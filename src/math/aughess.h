@@ -47,12 +47,12 @@ class AugHess {
 
     // contains
     std::shared_ptr<Matrix> mat_;
-    std::unique_ptr<double[]> prod_;
+    VectorB prod_;
     // scratch area for diagonalization
     std::shared_ptr<Matrix> scr_;
-    std::unique_ptr<double[]> vec_;
+    VectorB vec_;
     // an eigenvector
-    std::unique_ptr<double[]> eig_;
+    VectorB eig_;
 
     // for convenience below
     double& mat(int i, int j) { return mat_->element(i,j); }
@@ -61,11 +61,7 @@ class AugHess {
 
   public:
     AugHess(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad),
-      mat_(std::make_shared<Matrix>(ndim,ndim,true)),
-      prod_(new double[ndim]),
-      scr_(std::make_shared<Matrix>(ndim,ndim,true)),
-      vec_(new double[ndim]),
-      eig_(new double[ndim]) {
+      mat_(std::make_shared<Matrix>(ndim,ndim,true)), prod_(ndim), scr_(std::make_shared<Matrix>(ndim,ndim,true)), vec_(ndim), eig_(ndim) {
     }
 
     std::shared_ptr<T> compute_residual(const std::shared_ptr<const T> c, const std::shared_ptr<const T> s) {
@@ -81,38 +77,38 @@ class AugHess {
       for (int i = 0; i != size_; ++i, ++citer) {
         mat(i,size_-1) = mat(size_-1,i) = s->dot_product(**citer);
       }
-      prod_[size_-1] = c->dot_product(*grad_);
+      prod_(size_-1) = c->dot_product(*grad_);
 
       // set to scr_
       *scr_ = *mat_;
       // adding (1,0) vector as an additional basis function
       for (int i = 0; i != size_; ++i) {
-        scr(size_, i) = scr(i, size_) = prod_[i];
+        scr(size_, i) = scr(i, size_) = prod_(i);
       }
       scr(size_, size_) = 0.0;
-      scr_->diagonalize(eig_.get());
+      scr_->diagonalize(eig_);
 
       // scale eigenfunction
       for (int i = 0; i != size_; ++i)
-        vec_[i] = scr_->element(i,0) / scr_->element(size_,0);
+        vec_(i) = scr_->element(i,0) / scr_->element(size_,0);
 
       auto out = std::make_shared<T>(*grad_);
       int cnt = 0;
       for (auto i = c_.begin(), j = sigma_.begin(); i != c_.end(); ++i, ++j, ++cnt) {
-        out->ax_plus_y(vec_[cnt], *j);
-        out->ax_plus_y(-vec_[cnt]*eig_[0], *i);
+        out->ax_plus_y(vec_(cnt), *j);
+        out->ax_plus_y(-vec_(cnt)*eig_(0), *i);
       }
       assert(cnt == size_);
       return out;
     }
 
-    double eig() const { return eig_[0]; }
+    double eig() const { return eig_(0); }
 
     std::shared_ptr<T> civec() const {
       std::shared_ptr<T> out = c_.front()->clone();
       int cnt = 0;
       for (auto i = c_.begin(); i != c_.end(); ++i, ++cnt) {
-        out->ax_plus_y(vec_[cnt], *i);
+        out->ax_plus_y(vec_(cnt), *i);
       }
       return out;
     }

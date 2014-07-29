@@ -48,19 +48,19 @@ vector<double> RDM<1>::diag() const {
 
 
 template<>
-pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() const {
+pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals() const {
   auto buf = make_shared<Matrix>(norb(),norb(),true);
   buf->add_diag(2.0);
   daxpy_(norb()*norb(), -1.0, data(), 1, buf->data(), 1);
 
-  vector<double> vec(norb());
-  buf->diagonalize(vec.data());
+  VectorB vec(norb());
+  buf->diagonalize(vec);
 
   for (auto& i : vec) i = 2.0-i;
 
   map<int,int> emap;
   auto buf2 = buf->clone();
-  vector<double> vec2(norb());
+  VectorB vec2(norb());
   // sort eigenvectors so that buf is close to a unit matrix
   // target column
   for (int i = 0; i != norb(); ++i) {
@@ -72,11 +72,11 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
 
     // register to emap
     if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. RDM<1>::generate_natural_orbitals()");
-    emap.insert(make_pair(get<0>(max), i));
+    emap.emplace(get<0>(max), i);
 
     // copy to the target
     copy_n(buf->element_ptr(0,get<0>(max)), norb(), buf2->element_ptr(0,i));
-    vec2[i] = vec[get<0>(max)];
+    vec2(i) = vec(get<0>(max));
   }
 
   // fix the phase
@@ -85,7 +85,7 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
       blas::scale_n(-1.0, buf2->element_ptr(0,i), norb());
   }
 
-  return make_pair(buf2, vec2);
+  return {buf2, vec2};
 }
 
 

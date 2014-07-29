@@ -26,9 +26,16 @@
 #ifndef __SRC_DF_DFBLOCK_H
 #define __SRC_DF_DFBLOCK_H
 
+#include <numeric>
+#include <src/math/algo.h>
+#include <src/util/timer.h>
+#include <src/util/simple.h>
+#include <src/util/taskqueue.h>
+#include <src/parallel/staticdist.h>
+#include <src/parallel/mpi_interface.h>
+#include <src/math/btas_interface.h>
 #include <src/math/matrix.h>
 #include <src/math/matop.h>
-#include <src/df/dfblock_base.h>
 
 namespace bagel {
 
@@ -36,30 +43,129 @@ namespace bagel {
     DFBlock is a slice of 3-index DF integrals. Distributed by the first index
 */
 
-class DFBlock : public DFBlock_base<double> {
+class DFBlock : public btas::Tensor3<double> {
+
+  // aux_ runs fastest, b2_ runs slowest
   public:
-    template<typename... Types>
-    DFBlock(Types&&... args) : DFBlock_base<double>(std::forward<Types>(args)...) { }
+    using btas::Tensor3<double>::data;
 
-    DFBlock(const DFBlock& o) : DFBlock_base<double>(o) { }
-    DFBlock(DFBlock&& o)      : DFBlock_base<double>(std::move(o)) { }
+  protected:
+    // distribution information
+    std::shared_ptr<const StaticDist> adist_shell_;
+    std::shared_ptr<const StaticDist> adist_;
 
-    DFBlock& operator=(const DFBlock& o) { DFBlock_base<double>::operator=(o); return *this; }
-    DFBlock& operator=(DFBlock&& o)      { DFBlock_base<double>::operator=(std::move(o)); return *this; }
-    DFBlock& operator+=(const DFBlock& o){ DFBlock_base<double>::operator+=(o); return *this; }
-    DFBlock& operator-=(const DFBlock& o){ DFBlock_base<double>::operator-=(o); return *this; }
+    // if true, asize is evenly distributed. If false, asize is at the shell boundary
+    bool averaged_;
+
+    // a set of offsets of this block in the entire DF integrals
+    size_t astart_;
+    size_t b1start_;
+    size_t b2start_;
+
+  public:
+
+    DFBlock() { }
+
+    // construction of a block from AO integrals
+    DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<const StaticDist> adist,
+                 const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged = false);
+    DFBlock(const DFBlock& o);
+
+    // dimensions of the block
+    size_t asize() const { return this->extent(0); }
+    size_t b1size() const { return this->extent(1); }
+    size_t b2size() const { return this->extent(2); }
+
+    size_t size() const { return asize()*b1size()*b2size(); }
+    bool averaged() const { return averaged_; }
+
+    // a set of offsets of this block in the entire DF integrals
+    size_t astart() const { return astart_; }
+    size_t b1start() const { return b1start_; }
+    size_t b2start() const { return b2start_; }
+
+    // dist
+    const std::shared_ptr<const StaticDist>& adist_now() const { return averaged_ ? adist_ : adist_shell_; }
+
+
+    // some math functions
+    DFBlock& operator=(const DFBlock& o) {
+      btas::Tensor3<double>::operator=(o);
+      adist_shell_ = o.adist_shell_;
+      adist_ = o.adist_;
+      averaged_ = o.averaged_;
+      astart_ = o.astart_;
+      b1start_ = o.b1start_;
+      b2start_ = o.b2start_;
+      return *this;
+    }
+    DFBlock& operator=(DFBlock&& o) {
+      btas::Tensor3<double>::operator=(std::move(o));
+      adist_shell_ = o.adist_shell_;
+      adist_ = o.adist_;
+      averaged_ = o.averaged_;
+      astart_ = o.astart_;
+      b1start_ = o.b1start_;
+      b2start_ = o.b2start_;
+      return *this;
+    }
+    DFBlock& operator+=(const DFBlock& o) { btas::Tensor3<double>::operator+=(o); return *this; }
+    DFBlock& operator-=(const DFBlock& o) { btas::Tensor3<double>::operator-=(o); return *this; }
+
+    template <typename ScaleType, class DType>
+    void ax_plus_y(const ScaleType a, const DType& o) { btas::axpy(a, o, *this); }
+    template <typename ScaleType, class DType>
+    void ax_plus_y(const ScaleType a, const std::shared_ptr<DType>& o) { ax_plus_y(a, *o); }
+    template <typename ScaleType>
+    void scale(const ScaleType a) { btas::scal(a, *this); }
+
+    void zero() { std::fill_n(data(), size(), 0.0); }
+
+    // symmetrize b1 and b2 (assuming b1size() == b2size())
+    void symmetrize() {
+      if (b1size() != b2size()) throw std::logic_error("illegal call of DFBlock::symmetrize()");
+      const int n = b1size();
+      for (int i = 0; i != n; ++i)
+        for (int j = i; j != n; ++j) {
+          blas::ax_plus_y_n(1.0, data()+asize()*(j+n*i), asize(), data()+asize()*(i+n*j));
+          std::copy_n(data()+asize()*(i+n*j), asize(), data()+asize()*(j+n*i));
+        }
+    }
+
+    void copy_block(std::shared_ptr<MatView> o, const int jdim, const size_t offset) {
+      assert(o->size() == asize()*jdim);
+      std::copy_n(o->data(), asize()*jdim, data()+offset);
+    }
+
+    void copy_block(MatView o, const int jdim, const size_t offset) {
+      assert(o.size() == asize()*jdim);
+      std::copy_n(o.data(), asize()*jdim, data()+offset);
+    }
+
+    void add_block(std::shared_ptr<MatView> o, const int jdim, const size_t offset, const double fac = 1.0) {
+      assert(o->size() == asize()*jdim);
+      blas::ax_plus_y_n(fac, o->data(), asize()*jdim, data()+offset);
+    }
+
+    void add_block(MatView o, const int jdim, const size_t offset, const double fac = 1.0) {
+      assert(o.size() == asize()*jdim);
+      blas::ax_plus_y_n(fac, o.data(), asize()*jdim, data()+offset);
+    }
+
+    // average the asize between MPI processes (block will be described by dist_)
+    void average();
+
+    // reverse operation of average() function
+    void shell_boundary();
 
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;
 
-    std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const MatView> c, const bool trans = false) const;
-    std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const MatView> c, const bool trans = false) const;
-    // TODO will be deprecated
-    std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const Matrix> c, const bool trans = false) const;
-    std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const Matrix> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock> transform_second(const MatView c, const bool trans = false) const;
+    std::shared_ptr<DFBlock> transform_third(const MatView c, const bool trans = false) const;
 
     // add ab^+  to this.
-    void add_direct_product(const std::shared_ptr<const Matrix> a, const std::shared_ptr<const Matrix> b, const double fac);
+    void add_direct_product(const std::shared_ptr<const VectorB> a, const std::shared_ptr<const Matrix> b, const double fac);
 
     // exchange b1 and b2
     std::shared_ptr<DFBlock> swap() const;
@@ -77,8 +183,8 @@ class DFBlock : public DFBlock_base<double> {
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFBlock> o, const double a, const size_t n) const;
     std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
 
-    std::unique_ptr<double[]> form_vec(const std::shared_ptr<const Matrix> den) const;
-    std::shared_ptr<Matrix> form_mat(const double* fit) const;
+    std::shared_ptr<VectorB> form_vec(const std::shared_ptr<const Matrix> den) const;
+    std::shared_ptr<Matrix> form_mat(const btas::Tensor1<double>& fit) const;
 
     void contrib_apply_J(const std::shared_ptr<const DFBlock> o, const std::shared_ptr<const Matrix> mat);
 

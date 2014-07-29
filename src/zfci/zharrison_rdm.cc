@@ -304,12 +304,12 @@ void ZHarrison::compute_rdm12() {
 }
 
 
-shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const { 
+shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
   // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
   auto rdm1_tot = make_shared<ZMatrix>(norb_*2, norb_*2);
-  rdm1_tot->copy_block(    0,     0, norb_, norb_, rdm1_av_kramers("00")->data());
-  rdm1_tot->copy_block(norb_, norb_, norb_, norb_, rdm1_av_kramers("11")->data());
-  rdm1_tot->copy_block(norb_,     0, norb_, norb_, rdm1_av_kramers("10")->data());
+  rdm1_tot->copy_block(    0,     0, norb_, norb_, rdm1_av_kramers("00"));
+  rdm1_tot->copy_block(norb_, norb_, norb_, norb_, rdm1_av_kramers("11"));
+  rdm1_tot->copy_block(norb_,     0, norb_, norb_, rdm1_av_kramers("10"));
   rdm1_tot->copy_block(    0, norb_, norb_, norb_, rdm1_tot->get_submatrix(norb_, 0, norb_, norb_)->transpose_conjg());
 
 #if 0
@@ -327,7 +327,7 @@ shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
 }
 
 
-shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const { 
+shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
   // transformed 2RDM ; input format is i^+ k^+ j l ; output format is i^+ j k^+ l
   // TODO : slot in 2RDM by hand to avoid matrix multiplication ; should be slightly cheaper
 
@@ -349,17 +349,17 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
   for (int i = 0; i != 2; ++i) {
     auto co = make_shared<const ZMatrix>(*unit->slice(i*norb_,(i+1)*norb_)); 
     bitset<1> b(i);
-    trans.insert(make_pair(b, co)); 
+    trans.emplace(b, co);
   }
 #endif
 
-  // loop over each component 
+  // loop over each component
   auto ikjl = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
   auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
   for (auto& irdm : rdm2_av_) {
     bitset<4> ib = irdm.first;
     shared_ptr<const ZRDM<2>> rdm2 = irdm.second;
-    // TODO to be updated once the Tensor branch comes out 
+    // TODO to be updated once the Tensor branch comes out
     const int norb2 = norb_*norb_;
     const int norb3 = norb2*norb_;
     const int norb4 = norb3*norb_;
@@ -368,10 +368,10 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
     unique_ptr<complex<double>[]> tmp3(new complex<double>[8*norb4]);
     zgemm3m_("N", "N", 2*norb_, norb3, norb_, 1.0, trans[ib[3] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, rdm2->data(), norb_, 0.0, tmp1.get(), 2*norb_);
     for (int i = 0; i != norb2; ++i)
-      zgemm3m_("N", "T", 2*norb_, 2*norb_, norb_, 1.0, tmp1.get()+i*2*norb2, 2*norb_, trans[ib[2] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp2.get()+i*4*norb2, 2*norb_); 
+      zgemm3m_("N", "T", 2*norb_, 2*norb_, norb_, 1.0, tmp1.get()+i*2*norb2, 2*norb_, trans[ib[2] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp2.get()+i*4*norb2, 2*norb_);
     for (int i = 0; i != norb_; ++i)
-      zgemm3m_("N", "C", 4*norb2, 2*norb_, norb_, 1.0, tmp2.get()+i*4*norb3, 4*norb2, trans[ib[1] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp3.get()+i*8*norb3, 4*norb2); 
-    zgemm3m_("N", "C", 8*norb3, 2*norb_, norb_, 1.0, tmp3.get(),           8*norb3, trans[ib[0] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 1.0, ikjl->data()         , 8*norb3); 
+      zgemm3m_("N", "C", 4*norb2, 2*norb_, norb_, 1.0, tmp2.get()+i*4*norb3, 4*norb2, trans[ib[1] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp3.get()+i*8*norb3, 4*norb2);
+    zgemm3m_("N", "C", 8*norb3, 2*norb_, norb_, 1.0, tmp3.get(),           8*norb3, trans[ib[0] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 1.0, ikjl->data()         , 8*norb3);
   }
 
   // sort indices : G(ik|jl) -> G(ij|kl)

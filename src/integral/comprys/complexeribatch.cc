@@ -58,6 +58,8 @@ std::complex<double> ComplexERIBatch::get_PQ(const double coord1, const double c
   double imag;
   if (swap) imag = 0.5*(Bimag - Aimag);
   else imag = 0.5*(Aimag - Bimag);
+  assert(exp1 != 0.0 || imag == 0.0);
+  assert(exp2 != 0.0 || imag == 0.0);
   const std::complex<double> num (Areal + Breal, imag);
   return num * one12;
 }

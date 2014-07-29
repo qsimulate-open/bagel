@@ -66,7 +66,7 @@ class HPW_DIIS  {
         err = std::make_shared<T>(prev_ != nullptr ? (*expo-*prev_) : (*expo));
       }
 
-      std::shared_ptr<T> extrap = diis_.extrapolate(std::make_pair(expo, err))->exp(100);
+      std::shared_ptr<T> extrap = diis_.extrapolate({expo, err})->exp(100);
       // this is important
       extrap->purify_unitary();
       base_ = extrap;

@@ -25,6 +25,7 @@
 
 
 #include <src/london/scf_base_london.h>
+#include <src/london/reference_london.h>
 #include <src/util/timer.h>
 #include <src/math/diis.h>
 #include <iostream>
@@ -37,8 +38,8 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_base_London)
 
-SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry_London> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
- : Method(idat, geom, re) {
+SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
+ : Method(idat, geom, re), eig_(geom_->nbasis()) {
 
   // if this is called by Opt
   do_grad_ = idata_->get<bool>("gradient", false);
@@ -50,8 +51,6 @@ SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const share
   scfb.tick_print("Overlap matrix");
   hcore_ = make_shared<const ZHcore>(geom);
   scfb.tick_print("Hcore matrix");
-
-  eig_.resize(cgeom_->nbasis());
 
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);
@@ -65,11 +64,11 @@ SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const share
   multipole_print_ = idata_->get<int>("multipole", 1);
 
   const int ncharge = idata_->get<int>("charge", 0);
-  const int nact    = idata_->get<int>("nact", (cgeom_->nele()-ncharge)%2);
-  nocc_ = idata_->get<int>("nocc", (cgeom_->nele()-ncharge+nact)/2);
+  const int nact    = idata_->get<int>("nact", (geom_->nele()-ncharge)%2);
+  nocc_ = idata_->get<int>("nocc", (geom_->nele()-ncharge+nact)/2);
   noccB_ = nocc_ - nact;
 
-  if (nocc_+noccB_ != cgeom_->nele()-ncharge) throw runtime_error("nocc and nact are not consistently specified");
+  if (nocc_+noccB_ != geom_->nele()-ncharge) throw runtime_error("nocc and nact are not consistently specified");
 
   tildex_ = overlap_->tildex(thresh_overlap_);
 
@@ -80,16 +79,18 @@ SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const share
     scfb.tick_print("Schwarz matrix");
   }
 
-  //TODO Set up London orbital References?
   // if ref is passed to this
-  if (re != nullptr) throw runtime_error("SCF_base_London is unable to use References at this time");
-    //coeff_ = re->coeff();
+  if (re != nullptr) {
+    auto cref = dynamic_pointer_cast<const Reference_London>(re);
+    assert(cref);
+    coeff_ = cref->zcoeff();
+  }
 
   cout << endl;
 }
 
 
 void SCF_base_London::init_schwarz() {
-  schwarz_ = cgeom_->schwarz();
+  schwarz_ = geom_->schwarz();
 }
 

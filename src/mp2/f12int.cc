@@ -103,7 +103,7 @@ F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometr
 
   // coefficient sets
   const size_t nocc = geom->nele()/2 - ncore;
-  shared_ptr<const MatView> oc = ref_->coeff()->slice(ncore, ncore+nocc);
+  const MatView oc = ref_->coeff()->slice(ncore, ncore+nocc);
 
   const shared_ptr<const DFDist> df = geom_->df();
   const shared_ptr<const DFHalfDist> dxo = df->compute_half_transform(oc)->apply_J();

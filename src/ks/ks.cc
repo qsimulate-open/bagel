@@ -78,7 +78,7 @@ void KS::compute() {
     }
 
     if (iter >= diis_start_)
-      fock = diis.extrapolate(make_pair(fock, error_vector));
+      fock = diis.extrapolate({fock, error_vector});
 
     {
       auto intermediate = make_shared<Matrix>(*tildex_ % *fock * *tildex_);

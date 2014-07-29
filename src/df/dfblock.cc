@@ -29,73 +29,63 @@ using namespace bagel;
 using namespace std;
 using namespace btas;
 
-shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const MatView> cmat, const bool trans) const {
-  assert(trans ? cmat->mdim() : cmat->ndim() == b1size());
-  assert(cmat->range().ordinal().contiguous());
+// construction of a block from AO integrals
+DFBlock::DFBlock(shared_ptr<const StaticDist> adist_shell, shared_ptr<const StaticDist> adist,
+             const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged)
+ : btas::Tensor3<double>(max(adist_shell->size(mpi__->rank()), max(adist->size(mpi__->rank()), a)), b1, b2),
+   adist_shell_(adist_shell), adist_(adist), averaged_(averaged), astart_(as), b1start_(b1s), b2start_(b2s) {
+
+  assert(asize() == adist_shell->size(mpi__->rank()) || asize() == adist_->size(mpi__->rank()) || asize() == adist_->nele());
+
+  // resize to the current size (moving the end pointer)
+  const btas::CRange<3> range(a, b1, b2);
+  this->resize(range);
+}
+
+
+DFBlock::DFBlock(const DFBlock& o)
+ : btas::Tensor3<double>(max(o.adist_shell_->size(mpi__->rank()), max(o.adist_->size(mpi__->rank()), o.asize())), o.b1size(), o.b2size()),
+   adist_shell_(o.adist_shell_), adist_(o.adist_), averaged_(o.averaged_), astart_(o.astart_), b1start_(o.b1start_), b2start_(o.b2start_) {
+
+  // resize to the current size
+  const btas::CRange<3> range(o.asize(), o.b1size(), o.b2size());
+  this->resize(range);
+
+  btas::Tensor3<double>::operator=(o);
+}
+
+
+shared_ptr<DFBlock> DFBlock::transform_second(const MatView cmat, const bool trans) const {
+  assert(trans ? cmat.extent(1) : cmat.extent(0) == b1size());
+  assert(cmat.range().ordinal().contiguous());
 
   // so far I only consider the following case
   assert(b1start_ == 0);
-  const int nocc = trans ? cmat->ndim() : cmat->mdim();
+  const int nocc = trans ? cmat.extent(0) : cmat.extent(1);
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
 
   if (!trans)
-    btas::contract(1.0, *this, {0,3,2}, *cmat, {3,1}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,3,2}, cmat, {3,1}, 0.0, *out, {0,1,2});
   else
-    btas::contract(1.0, *this, {0,3,2}, *cmat, {1,3}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,3,2}, cmat, {1,3}, 0.0, *out, {0,1,2});
 
   return out;
 }
 
 
-shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const MatView> cmat, const bool trans) const {
-  assert(trans ? cmat->mdim() : cmat->ndim() == b2size());
-  assert(cmat->range().ordinal().contiguous());
+shared_ptr<DFBlock> DFBlock::transform_third(const MatView cmat, const bool trans) const {
+  assert(trans ? cmat.extent(1) : cmat.extent(0) == b2size());
+  assert(cmat.range().ordinal().contiguous());
 
   // so far I only consider the following case
   assert(b2start_ == 0);
-  const int nocc = trans ? cmat->ndim() : cmat->mdim();
+  const int nocc = trans ? cmat.extent(0) : cmat.extent(1);
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-    btas::contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,1,3}, cmat, {3,2}, 0.0, *out, {0,1,2});
   else  // trans -> back transform
-    btas::contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
-
-  return out;
-}
-
-
-// TODO will be deprecated
-shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat, const bool trans) const {
-  assert(trans ? cmat->mdim() : cmat->ndim() == b1size());
-
-  // so far I only consider the following case
-  assert(b1start_ == 0);
-  const int nocc = trans ? cmat->ndim() : cmat->mdim();
-  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
-
-  if (!trans)
-    btas::contract(1.0, *this, {0,3,2}, *cmat, {3,1}, 0.0, *out, {0,1,2});
-  else
-    btas::contract(1.0, *this, {0,3,2}, *cmat, {1,3}, 0.0, *out, {0,1,2});
-
-  return out;
-}
-
-
-// TODO will be deprecated
-shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat, const bool trans) const {
-  assert(trans ? cmat->mdim() : cmat->ndim() == b2size());
-
-  // so far I only consider the following case
-  assert(b2start_ == 0);
-  const int nocc = trans ? cmat->ndim() : cmat->mdim();
-  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
-
-  if (!trans)
-    btas::contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
-  else  // trans -> back transform
-    btas::contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,1,3}, cmat, {2,3}, 0.0, *out, {0,1,2});
 
   return out;
 }
@@ -113,8 +103,8 @@ shared_ptr<DFBlock> DFBlock::copy() const {
 }
 
 
-void DFBlock::add_direct_product(const shared_ptr<const Matrix> a, const shared_ptr<const Matrix> b, const double fac) {
-  assert(asize() == a->ndim() && b1size()*b2size() == b->size());
+void DFBlock::add_direct_product(const shared_ptr<const VectorB> a, const shared_ptr<const Matrix> b, const double fac) {
+  assert(asize() == a->size() && b1size()*b2size() == b->size());
   dger_(asize(), b1size()*b2size(), fac, a->data(), 1, b->data(), 1, data(), asize());
 }
 
@@ -137,12 +127,11 @@ shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM(const double scale_exch) const {
   // exchange contributions
   out->ax_plus_y(-2.0*scale_exch, *this);
   // coulomb contributions (diagonal to diagonal)
-  unique_ptr<double[]> diagsum(new double[asize()]);
-  fill_n(diagsum.get(), asize(), 0.0);
+  VectorB diagsum(asize());
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(1.0, data()+asize()*(i+nocc*i), asize(), diagsum.get());
+    blas::ax_plus_y_n(1.0, data()+asize()*(i+nocc*i), asize(), diagsum.data());
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(4.0, diagsum.get(), asize(), out->data()+asize()*(i+nocc*i));
+    blas::ax_plus_y_n(4.0, diagsum.data(), asize(), out->data()+asize()*(i+nocc*i));
   return out;
 }
 
@@ -150,35 +139,34 @@ shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM(const double scale_exch) const {
 // Caution
 //   o strictly assuming that we are using natural orbitals.
 //
-shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const btas::Tensor2<double>& amat, const btas::Tensor2<double>& bmat) const {
+shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const Tensor2<double>& amat, const Tensor2<double>& bmat) const {
   assert(b1size() == b2size());
   const int nocc = b1size();
   shared_ptr<DFBlock> out = clone();
   {
-    unique_ptr<double[]> d2(new double[size()]);
+    auto d2 = clone();
     // exchange contributions
-    dgemm_("N", "N", asize()*nocc, nocc, nocc, 1.0, data(), asize()*nocc, amat.data(), nocc, 0.0, d2.get(), asize()*nocc);
-    for (int i = 0; i != nocc; ++i)
-      dgemm_("N", "N", asize(), nocc, nocc, -1.0, d2.get()+asize()*nocc*i, asize(), amat.data(), nocc, 0.0, out->data()+asize()*nocc*i, asize());
-    dgemm_("N", "N", asize()*nocc, nocc, nocc, 1.0, data(), asize()*nocc, bmat.data(), nocc, 0.0, d2.get(), asize()*nocc);
-    for (int i = 0; i != nocc; ++i)
-      dgemm_("N", "N", asize(), nocc, nocc, -1.0, d2.get()+asize()*nocc*i, asize(), bmat.data(), nocc, 1.0, out->data()+asize()*nocc*i, asize());
+    contract( 1.0, *this, {0,1,2}, amat, {2,3}, 0.0,  *d2, {0,1,3});
+    contract(-1.0,   *d2, {0,1,2}, amat, {1,3}, 0.0, *out, {0,3,2});
+    contract( 1.0, *this, {0,1,2}, bmat, {2,3}, 0.0,  *d2, {0,1,3});
+    contract(-1.0,   *d2, {0,1,2}, bmat, {1,3}, 1.0, *out, {0,3,2});
   }
 
-  unique_ptr<double[]> sum(new double[nocc]);
-  for (int i = 0; i != nocc; ++i) sum[i] = amat(i,i) + bmat(i,i);
+  VectorB sum(nocc);
+  for (int i = 0; i != nocc; ++i)
+    sum[i] = amat(i,i) + bmat(i,i);
+
   // coulomb contributions (diagonal to diagonal)
-  unique_ptr<double[]> diagsum(new double[asize()]);
-  fill_n(diagsum.get(), asize(), 0.0);
+  VectorB diagsum(asize());
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(sum[i], data()+asize()*(i+nocc*i), asize(), diagsum.get());
+    blas::ax_plus_y_n(sum[i], data()+asize()*(i+nocc*i), asize(), diagsum.data());
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(sum[i], diagsum.get(), asize(), out->data()+asize()*(i+nocc*i));
+    blas::ax_plus_y_n(sum[i], diagsum.data(), asize(), out->data()+asize()*(i+nocc*i));
   return out;
 }
 
 
-shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const {
+shared_ptr<DFBlock> DFBlock::apply_2RDM(const Tensor4<double>& rdm, const Tensor2<double>& rdm1, const int nclosed, const int nact) const {
   assert(nclosed+nact == b1size() && b1size() == b2size());
   // checking if natural orbitals...
   bool natural = true;
@@ -206,17 +194,19 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const 
 
   // act-act part
   // compress
-  unique_ptr<double[]> buf(new double[nact*nact*asize()]);
-  unique_ptr<double[]> buf2(new double[nact*nact*asize()]);
-  for (int i = 0; i != nact; ++i)
-    for (int j = 0; j != nact; ++j)
-      copy_n(data()+asize()*(j+nclosed+b1size()*(i+nclosed)), asize(), buf.get()+asize()*(j+nact*i));
-  // multiply
-  dgemm_("N", "N", asize(), nact*nact, nact*nact, 1.0, buf.get(), asize(), rdm.data(), nact*nact, 0.0, buf2.get(), asize());
+  auto low = {0, nclosed, nclosed};
+  auto up = {static_cast<int>(asize()), nclosed+nact, nclosed+nact};
+  Tensor3<double> buf = make_view(range().slice(low, up), storage());
+  Tensor3<double> buf2(asize(), nact, nact);
+  {
+    auto rdm2v = group(group(rdm,2,4),0,2);
+    auto buf2v = group(buf2,1,3);
+    contract(1.0, group(buf,1,3), {0,1}, rdm2v, {1,2}, 0.0, buf2v, {0,2});
+  }
   // slot in
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
-      copy_n(buf2.get()+asize()*(j+nact*i), asize(), out->data()+asize()*(j+nclosed+b1size()*(i+nclosed)));
+      copy_n(buf2.data()+asize()*(j+nact*i), asize(), out->data()+asize()*(j+nclosed+b1size()*(i+nclosed)));
 
   // closed-act part
   // coulomb contribution G^ia_ia = 2*gamma_ab
@@ -229,10 +219,11 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const 
       for (int j = 0; j != nact; ++j)
         daxpy_(asize(), 2.0*rdm1(j, i), diagsum.get(), 1, out->data()+asize()*(j+nclosed+b1size()*(i+nclosed)), 1);
   }
-  unique_ptr<double[]> diagsum2(new double[asize()]);
-  dgemv_("N", asize(), nact*nact, 1.0, buf.get(), asize(), rdm1.data(), 1, 0.0, diagsum2.get(), 1);
+  VectorB diagsum2(asize());
+  contract(1.0, group(buf,1,3), {0,1}, group(rdm1,0,2), {1}, 0.0, diagsum2, {0});
+
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(asize(), 2.0, diagsum2.get(), 1, out->data()+asize()*(i+b1size()*i), 1);
+    daxpy_(asize(), 2.0, diagsum2.data(), 1, out->data()+asize()*(i+b1size()*i), 1);
   // exchange contribution
   if (natural) {
     for (int i = 0; i != nact; ++i)
@@ -252,15 +243,11 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const 
 }
 
 
-shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm) const {
+shared_ptr<DFBlock> DFBlock::apply_2RDM(const Tensor4<double>& rdm) const {
   shared_ptr<DFBlock> out = clone();
-
-  using btas::group;
-  auto outv = group(*out,  1, 3);
-  auto dfv  = group(*this, 1, 3);
   auto rdmv = group(group(rdm,  2, 4), 0, 2);
-
-  btas::contract(1.0, dfv, {0,2}, rdmv, {2,1}, 0.0, outv, {0,1});
+  auto outv = group(*out,1,3);
+  contract(1.0, group(*this,1,3), {0,2}, rdmv, {2,1}, 0.0, outv, {0,1});
   return out;
 }
 
@@ -271,11 +258,11 @@ shared_ptr<Matrix> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const
 
   if (b1size() == o->b1size()) {
     target = make_shared<Matrix>(b2size(),o->b2size());
-    btas::contract(a, *this, {2,3,0}, *o, {2,3,1}, 0.0, *target, {0,1});
+    contract(a, *this, {2,3,0}, *o, {2,3,1}, 0.0, *target, {0,1});
   } else {
     assert(b2size() == o->b2size());
     target = make_shared<Matrix>(b1size(),o->b1size());
-    btas::contract(a, *this, {2,0,3}, *o, {2,1,3}, 0.0, *target, {0,1});
+    contract(a, *this, {2,0,3}, *o, {2,1,3}, 0.0, *target, {0,1});
   }
 
   return target;
@@ -285,7 +272,7 @@ shared_ptr<Matrix> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const
 shared_ptr<Matrix> DFBlock::form_4index(const shared_ptr<const DFBlock> o, const double a) const {
   if (asize() != o->asize()) throw logic_error("illegal call of DFBlock::form_4index");
   auto target = make_shared<Matrix>(b1size()*b2size(), o->b1size()*o->b2size());
-  dgemm_("T", "N", b1size()*b2size(), o->b1size()*o->b2size(), asize(), a, data(), asize(), o->data(), asize(), 0.0, target->data(), b1size()*b2size());
+  contract(a, group(*this,1,3), {1,0}, group(*o,1,3), {1,2}, 0.0, *target, {0,2});
   return target;
 }
 
@@ -302,22 +289,22 @@ shared_ptr<Matrix> DFBlock::form_4index_1fixed(const shared_ptr<const DFBlock> o
 shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, const double a) const {
   if (b1size() != o->b1size() || b2size() != o->b2size()) throw logic_error("illegal call of DFBlock::form_aux_2index");
   auto target = make_shared<Matrix>(asize(), o->asize());
-  btas::contract(a, *this, {0,2,3}, *o, {1,2,3}, 0.0, *target, {0,1});
+  contract(a, *this, {0,2,3}, *o, {1,2,3}, 0.0, *target, {0,1});
   return target;
 }
 
 
-unique_ptr<double[]> DFBlock::form_vec(const shared_ptr<const Matrix> den) const {
-  unique_ptr<double[]> out(new double[asize()]);
-  assert(den->ndim() == b1size() && den->mdim() == b2size());
-  dgemv_("N", asize(), b1size()*b2size(), 1.0, data(), asize(), den->data(), 1, 0.0, out.get(), 1);
+shared_ptr<VectorB> DFBlock::form_vec(const shared_ptr<const Matrix> den) const {
+  auto out = make_shared<VectorB>(asize());
+  contract(1.0, group(*this,1,3), {0,1}, group(*den,0,2), {1}, 0.0, *out, {0});
   return out;
 }
 
 
-shared_ptr<Matrix> DFBlock::form_mat(const double* fit) const {
-  auto out = make_shared<Matrix>(b1size(),b2size());
-  dgemv_("T", asize(), b1size()*b2size(), 1.0, data(), asize(), fit, 1, 0.0, out->data(), 1);
+shared_ptr<Matrix> DFBlock::form_mat(const Tensor1<double>& fit) const {
+  auto out = make_shared<Matrix>(b1size(), b2size());
+  auto outv = group(*out,0,2);
+  contract(1.0, group(*this,1,3), {1,0}, fit, {1}, 0.0, outv, {0});
   return out;
 }
 
@@ -325,14 +312,14 @@ shared_ptr<Matrix> DFBlock::form_mat(const double* fit) const {
 void DFBlock::contrib_apply_J(const shared_ptr<const DFBlock> o, const shared_ptr<const Matrix> d) {
   if (b1size() != o->b1size() || b2size() != o->b2size()) throw logic_error("illegal call of DFBlock::contrib_apply_J");
   assert(astart_ == 0 && o->astart_ == 0);
-  btas::contract(1.0, *d, {0,3}, *o, {3,1,2}, 1.0, *this, {0,1,2});
+  contract(1.0, *d, {0,3}, *o, {3,1,2}, 1.0, *this, {0,1,2});
 }
 
 
 shared_ptr<Matrix> DFBlock::form_Dj(const shared_ptr<const Matrix> o, const int jdim) const {
   assert(o->size() == b1size()*b2size()*jdim);
   auto out = make_shared<Matrix>(asize(), jdim);
-  dgemm_("N", "N", asize(), jdim, b1size()*b2size(), 1.0, data(), asize(), o->data(), b1size()*b2size(), 0.0, out->data(), asize());
+  contract(1.0, group(*this,1,3), {0,1}, *o, {1,2}, 0.0, *out, {0,2});
   return out;
 }
 
@@ -355,4 +342,168 @@ shared_ptr<Tensor3<double>> DFBlock::get_block(const int ist, const int i, const
         (*out)(ii-ista, jj-jsta, kk-ksta) = (*this)(ii, jj, kk);
 
   return out;
+}
+
+
+// average the asize between MPI processes (block will be described by dist_)
+void DFBlock::average() {
+  if (averaged_) return;
+  averaged_ = true;
+
+  // first make a send and receive buffer
+  const size_t o_start = astart_;
+  const size_t o_end   = o_start + asize();
+  const int myrank = mpi__->rank();
+  size_t t_start, t_end;
+  tie(t_start, t_end) = adist_->range(myrank);
+
+  assert(o_end - t_end >= 0);
+  assert(o_start - t_start >= 0);
+
+  // TODO so far I am not considering the cases when data must be sent to the next neighbor; CAUTION
+  const size_t asendsize = o_end - t_end;
+  const size_t arecvsize = o_start - t_start;
+
+  assert(asendsize < t_end-t_start && arecvsize < t_end-t_start);
+
+  unique_ptr<double[]> sendbuf;
+  unique_ptr<double[]> recvbuf;
+  int sendtag = 0;
+  int recvtag = 0;
+
+  if (asendsize) {
+    TaskQueue<CopyBlockTask<double>> task(b2size());
+
+    sendbuf = unique_ptr<double[]>(new double[asendsize*b1size()*b2size()]);
+    const size_t retsize = asize() - asendsize;
+    for (size_t b2 = 0; b2 != b2size(); ++b2)
+      task.emplace_back(data()+retsize+asize()*b1size()*b2, asize(), sendbuf.get()+asendsize*b1size()*b2, asendsize, asendsize, b1size());
+
+    task.compute();
+
+    // send to the next node
+    sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size()*b2size(), myrank+1, myrank);
+  }
+
+  if (arecvsize) {
+    recvbuf = unique_ptr<double[]>(new double[arecvsize*b1size()*b2size()]);
+    // recv from the previous node
+    recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size()*b2size(), myrank-1, myrank-1);
+  }
+
+  // second move local data
+  if (arecvsize || asendsize) {
+    const size_t t_size = t_end - t_start;
+    const size_t retsize = asize() - asendsize;
+    if (t_size <= asize()) {
+      for (size_t i = 0; i != b1size()*b2size(); ++i) {
+        if (i*asize() < (i+1)*t_size-retsize) {
+          copy_backward(data()+i*asize(), data()+i*asize()+retsize, data()+(i+1)*t_size);
+        } else if (i*asize() > (i+1)*t_size-retsize) {
+          copy_n(data()+i*asize(), retsize, data()+(i+1)*t_size-retsize);
+        }
+      }
+    } else {
+      for (long long int i = b1size()*b2size()-1; i >= 0; --i) {
+        assert(i*asize() < (i+1)*t_size-retsize);
+        copy_backward(data()+i*asize(), data()+i*asize()+retsize, data()+(i+1)*t_size);
+      }
+    }
+  }
+
+  // set new astart_ and asize()
+  astart_ = t_start;
+  assert(this->storage().capacity() >= (t_end - t_start)*b1size()*b2size());
+  const btas::CRange<3> range(t_end - t_start, b1size(), b2size());
+  this->resize(range);
+
+  // set received data
+  if (arecvsize) {
+    // wait for recv communication
+    mpi__->wait(recvtag);
+
+    TaskQueue<CopyBlockTask<double>> task(b2size());
+    for (size_t b2 = 0; b2 != b2size(); ++b2)
+      task.emplace_back(recvbuf.get()+arecvsize*b1size()*b2, arecvsize, data()+asize()*b1size()*b2, asize(), arecvsize, b1size());
+    task.compute();
+  }
+
+  // wait for send communication
+  if (asendsize) mpi__->wait(sendtag);
+}
+
+
+// reverse operation of average() function
+void DFBlock::shell_boundary() {
+  if (!averaged_) return;
+  averaged_ = false;
+  const size_t o_start = astart_;
+  const size_t o_end = o_start + asize();
+  const int myrank = mpi__->rank();
+  size_t t_start, t_end;
+  tie(t_start, t_end) = adist_shell_->range(myrank);
+
+  const size_t asendsize = t_start - o_start;
+  const size_t arecvsize = t_end - o_end;
+  assert(t_start >= o_start && t_end >= o_end);
+
+  unique_ptr<double[]> sendbuf, recvbuf;
+  int sendtag = 0;
+  int recvtag = 0;
+
+  if (asendsize) {
+    TaskQueue<CopyBlockTask<double>> task(b2size());
+    sendbuf = unique_ptr<double[]>(new double[asendsize*b1size()*b2size()]);
+    for (size_t b2 = 0; b2 != b2size(); ++b2)
+      task.emplace_back(data()+asize()*b1size()*b2, asize(), sendbuf.get()+asendsize*b1size()*b2, asendsize, asendsize, b1size());
+
+    task.compute();
+    assert(myrank > 0);
+    sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size()*b2size(), myrank-1, myrank);
+  }
+  if (arecvsize) {
+    assert(myrank+1 < mpi__->size());
+    recvbuf = unique_ptr<double[]>(new double[arecvsize*b1size()*b2size()]);
+    recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size()*b2size(), myrank+1, myrank+1);
+  }
+
+  if (arecvsize || asendsize) {
+    const size_t t_size = t_end - t_start;
+    const size_t retsize = asize() - asendsize;
+    assert(t_size >= retsize);
+    if (t_size <= asize()) {
+      for (size_t i = 0; i != b1size()*b2size(); ++i) {
+        assert(i*asize()+asendsize > i*t_size);
+        copy_n(data()+i*asize()+asendsize, retsize, data()+i*t_size);
+      }
+    } else {
+      for (long long int i = b1size()*b2size()-1; i >= 0; --i) {
+        if (i*asize()+asendsize > i*t_size) {
+          copy_n(data()+i*asize()+asendsize, retsize, data()+i*t_size);
+        } else if (i*asize()+asendsize < i*t_size) {
+          copy_backward(data()+i*asize()+asendsize, data()+(i+1)*asize(), data()+i*t_size+retsize);
+        }
+      }
+    }
+  }
+
+  // set new astart_ and asize()
+  astart_ = t_start;
+  assert(this->storage().capacity() >= (t_end - t_start)*b1size()*b2size());
+  const btas::CRange<3> range(t_end - t_start, b1size(), b2size());
+  this->resize(range);
+
+  // set received data
+  if (arecvsize) {
+    // wait for recv communication
+    mpi__->wait(recvtag);
+
+    TaskQueue<CopyBlockTask<double>> task(b2size());
+    for (size_t b2 = 0; b2 != b2size(); ++b2)
+      task.emplace_back(recvbuf.get()+arecvsize*b1size()*b2, arecvsize, data()+asize()*b1size()*b2+(asize()-arecvsize), asize(), arecvsize, b1size());
+    task.compute();
+  }
+
+  // wait for send communication
+  if (asendsize) mpi__->wait(sendtag);
 }

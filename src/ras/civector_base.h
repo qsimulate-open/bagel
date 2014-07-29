@@ -26,7 +26,6 @@
 #ifndef __SRC_RAS_CIVECTOR_BASE_H
 #define __SRC_RAS_CIVECTOR_BASE_H
 
-#include <src/ciutil/citraits.h>
 #include <src/ras/determinants.h>
 
 namespace bagel {

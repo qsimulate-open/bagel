@@ -160,30 +160,30 @@ void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
   const int nguess = basis.size();
 
   shared_ptr<Matrix> spin = make_shared<CISpin>(basis, norb_);
-  vector<double> eigs(nguess, 0.0);
-  spin->diagonalize(eigs.data());
+  VectorB eigs(nguess);
+  spin->diagonalize(eigs);
 
   int start, end;
   const double target_spin = 0.25 * static_cast<double>(det_->nspin()*(det_->nspin()+2));
   for (start = 0; start < nguess; ++start)
-    if (fabs(eigs[start] - target_spin) < 1.0e-8) break;
+    if (fabs(eigs(start) - target_spin) < 1.0e-8) break;
   for (end = start; end < nguess; ++end)
-    if (fabs(eigs[end] - target_spin) > 1.0e-8) break;
+    if (fabs(eigs(end) - target_spin) > 1.0e-8) break;
 
   if ((end-start) >= nstate_) {
-    shared_ptr<const MatView> coeffs = spin->slice(start, end);
+    const MatView coeffs = spin->slice(start, end);
 
     shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
-    hamiltonian = make_shared<Matrix>(*coeffs % *hamiltonian * *coeffs);
-    hamiltonian->diagonalize(eigs.data());
+    hamiltonian = make_shared<Matrix>(coeffs % *hamiltonian * coeffs);
+    hamiltonian->diagonalize(eigs);
 
 #if 0
     const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
     for (int i = 0; i < end-start; ++i)
-      cout << setw(12) << setprecision(8) << eigs[i] + nuc_core << endl;
+      cout << setw(12) << setprecision(8) << eigs(i) + nuc_core << endl;
 #endif
 
-    auto coeffs1 = (*coeffs * *hamiltonian).slice_copy(0, nstate_);
+    auto coeffs1 = (coeffs * *hamiltonian).slice_copy(0, nstate_);
     mpi__->broadcast(coeffs1->data(), coeffs1->ndim() * coeffs1->mdim(), 0);
     const size_t lenb = det_->lenb();
     for (int i = 0; i < nguess; ++i) {
@@ -256,14 +256,14 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
 vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) {
   multimap<double, pair<size_t, size_t>> tmp;
   for (int i = 0; i != ndet; ++i)
-    tmp.insert(make_pair(-1.0e10*(1+i), make_pair(0,0)));
+    tmp.emplace(-1.0e10*(1+i), make_pair(0,0));
 
   double* diter = denom_->local();
   for (size_t ia = denom_->astart(); ia != denom_->aend(); ++ia) {
     for (size_t ib = 0; ib != det_->lenb(); ++ib) {
       const double din = -*diter++;
       if (tmp.begin()->first < din) {
-        tmp.insert(make_pair(din, make_pair(ib, ia)));
+        tmp.emplace(din, make_pair(ib, ia));
         tmp.erase(tmp.begin());
       }
     }
@@ -289,7 +289,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
 
   tmp.clear();
   for (int i = 0; i != aall.size(); ++i) {
-    tmp.insert(make_pair(eall[i], make_pair(ball[i], aall[i])));
+    tmp.emplace(eall[i], make_pair(ball[i], aall[i]));
   }
 
   // sync'ing to make sure the consistency
@@ -303,7 +303,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
 
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (int i = 0; i != ndet; ++i)
-    out.push_back(make_pair(det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])));
+    out.push_back({det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])});
 
   return out;
 }
@@ -334,16 +334,16 @@ void DistFCI::update(shared_ptr<const Matrix> c) {
 // same as HZ::const_denom except that denom_ is also distributed
 void DistFCI::const_denom() {
   Timer denom_t;
-  auto h = make_shared<Matrix>(norb_, 1);
+  auto h = make_shared<VectorB>(norb_);
   auto jop = make_shared<Matrix>(norb_, norb_);
   auto kop = make_shared<Matrix>(norb_, norb_);
 
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      jop->element(i,j) = jop->element(j,i) = 0.5*jop_->mo2e_hz(i, j, i, j);
-      kop->element(i,j) = kop->element(j,i) = 0.5*jop_->mo2e_hz(i, j, j, i);
+      (*jop)(i,j) = (*jop)(j,i) = 0.5*jop_->mo2e_hz(i, j, i, j);
+      (*kop)(i,j) = (*kop)(j,i) = 0.5*jop_->mo2e_hz(i, j, j, i);
     }
-    h->element(i,0) = jop_->mo1e(i,i);
+    (*h)(i) = jop_->mo1e(i,i);
   }
   denom_t.tick_print("jop, kop");
 

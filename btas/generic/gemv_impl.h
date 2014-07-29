@@ -16,6 +16,7 @@
 
 namespace btas {
 
+
 template<bool _Finalize> struct gemv_impl { };
 
 template<> struct gemv_impl<true>
@@ -58,7 +59,7 @@ template<> struct gemv_impl<true>
          }
       }
       // A:Trans RowMajor
-      else if (transA != CblasNoTrans && order == CblasRowMajor)
+      else if (transA == CblasTrans && order == CblasRowMajor)
       {
          auto itrY_save = itrY;
          for (size_type i = 0; i < Msize; ++i, ++itrX)
@@ -67,6 +68,19 @@ template<> struct gemv_impl<true>
             for (size_type j = 0; j < Nsize; ++j, ++itrA, ++itrY)
             {
                (*itrY) += alpha * (*itrA) * (*itrX);
+            }
+         }
+      }
+      // A:ConjTrans RowMajor
+      else if (transA == CblasConjTrans && order == CblasRowMajor)
+      {
+         auto itrY_save = itrY;
+         for (size_type i = 0; i < Msize; ++i, ++itrX)
+         {
+            itrY = itrY_save;
+            for (size_type j = 0; j < Nsize; ++j, ++itrA, ++itrY)
+            {
+               (*itrY) += alpha * impl::conj(*itrA) * (*itrX);
             }
          }
       }
@@ -84,7 +98,7 @@ template<> struct gemv_impl<true>
          }
       }
       // A:Trans ColMajor
-      else if (transA != CblasNoTrans && order == CblasColMajor)
+      else if (transA == CblasTrans && order == CblasColMajor)
       {
          auto itrX_save = itrX;
          for (size_type i = 0; i < Nsize; ++i, ++itrY)
@@ -93,6 +107,19 @@ template<> struct gemv_impl<true>
             for (size_type j = 0; j < Msize; ++j, ++itrA, ++itrX)
             {
                (*itrY) += alpha * (*itrA) * (*itrX);
+            }
+         }
+      }
+      // A:ConjTrans ColMajor
+      else if (transA == CblasConjTrans && order == CblasColMajor)
+      {
+         auto itrX_save = itrX;
+         for (size_type i = 0; i < Nsize; ++i, ++itrY)
+         {
+            itrX = itrX_save;
+            for (size_type j = 0; j < Msize; ++j, ++itrA, ++itrX)
+            {
+               (*itrY) += alpha * impl::conj(*itrA) * (*itrX);
             }
          }
       }
@@ -324,6 +351,9 @@ void gemv (
       scal(beta, Y);
       return;
    }
+
+   typedef typename _TensorA::value_type value_type;
+   assert(not ((transA == CblasConjTrans ) && std::is_fundamental<value_type>::value));
 
    // get contraction rank
    const size_type rankX = rank(X);

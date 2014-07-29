@@ -27,7 +27,6 @@
 #ifndef __SRC_RAS_DETERMINANTS_H
 #define __SRC_RAS_DETERMINANTS_H
 
-#include <tuple>
 #include <src/ciutil/determinants_base.h>
 
 namespace bagel {

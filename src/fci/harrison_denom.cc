@@ -40,16 +40,16 @@ using namespace bagel;
 
 void HarrisonZarrabian::const_denom() {
   Timer denom_t;
-  auto h = make_shared<Matrix>(norb_, 1);
+  auto h = make_shared<VectorB>(norb_);
   auto jop = make_shared<Matrix>(norb_, norb_);
   auto kop = make_shared<Matrix>(norb_, norb_);
 
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      jop->element(j, i) = jop->element(i, j) = 0.5*jop_->mo2e_hz(j, i, j, i);
-      kop->element(j, i) = kop->element(i, j) = 0.5*jop_->mo2e_hz(j, i, i, j);
+      (*jop)(j, i) = (*jop)(i, j) = 0.5*jop_->mo2e_hz(j, i, j, i);
+      (*kop)(j, i) = (*kop)(i, j) = 0.5*jop_->mo2e_hz(j, i, i, j);
     }
-    h->element(i,0) = jop_->mo1e(i,i);
+    (*h)(i,0) = jop_->mo1e(i,i);
   }
   denom_t.tick_print("jop, kop");
 

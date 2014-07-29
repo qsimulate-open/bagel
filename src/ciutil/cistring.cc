@@ -29,14 +29,14 @@
 #include <src/util/combination.hpp>
 
 // explicit instantiation
-template class bagel::CIString_base_impl<1>;
-template class bagel::CIString_base_impl<3>;
+template class bagel::CIString_base_impl<1,bagel::FCIString>;
+template class bagel::CIString_base_impl<3,bagel::RASString>;
 
 // instantiation of serialization code
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIGraph)
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base)
-BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base_impl<1>)
-BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base_impl<3>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RASString_base)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::FCIString_base)
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RASString)
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::FCIString)
 
@@ -69,13 +69,13 @@ CIGraph::CIGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb
 
 
 RASString::RASString(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset)
- : CIString_base_impl<3>{nele1, norb1, nele2, norb2, nele3, norb3, offset} {
+ : RASString_base{nele1, norb1, nele2, norb2, nele3, norb3, offset} {
 
   init();
 }
 
 
-void RASString::compute_strings() {
+void RASString::compute_strings_impl() {
   const size_t size = graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size();
   // Lexical ordering done, now fill in all the strings
   strings_ = vector<bitset<nbit__>>(size, bitset<nbit__>(0ul));
@@ -112,13 +112,13 @@ void RASString::compute_strings() {
 
 
 FCIString::FCIString(const size_t nele1, const size_t norb1, const size_t offset)
- : CIString_base_impl<1>{nele1, norb1, offset} {
+ : FCIString_base{nele1, norb1, offset} {
 
   init();
 }
 
 
-void FCIString::compute_strings() {
+void FCIString::compute_strings_impl() {
   vector<int> data(norb_);
   iota(data.begin(), data.end(), 0);
   // Lexical ordering done, now fill in all the strings

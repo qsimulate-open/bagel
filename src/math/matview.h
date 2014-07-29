@@ -23,15 +23,20 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifdef MATRIX_BASE
 #ifndef __SRC_MATH_MATVIEW_H
 #define __SRC_MATH_MATVIEW_H
 
 #include <complex>
 #include <src/math/btas_interface.h>
+#include <src/math/matrix_base.h>
 
 namespace bagel {
 
-template<typename DataType>
+template <typename DataType>
+class Matrix_base;
+
+template <typename DataType>
 class MatView_ : public btas::TensorView2<DataType> {
   protected:
     bool localized_;
@@ -84,10 +89,17 @@ class MatView_ : public btas::TensorView2<DataType> {
     }
 
   public:
-    MatView_(const MatView_& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
+    MatView_(      MatView_<DataType>& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
+    MatView_(const MatView_<DataType>& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
+    MatView_(      MatView_<DataType>&& o) : btas::TensorView2<DataType>(std::move(o)), localized_(o.localized()) { init(); }
+    MatView_(      btas::TensorView2<DataType>& o, const bool lo) : btas::TensorView2<DataType>(o), localized_(lo) { init(); }
     MatView_(const btas::TensorView2<DataType>& o, const bool lo) : btas::TensorView2<DataType>(o), localized_(lo) { init(); }
-    MatView_(btas::TensorView2<DataType>&& o, const bool lo) : btas::TensorView2<DataType>(std::move(o)), localized_(lo) { init(); }
-    MatView_(const btas::CRange<2>& r, const typename btas::Tensor2<DataType>::storage_type& s, const bool lo) : btas::TensorView2<DataType>(r, s), localized_(lo) { init(); }
+    MatView_(      btas::TensorView2<DataType>&& o, const bool lo) : btas::TensorView2<DataType>(std::move(o)), localized_(lo) { init(); }
+    MatView_(      Matrix_base<DataType>& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
+    MatView_(const Matrix_base<DataType>& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
+
+    MatView_<DataType> operator=(const MatView_<DataType>& o) { localized_ = o.localized_; btas::TensorView2<DataType>::operator=(o); return *this; }
+    MatView_<DataType> operator=(MatView_<DataType>&& o)      { localized_ = o.localized_; btas::TensorView2<DataType>::operator=(o); return *this; }
 
     int ndim() const { return this->extent(0); }
     int mdim() const { return this->extent(1); }
@@ -95,6 +107,9 @@ class MatView_ : public btas::TensorView2<DataType> {
 
     DataType* data()             { assert(contiguous()); return &*this->begin(); }
     const DataType* data() const { assert(contiguous()); return &*this->cbegin(); }
+
+    DataType& operator()(const int i, const int j) { return element(i,j); }
+    const DataType& operator()(const int i, const int j) const { return element(i,j); }
 
     bool localized() const { return localized_; }
     bool contiguous() const { return this->range().ordinal().contiguous(); }
@@ -152,4 +167,5 @@ using ZMatView = MatView_<std::complex<double>>;
 
 }
 
+#endif
 #endif

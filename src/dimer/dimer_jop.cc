@@ -35,7 +35,7 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
 
   const int norbA = nfenceA - nstart;
   const int norbB = nfenceB - nfenceA;
-  nact_ = make_pair(norbA, norbB);
+  nact_ = {norbA, norbB};
   const int norb = norbA + norbB;
 
   /************************************************************
@@ -63,7 +63,7 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
     }
   }
 
-  monomer_mo1es_ = make_pair(mo1eA, mo1eB);
+  monomer_mo1es_ = {mo1eA, mo1eB};
 
   /************************************************************
   * Repackage mo2e integrals for monomers                     *
@@ -105,12 +105,12 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
     }
   }
 
-  monomer_mo2es_ = make_pair(mo2eA, mo2eB);
+  monomer_mo2es_ = {mo2eA, mo2eB};
 
   auto c1eA = make_shared<CSymMatrix>(mo1eA);
   auto c1eB = make_shared<CSymMatrix>(mo1eB);
 
-  jops_ = make_pair(make_shared<Jop>(c1eA, mo2eA), make_shared<Jop>(c1eB, mo2eB));
+  jops_ = {make_shared<Jop>(c1eA, mo2eA), make_shared<Jop>(c1eB, mo2eB)};
 
   /************************************************************
   * Package cross_mo1e integrals into a matrix                *

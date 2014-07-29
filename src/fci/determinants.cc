@@ -139,7 +139,7 @@ pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int sp
 
   // scale to make the vector normalized
   const double factor = 1.0/sqrt(static_cast<double>(icnt));
-  return make_pair(out, factor);
+  return {out, factor};
 }
 
 

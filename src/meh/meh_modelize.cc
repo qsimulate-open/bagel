@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_modelize.hpp
+// Filename: meh_modelize.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,72 +23,71 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifdef MEH_HEADERS
+#include <src/meh/meh_base.h>
 
-#ifndef BAGEL_MEH_MODELIZE_H
-#define BAGEL_MEH_MODELIZE_H
+using namespace std;
+using namespace bagel;
 
-template <class VecType>
-void MultiExcitonHamiltonian<VecType>::modelize() {
+void MEH_base::modelize() {
   // makes, prints, and stores multiple model Hamiltonians
   for(auto& model : models_to_form_) {
-    std::vector<std::shared_ptr<Matrix>> modelstates;
-    std::vector<double> diagonals;
-    std::cout << "Building model Hamiltonian from model states:" << std::endl;
+    vector<shared_ptr<Matrix>> modelstates;
+    vector<double> diagonals;
+    cout << "Building model Hamiltonian from model states:" << endl;
 
-    std::vector<int> space_bounds;
+    vector<int> space_bounds;
 
     for(auto& block : model) {
       int S_A, q_A, S_B, q_B;
-      std::tie(S_A, S_B) = block.S_;
-      std::tie(q_A, q_B) = block.charge_;
+      tie(S_A, S_B) = block.S_;
+      tie(q_A, q_B) = block.charge_;
       const int nstates = block.nstates_;
-      std::cout << "  o S: (" << S_A << ", " << S_B << "), Q: (" << q_A << ", " << q_B << "), nstates: " << nstates << std::endl;
+      cout << "  o S: (" << S_A << ", " << S_B << "), Q: (" << q_A << ", " << q_B << "), nstates: " << nstates << endl;
 
-      std::vector<DSubSpace> blocks_in_subspace;
-      for (auto& sp : subspaces_)
+      vector<DimerSubspace_base> blocks_in_subspace;
+      for (auto& sp : subspaces_base())
         if ( block.S_ == sp.S() && block.charge_ == sp.charge() )
           blocks_in_subspace.push_back(sp);
-      std::for_each(blocks_in_subspace.begin(), blocks_in_subspace.end(), [&space_bounds] (const DSubSpace& s) { space_bounds.push_back(s.offset()); });
+      for_each(blocks_in_subspace.begin(), blocks_in_subspace.end(), [&space_bounds] (const DimerSubspace_base& s) { space_bounds.push_back(s.offset()); });
 
       // diagonalize in subspace
-      auto cc = std::make_shared<Matrix>(dimerstates_, nstates);
+      auto cc = make_shared<Matrix>(dimerstates_, nstates);
       generate_initial_guess(cc, blocks_in_subspace, nstates);
-      std::vector<double> eigenvalues = diagonalize(cc, blocks_in_subspace, /*mute=*/true);
+      vector<double> eigenvalues = diagonalize(cc, blocks_in_subspace, /*mute=*/true);
 
       // append to model space
       modelstates.push_back(cc);
       diagonals.insert(diagonals.end(), eigenvalues.begin(), eigenvalues.end());
     }
 
-    std::cout << std::endl;
+    cout << endl;
 
-    const int modelsize = std::accumulate(modelstates.begin(), modelstates.end(), 0, [] (int x, std::shared_ptr<const Matrix> m) { return x + m->mdim(); });
-    auto modelcc = std::make_shared<Matrix>(dimerstates_, modelsize);
+    const int modelsize = accumulate(modelstates.begin(), modelstates.end(), 0, [] (int x, shared_ptr<const Matrix> m) { return x + m->mdim(); });
+    auto modelcc = make_shared<Matrix>(dimerstates_, modelsize);
     int offset = 0;
     for(auto& m : modelstates) {
       modelcc->copy_block(0, offset, dimerstates_, m->mdim(), *m);
       offset += m->mdim();
     }
     print_states(*modelcc, diagonals, print_thresh_, "Model states");
-    std::shared_ptr<Matrix> modelsigma = apply_hamiltonian(*modelcc, subspaces_);
-    auto model_hamiltonian = std::make_shared<Matrix>(*modelsigma % *modelcc);
+    shared_ptr<Matrix> modelsigma = apply_hamiltonian(*modelcc, subspaces_base());
+    auto model_hamiltonian = make_shared<Matrix>(*modelsigma % *modelcc);
 
     const double E0 = model_hamiltonian->element(0,0);
-    std::cout << "E_0 = " << E0 << " H" << std::endl;
+    cout << "E_0 = " << E0 << " H" << endl;
     model_hamiltonian->add_diag(-E0);
     model_hamiltonian->scale(au2eV__);
     model_hamiltonian->print("Model Hamiltonian (eV)", modelsize);
 
     // Compute perturbative correction
-    std::shared_ptr<Matrix> perturbation = model_hamiltonian->clone();
+    shared_ptr<Matrix> perturbation = model_hamiltonian->clone();
     for (int i = 0; i < modelsize; ++i) {
       const double Ei = diagonals[i];
       for (int j = 0; j <= i; ++j) {
         const double Ej = diagonals[j];
         double perturb = 0;
-        for (auto& space : subspaces_) {
-          if (std::count(space_bounds.begin(), space_bounds.end(), space.offset()) == 1) continue;
+        for (auto& space : subspaces_base()) {
+          if (count(space_bounds.begin(), space_bounds.end(), space.offset()) == 1) continue;
           for (int k = 0; k < space.dimerstates(); ++k) {
             const int kk = k + space.offset();
             const double fac = 1.0/(denom_[kk] - Ei) + 1.0/(denom_[kk] - Ej);
@@ -100,13 +99,9 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
       }
     }
     perturbation->scale(au2eV__);
-    std::cout << std::endl;
+    cout << endl;
     perturbation->print("Perturbative correction (eV)", modelsize);
 
     models_.emplace_back(model_hamiltonian, perturbation);
   }
 }
-
-#endif
-
-#endif

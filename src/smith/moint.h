@@ -68,7 +68,7 @@ class K2ext {
         // virtual loop
         for (auto& i1 : blocks_[1]) {
           std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->slice(i1.offset(), i1.offset()+i1.size()));
-          dflist.insert(make_pair(generate_hash_key(i0, i1), df_full));
+          dflist.emplace(generate_hash_key(i0, i1), df_full);
         }
       }
       return dflist;
@@ -169,23 +169,23 @@ class MOFock {
           std::copy_n(ref_->rdm1(r->target())->data(), tmp.size(), tmp.data());
           tmp.sqrt();
           tmp.scale(1.0/std::sqrt(2.0));
-          weighted_coeff->copy_block(0, nclosed, nbasis, nact, *weighted_coeff->slice(nclosed, nclosed+nact) * tmp);
+          weighted_coeff->copy_block(0, nclosed, nbasis, nact, weighted_coeff->slice(nclosed, nclosed+nact) * tmp);
         }
         fock1 = std::make_shared<Fock<1>>(r->geom(), hcore, nullptr, weighted_coeff, false, true);
       }
       const Matrix forig = *coeff_ % *fock1 * *coeff_;
 
       // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
-      std::unique_ptr<double[]> eig(new double[nbasis]);
+      VectorB eig(nbasis);
       if (nclosed > 1) {
         std::shared_ptr<Matrix> fcl = forig.get_submatrix(ncore, ncore, nclosed, nclosed);
-        fcl->diagonalize(eig.get());
-        coeff_->copy_block(0, ncore, nbasis, nclosed, *coeff_->slice(ncore, ncore+nclosed) * *fcl);
+        fcl->diagonalize(eig);
+        coeff_->copy_block(0, ncore, nbasis, nclosed, coeff_->slice(ncore, ncore+nclosed) * *fcl);
       }
       if (nvirt > 1) {
         std::shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirt, nvirt);
-        fvirt->diagonalize(eig.get());
-        coeff_->copy_block(0, nocc, nbasis, nvirt, *coeff_->slice(nocc, nocc+nvirt) * *fvirt);
+        fvirt->diagonalize(eig);
+        coeff_->copy_block(0, nocc, nbasis, nvirt, coeff_->slice(nocc, nocc+nvirt) * *fvirt);
       }
       const Matrix f = *coeff_ % *fock1 * *coeff_;
       const Matrix hc = *coeff_ % *hcore * *coeff_;

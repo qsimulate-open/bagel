@@ -27,7 +27,6 @@
 #ifndef __BAGEL_CASSCF_CASHYBRID_H
 #define __BAGEL_CASSCF_CASHYBRID_H
 
-#include <iostream>
 #include <iomanip>
 #include <src/wfn/method.h>
 

@@ -122,30 +122,30 @@ void RASCI::model_guess(shared_ptr<RASDvec>& out) {
   const int nguess = basis.size();
 
   shared_ptr<Matrix> spin = make_shared<CISpin>(basis, norb_);
-  vector<double> eigs(nguess, 0.0);
-  spin->diagonalize(eigs.data());
+  VectorB eigs(nguess);
+  spin->diagonalize(eigs);
 
   int start, end;
   const double target_spin = 0.25 * static_cast<double>(det_->nspin()*(det_->nspin()+2));
   for (start = 0; start < nguess; ++start)
-    if (fabs(eigs[start] - target_spin) < 1.0e-8) break;
+    if (fabs(eigs(start) - target_spin) < 1.0e-8) break;
   for (end = start; end < nguess; ++end)
-    if (fabs(eigs[end] - target_spin) > 1.0e-8) break;
+    if (fabs(eigs(end) - target_spin) > 1.0e-8) break;
 
   if ((end-start) >= nstate_) {
-    shared_ptr<const MatView> coeffs = spin->slice(start, end);
+    const MatView coeffs = spin->slice(start, end);
 
     shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
-    hamiltonian = make_shared<Matrix>(*coeffs % *hamiltonian * *coeffs);
-    hamiltonian->diagonalize(eigs.data());
+    hamiltonian = make_shared<Matrix>(coeffs % *hamiltonian * coeffs);
+    hamiltonian->diagonalize(eigs);
 
 #if 0
     const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
     for (int i = 0; i < end-start; ++i)
-      cout << setw(12) << setprecision(8) << eigs[i] + nuc_core << endl;
+      cout << setw(12) << setprecision(8) << eigs(i) + nuc_core << endl;
 #endif
 
-    auto coeffs1 = make_shared<Matrix>(*coeffs * *hamiltonian);
+    auto coeffs1 = make_shared<Matrix>(coeffs * *hamiltonian);
     for (int i = 0; i < nguess; ++i) {
       const bitset<nbit__> ia = basis[i].first;
       const bitset<nbit__> ib = basis[i].second;
@@ -210,7 +210,7 @@ void RASCI::generate_guess(const int nspin, const int nstate, shared_ptr<RASDvec
 // returns seed determinants for initial guess
 vector<pair<bitset<nbit__> , bitset<nbit__>>> RASCI::detseeds(const int ndet) {
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
-  for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
+  for (int i = 0; i != ndet; ++i) tmp.emplace(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0)));
 
   for (auto& iblock : denom_->blocks()) {
     if (!iblock) continue;
@@ -219,7 +219,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> RASCI::detseeds(const int ndet) {
       for (auto& biter : *iblock->stringsb()) {
         const double din = -(*diter);
         if (tmp.begin()->first < din) {
-          tmp.insert(make_pair(din, make_pair(biter, aiter)));
+          tmp.emplace(din, make_pair(biter, aiter));
           tmp.erase(tmp.begin());
         }
         ++diter;

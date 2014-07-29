@@ -41,6 +41,8 @@ struct dotc_impl
             _IteratorY itrY, const typename std::iterator_traits<_IteratorY>::difference_type& incY)
    {
       return_type val = dotc(*itrX, *itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += dotc(*itrX, *itrY);
@@ -74,12 +76,14 @@ struct dotc_impl<float>
    static return_type call (
       const unsigned long& Nsize,
       const float* itrX, const typename std::iterator_traits<float*>::difference_type& incX,
-            float* itrY, const typename std::iterator_traits<float*>::difference_type& incY)
+      const float* itrY, const typename std::iterator_traits<float*>::difference_type& incY)
    {
 #ifdef _HAS_CBLAS
       return cblas_sdot(Nsize, itrX, incX, itrY, incY);
 #else
       return_type val = (*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += (*itrX) * (*itrY);
@@ -97,12 +101,14 @@ struct dotc_impl<double>
    static return_type call (
       const unsigned long& Nsize,
       const double* itrX, const typename std::iterator_traits<double*>::difference_type& incX,
-            double* itrY, const typename std::iterator_traits<double*>::difference_type& incY)
+      const double* itrY, const typename std::iterator_traits<double*>::difference_type& incY)
    {
 #ifdef _HAS_CBLAS
       return cblas_ddot(Nsize, itrX, incX, itrY, incY);
 #else
       return_type val = (*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += (*itrX) * (*itrY);
@@ -120,13 +126,15 @@ struct dotc_impl<std::complex<float>>
    static return_type call (
       const unsigned long& Nsize,
       const std::complex<float>* itrX, const typename std::iterator_traits<std::complex<float>*>::difference_type& incX,
-            std::complex<float>* itrY, const typename std::iterator_traits<std::complex<float>*>::difference_type& incY)
+      const std::complex<float>* itrY, const typename std::iterator_traits<std::complex<float>*>::difference_type& incY)
    {
       return_type val;
 #ifdef _HAS_CBLAS
       cblas_cdotc_sub(Nsize, itrX, incX, itrY, incY, &val);
 #else
-      val = (*itrX) * (*itrY);
+      val = std::conj(*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += std::conj(*itrX) * (*itrY);
@@ -144,13 +152,15 @@ struct dotu_impl<std::complex<float>>
    static return_type call (
       const unsigned long& Nsize,
       const std::complex<float>* itrX, const typename std::iterator_traits<std::complex<float>*>::difference_type& incX,
-            std::complex<float>* itrY, const typename std::iterator_traits<std::complex<float>*>::difference_type& incY)
+      const std::complex<float>* itrY, const typename std::iterator_traits<std::complex<float>*>::difference_type& incY)
    {
       return_type val;
 #ifdef _HAS_CBLAS
       cblas_cdotu_sub(Nsize, itrX, incX, itrY, incY, &val);
 #else
       val = (*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += *itrX * (*itrY);
@@ -168,13 +178,15 @@ struct dotc_impl<std::complex<double>>
    static return_type call (
       const unsigned long& Nsize,
       const std::complex<double>* itrX, const typename std::iterator_traits<std::complex<double>*>::difference_type& incX,
-            std::complex<double>* itrY, const typename std::iterator_traits<std::complex<double>*>::difference_type& incY)
+      const std::complex<double>* itrY, const typename std::iterator_traits<std::complex<double>*>::difference_type& incY)
    {
       return_type val;
 #ifdef _HAS_CBLAS
       cblas_zdotc_sub(Nsize, itrX, incX, itrY, incY, &val);
 #else
-      val = (*itrX) * (*itrY);
+      val = std::conj(*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += std::conj(*itrX) * (*itrY);
@@ -192,13 +204,15 @@ struct dotu_impl<std::complex<double>>
    static return_type call (
       const unsigned long& Nsize,
       const std::complex<double>* itrX, const typename std::iterator_traits<std::complex<double>*>::difference_type& incX,
-            std::complex<double>* itrY, const typename std::iterator_traits<std::complex<double>*>::difference_type& incY)
+      const std::complex<double>* itrY, const typename std::iterator_traits<std::complex<double>*>::difference_type& incY)
    {
       return_type val;
 #ifdef _HAS_CBLAS
       cblas_zdotu_sub(Nsize, itrX, incX, itrY, incY, &val);
 #else
       val = (*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += *itrX * (*itrY);
@@ -269,7 +283,7 @@ template<
    >::type
 >
 typename __dot_result_type<typename _TensorX::value_type>::type
-dotc (const _TensorX& X, _TensorY& Y)
+dotc (const _TensorX& X, const _TensorY& Y)
 {
    typedef typename _TensorX::value_type value_type;
    static_assert(std::is_same<value_type, typename _TensorY::value_type>::value, "value type of Y must be the same as that of X");
@@ -295,7 +309,7 @@ template<
    >::type
 >
 typename __dot_result_type<typename _TensorX::value_type>::type
-dotu (const _TensorX& X, _TensorY& Y)
+dotu (const _TensorX& X, const _TensorY& Y)
 {
    typedef typename _TensorX::value_type value_type;
    static_assert(std::is_same<value_type, typename _TensorY::value_type>::value, "value type of Y must be the same as that of X");
@@ -321,7 +335,7 @@ template<
    >::type
 >
 typename __dot_result_type<typename _TensorX::value_type>::type
-dot (const _TensorX& X, _TensorY& Y)
+dot (const _TensorX& X, const _TensorY& Y)
 {
    return dotc(X, Y);
 }

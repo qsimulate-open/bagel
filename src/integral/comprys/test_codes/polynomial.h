@@ -81,8 +81,8 @@ polynomial<T> multiply_polynomials (polynomial<T> polyA, polynomial<T> polyB) {
   const int rankP = polyA.rank + polyB.rank;
 
   std::vector<T> new_coeffs (rankP+1, 0.0);
-  for (int j=0; j<=polyA.rank; j++) {
-    for (int k=0; k<=polyB.rank; k++) {
+  for (int j=0; j<=polyA.rank; ++j) {
+    for (int k=0; k<=polyB.rank; ++k) {
       new_coeffs[j+k] += (polyA.coeff[j]*polyB.coeff[k]);
     }
   }
@@ -94,7 +94,7 @@ polynomial<T> multiply_polynomials (polynomial<T> polyA, polynomial<T> polyB) {
 template <typename T>
 polynomial<T> scalar_polynomial (polynomial<T> polyA, T scalar) {
   std::vector<T> new_coeffs (polyA.rank + 1, 0.0);
-  for (int j=0; j<=polyA.rank; j++) {
+  for (int j=0; j<=polyA.rank; ++j) {
     new_coeffs[j] = scalar*polyA.coeff[j];
   }
 
@@ -114,18 +114,18 @@ polynomial<T> add_polynomials (polynomial<T> polyA, polynomial<T> polyB) {
   const T zero = 0.0;
 
   std::vector<T> new_coeffs (rankS+1, zero);
-  for (int j=0; j<=lowrank; j++) {
+  for (int j=0; j<=lowrank; ++j) {
     new_coeffs[j] = (polyA.coeff[j]+polyB.coeff[j]);
   }
 
   if (rankS > polyB.rank) {
-    for (int j=lowrank+1; j<=rankS; j++) {
+    for (int j=lowrank+1; j<=rankS; ++j) {
       new_coeffs[j] = polyA.coeff[j];
     }
   }
 
   if (rankS > polyA.rank) {
-    for (int j=lowrank+1; j<=rankS; j++) {
+    for (int j=lowrank+1; j<=rankS; ++j) {
       new_coeffs[j] = polyB.coeff[j];
     }
   }

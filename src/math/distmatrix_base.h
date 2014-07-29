@@ -71,7 +71,7 @@ class DistMatrix_base {
       const int prow = (i - rowstride * istride) / blocksize__;
       const int off = i - rowstride * istride - prow * blocksize__ + istride * blocksize__;
 
-      return std::make_pair(prow, off);
+      return {prow, off};
     }
 
     std::pair<int, int> locate_column(const int j) { // Returns pcol and local col offset for jth col
@@ -81,7 +81,7 @@ class DistMatrix_base {
       const int pcol = (j - colstride * jstride) / blocksize__;
       const int off = j - colstride * jstride - pcol * blocksize__ + jstride * blocksize__;
 
-      return std::make_pair(pcol, off);
+      return {pcol, off};
     }
 
   public:
@@ -109,7 +109,7 @@ class DistMatrix_base {
     int ndim() const { return ndim_; }
     int mdim() const { return mdim_; }
 
-    virtual void diagonalize(double* vec) = 0;
+    virtual void diagonalize(VecView vec) = 0;
 
     void fill(const DataType a) { std::fill_n(local_.get(), size(), a); }
     void zero() { const DataType zero(0.0); fill(zero); }

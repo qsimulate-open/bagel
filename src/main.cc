@@ -27,12 +27,9 @@
 #include <src/io/moldenout.h>
 #include <src/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
-#include <src/wfn/geometry_london.h>
+#include <src/london/reference_london.h>
 #include <src/molecule/localization.h>
-#include <src/meh/meh_cas.h>
-#include <src/meh/meh_distcas.h>
-#include <src/meh/meh_ras.h>
-#include <src/meh/meh_distras.h>
+#include <src/meh/construct_meh.h>
 #include <src/util/archive.h>
 
 // debugging
@@ -59,9 +56,8 @@ int main(int argc, char** argv) {
 
     auto idata = make_shared<const PTree>(input);
 
-    shared_ptr<Geometry> geom;
-    shared_ptr<Geometry_London> cgeom;
     shared_ptr<Method> method;
+    shared_ptr<Geometry> geom;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
 
@@ -79,38 +75,30 @@ int main(int argc, char** argv) {
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (title == "molecule") {
-        const string basis_type = to_lower(itree->get<string>("basis_type", "gaussian"));
-        if (basis_type == "gaussian") {
-          geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
-          if (itree->get<bool>("restart", false))
-            ref.reset();
-          if (ref) ref = ref->project_coeff(geom);
-        } else if (basis_type == "london" || basis_type == "giao") {
-          cgeom = cgeom ? make_shared<Geometry_London>(*cgeom, itree) : make_shared<Geometry_London>(itree);
-          if (itree->get<bool>("restart", false)) throw runtime_error("Restart option not avaiable for London orbitals.");
-          if (ref) throw runtime_error("Reference use not set up for London orbitals");
-        } else throw runtime_error("basis type not understood - should be gaussian or london");
+        geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
+        if (itree->get<bool>("restart", false))
+          ref.reset();
+        if (ref) ref = ref->project_coeff(geom);
       } else {
-        if (!geom && !cgeom) throw runtime_error("molecule block is missing");
+        if (!geom) throw runtime_error("molecule block is missing");
         if (!itree->get<bool>("df",true)) dodf = false;
-        if (geom) if (dodf && geom->df() == nullptr)   throw runtime_error("It seems that DF basis was not specified in molecule block");
-        if (cgeom) if (dodf && cgeom->df() == nullptr) throw runtime_error("It seems that DF basis was not specified in molecule block");
+        if (dodf && !geom->df()) throw runtime_error("It seems that DF basis was not specified in molecule block");
       }
 
       if ((title == "smith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
 
-      assert (!geom || !cgeom);
       // most methods are constructed here
-      if (geom) method = construct_method(title, itree, geom, ref);
-      if (cgeom) method = construct_method(title, itree, cgeom, ref);
+      method = construct_method(title, itree, geom, ref);
 
+#ifndef DISABLE_SERIALIZATION
       if (title == "continue") {
         IArchive archive(itree->get<string>("archive"));
         Method* ptr;
         archive >> ptr;
         method = shared_ptr<Method>(ptr);
       }
+#endif
 
       if (method) {
 
@@ -147,40 +135,8 @@ int main(int argc, char** argv) {
 
         *geom = *dimer->sgeom();
         ref = dimer->sref();
-      } else if (title == "to-dimer") {
-#if 0
-        auto inputdata = iter->second;
-        auto stringiter = inputdata.find("dimer_active");
-        if (stringiter == inputdata.end()) throw runtime_error("Need to set dimer_active in to-dimer method");
-        ref = ref->set_active(stringiter->second);
-
-        vector<int> sizes;
-        auto bound = iter->second.equal_range("unit");
-        for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
-
-        dimer = make_shared<Dimer>(ref, make_pair(sizes.at(0), sizes.at(1)));
-#else
-throw logic_error("broken!");
-#endif
-      } else if (title == "meh-cas") {
-          shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
-
-          auto meh = make_shared<MEH_CAS>(itree, dimer, cispace);
-          meh->compute();
-      } else if (title == "meh-dist-cas") {
-          shared_ptr<DimerDistCAS> cispace = dimer->compute_distcispace(itree);
-
-          auto meh = make_shared<MEH_DistCAS>(itree, dimer, cispace);
-          meh->compute();
-      } else if (title == "meh-ras") { // Not the best solution, but it'll do for now
-          shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
-
-          auto meh = make_shared<MEH_RAS>(itree, dimer, cispace);
-          meh->compute();
-      } else if (title == "meh-dist-ras") { // Not the best solution, but it'll do for now
-          shared_ptr<DimerDistRAS> cispace = dimer->compute_distrcispace(itree);
-
-          auto meh = make_shared<MEH_DistRAS>(itree, dimer, cispace);
+      } else if (title == "meh") {
+          auto meh = construct_MEH(itree, dimer);
           meh->compute();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");

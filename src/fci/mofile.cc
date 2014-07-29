@@ -129,15 +129,15 @@ void MOFile::update_1ext_ints(const shared_ptr<const Matrix>& coeff) {
 
 
 shared_ptr<const Matrix> Jop::compute_mo1e(const int nstart, const int nfence) {
-  shared_ptr<const MatView> ocoeff = coeff_->slice(nstart, nfence);
-  return make_shared<const Matrix>(*ocoeff % *core_fock_ * *ocoeff);
+  const MatView ocoeff = coeff_->slice(nstart, nfence);
+  return make_shared<const Matrix>(ocoeff % *core_fock_ * ocoeff);
 }
 
 
 shared_ptr<const Matrix> Jop::compute_mo2e(const int nstart, const int nfence) {
 
   assert(nfence-nstart > 0);
-  shared_ptr<const MatView> cdata = coeff_->slice(nstart, nfence);
+  const MatView cdata = coeff_->slice(nstart, nfence);
 
   // first half transformation
   shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(cdata);

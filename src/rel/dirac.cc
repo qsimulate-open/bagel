@@ -80,7 +80,7 @@ void Dirac::compute() {
   shared_ptr<const DistZMatrix> hcore = hcore_->distmatrix();
   shared_ptr<const DistZMatrix> distovl = overlap_->distmatrix();
   shared_ptr<const DistZMatrix> s12 = s12_->distmatrix();
-  eig_ = unique_ptr<double[]>(new double[hcore->ndim()]);
+  eig_ = VectorB(hcore->ndim());
 
   // making initial guess
   shared_ptr<const DistZMatrix> coeff = initial_guess(s12, hcore);
@@ -134,12 +134,12 @@ void Dirac::compute() {
     }
 
     if (iter >= diis_start_) {
-      distfock = diis.extrapolate(make_pair(distfock, error_vector));
+      distfock = diis.extrapolate({distfock, error_vector});
       ptime.tick_print("DIIS");
     }
 
     DistZMatrix intermediate(*coeff % *distfock * *coeff);
-    intermediate.diagonalize(eig_.get());
+    intermediate.diagonalize(eig_);
     coeff = make_shared<DistZMatrix>(*coeff * intermediate);
 
     aodensity = coeff->form_density_rhf(nele_, nneg_);
@@ -161,9 +161,11 @@ shared_ptr<const Reference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
   const size_t npos = coeff_->mdim() - nneg_;
   auto out =  make_shared<RelReference>(geom_, coeff_, energy_, nneg_, nele_, npos-nele_, gaunt_, breit_);
-  vector<double> eig(eig_.get()+nneg_, eig_.get()+nneg_+npos);
-  vector<double> eigm(eig_.get(), eig_.get()+nneg_);
-  eig.insert(eig.end(), eigm.begin(), eigm.end());
+  vector<double> eigp(eig_.begin()+nneg_, eig_.end());
+  vector<double> eigm(eig_.begin(), eig_.begin()+nneg_);
+  VectorB eig(eig_.size());
+  copy(eigp.begin(), eigp.end(), eig.begin());
+  copy(eigm.begin(), eigm.end(), eig.begin()+eigp.size());
   out->set_eig(eig);
   return out;
 }
@@ -171,18 +173,18 @@ shared_ptr<const Reference> Dirac::conv_to_ref() const {
 
 shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZMatrix> s12, const shared_ptr<const DistZMatrix> hcore) const {
   const int n = geom_->nbasis();
-  unique_ptr<double[]> eig(new double[hcore->ndim()]);
+  VectorB eig(hcore->ndim());
 
   shared_ptr<const DistZMatrix> coeff;
   if (!ref_) {
     DistZMatrix interm = *s12 % *hcore * *s12;
-    interm.diagonalize(eig.get());
+    interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
     auto relref = dynamic_pointer_cast<const RelReference>(ref_);
     shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
-    interm.diagonalize(eig.get());
+    interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else if (ref_->coeff()->ndim() == n) {
     // non-relativistic reference.
@@ -190,20 +192,20 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     shared_ptr<ZMatrix> fock;
     if (nocc*2 == nele_) {
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
-      ocoeff->add_real_block(1.0, 0,    0, n, nocc, ref_->coeff()->data());
-      ocoeff->add_real_block(1.0, n, nocc, n, nocc, ref_->coeff()->data());
+      ocoeff->add_real_block(1.0, 0,    0, n, nocc, ref_->coeff()->slice(0,nocc));
+      ocoeff->add_real_block(1.0, n, nocc, n, nocc, ref_->coeff()->slice(0,nocc));
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     } else {
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
       assert(nocca+noccb == nele_);
       auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
-      ocoeff->add_real_block(1.0, 0,     0, n, nocca, ref_->coeffA()->data());
-      ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->data());
+      ocoeff->add_real_block(1.0, 0,     0, n, nocca, ref_->coeffA()->slice(0,nocca));
+      ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->slice(nocca,nocca+noccb));
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
-    interm.diagonalize(eig.get());
+    interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else {
     assert(ref_->coeff()->ndim() == n*4);

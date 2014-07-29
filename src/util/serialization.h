@@ -224,7 +224,7 @@ namespace boost {
         typename std::remove_cv<T>::type a;
         typename std::remove_cv<U>::type b;
         ar >> a >> b;
-        t.insert(std::make_pair(a, b));
+        t.emplace(a, b);
       }
     }
 
@@ -262,5 +262,13 @@ namespace boost {
 
   }
 }
+
+// If serialization is diabled, we reset the macros
+#ifdef DISABLE_SERIALIZATION
+  #undef BOOST_CLASS_EXPORT_KEY
+  #define BOOST_CLASS_EXPORT_KEY(x)
+  #undef BOOST_CLASS_EXPORT_IMPLEMENT
+  #define BOOST_CLASS_EXPORT_IMPLEMENT(x)
+#endif
 
 #endif

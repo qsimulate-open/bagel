@@ -28,7 +28,6 @@
 
 #include <type_traits>
 #include <src/ciutil/cistring.h>
-#include <src/util/constants.h>
 
 namespace bagel {
 namespace {

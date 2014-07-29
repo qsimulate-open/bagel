@@ -57,8 +57,8 @@ double Molecule::compute_nuclear_repulsion() {
           out += charge / dist;
 #ifdef BEYOND_DOUBLE
         } else if ((*iter)->finite_nucleus() && (*titer)->finite_nucleus()) { // both gaussian charges
-          const double gamma0 = (*iter)->finite_nucleus();
-          const double gamma1 = (*titer)->finite_nucleus();
+          const double gamma0 = (*iter)->atom_exponent();
+          const double gamma1 = (*titer)->atom_exponent();
           out += charge * erf(sqrt(gamma0 * gamma1 / (gamma0 + gamma1)) * dist) / dist;
         } else { // one point charge, the other gaussian
           const double gamma = (*iter)->finite_nucleus() ? (*iter)->atom_exponent() : (*titer)->atom_exponent();
@@ -170,6 +170,19 @@ void Molecule::common_init1() {
       aux_offsets_.push_back(coffsets);
     }
   }
+}
+
+
+void Molecule::merge_obs_aux() {
+  aux_merged_ = true;
+  atoms_.insert(atoms_.end(), aux_atoms_.begin(), aux_atoms_.end());
+  for (auto iter = aux_offsets_.begin(); iter != aux_offsets_.end(); ++iter) {
+    for (auto citer = iter->begin(); citer != iter->end(); ++citer) {
+      *citer += nbasis_;
+    }
+  }
+  offsets_.insert(offsets_.end(), aux_offsets_.begin(), aux_offsets_.end());
+  nbasis_ += naux_;
 }
 
 
@@ -383,25 +396,25 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   bdag.broadcast();
 
   Matrix bb = bdag % bdag * (-1.0);
-  unique_ptr<double[]> eig(new double[primsize]);
-  bb.diagonalize(eig.get());
+  VectorB eig(primsize);
+  bb.diagonalize(eig);
 
   // make them consistent if parallel and not using ScaLapack
 #ifndef HAVE_SCALAPACK
   bb.broadcast();
-  mpi__->broadcast(eig.get(), primsize, 0);
+  mpi__->broadcast(eig.data(), primsize, 0);
 #endif
 
   int ninternal = max(cartsize-6,1);
   for (int i = 0; i != ninternal; ++i) {
-    eig[i] *= -1.0;
-    if (eig[i] < 1.0e-10)
-      cout << "       ** caution **  small eigenvalue " << eig[i] << endl;
+    eig(i) *= -1.0;
+    if (eig(i) < 1.0e-10)
+      cout << "       ** caution **  small eigenvalue " << eig(i) << endl;
   }
   cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
 
   // form B = U^+ Bprim
-  Matrix bbslice = *bb.slice(0,ninternal);
+  Matrix bbslice = bb.slice(0,ninternal);
   auto bnew = make_shared<Matrix>(bdag * bbslice);
 
   // form (B^+)^-1 = (BB^+)^-1 B = Lambda^-1 B

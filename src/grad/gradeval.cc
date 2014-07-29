@@ -40,8 +40,8 @@ shared_ptr<GradFile> GradEval<SCF>::compute() {
 #endif
 
   //- One ELECTRON PART -//
-  shared_ptr<const MatView> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat() ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->coeff()->form_weighted_density_rhf(ref_->nocc(), ref_->eig());
 
 #ifdef LOCAL_TIMING
@@ -104,8 +104,8 @@ shared_ptr<GradFile> GradEval<UHF>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//
-  shared_ptr<const MatView> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat(0) ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat(0) ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
   assert(erdm1 != nullptr);
 
@@ -129,8 +129,8 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//
-  shared_ptr<const MatView> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat(0) ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat(0) ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
   assert(erdm1 != nullptr);
 
@@ -154,8 +154,8 @@ shared_ptr<GradFile> GradEval<KS>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//
-  shared_ptr<const MatView> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat() ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->coeff()->form_weighted_density_rhf(ref_->nocc(), ref_->eig());
 
   //- TWO ELECTRON PART -//
@@ -169,7 +169,7 @@ shared_ptr<GradFile> GradEval<KS>::compute() {
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
   //- Exchange-correlation part -//
-  shared_ptr<const GradFile> ggrad = task_->grid()->compute_xcgrad(task_->func(), make_shared<Matrix>(*coeff_occ));
+  shared_ptr<const GradFile> ggrad = task_->grid()->compute_xcgrad(task_->func(), make_shared<Matrix>(coeff_occ));
   *grad += *ggrad;
 
   grad->print();
@@ -185,8 +185,8 @@ shared_ptr<GradFile> GradEval<WernerKnowles>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//
-  shared_ptr<const MatView> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat() ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
 
   //- TWO ELECTRON PART -//
@@ -209,8 +209,8 @@ shared_ptr<GradFile> GradEval<SuperCI>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//
-  shared_ptr<const MatView> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat() ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
 
   //- TWO ELECTRON PART -//

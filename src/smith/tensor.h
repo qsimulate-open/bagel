@@ -94,7 +94,7 @@ class Tensor {
             size *= j.size();
             h.push_back(j.key());
           }
-          hashmap.insert(std::make_pair(generate_hash_key(h), size));
+          hashmap.emplace(generate_hash_key(h), size);
           off += size;
         }
 
@@ -260,7 +260,7 @@ class Tensor {
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
           std::unique_ptr<double[]> target = get_block(i0, i1);
-          out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target);
+          out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target.get());
         }
       }
       return out;

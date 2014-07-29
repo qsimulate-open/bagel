@@ -24,9 +24,7 @@
 //
 
 
-#include <src/meh/meh_cas.h>
-#include <src/meh/meh_ras.h>
-#include <src/dimer/dimer.h>
+#include <src/meh/construct_meh.h>
 
 double meh_energy(std::string inp) {
   auto ofs = std::make_shared<std::ofstream>(inp + ".testout", std::ios::trunc);
@@ -76,18 +74,8 @@ double meh_energy(std::string inp) {
 
       *geom = *dimer->sgeom();
       ref = dimer->sref();
-    } else if (method == "meh-cas") {
-      std::shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
-
-      auto meh = std::make_shared<MEH_CAS>(itree, dimer, cispace);
-      meh->compute();
-
-      std::cout.rdbuf(backup_stream);
-      return meh->energy(0);
-    } else if (method == "meh-ras") {
-      std::shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
-
-      auto meh = std::make_shared<MEH_RAS>(itree, dimer, cispace);
+    } else if (method == "meh") {
+      auto meh = construct_MEH(itree, dimer);
       meh->compute();
 
       std::cout.rdbuf(backup_stream);
@@ -95,7 +83,7 @@ double meh_energy(std::string inp) {
     }
 
     std::string saveref = itree->get<std::string>("saveref", "");
-    if (saveref != "") { saved.insert(std::make_pair(saveref, std::static_pointer_cast<const void>(ref))); }
+    if (saveref != "") { saved.emplace(saveref, std::static_pointer_cast<const void>(ref)); }
   }
   assert(false);
   return 0.0;
@@ -151,23 +139,8 @@ std::vector<double> meh_models(std::string inp) {
 
       *geom = *dimer->sgeom();
       ref = dimer->sref();
-    } else if (method == "meh-cas") {
-      std::shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
-
-      auto meh = std::make_shared<MEH_CAS>(itree, dimer, cispace);
-      meh->compute();
-
-      std::shared_ptr<Matrix> dirmodel = meh->model(0).first;
-      models.insert(models.end(), dirmodel->data(), dirmodel->data()+dirmodel->size());
-      models[1] = std::abs(models[1]); models[2] = std::abs(models[2]);
-
-      std::shared_ptr<Matrix> ptmodel = meh->model(0).second;
-      models.insert(models.end(), ptmodel->data(), ptmodel->data()+ptmodel->size());
-      models[5] = std::abs(models[5]); models[6] = std::abs(models[6]);
-    } else if (method == "meh-ras") {
-      std::shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
-
-      auto meh = std::make_shared<MEH_RAS>(itree, dimer, cispace);
+    } else if (method == "meh") {
+      auto meh = construct_MEH(itree, dimer);
       meh->compute();
 
       std::shared_ptr<Matrix> dirmodel = meh->model(0).first;
@@ -180,7 +153,7 @@ std::vector<double> meh_models(std::string inp) {
     }
 
     std::string saveref = itree->get<std::string>("saveref", "");
-    if (saveref != "") { saved.insert(std::make_pair(saveref, std::static_pointer_cast<const void>(ref))); }
+    if (saveref != "") { saved.emplace(saveref, std::static_pointer_cast<const void>(ref)); }
   }
 
   std::cout.rdbuf(backup_stream);

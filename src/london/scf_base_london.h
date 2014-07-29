@@ -28,7 +28,7 @@
 
 #include <src/molecule/zoverlap.h>
 #include <src/molecule/zhcore.h>
-#include <src/london/zcoeff.h>
+#include <src/scf/coeff.h>
 #include <src/london/fock_london.h>
 #include <src/wfn/method.h>
 
@@ -53,7 +53,7 @@ class SCF_base_London : public Method {
     std::vector<double> schwarz_;
     void init_schwarz();
 
-    std::vector<double> eig_;
+    VectorB eig_;
     double energy_;
 
     int nocc_;
@@ -64,7 +64,7 @@ class SCF_base_London : public Method {
     // when gradient is requested, we store half-transformed integrals
     // TODO so far only implemented in closed-shell SCF
     bool do_grad_;
-    std::shared_ptr<DFHalfDist_London> half_;
+    std::shared_ptr<ComplexDFHalfDist> half_;
 
     bool restart_;
 
@@ -73,7 +73,7 @@ class SCF_base_London : public Method {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Method);
+      ar & boost::serialization::base_object<Method>(*this);
       ar & tildex_ & overlap_ & hcore_ & coeff_ & max_iter_ & diis_start_ & diis_size_
          & thresh_overlap_ & thresh_scf_ & multipole_print_ & schwarz_ & eig_ & energy_
          & nocc_ & noccB_ & do_grad_ & restart_;
@@ -81,7 +81,7 @@ class SCF_base_London : public Method {
 
   public:
     SCF_base_London() { }
-    SCF_base_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London>,
+    SCF_base_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry>,
              const std::shared_ptr<const Reference>, const bool need_schwarz = false);
     virtual ~SCF_base_London() { }
 
@@ -102,9 +102,9 @@ class SCF_base_London : public Method {
 
     virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 
-    double* eig() { return eig_.data(); };
+    VectorB& eig() { return eig_; }
 
-    std::shared_ptr<DFHalfDist_London> half() const { return half_; }
+    std::shared_ptr<ComplexDFHalfDist> half() const { return half_; }
     void discard_half() { half_.reset(); }
 };
 

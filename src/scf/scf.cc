@@ -110,11 +110,13 @@ void SCF::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer pdebug(1);
 
+#ifndef DISABLE_SERIALIZATION
     if (restart_) {
       stringstream ss; ss << "scf_" << iter;
       OArchive archive(ss.str());
       archive << static_cast<Method*>(this);
     }
+#endif
 
     if (!dodf_) {
       previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
@@ -144,7 +146,7 @@ void SCF::compute() {
     }
 
     if (diis_ || iter >= diis_start_) {
-      fock = diis_->extrapolate(make_pair(fock, error_vector));
+      fock = diis_->extrapolate({fock, error_vector});
       pdebug.tick_print("DIIS");
     }
 

@@ -47,7 +47,7 @@ void PutRequest::init() {
   const int rq = mpi__->request_recv(call->buf.get(), 4, -1, probe_key2__ + probe_offset_);
   {
     lock_guard<mutex> lock(block_);
-    auto m = calls_.insert(make_pair(rq, call));
+    auto m = calls_.emplace(rq, call);
     if (!m.second)
       throw logic_error("PutRequest::init error");
   }

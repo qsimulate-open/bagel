@@ -28,6 +28,7 @@
 
 #include <array>
 #include <src/rel/alpha.h>
+#include <src/math/matop.h>
 
 namespace bagel {
 

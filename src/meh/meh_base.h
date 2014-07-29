@@ -28,8 +28,8 @@
 
 #include <src/dimer/dimer.h>
 #include <src/dimer/dimer_jop.h>
-#include <src/dimer/dimer_prop.h>
 #include <src/meh/meh_spin.h>
+#include <src/meh/gamma_tensor.h>
 
 namespace bagel {
 
@@ -97,13 +97,49 @@ class MEH_base {
     double thresh_;
     double print_thresh_;
 
+    virtual std::vector<DimerSubspace_base> subspaces_base() const = 0;
+
+    // Gamma Tensor
+    std::array<std::shared_ptr<const GammaTensor>,2> gammatensor_;
+
     std::vector<std::vector<ModelBlock>> models_to_form_; ///< Contains specifications to construct model spaces
     std::vector<std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>>> models_; ///< models that have been built
+
+    static Coupling coupling_type(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp);
+    static Coupling coupling_type(const std::array<MonomerKey,4>& keys);
+    std::shared_ptr<Matrix> apply_hamiltonian(const Matrix& o, const std::vector<DimerSubspace_base>& subspaces);
+    std::vector<double> diagonalize(std::shared_ptr<Matrix>& cc, const std::vector<DimerSubspace_base>& subspace, const bool mute = false);
+
+    // Off-diagonal stuff
+    template <bool _N, typename return_type = typename std::conditional<_N, Matrix, RDM<2>>::type>
+    std::shared_ptr<return_type> couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp); // Off-diagonal driver for H
+
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type>
+      compute_offdiagonal_1e(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix> h) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_inter_2e(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_aET(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_bET(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_abFlip(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_abET(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_aaET(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_bbET(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_diagonal_block(const DimerSubspace_base& subspace) const { assert(false); return nullptr; }
+
+    void generate_initial_guess(std::shared_ptr<Matrix> cc, const std::vector<DimerSubspace_base>& subspace, const int nstates);
+    std::shared_ptr<Matrix> compute_intra(const DimerSubspace_base& subspace, std::shared_ptr<const DimerJop> jop, const double diag) const;
+
+    void modelize();
+
+    void print_hamiltonian(const std::string title = "MultiExciton Hamiltonian", const int nstates = 10) const;
+    void print_states(const Matrix& cc, const std::vector<double>& energies, const double thresh = 0.01, const std::string title = "Adiabats") const;
+    void print_property(const std::string label, std::shared_ptr<const Matrix>, const int size = 10) const ;
+    void print(const double thresh = 0.01) const;
 
   public:
     MEH_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer);
 
     virtual void compute() = 0;
+    void compute_rdm() const;
 
     std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> model(const int i) { return models_[i]; }
 
@@ -111,6 +147,20 @@ class MEH_base {
     double energy(const int i) const { return energies_.at(i); }
 
 };
+
+#define MEH_HEADERS
+#include <src/meh/meh_compute_offdiagonal.hpp>
+#undef MEH_HEADERS
+
+template<> std::shared_ptr<Matrix> MEH_base::compute_offdiagonal_1e<true>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
+template<> std::shared_ptr<Matrix> MEH_base::compute_inter_2e<true>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<Matrix> MEH_base::compute_aET<true>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<Matrix> MEH_base::compute_bET<true>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<Matrix> MEH_base::compute_abFlip<true>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<Matrix> MEH_base::compute_abET<true>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<Matrix> MEH_base::compute_aaET<true>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<Matrix> MEH_base::compute_bbET<true>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<Matrix> MEH_base::compute_diagonal_block<true>(const DimerSubspace_base& subspace) const;
 
 }
 

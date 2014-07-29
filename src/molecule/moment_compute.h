@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: fci_london.h
+// Filename: moment_compute.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
@@ -24,30 +24,27 @@
 //
 
 
-#ifndef __BAGEL_SRC_LONDON_FCI_LONDON_H
-#define __BAGEL_SRC_LONDON_FCI_LONDON_H
+#ifndef __SRC_MOLECULE_MOMENT_COMPUTE_H
+#define __SRC_MOLECULE_MOMENT_COMPUTE_H
 
-#include <src/wfn/method.h>
+#include <array>
+#include <src/molecule/shell.h>
+#include <src/math/matrix.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 
-class FCI_London : public Method {
-
-  protected:
-
+struct MomentCompute {
+  private:
+    static std::array<std::shared_ptr<const Matrix>,6> mblock(const Shell& shell, const double exponent);
+    static std::array<std::shared_ptr<const ZMatrix>,9> mblock(const Shell& shell, const double exponent, const std::array<double,3> magnetic_field, const bool london);
   public:
-    FCI_London() { }
-    FCI_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London> cgeom, const std::shared_ptr<const Reference> re = nullptr) { };
-    virtual ~FCI_London() { }
-
-    void compute() override;
-    std::shared_ptr<const Reference> conv_to_ref() const override;
-
+    // Gaussian orbitals
+    static std::array<std::shared_ptr<const Matrix>,3> call(const Shell& shell);
+    // London orbitals (and common origin)
+    static std::array<std::shared_ptr<const ZMatrix>,3> call(const Shell& shell, const std::array<double,3> magnetic_field, const bool london);
 };
 
 }
-
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::FCI_London)
 
 #endif

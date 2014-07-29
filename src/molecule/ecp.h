@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: ecp.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -42,6 +42,13 @@ class ECP {
     int ishell_maxl_;
     int nshell_;
     std::array<int, 3> nr_;
+
+  private:
+    friend class boost::serialization::access;
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & ecp_ncore_ & ecp_maxl_ & shells_ecp_ & ishell_maxl_ & nshell_ & nr_;
+    }
 
   public:
     ECP();

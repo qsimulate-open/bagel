@@ -64,50 +64,6 @@ void MultiExcitonHamiltonian<VecType>::compute_pure_terms(DSubSpace& AB, std::sh
 }
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::compute_intra(Matrix& block, const DSubSpace& AB, std::shared_ptr<const DimerJop> jop, const double diag) {
-  const int nstatesA = AB.template nstates<0>();
-  const int nstatesB = AB.template nstates<1>();
-
-  // first H^{AA}_{AA}
-  for(int stateA = 0; stateA < nstatesA; ++stateA) {
-    for(int stateAp = 0; stateAp < stateA; ++stateAp) {
-      const double value = AB.template sigma<0>()->element(stateAp, stateA);
-      for(int stateB = 0; stateB < nstatesB; ++stateB) {
-        const int stateApB = AB.dimerindex(stateAp, stateB);
-        const int stateAB = AB.dimerindex(stateA, stateB);
-        block(stateAB, stateApB) += value;
-        block(stateApB, stateAB) += value;
-      }
-    }
-    const double value = AB.template sigma<0>()->element(stateA, stateA);
-    for(int stateB = 0; stateB < nstatesB; ++stateB) {
-      const int stateAB = AB.dimerindex(stateA, stateB);
-      block(stateAB,stateAB) += value;
-    }
-  }
-
-  // H^{BB}_{BB}
-  for(int stateB = 0; stateB < nstatesB; ++stateB) {
-    for(int stateBp = 0; stateBp < stateB; ++stateBp) {
-      const double value = AB.template sigma<1>()->element(stateBp, stateB);
-      for(int stateA = 0; stateA < nstatesA; ++stateA) {
-        const int stateAB = AB.dimerindex(stateA, stateB);
-        const int stateABp = AB.dimerindex(stateA, stateBp);
-        block(stateAB, stateABp) += value;
-        block(stateABp, stateAB) += value;
-      }
-    }
-    const double value = AB.template sigma<1>()->element(stateB, stateB);
-    for(int stateA = 0; stateA < nstatesA; ++stateA) {
-      const int stateAB = AB.dimerindex(stateA, stateB);
-      block(stateAB,stateAB) += value;
-    }
-  }
-
-  block.add_diag(diag);
-}
-
-template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_1e(const DSubSpace& AB, const double* hAA, const double* hBB, const double diag) const {
   std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
   std::shared_ptr<const VecType> ccvecB = AB.template ci<1>();
@@ -165,42 +121,6 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_1e(co
   return out;
 }
 
-
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_block(DSubSpace& subspace) {
-  const double core = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy();
-
-  auto out = std::make_shared<Matrix>(subspace.dimerstates(), subspace.dimerstates());
-
-  compute_intra(*out, subspace, jop_, core);
-  compute_inter_2e(*out, subspace, subspace);
-
-  return out;
-}
-
-// This term will couple off-diagonal blocks since it has no delta functions involved
-template <class VecType>
-void MultiExcitonHamiltonian<VecType>::compute_inter_2e(Matrix& block, DSubSpace& AB, DSubSpace& ApBp) {
-  // alpha-alpha
-  Matrix gamma_AA_alpha = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-  Matrix gamma_BB_alpha = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-
-  // beta-beta
-  Matrix gamma_AA_beta = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
-  Matrix gamma_BB_beta = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
-
-  // build J and K matrices
-  std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,0,1>();
-  std::shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
-
-  Matrix tmp((gamma_AA_alpha + gamma_AA_beta) * (*Jmatrix) ^ (gamma_BB_alpha + gamma_BB_beta));
-
-  tmp -= gamma_AA_alpha * (*Kmatrix) ^ gamma_BB_alpha;
-  tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
-
-  // sort: (A',A,B',B) --> (A,B,A',B') + block(A,B,A',B')
-  SMITH::sort_indices<1,3,0,2,1,1,1,1>(tmp.data(), block.data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
-}
 
 #endif
 

@@ -34,8 +34,6 @@ BOOST_CLASS_EXPORT_IMPLEMENT(ROHF)
 
 void ROHF::compute() {
 
-  eigB_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
-
   initial_guess();
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
@@ -77,9 +75,9 @@ void ROHF::compute() {
     }
 
     if (iter >= diis_start_) {
-      shared_ptr<Matrix> tmp_fock = diis.extrapolate(make_pair(fockA, error_vector));
+      shared_ptr<Matrix> tmp_fock = diis.extrapolate({fockA, error_vector});
       shared_ptr<Matrix> intermediateA = make_shared<Matrix>(*natorb % *tmp_fock * *natorb);
-                         tmp_fock = diisB.extrapolate(make_pair(fockB, error_vector));
+                         tmp_fock = diisB.extrapolate({fockB, error_vector});
       shared_ptr<Matrix> intermediateB = make_shared<Matrix>(*natorb % *tmp_fock * *natorb);
 
       // Specific to ROHF:

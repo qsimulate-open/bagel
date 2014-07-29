@@ -47,7 +47,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
   auto ai = geom_->aux_atoms().begin();
   for (auto& i : geom_->atoms()) {
     if (i->dummy()) { ++ai; continue; }
-    if (atoms.find(make_pair(i->name(),i->basis())) == atoms.end()) {
+    if (atoms.find({i->name(),i->basis()}) == atoms.end()) {
       // dummy buffer to suppress the output
       stringstream ss;
       std::streambuf* cout_orig = cout.rdbuf();
@@ -62,57 +62,12 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), nullptr);
       // TODO geometry makes aux atoms, which is ugly
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
-      atoms.insert(make_pair(make_pair(i->name(),i->basis()), compute_atomic(ga)));
+      atoms.emplace(make_pair(i->name(),i->basis()), compute_atomic(ga));
 
       // restore cout
       cout.rdbuf(cout_orig);
     }
-    auto iter = atoms.find(make_pair(i->name(),i->basis()));
-    assert(iter != atoms.end());
-    copy_block(offset, offset, i->nbasis(), i->nbasis(), iter->second);
-    offset += i->nbasis();
-
-    ++ai;
-  }
-
-}
-
-
-AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry_London> g) : Matrix(g->nbasis(), g->nbasis()), cgeom_(g) {
-  // first make a list of unique atoms
-  const string defbasis = cgeom_->basisfile();
-  map<pair<string,string>, shared_ptr<const Matrix>> atoms;
-  unique_ptr<double[]> eig(new double[cgeom_->nbasis()]);
-
-  int offset = 0;
-
-  // read basis file
-  shared_ptr<const PTree> bdata = PTree::read_basis(defbasis);
-
-  auto ai = cgeom_->aux_atoms().begin();
-  for (auto& i : cgeom_->atoms()) {
-    if (i->dummy()) { ++ai; continue; }
-    if (atoms.find(make_pair(i->name(),i->basis())) == atoms.end()) {
-      // dummy buffer to suppress the output
-      stringstream ss;
-      std::streambuf* cout_orig = cout.rdbuf();
-      cout.rdbuf(ss.rdbuf());
-
-      shared_ptr<PTree> geomop = make_shared<PTree>();
-      const string basis = i->basis();
-      geomop->put("basis", basis);
-      const string dfbasis = (*ai)->basis();
-      geomop->put("df_basis", !dfbasis.empty() ? dfbasis : basis);
-
-      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), nullptr);
-      // TODO geometry makes aux atoms, which is ugly
-      auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
-      atoms.insert(make_pair(make_pair(i->name(),i->basis()), compute_atomic(ga)));
-
-      // restore cout
-      cout.rdbuf(cout_orig);
-    }
-    auto iter = atoms.find(make_pair(i->name(),i->basis()));
+    auto iter = atoms.find({i->name(),i->basis()});
     assert(iter != atoms.end());
     copy_block(offset, offset, i->nbasis(), i->nbasis(), iter->second);
     offset += i->nbasis();
@@ -144,10 +99,10 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   auto hcore = make_shared<Hcore>(ga);
   DIIS<Matrix> diis(5);
   shared_ptr<const Matrix> coeff;
-  unique_ptr<double[]> eig(new double[ga->nbasis()]);
+  VectorB eig(ga->nbasis());
   {
     Matrix ints = *tildex % *hcore * *tildex;
-    ints = *ints.diagonalize_blocks(eig.get(), num);
+    ints = *ints.diagonalize_blocks(eig, num);
     coeff = make_shared<const Matrix>(*tildex * ints);
   }
 
@@ -189,7 +144,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   for (; iter != maxiter; ++iter) {
     shared_ptr<Matrix> fock = sclosed ? make_shared<Fock<1>>(ga, hcore, nullptr, ocoeff->slice(0,sclosed/2), false/*store*/, true/*rhf*/)
                                       : hcore->copy();
-    shared_ptr<Matrix> fock2 = make_shared<Fock<1>>(ga, hcore, vden, shared_ptr<MatView>(), false/*store*/, false/*rhf*/, 0.0/*exch*/);
+    shared_ptr<Matrix> fock2 = make_shared<Fock<1>>(ga, hcore, vden, ocoeff /*unused*/, false/*store*/, false/*rhf*/, 0.0/*exch*/);
     *fock += *fock2 - *hcore;
 
     auto aodensity = make_shared<const Matrix>((*ocoeff^*ocoeff)*2.0 + *vden);
@@ -199,10 +154,10 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     auto residual = make_shared<const Matrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     if (residual->rms() < 1.0e-2 || fabs(energy-prev_energy) < 1.0e-4) break;
     prev_energy = energy;
-    fock = diis.extrapolate(make_pair(fock, residual));
+    fock = diis.extrapolate({fock, residual});
 
     Matrix ints = *tildex % *fock * *tildex;
-    ints = *ints.diagonalize_blocks(eig.get(), num);
+    ints = *ints.diagonalize_blocks(eig, num);
 
     coeff  = make_shared<const Matrix>(*tildex * ints);
     ocoeff = make_shared<Matrix>(ga->nbasis(), sclosed);

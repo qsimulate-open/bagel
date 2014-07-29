@@ -17,11 +17,6 @@
 
 namespace btas {
 
-namespace impl {
-    template<typename T> T conj(const T& t) { return t; }
-    template<typename T> std::complex<T> conj(const std::complex<T>& t) { return std::conj(t); }
-}
-
 template<bool _Finalize> struct gemm_impl { };
 
 template<> struct gemm_impl<true>
@@ -505,17 +500,18 @@ void gemm (
 
    typedef unsigned long size_type;
 
-   if (A.empty() || B.empty()) return;
-   assert (C.rank() != 0);
-
-   typedef typename _TensorA::value_type value_type;
-   assert(not ((transA == CblasConjTrans || transB == CblasConjTrans) && std::is_fundamental<value_type>::value));
+   //if (A.empty() || B.empty()) return;
+   //assert (C.rank() != 0);
 
    if (A.empty() || B.empty())
    {
       scal(beta, C);
       return;
    }
+
+   typedef typename _TensorA::value_type value_type;
+   assert(not ((transA == CblasConjTrans || transB == CblasConjTrans) && std::is_fundamental<value_type>::value));
+
 
    // get contraction rank
    const size_type rankA = rank(A);
