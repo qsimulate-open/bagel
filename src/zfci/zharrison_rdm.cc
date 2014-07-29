@@ -341,13 +341,13 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
     auto co = make_shared<ZMatrix>(*coeff_tot % *overlap * *ocoeff);
     co->get_real_part()->print("co 2rdm",co->ndim());
     bitset<1> b(i);
-    trans.insert(make_pair(b, co)); 
+    trans.insert(make_pair(b, co));
   }
 #else
   auto unit = make_shared<ZMatrix>(norb_*2,norb_*2);
   unit->unit();
   for (int i = 0; i != 2; ++i) {
-    auto co = make_shared<const ZMatrix>(*unit->slice(i*norb_,(i+1)*norb_)); 
+    auto co = make_shared<const ZMatrix>(*unit->slice_copy(i*norb_,(i+1)*norb_));
     bitset<1> b(i);
     trans.emplace(b, co);
   }

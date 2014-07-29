@@ -41,7 +41,7 @@ void ZCASBFGS::compute() {
   shared_ptr<SRBFGS<ZRotFile>> ele_srbfgs;
   shared_ptr<SRBFGS<ZRotFile>> pos_srbfgs;
 #ifdef BOTHSPACES
-  const bool tight = idata_->get<bool>("tight", false); 
+  const bool tight = idata_->get<bool>("tight", false);
   const int limmem = idata_->get<int>("limited_memory", 0);
 #endif
 
@@ -74,8 +74,8 @@ void ZCASBFGS::compute() {
     fci_->update(coeff_, /*restricted*/true);
 
   auto cold = coeff_->clone();
-    
-  bool optimize_electrons = idata_->get<bool>("optimize_electrons", true); 
+
+  bool optimize_electrons = idata_->get<bool>("optimize_electrons", true);
   cout << " optimizing the electrons ? " << optimize_electrons << endl;
   cout << " See casscf.log for further information on FCI output " << endl;
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -148,7 +148,7 @@ void ZCASBFGS::compute() {
     // compute approximate diagonal hessian
     if (iter == 0) {
       shared_ptr<ZRotFile> denom = compute_denom(cfock, afock, qvec, rdm1);
-      // IMPROVISED LEVEL SHIFT 
+      // IMPROVISED LEVEL SHIFT
       const bool shift = idata_->get<bool>("shift", false);
       if (shift) {
         level_shift_ = find_level_shift(denom);
@@ -160,7 +160,7 @@ void ZCASBFGS::compute() {
       { // electronic rotation bfgs
         auto newdenom = ___debug___copy_electronic_rotations(denom);
         ele_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom);
-      } 
+      }
       { // positronic rotation bfgs
         auto newdenom = ___debug___copy_positronic_rotations(denom);
         const double thresh = 1.0e-8;
@@ -244,11 +244,11 @@ void ZCASBFGS::compute() {
     *amat *= 1.0 * complex<double>(0.0, -1.0);
 
     // restore the matrix from RotFile
-    unique_ptr<double[]> teig(new double[amat->ndim()]);
-    amat->diagonalize(teig.get());
+    VectorB teig(amat->ndim());
+    amat->diagonalize(teig);
     auto amat_sav = amat->copy();
     for (int i = 0; i != amat->ndim(); ++i) {
-      complex<double> ex = exp(complex<double>(0.0, teig[i]));
+      complex<double> ex = exp(complex<double>(0.0, teig(i)));
       for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
     }
     auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
@@ -311,7 +311,7 @@ void ZCASBFGS::compute() {
       print_iteration(iter, 0, 0, ele_energy, gradient, timer.tick());
     } else {
       print_iteration(iter, 0, 0, pos_energy, gradient, timer.tick());
-    } 
+    }
 #endif
 
 #ifdef BOTHSPACES
@@ -325,5 +325,5 @@ void ZCASBFGS::compute() {
     if (pos_conv && ele_conv) break;
 #endif
   }
-//  if (ele_energy.size() > 0 && energy_.size() == 0) energy_.push_back(ele_energy.back()); 
+//  if (ele_energy.size() > 0 && energy_.size() == 0) energy_.push_back(ele_energy.back());
 }

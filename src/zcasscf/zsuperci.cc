@@ -99,7 +99,7 @@ void ZSuperCI::compute() {
     if (!nact_) { // compute energy
       assert(nstate_ == 1);
       energy_.resize(iter+1);
-      auto hcoremo = make_shared<ZMatrix>(*coeff_->slice(0,nclosed_*2) % *hcore_ * *coeff_->slice(0,nclosed_*2));
+      auto hcoremo = make_shared<ZMatrix>(coeff_->slice(0,nclosed_*2) % *hcore_ * coeff_->slice(0,nclosed_*2));
       *hcoremo += *f->get_submatrix(0, 0, nclosed_*2, nclosed_*2);
       double etmp = 0.0;
       for (int j=0; j!= nclosed_*2; ++j)
@@ -135,16 +135,15 @@ void ZSuperCI::compute() {
     kramers_adapt(amat, nvirtnr_);
 #endif
   // multiply -i to make amat hermite (will be compensated), sqrt(2) to recover non-rel limit
-  *amat *= sqrt(2.0) * complex<double>(0.0, -1.0);
-  // restore the matrix from RotFile
-  vector<double> teig(amat->ndim());
-  amat->diagonalize(teig.data());
-  auto amat_sav = amat->copy();
-  for (int i = 0; i != amat->ndim(); ++i) {
-    complex<double> ex = exp(complex<double>(0.0, teig[i]));
-    for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
-  }
-  auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
+   *amat *= sqrt(2.0) * complex<double>(0.0, -1.0);
+   VectorB teig(amat->ndim());
+   amat->diagonalize(teig);
+   auto amat_sav = amat->copy();
+   for (int i = 0; i != amat->ndim(); ++i) {
+     complex<double> ex = exp(complex<double>(0.0, teig(i)));
+     for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
+   }
+   auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
   expa->purify_unitary();
 
 #ifdef BOTHSPACES

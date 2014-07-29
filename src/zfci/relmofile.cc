@@ -114,7 +114,7 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
   // just for convenience
   sigmaz->scale(-1.0);
 
-  unique_ptr<double[]> tmp(new double[mdim]);
+  VectorB tmp(mdim);
 
   list<int> done;
   for (int i = 0; i != mdim; ++i) {
@@ -136,10 +136,10 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
 
     auto corig = cnow->copy();
     auto s = make_shared<ZMatrix>(*cnow % *sigmaz * *cnow);
-    s->diagonalize(tmp.get());
+    s->diagonalize(tmp);
     *cnow *= *s;
 
-    // fix the phase - making the largest large-component element in each colomn real
+    // fix the phase - making the largest large-component element in each column real
 #if 1
     for (int i = 0; i != n; ++i) {
       const int iblock = i/(n/2);
@@ -153,9 +153,9 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
     // off diagonal
     const int m = n/2;
     cnow->add_block(-1.0, nb, 0, nb, m, cnow->get_submatrix(0, m, nb, m)->get_conjg());
-    cnow->copy_block(0, m, nb, m, (*cnow->get_submatrix(nb, 0, nb, m)->get_conjg() * (-1.0)));
+    cnow->copy_block(0, m, nb, m, *cnow->get_submatrix(nb, 0, nb, m)->get_conjg() * (-1.0));
     cnow->add_block(-1.0, nb*3, 0, nb, m, cnow->get_submatrix(nb*2, m, nb, m)->get_conjg());
-    cnow->copy_block(nb*2, m, nb, m, (*cnow->get_submatrix(nb*3, 0, nb, m)->get_conjg() * (-1.0)));
+    cnow->copy_block(nb*2, m, nb, m, *cnow->get_submatrix(nb*3, 0, nb, m)->get_conjg() * (-1.0));
 
     // diagonal
     cnow->add_block(1.0, 0, 0, nb, m, cnow->get_submatrix(nb, m, nb, m)->get_conjg());
@@ -290,7 +290,7 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
     bitset<4> s = mat.first;
     s[2] = mat.first[1];
     s[1] = mat.first[2];
-    mo2e_.insert(make_pair(s, tmp));
+    mo2e_.emplace(s, tmp);
   }
 }
 
@@ -474,7 +474,7 @@ void RelMOFile::update_kramers_coeff(shared_ptr<ZMatrix> coeff) {
   kcoefftmp->copy_block(0, nocc_, ndim, nocc_, kramers_coeff(1)->data());
   zgemm3m_("N", "N", ndim, n, n, 1.0, kcoefftmp->data(), ndim, coeff->get_conjg()->data(), n, 0.0, kcoefftmp2->data(), ndim);
   array<shared_ptr<const ZMatrix>,2> kctmp;
-  kctmp[0] = make_shared<const ZMatrix>(*kcoefftmp2->slice(0, nocc_));
-  kctmp[1] = make_shared<const ZMatrix>(*kcoefftmp2->slice(nocc_, nocc_*2));
+  kctmp[0] = make_shared<const ZMatrix>(*kcoefftmp2->slice_copy(0, nocc_));
+  kctmp[1] = make_shared<const ZMatrix>(*kcoefftmp2->slice_copy(nocc_, nocc_*2));
   kramers_coeff_ = kctmp;
 }

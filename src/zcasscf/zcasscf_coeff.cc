@@ -242,15 +242,15 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(const bool stripes) const {
   auto t12 = overlap_->get_submatrix(n*2, n*2, n, n)->copy();
   t12->inverse_half(1.0e-10);
   auto shalf = overlap_->get_submatrix(0, 0, n, n)->copy();
-  unique_ptr<double[]> eig2(new double[shalf->mdim()]);
-  shalf->diagonalize(eig2.get());
+  VectorB eig2(shalf->mdim());
+  shalf->diagonalize(eig2);
   for (int k = 0; k != shalf->mdim(); ++k) {
     if (real(eig2[k]) >= 0.0)
-      blas::scale_n(sqrt(sqrt(eig2[k])), shalf->element_ptr(0, k), shalf->ndim());
+      blas::scale_n(sqrt(sqrt(eig2(k))), shalf->element_ptr(0, k), shalf->ndim());
   }
   *shalf = *shalf ^ *shalf;
   auto tcoeff = make_shared<ZMatrix>(nr_coeff_->ndim(), nr_coeff_->mdim());
-  tcoeff->add_real_block(1.0, 0, 0, n, n, nr_coeff_->data());
+  tcoeff->add_real_block(1.0, 0, 0, n, n, *nr_coeff_);
   *tcoeff = *t12 * *shalf * *tcoeff;
   // copy non rel values into "+/-" stripes
   if (stripes) {
@@ -304,7 +304,7 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(const bool stripes) const {
 shared_ptr<ZMatrix> ZCASSCF::format_coeff(const int nclosed, const int nact, const int nvirt, shared_ptr<const ZMatrix> coeff, const bool striped) {
   assert(coeff->ndim() == coeff->mdim()); // TODO : generalize for when coeff is not a square ; shouldn't be too difficult
   auto ctmp2 = coeff->clone();
-  if (striped) { 
+  if (striped) {
     // Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
     int n = coeff->ndim();
     // closed

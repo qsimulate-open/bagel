@@ -80,8 +80,8 @@ void ZCASSCF::init() {
       auto hctmp = hcore_->copy();
       auto s12 = overlap_->tildex(1.0e-10);
       *hctmp = *s12 % *hctmp * *s12;
-      unique_ptr<double[]> eig(new double[hctmp->ndim()]);
-      hctmp->diagonalize(eig.get());
+      VectorB eig(hctmp->ndim());
+      hctmp->diagonalize(eig);
       *hctmp = *s12 * *hctmp;
       auto tmp = hctmp->clone();
       tmp->copy_block(0, nneg_, tmp->ndim(), nneg_, hctmp->slice(0,nneg_));
@@ -223,12 +223,12 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 
 shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore) const {
   // form natural orbitals
-  unique_ptr<double[]> eig(new double[nact_*2]);
+  VectorB eig(nact_*2);
   auto tmp = make_shared<ZMatrix>(*rdm1);
-  tmp->diagonalize(eig.get());
-  auto ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2);
+  tmp->diagonalize(eig);
+  const ZMatView ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2);
   // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik
-  auto natorb = make_shared<ZMatrix>(*ocoeff * *tmp->get_conjg());
+  auto natorb = make_shared<ZMatrix>(ocoeff * *tmp->get_conjg());
 
   // scale using eigen values
   for (int i = 0; i != nact_*2; ++i) {
@@ -276,7 +276,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
 
       // register to emap
       if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. make_natural_orbitals()");
-      emap.insert(make_pair(get<0>(max), i));
+      emap.emplace(get<0>(max), i);
 
       // copy to the target
       copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), buf2->element_ptr(0,i));
@@ -358,7 +358,7 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
   // first transformation
   zgemm3m_("N", "N", nbas, n, n, 1.0, qold->data(), nbas, natorb->data(), n, 0.0, qnew->data(), nbas);
   // second transformation for the active-active block
-  auto qtmp = qnew->get_submatrix(nclosed_*2, 0, n, n)->copy(); 
+  auto qtmp = qnew->get_submatrix(nclosed_*2, 0, n, n)->copy();
   *qtmp = *natorb % *qtmp;
   qnew->copy_block(nclosed_*2, 0, n, n, qtmp->data());
   return qnew;
@@ -372,22 +372,22 @@ shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
   shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
   shared_ptr<const ZMatrix> afockao = active_fock(rdm1, /*with_hcore*/true);
 
-  auto ocoeff = nclosed_ ? coeff_->slice(0, nclosed_*2) : nullptr;
-  auto vcoeff = coeff_->slice(nocc_*2, nbasis_*2);
-  
+  const ZMatView ocoeff = coeff_->slice(0, nclosed_*2);
+  const ZMatView vcoeff = coeff_->slice(nocc_*2, nbasis_*2);
+
   auto trans = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
   trans->unit();
   if (nclosed_) {
-    auto ofock = make_shared<ZMatrix>(*ocoeff % *afockao * *ocoeff);
-    unique_ptr<double[]> eig(new double[ofock->ndim()]);
+    auto ofock = make_shared<ZMatrix>(ocoeff % *afockao * ocoeff);
+    VectorB eig(ofock->ndim());
     if (nclosed_ == 1) {
-      ofock->diagonalize(eig.get());
+      ofock->diagonalize(eig);
     } else if (nclosed_ > 1) {
-      zquatev_(ofock->ndim(), ofock->data(), eig.get());
+      zquatev_(ofock->ndim(), ofock->data(), eig.data());
     }
     trans->copy_block(0, 0, nclosed_*2, nclosed_*2, ofock->data());
-  } 
-  auto vfock = make_shared<ZMatrix>(*vcoeff % *afockao * *vcoeff);
+  }
+  auto vfock = make_shared<ZMatrix>(vcoeff % *afockao * vcoeff);
   unique_ptr<double[]> eig(new double[vfock->ndim()]);
   zquatev_(vfock->ndim(), vfock->data(), eig.get());
   // move_positronic_orbitals;
@@ -404,7 +404,7 @@ shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
   }
   trans->copy_block(nocc_*2, nocc_*2, nvirt_*2, nvirt_*2, vfock->data());
   return make_shared<const ZMatrix>(*coeff_ * *trans);
-  
+
 }
 
 
