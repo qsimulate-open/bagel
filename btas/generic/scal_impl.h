@@ -34,36 +34,42 @@ template<> struct scal_impl<true>
    }
 
 #ifdef _HAS_CBLAS
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, float>::value>::type>
    static void call (
       const unsigned long& Nsize,
-      const float& alpha,
+      const _T& alpha,
             float* itrX, const typename std::iterator_traits<float*>::difference_type& incX)
    {
       cblas_sscal(Nsize, alpha, itrX, incX);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, double>::value>::type>
    static void call (
       const unsigned long& Nsize,
-      const double& alpha,
+      const _T& alpha,
             double* itrX, const typename std::iterator_traits<double*>::difference_type& incX)
    {
       cblas_dscal(Nsize, alpha, itrX, incX);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, std::complex<float>>::value>::type>
    static void call (
       const unsigned long& Nsize,
-      const std::complex<float>& alpha,
+      const _T& alpha,
             std::complex<float>* itrX, const typename std::iterator_traits<std::complex<float>*>::difference_type& incX)
    {
-      cblas_cscal(Nsize, &alpha, itrX, incX);
+      const std::complex<float> alphac(std::move(alpha));
+      cblas_cscal(Nsize, &alphac, itrX, incX);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, std::complex<double>>::value>::type>
    static void call (
       const unsigned long& Nsize,
-      const std::complex<double>& alpha,
+      const _T& alpha,
             std::complex<double>* itrX, const typename std::iterator_traits<std::complex<double>*>::difference_type& incX)
    {
-      cblas_zscal(Nsize, &alpha, itrX, incX);
+      const std::complex<double> alphac(std::move(alpha));
+      cblas_zscal(Nsize, &alphac, itrX, incX);
    }
 #endif
 };

@@ -36,40 +36,46 @@ template<> struct axpy_impl<true>
    }
 
 #ifdef _HAS_CBLAS
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, float>::value>::type>
    static void call (
       const unsigned long& Nsize,
-      const float& alpha,
+      const _T& alpha,
       const float* itrX, const typename std::iterator_traits<float*>::difference_type& incX,
             float* itrY, const typename std::iterator_traits<float*>::difference_type& incY)
    {
       cblas_saxpy(Nsize, alpha, itrX, incX, itrY, incY);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, double>::value>::type>
    static void call (
       const unsigned long& Nsize,
-      const double& alpha,
+      const _T& alpha,
       const double* itrX, const typename std::iterator_traits<double*>::difference_type& incX,
             double* itrY, const typename std::iterator_traits<double*>::difference_type& incY)
    {
       cblas_daxpy(Nsize, alpha, itrX, incX, itrY, incY);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, std::complex<float>>::value>::type>
    static void call (
       const unsigned long& Nsize,
-      const std::complex<float>& alpha,
+      const _T& alpha,
       const std::complex<float>* itrX, const typename std::iterator_traits<std::complex<float>*>::difference_type& incX,
             std::complex<float>* itrY, const typename std::iterator_traits<std::complex<float>*>::difference_type& incY)
    {
-      cblas_caxpy(Nsize, &alpha, itrX, incX, itrY, incY);
+      const std::complex<float> alphac(std::move(alpha));
+      cblas_caxpy(Nsize, &alphac, itrX, incX, itrY, incY);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, std::complex<double>>::value>::type>
    static void call (
       const unsigned long& Nsize,
-      const std::complex<double>& alpha,
+      const _T& alpha,
       const std::complex<double>* itrX, const typename std::iterator_traits<std::complex<double>*>::difference_type& incX,
             std::complex<double>* itrY, const typename std::iterator_traits<std::complex<double>*>::difference_type& incY)
    {
-      cblas_zaxpy(Nsize, &alpha, itrX, incX, itrY, incY);
+      const std::complex<double> alphac(std::move(alpha));
+      cblas_zaxpy(Nsize, &alphac, itrX, incX, itrY, incY);
    }
 #endif
 };

@@ -8,6 +8,8 @@
 #ifndef BTAS_STORAGE_TRAITS_H_
 #define BTAS_STORAGE_TRAITS_H_
 
+#include <valarray>
+
 #include <btas/index_traits.h>
 
 namespace btas {
@@ -41,6 +43,18 @@ namespace btas {
 
       typedef pointer iterator;
       typedef const_pointer const_iterator;
+  };
+
+  template <typename _T>
+  struct storage_traits<std::valarray<_T>> {
+      typedef _T value_type;
+      typedef _T& reference;
+      typedef const _T& const_reference;
+      typedef size_t size_type;
+      typedef ptrdiff_t difference_type;
+
+      typedef _T* iterator;
+      typedef typename std::add_const<_T*>::type const_iterator;
   };
 
   template <typename _Storage>

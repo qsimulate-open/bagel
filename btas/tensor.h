@@ -54,13 +54,13 @@ namespace btas {
       typedef const value_type& const_reference;
 
       /// element iterator
-      typedef typename storage_type::iterator iterator;
+      typedef typename storage_traits<storage_type>::iterator iterator;
 
       /// constant element iterator
-      typedef typename storage_type::const_iterator const_iterator;
+      typedef typename storage_traits<storage_type>::const_iterator const_iterator;
 
       /// size type
-      typedef typename storage_type::size_type size_type;
+      typedef typename storage_traits<storage_type>::size_type size_type;
 
       ///@}
 

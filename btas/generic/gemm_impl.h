@@ -226,6 +226,7 @@ template<> struct gemm_impl<true>
 
 #ifdef _HAS_CBLAS
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, float>::value>::type>
    static void call (
       const CBLAS_ORDER& order,
       const CBLAS_TRANSPOSE& transA,
@@ -233,18 +234,19 @@ template<> struct gemm_impl<true>
       const unsigned long& Msize,
       const unsigned long& Nsize,
       const unsigned long& Ksize,
-      const float& alpha,
+      const _T& alpha,
       const float* itrA,
       const unsigned long& LDA,
       const float* itrB,
       const unsigned long& LDB,
-      const float& beta,
+      const _T& beta,
             float* itrC,
       const unsigned long& LDC)
    {
       cblas_sgemm(order, transA, transB, Msize, Nsize, Ksize, alpha, itrA, LDA, itrB, LDB, beta, itrC, LDC);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, double>::value>::type>
    static void call (
       const CBLAS_ORDER& order,
       const CBLAS_TRANSPOSE& transA,
@@ -252,18 +254,19 @@ template<> struct gemm_impl<true>
       const unsigned long& Msize,
       const unsigned long& Nsize,
       const unsigned long& Ksize,
-      const double& alpha,
+      const _T& alpha,
       const double* itrA,
       const unsigned long& LDA,
       const double* itrB,
       const unsigned long& LDB,
-      const double& beta,
+      const _T& beta,
             double* itrC,
       const unsigned long& LDC)
    {
       cblas_dgemm(order, transA, transB, Msize, Nsize, Ksize, alpha, itrA, LDA, itrB, LDB, beta, itrC, LDC);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, std::complex<float>>::value>::type>
    static void call (
       const CBLAS_ORDER& order,
       const CBLAS_TRANSPOSE& transA,
@@ -271,22 +274,24 @@ template<> struct gemm_impl<true>
       const unsigned long& Msize,
       const unsigned long& Nsize,
       const unsigned long& Ksize,
-      const std::complex<float>& alpha,
+      const _T& alpha,
       const std::complex<float>* itrA,
       const unsigned long& LDA,
       const std::complex<float>* itrB,
       const unsigned long& LDB,
-      const std::complex<float>& beta,
+      const _T& beta,
             std::complex<float>* itrC,
       const unsigned long& LDC)
    {
+      const std::complex<float> alphac(std::move(alpha));
 #ifdef _HAS_INTEL_MKL
-      cblas_cgemm3m(order, transA, transB, Msize, Nsize, Ksize, &alpha, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
+      cblas_cgemm3m(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
 #else
-      cblas_cgemm(order, transA, transB, Msize, Nsize, Ksize, &alpha, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
+      cblas_cgemm(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
 #endif
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, std::complex<double>>::value>::type>
    static void call (
       const CBLAS_ORDER& order,
       const CBLAS_TRANSPOSE& transA,
@@ -294,19 +299,20 @@ template<> struct gemm_impl<true>
       const unsigned long& Msize,
       const unsigned long& Nsize,
       const unsigned long& Ksize,
-      const std::complex<double>& alpha,
+      const _T& alpha,
       const std::complex<double>* itrA,
       const unsigned long& LDA,
       const std::complex<double>* itrB,
       const unsigned long& LDB,
-      const std::complex<double>& beta,
+      const _T& beta,
             std::complex<double>* itrC,
       const unsigned long& LDC)
    {
+      const std::complex<double> alphac(std::move(alpha));
 #ifdef _HAS_INTEL_MKL
-      cblas_zgemm3m(order, transA, transB, Msize, Nsize, Ksize, &alpha, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
+      cblas_zgemm3m(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
 #else
-      cblas_zgemm(order, transA, transB, Msize, Nsize, Ksize, &alpha, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
+      cblas_zgemm(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
 #endif
    }
 
@@ -459,7 +465,7 @@ void gemm (
    static_assert(std::is_same<typename __traits_C::iterator_category, std::random_access_iterator_tag>::value,
                  "iterator C must be a random access iterator");
 
-   gemm_impl<std::is_same<value_type, _T>::value>::call(order, transA, transB, Msize, Nsize, Ksize, alpha, itrA, LDA, itrB, LDB, beta, itrC, LDC);
+   gemm_impl<std::is_convertible<_T, value_type>::value>::call(order, transA, transB, Msize, Nsize, Ksize, alpha, itrA, LDA, itrB, LDB, beta, itrC, LDC);
 }
 
 //  ================================================================================================
