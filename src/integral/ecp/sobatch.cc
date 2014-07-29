@@ -319,7 +319,7 @@ void SOBatch::init() {
       for (int kz = 0; kz <= ang0_[2]; ++kz) {
         const double ckz = c(ang0_[2], kz) * pow(AB_[2], ang0_[2] - kz);
         const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
-        c0_[index] = ckx * cky * ckz;
+        c0_[index] = ckx * cky * ckz * pow(-1.0, l0_-kx-ky-kz);
       }
     }
   }
@@ -331,7 +331,7 @@ void SOBatch::init() {
       for (int kz = 0; kz <= ang1_[2]; ++kz) {
         const double ckz = c(ang1_[2], kz) * pow(CB_[2], ang1_[2] - kz);
         const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
-        c1_[index] = ckx * cky * ckz;
+        c1_[index] = ckx * cky * ckz * pow(-1.0, l1_-kx-ky-kz);
       }
     }
   }
