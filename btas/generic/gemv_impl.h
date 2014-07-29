@@ -179,7 +179,8 @@ template<> struct gemv_impl<true>
       const typename std::iterator_traits<std::complex<float>*>::difference_type& incY)
    {
       const std::complex<float> alphac(std::move(alpha));
-      cblas_cgemv(order, transA, Msize, Nsize, &alphac, itrA, LDA, itrX, incX, &beta, itrY, incY);
+      const std::complex<float> betac (std::move(beta));
+      cblas_cgemv(order, transA, Msize, Nsize, &alphac, itrA, LDA, itrX, incX, &betac, itrY, incY);
    }
 
    template <typename _T, class = typename std::enable_if<std::is_convertible<_T, std::complex<double>>::value>::type>
@@ -198,7 +199,8 @@ template<> struct gemv_impl<true>
       const typename std::iterator_traits<std::complex<double>*>::difference_type& incY)
    {
       const std::complex<double> alphac(std::move(alpha));
-      cblas_zgemv(order, transA, Msize, Nsize, &alphac, itrA, LDA, itrX, incX, &beta, itrY, incY);
+      const std::complex<double> betac (std::move(beta));
+      cblas_zgemv(order, transA, Msize, Nsize, &alphac, itrA, LDA, itrX, incX, &betac, itrY, incY);
    }
 
 #endif // _HAS_CBLAS

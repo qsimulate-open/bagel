@@ -284,10 +284,11 @@ template<> struct gemm_impl<true>
       const unsigned long& LDC)
    {
       const std::complex<float> alphac(std::move(alpha));
+      const std::complex<float> betac (std::move(beta));
 #ifdef _HAS_INTEL_MKL
-      cblas_cgemm3m(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
+      cblas_cgemm3m(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &betac, itrC, LDC);
 #else
-      cblas_cgemm(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
+      cblas_cgemm(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &betac, itrC, LDC);
 #endif
    }
 
@@ -309,10 +310,11 @@ template<> struct gemm_impl<true>
       const unsigned long& LDC)
    {
       const std::complex<double> alphac(std::move(alpha));
+      const std::complex<double> betac (std::move(beta));
 #ifdef _HAS_INTEL_MKL
-      cblas_zgemm3m(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
+      cblas_zgemm3m(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &betac, itrC, LDC);
 #else
-      cblas_zgemm(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &beta, itrC, LDC);
+      cblas_zgemm(order, transA, transB, Msize, Nsize, Ksize, &alphac, itrA, LDA, itrB, LDB, &betac, itrC, LDC);
 #endif
    }
 
