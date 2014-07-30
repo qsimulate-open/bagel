@@ -37,6 +37,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
 
   assert(gaunt || !breit);
   if (gaunt) throw logic_error("Gaunt not implemented yet in ZQvec");
+  assert((coeff->slice(nclosed*2,(nclosed+nact)*2) - *fci->jop()->coeff()).rms() < 1.0e-15);
 
   array<shared_ptr<const ZMatrix>,2> kcoeff = fci->kramers_coeff();
   assert(geom->nbasis()*4 == kcoeff[0]->ndim());
