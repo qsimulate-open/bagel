@@ -360,8 +360,7 @@ void gemv (
       return;
    }
 
-   typedef typename _TensorA::value_type value_type;
-   assert(not ((transA == CblasConjTrans ) && std::is_fundamental<value_type>::value));
+   assert(not ((transA == CblasConjTrans ) && std::is_fundamental<typename _TensorA::value_type>::value));
 
    // get contraction rank
    const size_type rankX = rank(X);
