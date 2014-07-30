@@ -46,6 +46,21 @@ void ZSuperCI::compute() {
 
   cout << setprecision(8) << " kramers restricted re part rms = " << coeff_->get_real_part()->rms() << endl;
   cout << setprecision(8) << " kramers restricted im part rms = " << coeff_->get_imag_part()->rms() << endl;
+#if 0
+  {   // DEBUG : random scaling
+    bool randscal = idata_->get<bool>("randscal", false);
+    if (randscal) {
+      auto tmp = coeff_->copy();
+      for (int i = 0; i != nact_; ++i) {
+        const double b = (double)rand() / RAND_MAX;
+        const complex<double> fac(cos(b), sin(b));
+        blas::scale_n(fac, tmp->element_ptr(0,2*nclosed_+i), tmp->ndim());
+        blas::scale_n(conj(fac), tmp->element_ptr(0,2*nclosed_+nact_+i), tmp->ndim());
+      }
+      coeff_ = make_shared<const ZMatrix>(*tmp);
+    }
+  }
+#endif
 
   if (nact_)
     fci_->update(coeff_, /*restricted*/true);
