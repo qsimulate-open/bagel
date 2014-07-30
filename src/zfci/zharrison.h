@@ -193,6 +193,7 @@ class ZHarrison : public Method {
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(std::string&& b) const { return rdm2_av_.at(std::bitset<4>(b)); }
     std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const std::bitset<2>& b) const { return rdm1_av_.at(b); }
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
+    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_kramers() { return rdm2_av_; }
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }

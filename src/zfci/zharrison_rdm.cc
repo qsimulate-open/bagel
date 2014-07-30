@@ -282,11 +282,11 @@ void ZHarrison::compute_rdm12() {
       for (int i=0; i!=norb_; ++i) {
         for (int j=0; j!=norb_; ++j) {
           norm2rdm += tmp2rdm->element(j*norb_ + j, i*norb_ + i);
-        } 
-      } 
-    } 
+        }
+      }
+    }
       cout << setprecision(8) << " 2RDM normalization condition = " << real(norm2rdm) << endl;
-  }   
+  }
 #endif
 
 #if 0

@@ -90,7 +90,6 @@ void ZSuperCI::compute() {
       energy_.push_back((fci_->energy())[0]);
       resume_stdcout();
     }
-
 #ifdef BOTHSPACES
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
 #else
@@ -236,7 +235,6 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     natorb_coeff = make_natural_orbitals(rdm1); // NOTE : updates coeff_
     qvec = update_qvec(qvec, natorb_coeff);
     rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
-//    fci_->update_kramers_coeff(natorb_coeff);
   }
 
   shared_ptr<const ZMatrix> cfock;
