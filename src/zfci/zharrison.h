@@ -186,6 +186,7 @@ class ZHarrison : public Method {
 
     void compute_rdm12();
 
+    std::shared_ptr<const ZMatrix> mo2e_full() const;
     std::shared_ptr<const ZMatrix> rdm1_av() const;
     std::shared_ptr<const ZMatrix> rdm2_av() const;
     std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(std::string&& b) const { return rdm1_av_.at(std::bitset<2>(b)); }
