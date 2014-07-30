@@ -203,13 +203,8 @@ namespace btas {
       operator= (const _Tensor& x)
       {
           range_ = range_type(x.range().lobound(), x.range().upbound());
-          //Must leave storage_ untouched until done copying elements of x
-          //into new_storage, because x could be a TensorView referring to
-          //this Tensor
-          storage_type new_storage;
-          array_adaptor<storage_type>::resize(new_storage, range_.area());
-          std::copy(std::begin(x), std::end(x), std::begin(new_storage));
-          std::swap(storage_,new_storage);
+          array_adaptor<storage_type>::resize(storage_, range_.area());
+          std::copy(std::begin(x), std::end(x), std::begin(storage_));
           return *this;
       }
 
@@ -219,13 +214,7 @@ namespace btas {
       operator= (_Tensor&& x)
       {
           range_ = range_type(x.range().lobound(), x.range().upbound());
-          //Must leave storage_ untouched until done copying elements of x
-          //into new_storage, because x could be a TensorView referring to
-          //this Tensor
-          storage_type new_storage;
-          array_adaptor<storage_type>::resize(new_storage, range_.area());
-          std::copy(std::begin(x), std::end(x), std::begin(new_storage));
-          std::swap(storage_,new_storage);
+          storage_ = x.storage();
           return *this;
       }
 
