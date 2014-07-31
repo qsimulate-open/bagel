@@ -96,8 +96,15 @@ class DMRG_Block {
 
     int norb() const { return coeff_->mdim(); }
     int nstates() const { return std::accumulate(blocks_.begin(), blocks_.end(), 0, [] (const int o, const BlockInfo& b) { return o + b.nstates; }); }
+
     std::set<BlockInfo>& blocks() { return blocks_; }
     const std::set<BlockInfo>& blocks() const { return blocks_; }
+
+    BlockInfo blockinfo(const BlockKey k) const {
+      auto iter = std::find_if(blocks_.begin(), blocks_.end(), [&k] (const BlockInfo& b) { return (b.nelea==k.nelea && b.neleb==k.neleb); });
+      assert(iter!=blocks_.end());
+      return *iter;
+    }
 
     const std::map<std::pair<BlockKey, BlockKey>, CouplingBlock>& coupling(const std::list<GammaSQ>& l) const { return sparse_.at(l); }
     std::shared_ptr<const Matrix> h2e(const BlockKey& b) const { return H2e_.at(b); }

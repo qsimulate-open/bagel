@@ -214,7 +214,6 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
       //shared_ptr<const Matrix> hamiltonian_2e = prod_ras->compute_sigma2e();
       //auto hamiltonian_2e = make_shared<Matrix>(civecs.size(), civecs.size());
       //hamiltonian_2e->print();
-      for (auto& i : civecs) i->print();
       for (int i = 0; i < nstates_; ++i)
         sweep_energies_[i].push_back(prod_ras->energy(i));
     }

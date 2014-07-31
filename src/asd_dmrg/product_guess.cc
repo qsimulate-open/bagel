@@ -23,27 +23,15 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/asd_dmrg/product_modelci.h>
 #include <src/asd_dmrg/product_rasci.h>
 
 using namespace std;
 using namespace bagel;
 
-namespace bagel {
-  namespace PRAS {
-    struct Basis : public BlockKey {
-      bitset<nbit__> alpha;
-      bitset<nbit__> beta;
-      int state;
-
-      Basis(const BlockKey K, const int i, const bitset<nbit__> a, const bitset<nbit__> b) : BlockKey(K), alpha(a), beta(b), state(i) {}
-      BlockKey key() const { return BlockKey(this->nelea, this->neleb); }
-    };
-  }
-}
-
 void ProductRASCI::model_guess(vector<shared_ptr<ProductRASCivec>>& out) {
   // First, order elements of denom_ by energy
-  map<double, vector<PRAS::Basis>> ordered_elements;
+  map<double, vector<PCI::Basis>> ordered_elements;
   for (auto& sector : denom_->sectors()) {
     const int nstate = sector.second->nstates();
     for (int ist = 0; ist < nstate; ++ist) {
@@ -59,33 +47,30 @@ void ProductRASCI::model_guess(vector<shared_ptr<ProductRASCivec>>& out) {
   }
 
   // Now, pick the lowest lying elements to form a basis
-  vector<PRAS::Basis> basis;
+  vector<PCI::Basis> basis;
 
   for (auto& p : ordered_elements) {
     basis.insert(basis.end(), p.second.begin(), p.second.end());
     if (basis.size() >= nguess_)
       break;
   }
-  const int nguess = basis.size();
+  const int guess_size = basis.size();
 
   // In the future, I will want to do some sort of spin decontaminate
-#if 0
   shared_ptr<Matrix> hamiltonian = make_shared<ProductCIHamiltonian>(basis, left_, jop_);
-#else
-  shared_ptr<Matrix> hamiltonian = make_shared<Matrix>(basis.size(), basis.size());
-#endif
-  VectorB eigs(nguess);
+  VectorB eigs(guess_size);
   hamiltonian->diagonalize(eigs);
 
-  #if 1
+#if 0
+    cout << "energies from the initial guess:" << endl;
     const double nuc_core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
-    for (int i = 0; i < nguess; ++i)
+    for (int i = 0; i < guess_size; ++i)
       cout << setw(12) << setprecision(8) << eigs(i) + nuc_core << endl;
-  #endif
+#endif
 
-  for (int ibasis = 0; ibasis < nguess; ++ibasis) {
-    const PRAS::Basis b = basis[ibasis];
-    for (int state = 0; state < nguess; ++state)
+  for (int ibasis = 0; ibasis < guess_size; ++ibasis) {
+    const PCI::Basis b = basis[ibasis];
+    for (int state = 0; state < nstate_; ++state)
       out[state]->sector(b.key())->civec(b.state).element(b.beta, b.alpha) = hamiltonian->element(ibasis,state);
   }
 }
