@@ -110,35 +110,37 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
 
   for (int a = max(0, h-ang0_[1]-ang0_[2]); a <= min(ang0_[0], h); ++a) {
     for (int b = max(0, h-a-ang0_[2]); b <= min(ang0_[1], h-a); ++b) {
+      const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
+      if (c0_[index] > 1e-15) {
 
-      double smu = 0.0;
-      for (int j = 0; j != usp.size(); ++j) {
-        if (usp[j] != 0.0) {
-          map<int, array<int, 3>>::const_iterator pj = map_[l].find(j);
-          assert (pj != map_[l].end());
-          const array<int, 3> kj = pj->second;
+        double smu = 0.0;
+        for (int j = 0; j != usp.size(); ++j) {
+          if (usp[j] != 0.0) {
+            map<int, array<int, 3>>::const_iterator pj = map_[l].find(j);
+            assert (pj != map_[l].end());
+            const array<int, 3> kj = pj->second;
 
-          for (int mu = 0; mu <= 2*ld; ++mu) {
-            const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
-            double sAB = 0.0;
-            for (int i = 0; i != usp1.size(); ++i) {
-              if (usp1[i] != 0.0) {
-                map<int, array<int, 3>>::const_iterator pi = map_[ld].find(i);
-                assert (pi != map_[ld].end());
-                const array<int, 3> ki = pi->second;
-                const int x = ki[0] + kj[0] + a;
-                const int y = ki[1] + kj[1] + b;
-                const int z = ki[2] + kj[2] + h-a-b;
-                const double xyz = (x % 2 == 0 && y % 2 == 0 && z % 2 == 0) ? (4.0 * pi__ * df(x-1) * df(y-1) * df(z-1) / df(x+y+z+1)) : 0.0;
-                sAB += usp1[i] * usp[j] * xyz;
+            for (int mu = 0; mu <= 2*ld; ++mu) {
+              const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
+              double sAB = 0.0;
+              for (int i = 0; i != usp1.size(); ++i) {
+                if (usp1[i] != 0.0) {
+                  map<int, array<int, 3>>::const_iterator pi = map_[ld].find(i);
+                  assert (pi != map_[ld].end());
+                  const array<int, 3> ki = pi->second;
+                  const int x = ki[0] + kj[0] + a;
+                  const int y = ki[1] + kj[1] + b;
+                  const int z = ki[2] + kj[2] + h-a-b;
+                  const double xyz = (x % 2 == 0 && y % 2 == 0 && z % 2 == 0) ? (4.0 * pi__ * df(x-1) * df(y-1) * df(z-1) / df(x+y+z+1)) : 0.0;
+                  sAB += usp1[i] * usp[j] * xyz;
+                }
               }
+              smu += zAB_[ld][mu] * sAB;
             }
-            smu += zAB_[ld][mu] * sAB;
           }
         }
+        out += smu*c0_[index];
       }
-      const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
-      out += smu*c0_[index];
     }
   }
 
@@ -155,35 +157,37 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
 
   for (int a = max(0, h-ang1_[1]-ang1_[2]); a <= min(ang1_[0], h); ++a) {
     for (int b = max(0, h-a-ang1_[2]); b <= min(ang1_[1], h-a); ++b) {
+      const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
+      if (c1_[index] > 1e-15) {
 
-      double smu = 0.0;
-      for (int j = 0; j != usp.size(); ++j) {
-        if (usp[j] != 0.0) {
-          map<int, array<int, 3>>::const_iterator pj = map_[l].find(j);
-          assert (pj != map_[l].end());
-          const array<int, 3> kj = pj->second;
+        double smu = 0.0;
+        for (int j = 0; j != usp.size(); ++j) {
+          if (usp[j] != 0.0) {
+            map<int, array<int, 3>>::const_iterator pj = map_[l].find(j);
+            assert (pj != map_[l].end());
+            const array<int, 3> kj = pj->second;
 
-          for (int mu = 0; mu <= 2*ld; ++mu) {
-            const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
-            double sCB = 0.0;
-            for (int i = 0; i != usp1.size(); ++i) {
-              if (usp1[i] != 0.0) {
-                map<int, array<int, 3>>::const_iterator pi = map_[ld].find(i);
-                assert (pi != map_[ld].end());
-                const array<int, 3> ki = pi->second;
-                const int x = ki[0] + kj[0] + a;
-                const int y = ki[1] + kj[1] + b;
-                const int z = ki[2] + kj[2] + h-a-b;
-                const double xyz = (x % 2 == 0 && y % 2 == 0 && z % 2 == 0) ? (4.0 * pi__ * df(x-1) * df(y-1) * df(z-1) / df(x+y+z+1)) : 0.0;
-                sCB += usp1[i] * usp[j] * xyz;
+            for (int mu = 0; mu <= 2*ld; ++mu) {
+              const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
+              double sCB = 0.0;
+              for (int i = 0; i != usp1.size(); ++i) {
+                if (usp1[i] != 0.0) {
+                  map<int, array<int, 3>>::const_iterator pi = map_[ld].find(i);
+                  assert (pi != map_[ld].end());
+                  const array<int, 3> ki = pi->second;
+                  const int x = ki[0] + kj[0] + a;
+                  const int y = ki[1] + kj[1] + b;
+                  const int z = ki[2] + kj[2] + h-a-b;
+                  const double xyz = (x % 2 == 0 && y % 2 == 0 && z % 2 == 0) ? (4.0 * pi__ * df(x-1) * df(y-1) * df(z-1) / df(x+y+z+1)) : 0.0;
+                  sCB += usp1[i] * usp[j] * xyz;
+                }
               }
+              smu += zCB_[ld][mu] * sCB;
             }
-            smu += zCB_[ld][mu] * sCB;
           }
         }
+        out += smu*c1_[index];
       }
-      const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
-      out += smu*c1_[index];
     }
   }
 
@@ -343,9 +347,9 @@ void SOBatch::init() {
     vector<double> zAB_l(2*l+1, 0.0), zCB_l(2*l+1, 0.0);
     for (int m = 0; m <= 2*l; ++m) {
       auto shAB = make_shared<SphHarmonics>(l, m-l, AB_);
-      zAB_l[m] = (dAB_ == 0 ? (1.0/sqrt(4.0*pi__)) : shAB->zlm());
+      zAB_l[m] = (dAB_ < 1e-12 ? (1.0/sqrt(4.0*pi__)) : shAB->zlm());
       auto shCB = make_shared<SphHarmonics>(l, m-l, CB_);
-      zCB_l[m] = (dCB_ == 0 ? (1.0/sqrt(4.0*pi__)) : shCB->zlm());
+      zCB_l[m] = (dCB_ < 1e-12 ? (1.0/sqrt(4.0*pi__)) : shCB->zlm());
     }
     zAB_.push_back(zAB_l);
     zCB_.push_back(zCB_l);
@@ -372,25 +376,7 @@ void SOBatch::init() {
 }
 
 void SOBatch::print() const {
-
-  cout << "Compute the integral < shell_0 | lm > exp(-zeta r^n) < lm | shell_1> r^2 dr " << endl;
-  cout << "Shell 0" << basisinfo_[0]->show() << endl;
-  cout << "Shell 1" << basisinfo_[1]->show() << endl;
-  cout << "ECP parameters" << endl;
+  cout << "+++ Shell 0 +++" << endl << basisinfo_[0]->show() << endl;
+  cout << "+++ Shell 1 +++" << endl << basisinfo_[1]->show() << endl;
   so_->print();
-
 }
-
-void SOBatch::print_one_centre(array<double, 3> posA, const array<int, 3> lxyz, const double expA,
-                               array<double, 3> posB, const array<int, 2> lm, const double r) const {
-
-  cout << "Project one centre <phiA | lmB> (r)" << endl;
-  cout << "A = (" << posA[0] << ", " << posA[1] << ", " << posA[2] << ")" << endl;
-  cout << "B = (" << posB[0] << ", " << posB[1] << ", " << posB[2] << ")" << endl;
-  cout << "(kx, ky, kz) = (" << lxyz[0] << ", " << lxyz[1] << ", " << lxyz[2] << ")" << endl;
-  cout << "(l, m)       = (" << lm[0] << ", " << lm[1] << ")" << endl;
-  cout << "alpha = " << setw(15) << setprecision(9) << expA << endl;
-  cout << "r     = " << setw(15) << setprecision(9) << r << endl;
-
-}
-

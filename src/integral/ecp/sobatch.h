@@ -69,8 +69,6 @@ class SOBatch : public RadialInt {
 
     void init();
     void print() const;
-    void print_one_centre(std::array<double, 3> posA, const std::array<int, 3> lxyz, const double expA,
-                          std::array<double, 3> posB, const std::array<int, 2> lm, const double r) const;
 
 };
 
