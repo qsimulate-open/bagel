@@ -180,7 +180,7 @@ CIHamiltonian::CIHamiltonian(vector<SD> b, shared_ptr<const MOFile> jop) : Matri
   this->fill_upper();
 }
 
-namespace {
+namespace bagel {
 
 class CISpinTask : public CITask<CISpinTask> {
   protected:
