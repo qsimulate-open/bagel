@@ -27,6 +27,7 @@
 
 #include <src/asd_dmrg/form_sigma.h>
 #include <src/ras/form_sigma.h>
+#include <src/ras/apply_operator.h>
 
 using namespace std;
 using namespace bagel;
@@ -78,13 +79,12 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
     shared_ptr<const Matrix> mo1e = jop->monomer_jop<1>()->mo1e()->matrix();
     const double* const mo1e_data = mo1e->data();
 
-    const int npq = cc->left()->norb() * cc->left()->norb();
+    const int lnorb = cc->left()->norb();
+    const int npq = lnorb * lnorb;
     for (int pq = 0; pq < npq; ++pq) {
       blas::ax_plus_y_n(mo1e_data[pq], &(*alpha)(0,0,pq), pure_block.size(), pure_block.data());
       blas::ax_plus_y_n(mo1e_data[pq], &(*beta)(0,0,pq), pure_block.size(), pure_block.data());
     }
-
-    pure_block.print();
 
     shared_ptr<RASBlockVectors> sigma_sector = sector.second;
     shared_ptr<const RASBlockVectors> cc_sector = cc->sector(sector.first);
@@ -95,5 +95,47 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
     FormSigmaRAS form_pure_ras(batchsize_);
     for(int ist = 0; ist < nsecstates; ++ist)
       form_pure_ras(cc_sector->civec(ist), sigma_sector->civec(ist), jop->monomer_jop<0>());
+
+    const int rnorb = jop->monomer_jop<0>()->nocc();
+
+    // and now for the interaction part
+    Matrix gamma_rs(nsecstates, nsecstates);
+    const int nsecsize = nsecstates * nsecstates;
+
+    RASBlockVectors sector_rs(cc_sector->det(), cc_sector->left_state());
+    ApplyOperator apply;
+
+    for (int r = 0, rs = 0; r < rnorb; ++r) {
+      for (int s = 0; s < rnorb; ++s, ++rs) {
+        // Prepare Gamma_IJ^alpha quantity
+        gamma_rs.zero();
+        for (int p = 0, pq = 0; p < lnorb; ++p) {
+          for (int q = 0; q < lnorb; ++q, ++pq) {
+            blas::ax_plus_y_n(jop->mo2e(rnorb+p,rnorb+q,r,s) - jop->mo2e(rnorb+p,r,rnorb+q,s), &(*alpha)(0,0,pq), nsecsize, gamma_rs.data());
+            blas::ax_plus_y_n(jop->mo2e(rnorb+p,rnorb+q,r,s)                                 , &(*beta)(0,0,pq) , nsecsize, gamma_rs.data());
+          }
+        }
+        // apply (r^dagger s)_alpha to the Civecs
+        sector_rs.zero();
+        for (int ist = 0; ist < nsecstates; ++ist)
+          apply(cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}, {r,s});
+        dgemm_("N","N", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), gamma_rs.data(), gamma_rs.ndim(),
+                                                                                          1.0, sigma_sector->data(), sigma_sector->ndim());
+        // Prepare Gamma_IJ^beta quantity
+        gamma_rs.zero();
+        for (int p = 0, pq = 0; p < lnorb; ++p) {
+          for (int q = 0; q < lnorb; ++q, ++pq) {
+            blas::ax_plus_y_n(jop->mo2e(rnorb+p,rnorb+q,r,s) - jop->mo2e(rnorb+p,r,rnorb+q,s), &(*beta)(0,0,pq) , nsecsize, gamma_rs.data());
+            blas::ax_plus_y_n(jop->mo2e(rnorb+p,rnorb+q,r,s)                                 , &(*alpha)(0,0,pq), nsecsize, gamma_rs.data());
+          }
+        }
+        // apply (r^dagger s)_beta to the Civecs
+        sector_rs.zero();
+        for (int ist = 0; ist < nsecstates; ++ist)
+          apply(cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}, {r,s});
+        dgemm_("N","N", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), gamma_rs.data(), gamma_rs.ndim(),
+                                                                                          1.0, sigma_sector->data(), sigma_sector->ndim());
+      }
+    }
   }
 }

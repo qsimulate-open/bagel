@@ -61,6 +61,7 @@ class RASBlockVectors : public Matrix {
     RASCivecView civec(const int i) { return RASCivecView(det_, element_ptr(0,i)); }
     const RASCivecView civec(const int i) const { return RASCivecView(det_, element_ptr(0,i)); }
 
+    BlockInfo left_state() const { return left_state_; }
     int nstates() const { return left_state_.nstates; }
     std::shared_ptr<const RASDeterminants> det() const { return det_; }
 
