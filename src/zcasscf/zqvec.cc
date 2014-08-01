@@ -231,15 +231,21 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   assert(dffullr.size() == 1);
   shared_ptr<const RelDFFull> fullrs = dffullr.front();
 
-  // (5) form (rs|tu) where r runs fastest
-  shared_ptr<const ZMatrix> rstu = fullrs->form_4index(fulltu, 1.0);
-  shared_ptr<const ZMatrix> rdm2 = fci->rdm2_av()->get_conjg();
-  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(nbasis*2,nact*2);
+  // (5) form (rs|tu)*G(vs,tu) where r runs fastest
+//  shared_ptr<const ZMatrix> rstu = fullrs->form_4index(fulltu, 1.0);
+  shared_ptr<const ZMatrix> rdm2 = fci->rdm2_av();
+  auto rdm2_av = make_shared<ZRDM<2>>(nact*2);
+  copy_n(rdm2->data(), nact*nact*nact*nact*16, rdm2_av->data());
+
+  shared_ptr<ZMatrix> out;
+  shared_ptr<const RelDFFull> fulltu_d = fulltu->apply_2rdm(rdm2_av);
+  out = fullrs->form_2index(fulltu_d, 1.0, false);
 
   // (6) form Qrv = (rs|tu) * G(vs,tu)^*
-  zgemm3m_("N", "N", nbasis*2, nact*2, nact*nact*nact*8, 1.0, rstu->data(), nbasis*2, rdm2->data(), nact*nact*nact*8, 0.0, out->data(), nbasis*2);
+//  zgemm3m_("N", "N", nbasis*2, nact*2, nact*nact*nact*8, 1.0, rstu->data(), nbasis*2, rdm2->data(), nact*nact*nact*8, 0.0, out->data(), nbasis*2);
 
-  *this = -1.0 * *out;
+  *this = *out;
+
 #if 0
   complex<double> en = 0.0;
   for (int i = 0; i != nact*2; ++i) en += element(i+nclosed*2, i) * 0.5;
