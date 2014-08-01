@@ -24,6 +24,7 @@
 //
 
 #include <src/asd_dmrg/product_rasci.h>
+#include <src/asd_dmrg/form_sigma.h>
 #include <src/math/davidson.h>
 
 using namespace std;
@@ -121,16 +122,7 @@ void ProductRASCI::compute() {
   DavidsonDiag<ProductRASCivec> davidson(nstate_, davidson_subspace_);
 
   // Object in charge of forming sigma vector
-  //FormSigmaProductRAS form_sigma(batchsize_);
-
-  // place-holder of form sigma for now
-  auto form_sigma = [] (vector<shared_ptr<ProductRASCivec>>& cc, shared_ptr<DimerJop> jop, vector<bool> conv) {
-    vector<shared_ptr<ProductRASCivec>> out;
-    const int nstates = cc.size();
-    for (int i = 0; i < nstates; ++i)
-      out.push_back(conv[i] ? nullptr : cc[i]->clone());
-    return out;
-  };
+  FormSigmaProdRAS form_sigma(batchsize_);
 
   // main iteration starts here
   cout << "  === ProductRAS-CI iterations ===" << endl << endl;
@@ -168,7 +160,7 @@ void ProductRASCI::compute() {
     }
     pdebug.tick_print("error");
 
-    if (all_of(converged.begin(), converged.end(), [] (const bool b) { return b; })) {
+    if (!all_of(converged.begin(), converged.end(), [] (const bool b) { return b; })) {
       // denominator scaling
       for (int ist = 0; ist != nstate_; ++ist) {
         if (converged[ist]) continue;

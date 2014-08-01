@@ -42,14 +42,13 @@ class FormSigmaRAS {
     std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> ccvec, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
     /// Applies Hamiltonian to cc using the provided 1e and 2e integrals, skipping the vectors marked as converged
     std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> ccvec, std::shared_ptr<const Matrix> mo1e, std::shared_ptr<const Matrix> mo2e, const std::vector<int>& conv) const;
+    void operator()(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<const MOFile> jop) const;
 
   private:
     // Helper functions for sigma formation
-    void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* g, const double* mo2e) const;
-    void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* g, const double* mo2e) const;
-    void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* mo2e) const;
-
-    //void sigma_ab_1(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* mo2e) const;
+    void sigma_aa(const RASCivecView cc, RASCivecView sigma, const double* g, const double* mo2e) const;
+    void sigma_bb(const RASCivecView cc, RASCivecView sigma, const double* g, const double* mo2e) const;
+    void sigma_ab(const RASCivecView cc, RASCivecView sigma, const double* mo2e) const;
 };
 
 }
