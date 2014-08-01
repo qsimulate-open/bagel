@@ -50,6 +50,7 @@ void ZSuperCI::compute() {
   {   // DEBUG : random scaling
     bool randscal = idata_->get<bool>("randscal", false);
     if (randscal) {
+      cout << " RANDOM SCALING OF THE ACTIVE COEFFICIENT " << endl;
       auto tmp = coeff_->copy();
       for (int i = 0; i != nact_; ++i) {
         const double b = (double)rand() / RAND_MAX;

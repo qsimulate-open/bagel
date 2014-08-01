@@ -39,6 +39,9 @@ class ZQvec : public ZMatrix {
           std::shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit);
 
     ZQvec(const ZMatrix& a) : ZMatrix(a) {}
+
+    ZQvec(const int n, const int m, std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> rcoeff, std::shared_ptr<const ZMatrix> acoeff, const int nclosed,
+          std::shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit);
 };
 
 }

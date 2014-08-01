@@ -34,6 +34,7 @@ using namespace bagel;
 ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> coeff, const int nclosed,
              shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit)
  : ZMatrix(nbasis*2, nact*2) {
+  // TODO : this constructor is wrong; the 2RDM should be conjugated so the result is phase invariant. This could be corrected if the RDM class had get_conjg.
 
   assert(gaunt || !breit);
   if (gaunt) throw logic_error("Gaunt not implemented yet in ZQvec");
@@ -157,6 +158,91 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
 #if 0
   complex<double> en = 0.0;
   for (int i = 0; i != nact*2; ++i) en += element(i+nclosed*2, i) * 0.5;
-  cout << setprecision(10) << en << endl;
+  cout << setprecision(16) << " active space 2ele energy        = " << en << endl;
+#endif
+}
+
+
+ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> rcoeff, shared_ptr<const ZMatrix> acoeff, const int nclosed,
+             shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit)
+ : ZMatrix(nbasis*2, nact*2) {
+
+  assert(gaunt || !breit);
+  if (gaunt) throw logic_error("Gaunt not implemented yet in ZQvec");
+  assert((rcoeff->slice(nclosed*2,(nclosed+nact)*2) - *fci->jop()->coeff()).rms() < 1.0e-15);
+  assert(nbasis*2 == rcoeff->mdim());
+
+  // (1) Sepeate real and imaginary parts for pcoeff
+  array<shared_ptr<const Matrix>, 4> racoeff;
+  array<shared_ptr<const Matrix>, 4> iacoeff;
+  array<shared_ptr<const Matrix>, 4> rrcoeff;
+  array<shared_ptr<const Matrix>, 4> ircoeff;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> ac = acoeff->get_submatrix(i*acoeff->ndim()/4, 0, acoeff->ndim()/4, acoeff->mdim());
+    shared_ptr<const ZMatrix> rc = rcoeff->get_submatrix(i*rcoeff->ndim()/4, 0, rcoeff->ndim()/4, rcoeff->mdim());
+    racoeff[i] = ac->get_real_part();
+    iacoeff[i] = ac->get_imag_part();
+    rrcoeff[i] = rc->get_real_part();
+    ircoeff[i] = rc->get_imag_part();
+  }
+  // (1.5) dfdists
+  vector<shared_ptr<const DFDist>> dfs = geom->dfs()->split_blocks();
+  dfs.push_back(geom->df());
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+  // (2) half transform
+  list<shared_ptr<RelDFHalf>> half_complexa = DFock::make_half_complex(dfdists, racoeff, iacoeff);
+  list<shared_ptr<RelDFHalf>> half_complexr = DFock::make_half_complex(dfdists, rrcoeff, ircoeff);
+  for (auto& i : half_complexr)
+    i = i->apply_J()->apply_J();
+
+  // (3) split and factorize
+  list<shared_ptr<RelDFHalf>> half_complex_factr;
+  for (auto& i : half_complexr) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_factr.insert(half_complex_factr.end(), tmp.begin(), tmp.end());
+  }
+  half_complexr.clear();
+
+  list<shared_ptr<RelDFHalf>> half_complex_facta;
+  for (auto& i : half_complexa) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facta.insert(half_complex_facta.end(), tmp.begin(), tmp.end());
+  }
+  half_complexa.clear();
+  DFock::factorize(half_complex_factr);
+  DFock::factorize(half_complex_facta);
+
+  // (4) compute (gamma|tu)
+  list<shared_ptr<RelDFFull>> dffulla;
+  for (auto& i : half_complex_facta)
+    dffulla.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff));
+  DFock::factorize(dffulla);
+  dffulla.front()->scale(dffulla.front()->fac()); // take care of the factor
+  assert(dffulla.size() == 1);
+  shared_ptr<const RelDFFull> fulltu = dffulla.front();
+
+  // (4.5) compute (gamma|rs)
+  list<shared_ptr<RelDFFull>> dffullr;
+  for (auto& i : half_complex_factr)
+    dffullr.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff)); // <- only difference from the Coulomb version
+  DFock::factorize(dffullr);
+  dffullr.front()->scale(dffullr.front()->fac()); // take care of the factor
+  assert(dffullr.size() == 1);
+  shared_ptr<const RelDFFull> fullrs = dffullr.front();
+
+  // (5) form (rs|tu) where r runs fastest
+  shared_ptr<const ZMatrix> rstu = fullrs->form_4index(fulltu, 1.0);
+  shared_ptr<const ZMatrix> rdm2 = fci->rdm2_av()->get_conjg();
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(nbasis*2,nact*2);
+
+  // (6) form Qrv = (rs|tu) * G(vs,tu)
+  zgemm3m_("N", "N", nbasis*2, nact*2, nact*nact*nact*8, 1.0, rstu->data(), nbasis*2, rdm2->data(), nact*nact*nact*8, 0.0, out->data(), nbasis*2);
+
+  *this = *out;
+#if 0
+  complex<double> en = 0.0;
+  for (int i = 0; i != nact*2; ++i) en += element(i+nclosed*2, i) * 0.5;
+  cout << setprecision(16) << " new active space 2ele energy        = " << en << endl;
 #endif
 }
