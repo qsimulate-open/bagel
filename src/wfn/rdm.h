@@ -132,6 +132,16 @@ class RDM : public btas::TensorN<DataType, rank*2> {
       return out;
     }
 
+    template<typename T = DataType,
+             class = typename std::enable_if<std::is_same<T,std::complex<double>>::value>::type
+            >
+    std::shared_ptr<RDM<rank,std::complex<double>>> get_conjg() const {
+      auto out = this->copy();
+      for (auto& d : *out)
+        d = std::conj(d);
+      return out;
+    }
+
     void print(const double thresh = 1.0e-3) const { throw std::logic_error("RDM<N>::print() (N>3) not implemented yet"); }
 };
 
