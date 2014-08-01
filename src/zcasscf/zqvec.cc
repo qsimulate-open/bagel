@@ -192,25 +192,16 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
 
   // (2) half transform
   list<shared_ptr<RelDFHalf>> half_complexa = DFock::make_half_complex(dfdists, racoeff, iacoeff);
-  list<shared_ptr<RelDFHalf>> half_complexr = DFock::make_half_complex(dfdists, rrcoeff, ircoeff);
-  for (auto& i : half_complexr)
-    i = i->apply_J()->apply_J();
+  for (auto& i : half_complexa)
+    i = i->apply_J();
 
   // (3) split and factorize
-  list<shared_ptr<RelDFHalf>> half_complex_factr;
-  for (auto& i : half_complexr) {
-    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
-    half_complex_factr.insert(half_complex_factr.end(), tmp.begin(), tmp.end());
-  }
-  half_complexr.clear();
-
   list<shared_ptr<RelDFHalf>> half_complex_facta;
   for (auto& i : half_complexa) {
     list<shared_ptr<RelDFHalf>> tmp = i->split(false);
     half_complex_facta.insert(half_complex_facta.end(), tmp.begin(), tmp.end());
   }
   half_complexa.clear();
-  DFock::factorize(half_complex_factr);
   DFock::factorize(half_complex_facta);
 
   // (4) compute (gamma|tu)
@@ -224,15 +215,14 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
 
   // (4.5) compute (gamma|rs)
   list<shared_ptr<RelDFFull>> dffullr;
-  for (auto& i : half_complex_factr)
-    dffullr.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff)); // <- only difference from the Coulomb version
+  for (auto& i : half_complex_facta)
+    dffullr.push_back(make_shared<RelDFFull>(i, rrcoeff, ircoeff)); // <- only difference from the Coulomb version
   DFock::factorize(dffullr);
   dffullr.front()->scale(dffullr.front()->fac()); // take care of the factor
   assert(dffullr.size() == 1);
   shared_ptr<const RelDFFull> fullrs = dffullr.front();
 
   // (5) form (rs|tu)*G(vs,tu) where r runs fastest
-//  shared_ptr<const ZMatrix> rstu = fullrs->form_4index(fulltu, 1.0);
   shared_ptr<const ZMatrix> rdm2 = fci->rdm2_av();
   auto rdm2_av = make_shared<ZRDM<2>>(nact*2);
   copy_n(rdm2->data(), nact*nact*nact*nact*16, rdm2_av->data());
@@ -240,9 +230,6 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   shared_ptr<ZMatrix> out;
   shared_ptr<const RelDFFull> fulltu_d = fulltu->apply_2rdm(rdm2_av);
   out = fullrs->form_2index(fulltu_d, 1.0, false);
-
-  // (6) form Qrv = (rs|tu) * G(vs,tu)^*
-//  zgemm3m_("N", "N", nbasis*2, nact*2, nact*nact*nact*8, 1.0, rstu->data(), nbasis*2, rdm2->data(), nact*nact*nact*8, 0.0, out->data(), nbasis*2);
 
   *this = *out;
 
