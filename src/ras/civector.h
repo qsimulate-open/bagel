@@ -653,9 +653,11 @@ class RASCivecView_ : public RASCivector_impl<DataType, RASCivecView_<DataType>>
     using RASCivector_base<RASBlock<DataType>>::blocks_;
 
     double* const data_ptr_;
+    bool can_write_;
 
   public:
-    RASCivecView_(std::shared_ptr<const RASDeterminants> det, double* const data) : RASCivector_impl<DataType, RASCivecView_<DataType>>(det), data_ptr_(data) {
+    RASCivecView_(std::shared_ptr<const RASDeterminants> det, double* const data) : RASCivector_impl<DataType, RASCivecView_<DataType>>(det),
+                                                                                    data_ptr_(data), can_write_(true) {
       size_t sz = 0;
       for (auto& ipair : det->blockinfo()) {
         if (!ipair->empty()) {
@@ -667,14 +669,29 @@ class RASCivecView_ : public RASCivector_impl<DataType, RASCivecView_<DataType>>
         }
       }
     }
+    RASCivecView_(std::shared_ptr<const RASDeterminants> det, const double* const data) : RASCivector_impl<DataType, RASCivecView_<DataType>>(det),
+                                                                                          data_ptr_(const_cast<DataType*>(data)), can_write_(false) {
+      size_t sz = 0;
+      for (auto& ipair : det->blockinfo()) {
+        if (!ipair->empty()) {
+          blocks_.push_back(std::make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), data_ptr_+sz, sz));
+          sz += blocks_.back()->size();
+        }
+        else {
+          blocks_.push_back(nullptr);
+        }
+      }
+    }
 
     RASCivecView_(RASCivector<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
     RASCivecView_(RASCivecView_<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
-    RASCivecView_(RASCivecView_<DataType>&& o) : RASCivecView_(o.det(), o.data()) {}
+
+    RASCivecView_(const RASCivector<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
+    RASCivecView_(const RASCivecView_<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
 
     using RASCivector_base<RASBlock<DataType>>::det;
 
-    DataType* data_impl() { return data_ptr_; }
+    DataType* data_impl() { assert(can_write_); return data_ptr_; }
     const DataType* data_impl() const { return data_ptr_; }
 
     DataType dot_product(const RASCivector<DataType>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(o); }
