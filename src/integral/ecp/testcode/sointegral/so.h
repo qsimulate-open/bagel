@@ -72,7 +72,7 @@ class Angular {
       for (int i = 0; i != n1; ++i) {
         for (int j = n1; j != n1 + n2; ++j) {
           const double coeff = usp[i].first * usp[j].first;
-          array<int, 3> ki;
+          array<int, 3> ki = {{0, 0, 0}};
           int id = usp[i].second;
           int kz = 0;
           for (int lp1 = l1+1; lp1 != 0; --lp1) {
@@ -86,7 +86,7 @@ class Angular {
               id -= lp1;
             }
           }
-          array<int, 3> kj;
+          array<int, 3> kj = {{0, 0, 0}};
           id = usp[j].second;
           kz = 0;
           for (int lp1 = l2+1; lp1 != 0; --lp1) {
@@ -150,19 +150,29 @@ class Angular {
 
 class SOIntegral { /* ACB */
   protected:
-    shared_ptr<CartesianGauss> cartA_, cartB_;
-    shared_ptr<SphHarmonics> sphC_;
+    shared_ptr<const CartesianGauss> cartA_, cartB_;
+    shared_ptr<const SphHarmonics> sphC_;
 
     array<double, 3> AB_, CA_, CB_;
     double dAB_, dCA_, dCB_;
 
+    double ecp_exp_;
+    int ecp_r_;
+    int ic_;
+
   public:
-    SOIntegral(shared_ptr<CartesianGauss> cA, shared_ptr<CartesianGauss> cB, shared_ptr<SphHarmonics> sC)
-      : cartA_(cA), cartB_(cB), sphC_(sC) { init(); }
+    SOIntegral(tuple<shared_ptr<const CartesianGauss>, shared_ptr<const CartesianGauss>, shared_ptr<const SphHarmonics>, double, int, int> so)
+      : cartA_(get<0>(so)),
+        cartB_(get<1>(so)),
+        sphC_(get<2>(so)),
+        ecp_exp_(get<3>(so)),
+        ecp_r_(get<4>(so)),
+        ic_(get<5>(so))
+      { init(); }
 
     ~SOIntegral() {}
 
-    array<double, 3> compute_mlm(const int m1, const int m2, const int l) {
+    double compute_mlm(const int m1, const int m2, const int l) const {
 
        array<double, 3> out = {{0.0, 0.0, 0.0}};
        const double tau1 = (m1 < 0) ? 0.0 : 1.0;
@@ -179,7 +189,7 @@ class SOIntegral { /* ACB */
        out[1] = real(ab);
        out[2] = real(ab);
 
-       return out;
+       return out[ic_];
     }
 
     double compute_radial(const int N, const int l1, const int l2, const double k1, const double k2, const double a, const double r) const {
@@ -192,8 +202,8 @@ class SOIntegral { /* ACB */
       return pow(r, N) * exp(-a*r*r) * b1 * b2;
     }
 
-    array<double, 3> compute(const double r) {
-      array<double, 3> out = {{0.0, 0.0, 0.0}};
+    double compute(const double r) const {
+      double out = 0.0;
 
       const double expA = cartA_->exponent();
       const double expB = cartB_->exponent();
@@ -211,23 +221,24 @@ class SOIntegral { /* ACB */
           const int gmin = abs(ld-l)+abs(mu-l);
           const int gmax = jA-(jA-abs(ld-l))%2 + jB-(jB-abs(mu-l))%2;
           for (int g = gmin; g != gmax; g += 2) {
-            const double Qldmu = compute_radial(g, ld, mu, 2.0*expA*dCA_*r, 2.0*expB*dCB_*r, expA+expB, r);
-            const int hmin = max(abs(ld-l), g-(jA-abs(ld-l))%2);
+            const int hmin = max(abs(ld-l), g-(jB-(jB-abs(ld-l))%2));
             const int hmax = min(jA-(jA-abs(ld-l))%2, g-abs(mu-l));
+            double tmp = 0.0;
             for (int h = hmin; h != hmax; h +=2) {
               for (int m1 = 0; m1 != 2*l; ++m1) {
                 for (int m2 = 0; m2 != m1-1; ++m2) {
-                  const array<double, 3> fmm = compute_mlm(m1-l, m2-l, l);
-                  for (int i = 0; i != 3; ++i)
-                    out[i] += coeff * Qldmu * (pA->compute(h, ld, l, m1-l)*pB->compute(g-h, mu, l, m2-l) - pA->compute(h, ld, l, m2-l)*pB->compute(g-h, mu, l, m1-l)) * fmm[i];
+                  const double fmm = compute_mlm(m1-l, m2-l, l);
+                  tmp += (pA->compute(h, ld, l, m1-l)*pB->compute(g-h, mu, l, m2-l) - pA->compute(h, ld, l, m2-l)*pB->compute(g-h, mu, l, m1-l)) * fmm;
                 }
               }
             }
+            const double Qldmu = compute_radial(g, ld, mu, 2.0*expA*dCA_*r, 2.0*expB*dCB_*r, expA+expB, r);
+            out += Qldmu * tmp;
           }
         }
       }
 
-      return out;
+      return out * coeff * exp(-ecp_exp_*r*r) * pow(r, ecp_r_);
     }
 
     void init() {
