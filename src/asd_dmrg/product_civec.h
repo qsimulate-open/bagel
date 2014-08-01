@@ -29,7 +29,7 @@
 #include <algorithm>
 
 #include <src/ras/ras_space.h>
-#include <src/asd_dmrg/block_key.h>
+#include <src/asd_dmrg/dmrg_block.h>
 #include <src/math/matrix.h>
 #include <src/ras/civector.h>
 
@@ -59,6 +59,7 @@ class RASBlockVectors : public Matrix {
       return out;
     }
     RASCivecView civec(const int i) { return RASCivecView(det_, element_ptr(0,i)); }
+    const RASCivecView civec(const int i) const { return RASCivecView(det_, element_ptr(0,i)); }
 
     int nstates() const { return left_state_.nstates; }
     std::shared_ptr<const RASDeterminants> det() const { return det_; }
@@ -75,21 +76,20 @@ class ProductRASCivec {
   protected:
     std::map<BlockKey, std::shared_ptr<RASBlockVectors>> sectors_; ///< The key for sectors_ specifies information for the left_block
     std::shared_ptr<RASSpace> space_;
-
-    std::set<BlockInfo> lblocks_;
+    std::shared_ptr<const DMRG_Block> left_;
 
     int nelea_;
     int neleb_;
 
   public:
-    ProductRASCivec(std::shared_ptr<RASSpace> space, const std::set<BlockInfo>& left_blocks, const int nelea, const int neleb); ///< Constructor
+    ProductRASCivec(std::shared_ptr<RASSpace> space, std::shared_ptr<const DMRG_Block> left, const int nelea, const int neleb); ///< Constructor
     ProductRASCivec(const ProductRASCivec& o); ///< Copy-constructor
     ProductRASCivec(ProductRASCivec&& o); ///< Move-constructor
 
     ProductRASCivec& operator=(const ProductRASCivec& o); ///< Copy-assignment
     ProductRASCivec& operator=(ProductRASCivec&& o); ///< Move-assignment
 
-    std::shared_ptr<ProductRASCivec> clone() const { return std::make_shared<ProductRASCivec>(space_, lblocks_, nelea_, neleb_); }
+    std::shared_ptr<ProductRASCivec> clone() const { return std::make_shared<ProductRASCivec>(space_, left_, nelea_, neleb_); }
     std::shared_ptr<ProductRASCivec> copy() const { return std::make_shared<ProductRASCivec>(*this); }
 
     int nelea() const { return nelea_; }
@@ -99,16 +99,17 @@ class ProductRASCivec {
       return std::accumulate(sectors_.begin(), sectors_.end(), 0ul, [] (const size_t a, const std::pair<const BlockKey, std::shared_ptr<RASBlockVectors>>& p) { return a+p.second->size(); });
     }
 
-    const std::set<BlockInfo>& lblocks() const { return lblocks_; }
+    std::shared_ptr<const DMRG_Block> left() const { return left_; }
+    const std::set<BlockInfo>& lblocks() const { return left_->blocks(); }
 
-    std::map<BlockKey, std::shared_ptr<RASBlockVectors>> sectors() { return sectors_; }
-    const std::map<BlockKey, std::shared_ptr<RASBlockVectors>> sectors() const { return sectors_; }
+    std::map<BlockKey, std::shared_ptr<RASBlockVectors>>& sectors() { return sectors_; }
+    const std::map<BlockKey, std::shared_ptr<RASBlockVectors>>& sectors() const { return sectors_; }
 
     std::shared_ptr<RASBlockVectors> sector(const BlockKey& b) { return sectors_.at(b); }
     std::shared_ptr<const RASBlockVectors> sector(const BlockKey& b) const { return sectors_.at(b); }
 
     bool matches(const ProductRASCivec& o) const {
-      return (*space_==*o.space_ && std::make_pair(nelea_,neleb_)==std::make_pair(o.nelea(),o.neleb()) && std::equal(lblocks_.begin(), lblocks_.end(), o.lblocks_.begin()));
+      return (*space_==*o.space_ && std::make_pair(nelea_,neleb_)==std::make_pair(o.nelea(),o.neleb()) && lblocks()==o.lblocks());
     }
 
     void scale(const double a);

@@ -107,7 +107,7 @@ void ProductRASCI::compute() {
 
   // Creating an initial CI vector
   vector<shared_ptr<ProductRASCivec>> cc(nstate_);
-  generate(cc.begin(), cc.end(), [this] () { return make_shared<ProductRASCivec>(space_, left_->blocks(), nelea_, neleb_); });
+  generate(cc.begin(), cc.end(), [this] () { return make_shared<ProductRASCivec>(space_, left_, nelea_, neleb_); });
 
   // find determinants that have small diagonal energies
   model_guess(cc);

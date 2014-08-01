@@ -30,10 +30,10 @@ using namespace std;
 using namespace bagel;
 
 // Constructor
-ProductRASCivec::ProductRASCivec(shared_ptr<RASSpace> space, const set<BlockInfo>& left_blocks, const int nelea, const int neleb) :
-  space_(space), lblocks_(left_blocks), nelea_(nelea), neleb_(neleb) {
+ProductRASCivec::ProductRASCivec(shared_ptr<RASSpace> space, shared_ptr<const DMRG_Block> left, const int nelea, const int neleb) :
+  space_(space), left_(left), nelea_(nelea), neleb_(neleb) {
 
-  for (auto& block : lblocks_) {
+  for (auto& block : lblocks()) {
     const int na = nelea_ - block.nelea;
     const int nb = neleb_ - block.neleb;
 
@@ -46,7 +46,7 @@ ProductRASCivec::ProductRASCivec(shared_ptr<RASSpace> space, const set<BlockInfo
 
 
 /// Copy-constructor
-ProductRASCivec::ProductRASCivec(const ProductRASCivec& o) : space_(o.space_), lblocks_(o.lblocks_), nelea_(o.nelea_), neleb_(o.neleb_) {
+ProductRASCivec::ProductRASCivec(const ProductRASCivec& o) : space_(o.space_), left_(o.left_), nelea_(o.nelea_), neleb_(o.neleb_) {
   for (auto& sec : o.sectors_)
     sectors_.emplace(sec.first, make_shared<RASBlockVectors>(*sec.second));
 }
@@ -54,14 +54,14 @@ ProductRASCivec::ProductRASCivec(const ProductRASCivec& o) : space_(o.space_), l
 
 /// Move-constructor
 ProductRASCivec::ProductRASCivec(ProductRASCivec&& o) : sectors_(move(o.sectors_)), space_(move(o.space_)),
-  lblocks_(move(o.lblocks_)), nelea_(o.nelea_), neleb_(o.neleb_) {}
+  left_(o.left_), nelea_(o.nelea_), neleb_(o.neleb_) {}
 
 
 /// Copy-assignment
 ProductRASCivec& ProductRASCivec::operator=(const ProductRASCivec& o) {
   nelea_ = o.nelea_;
   neleb_ = o.neleb_;
-  lblocks_ = o.lblocks_;
+  left_ = o.left_;
   space_ = o.space_;
   sectors_.clear();
   for (auto& osec : o.sectors_)
@@ -74,7 +74,7 @@ ProductRASCivec& ProductRASCivec::operator=(const ProductRASCivec& o) {
 ProductRASCivec& ProductRASCivec::operator=(ProductRASCivec&& o) {
   nelea_ = o.nelea_;
   neleb_ = o.neleb_;
-  lblocks_ = move(o.lblocks_);
+  left_ = move(o.left_);
   space_ = move(o.space_);
   sectors_ = move(o.sectors_);
 
@@ -90,7 +90,7 @@ void ProductRASCivec::scale(const double a) {
 double ProductRASCivec::dot_product(const ProductRASCivec& o) const {
   assert(matches(o));
   double out = 0.0;
-  for (auto& b : lblocks_)
+  for (auto& b : lblocks())
     out += sectors_.at(b)->dot_product(*o.sectors_.at(b));
   return out;
 }
@@ -98,7 +98,7 @@ double ProductRASCivec::dot_product(const ProductRASCivec& o) const {
 
 void ProductRASCivec::ax_plus_y(const double& a, const ProductRASCivec& o) {
   assert(matches(o));
-  for (auto& b : lblocks_)
+  for (auto& b : lblocks())
     sectors_.at(b)->ax_plus_y(a, *o.sectors_.at(b));
 }
 

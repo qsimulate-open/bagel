@@ -34,7 +34,7 @@ void ProductRASCI::construct_denom() {
   Timer denom_t;
 
   // allocate denom_
-  denom_ = make_shared<ProductRASCivec>(space_, left_->blocks(), nelea_, neleb_);
+  denom_ = make_shared<ProductRASCivec>(space_, left_, nelea_, neleb_);
 
   const int lnorb = left_->norb();
   const int rnorb = norb_;
