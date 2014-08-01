@@ -127,6 +127,8 @@ void ZSuperCI::compute() {
     gradient = grad->rms();
     if (gradient < thresh_) {
       if (!nact_) print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+      cout << " " << endl;
+      cout << " +++ gradient rms at convergence = " << gradient << " +++ " << endl << endl;
       break;
     }
 

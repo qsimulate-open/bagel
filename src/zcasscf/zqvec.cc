@@ -34,7 +34,7 @@ using namespace bagel;
 ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> coeff, const int nclosed,
              shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit)
  : ZMatrix(nbasis*2, nact*2) {
-  // TODO : this constructor is wrong; the 2RDM should be conjugated so the result is phase invariant. This could be corrected if the RDM class had get_conjg.
+  // TODO : this constructor is wrong; the result is not phase invariant. Simple conjugation of 2RDM did not resolve this issue.
 
   assert(gaunt || !breit);
   if (gaunt) throw logic_error("Gaunt not implemented yet in ZQvec");
@@ -172,7 +172,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   assert((rcoeff->slice(nclosed*2,(nclosed+nact)*2) - *fci->jop()->coeff()).rms() < 1.0e-15);
   assert(nbasis*2 == rcoeff->mdim());
 
-  // (1) Sepeate real and imaginary parts for pcoeff
+  // (1) Sepeate real and imaginary parts for coeffs
   array<shared_ptr<const Matrix>, 4> racoeff;
   array<shared_ptr<const Matrix>, 4> iacoeff;
   array<shared_ptr<const Matrix>, 4> rrcoeff;
@@ -236,10 +236,10 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   shared_ptr<const ZMatrix> rdm2 = fci->rdm2_av()->get_conjg();
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(nbasis*2,nact*2);
 
-  // (6) form Qrv = (rs|tu) * G(vs,tu)
+  // (6) form Qrv = (rs|tu) * G(vs,tu)^*
   zgemm3m_("N", "N", nbasis*2, nact*2, nact*nact*nact*8, 1.0, rstu->data(), nbasis*2, rdm2->data(), nact*nact*nact*8, 0.0, out->data(), nbasis*2);
 
-  *this = *out;
+  *this = -1.0 * *out;
 #if 0
   complex<double> en = 0.0;
   for (int i = 0; i != nact*2; ++i) en += element(i+nclosed*2, i) * 0.5;
