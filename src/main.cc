@@ -29,7 +29,7 @@
 #include <src/opt/optimize.h>
 #include <src/london/reference_london.h>
 #include <src/molecule/localization.h>
-#include <src/meh/construct_meh.h>
+#include <src/asd/construct_asd.h>
 #include <src/util/archive.h>
 
 // debugging
@@ -135,9 +135,9 @@ int main(int argc, char** argv) {
 
         *geom = *dimer->sgeom();
         ref = dimer->sref();
-      } else if (title == "meh") {
-          auto meh = construct_MEH(itree, dimer);
-          meh->compute();
+      } else if (title == "asd") {
+          auto asd = construct_ASD(itree, dimer);
+          asd->compute();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
 

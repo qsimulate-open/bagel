@@ -82,6 +82,6 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/molecule/test_localize.cc>
 
-#include <src/meh/test_meh.cc>
+#include <src/asd/test_asd.cc>
 
 #include <src/london/test_london.cc>
