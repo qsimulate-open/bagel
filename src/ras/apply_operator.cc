@@ -93,7 +93,7 @@ void ApplyOperator::operator()(const RASCivecView source, RASCivecView target, c
           const bitset<nbit__> sbit = tbit ^ maskrs;
           const size_t slex = det->lexical_zero<0>(sbit);
           const int signrs = sign(sbit, r, s);
-          blas::ax_plus_y_n(signrs, &sblock->element(0,slex), tlb, &tblock->element(0,ia));
+          blas::ax_plus_y_n(signrs, sblock->data() + slex*slb, tlb, tblock->data() + ia*tlb);
         }
       }
     }
@@ -117,7 +117,7 @@ void ApplyOperator::operator()(const RASCivecView source, RASCivecView target, c
           const bitset<nbit__> sbit = tbit ^ maskrs;
           const size_t slex = det->lexical_zero<1>(sbit);
           const int signrs = sign(sbit, r, s);
-          daxpy_(tla, signrs, &sblock->element(slex,0), slb, &tblock->element(ib,0), tlb);
+          daxpy_(tla, signrs, sblock->data() + slex, slb, tblock->data() + ib, tlb);
         }
       }
     }
