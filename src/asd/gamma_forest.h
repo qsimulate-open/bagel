@@ -31,7 +31,7 @@
 #include <src/ras/civector.h>
 #include <src/math/matrix.h>
 #include <src/util/taskqueue.h>
-#include <src/meh/gamma_sq.h>
+#include <src/asd/gamma_sq.h>
 
 namespace bagel {
 

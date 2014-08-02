@@ -31,7 +31,7 @@
 
 namespace bagel {
 
-/// Template for ASD (to be renamed ASD)
+/// Template for ASD
 template <class VecType>
 class MultiExcitonHamiltonian : public ASD_base {
   protected: using DSubSpace = DimerSubspace<VecType>;

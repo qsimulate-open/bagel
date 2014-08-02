@@ -23,13 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __MEH_GAMMA_FOREST_ASD_H
-#define __MEH_GAMMA_FOREST_ASD_H
+#ifndef __ASD_GAMMA_FOREST_ASD_H
+#define __ASD_GAMMA_FOREST_ASD_H
 
 #include <vector>
 #include <list>
 
-#include <src/meh/gamma_forest.h>
+#include <src/asd/gamma_forest.h>
 #include <src/asd_dmrg/block_key.h>
 
 namespace bagel {

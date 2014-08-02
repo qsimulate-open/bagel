@@ -125,7 +125,7 @@ std::shared_ptr<const VecType> Dimer::embedded_ci(std::shared_ptr<const PTree> i
 
   // Hiding cout
   std::stringstream outfilename;
-  outfilename << "meh_ci_" << label << "_c" << charge << "_s" << nspin;
+  outfilename << "asd_ci_" << label << "_c" << charge << "_s" << nspin;
   Muffle hide(outfilename.str());
 
   auto ci = std::make_shared<CIMethod>(input, ref->geom(), ref);

@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_MEH_GAMMA_SQ_H
-#define __BAGEL_MEH_GAMMA_SQ_H
+#ifndef __BAGEL_ASD_GAMMA_SQ_H
+#define __BAGEL_ASD_GAMMA_SQ_H
 
 namespace bagel {
 
