@@ -128,7 +128,7 @@ void ZSuperCI::compute() {
     if (gradient < thresh_) {
       if (!nact_) print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
       cout << " " << endl;
-      cout << " +++ gradient rms at convergence = " << gradient << " +++ " << endl << endl;
+      cout << " +++ gradient rms at convergence = " << setprecision(4) << scientific << gradient << " +++ " << endl << endl;
       break;
     }
 
@@ -211,27 +211,20 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
                                   shared_ptr<ZRotFile>& denom) {
   bool a2approx = idata_->get<bool>("a2approx", false);
   assert(coeff_->mdim()== nbasis_*2);
-  // qvec
+
+  // qvec ; electronic contributions only
   shared_ptr<const ZMatrix> qvec;
   if (nact_) {
+    // extract electronic orbitals from coeff
+    auto coefftmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
+    coefftmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
+    coefftmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2, nocc_*2+nvirtnr_));
+    coefftmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
     if (!a2approx) {
-#if 0
-      qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
-#else
-      qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2, nocc_*2), nclosed_, fci_, gaunt_, breit_);
-#endif
-#ifndef BOTHSPACES
-      { // take non-rel parts out
-        auto tmp = make_shared<ZMatrix>(nocc_*2+nvirtnr_*2, nact_*2);
-        tmp->copy_block(0,0,nocc_*2, nact_*2, qvec->get_submatrix(0,0,nocc_*2,nact_*2)->data());
-        tmp->copy_block(nocc_*2, 0, nvirtnr_, nact_*2, qvec->get_submatrix(nocc_*2,0,nvirtnr_,nact_*2)->data());
-        tmp->copy_block(nocc_*2+nvirtnr_, 0, nvirtnr_, nact_*2, qvec->get_submatrix(nocc_*2+nvirt_,0,nvirtnr_,nact_*2)->data());
-        qvec = make_shared<const ZMatrix>(*tmp);
-      }
+      qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coefftmp, coefftmp->slice_copy(nclosed_*2, nocc_*2), nclosed_, fci_, gaunt_, breit_);
     } else {
       qvec = make_shared<const ZMatrix>(nocc_*2+nvirtnr_*2, nact_*2);
     }
-#endif
   }
 
   // calculate 1RDM in an original basis set
@@ -249,6 +242,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
 #ifdef BOTHSPACES
     auto coefftmp = coeff_->copy();
 #else
+    // extract electronic orbitals from coeff
     auto coefftmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
     coefftmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
     coefftmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2, nocc_*2+nvirtnr_));

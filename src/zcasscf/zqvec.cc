@@ -163,14 +163,15 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
 }
 
 
+// constructor to return qvec only in the electronic space (no positronic contributions)
 ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> rcoeff, shared_ptr<const ZMatrix> acoeff, const int nclosed,
              shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit)
- : ZMatrix(nbasis*2, nact*2) {
+ : ZMatrix(nbasis, nact*2) {
 
   assert(gaunt || !breit);
   if (gaunt) throw logic_error("Gaunt not implemented yet in ZQvec");
   assert((rcoeff->slice(nclosed*2,(nclosed+nact)*2) - *fci->jop()->coeff()).rms() < 1.0e-15);
-  assert(nbasis*2 == rcoeff->mdim());
+  assert(nbasis == rcoeff->mdim());
 
   // (1) Sepeate real and imaginary parts for coeffs
   array<shared_ptr<const Matrix>, 4> racoeff;
