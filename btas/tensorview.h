@@ -10,6 +10,8 @@
 
 #include <functional>
 
+#include <btas/storage_traits.h>
+#include <btas/util/sequence_adaptor.h>
 #include <btas/tensorview_iterator.h>
 #include <btas/defaults.h>
 #include <btas/util/functional.h>
@@ -66,7 +68,7 @@ namespace btas {
       typedef std::reference_wrapper<storage_type> storageref_type;
 
       /// size type
-      typedef typename storage_type::size_type size_type;
+      typedef typename storage_traits<storage_type>::size_type size_type;
 
       /// element iterator
       typedef TensorViewIterator<range_type, storage_type> iterator;
@@ -234,7 +236,7 @@ namespace btas {
       storage()
       {
         assert_writable();
-        return storageref_;
+        return storageref_.get();
       }
 
       /// test whether TensorView is empty
@@ -760,10 +762,10 @@ namespace btas {
             typename Storage,
             typename Policy = btas::TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
             class = typename std::enable_if<not std::is_reference<Range>::value>::type>
-  TensorView<typename Storage::value_type, Range, const Storage, Policy>
+  TensorView<typename std::add_const<typename Storage::value_type>::type, Range, const Storage, Policy>
   make_cview(const Range& range, const Storage& storage, Policy = Policy())
   {
-    return make_cview<typename Storage::value_type, Range, Storage, Policy>(range, storage);
+    return make_cview<typename std::add_const<typename Storage::value_type>::type, Range, Storage, Policy>(range, storage);
   }
 
   /// Helper function that constructs a constant TensorView, with an explicitly-specified element type of the view. Useful if need to
@@ -779,10 +781,10 @@ namespace btas {
             typename Storage,
             typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
             class = typename std::enable_if<not std::is_reference<Range>::value>::type>
-  TensorView<T, Range, const Storage, Policy>
+  TensorView<typename std::add_const<T>::type, Range, const Storage, Policy>
   make_cview(const Range& range, const Storage& storage, Policy = Policy())
   {
-    return __make_cview<T, Range, const Storage, Policy>(Range(range), storage);
+    return __make_cview<typename std::add_const<T>::type, Range, const Storage, Policy>(Range(range), storage);
   }
 
   /// Helper function that constructs a full constant TensorView of a Tensor.
@@ -793,13 +795,13 @@ namespace btas {
   template <typename Tensor,
             typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
             class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
-  TensorView<typename Tensor::value_type,
+  TensorView<typename std::add_const<typename Tensor::value_type>::type,
              typename Tensor::range_type,
              const typename Tensor::storage_type,
              Policy>
   make_cview(const Tensor& tensor)
   {
-    return TensorView<typename Tensor::value_type,
+    return TensorView<typename std::add_const<typename Tensor::value_type>::type,
                       typename Tensor::range_type,
                       const typename Tensor::storage_type,
                       Policy>(tensor);
@@ -816,13 +818,13 @@ namespace btas {
   template <typename T, typename Tensor,
             typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
             class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
-  TensorView<T,
+  TensorView<typename std::add_const<T>::type,
              typename Tensor::range_type,
              const typename Tensor::storage_type,
              Policy>
   make_cview(const Tensor& tensor)
   {
-    return TensorView<T,
+    return TensorView<typename std::add_const<T>::type,
                       typename Tensor::range_type,
                       const typename Tensor::storage_type,
                       Policy>(tensor);
@@ -1000,6 +1002,61 @@ namespace btas {
   std::ostream& operator<<(std::ostream& os, const btas::TensorView<_T, _Range, _Storage>& t) {
     os << "TensorView:\n  Range: " << t.range() << std::endl;
     return os;
+  }
+
+  /// TensorMap views a sequence of values as a Tensor
+  template <typename _T,
+            class _Range = btas::DEFAULT::range>
+  using TensorMap = TensorView<_T, _Range, btas::infinite_sequence_adaptor<_T*>>;
+  /// TensorConstMap const-views a sequence of values as a Tensor
+  template <typename _T,
+            class _Range = btas::DEFAULT::range>
+  using TensorConstMap = TensorView<_T, _Range, const btas::infinite_sequence_adaptor<const _T*>>;
+
+  /// Helper function that constructs TensorMap.
+  /// \tparam T the element type returned by the view
+  /// \tparam Range the range type
+  /// \param range the range object defining the view
+  /// \return TensorView into \c storage using \c range
+  /// \attention use make_cmap if you must force a const view; this will provide const view, however, if \c storage is a const reference.
+  template <typename T,
+            typename Range>
+  TensorMap<T, Range>
+  make_map(T* data, Range&& range)
+  {
+    return TensorMap<T, Range>(std::move(range),
+                               std::ref(btas::infinite_sequence_adaptor<T*>(data)));
+  }
+
+  /// Helper function that constructs TensorConstMap.
+  /// \tparam T the element type returned by the view
+  /// \tparam Range the range type
+  /// \param range the range object defining the view
+  /// \return TensorView into \c storage using \c range
+  /// \attention use make_cmap if you must force a const view; this will provide const view, however, if \c storage is a const reference.
+  template <typename T,
+            typename Range>
+  TensorConstMap<T, Range>
+  make_map(const T* data, Range&& range)
+  {
+    return TensorConstMap<T, Range>(std::move(range),
+                                    std::cref(btas::infinite_sequence_adaptor<const T*>(data)));
+  }
+
+  /// Helper function that constructs TensorConstMap.
+  /// \tparam Range the range type
+  /// \param range the range object defining the view
+  /// \return TensorView into \c storage using \c range
+  /// \attention use make_cmap if you must force a const view; this will provide const view, however, if \c storage is a const reference.
+  template <typename T,
+            typename Range>
+  TensorConstMap<typename std::remove_const<T>::type, Range>
+  make_cmap(T* data, Range&& range)
+  {
+    typedef typename std::remove_const<T>::type value_type;
+    typedef TensorConstMap<value_type, Range> result_type;
+    return result_type(std::move(range),
+                       std::cref(btas::infinite_sequence_adaptor<const T*>(const_cast<const T*>(data))));
   }
 
 } // namespace btas

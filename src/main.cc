@@ -27,9 +27,9 @@
 #include <src/io/moldenout.h>
 #include <src/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
-#include <src/wfn/geometry_london.h>
+#include <src/london/reference_london.h>
 #include <src/molecule/localization.h>
-#include <src/meh/construct_meh.h>
+#include <src/asd/construct_asd.h>
 #include <src/asd_dmrg/rasd.h>
 #include <src/util/archive.h>
 
@@ -57,9 +57,8 @@ int main(int argc, char** argv) {
 
     auto idata = make_shared<const PTree>(input);
 
-    shared_ptr<Geometry> geom;
-    shared_ptr<Geometry_London> cgeom;
     shared_ptr<Method> method;
+    shared_ptr<Geometry> geom;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
 
@@ -77,31 +76,21 @@ int main(int argc, char** argv) {
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (title == "molecule") {
-        const string basis_type = to_lower(itree->get<string>("basis_type", "gaussian"));
-        if (basis_type == "gaussian") {
-          geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
-          if (itree->get<bool>("restart", false))
-            ref.reset();
-          if (ref) ref = ref->project_coeff(geom);
-        } else if (basis_type == "london" || basis_type == "giao") {
-          cgeom = cgeom ? make_shared<Geometry_London>(*cgeom, itree) : make_shared<Geometry_London>(itree);
-          if (itree->get<bool>("restart", false)) throw runtime_error("Restart option not avaiable for London orbitals.");
-          if (ref) throw runtime_error("Reference use not set up for London orbitals");
-        } else throw runtime_error("basis type not understood - should be gaussian or london");
+        geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
+        if (itree->get<bool>("restart", false))
+          ref.reset();
+        if (ref) ref = ref->project_coeff(geom);
       } else {
-        if (!geom && !cgeom) throw runtime_error("molecule block is missing");
+        if (!geom) throw runtime_error("molecule block is missing");
         if (!itree->get<bool>("df",true)) dodf = false;
-        if (geom) if (dodf && geom->df() == nullptr)   throw runtime_error("It seems that DF basis was not specified in molecule block");
-        if (cgeom) if (dodf && cgeom->df() == nullptr) throw runtime_error("It seems that DF basis was not specified in molecule block");
+        if (dodf && !geom->df()) throw runtime_error("It seems that DF basis was not specified in molecule block");
       }
 
       if ((title == "smith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
 
-      assert (!geom || !cgeom);
       // most methods are constructed here
-      if (geom) method = construct_method(title, itree, geom, ref);
-      if (cgeom) method = construct_method(title, itree, cgeom, ref);
+      method = construct_method(title, itree, geom, ref);
 
 #ifndef DISABLE_SERIALIZATION
       if (title == "continue") {
@@ -147,9 +136,9 @@ int main(int argc, char** argv) {
 
         *geom = *dimer->sgeom();
         ref = dimer->sref();
-      } else if (title == "meh") {
-          auto meh = construct_MEH(itree, dimer);
-          meh->compute();
+      } else if (title == "asd") {
+          auto asd = construct_ASD(itree, dimer);
+          asd->compute();
       } else if (title == "asd_dmrg") {
           auto asd = make_shared<RASD>(itree, dimer);
           asd->compute();

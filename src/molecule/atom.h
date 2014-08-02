@@ -78,9 +78,10 @@ class Atom {
   public:
     Atom() { }
     Atom(std::shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const std::pair<std::string, std::shared_ptr<const PTree>> defbas,
-         std::shared_ptr<const PTree> elem, const std::array<double,3> magnetic_field, const bool aux=false, const bool ecp=false);
+         std::shared_ptr<const PTree> elem, const bool aux=false, const bool ecp=false);
 
-    Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> json, std::shared_ptr<const PTree> elem, const std::array<double,3> magnetic_field = {{0.0,0.0,0.0}});
+    Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string bas,
+         const std::pair<std::string, std::shared_ptr<const PTree>> json, std::shared_ptr<const PTree> elem);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
@@ -90,7 +91,8 @@ class Atom {
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
                                                         const std::shared_ptr<const ECP> ecp_param);
 
-    Atom(const Atom&, const bool spherical, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem);
+    Atom(const Atom&, const bool spherical, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas,
+         std::shared_ptr<const PTree> elem);
     Atom(const Atom&, const std::array<double,3>& displ);
 
     const std::string name() const { return name_; }
@@ -133,11 +135,16 @@ class Atom {
     // dihedral angle for A-this-O-B
     double dihedral_angle(const std::shared_ptr<const Atom>, const std::shared_ptr<const Atom>, const std::shared_ptr<const Atom>) const;
 
-    double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
-    const std::array<double,3>& vector_potential() const { return vector_potential_; };
+    double vector_potential(const unsigned int i) const { assert(false);  return vector_potential_[i]; }
+    const std::array<double,3>& vector_potential() const { assert(false);  return vector_potential_; };
 
     // inititalize relativistic calculation
     std::shared_ptr<const Atom> relativistic() const;
+    std::shared_ptr<const Atom> relativistic(const std::array<double,3>& magnetic_field, bool london) const;
+
+    // initialize magnetic field calculations
+    std::shared_ptr<const Atom> apply_magnetic_field(const std::array<double,3>& field) const;
+
 };
 
 }

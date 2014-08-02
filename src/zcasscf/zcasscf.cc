@@ -314,9 +314,9 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatri
   int ndim  = coeff->ndim();
   int ndim2 = rdm2->ndim();
   unique_ptr<complex<double>[]> buf(new complex<double>[ndim2*ndim2]);
-  // first half transformation 
+  // first half transformation
   zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, rdm2->data(), ndim2*ndim, start->data(), ndim, 0.0, buf.get(), ndim2*ndim);
-  for (int i = 0; i != ndim; ++i) 
+  for (int i = 0; i != ndim; ++i)
     zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, buf.get()+i*ndim2*ndim, ndim2, start->data(), ndim, 0.0, tmp->data()+i*ndim2*ndim, ndim2);
   // then tranpose
   blas::transpose(tmp->data(), ndim2, ndim2, buf.get());
@@ -349,7 +349,7 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
   // first transformation
   zgemm3m_("N", "N", nbas, n, n, 1.0, qold->data(), nbas, natorb->data(), n, 0.0, qnew->data(), nbas);
   // second transformation for the active-active block
-  auto qtmp = qnew->get_submatrix(nclosed_*2, 0, n, n)->copy(); 
+  auto qtmp = qnew->get_submatrix(nclosed_*2, 0, n, n)->copy();
   *qtmp = *natorb % *qtmp;
   qnew->copy_block(nclosed_*2, 0, n, n, qtmp->data());
   return qnew;
@@ -365,7 +365,7 @@ shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
 
   const ZMatView ocoeff = coeff_->slice(0, nclosed_*2);
   const ZMatView vcoeff = coeff_->slice(nocc_*2, nbasis_*2);
-  
+
   auto trans = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
   trans->unit();
   if (nclosed_) {
@@ -377,7 +377,7 @@ shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
       zquatev_(ofock->ndim(), ofock->data(), eig.data());
     }
     trans->copy_block(0, 0, nclosed_*2, nclosed_*2, ofock->data());
-  } 
+  }
   auto vfock = make_shared<ZMatrix>(vcoeff % *afockao * vcoeff);
   unique_ptr<double[]> eig(new double[vfock->ndim()]);
   zquatev_(vfock->ndim(), vfock->data(), eig.get());
@@ -395,7 +395,7 @@ shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
   }
   trans->copy_block(nocc_*2, nocc_*2, nvirt_*2, nvirt_*2, vfock->data());
   return make_shared<const ZMatrix>(*coeff_ * *trans);
-  
+
 }
 
 

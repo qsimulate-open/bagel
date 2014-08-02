@@ -32,23 +32,23 @@
 namespace bagel {
 
 // variadic template
-template<typename T, typename... Value>
-class MixedBasis : public Matrix {
+template<typename TBatch, typename MatType=Matrix, typename... Value>
+class MixedBasis : public MatType {
   protected:
 
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, Value... tail) {
       // input = [b1, b0]
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      T batch(input, tail...);
+      TBatch batch(input, tail...);
       batch.compute();
 
-      copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data());
+      this->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data());
     }
 
   public:
-    MixedBasis(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const Geometry> g1, Value... tail)
-     : Matrix(g1->nbasis(), g0->nbasis()) {
+    MixedBasis(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const Molecule> g1, Value... tail)
+     : MatType(g1->nbasis(), g0->nbasis()) {
       size_t off0 = 0;
       for (auto& catom0 : g0->atoms()) {
         for (auto& b0 : catom0->shells()) {
@@ -65,9 +65,9 @@ class MixedBasis : public Matrix {
 
     void print(const std::string in = "", const int size = 10) const {
       std::cout << "++++ " << in << " ++++" << std::endl;
-      for (int i = 0; i != std::min(size, ndim()); ++i) {
-        for (int j = 0; j != std::min(size, mdim()); ++j) {
-          std::cout << std::fixed << std::setw(12) << std::setprecision(9) << element(i, j) << " ";
+      for (int i = 0; i != std::min(size, this->ndim()); ++i) {
+        for (int j = 0; j != std::min(size, this->mdim()); ++j) {
+          std::cout << std::fixed << std::setw(12) << std::setprecision(9) << this->element(i, j) << " ";
         }
         std::cout << std::endl;
       }

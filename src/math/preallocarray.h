@@ -35,11 +35,14 @@ template <class DataType>
 class PreAllocArray {
   public:
     using value_type = DataType;
-    using size_type = size_t;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
     using iterator = DataType*;
+    using reference = DataType&;
 
     using const_value_type = const typename std::remove_cv<DataType>::type;
     using const_iterator = const typename std::remove_cv<DataType>::type*;
+    using const_reference = const typename std::remove_cv<DataType>::type&;
 
   protected:
     DataType* begin_;

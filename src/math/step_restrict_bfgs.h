@@ -170,7 +170,7 @@ class SRBFGS {
 
         const int n = delta().size()-1;
 //        assert(delta_.size() == y_.size()+1 && y_.size()+1 == D_.size());
-  
+
         // (4)
         for (int i = 0; i < n; ++i) {
           auto s1 = detail::real(1.0 / D_[i]->dot_product(delta_[i]));
@@ -207,7 +207,7 @@ class SRBFGS {
 
     double taylor_series_validity_ratio(const std::vector<double> _f, std::shared_ptr<const T> _grad, std::shared_ptr<const T> _a) const {
     // Following JSY and Jensen and Jorgensen (JCP 80 1204 1984)
-    // Returns r_k = ( f(a_k) - f(a_(k-1)) )/( f^(2)(a_k) - f(a_(k-1)) ) (Eq 64) 
+    // Returns r_k = ( f(a_k) - f(a_(k-1)) )/( f^(2)(a_k) - f(a_(k-1)) ) (Eq 64)
     //   where f^(2) is the second order Taylor expansion, f^(2)(a_k) = f(a_(k-1)) + g_k*a_k + 1/2 * a_k^T H_k a_k
 
       // to make sure, inputs are copied.
@@ -215,13 +215,13 @@ class SRBFGS {
       auto a    = std::make_shared<const T>(*_a);
       auto grad = std::make_shared<const T>(*_grad);
       assert(!f.empty());
-    
+
       auto f1     = ( f.size() > 1 ? *(f.end()-2) : 0.0 );
       auto DeltaE = f.back() - f1;
 
       auto dg = -1.0 * detail::real(a->dot_product(grad));
       auto dd = detail::real(a->dot_product(a));
-    
+
       auto e1 = detail::real(a->dot_product(grad));
       auto e2 = 0.5 * ( dg - prev_level_shift() * dd );
       auto e0 = e1 + e2;
@@ -233,10 +233,10 @@ class SRBFGS {
    // iteratively finds an appropriate level shift according to hebden's algorithm (JSY)
    double hebden_levelshift(std::shared_ptr<const T> _grad) {
      // No shift is preferred when steps are within the trust radius
-     
+
      // to make sure, inputs are copied
      auto grad  = std::make_shared<const T>(*_grad);
-     
+
      double shift = 1e-12;
      auto shift_vec = grad->clone();
      shift_vec->fill(shift);
@@ -350,7 +350,7 @@ class SRBFGS {
       // apply H0 * v
       *out *= *denom_;
 
-      // get size of intermediate 
+      // get size of intermediate
       const int nd = delta().empty() ? 0 : delta().size()-1;
       for (int i = 0; i != nd; ++i) {
         auto yy =  std::make_shared<T>(*delta().at(nd-1));
@@ -367,7 +367,7 @@ class SRBFGS {
           yy->ax_plus_y( s3 * s1, t1);
           yy->ax_plus_y(-s4 / s2, t3);
         }
-        if (i == nd-1) 
+        if (i == nd-1)
           Y_.push_back(yy);
       }
       for (int i = 0; i != nd; ++i) {
@@ -424,7 +424,7 @@ class SRBFGS {
         auto b  = alpha.at(i) - s1/s2;
         out->ax_plus_y(b, deltai);
       }
-      
+
       return out;
     }
 
@@ -570,7 +570,7 @@ class SRBFGS {
         D_.push_back(DD);
         auto yy = std::make_shared<T>(*_value - *prev_value());
         delta_.push_back(yy);
-        { 
+        {
           auto xx = std::make_shared<T>(*prev_grad());
           xx->scale(-1.0);
           auto xx2 = std::make_shared<T>(*yy);
@@ -583,7 +583,7 @@ class SRBFGS {
       }
 
       if (_f.size() > 1) {
-        if (_f.at(_f.size()-1) > _f.at(_f.size()-2)) 
+        if (_f.at(_f.size()-1) > _f.at(_f.size()-2))
           std::cout << " OBJECTIVE FUNCTION VALUE INCREASED BY PREVIOUS STEP " << std::endl;
       }
 

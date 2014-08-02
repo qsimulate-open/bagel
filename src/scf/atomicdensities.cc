@@ -78,51 +78,6 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
 }
 
 
-AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry_London> g) : Matrix(g->nbasis(), g->nbasis()), cgeom_(g) {
-  // first make a list of unique atoms
-  const string defbasis = cgeom_->basisfile();
-  map<pair<string,string>, shared_ptr<const Matrix>> atoms;
-  unique_ptr<double[]> eig(new double[cgeom_->nbasis()]);
-
-  int offset = 0;
-
-  // read basis file
-  shared_ptr<const PTree> bdata = PTree::read_basis(defbasis);
-
-  auto ai = cgeom_->aux_atoms().begin();
-  for (auto& i : cgeom_->atoms()) {
-    if (i->dummy()) { ++ai; continue; }
-    if (atoms.find({i->name(),i->basis()}) == atoms.end()) {
-      // dummy buffer to suppress the output
-      stringstream ss;
-      std::streambuf* cout_orig = cout.rdbuf();
-      cout.rdbuf(ss.rdbuf());
-
-      shared_ptr<PTree> geomop = make_shared<PTree>();
-      const string basis = i->basis();
-      geomop->put("basis", basis);
-      const string dfbasis = (*ai)->basis();
-      geomop->put("df_basis", !dfbasis.empty() ? dfbasis : basis);
-
-      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), nullptr);
-      // TODO geometry makes aux atoms, which is ugly
-      auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
-      atoms.emplace(make_pair(i->name(),i->basis()), compute_atomic(ga));
-
-      // restore cout
-      cout.rdbuf(cout_orig);
-    }
-    auto iter = atoms.find({i->name(),i->basis()});
-    assert(iter != atoms.end());
-    copy_block(offset, offset, i->nbasis(), i->nbasis(), iter->second);
-    offset += i->nbasis();
-
-    ++ai;
-  }
-
-}
-
-
 shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geometry> ga) const {
   // this thing does not work with cartesian basis
   assert(ga->spherical());

@@ -239,11 +239,18 @@ class Matrix_base : public btas::Tensor2<DataType> {
     int ndim() const { return this->extent(0); }
     int mdim() const { return this->extent(1); }
 
-    virtual void fill_upper() {
+    void fill_upper() {
       assert(ndim() == mdim());
       for (size_t i = 0; i != mdim(); ++i)
         for (size_t j = i+1; j != ndim(); ++j)
           element(i, j) = element(j, i);
+    }
+
+    void fill_upper_conjg() {
+      assert(ndim() == mdim());
+      for (size_t i = 0; i != mdim(); ++i)
+        for (size_t j = i+1; j != ndim(); ++j)
+          element(i, j) = detail::conj(element(j, i));
     }
 
     void symmetrize() {

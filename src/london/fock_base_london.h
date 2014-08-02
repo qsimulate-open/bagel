@@ -27,14 +27,14 @@
 #ifndef __src_london_fock_base_london_h
 #define __src_london_fock_base_london_h
 
-#include <src/wfn/geometry_london.h>
+#include <src/wfn/geometry.h>
 #include <src/molecule/zmatrix1e.h>
 
 namespace bagel {
 
 class Fock_base_London : public ZMatrix1e {
   protected:
-    std::shared_ptr<const Geometry_London> cgeom_;
+    std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const ZMatrix> previous_;
     std::shared_ptr<const ZMatrix> density_;
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
@@ -52,12 +52,12 @@ class Fock_base_London : public ZMatrix1e {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<ZMatrix1e>(*this) & cgeom_ & previous_ & density_ & schwarz_ & schwarz_thresh_;
+      ar & boost::serialization::base_object<ZMatrix1e>(*this) & geom_ & previous_ & density_ & schwarz_ & schwarz_thresh_;
     }
 
   public:
     Fock_base_London() { }
-    Fock_base_London(const std::shared_ptr<const Geometry_London>, const std::shared_ptr<const ZMatrix>, const std::shared_ptr<const ZMatrix>,
+    Fock_base_London(const std::shared_ptr<const Geometry>, const std::shared_ptr<const ZMatrix>, const std::shared_ptr<const ZMatrix>,
               const std::vector<double>& = std::vector<double>());
     virtual ~Fock_base_London() { }
 };

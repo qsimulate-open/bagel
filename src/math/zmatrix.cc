@@ -338,6 +338,7 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
   bool nolindep = out->inverse_half(thresh);
   if (!nolindep) {
     // use canonical orthogonalization. Start over
+    cout << "    * Using canonical orthogonalization due to linear dependency" << endl << endl;
     out = this->copy();
     VectorB eig(ndim());
     out->diagonalize(eig);
@@ -357,16 +358,14 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
 void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const MatView data) {
   assert(ndim == data.ndim() && mdim == data.mdim());
   for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
-    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l)
-      element(k,i) = a * data(l, j);
+    transform(&data(0,j), &data(0,j+1), element_ptr(ndim_i,i), [&a](const double& p) { return a*p; });
 }
 
 
 void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const MatView data) {
   assert(ndim == data.ndim() && mdim == data.mdim());
   for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
-    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l)
-      element(k,i) += a * data(l,j);
+    blas::ax_plus_y_n(a, data.element_ptr(0, j), ndim, element_ptr(ndim_i, i));
 }
 
 
@@ -395,15 +394,6 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
     o = conj(*i++);
   return out;
 }
-
-
-void ZMatrix::fill_upper_conjg() {
-  assert(ndim() == mdim());
-  for (size_t i = 0; i != mdim(); ++i)
-    for (size_t j = i+1; j != ndim(); ++j)
-      element(i, j) = conj(element(j, i));
-}
-
 
 
 #ifdef HAVE_SCALAPACK

@@ -100,8 +100,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     std::shared_ptr<const Geometry> geom() const { return geom_; }
     const std::vector<double> schwarz() const { return geom_->schwarz(); }
-    std::shared_ptr<const Hcore> hcore() const { return hcore_; }
-    virtual const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+    virtual std::shared_ptr<const Hcore> hcore() const { return hcore_; }
+    virtual std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     void set_coeff(std::shared_ptr<const Matrix> matrix) { coeff_ = std::make_shared<const Coeff>(*matrix); }
     void set_nocc(const int a, const int b) { noccA_ = a; noccB_ = b; }
@@ -128,8 +128,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     // used in UHF
     void set_coeff_AB(const std::shared_ptr<const Coeff> a, const std::shared_ptr<const Coeff> b);
-    const std::shared_ptr<const Coeff> coeffA() const { return coeffA_; }
-    const std::shared_ptr<const Coeff> coeffB() const { return coeffB_; }
+    std::shared_ptr<const Coeff> coeffA() const { return coeffA_; }
+    std::shared_ptr<const Coeff> coeffB() const { return coeffB_; }
 
     double energy() const { return energy_; }
 

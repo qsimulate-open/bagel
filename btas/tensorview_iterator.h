@@ -10,6 +10,8 @@
 
 #include <cstddef>
 
+#include <btas/storage_traits.h>
+
 namespace btas {
 
   /// Iterates over elements of \c Storage using ordinal values of indices in \c Range
@@ -19,8 +21,8 @@ namespace btas {
                                                                             std::forward_iterator_tag,
                                                                             std::output_iterator_tag>::type,
                                                   typename std::conditional<std::is_const<Storage>::value,
-                                                  const typename Storage::value_type,
-                                                        typename Storage::value_type>::type>
+                                                  const typename storage_traits<Storage>::value_type,
+                                                        typename storage_traits<Storage>::value_type>::type>
   {
       struct Enabler {};
 
@@ -32,8 +34,8 @@ namespace btas {
           std::forward_iterator_tag,
           std::output_iterator_tag>::type,
           typename std::conditional<std::is_const<Storage>::value,
-          const typename Storage::value_type,
-          typename Storage::value_type>::type> base_type;
+          const typename storage_traits<Storage>::value_type,
+          typename storage_traits<Storage>::value_type>::type> base_type;
       using typename base_type::value_type;
       using typename base_type::pointer;
       using typename base_type::reference;
@@ -91,14 +93,14 @@ namespace btas {
       }
 
       const reference operator*() const {
-        return *(storageref_.get().cbegin() + *iter_);
+        return *(cbegin(storageref_.get()) + *iter_);
       }
 
       //template <class = typename std::enable_if<not std::is_const<storage_type>::value,Enabler>::type>
       template <typename S = Storage>
       typename std::enable_if<not std::is_const<S>::value,reference>::type
       operator*() {
-        return *(storageref_.get().begin() + *iter_);
+        return *(begin(storageref_.get()) + *iter_);
       }
 
       const index_type& index() const {

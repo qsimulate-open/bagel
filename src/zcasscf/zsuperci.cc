@@ -265,8 +265,8 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
       } else {
         for (int j = 0; j != nvirt_tmp*2; ++j, ++target)
           *target = 1.0/zoccup_thresh;
-      } 
-    } 
+      }
+    }
 
     target = dtmp->ptr_vc();
     for (int i = 0; i != nclosed_*2; ++i)

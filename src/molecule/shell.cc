@@ -24,8 +24,8 @@
 //
 
 #include <src/molecule/shell.h>
+#include <src/molecule/moment_compute.h>
 #include <src/math/matop.h>
-#include <src/molecule/carsph_shell.h>
 #include <src/integral/carsphlist.h>
 
 using namespace std;
@@ -34,9 +34,9 @@ using namespace bagel;
 static const CarSphList carsphlist;
 
 Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
-                       const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range, const array<double,3>& _vector_potential)
+                       const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range)
  : Shell_base(sph, _position, _ang),
-   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false), vector_potential_(_vector_potential) {
+   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false), magnetism_(false), vector_potential_{{0.0, 0.0, 0.0}} {
 
   contraction_lower_.reserve(_range.size());
   contraction_upper_.reserve(_range.size());
@@ -54,7 +54,7 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 
 
 Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}},
-                               contraction_ranges_{{0,1}}, dummy_(true), vector_potential_{{0.0,0.0,0.0}} {
+                               contraction_ranges_{{0,1}}, dummy_(true), magnetism_(false), vector_potential_{{0.0,0.0,0.0}} {
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }
@@ -82,6 +82,8 @@ string Shell::show() const {
   ss << "position: ";
   ss << position_[0] << " " << position_[1] << " "  << position_[2] << endl;
   ss << "angular: "  << angular_number_ << endl;
+  if (magnetism_)
+    ss << "vector potential: " << vector_potential_[0] << " " << vector_potential_[1] << " " << vector_potential_[2] << endl;
   ss << "exponents: ";
   for (int i = 0; i != exponents_.size(); ++i) {
     ss << " " << exponents_[i];
@@ -136,7 +138,7 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
         contr.push_back(vector<double>(contractions_[i].begin()+smallest, contractions_[i].end()));
         range.push_back({contraction_ranges_[i].first-smallest, contraction_ranges_[i].second-smallest});
       }
-      out.push_back(make_shared<const Shell>(spherical_, position_, angular_number_, expo, contr, range, vector_potential_));
+      out.push_back(make_shared<Shell>(spherical_, position_, angular_number_, expo, contr, range));
       smallest = *lower;
       nstart = nend;
       if (upper == contraction_upper_.end()) break;
@@ -153,7 +155,7 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
 // returns uncontracted cartesian shell with one higher or lower angular number if increment is + or - 1 respectively
 template<int increment>
 shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
-  static_assert(increment==1||increment==-1, "illegal call of Shell::kinetic_balance_uncont");
+  static_assert(increment==1||increment==0||increment==-1, "illegal call of Shell::kinetic_balance_uncont");
   int i = 0;
   vector<vector<double>> conts;
   vector<pair<int, int>> ranges;
@@ -163,11 +165,20 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
     conts.push_back(cont);
     ranges.push_back({i,i+1});
   }
-  return angular_number_+increment < 0 ? nullptr : make_shared<const Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges, vector_potential_);
+  auto out = angular_number_+increment < 0 ? nullptr : make_shared<Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges);
+  if (magnetism_ && angular_number_+increment >= 0) out->add_phase(vector_potential_);
+  return out;
+}
+
+
+void Shell::add_phase(const std::array<double,3>& phase_input) {
+  magnetism_ = true;
+  vector_potential_ = phase_input;
 }
 
 shared_ptr<const Shell> Shell::cartesian_shell() const {
-  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_, vector_potential_);
+  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_);
+  if (magnetism_) out->add_phase(vector_potential_);
   return out;
 }
 
@@ -178,7 +189,21 @@ void Shell::init_relativistic() {
   aux_increment_ = kinetic_balance_uncont<1>();
 
   // small is a transformation matrix (x,y,z components)
-  small_ = moment_compute();
+  small_ = MomentCompute::call(*this);
+}
+
+
+void Shell::init_relativistic(const array<double,3> magnetic_field, bool london) {
+  assert(magnetism_);
+  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
+  relativistic_ = true;
+  aux_decrement_ = kinetic_balance_uncont<-1>();
+  aux_increment_ = kinetic_balance_uncont<1>();
+  aux_same_ = london ? nullptr : kinetic_balance_uncont<0>();
+
+  // zsmall is a transformation matrix (x,y,z components)
+  zsmall_ = MomentCompute::call(*this, magnetic_field, london);
+  for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
 }
 
 
@@ -335,114 +360,4 @@ void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, dou
     bzz += nxyz;
     ++range;
   }
-}
-
-
-// for each primitive basis function
-array<shared_ptr<const Matrix>,6> Shell::mblock(const double exponent) const {
-
-  const int norig = (angular_number_+1) * (angular_number_+2) / 2;
-  const int ninc = norig + angular_number_ + 2;
-  const int ndec = norig - angular_number_ - 1;
-  assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2);
-  if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2);
-  else assert (ndec == 0);
-
-  array<shared_ptr<Matrix>,6> mcart;
-  for (int i=0; i!=3; i++) mcart[i] = make_shared<Matrix>(ninc, norig, true);
-  if (aux_decrement_) for (int i=3; i!=6; i++) mcart[i] = make_shared<Matrix>(ndec, norig, true);
-  for (int i=0; i!=norig; i++) {
-    int x, y, z;
-    size_t column = 0;
-    for (int i=0; i<=angular_number_; i++) {
-      z = i;
-      for (int j=0; j<=(angular_number_-i); j++) {
-        y = j;
-        x = angular_number_ - i - j;
-
-        // three components of the angular momentum
-        array<int,3> index = {{x, y, z}};
-        array<double,3> dindex;
-        for (int k=0; k!=3; k++) dindex[k] = index[k];
-
-        assert(column == index[2]*(angular_number_+1) - index[2]*(index[2]-1)/2 + index[1]);
-        const double talph = 2.0 * exponent;
-
-        // k tells us which dimension of the momentum operator we're using
-        for (int k=0; k!=3; k++) {
-
-          // -i a_x phi^(x-1)
-          if (index[k]!=0) {
-            array<int,3> newindex = index;
-            newindex[k]--;
-            assert(newindex[0] + newindex[1] + newindex[2] == angular_number_ - 1);
-            const size_t row = newindex[2]*(angular_number_) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
-            mcart[3+k]->element(row, column) = -dindex[k];
-          }
-
-          // +i 2alpha phi^(x+1)
-          {
-            array<int,3> newindex = index;
-            newindex[k]++;
-            assert(newindex[0] + newindex[1] + newindex[2] == angular_number_ + 1);
-            const size_t row = newindex[2]*(angular_number_+2) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
-            mcart[k]->element(row, column) = talph;
-          }
-        }
-        column++;
-      }
-    }
-  }
-
-  array<shared_ptr<const Matrix>,6> out;
-  const int nblock = aux_decrement_ ? 6 : 3;
-
-  // convert this block from cartesian to spherical
-  if (spherical_) for (int i=0; i!=nblock; i++) out[i] = make_shared<const Matrix>(*mcart[i] * *carsph_matrix(angular_number_));
-  else for (int i=0; i!=nblock; i++) out[i] = mcart[i];
-
-  return out;
-}
-
-
-array<shared_ptr<const Matrix>,3> Shell::moment_compute() const {
-
-  int norig;
-  int n;
-  norig = ( (angular_number_+1) * (angular_number_+2) / 2 );
-  const int ninc = norig + (angular_number_ + 2);
-  const int ndec = norig - (angular_number_ + 1);
-  n = ninc + ndec;
-  if (spherical_ ) norig = 2*angular_number_+1;
-
-  assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2 );
-  if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2 );
-  else assert (ndec == 0);
-  assert(aux_increment_->num_primitive() == num_primitive());
-  if(aux_decrement_)assert(aux_decrement_->num_primitive() == num_primitive());
-
-  // build the momentum transformation matrix for primitive functions
-  // each exponent gets 2 blocks, one for L+1 & one for L-1
-  array<shared_ptr<Matrix>,3> tmp;
-  for (int i=0; i!=3; i++) tmp[i] = make_shared<Matrix>(n*num_primitive(), norig*num_primitive(), true);
-  for (int j=0; j!=num_primitive(); j++) {
-    auto thisblock = mblock(exponents_[j]);
-    for (int i=0; i!=3; i++) tmp[i]->copy_block( j*ninc, j*norig, ninc, norig, thisblock[i] );
-    if (aux_decrement_) for (int i=0; i!=3; i++) tmp[i]->copy_block( ninc*num_primitive()+j*ndec, j*norig, ndec, norig, thisblock[3+i] );
-  }
-
-  // build the contraction matrix
-  auto contract = make_shared<Matrix>(norig*num_primitive(), norig*num_contracted(), true);
-  for (int j=0; j!=num_contracted(); j++) {
-    for (int k=contraction_ranges_[j].first; k!=contraction_ranges_[j].second; k++) {
-      for (int l=0; l!=norig; l++) {
-        contract->element(k*norig+l, j*norig+l) = (contractions_[j])[k];
-      }
-    }
-  }
-
-  // contract
-  array<shared_ptr<const Matrix>,3> out;
-  for (int i=0; i!=3; i++) out[i] = make_shared<const Matrix>(*tmp[i] * *contract);
-  return out;
 }
