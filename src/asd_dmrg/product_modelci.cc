@@ -168,7 +168,7 @@ double ProductCIHamTask::matrix_element_impl(const PCI::Basis& bra, const PCI::B
         for (int q = 0; q < lnorb_; ++q, ++pq) {
           double j_pq = 0.0, ka_pq = 0.0, kb_pq = 0.0;
           for (int r = 0; r < rnorb_; ++r) {
-            j_pq += mo2e(p+rnorb_,q+rnorb_,r,r) * static_cast<double>(bra.alpha[r]+bra.beta[r]);
+            j_pq  += mo2e(p+rnorb_,q+rnorb_,r,r) * static_cast<double>(bra.alpha[r]+bra.beta[r]);
             ka_pq += mo2e(p+rnorb_,r,q+rnorb_,r) * static_cast<double>(bra.alpha[r]);
             kb_pq += mo2e(p+rnorb_,r,q+rnorb_,r) * static_cast<double>(bra.beta[r]);
           }
@@ -177,16 +177,15 @@ double ProductCIHamTask::matrix_element_impl(const PCI::Basis& bra, const PCI::B
       }
     }
     else if (nexch==2) {
-      vector<int> exch_bits = bit_to_numbers((naexch==2 ? aexch : bexch));
       shared_ptr<const btas::Tensor3<double>> ktensor = (naexch==2 ? alpha : beta);
       assert(ktensor->range().extent(2) == lnorb_*lnorb_);
-      const int r = exch_bits.front();
-      const int s = exch_bits.back();
-      const int phase = bagel::sign((naexch==2 ? bra.alpha : bra.beta), r, s);
+      const int r = bit_to_numbers(naexch==2 ? (aexch & bra.alpha) : (bexch & bra.beta)).front();
+      const int s = bit_to_numbers(naexch==2 ? (aexch & ket.alpha) : (bexch & ket.beta)).front();
+      const double phase = static_cast<double>(bagel::sign((naexch==2 ? bra.alpha : bra.beta), r, s));
       for (int p = 0, pq = 0; p < lnorb_; ++p)
         for (int q = 0; q < lnorb_; ++q, ++pq)
-          out += phase * ((*alpha)(bra.state,ket.state,pq) + (*beta)(bra.state,ket.state,pq)) * mo2e(p+rnorb_,q+rnorb_,r,s)
-                                                 - (*ktensor)(bra.state,ket.state,pq) * mo2e(p+rnorb_,r,q+rnorb_,s);
+          out += phase * (((*alpha)(bra.state,ket.state,pq) + (*beta)(bra.state,ket.state,pq)) * mo2e(p+rnorb_,q+rnorb_,r,s)
+                                                         - (*ktensor)(bra.state,ket.state,pq)  * mo2e(p+rnorb_,r,q+rnorb_,s));
     }
   }
 
