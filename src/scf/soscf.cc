@@ -49,10 +49,18 @@ void SOSCF::initial_guess() {
   sooverlap_ = sooverlap();
   sotildex_ = sotildex();
 
-  shared_ptr<const ZMatrix> sofock = sohcore_;
-  shared_ptr<ZMatrix> intermediate = make_shared<ZMatrix>(*sotildex_ % *sofock * *sotildex_);
-  intermediate->diagonalize(soeig_.get());
-  socoeff_ = make_shared<ZMatrix>(*sotildex_ * *intermediate);
+  if (socoeff_ == nullptr) {
+    shared_ptr<const ZMatrix> sofock = sohcore_;
+    shared_ptr<ZMatrix> intermediate = make_shared<ZMatrix>(*sotildex_ % *sofock * *sotildex_);
+    intermediate->diagonalize(soeig_.get());
+    socoeff_ = make_shared<ZMatrix>(*sotildex_ * *intermediate);
+  } else {
+    aodensity_ = aodensity();
+    auto sofock = make_shared<const SOFock>(geom_, sohcore_, socoeff_->slice(0, nocc_ * 2));
+    shared_ptr<ZMatrix> intermediate = make_shared<ZMatrix>(*sotildex_ % *sofock * *sotildex_);
+    intermediate->diagonalize(soeig_.get());
+    socoeff_ = make_shared<ZMatrix>(*sotildex_ * *intermediate);
+  }
   aodensity_ = aodensity();
 }
 
@@ -81,6 +89,10 @@ void SOSCF::compute() {
                                       << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SOSCF iteration converged." << endl << endl;
+      const double onee_energy = ((*sohcore_ * *aodensity_).trace()).real();
+      const double twoe_energy = energy_ - onee_energy;
+      cout << indent << "    - One-electron energy" << setw(20) << fixed << setprecision(8) << onee_energy << endl;
+      cout << indent << "    - Two-electron energy" << setw(20) << fixed << setprecision(8) << twoe_energy << endl;
       break;
     } else if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in SOSCF." << endl << endl;

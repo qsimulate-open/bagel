@@ -76,9 +76,7 @@ complex<double> SOBatch::theta(const int m) const {
 
 array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) const { /* Im{aa}, Re{ab}, Im{ab} */
 
-  assert(l > 0);
-  assert(abs(m0) <= l && abs(m1) <=l);
-  assert(m1 < m0);
+  assert(l>0 && abs(m0)<=l && abs(m1)<=l && m1<m0);
   array<double, 3> out = {{0.0, 0.0, 0.0}};
 
   if (m0 == -m1) out[0] = 0.5 * m1;

@@ -85,13 +85,6 @@ void SOFock::form_sofock() {
   *ifockaa += *ihalf_a->form_2index(rhalf_a, -1.0);
   *ifockaa += *rhalf_a->form_2index(ihalf_a,  1.0);
 
-  std::shared_ptr<Matrix> rfockbb = std::make_shared<Matrix>(nbasis, nbasis);
-  std::shared_ptr<Matrix> ifockbb = std::make_shared<Matrix>(nbasis, nbasis);
-  *rfockbb += *rhalf_b->form_2index(rhalf_b, -1.0);
-  *rfockbb += *ihalf_b->form_2index(ihalf_b, -1.0);
-  *ifockbb += *ihalf_b->form_2index(rhalf_b, -1.0);
-  *ifockbb += *rhalf_b->form_2index(ihalf_b,  1.0);
-
   std::shared_ptr<Matrix> rfockab = std::make_shared<Matrix>(nbasis, nbasis);
   std::shared_ptr<Matrix> ifockab = std::make_shared<Matrix>(nbasis, nbasis);
   *rfockab += *rhalf_a->form_2index(rhalf_b, -1.0);
@@ -105,8 +98,8 @@ void SOFock::form_sofock() {
   add_real_block(real, 0, 0, nbasis, nbasis, rfockaa);
   add_real_block(imag, 0, 0, nbasis, nbasis, ifockaa);
   add_real_block(real, 0, 0, nbasis, nbasis, J);
-  add_real_block(real, nbasis, nbasis, nbasis, nbasis, rfockbb);
-  add_real_block(imag, nbasis, nbasis, nbasis, nbasis, ifockbb);
+  add_real_block(real, nbasis, nbasis, nbasis, nbasis, rfockaa);
+  add_real_block(-imag, nbasis, nbasis, nbasis, nbasis, ifockaa);
   add_real_block(real, nbasis, nbasis, nbasis, nbasis, J);
 
   add_real_block(real, 0, nbasis, nbasis, nbasis, rfockab);
