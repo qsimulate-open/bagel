@@ -25,48 +25,58 @@ class Gaussian_Int {
 int main() {
 
   /* ++++ TEST int r^n exp(-zeta r*r) <phi_A|lm><lm|l|lm'><lm'|phi_C> ++++  */
-  cout << endl;
   const array<double, 3> centreA = {{0.0000, 0.0000, 0.0000}};
-  const array<int, 3> angular_momentumA = {{0, 1, 0}};
   const double alphaA = 1.0;
-  auto cargaussA = make_shared<const CartesianGauss>(alphaA, angular_momentumA, centreA);
-  cargaussA->print();
-
+  const int lA = 1;
   const array<double, 3> centreC = {{0.0000, 0.0000, 0.0000}};
-  const array<int, 3> angular_momentumC = {{1 , 0, 0}};
   const double alphaC = 1.0;
-  auto cargaussC = make_shared<const CartesianGauss>(alphaC, angular_momentumC, centreC);
-  cargaussC->print();
+  const int lC = 1;
 
-  cout << "Using unnormalized gaussian..." << endl;
+  for (int lza = 0; lza <= lA; ++lza)
+  for (int lya = 0; lya <= lA-lza; ++lya)
+  for (int lzc = 0; lzc <= lC; ++lzc)
+  for (int lyc = 0; lyc <= lC-lzc; ++lyc) {
+    const int lxa = lA-lza-lya;
+    const int lxc = lC-lzc-lyc;
+    const array<int, 3> angA = {{lxa, lya, lza}};
+    auto cargaussA = make_shared<const CartesianGauss>(alphaA, angA, centreA);
+//  cargaussA->print();
 
+    const array<int, 3> angC = {{lxc , lyc, lzc}};
+    auto cargaussC = make_shared<const CartesianGauss>(alphaC, angC, centreC);
+//  cargaussC->print();
 
-  const int max_iter = 100;
-  const double thresh_int = 10e-5;
-
-  /* ECP Parameters */
-  const double ecp_coef = 1.0;
-  const double ecp_exp = 0.0;
-  const int ecp_r = 0;
-
-  for (int ic = 0; ic != 3; ++ic) {
-    double out = 0.0;
     const array<double, 3> centreB = {{0.0000, 0.0000, 0.0000}};
     const int l = 1;
     const array<int, 2> lm = {{l, 0}}; // m can be any number st |m| <= l
     auto rsh = make_shared<const SphHarmonics>(lm, centreB);
-    tuple<shared_ptr<const CartesianGauss>, shared_ptr<const CartesianGauss>, shared_ptr<const SphHarmonics>, double, int, int>
-      so(cargaussA, cargaussC, rsh, ecp_exp, ecp_r, ic);
-    //rsh->print();
-    //SOIntegral soint(so);
-    //soint.compute(1.461297473945);
-    RadialInt<SOIntegral, tuple<shared_ptr<const CartesianGauss>, shared_ptr<const CartesianGauss>,
-              shared_ptr<const SphHarmonics>, double, int, int>> rad(so, false, max_iter, thresh_int);
-    out = ecp_coef*rad.integral();
-    cout << "int r^n exp(-zrr) <" << angular_momentumA[0] << angular_momentumA[1] << angular_momentumA[2]
-         << "|" << l << "m><" << l << "m|l_" << ic << "|" << l << "m'><" << l << "m'|"
-         << angular_momentumC[0] << angular_momentumC[1] << angular_momentumC[2] << "> dr" << endl;
-    cout << "out[" << ic << "] = " << setprecision(12) << out << endl;
+  //rsh->print();
+  //SOIntegral soint(so);
+  //soint.compute(1.461297473945);
+
+    /* ECP Parameters */
+    const double ecp_coef = 1.0;
+    const double ecp_exp = 0.0;
+    const int ecp_r = 0;
+
+    const int max_iter = 100;
+    const double thresh_int = 10e-5;
+    /* Using normalized gaussian... */
+    cout << "lA = (" << lxa << ", " << lya << ", " << lza << ")    l = " << l << "    ";
+    cout << "lC = (" << lxc << ", " << lyc << ", " << lzc << ")    ";
+    cout << "(iaa, rab, iab) = (";
+    for (int ic = 0; ic != 3; ++ic) {
+      tuple<shared_ptr<const CartesianGauss>, shared_ptr<const CartesianGauss>, shared_ptr<const SphHarmonics>, double, int, int>
+        so(cargaussA, cargaussC, rsh, ecp_exp, ecp_r, ic);
+      RadialInt<SOIntegral, tuple<shared_ptr<const CartesianGauss>, shared_ptr<const CartesianGauss>,
+                shared_ptr<const SphHarmonics>, double, int, int>> rad(so, false, max_iter, thresh_int);
+      const double out = ecp_coef*rad.integral();
+      if (ic != 2) {
+        cout << setprecision(12) << out << ", ";
+      } else {
+        cout << setprecision(12) << out << ")" << endl;
+      }
+    }
   }
 
 #if 0
