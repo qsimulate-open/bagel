@@ -45,7 +45,7 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(vector<shared_p
 #ifdef NOPENOPE_HAVE_MPI_H
     if ( istate % mpi__->size() == mpi__->rank() ) {
 #endif
-      Timer pdebug(2);
+      Timer pdebug;
       shared_ptr<const ProductRASCivec> cc = ccvec.at(istate);
       shared_ptr<ProductRASCivec> sigma = sigmavec.at(istate);
 
@@ -80,8 +80,9 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
     const double* const mo1e_data = mo1e->data();
 
     const int lnorb = cc->left()->norb();
-    const int npq = lnorb * lnorb;
-    for (int pq = 0; pq < npq; ++pq) {
+    const int rnorb = jop->monomer_jop<0>()->nocc();
+
+    for (int pq = 0; pq < lnorb*lnorb; ++pq) {
       blas::ax_plus_y_n(mo1e_data[pq], &(*alpha)(0,0,pq), pure_block.size(), pure_block.data());
       blas::ax_plus_y_n(mo1e_data[pq], &(*beta)(0,0,pq), pure_block.size(), pure_block.data());
     }
@@ -96,8 +97,6 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
     for(int ist = 0; ist < nsecstates; ++ist)
       form_pure_ras(cc_sector->civec(ist), sigma_sector->civec(ist), jop->monomer_jop<0>());
 
-    const int rnorb = jop->monomer_jop<0>()->nocc();
-
     // and now for the interaction part
     Matrix gamma_rs(nsecstates, nsecstates);
     const int nsecsize = nsecstates * nsecstates;
@@ -105,8 +104,8 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
     RASBlockVectors sector_rs(cc_sector->det(), cc_sector->left_state());
     ApplyOperator apply;
 
-    for (int r = 0, rs = 0; r < rnorb; ++r) {
-      for (int s = 0; s < rnorb; ++s, ++rs) {
+    for (int r = 0; r < rnorb; ++r) {
+      for (int s = 0; s < rnorb; ++s) {
         // Prepare Gamma_IJ^alpha quantity
         gamma_rs.zero();
         for (int p = 0, pq = 0; p < lnorb; ++p) {
