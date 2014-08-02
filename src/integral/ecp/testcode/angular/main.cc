@@ -157,7 +157,7 @@ int main() {
   const array<double, 3> centreB = {{0.0000, 0.0000, 0.0000}};
   const double alphaA = 1.0;
 
-  const int jAmax = 2;
+  const int jAmax = 1;
   for (int jA = 1; jA <= jAmax; ++jA) {
     for (int lz = 0; lz <= jA; ++lz) {
       for (int ly = 0; ly <= jA-lz; ++ly) {
@@ -174,10 +174,13 @@ int main() {
             auto so = make_shared<SOInt>(cargaussA, rsh);
 
             for (int ld = 0; ld <= l+jA; ++ld) {
-              for (int h = 0; h <= lz; ++h) {
+              for (int h = 0; h <= jA; ++h) {
                 const double p = so->angularA(h, ld, l, usp);
-                if (p > 1e-12)
+                if (p > 1e-12) {
+                  cout << "h = " << h << " (lx, ly, lz) = (" << lx << ", " << ly << ", " << lz << ")" << endl;
                   cout << "P(" << h << ", " << ld << ", " << l << ", " << m-l << ") = " << setprecision(12) << p << endl;
+                  cout << endl;
+                }
               }
             }
           }

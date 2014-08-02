@@ -18,11 +18,12 @@ class Angular {
   protected:
     array<double, 3> CA_;
     array<int, 3> angA_;
+    double dCA_;
 
   public:
 
     Angular(const array<double, 3> CA, const array<int, 3> angA)
-      : CA_(CA), angA_(angA) {}
+      : CA_(CA), angA_(angA) { dCA_ = sqrt(CA_[0]*CA_[0] + CA_[1]*CA_[1] + CA_[2]*CA_[2]); }
 
     ~Angular() {}
 
@@ -115,10 +116,11 @@ class Angular {
       double out = 0.0;
       const array<int, 3> ijk = {{a, b, c}};
       const array<int, 2> lm = {{l, m}};
-      for (int mu = 0; mu != 2*ld; ++mu) {
-        auto shAB = make_shared<SphHarmonics>(ld, mu-ld, CA_);
-        const array<int, 2> ldmu = {{ld, mu}};
-        out += shAB->zlm() * integrate2SH1USP(ldmu, lm, ijk);
+      for (int mu = 0; mu <= 2*ld; ++mu) {
+        auto shCA = make_shared<SphHarmonics>(ld, mu-ld, CA_);
+        const array<int, 2> ldmu = {{ld, mu-ld}};
+        const double z = (dCA_ < 1e-12 ? (1.0/sqrt(4.0*pi__)) : shCA->zlm());
+        out += z * integrate2SH1USP(ldmu, lm, ijk);
       }
 
       return out;
@@ -134,10 +136,10 @@ class Angular {
       double out = 0.0;
       const int amin = max(0, h-lA-mA);
       const int amax = min(nA, h);
-      for (int a = amin; a != amax; ++a) {
+      for (int a = amin; a <= amax; ++a) {
         const int bmin = max(0, h-a-mA);
         const int bmax = min(lA, h-a);
-        for (int b = bmin; b != bmax; ++b) {
+        for (int b = bmin; b <= bmax; ++b) {
           const double omega = compute_omega(a, b, h-a-b, ld, l, m);
           out += comb(nA, a) * comb(lA, b) * comb(mA, h-a-b) * pow(CA_[0], nA-a) * pow(CA_[1], lA-b) * pow(CA_[2], mA+a+b-h) * omega;
         }
@@ -192,14 +194,15 @@ class SOIntegral { /* ACB */
        return out[ic_];
     }
 
-    double compute_radial(const int N, const int l1, const int l2, const double k1, const double k2, const double a, const double r) const {
+    double compute_radial(const int N, const int l1, const int l2, const double k1, const double k2,
+                                       const double a1, const double a2 , const double r) const {
     /* Q_{l1,l2}^N(k1,k2,a) (MD E25) */
 
       const static MSphBesselI msbessel;
       const double b1 = msbessel.compute(l1, k1*r);
       const double b2 = msbessel.compute(l2, k2*r);
 
-      return pow(r, N) * exp(-a*r*r) * b1 * b2;
+      return pow(r, N) * exp(-(a1+a2)*r*r) * exp(k1*r+k2*r) * b1 * b2;
     }
 
     double compute(const double r) const {
@@ -216,29 +219,31 @@ class SOIntegral { /* ACB */
       auto pA = make_shared<const Angular>(CA_, cartA_->angular_momentum());
       auto pB = make_shared<const Angular>(CB_, cartB_->angular_momentum());
 
-      for (int ld = max(0, l-jA); ld != l+jA; ++ld) {
-        for (int mu = max(0, l-jB); mu != l+jB; ++mu) {
+      for (int ld = max(0, l-jA); ld <= l+jA; ++ld) {
+        for (int mu = max(0, l-jB); mu <= l+jB; ++mu) {
           const int gmin = abs(ld-l)+abs(mu-l);
           const int gmax = jA-(jA-abs(ld-l))%2 + jB-(jB-abs(mu-l))%2;
-          for (int g = gmin; g != gmax; g += 2) {
+          for (int g = gmin; g <= gmax; g += 2) {
             const int hmin = max(abs(ld-l), g-(jB-(jB-abs(ld-l))%2));
             const int hmax = min(jA-(jA-abs(ld-l))%2, g-abs(mu-l));
             double tmp = 0.0;
-            for (int h = hmin; h != hmax; h +=2) {
-              for (int m1 = 0; m1 != 2*l; ++m1) {
-                for (int m2 = 0; m2 != m1-1; ++m2) {
+            for (int h = hmin; h <= hmax; h +=2) {
+              for (int m1 = 0; m1 <= 2*l; ++m1) {
+                for (int m2 = 0; m2 <= m1-1; ++m2) {
                   const double fmm = compute_mlm(m1-l, m2-l, l);
-                  tmp += (pA->compute(h, ld, l, m1-l)*pB->compute(g-h, mu, l, m2-l) - pA->compute(h, ld, l, m2-l)*pB->compute(g-h, mu, l, m1-l)) * fmm;
+                  const double p = (pA->compute(h, ld, l, m1-l)*pB->compute(g-h, mu, l, m2-l) - pA->compute(h, ld, l, m2-l)*pB->compute(g-h, mu, l, m1-l));
+                  tmp += p*fmm;
                 }
               }
             }
-            const double Qldmu = compute_radial(g, ld, mu, 2.0*expA*dCA_*r, 2.0*expB*dCB_*r, expA+expB, r);
+            const double Qldmu = compute_radial(g, ld, mu, 2.0*expA*dCA_, 2.0*expB*dCB_, expA, expB, r);
             out += Qldmu * tmp;
           }
         }
       }
 
-      return out * coeff * exp(-ecp_exp_*r*r) * pow(r, ecp_r_);
+      //return 16.0 * pi__ * pi__ * out * coeff * exp(-ecp_exp_*r*r) * pow(r, ecp_r_);
+      return 16.0 * pi__ * pi__ * cartA_->normalise() * cartB_->normalise() * out * coeff * exp(-ecp_exp_*r*r) * pow(r, ecp_r_);
     }
 
     void init() {

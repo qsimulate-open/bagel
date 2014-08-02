@@ -68,7 +68,7 @@ class RadialInt {
         x_.clear();
         w_.clear();
         r_.clear();
-        ngrid *= 2;
+        ngrid = ngrid*2+1;
       }
     }
 
