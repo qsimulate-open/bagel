@@ -38,7 +38,7 @@ namespace {
 }
 
 template <bool _N, typename return_type>
-std::shared_ptr<return_type> ASD_base::couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) {
+std::shared_ptr<return_type> ASD_base::couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
 
   Coupling term_type = coupling_type(AB, ApBp);
 
