@@ -41,72 +41,72 @@ namespace bagel {
 /// Used to prepare an MEH calculation and to start the requisite CI calculations
 
 class Dimer : public std::enable_shared_from_this<Dimer> {
-   template <class T> using Ref = std::shared_ptr<const T>;
+  template <class T> using Ref = std::shared_ptr<const T>;
 
-   protected:
-      std::shared_ptr<const PTree> input_;
+  protected:
+    std::shared_ptr<const PTree> input_;
 
-      std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;            ///< Geometry objects of isolated monomers
-      std::pair<Ref<Reference>, Ref<Reference>> isolated_refs_; ///< Reference objects of the isolated monomers BEFORE active spaces have been chosen
-      std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_; ///< Reference objects for monomers with the other monomer included as an embedding
-      std::pair<Ref<Reference>, Ref<Reference>> active_refs_;   ///< Reference objects of the isolated monomers AFTER the active spaces have been chosen
+    std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;            ///< Geometry objects of isolated monomers
+    std::pair<Ref<Reference>, Ref<Reference>> isolated_refs_; ///< Reference objects of the isolated monomers BEFORE active spaces have been chosen
+    std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_; ///< Reference objects for monomers with the other monomer included as an embedding
+    std::pair<Ref<Reference>, Ref<Reference>> active_refs_;   ///< Reference objects of the isolated monomers AFTER the active spaces have been chosen
 
-      std::shared_ptr<const Geometry>   sgeom_;                 ///< Supergeometry, i.e., Geometry of dimer
-      /// Superreference, i.e., Reference of dimer
-      /// sref_->coeff() is organized such that the MOs run as (closedA, closedB, activeA, activeB, virtA, virtB)
-      std::shared_ptr<const Reference>  sref_;
+    std::shared_ptr<const Geometry>   sgeom_;                 ///< Supergeometry, i.e., Geometry of dimer
+    /// Superreference, i.e., Reference of dimer
+    /// sref_->coeff() is organized such that the MOs run as (closedA, closedB, activeA, activeB, virtA, virtB)
+    std::shared_ptr<const Reference>  sref_;
 
-      double active_thresh_;                                    ///< overlap threshold for inclusion in the active space
+    double active_thresh_;                                    ///< overlap threshold for inclusion in the active space
 
-   public:
-      // Constructors
-      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b); ///< Conjoins the provided Geometry objects
-      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a); ///< Duplicates provided Geometry according to translation vector specified in input
-      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B); ///< Conjoins the provided Reference objects
-      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a); ///< Duplicates provided Reference according to translation vector specified in input
+  public:
+    // Constructors
+    Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b); ///< Conjoins the provided Geometry objects
+    Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a); ///< Duplicates provided Geometry according to translation vector specified in input
+    Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B); ///< Conjoins the provided Reference objects
+    Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a); ///< Duplicates provided Reference according to translation vector specified in input
 
-      // Return functions
-      std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
-      std::pair<Ref<Reference>, Ref<Reference>> isolated_refs() const { return isolated_refs_; }
-      std::pair<Ref<Reference>, Ref<Reference>> embedded_refs() const { return embedded_refs_; }
-      std::pair<Ref<Reference>, Ref<Reference>> active_refs() const { return active_refs_; }
+    // Return functions
+    std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
+    std::pair<Ref<Reference>, Ref<Reference>> isolated_refs() const { return isolated_refs_; }
+    std::pair<Ref<Reference>, Ref<Reference>> embedded_refs() const { return embedded_refs_; }
+    std::pair<Ref<Reference>, Ref<Reference>> active_refs() const { return active_refs_; }
 
-      std::shared_ptr<const Geometry> sgeom() const { return sgeom_; };
-      std::shared_ptr<const Reference> sref() const { return sref_; };
+    std::shared_ptr<const Geometry> sgeom() const { return sgeom_; };
+    std::shared_ptr<const Reference> sref() const { return sref_; };
 
-      // Utility functions
-      /// Sets active space of sref_ using overlaps with isolated_ref_ active spaces
-      void set_active(std::shared_ptr<const PTree> idata, const bool localize_first);
-      /// Localizes active space and uses the given Fock matrix to diagonalize the subspaces
-      void localize(std::shared_ptr<const PTree> idata, std::shared_ptr<const Matrix> fock, const bool localize_first);
+    // Utility functions
+    /// Sets active space of sref_ using overlaps with isolated_ref_ active spaces
+    void set_active(std::shared_ptr<const PTree> idata, const bool localize_first);
+    /// Localizes active space and uses the given Fock matrix to diagonalize the subspaces
+    void localize(std::shared_ptr<const PTree> idata, std::shared_ptr<const Matrix> fock, const bool localize_first);
 
-      // Calculations
-      void scf(std::shared_ptr<const PTree> idata); ///< Driver for preparation of dimer for MultiExcitonHamiltonian or CI calculation
+    // Calculations
+    void scf(std::shared_ptr<const PTree> idata); ///< Driver for preparation of dimer for MultiExcitonHamiltonian or CI calculation
 
-      /// Driver to run monomer CAS calculations used in MEH
-      template <class VecType>
-      std::shared_ptr<DimerCISpace_base<VecType>> compute_cispace(std::shared_ptr<const PTree> idata);
-      /// Driver to run monomer RAS calculations used in MEH
-      template <class VecType>
-      std::shared_ptr<DimerCISpace_base<VecType>> compute_rcispace(std::shared_ptr<const PTree> idata);
+    /// Driver to run monomer CAS calculations used in MEH
+    template <class VecType>
+    std::shared_ptr<DimerCISpace_base<VecType>> compute_cispace(std::shared_ptr<const PTree> idata);
+    /// Driver to run monomer RAS calculations used in MEH
+    template <class VecType>
+    std::shared_ptr<DimerCISpace_base<VecType>> compute_rcispace(std::shared_ptr<const PTree> idata);
 
-   private:
-      void construct_geometry(); ///< Forms super geometry (sgeom_) and optionally projects isolated geometries and supergeometry to a specified basis
-      void embed_refs();         ///< Forms two references to be used in CI calculations where the inactive monomer is included as "embedding"
-      /// Reads information on monomer subspaces from input
-      void get_spaces(std::shared_ptr<const PTree> idata, std::vector<std::vector<int>>& spaces_A, std::vector<std::vector<int>>& spaces_B);
+  private:
+    void construct_geometry(); ///< Forms super geometry (sgeom_) and optionally projects isolated geometries and supergeometry to a specified basis
+    void embed_refs();         ///< Forms two references to be used in CI calculations where the inactive monomer is included as "embedding"
+    /// Reads information on monomer subspaces from input
+    void get_spaces(std::shared_ptr<const PTree> idata, std::vector<std::vector<int>>& spaces_A, std::vector<std::vector<int>>& spaces_B);
 
-      /// Takes monomer references, projections them onto the supergeom basis, and arranges the
-      /// to follow (closedA, closedB, activeA, activeB, virtA, virtB) and returns the result
-      std::shared_ptr<const Matrix> form_projected_coeffs();
+    /// Takes monomer references, projections them onto the supergeom basis, and arranges the
+    /// to follow (closedA, closedB, activeA, activeB, virtA, virtB) and returns the result
+    std::shared_ptr<const Matrix> form_projected_coeffs();
 
-      /// Lowdin orthogonalizes the result of form_projected_coeffs
-      std::shared_ptr<const Matrix> construct_coeff();
+    /// Lowdin orthogonalizes the result of form_projected_coeffs
+    std::shared_ptr<const Matrix> construct_coeff();
 
-      /// Runs a single set of monomer CAS/RAS calculations as specified
-      template <class CIMethod, class VecType>
-      std::shared_ptr<const VecType> embedded_ci(std::shared_ptr<const PTree> idata, std::shared_ptr<const Reference> ref,
-                                                  const int charge, const int nspin, const int nstate, std::string label);
+    /// Runs a single set of monomer CAS/RAS calculations as specified
+    template <class CIMethod, class VecType>
+    std::shared_ptr<const VecType> embedded_ci(std::shared_ptr<const PTree> idata, std::shared_ptr<const Reference> ref,
+                                               const int charge, const int nspin, const int nstate, std::string label);
 };
 
 template<class CIMethod, class VecType>
