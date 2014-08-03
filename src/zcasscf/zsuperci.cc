@@ -288,7 +288,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     gaa = factp->clone();
     shared_ptr<const ZMatrix> nat_rdm2 = natorb_rdm2_transform(natorb_coeff, fci_->rdm2_av());
     if (!a2approx)
-      zgemv_("N", nact_*nact_*4, nact_*nact_*4, 1.0, nat_rdm2->data(), nact_*nact_*4, factp->data(), 1, 0.0, gaa->data(), 1);
+      zgemv_("N", nact_*nact_*4, nact_*nact_*4, 1.0, nat_rdm2->data(), nact_*nact_*4, factp->get_conjg()->data(), 1, 0.0, gaa->data(), 1);
     complex<double> p = complex<double> (0.0,0.0);
     for (int i = 0; i != nact_*2; ++i) p += occup_[i] * factp->element(i,i);
     for (int i = 0; i != nact_*2; ++i) gaa->element(i,i) -= occup_[i] * p;
