@@ -80,6 +80,19 @@ void ASD_base::compute_rdm() const {
     }
   }
 
+  // now compute RDM's
+  for (auto& i : full) {
+    for (auto& j : *gammatensor_[0]) {
+      auto& ikey = i.first;
+      auto& jkey = j.first;
+      // checks if state labels match, and the number of operators is 4 in total
+      if (get<1>(ikey) == get<1>(jkey) && get<2>(ikey) == get<2>(jkey) &&
+          get<0>(ikey).list.size() + get<0>(jkey).list.size() == 4) {
+        cout << "compute here" << endl;
+      }
+    }
+  }
+
 #if 0
   // diagonal term
   for (auto& subspace : subspaces_) {

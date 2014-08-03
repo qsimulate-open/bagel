@@ -41,7 +41,7 @@ namespace asd {
 
 // Store Gamma Tensor as a block-sparse tensor.
 class GammaTensor {
-  protected:
+  public:
     struct listGammaSQ {
       std::list<GammaSQ> list;
       int size;
@@ -63,6 +63,7 @@ class GammaTensor {
       }
     };
 
+  protected:
     using SparseMap = std::map<std::tuple<listGammaSQ, MonomerKey, MonomerKey>, std::shared_ptr<btas::Tensor3<double>>>;
     SparseMap sparse_;
     int norb_;
