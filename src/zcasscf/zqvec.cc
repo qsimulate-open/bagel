@@ -224,9 +224,8 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   shared_ptr<const RelDFFull> fullrs = dffullr.front();
 
   // (5) form (rs|tu)*G(vs,tu) where r runs fastest
-  shared_ptr<const ZMatrix> rdm2 = fci->rdm2_av();
   auto rdm2_av = make_shared<ZRDM<2>>(nact*2);
-  copy_n(rdm2->data(), nact*nact*nact*nact*16, rdm2_av->data());
+  copy_n(fci_->rdm2_av()->data(), nact*nact*nact*nact*16, rdm2_av->data());
 
   shared_ptr<ZMatrix> out;
   shared_ptr<const RelDFFull> fulltu_d = fulltu->apply_2rdm(rdm2_av);
