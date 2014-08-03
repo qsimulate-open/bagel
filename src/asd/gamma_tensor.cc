@@ -60,7 +60,6 @@ const std::list<std::list<GammaSQ>> GammaTensor::oplist_(init::call());
 
 
 GammaTensor& GammaTensor::operator=(const GammaTensor& o) {
-  assert(sparse_.size() == o.sparse_.size() && norb_ == o.norb_);
   auto ptr = o.sparse_.begin();
   for (auto& i : sparse_) {
     assert(i.first == ptr->first);
@@ -72,7 +71,6 @@ GammaTensor& GammaTensor::operator=(const GammaTensor& o) {
 
 
 GammaTensor& GammaTensor::operator=(GammaTensor&& o) {
-  assert(sparse_.size() == o.sparse_.size() && norb_ == o.norb_);
   auto ptr = o.sparse_.begin();
   for (auto& i : sparse_) {
     assert(i.first == ptr->first);

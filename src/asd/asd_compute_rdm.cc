@@ -51,9 +51,13 @@ void ASD_base::compute_rdm() {
       auto& jkey = j.first;
       if (get<0>(jkey) == istate && get<2>(ikey) == get<1>(jkey)) {
         auto tag = make_tuple(get<0>(ikey), get<1>(ikey), get<2>(jkey));
-        auto data = make_shared<Tensor3<double>>(get<1>(ikey).nstates(), get<2>(jkey).nstates(), get<0>(ikey).size);
-        contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *data, {0,3,2});
-        half.emplace(tag, data);
+        if (half.exist(tag)) {
+          contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *half.get_block(tag), {0,3,2});
+        } else {
+          auto data = make_shared<Tensor3<double>>(get<1>(ikey).nstates(), get<2>(jkey).nstates(), i.second->extent(2));
+          contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *data, {0,3,2});
+          half.emplace(tag, data);
+        }
       }
     }
   }
@@ -70,7 +74,7 @@ void ASD_base::compute_rdm() {
         if (worktensor_->exist(tag)) {
           contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 1.0, *worktensor_->get_block(tag), {3,1,2});
         } else {
-          auto data = make_shared<Tensor3<double>>(get<2>(jkey).nstates(), get<2>(ikey).nstates(), get<0>(ikey).size);
+          auto data = make_shared<Tensor3<double>>(get<2>(jkey).nstates(), get<2>(ikey).nstates(), i.second->extent(2));
           contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 0.0, *data, {3,1,2});
           worktensor_->emplace(tag, data);
         }

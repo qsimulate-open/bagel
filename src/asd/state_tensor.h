@@ -80,6 +80,8 @@ class StateTensor {
 
     int nblocks() const { return sparse_.size(); }
 
+    bool exist(const std::tuple<int, MonomerKey, MonomerKey>& i) const { return sparse_.find(i) != sparse_.end(); }
+
     btas::PTensor2<const double> get_block(const MonomerKey& i, const MonomerKey& j, const int k) const {
       return sparse_.at(std::make_tuple(k, i, j));
     }

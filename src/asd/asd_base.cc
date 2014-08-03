@@ -728,23 +728,28 @@ shared_ptr<Matrix> ASD_base::compute_bbET<true>(const array<MonomerKey,4>& keys)
 
 template <>
 shared_ptr<RDM<2>> ASD_base::compute_bbET<false>(const array<MonomerKey,4>& keys) const {
-#if 0
-  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
-  auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateBeta});
-  auto gamma_B = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
+  auto& B = keys[1]; auto& Bp = keys[3];
 
-  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
+  assert(gammatensor_[0]->exist(keys[0], keys[2], {GammaSQ::CreateBeta, GammaSQ::CreateBeta}));
+  assert(worktensor_->exist(B, Bp, {GammaSQ::CreateBeta, GammaSQ::CreateBeta}));
 
-  Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::CreateBeta});
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
 
-  // sort: (A',A,B',B) --> -0.5 * (A,B,A',B')
-  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<1,3,0,2,0,1,-1,2>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
+  auto rdm  = make_shared<Matrix>(gamma_A % gamma_B);
+  auto rdmt = rdm->clone();
 
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+
+  SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
+
+  auto out = make_shared<RDM<2>>(nactA+nactB);
+  auto low = {0, nactA, 0, nactA};
+  auto up  = {nactA, nactA+nactB, nactA, nactA+nactB};
+  auto outv = make_rwview(out->range().slice(low, up), out->storage());
+  copy(rdmt->begin(), rdmt->end(), outv.begin());
   return out;
-#else
-  return nullptr;
-#endif
 }
 
 
