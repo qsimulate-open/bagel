@@ -172,7 +172,7 @@ void ZSuperCIMicro::sigma_ai_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 }
 
 
-// sigma_at_ai = -delta_ab Fact_ti sqrt(nt)*2 TODO : not including sqrt(1/2) ; factor 2 needed to reproduce non-rel limit
+// sigma_at_ai = -delta_ab Fact_ti sqrt(nt)*2 ; factor 2 needed to reproduce non-rel limit
 void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
@@ -194,7 +194,7 @@ void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 }
 
 
-// sigma_ai_ti = sqrt((1-nt))*2* Fact_at // TODO check normalization factors ; factor 2 needed to recover non-rel limit
+// sigma_ai_ti = sqrt((1-nt))*2* Fact_at ; factor 2 needed to recover non-rel limit
 void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
