@@ -253,57 +253,7 @@ shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e<true>(const array<MonomerKey
 
 template <>
 shared_ptr<RDM<2>> ASD_base::compute_offdiagonal_1e<false>(const array<MonomerKey,4>& keys, shared_ptr<const Matrix> hAB) const {
-#if 0
-  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
-
-  Coupling term_type = coupling_type(keys);
-
-  GammaSQ operatorA;
-  GammaSQ operatorB;
-  int neleA = A.nelea() + A.neleb();
-
-  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-
-  switch(term_type) {
-    case Coupling::aET :
-      operatorA = GammaSQ::CreateAlpha;
-      operatorB = GammaSQ::AnnihilateAlpha;
-      break;
-    case Coupling::inv_aET :
-      operatorA = GammaSQ::AnnihilateAlpha;
-      operatorB = GammaSQ::CreateAlpha;
-      --neleA;
-      break;
-    case Coupling::bET :
-      operatorA = GammaSQ::CreateBeta;
-      operatorB = GammaSQ::AnnihilateBeta;
-      break;
-    case Coupling::inv_bET :
-      operatorA = GammaSQ::AnnihilateBeta;
-      operatorB = GammaSQ::CreateBeta;
-      --neleA;
-      break;
-    default :
-      return out;
-  }
-
-  auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {operatorA});
-  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {operatorB});
-  Matrix tmp = gamma_A * (*hAB) ^ gamma_B;
-
-  if ((neleA % 2) == 1) {
-    // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
-    SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
-  }
-  else {
-    // sort: (A',A,B',B) --> (A,B,A',B')
-    SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
-  }
-
-  return out;
-#else
   return nullptr;
-#endif
 }
 
 
@@ -338,33 +288,39 @@ shared_ptr<Matrix> ASD_base::compute_inter_2e<true>(const array<MonomerKey,4>& k
 
 template <>
 shared_ptr<RDM<2>> ASD_base::compute_inter_2e<false>(const array<MonomerKey,4>& keys) const {
-#if 0
-  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
+  auto& B = keys[1]; auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out = make_shared<RDM<2>>(nactA+nactB);
 
   // alpha-alpha
-  auto gamma_AA_alpha = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
+  auto gamma_AA_alpha = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
   auto gamma_BB_alpha = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
 
   // beta-beta
-  auto gamma_AA_beta = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
+  auto gamma_AA_beta = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
   auto gamma_BB_beta = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
 
-  // build J and K matrices
-  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,0,1>();
-  shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
+  {
+    auto rdm = make_shared<Matrix>((gamma_AA_alpha + gamma_AA_beta) % (gamma_BB_alpha + gamma_BB_beta));
+    auto low = {0, 0, nactA, nactA};
+    auto up  = {nactA, nactA, nactA+nactB, nactA+nactB};
+    auto outv = make_rwview(out->range().slice(low, up), out->storage());
+    copy(rdm->begin(), rdm->end(), outv.begin());
+  }
+  {
+    auto rdm = make_shared<Matrix>(gamma_AA_alpha % gamma_BB_alpha + gamma_AA_beta % gamma_BB_beta);
+    auto rdmt = rdm->clone();
+    SMITH::sort_indices<0,3,2,1,0,1,-1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+    auto low = {0, nactA, nactA, 0};
+    auto up  = {nactA, nactA+nactB, nactA+nactB, nactA};
+    auto outv = make_rwview(out->range().slice(low, up), out->storage());
+    copy(rdm->begin(), rdm->end(), outv.begin());
+  }
 
-  Matrix tmp((gamma_AA_alpha + gamma_AA_beta) * (*Jmatrix) ^ (gamma_BB_alpha + gamma_BB_beta));
-
-  tmp -= gamma_AA_alpha * (*Kmatrix) ^ gamma_BB_alpha;
-  tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
-
-  // sort: (A',A,B',B) --> (A,B,A',B') + block(A,B,A',B')
-  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
+  // TODO not sure about the sign and index ordering
   return out;
-#else
-  return nullptr;
-#endif
 }
 
 
@@ -421,56 +377,48 @@ shared_ptr<Matrix> ASD_base::compute_aET<true>(const array<MonomerKey,4>& keys) 
 
 template <>
 shared_ptr<RDM<2>> ASD_base::compute_aET<false>(const array<MonomerKey,4>& keys) const {
-#if 0
-  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
-  Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
+  auto& B = keys[1]; auto& Bp = keys[3];
 
-  // One-body aET
-  {
-    auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateAlpha});
-    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha});
-
-    shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
-
-    tmp += gamma_A * (*Fmatrix) ^ gamma_B;
-  }
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out = make_shared<RDM<2>>(nactA+nactB);
 
   //Two-body aET, type 1
   {
-    auto gamma_A  = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateAlpha});
+    auto gamma_A  = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha});
     auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
     auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta});
 
-    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,1,1>();
+    auto rdm  = make_shared<Matrix>(gamma_A % (gamma_B1+gamma_B2));
+    auto rdmt = rdm->clone();
 
-    tmp -= gamma_A * (*Jmatrix) ^ (gamma_B1 + gamma_B2);
+    SMITH::sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactB, nactB, nactB);
+
+    auto low = {0, nactA, nactA, nactA};
+    auto up  = {nactA, nactA+nactB, nactA+nactB, nactA+nactB};
+    auto outv = make_rwview(out->range().slice(low, up), out->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
 
   //Two-body aET, type 2
   {
-    auto gamma_A1 = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
-    auto gamma_A2 = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha});
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha});
     auto gamma_B  = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha});
 
-    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,0>();
+    auto rdm  = make_shared<Matrix>((gamma_A1+gamma_A2) % gamma_B);
+    auto rdmt = rdm->clone();
 
-    tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
+    SMITH::sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+
+    auto low = {0, 0, 0, nactA};
+    auto up  = {nactA, nactA, nactA, nactA+nactB};
+    auto outv = make_rwview(out->range().slice(low, up), out->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
 
-  const int neleA = A.nelea() + A.neleb();
-  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  if ((neleA % 2) == 1) {
-    // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
-    SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
-  }
-  else {
-    // sort: (A',A,B',B) --> (A,B,A',B')
-    SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
-  }
+  // TODO not sure about the sign and index ordering
   return out;
-#else
-  return nullptr;
-#endif
 }
 
 
@@ -529,58 +477,48 @@ shared_ptr<Matrix> ASD_base::compute_bET<true>(const array<MonomerKey,4>& keys) 
 
 template <>
 shared_ptr<RDM<2>> ASD_base::compute_bET<false>(const array<MonomerKey,4>& keys) const {
-#if 0
-  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
-  Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
+  auto& B = keys[1]; auto& Bp = keys[3];
 
-  // One-body bET
-  {
-    auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta});
-    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta});
-
-    shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
-
-    tmp += gamma_A * (*Fmatrix) ^ gamma_B;
-  }
-
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out = make_shared<RDM<2>>(nactA+nactB);
 
   //Two-body bET, type 1
   {
-    auto gamma_A  = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta});
+    auto gamma_A  = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta});
     auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha});
     auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
 
-    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,1,1>();
+    auto rdm  = make_shared<Matrix>(gamma_A % (gamma_B1+gamma_B2));
+    auto rdmt = rdm->clone();
 
-    tmp -= gamma_A * (*Jmatrix) ^ (gamma_B1 + gamma_B2);
+    SMITH::sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactB, nactB, nactB);
+
+    auto low = {0, nactA, nactA, nactA};
+    auto up  = {nactA, nactA+nactB, nactA+nactB, nactA+nactB};
+    auto outv = make_rwview(out->range().slice(low, up), out->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
 
   //Two-body aET, type 2
   {
-    auto gamma_A1 = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta});
-    auto gamma_A2 = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta});
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta});
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta});
     auto gamma_B  = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta});
 
-    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,0>();
+    auto rdm  = make_shared<Matrix>((gamma_A1+gamma_A2) % gamma_B);
+    auto rdmt = rdm->clone();
 
-    tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
+    SMITH::sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+
+    auto low = {0, 0, 0, nactA};
+    auto up  = {nactA, nactA, nactA, nactA+nactB};
+    auto outv = make_rwview(out->range().slice(low, up), out->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
 
-  const int neleA = A.nelea() + A.neleb();
-  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  if ((neleA % 2) == 1) {
-    // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
-    SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
-  }
-  else {
-    // sort: (A',A,B',B) --> (A,B,A',B')
-    SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
-  }
-
+  // TODO not sure about the sign and index ordering
   return out;
-#else
-  return nullptr;
-#endif
 }
 
 
@@ -605,24 +543,30 @@ shared_ptr<Matrix> ASD_base::compute_abFlip<true>(const array<MonomerKey,4>& key
 
 template <>
 shared_ptr<RDM<2>> ASD_base::compute_abFlip<false>(const array<MonomerKey,4>& keys) const {
-#if 0
-  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
+  auto& B = keys[1]; auto& Bp = keys[3];
 
-  auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta});
+  assert(gammatensor_[0]->exist(keys[0], keys[2], {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta}));
+
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta});
   auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha});
 
-  shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
+  auto rdm  = make_shared<Matrix>(gamma_A % gamma_B);
+  auto rdmt = rdm->clone();
 
-  Matrix tmp = gamma_A * (*Kmatrix) ^ gamma_B;
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
 
-  // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
-  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
+  SMITH::sort_indices<0,3,2,1,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
 
+  auto out = make_shared<RDM<2>>(nactA+nactB);
+  auto low = {0, nactA, nactA, 0};
+  auto up  = {nactA, nactA+nactB, nactA+nactB, nactA};
+  auto outv = make_rwview(out->range().slice(low, up), out->storage());
+  assert(rdmt->size() == outv.size());
+  copy(rdmt->begin(), rdmt->end(), outv.begin());
+
+  // TODO not sure about the sign and index ordering
   return out;
-#else
-  return nullptr;
-#endif
 }
 
 
@@ -668,6 +612,8 @@ shared_ptr<RDM<2>> ASD_base::compute_abET<false>(const array<MonomerKey,4>& keys
   auto outv = make_rwview(out->range().slice(low, up), out->storage());
   assert(rdmt->size() == outv.size());
   copy(rdmt->begin(), rdmt->end(), outv.begin());
+
+  // TODO not sure about the sign and index ordering
   return out;
 }
 
@@ -713,6 +659,8 @@ shared_ptr<RDM<2>> ASD_base::compute_aaET<false>(const array<MonomerKey,4>& keys
   auto outv = make_rwview(out->range().slice(low, up), out->storage());
   assert(rdmt->size() == outv.size());
   copy(rdmt->begin(), rdmt->end(), outv.begin());
+
+  // TODO not sure about the sign and index ordering
   return out;
 }
 
@@ -758,6 +706,8 @@ shared_ptr<RDM<2>> ASD_base::compute_bbET<false>(const array<MonomerKey,4>& keys
   auto outv = make_rwview(out->range().slice(low, up), out->storage());
   assert(rdmt->size() == outv.size());
   copy(rdmt->begin(), rdmt->end(), outv.begin());
+
+  // TODO not sure about the sign and index ordering
   return out;
 }
 
