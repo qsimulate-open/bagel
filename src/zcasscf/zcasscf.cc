@@ -221,34 +221,22 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore) const {
+shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore) {
    // natural orbitals required
    shared_ptr<ZMatrix> natorb;
    if (occup_.size() > 0) {
-     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nclosed_*2+nact_*2));
+     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2));
+   } else {
+     auto natorb_transform = make_natural_orbitals(rdm1)->get_conjg();
+     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2) * *natorb_transform);
+   }
 
-     // scale using occupation numbers
-     for (int i = 0; i != nact_*2; ++i) {
-       assert(occup_[i] >= -1.0e-14);
-       const double fac = occup_[i] > 0 ? sqrt(occup_[i]) : 0.0;
-       for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
-     }
-  } else { // TODO : replace diagonalization with make natural orbitals call
-    // form natural orbitals
-    VectorB eig(nact_*2);
-    auto tmp = make_shared<ZMatrix>(*rdm1);
-    tmp->diagonalize(eig);
-    const ZMatView ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2);
-    // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik
-    natorb = make_shared<ZMatrix>(ocoeff * *tmp->get_conjg());
-
-    // scale using eigen values
-    for (int i = 0; i != nact_*2; ++i) {
-      assert(eig[i] >= -1.0e-14);
-      const double fac = eig[i] > 0 ? sqrt(eig[i]) : 0.0;
-      for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
-    }
-  }
+   // scale using occupation numbers
+   for (int i = 0; i != nact_*2; ++i) {
+     assert(occup_[i] >= -1.0e-14);
+     const double fac = occup_[i] > 0 ? sqrt(occup_[i]) : 0.0;
+     for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
+   }
 
   shared_ptr<ZMatrix> zero;
   if (!with_hcore) {
@@ -304,7 +292,6 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
         blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
     }
     occup_ = vec2;
-    coeff_ = update_coeff(coeff_, buf2);
     return buf2;
   } else { // set occupation numbers, but coefficients don't need to be updated
     vector<double> vec2(tmp->ndim());
@@ -354,7 +341,7 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatri
 
 
 shared_ptr<const ZMatrix> ZCASSCF::update_coeff(shared_ptr<const ZMatrix> cold, shared_ptr<const ZMatrix> natorb) const {
-  // see active_fock for explanation of conjugation for natorb
+  // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
   auto cnew = make_shared<ZMatrix>(*cold);
   int n    = natorb->ndim();
   int nbas = cold->ndim();
