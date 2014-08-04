@@ -154,6 +154,11 @@ void RASCI::model_guess(shared_ptr<RASDvec>& out) {
         out->data(j)->element(ib, ia) = coeffs1->element(i, j);
     }
   }
+  else if (nguess_ >= det_->size()) {
+    stringstream message;
+    message << "Asking for " << nstate_ << " states, but there seems to only be " << end-start << " states with the right spin.";
+    throw runtime_error(message.str());
+  }
   else {
     nguess_ *= 2;
     model_guess(out);
