@@ -70,7 +70,7 @@ void ProductRASCI::model_guess(vector<shared_ptr<ProductRASCivec>>& out) {
 
   for (int ibasis = 0; ibasis < guess_size; ++ibasis) {
     const PCI::Basis b = basis[ibasis];
-    for (int state = 0; state < nstate_; ++state)
+    for (int state = 0; state < nstates_; ++state)
       out[state]->sector(b.key())->civec(b.state).element(b.beta, b.alpha) = hamiltonian->element(ibasis,state);
   }
 }

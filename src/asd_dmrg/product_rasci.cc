@@ -45,8 +45,8 @@ ProductRASCI::ProductRASCI(shared_ptr<const PTree> input, shared_ptr<const Refer
 
   batchsize_ = input_->get<int>("batchsize", 512);
 
-  nstate_ = input_->get<int>("nstate", 1);
-  nguess_ = input_->get<int>("nguess", nstate_);
+  nstates_ = input_->get<int>("nstates", 1);
+  nguess_ = input_->get<int>("nguess", nstates_);
 
   // Set up wavefunction parameters for site
   // No defaults for RAS, must set "active"
@@ -81,7 +81,7 @@ ProductRASCI::ProductRASCI(shared_ptr<const PTree> input, shared_ptr<const Refer
   // TODO allow for zero electron (quick return)
   if (nelea_ < 0 || neleb_ < 0) throw runtime_error("#electrons cannot be negative in ProductRASCI");
 
-  energy_.resize(nstate_);
+  energy_.resize(nstates_);
 
   // construct a space of several RASDeterminants to hold all of the RAS information
   space_ = make_shared<RASSpace>(ras_, max_holes_, max_particles_);
@@ -107,7 +107,7 @@ void ProductRASCI::compute() {
   Timer pdebug(0);
 
   // Creating an initial CI vector
-  vector<shared_ptr<ProductRASCivec>> cc(nstate_);
+  vector<shared_ptr<ProductRASCivec>> cc(nstates_);
   generate(cc.begin(), cc.end(), [this] () { return make_shared<ProductRASCivec>(space_, left_, nelea_, neleb_); });
 
   // find determinants that have small diagonal energies
@@ -119,14 +119,14 @@ void ProductRASCI::compute() {
   const double nuc_core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<ProductRASCivec> davidson(nstate_, davidson_subspace_);
+  DavidsonDiag<ProductRASCivec> davidson(nstates_, davidson_subspace_);
 
   // Object in charge of forming sigma vector
   FormSigmaProdRAS form_sigma(batchsize_);
 
   // main iteration starts here
   cout << "  === ProductRAS-CI iterations ===" << endl << endl;
-  vector<bool> converged(nstate_, false);
+  vector<bool> converged(nstates_, false);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer calctime;
@@ -137,7 +137,7 @@ void ProductRASCI::compute() {
 
     // feeding sigma vectors into Davidson
     vector<shared_ptr<const ProductRASCivec>> ccn, sigman;
-    for (int i = 0; i < nstate_; ++i) {
+    for (int i = 0; i < nstates_; ++i) {
       if (!converged[i]) {
         ccn.push_back(make_shared<const ProductRASCivec>(*cc.at(i))); // copy in civec
         sigman.push_back(sigma.at(i)); // place in sigma
@@ -154,7 +154,7 @@ void ProductRASCI::compute() {
 
     // compute errors
     vector<double> errors;
-    for (int i = 0; i != nstate_; ++i) {
+    for (int i = 0; i != nstates_; ++i) {
       errors.push_back(errvec.at(i)->rms());
       converged.at(i) = errors.at(i) < thresh_;
     }
@@ -162,7 +162,7 @@ void ProductRASCI::compute() {
 
     if (!all_of(converged.begin(), converged.end(), [] (const bool b) { return b; })) {
       // denominator scaling
-      for (int ist = 0; ist != nstate_; ++ist) {
+      for (int ist = 0; ist != nstates_; ++ist) {
         if (converged[ist]) continue;
         for (auto& denomsector : denom_->sectors()) {
           auto dbegin = denomsector.second->begin();
@@ -181,8 +181,8 @@ void ProductRASCI::compute() {
     pdebug.tick_print("denominator");
 
     // printing out
-    if (nstate_ != 1 && iter > 0) cout << endl;
-    for (int i = 0; i != nstate_; ++i) {
+    if (nstates_ != 1 && iter > 0) cout << endl;
+    for (int i = 0; i != nstates_; ++i) {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (converged[i] ? "*" : " ")
                               << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
@@ -198,12 +198,12 @@ void ProductRASCI::compute() {
   if (all_of(converged.begin(), converged.end(), [] (const bool b) { return b; })) {
     cout << " ----- ProductRASCI calculation converged! -----" << endl;
     cout << " Final energies:" << endl;
-    for (int i = 0; i < nstate_; ++i)
+    for (int i = 0; i < nstates_; ++i)
       cout << setw(7) << i << setw(17) << fixed << setprecision(8) << energy_[i] << " Hartree" << endl;
     cout << endl;
-    if (nstate_ > 1) {
+    if (nstates_ > 1) {
       cout << " Excitation energies (eV):" << endl;
-      for (int i = 1; i < nstate_; ++i)
+      for (int i = 1; i < nstates_; ++i)
         cout << setw(7) << i << setw(17) << fixed << setprecision(8) << (energy_[i] - energy_.front()) * au2eV__ << " eV" << endl;
     }
   }
@@ -211,7 +211,7 @@ void ProductRASCI::compute() {
     cout << " WARNING: calculation failed to converge after " << max_iter_ << " iterations." << endl;
   }
 
-  for (int istate = 0; istate < nstate_; ++istate) {
+  for (int istate = 0; istate < nstates_; ++istate) {
     cout << endl << "     * state " << setw(3) << istate << ", <S^2> = " << setw(6) << setprecision(4) //<< cc_.at(istate)->spin_expectation()
                  << ", E = " << setw(17) << fixed << setprecision(8) << energy_[istate] << endl;
     cc_.at(istate)->print(print_thresh_);
@@ -220,15 +220,15 @@ void ProductRASCI::compute() {
 
 #if 0
 shared_ptr<Matrix> ProductRASCI::compute_sigma2e() const {
-  assert(cc_->ij() == nstate_);
+  assert(cc_->ij() == nstates_);
 #if 0
   FormSigmaRAS form_sigma(batchsize_);
-  shared_ptr<const RASDvec> sigma = form_sigma(cc_, nullptr, jop_->mo2e(), vector<int>(nstate_, static_cast<int>(false)));
+  shared_ptr<const RASDvec> sigma = form_sigma(cc_, nullptr, jop_->mo2e(), vector<int>(nstates_, static_cast<int>(false)));
 #else
   vector<shared_ptr<const ProductRASCivec>> sigma = form_sigma(cc_, jop_/*, ..., ...*/);
 #endif
-  auto out = make_shared<Matrix>(nstate_, nstate_);
-  for (int i = 0; i < nstate_; ++i) {
+  auto out = make_shared<Matrix>(nstates_, nstates_);
+  for (int i = 0; i < nstates_; ++i) {
     for (int j = 0; j < i; ++j)
       out->element(i,j) = out->element(j,i) = cc_.at(i)->dot_product(*sigma.at(j));
     out->element(i,i) = out->element(i,i) = cc_.at(i)->dot_product(*sigma.at(i));

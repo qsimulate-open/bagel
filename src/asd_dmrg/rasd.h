@@ -27,6 +27,7 @@
 #define __ASD_DMRG_RASD_H
 
 #include <src/asd_dmrg/asd_dmrg.h>
+#include <src/asd_dmrg/product_civec.h>
 
 namespace bagel {
 
@@ -42,6 +43,8 @@ class RASD : public ASD_DMRG {
 
   private:
     void read_restricted(std::shared_ptr<PTree> input, const int site) const;
+
+    std::vector<std::shared_ptr<const RASDvec>> diagonalize_site_RDM(const std::vector<std::shared_ptr<ProductRASCivec>>& civecs) const ;
 };
 
 }

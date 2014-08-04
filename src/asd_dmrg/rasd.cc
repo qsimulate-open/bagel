@@ -210,9 +210,9 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
       auto prod_ras = make_shared<ProductRASCI>(input, ref, environment);
       prod_ras->compute();
       // diagonalize RDM to get RASCivecs
-      vector<shared_ptr<ProductRASCivec>> civecs = prod_ras->civectors();
+      vector<shared_ptr<const RASDvec>> civecs = diagonalize_site_RDM(prod_ras->civectors());
+      for_each(civecs.begin(), civecs.end(), [] (shared_ptr<const RASDvec> c) { c->print(); });
       //shared_ptr<const Matrix> hamiltonian_2e = prod_ras->compute_sigma2e();
-      //auto hamiltonian_2e = make_shared<Matrix>(civecs.size(), civecs.size());
       //hamiltonian_2e->print();
       for (int i = 0; i < nstates_; ++i)
         sweep_energies_[i].push_back(prod_ras->energy(i));
@@ -226,4 +226,108 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
 #else
   return make_shared<DMRG_Block>(/*stuff*/);
 #endif
+}
+
+vector<shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector<shared_ptr<ProductRASCivec>>& civecs) const {
+  assert(civecs.size()==nstates_);
+
+  // store the coefficients and sector bases by block
+  map<BlockKey, pair<shared_ptr<Matrix>, vector<pair<int, shared_ptr<const RASBlockVectors>>>>> basisdata;
+
+  // arrange all the 'singular values' to get the best ones
+  multimap<double, pair<BlockKey, const int>> singular_values;
+
+  // non-orthogonal basis to do the diagonalization
+  map<BlockKey, vector<shared_ptr<const RASBlockVectors>>> cibasis;
+  for (auto& ivec : civecs)
+    for (auto& isec : ivec->sectors())
+      cibasis[isec.first].push_back(isec.second);
+
+  // RDM is block diagonal by sector
+  for (auto& isec : cibasis) {
+    // form basis for sector
+    vector<pair<int, shared_ptr<const RASBlockVectors>>> sectorbasis;
+    {
+      int offset = 0;
+      for (auto& i : isec.second) {
+        sectorbasis.emplace_back(offset, i);
+        offset += i->mdim();
+      }
+    }
+    const size_t bsize = accumulate(isec.second.begin(), isec.second.end(), 0ul, [] (size_t a, shared_ptr<const Matrix> m) { return a+m->mdim(); });
+
+    // build overlap matrix
+    Matrix overlap(bsize, bsize);
+    for (auto i = sectorbasis.begin(); i != sectorbasis.end(); ++i) {
+      shared_ptr<const Matrix> imat = i->second;
+      for (auto j = sectorbasis.begin(); j != i; ++j) {
+        if (i->second->left_state().key()==j->second->left_state().key()) {
+          shared_ptr<const Matrix> jmat = j->second;
+          assert(imat->ndim()==jmat->ndim());
+          dgemm_("T", "N", imat->mdim(), jmat->mdim(), imat->ndim(), 1.0, imat->data(), imat->ndim(), jmat->data(), jmat->ndim(),
+                                                                     0.0, overlap.element_ptr(i->first, j->first), overlap.ndim());
+        }
+      }
+      dgemm_("T", "N", imat->mdim(), imat->mdim(), imat->ndim(), 1.0, imat->data(), imat->ndim(), imat->data(), imat->ndim(),
+                                                                 0.0, overlap.element_ptr(i->first, i->first), overlap.ndim());
+    }
+    overlap.fill_upper();
+
+    // build rdm
+    Matrix rdm(bsize, bsize);
+    for (int ist = 0; ist < nstates_; ++ist) {
+      shared_ptr<const Matrix> sector = civecs[ist]->sector(isec.first);
+      Matrix tmp(sector->mdim(), bsize);
+      for (auto& ib : sectorbasis)
+        dgemm_("T", "N", sector->mdim(), ib.second->mdim(), sector->ndim(), 1.0, sector->data(), sector->ndim(), ib.second->data(), ib.second->ndim(),
+                                                                            0.0, tmp.element_ptr(0, ib.first), tmp.ndim());
+
+      dgemm_("T", "N", bsize, bsize, sector->mdim(), weights_[ist], tmp.data(), tmp.ndim(), tmp.data(), tmp.ndim(),
+                                                               1.0, rdm.data(), rdm.ndim());
+    }
+
+    Matrix orthonormalize(*overlap.tildex());
+    auto best_states = make_shared<Matrix>(orthonormalize % rdm * orthonormalize);
+    VectorB eigs(best_states->ndim());
+    best_states->diagonalize(eigs);
+    best_states = make_shared<Matrix>(orthonormalize * *best_states);
+    basisdata.emplace(isec.first, make_pair(best_states, sectorbasis));
+    for (int i = 0; i < eigs.size(); ++i)
+      singular_values.emplace(eigs(i), make_pair(isec.first, i));
+  }
+
+  // pre-organize output
+  map<BlockKey, vector<shared_ptr<RASCivec>>> output_vectors;
+
+  // Pick the top singular values
+  int nvectors = 0;
+  double partial_trace = 0.0;
+  for (auto i = singular_values.rbegin(); i != singular_values.rend(); ++i, ++nvectors) {
+    if (nvectors==ntrunc_) break;
+    BlockKey bk = i->second.first;
+    const int position = i->second.second;
+
+    shared_ptr<const Matrix> coeff = basisdata[bk].first;
+    vector<pair<int, shared_ptr<const RASBlockVectors>>>& sectorbasis = basisdata[bk].second;
+
+    shared_ptr<const RASDeterminants> det = sectorbasis.front().second->det();
+
+    auto tmp = make_shared<RASCivec>(det);
+    for (auto& ic : sectorbasis) {
+      shared_ptr<const RASBlockVectors> vecs = ic.second;
+      dgemv_("N", det->size(), vecs->mdim(), 1.0, vecs->data(), vecs->ndim(), coeff->element_ptr(ic.first, position), 1,
+                                             1.0, tmp->data(), 1);
+    }
+
+    output_vectors[i->second.first].push_back(tmp);
+    partial_trace += i->first;
+  }
+  cout << "  discarded weights: " << setw(12) << setprecision(8) << scientific <<  1.0 - partial_trace << fixed << endl;
+
+  // Process into Dvecs
+  vector<shared_ptr<const RASDvec>> out;
+  for (auto& dvec : output_vectors)
+    out.push_back(make_shared<RASDvec>(dvec.second));
+
+  return out;
 }
