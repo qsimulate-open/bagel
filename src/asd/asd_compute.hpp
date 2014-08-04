@@ -39,16 +39,16 @@ void ASD<VecType>::compute() {
 
   auto gammaforest = std::make_shared<GammaForest<VecType, 2>>();
   {
-    std::map<std::pair<int,int>, double> spinmap;
+    auto spinmap = std::make_shared<ASDSpinMap<VecType>>();
     for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
       for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
         gammaforest->couple_blocks(*iAB, *jAB);
-        spin_couple_blocks(*iAB, *jAB, spinmap);
+        spinmap->couple_blocks(*iAB, *jAB);
       }
       gammaforest->couple_blocks(*iAB, *iAB);
-      compute_diagonal_spin_block(*iAB, spinmap);
+      spinmap->diagonal_block(*iAB);
     }
-    spin_ = std::make_shared<ASDSpin>(dimerstates_, spinmap, max_spin_);
+    spin_ = std::make_shared<ASDSpin>(dimerstates_, *spinmap, max_spin_);
   }
 
   std::cout << "  o Preparing Gamma trees and building spin operator - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
@@ -100,10 +100,10 @@ void ASD<VecType>::compute() {
 
   adiabats_ = cc->copy();
 
-  if ( dipoles_ ) { // TODO Redo to make better use of memory
+  if (dipoles_) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;
     std::shared_ptr<const Reference> dimerref = dimer_->sref();
-    DimerDipole dipole = DimerDipole(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->active_refs().first->nact(), dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
+    DimerDipole dipole(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->active_refs().first->nact(), dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
     std::array<std::string,3> mu_labels = {{"x", "y", "z"}};
     for (int i = 0; i < 3; ++i) {
       std::string label("mu_");

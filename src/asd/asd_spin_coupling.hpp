@@ -29,7 +29,7 @@
 #define BAGEL_ASD_SPIN_COUPLING_H
 
 template <class VecType>
-void ASD<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<std::pair<int, int>, double>& spinmap) {
+void ASDSpinMap<VecType>::couple_blocks(const DimerSubspace<VecType>& AB, const DimerSubspace<VecType>& ApBp) {
   const Coupling term_type = coupling_type(AB, ApBp);
 
   auto spin_block = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
@@ -93,8 +93,8 @@ void ASD<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<s
       for (int jspin = 0; jspin < m; ++jspin) {
         const double ele = spin_block->element(ispin, jspin);
         if ( std::fabs(ele) > 1.0e-4)  {
-          spinmap.emplace(std::make_pair(ispin + ioff, jspin + joff), ele);
-          spinmap.emplace(std::make_pair(jspin + joff, ispin + ioff), ele);
+          this->emplace(std::make_pair(ispin + ioff, jspin + joff), ele);
+          this->emplace(std::make_pair(jspin + joff, ispin + ioff), ele);
         }
       }
     }
@@ -106,7 +106,7 @@ void ASD<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<s
 //   S^2 = [ (S^A)^2 + (S^B)^2 ] + (S^2 - (S^A)^2 - (S^B)^2)
 //       = [ (S^A)^2 + (S^B)^2 ] + 2 S_z^A S_z^B
 template <class VecType>
-void ASD<VecType>::compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap) {
+void ASDSpinMap<VecType>::diagonal_block(const DimerSubspace<VecType>& subspace) {
   std::shared_ptr<const VecType> Ap = subspace.template ci<0>();
   std::shared_ptr<const VecType> Bp = subspace.template ci<1>();
   std::shared_ptr<const VecType> SA = Ap->spin();
@@ -152,12 +152,12 @@ void ASD<VecType>::compute_diagonal_spin_block(DSubSpace& subspace, std::map<std
     for (int jspin = 0; jspin < ispin; ++jspin) {
       const double ele = spin_block->element(ispin,jspin);
       if (std::fabs(ele) > 1.0e-4) {
-        spinmap.emplace(std::make_pair(ispin + offset, jspin + offset), ele);
-        spinmap.emplace(std::make_pair(jspin + offset, ispin + offset), ele);
+        this->emplace(std::make_pair(ispin + offset, jspin + offset), ele);
+        this->emplace(std::make_pair(jspin + offset, ispin + offset), ele);
       }
     }
     const double ele = spin_block->element(ispin, ispin);
-    if (std::fabs(ele) > 1.0e-4) spinmap.emplace(std::make_pair(ispin + offset, ispin + offset), ele);
+    if (std::fabs(ele) > 1.0e-4) this->emplace(std::make_pair(ispin + offset, ispin + offset), ele);
   }
 }
 

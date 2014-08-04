@@ -64,10 +64,6 @@ class ASD : public ASD_base {
     virtual std::shared_ptr<VecType> form_sigma(std::shared_ptr<const VecType> ccvec, std::shared_ptr<const MOFile> jop) const = 0;
     virtual std::shared_ptr<VecType> form_sigma_1e(std::shared_ptr<const VecType> ccvec, const double* modata) const = 0;
 
-    // Gamma Tree building
-    void spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<std::pair<int, int>, double>& spinmap); // Off-diagonal driver for S^2
-    void compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap);
-
 };
 
 // Locks to make sure the following files are not included on their own
@@ -75,7 +71,6 @@ class ASD : public ASD_base {
 #include <src/asd/asd_compute.hpp>
 #include <src/asd/asd_compute_diagonal.hpp>
 #include <src/asd/asd_init.hpp>
-#include <src/asd/asd_spin_coupling.hpp>
 #undef ASD_HEADERS
 
 }
