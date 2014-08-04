@@ -134,17 +134,16 @@ shared_ptr<Matrix> ASD_base::compute_diagonal_block<true>(const DimerSubspace_ba
 
 template <>
 shared_ptr<RDM<2>> ASD_base::compute_diagonal_block<false>(const DimerSubspace_base& subspace) const {
+
+  array<MonomerKey,4> keys {{ subspace.monomerkey<0>(), subspace.monomerkey<1>(), subspace.monomerkey<0>(), subspace.monomerkey<1>() }};
+  auto out = compute_inter_2e<false>(keys);
 #if 0
   const double core = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy();
 
   auto out = compute_intra(subspace, jop_, core);
-  array<MonomerKey,4> keys {{ subspace.monomerkey<0>(), subspace.monomerkey<1>(), subspace.monomerkey<0>(), subspace.monomerkey<1>() }};
-  *out += *compute_inter_2e<false>(keys);
+#endif
 
   return out;
-#else
-  return nullptr;
-#endif
 }
 
 

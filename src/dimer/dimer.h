@@ -41,7 +41,9 @@ namespace bagel {
 /// Used to prepare an MEH calculation and to start the requisite CI calculations
 
 class Dimer : public std::enable_shared_from_this<Dimer> {
-  template <class T> using Ref = std::shared_ptr<const T>;
+  private:
+    template <class T>
+    using Ref = std::shared_ptr<const T>;
 
   protected:
     std::shared_ptr<const PTree> input_;
@@ -220,14 +222,14 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_rcispace(const std::s
 
   if (restrictions->size() == 1) {
     ras_desc = { get_restricted_data(*restrictions->begin()), get_restricted_data(*restrictions->begin()) };
-  }
-  else if (restrictions->size() == 2) {
+  } else if (restrictions->size() == 2) {
     auto iter = restrictions->begin();
     auto tmp1 = get_restricted_data(*iter++);
     auto tmp2 = get_restricted_data(*iter);
     ras_desc = {tmp1, tmp2};
+  } else {
+    throw std::logic_error("One or two sets of restrictions must be provided.");
   }
-  else throw std::logic_error("One or two sets of restrictions must be provided.");
 
   // This is less than ideal. It'd be better to have some sort of generator object that can be passed around.
   auto d1 = std::make_shared<RASDeterminants>(std::get<0>(ras_desc.first), nelea.first, neleb.first, std::get<1>(ras_desc.first), std::get<2>(ras_desc.first), true);
@@ -250,7 +252,8 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_rcispace(const std::s
     std::vector<std::shared_ptr<const VecType>> results;
 
     for (auto& ispace : spaces) {
-      if (ispace.size() != 3) throw std::runtime_error("Spaces should specify \"charge\", \"spin\", and \"nstate\"");
+      if (ispace.size() != 3)
+        throw std::runtime_error("Spaces should specify \"charge\", \"spin\", and \"nstate\"");
 
       auto input_copy = std::make_shared<PTree>(*rasdata);
       input_copy->erase("max_holes"); input_copy->put("max_holes", lexical_cast<std::string>(std::get<1>(ras_desc)));
@@ -273,9 +276,9 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_rcispace(const std::s
       std::set<std::string> serial_options = {"local"};
       std::set<std::string> dist_options = {"dist", "parallel"};
 
-      if ( std::find(serial_options.begin(), serial_options.end(), method) != serial_options.end() )
+      if (std::find(serial_options.begin(), serial_options.end(), method) != serial_options.end())
         results.push_back(std::make_shared<VecType>(embedded_ci<RASCI, RASDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
-      else if ( std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end() )
+      else if (std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end())
         results.push_back(std::make_shared<VecType>(embedded_ci<DistRASCI, DistRASDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
       else
         throw std::logic_error("Unrecognized RAS type algorithm");

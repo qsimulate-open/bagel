@@ -82,15 +82,13 @@ void ASD_base::compute_rdm() {
     }
   }
 
-#if 0
-  // diagonal term
-  for (auto& subspace : subspaces_) {
-    compute_pure_terms(subspace, jop_);
-    std::shared_ptr<Matrix> block = compute_diagonal_block<false>(subspace);
-  }
-#endif
-  // off diagonal term
   const auto subspaces = subspaces_base();
+
+  // diagonal term
+  for (auto& subspace : subspaces) {
+    compute_diagonal_block<false>(subspace);
+  }
+  // off diagonal term
   for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
     for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
       couple_blocks<false>(*iAB, *jAB);
