@@ -118,7 +118,7 @@ void ZCASBFGS::compute() {
     // qvec
     shared_ptr<const ZMatrix> qvec;
     if (nact_) {
-      qvec = make_shared<ZQvec>(nbasis_*2, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2,nocc_*2), nclosed_, fci_, gaunt_, breit_);
+      qvec = make_shared<ZQvec>(nbasis_*2, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2,nocc_*2), nclosed_, fci_, gaunt_, breit_)->get_conjg();
     }
 
     // get energy
