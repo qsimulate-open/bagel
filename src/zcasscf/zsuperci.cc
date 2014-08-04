@@ -42,10 +42,7 @@ void ZSuperCI::compute() {
   // ============================
   // macro iteration from here
   // ============================
-   Timer timer;
-
-  cout << setprecision(8) << " kramers restricted re part rms = " << coeff_->get_real_part()->rms() << endl;
-  cout << setprecision(8) << " kramers restricted im part rms = " << coeff_->get_imag_part()->rms() << endl;
+  Timer timer;
 
   if (nact_)
     fci_->update(coeff_, /*restricted*/true);
