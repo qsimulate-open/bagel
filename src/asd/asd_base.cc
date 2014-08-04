@@ -92,9 +92,6 @@ Coupling ASD_base::coupling_type(const array<MonomerKey,4>& keys) {
   pair<int,int> AT {neleaApBp.first - neleaAB.first, neleaApBp.second - neleaAB.second};
   pair<int,int> BT {nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second};
 
-  constexpr int stride = 8; // Should be sufficient
-  auto coupling_index = [&stride] (const int a, const int b, const int c, const int d) { return a + b * stride + stride*stride * (c + d * stride); };
-
   /************************************************************
   *  BT\AT  | ( 0, 0) | (+1,-1) | (-1,+1) | (+2,-2) | (-2,+2) *
   *-----------------------------------------------------------*
@@ -105,22 +102,22 @@ Coupling ASD_base::coupling_type(const array<MonomerKey,4>& keys) {
   * (-2,+2) | -bbET   |         |         |         |         *
   ************************************************************/
 
-  const int icouple = coupling_index(AT.first, AT.second, BT.first, BT.second);
+  const auto icouple = make_tuple(AT.first, AT.second, BT.first, BT.second);
 
-  if      ( icouple == coupling_index( 0, 0, 0, 0) ) return Coupling::diagonal;
-  else if ( icouple == coupling_index( 0, 0,+1,-1) ) return Coupling::bET;
-  else if ( icouple == coupling_index( 0, 0,-1,+1) ) return Coupling::inv_bET;
-  else if ( icouple == coupling_index(+1,-1, 0, 0) ) return Coupling::aET;
-  else if ( icouple == coupling_index(+1,-1,+1,-1) ) return Coupling::abET;
-  else if ( icouple == coupling_index(+1,-1,-1,+1) ) return Coupling::baFlip;
-  else if ( icouple == coupling_index(-1,+1, 0, 0) ) return Coupling::inv_aET;
-  else if ( icouple == coupling_index(-1,+1,+1,-1) ) return Coupling::abFlip;
-  else if ( icouple == coupling_index(-1,+1,-1,+1) ) return Coupling::inv_abET;
-  else if ( icouple == coupling_index(+2,-2, 0, 0) ) return Coupling::aaET;
-  else if ( icouple == coupling_index(-2,+2, 0, 0) ) return Coupling::inv_aaET;
-  else if ( icouple == coupling_index( 0, 0,+2,-2) ) return Coupling::bbET;
-  else if ( icouple == coupling_index( 0, 0,-2,+2) ) return Coupling::inv_bbET;
-  else                                               return Coupling::none;
+  if      ( icouple == make_tuple( 0, 0, 0, 0) ) return Coupling::diagonal;
+  else if ( icouple == make_tuple( 0, 0,+1,-1) ) return Coupling::bET;
+  else if ( icouple == make_tuple( 0, 0,-1,+1) ) return Coupling::inv_bET;
+  else if ( icouple == make_tuple(+1,-1, 0, 0) ) return Coupling::aET;
+  else if ( icouple == make_tuple(+1,-1,+1,-1) ) return Coupling::abET;
+  else if ( icouple == make_tuple(+1,-1,-1,+1) ) return Coupling::baFlip;
+  else if ( icouple == make_tuple(-1,+1, 0, 0) ) return Coupling::inv_aET;
+  else if ( icouple == make_tuple(-1,+1,+1,-1) ) return Coupling::abFlip;
+  else if ( icouple == make_tuple(-1,+1,-1,+1) ) return Coupling::inv_abET;
+  else if ( icouple == make_tuple(+2,-2, 0, 0) ) return Coupling::aaET;
+  else if ( icouple == make_tuple(-2,+2, 0, 0) ) return Coupling::inv_aaET;
+  else if ( icouple == make_tuple( 0, 0,+2,-2) ) return Coupling::bbET;
+  else if ( icouple == make_tuple( 0, 0,-2,+2) ) return Coupling::inv_bbET;
+  else                                           return Coupling::none;
 }
 
 
