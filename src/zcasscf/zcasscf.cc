@@ -158,6 +158,23 @@ void ZCASSCF::init() {
     init_kramers_coeff(); // coeff_ now in block format
   }
 
+#if 1
+  {   // DEBUG : random scaling
+    bool randscal = idata_->get<bool>("randscal", false);
+    if (randscal) {
+      cout << " RANDOM SCALING OF THE ACTIVE COEFFICIENT " << endl;
+      auto tmp = coeff_->copy();
+      for (int i = 0; i != nact_; ++i) {
+        const double b = (double)rand() / RAND_MAX;
+        const complex<double> fac(cos(b), sin(b));
+        blas::scale_n(fac, tmp->element_ptr(0,2*nclosed_+i), tmp->ndim());
+        blas::scale_n(conj(fac), tmp->element_ptr(0,2*nclosed_+nact_+i), tmp->ndim());
+      }
+      coeff_ = make_shared<const ZMatrix>(*tmp);
+    }
+  }
+#endif
+
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
     mute_stdcout(/*fci*/true);
