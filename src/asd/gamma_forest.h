@@ -31,6 +31,8 @@
 #include <src/ras/civector.h>
 #include <src/math/matrix.h>
 #include <src/util/taskqueue.h>
+#include <src/asd/coupling.h>
+#include <src/asd/dimersubspace.h>
 
 namespace bagel {
 
@@ -384,6 +386,8 @@ class GammaForest {
       tasks.compute();
     }
 
+    void couple_blocks(const DimerSubspace<VecType>& AB, const DimerSubspace<VecType>& ABp); // implemented in gamma_coupling.hpp
+
   private:
     template <int unit>
     std::shared_ptr<GammaTree<VecType>> tree(std::shared_ptr<const VecType> ket, const int ioffset) {
@@ -395,6 +399,10 @@ class GammaForest {
       return itree->second;
     }
 };
+
+#define ASD_HEADERS
+#include <src/asd/gamma_coupling.hpp>
+#undef ASD_HEADERS
 
 template <>
 void GammaForest<DistDvec, 2>::compute();

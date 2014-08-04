@@ -65,7 +65,6 @@ class ASD : public ASD_base {
     virtual std::shared_ptr<VecType> form_sigma_1e(std::shared_ptr<const VecType> ccvec, const double* modata) const = 0;
 
     // Gamma Tree building
-    void gamma_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::shared_ptr<GammaForest<VecType,2>> gammaforest);
     void spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<std::pair<int, int>, double>& spinmap); // Off-diagonal driver for S^2
     void compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap);
 
@@ -75,7 +74,6 @@ class ASD : public ASD_base {
 #define ASD_HEADERS
 #include <src/asd/asd_compute.hpp>
 #include <src/asd/asd_compute_diagonal.hpp>
-#include <src/asd/asd_gamma_coupling.hpp>
 #include <src/asd/asd_init.hpp>
 #include <src/asd/asd_spin_coupling.hpp>
 #undef ASD_HEADERS

@@ -42,10 +42,10 @@ void ASD<VecType>::compute() {
     std::map<std::pair<int,int>, double> spinmap;
     for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
       for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
-        gamma_couple_blocks(*iAB, *jAB, gammaforest);
+        gammaforest->couple_blocks(*iAB, *jAB);
         spin_couple_blocks(*iAB, *jAB, spinmap);
       }
-      gamma_couple_blocks(*iAB, *iAB, gammaforest);
+      gammaforest->couple_blocks(*iAB, *iAB);
       compute_diagonal_spin_block(*iAB, spinmap);
     }
     spin_ = std::make_shared<ASDSpin>(dimerstates_, spinmap, max_spin_);
