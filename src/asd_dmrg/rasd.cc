@@ -26,6 +26,7 @@
 #include <src/asd_dmrg/rasd.h>
 #include <src/asd_dmrg/gamma_forest_asd.h>
 #include <src/asd_dmrg/product_rasci.h>
+#include <src/ras/form_sigma.h>
 
 #define DEBUG
 
@@ -53,7 +54,7 @@ void RASD::read_restricted(shared_ptr<PTree> input, const int site) const {
     }
     input->add_child("active", parent);
 #ifdef DEBUG
-    cout << "RAS[" << nras[0] << "," << nras[1] << "," << nras[2] << "](" << input->get<int>("max_holes") << "h" << input->get<int>("max_particles") << "p)" << endl;
+    //cout << "RAS[" << nras[0] << "," << nras[1] << "," << nras[2] << "](" << input->get<int>("max_holes") << "h" << input->get<int>("max_particles") << "p)" << endl;
 #endif
   };
 
@@ -66,6 +67,21 @@ void RASD::read_restricted(shared_ptr<PTree> input, const int site) const {
   }
   else
     throw runtime_error("Must specify either one set of restrictions for all sites, or one set per site");
+}
+
+shared_ptr<Matrix> RASD::compute_sigma2e(shared_ptr<const RASDvec> cc, shared_ptr<const MOFile> jop) const {
+  const int nstates = cc->ij();
+  // Maybe batchsize should be an attribute of RASD
+  FormSigmaRAS form_2e(input_->get_child("ras")->get<int>("batchsize", 512));
+  shared_ptr<const RASDvec> sigma = form_2e(cc, nullptr, jop->mo2e(), vector<int>(nstates, static_cast<int>(false)));
+
+  auto out = make_shared<Matrix>(nstates, nstates);
+  for (int i = 0; i < nstates; ++i) {
+    for (int j = 0; j < i; ++j)
+      out->element(i,j) = out->element(j,i) = cc->data(i)->dot_product(*sigma->data(j));
+    out->element(i,i) = cc->data(i)->dot_product(*sigma->data(i));
+  }
+  return out;
 }
 
 shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref) {
@@ -85,8 +101,8 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
       auto ras = make_shared<RASCI>(inp, ref->geom(), ref);
       ras->compute();
       shared_ptr<const RASDvec> civecs = ras->civectors();
-      shared_ptr<const Matrix> hamiltonian_2e = ras->compute_sigma2e();
-      hamiltonian_2e->print();
+      shared_ptr<const Matrix> hamiltonian_2e = compute_sigma2e(civecs, ras->jop());
+      //hamiltonian_2e->print();
 
       // Combines data for vectors with the same nelea and neleb
       auto organize_data = [&states, &h_2e] (shared_ptr<const RASDvec> civecs, shared_ptr<const Matrix> ham2e) {
@@ -196,9 +212,6 @@ shared_ptr<DMRG_Block> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared
 }
 
 shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> system, shared_ptr<DMRG_Block> environment, const int site) {
-  //map<BlockKey, vector<shared_ptr<const ProductRASCivec>>> states;
-  //map<BlockKey, shared_ptr<const Matrix>> h_2e;
-
   Timer decimatetime;
   // assume the input is already fully formed, this may be revisited later
   input->put("nclosed", ref->nclosed());
@@ -210,25 +223,26 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
       auto prod_ras = make_shared<ProductRASCI>(input, ref, environment);
       prod_ras->compute();
       // diagonalize RDM to get RASCivecs
-      vector<shared_ptr<const RASDvec>> civecs = diagonalize_site_RDM(prod_ras->civectors());
-      for_each(civecs.begin(), civecs.end(), [] (shared_ptr<const RASDvec> c) { c->print(); });
-      //shared_ptr<const Matrix> hamiltonian_2e = prod_ras->compute_sigma2e();
-      //hamiltonian_2e->print();
+      map<BlockKey, shared_ptr<const RASDvec>> civecs = diagonalize_site_RDM(prod_ras->civectors());
+      map<BlockKey, shared_ptr<const Matrix>> h_2e;
+      //for_each(civecs.begin(), civecs.end(), [] (pair<BlockKey, shared_ptr<const RASDvec>> c) { c.second->print(); });
+      for (auto& ici : civecs)
+        h_2e.emplace(ici.first, compute_sigma2e(ici.second, prod_ras->jop()->monomer_jop<0>()));
+
       for (int i = 0; i < nstates_; ++i)
         sweep_energies_[i].push_back(prod_ras->energy(i));
+
+      GammaForestASD<RASDvec> forest(civecs);
+      return make_shared<DMRG_Block>(move(forest), h_2e, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
     }
     else {
       throw logic_error("Full DMRG sweep not yet implemented!");
+      return nullptr;
     }
   }
-#if 1
-  return nullptr;
-#else
-  return make_shared<DMRG_Block>(/*stuff*/);
-#endif
 }
 
-vector<shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector<shared_ptr<ProductRASCivec>>& civecs) const {
+map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector<shared_ptr<ProductRASCivec>>& civecs) const {
   assert(civecs.size()==nstates_);
 
   // store the coefficients and sector bases by block
@@ -286,7 +300,7 @@ vector<shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector<shared
                                                                1.0, rdm.data(), rdm.ndim());
     }
 
-    Matrix orthonormalize(*overlap.tildex());
+    Matrix orthonormalize(*overlap.tildex(1.0e-12));
     auto best_states = make_shared<Matrix>(orthonormalize % rdm * orthonormalize);
     VectorB eigs(best_states->ndim());
     best_states->diagonalize(eigs);
@@ -319,15 +333,16 @@ vector<shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector<shared
                                              1.0, tmp->data(), 1);
     }
 
+    cout << "spin expectation of vector: " << tmp->spin_expectation() << endl;
     output_vectors[i->second.first].push_back(tmp);
     partial_trace += i->first;
   }
   cout << "  discarded weights: " << setw(12) << setprecision(8) << scientific <<  1.0 - partial_trace << fixed << endl;
 
   // Process into Dvecs
-  vector<shared_ptr<const RASDvec>> out;
+  map<BlockKey, shared_ptr<const RASDvec>> out;
   for (auto& dvec : output_vectors)
-    out.push_back(make_shared<RASDvec>(dvec.second));
+    out.emplace(dvec.first, make_shared<RASDvec>(dvec.second));
 
   return out;
 }

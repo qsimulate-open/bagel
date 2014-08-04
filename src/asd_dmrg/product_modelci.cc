@@ -128,9 +128,10 @@ double ProductCIHamTask::compute_pure_block(const BlockKey brakey, const int bra
   shared_ptr<const btas::Tensor3<double>> alpha = left_->coupling({GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}).at({brakey,ketkey}).data;
   shared_ptr<const btas::Tensor3<double>> beta = left_->coupling({GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}).at({brakey,ketkey}).data;
 
-  for (int i = 0, ij = 0; i < lnorb_; ++i)
-    for (int j = 0; j < lnorb_; ++j, ++ij)
-      out += mo1e_->element(i+rnorb_,j+rnorb_) * ((*alpha)(brastate,ketstate,ij) + (*beta)(brastate,ketstate,ij));
+  // p^+ q
+  for (int p = 0, pq = 0; p < lnorb_; ++p)
+    for (int q = 0; q < lnorb_; ++q, ++pq)
+      out += mo1e_->element(p+rnorb_,q+rnorb_) * ((*alpha)(brastate,ketstate,pq) + (*beta)(brastate,ketstate,pq));
 
   return out;
 }
@@ -182,10 +183,11 @@ double ProductCIHamTask::matrix_element_impl(const PCI::Basis& bra, const PCI::B
       const int r = bit_to_numbers(naexch==2 ? (aexch & bra.alpha) : (bexch & bra.beta)).front();
       const int s = bit_to_numbers(naexch==2 ? (aexch & ket.alpha) : (bexch & ket.beta)).front();
       const double phase = static_cast<double>(bagel::sign((naexch==2 ? bra.alpha : bra.beta), r, s));
+      // p^+ q
       for (int p = 0, pq = 0; p < lnorb_; ++p)
         for (int q = 0; q < lnorb_; ++q, ++pq)
           out += phase * (((*alpha)(bra.state,ket.state,pq) + (*beta)(bra.state,ket.state,pq)) * mo2e(p+rnorb_,q+rnorb_,r,s)
-                                                         - (*ktensor)(bra.state,ket.state,pq)  * mo2e(p+rnorb_,r,q+rnorb_,s));
+                                                         - (*ktensor)(bra.state,ket.state,pq)  * mo2e(p+rnorb_,s,q+rnorb_,r));
     }
   }
 

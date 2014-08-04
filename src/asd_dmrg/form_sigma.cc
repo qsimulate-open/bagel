@@ -68,6 +68,7 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(vector<shared_p
 }
 
 void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, shared_ptr<ProductRASCivec> sigma, shared_ptr<const DimerJop> jop) const {
+  Timer ptime;
   for (auto& sector : sigma->sectors()) {
     // first prepare pure block part which will be a nsecstates x nsecstates matrix
     const int nsecstates = sector.second->nstates();
@@ -89,13 +90,15 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
 
     shared_ptr<RASBlockVectors> sigma_sector = sector.second;
     shared_ptr<const RASBlockVectors> cc_sector = cc->sector(sector.first);
-    dgemm_("N","N", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, cc_sector->data(), cc_sector->ndim(), pure_block.data(), pure_block.ndim(),
+    dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, cc_sector->data(), cc_sector->ndim(), pure_block.data(), pure_block.ndim(),
                                                                                       0.0, sigma_sector->data(), sigma_sector->ndim());
+    ptime.tick_print("pure_block");
 
     // now do individual form_sigmas for the RAS parts
     FormSigmaRAS form_pure_ras(batchsize_);
     for(int ist = 0; ist < nsecstates; ++ist)
       form_pure_ras(cc_sector->civec(ist), sigma_sector->civec(ist), jop->monomer_jop<0>());
+    ptime.tick_print("pure_ras");
 
     // and now for the interaction part
     Matrix gamma_rs(nsecstates, nsecstates);
@@ -118,7 +121,7 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
         sector_rs.zero();
         for (int ist = 0; ist < nsecstates; ++ist)
           apply(cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}, {r,s});
-        dgemm_("N","N", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), gamma_rs.data(), gamma_rs.ndim(),
+        dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), gamma_rs.data(), gamma_rs.ndim(),
                                                                                           1.0, sigma_sector->data(), sigma_sector->ndim());
         // Prepare Gamma_IJ^beta quantity
         gamma_rs.zero();
@@ -132,9 +135,10 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
         sector_rs.zero();
         for (int ist = 0; ist < nsecstates; ++ist)
           apply(cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}, {r,s});
-        dgemm_("N","N", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), gamma_rs.data(), gamma_rs.ndim(),
+        dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), gamma_rs.data(), gamma_rs.ndim(),
                                                                                           1.0, sigma_sector->data(), sigma_sector->ndim());
       }
     }
+    ptime.tick_print("mixed form sigma");
   }
 }

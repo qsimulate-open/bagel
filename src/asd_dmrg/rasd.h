@@ -44,7 +44,8 @@ class RASD : public ASD_DMRG {
   private:
     void read_restricted(std::shared_ptr<PTree> input, const int site) const;
 
-    std::vector<std::shared_ptr<const RASDvec>> diagonalize_site_RDM(const std::vector<std::shared_ptr<ProductRASCivec>>& civecs) const ;
+    std::map<BlockKey, std::shared_ptr<const RASDvec>> diagonalize_site_RDM(const std::vector<std::shared_ptr<ProductRASCivec>>& civecs) const;
+    std::shared_ptr<Matrix> compute_sigma2e(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop) const;
 };
 
 }
