@@ -35,13 +35,14 @@ ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<
   if ((dynamic_pointer_cast<const RelReference>(ref))) {
       auto relref = dynamic_pointer_cast<const RelReference>(ref);
       coeff_ = relref->relcoeff();
+      ref_ = ref;
   } else {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
       nr_coeff_ = ref->coeff();
     }
   }
 // relref needed for many things below ; TODO eliminate dependence on ref_ being a relref
-  {
+  if (!dynamic_pointer_cast<const RelReference>(ref)) {
     auto idata_tmp = make_shared<PTree>(*idata_);
     const int ctmp = idata_->get<int>("charge", 0);
     const int nele = geom->nele();
@@ -150,10 +151,19 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  const bool bfgs_after_superci = idata_->get<bool>("bfgs_after_superci", false);
-  if (bfgs_after_superci) {
+  const bool kramers_coeff = idata_->get<bool>("kramers_coeff", false);
+  if (kramers_coeff) {
     shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
     coeff_ = make_shared<const ZMatrix>(*tmp);
+    if (nclosed_) {
+      if((*coeff_->get_submatrix(0, 0, coeff_->ndim()/4, 1)
+         - *coeff_->get_submatrix(coeff_->ndim()/4, nclosed_, coeff_->ndim()/4, 1)->get_conjg()).rms() > 1.0e-14)
+      throw logic_error("Coefficient is not kramers restricted ; please disable kramers_coeff flag for this reference");
+    } else {
+      if((*coeff_->get_submatrix(0, 0, coeff_->ndim()/4, 1)
+         - *coeff_->get_submatrix(coeff_->ndim()/4, nact_, coeff_->ndim()/4, 1)->get_conjg()).rms() > 1.0e-14)
+      throw logic_error("Coefficient is not kramers restricted ; please disable kramers_coeff flag for this reference");
+    }
   } else {
     init_kramers_coeff(); // coeff_ now in block format
   }
