@@ -29,8 +29,8 @@
 #define BAGEL_ASD_GAMMA_COUPLING
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::gamma_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::shared_ptr<GammaForest<VecType,2>> gammaforest) {
-  Coupling term_type = coupling_type(AB, ApBp);
+void ASD<VecType>::gamma_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::shared_ptr<GammaForest<VecType,2>> gammaforest) {
+  Coupling term_type = ASD::coupling_type(AB, ApBp);
 
   DSubSpace* space1 = &AB;
   DSubSpace* space2 = &ApBp;

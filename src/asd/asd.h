@@ -33,7 +33,7 @@ namespace bagel {
 
 /// Template for ASD (to be renamed ASD)
 template <class VecType>
-class MultiExcitonHamiltonian : public ASD_base {
+class ASD : public ASD_base {
   protected: using DSubSpace = DimerSubspace<VecType>;
   protected: using DCISpace = DimerCISpace_base<VecType>;
   protected: using CiType = typename VecType::Ci;
@@ -49,7 +49,7 @@ class MultiExcitonHamiltonian : public ASD_base {
     }
 
   public:
-    MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace);
+    ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace);
 
     void compute() override;
 

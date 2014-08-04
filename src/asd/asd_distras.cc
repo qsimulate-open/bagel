@@ -29,8 +29,8 @@
 using namespace std;
 using namespace bagel;
 
-ASD_DistRAS::ASD_DistRAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerDistRAS> cispace) :
-  MultiExcitonHamiltonian<DistRASDvec>(input, dimer, cispace) {}
+ASD_DistRAS::ASD_DistRAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerDistRAS> cispace)
+ : ASD<DistRASDvec>(input, dimer, cispace) {}
 
 
 shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma(shared_ptr<const DistRASDvec> ccvec, shared_ptr<const MOFile> jop) const {
@@ -47,5 +47,6 @@ shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma(shared_ptr<const DistRASDvec> cc
 
 // TODO function not yet written
 shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma_1e(shared_ptr<const DistRASDvec> ccvec, const double* modata) const {
+  throw logic_error("ASD_DistRAS::form_sigma_1e function not yet written");
   return nullptr;
 }

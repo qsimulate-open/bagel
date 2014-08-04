@@ -29,7 +29,7 @@
 #define BAGEL_ASD_COMPUTE_H
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::compute() {
+void ASD<VecType>::compute() {
   Timer asdtime;
   std::cout << std::endl << " ===== Starting construction of dimer Hamiltonian " << std::endl;
   std::cout << "   o Dimer space:" << std::endl;

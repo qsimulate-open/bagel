@@ -29,9 +29,9 @@
 #define BAGEL_ASD_INIT_H
 
 template <class VecType>
-MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace_base<VecType>> cispace) :
-  ASD_base(input, dimer), cispace_(cispace)
-{
+ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace_base<VecType>> cispace)
+ : ASD_base(input, dimer), cispace_(cispace) {
+
   Timer timer;
 
   cispace_->complete();
@@ -59,7 +59,7 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
 }
 
 template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const {
+std::shared_ptr<Matrix> ASD<VecType>::compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const {
 
   auto out = std::make_shared<Matrix>(dimerstates_, dimerstates_);
 

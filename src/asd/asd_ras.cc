@@ -29,8 +29,10 @@
 using namespace std;
 using namespace bagel;
 
-ASD_RAS::ASD_RAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerRAS> cispace) :
-  MultiExcitonHamiltonian<RASDvec>(input, dimer, cispace) { }
+ASD_RAS::ASD_RAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerRAS> cispace)
+  : ASD<RASDvec>(input, dimer, cispace) {
+
+}
 
 
 shared_ptr<RASDvec> ASD_RAS::form_sigma(shared_ptr<const RASDvec> ccvec, shared_ptr<const MOFile> jop) const {

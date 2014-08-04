@@ -29,7 +29,7 @@
 #define BAGEL_ASD_COMPUTE_DIAGONAL_H
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::compute_pure_terms(DSubSpace& AB, std::shared_ptr<const DimerJop> jop) {
+void ASD<VecType>::compute_pure_terms(DSubSpace& AB, std::shared_ptr<const DimerJop> jop) {
   {
     std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
     std::shared_ptr<const VecType> sigmavecA = form_sigma(ccvecA, jop->monomer_jop<0>());
@@ -64,7 +64,7 @@ void MultiExcitonHamiltonian<VecType>::compute_pure_terms(DSubSpace& AB, std::sh
 }
 
 template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_1e(const DSubSpace& AB, const double* hAA, const double* hBB, const double diag) const {
+std::shared_ptr<Matrix> ASD<VecType>::compute_diagonal_1e(const DSubSpace& AB, const double* hAA, const double* hBB, const double diag) const {
   std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
   std::shared_ptr<const VecType> ccvecB = AB.template ci<1>();
   std::shared_ptr<const VecType> sigmavecA = form_sigma_1e(ccvecA, hAA);

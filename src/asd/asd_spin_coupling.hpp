@@ -29,7 +29,7 @@
 #define BAGEL_ASD_SPIN_COUPLING_H
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<std::pair<int, int>, double>& spinmap) {
+void ASD<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<std::pair<int, int>, double>& spinmap) {
   const Coupling term_type = coupling_type(AB, ApBp);
 
   auto spin_block = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
@@ -106,7 +106,7 @@ void MultiExcitonHamiltonian<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpa
 //   S^2 = [ (S^A)^2 + (S^B)^2 ] + (S^2 - (S^A)^2 - (S^B)^2)
 //       = [ (S^A)^2 + (S^B)^2 ] + 2 S_z^A S_z^B
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap) {
+void ASD<VecType>::compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap) {
   std::shared_ptr<const VecType> Ap = subspace.template ci<0>();
   std::shared_ptr<const VecType> Bp = subspace.template ci<1>();
   std::shared_ptr<const VecType> SA = Ap->spin();
