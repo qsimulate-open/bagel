@@ -110,11 +110,11 @@ shared_ptr<Matrix> ASD_base::apply_hamiltonian(const Matrix& o, const vector<Dim
                                                                           1.0, out->element_ptr(joff, 0), out->ndim());
       }
       else {
-        shared_ptr<const Matrix> block = couple_blocks<true>(*iAB, *jAB);
+        shared_ptr<const Matrix> block = couple_blocks<true>(*jAB, *iAB);
 
         if (block) {
-          dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
-          dgemm_("T", "N", block->mdim(), nstates, block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
+          dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
+          dgemm_("T", "N", block->mdim(), nstates, block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
         }
       }
     }

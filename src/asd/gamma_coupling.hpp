@@ -31,7 +31,7 @@
 template <class VecType, int N>
 void GammaForest<VecType,N>::couple_blocks(const DimerSubspace<VecType>& AB, const DimerSubspace<VecType>& ApBp) {
   static_assert(N == 2, "the following assumes N == 2");
-  Coupling term_type = coupling_type(AB, ApBp);
+  Coupling term_type = coupling_type_old(AB, ApBp);
 
   auto* space1 = &AB;
   auto* space2 = &ApBp;

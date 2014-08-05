@@ -30,7 +30,7 @@
 
 template <class VecType>
 void ASDSpinMap<VecType>::couple_blocks(const DimerSubspace<VecType>& AB, const DimerSubspace<VecType>& ApBp) {
-  const Coupling term_type = coupling_type(AB, ApBp);
+  const Coupling term_type = coupling_type_old(AB, ApBp);
 
   auto spin_block = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 

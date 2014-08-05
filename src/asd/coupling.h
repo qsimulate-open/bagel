@@ -48,8 +48,35 @@ enum class Coupling {
   inv_bbET = -7   ///< inverse beta+beta transfer (B --> A)
 };
 
+inline std::ostream& operator<<(std::ostream& out, const Coupling value){
+  static std::map<Coupling, std::string> strings;
+  if (strings.size() == 0) {
+#define INSERT_ELEMENT(p) strings[p] = #p
+    INSERT_ELEMENT(Coupling::none);
+    INSERT_ELEMENT(Coupling::diagonal);
+    INSERT_ELEMENT(Coupling::aET);
+    INSERT_ELEMENT(Coupling::inv_aET);
+    INSERT_ELEMENT(Coupling::bET);
+    INSERT_ELEMENT(Coupling::inv_bET);
+    INSERT_ELEMENT(Coupling::abFlip);
+    INSERT_ELEMENT(Coupling::baFlip);
+    INSERT_ELEMENT(Coupling::abET);
+    INSERT_ELEMENT(Coupling::inv_abET);
+    INSERT_ELEMENT(Coupling::aaET);
+    INSERT_ELEMENT(Coupling::inv_aaET);
+    INSERT_ELEMENT(Coupling::bbET);
+    INSERT_ELEMENT(Coupling::inv_bbET);
+#undef INSERT_ELEMENT
+  }
+  return out << std::setw(25) << std::left << strings[value] << std::right;
+}
+
 Coupling coupling_type(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp);
 Coupling coupling_type(const std::array<MonomerKey,4>& keys);
+
+// TODO deprecated
+Coupling coupling_type_old(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp);
+Coupling coupling_type_old(const std::array<MonomerKey,4>& keys);
 
 }
 

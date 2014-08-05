@@ -28,6 +28,8 @@
 
 #include <src/asd/gamma_forest.h>
 #include <src/asd/dimersubspace.h>
+// TODO remove once debugging is done
+#include <src/smith/prim_op.h>
 
 namespace bagel {
 
@@ -74,9 +76,18 @@ class GammaTensor {
       // initialize operator space
       for (auto o : oplist_) {
         for (auto& i : sp)
-          for (auto& j : sp)
+          for (auto& j : sp) {
+#if 1
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TODO this will be removed once GammaForest has been fixed
+            std::list<GammaSQ> orev(o.rbegin(), o.rend());
+            if (f->template exist<M>(i.template tag<M>(), j.template tag<M>(), orev)) {
+              std::shared_ptr<Matrix> mat = f->template get<M>(i.template tag<M>(), j.template tag<M>(), orev);
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#else
             if (f->template exist<M>(i.template tag<M>(), j.template tag<M>(), o)) {
               std::shared_ptr<Matrix> mat = f->template get<M>(i.template tag<M>(), j.template tag<M>(), o);
+#endif
               btas::CRange<3> range(i.template monomerkey<M>().nstates(), j.template monomerkey<M>().nstates(), mat->mdim());
               // checking ndim
               assert(mat->ndim() == range.extent(0)*range.extent(1));
@@ -86,9 +97,32 @@ class GammaTensor {
               assert(mat->storage().size() == range.area());
               // convert this matrix to 3-tensor
               auto tensor = std::make_shared<btas::Tensor3<double>>(range, std::move(mat->storage()));
+#if 1
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TODO this will be removed once GammaForest has been fixed
+auto tmp = std::make_shared<btas::Tensor3<double>>(*tensor);
+// reordering operator indices
+if (o.size() == 2) {
+  const int dim = std::lrint(std::sqrt(static_cast<double>(range.extent(2))));
+  assert(dim*dim == range.extent(2));
+  SMITH::sort_indices<0,2,1,0,1,1,1>(tensor->data(), tmp->data(), range.extent(0)*range.extent(1), dim, dim);
+} else if (o.size() == 3) {
+  const int dim = std::lrint(std::pow(static_cast<double>(range.extent(2)), 1.0/3.0));
+  assert(dim*dim*dim == range.extent(2));
+  SMITH::sort_indices<0,3,2,1,0,1,1,1>(tensor->data(), tmp->data(), range.extent(0)*range.extent(1), dim, dim, dim);
+}
+// then reordering ket and bra (after this step, bra runs fastest)
+SMITH::sort_indices<1,0,2,0,1,1,1>(tmp->data(), tensor->data(), range.extent(0), range.extent(1), range.extent(2));
+btas::CRange<3> newrange(range.extent(1), range.extent(0), range.extent(2));
+tensor->resize(newrange);
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
               // add matrix
+              sparse_.emplace(std::make_tuple(listGammaSQ(o), j.template monomerkey<M>(), i.template monomerkey<M>()), tensor);
+#else
               sparse_.emplace(std::make_tuple(listGammaSQ(o), i.template monomerkey<M>(), j.template monomerkey<M>()), tensor);
+#endif
             }
+          }
       }
     }
 

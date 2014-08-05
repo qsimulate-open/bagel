@@ -80,11 +80,12 @@ void ASD<VecType>::compute() {
       for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
         const int joff = jAB->offset();
 
-        std::shared_ptr<Matrix> block = couple_blocks<true>(*iAB, *jAB);
+// TODO remove this comment once the gammaforst issue has been fixed (bra and ket have been exchanged)
+        std::shared_ptr<Matrix> block = couple_blocks<true>(*jAB, *iAB);
 
         if (block) {
-          hamiltonian_->add_block(1.0, ioff, joff, block->ndim(), block->mdim(), block);
-          hamiltonian_->add_block(1.0, joff, ioff, block->mdim(), block->ndim(), block->transpose());
+          hamiltonian_->add_block(1.0, joff, ioff, block->ndim(), block->mdim(), block);
+          hamiltonian_->add_block(1.0, ioff, joff, block->mdim(), block->ndim(), block->transpose());
         }
       }
     }

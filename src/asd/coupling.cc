@@ -44,6 +44,56 @@ Coupling bagel::coupling_type(const array<MonomerKey,4>& keys) {
   pair<int,int> nelebApBp {Ap.neleb(), Bp.neleb()};
 
   // AlphaTransfer and BetaTransfer
+  pair<int,int> AT {neleaAB.first - neleaApBp.first, neleaAB.second - neleaApBp.second};
+  pair<int,int> BT {nelebAB.first - nelebApBp.first, nelebAB.second - nelebApBp.second};
+
+  /************************************************************
+  *  BT\AT  | ( 0, 0) | (+1,-1) | (-1,+1) | (+2,-2) | (-2,+2) *
+  *-----------------------------------------------------------*
+  * ( 0, 0) |  diag   |  aET    |  -aET   |  aaET   | -aaET   *
+  * (+1,-1) |  bET    |  dABT   |  ABflp  |         |         *
+  * (-1,+1) | -bET    | BAflp   | -dABT   |         |         *
+  * (+2,-2) |  bbET   |         |         |         |         *
+  * (-2,+2) | -bbET   |         |         |         |         *
+  ************************************************************/
+
+  const auto icouple = make_tuple(AT.first, AT.second, BT.first, BT.second);
+
+  if      (icouple == make_tuple( 0, 0, 0, 0)) return Coupling::diagonal;
+  else if (icouple == make_tuple( 0, 0,+1,-1)) return Coupling::bET;
+  else if (icouple == make_tuple( 0, 0,-1,+1)) return Coupling::inv_bET;
+  else if (icouple == make_tuple(+1,-1, 0, 0)) return Coupling::aET;
+  else if (icouple == make_tuple(+1,-1,+1,-1)) return Coupling::abET;
+  else if (icouple == make_tuple(+1,-1,-1,+1)) return Coupling::baFlip;
+  else if (icouple == make_tuple(-1,+1, 0, 0)) return Coupling::inv_aET;
+  else if (icouple == make_tuple(-1,+1,+1,-1)) return Coupling::abFlip;
+  else if (icouple == make_tuple(-1,+1,-1,+1)) return Coupling::inv_abET;
+  else if (icouple == make_tuple(+2,-2, 0, 0)) return Coupling::aaET;
+  else if (icouple == make_tuple(-2,+2, 0, 0)) return Coupling::inv_aaET;
+  else if (icouple == make_tuple( 0, 0,+2,-2)) return Coupling::bbET;
+  else if (icouple == make_tuple( 0, 0,-2,+2)) return Coupling::inv_bbET;
+  else                                         return Coupling::none;
+}
+
+
+// TODO will be deprecated
+Coupling bagel::coupling_type_old(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) {
+  array<MonomerKey,4> keys {{ AB.monomerkey<0>(), AB.monomerkey<1>(), ApBp.monomerkey<0>(), ApBp.monomerkey<1>()}};
+  return coupling_type_old(keys);
+}
+
+
+// TODO will be deprecated
+Coupling bagel::coupling_type_old(const array<MonomerKey,4>& keys) {
+  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
+
+  pair<int,int> neleaAB {A.nelea(), B.nelea()};
+  pair<int,int> nelebAB {A.neleb(), B.neleb()};
+
+  pair<int,int> neleaApBp {Ap.nelea(), Bp.nelea()};
+  pair<int,int> nelebApBp {Ap.neleb(), Bp.neleb()};
+
+  // AlphaTransfer and BetaTransfer
   pair<int,int> AT {neleaApBp.first - neleaAB.first, neleaApBp.second - neleaAB.second};
   pair<int,int> BT {nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second};
 
