@@ -262,8 +262,7 @@ void ZHarrison::compute_rdm12() {
           (trace2("0000")*0.5 + trace2("1111")*0.5
             + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av_kramers(bitset<4>("0101"))->data(), 1)
             + trace2("1100") + trace2("0100")*2.0 + trace2("1101")*2.0).real();
-  cout << "    *  recalculated FCI 2electron energy (state averaged)" << endl;
-  cout << setw(29) << setprecision(16) << twoelectron_energy << endl;
+  cout << "    *  recalculated FCI 2electron energy (state averaged) = " << setw(29) << setprecision(16) << twoelectron_energy << endl;
 
   // checking against the original energies
   const double orig_energy = accumulate(energy_.begin(), energy_.end(), 0.0) / energy_.size();
