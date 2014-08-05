@@ -46,6 +46,7 @@ class RASD : public ASD_DMRG {
 
     std::map<BlockKey, std::shared_ptr<const RASDvec>> diagonalize_site_RDM(const std::vector<std::shared_ptr<ProductRASCivec>>& civecs) const;
     std::shared_ptr<Matrix> compute_sigma2e(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop) const;
+    std::shared_ptr<Matrix> compute_spin(std::shared_ptr<const RASDvec> cc) const;
 };
 
 }

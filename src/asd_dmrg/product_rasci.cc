@@ -172,8 +172,8 @@ void ProductRASCI::compute() {
           const double en = energies.at(ist);
           transform(dbegin, dend, source_iter, targ_iter, [&en] (const double den, const double cc) { return cc / min(en - den, -0.1); });
         }
-        cc.at(ist)->normalize();
         //cc.at(ist)->spin_decontaminate();
+        cc.at(ist)->normalize();
         //cc.at(ist)->synchronize();
       }
     }
@@ -212,27 +212,8 @@ void ProductRASCI::compute() {
   }
 
   for (int istate = 0; istate < nstates_; ++istate) {
-    cout << endl << "     * state " << setw(3) << istate << ", <S^2> = " << setw(6) << setprecision(4) //<< cc_.at(istate)->spin_expectation()
+    cout << endl << "     * state " << setw(3) << istate << ", <S^2> = " << setw(6) << setprecision(4) << cc_.at(istate)->spin_expectation()
                  << ", E = " << setw(17) << fixed << setprecision(8) << energy_[istate] << endl;
     cc_.at(istate)->print(print_thresh_);
   }
 }
-
-#if 0
-shared_ptr<Matrix> ProductRASCI::compute_sigma2e() const {
-  assert(cc_->ij() == nstates_);
-#if 0
-  FormSigmaRAS form_sigma(batchsize_);
-  shared_ptr<const RASDvec> sigma = form_sigma(cc_, nullptr, jop_->mo2e(), vector<int>(nstates_, static_cast<int>(false)));
-#else
-  vector<shared_ptr<const ProductRASCivec>> sigma = form_sigma(cc_, jop_/*, ..., ...*/);
-#endif
-  auto out = make_shared<Matrix>(nstates_, nstates_);
-  for (int i = 0; i < nstates_; ++i) {
-    for (int j = 0; j < i; ++j)
-      out->element(i,j) = out->element(j,i) = cc_.at(i)->dot_product(*sigma.at(j));
-    out->element(i,i) = out->element(i,i) = cc_.at(i)->dot_product(*sigma.at(i));
-  }
-  return out;
-}
-#endif

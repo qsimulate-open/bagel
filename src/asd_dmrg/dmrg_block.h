@@ -47,6 +47,7 @@ class DMRG_Block {
 
     SparseMap sparse_;
     std::map<BlockKey, std::shared_ptr<const Matrix>> H2e_;
+    std::map<BlockKey, std::shared_ptr<const Matrix>> spin_;
     std::set<BlockInfo> blocks_;
 
     std::shared_ptr<const Matrix> coeff_; ///< Coefficients for orbitals stored in DMRG_Block
@@ -57,7 +58,8 @@ class DMRG_Block {
 
     /// constructor that takes an Rvalue reference to a GammaForestASD
     template <typename T>
-    DMRG_Block(GammaForestASD<T>&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, std::shared_ptr<const Matrix> coeff) : H2e_(h2e), coeff_(coeff) {
+    DMRG_Block(GammaForestASD<T>&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, std::map<BlockKey,
+               std::shared_ptr<const Matrix>> spin, std::shared_ptr<const Matrix> coeff) : H2e_(h2e), spin_(spin), coeff_(coeff) {
       // Build set of blocks
       for (auto& i : h2e) {
         assert(i.second->ndim() == i.second->mdim());
@@ -108,6 +110,7 @@ class DMRG_Block {
 
     const std::map<std::pair<BlockKey, BlockKey>, CouplingBlock>& coupling(const std::list<GammaSQ>& l) const { return sparse_.at(l); }
     std::shared_ptr<const Matrix> h2e(const BlockKey& b) const { return H2e_.at(b); }
+    std::shared_ptr<const Matrix> spin(const BlockKey& b) const { return spin_.at(b); }
 
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
 };
