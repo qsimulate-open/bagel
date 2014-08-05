@@ -444,6 +444,34 @@ class RASCivector_impl : public RASCivector_base<RASBlock<DataType>> {
       return out;
     }
 
+    DataType spin_expectation() const { return static_cast<const Derived*>(this)->dot_product(*static_cast<const Derived*>(this)->spin()); }
+    void spin_decontaminate_impl(const double thresh) {
+      const int nspin = det_->nspin();
+      const int max_spin = det_->nelea() + det_->neleb();
+
+      const double pure_expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
+
+      auto S2 = static_cast<Derived*>(this)->spin();
+      double actual_expectation = static_cast<Derived*>(this)->dot_product(*S2);
+
+      int k = nspin + 2;
+      while( fabs(actual_expectation - pure_expectation) > thresh ) {
+        if ( k > max_spin ) { this->print(0.05); throw std::runtime_error("Spin decontamination failed."); }
+
+        const double factor = -4.0/(static_cast<double>(k*(k+2)));
+        static_cast<Derived*>(this)->ax_plus_y(factor, *S2);
+
+        const double norm = this->norm();
+        const double rescale = (norm*norm > 1.0e-60) ? 1.0/norm : 0.0;
+        scale(rescale);
+
+        S2 = static_cast<Derived*>(this)->spin();
+        actual_expectation = static_cast<Derived*>(this)->dot_product(*S2);
+
+        k += 2;
+      }
+    }
+
     void ax_plus_y(const double a, const Derived& o) { blas::ax_plus_y_n(a, o.data(), size(), data()); }
     void ax_plus_y(const double a, std::shared_ptr<const Derived>& o) { blas::ax_plus_y_n(a, o->data(), size(), data()); }
 
@@ -575,11 +603,11 @@ class RASCivector : public RASCivector_impl<DataType, RASCivector<DataType>> {
     std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const { return this->template transpose_impl<RASCivector<DataType>>(det); }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
-    double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
-    std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return nullptr;} // returns S^2 | civec >
-    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; } // S_-
-    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; } // S_+
-    void spin_decontaminate(const double thresh = 1.0e-8) { assert(false); }
+    std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return nullptr;}
+    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
+
+    void spin_decontaminate(const double thresh = 1.0e-8) { this->spin_decontaminate_impl(thresh); }
 
     std::shared_ptr<RASCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
       // action: true -> create; false -> annihilate
@@ -631,11 +659,9 @@ class RASCivector : public RASCivector_impl<DataType, RASCivector<DataType>> {
     }
 };
 
-template<> double RASCivector<double>::spin_expectation() const; // returns < S^2 >
 template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin() const; // returns S^2 | civec >
 template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(std::shared_ptr<const RASDeterminants>) const; // S_-
 template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(std::shared_ptr<const RASDeterminants>) const; // S_+
-template<> void RASCivector<double>::spin_decontaminate(const double thresh);
 
 using RASCivec = RASCivector<double>;
 using RASDvec  = Dvector_base<RASCivec>;
@@ -691,6 +717,13 @@ class RASCivecView_ : public RASCivector_impl<DataType, RASCivecView_<DataType>>
 
     using RASCivector_base<RASBlock<DataType>>::det;
 
+    // Spin functions are only implememted as specialized functions for double (see civec.cc)
+    std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return nullptr;}
+    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
+
+    void spin_decontaminate(const double thresh = 1.0e-8) { this->spin_decontaminate_impl(thresh); }
+
     DataType* data_impl() { assert(can_write_); return data_ptr_; }
     const DataType* data_impl() const { return data_ptr_; }
 
@@ -700,6 +733,10 @@ class RASCivecView_ : public RASCivector_impl<DataType, RASCivecView_<DataType>>
 
     std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const { return this->template transpose_impl<RASCivector<DataType>>(det); }
 };
+
+template<> std::shared_ptr<RASCivector<double>> RASCivecView_<double>::spin() const; // returns S^2 | civec >
+template<> std::shared_ptr<RASCivector<double>> RASCivecView_<double>::spin_lower(std::shared_ptr<const RASDeterminants>) const; // S_-
+template<> std::shared_ptr<RASCivector<double>> RASCivecView_<double>::spin_raise(std::shared_ptr<const RASDeterminants>) const; // S_+
 
 using RASCivecView = RASCivecView_<double>;
 
