@@ -314,8 +314,7 @@ shared_ptr<Matrix> ASD_base::compute_aET<true>(const array<MonomerKey,4>& keys) 
   if ((neleA % 2) == 1) {
     // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
     SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
-  }
-  else {
+  } else {
     // sort: (A,A',B,B') --> (A,B,A',B')
     SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }

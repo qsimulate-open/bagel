@@ -112,7 +112,6 @@ if (o.size() == 2) {
   SMITH::sort_indices<0,3,2,1,0,1,1,1>(tensor->data(), tmp->data(), range.extent(0)*range.extent(1), dim, dim, dim);
 }
 // then reordering ket and bra (after this step, bra runs fastest)
-SMITH::sort_indices<1,0,2,0,1,1,1>(tmp->data(), tensor->data(), range.extent(0), range.extent(1), range.extent(2));
 btas::CRange<3> newrange(range.extent(1), range.extent(0), range.extent(2));
 tensor->resize(newrange);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
