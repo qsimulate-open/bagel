@@ -35,23 +35,31 @@ namespace bagel {
 
 template <typename Batch>
 class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
+  friend class Matrix1eArrayTask<4*Batch::Nblocks()>;
   protected:
     void init(std::shared_ptr<const Molecule> mol) override {
       std::list<std::shared_ptr<const Shell>> shells;
       for (auto& i : mol->atoms())
         shells.insert(shells.end(), i->shells().begin(), i->shells().end());
 
-      // TODO thread, parallel
+      const size_t nshell = accumulate(mol->atoms().begin(), mol->atoms().end(), 0, [](int r, std::shared_ptr<const Atom> p) { return r+p->nshell(); });
+      TaskQueue<Matrix1eArrayTask<4*Batch::Nblocks()>> task(nshell*(nshell+1)/2);
+
       int o0 = 0;
+      int u = 0;
       for (auto& a0 : shells) {
         int o1 = 0;
         for (auto& a1 : shells) {
-          std::array<std::shared_ptr<const Shell>,2> input = {{a1, a0}};
-          computebatch(input, o0, o1, mol);
+          if (u++ % mpi__->size() == mpi__->rank()) {
+            std::array<std::shared_ptr<const Shell>,2> input = {{a1, a0}};
+            task.emplace_back(input, o0, o1, mol, this);
+          }
           o1 += a1->nbasis();
         }
         o0 += a0->nbasis();
       }
+      task.compute();
+      for (auto& i : this->matrices_) i->allreduce();
     }
 
   public:
