@@ -93,6 +93,8 @@ ProductRASCI::ProductRASCI(shared_ptr<const PTree> input, shared_ptr<const Refer
   ref_ = make_shared<Reference>(ref_->geom(), std::make_shared<Coeff>(move(*coeff)), ref_->nclosed(), ref_->nact() + left_->norb(), 0);
   jop_ = make_shared<DimerJop>(ref_, ref_->nclosed(), ref_->nclosed() + norb_, ref_->nclosed() + ref_->nact(), ref_->coeff());
 
+  blockops_ = make_shared<BlockOperators>(left_, jop_);
+
   construct_denom();
 }
 
@@ -132,7 +134,7 @@ void ProductRASCI::compute() {
     Timer calctime;
 
     // form a sigma vector given cc
-    vector<shared_ptr<ProductRASCivec>> sigma = form_sigma(cc, jop_, converged);
+    vector<shared_ptr<ProductRASCivec>> sigma = form_sigma(cc, blockops_, jop_, converged);
     pdebug.tick_print("sigma formation");
 
     // feeding sigma vectors into Davidson

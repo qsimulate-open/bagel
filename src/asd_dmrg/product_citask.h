@@ -60,11 +60,10 @@ class ProductCITask {
 
 class ProductCIHamTask : public ProductCITask<ProductCIHamTask> {
   protected:
-    std::shared_ptr<const DMRG_Block> left_;
+    std::shared_ptr<const BlockOperators> blockops_;
     std::shared_ptr<const DimerJop> jop_;
     std::shared_ptr<const Matrix> mo1e_;
 
-    const int lnorb_;
     const int rnorb_;
 
     double mo2e(int i, int j, int k, int l) {
@@ -73,10 +72,9 @@ class ProductCIHamTask : public ProductCITask<ProductCIHamTask> {
     }
 
     double compute_pure_ras(const std::bitset<nbit__> abra, const std::bitset<nbit__> bbra, const std::bitset<nbit__> aket, const std::bitset<nbit__> bket);
-    double compute_pure_block(const BlockKey brakey, const int brastate, const BlockKey ketkey, const int ketstate);
 
   public:
-    ProductCIHamTask(std::vector<PCI::Basis>* b, std::shared_ptr<const DMRG_Block> left, std::shared_ptr<const DimerJop> jop, std::shared_ptr<const Matrix> mo1e, const size_t c1, double* d1, const size_t c2, double* d2);
+    ProductCIHamTask(std::vector<PCI::Basis>* b, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop, std::shared_ptr<const Matrix> mo1e, const size_t c1, double* d1, const size_t c2, double* d2);
 
     double matrix_element_impl(const PCI::Basis& bra, const PCI::Basis& ket);
 };

@@ -119,23 +119,6 @@ double ProductCIHamTask::compute_pure_ras(const bitset<nbit__> abra, const bitse
   return out;
 }
 
-double ProductCIHamTask::compute_pure_block(const BlockKey brakey, const int brastate, const BlockKey ketkey, const int ketstate) {
-  assert(brakey==ketkey);
-
-  // two-electron energy
-  double out = left_->h2e(brakey)->element(brastate, ketstate);
-
-  shared_ptr<const btas::Tensor3<double>> alpha = left_->coupling({GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}).at({brakey,ketkey}).data;
-  shared_ptr<const btas::Tensor3<double>> beta = left_->coupling({GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}).at({brakey,ketkey}).data;
-
-  // p^+ q
-  for (int p = 0, pq = 0; p < lnorb_; ++p)
-    for (int q = 0; q < lnorb_; ++q, ++pq)
-      out += mo1e_->element(p+rnorb_,q+rnorb_) * ((*alpha)(brastate,ketstate,pq) + (*beta)(brastate,ketstate,pq));
-
-  return out;
-}
-
 double ProductCIHamTask::matrix_element_impl(const PCI::Basis& bra, const PCI::Basis& ket) {
   assert((bra.nelea+bra.neleb+bra.alpha.count()+bra.beta.count()) == (ket.nelea+ket.neleb+ket.alpha.count()+ket.beta.count()));
   if ( !(bra.alpha.count()==ket.alpha.count() && bra.beta.count()==ket.beta.count()) )
@@ -151,10 +134,10 @@ double ProductCIHamTask::matrix_element_impl(const PCI::Basis& bra, const PCI::B
       out += compute_pure_ras(bra.alpha, bra.beta, ket.alpha, ket.beta);
 
     if (make_pair(bra.alpha,bra.beta)==make_pair(ket.alpha,ket.beta)) // |L>==|L'> --> <phi| H |phi'>
-      out += compute_pure_block(bra.key(), bra.state, ket.key(), ket.state);
+      out += (*blockops_->ham(bra.key()))(bra.state, ket.state);
 
-    shared_ptr<const btas::Tensor3<double>> alpha = left_->coupling({GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}).at({bra.key(),ket.key()}).data;
-    shared_ptr<const btas::Tensor3<double>> beta = left_->coupling({GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}).at({bra.key(),ket.key()}).data;
+    shared_ptr<const btas::Tensor4<double>> Qaa = blockops_->Q_aa(bra.key());
+    shared_ptr<const btas::Tensor4<double>> Qbb = blockops_->Q_bb(bra.key());
 
     const bitset<nbit__> aexch = bra.alpha ^ ket.alpha;
     const bitset<nbit__> bexch = bra.beta ^ ket.beta;
@@ -165,39 +148,27 @@ double ProductCIHamTask::matrix_element_impl(const PCI::Basis& bra, const PCI::B
 
     if (nexch==0) {
       assert(make_pair(bra.alpha,bra.beta)==make_pair(ket.alpha,ket.beta));
-      for (int p = 0, pq = 0; p < lnorb_; ++p) {
-        for (int q = 0; q < lnorb_; ++q, ++pq) {
-          double j_pq = 0.0, ka_pq = 0.0, kb_pq = 0.0;
-          for (int r = 0; r < rnorb_; ++r) {
-            j_pq  += mo2e(p+rnorb_,q+rnorb_,r,r) * static_cast<double>(bra.alpha[r]+bra.beta[r]);
-            ka_pq += mo2e(p+rnorb_,r,q+rnorb_,r) * static_cast<double>(bra.alpha[r]);
-            kb_pq += mo2e(p+rnorb_,r,q+rnorb_,r) * static_cast<double>(bra.beta[r]);
-          }
-          out += (*alpha)(bra.state,ket.state,pq) * (j_pq - ka_pq) + (*beta)(bra.state,ket.state,pq) * (j_pq - kb_pq);
-        }
+      for (int r = 0; r < rnorb_; ++r) {
+        out += (*Qaa)(bra.state, ket.state, r, r) * static_cast<double>(bra.alpha[r]);
+        out += (*Qbb)(bra.state, ket.state, r, r) * static_cast<double>(bra.beta[r]);
       }
     }
     else if (nexch==2) {
-      shared_ptr<const btas::Tensor3<double>> ktensor = (naexch==2 ? alpha : beta);
-      assert(ktensor->range().extent(2) == lnorb_*lnorb_);
+      shared_ptr<const btas::Tensor3<double>> Q = (naexch==2 ? Qaa : Qbb);
       const int r = bit_to_numbers(naexch==2 ? (aexch & bra.alpha) : (bexch & bra.beta)).front();
       const int s = bit_to_numbers(naexch==2 ? (aexch & ket.alpha) : (bexch & ket.beta)).front();
       const double phase = static_cast<double>(bagel::sign((naexch==2 ? bra.alpha : bra.beta), r, s));
-      // p^+ q
-      for (int p = 0, pq = 0; p < lnorb_; ++p)
-        for (int q = 0; q < lnorb_; ++q, ++pq)
-          out += phase * (((*alpha)(bra.state,ket.state,pq) + (*beta)(bra.state,ket.state,pq)) * mo2e(p+rnorb_,q+rnorb_,r,s)
-                                                         - (*ktensor)(bra.state,ket.state,pq)  * mo2e(p+rnorb_,s,q+rnorb_,r));
+      out += phase * (*Q)(bra.state, ket.state, r, s);
     }
   }
 
   return out;
 }
 
-ProductCIHamTask::ProductCIHamTask(vector<PCI::Basis>* b, shared_ptr<const DMRG_Block> left, shared_ptr<const DimerJop> jop, shared_ptr<const Matrix> mo1e, const size_t c1, double* d1, const size_t c2, double* d2) :
-  ProductCITask<ProductCIHamTask>(b, c1, d1, c2, d2), left_(left), jop_(jop), mo1e_(mo1e), lnorb_(left->norb()), rnorb_(jop->nocc() - left->norb()) {}
+ProductCIHamTask::ProductCIHamTask(vector<PCI::Basis>* b, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop, shared_ptr<const Matrix> mo1e, const size_t c1, double* d1, const size_t c2, double* d2) :
+  ProductCITask<ProductCIHamTask>(b, c1, d1, c2, d2), blockops_(blockops), jop_(jop), mo1e_(mo1e), rnorb_(jop->monomer_jop<0>()->nocc()) {}
 
-ProductCIHamiltonian::ProductCIHamiltonian(vector<PCI::Basis>& b, shared_ptr<const DMRG_Block> left, shared_ptr<const DimerJop> jop) : Matrix(b.size(), b.size()), basis_(b), left_(left), jop_(jop) {
+ProductCIHamiltonian::ProductCIHamiltonian(vector<PCI::Basis>& b, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop) : Matrix(b.size(), b.size()), basis_(b), blockops_(blockops), jop_(jop) {
   const size_t size = basis_.size();
 
   shared_ptr<Matrix> mo1e = jop_->mo1e()->matrix();
@@ -222,7 +193,7 @@ ProductCIHamiltonian::ProductCIHamiltonian(vector<PCI::Basis>& b, shared_ptr<con
   size_t end = size - 1;
 
   for (size_t i = 0; i < ntasks; ++i, ++start, --end)
-    tasks.emplace_back(&basis_, left_, jop_, mo1e, start, this->element_ptr(start, start), end, this->element_ptr(end, end));
+    tasks.emplace_back(&basis_, blockops_, jop_, mo1e, start, this->element_ptr(start, start), end, this->element_ptr(end, end));
 
   tasks.compute();
 

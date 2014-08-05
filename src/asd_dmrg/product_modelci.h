@@ -28,7 +28,7 @@
 
 #include <src/math/matrix.h>
 #include <src/dimer/dimer_jop.h>
-#include <src/asd_dmrg/dmrg_block.h>
+#include <src/asd_dmrg/block_operators.h>
 
 namespace bagel {
 
@@ -47,11 +47,11 @@ namespace PCI {
 class ProductCIHamiltonian : public Matrix {
   protected:
     std::vector<PCI::Basis> basis_;
-    std::shared_ptr<const DMRG_Block> left_;
+    std::shared_ptr<const BlockOperators> blockops_;
     std::shared_ptr<const DimerJop> jop_;
 
   public:
-    ProductCIHamiltonian(std::vector<PCI::Basis>& b, std::shared_ptr<const DMRG_Block> left, std::shared_ptr<const DimerJop> jop);
+    ProductCIHamiltonian(std::vector<PCI::Basis>& b, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop);
 };
 
 class ProductCISpin : public Matrix {

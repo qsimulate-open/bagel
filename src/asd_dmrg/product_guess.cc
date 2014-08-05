@@ -56,8 +56,8 @@ void ProductRASCI::model_guess(vector<shared_ptr<ProductRASCivec>>& out) {
   }
   const int guess_size = basis.size();
 
-  // In the future, I will want to do some sort of spin decontaminate
-  shared_ptr<Matrix> hamiltonian = make_shared<ProductCIHamiltonian>(basis, left_, jop_);
+  // In the future, I may want to do some sort of spin decontaminate
+  shared_ptr<Matrix> hamiltonian = make_shared<ProductCIHamiltonian>(basis, blockops_, jop_);
   VectorB eigs(guess_size);
   hamiltonian->diagonalize(eigs);
 

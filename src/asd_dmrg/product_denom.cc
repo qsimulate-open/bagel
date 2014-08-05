@@ -36,31 +36,17 @@ void ProductRASCI::construct_denom() {
   // allocate denom_
   denom_ = make_shared<ProductRASCivec>(space_, left_, nelea_, neleb_);
 
-  const int lnorb = left_->norb();
   const int rnorb = norb_;
 
   // first compute pure Block terms
   map<BlockKey, shared_ptr<VectorB>> pure_block;
   for (auto& b : left_->blocks()) {
     auto out = make_shared<VectorB>(b.nstates);
-    shared_ptr<const Matrix> h2e = left_->h2e(b.key());
+    shared_ptr<const Matrix> ham = blockops_->ham(b.key());
     const int nstates = b.nstates;
     for (int i = 0; i < nstates; ++i)
-      (*out)(i) = h2e->element(i,i);
+      (*out)(i) = ham->element(i,i);
     pure_block.emplace(b.key(), out);
-
-    const Matrix block1e(*jop_->monomer_jop<1>()->mo1e()->matrix());
-
-    // alpha-alpha part
-    const btas::TensorView4<double> alphaview(btas::make_view(btas::CRange<4>(nstates, nstates, lnorb, lnorb), left_->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha}).at({b.key(), b.key()}).data->storage()));
-    const btas::TensorView4<double> betaview(btas::make_view(btas::CRange<4>(nstates, nstates, lnorb, lnorb), left_->coupling({GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta}).at({b.key(), b.key()}).data->storage()));
-    for (int ist = 0; ist < nstates; ++ist) {
-      for (int i = 0; i < lnorb; ++i) {
-        for (int j = 0; j < lnorb; ++j) {
-          (*out)(ist) += (alphaview(ist,ist,i,j)+betaview(ist,ist,i,j)) * block1e(i,j);
-        }
-      }
-    }
   }
   denom_t.tick_print("denom: pure block");
 
@@ -100,28 +86,12 @@ void ProductRASCI::construct_denom() {
 
   // finally, pull it all together and compute the mixed terms
   {
-    btas::Tensor3<double> jop(rnorb, lnorb, lnorb);
-    btas::Tensor3<double> kop(rnorb, lnorb, lnorb);
-    {
-      const btas::TensorView4<double> fulljop(btas::make_view(btas::CRange<4>(rnorb,rnorb,lnorb,lnorb), jop_->coulomb_matrix<1,0,1,0>()->storage()));
-      const btas::TensorView4<double> fullkop(btas::make_view(btas::CRange<4>(rnorb,rnorb,lnorb,lnorb), jop_->coulomb_matrix<1,1,0,0>()->storage()));
-      for (int i = 0; i < lnorb; ++i) {
-        for (int j = 0; j < lnorb; ++j) {
-          for (int k = 0; k < rnorb; ++k) {
-            jop(k,i,j) = fulljop(i,j,k,k);
-            kop(k,i,j) = fullkop(i,j,k,k);
-          }
-        }
-      }
-    }
-
-    // TODO: This should be threaded
     for (auto& sec: denom_->sectors()) {
       const int nstates = sec.second->nstates();
       vector<RASCivecView> vecs = sec.second->civecs();
 
-      const btas::TensorView4<double> alphaview(btas::make_view(btas::CRange<4>(nstates, nstates, lnorb, lnorb), left_->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha}).at({sec.first, sec.first}).data->storage()));
-      const btas::TensorView4<double> betaview(btas::make_view(btas::CRange<4>(nstates, nstates, lnorb, lnorb), left_->coupling({GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta}).at({sec.first, sec.first}).data->storage()));
+      shared_ptr<const btas::Tensor4<double>> Qaa = blockops_->Q_aa(sec.first);
+      shared_ptr<const btas::Tensor4<double>> Qbb = blockops_->Q_bb(sec.first);
 
       for (int i = 0; i < nstates; ++i) {
         // initialize to sum of pure terms
@@ -136,27 +106,19 @@ void ProductRASCI::construct_denom() {
           for (size_t ia = 0; ia < la; ++ia) {
             bitset<nbit__> abit = block->string_bits_a(ia);
             double* const data_base = block->data() + lb*ia;
-            for (int p = 0; p < lnorb; ++p) {
-              for (int q = 0; q < lnorb; ++q) {
-                double ja_pq = 0.0; // ja_pq = \sum_r n_r^alpha (pq|rr)
-                double ka_pq = 0.0; // ka_pq = \sum_r n_r^alpha (pr|qr)
-                for (int r = 0; r < rnorb; ++r) {
-                  ja_pq += jop(r,p,q)*abit[r];
-                  ka_pq += kop(r,p,q)*abit[r];
-                }
 
-                for (size_t ib = 0; ib < lb; ++ib) {
-                  bitset<nbit__> bbit = block->string_bits_b(ib);
+            double alphaE = 0.0;
+            for (int r = 0; r < rnorb; ++r)
+              alphaE += (*Qaa)(i,i,r,r)*abit[r];
 
-                  double j_pq = ja_pq; // j_pq = \sum_r n_r^beta (pq|rr) + ja_pq
-                  double kb_pq = 0.0; // kb_pq = \sum_r n_r^beta (pr|qr)
-                  for (int r = 0; r < rnorb; ++r) {
-                    j_pq += jop(r,p,q)*bbit[r];
-                    kb_pq += kop(r,p,q)*bbit[r];
-                  }
-                  data_base[ib] += alphaview(i,i,p,q) * (j_pq - ka_pq) + betaview(i,i,p,q) * (j_pq - kb_pq);
-                }
-              }
+            for (size_t ib = 0; ib < lb; ++ib) {
+              const bitset<nbit__> bbit = block->string_bits_b(ib);
+
+              double betaE = 0.0;
+              for (int r = 0; r < rnorb; ++r)
+                betaE += (*Qbb)(i,i,r,r)*bbit[r];
+
+              data_base[ib] += alphaE + betaE;
             }
           }
         }

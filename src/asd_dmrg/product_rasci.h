@@ -30,6 +30,7 @@
 
 #include <src/asd_dmrg/product_civec.h>
 #include <src/asd_dmrg/dmrg_block.h>
+#include <src/asd_dmrg/block_operators.h>
 
 namespace bagel {
 
@@ -39,6 +40,7 @@ class ProductRASCI {
     std::shared_ptr<const PTree> input_;
     std::shared_ptr<const Reference> ref_;
     std::shared_ptr<const DMRG_Block> left_;
+    std::shared_ptr<const BlockOperators> blockops_;
 
     int max_iter_; ///< maximum number of iterations to perform
     int davidson_subspace_; ///< maximum number of trial vectors to keep during the Davidson iterations
@@ -82,8 +84,6 @@ class ProductRASCI {
     double core_energy() const { return jop_->core_energy(); }
 
     std::shared_ptr<const DimerJop> jop() const { return jop_; }
-
-    //std::shared_ptr<Matrix> compute_sigma2e() const;
 
     std::vector<double> energy() const { return energy_; }
     double energy(const int i) const { return energy_.at(i); }
