@@ -96,6 +96,11 @@ class DMRG_Block {
       }
     }
 
+    bool contains(const BlockKey& k) const {
+      auto iter = std::find_if(blocks_.begin(), blocks_.end(), [&k] (const BlockInfo& b) { return (b.nelea==k.nelea && b.neleb==k.neleb); });
+      return iter!=blocks_.end();
+    }
+
     int norb() const { return coeff_->mdim(); }
     int nstates() const { return std::accumulate(blocks_.begin(), blocks_.end(), 0, [] (const int o, const BlockInfo& b) { return o + b.nstates; }); }
 

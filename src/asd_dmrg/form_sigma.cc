@@ -96,6 +96,7 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
 
     const int rnorb = jop->monomer_jop<0>()->nocc();
 
+    // TODO make use of the symmetry of Qaa and Qbb: Q(L',L,i,j) = Q(L',L,j,i)
     for (int r = 0; r < rnorb; ++r) {
       for (int s = 0; s < rnorb; ++s) {
         // apply (r^dagger s)_alpha to the Civecs
