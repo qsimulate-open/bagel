@@ -40,7 +40,7 @@ namespace RAS {
   /// Spin lowering operator \f$ \hat S_- = \sum_i i^\dagger_\beta i_\alpha \f$
   void spin_lower_impl(const RASCivecView cc, RASCivecView out);
 
-  /// Spin raising operator \f$ \hat S_+ = \sum_i i^\dagger_\alph i_\beta \f$
+  /// Spin raising operator \f$ \hat S_+ = \sum_i i^\dagger_\alpha i_\beta \f$
   void spin_raise_impl(const RASCivecView cc, RASCivecView out);
 }
 }
