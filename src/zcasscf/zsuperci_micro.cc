@@ -150,7 +150,7 @@ void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
     }
   }
   zgemm3m_("N", "N", nvirt*2, nact*2, nact*2, 1.0, cc->ptr_va(), nvirt*2, gtup->data(), nact*2, 1.0, sigma->ptr_va(), nvirt*2);
-  zgemm3m_("C", "N", nvirt*2, nact*2, nvirt*2, 1.0, fock_->element_ptr(nocc*2, nocc*2), nbasis*2, cc->ptr_va(), nvirt*2, 1.0, sigma->ptr_va(), nvirt*2);
+  zgemm3m_("N", "N", nvirt*2, nact*2, nvirt*2, 1.0, fock_->element_ptr(nocc*2, nocc*2), nbasis*2, cc->ptr_va(), nvirt*2, 1.0, sigma->ptr_va(), nvirt*2);
 }
 
 
@@ -167,7 +167,7 @@ void ZSuperCIMicro::sigma_ai_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
   const int nocc = casscf_->nocc();
   if (!nclosed || !nvirt) return;
 
-  zgemm3m_("N", "N", nvirt*2, nclosed*2, nclosed*2, -1.0, cc->ptr_vc(), nvirt*2, fock_->get_conjg()->data(), nbasis*2, 1.0, sigma->ptr_vc(), nvirt*2);
+  zgemm3m_("N", "N", nvirt*2, nclosed*2, nclosed*2, -1.0, cc->ptr_vc(), nvirt*2, fock_->data(), nbasis*2, 1.0, sigma->ptr_vc(), nvirt*2);
   zgemm3m_("N", "N", nvirt*2, nclosed*2, nvirt*2, 1.0, fock_->element_ptr(nocc*2, nocc*2), nbasis*2, cc->ptr_vc(), nvirt*2, 1.0, sigma->ptr_vc(), nvirt*2);
 }
 
