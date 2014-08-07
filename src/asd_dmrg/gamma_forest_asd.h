@@ -75,7 +75,7 @@ class GammaForestASD : public GammaForest<VecType, 1> {
           }
 
           for (auto& j : monomer_states) {
-            if (BlockKey(new_nelea, new_neleb)==i.first) {
+            if (BlockKey(new_nelea, new_neleb)==j.first) {
 #ifdef DEBUG
               std::cout << "inserting: <" << j.first.nelea << ", " << j.first.neleb << "|";
               for (auto opiter = coupling.rbegin(); opiter != coupling.rend(); ++opiter) {
@@ -89,7 +89,7 @@ class GammaForestASD : public GammaForest<VecType, 1> {
               }
               std::cout << "|" << i.first.nelea << ", " << i.first.neleb << ">" << std::endl;
 #endif
-              sparselist_.emplace_back(coupling, BlockInfo(i.first.nelea, i.first.neleb, i.second->ij()), BlockInfo(j.first.nelea, j.first.neleb, j.second->ij()));
+              sparselist_.emplace_back(coupling, BlockInfo(j.first.nelea, j.first.neleb, j.second->ij()), BlockInfo(i.first.nelea, i.first.neleb, i.second->ij()));
               this->template insert<0>(i.second, block_tag(i.first), j.second, block_tag(j.first), coupling);
             }
           }

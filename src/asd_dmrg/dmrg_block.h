@@ -70,18 +70,18 @@ class DMRG_Block {
       for (auto o : forest.sparselist()) {
         std::list<GammaSQ> gammalist = std::get<0>(o);
 
-        BlockInfo ikey = std::get<1>(o);
-        BlockInfo jkey = std::get<2>(o);
+        BlockInfo brakey = std::get<1>(o);
+        BlockInfo ketkey = std::get<2>(o);
 
-        assert(blocks_.count(ikey));
-        assert(blocks_.count(jkey));
+        assert(blocks_.count(brakey));
+        assert(blocks_.count(ketkey));
 
-        const int itag = forest.block_tag(ikey);
-        const int jtag = forest.block_tag(jkey);
+        const int bratag = forest.block_tag(brakey);
+        const int kettag = forest.block_tag(ketkey);
 
-        assert(forest.template exist<0>(itag, jtag, gammalist));
-        std::shared_ptr<const Matrix> mat = forest.template get<0>(itag, jtag, gammalist);
-        btas::CRange<3> range(ikey.nstates, jkey.nstates, std::lrint(std::pow(norb(), gammalist.size())));
+        assert(forest.template exist<0>(kettag, bratag, gammalist));
+        std::shared_ptr<const Matrix> mat = forest.template get<0>(kettag, bratag, gammalist);
+        btas::CRange<3> range(brakey.nstates, ketkey.nstates, std::lrint(std::pow(norb(), gammalist.size())));
         // checking ndim
         assert(mat->ndim() == range.extent(0)*range.extent(1));
         // checking mdim
@@ -91,7 +91,7 @@ class DMRG_Block {
         // convert this matrix to 3-tensor
         auto tensor = std::make_shared<btas::Tensor3<double>>(range, std::move(mat->storage()));
         // add matrix
-        CouplingBlock cb(ikey, jkey, tensor);
+        CouplingBlock cb(brakey, ketkey, tensor);
         sparse_[gammalist].emplace(cb.key(), cb);
       }
     }

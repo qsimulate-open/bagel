@@ -29,8 +29,8 @@ using namespace std;
 using namespace bagel;
 
 BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<DimerJop> jop) {
-  const int lnorb = jop->monomer_jop<0>()->nocc();
-  const int rnorb = jop->monomer_jop<1>()->nocc();
+  const int rnorb = jop->monomer_jop<0>()->nocc();
+  const int lnorb = jop->monomer_jop<1>()->nocc();
 
   for (auto& binfo : left->blocks()) {
     const BlockKey bk = binfo.key();
@@ -70,7 +70,7 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
 
       const BlockKey abkey(bk.nelea-1, bk.neleb+1);
       if (left->contains(abkey)) {
-        shared_ptr<btas::Tensor3<double>> gamma_ab = left->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta}).at({bk,abkey}).data;
+        shared_ptr<btas::Tensor3<double>> gamma_ab = left->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta}).at({abkey,bk}).data;
         auto Qab = make_shared<btas::Tensor4<double>>(gamma_ab->extent(0), gamma_ab->extent(1), rnorb, rnorb);
         const int gabsize = gamma_ab->extent(0)*gamma_ab->extent(1);
         dgemm_("N", "T", gsize, rnorb*rnorb, lnorb*lnorb, -1.0, gamma_ab->data(), gabsize, exchange.data(), exchange.ndim(),
@@ -85,9 +85,9 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
 
       const BlockKey akey(bk.nelea+1, bk.neleb);
       if (left->contains(akey)) {
-        shared_ptr<const btas::Tensor3<double>> gamma_a = left->coupling({GammaSQ::CreateAlpha}).at({bk,akey}).data;
-        shared_ptr<const btas::Tensor3<double>> gamma_aaa = left->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}).at({bk, akey}).data;
-        shared_ptr<const btas::Tensor3<double>> gamma_abb = left->coupling({GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha}).at({bk, akey}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_a = left->coupling({GammaSQ::CreateAlpha}).at({akey,bk}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_aaa = left->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}).at({akey,bk}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_abb = left->coupling({GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha}).at({akey,bk}).data;
 
         const int asize = gamma_aaa->extent(0) * gamma_aaa->extent(1);
 
@@ -101,9 +101,9 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
 
       const BlockKey bkey(bk.nelea, bk.neleb+1);
       if (left->contains(bkey)) {
-        shared_ptr<const btas::Tensor3<double>> gamma_b = left->coupling({GammaSQ::CreateBeta}).at({bk,bkey}).data;
-        shared_ptr<const btas::Tensor3<double>> gamma_baa = left->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta}).at({bk, bkey}).data;
-        shared_ptr<const btas::Tensor3<double>> gamma_bbb = left->coupling({GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta}).at({bk, bkey}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_b = left->coupling({GammaSQ::CreateBeta}).at({bkey,bk}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_baa = left->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta}).at({bkey, bk}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_bbb = left->coupling({GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta}).at({bkey, bk}).data;
 
         const int bsize = gamma_bbb->extent(0) * gamma_bbb->extent(1);
 
@@ -119,7 +119,7 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
     { // P_aa, P_bb, P_ab
       const Matrix& J_0011 = *jop->coulomb_matrix<0,0,1,1>();
       auto compute_Pxx = [&J_0011, &lnorb, &rnorb, &left, &bk] (const BlockKey new_key, list<GammaSQ> ops) {
-        shared_ptr<const btas::Tensor4<double>> gamma = left->coupling(ops).at({bk, new_key}).data;
+        shared_ptr<const btas::Tensor4<double>> gamma = left->coupling(ops).at({new_key, bk}).data;
         auto Pxx = make_shared<btas::Tensor4<double>>(gamma->extent(0), gamma->extent(1), rnorb, rnorb);
         const int gsize = gamma->extent(0)*gamma->extent(1);
         dgemm_("N", "T", gsize, rnorb*rnorb, lnorb*lnorb, 1.0, gamma->data(), gsize, J_0011.data(), J_0011.ndim(), 0.0, Pxx->data(), gsize);
@@ -144,7 +144,7 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
 
       const BlockKey akey(bk.nelea+1, bk.neleb);
       if (left->contains(akey)) {
-        shared_ptr<btas::Tensor3<double>> gamma_a = left->coupling({GammaSQ::CreateAlpha}).at({bk, akey}).data;
+        shared_ptr<btas::Tensor3<double>> gamma_a = left->coupling({GammaSQ::CreateAlpha}).at({akey,bk}).data;
         auto Da = make_shared<btas::TensorN<double,5>>(gamma_a->extent(0), gamma_a->extent(1), rnorb, rnorb, rnorb);
         const int gsize = Da->extent(0)*Da->extent(1);
         dgemm_("N", "T", gsize, rnorb*rnorb*rnorb, lnorb, 1.0, gamma_a->data(), gsize, J_0010.data(), J_0010.ndim(), 0.0, Da->data(), gsize);
@@ -153,7 +153,7 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
 
       const BlockKey bkey(bk.nelea, bk.neleb+1);
       if (left->contains(bkey)) {
-        shared_ptr<btas::Tensor3<double>> gamma_b = left->coupling({GammaSQ::CreateBeta}).at({bk, bkey}).data;
+        shared_ptr<btas::Tensor3<double>> gamma_b = left->coupling({GammaSQ::CreateBeta}).at({bkey,bk}).data;
         auto Db = make_shared<btas::TensorN<double,5>>(gamma_b->extent(0), gamma_b->extent(1), rnorb, rnorb, rnorb);
         const int gsize = Db->extent(0)*Db->extent(1);
         dgemm_("N", "T", gsize, rnorb*rnorb*rnorb, lnorb, 1.0, gamma_b->data(), gsize, J_0010.data(), J_0010.ndim(), 0.0, Db->data(), gsize);

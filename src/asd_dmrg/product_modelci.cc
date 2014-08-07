@@ -141,10 +141,10 @@ double ProductCIHamTask::matrix_element_impl(PCI::Basis bra, PCI::Basis ket) {
       out += compute_pure_ras(bra.alpha, bra.beta, ket.alpha, ket.beta);
 
     if (make_pair(bra.alpha,bra.beta)==make_pair(ket.alpha,ket.beta)) // |L>==|L'> --> <phi| H |phi'>
-      out += (*blockops_->ham(bra.key()))(bra.state, ket.state);
+      out += (*blockops_->ham(ket.key()))(bra.state, ket.state);
 
-    shared_ptr<const btas::Tensor4<double>> Qaa = blockops_->Q_aa(bra.key());
-    shared_ptr<const btas::Tensor4<double>> Qbb = blockops_->Q_bb(bra.key());
+    shared_ptr<const btas::Tensor4<double>> Qaa = blockops_->Q_aa(ket.key());
+    shared_ptr<const btas::Tensor4<double>> Qbb = blockops_->Q_bb(ket.key());
 
     if (nexch==0) {
       assert(make_pair(bra.alpha,bra.beta)==make_pair(ket.alpha,ket.beta));
@@ -156,7 +156,7 @@ double ProductCIHamTask::matrix_element_impl(PCI::Basis bra, PCI::Basis ket) {
       shared_ptr<const btas::Tensor3<double>> Q = (naexch==2 ? Qaa : Qbb);
       const int r = bit_to_numbers(naexch==2 ? (aexch & bra.alpha) : (bexch & bra.beta)).front();
       const int s = bit_to_numbers(naexch==2 ? (aexch & ket.alpha) : (bexch & ket.beta)).front();
-      const double phase = static_cast<double>(bagel::sign((naexch==2 ? bra.alpha : bra.beta), r, s));
+      const double phase = sign((naexch==2 ? bra.alpha : bra.beta), r, s);
       out += phase * (*Q)(bra.state, ket.state, r, s);
     }
   } else if (ntransa*ntransb==-1) { // single spinflip
@@ -165,7 +165,7 @@ double ProductCIHamTask::matrix_element_impl(PCI::Basis bra, PCI::Basis ket) {
       int s = bit_to_numbers(bexch).front();
       if (ntransa==-1)
         swap(bra,ket);
-      const double phase = static_cast<double>(sign(ket.beta, s) * sign(ket.alpha, r) * (1 - ((ket.alpha.count()%2) << 1)));
+      const double phase = sign(ket.beta, s) * sign(ket.alpha, r) * static_cast<int>(1 - ((ket.alpha.count()%2) << 1));
       out += phase * (*blockops_->Q_ab(ket.key()))(bra.state, ket.state, s, r);
     }
   } else if (ntransa*ntransb==1) { // alpha-beta transfer
@@ -175,28 +175,27 @@ double ProductCIHamTask::matrix_element_impl(PCI::Basis bra, PCI::Basis ket) {
       if (ntransa==-1)
         swap(bra,ket);
 
-      const double phase = static_cast<double>(sign(ket.beta, s) * sign(ket.alpha, r) * (1 - ((ket.alpha.count()%2) << 1)));
+      const double phase = sign(ket.beta, s) * sign(ket.alpha, r) * static_cast<int>(1 - ((ket.alpha.count()%2) << 1));
       out += phase * (*blockops_->P_ab(ket.key()))(bra.state, ket.state, s, r);
     }
   } else if ((ntransa+ntransb)*(ntransa+ntransb)==1) { // ET
     if (nexch==1) {
-      if ((ntransa+ntransb) < 0)
+      if ((ntransa+ntransb) > 0)
         swap(bra,ket);
 
       const int p = (abs(ntransa)==1 ? bit_to_numbers(aexch).front() : bit_to_numbers(bexch).front());
-      const double phase = abs(ntransa)==1 ? sign(ket.alpha, p) : sign(ket.beta, p) * (1 - (1 << (ket.alpha.count()%2)));
+      const double phase = abs(ntransa)==1 ? sign(ket.alpha, p) : sign(ket.beta, p) * static_cast<int>(1 - ((ket.alpha.count()%2) << 1));
 
       // 1e contribution
       shared_ptr<const btas::Tensor3<double>> S = (abs(ntransa)==1 ? blockops_->S_a(ket.key()) : blockops_->S_b(ket.key()));
       out += phase * (*S)(bra.state, ket.state, p);
 
-      // 2e contribution is slightly backwards because D contains the opposite "action"
-      shared_ptr<const btas::TensorN<double,5>> D = (abs(ntransa)==1 ? blockops_->D_a(bra.key()) : blockops_->D_b(bra.key()));
+      shared_ptr<const btas::TensorN<double,5>> D = (abs(ntransa)==1 ? blockops_->D_a(ket.key()) : blockops_->D_b(ket.key()));
       for (int r = 0; r < rnorb_; ++r)
-        out += phase * ((*D)(ket.state, bra.state, r, r, p) * static_cast<double>(ket.alpha[r]+ket.beta[r])
-                         - (*D)(ket.state, bra.state, r, p, r) * static_cast<double>(ket.alpha[r]));
+        out += phase * ((*D)(bra.state, ket.state, r, r, p) * static_cast<double>(ket.alpha[r]+ket.beta[r])
+                         - (*D)(bra.state, ket.state, r, p, r) * static_cast<double>(ket.alpha[r]));
     } else if (nexch==3) {
-      if ((ntransa+ntransb) < 0)
+      if ((ntransa+ntransb) > 0)
         swap(bra,ket);
       if (naexch*nbexch==0) { // a^+a a or b^+b b
         vector<int> annihilated = bit_to_numbers(naexch==3 ? aexch^ket.alpha : bexch^ket.beta);
@@ -204,7 +203,7 @@ double ProductCIHamTask::matrix_element_impl(PCI::Basis bra, PCI::Basis ket) {
         const int a = annihilated.front();
         const int b = bit_to_numbers(naexch==3 ? aexch^bra.alpha : bexch^bra.beta).front();
         const double phase = naexch==3 ? sign(bra.alpha, a, b) * sign(bra.alpha, c)
-                                       : sign(bra.beta, a, b) * sign(bra.beta, c) * (1 - (1 << (bra.alpha.count()%2)));
+                                       : sign(bra.beta, a, b) * sign(bra.beta, c) * static_cast<int>(1 - ((ket.alpha.count()%2) << 1));
         shared_ptr<const btas::TensorN<double, 5>> D = (naexch==3 ? blockops_->D_a(ket.key()) : blockops_->D_b(ket.key()));
         out += phase * ((*D)(bra.state, ket.state, c, a, b) - (*D)(bra.state, ket.state, a, c, b));
       }
@@ -213,7 +212,7 @@ double ProductCIHamTask::matrix_element_impl(PCI::Basis bra, PCI::Basis ket) {
           const int c = bit_to_numbers(bexch).front();
           const int a = bit_to_numbers(aexch^ket.alpha).front();
           const int b = bit_to_numbers(aexch^bra.alpha).front();
-          const double phase = sign(ket.alpha, a, b) * sign(ket.beta, c) * (1 - (1 << (bra.alpha.count()%2)));
+          const double phase = sign(ket.alpha, a, b) * sign(ket.beta, c) * static_cast<int>(1 - (1 << (bra.alpha.count()%2)));
           shared_ptr<const btas::TensorN<double, 5>> D = blockops_->D_b(ket.key());
           out += phase * ((*D)(bra.state, ket.state, b, a, c) - (*D)(bra.state, ket.state, b, c, a));
         }
@@ -229,7 +228,7 @@ double ProductCIHamTask::matrix_element_impl(PCI::Basis bra, PCI::Basis ket) {
     }
   } else if ((ntransa+ntransb)*(ntransa+ntransb)==4) { // double ET
     if (nexch==2) {
-      if ((ntransa+ntransb) > 0)
+      if ((ntransa+ntransb) < 0)
         swap(bra,ket);
 
       shared_ptr<const btas::Tensor4<double>> P = (abs(ntransa)==2 ? blockops_->P_aa(ket.key()) : blockops_->P_bb(ket.key()));
