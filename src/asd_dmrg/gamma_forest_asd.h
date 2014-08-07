@@ -43,8 +43,8 @@ class GammaForestASD : public GammaForest<VecType, 1> {
   public:
     GammaForestASD(std::map<BlockKey, std::shared_ptr<const VecType>> monomer_states) {
       std::vector<std::list<GammaSQ>> possible_couplings = {
-        {GammaSQ::AnnihilateAlpha},
-        {GammaSQ::AnnihilateBeta},
+        {GammaSQ::CreateAlpha},
+        {GammaSQ::CreateBeta},
         {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha},
         {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},
         {GammaSQ::AnnihilateAlpha,  GammaSQ::AnnihilateBeta},

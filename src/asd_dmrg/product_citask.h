@@ -76,7 +76,7 @@ class ProductCIHamTask : public ProductCITask<ProductCIHamTask> {
   public:
     ProductCIHamTask(std::vector<PCI::Basis>* b, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop, std::shared_ptr<const Matrix> mo1e, const size_t c1, double* d1, const size_t c2, double* d2);
 
-    double matrix_element_impl(const PCI::Basis& bra, const PCI::Basis& ket);
+    double matrix_element_impl(PCI::Basis bra, PCI::Basis ket);
 };
 
 }
