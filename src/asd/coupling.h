@@ -74,10 +74,6 @@ inline std::ostream& operator<<(std::ostream& out, const Coupling value){
 Coupling coupling_type(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp);
 Coupling coupling_type(const std::array<MonomerKey,4>& keys);
 
-// TODO deprecated
-Coupling coupling_type_old(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp);
-Coupling coupling_type_old(const std::array<MonomerKey,4>& keys);
-
 }
 
 #endif

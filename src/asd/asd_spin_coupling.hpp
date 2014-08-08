@@ -30,23 +30,23 @@
 
 template <class VecType>
 void ASDSpinMap<VecType>::couple_blocks(const DimerSubspace<VecType>& AB, const DimerSubspace<VecType>& ApBp) {
-  const Coupling term_type = coupling_type_old(AB, ApBp);
+  const Coupling term_type = coupling_type(AB, ApBp);
 
   auto spin_block = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
   if ( (term_type == Coupling::abFlip) || (term_type == Coupling::baFlip) ) {
-    std::shared_ptr<VecType> SA, SB;
+    std::shared_ptr<VecType> SAp, SBp;
 
-    std::shared_ptr<const VecType> Ap = ApBp.template ci<0>();
-    std::shared_ptr<const VecType> Bp = ApBp.template ci<1>();
+    std::shared_ptr<const VecType> A = AB.template ci<0>();
+    std::shared_ptr<const VecType> B = AB.template ci<1>();
     switch (term_type) {
       case Coupling::abFlip :
-        SA = AB.template ci<0>()->spin_lower(Ap->det());
-        SB = AB.template ci<1>()->spin_raise(Bp->det());
+        SAp = ApBp.template ci<0>()->spin_lower(A->det());
+        SBp = ApBp.template ci<1>()->spin_raise(B->det());
         break;
       case Coupling::baFlip :
-        SA = AB.template ci<0>()->spin_raise(Ap->det());
-        SB = AB.template ci<1>()->spin_lower(Bp->det());
+        SAp = ApBp.template ci<0>()->spin_raise(A->det());
+        SBp = ApBp.template ci<1>()->spin_lower(B->det());
         break;
       default: assert(false); break; // Control should never be able to reach here...
     }
@@ -60,13 +60,13 @@ void ASDSpinMap<VecType>::couple_blocks(const DimerSubspace<VecType>& AB, const 
 
     for (int iAp = 0; iAp < nAp; ++iAp) {
       for (int iA = 0; iA < nA; ++iA) {
-        AdotAp.push_back(SA->data(iA)->dot_product(*Ap->data(iAp)));
+        AdotAp.push_back(SAp->data(iAp)->dot_product(*A->data(iA)));
       }
     }
 
     for (int iBp = 0; iBp < nBp; ++iBp) {
       for (int iB = 0; iB < nB; ++iB) {
-        BdotBp.push_back(SB->data(iB)->dot_product(*Bp->data(iBp)));
+        BdotBp.push_back(SBp->data(iBp)->dot_product(*B->data(iB)));
       }
     }
 

@@ -42,8 +42,8 @@ void ASD<VecType>::compute() {
     auto spinmap = std::make_shared<ASDSpinMap<VecType>>();
     for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
       for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
-        gammaforest->couple_blocks(*iAB, *jAB);
-        spinmap->couple_blocks(*iAB, *jAB);
+        gammaforest->couple_blocks(*jAB, *iAB);
+        spinmap->couple_blocks(*jAB, *iAB);
       }
       gammaforest->couple_blocks(*iAB, *iAB);
       spinmap->diagonal_block(*iAB);
