@@ -87,7 +87,7 @@ void ZSuperCI::compute() {
     grad->zero();
     // <a/i|H|0> = f_ai
     grad_vc(f, grad);
-    // <a/r|H|0> = cfock_ar^* n_r + (as|tu)D_rs,tu = fact_ar
+    // <a/r|H|0> = cfock_ar n_r + ((as|tu)D_rs,tu)^* = fact_ar
     grad_va(fact, grad);
     // <r/i|H|0> = f_ri - f^inact_is d_sr - (is|tu)P_rs,tu = f_ri - fact_ri
     grad_ca(f, fact, grad);
@@ -247,11 +247,10 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     }
     f = make_shared<ZMatrix>(*cfock + *afock);
   }
-  if (nact_) { // x-active Fock operator : cfock_xs^* n_s + Q_xt
-    fact = qvec->copy();
-    shared_ptr<ZMatrix> cfock_conj = cfock->slice_copy(nclosed_*2, nocc_*2)->get_conjg();
+  if (nact_) { // x-active Fock operator : cfock_xs^ n_s + Q_xt^*
+    fact = qvec->get_conjg();
     for (int i = 0; i != nact_*2; ++i)
-      zaxpy_(qvec->ndim(), occup_[i], cfock_conj->element_ptr(0,i), 1, fact->data()+i*qvec->ndim(), 1);
+      zaxpy_(qvec->ndim(), occup_[i], cfock->element_ptr(0,nclosed_*2+i), 1, fact->data()+i*qvec->ndim(), 1);
   }
   if (nact_) { // active Fock' operator (Fts+Fst) / (ns+nt)
     factp = make_shared<ZMatrix>(nact_*2, nact_*2);
