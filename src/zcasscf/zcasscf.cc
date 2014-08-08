@@ -169,19 +169,33 @@ void ZCASSCF::init() {
   }
 
 #if 1
-  {   // DEBUG : random scaling
-    bool randscal = idata_->get<bool>("randscal", false);
-    if (randscal) {
+  { // DEBUG : random scaling
+    bool randscal_c = idata_->get<bool>("randscal_c", false);
+    bool randscal_a = idata_->get<bool>("randscal_a", false);
+    auto tmp = coeff_->copy();
+    if (randscal_c) {
+      scale_closed_.resize(nclosed_);
+      cout << " RANDOM SCALING OF THE CLOSED COEFFICIENT " << endl;
+      for (int i = 0; i != nclosed_; ++i) {
+        const double b = (double)rand() / RAND_MAX;
+        const complex<double> fac(cos(b), sin(b));
+        scale_closed_[i] = fac; cout << setprecision(12) << " scale closed " << i << " = " << fac << endl;
+        blas::scale_n(fac, tmp->element_ptr(0,i), tmp->ndim());
+        blas::scale_n(conj(fac), tmp->element_ptr(0,nclosed_+i), tmp->ndim());
+      }
+    }
+    if (randscal_a) {
       cout << " RANDOM SCALING OF THE ACTIVE COEFFICIENT " << endl;
-      auto tmp = coeff_->copy();
+      scale_active_.resize(nact_);
       for (int i = 0; i != nact_; ++i) {
         const double b = (double)rand() / RAND_MAX;
         const complex<double> fac(cos(b), sin(b));
+        scale_active_[i] = fac; cout << setprecision(12) << " scale active " << i << " = " << fac << endl;
         blas::scale_n(fac, tmp->element_ptr(0,2*nclosed_+i), tmp->ndim());
         blas::scale_n(conj(fac), tmp->element_ptr(0,2*nclosed_+nact_+i), tmp->ndim());
       }
-      coeff_ = make_shared<const ZMatrix>(*tmp);
     }
+    coeff_ = make_shared<const ZMatrix>(*tmp);
   }
 #endif
 
