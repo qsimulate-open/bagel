@@ -249,7 +249,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   }
   if (nact_) { // x-active Fock operator : cfock_xs^* n_s + Q_xt
     fact = qvec->copy();
-    shared_ptr<ZMatrix> cfock_conj = cfock->slice_copy(nclosed_*2, nocc_*2)->get_conj();
+    shared_ptr<ZMatrix> cfock_conj = cfock->slice_copy(nclosed_*2, nocc_*2)->get_conjg();
     for (int i = 0; i != nact_*2; ++i)
       zaxpy_(qvec->ndim(), occup_[i], cfock_conj->element_ptr(0,i), 1, fact->data()+i*qvec->ndim(), 1);
   }
