@@ -212,7 +212,7 @@ void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
     const double fac = 1.0 - casscf_->occup(i) > zoccup_thresh ? std::sqrt(1.0-casscf_->occup(i)) : 0.0;
     zaxpy_(nvirt*2, fac*2.0, fockact_->element_ptr(nocc*2,i), 1, tmp.element_ptr(0,i), 1);
   }
-  zgemm3m_("C", "N", nclosed*2, nact*2, nvirt*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.data(), nvirt*2, 1.0, sigma->ptr_ca(), nclosed*2); // TODO : check "C" vs "T" here
+  zgemm3m_("T", "N", nclosed*2, nact*2, nvirt*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.get_conjg()->data(), nvirt*2, 1.0, sigma->ptr_ca(), nclosed*2);
   zgemm3m_("N", "T", nvirt*2, nclosed*2, nact*2, 1.0, tmp.data(), nvirt*2, cc->ptr_ca(), nclosed*2, 1.0, sigma->ptr_vc(), nvirt*2);
 }
 
@@ -234,6 +234,6 @@ void ZSuperCIMicro::sigma_ti_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
       tmp(j,i) = -((1.0 - casscf_->occup(j) - casscf_->occup(i)) * fockactp_->element(j,i) - gaa_->element(j,i)) * fac;
     }
   }
-  zgemm3m_("N", "N", nclosed*2, nact*2, nact*2, 1.0, cc->ptr_ca(), nclosed*2, tmp.data(), nact*2, 1.0, sigma->ptr_ca(), nclosed*2);
-  zgemm3m_("N", "N", nclosed*2, nact*2, nclosed*2, -1.0, fock_->data(), nbasis*2, cc->ptr_ca(), nclosed*2, 1.0, sigma->ptr_ca(), nclosed*2);
+  zgemm3m_("N", "N", nclosed*2, nact*2, nact*2, 1.0, cc->ptr_ca(), nclosed*2, tmp.get_conjg()->data(), nact*2, 1.0, sigma->ptr_ca(), nclosed*2);
+  zgemm3m_("N", "N", nclosed*2, nact*2, nclosed*2, -1.0, fock_->get_conjg()->data(), nbasis*2, cc->ptr_ca(), nclosed*2, 1.0, sigma->ptr_ca(), nclosed*2);
 }
