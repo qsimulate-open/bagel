@@ -88,7 +88,7 @@ void ZCASBFGS::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix
 }
 
 
-// grad(a/t) (eq.4.3b): cfock_au gamma_ut + q_at
+// grad(a/t) (eq.4.3b): cfock_au gamma_ut + q_at^*
 void ZCASBFGS::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
   if (!nvirt_ || !nact_) return;
   // TODO not sure about complex conjugation of rdm1
@@ -105,10 +105,12 @@ void ZCASBFGS::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix
   if (!nclosed_ || !nact_) return;
   // TODO check
   auto qxrc = qxr->get_conjg();
+  auto afockc = afock->get_conjg();
+  auto cfockc = cfock->get_conjg();
   complex<double>* target = sigma->ptr_ca();
   for (int i = 0; i != nact_*2; ++i, target += nclosed_*2) {
-    zaxpy_(nclosed_*2, 1.0, afock->element_ptr(0,nclosed_*2+i), 1, target, 1);
-    zaxpy_(nclosed_*2, 1.0, cfock->element_ptr(0,nclosed_*2+i), 1, target, 1);
+    zaxpy_(nclosed_*2, 1.0, afockc->element_ptr(0,nclosed_*2+i), 1, target, 1);
+    zaxpy_(nclosed_*2, 1.0, cfockc->element_ptr(0,nclosed_*2+i), 1, target, 1);
     zaxpy_(nclosed_*2, -1.0, qxrc->element_ptr(0, i), 1, target, 1);
   }
   // "T" effectively makes complex conjugate of cfock
