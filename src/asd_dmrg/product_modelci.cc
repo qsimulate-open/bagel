@@ -237,11 +237,11 @@ double ProductCIHamTask::matrix_element_impl(PCI::Basis bra, PCI::Basis ket) {
         swap(bra,ket);
 
       shared_ptr<const btas::Tensor4<double>> P = (abs(ntransa)==2 ? blockops_->P_aa(ket.key()) : blockops_->P_bb(ket.key()));
-      vector<int> exch_bits = bit_to_numbers(abs(ntransa)==2 ? ket.alpha : ket.beta);
-      const int p = exch_bits.front();
-      const int q = exch_bits.back();
-      const double phase = static_cast<double>(sign((abs(ntransa)==2 ? ket.alpha : ket.beta), q, p));
-      out += phase * (*P)(bra.state, ket.state, q, p);
+      vector<int> exch_bits = bit_to_numbers(abs(ntransa)==2 ? aexch : bexch);
+      const int p = exch_bits.back();
+      const int q = exch_bits.front();
+      const double phase = static_cast<int>(sign((abs(ntransa)==2 ? ket.alpha : ket.beta), q, p));
+      out += phase * ((*P)(bra.state, ket.state, p, q) - (*P)(bra.state, ket.state, q, p));
     }
   }
 

@@ -133,15 +133,13 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
           tmpvecs.insert(tmpvecs.end(), new_vecs.begin(), new_vecs.end());
           states[key] = make_shared<RASDvec>(tmpvecs);
 
-          shared_ptr<Matrix> tmp2e = h_2e[key]->copy();
-          const int oldsize = tmp2e->ndim();
           const int newsize = ham2e->ndim();
-          tmp2e->resize(oldsize + newsize, oldsize + newsize);
+          const int oldsize = h_2e[key]->ndim();
+          shared_ptr<Matrix> tmp2e = h_2e[key]->resize(oldsize+newsize, oldsize+newsize);
           tmp2e->copy_block(oldsize, oldsize, newsize, newsize, *ham2e);
           h_2e[key] = tmp2e;
 
-          shared_ptr<Matrix> tmpspin = spinmap[key]->copy();
-          tmpspin->resize(oldsize + newsize, oldsize + newsize);
+          shared_ptr<Matrix> tmpspin = spinmap[key]->resize(oldsize+newsize, oldsize+newsize);
           tmpspin->copy_block(oldsize, oldsize, newsize, newsize, *spinmat);
           spinmap[key] = tmpspin;
         }
@@ -245,7 +243,6 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
       map<BlockKey, shared_ptr<const RASDvec>> civecs = diagonalize_site_RDM(prod_ras->civectors());
       map<BlockKey, shared_ptr<const Matrix>> h_2e;
       map<BlockKey, shared_ptr<const Matrix>> spinmap;
-      //for_each(civecs.begin(), civecs.end(), [] (pair<BlockKey, shared_ptr<const RASDvec>> c) { c.second->print(); });
       for (auto& ici : civecs) {
         h_2e.emplace(ici.first, compute_sigma2e(ici.second, prod_ras->jop()->monomer_jop<0>()));
         spinmap.emplace(ici.first, compute_spin(ici.second));
@@ -355,7 +352,6 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
                                              1.0, tmp->data(), 1);
     }
 
-    cout << "spin expectation of vector: " << tmp->spin_expectation() << endl;
     output_vectors[i->second.first].push_back(tmp);
     partial_trace += i->first;
   }

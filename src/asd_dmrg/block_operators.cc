@@ -118,26 +118,26 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
     }
 
     { // P_aa, P_bb, P_ab
-      const Matrix& J_0011 = *jop->coulomb_matrix<0,0,1,1>();
-      auto compute_Pxx = [&J_0011, &lnorb, &rnorb, &left, &bk] (const BlockKey new_key, list<GammaSQ> ops) {
+      const Matrix& J_0110 = *jop->coulomb_matrix<0,1,1,0>();
+      auto compute_Pxx = [&J_0110, &lnorb, &rnorb, &left, &bk] (const BlockKey new_key, list<GammaSQ> ops, const double fac) {
         shared_ptr<const btas::Tensor4<double>> gamma = left->coupling(ops).at({new_key, bk}).data;
         auto Pxx = make_shared<btas::Tensor4<double>>(gamma->extent(0), gamma->extent(1), rnorb, rnorb);
         const int gsize = gamma->extent(0)*gamma->extent(1);
-        dgemm_("N", "T", gsize, rnorb*rnorb, lnorb*lnorb, 1.0, gamma->data(), gsize, J_0011.data(), J_0011.ndim(), 0.0, Pxx->data(), gsize);
+        dgemm_("N", "T", gsize, rnorb*rnorb, lnorb*lnorb, fac, gamma->data(), gsize, J_0110.data(), J_0110.ndim(), 0.0, Pxx->data(), gsize);
         return Pxx;
       };
 
       const BlockKey aakey(bk.nelea-2,bk.neleb);
       if (left->contains(aakey))
-        P_aa_.emplace(bk, compute_Pxx(aakey, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}));
+        P_aa_.emplace(bk, compute_Pxx(aakey, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}, 0.5));
 
       const BlockKey bbkey(bk.nelea,bk.neleb-2);
       if (left->contains(bbkey))
-        P_bb_.emplace(bk, compute_Pxx(bbkey, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}));
+        P_bb_.emplace(bk, compute_Pxx(bbkey, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}, 0.5));
 
       const BlockKey abkey(bk.nelea-1, bk.neleb-1);
       if (left->contains(abkey))
-        P_ab_.emplace(bk, compute_Pxx(abkey, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta}));
+        P_ab_.emplace(bk, compute_Pxx(abkey, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta}, 1.0));
     }
 
     { // D_a, D_b
