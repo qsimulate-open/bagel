@@ -43,7 +43,7 @@ void ZSuperCI::grad_vc(const shared_ptr<ZMatrix> f, shared_ptr<ZRotFile> sigma) 
 }
 
 
-// <a/r|H|0> = cfock_as^* n_s + (as|tu)D_rs,tu = fact_ar  (/sqrt(n_s) - due to normalization)
+// <a/r|H|0> = cfock_as n_s + ((as|tu)D_rs,tu)^* = fact_ar  (/sqrt(n_s) - due to normalization)
 void ZSuperCI::grad_va(const shared_ptr<ZMatrix> fact, shared_ptr<ZRotFile> sigma) {
 #ifdef BOTHSPACES
   const int nvirt_tmp = nvirt_;
