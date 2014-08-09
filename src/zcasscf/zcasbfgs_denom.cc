@@ -92,7 +92,7 @@ void ZCASBFGS::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix
 void ZCASBFGS::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
   if (!nvirt_ || !nact_) return;
   // TODO not sure about complex conjugation of rdm1
-  zgemm3m_("N", "T", nvirt_*2, nact_*2, nact_*2, 1.0, cfock->element_ptr(nocc_*2, nclosed_*2), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_*2);
+  zgemm3m_("N", "N", nvirt_*2, nact_*2, nact_*2, 1.0, cfock->element_ptr(nocc_*2, nclosed_*2), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_*2);
   complex<double>* target = sigma->ptr_va();
   for (int i = 0; i != nact_*2; ++i, target += nvirt_*2) {
     zaxpy_(nvirt_*2, 1.0, qxr->element_ptr(nocc_*2, i), 1, target, 1);
