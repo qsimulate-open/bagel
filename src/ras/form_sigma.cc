@@ -276,7 +276,7 @@ namespace bagel {
 
 
 void FormSigmaRAS::sigma_ab(const RASCivecView cc, RASCivecView sigma, const double* mo2e) const {
-  assert(cc.det() == sigma.det());
+  assert(*cc.det() == *sigma.det());
   shared_ptr<const RASDeterminants> det = cc.det();
 
   const int norb = det->norb();
