@@ -38,11 +38,13 @@ class SOECP {
 
   protected:
     std::vector<std::shared_ptr<const Shell_ECP>> shells_so_;
+    int so_maxl_;
 
   public:
     SOECP() {}
     SOECP(std::vector<std::shared_ptr<const Shell_ECP>> shells_so) : shells_so_(shells_so) {
       for (auto& i : shells_so) assert(i->angular_number() > 0);
+      so_maxl_ = shells_so.back()->angular_number();
     }
     ~SOECP() {}
 
@@ -50,6 +52,7 @@ class SOECP {
     std::shared_ptr<const Shell_ECP> shell_so(const int i) const { return shells_so_[i]; }
 
     const int nshell() const { return shells_so_.size(); }
+    const int so_maxl() const { return so_maxl_; }
 
     double position(const int i) const { return shells_so_.front()->position(i); };
     const std::array<double,3>& position() const { return shells_so_.front()->position(); };

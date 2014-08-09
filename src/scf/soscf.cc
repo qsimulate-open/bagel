@@ -79,14 +79,20 @@ void SOSCF::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     shared_ptr<const ZMatrix> sofock = make_shared<const SOFock> (geom_, sohcore_, socoeff_->slice(0, nocc_ * 2));
     const complex<double> energy = 0.5 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
-    assert(energy.imag() < 1e-12);
+    assert(energy.imag() < 1e-8);
     energy_ = energy.real();
     auto error_vector = make_shared<const ZMatrix>(*sofock * *aodensity_ * *sooverlap_ - *sooverlap_ * *aodensity_ * *sofock);
     auto real_error_vector = error_vector->get_real_part();
     const double error = real_error_vector->rms();
 
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
-                                      << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
+                                      << setw(17) << error << setw(15) << setprecision(2) << scftime.tick();
+    if (abs(energy.imag()) > 1e-12) {
+      cout << "  *** Warning *** Im(E) = " << setw(15) << fixed << setprecision(12) << energy.imag() << endl;
+    } else {
+      cout << endl;
+    }
+
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SOSCF iteration converged." << endl << endl;
       const double onee_energy = ((*sohcore_ * *aodensity_).trace()).real();
