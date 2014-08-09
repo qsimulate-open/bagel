@@ -36,7 +36,7 @@ struct HolesParticles {
 };
 }
 
-void ApplyOperator::operator()(const RASCivecView source, RASCivecView target, const vector<GammaSQ> operations, const vector<int> orbitals) const {
+void ApplyOperator::operator()(const double fac, const RASCivecView source, RASCivecView target, const vector<GammaSQ> operations, const vector<int> orbitals) const {
   assert(operations.size() == orbitals.size());
 
   const array<int, 3> ras = source.det()->ras();
@@ -92,8 +92,8 @@ void ApplyOperator::operator()(const RASCivecView source, RASCivecView target, c
         if (((tbit & mask1) ^ mask2).none()) { // equivalent to tbit[s] && (r==s || !tbit[r])
           const bitset<nbit__> sbit = tbit ^ maskrs;
           const size_t slex = det->lexical_zero<0>(sbit);
-          const int signrs = sign(sbit, r, s);
-          blas::ax_plus_y_n(signrs, sblock->data() + slex*slb, tlb, tblock->data() + ia*tlb);
+          const double signrs = sign(sbit, r, s);
+          blas::ax_plus_y_n(signrs*fac, sblock->data() + slex*slb, tlb, tblock->data() + ia*tlb);
         }
       }
     }
@@ -116,8 +116,8 @@ void ApplyOperator::operator()(const RASCivecView source, RASCivecView target, c
         if (((tbit & mask1) ^ mask2).none()) { // equivalent to tbit[s] && (r==s || !tbit[r])
           const bitset<nbit__> sbit = tbit ^ maskrs;
           const size_t slex = det->lexical_zero<1>(sbit);
-          const int signrs = sign(sbit, r, s);
-          daxpy_(tla, signrs, sblock->data() + slex, slb, tblock->data() + ib, tlb);
+          const double signrs = sign(sbit, r, s);
+          daxpy_(tla, signrs*fac, sblock->data() + slex, slb, tblock->data() + ib, tlb);
         }
       }
     }

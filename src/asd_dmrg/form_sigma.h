@@ -45,6 +45,7 @@ class FormSigmaProdRAS {
   private:
     // Helper functions for sigma formation
     void pure_block_and_ras(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop) const;
+    void interaction_terms(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop) const;
 };
 
 }

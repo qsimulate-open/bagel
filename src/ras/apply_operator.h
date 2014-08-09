@@ -45,7 +45,8 @@ class ApplyOperator {
   public:
     ApplyOperator() {}
 
-    void operator()(const RASCivecView source, RASCivecView target, std::vector<GammaSQ> operations, std::vector<int> orbitals) const;
+    /// \f[ |\mbox{target}\rangle \leftarrow a \hat E_{\mbox{operations}} |\mbox{source}\rangle + |\mbox{target}\rangle \f]
+    void operator()(const double a, const RASCivecView source, RASCivecView target, std::vector<GammaSQ> operations, std::vector<int> orbitals) const;
 };
 
 }
