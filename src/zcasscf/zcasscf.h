@@ -65,6 +65,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const RelOverlap> overlap_;
     std::vector<double> occup_;
+    std::vector<std::complex<double>> scale_closed_;
+    std::vector<std::complex<double>> scale_active_;
 
     void print_header() const;
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
