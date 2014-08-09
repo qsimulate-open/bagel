@@ -102,6 +102,8 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
   map<BlockKey, shared_ptr<const Matrix>> spinmap;
   Timer rastime;
 
+  bool append = false;
+
   for (auto& inp : inputs) {
     // finish preparing the input
     inp->put("nclosed", ref->nclosed());
@@ -109,7 +111,8 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
     const int spin = inp->get<int>("nspin");
     const int charge = inp->get<int>("charge");
     {
-      Muffle hide_cout;
+      Muffle hide_cout("asd_dmrg.log", append);
+      append = true;
       // RAS calculations
       auto ras = make_shared<RASCI>(inp, ref->geom(), ref);
       ras->compute();
