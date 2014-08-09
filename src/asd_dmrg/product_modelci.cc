@@ -154,19 +154,19 @@ double ProductCIHamTask::matrix_element_impl(PCI::Basis bra, PCI::Basis ket) {
       }
     } else if (nexch==2) {
       shared_ptr<const btas::Tensor3<double>> Q = (naexch==2 ? Qaa : Qbb);
-      const int r = bit_to_numbers(naexch==2 ? (aexch & bra.alpha) : (bexch & bra.beta)).front();
-      const int s = bit_to_numbers(naexch==2 ? (aexch & ket.alpha) : (bexch & ket.beta)).front();
+      const int s = bit_to_numbers(naexch==2 ? (aexch & bra.alpha) : (bexch & bra.beta)).front();
+      const int r = bit_to_numbers(naexch==2 ? (aexch & ket.alpha) : (bexch & ket.beta)).front();
       const double phase = sign((naexch==2 ? bra.alpha : bra.beta), r, s);
       out += phase * (*Q)(bra.state, ket.state, r, s);
     }
   } else if (ntransa*ntransb==-1) { // single spinflip
     if (naexch==1 && nbexch==1) {
-      int r = bit_to_numbers(aexch).front();
-      int s = bit_to_numbers(bexch).front();
+      int r = bit_to_numbers(bexch).front();
+      int s = bit_to_numbers(aexch).front();
       if (ntransa==-1)
         swap(bra,ket);
-      const double phase = sign(ket.beta, s) * sign(ket.alpha, r) * static_cast<int>(1 - ((ket.alpha.count()%2) << 1));
-      out += phase * (*blockops_->Q_ab(ket.key()))(bra.state, ket.state, s, r);
+      const double phase = sign(ket.beta, r) * sign(ket.alpha, s) * static_cast<int>(1 - ((ket.alpha.count()%2) << 1));
+      out += phase * (*blockops_->Q_ab(ket.key()))(bra.state, ket.state, r, s);
     }
   } else if (ntransa*ntransb==1) { // alpha-beta transfer
     if (naexch==1 && nbexch==1) {
@@ -184,45 +184,50 @@ double ProductCIHamTask::matrix_element_impl(PCI::Basis bra, PCI::Basis ket) {
         swap(bra,ket);
 
       const int p = (abs(ntransa)==1 ? bit_to_numbers(aexch).front() : bit_to_numbers(bexch).front());
-      const double phase = abs(ntransa)==1 ? sign(ket.alpha, p) : sign(ket.beta, p) * static_cast<int>(1 - ((ket.alpha.count()%2) << 1));
+      const int etphase = 1 - (((bra.alpha.count() + bra.beta.count())%2) << 1);
+      const double phase = etphase * (abs(ntransa)==1 ? sign(ket.alpha, p) : sign(ket.beta, p) * static_cast<int>(1 - ((ket.alpha.count()%2) << 1)));
 
       // 1e contribution
       shared_ptr<const btas::Tensor3<double>> S = (abs(ntransa)==1 ? blockops_->S_a(ket.key()) : blockops_->S_b(ket.key()));
       out += phase * (*S)(bra.state, ket.state, p);
 
       shared_ptr<const btas::TensorN<double,5>> D = (abs(ntransa)==1 ? blockops_->D_a(ket.key()) : blockops_->D_b(ket.key()));
+      bitset<nbit__> Kbit = abs(ntransa)==1 ? ket.alpha : ket.beta;
       for (int r = 0; r < rnorb_; ++r)
-        out += phase * ((*D)(bra.state, ket.state, r, r, p) * static_cast<double>(ket.alpha[r]+ket.beta[r])
-                         - (*D)(bra.state, ket.state, r, p, r) * static_cast<double>(ket.alpha[r]));
+        out += phase * ((*D)(bra.state, ket.state, p, r, r) * static_cast<double>(ket.alpha[r]+ket.beta[r])
+                         - (*D)(bra.state, ket.state, r, p, r) * static_cast<double>(Kbit[r]));
     } else if (nexch==3) {
       if ((ntransa+ntransb) > 0)
         swap(bra,ket);
+
+      const int etphase = 1 - (((bra.alpha.count() + bra.beta.count())%2) << 1);
       if (naexch*nbexch==0) { // a^+a a or b^+b b
-        vector<int> annihilated = bit_to_numbers(naexch==3 ? aexch^ket.alpha : bexch^ket.beta);
+        assert(naexch==3 || nbexch==3);
+        vector<int> annihilated = bit_to_numbers(naexch==3 ? aexch&ket.alpha : bexch&ket.beta);
         const int c = annihilated.back();
-        const int a = annihilated.front();
-        const int b = bit_to_numbers(naexch==3 ? aexch^bra.alpha : bexch^bra.beta).front();
-        const double phase = naexch==3 ? sign(bra.alpha, a, b) * sign(bra.alpha, c)
-                                       : sign(bra.beta, a, b) * sign(bra.beta, c) * static_cast<int>(1 - ((ket.alpha.count()%2) << 1));
+        const int b = annihilated.front();
+        const int a = bit_to_numbers(naexch==3 ? aexch&bra.alpha : bexch&bra.beta).front();
+        const double phase = etphase * (naexch==3 ? sign(bra.alpha, a, b) * sign(bra.alpha ^ aexch, c)
+                                                  : sign(bra.beta, a, b) * sign(bra.beta ^ bexch, c) * static_cast<int>(1 - ((bra.alpha.count()%2) << 1)));
         shared_ptr<const btas::TensorN<double, 5>> D = (naexch==3 ? blockops_->D_a(ket.key()) : blockops_->D_b(ket.key()));
-        out += phase * ((*D)(bra.state, ket.state, c, a, b) - (*D)(bra.state, ket.state, a, c, b));
+        out += phase * ((*D)(bra.state, ket.state, c, b, a) - (*D)(bra.state, ket.state, b, c, a));
       }
       else { // b^+b a or a^+a b
         if (make_pair(naexch, nbexch)==make_pair(2,1)) {
           const int c = bit_to_numbers(bexch).front();
-          const int a = bit_to_numbers(aexch^ket.alpha).front();
-          const int b = bit_to_numbers(aexch^bra.alpha).front();
-          const double phase = sign(ket.alpha, a, b) * sign(ket.beta, c) * static_cast<int>(1 - (1 << (bra.alpha.count()%2)));
+          const int a = bit_to_numbers(aexch&ket.alpha).front();
+          const int b = bit_to_numbers(aexch&bra.alpha).front();
+          const double phase = etphase * sign(ket.alpha, a, b) * sign(ket.beta, c) * static_cast<int>(1 - (1 << (bra.alpha.count()%2)));
           shared_ptr<const btas::TensorN<double, 5>> D = blockops_->D_b(ket.key());
-          out += phase * ((*D)(bra.state, ket.state, b, a, c) - (*D)(bra.state, ket.state, b, c, a));
+          out += phase * ((*D)(bra.state, ket.state, c, b, a));
         }
-        else {
+        else if (make_pair(naexch, nbexch)==make_pair(1,2)) {
           const int c = bit_to_numbers(aexch).front();
-          const int a = bit_to_numbers(bexch^ket.beta).front();
-          const int b = bit_to_numbers(bexch^bra.beta).front();
-          const double phase = sign(ket.beta, a, b) * sign(ket.alpha, c);
+          const int a = bit_to_numbers(bexch&ket.beta).front();
+          const int b = bit_to_numbers(bexch&bra.beta).front();
+          const double phase = etphase * sign(ket.beta, a, b) * sign(ket.alpha, c);
           shared_ptr<const btas::TensorN<double, 5>> D = blockops_->D_a(ket.key());
-          out += phase * ((*D)(bra.state, ket.state, b, a, c) - (*D)(bra.state, ket.state, b, c, a));
+          out += phase * ((*D)(bra.state, ket.state, c, b, a));
         }
       }
     }
