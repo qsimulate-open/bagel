@@ -96,6 +96,14 @@ void ZCASSCF::init() {
       coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
       coeff_ = coeff;
     }
+  } else {
+    cout << " rearranging coefficeint matrix " << endl;
+    shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
+    shared_ptr<ZMatrix> coeff = ctmp->clone();
+    const int npos = ctmp->mdim() - nneg_;
+    coeff->copy_block(0, 0, ctmp->mdim(), npos, ctmp->slice(nneg_, nneg_+npos));
+    coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
+    coeff_ = coeff;
   }
 
   // get maxiter from the input
