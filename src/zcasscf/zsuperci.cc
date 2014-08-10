@@ -107,9 +107,12 @@ void ZSuperCI::compute() {
     // setting error of macro iteration
     gradient = grad->rms();
     if (gradient < thresh_) {
-      if (!nact_) print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
-      cout << " " << endl;
-      cout << " +++ gradient rms at convergence = " << setprecision(4) << scientific << gradient << " +++ " << endl << endl;
+      // print out...
+      if (!nact_) {
+        print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+      } else {
+        print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+      }
       break;
     }
 
@@ -142,7 +145,7 @@ void ZSuperCI::compute() {
      for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
    }
    auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
-  expa->purify_unitary();
+   expa->purify_unitary();
 
 #ifdef BOTHSPACES
    coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);

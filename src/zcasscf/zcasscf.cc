@@ -157,11 +157,11 @@ void ZCASSCF::init() {
     coeff_ = make_shared<const ZMatrix>(*tmp);
     if (nclosed_) {
       if((*coeff_->get_submatrix(0, 0, coeff_->ndim()/4, 1)
-         - *coeff_->get_submatrix(coeff_->ndim()/4, nclosed_, coeff_->ndim()/4, 1)->get_conjg()).rms() > 1.0e-14)
+         - *coeff_->get_submatrix(coeff_->ndim()/4, nclosed_, coeff_->ndim()/4, 1)->get_conjg()).rms() > 1.0e-12)
       throw logic_error("Coefficient is not kramers restricted ; please disable kramers_coeff flag for this reference");
     } else {
       if((*coeff_->get_submatrix(0, 0, coeff_->ndim()/4, 1)
-         - *coeff_->get_submatrix(coeff_->ndim()/4, nact_, coeff_->ndim()/4, 1)->get_conjg()).rms() > 1.0e-14)
+         - *coeff_->get_submatrix(coeff_->ndim()/4, nact_, coeff_->ndim()/4, 1)->get_conjg()).rms() > 1.0e-12)
       throw logic_error("Coefficient is not kramers restricted ; please disable kramers_coeff flag for this reference");
     }
   } else {

@@ -326,4 +326,13 @@ void ZCASBFGS::compute() {
 #endif
   }
 //  if (ele_energy.size() > 0 && energy_.size() == 0) energy_.push_back(ele_energy.back());
+
+  // this is not needed for energy, but for consistency we want to have this...
+  // update construct Jop from scratch
+  if (nact_) {
+    fci_->update(coeff_, /*restricted*/true);
+    fci_->compute();
+    fci_->compute_rdm12();
+  }
+
 }
