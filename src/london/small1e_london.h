@@ -35,7 +35,6 @@ namespace bagel {
 
 template <typename Batch>
 class Small1e_London : public Matrix1eArray<4*Batch::Nblocks(), ZMatrix> {
-  friend class Matrix1eArrayTask<4*Batch::Nblocks(), ZMatrix>;
   protected:
     void init(std::shared_ptr<const Molecule> mol) override {
       std::list<std::shared_ptr<const Shell>> shells;
@@ -62,13 +61,7 @@ class Small1e_London : public Matrix1eArray<4*Batch::Nblocks(), ZMatrix> {
       for (auto& i : this->matrices_) i->allreduce();
     }
 
-
-  public:
-    Small1e_London(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<4*Batch::Nblocks(), ZMatrix>(mol) {
-      init(mol);
-    }
-
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) override {
       // input = [b1, b0]
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
@@ -78,6 +71,11 @@ class Small1e_London : public Matrix1eArray<4*Batch::Nblocks(), ZMatrix> {
 
       for (int i = 0; i != this->Nblocks(); ++i)
         this->matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
+    }
+
+  public:
+    Small1e_London(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<4*Batch::Nblocks(), ZMatrix>(mol) {
+      init(mol);
     }
 
     void print(const std::string name = "") const override {
