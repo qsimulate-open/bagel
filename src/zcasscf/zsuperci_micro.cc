@@ -124,7 +124,7 @@ std::shared_ptr<ZRotFile> ZSuperCIMicro::form_sigma(std::shared_ptr<const ZRotFi
 }
 
 
-// sigma_at_at = 2 * delta_ab Gtu/sqrt(nt nu) + delta_tu Fab  : TODO factor 2 needed here to reproduce non-rel limit
+// sigma_at_at = 2 * delta_ab Gtu/sqrt(nt nu) + delta_tu Fab  : factor 2 needed here to reproduce non-rel limit
 // TODO : check why normalization factor is commented out
 void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nact = casscf_->nact();
