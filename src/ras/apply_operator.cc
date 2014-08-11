@@ -29,99 +29,178 @@
 using namespace std;
 using namespace bagel;
 
-namespace bagel {
-struct HolesParticles {
-  int ha, hb, pa, pb;
-  HolesParticles() : ha(0), hb(0), pa(0), pb(0) {}
-};
+shared_ptr<const RASBlock<double>> ApplyOperator::get_block(const RASCivecView& source, array<int, 4>& dhp, shared_ptr<const RASBlock<double>> tblock) const {
+  // get appropriate block in source
+  array<int, 4> tag = {tblock->stringsa()->nholes()     - dhp[0], tblock->stringsb()->nholes()     - dhp[1],
+                       tblock->stringsa()->nparticles() - dhp[2], tblock->stringsb()->nparticles() - dhp[3]};
+  if (any_of(tag.begin(), tag.end(), [] (int i) { return i < 0; })) return nullptr;
+
+  return source.block(tag[0], tag[1], tag[2], tag[3]);
 }
 
 void ApplyOperator::operator()(const double fac, const RASCivecView source, RASCivecView target, const vector<GammaSQ> operations, const vector<int> orbitals) const {
   assert(operations.size() == orbitals.size());
 
-  const array<int, 3> ras = source.det()->ras();
-  assert(ras == target.det()->ras());
+  shared_ptr<const RASDeterminants> sdet = source.det();
+  shared_ptr<const RASDeterminants> tdet = target.det();
+
+  const array<int, 3> ras = sdet->ras();
+  assert(ras == tdet->ras());
 
   const int nops = operations.size();
 
   // First figure which block transformations are allowed, i.e., (h,p) -> (h',p') = (h+dh,p+dp)
-  HolesParticles dhp;
+  array<int, 4> dhp = {0, 0, 0, 0};
   for (int op = 0; op < nops; ++op) {
     const int orb = orbitals[op];
     const bool spin = (operations[op]==GammaSQ::AnnihilateAlpha || operations[op]==GammaSQ::CreateAlpha);
-    const int fac = (operations[op]==GammaSQ::CreateAlpha || operations[op]==GammaSQ::CreateBeta) ? 1 : -1;
+    const int delta = (operations[op]==GammaSQ::CreateAlpha || operations[op]==GammaSQ::CreateBeta) ? 1 : -1;
     if (orb < ras[0]) // in RASI
-      (spin ? dhp.ha : dhp.hb) -= fac;
+      (spin ? dhp[0] : dhp[1]) -= delta;
     else if (orb >= ras[0]+ras[1]) // in RASIII
-      (spin ? dhp.pa : dhp.pb) += fac;
+      (spin ? dhp[2] : dhp[3]) += delta;
     // else is in RASII and doesn't change hp
   }
 
-  // loop over blocks in the target
-  for (auto& tblock : target.blocks()) {
-    if (!tblock) continue;
-    // get appropriate block in source
-    array<int, 4> tag = {tblock->stringsa()->nholes()     - dhp.ha, tblock->stringsb()->nholes()     - dhp.hb,
-                       tblock->stringsa()->nparticles() - dhp.pa, tblock->stringsb()->nparticles() - dhp.pb};
-    if (any_of(tag.begin(), tag.end(), [] (int i) { return i < 0; })) continue;
+  if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}}) {
+    assert(*sdet == *tdet);
 
-    auto sblock = source.block(tag[0], tag[1], tag[2], tag[3]);
-    if (!sblock) continue;
+    const int r = orbitals.back();  // annihilation operator on target
+    const int s = orbitals.front(); // creation operator on target
 
-    //const size_t sla = sblock->lena();
-    const size_t slb = sblock->lenb();
-    const size_t tla = tblock->lena();
-    const size_t tlb = tblock->lenb();
+    bitset<nbit__> mask1; mask1.set(r); mask1.set(s);
+    bitset<nbit__> mask2; mask2.set(r);
 
-    if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}}) {
-      shared_ptr<const RASDeterminants> det = target.det();
-      assert(*det == *source.det());
-      assert(tlb==slb);
+    // (bit ^ maskrs) flips both r and s (if r!=s) or doesn't change (if r==s)
+    bitset<nbit__> maskrs; maskrs.set(r); maskrs.flip(s);
 
-      const int s = orbitals.front(); // creation operator on target
-      const int r = orbitals.back();  // annihilation operator on target
+    // loop over blocks in the target
+    for (auto& tblock : target.blocks()) {
+      if (!tblock) continue;
+      auto sblock = get_block(source, dhp, tblock);
+      if (!sblock) continue;
 
-      bitset<nbit__> mask1; mask1.set(r); mask1.set(s);
-      bitset<nbit__> mask2; mask2.set(r);
-
-      // (bit ^ maskrs) flips both r and s (if r!=s) or doesn't change (if r==s)
-      bitset<nbit__> maskrs; maskrs.set(r); maskrs.flip(s);
+      const size_t slb = sblock->lenb();
+      const size_t tla = tblock->lena();
+      const size_t tlb = tblock->lenb();
 
       for (size_t ia = 0; ia < tla; ++ia) {
         auto tbit = tblock->string_bits_a(ia);
         if (((tbit & mask1) ^ mask2).none()) { // equivalent to tbit[s] && (r==s || !tbit[r])
           const bitset<nbit__> sbit = tbit ^ maskrs;
-          const size_t slex = det->lexical_zero<0>(sbit);
-          const double signrs = sign(sbit, r, s);
-          blas::ax_plus_y_n(signrs*fac, sblock->data() + slex*slb, tlb, tblock->data() + ia*tlb);
+          const size_t slex = sblock->stringsa()->lexical_zero(sbit);
+          const int signrs = sign(sbit, r, s);
+          blas::ax_plus_y_n(static_cast<double>(signrs)*fac, sblock->data() + slex*slb, tlb, tblock->data() + ia*tlb);
         }
       }
     }
-    else if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}}) {
-      shared_ptr<const RASDeterminants> det = target.det();
-      assert(*det == *source.det());
-      assert(tla==sblock->lena());
+  } else if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}}) {
+    assert(*sdet == *tdet);
 
-      const int s = orbitals.front(); // creation operator on target
-      const int r = orbitals.back();  // annihilation operator on target
+    const int r = orbitals.back();  // annihilation operator on target
+    const int s = orbitals.front(); // creation operator on target
 
-      bitset<nbit__> mask1; mask1.set(r); mask1.set(s);
-      bitset<nbit__> mask2; mask2.set(r);
+    bitset<nbit__> mask1; mask1.set(r); mask1.set(s);
+    bitset<nbit__> mask2; mask2.set(r);
 
-      // (bit ^ maskrs) flips both r and s (if r!=s) or doesn't change (if r==s)
-      bitset<nbit__> maskrs; maskrs.set(r); maskrs.flip(s);
+    // (bit ^ maskrs) flips both r and s (if r!=s) or doesn't change (if r==s)
+    bitset<nbit__> maskrs; maskrs.set(r); maskrs.flip(s);
+
+    // loop over blocks in the target
+    for (auto& tblock : target.blocks()) {
+      if (!tblock) continue;
+      auto sblock = get_block(source, dhp, tblock);
+      if (!sblock) continue;
+
+      const size_t slb = sblock->lenb();
+      const size_t tla = tblock->lena();
+      const size_t tlb = tblock->lenb();
 
       for (size_t ib = 0; ib < tlb; ++ib) {
         auto tbit = tblock->string_bits_b(ib);
         if (((tbit & mask1) ^ mask2).none()) { // equivalent to tbit[s] && (r==s || !tbit[r])
           const bitset<nbit__> sbit = tbit ^ maskrs;
-          const size_t slex = det->lexical_zero<1>(sbit);
-          const double signrs = sign(sbit, r, s);
-          daxpy_(tla, signrs*fac, sblock->data() + slex, slb, tblock->data() + ib, tlb);
+          const size_t slex = sblock->stringsb()->lexical_zero(sbit);
+          const int signrs = sign(sbit, r, s);
+          daxpy_(tla, static_cast<double>(signrs)*fac, sblock->data() + slex, slb, tblock->data() + ib, tlb);
         }
       }
     }
-    else
-      throw logic_error("Not yet implemented!");
+  } else if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta}}) {
+    const int r = orbitals.back(); // beta annihilation on target
+    const int s = orbitals.front();  // alpha creation on target
+
+    // loop over blocks in the target
+    for (auto& tblock : target.blocks()) {
+      if (!tblock) continue;
+      auto sblock = get_block(source, dhp, tblock);
+      if (!sblock) continue;
+
+      const size_t slb = sblock->lenb();
+      const size_t tla = tblock->lena();
+      const size_t tlb = tblock->lenb();
+
+      // pre-process beta creation so it doesn't have to be done in a loop
+      vector<tuple<size_t, int, size_t>> valid_bbits;
+      const int nasign = (1 - ((tblock->stringsa()->nele()%2) << 1));
+      for (size_t ib = 0; ib < tlb; ++ib) {
+        bitset<nbit__> bbit = tblock->string_bits_b(ib);
+        if (bbit[r])
+          valid_bbits.emplace_back(ib, nasign*sign(bbit, r), sblock->stringsb()->lexical_zero(bbit ^ bitset<nbit__>(1 << r)));
+      }
+
+      if (!valid_bbits.empty()) {
+        for (size_t ia = 0; ia < tla; ++ia) {
+          bitset<nbit__> tabit = tblock->string_bits_a(ia);
+          if (!tabit[s]) {
+            bitset<nbit__> sabit = (tabit ^ bitset<nbit__>(1 << s));
+            double* target_base = tblock->data() + ia*tlb;
+            const double* source_base = sblock->data() + sblock->stringsa()->lexical_zero(sabit)*slb;
+            const double c = fac * sign(sabit, s);
+            for (auto& iex : valid_bbits)
+              target_base[get<0>(iex)] += c * static_cast<double>(get<1>(iex)) * source_base[get<2>(iex)];
+          }
+        }
+      }
+    }
+  } else if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha}}) {
+    const int r = orbitals.back(); // alpha annihilation on target
+    const int s = orbitals.front();  // beta creation on target
+
+    // loop over blocks in the target
+    for (auto& tblock : target.blocks()) {
+      if (!tblock) continue;
+      auto sblock = get_block(source, dhp, tblock);
+      if (!sblock) continue;
+
+      const size_t slb = sblock->lenb();
+      const size_t tla = tblock->lena();
+      const size_t tlb = tblock->lenb();
+
+      // pre-process beta creation so it doesn't have to be done in a loop
+      vector<tuple<size_t, int, size_t>> valid_bbits;
+      const int nasign = -(1 - ((tblock->stringsa()->nele()%2) << 1));
+      for (size_t ib = 0; ib < tlb; ++ib) {
+        bitset<nbit__> bbit = tblock->string_bits_b(ib);
+        if (!bbit[s])
+          valid_bbits.emplace_back(ib, nasign*sign(bbit, s), sblock->stringsb()->lexical_zero(bbit ^ bitset<nbit__>(1 << s)));
+      }
+
+      if (!valid_bbits.empty()) {
+        for (size_t ia = 0; ia < tla; ++ia) {
+          bitset<nbit__> tabit = tblock->string_bits_a(ia);
+          if (tabit[r]) {
+            bitset<nbit__> sabit = (tabit ^ bitset<nbit__>(1 << r));
+            double* target_base = tblock->data() + ia*tlb;
+            const double* source_base = sblock->data() + sblock->stringsa()->lexical_zero(sabit)*slb;
+            const double c = fac * sign(sabit, r);
+            for (auto& iex : valid_bbits)
+              target_base[get<0>(iex)] += c * static_cast<double>(get<1>(iex)) * source_base[get<2>(iex)];
+          }
+        }
+      }
+    }
   }
+  else
+    throw logic_error("Not yet implemented!");
 }

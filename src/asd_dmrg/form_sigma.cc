@@ -94,34 +94,90 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
 void FormSigmaProdRAS::interaction_terms(shared_ptr<const ProductRASCivec> cc, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop) const {
   Timer ptime;
 
+  ApplyOperator apply;
+
   const int rnorb = jop->monomer_jop<0>()->nocc();
   for (auto& sector : sigma->sectors()) {
     shared_ptr<RASBlockVectors> sigma_sector = sector.second;
-    shared_ptr<const RASBlockVectors> cc_sector = cc->sector(sector.first);
 
-    const int nsecstates = sigma_sector->mdim();
+    const int nsigstates = sigma_sector->mdim();
 
-    // Portion that does not change occupation numbers
-    shared_ptr<const btas::Tensor4<double>> Qaa = blockops->Q_aa(sector.first);
-    shared_ptr<const btas::Tensor4<double>> Qbb = blockops->Q_bb(sector.first);
-    RASBlockVectors sector_rs(cc_sector->det(), cc_sector->left_state());
-    ApplyOperator apply;
-    for (int r = 0; r < rnorb; ++r) {
-      for (int s = 0; s < rnorb; ++s) {
-        // apply (r^dagger s)_alpha to the Civecs
-        sector_rs.zero();
-        for (int ist = 0; ist < nsecstates; ++ist)
-          apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}, {r,s});
-        dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qaa)(0,0,r,s), nsecstates,
-                                                                                          1.0, sigma_sector->data(), sigma_sector->ndim());
-        // apply (r^dagger s)_beta to the Civecs
-        sector_rs.zero();
-        for (int ist = 0; ist < nsecstates; ++ist)
-          apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}, {r,s});
-        dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qbb)(0,0,r,s), nsecstates,
-                                                                                          1.0, sigma_sector->data(), sigma_sector->ndim());
+    { // Portion that does not change occupation numbers
+      shared_ptr<const RASBlockVectors> cc_sector = cc->sector(sector.first);
+      shared_ptr<const btas::Tensor4<double>> Qaa = blockops->Q_aa(sector.first);
+      shared_ptr<const btas::Tensor4<double>> Qbb = blockops->Q_bb(sector.first);
+      RASBlockVectors sector_rs(cc_sector->det(), cc_sector->left_state());
+      for (int r = 0; r < rnorb; ++r) {
+        for (int s = 0; s < rnorb; ++s) {
+          // apply (r^dagger s)_alpha to the Civecs
+          sector_rs.zero();
+          for (int ist = 0; ist < nsigstates; ++ist)
+            apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}, {s,r});
+          dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qaa)(0,0,s,r), nsigstates,
+                                                                                            1.0, sigma_sector->data(), sigma_sector->ndim());
+          // apply (r^dagger s)_beta to the Civecs
+          sector_rs.zero();
+          for (int ist = 0; ist < nsigstates; ++ist)
+            apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}, {s,r});
+          dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qbb)(0,0,s,r), nsigstates,
+                                                                                            1.0, sigma_sector->data(), sigma_sector->ndim());
+        }
       }
     }
-    ptime.tick_print("mixed form sigma");
+    ptime.tick_print("\"diagonal\"");
+
+    { // Spin flip portion
+      const BlockKey abflipkey(sector.first.nelea+1,sector.first.neleb-1);
+      if (cc->left()->contains(abflipkey)) {
+        shared_ptr<const btas::Tensor4<double>> Qab = blockops->Q_ab(abflipkey);
+        shared_ptr<const RASBlockVectors> cc_sector = cc->sector(abflipkey);
+        cout << "spinflip" << endl;
+        cout << "Qab size: " << *Qab << endl;
+        cout << "cc_sector size: " << cc_sector->ndim() << ", " << cc_sector->mdim() << endl;
+        cout << "sigma_sector size: " << sigma_sector->ndim() << ", " << sigma_sector->mdim() << endl;
+        assert(sigma_sector->det()->nelea()==cc_sector->det()->nelea()+1 && sigma_sector->det()->neleb()==cc_sector->det()->neleb()-1);
+        const int nccstates = cc_sector->mdim();
+        const BlockInfo lstate(abflipkey.nelea, abflipkey.neleb, nccstates);
+        RASBlockVectors sector_rs(sigma_sector->det(), lstate);
+        for (int r = 0; r < rnorb; ++r) {
+          for (int s = 0; s < rnorb; ++s) {
+            // apply (r^dagger_alpha s_beta) to the civec
+            sector_rs.zero();
+            for (int ist = 0; ist < nccstates; ++ist)
+              apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateBeta,GammaSQ::CreateAlpha}, {s, r});
+            const int qstride = Qab->extent(0);
+            dgemm_("N", "T", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,s,r), qstride,
+                                                                                           1.0, sigma_sector->data(), sigma_sector->ndim());
+          }
+        }
+      }
+
+      const BlockKey baflipkey(sector.first.nelea-1,sector.first.neleb+1);
+      if (cc->left()->contains(baflipkey)) {
+        shared_ptr<const btas::Tensor4<double>> Qab = blockops->Q_ab(sector.first);
+        shared_ptr<const RASBlockVectors> cc_sector = cc->sector(baflipkey);
+        assert(sigma_sector->det()->nelea()==cc_sector->det()->nelea()-1 && sigma_sector->det()->neleb()==cc_sector->det()->neleb()+1);
+        cout << "inverse" << endl;
+        cout << "Qab size: " << *Qab << endl;
+        cout << "cc_sector size: " << cc_sector->ndim() << ", " << cc_sector->mdim() << endl;
+        cout << "sigma_sector size: " << sigma_sector->ndim() << ", " << sigma_sector->mdim() << endl;
+        const int nccstates = cc_sector->mdim();
+        const BlockInfo lstate(baflipkey.nelea, baflipkey.neleb, nccstates);
+        RASBlockVectors sector_rs(sigma_sector->det(), lstate);
+        for (int r = 0; r < rnorb; ++r) {
+          for (int s = 0; s < rnorb; ++s) {
+            // apply (r^dagger_beta s_alpha) to the civec
+            sector_rs.zero();
+            for (int ist = 0; ist < nccstates; ++ist)
+              apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateAlpha,GammaSQ::CreateBeta}, {s, r});
+            const int qstride = Qab->extent(0);
+            dgemm_("N", "N", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,r,s), qstride,
+                                                                                           1.0, sigma_sector->data(), sigma_sector->ndim());
+          }
+        }
+      }
+    }
+    ptime.tick_print("spinflip");
+
   }
 }
