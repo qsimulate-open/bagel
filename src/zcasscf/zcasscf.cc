@@ -50,7 +50,7 @@ ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<
       idata_tmp->erase("charge");
       idata_tmp->put<int>("charge", ctmp - 1);
     }
-    auto scf = make_shared<Dirac>(idata_tmp, geom_);
+    auto scf = make_shared<Dirac>(idata_tmp, geom_, ref);
     scf->compute();
     ref_ = scf->conv_to_ref();
   }
