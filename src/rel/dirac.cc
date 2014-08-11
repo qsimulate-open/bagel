@@ -195,6 +195,12 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       ocoeff->add_real_block(1.0, 0,    0, n, nocc, ref_->coeff()->slice(0,nocc));
       ocoeff->add_real_block(1.0, n, nocc, n, nocc, ref_->coeff()->slice(0,nocc));
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
+    } else if (!((2*nocc - nele_)%2)) {
+      cout << " new case to dirac initial guess " << endl;
+      auto ocoeff = make_shared<ZMatrix>(n*4, 2*nele_);
+      ocoeff->add_real_block(1.0, 0,    0, n, nele_, ref_->coeff()->slice(0,nele_));
+      ocoeff->add_real_block(1.0, n, nele_, n, nele_, ref_->coeff()->slice(0,nele_));
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     } else {
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
