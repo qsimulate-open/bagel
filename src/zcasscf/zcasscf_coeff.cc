@@ -124,6 +124,7 @@ void ZCASSCF::init_kramers_coeff() {
     tmp = {{ ctmp->slice_copy(0, ctmp->mdim()/2), ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()) }};
   } else{
     tmp = {{ coefftmp->slice_copy(0, coefftmp->mdim()/2), coefftmp->slice_copy(coefftmp->mdim()/2, coefftmp->mdim()) }};
+    coeff_ = coefftmp->clone();
   }
   shared_ptr<ZMatrix> ctmp2 = coeff_->clone();
 
