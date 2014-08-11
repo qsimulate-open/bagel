@@ -114,8 +114,8 @@ class DistABTask {
         }
       }
 
-      auto buf2v = btas::group(buf2, 1,2);
-      auto buf3v = btas::group(buf3, 1,2);
+      auto buf2v = btas::group(buf2, 1,3);
+      auto buf3v = btas::group(buf3, 1,3);
       btas::contract(1.0, buf2v, {0,1}, h, {1,2}, 0.0, buf3v, {0,2});
 
       for (int i = 0, k = 0; i < norb_; ++i) {
