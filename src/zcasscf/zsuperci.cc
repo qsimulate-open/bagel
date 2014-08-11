@@ -63,6 +63,7 @@ void ZSuperCI::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
+      Timer fci_time(0);
       mute_stdcout(/*fci*/true);
       if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
@@ -71,6 +72,7 @@ void ZSuperCI::compute() {
       fci_->compute_rdm12();
       energy_.push_back((fci_->energy())[0]);
       resume_stdcout();
+      fci_time.tick_print("FCI and RDMs");
     }
 #ifdef BOTHSPACES
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
@@ -81,7 +83,9 @@ void ZSuperCI::compute() {
     // compute one-boedy operators
     shared_ptr<ZMatrix> f, fact, factp, gaa;
     shared_ptr<ZRotFile> denom;
+    Timer onebody(0);
     one_body_operators(f, fact, factp, gaa, denom);
+    onebody.tick_print("One body operators");
 
     // first, <proj|H|0> is computed
     grad->zero();
@@ -121,11 +125,13 @@ void ZSuperCI::compute() {
   // ============================
     shared_ptr<const ZRotFile> cc;
     {
+      Timer microiter_time(0);
       mute_stdcout(/*fci*/true);
       ZSuperCIMicro micro(shared_from_this(), grad, denom, f, fact, factp, gaa);
       micro.compute();
       cc = micro.cc();
       resume_stdcout();
+      microiter_time.tick_print("Microiterations");
     }
 
    // orbital rotation matrix
