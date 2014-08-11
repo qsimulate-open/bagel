@@ -131,10 +131,6 @@ void FormSigmaProdRAS::interaction_terms(shared_ptr<const ProductRASCivec> cc, s
       if (cc->left()->contains(abflipkey)) {
         shared_ptr<const btas::Tensor4<double>> Qab = blockops->Q_ab(abflipkey);
         shared_ptr<const RASBlockVectors> cc_sector = cc->sector(abflipkey);
-        cout << "spinflip" << endl;
-        cout << "Qab size: " << *Qab << endl;
-        cout << "cc_sector size: " << cc_sector->ndim() << ", " << cc_sector->mdim() << endl;
-        cout << "sigma_sector size: " << sigma_sector->ndim() << ", " << sigma_sector->mdim() << endl;
         assert(sigma_sector->det()->nelea()==cc_sector->det()->nelea()+1 && sigma_sector->det()->neleb()==cc_sector->det()->neleb()-1);
         const int nccstates = cc_sector->mdim();
         const BlockInfo lstate(abflipkey.nelea, abflipkey.neleb, nccstates);
@@ -157,10 +153,6 @@ void FormSigmaProdRAS::interaction_terms(shared_ptr<const ProductRASCivec> cc, s
         shared_ptr<const btas::Tensor4<double>> Qab = blockops->Q_ab(sector.first);
         shared_ptr<const RASBlockVectors> cc_sector = cc->sector(baflipkey);
         assert(sigma_sector->det()->nelea()==cc_sector->det()->nelea()-1 && sigma_sector->det()->neleb()==cc_sector->det()->neleb()+1);
-        cout << "inverse" << endl;
-        cout << "Qab size: " << *Qab << endl;
-        cout << "cc_sector size: " << cc_sector->ndim() << ", " << cc_sector->mdim() << endl;
-        cout << "sigma_sector size: " << sigma_sector->ndim() << ", " << sigma_sector->mdim() << endl;
         const int nccstates = cc_sector->mdim();
         const BlockInfo lstate(baflipkey.nelea, baflipkey.neleb, nccstates);
         RASBlockVectors sector_rs(sigma_sector->det(), lstate);

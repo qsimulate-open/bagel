@@ -267,7 +267,7 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
 map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector<shared_ptr<ProductRASCivec>>& civecs) const {
   assert(civecs.size()==nstates_);
 
-  // store the coefficients and sector bases by block
+  // store the coefficients and sector bases by block: BlockKey corresponds to the block's information
   map<BlockKey, pair<shared_ptr<Matrix>, vector<pair<int, shared_ptr<const RASBlockVectors>>>>> basisdata;
 
   // arrange all the 'singular values' to get the best ones
@@ -323,13 +323,15 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
     }
 
     Matrix orthonormalize(*overlap.tildex(1.0e-12));
-    auto best_states = make_shared<Matrix>(orthonormalize % rdm * orthonormalize);
-    VectorB eigs(best_states->ndim());
-    best_states->diagonalize(eigs);
-    best_states = make_shared<Matrix>(orthonormalize * *best_states);
-    basisdata.emplace(isec.first, make_pair(best_states, sectorbasis));
-    for (int i = 0; i < eigs.size(); ++i)
-      singular_values.emplace(eigs(i), make_pair(isec.first, i));
+    if (orthonormalize.mdim() > 0) {
+      auto best_states = make_shared<Matrix>(orthonormalize % rdm * orthonormalize);
+      VectorB eigs(best_states->ndim());
+      best_states->diagonalize(eigs);
+      best_states = make_shared<Matrix>(orthonormalize * *best_states);
+      basisdata.emplace(isec.first, make_pair(best_states, sectorbasis));
+      for (int i = 0; i < eigs.size(); ++i)
+        singular_values.emplace(eigs(i), make_pair(isec.first, i));
+    }
   }
 
   // pre-organize output
@@ -360,10 +362,12 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
   }
   cout << "  discarded weights: " << setw(12) << setprecision(8) << scientific <<  1.0 - partial_trace << fixed << endl;
 
-  // Process into Dvecs
+  // Process into Dvecs: These vectors will become blocks so now BlockKey should be a descriptor of the block vector
   map<BlockKey, shared_ptr<const RASDvec>> out;
-  for (auto& dvec : output_vectors)
-    out.emplace(dvec.first, make_shared<RASDvec>(dvec.second));
+  for (auto& dvec : output_vectors) {
+    auto tmp = make_shared<RASDvec>(dvec.second);
+    out.emplace(BlockKey(tmp->det()->nelea(), tmp->det()->neleb()), tmp);
+  }
 
   return out;
 }
