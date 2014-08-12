@@ -327,6 +327,8 @@ void ZCASBFGS::compute() {
     if (pos_conv && ele_conv) break;
 #endif
   }
+  if (energy_.size() == 0)
+    optimize_electrons == true ? energy_.push_back(ele_energy.back()) : energy_.push_back(pos_energy.back());
 
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
