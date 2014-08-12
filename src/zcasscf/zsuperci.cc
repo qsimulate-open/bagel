@@ -44,9 +44,6 @@ void ZSuperCI::compute() {
   // ============================
   Timer timer;
 
-  if (nact_)
-    fci_->update(coeff_, /*restricted*/true);
-
   double gradient = 1.0e10;
 
   for (int iter = 0; iter != max_iter_; ++iter) {

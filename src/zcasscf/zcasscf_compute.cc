@@ -70,9 +70,6 @@ void ZCASBFGS::compute() {
   if (___debug___break_kramers)
     ___debug___orbital_rotation(___debug___with_kramers);
 
-  if (nact_)
-    fci_->update(coeff_, /*restricted*/true);
-
   auto cold = coeff_->clone();
 
   bool optimize_electrons = idata_->get<bool>("optimize_electrons", true);
