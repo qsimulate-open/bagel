@@ -68,7 +68,8 @@ void ZCASSCF::init() {
   if (!geom_->dfs())
     geom_ = geom_->relativistic(relref->gaunt());
 
-  nneg_ = relref->nneg();
+  const bool kramers_coeff = idata_->get<bool>("kramers_coeff", false);
+  nneg_ = kramers_coeff ? geom_->nbasis()*2 : relref->nneg();
 
   // set hcore and overlap
   hcore_   = make_shared<RelHcore>(geom_);
@@ -96,6 +97,10 @@ void ZCASSCF::init() {
       coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
       coeff_ = coeff;
     }
+  } else if (kramers_coeff) {
+    cout << " kramers coeff already in proper order " << endl;
+    shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
+    coeff_ = ctmp;
   } else {
     cout << " rearranging coefficeint matrix " << endl;
     shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
@@ -159,7 +164,6 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  const bool kramers_coeff = idata_->get<bool>("kramers_coeff", false);
   if (kramers_coeff) {
     shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
     coeff_ = make_shared<const ZMatrix>(*tmp);
