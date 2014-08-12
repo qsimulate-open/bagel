@@ -69,7 +69,7 @@ void SOECPBatch::compute() {
 
   double* current_data = intermediate_c;
   double* current_data1 = intermediate_c + size_alloc_;
-  double* current_data2 = intermediate_c + size_alloc_;
+  double* current_data2 = intermediate_c + 2*size_alloc_;
 
   int i = 0;
   for (int izA = 0; izA <= ang0_; ++izA)
