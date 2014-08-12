@@ -246,35 +246,38 @@ void FormSigmaProdRAS::branch_3(shared_ptr<const RASBlockVectors> cc_sector, sha
   // S_alpha
   const BlockKey cckey = cc_sector->left_state().key();
 
-  const BlockKey singleHTkey(cckey.nelea+1, cckey.neleb);
-  const BlockKey doubleHTkey(cckey.nelea+2, cckey.neleb);
+  const BlockKey aHTkey(cckey.nelea+1, cckey.neleb);
+  const BlockKey aaHTkey(cckey.nelea+2, cckey.neleb);
+  const BlockKey bHTkey(cckey.nelea, cckey.neleb+1);
 
-  const bool do_single = sigma->left()->contains(singleHTkey);
-  const bool do_double = sigma->left()->contains(doubleHTkey);
-  // not sure how you could do a double but not a single, but that's a different problem
-  assert(do_single || do_double);
+  const bool do_aHT = sigma->left()->contains(aHTkey);
+  const bool do_aaHT = sigma->left()->contains(aaHTkey);
+  const bool do_bHT = sigma->left()->contains(bHTkey);
+  // not sure how you could do a aa but not a a, but that's a different problem
+  assert(do_aHT || do_aaHT || do_bHT);
 
-  shared_ptr<const btas::Tensor3<double>> S = do_single ? blockops->S_a(cckey) : nullptr;
-  shared_ptr<const btas::Tensor3<double>> D = do_single ? blockops->D_a(cckey) : nullptr;
-  shared_ptr<const btas::Tensor4<double>> P = do_double ? blockops->P_aa(doubleHTkey) : nullptr;
+  shared_ptr<const btas::Tensor3<double>> S = do_aHT ? blockops->S_a(cckey) : nullptr;
+  shared_ptr<const btas::TensorN<double,5>> Da = do_aHT ? blockops->D_a(cckey) : nullptr;
+  shared_ptr<const btas::TensorN<double,5>> Db = do_bHT ? blockops->D_b(cckey) : nullptr;
+  shared_ptr<const btas::Tensor4<double>> P = do_aaHT ? blockops->P_aa(aaHTkey) : nullptr;
 
   const int nccstates = cc_sector->nstates();
 
-  shared_ptr<RASBlockVectors> single_sector = do_single ? sigma->sector(singleHTkey) : nullptr;
-  shared_ptr<const RASDeterminants> single_det = do_single ? single_sector->det() : sigma->space()->det(singleHTkey.nelea, singleHTkey.neleb);
+  shared_ptr<RASBlockVectors> a_sector = do_aHT ? sigma->sector(aHTkey) : nullptr;
+  shared_ptr<const RASDeterminants> a_det = do_aHT ? a_sector->det() : sigma->space()->det(cc_sector->det()->nelea()-1,cc_sector->det()->neleb());
 
-  const BlockInfo singlestate(singleHTkey.nelea, singleHTkey.neleb, nccstates);
-  RASBlockVectors sector_r(single_det, singlestate);
+  const BlockInfo astate(aHTkey.nelea, aHTkey.neleb, nccstates);
+  RASBlockVectors sector_r(a_det, astate);
 
   for (int r = 0; r < rnorb; ++r) {
     sector_r.zero();
     for (int ist = 0; ist < nccstates; ++ist)
-      apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::CreateAlpha}, {r});
-    if (do_single) {
-      dgemm_("N", "T", single_sector->ndim(), single_sector->mdim(), sector_r.mdim(), 1.0, sector_r.data(), sector_r.ndim(),
-                                                          &(*S)(0,0,r), S->extent(0), 1.0, single_sector->data(), single_sector->ndim());
+      apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::AnnihilateAlpha}, {r});
+    if (do_aHT) {
+      dgemm_("N", "T", a_sector->ndim(), a_sector->mdim(), sector_r.mdim(), 1.0, sector_r.data(), sector_r.ndim(),
+                                                &(*S)(0,0,r), S->extent(0), 1.0, a_sector->data(), a_sector->ndim());
 
-      // plus some stuff on D
+      // plus some stuff on Da and Db
     }
 #if 0
     if (do_double) {
@@ -312,7 +315,7 @@ void FormSigmaProdRAS::branch_4(shared_ptr<const RASBlockVectors> cc_sector, sha
   const int nccstates = cc_sector->nstates();
 
   shared_ptr<RASBlockVectors> b_sector = do_bHT ? sigma->sector(bHTkey) : nullptr;
-  shared_ptr<const RASDeterminants> b_det = do_bHT ? b_sector->det() : sigma->space()->det(bHTkey.nelea, bHTkey.neleb);
+  shared_ptr<const RASDeterminants> b_det = do_bHT ? b_sector->det() : sigma->space()->det(cc_sector->det()->nelea(), cc_sector->det()->neleb()-1);
 
   const BlockInfo bstate(bHTkey.nelea, bHTkey.neleb, nccstates);
   RASBlockVectors sector_r(b_det, bstate);
@@ -320,7 +323,7 @@ void FormSigmaProdRAS::branch_4(shared_ptr<const RASBlockVectors> cc_sector, sha
   for (int r = 0; r < rnorb; ++r) {
     sector_r.zero();
     for (int ist = 0; ist < nccstates; ++ist)
-      apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::CreateBeta}, {r});
+      apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::AnnihilateBeta}, {r});
     if (do_bHT) {
       dgemm_("N", "T", b_sector->ndim(), b_sector->mdim(), sector_r.mdim(), 1.0, sector_r.data(), sector_r.ndim(),
                                                 &(*S)(0,0,r), S->extent(0), 1.0, b_sector->data(), b_sector->ndim());

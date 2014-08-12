@@ -62,7 +62,17 @@ void ApplyOperator::operator()(const double fac, const RASCivecView source, RASC
     // else is in RASII and doesn't change hp
   }
 
-  if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}}) {
+  if (operations.size() == 1) {
+    const int r = orbitals.front(); // operator
+    const bool spin = operations.front()==GammaSQ::CreateAlpha || operations.front()==GammaSQ::AnnihilateAlpha;
+    const bool action = operations.front()==GammaSQ::CreateAlpha || operations.front()==GammaSQ::CreateBeta;
+    RAS::Apply_block apply_block(r, action, spin);
+    for (auto& tblock : target.blocks()) {
+      if (!tblock) continue;
+      auto sblock = get_block(source, dhp, tblock);
+      if (sblock) apply_block(sblock, tblock, false);
+    }
+  } else if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}}) {
     assert(*sdet == *tdet);
 
     const int r = orbitals.back();  // annihilation operator on target
