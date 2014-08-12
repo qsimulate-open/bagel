@@ -460,9 +460,8 @@ tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRo
   const bool tight = idata_->get<bool>("tight", false);
   const int limmem = idata_->get<int>("limited_memory", 0);
   auto reset = srbfgs->check_step(energy, newgrad, newrot, tight, limmem);
-  cout << " reset ?!?! = " << reset << endl;
   if (reset) {
-    cout << " STEP DOES NOT MEET PROPER CRITERIA : Please backtrack. " << endl;
+    cout << " STEP DOES NOT MEET PROPER CRITERIA " << endl;
 //    coeff_ = cold->copy();
 //    newrot   = srbfgs->prev_value()->copy();
 //    newgrad  = srbfgs->prev_grad()->copy();
@@ -485,16 +484,13 @@ tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRo
     a = srbfgs->extrapolate(newgrad, newrot);
   }
 
-  cout << setprecision(8) << " a rms = " << a->rms() << endl;
   if (optimize_electrons) {
     kramers_adapt(a, nclosed_, nact_, nvirtnr);
   } else {
     kramers_adapt(a, nclosed_, nact_, nneg_/2);
   }
 //  a->scale(0.1);
-  cout << setprecision(6) << "+++ STEP LENGTH   = " << a->norm() << endl;
-  cout << setprecision(6) << "+++ grad * delta  = " << newgrad->dot_product(a) << endl;
-  cout << setprecision(6) << "+++ ele grad rms  = " << newgrad->rms() << endl;
+  cout << setprecision(6) << " Subspace gradient rms  = " << newgrad->rms() << endl;
 
   return make_tuple(a, energy, newgrad, newrot, reset);
 }
