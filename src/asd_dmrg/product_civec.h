@@ -101,6 +101,8 @@ class ProductRASCivec {
     }
 
     std::shared_ptr<const DMRG_Block> left() const { return left_; }
+    std::shared_ptr<RASSpace> space() { return space_; }
+    std::shared_ptr<const RASSpace> space() const { return space_; }
     const std::set<BlockInfo>& lblocks() const { return left_->blocks(); }
 
     std::map<BlockKey, std::shared_ptr<RASBlockVectors>>& sectors() { return sectors_; }

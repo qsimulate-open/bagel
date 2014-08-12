@@ -46,6 +46,23 @@ class FormSigmaProdRAS {
     // Helper functions for sigma formation
     void pure_block_and_ras(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop) const;
     void interaction_terms(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop) const;
+
+    /// Branch 1: \f$\alpha^\dagger, \alpha^\dagger\alpha^\dagger\f$
+    void branch_1(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
+    /// Branch 2: \f$\beta^\dagger, \alpha^\dagger\beta^\dagger\f$
+    void branch_2(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
+    /// Branch 3: \f$\alpha, \alpha\alpha, \alpha^\dagger\alpha\alpha, \beta^\dagger \alpha\alpha, (\alpha^\dagger\beta\alpha)\f$
+    void branch_3(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
+    /// Branch 4: \f$\beta, \alpha\beta, \beta\beta, (\beta^\dagger\alpha\beta), \beta^\dagger\beta\beta, (\alpha^\dagger\alpha\beta)\f$
+    void branch_4(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
+    /// Branch 5: \f$\alpha^\dagger\alpha, \alpha^\dagger\alpha^\dagger\alpha, (\beta^\dagger\alpha^\dagger\alpha)\f$
+    void branch_5(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
+    /// Branch 6: \f$\beta^\dagger\beta, \beta^\dagger\beta^\dagger\beta, (\alpha^\dagger\beta^\dagger\beta)\f$
+    void branch_6(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
+    /// Branch 7: \f$\alpha^\dagger\beta, (\beta^\dagger\alpha^\dagger\beta)\f$
+    void branch_7(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
+    /// Branch 8: \f$\beta^\dagger\alpha, (\alpha^\dagger\beta^\dagger\alpha)\f$
+    void branch_8(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
 };
 
 }
