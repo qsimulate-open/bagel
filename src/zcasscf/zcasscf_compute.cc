@@ -191,6 +191,7 @@ void ZCASBFGS::compute() {
     shared_ptr<ZRotFile> ele_rot;
     shared_ptr<ZRotFile> pos_rot;
     bool reset;
+    Timer more_sorensen_timer(0);
     mute_stdcout(/*fci*/true);
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
@@ -207,6 +208,7 @@ void ZCASBFGS::compute() {
     }
     cout << " ---------------------------------------------------- " << endl << endl;
     resume_stdcout();
+    more_sorensen_timer.tick_print("More-Sorensen/Hebden extrapolation");
 #endif
 
 #ifdef BOTHSPACES
