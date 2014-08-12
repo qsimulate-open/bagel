@@ -35,7 +35,6 @@ const static CCarSphList carsphlist;
 ComplexMixedERIBatch::ComplexMixedERIBatch(std::array<std::shared_ptr<const Shell>,4> info, const double dummy)
   : shells_{{info[1],info[2],info[3]}}, stack_(resources__->get()) {
 
-  throw logic_error("Trying to construct a ComplexMixedERIBatch.  This shouldn't be necessary until we implement the Gaunt interaction with London orbitals.");
   assert(info[0]->dummy());
 
   size_block_ = shells_[0]->nbasis()*shells_[1]->nbasis()*shells_[2]->nbasis();
@@ -52,8 +51,9 @@ ComplexMixedERIBatch::~ComplexMixedERIBatch() {
 
 void ComplexMixedERIBatch::compute() {
 
-  throw logic_error("Trying to compute a ComplexMixedERIBatch.  This shouldn't be necessary until we implement the Gaunt interaction with London orbitals.");
-  /*
+  // Common origin MixedERIBatch not set up yet
+  assert(!shells_[1]->aux_same());
+
   const int s0size = shells_[0]->nbasis();
   const int s1size = shells_[1]->nbasis();
   const int s2size = shells_[2]->nbasis();
@@ -81,15 +81,12 @@ void ComplexMixedERIBatch::compute() {
 
   stack_->release(s0size*a1*s2size, ints);
   stack_->release(s0size*a1*s2size, eri);
-  */
 }
 
 
 void ComplexMixedERIBatch::eri_compute(complex<double>* eri) const {
 
-  throw logic_error("Trying to compute integrals for a ComplexMixedERIBatch.  This shouldn't be necessary until we implement the Gaunt interaction with London orbitals.");
-  /*
-  // shells_[0] is aux function, shelles_[1] and [2] are basis
+  // shells_[0] is aux function, shells_[1] and [2] are basis
 
   const int s0size = shells_[0]->nbasis();
   const int s2size = shells_[2]->nbasis();
@@ -153,5 +150,4 @@ void ComplexMixedERIBatch::eri_compute(complex<double>* eri) const {
 
     stack_->release(s0size * a1size_dec * s2cart, tmp);
   }
-*/
 }
