@@ -20,7 +20,7 @@
   "state"  : [1],
   "nact_cas"      : 2,
   "nclosed"   : 0,
-  "maxiter" : 30,
+  "maxiter" : 35,
   "maxiter_scf" : 50,
   "maxiter_fci" : 100
 }

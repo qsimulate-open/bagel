@@ -73,7 +73,8 @@ void ZCASBFGS::compute() {
   auto cold = coeff_->clone();
 
   bool optimize_electrons = idata_->get<bool>("optimize_electrons", true);
-  cout << " Orbital optimization presently only available for electronic orbitals " << endl;
+  const bool only_electrons = idata_->get<bool>("only_electrons", false);
+  if (only_electrons)  cout << " Orbital optimization for electronic orbitals only " << endl;
   cout << " See casscf.log for further information on FCI output " << endl;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
@@ -324,7 +325,12 @@ void ZCASBFGS::compute() {
     optimize_electrons = optimize_electrons == true ? false : true;
     if (ele_conv && optimize_electrons) optimize_electrons = false;
     if (pos_conv && !optimize_electrons) optimize_electrons = true;
-    if (pos_conv && ele_conv) break;
+    if (only_electrons) optimize_electrons = true;
+    if ((ele_conv && only_electrons) || (pos_conv && ele_conv)) {
+      cout << " " << endl;
+      cout << "    * ZCASBFGS optimization converged    " << endl << endl;
+      break;
+    }
 #endif
   }
   if (energy_.size() == 0)
