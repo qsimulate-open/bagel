@@ -98,11 +98,9 @@ void ZCASSCF::init() {
       coeff_ = coeff;
     }
   } else if (kramers_coeff) {
-    cout << " kramers coeff already in proper order " << endl;
     shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
     coeff_ = ctmp;
   } else {
-    cout << " rearranging coefficeint matrix " << endl;
     shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
     shared_ptr<ZMatrix> coeff = ctmp->clone();
     const int npos = ctmp->mdim() - nneg_;

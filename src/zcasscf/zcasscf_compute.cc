@@ -74,8 +74,8 @@ void ZCASBFGS::compute() {
 
   bool optimize_electrons = idata_->get<bool>("optimize_electrons", true);
   const bool only_electrons = idata_->get<bool>("only_electrons", false);
-  if (only_electrons)  cout << " Orbital optimization for electronic orbitals only " << endl;
-  cout << " See casscf.log for further information on FCI output " << endl;
+  if (only_electrons)  cout << "     Orbital optimization for electronic orbitals only " << endl;
+  cout << "     See casscf.log for further information on FCI output " << endl << endl;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // first perform CASCI to obtain RDMs

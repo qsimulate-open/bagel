@@ -46,6 +46,7 @@ void ZSuperCI::compute() {
 
   double gradient = 1.0e10;
 
+  cout << "     See casscf.log for further information on FCI output " << endl << endl;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     if (iter >= diis_start_ && gradient < 1.0e-2 && diis == nullptr) {
