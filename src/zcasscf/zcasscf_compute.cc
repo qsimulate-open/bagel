@@ -73,7 +73,7 @@ void ZCASBFGS::compute() {
   auto cold = coeff_->clone();
 
   bool optimize_electrons = idata_->get<bool>("optimize_electrons", true);
-  cout << " optimizing the electrons ? " << optimize_electrons << endl;
+  cout << " Orbital optimization presently only available for electronic orbitals " << endl;
   cout << " See casscf.log for further information on FCI output " << endl;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
@@ -322,7 +322,6 @@ void ZCASBFGS::compute() {
     if (pos_conv && ele_conv) break;
 #endif
   }
-//  if (ele_energy.size() > 0 && energy_.size() == 0) energy_.push_back(ele_energy.back());
 
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
