@@ -36,7 +36,6 @@ using namespace std;
 using namespace bagel;
 
 void ZSuperCI::compute() {
-  // TODO : DIIS needs to be cleaned up
   shared_ptr<HPW_DIIS<ZMatrix,ZMatrix>> diis;
 
   // ============================
@@ -72,11 +71,7 @@ void ZSuperCI::compute() {
       resume_stdcout();
       fci_time.tick_print("FCI and RDMs");
     }
-#ifdef BOTHSPACES
-    auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
-#else
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirtnr_*2);
-#endif
 
     // compute one-boedy operators
     shared_ptr<ZMatrix> f, fact, factp, gaa;
@@ -132,59 +127,49 @@ void ZSuperCI::compute() {
       microiter_time.tick_print("Microiterations");
     }
 
-   // orbital rotation matrix
+    // orbital rotation matrix
     shared_ptr<ZMatrix> amat = cc->unpack<ZMatrix>();
-#ifdef BOTHSPACES
-    kramers_adapt(amat, nvirt_);
-#else
     kramers_adapt(amat, nvirtnr_);
-#endif
-  // multiply -i to make amat hermite (will be compensated), sqrt(2) to recover non-rel limit
-   *amat *= sqrt(2.0) * complex<double>(0.0, -1.0);
-   VectorB teig(amat->ndim());
-   amat->diagonalize(teig);
-   auto amat_sav = amat->copy();
-   for (int i = 0; i != amat->ndim(); ++i) {
-     complex<double> ex = exp(complex<double>(0.0, teig(i)));
-     for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
-   }
-   auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
-   expa->purify_unitary();
+    // multiply -i to make amat hermite (will be compensated), sqrt(2) to recover non-rel limit
+    *amat *= sqrt(2.0) * complex<double>(0.0, -1.0);
+    VectorB teig(amat->ndim());
+    amat->diagonalize(teig);
+    auto amat_sav = amat->copy();
+    for (int i = 0; i != amat->ndim(); ++i) {
+      complex<double> ex = exp(complex<double>(0.0, teig(i)));
+      for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
+    }
+    auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
+    expa->purify_unitary();
 
-#ifdef BOTHSPACES
-   coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
-#else
-   if (diis == nullptr) {
-     auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
-     ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
-     ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2,nocc_*2+nvirtnr_));
-     ctmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_,nocc_*2+nvirt_+nvirtnr_));
-     *ctmp *= *expa;
-     auto ctmp2 = coeff_->copy();
-     ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
-     ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2,nocc_*2+nvirtnr_));
-     ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
-     coeff_ = make_shared<const ZMatrix>(*ctmp2);
-   } else {
-     shared_ptr<const ZMatrix> mcc = diis->extrapolate(expa);
-     auto ctmp2 = coeff_->copy();
-     ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, mcc->slice(0, nocc_*2));
-     ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, mcc->slice(nocc_*2,nocc_*2+nvirtnr_));
-     ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, mcc->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
-     coeff_ = make_shared<const ZMatrix>(*ctmp2);
-   }
-#endif
+    if (diis == nullptr) {
+      auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
+      ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
+      ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2,nocc_*2+nvirtnr_));
+      ctmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_,nocc_*2+nvirt_+nvirtnr_));
+      *ctmp *= *expa;
+      auto ctmp2 = coeff_->copy();
+      ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
+      ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2,nocc_*2+nvirtnr_));
+      ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
+      coeff_ = make_shared<const ZMatrix>(*ctmp2);
+    } else {
+      shared_ptr<const ZMatrix> mcc = diis->extrapolate(expa);
+      auto ctmp2 = coeff_->copy();
+      ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, mcc->slice(0, nocc_*2));
+      ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, mcc->slice(nocc_*2,nocc_*2+nvirtnr_));
+      ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, mcc->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
+      coeff_ = make_shared<const ZMatrix>(*ctmp2);
+    }
 
-   // print out...
-   print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+    // print out...
+    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
   }
-//
-//  // block diagonalize coeff_ in nclosed and nvirt
-//  if (nact_)
-//    coeff_ = semi_canonical_orb();
-//
-  // this is not needed for energy, but for consistency we want to have this...
+
+  // TODO : block diagonalize coeff_ in nclosed and nvirt
+
+  // the following is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
   if (nact_) {
     fci_->update(coeff_, /*restricted*/true);
@@ -228,15 +213,12 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
 
   shared_ptr<const ZMatrix> cfock;
   { // Fock operators
-#ifdef BOTHSPACES
-    auto coefftmp = coeff_->copy();
-#else
     // extract electronic orbitals from coeff
     auto coefftmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
     coefftmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
     coefftmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2, nocc_*2+nvirtnr_));
     coefftmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
-#endif
+
     // closed Fock - same as inactive fock
     if (!nact_) {
       shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice_copy(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
@@ -285,11 +267,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
 
   // diagonal denom
   {
-#ifdef BOTHSPACES
-    int nvirt_tmp = nvirt_;
-#else
     int nvirt_tmp = nvirtnr_;
-#endif
     auto dtmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_tmp*2);
 
     complex<double>* target = dtmp->ptr_va();
@@ -328,25 +306,4 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
 
     denom = dtmp;
   }
-}
-
-
-// rotate (within allowed rotations) the transformation matrix so that it is diagonal in each subblock
-shared_ptr<ZMatrix> ZSuperCI::tailor_rotation(const shared_ptr<ZMatrix> seed) {
-
-  shared_ptr<ZMatrix> out = seed->clone();
-  for (int i = 0; i != nclosed_*2; ++i)
-    for (int j = 0; j != nclosed_*2; ++j)
-      out->element(j,i) = seed->element(j,i);
-  for (int i = 0; i != nact_*2; ++i)
-    for (int j = 0; j != nact_*2; ++j)
-      out->element(j+nclosed_*2,i+nclosed_*2) = seed->element(j+nclosed_*2,i+nclosed_*2);
-  for (int i = 0; i != nvirt_*2; ++i)
-    for (int j = 0; j != nvirt_*2; ++j)
-      out->element(j+nocc_*2,i+nocc_*2) = seed->element(j+nocc_*2,i+nocc_*2);
-  out->inverse();
-  out->purify_unitary();
-  *out = *seed * *out;
-
-  return out;
 }

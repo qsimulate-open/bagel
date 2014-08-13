@@ -26,8 +26,6 @@
 #ifndef __SRC_ZCASSCF_ZSUPERCI_H
 #define __SRC_ZCASSCF_ZSUPERCI_H
 
-//#define BOTHSPACES
-
 #include <src/zcasscf/zcasscf.h>
 
 namespace bagel {
@@ -42,11 +40,6 @@ class ZSuperCI : public ZCASSCF {
       std::cout << "   * DIIS will be used after " << diis_start_ << " macro iterations *    " << std::endl << std::endl;
     }
 
-    // internal function
-    // gradients
-
-    // diagonal denominator
-
   public:
     ZSuperCI(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref = nullptr)
        : ZCASSCF(idat, geom, ref) { common_init(); }
@@ -54,10 +47,10 @@ class ZSuperCI : public ZCASSCF {
     void compute() override;
     void one_body_operators(std::shared_ptr<ZMatrix>& f, std::shared_ptr<ZMatrix>& fact, std::shared_ptr<ZMatrix>& factp, std::shared_ptr<ZMatrix>& gaa,
                             std::shared_ptr<ZRotFile>& denom);
+    // gradient functions for virtual-closed, virtual-active, and closed-active contributions
     void grad_vc(const std::shared_ptr<ZMatrix> f, std::shared_ptr<ZRotFile> sigma);
     void grad_va(const std::shared_ptr<ZMatrix> fact, std::shared_ptr<ZRotFile> sigma);
     void grad_ca(const std::shared_ptr<ZMatrix> f, std::shared_ptr<ZMatrix> fact, std::shared_ptr<ZRotFile> sigma);
-    std::shared_ptr<ZMatrix> tailor_rotation(const std::shared_ptr<ZMatrix> seed);
 
 };
 

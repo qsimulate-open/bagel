@@ -37,11 +37,7 @@ void ZSuperCIMicro::compute() {
 
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
-#ifdef BOTHSPACES
-  const int nvirt = casscf_->nvirt();
-#else
   const int nvirt = casscf_->nvirtnr();
-#endif
   DavidsonDiag<ZSCIData, ZMatrix> davidson(1, casscf_->max_micro_iter());
 
   // current coefficient
@@ -128,13 +124,8 @@ std::shared_ptr<ZRotFile> ZSuperCIMicro::form_sigma(std::shared_ptr<const ZRotFi
 // TODO : check why normalization factor is commented out
 void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nact = casscf_->nact();
-#ifdef BOTHSPACES
-  const int nvirt = casscf_->nvirt();
-  const int nbasis = casscf_->nbasis();
-#else
   const int nvirt = casscf_->nvirtnr();
   const int nbasis = casscf_->nbasis()/2;
-#endif
   const int nocc = casscf_->nocc();
   if (!nact || !nvirt) return;
 
@@ -157,13 +148,8 @@ void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 // sigma_ai_ai = delta_ij F_ab - delta_ab F_ij
 void ZSuperCIMicro::sigma_ai_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
-#ifdef BOTHSPACES
-  const int nvirt = casscf_->nvirt();
-  const int nbasis = casscf_->nbasis();
-#else
   const int nvirt = casscf_->nvirtnr();
   const int nbasis = casscf_->nbasis()/2;
-#endif
   const int nocc = casscf_->nocc();
   if (!nclosed || !nvirt) return;
 
@@ -176,11 +162,7 @@ void ZSuperCIMicro::sigma_ai_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
-#ifdef BOTHSPACES
-  const int nvirt = casscf_->nvirt();
-#else
   const int nvirt = casscf_->nvirtnr();
-#endif
   if (!nact || !nvirt || !nclosed) return;
 
   ZMatrix tmp(nclosed*2, nact*2);
@@ -198,11 +180,7 @@ void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
-#ifdef BOTHSPACES
-  const int nvirt = casscf_->nvirt();
-#else
   const int nvirt = casscf_->nvirtnr();
-#endif
   const int nocc = casscf_->nocc();
   if (!nact || !nvirt || !nclosed) return;
 
@@ -221,11 +199,7 @@ void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 void ZSuperCIMicro::sigma_ti_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
-#ifdef BOTHSPACES
-  const int nbasis = casscf_->nbasis();
-#else
   const int nbasis = casscf_->nbasis()/2;
-#endif
   if (!nact || !nclosed) return;
   ZMatrix tmp(nact*2, nact*2);
   for (int i = 0; i != nact*2; ++i) {
