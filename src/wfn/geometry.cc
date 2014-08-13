@@ -635,15 +635,14 @@ void Geometry::set_london(shared_ptr<const PTree>& geominfo) {
 
 void Geometry::compute_integrals(const double thresh) const {
 #ifdef LIBINT_INTERFACE
-  if (magnetism_)
-    throw runtime_error("Libint cannot compute London orbital integrals; use BAGEL's native integral code.");
-  df_ = form_fit<DFDist_ints<Libint>>(thresh, true); // true means we construct J^-1/2
+  if (!magnetism_)
+    df_ = form_fit<DFDist_ints<Libint>>(thresh, true); // true means we construct J^-1/2
 #else
   if (!magnetism_)
     df_ = form_fit<DFDist_ints<ERIBatch>>(thresh, true); // true means we construct J^-1/2
+#endif
   else
     df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
-#endif
 }
 
 
