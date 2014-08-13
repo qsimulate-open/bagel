@@ -165,49 +165,9 @@ void ZCASSCF::init() {
   if (kramers_coeff) {
     shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
     coeff_ = make_shared<const ZMatrix>(*tmp);
-    if (nclosed_) {
-      if((*coeff_->get_submatrix(0, 0, coeff_->ndim()/4, 1)
-         - *coeff_->get_submatrix(coeff_->ndim()/4, nclosed_, coeff_->ndim()/4, 1)->get_conjg()).rms() > 1.0e-12)
-      throw logic_error("Coefficient is not kramers restricted ; please disable kramers_coeff flag for this reference");
-    } else {
-      if((*coeff_->get_submatrix(0, 0, coeff_->ndim()/4, 1)
-         - *coeff_->get_submatrix(coeff_->ndim()/4, nact_, coeff_->ndim()/4, 1)->get_conjg()).rms() > 1.0e-12)
-      throw logic_error("Coefficient is not kramers restricted ; please disable kramers_coeff flag for this reference");
-    }
   } else {
     init_kramers_coeff(); // coeff_ now in block format
   }
-
-#if 1
-  { // DEBUG : random scaling
-    bool randscal_c = idata_->get<bool>("randscal_c", false);
-    bool randscal_a = idata_->get<bool>("randscal_a", false);
-    auto tmp = coeff_->copy();
-    if (randscal_c) {
-      scale_closed_.resize(nclosed_);
-      cout << " RANDOM SCALING OF THE CLOSED COEFFICIENT " << endl;
-      for (int i = 0; i != nclosed_; ++i) {
-        const double b = (double)rand() / RAND_MAX;
-        const complex<double> fac(cos(b), sin(b));
-        scale_closed_[i] = fac; cout << setprecision(12) << " scale closed " << i << " = " << fac << endl;
-        blas::scale_n(fac, tmp->element_ptr(0,i), tmp->ndim());
-        blas::scale_n(conj(fac), tmp->element_ptr(0,nclosed_+i), tmp->ndim());
-      }
-    }
-    if (randscal_a) {
-      cout << " RANDOM SCALING OF THE ACTIVE COEFFICIENT " << endl;
-      scale_active_.resize(nact_);
-      for (int i = 0; i != nact_; ++i) {
-        const double b = (double)rand() / RAND_MAX;
-        const complex<double> fac(cos(b), sin(b));
-        scale_active_[i] = fac; cout << setprecision(12) << " scale active " << i << " = " << fac << endl;
-        blas::scale_n(fac, tmp->element_ptr(0,2*nclosed_+i), tmp->ndim());
-        blas::scale_n(conj(fac), tmp->element_ptr(0,2*nclosed_+nact_+i), tmp->ndim());
-      }
-    }
-    coeff_ = make_shared<const ZMatrix>(*tmp);
-  }
-#endif
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
@@ -217,10 +177,6 @@ void ZCASSCF::init() {
   }
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
-
-//  // transform coefficient matrix to block format
-//  shared_ptr<ZMatrix> ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_);
-//  coeff_ = make_shared<const ZMatrix>(*ctmp);
 
 }
 
@@ -413,49 +369,6 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
   *qtmp = *natorb % *qtmp;
   qnew->copy_block(nclosed_*2, 0, n, n, qtmp->data());
   return qnew;
-}
-
-
-shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
-  // TODO : address diagonalization issues for nclosed=1
-  assert(nact_ > 0);
-  // calculate 1RDM in an original basis set then and active fock with hcore contribution
-  shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
-  shared_ptr<const ZMatrix> afockao = active_fock(rdm1, /*with_hcore*/true);
-
-  const ZMatView ocoeff = coeff_->slice(0, nclosed_*2);
-  const ZMatView vcoeff = coeff_->slice(nocc_*2, nbasis_*2);
-
-  auto trans = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
-  trans->unit();
-  if (nclosed_) {
-    auto ofock = make_shared<ZMatrix>(ocoeff % *afockao * ocoeff);
-    VectorB eig(ofock->ndim());
-    if (nclosed_ == 1) {
-      ofock->diagonalize(eig);
-    } else if (nclosed_ > 1) {
-      zquatev_(ofock->ndim(), ofock->data(), eig.data());
-    }
-    trans->copy_block(0, 0, nclosed_*2, nclosed_*2, ofock->data());
-  }
-  auto vfock = make_shared<ZMatrix>(vcoeff % *afockao * vcoeff);
-  unique_ptr<double[]> eig(new double[vfock->ndim()]);
-  zquatev_(vfock->ndim(), vfock->data(), eig.get());
-  // move_positronic_orbitals;
-  {
-    auto move_one = [this, &vfock](const int offset, const int block1, const int block2) {
-      shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(vfock->ndim(), block1+block2);
-      scratch->copy_block(0,      0, vfock->ndim(), block2, vfock->slice(offset+block1, offset+block1+block2));
-      scratch->copy_block(0, block2, vfock->ndim(), block1, vfock->slice(offset,        offset+block1));
-      vfock->copy_block(0, offset, vfock->ndim(), block1+block2, scratch);
-    };
-    const int nneg2 = nneg_/2;
-    move_one(           0, nneg2, nvirt_-nneg2);
-    move_one(nvirt_, nneg2, nvirt_-nneg2);
-  }
-  trans->copy_block(nocc_*2, nocc_*2, nvirt_*2, nvirt_*2, vfock->data());
-  return make_shared<const ZMatrix>(*coeff_ * *trans);
-
 }
 
 

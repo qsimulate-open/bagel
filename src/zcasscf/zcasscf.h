@@ -101,11 +101,11 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const Reference> conv_to_ref() const override;
 
     std::shared_ptr<ZMatrix> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1);
+    // natural orbital transformations for the 1 and 2 RDMs, the coefficient, and qvec
     std::shared_ptr<const ZMatrix> natorb_rdm1_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
     std::shared_ptr<const ZMatrix> natorb_rdm2_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm2) const;
     std::shared_ptr<const ZMatrix> update_coeff(std::shared_ptr<const ZMatrix> cold, std::shared_ptr<const ZMatrix> natorb) const;
     std::shared_ptr<const ZMatrix> update_qvec(std::shared_ptr<const ZMatrix> qold, std::shared_ptr<const ZMatrix> natorb) const;
-    std::shared_ptr<const ZMatrix> semi_canonical_orb();
     // coeff format transformation is a static function!
     static std::shared_ptr<ZMatrix> format_coeff(const int nclosed, const int nact, const int nvirt, std::shared_ptr<const ZMatrix> coeff, const bool striped = true);
     // kramers adapt for RotFile is a static function!
