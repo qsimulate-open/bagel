@@ -37,7 +37,6 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
   // first make a list of unique atoms
   const string defbasis = geom_->basisfile();
   map<pair<string,string>, shared_ptr<const Matrix>> atoms;
-  unique_ptr<double[]> eig(new double[geom_->nbasis()]);
 
   int offset = 0;
 

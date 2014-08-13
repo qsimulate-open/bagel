@@ -33,7 +33,7 @@ using namespace bagel;
 using namespace std;
 
 // assumes data is given with 1-based indexing
-SparseMatrix::SparseMatrix(const int n, const int m, const int size, double* data, int* cols, int* rind) :
+SparseMatrix::SparseMatrix(const int n, const int m, const int size, const double* data, int* cols, int* rind) :
   data_(unique_ptr<double[]>(new double[size])), cols_(unique_ptr<int[]>(new int[size])), rind_(unique_ptr<int[]>(new int[n+1])),
   ndim_(n), mdim_(m), size_(size)
 {
@@ -43,7 +43,7 @@ SparseMatrix::SparseMatrix(const int n, const int m, const int size, double* dat
 }
 
 // assumes data is given with 1-based indexing
-SparseMatrix::SparseMatrix(const int n, const int m, vector<double>& data, vector<int>& cols, vector<int>& rind) :
+SparseMatrix::SparseMatrix(const int n, const int m, const vector<double>& data, vector<int>& cols, vector<int>& rind) :
   SparseMatrix(n, m, data.size(), data.data(), cols.data(), rind.data())
 {
   assert(data.size() == cols.size());
@@ -51,7 +51,7 @@ SparseMatrix::SparseMatrix(const int n, const int m, vector<double>& data, vecto
 }
 
 // assumes coords is given with 0-based indexing
-SparseMatrix::SparseMatrix(const int n, const int m, map<pair<int, int>, double>& coords) : ndim_(n), mdim_(m), size_(coords.size())
+SparseMatrix::SparseMatrix(const int n, const int m, const map<pair<int, int>, double>& coords) : ndim_(n), mdim_(m), size_(coords.size())
 {
   data_ = unique_ptr<double[]>(new double[size_]);
   cols_ = unique_ptr<int[]>(new int[size_]);

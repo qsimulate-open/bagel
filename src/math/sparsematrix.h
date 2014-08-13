@@ -50,9 +50,9 @@ class SparseMatrix {
     const int size_;
 
   public:
-    SparseMatrix(const int n, const int m, const int size, double* data, int* cols, int* rind);
-    SparseMatrix(const int n, const int m, std::vector<double>& data, std::vector<int>& cols, std::vector<int>& rind);
-    SparseMatrix(const int n, const int m, std::map<std::pair<int, int>, double>& coords);
+    SparseMatrix(const int n, const int m, const int size, const double* data, int* cols, int* rind);
+    SparseMatrix(const int n, const int m, const std::vector<double>& data, std::vector<int>& cols, std::vector<int>& rind);
+    SparseMatrix(const int n, const int m, const std::map<std::pair<int, int>, double>& coords);
     SparseMatrix(const SparseMatrix& o); // copy constructor
     SparseMatrix(SparseMatrix&& o);      // move constructor
 
