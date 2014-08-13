@@ -40,7 +40,6 @@ using namespace std;
 using namespace bagel;
 
 void SuperCI::compute() {
-
   // DIIS: will be turned on at iter = diis_start_ (>1),
   //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner
   //       paper on Brueckner CC
@@ -66,8 +65,10 @@ void SuperCI::compute() {
 
     // first perform CASCI to obtain RDMs
     if (iter) fci_->update(coeff_);
+    Timer fci_time(0);
     fci_->compute();
     fci_->compute_rdm12();
+    fci_time.tick_print("FCI and RDMs");
     // get energy
     energy_ = fci_->energy();
 
@@ -79,7 +80,9 @@ void SuperCI::compute() {
     // compute one-boedy operators
     shared_ptr<Matrix> f, fact, factp, gaa;
     shared_ptr<RotFile> denom;
+    Timer onebody(0);
     one_body_operators(f, fact, factp, gaa, denom);
+    onebody.tick_print("One body operators");
 
     // first, <proj|H|0> is computed
     grad->zero();
@@ -99,9 +102,11 @@ void SuperCI::compute() {
 
     shared_ptr<const RotFile> cc;
     {
+      Timer microiter_time(0);
       SuperCIMicro micro(shared_from_this(), grad, denom, f, fact, factp, gaa);
       micro.compute();
       cc = micro.cc();
+      microiter_time.tick_print("Microiterations");
     }
 
     // unitary matrix

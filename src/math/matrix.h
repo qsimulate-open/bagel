@@ -151,6 +151,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     std::shared_ptr<const Matrix> matrix() const { return shared_from_this(); }
 #endif
     std::shared_ptr<const Matrix> form_density_rhf(const int n, const int off = 0) const;
+    std::shared_ptr<Matrix> swap_columns(const int i, const int iblock, const int j, const int jblock) const;
 };
 
 
