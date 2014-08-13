@@ -99,7 +99,7 @@ void ZCASBFGS::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix
 }
 
 
-// grad(r/i) (eq.4.3c): (cfock_ri+afock_ri) - cfock_iu gamma_ur - qxr_ir
+// grad(r/i) (eq.4.3c): (cfock_ri+afock_ri)^* - (cfock_iu gamma_ur)^* - qxr_ir
 void ZCASBFGS::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
   if (!nclosed_ || !nact_) return;
   auto qxrc = qxr->get_conjg();

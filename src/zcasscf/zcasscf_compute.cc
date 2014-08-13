@@ -54,12 +54,6 @@ void ZCASBFGS::compute() {
   bool ele_conv = false;
   bool pos_conv = false;
 
-  // TODO for debug, we may rotate coefficients. The magnitude can be specified in the input
-  const bool ___debug___break_kramers = false;
-  const bool ___debug___with_kramers = idata_->get<bool>("debugkramers", true);
-  if (___debug___break_kramers)
-    ___debug___orbital_rotation(___debug___with_kramers);
-
   auto cold = coeff_->clone();
 
   bool optimize_electrons = idata_->get<bool>("optimize_electrons", true);
@@ -154,13 +148,6 @@ void ZCASBFGS::compute() {
     grad_va(cfock, qvec, rdm1, grad);
     grad_ca(cfock, afock, qvec, rdm1, grad);
     *grad *= 2.0;
-    if (!___debug___break_kramers)
-      kramers_adapt(grad, nclosed_, nact_, nvirt_);
-
-    if (___debug___break_kramers) {
-      ___debug___print_gradient(grad, ___debug___with_kramers);
-      ___debug___compute_hessian(cfock, afock, qvec, ___debug___with_kramers);
-    }
 
     shared_ptr<ZRotFile> xlog;
     shared_ptr<ZRotFile> ele_rot;
@@ -206,12 +193,10 @@ void ZCASBFGS::compute() {
       for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
     }
     auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
-    if (!___debug___break_kramers) {
-      if (optimize_electrons) {
-        kramers_adapt(expa, nvirtnr_);
-      } else {
-        kramers_adapt(expa, nneg_/2);
-      }
+    if (optimize_electrons) {
+      kramers_adapt(expa, nvirtnr_);
+    } else {
+      kramers_adapt(expa, nneg_/2);
     }
 
     cold = coeff_->copy();
