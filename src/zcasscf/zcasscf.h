@@ -53,6 +53,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     double thresh_;
     double thresh_micro_;
+    double rms_grad_;
     std::complex<double> level_shift_;
 
     int nstate_;
@@ -124,6 +125,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
     double occup(const int i) const { return occup_[i]; }
+    double rms_grad() const { return rms_grad_; };
 
 };
 
