@@ -29,8 +29,6 @@
 #include <src/zcasscf/zcasbfgs.h>
 #include <src/rel/reloverlap.h>
 
-//#define BOTHSPACES
-
 using namespace std;
 using namespace bagel;
 
@@ -40,20 +38,13 @@ void ZCASBFGS::compute() {
   shared_ptr<SRBFGS<ZRotFile>> srbfgs;
   shared_ptr<SRBFGS<ZRotFile>> ele_srbfgs;
   shared_ptr<SRBFGS<ZRotFile>> pos_srbfgs;
-#ifdef BOTHSPACES
-  const bool tight = idata_->get<bool>("tight", false);
-  const int limmem = idata_->get<int>("limited_memory", 0);
-#endif
 
   // ============================
   // macro iteration from here
   // ============================
   Timer timer;
 
-#ifdef BOTHSPACES
-  auto x = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
-  x->unit();
-#else
+  // allocate unitary rotation matrices
   auto ele_x = make_shared<ZMatrix>((nocc_+nvirtnr_)*2, (nocc_+nvirtnr_)*2);
   ele_x->unit();
   vector<double> ele_energy;
@@ -62,7 +53,6 @@ void ZCASBFGS::compute() {
   vector<double> pos_energy;
   bool ele_conv = false;
   bool pos_conv = false;
-#endif
 
   // TODO for debug, we may rotate coefficients. The magnitude can be specified in the input
   const bool ___debug___break_kramers = false;
@@ -121,26 +111,14 @@ void ZCASBFGS::compute() {
 
     // get energy
     if (nact_) {
-#ifdef BOTHSPACES
-      energy_.push_back((fci_->energy())[0]);
-#else
       optimize_electrons == true ? ele_energy.push_back((fci_->energy())[0]) : pos_energy.push_back((fci_->energy())[0]);
-#endif
     } else {
       assert(nstate_ == 1);
-#ifdef BOTHSPACES
-      energy_.resize(iter+1);
-      energy_[iter] = geom_->nuclear_repulsion();
-      auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore_) * *coeff_);
-      for (int i = 0; i != nclosed_*2; ++i)
-        energy_[iter] += 0.5*mo->element(i,i).real();
-#else
       optimize_electrons == true ? ele_energy.resize(iter/2+1) : pos_energy.resize((iter-1)/2+1);
       optimize_electrons == true ? ele_energy[iter/2] = geom_->nuclear_repulsion() : pos_energy[(iter-1)/2] = geom_->nuclear_repulsion();
       auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore_) * *coeff_);
       for (int i = 0; i != nclosed_*2; ++i)
         optimize_electrons == true ? ele_energy[iter/2] += 0.5*mo->element(i,i).real() : pos_energy[(iter-1)/2] += 0.5*mo->element(i,i).real();
-#endif
     }
 
     // compute approximate diagonal hessian
@@ -156,11 +134,11 @@ void ZCASBFGS::compute() {
       }
       srbfgs = make_shared<SRBFGS<ZRotFile>>(denom);
       { // electronic rotation bfgs
-        auto newdenom = ___debug___copy_electronic_rotations(denom);
+        auto newdenom = copy_electronic_rotations(denom);
         ele_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom);
       }
       { // positronic rotation bfgs
-        auto newdenom = ___debug___copy_positronic_rotations(denom);
+        auto newdenom = copy_positronic_rotations(denom);
         const double thresh = 1.0e-8;
         for (int i = 0; i != newdenom->size(); ++i)
           if (fabs(newdenom->data(i)) < thresh) {
@@ -184,9 +162,6 @@ void ZCASBFGS::compute() {
       ___debug___compute_hessian(cfock, afock, qvec, ___debug___with_kramers);
     }
 
-#ifdef BOTHSPACES
-    auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2);
-#else
     shared_ptr<ZRotFile> xlog;
     shared_ptr<ZRotFile> ele_rot;
     shared_ptr<ZRotFile> pos_rot;
@@ -198,52 +173,26 @@ void ZCASBFGS::compute() {
     if (optimize_electrons) {
       cout << " --- Optimizing electrons --- " << endl;
       xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
-      tie(ele_rot, ele_energy, grad, xlog, reset) = ___debug___optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, cold, optimize_electrons);
+      tie(ele_rot, ele_energy, grad, xlog, reset) = optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, cold, optimize_electrons);
       kramers_adapt(ele_rot, nclosed_, nact_, nvirtnr_);
     } else {
       cout << " --- Optimizing positrons --- " << endl;
       xlog    = make_shared<ZRotFile>(pos_x->log(4), nclosed_*2, nact_*2, nneg_);
-      tie(pos_rot, pos_energy, grad, xlog, reset) = ___debug___optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, cold, optimize_electrons);
+      tie(pos_rot, pos_energy, grad, xlog, reset) = optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, cold, optimize_electrons);
       kramers_adapt(pos_rot, nclosed_, nact_, nneg_/2);
     }
     cout << " ---------------------------------------------------- " << endl << endl;
     resume_stdcout();
     more_sorensen_timer.tick_print("More-Sorensen/Hebden extrapolation");
-#endif
 
-#ifdef BOTHSPACES
-    mute_stdcout(/*fci*/false);
-    cout << " " << endl;
-    cout << " ++++++++++++++++++++++++ " << endl;
-    cout << " Starting microiterations " << endl;
-    cout << " ++++++++++++++++++++++++ " << endl;
-    cout << setprecision(6) << " gradient norm      = " << grad->norm() << endl;
-    cout << " " << endl;
-    auto reset = srbfgs->check_step(energy_, grad, xlog, tight, limmem);
-    if (reset) {
-      cout << " STEP DOES NOT MEET PROPER CRITERIA : Please backtrack. " << endl;
-    }
-    shared_ptr<ZRotFile> a = srbfgs->more_sorensen_extrapolate(grad, xlog);
-    resume_stdcout();
-    if (!___debug___break_kramers)
-      kramers_adapt(a, nclosed_, nact_, nvirt_);
-#endif
-#ifdef BOTHSPACES
-    shared_ptr<ZMatrix> amat = a->unpack<ZMatrix>();
-#else
     shared_ptr<ZMatrix> amat;
     if (optimize_electrons) {
       amat = ele_rot->unpack<ZMatrix>();
     } else {
       amat = pos_rot->unpack<ZMatrix>();
     }
-#endif
 
-#ifdef BOTHSPACES
     const double gradient = grad->rms();
-#else
-    const double gradient = grad->rms();//optimize_electrons ? ___debug___copy_electronic_rotations(grad)->rms() : ___debug___copy_positronic_rotations(grad)->rms();
-#endif
 
     // multiply -1 from the formula taken care of in extrap. multiply -i to make amat hermite (will be compensated)
     *amat *= 1.0 * complex<double>(0.0, -1.0);
@@ -258,21 +207,14 @@ void ZCASBFGS::compute() {
     }
     auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
     if (!___debug___break_kramers) {
-#ifdef BOTHSPACES
-      kramers_adapt(expa, nvirt_);
-#else
       if (optimize_electrons) {
         kramers_adapt(expa, nvirtnr_);
       } else {
         kramers_adapt(expa, nneg_/2);
       }
-#endif
     }
 
     cold = coeff_->copy();
-#ifdef BOTHSPACES
-    coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
-#else
     if (optimize_electrons) {
       int nvirtnr = nvirt_ - nneg_/2;
       auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), coeff_->mdim()/2);
@@ -296,32 +238,20 @@ void ZCASBFGS::compute() {
       ctmp2->copy_block(0, nocc_*2 + nvirtnr + nvirt_, coeff_->ndim(), nneg_/2, ctmp->slice(nocc_*2 + nneg_/2, ctmp->mdim()));
       coeff_ = make_shared<const ZMatrix>(*ctmp2);
     }
-#endif
     // for next BFGS extrapolation
-#ifdef BOTHSPACES
-    *x *= *expa;
-#else
     if (optimize_electrons) {
       *ele_x *= *expa;
     } else {
       *pos_x *= *expa;
     }
-#endif
 
     // print energy
-#ifdef BOTHSPACES
-    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
-#else
     if (optimize_electrons) {
       print_iteration(iter, 0, 0, ele_energy, gradient, timer.tick());
     } else {
       print_iteration(iter, 0, 0, pos_energy, gradient, timer.tick());
     }
-#endif
 
-#ifdef BOTHSPACES
-    if (gradient < thresh_) break;
-#else
     if (gradient < thresh_ && !optimize_electrons) pos_conv = true;
     if (gradient < thresh_ &&  optimize_electrons) ele_conv = true;
     optimize_electrons = optimize_electrons == true ? false : true;
@@ -333,7 +263,6 @@ void ZCASBFGS::compute() {
       cout << "    * ZCASBFGS optimization converged    " << endl << endl;
       break;
     }
-#endif
   }
   if (energy_.size() == 0)
     optimize_electrons == true ? energy_.push_back(ele_energy.back()) : energy_.push_back(pos_energy.back());

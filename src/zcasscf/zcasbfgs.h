@@ -37,13 +37,13 @@ class ZCASBFGS : public ZCASSCF {
     }
 
     // internal function
-    // gradients
+    // gradient functions for computing the virtual-closed, virtual-active, and closed-active contributions
     void grad_vc(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<ZRotFile> sigma) const;
     void grad_va(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> qxr,   std::shared_ptr<const ZMatrix> rdm1, std::shared_ptr<ZRotFile> sigma) const;
     void grad_ca(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr,
                  std::shared_ptr<const ZMatrix> rdm1, std::shared_ptr<ZRotFile> sigma) const;
 
-    // diagonal denominator
+    // diagonal Hessian
     std::shared_ptr<ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock,
                  std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
 
@@ -52,6 +52,12 @@ class ZCASBFGS : public ZCASSCF {
        : ZCASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override;
+   // function to optimize only the electronic-electronic or electronic-positronic type rotations
+   std::tuple<std::shared_ptr<ZRotFile>, std::vector<double>, std::shared_ptr<ZRotFile>, std::shared_ptr<ZRotFile>, bool> optimize_subspace_rotations(std::vector<double> energy, std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> rot, std::shared_ptr<SRBFGS<ZRotFile>> srbfgs, std::shared_ptr<ZMatrix> cold, bool optimize_electrons = true);
+   // function to copy electronic rotations from a rotation file TODO: make lambda
+   std::shared_ptr<ZRotFile> copy_electronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
+   // function to copy positronic rotations from a rotation file TODO: make lambda
+   std::shared_ptr<ZRotFile> copy_positronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
 
    // TODO debug only. All implemented in zcasscf_debug.cc. Will be removed once everything works.
   private:
@@ -110,12 +116,6 @@ class ZCASBFGS : public ZCASSCF {
    double trust_radius_energy_ratio(const int iter, const std::vector<double> energy, std::shared_ptr<ZRotFile> a, std::shared_ptr<ZRotFile> v, std::shared_ptr<ZRotFile> grad) const;
    // returns matrix of orbital rotation parameters
    std::shared_ptr<ZRotFile> ___debug___microiterations(std::shared_ptr<ZRotFile> xlog, std::shared_ptr<ZRotFile> grad, std::shared_ptr<SRBFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const;
-   // function to optimize only the electronic-electronic or electronic-positronic type rotations
-   std::tuple<std::shared_ptr<ZRotFile>, std::vector<double>, std::shared_ptr<ZRotFile>, std::shared_ptr<ZRotFile>, bool> ___debug___optimize_subspace_rotations(std::vector<double> energy, std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> rot, std::shared_ptr<SRBFGS<ZRotFile>> srbfgs, std::shared_ptr<ZMatrix> cold, bool optimize_electrons = true);
-   // function to copy electronic rotations from a rotation file TODO: make lambda
-   std::shared_ptr<ZRotFile> ___debug___copy_electronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
-   // function to copy positronic rotations from a rotation file TODO: make lambda
-   std::shared_ptr<ZRotFile> ___debug___copy_positronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
    // function to compute energy and gradient of a given coeff
    std::shared_ptr<ZRotFile> ___debug___compute_energy_and_gradients(std::shared_ptr<const ZMatrix> coeff);
    // line search function specific to ZCAS
