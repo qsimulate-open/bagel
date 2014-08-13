@@ -37,11 +37,7 @@ void ZSuperCIMicro::compute() {
 
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
-#ifdef BOTHSPACES
-  const int nvirt = casscf_->nvirt();
-#else
   const int nvirt = casscf_->nvirtnr();
-#endif
   DavidsonDiag<ZSCIData, ZMatrix> davidson(1, casscf_->max_micro_iter());
 
   // current coefficient
@@ -58,6 +54,7 @@ void ZSuperCIMicro::compute() {
 
     if (miter != 0) {
       sigma1 = form_sigma(cc1);
+      ZCASSCF::kramers_adapt(sigma1, nclosed, nact, nvirt);
       // projection to reference
       (*cc0)   (0,0) = 0.0;
       (*sigma0)(0,0) = grad_->dot_product(*cc1);
@@ -70,13 +67,13 @@ void ZSuperCIMicro::compute() {
     // enters davidson iteration
     auto ccp    = make_shared<ZSCIData>(cc0->copy(), cc1->copy());
     auto sigmap = make_shared<ZSCIData>(sigma0->copy(), sigma1->copy());
-//    ccp->synchronize();
-//    sigmap->synchronize();
+    ccp->synchronize();
+    sigmap->synchronize();
     const double mic_energy = davidson.compute(ccp, sigmap);
 
     // residual vector and error
     shared_ptr<ZSCIData> residual = davidson.residual().front();
-//    residual->synchronize();
+    residual->synchronize();
     const double error = residual->rms();
     assert(isnormal(error)); // check for nan's
 
@@ -85,11 +82,12 @@ void ZSuperCIMicro::compute() {
          << setw(10) << scientific << setprecision(2) << error << fixed << " " << mtimer.tick() << endl;
 
     if (error < casscf_->thresh_micro()) { cout << endl; break; }
-//    if (miter+1 == casscf_->max_micro_iter()) throw runtime_error("max_micro_iter_ is reached in CASSCF");
+    if (miter+1 == casscf_->max_micro_iter()) throw runtime_error("max_micro_iter_ is reached in CASSCF");
 
     // update cc0 and cc1
     cc1 = mbfgs->extrapolate(residual, davidson.civec().front())->second();
     cc1->normalize();
+    ZCASSCF::kramers_adapt(cc1, nclosed, nact, nvirt);
     cc0 = cc0->clone();
   }
 
@@ -98,7 +96,8 @@ void ZSuperCIMicro::compute() {
   const complex<double> cref = result->first()->element(0,0);
   shared_ptr<ZRotFile> tmp = result->second()->copy();
   *tmp *= 1.0/cref;
-//  tmp->synchronize();
+  tmp->synchronize();
+  ZCASSCF::kramers_adapt(tmp, nclosed, nact, nvirt);
   cc_ = tmp;
 }
 
@@ -121,17 +120,12 @@ std::shared_ptr<ZRotFile> ZSuperCIMicro::form_sigma(std::shared_ptr<const ZRotFi
 }
 
 
-// sigma_at_at = 2 * delta_ab Gtu/sqrt(nt nu) + delta_tu Fab  : TODO factor 2 needed here to reproduce non-rel limit
+// sigma_at_at = 2 * delta_ab Gtu/sqrt(nt nu) + delta_tu Fab  : factor 2 needed here to reproduce non-rel limit
 // TODO : check why normalization factor is commented out
 void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nact = casscf_->nact();
-#ifdef BOTHSPACES
-  const int nvirt = casscf_->nvirt();
-  const int nbasis = casscf_->nbasis();
-#else
   const int nvirt = casscf_->nvirtnr();
   const int nbasis = casscf_->nbasis()/2;
-#endif
   const int nocc = casscf_->nocc();
   if (!nact || !nvirt) return;
 
@@ -154,13 +148,8 @@ void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 // sigma_ai_ai = delta_ij F_ab - delta_ab F_ij
 void ZSuperCIMicro::sigma_ai_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
-#ifdef BOTHSPACES
-  const int nvirt = casscf_->nvirt();
-  const int nbasis = casscf_->nbasis();
-#else
   const int nvirt = casscf_->nvirtnr();
   const int nbasis = casscf_->nbasis()/2;
-#endif
   const int nocc = casscf_->nocc();
   if (!nclosed || !nvirt) return;
 
@@ -169,21 +158,17 @@ void ZSuperCIMicro::sigma_ai_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 }
 
 
-// sigma_at_ai = -delta_ab Fact_ti sqrt(nt)*2 TODO : not including sqrt(1/2) ; factor 2 needed to reproduce non-rel limit
+// sigma_at_ai = -delta_ab Fact_ti sqrt(nt)*2 ; factor 2 needed to reproduce non-rel limit
 void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
-#ifdef BOTHSPACES
-  const int nvirt = casscf_->nvirt();
-#else
   const int nvirt = casscf_->nvirtnr();
-#endif
   if (!nact || !nvirt || !nclosed) return;
 
   ZMatrix tmp(nclosed*2, nact*2);
   tmp.zero();
   for (int i = 0; i != nact*2; ++i) {
-    const double fac = -2.0 * std::sqrt(casscf_->occup(i)); // TODO check on a factor of 0.5
+    const double fac = -2.0 * std::sqrt(casscf_->occup(i));
     zaxpy_(nclosed*2, fac, fockact_->element_ptr(0,i), 1, tmp.element_ptr(0,i), 1);
   }
   zgemm3m_("N", "N", nvirt*2, nact*2, nclosed*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.data(), nclosed*2, 1.0, sigma->ptr_va(), nvirt*2);
@@ -191,15 +176,11 @@ void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 }
 
 
-// sigma_ai_ti = sqrt((1-nt))*2* Fact_at // TODO check normalization factors ; factor 2 needed to recover non-rel limit
+// sigma_ai_ti = sqrt((1-nt))*2* Fact_at ; factor 2 needed to recover non-rel limit
 void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
-#ifdef BOTHSPACES
-  const int nvirt = casscf_->nvirt();
-#else
   const int nvirt = casscf_->nvirtnr();
-#endif
   const int nocc = casscf_->nocc();
   if (!nact || !nvirt || !nclosed) return;
 
@@ -209,20 +190,16 @@ void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
     const double fac = 1.0 - casscf_->occup(i) > zoccup_thresh ? std::sqrt(1.0-casscf_->occup(i)) : 0.0;
     zaxpy_(nvirt*2, fac*2.0, fockact_->element_ptr(nocc*2,i), 1, tmp.element_ptr(0,i), 1);
   }
-  zgemm3m_("C", "N", nclosed*2, nact*2, nvirt*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.data(), nvirt*2, 1.0, sigma->ptr_ca(), nclosed*2); // TODO : check "C" vs "T" here
-  zgemm3m_("N", "C", nvirt*2, nclosed*2, nact*2, 1.0, tmp.data(), nvirt*2, cc->ptr_ca(), nclosed*2, 1.0, sigma->ptr_vc(), nvirt*2);
+  zgemm3m_("T", "N", nclosed*2, nact*2, nvirt*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.get_conjg()->data(), nvirt*2, 1.0, sigma->ptr_ca(), nclosed*2);
+  zgemm3m_("N", "T", nvirt*2, nclosed*2, nact*2, 1.0, tmp.data(), nvirt*2, cc->ptr_ca(), nclosed*2, 1.0, sigma->ptr_vc(), nvirt*2);
 }
 
 
-// sigma_ti_ti = - delta_ij ((2-nt-nu)Fact_tu - G_tu)/sqrt((2-nt)(2-nu)) - delta_tu f_ij // TODO : check normalization factors
+// sigma_ti_ti = - delta_ij ((1-nt-nu)Fact_tu - G_tu)/sqrt((1-nt)(1-nu)) - delta_tu f_ij
 void ZSuperCIMicro::sigma_ti_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
-#ifdef BOTHSPACES
-  const int nbasis = casscf_->nbasis();
-#else
   const int nbasis = casscf_->nbasis()/2;
-#endif
   if (!nact || !nclosed) return;
   ZMatrix tmp(nact*2, nact*2);
   for (int i = 0; i != nact*2; ++i) {
@@ -231,6 +208,6 @@ void ZSuperCIMicro::sigma_ti_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
       tmp(j,i) = -((1.0 - casscf_->occup(j) - casscf_->occup(i)) * fockactp_->element(j,i) - gaa_->element(j,i)) * fac;
     }
   }
-  zgemm3m_("N", "N", nclosed*2, nact*2, nact*2, 1.0, cc->ptr_ca(), nclosed*2, tmp.data(), nact*2, 1.0, sigma->ptr_ca(), nclosed*2);
-  zgemm3m_("N", "N", nclosed*2, nact*2, nclosed*2, -1.0, fock_->data(), nbasis*2, cc->ptr_ca(), nclosed*2, 1.0, sigma->ptr_ca(), nclosed*2);
+  zgemm3m_("N", "N", nclosed*2, nact*2, nact*2, 1.0, cc->ptr_ca(), nclosed*2, tmp.get_conjg()->data(), nact*2, 1.0, sigma->ptr_ca(), nclosed*2);
+  zgemm3m_("N", "N", nclosed*2, nact*2, nclosed*2, -1.0, fock_->get_conjg()->data(), nbasis*2, cc->ptr_ca(), nclosed*2, 1.0, sigma->ptr_ca(), nclosed*2);
 }

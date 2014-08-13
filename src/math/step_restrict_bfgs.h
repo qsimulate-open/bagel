@@ -483,7 +483,7 @@ class SRBFGS {
       auto phat = p->clone();
       double tshift = 0.0;
 
-      std::cout << " Initial Step Length = " << p->norm() << std::endl;
+      std::cout << std::setprecision(6) << " Initial Step Length = " << p->norm() << std::endl;
       for (int k = 0; k != hebden_iter_; ++k) {
         if (p->norm() <= trust_radius_) {
           std::cout << " More-Sorensen converged in " << k << " iterations. " << std::endl;

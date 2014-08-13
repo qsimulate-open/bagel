@@ -21,7 +21,8 @@
 
 {
   "title" : "zfci",
-  "state" : [1]
+  "state" : [1],
+  "thresh" : 5.0e-10
 }
 
 ]}

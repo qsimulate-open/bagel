@@ -157,13 +157,13 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const ZMatrix> coeff_zcas = nullptr);
+        const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const ZMatrix> coeff_zcas = nullptr, const bool restricted = false);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
-    void update(std::shared_ptr<const ZMatrix> coeff) {
+    void update(std::shared_ptr<const ZMatrix> coeff, const bool restricted = false) {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_);
+      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, restricted);
 
       // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
@@ -186,16 +186,21 @@ class ZHarrison : public Method {
 
     void compute_rdm12();
 
+    std::shared_ptr<const ZMatrix> mo2e_full() const;
     std::shared_ptr<const ZMatrix> rdm1_av() const;
     std::shared_ptr<const ZMatrix> rdm2_av() const;
     std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(std::string&& b) const { return rdm1_av_.at(std::bitset<2>(b)); }
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(std::string&& b) const { return rdm2_av_.at(std::bitset<4>(b)); }
     std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const std::bitset<2>& b) const { return rdm1_av_.at(b); }
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
+    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_kramers() { return rdm2_av_; }
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return jop_->kramers_coeff(); }
+    void update_kramers_coeff(std::shared_ptr<ZMatrix> natorb_transform) {
+      jop_->update_kramers_coeff(natorb_transform);
+    }
 };
 
 }

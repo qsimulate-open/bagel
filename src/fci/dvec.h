@@ -62,7 +62,7 @@ class Dvector {
     // the size of the vector<shared_ptr<Civector<DataType>>>
     size_t ij_;
     std::vector<std::shared_ptr<Civector<DataType>>> dvec_;
-    std::unique_ptr<DataType[]> data_;
+    btas::Tensor3<DataType> data_;
 
   private:
     friend class boost::serialization::access;
@@ -75,44 +75,35 @@ class Dvector {
       // dvec_ is just an alias and therefore not serialized
       const bool alloc = data();
       ar << det_ << lena_ << lenb_ << ij_ << alloc;
-      if (alloc) ar << make_array(data(), size());
+      if (alloc) ar << data_;
       else       ar << dvec_;
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int version) {
       bool alloc;
       ar >> det_ >> lena_ >> lenb_ >> ij_ >> alloc;
-      if (alloc) {
-        data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-        ar >> make_array(data(), size());
-        // make an alias and set to dvec_
-        DataType* ptr = data();
-        for (int i = 0; i != ij_; ++i, ptr += lena_*lenb_)
-          dvec_.push_back(std::make_shared<Civector<DataType>>(det_, ptr));
-      } else {
+      if (alloc)
+        ar >> data_;
+      else
         ar >> dvec_;
-      }
     }
 
   public:
     Dvector() { }
 
-    Dvector(std::shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
-      // data should be in a contiguous area to call dgemm.
-      data_ = std::unique_ptr<DataType[]>(new DataType[lenb_*lena_*ij_]);
-      std::fill_n(data_.get(), lenb_*lena_*ij_, DataType(0.0));
-      DataType* tmp = data_.get();
+    Dvector(std::shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij), data_(lenb_, lena_, ij_) {
+      std::fill(data_.begin(), data_.end(), DataType(0.0));
+      DataType* tmp = data_.data();
       for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
         dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
     }
 
     Dvector(const Dvector<DataType>& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
-      if (o.data_.get()) {
-        data_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_*ij_]);
-        DataType* tmp = data_.get();
+      if (o.data()) {
+        data_ = btas::Tensor3<DataType>(o.data_);
+        DataType* tmp = data();
         for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
           dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
-        std::copy_n(o.data(), lena_*lenb_*ij_, data());
       } else {
         for (auto& i : o.dvec_)
           dvec_.push_back(std::make_shared<Civector<DataType>>(*i));
@@ -124,8 +115,7 @@ class Dvector {
         dvec_.push_back(std::make_shared<Civector<DataType>>(*i));
     }
 
-    Dvector(std::shared_ptr<const Civector<DataType>> e, const size_t ij) : det_(e->det()), lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {
-      data_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_*ij]);
+    Dvector(std::shared_ptr<const Civector<DataType>> e, const size_t ij) : det_(e->det()), lena_(e->lena()), lenb_(e->lenb()), ij_(ij), data_(lenb_, lena_, ij_) {
       DataType* tmp = data();
       for (int i = 0; i != ij; ++i, tmp += lenb_*lena_) {
         auto c = std::make_shared<Civector<DataType>>(det_, tmp);
@@ -149,12 +139,12 @@ class Dvector {
 
     std::shared_ptr<const Determinants> det() const { return det_; }
 
-    DataType* data() { return data_.get(); }
-    const DataType* data() const { return data_.get(); }
+    DataType* data() { return data_.data(); }
+    const DataType* data() const { return data_.data(); }
 
     std::shared_ptr<Civector<DataType>>& data(const size_t i) { return dvec_[i]; }
     std::shared_ptr<const Civector<DataType>> data(const size_t i) const { return dvec_[i]; }
-    void zero() { std::fill(data(), data()+lena_*lenb_*ij_, 0.0); }
+    void zero() { std::fill(data_.begin(), data_.end(), 0.0); }
 
     std::vector<std::shared_ptr<Civector<DataType>>>& dvec() { return dvec_; }
     const std::vector<std::shared_ptr<Civector<DataType>>>& dvec() const { return dvec_; }

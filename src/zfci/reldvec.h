@@ -138,12 +138,14 @@ class RelDvector {
       return out;
     }
 
+
     std::vector<std::shared_ptr<const RelDvector<DataType>>> dvec(const std::vector<int>& conv) const {
       std::vector<std::shared_ptr<const RelDvector<DataType>>> sp = split();
       std::vector<std::shared_ptr<const RelDvector<DataType>>> out;
       auto c = conv.begin();
       for (auto& i : sp)
         if (*c++ == 0) out.push_back(i);
+        else out.push_back(nullptr);
       return out;
     }
 
