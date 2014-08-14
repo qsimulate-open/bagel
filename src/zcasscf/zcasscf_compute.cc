@@ -126,7 +126,6 @@ void ZCASBFGS::compute() {
         diagonal_shift->fill(level_shift_);
         denom->ax_plus_y(-1.0, diagonal_shift);
       }
-      srbfgs = make_shared<SRBFGS<ZRotFile>>(denom);
       { // electronic rotation bfgs
         auto newdenom = copy_electronic_rotations(denom);
         ele_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom);
