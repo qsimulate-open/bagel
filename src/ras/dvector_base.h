@@ -65,7 +65,7 @@ class Dvector_base {
       for ( auto& ivec : o.dvec() ) dvec_.push_back( std::make_shared<CiType>(ivec) );
     }
 
-    Dvector_base(std::vector<CiPtr> o) : det_(o.front()->det()), ij_(o.size()) {
+    Dvector_base(const std::vector<CiPtr> o) : det_(o.front()->det()), ij_(o.size()) {
       for (auto& ivec : o) dvec_.push_back( ivec->copy() );
     }
 

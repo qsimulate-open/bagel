@@ -40,17 +40,19 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(cons
 
       if (store_matrix_) {
         dgemm_("N", "N", iAB->dimerstates(), nstates, jAB->dimerstates(), 1.0, hamiltonian_->element_ptr(ioff, joff), hamiltonian_->ndim(),
-                                                                                o.element_ptr(joff, 0), o.ndim(),
-                                                                           1.0, out->element_ptr(ioff, 0), out->ndim());
+                                                                               o.element_ptr(joff, 0), o.ndim(),
+                                                                          1.0, out->element_ptr(ioff, 0), out->ndim());
         dgemm_("T", "N", jAB->dimerstates(), nstates, iAB->dimerstates(), 1.0, hamiltonian_->element_ptr(ioff, joff), hamiltonian_->ndim(),
-                                                                                o.element_ptr(ioff, 0), o.ndim(),
-                                                                           1.0, out->element_ptr(joff, 0), out->ndim());
+                                                                               o.element_ptr(ioff, 0), o.ndim(),
+                                                                          1.0, out->element_ptr(joff, 0), out->ndim());
       }
       else {
         std::shared_ptr<const Matrix> block = couple_blocks(*iAB, *jAB);
 
-        dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
-        dgemm_("T", "N", block->mdim(), nstates, block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
+        if (block) {
+          dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
+          dgemm_("T", "N", block->mdim(), nstates, block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
+        }
       }
     }
 
@@ -89,8 +91,8 @@ std::vector<double> MultiExcitonHamiltonian<VecType>::diagonalize(std::shared_pt
     std::vector<std::shared_ptr<const Matrix>> ccn;
     for (int i = 0; i != nstates; ++i) {
       if (!conv[i]) {
-        sigman.push_back(sigma->slice(i,i+1));
-        ccn.push_back(cc->slice(i,i+1));
+        sigman.push_back(sigma->slice_copy(i,i+1));
+        ccn.push_back(cc->slice_copy(i,i+1));
       }
       else {
         sigman.push_back(std::shared_ptr<const Matrix>());

@@ -196,7 +196,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet
 
   tmp.clear();
   for (int i = 0; i != aall.size(); ++i) {
-    tmp.insert(make_pair(eall[i], make_pair(ball[i], aall[i])));
+    tmp.emplace(eall[i], make_pair(ball[i], aall[i]));
   }
 
   // sync'ing
@@ -210,7 +210,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet
 
   vector<pair<bitset<nbit__>, bitset<nbit__>>> out;
   for (int i = 0; i != ndet; ++i)
-    out.push_back(make_pair(det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])));
+    out.push_back({det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])});
 
   return out;
 }

@@ -62,20 +62,19 @@ void ZHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
     add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
 
-  if (mol->has_finite_nucleus()) throw std::logic_error("Wasn't planning to use finite nucleus with London orbitals");
-#if 0
+  if (mol->has_finite_nucleus()) {
     auto dummy = make_shared<const Shell>(input[0]->spherical());
     for (auto& i : mol->atoms()) {
       if (i->finite_nucleus()) {
         const double fac = - i->atom_charge()*pow(i->atom_exponent()/pi__, 1.5);
-        auto in = make_shared<Shell>(i->spherical(), i->position(), 0, vector<double>{i->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)}, i->vector_potential());
+        auto in = make_shared<Shell>(i->spherical(), i->position(), 0, vector<double>{i->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)});
         const array<shared_ptr<const Shell>,4> shells{{ dummy, in, input[0], input[1] }};
         ComplexERIBatch eri(shells, 2.0);
         eri.compute();
         add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, eri.data());
       }
     }
-#endif
+  }
 
   if (mol->external()) throw std::logic_error("Wasn't planning to compute dipole in an external electric field with London orbitals");
 #if 0

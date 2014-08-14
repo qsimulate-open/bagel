@@ -29,7 +29,6 @@
 
 #include <src/ciutil/citraits.h>
 #include <src/ciutil/bitutil.h>
-#include <src/ciutil/cistring.h>
 
 namespace bagel {
 

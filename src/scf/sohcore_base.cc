@@ -122,9 +122,9 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*ndim_ + j] += dip[cnt        ]*mol->external(0);
-        data_[i*ndim_ + j] += dip[cnt+block  ]*mol->external(1);
-        data_[i*ndim_ + j] += dip[cnt+block*2]*mol->external(2);
+        element(j, i) += dip[cnt        ]*mol->external(0);
+        element(j, i) += dip[cnt+block  ]*mol->external(1);
+        element(j, i) += dip[cnt+block*2]*mol->external(2);
       }
     }
   }

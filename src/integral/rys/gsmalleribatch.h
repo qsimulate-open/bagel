@@ -30,6 +30,7 @@
 #include <src/molecule/shell.h>
 #include <src/math/xyzfile.h>
 #include <src/parallel/resources.h>
+#include <src/math/btas_interface.h>
 
 namespace bagel {
 
@@ -58,7 +59,7 @@ class GSmallERIBatch {
     ~GSmallERIBatch();
 
     void compute();
-    std::shared_ptr<GradFile> compute_gradient(std::array<std::shared_ptr<const Matrix>,6>&) const;
+    std::shared_ptr<GradFile> compute_gradient(std::array<std::shared_ptr<const btas::Tensor3<double>>,6>&) const;
 
     size_t size_block() const { return size_block_; }
     constexpr static int nblocks() { return 9; }

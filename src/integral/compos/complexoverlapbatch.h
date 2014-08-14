@@ -28,6 +28,7 @@
 #define __SRC_INTEGRAL_COMPOS_COMPLEXOVERLAPBATCH_H
 
 #include <src/integral/os/osintegral.h>
+#include <src/molecule/molecule.h>
 
 namespace bagel {
 

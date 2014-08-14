@@ -87,19 +87,20 @@ class DistABTask {
 
       const size_t ndima = norb_ - astring.count();
 
-      std::unique_ptr<double[]> buf2(new double[lbt*ndima*norb_]);
-      std::unique_ptr<double[]> buf3(new double[lbt*ndima*norb_]);
-      std::unique_ptr<double[]> h(new double[ndima*ndima*norb_*norb_]);
-      std::fill_n(buf2.get(), lbt*ndima*norb_, 0.0);
+      btas::Tensor3<double> buf2(lbt, norb_, ndima);
+      btas::Tensor3<double> buf3(lbt, norb_, ndima);
+      btas::Tensor2<double> h(norb_*ndima, norb_*ndima);
+      std::fill(buf2.begin(), buf2.end(), 0.0);
 
       // form Hamiltonian
-      for (int i = 0, ijkl = 0; i != norb_; ++i) {
+      auto hiter = h.data();
+      for (int i = 0; i != norb_; ++i) {
         if (astring[i]) continue;
         for (int j = 0; j != norb_; ++j) {
           for (int k = 0; k != norb_; ++k) {
             if (astring[k]) continue;
             for (int l = 0; l != norb_; ++l)
-              h[ijkl++] = jop->mo2e(l+norb_*k,j+norb_*i);
+              *hiter++ = jop->mo2e(l+norb_*k,j+norb_*i);
           }
         }
       }
@@ -108,13 +109,14 @@ class DistABTask {
         if (!astring[k]) {
           for (int l = 0; l != norb_; ++l)
             for (auto& b : int_det->phiupb(l))
-              buf2[b.source+lbt*(l+norb_*i)] += base_det->sign(astring, -1, k) * b.sign * buf[b.target+i*lbs];
+              buf2(b.source, l, i) += base_det->sign(astring, -1, k) * b.sign * buf[b.target+i*lbs];
           ++i;
         }
       }
 
-      const int ij = ndima*norb_;
-      dgemm_("n", "n", lbt, ij, ij, 1.0, buf2, lbt, h, ij, 0.0, buf3, lbt);
+      auto buf2v = btas::group(buf2, 1,3);
+      auto buf3v = btas::group(buf3, 1,3);
+      btas::contract(1.0, buf2v, {0,1}, h, {1,2}, 0.0, buf3v, {0,2});
 
       for (int i = 0, k = 0; i < norb_; ++i) {
         if (astring[i]) continue;
@@ -126,7 +128,7 @@ class DistABTask {
 
         for (int j = 0; j < norb_; ++j) {
           for (auto& b : int_det->phiupb(j))
-            bcolumn[b.target] += asign * b.sign * buf3[b.source+lbt*(j+norb_*k)];
+            bcolumn[b.target] += asign * b.sign * buf3(b.source, j, k);
         }
         sigma->accumulate_bstring_buf(bcolumn, base_det->lexical<0>(atarget));
         ++k;

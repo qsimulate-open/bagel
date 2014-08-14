@@ -133,9 +133,9 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
 }
 
 
-void Reference::set_eig(const std::vector<double>& eig) {
+void Reference::set_eig(const VectorB& eig) {
   eig_ = eig;
-  mpi__->broadcast(&eig_[0], eig_.size(), 0);
+  mpi__->broadcast(eig_.data(), eig_.size(), 0);
 }
 
 

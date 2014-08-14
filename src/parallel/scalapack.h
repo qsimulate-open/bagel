@@ -120,9 +120,9 @@ static void pzheevd_(const char* a, const char* b, const int dim, std::complex<d
 static std::pair<int, int> numgrid(int numproc) {
   int sq = static_cast<int>(std::sqrt(static_cast<double>(numproc)))+1;
   for (int i = sq; i != 0; --i)
-    if (numproc%i == 0) return std::make_pair(i, numproc/i);
+    if (numproc%i == 0) return {i, numproc/i};
   assert(false);
-  return std::make_pair(0,0);
+  return {0,0};
 }
 
 namespace bagel {

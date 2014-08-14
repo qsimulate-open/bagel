@@ -65,6 +65,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const RelOverlap> overlap_;
     std::vector<double> occup_;
+    std::vector<std::complex<double>> scale_closed_;
+    std::vector<std::complex<double>> scale_active_;
 
     void print_header() const;
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
@@ -76,7 +78,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void resume_stdcout() const;
 
     std::shared_ptr<ZHarrison> fci_;
-    std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix>, const bool with_hcore = false) const;
+    std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix>, const bool with_hcore = false);
     std::shared_ptr<const ZMatrix> transform_rdm1() const;
 
     // energy
@@ -84,7 +86,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double micro_energy_;
 
     // internal function
-    void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nvirt) const;
     void kramers_adapt(std::shared_ptr<ZMatrix> o, const int nvirt) const;
 
     void zero_positronic_elements(std::shared_ptr<ZRotFile> rot);
@@ -100,12 +101,15 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const Reference> conv_to_ref() const override;
 
     std::shared_ptr<ZMatrix> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1);
+    // natural orbital transformations for the 1 and 2 RDMs, the coefficient, and qvec
     std::shared_ptr<const ZMatrix> natorb_rdm1_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
     std::shared_ptr<const ZMatrix> natorb_rdm2_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm2) const;
     std::shared_ptr<const ZMatrix> update_coeff(std::shared_ptr<const ZMatrix> cold, std::shared_ptr<const ZMatrix> natorb) const;
     std::shared_ptr<const ZMatrix> update_qvec(std::shared_ptr<const ZMatrix> qold, std::shared_ptr<const ZMatrix> natorb) const;
-    std::shared_ptr<const ZMatrix> semi_canonical_orb();
-    std::shared_ptr<ZMatrix> coeff_stripe_to_block(std::shared_ptr<const ZMatrix> coeff) const;
+    // coeff format transformation is a static function!
+    static std::shared_ptr<ZMatrix> format_coeff(const int nclosed, const int nact, const int nvirt, std::shared_ptr<const ZMatrix> coeff, const bool striped = true);
+    // kramers adapt for RotFile is a static function!
+    static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }

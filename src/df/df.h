@@ -28,11 +28,6 @@
 
 #include <src/df/paralleldf.h>
 #include <src/molecule/atom.h>
-#include <src/parallel/resources.h>
-#include <src/df/dfinttask_old.h>
-#include <src/df/dfinttask.h>
-#include <src/util/timer.h>
-#include <src/util/taskqueue.h>
 
 namespace bagel {
 
@@ -64,15 +59,19 @@ class DFDist : public ParallelDF {
     size_t nbasis1() const { return nindex1_; }
     size_t naux() const { return naux_; }
 
-    void add_direct_product(std::shared_ptr<const Matrix> a, std::shared_ptr<const Matrix> b, const double fac)
-       { add_direct_product(std::vector<std::shared_ptr<const Matrix>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
-    void add_direct_product(std::vector<std::shared_ptr<const Matrix>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
+    void add_direct_product(std::shared_ptr<const VectorB> a, std::shared_ptr<const Matrix> b, const double fac)
+       { add_direct_product(std::vector<std::shared_ptr<const VectorB>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
+    void add_direct_product(std::vector<std::shared_ptr<const VectorB>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
-    std::shared_ptr<DFHalfDist> compute_half_transform(const std::shared_ptr<const Matrix> c) const;
+    std::shared_ptr<DFHalfDist> compute_half_transform(const MatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFHalfDist> compute_half_transform(std::shared_ptr<T> c) const { return compute_half_transform(*c); }
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
-    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const;
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const MatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(std::shared_ptr<T> c) const { return compute_half_transform_swap(*c); }
 
     std::shared_ptr<DFDist> copy() const;
     std::shared_ptr<DFDist> clone() const;
@@ -175,8 +174,13 @@ class DFHalfDist : public ParallelDF {
     size_t nocc() const { return nindex1_; }
     size_t nbasis() const { return nindex2_; }
 
-    std::shared_ptr<DFFullDist> compute_second_transform(const std::shared_ptr<const Matrix> c) const;
-    std::shared_ptr<DFDist> back_transform(const std::shared_ptr<const Matrix> c) const;
+    std::shared_ptr<DFFullDist> compute_second_transform(const MatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFFullDist> compute_second_transform(std::shared_ptr<T> c) const { return compute_second_transform(*c); }
+
+    std::shared_ptr<DFDist> back_transform(const MatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFDist> back_transform(std::shared_ptr<T> c) const { return back_transform(*c); }
 
     std::shared_ptr<DFHalfDist> copy() const;
     std::shared_ptr<DFHalfDist> clone() const;
@@ -208,7 +212,9 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFFullDist> copy() const;
     std::shared_ptr<DFFullDist> clone() const;
 
-    std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const;
+    std::shared_ptr<DFHalfDist> back_transform(const MatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFHalfDist> back_transform(std::shared_ptr<T> c) const { return back_transform(*c); }
 
     void rotate_occ1(const std::shared_ptr<const Matrix> d);
 
@@ -216,11 +222,11 @@ class DFFullDist : public ParallelDF {
     // special function for RHF
     std::shared_ptr<DFFullDist> apply_closed_2RDM(const double scale_ex = 1.0) const;
     // special function for UHF
-    std::shared_ptr<DFFullDist> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
+    std::shared_ptr<DFFullDist> apply_uhf_2RDM(const btas::Tensor2<double>& rdma, const btas::Tensor2<double>& rdmb) const;
     // general case with closed orbitals
-    std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
+    std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const;
     // general case without closed orbitals
-    std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm) const;
+    std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm) const;
 
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFFullDist> o, const double a, const size_t n) const;
 

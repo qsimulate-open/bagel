@@ -35,6 +35,7 @@
 
 using namespace std;
 using namespace bagel;
+using namespace btas;
 
 MP2Grad::MP2Grad(shared_ptr<const PTree> input, shared_ptr<const Geometry> g, shared_ptr<const Reference> ref) : MP2(input, g, ref) {
 
@@ -59,10 +60,10 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const size_t nvirt = nmobasis - nocca;
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
-  shared_ptr<const Matrix> ccmat = ref_->coeff()->slice(0, ncore);
-  shared_ptr<const Matrix> acmat = ref_->coeff()->slice(ncore, nocca);
-  shared_ptr<const Matrix> ocmat = ref_->coeff()->slice(0, nocca);
-  shared_ptr<const Matrix> vcmat = ref_->coeff()->slice(nocca, nmobasis);
+  const MatView ccmat = ref_->coeff()->slice(0, ncore);
+  const MatView ocmat = ref_->coeff()->slice(0, nocca);
+  const MatView vcmat = ref_->coeff()->slice(nocca, nmobasis);
+  const MatView acmat = ref_->coeff()->slice(ncore, nocca);
 
   // first compute half transformed integrals
   shared_ptr<DFHalfDist> half;
@@ -87,8 +88,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // assemble
   auto buf = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
   auto buf2 = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
-  vector<double> eig_tm = ref_->eig();
-  vector<double> eig(eig_tm.begin()+ncore, eig_tm.end());
+  const VectorB eig_tm = ref_->eig();
+  const VecView eig = eig_tm.slice(ncore, eig_tm.size());
 
   auto dmp2 = make_shared<Matrix>(nmobasis, nmobasis);
   double* optr = dmp2->element_ptr(ncore, ncore);
@@ -108,7 +109,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     for (size_t j = 0; j != nocc; ++j) {
       for (size_t k = 0; k != nvirt; ++k) {
         for (size_t l = 0; l != nocc; ++l, ++tdata, ++bdata) {
-          const double denom = 1.0 / (-eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l]);
+          const double denom = 1.0 / (-eig(i+nocc)+eig(j)-eig(k+nocc)+eig(l));
           *tdata *= denom;
           *bdata *= denom;
         }
@@ -138,7 +139,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   // L''aq = 2 Gia(D|ia) (D|iq)
   shared_ptr<const Matrix> laq = gia->form_2index(half, 2.0);
-  const Matrix lai = *laq * *ocmat;
+  const Matrix lai = *laq * ocmat;
 
   // Gip = Gia(D|ia) C+_ap
   shared_ptr<DFHalfDist> gip = gia->back_transform(vcmat);
@@ -147,21 +148,21 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   Matrix lif(nocc, max(1lu,ncore));
   shared_ptr<const Matrix> lip = gip->form_2index(cgeom->df(), 2.0);
   {
-    lia.add_block(1.0, ncore, 0, nocc, nvirt, *lip * *vcmat);
+    lia.add_block(1.0, ncore, 0, nocc, nvirt, *lip * vcmat);
     if (ncore)
-      lif = *lip * *ccmat;
+      lif = *lip * ccmat;
   }
 
   // core-occ density matrix elements
   for (int i = 0; i != ncore; ++i)
     for (int j = ncore; j != nocca; ++j)
-      dmp2->element(j,i) = dmp2->element(i,j) = lif(j-ncore, i) / (eig_tm[j]-eig_tm[i]);
+      dmp2->element(j,i) = dmp2->element(i,j) = lif(j-ncore, i) / (eig_tm(j)-eig_tm(i));
 
   // 2*J_al(d_rs)
   auto dmp2ao_part = make_shared<const Matrix>(*ref_->coeff() * *dmp2 ^ *ref_->coeff());
-  const Matrix jai = *vcmat % *geom_->df()->compute_Jop(dmp2ao_part) * *ocmat * 2.0;
+  const Matrix jai = vcmat % *geom_->df()->compute_Jop(dmp2ao_part) * ocmat * 2.0;
   // -1*K_al(d_rs)
-  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part, -1.0) * *vcmat;
+  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part, -1.0) * vcmat;
 
   auto grad = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nocca; ++i)
@@ -205,12 +206,12 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   auto dbarao = make_shared<Matrix>(*dtotao - *d0ao*0.5);
 
   // size of naux
-  shared_ptr<const Matrix> cd0 = geom_->df()->compute_cd(d0ao);
-  shared_ptr<const Matrix> cdbar = geom_->df()->compute_cd(dbarao);
+  shared_ptr<const VectorB> cd0 = geom_->df()->compute_cd(d0ao);
+  shared_ptr<const VectorB> cdbar = geom_->df()->compute_cd(dbarao);
 
 
   // three-index derivatives (seperable part)...
-  vector<shared_ptr<const Matrix>> cd {cd0, cdbar};
+  vector<shared_ptr<const VectorB>> cd {cd0, cdbar};
   vector<shared_ptr<const Matrix>> dd {dbarao, d0ao};
 
   shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao);
@@ -240,19 +241,19 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   auto wd = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nocca; ++i)
     for (int j = 0; j != nocca; ++j)
-      wd->element(j,i) += dtot->element(j,i) * eig_tm[j];
+      wd->element(j,i) += dtot->element(j,i) * eig_tm(j);
   for (int i = 0; i != nvirt; ++i)
     for (int j = 0; j != nvirt; ++j)
-      wd->element(j+nocca,i+nocca) += dmp2->element(j+nocca,i+nocca) * eig_tm[j+nocca];
+      wd->element(j+nocca,i+nocca) += dmp2->element(j+nocca,i+nocca) * eig_tm(j+nocca);
   for (int i = 0; i != nocca; ++i)
     for (int j = 0; j != nvirt; ++j)
-      wd->element(j+nocca,i) += 2.0 * dmp2->element(j+nocca,i) * eig_tm[i];
+      wd->element(j+nocca,i) += 2.0 * dmp2->element(j+nocca,i) * eig_tm(i);
   // Liq + Laq
-  wd->add_block(1.0, ncore, 0, nocc, nocca, *lip * *ocmat);
-  wd->add_block(1.0, nocca, 0, nvirt, nocca, *laq * *ocmat * 2.0);
-  wd->add_block(1.0, nocca, nocca, nvirt, nvirt, *laq * *vcmat);
-  wd->add_block(1.0, 0, 0, nocca, nocca, (*ocmat % *geom_->df()->compute_Jop(dmp2ao) * *ocmat * 2.0));
-  wd->add_block(1.0, 0, 0, nocca, nocca, (*halfjj->compute_Kop_1occ(dmp2ao, -1.0) * *ocmat));
+  wd->add_block(1.0, ncore, 0, nocc, nocca, *lip * ocmat);
+  wd->add_block(1.0, nocca, 0, nvirt, nocca, *laq * ocmat * 2.0);
+  wd->add_block(1.0, nocca, nocca, nvirt, nvirt, *laq * vcmat);
+  wd->add_block(1.0, 0, 0, nocca, nocca, (ocmat % *geom_->df()->compute_Jop(dmp2ao) * ocmat * 2.0));
+  wd->add_block(1.0, 0, 0, nocca, nocca, (*halfjj->compute_Kop_1occ(dmp2ao, -1.0) * ocmat));
 
   wd->symmetrize();
   auto wdao = make_shared<Matrix>(*ref_->coeff() * *wd ^ *ref_->coeff());

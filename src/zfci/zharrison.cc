@@ -31,7 +31,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 using namespace std;
 using namespace bagel;
 
-ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, std::shared_ptr<const ZMatrix> coeff_zcas)
+ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, std::shared_ptr<const ZMatrix> coeff_zcas, const bool restricted)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
@@ -74,9 +74,11 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
 
   if (coeff_zcas == nullptr) {
-    update(rr->relcoeff());
+    // coeff from ref is always in striped format
+    update(rr->relcoeff(), restricted);
   } else {
-    update(coeff_zcas);
+    // coeff from zcas presently in striped format
+    update(coeff_zcas, restricted);
   }
 }
 
@@ -138,14 +140,14 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
   shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
 
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
-  for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
+  for (int i = 0; i != ndet; ++i) tmp.emplace(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0)));
 
   double* diter = denom_->find(cdet->nelea(), cdet->neleb())->data();
   for (auto& aiter : cdet->string_bits_a()) {
     for (auto& biter : cdet->string_bits_b()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
-        tmp.insert(make_pair(din, make_pair(biter, aiter)));
+        tmp.emplace(din, make_pair(biter, aiter));
         tmp.erase(tmp.begin());
       }
       ++diter;
@@ -206,11 +208,13 @@ void ZHarrison::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer fcitime;
 
+#ifndef DISABLE_SERIALIZATION
     if (restart_) {
       stringstream ss; ss << "zfci_" << iter;
       OArchive ar(ss.str());
       ar << static_cast<Method*>(this);
     }
+#endif
 
     // form a sigma vector given cc
     shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);

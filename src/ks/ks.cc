@@ -56,7 +56,7 @@ void KS::compute() {
     // add xc
     shared_ptr<const Matrix> xc;
     double exc;
-    tie(xc, exc) = grid_->compute_xc(func_, coeff_->slice(0, nocc_));
+    tie(xc, exc) = grid_->compute_xc(func_, coeff_->slice_copy(0, nocc_));
 
     energy_ = 0.5*((*hcore_+ *fock) * *aodensity_).trace() + exc + geom_->nuclear_repulsion();
 
@@ -78,7 +78,7 @@ void KS::compute() {
     }
 
     if (iter >= diis_start_)
-      fock = diis.extrapolate(make_pair(fock, error_vector));
+      fock = diis.extrapolate({fock, error_vector});
 
     {
       auto intermediate = make_shared<Matrix>(*tildex_ % *fock * *tildex_);

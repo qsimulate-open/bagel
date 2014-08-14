@@ -28,7 +28,7 @@
 using namespace std;
 using namespace bagel;
 
-CPHF::CPHF(const shared_ptr<const Matrix> grad, const vector<double>& eig, const shared_ptr<const DFHalfDist> h,
+CPHF::CPHF(const shared_ptr<const Matrix> grad, const VectorB& eig, const shared_ptr<const DFHalfDist> h,
            const shared_ptr<const Reference> r)
 : grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
 
@@ -43,13 +43,13 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
   const size_t nocca = ref_->nocc();
   const size_t nvirt = nmobasis - nocca;
 
-  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
-  shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(nocca, nmobasis);
+  const MatView ocoeff = ref_->coeff()->slice(0, nocca);
+  const MatView vcoeff = ref_->coeff()->slice(nocca, nmobasis);
 
   auto t = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
-      t->element(a,i) = grad_->element(a,i) / (eig_[a]-eig_[i]);
+      t->element(a,i) = grad_->element(a,i) / (eig_(a)-eig_(i));
 
   cout << "  === Z-vector iteration ===" << endl << endl;
 
@@ -61,19 +61,19 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
     // one electron part
     for (int i = 0; i != nocca; ++i)
       for (int a = nocca; a != nocca+nvirt; ++a)
-        (*sigma)(a,i) = (eig_[a]-eig_[i]) * t->element(a,i);
+        (*sigma)(a,i) = (eig_(a)-eig_(i)) * t->element(a,i);
 
     // J part
     shared_ptr<const Matrix> tvo = t->get_submatrix(nocca, 0, nvirt, nocca);
-    auto pbmao = make_shared<Matrix>(*ocoeff ^ (*vcoeff * *tvo));
+    auto pbmao = make_shared<Matrix>(ocoeff ^ (vcoeff * *tvo));
     pbmao->symmetrize();
-    Matrix jri = *geom_->df()->compute_Jop(pbmao) * *ocoeff;
-    Matrix jai = (*vcoeff % jri) * 4.0;
+    Matrix jri = *geom_->df()->compute_Jop(pbmao) * ocoeff;
+    Matrix jai = (vcoeff % jri) * 4.0;
 
     // K part
     // halfjj is an half transformed DF integral with J^{-1}_{DE}, given by the constructor
     shared_ptr<const Matrix> kir = halfjj_->compute_Kop_1occ(pbmao, -2.0);
-    Matrix kia = *kir * *vcoeff;
+    Matrix kia = *kir * vcoeff;
 
     for (int i = 0; i != nocca; ++i)
       for (int a = 0; a != nvirt; ++a)
@@ -86,7 +86,7 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
 
     for (int i = 0; i != nocca; ++i)
       for (int a = nocca; a != nvirt+nocca; ++a)
-        t->element(a,i) /= (eig_[a]-eig_[i]);
+        t->element(a,i) /= (eig_(a)-eig_(i));
   }
 
   cout << endl;

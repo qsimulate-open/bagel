@@ -28,14 +28,15 @@
 #define __SRC_MOLECULE_MATRIX1EARRAY_H
 
 #include <src/molecule/matrix1e.h>
+#include <src/molecule/zmatrix1e.h>
 
 namespace bagel {
 
 // specialized matrix for N component 1e integrals
-template <int N>
+template <int N, typename MatType = Matrix>
 class Matrix1eArray {
   protected:
-    std::array<std::shared_ptr<Matrix>, N> matrices_;
+    std::array<std::shared_ptr<MatType>, N> matrices_;
 
     virtual void init(std::shared_ptr<const Molecule>);
     virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) = 0;
@@ -48,18 +49,21 @@ class Matrix1eArray {
     Matrix1eArray(const Matrix1eArray&);
     virtual ~Matrix1eArray() { }
 
-    void ax_plus_y(const double a, const Matrix1eArray<N>& o) {
+    void ax_plus_y(const double a, const Matrix1eArray<N, MatType>& o) {
       std::transform(o.matrices_.begin(), o.matrices_.end(), matrices_.begin(), matrices_.begin(),
-                     [&a](std::shared_ptr<Matrix> p, std::shared_ptr<Matrix> q) { q->ax_plus_y(a, p); return q; });
+                     [&a](std::shared_ptr<MatType> p, std::shared_ptr<MatType> q) { q->ax_plus_y(a, p); return q; });
     }
 
-    std::shared_ptr<Matrix>& data(const int i) { return matrices_[i]; }
-    std::shared_ptr<Matrix>& operator[](const int i) { return data(i); }
-    std::shared_ptr<const Matrix> data(const int i) const { return matrices_[i]; }
-    std::shared_ptr<const Matrix> operator[](const int i) const { return matrices_[i]; }
+    std::shared_ptr<MatType>& data(const int i) { return matrices_[i]; }
+    std::shared_ptr<const MatType> data(const int i) const { return matrices_[i]; }
+
+    MatType& operator[](const int i) { return *matrices_[i]; }
+    const MatType& operator[](const int i) const { return *matrices_[i]; }
+
     constexpr static int Nblocks() { return N; }
 
     void fill_upper() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper(); }
+    void fill_upper_conjg() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper_conjg(); }
 
     virtual void print(const std::string name = "") const;
 
@@ -70,34 +74,34 @@ class Matrix1eArray {
 
 };
 
-template <int N>
-Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Molecule> mol, const bool loc) : localized_(loc) {
+template <int N, typename MatType>
+Matrix1eArray<N, MatType>::Matrix1eArray(const std::shared_ptr<const Molecule> mol, const bool loc) : localized_(loc) {
   static_assert(N > 0, "Matrix1eArray should be constructed with N > 0");
   for(int i = 0; i < N; ++i) {
-    matrices_[i] = std::make_shared<Matrix>(mol->nbasis(), mol->nbasis(), loc);
+    matrices_[i] = std::make_shared<MatType>(mol->nbasis(), mol->nbasis(), loc);
   }
 }
 
 
-template <int N>
-Matrix1eArray<N>::Matrix1eArray(const int n, const int m, const bool loc) : localized_(loc) {
+template <int N, typename MatType>
+Matrix1eArray<N, MatType>::Matrix1eArray(const int n, const int m, const bool loc) : localized_(loc) {
   static_assert(N > 0, "Matrix1eArray should be constructed with N > 0");
   for(int i = 0; i < N; ++i) {
-    matrices_[i] = std::make_shared<Matrix>(n, m, loc);
+    matrices_[i] = std::make_shared<MatType>(n, m, loc);
   }
 }
 
 
-template <int N>
-Matrix1eArray<N>::Matrix1eArray(const Matrix1eArray& o) : localized_(o.localized_) {
+template <int N, typename MatType>
+Matrix1eArray<N, MatType>::Matrix1eArray(const Matrix1eArray& o) : localized_(o.localized_) {
   for (int i = 0; i < N; ++i) {
     *data(i) = *o.data(i);
   }
 }
 
 
-template <int N>
-void Matrix1eArray<N>::print(const std::string name) const {
+template <int N, typename MatType>
+void Matrix1eArray<N, MatType>::print(const std::string name) const {
   int j = 0;
   for (auto& i : matrices_) {
     std::stringstream ss; ss << name << " " << j++;
@@ -105,8 +109,8 @@ void Matrix1eArray<N>::print(const std::string name) const {
   }
 }
 
-template <int N>
-void Matrix1eArray<N>::init(std::shared_ptr<const Molecule> mol) {
+template <int N, typename MatType>
+void Matrix1eArray<N, MatType>::init(std::shared_ptr<const Molecule> mol) {
 
   // identical to Matrix1e::init()
   // only lower half will be stored

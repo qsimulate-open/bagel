@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: shell_ecp.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,6 +24,7 @@
 //
 
 
+#include <sstream>
 #include <src/molecule/shellecp.h>
 
 using namespace std;

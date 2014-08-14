@@ -60,7 +60,7 @@ class Sigma : public ZMatrix {
   protected:
   public:
     Sigma(const int i) : ZMatrix(4,4,true) {
-      auto s = std::make_shared<Sigma2>(i);
+      Sigma2 s(i);
       if (i == Comp::L) {
         copy_block(0,0,2,2,s);
       } else {
@@ -75,7 +75,7 @@ class Alpha : public ZMatrix {
     const int alpha_comp_;
   public:
     Alpha(const int i) : ZMatrix(4,4,true), alpha_comp_(i) {
-      auto s = std::make_shared<Sigma2>(i);
+      Sigma2 s(i);
       if (i == Comp::L) {
         copy_block(0, 0, 2, 2, s);
         copy_block(2, 2, 2, 2, s);

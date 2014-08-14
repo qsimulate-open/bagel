@@ -24,45 +24,56 @@
 //
 
 
-#ifndef __src_scf_coeff_h
-#define __src_scf_coeff_h
+#ifndef __SRC_SCF_COEFF_H
+#define __SRC_SCF_COEFF_H
 
 #include <src/wfn/geometry.h>
-#include <src/math/matrix.h>
 
 namespace bagel {
 
-class Coeff : public Matrix {
-  protected:
-    std::shared_ptr<const Geometry> geom_;
-
+template <typename MatType = Matrix, class Enable = typename std::enable_if<(std::is_same<MatType, Matrix>::value || std::is_same<MatType, ZMatrix>::value)>::type>
+class Coeff_ : public MatType {
   private:
-    int num_basis(std::vector<std::shared_ptr<const Coeff>> coeff_vec) const;
+    using DataType = typename MatType::value_type;
 
-  private:
+    int num_basis(std::vector<std::shared_ptr<const Coeff_<MatType>>> coeff_vec) const;
+
     // serialization
     friend class boost::serialization::access;
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Matrix>(*this) & geom_;
+      ar & boost::serialization::base_object<MatType>(*this);
     }
 
   public:
-    Coeff() { }
-    Coeff(const Matrix&);
-    Coeff(std::vector<std::shared_ptr<const Coeff>> coeff_vec);
-    Coeff(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {}
+    Coeff_() { }
+    Coeff_(const MatType&);
+    Coeff_(MatType&&);
+    Coeff_(std::vector<std::shared_ptr<const Coeff_<MatType>>> coeff_vec);
+    Coeff_(std::shared_ptr<const Geometry> g) : MatType(g->nbasis(), g->nbasis()) {}
 
-    std::shared_ptr<const Geometry> geom() const { assert(geom_); return geom_; }
+    std::shared_ptr<MatType> form_weighted_density_rhf(const int n, const VecView e) const;
+    std::pair<std::shared_ptr<MatType>, std::shared_ptr<MatType>> split(const int, const int) const;
 
-    std::shared_ptr<Matrix> form_weighted_density_rhf(const int n, const std::vector<double>& e, const int offset = 0) const;
-    std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> split(const int, const int) const;
+  public:
+    using MatType::data;
+    using MatType::mdim;
+    using MatType::ndim;
+    using MatType::size;
+    using MatType::slice;
 };
+
+using Coeff = Coeff_<Matrix>;
+using ZCoeff = Coeff_<ZMatrix>;
 
 }
 
+extern template class bagel::Coeff_<bagel::Matrix>;
+extern template class bagel::Coeff_<bagel::ZMatrix>;
+
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::Coeff)
+BOOST_CLASS_EXPORT_KEY(bagel::ZCoeff)
 
 #endif

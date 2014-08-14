@@ -35,14 +35,13 @@ namespace bagel {
 
 class SOFock : public ZMatrix {
   protected:
-    const std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<const ZMatrix> previous_;
-    const std::shared_ptr<const ZMatrix> socoeff_;
+    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const ZMatrix> previous_;
+    std::shared_ptr<const ZMatrix> socoeff_;
     void form_sofock();
 
   public:
-    SOFock(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const ZMatrix> previous,
-           const std::shared_ptr<const ZMatrix> socoeff) :
+    SOFock(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const ZMatrix> previous, const std::shared_ptr<const ZMatrix> socoeff) :
       ZMatrix(geom->nbasis() * 2, geom->nbasis() * 2), geom_(geom), previous_(previous), socoeff_(socoeff)
     {
       form_sofock();
@@ -95,17 +94,17 @@ void SOFock::form_sofock() {
   const std::complex<double> real(1.0, 0.0);
   const std::complex<double> imag(0.0, 1.0);
 
-  add_real_block(real, 0, 0, nbasis, nbasis, rfockaa);
-  add_real_block(imag, 0, 0, nbasis, nbasis, ifockaa);
-  add_real_block(real, 0, 0, nbasis, nbasis, J);
-  add_real_block(real, nbasis, nbasis, nbasis, nbasis, rfockaa);
-  add_real_block(-imag, nbasis, nbasis, nbasis, nbasis, ifockaa);
-  add_real_block(real, nbasis, nbasis, nbasis, nbasis, J);
+  add_real_block(real, 0, 0, nbasis, nbasis, *rfockaa);
+  add_real_block(imag, 0, 0, nbasis, nbasis, *ifockaa);
+  add_real_block(real, 0, 0, nbasis, nbasis, *J);
+  add_real_block(real, nbasis, nbasis, nbasis, nbasis, *rfockaa);
+  add_real_block(-imag, nbasis, nbasis, nbasis, nbasis, *ifockaa);
+  add_real_block(real, nbasis, nbasis, nbasis, nbasis, *J);
 
-  add_real_block(real, 0, nbasis, nbasis, nbasis, rfockab);
-  add_real_block(imag, 0, nbasis, nbasis, nbasis, ifockab);
-  add_real_block(real, nbasis, 0, nbasis, nbasis, rfockab->transpose());
-  add_real_block(-imag, nbasis, 0, nbasis, nbasis, ifockab->transpose());
+  add_real_block(real, 0, nbasis, nbasis, nbasis, *rfockab);
+  add_real_block(imag, 0, nbasis, nbasis, nbasis, *ifockab);
+  add_real_block(real, nbasis, 0, nbasis, nbasis, *rfockab->transpose());
+  add_real_block(-imag, nbasis, 0, nbasis, nbasis, *ifockab->transpose());
 }
 
 }

@@ -56,8 +56,8 @@ void GradTask3::compute() {
   if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
   if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
 
-  shared_ptr<Matrix> db1 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis());
-  shared_ptr<Matrix> db2 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[0], shell_[3]->nbasis(), offset_[1], shell_[2]->nbasis());
+  shared_ptr<btas::Tensor3<double>> db1 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis());
+  shared_ptr<btas::Tensor3<double>> db2 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[0], shell_[3]->nbasis(), offset_[1], shell_[2]->nbasis());
   SMITH::sort_indices<0,2,1,1,1,1,1>(db2->data(), db1->data(), shell_[1]->nbasis(), shell_[3]->nbasis(), shell_[2]->nbasis());
 
   for (int iatom = 0; iatom != 4; ++iatom) {
@@ -194,7 +194,7 @@ void GradTask3r::compute() {
 shared_ptr<GradFile> GradTask3r::compute_smalleri() const {
   GSmallERIBatch batch(shell_, array<int,3>{{atomindex_[0], atomindex_[1], atomindex_[2]}}, ge_->geom_->natom());
   batch.compute();
-  array<shared_ptr<const Matrix>,6> d = {{
+  array<shared_ptr<const btas::Tensor3<double>>,6> d = {{
     rden3_[0]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
     rden3_[1]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
     rden3_[2]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
@@ -226,13 +226,16 @@ void GradTask1rf::compute() {
 shared_ptr<GradFile> GradTask1rf::compute_smalleri() const {
   GSmallERIBatch batch(shell_, array<int,3>{{atomindex_[0], atomindex_[1], atomindex_[2]}}, ge_->geom_->natom());
   batch.compute();
-  array<shared_ptr<const Matrix>,6> d = {{
-    rden_[0]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()),
-    rden_[1]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()),
-    rden_[2]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()),
-    rden_[3]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()),
-    rden_[4]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()),
-    rden_[5]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()) }};
+  btas::Range range(shell_[2]->nbasis(), shell_[3]->nbasis(), 1);
+  array<shared_ptr<const btas::Tensor3<double>>,6> d = {{
+    make_shared<btas::Tensor3<double>>(range, std::move(rden_[0]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis())->storage())),
+    make_shared<btas::Tensor3<double>>(range, std::move(rden_[1]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis())->storage())),
+    make_shared<btas::Tensor3<double>>(range, std::move(rden_[2]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis())->storage())),
+    make_shared<btas::Tensor3<double>>(range, std::move(rden_[3]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis())->storage())),
+    make_shared<btas::Tensor3<double>>(range, std::move(rden_[4]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis())->storage())),
+    make_shared<btas::Tensor3<double>>(range, std::move(rden_[5]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis())->storage())),
+  }};
+  assert(d[0]->storage().size() == shell_[2]->nbasis()*shell_[3]->nbasis());
   return batch.compute_gradient(d);
 }
 

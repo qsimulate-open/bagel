@@ -75,12 +75,12 @@ vector<shared_ptr<RelDFHalf>> RelDF::compute_half_transform(array<shared_ptr<con
 
 vector<shared_ptr<ZMatrix>> RelDF::compute_Jop(list<shared_ptr<const CDMatrix>>& cd) const {
 
-  vector<shared_ptr<ZMatrix>> sum;
+  vector<shared_ptr<ZVectorB>> sum;
   for (auto& b : basis_) {
     sum.push_back(cd.front()->clone());
     for (auto& i : cd) {
       if(b->alpha_comp() == i->alpha_comp())
-        sum.back()->ax_plus_y(1.0, *i);
+        *sum.back() += *i;
     }
   }
 

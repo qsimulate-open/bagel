@@ -58,5 +58,19 @@
         "type"    : "article"
       }
     ]
+  },
+  {
+    "year" : "2014",
+    "references" : [
+      {
+        "author"  : "S. M. Parker, T. Seideman, M. A. Ratner, and T. Shiozaki",
+        "journal" : "The Journal of Physical Chemistry C",
+        "volume"  : "118",
+        "pages"   : "12700&ndash;12705",
+        "title"   : "Model hamiltonian analysis of singlet fission from first principles",
+        "doi"     : "10.1021/jp505082a",
+        "type"    : "article"
+      }
+    ]
   }
 ]

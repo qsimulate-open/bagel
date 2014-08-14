@@ -23,11 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #include <src/molecule/shell.h>
+#include <src/molecule/moment_compute.h>
+#include <src/math/matop.h>
 #include <src/integral/carsphlist.h>
-#include <src/integral/os/overlapbatch.h>
-#include <src/integral/os/momentumbatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -35,9 +34,9 @@ using namespace bagel;
 static const CarSphList carsphlist;
 
 Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
-                       const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range, const array<double,3>& _vector_potential)
+                       const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range)
  : Shell_base(sph, _position, _ang),
-   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false), vector_potential_(_vector_potential) {
+   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false), magnetism_(false), vector_potential_{{0.0, 0.0, 0.0}} {
 
   contraction_lower_.reserve(_range.size());
   contraction_upper_.reserve(_range.size());
@@ -55,7 +54,7 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 
 
 Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}},
-                               contraction_ranges_{make_pair(0,1)}, dummy_(true), vector_potential_{{0.0,0.0,0.0}} {
+                               contraction_ranges_{{0,1}}, dummy_(true), magnetism_(false), vector_potential_{{0.0,0.0,0.0}} {
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }
@@ -83,6 +82,8 @@ string Shell::show() const {
   ss << "position: ";
   ss << position_[0] << " " << position_[1] << " "  << position_[2] << endl;
   ss << "angular: "  << angular_number_ << endl;
+  if (magnetism_)
+    ss << "vector potential: " << vector_potential_[0] << " " << vector_potential_[1] << " " << vector_potential_[2] << endl;
   ss << "exponents: ";
   for (int i = 0; i != exponents_.size(); ++i) {
     ss << " " << exponents_[i];
@@ -136,9 +137,9 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
       vector<pair<int,int>>  range;
       for (int i = nstart; i != nend; ++i) {
         contr.push_back(vector<double>(contractions_[i].begin()+smallest, contractions_[i].end()));
-        range.push_back(make_pair(contraction_ranges_[i].first-smallest, contraction_ranges_[i].second-smallest));
+        range.push_back({contraction_ranges_[i].first-smallest, contraction_ranges_[i].second-smallest});
       }
-      out.push_back(make_shared<const Shell>(spherical_, position_, angular_number_, expo, contr, range, vector_potential_));
+      out.push_back(make_shared<Shell>(spherical_, position_, angular_number_, expo, contr, range));
       smallest = *lower;
       nstart = nend;
       if (upper == contraction_upper_.end()) break;
@@ -155,7 +156,7 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
 // returns uncontracted cartesian shell with one higher or lower angular number if increment is + or - 1 respectively
 template<int increment>
 shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
-  static_assert(increment==1||increment==-1, "illegal call of Shell::kinetic_balance_uncont");
+  static_assert(increment==1||increment==0||increment==-1, "illegal call of Shell::kinetic_balance_uncont");
   int i = 0;
   vector<vector<double>> conts;
   vector<pair<int, int>> ranges;
@@ -163,111 +164,47 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
     vector<double> cont(exponents_.size(), 0);
     cont[i] = 1.0;
     conts.push_back(cont);
-    ranges.push_back(make_pair(i,i+1));
+    ranges.push_back({i,i+1});
   }
-  return angular_number_+increment < 0 ? nullptr : make_shared<const Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges, vector_potential_);
+  auto out = angular_number_+increment < 0 ? nullptr : make_shared<Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges);
+  if (magnetism_ && angular_number_+increment >= 0) out->add_phase(vector_potential_);
+  return out;
+}
+
+
+void Shell::add_phase(const std::array<double,3>& phase_input) {
+  magnetism_ = true;
+  vector_potential_ = phase_input;
 }
 
 shared_ptr<const Shell> Shell::cartesian_shell() const {
-  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_, vector_potential_);
+  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_);
+  if (magnetism_) out->add_phase(vector_potential_);
   return out;
 }
 
 void Shell::init_relativistic() {
+  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
   relativistic_ = true;
   aux_decrement_ = kinetic_balance_uncont<-1>();
   aux_increment_ = kinetic_balance_uncont<1>();
 
-  // overlap = S^-1 between auxiliary functions
-  shared_ptr<const Matrix> overlap = overlap_compute_();
-
   // small is a transformation matrix (x,y,z components)
-  small_ = moment_compute_(overlap);
+  small_ = MomentCompute::call(*this);
 }
 
 
-shared_ptr<const Matrix> Shell::overlap_compute_() const {
+void Shell::init_relativistic(const array<double,3> magnetic_field, bool london) {
+  assert(magnetism_);
+  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
+  relativistic_ = true;
+  aux_decrement_ = kinetic_balance_uncont<-1>();
+  aux_increment_ = kinetic_balance_uncont<1>();
+  aux_same_ = london ? nullptr : kinetic_balance_uncont<0>();
 
-  const int asize_inc = aux_increment_->nbasis();
-  const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
-  const int a = asize_inc + asize_dec;
-
-  auto overlap = make_shared<Matrix>(a,a, true);
-
-  {
-    OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_increment_}});
-    ovl.compute();
-    for (int i = 0; i != aux_increment_->nbasis(); ++i)
-      copy_n(ovl.data() + i*asize_inc, asize_inc, overlap->element_ptr(0,i));
-  }
-  if (aux_decrement_) {
-    {
-      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_decrement_, aux_decrement_}});
-      ovl.compute();
-      for (int i = 0; i != asize_dec; ++i)
-        copy_n(ovl.data() + i*asize_dec, asize_dec, overlap->element_ptr(asize_inc, i+asize_inc));
-    }
-    {
-      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_decrement_}});
-      ovl.compute();
-      for (int i = 0; i != asize_dec; ++i)
-        for (int j = 0; j != asize_inc; ++j)
-          overlap->element(j,i+asize_inc) = overlap->element(i+asize_inc,j) = *(ovl.data()+j+asize_inc*i);
-    }
-  }
-
-  return overlap;
-}
-
-
-array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const Matrix> overlap) const {
-  const int ssize = nbasis();
-  const int asize_inc = aux_increment_->nbasis();
-  const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
-  const int a = asize_inc + asize_dec;
-
-  auto coeff0 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_increment_}});
-  coeff0->compute();
-
-  shared_ptr<MomentumBatch> coeff1;
-  if (aux_decrement_) {
-    coeff1 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_decrement_}});
-    coeff1->compute();
-  } else {
-    // just to run. coeff1 is not referenced in the code
-    coeff1 = coeff0;
-  }
-
-  const double* carea0 = coeff0->data();
-  const double* carea1 = coeff1->data();
-
-  auto tmparea = make_shared<Matrix>(ssize,a, true);
-  array<shared_ptr<const Matrix>,3> out;
-
-  const static CarSphList carsphlist;
-  for (int i = 0; i != 3; ++i, carea0 += coeff0->size_block(), carea1 += coeff1->size_block()) {
-    if (spherical_) {
-      const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
-      const int nloop = num_contracted() * asize_inc;
-      carsphlist.carsphfunc_call(carsphindex, nloop, carea0, tmparea->data());
-    } else {
-      assert(coeff0->size_block() == asize_inc*ssize);
-      copy(carea0, carea0+coeff0->size_block(), tmparea->data());
-    }
-    if (aux_decrement_) {
-      if (spherical_) {
-        const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
-        const int nloop = num_contracted() * asize_dec;
-        carsphlist.carsphfunc_call(carsphindex, nloop, carea1, tmparea->data()+asize_inc*ssize);
-      } else {
-        assert(coeff1->size_block() == asize_dec*ssize);
-        copy(carea1, carea1+coeff1->size_block(), tmparea->data()+asize_inc*ssize);
-        }
-    }
-
-    out[i] = tmparea->transpose()->solve(overlap, overlap->ndim());
-  }
-  return out;
+  // zsmall is a transformation matrix (x,y,z components)
+  zsmall_ = MomentCompute::call(*this, magnetic_field, london);
+  for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
 }
 
 

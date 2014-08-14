@@ -24,6 +24,7 @@
 //
 
 
+#include <sstream>
 #include <src/molecule/shell_base.h>
 
 using namespace std;

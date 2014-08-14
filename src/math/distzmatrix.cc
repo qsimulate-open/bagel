@@ -108,8 +108,9 @@ DistZMatrix DistZMatrix::operator^(const DistZMatrix& o) const {
 }
 
 
-void DistZMatrix::diagonalize(double* eig) {
+void DistZMatrix::diagonalize(VecView eig) {
   if (ndim_ != mdim_) throw logic_error("illegal call of DistZMatrix::diagonalize(double*)");
+  assert(eig.size() >= ndim_);
   const int n = ndim_;
   const int localrow = get<0>(localsize_);
   const int localcol = get<1>(localsize_);
@@ -123,11 +124,11 @@ void DistZMatrix::diagonalize(double* eig) {
   const int liwork = 7*n + 8*mpi__->npcol() + 2;
   unique_ptr<double[]> rwork(new double[lrwork]);
   unique_ptr<int[]> iwork(new int[liwork]);
-  pzheevd_("V", "U", n, local_.get(), desc_.data(), eig, tmp.local_.get(), tmp.desc_.data(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
+  pzheevd_("V", "U", n, local_.get(), desc_.data(), eig.data(), tmp.local_.get(), tmp.desc_.data(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
 
   const int lwork = round(max(131072.0, wsize.real()*2.0));
   unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
-  pzheevd_("V", "U", n, local_.get(), desc_.data(), eig, tmp.local_.get(), tmp.desc_.data(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
+  pzheevd_("V", "U", n, local_.get(), desc_.data(), eig.data(), tmp.local_.get(), tmp.desc_.data(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
   if (info) throw runtime_error("pzheevd failed in DistZMatrix");
 
   *this = tmp;

@@ -42,16 +42,16 @@ void SOHcore::form_sohcore() {
   const complex<double> real(1.0, 0.0);
   const complex<double> imag(0.0, 1.0);
 
-  add_real_block(real, 0, 0, nbasis, nbasis, hcore_);
-  add_real_block(imag, 0, 0, nbasis, nbasis, hcore_->soiaa());
+  add_real_block(real, 0, 0, nbasis, nbasis, *hcore_);
+  add_real_block(imag, 0, 0, nbasis, nbasis, *hcore_->soiaa());
 
-  add_real_block(real, nbasis, nbasis, nbasis, nbasis, hcore_);
-  add_real_block(-imag, nbasis, nbasis, nbasis, nbasis, hcore_->soiaa());
+  add_real_block(real, nbasis, nbasis, nbasis, nbasis, *hcore_);
+  add_real_block(-imag, nbasis, nbasis, nbasis, nbasis, *hcore_->soiaa());
 
-  add_real_block(real, 0, nbasis, nbasis, nbasis, hcore_->sorab());
-  add_real_block(imag, 0, nbasis, nbasis, nbasis, hcore_->soiab());
+  add_real_block(real, 0, nbasis, nbasis, nbasis, *hcore_->sorab());
+  add_real_block(imag, 0, nbasis, nbasis, nbasis, *hcore_->soiab());
 
-  add_real_block(-real, nbasis, 0, nbasis, nbasis, hcore_->sorab());
-  add_real_block( imag, nbasis, 0, nbasis, nbasis, hcore_->soiab());
+  add_real_block(-real, nbasis, 0, nbasis, nbasis, *hcore_->sorab());
+  add_real_block( imag, nbasis, 0, nbasis, nbasis, *hcore_->soiab());
 
 }

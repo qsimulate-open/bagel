@@ -23,11 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
-#include <src/util/constants.h>
 #include <src/rel/dfock.h>
-#include <src/math/matrix.h>
-#include <src/rel/cdmatrix.h>
 
 using namespace std;
 using namespace bagel;
@@ -137,7 +133,6 @@ list<shared_ptr<RelDF>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> dfs
 
   list<shared_ptr<RelDF>> dfdists;
   if (!mixed) { // Regular DHF
-    const vector<int> alphaL = { Comp::L };
     auto k = dfs.begin();
     for (auto& i : xyz) {
       for (auto& j : xyz)
@@ -191,7 +186,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   }
 
   list<shared_ptr<RelDF>> dfdists = make_dfdists(dfs, gaunt);
-  // Note that we are NOT using dagger-ed coefficients! -1 factor for imagnary will be compensated by CDMatrix and Exop
+  // Note that we are NOT using dagger-ed coefficients! -1 factor for imaginary will be compensated by CDMatrix and Exop
   list<shared_ptr<RelDFHalf>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
   // apply J^{-1/2}
   for (auto& i : half_complex)

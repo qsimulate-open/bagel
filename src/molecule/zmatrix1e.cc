@@ -45,8 +45,8 @@ ZMatrix1e::ZMatrix1e(const shared_ptr<const Molecule> mol) : ZMatrix(mol->nbasis
 }
 
 
-ZMatrix1e::ZMatrix1e(const ZMatrix1e& o) : ZMatrix(o.ndim_, o.mdim_) {
-  copy_n(o.data(), ndim_*mdim_, data());
+ZMatrix1e::ZMatrix1e(const ZMatrix1e& o) : ZMatrix(o.ndim(), o.mdim()) {
+  copy_n(o.data(), size(), data());
 }
 
 

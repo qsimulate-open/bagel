@@ -100,7 +100,7 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     for (auto& i : mol->atoms()) {
       if (i->finite_nucleus()) {
         const double fac = - i->atom_charge()*pow(i->atom_exponent()/pi__, 1.5);
-        auto in = make_shared<Shell>(i->spherical(), i->position(), 0, vector<double>{i->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)}, i->vector_potential());
+        auto in = make_shared<Shell>(i->spherical(), i->position(), 0, vector<double>{i->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)});
         const array<shared_ptr<const Shell>,4> shells{{ dummy, in, input[0], input[1] }};
 #ifdef LIBINT_INTERFACE
         Libint eri(shells);
@@ -122,9 +122,9 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*ndim_ + j] += dip[cnt        ]*mol->external(0);
-        data_[i*ndim_ + j] += dip[cnt+block  ]*mol->external(1);
-        data_[i*ndim_ + j] += dip[cnt+block*2]*mol->external(2);
+        element(j, i) += dip[cnt        ]*mol->external(0);
+        element(j, i) += dip[cnt+block  ]*mol->external(1);
+        element(j, i) += dip[cnt+block*2]*mol->external(2);
       }
     }
   }

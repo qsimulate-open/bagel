@@ -38,7 +38,7 @@ template<int DF>
 class Fock : public Fock_base {
   protected:
     void fock_two_electron_part(std::shared_ptr<const Matrix> den = nullptr);
-    void fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> coeff, const bool rhf, const double scale_ex);
+    void fock_two_electron_part_with_coeff(const MatView coeff, const bool rhf, const double scale_ex);
 
     // when DF gradients are requested
     bool store_half_;
@@ -57,11 +57,15 @@ class Fock : public Fock_base {
     // Fock operator for DF cases
     template<int DF1 = DF, class = typename std::enable_if<DF1==1>::type>
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
-         const std::shared_ptr<const Matrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
+         const MatView ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
      : Fock_base(a,b,c), store_half_(store) {
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
       fock_one_electron_part();
     }
+    // the same is above.
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
+         std::shared_ptr<T> o, const bool store = false, const bool rhf = false, const double scale_ex = 1.0) : Fock(a,b,c,*o,store,rhf,scale_ex) { }
 
     // Fock operator
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
@@ -110,7 +114,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
       double cmax = 0.0;
       for (int ii = ioffset; ii != ioffset + isize; ++ii) {
-        const int iin = ii * ndim_;
+        const int iin = ii * ndim();
         for (int jj = joffset; jj != joffset + jsize; ++jj) {
           cmax = std::max(cmax, ::fabs(density_data[iin + jj]));
         }
@@ -185,7 +189,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
             eribatch.compute();
             const double* eridata = eribatch.data();
             for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-              const int j0n = j0 * ndim_;
+              const int j0n = j0 * ndim();
 
               for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
                 const unsigned int nj01 = (j0 << shift) + j1;
@@ -197,17 +201,15 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
                 const bool eqlj0j1 = (j0 == j1);
                 const double scal01 = (eqlj0j1 ? 0.5 : 1.0) * static_cast<double>(ijkl);
-                const int j1n = j1 * ndim_;
+                const int j1n = j1 * ndim();
 
                 for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
                   const int maxj1j2 = std::max(j1, j2);
                   const int minj1j2 = std::min(j1, j2);
-                  const int minj1j2n = minj1j2 * ndim_;
 
                   const int maxj0j2 = std::max(j0, j2);
                   const int minj0j2 = std::min(j0, j2);
-                  const int minj0j2n = minj0j2 * ndim_;
-                  const int j2n = j2 * ndim_;
+                  const int j2n = j2 * ndim();
 
                   for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
                     const bool skipj2j3 = (j2 > j3);
@@ -222,12 +224,12 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
                     double intval = *eridata * scal01 * (j2 == j3 ? 0.5 : 1.0) * (nj01 == nj23 ? 0.25 : 0.5); // 1/2 in the Hamiltonian absorbed here
                     const double intval4 = 4.0 * intval;
 
-                    data_[j0n + j1] += density_data[j2n + j3] * intval4;
-                    data_[j2n + j3] += density_data[j0n + j1] * intval4;
-                    data_[j0n + j3] -= density_data[j1n + j2] * intval;
-                    data_[minj1j2n + maxj1j2] -= density_data[j0n + j3] * intval;
-                    data_[minj0j2n + maxj0j2] -= density_data[j1n + j3] * intval;
-                    data_[minj1j3 * ndim_ + maxj1j3] -= density_data[j0n + j2] * intval;
+                    element(j1, j0) += density_data[j2n + j3] * intval4;
+                    element(j3, j2) += density_data[j0n + j1] * intval4;
+                    element(j3, j0) -= density_data[j1n + j2] * intval;
+                    element(maxj1j2, minj1j2) -= density_data[j0n + j3] * intval;
+                    element(maxj0j2, minj0j2) -= density_data[j1n + j3] * intval;
+                    element(maxj1j3, minj1j3) -= density_data[j0n + j2] * intval;
                   }
                 }
               }
@@ -237,7 +239,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
         }
       }
     }
-    for (int i = 0; i != ndim_; ++i) data_[i*ndim_ + i] *= 2.0;
+    for (int i = 0; i != ndim(); ++i) element(i, i) *= 2.0;
     fill_upper();
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -250,7 +252,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     std::shared_ptr<const DFDist> df = geom_->df();
 
     // some constants
-    assert(ndim_ == df->nbasis0());
+    assert(ndim() == df->nbasis0());
 
     Timer pdebug(3);
 
@@ -258,12 +260,12 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     *coeff *= -1.0;
     int nocc = 0;
     {
-      std::unique_ptr<double[]> vec(new double[ndim_]);
-      coeff->diagonalize(vec.get());
-      for (int i = 0; i != ndim_; ++i) {
+      VectorB vec(ndim());
+      coeff->diagonalize(vec);
+      for (int i = 0; i != ndim(); ++i) {
         if (vec[i] < -1.0e-8) {
           ++nocc;
-          const double fac = std::sqrt(-vec[i]);
+          const double fac = std::sqrt(-vec(i));
           std::for_each(coeff->element_ptr(0,i), coeff->element_ptr(0,i+1), [&fac](double& i) { i *= fac; });
         } else { break; }
       }
@@ -287,7 +289,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 }
 
 template<int DF>
-void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> ocoeff, const bool rhf, const double scale_exchange) {
+void Fock<DF>::fock_two_electron_part_with_coeff(const MatView ocoeff, const bool rhf, const double scale_exchange) {
   if (DF == 0) throw std::logic_error("Fock<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
 
   Timer pdebug(3);
@@ -305,7 +307,8 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
     pdebug.tick_print("Exchange build");
 
     if (rhf) {
-      auto coeff = std::make_shared<const Matrix>(*ocoeff->transpose()*2.0);
+      Matrix oc(ocoeff);
+      auto coeff = std::make_shared<const Matrix>(*oc.transpose()*2.0);
       *this += *df->compute_Jop(half, coeff, true);
     } else {
       *this += *df->compute_Jop(density_);

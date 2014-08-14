@@ -30,7 +30,6 @@
 #include <src/df/dfinttask_old.h>
 #include <src/df/dfinttask.h>
 #include <src/df/dfblock.h>
-#include <src/math/matrix.h>
 
 namespace bagel {
 
@@ -53,11 +52,14 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
   public:
     ParallelDF(const size_t, const size_t, const size_t, std::shared_ptr<const ParallelDF> = nullptr, std::shared_ptr<Matrix> = nullptr);
+    virtual ~ParallelDF() { }
 
     size_t naux() const { return naux_; }
     size_t nindex1() const { return nindex1_; }
     size_t nindex2() const { return nindex2_; }
     size_t size() const { return naux_*nindex1_*nindex2_; }
+
+    bool serial() const { return serial_; }
 
     std::vector<std::shared_ptr<DFBlock>>& block() { return block_; }
     const std::vector<std::shared_ptr<DFBlock>>& block() const { return block_; }
@@ -76,7 +78,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     void scale(const double a);
     void symmetrize();
 
-    std::shared_ptr<Matrix> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
+    std::shared_ptr<btas::Tensor3<double>> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const Matrix> data2() const { return data2_; }
@@ -84,8 +86,8 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     // compute a J operator, given density matrices in AO basis
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const std::shared_ptr<const Matrix> den, const bool onlyonce = false) const;
-    std::shared_ptr<Matrix> compute_Jop_from_cd(std::shared_ptr<const Matrix> cd) const;
-    std::shared_ptr<Matrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
+    std::shared_ptr<Matrix> compute_Jop_from_cd(std::shared_ptr<const VectorB> cd) const;
+    std::shared_ptr<VectorB> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
 
     void average_3index() {
       Timer time;

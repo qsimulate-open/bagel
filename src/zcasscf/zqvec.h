@@ -36,9 +36,12 @@ class ZQvec : public ZMatrix {
 
   public:
     ZQvec(const int n, const int m, std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> coeff, const int nclosed,
-          std::shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit);
+          std::shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit); // FIXME : this constructor has a bug
 
     ZQvec(const ZMatrix& a) : ZMatrix(a) {}
+
+    ZQvec(const int n, const int m, std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> rcoeff, std::shared_ptr<const ZMatrix> acoeff, const int nclosed,
+          std::shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit);
 };
 
 }

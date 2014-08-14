@@ -39,7 +39,7 @@ BreitInt::BreitInt(const shared_ptr<const Molecule> mol) : Matrix1eArray<6>(mol-
   for (auto& i : xyz) {
     for (auto& j : xyz)
       if (i <= j)
-        index_.push_back(make_pair(i,j));
+        index_.push_back({i,j});
   }
 
   localize();

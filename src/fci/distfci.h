@@ -26,8 +26,6 @@
 #ifndef __BAGEL_FCI_DISTFCI_H
 #define __BAGEL_FCI_DISTFCI_H
 
-#include <memory>
-#include <vector>
 #include <src/fci/fci.h>
 #include <src/fci/space.h>
 

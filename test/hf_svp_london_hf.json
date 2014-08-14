@@ -17,7 +17,7 @@
 {
   "title" : "hf",
   "df" : "false",
-  "thresh" : 1.0e-10
+  "thresh" : 5.0e-8
 }
 
 ]}

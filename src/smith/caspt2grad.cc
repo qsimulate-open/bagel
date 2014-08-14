@@ -113,7 +113,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 
   // d0 including core
   shared_ptr<const Matrix> d0 = ref->rdm1_mat(task_->target())->resize(nmobasis,nmobasis);
-  shared_ptr<const Matrix> ocoeff = coeff->slice(0, nocc);
+  const MatView ocoeff = coeff->slice(0, nocc);
 
   {
     auto dtotao = make_shared<Matrix>(*coeff * (*d0 + *d1) ^ *coeff);
@@ -173,17 +173,17 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const DFFullDist> qij  = halfjj->compute_second_transform(ocoeff);
   shared_ptr<DFHalfDist> qri;
   {
-    shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*coeff * *zmat->slice(0,nocc));
+    shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*coeff * zmat->slice(0,nocc));
     {
       const RDM<2> D(*ref->rdm2(task_->target())+*zrdm2);
       const RDM<1> dd(*ref->rdm1(task_->target())+*zrdm1);
 
-      shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D.data(), dd.data(), nclosed, nact);
-      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact));
+      shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D, dd, nclosed, nact);
+      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
       qri = qijd->back_transform(ocoeff);
     }
     {
-      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
+      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
       qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
     }
   }
@@ -197,13 +197,13 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 
   // separable part
   auto separable_pair = [&,this](shared_ptr<const Matrix> d0occ, shared_ptr<const Matrix> d1bas) {
-    shared_ptr<const Matrix> d0ao = make_shared<Matrix>(*ocoeff * *d0occ ^ *ocoeff);
+    shared_ptr<const Matrix> d0ao = make_shared<Matrix>(ocoeff * *d0occ ^ ocoeff);
     shared_ptr<const Matrix> d1ao = make_shared<Matrix>(*coeff * *d1bas ^ *coeff);
-    shared_ptr<const Matrix> cd0 = geom_->df()->compute_cd(d0ao);
-    shared_ptr<const Matrix> cd1 = geom_->df()->compute_cd(d1ao);
+    shared_ptr<const VectorB> cd0 = geom_->df()->compute_cd(d0ao);
+    shared_ptr<const VectorB> cd1 = geom_->df()->compute_cd(d1ao);
 
     // three-index derivatives (seperable part)...
-    vector<shared_ptr<const Matrix>> cd {cd0, cd1};
+    vector<shared_ptr<const VectorB>> cd {cd0, cd1};
     vector<shared_ptr<const Matrix>> dd {d1ao, d0ao};
 
     shared_ptr<DFHalfDist> sepd = halfjj->apply_density(d1ao);
@@ -241,8 +241,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   const int nmobasis = coeff_->mdim();
   assert(nall == nmobasis);
 
-  shared_ptr<const Matrix> ocmat = coeff_->slice(0, nocc);
-  shared_ptr<const Matrix> vcmat = coeff_->slice(nocc, nmobasis);
+  const MatView ocmat = coeff_->slice(0, nocc);
 
   auto dmr = make_shared<Matrix>(*dm1);
 
@@ -251,7 +250,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
 
   // Y_rs = 2[Y1 + Y2 + Y3(ri) + Y4 + Y5(ri)]
   shared_ptr<Matrix> out = make_shared<Matrix>(nmobasis, nmobasis);
-  auto ocoeff = coeff_->slice(0, nocc);
+  const MatView ocoeff = coeff_->slice(0, nocc);
 
   {
     // 2 Y1 = h(d0 + d1 + d2) * 2
@@ -266,7 +265,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     shared_ptr<Matrix> dkl = ref_->rdm1_mat(target_);
     dkl->sqrt();
     dkl->scale(1.0/sqrt(2.0));
-    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, make_shared<Matrix>(*ocoeff * *dkl), /*grad*/false, /*rhf*/true);
+    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, ocoeff * *dkl, /*grad*/false, /*rhf*/true);
     *out += *coeff_ % fock * *coeff_ * *dmr * 2.0;
   }
 
@@ -278,12 +277,12 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     // exchange
     auto kopi = halfjj->compute_Kop_1occ(dmrao, -0.5)->transpose();
 
-    out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % (*jop * *ocoeff + *kopi) * *ref_->rdm1_mat(target_));
+    out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % (*jop * ocoeff + *kopi) * *ref_->rdm1_mat(target_));
   }
 
   // TODO D1 must be parallelised as it is very big.
   // construct D1 to be used in Y4 and Y5
-  auto D1 = make_shared<Matrix>(nocc*nall, nocc*nall);
+  auto D1 = make_shared<btas::Tensor4<double>>(nocc,nall,nocc,nall);
   {
     // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
     for (int s = 0; s != nall; ++s) // extend
@@ -291,7 +290,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
         for (int t = 0; t != nall; ++t) // extend
           for (int l = ncore_; l != nocc; ++l) {
             if (t >= nclosed && s >= nclosed) {
-              D1->element(l+nocc*t, k+nocc*s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
             }
           }
   }
@@ -301,10 +300,10 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   {
     // 2 Y4 =  2 K^{kl}_{rt} D^{lk}_{ts} = 2 (kr|lj) D0_(lj,ki) +  2 (kr|lt) D1_(lt,ks)
     // construct stepwise, D1 part
-    fullks = full->apply_2rdm(D1->data());
+    fullks = full->apply_2rdm(*D1);
     *out += *full->form_2index(fullks, 2.0);
     // D0 part
-    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(ref_->rdm2(target_)->data(), ref_->rdm1(target_)->data(), nclosed, nact);
+    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(*ref_->rdm2(target_), *ref_->rdm1(target_), nclosed, nact);
     out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulld, 1.0));
   }
 

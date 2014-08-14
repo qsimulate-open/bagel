@@ -80,7 +80,7 @@ class MP2_Ref : public SpinFreeMethod<T> {
       std::vector<std::shared_ptr<Tensor<T>>> tensor5 = {t2, this->v2_};
       std::shared_ptr<Task5<T>> t5(new Task5<T>(tensor5, index0));
       energy->add_task(t5);
-      return make_pair(queue, energy);
+      return {queue, energy};
     };
 
   public:

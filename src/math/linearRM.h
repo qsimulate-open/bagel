@@ -28,6 +28,7 @@
 #define __BAGEL_SRC_MATH_LINEARRM_H
 
 #include <src/math/matrix.h>
+#include <src/math/matop.h>
 
 // Solves a linear equation using residual minimization.
 // Compared to Linear, this is robust because we don't assume

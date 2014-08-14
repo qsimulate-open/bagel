@@ -46,14 +46,15 @@ void ZCASSCF::init_kramers_coeff() {
   };
 
   shared_ptr<ZMatrix> coefftmp;
-  if (nr_coeff_ != nullptr) 
+  if (nr_coeff_ != nullptr)
     coefftmp = nonrel_to_relcoeff(false);
 
   shared_ptr<ZMatrix> focktmp;
   shared_ptr<ZMatrix> ctmp;
+  // quaternion diagonalize a fock matrix
   if (nr_coeff_ == nullptr) {
     int norb = nele;// - 2 > 0 ? nele-2 : nele;
-    focktmp = make_shared<DFock>(geom_, hcore_, coeff_->slice(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+    focktmp = make_shared<DFock>(geom_, hcore_, coeff_->slice_copy(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
     quaternion(focktmp);
 
     shared_ptr<ZMatrix> s12 = overlap_->tildex(1.0e-9);
@@ -94,8 +95,8 @@ void ZCASSCF::init_kramers_coeff() {
   } else {//if (nele%2 == 0 && nele - 2 > 0) {
     int norb = nele;//-2;
     auto ctmp = make_shared<ZMatrix>(coefftmp->ndim(), norb);
-    ctmp->copy_block(0, 0, coefftmp->ndim(), norb/2, coefftmp->slice(0, norb/2)->data()); 
-    ctmp->copy_block(0, norb/2, coefftmp->ndim(), norb/2, coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()/2+norb/2)->data()); 
+    ctmp->copy_block(0, 0, coefftmp->ndim(), norb/2, coefftmp->slice(0, norb/2));
+    ctmp->copy_block(0, norb/2, coefftmp->ndim(), norb/2, coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()/2+norb/2));
     focktmp = make_shared<DFock>(geom_, hcore_, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
     auto fmo = make_shared<ZMatrix>(*coefftmp % *focktmp * *coefftmp);
     // quaternion diagonalization
@@ -120,37 +121,46 @@ void ZCASSCF::init_kramers_coeff() {
 
   array<shared_ptr<const ZMatrix>,2> tmp;
   if (nr_coeff_ == nullptr) {
-    tmp = {{ ctmp->slice(0, ctmp->mdim()/2), ctmp->slice(ctmp->mdim()/2, ctmp->mdim()) }};
+    tmp = {{ ctmp->slice_copy(0, ctmp->mdim()/2), ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()) }};
   } else{
-    tmp = {{ coefftmp->slice(0, coefftmp->mdim()/2), coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()) }};
+    tmp = {{ coefftmp->slice_copy(0, coefftmp->mdim()/2), coefftmp->slice_copy(coefftmp->mdim()/2, coefftmp->mdim()) }};
+    coeff_ = coefftmp->clone();
   }
   shared_ptr<ZMatrix> ctmp2 = coeff_->clone();
 
-  { // striped format
+  int i = 0;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nact_, tmp[0]->slice(nclosed_, nocc_)); i += nact_;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nact_, tmp[1]->slice(nclosed_, nocc_)); i += nact_;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[0]->slice(nocc_, nocc_+nvirt_)); i += nvirt_;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[1]->slice(nocc_, nocc_+nvirt_));
+
+  if (false) { // striped format
     int n = coeff_->ndim();
     // closed
     for (int j=0; j!=nclosed_; ++j) {
-      ctmp2->copy_block(0, j*2,   n, 1, tmp[0]->slice(j, j+1)->data());
-      ctmp2->copy_block(0, j*2+1, n, 1, tmp[1]->slice(j, j+1)->data());
+      ctmp2->copy_block(0, j*2,   n, 1, tmp[0]->slice(j, j+1));
+      ctmp2->copy_block(0, j*2+1, n, 1, tmp[1]->slice(j, j+1));
     }
     int offset = nclosed_*2;
     // active
     for (int j=0; j!=nact_; ++j) {
-      ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1)->data());
-      ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1)->data());
+      ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
+      ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
     }
     offset = nocc_*2;
-    // active
+    // virtual
     for (int j=0; j!=nvirtnr_; ++j) {
-      ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1)->data());
-      ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1)->data());
+      ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
+      ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
     }
-    offset = ctmp2->mdim()/2; 
+    offset = ctmp2->mdim()/2;
     // positrons
-    for (int j=0; j!=nneg_/2; ++j) { 
-      ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1)->data());
-      ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1)->data());
-    }          
+    for (int j=0; j!=nneg_/2; ++j) {
+      ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
+      ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
+    }
   }
   coeff_ = ctmp2;
 }
@@ -192,32 +202,32 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o, const int nvirt) const {
 }
 
 
-void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nvirt) const {
-  for (int i = 0; i != nclosed_; ++i) {
+void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt) {
+  for (int i = 0; i != nclosed; ++i) {
     for (int j = 0; j != nvirt; ++j) {
-      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt, i+nclosed_))) * 0.5;
-      o->ele_vc(j+nvirt, i+nclosed_) = conj(o->ele_vc(j, i));
+      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt, i+nclosed))) * 0.5;
+      o->ele_vc(j+nvirt, i+nclosed) = conj(o->ele_vc(j, i));
 
-      o->ele_vc(j+nvirt, i) = (o->ele_vc(j+nvirt, i) - conj(o->ele_vc(j, i+nclosed_))) * 0.5;
-      o->ele_vc(j, i+nclosed_) = - conj(o->ele_vc(j+nvirt, i));
+      o->ele_vc(j+nvirt, i) = (o->ele_vc(j+nvirt, i) - conj(o->ele_vc(j, i+nclosed))) * 0.5;
+      o->ele_vc(j, i+nclosed) = - conj(o->ele_vc(j+nvirt, i));
     }
   }
-  for (int i = 0; i != nact_; ++i) {
+  for (int i = 0; i != nact; ++i) {
     for (int j = 0; j != nvirt; ++j) {
-      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt, i+nact_))) * 0.5;
-      o->ele_va(j+nvirt, i+nact_) = conj(o->ele_va(j, i));
+      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt, i+nact))) * 0.5;
+      o->ele_va(j+nvirt, i+nact) = conj(o->ele_va(j, i));
 
-      o->ele_va(j+nvirt, i) = (o->ele_va(j+nvirt, i) - conj(o->ele_va(j, i+nact_))) * 0.5;
-      o->ele_va(j, i+nact_) = - conj(o->ele_va(j+nvirt, i));
+      o->ele_va(j+nvirt, i) = (o->ele_va(j+nvirt, i) - conj(o->ele_va(j, i+nact))) * 0.5;
+      o->ele_va(j, i+nact) = - conj(o->ele_va(j+nvirt, i));
     }
   }
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nclosed_; ++j) {
-      o->ele_ca(j, i) = (o->ele_ca(j, i) + conj(o->ele_ca(j+nclosed_, i+nact_))) * 0.5;
-      o->ele_ca(j+nclosed_, i+nact_) = conj(o->ele_ca(j, i));
+  for (int i = 0; i != nact; ++i) {
+    for (int j = 0; j != nclosed; ++j) {
+      o->ele_ca(j, i) = (o->ele_ca(j, i) + conj(o->ele_ca(j+nclosed, i+nact))) * 0.5;
+      o->ele_ca(j+nclosed, i+nact) = conj(o->ele_ca(j, i));
 
-      o->ele_ca(j+nclosed_, i) = (o->ele_ca(j+nclosed_, i) - conj(o->ele_ca(j, i+nact_))) * 0.5;
-      o->ele_ca(j, i+nact_) = - conj(o->ele_ca(j+nclosed_, i));
+      o->ele_ca(j+nclosed, i) = (o->ele_ca(j+nclosed, i) - conj(o->ele_ca(j, i+nact))) * 0.5;
+      o->ele_ca(j, i+nact) = - conj(o->ele_ca(j+nclosed, i));
     }
   }
 }
@@ -233,87 +243,109 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(const bool stripes) const {
   auto t12 = overlap_->get_submatrix(n*2, n*2, n, n)->copy();
   t12->inverse_half(1.0e-10);
   auto shalf = overlap_->get_submatrix(0, 0, n, n)->copy();
-  unique_ptr<double[]> eig2(new double[shalf->mdim()]);
-  shalf->diagonalize(eig2.get());
+  VectorB eig2(shalf->mdim());
+  shalf->diagonalize(eig2);
   for (int k = 0; k != shalf->mdim(); ++k) {
     if (real(eig2[k]) >= 0.0)
-      blas::scale_n(sqrt(sqrt(eig2[k])), shalf->element_ptr(0, k), shalf->ndim());
+      blas::scale_n(sqrt(sqrt(eig2(k))), shalf->element_ptr(0, k), shalf->ndim());
   }
   *shalf = *shalf ^ *shalf;
   auto tcoeff = make_shared<ZMatrix>(nr_coeff_->ndim(), nr_coeff_->mdim());
-  tcoeff->add_real_block(1.0, 0, 0, n, n, nr_coeff_->data());
+  tcoeff->add_real_block(1.0, 0, 0, n, n, *nr_coeff_);
   *tcoeff = *t12 * *shalf * *tcoeff;
   // copy non rel values into "+/-" stripes
   if (stripes) {
     // closed
     for (int j=0; j!=nclosed_; ++j) {
-      ctmp->add_real_block(1.0, 0, j*2,   n, 1, nr_coeff_->slice(j, j+1)->data());
-      ctmp->add_real_block(1.0, n, j*2+1, n, 1, nr_coeff_->slice(j, j+1)->data());
+      ctmp->add_real_block(1.0, 0, j*2,   n, 1, nr_coeff_->slice(j, j+1));
+      ctmp->add_real_block(1.0, n, j*2+1, n, 1, nr_coeff_->slice(j, j+1));
     }
     // active
     for (int j=0; j!=nact_; ++j) {
-      ctmp->add_real_block(1.0, 0, nclosed_*2 + j*2,   n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1)->data());
-      ctmp->add_real_block(1.0, n, nclosed_*2 + j*2+1, n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1)->data());
+      ctmp->add_real_block(1.0, 0, nclosed_*2 + j*2,   n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1));
+      ctmp->add_real_block(1.0, n, nclosed_*2 + j*2+1, n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1));
     }
     // virtuals
     for (int j=0; j!=nvirtnr; ++j) {
-      ctmp->add_real_block(1.0, 0, nocc_*2 + j*2,   n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1)->data());
-      ctmp->add_real_block(1.0, n, nocc_*2 + j*2+1, n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1)->data());
+      ctmp->add_real_block(1.0, 0, nocc_*2 + j*2,   n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1));
+      ctmp->add_real_block(1.0, n, nocc_*2 + j*2+1, n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1));
     }
     // positrons
     for (int j=0; j!=nneg_/2; ++j) {
-      ctmp->copy_block(n*2, ctmp->mdim() - j*2-2,   n, 1, tcoeff->slice(j, j+1)->data());
-      ctmp->copy_block(n*3, ctmp->mdim() - j*2-1, n, 1, tcoeff->slice(j, j+1)->data());
+      ctmp->copy_block(n*2, ctmp->mdim() - j*2-2,   n, 1, tcoeff->slice(j, j+1));
+      ctmp->copy_block(n*3, ctmp->mdim() - j*2-1, n, 1, tcoeff->slice(j, j+1));
     }
   } else { // block structure
     int m2 = ctmp->mdim()/2;
     // closed
     for (int j=0; j!=nclosed_; ++j) {
-      ctmp->add_real_block(1.0, 0, j,   n, 1, nr_coeff_->slice(j, j+1)->data());
-      ctmp->add_real_block(1.0, n, m2 + j, n, 1, nr_coeff_->slice(j, j+1)->data());
+      ctmp->add_real_block(1.0, 0, j,   n, 1, nr_coeff_->slice(j, j+1));
+      ctmp->add_real_block(1.0, n, m2 + j, n, 1, nr_coeff_->slice(j, j+1));
     }
     // active
     for (int j=0; j!=nact_; ++j) {
-      ctmp->add_real_block(1.0, 0, nclosed_ + j, n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1)->data());
-      ctmp->add_real_block(1.0, n, m2 + nclosed_ + j, n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1)->data());
+      ctmp->add_real_block(1.0, 0, nclosed_ + j, n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1));
+      ctmp->add_real_block(1.0, n, m2 + nclosed_ + j, n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1));
     }
     // virtuals
     for (int j=0; j!=nvirtnr; ++j) {
-      ctmp->add_real_block(1.0, 0, nocc_ + j,   n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1)->data());
-      ctmp->add_real_block(1.0, n, m2 + nocc_ + j, n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1)->data());
+      ctmp->add_real_block(1.0, 0, nocc_ + j,   n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1));
+      ctmp->add_real_block(1.0, n, m2 + nocc_ + j, n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1));
     }
     // positrons
     for (int j=0; j!=nneg_/2; ++j) {
-      ctmp->copy_block(n*2, m2 - j-1,   n, 1, tcoeff->slice(j, j+1)->data());
-      ctmp->copy_block(n*3, ctmp->mdim() - j-1, n, 1, tcoeff->slice(j, j+1)->data());
+      ctmp->copy_block(n*2, m2 - j-1,   n, 1, tcoeff->slice(j, j+1));
+      ctmp->copy_block(n*3, ctmp->mdim() - j-1, n, 1, tcoeff->slice(j, j+1));
     }
   }
   return ctmp;
 }
 
 
-// Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
-shared_ptr<ZMatrix> ZCASSCF::coeff_stripe_to_block(shared_ptr<const ZMatrix> coeff) const {
-  assert(coeff->ndim() == coeff->mdim());
+shared_ptr<ZMatrix> ZCASSCF::format_coeff(const int nclosed, const int nact, const int nvirt, shared_ptr<const ZMatrix> coeff, const bool striped) {
+  assert(coeff->ndim() == coeff->mdim()); // TODO : generalize for when coeff is not a square ; shouldn't be too difficult
   auto ctmp2 = coeff->clone();
-  { // block format
+  if (striped) {
+    // Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
     int n = coeff->ndim();
     // closed
-    for (int j=0; j!=nclosed_; ++j) {
-      ctmp2->copy_block(0,            j, n, 1, coeff->slice(j*2  , j*2+1)->data());
-      ctmp2->copy_block(0, nclosed_ + j, n, 1, coeff->slice(j*2+1, j*2+2)->data());
+    for (int j=0; j!=nclosed; ++j) {
+      ctmp2->copy_block(0,           j, n, 1, coeff->slice(j*2  , j*2+1));
+      ctmp2->copy_block(0, nclosed + j, n, 1, coeff->slice(j*2+1, j*2+2));
     }
-    int offset = nclosed_*2;
+    int offset = nclosed*2;
     // active
-    for (int j=0; j!=nact_; ++j) {
-      ctmp2->copy_block(0, offset + j,         n, 1, coeff->slice(offset +j*2,   offset + j*2+1)->data());
-      ctmp2->copy_block(0, offset + nact_ + j, n, 1, coeff->slice(offset +j*2+1, offset + j*2+2)->data());
+    for (int j=0; j!=nact; ++j) {
+      ctmp2->copy_block(0, offset + j,        n, 1, coeff->slice(offset +j*2,   offset + j*2+1));
+      ctmp2->copy_block(0, offset + nact + j, n, 1, coeff->slice(offset +j*2+1, offset + j*2+2));
     }
-    offset = nocc_*2;
+    offset = (nclosed+nact)*2;
     // virtual (including positrons)
-    for (int j=0; j!=nvirt_; ++j) {
-      ctmp2->copy_block(0, offset + j,            n, 1, coeff->slice(offset + j*2,   offset + j*2+1)->data());
-      ctmp2->copy_block(0, offset + nvirt_ + j,   n, 1, coeff->slice(offset + j*2+1, offset + j*2+2)->data());
+    for (int j=0; j!=nvirt; ++j) {
+      ctmp2->copy_block(0, offset + j,           n, 1, coeff->slice(offset + j*2,   offset + j*2+1));
+      ctmp2->copy_block(0, offset + nvirt + j,   n, 1, coeff->slice(offset + j*2+1, offset + j*2+2));
+    }
+  } else {
+    // Transforms a coefficient matrix from block format to striped format : assumes ordering is (c,a,v,positrons)
+    // striped format
+    int n = coeff->ndim();
+    int offset = nclosed;
+    // closed
+    for (int j=0; j!=nclosed; ++j) {
+      ctmp2->copy_block(0, j*2,   n, 1, coeff->slice(j, j+1));
+      ctmp2->copy_block(0, j*2+1, n, 1, coeff->slice(offset + j, offset + j+1));
+    }
+    offset = nclosed*2;
+    // active
+    for (int j=0; j!=nact; ++j) {
+      ctmp2->copy_block(0, offset + j*2,   n, 1, coeff->slice(offset + j, offset + j+1));
+      ctmp2->copy_block(0, offset + j*2+1, n, 1, coeff->slice(offset + nact + j, offset + nact + j+1));
+    }
+    offset = (nclosed+nact)*2;
+    // vituals (including positrons)
+    for (int j=0; j!=nvirt; ++j) {
+      ctmp2->copy_block(0, offset + j*2,   n, 1, coeff->slice(offset + j, offset + j+1));
+      ctmp2->copy_block(0, offset + j*2+1, n, 1, coeff->slice(offset + nvirt + j, offset + nvirt + j+1));
     }
   }
    return ctmp2;
@@ -327,12 +359,12 @@ void ZCASSCF::zero_positronic_elements(shared_ptr<ZRotFile> rot) {
     for (int j = 0; j != nneg_/2; ++j) {
       rot->ele_vc(j + nr_nvirt, i) =  complex<double> (0.0,0.0);
       rot->ele_vc(j + nr_nvirt + nvirt_, i) =  complex<double> (0.0,0.0);
-    } 
-  } 
+    }
+  }
   for (int i = 0; i != nact_*2; ++i) {
     for (int j = 0; j != nneg_/2; ++j) {
       rot->ele_va(j + nr_nvirt, i) =  complex<double> (0.0,0.0);
       rot->ele_va(j + nr_nvirt + nvirt_, i) =  complex<double> (0.0,0.0);
-    } 
-  } 
-} 
+    }
+  }
+}

@@ -27,7 +27,6 @@
 #define __SRC_WFN_METHOD_H
 
 #include <src/wfn/geometry.h>
-#include <src/wfn/geometry_london.h>
 #include <src/wfn/reference.h>
 
 // this file should be header only (in order not to introduce additional dependency)
@@ -38,7 +37,6 @@ class Method {
   protected:
     std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Geometry_London> cgeom_;
     std::shared_ptr<const Reference> ref_;
 
   private:
@@ -47,15 +45,13 @@ class Method {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & idata_ & geom_ & cgeom_ & ref_;
+      ar & idata_ & geom_ & ref_;
     }
 
   public:
     Method() { }
     Method(std::shared_ptr<const PTree> p, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> r)
      : idata_(p), geom_(g), ref_(r) { }
-    Method(std::shared_ptr<const PTree> p, std::shared_ptr<const Geometry_London> g, std::shared_ptr<const Reference> r)
-     : idata_(p), cgeom_(g), ref_(r) { }
     virtual ~Method() { }
 
     virtual void compute() = 0;
@@ -64,7 +60,6 @@ class Method {
     std::shared_ptr<const PTree> idata() const { return idata_; }
     std::shared_ptr<const Reference> ref() const { return ref_; }
     std::shared_ptr<const Geometry> geom() const { return geom_; }
-    std::shared_ptr<const Geometry_London> cgeom() const { return cgeom_; }
 
 };
 

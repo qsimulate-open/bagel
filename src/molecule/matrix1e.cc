@@ -45,8 +45,8 @@ Matrix1e::Matrix1e(const shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(),
 }
 
 
-Matrix1e::Matrix1e(const Matrix1e& o) : Matrix(o.ndim_, o.mdim_) {
-  copy_n(o.data(), ndim_*mdim_, data());
+Matrix1e::Matrix1e(const Matrix1e& o) : Matrix(o.ndim(), o.mdim()) {
+  copy_n(o.data(), size(), data());
 }
 
 

@@ -31,6 +31,7 @@
 
 using namespace std;
 using namespace bagel;
+using namespace btas;
 
 
 shared_ptr<DFDist> DFDist::copy() const {
@@ -49,13 +50,13 @@ shared_ptr<DFDist> DFDist::clone() const {
 }
 
 
-void DFDist::add_direct_product(const vector<shared_ptr<const Matrix>> cd, const vector<shared_ptr<const Matrix>> dd, const double a) {
+void DFDist::add_direct_product(const vector<shared_ptr<const VectorB>> cd, const vector<shared_ptr<const Matrix>> dd, const double a) {
   if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   if (cd.size() != dd.size()) throw logic_error("Illegal call of DFDist::DFDist");
 
   auto d = dd.begin();
   for (auto& c : cd) {
-    shared_ptr<const Matrix> aslice = c->get_submatrix(block_[0]->astart(), 0, block_[0]->asize(), 1);
+    auto aslice = make_shared<VectorB>(c->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
     block_[0]->add_direct_product(aslice, *d++, a);
   }
   assert(d == dd.end());
@@ -146,22 +147,22 @@ pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<c
   shared_ptr<RysInt> eribatch = make_shared<ERIBatch>(input, 2.0);
 #endif
   eribatch->compute();
-  return make_pair(eribatch->data(), eribatch);
+  return {eribatch->data(), eribatch};
 }
 
 
-shared_ptr<DFHalfDist> DFDist::compute_half_transform(const std::shared_ptr<const Matrix> c) const {
-  const int nocc = c->mdim();
-  auto out = make_shared<DFHalfDist>(shared_from_this(), nocc);
+shared_ptr<DFHalfDist> DFDist::compute_half_transform(const MatView c) const {
+  const int nocc = c.extent(1);
+  auto out = make_shared<DFHalfDist>(df_ ? df_ : shared_from_this(), nocc);
   for (auto& i : block_)
     out->add_block(i->transform_second(c));
   return out;
 }
 
 
-shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const {
-  const int nocc = c->mdim();
-  auto out = make_shared<DFHalfDist>(shared_from_this(), nocc);
+shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const MatView c) const {
+  const int nocc = c.extent(1);
+  auto out = make_shared<DFHalfDist>(df_ ? df_ : shared_from_this(), nocc);
   for (auto& i : block_)
     out->add_block(i->transform_third(c)->swap());
   return out;
@@ -171,8 +172,8 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const std::shared_ptr
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const std::shared_ptr<const Matrix> c) const {
-  const int nocc = c->mdim();
+shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const MatView c) const {
+  const int nocc = c.extent(1);
   auto out = make_shared<DFFullDist>(df_, nindex1_, nocc);
   for (auto& i : block_)
     out->add_block(i->transform_third(c));
@@ -196,8 +197,8 @@ shared_ptr<DFHalfDist> DFHalfDist::clone() const {
 }
 
 
-shared_ptr<DFDist> DFHalfDist::back_transform(const std::shared_ptr<const Matrix> c) const{
-  assert(df_->nindex1() == c->ndim());
+shared_ptr<DFDist> DFHalfDist::back_transform(const MatView c) const{
+  assert(df_->nindex1() == c.extent(0));
   auto out = make_shared<DFDist>(df_);
   for (auto& i : block_)
     out->add_block(i->transform_second(c, true));
@@ -208,7 +209,7 @@ shared_ptr<DFDist> DFHalfDist::back_transform(const std::shared_ptr<const Matrix
 void DFHalfDist::rotate_occ(const std::shared_ptr<const Matrix> d) {
   assert(nindex1_ == d->mdim());
   for (auto& i : block_)
-    i = i->transform_second(d);
+    i = i->transform_second(*d);
 }
 
 
@@ -216,7 +217,7 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_density(const std::shared_ptr<const Mat
   assert(den->mdim() == nindex2_);
   auto out = make_shared<DFHalfDist>(df_, nindex1_);
   for (auto& i : block_)
-    out->add_block(i->transform_third(den));
+    out->add_block(i->transform_third(*den));
   return out;
 }
 
@@ -248,13 +249,13 @@ shared_ptr<DFFullDist> DFFullDist::clone() const {
 void DFFullDist::rotate_occ1(const std::shared_ptr<const Matrix> d) {
   assert(nindex1_ == d->mdim());
   for (auto& i : block_)
-    i = i->transform_second(d);
+    i = i->transform_second(*d);
 }
 
 
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
-shared_ptr<DFHalfDist> DFFullDist::back_transform(const std::shared_ptr<const Matrix> c) const {
-  assert(c->ndim() == df_->nindex2());
+shared_ptr<DFHalfDist> DFFullDist::back_transform(const MatView c) const {
+  assert(c.extent(0) == df_->nindex2());
   auto out = make_shared<DFHalfDist>(df_, nindex1_);
   for (auto& i : block_)
     out->add_block(i->transform_third(c, true));
@@ -271,7 +272,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_closed_2RDM(const double scale_exch) co
 }
 
 
-shared_ptr<DFFullDist> DFFullDist::apply_uhf_2RDM(const double* amat, const double* bmat) const {
+shared_ptr<DFFullDist> DFFullDist::apply_uhf_2RDM(const btas::Tensor2<double>& amat, const btas::Tensor2<double>& bmat) const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
   for (auto& i : block_)
     out->add_block(i->apply_uhf_2RDM(amat, bmat));
@@ -279,7 +280,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_uhf_2RDM(const double* amat, const doub
 }
 
 
-shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const {
+shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
   for (auto& i : block_)
     out->add_block(i->apply_2RDM(rdm, rdm1, nclosed, nact));
@@ -287,7 +288,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm, const double* r
 }
 
 
-shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm) const {
+shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const btas::Tensor4<double>& rdm) const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
   for (auto& i : block_)
     out->add_block(i->apply_2RDM(rdm));
@@ -314,7 +315,7 @@ shared_ptr<Matrix> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFullD
 void DFFullDist::add_product(const shared_ptr<const DFFullDist> o, const shared_ptr<const Matrix> c, const int jdim, const size_t off, const double fac) {
   // TODO needs more work
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
-  block_[0]->add_block(o->block_[0]->form_Dj(c, jdim), jdim, off*block_[0]->asize(), fac);
+  block_[0]->add_block(*o->block_[0]->form_Dj(c, jdim), jdim, off*block_[0]->asize(), fac);
 }
 
 

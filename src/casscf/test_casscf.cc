@@ -23,11 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <sstream>
 #include <src/casscf/superci.h>
 #include <src/casscf/casbfgs.h>
 #include <src/casscf/cashybrid.h>
-#include <src/wfn/reference.h>
 
 double cas_energy(std::string filename) {
   auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);

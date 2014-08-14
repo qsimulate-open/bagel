@@ -116,36 +116,36 @@ void FCI::model_guess(shared_ptr<Dvec> out) {
   const int nguess = basis.size();
 
   shared_ptr<Matrix> spin = make_shared<CISpin>(basis, norb_);
-  vector<double> eigs(nguess, 0.0);
-  spin->diagonalize(eigs.data());
+  VectorB eigs(nguess);
+  spin->diagonalize(eigs);
 
   int start, end;
   const double target_spin = 0.25 * static_cast<double>(det_->nspin()*(det_->nspin()+2));
   for (start = 0; start < nguess; ++start)
-    if (fabs(eigs[start] - target_spin) < 1.0e-8) break;
+    if (fabs(eigs(start) - target_spin) < 1.0e-8) break;
   for (end = start; end < nguess; ++end)
-    if (fabs(eigs[end] - target_spin) > 1.0e-8) break;
+    if (fabs(eigs(end) - target_spin) > 1.0e-8) break;
 
   if ((end-start) >= nstate_) {
-    shared_ptr<Matrix> coeffs = spin->slice(start, end);
+    const MatView coeffs = spin->slice(start, end);
 
     shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
-    hamiltonian = make_shared<Matrix>(*coeffs % *hamiltonian * *coeffs);
-    hamiltonian->diagonalize(eigs.data());
+    hamiltonian = make_shared<Matrix>(coeffs % *hamiltonian * coeffs);
+    hamiltonian->diagonalize(eigs);
 
 #if 0
     const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
     for (int i = 0; i < end-start; ++i)
-      cout << setw(12) << setprecision(8) << eigs[i] + nuc_core << endl;
+      cout << setw(12) << setprecision(8) << eigs(i) + nuc_core << endl;
 #endif
 
-    coeffs = make_shared<Matrix>(*coeffs * *hamiltonian);
+    auto coeffs1 = make_shared<Matrix>(coeffs * *hamiltonian);
     for (int i = 0; i < nguess; ++i) {
       const size_t ia = det_->lexical<0>(basis[i].first);
       const size_t ib = det_->lexical<1>(basis[i].second);
 
       for (int j = 0; j < nstate_; ++j)
-        out->data(j)->element(ib, ia) = coeffs->element(i, j);
+        out->data(j)->element(ib, ia) = coeffs1->element(i, j);
     }
   }
   else {
@@ -204,14 +204,14 @@ void FCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dvec> out
 // returns seed determinants for initial guess
 vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
-  for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
+  for (int i = 0; i != ndet; ++i) tmp.emplace(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0)));
 
   double* diter = denom_->data();
   for (auto& aiter : det()->string_bits_a()) {
     for (auto& biter : det()->string_bits_b()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
-        tmp.insert(make_pair(din, make_pair(biter, aiter)));
+        tmp.emplace(din, make_pair(biter, aiter));
         tmp.erase(tmp.begin());
       }
       ++diter;
@@ -271,11 +271,13 @@ void FCI::compute() {
     shared_ptr<Dvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
+#ifndef DISABLE_SERIALIZATION
     if (restart_) {
       stringstream ss; ss << "fci_" << iter;
       OArchive ar(ss.str());
       ar << static_cast<Method*>(this);
     }
+#endif
 
     // constructing Dvec's for Davidson
     auto ccn = make_shared<const Dvec>(cc_);

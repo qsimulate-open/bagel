@@ -56,16 +56,12 @@ GSmallERIBatch::~GSmallERIBatch() {
 }
 
 
-std::shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<shared_ptr<const Matrix>,6>& d) const {
+std::shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<shared_ptr<const btas::Tensor3<double>>,6>& d) const {
   auto out = make_shared<GradFile>(natoms_);
   static_assert(Comp::X == 0 && Comp::Y == 1 && Comp::Z == 2, "something is wrong in GSmallERIBatch::compute_gradient");
 
-  const size_t a1size_inc = shells_[1]->nbasis_aux_increment();
-  const size_t a2size_inc = shells_[2]->nbasis_aux_increment();
-  const size_t a1size_dec = shells_[1]->nbasis_aux_decrement();
-  const size_t a2size_dec = shells_[2]->nbasis_aux_decrement();
-  const size_t a1 = a1size_inc + a1size_dec;
-  const size_t a2 = a2size_inc + a2size_dec;
+  const size_t a1 = shells_[1]->nbasis_aux_increment() + shells_[1]->nbasis_aux_decrement();
+  const size_t a2 = shells_[2]->nbasis_aux_increment() + shells_[2]->nbasis_aux_decrement();
 
   const size_t s0size = shells_[0]->nbasis();
   const size_t s1size = shells_[1]->nbasis();

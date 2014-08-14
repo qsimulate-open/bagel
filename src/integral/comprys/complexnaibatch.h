@@ -62,6 +62,8 @@ class ComplexNAIBatch : public CoulombBatch_Base<std::complex<double>,Int_t::Lon
 
     ~ComplexNAIBatch() {};
 
+    constexpr static int Nblocks() { return 1; }
+
 };
 
 }

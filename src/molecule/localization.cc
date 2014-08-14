@@ -60,8 +60,7 @@ OrbitalLocalization::OrbitalLocalization(shared_ptr<const PTree> input, shared_p
   // if there, take eigenvalues out of Reference to reorder subspaces later on
   // TODO: would more flexibility in defining the reordering criterion be helpful?
   if (!ref->eig().empty()) {
-    diagonals_.resize(coeff_->mdim(), 0.0);
-    copy(ref->eig().begin(), ref->eig().end(), diagonals_.begin());
+    diagonals_ = ref->eig();
   }
 }
 
@@ -73,7 +72,7 @@ shared_ptr<Matrix> OrbitalLocalization::localize() {
   if (!diagonals_.empty()) {
     ordering = out->copy();
     for (int i = 0; i < ordering->mdim(); ++i) {
-      const double e = std::sqrt(diagonals_[i]);
+      const double e = std::sqrt(diagonals_(i));
       for_each(ordering->element_ptr(0,i), ordering->element_ptr(0,i+1), [&e](double& a){ return a *= e; });
     }
     ordering = make_shared<Matrix>(*ordering ^ *ordering);
@@ -89,7 +88,7 @@ shared_ptr<Matrix> OrbitalLocalization::localize() {
     for (int iter = start; iter < fence; ++iter)
       if (!localized.insert(iter).second) cout << "WARNING: Orbital " << iter << " has already been localized." << endl;
 
-    shared_ptr<Matrix> loc_subspace = localize_space(out->slice(start, fence));
+    shared_ptr<Matrix> loc_subspace = localize_space(out->slice_copy(start, fence));
     if (ordering) {
       Matrix tmp = *loc_subspace % *ordering * *loc_subspace;
       multimap<double, int> to_copy;
@@ -145,7 +144,7 @@ void RegionLocalization::common_init(vector<int> sizes) {
   sqrt_S_ = S->copy(); sqrt_S_->sqrt();
   S_inverse_half_ = S->copy();
   if (!S_inverse_half_->inverse_half()) {
-    throw runtime_error("Region Localization does not currently handle linear dependencies. Sorry!");
+    throw runtime_error("Region Localization does not handle linear dependencies. Use PM localization.");
   }
 }
 
@@ -159,8 +158,8 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<const Matrix> c
   auto ortho_density = make_shared<Matrix>(*sqrt_S_ % den * *sqrt_S_);
 
   // transform will hold the eigenvectors of each block
-  vector<double> eigenvalues(nbasis, 0.0);
-  Matrix T = *ortho_density->diagonalize_blocks(eigenvalues.data(), sizes_);
+  VectorB eigenvalues(nbasis);
+  Matrix T = *ortho_density->diagonalize_blocks(eigenvalues, sizes_);
 
   *ortho_density = T % *ortho_density * T;
 

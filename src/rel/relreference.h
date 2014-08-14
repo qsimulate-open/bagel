@@ -50,12 +50,12 @@ class RelReference : public Reference {
   public:
     RelReference() { }
     RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en, const int nneg, const int nocc, const int nvirt, const bool ga, const bool br)
-     : Reference(g, nullptr, nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice(nneg_, c->mdim())), relcoeff_full_(c) {
+     : Reference(g, nullptr, nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c) {
     }
 
-    const std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
-    const std::shared_ptr<const ZMatrix> relcoeff() const { return relcoeff_; }
-    const std::shared_ptr<const ZMatrix> relcoeff_full() const { return relcoeff_full_; }
+    std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
+    std::shared_ptr<const ZMatrix> relcoeff() const { return relcoeff_; }
+    std::shared_ptr<const ZMatrix> relcoeff_full() const { return relcoeff_full_; }
 
     bool gaunt() const { return gaunt_; }
     bool breit() const { return breit_; }

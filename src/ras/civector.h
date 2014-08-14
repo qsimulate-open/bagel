@@ -28,20 +28,10 @@
 #define __BAGEL_RAS_RASCIVECTOR_H
 
 #include <list>
-#include <map>
-#include <cassert>
-#include <iostream>
-#include <iomanip>
-
 #include <src/ras/civector_base.h>
 #include <src/ras/apply_block.h>
-#include <src/parallel/staticdist.h>
 #include <src/parallel/recvrequest.h>
 #include <src/ras/dvector_base.h>
-#include <src/ras/determinants.h>
-#include <src/math/algo.h>
-#include <src/ciutil/ciblock.h>
-#include <src/ciutil/bitutil.h>
 
 namespace bagel {
 
@@ -588,7 +578,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
         for (auto& ia : *iblock->stringsa()) {
           for (auto& ib : *iblock->stringsb()) {
             if (std::abs(*i) > thr)
-              tmp.insert(std::make_pair(-std::abs(*i), std::make_tuple(*i, ia, ib)));
+              tmp.emplace(-std::abs(*i), std::make_tuple(*i, ia, ib));
             ++i;
           }
         }

@@ -40,6 +40,14 @@ using DistZMatrix = ZMatrix;
 #endif
 
 class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_shared_from_this<ZMatrix> {
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Matrix_base<std::complex<double>>>(*this);
+    }
+
   public:
 #ifdef HAVE_SCALAPACK
     ZMatrix(const int n, const int m, const bool localized = false);
@@ -47,6 +55,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix(const int n, const int m, const bool localized = true);
 #endif
     ZMatrix(const ZMatrix&);
+    ZMatrix(const ZMatView& o);
     ZMatrix(ZMatrix&&);
     ZMatrix(const Matrix& real, const Matrix& imag);
     ZMatrix(const Matrix& real, const std::complex<double> factor);
@@ -55,14 +64,27 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     void antisymmetrize();
     void hermite();
-    std::shared_ptr<ZMatrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim_); }
-    std::shared_ptr<ZMatrix> slice(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim_, mend-mstart); }
+    std::shared_ptr<ZMatrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim()); }
+    std::shared_ptr<ZMatrix> slice_copy(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim(), mend-mstart); }
     std::shared_ptr<ZMatrix> resize(const int n, const int m) const { return this->resize_impl<ZMatrix>(n, m); }
     std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix> o) const { return this->merge_impl<ZMatrix>(o); }
-    // diagonalize this matrix (overwritten by a coefficient matrix)
-    virtual void diagonalize(double* vec);
 
-    std::shared_ptr<ZMatrix> diagonalize_blocks(double* eig, std::vector<int> blocks) { return diagonalize_blocks_impl<ZMatrix>(eig, blocks); }
+    ZMatView slice(const int mstart, const int mend) {
+      auto low = {0, mstart};
+      auto up  = {ndim(), mend};
+      return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
+    }
+
+    const ZMatView slice(const int mstart, const int mend) const {
+      auto low = {0, mstart};
+      auto up  = {ndim(), mend};
+      return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
+    }
+
+    // diagonalize this matrix (overwritten by a coefficient matrix)
+    virtual void diagonalize(VecView vec);
+
+    std::shared_ptr<ZMatrix> diagonalize_blocks(VectorB& eig, std::vector<int> blocks) { return diagonalize_blocks_impl<ZMatrix>(eig, blocks); }
 
     std::tuple<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> svd(double* sing = nullptr);
     // compute S^-1. Assumes positive definite matrix
@@ -72,57 +94,27 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<ZMatrix> tildex(const double thresh = 1.0e-8) const;
 
     using Matrix_base<std::complex<double>>::copy_block;
-    using Matrix_base<std::complex<double>>::get_block;
     using Matrix_base<std::complex<double>>::add_block;
 
-    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const ZMatrix& o) {
-      assert(o.ndim() == ndim && o.mdim() == mdim);
-      this->copy_block(nstart, mstart, ndim, mdim, o.data());
-    }
-    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const ZMatrix& o) {
-      assert(o.ndim() == ndim && o.mdim() == mdim);
-      this->add_block(a, nstart, mstart, ndim, mdim, o.data());
-    }
-
-    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
-    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
-    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
-    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
-
-    void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
-    void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
-    void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
-    void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
+    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const MatView o);
+    void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const MatView o);
 
     std::shared_ptr<Matrix> get_real_part() const;
     std::shared_ptr<Matrix> get_imag_part() const;
 
     std::shared_ptr<ZMatrix> get_conjg() const;
-    void fill_upper_conjg();
 
     std::shared_ptr<ZMatrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const {
       return this->get_submatrix_impl<ZMatrix>(nstart, mstart, ndim, mdim);
     }
 
-    ZMatrix operator*(const ZMatrix&) const;
-    ZMatrix& operator*=(const ZMatrix&);
-    ZMatrix operator*(const std::complex<double>& a) const;
-    ZMatrix operator/(const std::complex<double>& a) const;
-    ZMatrix& operator*=(const std::complex<double>& a);
-    ZMatrix& operator/=(const std::complex<double>& a);
-    ZMatrix operator%(const ZMatrix&) const; // caution
-    ZMatrix operator^(const ZMatrix&) const; // caution
-    ZMatrix operator+(const ZMatrix&) const;
-    ZMatrix operator-(const ZMatrix&) const;
-    ZMatrix& operator+=(const ZMatrix&);
-    ZMatrix& operator-=(const ZMatrix&);
-    ZMatrix& operator=(const ZMatrix&);
-    ZMatrix& operator=(ZMatrix&&);
+    ZMatrix& operator=(const ZMatrix& o) { Matrix_base<std::complex<double>>::operator=(o); return *this; }
+    ZMatrix& operator=(ZMatrix&& o)      { Matrix_base<std::complex<double>>::operator=(o); return *this; }
 
     ZMatrix& operator/=(const ZMatrix&);
     ZMatrix operator/(const ZMatrix&) const;
 
-    std::shared_ptr<ZMatrix> clone() const { return std::make_shared<ZMatrix>(ndim_, mdim_); }
+    std::shared_ptr<ZMatrix> clone() const { return std::make_shared<ZMatrix>(ndim(), mdim()); }
     std::shared_ptr<ZMatrix> copy() const { return std::make_shared<ZMatrix>(*this); }
 
     // returns exp(*this)
@@ -142,10 +134,10 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     double orthog(const std::list<std::shared_ptr<const ZMatrix>> o) { return this->orthog_impl(o); }
 
     void add_diag(const std::complex<double> a, const int i, const int j) {
-      assert(ndim_ == mdim_);
+      assert(ndim() == mdim());
       for (int ii = i; ii != j; ++ii) element(ii,ii) += a;
     }
-    void add_diag(const std::complex<double> a) { add_diag(a,0,ndim_); }
+    void add_diag(const std::complex<double> a) { add_diag(a,0,ndim()); }
     // returns diagonal elements
     std::unique_ptr<std::complex<double>[]> diag() const;
 
@@ -155,8 +147,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void purify_redrotation(const int nclosed, const int nact, const int nvirt);
 
     std::shared_ptr<ZMatrix> solve(std::shared_ptr<const ZMatrix> A, const int n) const;
-
-    void print(const std::string in = "", const size_t size = 10) const;
 
 #ifdef HAVE_SCALAPACK
     std::shared_ptr<DistZMatrix> distmatrix() const;
@@ -203,7 +193,7 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     DistZMatrix(DistZMatrix&&);
     DistZMatrix(const ZMatrix&);
 
-    void diagonalize(double* vec) override;
+    void diagonalize(VecView vec) override;
 
     DistZMatrix operator*(const DistZMatrix&) const;
     DistZMatrix& operator*=(const DistZMatrix&);

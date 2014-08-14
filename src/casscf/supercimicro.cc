@@ -129,7 +129,7 @@ void SuperCIMicro::sigma_at_at_(shared_ptr<const RotFile> cc, shared_ptr<RotFile
   for (int i = 0; i != nact; ++i) {
     for (int j = 0; j != nact; ++j) {
 #if 0
-      const double fac = (occup_[i]*occup_[j] > occup_thresh) ? 1.0/std::sqrt(occup_[i]*occup_[j]) : 0.0;
+      const double fac = (casscf_->occup(i)*casscf_->occup(j) > occup_thresh) ? 1.0/std::sqrt(casscf_->occup(i)*casscf_->occup(j)) : 0.0;
 #else
       const double fac = 1.0;
 #endif

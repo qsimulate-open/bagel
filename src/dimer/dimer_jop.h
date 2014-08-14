@@ -117,7 +117,7 @@ template <int A, int B, int C, int D> std::pair<int, int> DimerJop::index(int a,
   if (B == 0) iA = b + iA*nact_.first; else jB = b + jB*nact_.second;
   if (C == 0) iA = c + iA*nact_.first; else jB = c + jB*nact_.second;
   if (D == 0) iA = d + iA*nact_.first; else jB = d + jB*nact_.second;
-  return std::make_pair(iA,jB);
+  return {iA,jB};
 }
 
 }

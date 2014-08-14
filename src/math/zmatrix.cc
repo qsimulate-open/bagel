@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <cmath>
 #include <src/math/zmatrix.h>
+#include <src/math/matop.h>
 
 using namespace std;
 using namespace bagel;
@@ -42,19 +43,23 @@ ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double>>(o) {
 }
 
 
+ZMatrix::ZMatrix(const ZMatView& o) : Matrix_base<complex<double>>(o) {
+}
+
+
 ZMatrix::ZMatrix(ZMatrix&& o) : Matrix_base<complex<double>>(move(o)) {
 }
 
 
 ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) {
   assert(r.ndim() == i.ndim() && r.mdim() == i.mdim());
-  add_real_block(complex<double>(1.0, 0.0), 0, 0, ndim_, mdim_, r.data());
-  add_real_block(complex<double>(0.0, 1.0), 0, 0, ndim_, mdim_, i.data());
+  add_real_block(complex<double>(1.0, 0.0), 0, 0, ndim(), mdim(), r);
+  add_real_block(complex<double>(0.0, 1.0), 0, 0, ndim(), mdim(), i);
 }
 
 
 ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim(), r.localized()) {
-  add_real_block(factor, 0, 0, ndim_, mdim_, r.data());
+  add_real_block(factor, 0, 0, ndim(), mdim(), r);
 }
 
 
@@ -65,160 +70,6 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
 #endif
 
 
-ZMatrix ZMatrix::operator+(const ZMatrix& o) const {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ZMatrix out(*this);
-  out += o;
-  return out;
-}
-
-
-ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ZMatrix out(*this);
-  out -= o;
-  return out;
-}
-
-
-ZMatrix& ZMatrix::operator+=(const ZMatrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ax_plus_y(1.0, o);
-  return *this;
-}
-
-
-ZMatrix& ZMatrix::operator-=(const ZMatrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ax_plus_y(-1.0, o);
-  return *this;
-}
-
-
-ZMatrix& ZMatrix::operator=(const ZMatrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  copy_n(o.data(), ndim_*mdim_, data());
-  return *this;
-}
-
-
-ZMatrix& ZMatrix::operator=(ZMatrix&& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  data_ = move(o.data_);
-  return *this;
-}
-
-
-ZMatrix ZMatrix::operator*(const ZMatrix& o) const {
-  const int l = ndim_;
-  const int m = mdim_;
-  assert(mdim_ == o.ndim());
-  const int n = o.mdim();
-  ZMatrix out(l, n, localized_);
-
-#ifdef HAVE_SCALAPACK
-  assert(localized_ == o.localized_);
-  if (localized_ || min(min(l,m),n) < blocksize__) {
-#endif
-    zgemm3m_("N", "N", l, n, m, 1.0, data(), l, o.data(), o.ndim_, 0.0, out.data(), l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<complex<double>[]> locala = getlocal();
-    unique_ptr<complex<double>[]> localb = o.getlocal();
-    unique_ptr<complex<double>[]> localc = out.getlocal();
-    pzgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
-    out.setlocal_(localc);
-  }
-#endif
-
-  return out;
-}
-
-
-ZMatrix& ZMatrix::operator*=(const ZMatrix& o) {
-  *this = *this * o;
-  return *this;
-}
-
-
-ZMatrix ZMatrix::operator*(const complex<double>& a) const {
-  ZMatrix out(*this);
-  out *= a;
-  return out;
-}
-
-
-ZMatrix ZMatrix::operator/(const complex<double>& a) const {
-  ZMatrix out(*this);
-  out /= a;
-  return out;
-}
-
-
-ZMatrix& ZMatrix::operator*=(const complex<double>& a) {
-  scale(a);
-  return *this;
-}
-
-
-ZMatrix& ZMatrix::operator/=(const complex<double>& a) {
-  *this *= 1.0/a;
-  return *this;
-}
-
-
-ZMatrix ZMatrix::operator%(const ZMatrix& o) const {
-  const int l = mdim_;
-  const int m = ndim_;
-  assert(ndim_ == o.ndim());
-  const int n = o.mdim();
-  ZMatrix out(l, n, localized_);
-
-#ifdef HAVE_SCALAPACK
-  assert(localized_ == o.localized_);
-  if (localized_ || min(min(l,m),n) < blocksize__) {
-#endif
-    zgemm3m_("C", "N", l, n, m, 1.0, data(), m, o.data(), o.ndim_, 0.0, out.data(), l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<complex<double>[]> locala = getlocal();
-    unique_ptr<complex<double>[]> localb = o.getlocal();
-    unique_ptr<complex<double>[]> localc = out.getlocal();
-    pzgemm_("C", "N", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
-    out.setlocal_(localc);
-  }
-#endif
-
-  return out;
-}
-
-
-ZMatrix ZMatrix::operator^(const ZMatrix& o) const {
-  const int l = ndim_;
-  const int m = mdim_;
-  assert(mdim_ == o.mdim());
-  const int n = o.ndim();
-  ZMatrix out(l, n, localized_);
-
-#ifdef HAVE_SCALAPACK
-  assert(localized_ == o.localized_);
-  if (localized_ || min(min(l,m),n) < blocksize__) {
-#endif
-    zgemm3m_("N", "C", l, n, m, 1.0, data(), ndim_, o.data(), o.ndim_, 0.0, out.data(), l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<complex<double>[]> locala = getlocal();
-    unique_ptr<complex<double>[]> localb = o.getlocal();
-    unique_ptr<complex<double>[]> localc = out.getlocal();
-    pzgemm_("N", "C", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
-    out.setlocal_(localc);
-  }
-#endif
-
-  return out;
-}
-
-
 ZMatrix ZMatrix::operator/(const ZMatrix& o) const {
   ZMatrix out(*this);
   out /= o;
@@ -227,7 +78,7 @@ ZMatrix ZMatrix::operator/(const ZMatrix& o) const {
 
 
 ZMatrix& ZMatrix::operator/=(const ZMatrix& o) {
-  assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
+  assert(ndim() == o.ndim()); assert(mdim() == o.mdim());
   auto oiter = o.cbegin();
   for (auto& i : *this) {
     i /= *oiter++;
@@ -236,20 +87,21 @@ ZMatrix& ZMatrix::operator/=(const ZMatrix& o) {
 }
 
 
-void ZMatrix::diagonalize(double* eig) {
-  if (ndim_ != mdim_) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)");
+void ZMatrix::diagonalize(VecView eig) {
+  if (ndim() != mdim()) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)");
+  assert(eig.size() >= ndim());
 
   //assert that matrix is hermitian to ensure real eigenvalues
   assert((*this - *(this->transpose_conjg())).norm()/size() < 1e-10);
 
-  const int n = ndim_;
+  const int n = ndim();
   int info;
 #ifdef HAVE_SCALAPACK
   if (localized_  || n <= blocksize__) {
 #endif
     unique_ptr<complex<double>[]> work(new complex<double>[n*6]);
-    unique_ptr<double[]> rwork(new double[3*ndim_]);
-    zheev_("V", "L", n, data(), n, eig, work.get(), n*6, rwork.get(), info);
+    unique_ptr<double[]> rwork(new double[3*ndim()]);
+    zheev_("V", "L", n, data(), n, eig.data(), work.get(), n*6, rwork.get(), info);
     mpi__->broadcast(data(), n*n, 0);
 #ifdef HAVE_SCALAPACK
   } else {
@@ -266,11 +118,11 @@ void ZMatrix::diagonalize(double* eig) {
     unique_ptr<double[]> rwork(new double[lrwork]);
     unique_ptr<int[]> iwork(new int[liwork]);
 
-    pzheevd_("V", "U", n, local.get(), desc_.data(), eig, coeff.get(), desc_.data(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
+    pzheevd_("V", "U", n, local.get(), desc_.data(), eig.data(), coeff.get(), desc_.data(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
 
     const int lwork = round(max(131072.0, wsize.real()*2.0));
     unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
-    pzheevd_("V", "U", n, local.get(), desc_.data(), eig, coeff.get(), desc_.data(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
+    pzheevd_("V", "U", n, local.get(), desc_.data(), eig.data(), coeff.get(), desc_.data(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
     if(info) throw runtime_error("diagonalize failed");
 
     setlocal_(coeff);
@@ -281,15 +133,15 @@ void ZMatrix::diagonalize(double* eig) {
 
 
 tuple<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> ZMatrix::svd(double* sing) {
-  auto U = make_shared<ZMatrix>(ndim_, ndim_);
-  auto V = make_shared<ZMatrix>(mdim_, mdim_);
-  const int lwork = 10*max(ndim_, mdim_);
-  unique_ptr<double[]> rwork(new double[5*max(ndim_, mdim_)]);
+  auto U = make_shared<ZMatrix>(ndim(), ndim());
+  auto V = make_shared<ZMatrix>(mdim(), mdim());
+  const int lwork = 10*max(ndim(), mdim());
+  unique_ptr<double[]> rwork(new double[5*max(ndim(), mdim())]);
   unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
 
   unique_ptr<double[]> S;
   if (!sing) {
-    S = unique_ptr<double[]>(new double[min(ndim_, mdim_)]);
+    S = unique_ptr<double[]>(new double[min(ndim(), mdim())]);
     sing = S.get();
   }
 /*
@@ -300,7 +152,7 @@ tuple<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> ZMatrix::svd(double* sing) {
   complex<double>* ublock = U->data();
   complex<double>* vblock = V->data();
   int info = 0;
-  zgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, sing, ublock, ndim_, vblock, mdim_, work.get(), lwork, rwork.get(), info);
+  zgesvd_("A", "A", ndim(), mdim(), cblock, ndim(), sing, ublock, ndim(), vblock, mdim(), work.get(), lwork, rwork.get(), info);
   if (info != 0) throw runtime_error("zgesvd failed in ZMatrix::svd");
 
   return make_tuple(U, V);
@@ -323,32 +175,32 @@ shared_ptr<ZMatrix> ZMatrix::solve(shared_ptr<const ZMatrix> A, const int n) con
 
 
 shared_ptr<ZMatrix> ZMatrix::exp(const int deg) const {
-  auto out = make_shared<ZMatrix>(ndim_, mdim_, localized_);
+  auto out = make_shared<ZMatrix>(ndim(), mdim(), localized_);
   ZMatrix buf(*this);
-  assert(ndim_ == mdim_);
+  assert(ndim() == mdim());
 
   for (int i = deg; i != 1; --i) {
     const complex<double> inv = 1.0/static_cast<complex<double>>(i);
     buf *= inv;
-    for (int j = 0; j != ndim_; ++j) buf(j,j) += 1.0;
+    for (int j = 0; j != ndim(); ++j) buf(j,j) += 1.0;
     *out = (*this)*buf;
     if (i != 1) buf = *out;
   }
-  for (int j = 0; j != ndim_; ++j) out->element(j,j) += 1.0;
+  for (int j = 0; j != ndim(); ++j) out->element(j,j) += 1.0;
   return out;
 }
 
 
 shared_ptr<ZMatrix> ZMatrix::log(const int deg) const {
-  auto out = make_shared<ZMatrix>(ndim_, mdim_, localized_);
+  auto out = make_shared<ZMatrix>(ndim(), mdim(), localized_);
   ZMatrix buf(*this);
-  for (int j = 0; j != ndim_; ++j) buf(j,j) -= 1.0;
-  assert(ndim_ == mdim_);
+  for (int j = 0; j != ndim(); ++j) buf(j,j) -= 1.0;
+  assert(ndim() == mdim());
 
   for (int i = deg; i != 1; --i) {
     const complex<double> inv = -static_cast<complex<double>>(i-1)/static_cast<complex<double>>(i);
     buf *= inv;
-    for (int j = 0; j != ndim_; ++j) buf(j,j) += 1.0;
+    for (int j = 0; j != ndim(); ++j) buf(j,j) += 1.0;
     *out = (*this)*buf - buf;
     if (i != 1) buf = *out;
   }
@@ -357,9 +209,9 @@ shared_ptr<ZMatrix> ZMatrix::log(const int deg) const {
 
 
 unique_ptr<complex<double>[]> ZMatrix::diag() const {
-  if (ndim_ != mdim_) throw logic_error("illegal call of ZMatrix::diag()");
-  unique_ptr<complex<double>[]> out(new complex<double>[ndim_]);
-  for (int i = 0; i != ndim_; ++i) {
+  if (ndim() != mdim()) throw logic_error("illegal call of ZMatrix::diag()");
+  unique_ptr<complex<double>[]> out(new complex<double>[ndim()]);
+  for (int i = 0; i != ndim(); ++i) {
     out[i] = element(i,i);
   }
   return move(out);
@@ -367,21 +219,21 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 
 
 shared_ptr<ZMatrix> ZMatrix::transpose() const {
-  auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
-  blas::transpose(data(), ndim_, mdim_, out->data());
+  auto out = make_shared<ZMatrix>(mdim(), ndim(), localized_);
+  blas::transpose(data(), ndim(), mdim(), out->data());
   return out;
 }
 
 
 shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
-  auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
-  blas::transpose_conjg(data(), ndim_, mdim_, out->data());
+  auto out = make_shared<ZMatrix>(mdim(), ndim(), localized_);
+  blas::transpose_conjg(data(), ndim(), mdim(), out->data());
   return out;
 }
 
 
 void ZMatrix::antisymmetrize() {
-  assert(ndim_ == mdim_);
+  assert(ndim() == mdim());
 
   shared_ptr<ZMatrix> trans = transpose();
   *this -= *trans;
@@ -390,7 +242,7 @@ void ZMatrix::antisymmetrize() {
 
 
 void ZMatrix::hermite() {
-  assert(ndim_ == mdim_);
+  assert(ndim() == mdim());
 
   shared_ptr<ZMatrix> trans = transpose_conjg();
   *this += *trans;
@@ -399,14 +251,14 @@ void ZMatrix::hermite() {
 
 
 void ZMatrix::purify_unitary() {
-  assert(ndim_ == mdim_);
+  assert(ndim() == mdim());
   // Schmidt orthogonalization
-  for (int i = 0; i != ndim_; ++i) {
+  for (int i = 0; i != ndim(); ++i) {
     for (int j = 0; j != i; ++j) {
-      const complex<double> a = blas::dot_product(element_ptr(0,j), ndim_, element_ptr(0,i));
-      blas::ax_plus_y_n(-a, element_ptr(0,j), ndim_, element_ptr(0,i));
+      const complex<double> a = blas::dot_product(element_ptr(0,j), ndim(), element_ptr(0,i));
+      blas::ax_plus_y_n(-a, element_ptr(0,j), ndim(), element_ptr(0,i));
     }
-    const complex<double> b = 1.0/sqrt(blas::dot_product(element_ptr(0,i), ndim_, element_ptr(0,i)));
+    const complex<double> b = 1.0/sqrt(blas::dot_product(element_ptr(0,i), ndim(), element_ptr(0,i)));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](complex<double>& a) { a *= b; });
   }
 }
@@ -424,7 +276,7 @@ void ZMatrix::purify_redrotation(const int nclosed, const int nact, const int nv
   for (int g = 0; g != nvirt; ++g)
     for (int h = 0; h != nvirt; ++h)
       element(h+nclosed+nact,g+nclosed+nact)=0.0;
-  for (int i = 0; i != ndim_; ++i) {
+  for (int i = 0; i != ndim(); ++i) {
     for (int j = 0; j != i; ++j) {
       const complex<double> ele = (element(j,i) - conj(element(i,j))) * 0.5;
       element(j,i) = ele;
@@ -443,8 +295,8 @@ void ZMatrix::purify_idempotent(const ZMatrix& s) {
 
 // in-place matrix inverse (practically we use buffer area)
 void ZMatrix::inverse() {
-  assert(ndim_ == mdim_);
-  const int n = ndim_;
+  assert(ndim() == mdim());
+  const int n = ndim();
   shared_ptr<ZMatrix> buf = this->clone();
   buf->unit();
 
@@ -459,13 +311,13 @@ void ZMatrix::inverse() {
 
 // compute S^{-1/2}
 bool ZMatrix::inverse_half(const double thresh) {
-  assert(ndim_ == mdim_);
-  const int n = ndim_;
-  unique_ptr<double[]> vec(new double[n]);
-  diagonalize(vec.get());
+  assert(ndim() == mdim());
+  const int n = ndim();
+  VectorB vec(n);
+  diagonalize(vec);
 
   for (int i = 0; i != n; ++i) {
-    double s = vec[i] > thresh ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
+    double s = vec(i) > thresh ? 1.0/sqrt(sqrt(vec(i))) : 0.0;
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](complex<double>& a) { a *= s; });
   }
 
@@ -476,7 +328,7 @@ bool ZMatrix::inverse_half(const double thresh) {
 
   *this = *this ^ *this;
 
-  const bool lindep = std::any_of(vec.get(), vec.get() + n, [&thresh] (const double& e) { return e < thresh; });
+  const bool lindep = std::any_of(vec.begin(), vec.end(), [&thresh] (const double& e) { return e < thresh; });
   return !lindep;
 }
 
@@ -486,86 +338,39 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
   bool nolindep = out->inverse_half(thresh);
   if (!nolindep) {
     // use canonical orthogonalization. Start over
+    cout << "    * Using canonical orthogonalization due to linear dependency" << endl << endl;
     out = this->copy();
-    unique_ptr<double[]> eig(new double[ndim_]);
-    out->diagonalize(eig.get());
+    VectorB eig(ndim());
+    out->diagonalize(eig);
     int m = 0;
-    for (int i = 0; i != mdim_; ++i) {
+    for (int i = 0; i != mdim(); ++i) {
       if (eig[i] > thresh) {
-        const double e = 1.0/std::sqrt(eig[i]);
+        const double e = 1.0/std::sqrt(eig(i));
         transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](complex<double> a) { return a*e; });
       }
     }
-    out = out->slice(0,m);
+    out = out->slice_copy(0,m);
   }
   return out;
 }
 
 
-void ZMatrix::print(const string name, const size_t size) const {
-  cout << "++++ " + name + " ++++" << endl;
-  for (int i = 0; i != min(size,ndim_); ++i) {
-    for (int j = 0; j != min(size,mdim_); ++j) {
-      cout << fixed << setw(30) << setprecision(8) << data_[j * ndim_ + i]  << " ";
-    }
-    cout << endl;
-  }
-}
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-      element(k,i) = a * *(data + j*ndim + l);
-    }
-  }
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) {
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& data) {
+void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const MatView data) {
   assert(ndim == data.ndim() && mdim == data.mdim());
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data.data());
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    transform(&data(0,j), &data(0,j+1), element_ptr(ndim_i,i), [&a](const double& p) { return a*p; });
 }
 
 
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-      element(k,i) += a * *(data + j*ndim + l);
-    }
-  }
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) {
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& data) {
+void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const MatView data) {
   assert(ndim == data.ndim() && mdim == data.mdim());
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data.data());
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    blas::ax_plus_y_n(a, data.element_ptr(0, j), ndim, element_ptr(ndim_i, i));
 }
 
 
 shared_ptr<Matrix> ZMatrix::get_real_part() const {
-  auto out = make_shared<Matrix>(ndim_, mdim_, localized_);
+  auto out = make_shared<Matrix>(ndim(), mdim(), localized_);
   auto i = cbegin();
   for (auto& o : *out)
     o = real(*i++);
@@ -574,7 +379,7 @@ shared_ptr<Matrix> ZMatrix::get_real_part() const {
 
 
 shared_ptr<Matrix> ZMatrix::get_imag_part() const {
-  auto out = make_shared<Matrix>(ndim_, mdim_, localized_);
+  auto out = make_shared<Matrix>(ndim(), mdim(), localized_);
   auto i = cbegin();
   for (auto& o : *out)
     o = imag(*i++);
@@ -583,21 +388,12 @@ shared_ptr<Matrix> ZMatrix::get_imag_part() const {
 
 
 shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
-  auto out = make_shared<ZMatrix>(ndim_, mdim_, localized_);
+  auto out = make_shared<ZMatrix>(ndim(), mdim(), localized_);
   auto i = cbegin();
   for (auto& o : *out)
     o = conj(*i++);
   return out;
 }
-
-
-void ZMatrix::fill_upper_conjg() {
-  assert(ndim_ == mdim_);
-  for (size_t i = 0; i != mdim_; ++i)
-    for (size_t j = i+1; j != ndim_; ++j)
-      data_[i+j*ndim_] = conj(data_[j+i*ndim_]);
-}
-
 
 
 #ifdef HAVE_SCALAPACK
@@ -613,8 +409,8 @@ shared_ptr<const ZMatrix> ZMatrix::distmatrix() const {
 
 
 shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset, const complex<double> scale) const {
-  shared_ptr<const ZMatrix> tmp = this->slice(offset, offset+n);
-  auto out = make_shared<ZMatrix>(*tmp ^ *tmp);
+  const ZMatView tmp = this->slice(offset, offset+n);
+  auto out = make_shared<ZMatrix>(tmp ^ tmp);
   *out *= scale;
   return out;
 }
