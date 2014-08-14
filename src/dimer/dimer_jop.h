@@ -74,6 +74,9 @@ class DimerJop : public Jop {
     */
     template<int A, int B, int C, int D>
     std::shared_ptr<const Matrix> coulomb_matrix();
+    /// Same as non-const version but will not create the matrix if it doesn't already exist
+    template<int A, int B, int C, int D>
+    std::shared_ptr<const Matrix> coulomb_matrix() const;
 
   private:
     template <int unit> const int nact() const { return ( unit == 0 ? nact_.first : nact_.second ); }
@@ -121,6 +124,9 @@ std::shared_ptr<const Matrix> DimerJop::coulomb_matrix() {
     return out;
   }
 }
+
+template<int A, int B, int C, int D>
+std::shared_ptr<const Matrix> DimerJop::coulomb_matrix() const { return matrices_[A + 2*B + 4*C + 8*D]; }
 
 template <int A, int B, int C, int D> std::pair<int, int> DimerJop::index(int a, int b, int c, int d) const {
   int iA = 0, jB = 0;

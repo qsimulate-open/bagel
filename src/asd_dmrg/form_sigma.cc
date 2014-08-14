@@ -25,6 +25,7 @@
 
 #include <map>
 
+#include <src/math/sparsematrix.h>
 #include <src/asd_dmrg/form_sigma.h>
 #include <src/ras/form_sigma.h>
 #include <src/ras/apply_operator.h>
@@ -122,12 +123,12 @@ void FormSigmaProdRAS::interaction_terms(shared_ptr<const ProductRASCivec> cc, s
       ptime.tick_print("branch-2");
     }
 
-    if (do_aHT || do_aaHT || do_bHT) {
+    if (do_aHT || do_aaHT) {
       branch_3(cc_sector, sigma, blockops);
       ptime.tick_print("branch-3");
     }
 
-    if (do_bHT || do_aHT || do_bbHT || do_abHT) {
+    if (do_bHT || do_bbHT || do_abHT) {
       branch_4(cc_sector, sigma, blockops);
       ptime.tick_print("branch-4");
     }
@@ -137,15 +138,33 @@ void FormSigmaProdRAS::interaction_terms(shared_ptr<const ProductRASCivec> cc, s
     branch_6(cc_sector, sigma, blockops);
     ptime.tick_print("branch-5&6");
 
-    if (do_flipup || do_aET) {
+    if (do_flipup) {
       branch_7(cc_sector, sigma, blockops);
       ptime.tick_print("branch-7");
     }
 
-    if (do_flipdn || do_bET) {
+    if (do_flipdn) {
       branch_8(cc_sector, sigma, blockops);
       ptime.tick_print("branch-8");
     }
+
+#if 0
+    if (do_aET) {
+      compute_sigma_3aET(cc_sector, sigma, jop);
+    }
+
+    if (do_aHT) {
+      compute_sigma_3aHT(cc_sector, sigma, jop);
+    }
+
+    if (do_bET) {
+      compute_sigma_3bET(cc_sector, sigma, jop);
+    }
+
+    if (do_bHT) {
+      compute_sigma_3bHT(cc_sector, sigma, jop);
+    }
+#endif
   }
 }
 
@@ -175,13 +194,15 @@ void FormSigmaProdRAS::branch_1(shared_ptr<const RASBlockVectors> cc_sector, sha
   const BlockInfo singlestate(singleETkey.nelea, singleETkey.neleb, nccstates);
   RASBlockVectors sector_r(single_det, singlestate);
 
+  const int phase = (1 - (((cc_sector->det()->nelea()+cc_sector->det()->neleb())%2) << 1));
+
   for (int r = 0; r < rnorb; ++r) {
     sector_r.zero();
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::CreateAlpha}, {r});
     if (do_single)
-      dgemm_("N", "N", single_sector->ndim(), single_sector->mdim(), sector_r.mdim(), 1.0, sector_r.data(), sector_r.ndim(),
-                                                          &(*S)(0,0,r), S->extent(0), 1.0, single_sector->data(), single_sector->ndim());
+      dgemm_("N", "N", single_sector->ndim(), single_sector->mdim(), sector_r.mdim(), phase, sector_r.data(), sector_r.ndim(),
+                                                            &(*S)(0,0,r), S->extent(0), 1.0, single_sector->data(), single_sector->ndim());
 #if 0
     if (do_double) {
       // some extra stuff
@@ -214,18 +235,22 @@ void FormSigmaProdRAS::branch_2(shared_ptr<const RASBlockVectors> cc_sector, sha
   const int nccstates = cc_sector->nstates();
 
   shared_ptr<RASBlockVectors> b_sector = do_b ? sigma->sector(bETkey) : nullptr;
-  shared_ptr<const RASDeterminants> b_det = do_b ? b_sector->det() : sigma->space()->det(bETkey.nelea, bETkey.neleb);
+  shared_ptr<const RASDeterminants> b_det = do_b ? b_sector->det() : sigma->space()->det(cc_sector->det()->nelea(), cc_sector->det()->neleb()+1);
 
   const BlockInfo bstate(bETkey.nelea, bETkey.neleb, nccstates);
   RASBlockVectors sector_r(b_det, bstate);
+
+  assert(S->extent(0)==sector_r.mdim() && S->extent(1)==b_sector->mdim());
+
+  const int phase = (1 - (((cc_sector->det()->nelea()+cc_sector->det()->neleb())%2) << 1));
 
   for (int r = 0; r < rnorb; ++r) {
     sector_r.zero();
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::CreateBeta}, {r});
     if (do_b)
-      dgemm_("N", "N", b_sector->ndim(), b_sector->mdim(), sector_r.mdim(), 1.0, sector_r.data(), sector_r.ndim(),
-                                                &(*S)(0,0,r), S->extent(0), 1.0, b_sector->data(), b_sector->ndim());
+      dgemm_("N", "N", b_sector->ndim(), b_sector->mdim(), sector_r.mdim(), phase, sector_r.data(), sector_r.ndim(),
+                                                  &(*S)(0,0,r), S->extent(0), 1.0, b_sector->data(), b_sector->ndim());
 #if 0
     if (do_bb) {
       // some extra stuff
@@ -248,17 +273,13 @@ void FormSigmaProdRAS::branch_3(shared_ptr<const RASBlockVectors> cc_sector, sha
 
   const BlockKey aHTkey(cckey.nelea+1, cckey.neleb);
   const BlockKey aaHTkey(cckey.nelea+2, cckey.neleb);
-  const BlockKey bHTkey(cckey.nelea, cckey.neleb+1);
 
   const bool do_aHT = sigma->left()->contains(aHTkey);
   const bool do_aaHT = sigma->left()->contains(aaHTkey);
-  const bool do_bHT = sigma->left()->contains(bHTkey);
   // not sure how you could do a aa but not a a, but that's a different problem
-  assert(do_aHT || do_aaHT || do_bHT);
+  assert(do_aHT || do_aaHT);
 
   shared_ptr<const btas::Tensor3<double>> S = do_aHT ? blockops->S_a(cckey) : nullptr;
-  shared_ptr<const btas::TensorN<double,5>> Da = do_aHT ? blockops->D_a(cckey) : nullptr;
-  shared_ptr<const btas::TensorN<double,5>> Db = do_bHT ? blockops->D_b(cckey) : nullptr;
   shared_ptr<const btas::Tensor4<double>> P = do_aaHT ? blockops->P_aa(aaHTkey) : nullptr;
 
   const int nccstates = cc_sector->nstates();
@@ -269,21 +290,23 @@ void FormSigmaProdRAS::branch_3(shared_ptr<const RASBlockVectors> cc_sector, sha
   const BlockInfo astate(aHTkey.nelea, aHTkey.neleb, nccstates);
   RASBlockVectors sector_r(a_det, astate);
 
+  const int phase = (1 - (((sector_r.det()->nelea()+sector_r.det()->neleb())%2) << 1));
+
   for (int r = 0; r < rnorb; ++r) {
     sector_r.zero();
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::AnnihilateAlpha}, {r});
     if (do_aHT) {
-      dgemm_("N", "T", a_sector->ndim(), a_sector->mdim(), sector_r.mdim(), 1.0, sector_r.data(), sector_r.ndim(),
-                                                &(*S)(0,0,r), S->extent(0), 1.0, a_sector->data(), a_sector->ndim());
-
-      // plus some stuff on Da and Db
+      dgemm_("N", "T", a_sector->ndim(), a_sector->mdim(), sector_r.mdim(), phase, sector_r.data(), sector_r.ndim(),
+                                                  &(*S)(0,0,r), S->extent(0), 1.0, a_sector->data(), a_sector->ndim());
     }
+
 #if 0
-    if (do_double) {
+    if (do_aaHT) {
       // some extra stuff
     }
 #endif
+
   }
 }
 
@@ -295,22 +318,18 @@ void FormSigmaProdRAS::branch_4(shared_ptr<const RASBlockVectors> cc_sector, sha
   // S_beta
   const BlockKey cckey = cc_sector->left_state().key();
 
-  const BlockKey aHTkey(cckey.nelea+1, cckey.neleb);
   const BlockKey bHTkey(cckey.nelea, cckey.neleb+1);
   const BlockKey bbHTkey(cckey.nelea, cckey.neleb+2);
   const BlockKey abHTkey(cckey.nelea+1, cckey.neleb+1);
 
-  const bool do_aHT = sigma->left()->contains(aHTkey);
   const bool do_bHT = sigma->left()->contains(bHTkey);
   const bool do_bbHT = sigma->left()->contains(bbHTkey);
   const bool do_abHT = sigma->left()->contains(abHTkey);
-  assert(do_aHT || do_bHT || do_bbHT || do_abHT);
+  assert(do_bHT || do_bbHT || do_abHT);
 
   shared_ptr<const btas::Tensor3<double>> S = do_bHT ? blockops->S_b(cckey) : nullptr;
-  shared_ptr<const btas::TensorN<double,5>> D_b = do_bHT ? blockops->D_b(cckey) : nullptr;
   shared_ptr<const btas::Tensor4<double>> P_bb = do_bbHT ? blockops->P_bb(bbHTkey) : nullptr;
   shared_ptr<const btas::Tensor4<double>> P_ab = do_abHT ? blockops->P_ab(abHTkey) : nullptr;
-  shared_ptr<const btas::TensorN<double,5>> D_a = do_aHT ? blockops->D_a(cckey) : nullptr;
 
   const int nccstates = cc_sector->nstates();
 
@@ -320,20 +339,19 @@ void FormSigmaProdRAS::branch_4(shared_ptr<const RASBlockVectors> cc_sector, sha
   const BlockInfo bstate(bHTkey.nelea, bHTkey.neleb, nccstates);
   RASBlockVectors sector_r(b_det, bstate);
 
+  assert(S->extent(1)==sector_r.mdim() && S->extent(0)==b_sector->mdim());
+
+  const int phase = (1 - (((sector_r.det()->nelea()+sector_r.det()->neleb())%2) << 1));
+
   for (int r = 0; r < rnorb; ++r) {
     sector_r.zero();
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::AnnihilateBeta}, {r});
     if (do_bHT) {
-      dgemm_("N", "T", b_sector->ndim(), b_sector->mdim(), sector_r.mdim(), 1.0, sector_r.data(), sector_r.ndim(),
-                                                &(*S)(0,0,r), S->extent(0), 1.0, b_sector->data(), b_sector->ndim());
-      // plus some displacement stuff
+      dgemm_("N", "T", b_sector->ndim(), b_sector->mdim(), sector_r.mdim(), phase, sector_r.data(), sector_r.ndim(),
+                                                  &(*S)(0,0,r), S->extent(0), 1.0, b_sector->data(), b_sector->ndim());
     }
 #if 0
-    if (do_aHT) {
-      // some extra stuff
-    }
-
     if (do_bbHT) {
       // some extra stuff
     }
@@ -366,7 +384,6 @@ void FormSigmaProdRAS::branch_5(shared_ptr<const RASBlockVectors> cc_sector, sha
       dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qaa)(0,0,s,r), Qaa->extent(0),
                                                                                         1.0, sigma_sector->data(), sigma_sector->ndim());
 
-      // Then possibly some ET stuff
     }
   }
 }
@@ -392,7 +409,6 @@ void FormSigmaProdRAS::branch_6(shared_ptr<const RASBlockVectors> cc_sector, sha
       dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qbb)(0,0,s,r), Qbb->extent(0),
                                                                                         1.0, sigma_sector->data(), sigma_sector->ndim());
 
-      // Then possibly some ET stuff
     }
   }
 
@@ -405,17 +421,13 @@ void FormSigmaProdRAS::branch_7(shared_ptr<const RASBlockVectors> cc_sector, sha
   const int nccstates = cc_sector->mdim();
   const BlockKey cckey = cc_sector->left_state().key();
   const BlockKey flipkey(cckey.nelea-1, cckey.neleb+1);
-  const BlockKey bETkey(cckey.nelea-1, cckey.neleb);
 
-  // figure out which sections to do
-  const bool do_flip = sigma->left()->contains(flipkey);
-  const bool do_bET = sigma->left()->contains(bETkey);
-  assert(do_flip || do_bET);
+  assert(sigma->left()->contains(flipkey));
 
-  shared_ptr<const RASDeterminants> flipdet = do_flip ? sigma->sector(flipkey)->det() : sigma->space()->det(cc_sector->det()->nelea()+1,cc_sector->det()->neleb()-1);
-  shared_ptr<const btas::Tensor4<double>> Qab = do_flip ? blockops->Q_ab(cckey) : nullptr;
+  shared_ptr<const RASDeterminants> flipdet = sigma->sector(flipkey)->det();
+  shared_ptr<const btas::Tensor4<double>> Qab = blockops->Q_ab(cckey);
 
-  shared_ptr<RASBlockVectors> sigma_sector = do_flip ? sigma->sector(flipkey) : nullptr;
+  shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(flipkey);
 
   RASBlockVectors sector_rs(flipdet, BlockInfo(flipkey.nelea, flipkey.neleb, nccstates));
   for (int r = 0; r < rnorb; ++r) {
@@ -424,14 +436,8 @@ void FormSigmaProdRAS::branch_7(shared_ptr<const RASBlockVectors> cc_sector, sha
       sector_rs.zero();
       for (int ist = 0; ist < nccstates; ++ist)
         apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateBeta,GammaSQ::CreateAlpha}, {s, r});
-      if (do_flip)
-        dgemm_("N", "T", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,s,r), Qab->extent(0),
-                                                                                       1.0, sigma_sector->data(), sigma_sector->ndim());
-#if 0
-      if (do_bET) {
-        // some stuff
-      }
-#endif
+      dgemm_("N", "T", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,s,r), Qab->extent(0),
+                                                                                     1.0, sigma_sector->data(), sigma_sector->ndim());
     }
   }
 }
@@ -443,17 +449,12 @@ void FormSigmaProdRAS::branch_8(shared_ptr<const RASBlockVectors> cc_sector, sha
   const int nccstates = cc_sector->mdim();
   const BlockKey cckey = cc_sector->left_state().key();
   const BlockKey flipkey(cckey.nelea+1, cckey.neleb-1);
-  const BlockKey bETkey(cckey.nelea, cckey.neleb-1);
+  assert(sigma->left()->contains(flipkey));
 
-  // figure out which sections to do
-  const bool do_flip = sigma->left()->contains(flipkey);
-  const bool do_bET = sigma->left()->contains(bETkey);
-  assert(do_flip || do_bET);
+  shared_ptr<const RASDeterminants> flipdet = sigma->sector(flipkey)->det();
+  shared_ptr<const btas::Tensor4<double>> Qab = blockops->Q_ab(flipkey);
 
-  shared_ptr<const RASDeterminants> flipdet = do_flip ? sigma->sector(flipkey)->det() : sigma->space()->det(cc_sector->det()->nelea()-1,cc_sector->det()->neleb()+1);
-  shared_ptr<const btas::Tensor4<double>> Qab = do_flip ? blockops->Q_ab(flipkey) : nullptr;
-
-  shared_ptr<RASBlockVectors> sigma_sector = do_flip ? sigma->sector(flipkey) : nullptr;
+  shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(flipkey);
 
   RASBlockVectors sector_rs(flipdet, BlockInfo(flipkey.nelea, flipkey.neleb, nccstates));
   for (int r = 0; r < rnorb; ++r) {
@@ -462,14 +463,334 @@ void FormSigmaProdRAS::branch_8(shared_ptr<const RASBlockVectors> cc_sector, sha
       sector_rs.zero();
       for (int ist = 0; ist < nccstates; ++ist)
         apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateAlpha,GammaSQ::CreateBeta}, {s, r});
-      if (do_flip)
-        dgemm_("N", "N", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,r,s), Qab->extent(0),
-                                                                                       1.0, sigma_sector->data(), sigma_sector->ndim());
-#if 0
-      if (do_aET) {
-        // some stuff
+
+      dgemm_("N", "N", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,r,s), Qab->extent(0),
+                                                                                     1.0, sigma_sector->data(), sigma_sector->ndim());
+    }
+  }
+}
+
+void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const DimerJop> jop) const {
+  const BlockKey aETkey(cc_sector->left_state().key().nelea-1, cc_sector->left_state().key().neleb);
+  assert(sigma->left()->contains(aETkey));
+  shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(aETkey);
+  const int nccstates = cc_sector->mdim();
+  const BlockInfo tmpinfo(aETkey.nelea, aETkey.neleb, nccstates);
+  RASBlockVectors tmp_sector(sigma_sector->det(), tmpinfo);
+
+  const int lnorb = jop->monomer_jop<1>()->nocc();
+  const int rnorb = jop->monomer_jop<0>()->nocc();
+
+  shared_ptr<const Matrix> J = jop->coulomb_matrix<0,1,0,0>();
+  shared_ptr<const btas::Tensor3<double>> gamma_a = sigma->left()->coupling({GammaSQ::CreateAlpha}).at({cc_sector->left_state(), aETkey}).data;
+  for (int p = 0; p < lnorb; ++p ) {
+    tmp_sector.zero();
+    auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
+    copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
+    for (int ist = 0; ist < nccstates; ++ist) {
+      resolve_S_adag_adag_a(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
+      resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
+    }
+
+    dgemm_("N", "N", sigma_sector->ndim(), sigma_sector->mdim(), cc_sector->mdim(), 1.0, tmp_sector.data(), tmp_sector.ndim(),
+                                            &(*gamma_a)(0,0,p), gamma_a->extent(0), 1.0, sigma_sector->data(), sigma_sector->ndim());
+  }
+}
+
+void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const DimerJop> jop) const {
+  const BlockKey aHTkey(cc_sector->left_state().key().nelea+1, cc_sector->left_state().key().neleb);
+  assert(sigma->left()->contains(aHTkey));
+  shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(aHTkey);
+  const int nccstates = cc_sector->mdim();
+  const BlockInfo tmpinfo(aHTkey.nelea, aHTkey.neleb, nccstates);
+  RASBlockVectors tmp_sector(sigma_sector->det(), tmpinfo);
+
+  const int lnorb = jop->monomer_jop<1>()->nocc();
+  const int rnorb = jop->monomer_jop<0>()->nocc();
+
+  shared_ptr<const Matrix> J = jop->coulomb_matrix<0,1,0,0>();
+  shared_ptr<const btas::Tensor3<double>> gamma_a = sigma->left()->coupling({GammaSQ::CreateAlpha}).at({aHTkey, cc_sector->left_state()}).data;
+  for (int p = 0; p < lnorb; ++p ) {
+    tmp_sector.zero();
+    auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
+    copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
+    for (int ist = 0; ist < nccstates; ++ist) {
+      resolve_S_adag_a_a(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
+      resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
+    }
+
+    dgemm_("N", "T", sigma_sector->ndim(), sigma_sector->mdim(), cc_sector->mdim(), 1.0, tmp_sector.data(), tmp_sector.ndim(),
+                                            &(*gamma_a)(0,0,p), gamma_a->extent(0), 1.0, sigma_sector->data(), sigma_sector->ndim());
+  }
+}
+
+void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const DimerJop> jop) const {
+  const BlockKey bETkey(cc_sector->left_state().key().nelea, cc_sector->left_state().key().neleb-1);
+  assert(sigma->left()->contains(bETkey));
+  shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(bETkey);
+  const int nccstates = cc_sector->mdim();
+  const BlockInfo tmpinfo(bETkey.nelea, bETkey.neleb, nccstates);
+  RASBlockVectors tmp_sector(sigma_sector->det(), tmpinfo);
+
+  const int lnorb = jop->monomer_jop<1>()->nocc();
+  const int rnorb = jop->monomer_jop<0>()->nocc();
+
+  shared_ptr<const Matrix> J = jop->coulomb_matrix<0,1,0,0>();
+  shared_ptr<const btas::Tensor3<double>> gamma_b = sigma->left()->coupling({GammaSQ::CreateBeta}).at({cc_sector->left_state(), bETkey}).data;
+  for (int p = 0; p < lnorb; ++p ) {
+    tmp_sector.zero();
+    auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
+    copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
+    for (int ist = 0; ist < nccstates; ++ist) {
+      auto cc_trans = cc_sector->civec(ist).transpose();
+      auto tmp_trans = tmp_sector.civec(ist).transpose();
+      resolve_S_adag_adag_a(*cc_trans, *tmp_trans, Jp);
+      resolve_S_abb(*cc_trans, *tmp_trans, Jp);
+      tmp_sector.civec(ist).ax_plus_y(1.0, *tmp_trans);
+    }
+
+    dgemm_("N", "N", sigma_sector->ndim(), sigma_sector->mdim(), cc_sector->mdim(), 1.0, tmp_sector.data(), tmp_sector.ndim(),
+                                            &(*gamma_b)(0,0,p), gamma_b->extent(0), 1.0, sigma_sector->data(), sigma_sector->ndim());
+  }
+}
+
+
+void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const DimerJop> jop) const {
+  const BlockKey bHTkey(cc_sector->left_state().key().nelea, cc_sector->left_state().key().neleb+1);
+  assert(sigma->left()->contains(bHTkey));
+  shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(bHTkey);
+  const int nccstates = cc_sector->mdim();
+  const BlockInfo tmpinfo(bHTkey.nelea, bHTkey.neleb, nccstates);
+  RASBlockVectors tmp_sector(sigma_sector->det(), tmpinfo);
+
+  const int lnorb = jop->monomer_jop<1>()->nocc();
+  const int rnorb = jop->monomer_jop<0>()->nocc();
+
+  shared_ptr<const Matrix> J = jop->coulomb_matrix<0,1,0,0>();
+  shared_ptr<const btas::Tensor3<double>> gamma_b = sigma->left()->coupling({GammaSQ::CreateBeta}).at({bHTkey, cc_sector->left_state()}).data;
+  for (int p = 0; p < lnorb; ++p ) {
+    tmp_sector.zero();
+    auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
+    copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
+    for (int ist = 0; ist < nccstates; ++ist) {
+      auto cc_trans = cc_sector->civec(ist).transpose();
+      auto tmp_trans = tmp_sector.civec(ist).transpose();
+      resolve_S_adag_a_a(*cc_trans, *tmp_trans, Jp);
+      resolve_S_abb(*cc_trans, *tmp_trans, Jp);
+      tmp_sector.civec(ist).ax_plus_y(1.0, *tmp_trans);
+    }
+
+    dgemm_("N", "T", sigma_sector->ndim(), sigma_sector->mdim(), cc_sector->mdim(), 1.0, tmp_sector.data(), tmp_sector.ndim(),
+                                            &(*gamma_b)(0,0,p), gamma_b->extent(0), 1.0, sigma_sector->data(), sigma_sector->ndim());
+  }
+}
+
+
+// resolves (S_p)_alpha = \sum_{ijk} (pk|ij) (k^+)_alpha i^+_alpha j_alpha
+void FormSigmaProdRAS::resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView sigma, shared_ptr<btas::Tensor3<double>> Jp) const {
+  shared_ptr<const RASDeterminants> sdet = cc.det();
+  shared_ptr<const RASDeterminants> tdet = sigma.det();
+
+  const int norb = sdet->norb();
+  assert(norb == tdet->norb());
+
+  const size_t sla = sdet->lena();
+
+  // k^+_alpha i^+_alpha j_alpha portion. the way easy part
+  Matrix F(sla, batchsize_);
+  for (auto& targetspace : *tdet->stringspacea()) {
+    const int nbatches = (targetspace->size()-1)/batchsize_ + 1;
+    for (int batch = 0; batch < nbatches; ++batch) {
+      const size_t batchstart = batch*batchsize_;
+      const size_t batchlength = min(static_cast<size_t>(batchsize_), targetspace->size() - batchstart);
+
+      F.zero();
+
+      // first build an F
+      for (size_t ia = 0; ia < batchlength; ++ia) {
+        double* const fdata = F.element_ptr(0, ia);
+        const bitset<nbit__> tabit = targetspace->strings(ia);
+        for (int k = 0; k < norb; ++k) {
+          if (!tabit[k]) continue;
+          bitset<nbit__> tmpbit = tabit ^ bitset<nbit__>(1 << k);
+          if (!sdet->allowed(tmpbit)) continue;
+          const int kphase = sign(tmpbit, k);
+          const size_t tmpia = sdet->lexical_offset<0>(tmpbit);
+          for (auto& iterij : sdet->phia(tmpia)) {
+            const int i = iterij.ij/norb;
+            const int j = iterij.ij%norb;
+            if (i > k)
+              fdata[iterij.source] += static_cast<double>(kphase*iterij.sign) * ((*Jp)(j, i, k) - (*Jp)(j, k, i));
+          }
+        }
       }
-#endif
+
+      // Sp(beta, alpha) += \sum_alpha' C(beta, alpha') * F(alpha', alpha)
+      for (auto& ccblock : cc.blocks()) {
+        if (!ccblock) continue;
+        if (!tdet->allowed(targetspace, ccblock->stringsb())) continue;
+        shared_ptr<RASBlock<double>> target_block = sigma.block(ccblock->stringsb(), targetspace);
+
+        assert(ccblock->lenb() == target_block->lenb());
+        dgemm_("N", "N", target_block->lenb(), batchlength, ccblock->lena(), 1.0, ccblock->data(), ccblock->lenb(),
+                  F.element_ptr(ccblock->stringsa()->offset(), 0), F.ndim(), 1.0, target_block->data() + batchstart * target_block->lenb(), target_block->lenb());
+      }
+    }
+  }
+}
+
+// resolves (S_p)_alpha = \sum_{ijk} (pk|ij) (i^+)_alpha j_alpha k_alpha
+void FormSigmaProdRAS::resolve_S_adag_a_a(const RASCivecView cc, RASCivecView sigma, shared_ptr<btas::Tensor3<double>> Jp) const {
+  shared_ptr<const RASDeterminants> sdet = cc.det();
+  shared_ptr<const RASDeterminants> tdet = sigma.det();
+
+  const int norb = sdet->norb();
+  assert(norb == tdet->norb());
+
+  const size_t sla = sdet->lena();
+
+  // i^+_alpha j^_alpha k_alpha portion. the way easy part
+  Matrix F(sla, batchsize_);
+  for (auto& targetspace : *tdet->stringspacea()) {
+    const int nbatches = (targetspace->size()-1)/batchsize_ + 1;
+    for (int batch = 0; batch < nbatches; ++batch) {
+      const size_t batchstart = batch*batchsize_;
+      const size_t batchlength = min(static_cast<size_t>(batchsize_), targetspace->size() - batchstart);
+
+      F.zero();
+
+      // first build an F
+      const size_t offset = batchstart + targetspace->offset();
+      for (size_t ia = 0; ia < batchlength; ++ia) {
+        double* const fdata = F.element_ptr(0, ia);
+        for (auto& iterij : tdet->phia(ia + offset)) {
+          const bitset<nbit__> tmpbit = tdet->string_bits_a(iterij.source);
+          const int i = iterij.ij/norb;
+          const int j = iterij.ij%norb;
+          for (int k = j+1; k < norb; ++k) {
+            if (tmpbit[k]) continue;
+            const bitset<nbit__> sabit = tmpbit ^ bitset<nbit__>(1 << k);
+            if (!sdet->allowed(sabit)) continue;
+            const int kphase = sign(tmpbit, k);
+            const size_t source_ia = sdet->lexical_offset<0>(sabit);
+            fdata[source_ia] += static_cast<double>(kphase*iterij.sign) * ((*Jp)(k, j, i) - (*Jp)(j, k, i));
+          }
+        }
+      }
+
+      // Sp(beta, alpha) += \sum_alpha' C(beta, alpha') * F(alpha', alpha)
+      for (auto& ccblock : cc.blocks()) {
+        if (!ccblock) continue;
+        if (!tdet->allowed(targetspace, ccblock->stringsb())) continue;
+        shared_ptr<RASBlock<double>> target_block = sigma.block(ccblock->stringsb(), targetspace);
+
+        assert(ccblock->lenb() == target_block->lenb());
+        dgemm_("N", "N", target_block->lenb(), batchlength, ccblock->lena(), 1.0, ccblock->data(), ccblock->lenb(),
+                  F.element_ptr(ccblock->stringsa()->offset(), 0), F.ndim(), 1.0, target_block->data() + batchstart * target_block->lenb(), target_block->lenb());
+      }
+    }
+  }
+}
+
+// computes \sum_{ijk} (k)_alpha i^+_beta j_beta (pk|ij)
+// (k) can be creation or annihilation and is determined based on the electron count of sigma
+void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, shared_ptr<btas::Tensor3<double>> Jp) const {
+  shared_ptr<const RASDeterminants> sdet = cc.det();
+  shared_ptr<const RASDeterminants> tdet = sigma.det();
+
+  assert(abs(sdet->nelea()-tdet->nelea())==1);
+  assert(sdet->neleb()==tdet->neleb());
+
+  const size_t na_target = tdet->nelea();
+
+  const int norb = sdet->norb();
+  assert(norb == tdet->norb());
+
+  // k^?_alpha i^+_beta j_beta portion. the harder part
+  for (int k = 0; k < norb; ++k) {
+    // map<taga, map<tagb, pair<Cprime, list of target destinations>>>
+    map<int, map<int, shared_ptr<Matrix>>> Cp_map;
+    map<int, vector<tuple<size_t, bitset<nbit__>>>> RI_map;
+
+    // gathering operations
+    for (auto& ispace : *sdet->stringspacea()) {
+      vector<tuple<size_t, int, size_t>> kmap;
+      for (size_t ia = 0; ia < ispace->size(); ++ia) {
+        const bitset<nbit__> sabit = sdet->string_bits_a(ia+ispace->offset());
+        const bitset<nbit__> tabit = sabit ^ bitset<nbit__>(1 << k); // flips occupation k
+        // counting nelea should tell me whether flipping k was in the right direction or not
+        if (tabit.count()==na_target) {
+          // if too many holes or particles
+          if (!tdet->allowed(tabit)) continue;
+
+          const int phase = sign(tabit, k);
+          const size_t target_lex = tdet->lexical_offset<0>(tabit);
+          kmap.emplace_back(ia, phase, target_lex);
+          RI_map[ispace->tag()].emplace_back(target_lex, tabit);
+        }
+      }
+
+      for (auto& iblock : cc.allowed_blocks<0>(ispace)) {
+        auto cp_block = make_shared<Matrix>(iblock->lenb(), kmap.size());
+        vector<size_t> destinations;
+        destinations.reserve(kmap.size());
+        for (size_t ia = 0; ia < kmap.size(); ++ia) {
+          blas::ax_plus_y_n(get<1>(kmap[ia]), iblock->data() + iblock->lenb()*get<0>(kmap[ia]), iblock->lenb(), cp_block->element_ptr(0, ia));
+          destinations.push_back(get<2>(kmap[ia]));
+        }
+        Cp_map[ispace->tag()].emplace(iblock->stringsb()->tag(), cp_block);
+      }
+    }
+
+    for (auto& target_bspace : *tdet->stringspaceb()) {
+      for (auto& aspace_RI : RI_map) {
+        vector<int> reduced_positions;
+        vector<tuple<size_t,bitset<nbit__>>> reduced_RI;
+        int current = 0;
+        for (auto& i : aspace_RI.second) {
+          shared_ptr<const RASString> target_aspace = tdet->space<0>(get<1>(i));
+          if (tdet->allowed(target_bspace, target_aspace)) {
+            reduced_positions.push_back(current);
+            reduced_RI.push_back(i);
+          }
+          ++current;
+        }
+
+        if (reduced_RI.empty()) continue;
+
+        for (auto& source_bspace : *sdet->stringspaceb()) {
+          if (Cp_map.find(source_bspace->tag())==Cp_map.end()) continue;
+          shared_ptr<const Matrix> full_cp = Cp_map[aspace_RI.first][source_bspace->tag()];
+          auto reduced_cp = make_shared<Matrix>(full_cp->ndim(), reduced_RI.size());
+          current = 0;
+          for (auto& i : reduced_positions)
+            copy_n(full_cp->element_ptr(0,i), full_cp->ndim(), reduced_cp->element_ptr(0,current++));
+
+          // Now build an F matrix in sparse format
+          map<pair<int, int>, double> sparse_coords;
+          for (size_t ib = 0; ib < target_bspace->size(); ++ib) {
+            for (auto& iterij : tdet->phib(ib)) {
+              if (iterij.source < source_bspace->offset() || iterij.source >= source_bspace->offset()+source_bspace->size()) continue;
+              const int i = iterij.ij/norb;
+              const int j = iterij.ij%norb;
+              sparse_coords[{ib,iterij.source-source_bspace->offset()}] += iterij.sign * (*Jp)(j,i,k);
+            }
+          }
+
+          if (!sparse_coords.empty()) {
+            SparseMatrix sparseF(target_bspace->size(), tdet->lenb(), sparse_coords);
+            Matrix V(sparseF * *reduced_cp);
+
+            // scatter
+            current = 0;
+            for (auto& ireduced : reduced_RI) {
+              shared_ptr<const RASString> target_aspace = tdet->space<0>(get<1>(ireduced));
+              shared_ptr<RASBlock<double>> target_block = sigma.block(target_bspace, target_aspace);
+              blas::ax_plus_y_n(1.0, V.element_ptr(0,current++), V.ndim(), target_block->data() + target_block->lenb()*(get<0>(ireduced)-target_bspace->offset()));
+            }
+          }
+        }
+      }
     }
   }
 }

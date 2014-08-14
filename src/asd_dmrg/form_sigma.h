@@ -47,22 +47,45 @@ class FormSigmaProdRAS {
     void pure_block_and_ras(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop) const;
     void interaction_terms(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop) const;
 
+    // TODO: rename these something that makes sense
+
     /// Branch 1: \f$\alpha^\dagger, \alpha^\dagger\alpha^\dagger\f$
     void branch_1(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
     /// Branch 2: \f$\beta^\dagger, \alpha^\dagger\beta^\dagger\f$
     void branch_2(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
-    /// Branch 3: \f$\alpha, \alpha\alpha, \alpha^\dagger\alpha\alpha, \beta^\dagger \alpha\alpha, (\alpha^\dagger\beta\alpha)\f$
+    /// Branch 3: \f$\alpha, \alpha\alpha \f$
     void branch_3(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
-    /// Branch 4: \f$\beta, \alpha\beta, \beta\beta, (\beta^\dagger\alpha\beta), \beta^\dagger\beta\beta, (\alpha^\dagger\alpha\beta)\f$
+    /// Branch 4: \f$\beta, \alpha\beta, \beta\beta\f$
     void branch_4(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
-    /// Branch 5: \f$\alpha^\dagger\alpha, \alpha^\dagger\alpha^\dagger\alpha, (\beta^\dagger\alpha^\dagger\alpha)\f$
+    /// Branch 5: \f$\alpha^\dagger\alpha\f$
     void branch_5(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
-    /// Branch 6: \f$\beta^\dagger\beta, \beta^\dagger\beta^\dagger\beta, (\alpha^\dagger\beta^\dagger\beta)\f$
+    /// Branch 6: \f$\beta^\dagger\beta\f$
     void branch_6(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
-    /// Branch 7: \f$\alpha^\dagger\beta, (\beta^\dagger\alpha^\dagger\beta)\f$
+    /// Branch 7: \f$\alpha^\dagger\beta\f$
     void branch_7(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
-    /// Branch 8: \f$\beta^\dagger\alpha, (\alpha^\dagger\beta^\dagger\alpha)\f$
+    /// Branch 8: \f$\beta^\dagger\alpha\f$
     void branch_8(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
+
+    /// Computes 3-operator aET terms
+    void compute_sigma_3aET(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const DimerJop> jop) const;
+
+    /// Computes 3-operator aHT terms
+    void compute_sigma_3aHT(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const DimerJop> jop) const;
+
+    /// Computes 3-operator bET terms
+    void compute_sigma_3bET(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const DimerJop> jop) const;
+
+    /// Computes 3-operator bHT terms
+    void compute_sigma_3bHT(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const DimerJop> jop) const;
+
+    /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\alpha j^\dagger_\alpha k_\alpha (jk|pi)f$
+    void resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<btas::Tensor3<double>> Jp) const;
+
+    /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\alpha j_\alpha k_\alpha (ij|pk)f$
+    void resolve_S_adag_a_a(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<btas::Tensor3<double>> Jp) const;
+
+    /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\beta j_\beta k_\alpha (ij|pk)f$ and \f$\hat S_p = \sum_{i,j,k}
+    void resolve_S_abb(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<btas::Tensor3<double>> Jp) const;
 };
 
 }

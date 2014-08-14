@@ -168,11 +168,12 @@ void FormSigmaRAS::sigma_aa(const RASCivecView cc, RASCivecView sigma, const dou
   const int norb = det->norb();
   const size_t la = det->lena();
 
+  Matrix F(la, batchsize_);
+
   // Let's just get it working first, thread it later
   for (auto& ispace : *det->stringspacea()) {
     // Do this multiplication batchwise
     const int nbatches = (ispace->size() - 1)/batchsize_ + 1;
-    Matrix F(la, batchsize_);
     for (int batch = 0; batch < nbatches; ++batch) {
       const size_t batchstart = batch * batchsize_;
       const size_t batchlength = min(static_cast<size_t>(batchsize_), ispace->size() - batchstart);
