@@ -110,6 +110,7 @@ void ZSuperCI::compute() {
       } else {
         print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
       }
+      rms_grad_ = gradient;
       break;
     }
 
@@ -164,6 +165,12 @@ void ZSuperCI::compute() {
 
     // print out...
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+    if (iter == max_iter_-1) {
+      rms_grad_ = gradient;
+      cout << " " << endl;
+      if (real(rms_grad_) > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
+      cout << "    * Max iteration reached in the ZCASSCF macro interations. *     " << endl << endl;
+    }
 
   }
 

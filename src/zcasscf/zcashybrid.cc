@@ -51,8 +51,8 @@ void ZCASHYBRID::compute() {
     active_method = make_shared<ZSuperCI>(idata, geom_, ref_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
-    double grad = dynamic_pointer_cast<ZCASSCF>(active_method)->rms_grad();
-    if (grad < global_thresh) {
+    complex<double> grad = dynamic_pointer_cast<ZCASSCF>(active_method)->rms_grad();
+    if (real(grad) < global_thresh) {
       cout << "      * ZCASSCF converged *    " << endl;
       return;
     }
@@ -66,11 +66,13 @@ void ZCASHYBRID::compute() {
     active_method = make_shared<ZCASBFGS>(idata, geom_, refout_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
-    double grad = dynamic_pointer_cast<ZCASSCF>(active_method)->rms_grad();
-    if (grad < global_thresh) {
-      cout << "      * ZCASSCF converged *    " << endl;
+    complex<double> grad = dynamic_pointer_cast<ZCASSCF>(active_method)->rms_grad();
+    if (real(grad) < global_thresh) {
+      cout << " " << endl;
+      cout << "    * ZCASSCF converged *    " << endl;
     } else {
-      cout << "      * ZCASSCF did NOT converge *    " << endl;
+      cout << " " << endl;
+      cout << "    * ZCASSCF did NOT converge *    " << endl;
     }
   }
 

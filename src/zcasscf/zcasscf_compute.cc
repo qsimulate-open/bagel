@@ -246,8 +246,10 @@ void ZCASBFGS::compute() {
     if ((ele_conv && only_electrons) || (pos_conv && ele_conv)) {
       cout << " " << endl;
       cout << "    * ZCASBFGS optimization converged    " << endl << endl;
+      rms_grad_ = gradient;
       break;
     }
+    rms_grad_ = gradient;
   }
   if (energy_.size() == 0)
     optimize_electrons == true ? energy_.push_back(ele_energy.back()) : energy_.push_back(pos_energy.back());
