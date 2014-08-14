@@ -30,7 +30,7 @@
 #include <src/parallel/resources.h>
 #include <src/molecule/molecule.h>
 #include <src/integral/integral.h>
-#include <src/integral/ecp/sobatch.h>
+#include <src/integral/ecp/soangularbatch.h>
 
 namespace bagel {
 

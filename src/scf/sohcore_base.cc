@@ -76,7 +76,7 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
     add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
 
-  if (mol->atoms(0)->use_ecp_basis()) {
+  if (mol->atoms().front()->use_ecp_basis()) {
     {
       R0Batch r0(input, mol);
       r0.compute();
@@ -102,7 +102,7 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
       add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, ecp.data());
     }
     {
-      if (mol->atoms(0)->so_parameters()) {
+      if (mol->atoms().front()->so_parameters()) {
         SOECPBatch soecp(input, mol);
         soecp.compute();
 

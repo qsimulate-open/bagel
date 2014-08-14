@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sobatch.cc
+// Filename: soangularbatch.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -26,7 +26,7 @@
 
 #include <src/math/bessel.h>
 #include <src/math/algo.h>
-#include <src/integral/ecp/sobatch.h>
+#include <src/integral/ecp/soangularbatch.h>
 #include <src/integral/ecp/sphusplist.h>
 #include <iomanip>
 
@@ -205,31 +205,28 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
   const int end1   = basisinfo_[1]->contraction_ranges(cont1_).second;
 
   for (int ir = 0; ir != r.size(); ++ir) {
-    vector<double> bessel0(l0_+l+1), bessel1(l1_+l+1);
+    vector<double> b((l0_+l+1)*(l1_+l+1));
 
     for (int i0 = begin0; i0 != end0; ++i0) {
       const double coef0 = basisinfo_[0]->contractions()[cont0_][i0];
       const double exp0 = basisinfo_[0]->exponents(i0);
       const double fac0 = coef0 * exp(-exp0*r[ir]*(r[ir]-2.0*dAB_));
-      for (int i = 0; i <= l0_+l; ++i)
-        bessel0[i] += fac0 * msbessel.compute(i, 2.0*exp0*dAB_*r[ir]);
-    }
-    double exp01 = 0.0;
-    for (int i1 = begin1; i1 != end1; ++i1) {
-      const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
-      const double exp1 = basisinfo_[1]->exponents(i1);
-      const double fac1 = coef1 * exp(-exp1*r[ir]*(r[ir]-2.0*dCB_));
-      for (int i = 0; i <= l1_+l; ++i)
-        bessel1[i] += fac1 * msbessel.compute(i, 2.0*exp1*dCB_*r[ir]);
-      for (int i0 = begin0; i0 != end0; ++i0) {
-        const double exp0 = basisinfo_[0]->exponents(i0);
-        exp01 += -exp0*exp1*pow(dAC_, 2)/(exp0+exp1);
+
+      for (int i1 = begin1; i1 != end1; ++i1) {
+        const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
+        const double exp1 = basisinfo_[1]->exponents(i1);
+        const double fac1 = coef1 * exp(-exp1*r[ir]*(r[ir]-2.0*dCB_));
+
+        const double exp01 = exp(-exp0*exp1*dACsq_/(exp0+exp1));
+        for (int i = 0; i <= l0_+l; ++i) {
+          const double bessel0 = fac0 * msbessel.compute(i, 2.0*exp0*dAB_*r[ir]);
+          for (int j = 0; j <= l1_+l; ++j) {
+            const double bessel1 = fac1 * msbessel.compute(j, 2.0*exp1*dCB_*r[ir]);
+            b[i*(l1_+l+1)+j] += exp01 * bessel0 * bessel1;
+          }
+        }
       }
     }
-    vector<double> b((l0_+l+1)*(l1_+l+1));
-    const double coeff = exp(exp01);
-    for (int i = 0; i <= l0_+l; ++i)
-      for (int j = 0; j <= l1_+l; ++j) b[i*(l1_+l+1)+j] = coeff*bessel0[i]*bessel1[j];
 
     rbessel[ir] = b;
   }
@@ -280,6 +277,7 @@ vector<double> SOBatch::compute(const vector<double> r) {
 
   for (auto& ishso : shells_so) {
     const int l = ishso->angular_number();
+    assert (l > 0);
     vector<double> p = project(l, r);
     for (int i = 0; i != ishso->ecp_exponents().size(); ++i)
       if (ishso->ecp_coefficients(i) != 0) {
@@ -307,7 +305,7 @@ void SOBatch::init() {
   }
   dAB_ = sqrt(pow(AB_[0], 2) + pow(AB_[1], 2) + pow(AB_[2], 2));
   dCB_ = sqrt(pow(CB_[0], 2) + pow(CB_[1], 2) + pow(CB_[2], 2));
-  dAC_ = sqrt(pow(AC_[0], 2) + pow(AC_[1], 2) + pow(AC_[2], 2));
+  dACsq_ = pow(AC_[0], 2) + pow(AC_[1], 2) + pow(AC_[2], 2);
 
   c0_.resize(ANG_HRR_END*ANG_HRR_END*ANG_HRR_END);
   c1_.resize(ANG_HRR_END*ANG_HRR_END*ANG_HRR_END);

@@ -62,6 +62,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
     (!use_ecp_basis_) ? basis_init(basisset->get_child(na)) : basis_init_ECP(basisset->get_child(na));
     if (!use_ecp_basis_ && ecp) {
       ecp_parameters_ = make_shared<const ECP>();
+      so_parameters_ = make_shared<const SOECP>();
       use_ecp_basis_ = true;
     }
   }
@@ -194,7 +195,7 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
 
       construct_shells_SOECP(sobasis_info);
     } else {
-      so_parameters_ = nullptr;
+      so_parameters_ = make_shared<const SOECP>();
     }
   }
 
@@ -458,7 +459,7 @@ void Atom::construct_shells_SOECP(vector<tuple<string, vector<double>, vector<do
     if (!exponents.empty()) shells_SO.push_back(make_shared<const Shell_ECP>(position_, l , exponents, new_coefficients, r_power));
   }
 
-  so_parameters_ = (shells_SO.empty()) ? nullptr : make_shared<const SOECP>(shells_SO);
+  so_parameters_ = (shells_SO.empty()) ? make_shared<const SOECP>() : make_shared<const SOECP>(shells_SO);
 
 }
 

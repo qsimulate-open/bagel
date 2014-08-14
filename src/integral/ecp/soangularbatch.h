@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sobatch.h
+// Filename: soangularbatch.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -42,7 +42,7 @@ class SOBatch : public RadialInt {
     int cont0_, cont1_;
     std::array<int, 3> ang0_, ang1_;
     std::array<double, 3> AB_, CB_, AC_;
-    double dAB_, dCB_, dAC_;
+    double dAB_, dCB_, dACsq_;
     std::vector<double> c0_, c1_;
     std::vector<std::map<int, std::array<int, 3>>> map_;
 
