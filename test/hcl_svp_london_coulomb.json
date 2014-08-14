@@ -7,10 +7,11 @@
   "df_basis" : "svp-jkfit",
   "basis_type" : "london",
   "tesla" : "false",
+  "finite_nucleus" : "true",
   "angstrom" : "false",
   "geometry" : [
-    { "atom" : "Cl",  "xyz" : [ -1.200000,      2.500000,      2.720616], "exponent" : 3.8463852873E+08 },
-    { "atom" : "H",   "xyz" : [ -1.200000,      2.500000,      0.305956], "exponent" : 2.1248239171E+09 }
+    { "atom" : "Cl",  "xyz" : [ -1.200000,      2.500000,      2.720616]},
+    { "atom" : "H",   "xyz" : [ -1.200000,      2.500000,      0.305956]}
   ]
 },
 

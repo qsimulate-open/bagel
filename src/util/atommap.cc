@@ -372,6 +372,117 @@ AtomMap::AtomMap () {
   bsradii.emplace("uuo", 118);
 #endif
 
+  // finite nuclear exponents, from L. Visscher and K. G. Dyall, At. Data Nucl. Data Tables 67, 207 (1997)
+  nuclear_exponents.emplace("h",  2.1248239171E+09);
+  nuclear_exponents.emplace("he", 1.1671538870E+09);
+  nuclear_exponents.emplace("li", 8.9266848806E+08);
+  nuclear_exponents.emplace("be", 7.8788802914E+08);
+  nuclear_exponents.emplace("b",  7.1178709563E+08);
+  nuclear_exponents.emplace("c",  6.8077502929E+08);
+  nuclear_exponents.emplace("n",  6.2865615725E+08);
+  nuclear_exponents.emplace("o",  5.8631436655E+08);
+  nuclear_exponents.emplace("f",  5.3546911034E+08);
+  nuclear_exponents.emplace("ne", 5.2105715255E+08);
+  nuclear_exponents.emplace("na", 4.8349721509E+08);
+  nuclear_exponents.emplace("mg", 4.7254270882E+08);
+  nuclear_exponents.emplace("al", 4.4335984491E+08);
+  nuclear_exponents.emplace("si", 4.3467748823E+08);
+  nuclear_exponents.emplace("p",  4.1117553148E+08);
+  nuclear_exponents.emplace("s",  4.0407992047E+08);
+  nuclear_exponents.emplace("cl", 3.8463852873E+08);
+  nuclear_exponents.emplace("ar", 3.5722217300E+08);
+  nuclear_exponents.emplace("k",  3.6228128110E+08);
+  nuclear_exponents.emplace("ca", 3.5722217300E+08);
+  nuclear_exponents.emplace("sc", 3.3451324570E+08);
+  nuclear_exponents.emplace("ti", 3.2263108827E+08);
+  nuclear_exponents.emplace("v",  3.1181925878E+08);
+  nuclear_exponents.emplace("cr", 3.0842641793E+08);
+  nuclear_exponents.emplace("mn", 2.9881373610E+08);
+  nuclear_exponents.emplace("fe", 2.9578406371E+08);
+  nuclear_exponents.emplace("co", 2.8716667270E+08);
+  nuclear_exponents.emplace("ni", 2.8996391416E+08);
+  nuclear_exponents.emplace("cu", 2.7665979354E+08);
+  nuclear_exponents.emplace("zn", 2.7419021043E+08);
+  nuclear_exponents.emplace("ga", 2.6267002737E+08);
+  nuclear_exponents.emplace("ge", 2.5235613399E+08);
+  nuclear_exponents.emplace("as", 2.5042024280E+08);
+  nuclear_exponents.emplace("se", 2.4130163719E+08);
+  nuclear_exponents.emplace("br", 2.4305454351E+08);
+  nuclear_exponents.emplace("kr", 2.3461213272E+08);
+  nuclear_exponents.emplace("rb", 2.3301551109E+08);
+  nuclear_exponents.emplace("sr", 2.2839354730E+08);
+  nuclear_exponents.emplace("y",  2.2690621893E+08);
+  nuclear_exponents.emplace("zr", 2.2544431039E+08);
+  nuclear_exponents.emplace("nb", 2.2120420724E+08);
+  nuclear_exponents.emplace("mo", 2.1458511597E+08);
+  nuclear_exponents.emplace("tc", 2.1458511597E+08);
+  nuclear_exponents.emplace("ru", 2.0965270287E+08);
+  nuclear_exponents.emplace("rh", 2.0846586999E+08);
+  nuclear_exponents.emplace("pd", 2.0500935221E+08);
+  nuclear_exponents.emplace("ag", 2.0389047621E+08);
+  nuclear_exponents.emplace("cd", 1.9648639618E+08);
+  nuclear_exponents.emplace("in", 1.9548577691E+08);
+  nuclear_exponents.emplace("sn", 1.9067718154E+08);
+  nuclear_exponents.emplace("sb", 1.8975246242E+08);
+  nuclear_exponents.emplace("te", 1.8193056289E+08);
+  nuclear_exponents.emplace("i",  1.8444240538E+08);
+  nuclear_exponents.emplace("xe", 1.8030529331E+08);
+  nuclear_exponents.emplace("cs", 1.7950688281E+08);
+  nuclear_exponents.emplace("ba", 1.7565009043E+08);
+  nuclear_exponents.emplace("la", 1.7490463170E+08);
+  nuclear_exponents.emplace("ce", 1.7416744147E+08);
+  nuclear_exponents.emplace("pr", 1.7343837120E+08);
+  nuclear_exponents.emplace("nd", 1.7129844956E+08);
+  nuclear_exponents.emplace("pm", 1.7060044589E+08);
+  nuclear_exponents.emplace("sm", 1.6591550422E+08);
+  nuclear_exponents.emplace("eu", 1.6527352089E+08);
+  nuclear_exponents.emplace("gd", 1.6215880671E+08);
+  nuclear_exponents.emplace("tb", 1.6155419421E+08);
+  nuclear_exponents.emplace("dy", 1.5977529080E+08);
+  nuclear_exponents.emplace("ho", 1.5977529080E+08);
+  nuclear_exponents.emplace("er", 1.5636673634E+08);
+  nuclear_exponents.emplace("tm", 1.5581702004E+08);
+  nuclear_exponents.emplace("yb", 1.5314257850E+08);
+  nuclear_exponents.emplace("lu", 1.5262201512E+08);
+  nuclear_exponents.emplace("hf", 1.5008710340E+08);
+  nuclear_exponents.emplace("ta", 1.4959325643E+08);
+  nuclear_exponents.emplace("w",  1.4813689532E+08);
+  nuclear_exponents.emplace("re", 1.4671710337E+08);
+  nuclear_exponents.emplace("os", 1.4442808782E+08);
+  nuclear_exponents.emplace("ir", 1.4398142103E+08);
+  nuclear_exponents.emplace("pt", 1.4309883584E+08);
+  nuclear_exponents.emplace("au", 1.4223027307E+08);
+  nuclear_exponents.emplace("hg", 1.4011788914E+08);
+  nuclear_exponents.emplace("tl", 1.3888925203E+08);
+  nuclear_exponents.emplace("pb", 1.3768840081E+08);
+  nuclear_exponents.emplace("bi", 1.3729411599E+08);
+  nuclear_exponents.emplace("po", 1.3729411599E+08);
+  nuclear_exponents.emplace("at", 1.3690277000E+08);
+  nuclear_exponents.emplace("rn", 1.3242350205E+08);
+  nuclear_exponents.emplace("fr", 1.3206733609E+08);
+  nuclear_exponents.emplace("ra", 1.3101367628E+08);
+  nuclear_exponents.emplace("ac", 1.3066730974E+08);
+  nuclear_exponents.emplace("th", 1.2897067480E+08);
+  nuclear_exponents.emplace("pa", 1.2930539512E+08);
+  nuclear_exponents.emplace("u",  1.2700881714E+08);
+  nuclear_exponents.emplace("np", 1.2733038109E+08);
+  nuclear_exponents.emplace("pu", 1.2512299012E+08);
+  nuclear_exponents.emplace("am", 1.2543221826E+08);
+  nuclear_exponents.emplace("cm", 1.2420711085E+08);
+  nuclear_exponents.emplace("bk", 1.2420711085E+08);
+  nuclear_exponents.emplace("cf", 1.2301273547E+08);
+  nuclear_exponents.emplace("es", 1.2271879740E+08);
+  nuclear_exponents.emplace("fm", 1.2127611477E+08);
+  nuclear_exponents.emplace("md", 1.2099285491E+08);
+  nuclear_exponents.emplace("no", 1.2071131346E+08);
+  nuclear_exponents.emplace("lr", 1.1987683191E+08);
+  nuclear_exponents.emplace("db", 1.2015331850E+08);
+  nuclear_exponents.emplace("jl", 1.1987683191E+08);
+  nuclear_exponents.emplace("rf", 1.1960199758E+08);
+  nuclear_exponents.emplace("bh", 1.1987683191E+08);
+  nuclear_exponents.emplace("hn", 1.1905722195E+08);
+  nuclear_exponents.emplace("mt", 1.1878724932E+08);
+
   angmap.emplace("s", 0);
   angmap.emplace("p", 1);
   angmap.emplace("d", 2);
@@ -643,6 +754,13 @@ double AtomMap::cov_radius(const string input) const {
   auto miter = cov_radii.find(input);
   if (miter == cov_radii.end()) throw runtime_error("Unknown atom (Covalent radii).");
   return miter->second/au2angstrom__;
+}
+
+
+double AtomMap::nuclear_exponent(const string input) const {
+  auto miter = nuclear_exponents.find(input);
+  if (miter == nuclear_exponents.end()) throw runtime_error("Unknown atom (Finite nucleus exponent).");
+  return miter->second;
 }
 
 
