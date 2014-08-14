@@ -61,7 +61,7 @@ void ZSuperCI::compute() {
     // first perform CASCI to obtain RDMs
     if (nact_) {
       Timer fci_time(0);
-      mute_stdcout(/*fci*/true);
+      mute_stdcout();
       if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
@@ -120,7 +120,7 @@ void ZSuperCI::compute() {
     shared_ptr<const ZRotFile> cc;
     {
       Timer microiter_time(0);
-      mute_stdcout(/*fci*/true);
+      mute_stdcout();
       ZSuperCIMicro micro(shared_from_this(), grad, denom, f, fact, factp, gaa);
       micro.compute();
       cc = micro.cc();

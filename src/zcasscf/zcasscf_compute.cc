@@ -64,7 +64,7 @@ void ZCASBFGS::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      mute_stdcout(/*fci*/true);
+      mute_stdcout();
       if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
@@ -153,7 +153,7 @@ void ZCASBFGS::compute() {
     shared_ptr<ZRotFile> pos_rot;
     bool reset;
     Timer more_sorensen_timer(0);
-    mute_stdcout(/*fci*/true);
+    mute_stdcout();
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
     if (optimize_electrons) {

@@ -75,7 +75,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void init();
     void init_kramers_coeff();
 
-    void mute_stdcout(const bool fci) const;
+    void mute_stdcout() const;
     void resume_stdcout() const;
 
     std::shared_ptr<ZHarrison> fci_;

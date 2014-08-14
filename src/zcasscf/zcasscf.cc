@@ -171,7 +171,7 @@ void ZCASSCF::init() {
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
-    mute_stdcout(/*fci*/true);
+    mute_stdcout();
     fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_, /*restricted*/true);
     resume_stdcout();
   }
@@ -201,16 +201,10 @@ void ZCASSCF::print_iteration(int iter, int miter, int tcount, const vector<doub
 static streambuf* backup_stream_;
 static ofstream* ofs_;
 
-void ZCASSCF::mute_stdcout(const bool fci) const {
-  if (fci) {
-    ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
-    ofs_ = ofs;
-    backup_stream_ = cout.rdbuf(ofs->rdbuf());
-  } else {
-    ofstream* ofs(new ofstream("microiter.log",(backup_stream_ ? ios::app : ios::trunc)));
-    ofs_ = ofs;
-    backup_stream_ = cout.rdbuf(ofs->rdbuf());
-  }
+void ZCASSCF::mute_stdcout() const {
+  ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
+  ofs_ = ofs;
+  backup_stream_ = cout.rdbuf(ofs->rdbuf());
 }
 
 
