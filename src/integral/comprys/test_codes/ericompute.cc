@@ -1780,4 +1780,99 @@ complex<double> get_smalleri_matrix_element (const vector<double> field, atomic_
 }
 
 
+complex<double> compute_mixederi (vector<atomic_orbital> basis, vector<molecular_orbital> input, vector<double> field, const int ia, const int ib) {
+
+  // Use a four-fold summation to compute the ERI over MO_A, MO_B, MO_C, and MO_D
+  const int nbasis = basis.size();
+  complex<double> Full_ERI = 0.0;
+  complex<double> current_term;
+  complex<double> coeff_prod;
+
+  for (int i = 0; i!=nbasis; i++) {
+    for (int j = 0; j!=nbasis; j++) {
+      for (int k = 0; k!=nbasis; k++) {
+        for (int l = 0; l!=nbasis; l++) {
+          coeff_prod = conj(input[0].coefficient[i]) * input[1].coefficient[j] * conj(input[2].coefficient[k]) * input[3].coefficient[l];
+          if (abs(coeff_prod)) {
+            current_term = get_mixederi_matrix_element (field, basis[i], basis[j], basis[k], basis[l], ia, ib);
+            Full_ERI += (coeff_prod * current_term);
+          }
+        }
+      }
+    }
+  }
+
+  return Full_ERI;
+
+}
+
+
+complex<double> get_mixederi_matrix_element (const vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_, const int ic, const int id) {
+
+#if 1 // Check to ensure that A_ = dummy orbital, B_ = auxiliary function, C_ and D_ = main basis functions
+  assert(A_.exponent == 0.0);
+  assert(A_.prefactor == 1.0);
+  for (int i=0; i!=3; i++) assert(A_.position[i] == 0.0);
+  for (int i=0; i!=3; i++) assert(A_.angular_momentum[i] == 0);
+  assert(B_.exponent != 0.0);
+  assert(C_.exponent != 0.0);
+  assert(D_.exponent != 0.0);
+#endif
+
+  atomic_orbital A;
+  atomic_orbital B;
+  const vector<double> nofield = {{ 0.0, 0.0, 0.0 }};
+  A.set_data(A_.position, A_.exponent, A_.angular_momentum, nofield);
+  B.set_data(B_.position, B_.exponent, B_.angular_momentum, nofield);
+
+  atomic_orbital C = C_;
+  atomic_orbital D = D_;
+  const complex<double> imag (0.0, 1.0);
+  const array<int,3> fwd = {{ 1, 2, 0 }};
+  const array<int,3> bck = {{ 2, 0, 1 }};
+
+  const array<int,5> xinc = {{ -1, 1, 0, 0, 0 }};
+  const array<int,5> yinc = {{  0, 0, 0, 1, 0 }};
+  const array<int,5> zinc = {{  0, 0, 1, 0, 0 }};
+  const array<array<int,5>,3> ang = {{ xinc, yinc, zinc }};
+
+  const double gamma = C.exponent;
+  const array<double,3> Cx = {{ C.position[0], C.position[1], C.position[2] }};
+  const array<int,3> cx = {{ C.angular_momentum[0], C.angular_momentum[1], C.angular_momentum[2] }};
+  array<double,3> cxd;
+  for (int i=0; i!=3; i++) cxd[i] = cx[i];
+
+#if 1
+  const int nterms = 5;  // For Gaussian orbitals (common origin)
+#else
+  const int nterms = 4;  // For London orbitals
+#endif
+
+  const array<complex<double>,5> Ccoeff = {{  cxd[ic]*imag, -2*gamma*imag, 0.5*field[fwd[ic]], -0.5*field[bck[ic]], 0.5*(field[fwd[ic]]*Cx[bck[ic]] - field[bck[ic]]*Cx[fwd[ic]]) }};
+
+#if 0
+  cout << endl;
+  array<char,3> source = {{ 'x', 'y', 'z'}};
+  array<char,3> cdim;
+  cdim[0] = source[ic];
+  cdim[1] = source[fwd[ic]];
+  cdim[2] = source[bck[ic]];
+  cout << "ic = " << ic << " ... " << cdim[0] << " " << cdim[1] << " " << cdim[2];
+  cout << ", D is a large-component function" << endl;
+#endif
+
+  complex<double> out = 0.0;
+  for (int c=0; c!=nterms; c++) {
+    array<int,3> newc;
+    newc[ic] = ang[0][c];
+    newc[fwd[ic]] = ang[1][c];
+    newc[bck[ic]] = ang[2][c];
+    C.change_angular( cx[0]+newc[0], cx[1]+newc[1], cx[2]+newc[2] );
+    const complex<double> coef = Ccoeff[c];
+    if (coef != 0.0) out += coef * get_eri_matrix_element(field, A, B, C, D);
+  }
+  return out;
+}
+
+
 }
