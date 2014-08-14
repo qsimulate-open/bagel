@@ -92,11 +92,13 @@ void RadialInt::integrate() {
     }
     if (maxerror <= thresh_int_) {
       if (print_intermediate_) {
-        cout << "Integration converged..." << endl;
-        cout << "Radial integral:";
-        for (int ic = 0; ic != nc_; ++ic) cout << setw(20) << setprecision(12) << "[" << ic << "] = " << ans[ic] << ",  ";
+        cout << "Integration converged in " << iter << " interations:   ";
+        for (int ic = 0; ic != nc_; ++ic) {
+          cout << setw(20) << setprecision(12) << ans[ic];
+          if (nc_ > 1) cout << ",  ";
+        }
         cout << endl;
-        cout << "Radial time = " << radialtime.tick() << endl;
+        radialtime.tick_print("ECP radial integration");
       }
       for (int ic = 0; ic != nc_; ++ic)  integral_[ic] = ans[ic];
       break;
