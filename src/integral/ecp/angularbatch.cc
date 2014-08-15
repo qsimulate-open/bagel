@@ -113,28 +113,30 @@ vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, c
         const int lk = kx + ky + kz;
         const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
         const double coeff = c0_[index] * pow(-1.0, lk - l0_);
+        if (abs(coeff) > 1e-15) {
         for (int ld = max(l-lk, 0); ld <= l+lk; ++ld) {
-          if ((l + lk - ld) % 2 == 0) {
-            double smu = 0.0;
-            for (int mu = 0; mu <= 2 * ld; ++mu) {
+            if ((l + lk - ld) % 2 == 0) {
+              double smu = 0.0;
+              for (int mu = 0; mu <= 2 * ld; ++mu) {
 
-              const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
-              double sAB = 0.0;
-              for (int i = 0; i != usp1.size(); ++i) {
-                if (usp1[i] != 0.0) {
-                  map<int, array<int, 3>>::const_iterator p = map_[ld].find(i);
-                  assert (p != map_[ld].end());
-                  const array<int, 3> ki = p->second;
-                  const int x = ki[0] + kj[0] + kx;
-                  const int y = ki[1] + kj[1] + ky;
-                  const int z = ki[2] + kj[2] + kz;
-                  const double xyz = (x % 2 == 0 && y % 2 == 0 && z % 2 == 0) ? (4.0 * pi__ * df(x-1) * df(y-1) * df(z-1) / df(x+y+z+1)) : 0.0;
-                  sAB += usp1[i] * usp[j] * xyz;
+                const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
+                double sAB = 0.0;
+                for (int i = 0; i != usp1.size(); ++i) {
+                  if (usp1[i] != 0.0) {
+                    map<int, array<int, 3>>::const_iterator p = map_[ld].find(i);
+                    assert (p != map_[ld].end());
+                    const array<int, 3> ki = p->second;
+                    const int x = ki[0] + kj[0] + kx;
+                    const int y = ki[1] + kj[1] + ky;
+                    const int z = ki[2] + kj[2] + kz;
+                    const double xyz = (x % 2 == 0 && y % 2 == 0 && z % 2 == 0) ? (4.0 * pi__ * df(x-1) * df(y-1) * df(z-1) / df(x+y+z+1)) : 0.0;
+                    sAB += usp1[i] * usp[j] * xyz;
+                  }
                 }
+                smu += zAB_[ld][mu] * sAB;
               }
-              smu += zAB_[ld][mu] * sAB;
+              for (int ir = 0; ir != r.size(); ++ir) out[ir] += smu * rbessel[ir][ld] * coeff * pow(r[ir], lk);
             }
-            for (int ir = 0; ir != r.size(); ++ir) out[ir] += smu * rbessel[ir][ld] * coeff * pow(r[ir], lk);
           }
         }
       }
@@ -177,28 +179,30 @@ vector<double> AngularBatch::project_CB(const int l, const vector<double> usp, c
         const int lk = kx + ky + kz;
         const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
         const double coeff = c1_[index] * pow(-1.0, lk - l1_);
-        for (int ld = max(l-lk, 0); ld <= l+lk; ++ld) {
-          if ((l + lk - ld) % 2 == 0) {
-            double smu = 0.0;
-            for (int mu = 0; mu <= 2 * ld; ++mu) {
+        if (abs(coeff) > 1e-15) {
+          for (int ld = max(l-lk, 0); ld <= l+lk; ++ld) {
+            if ((l + lk - ld) % 2 == 0) {
+              double smu = 0.0;
+              for (int mu = 0; mu <= 2 * ld; ++mu) {
 
-              const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
-              double sCB = 0.0;
-              for (int i = 0; i != usp1.size(); ++i) {
-                if (usp1[i] != 0.0) {
-                  map<int, array<int, 3>>::const_iterator p = map_[ld].find(i);
-                  assert (p != map_[ld].end());
-                  const array<int, 3> ki = p->second;
-                  const int x = ki[0] + kj[0] + kx;
-                  const int y = ki[1] + kj[1] + ky;
-                  const int z = ki[2] + kj[2] + kz;
-                  const double xyz = (x % 2 == 0 && y % 2 == 0 && z % 2 == 0) ? (4.0 * pi__ * df(x-1) * df(y-1) * df(z-1) / df(x+y+z+1)) : 0.0;
-                  sCB += usp1[i] * usp[j] * xyz;
+                const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
+                double sCB = 0.0;
+                for (int i = 0; i != usp1.size(); ++i) {
+                  if (usp1[i] != 0.0) {
+                    map<int, array<int, 3>>::const_iterator p = map_[ld].find(i);
+                    assert (p != map_[ld].end());
+                    const array<int, 3> ki = p->second;
+                    const int x = ki[0] + kj[0] + kx;
+                    const int y = ki[1] + kj[1] + ky;
+                    const int z = ki[2] + kj[2] + kz;
+                    const double xyz = (x % 2 == 0 && y % 2 == 0 && z % 2 == 0) ? (4.0 * pi__ * df(x-1) * df(y-1) * df(z-1) / df(x+y+z+1)) : 0.0;
+                    sCB += usp1[i] * usp[j] * xyz;
+                  }
                 }
+                smu += zCB_[ld][mu] * sCB;
               }
-              smu += zCB_[ld][mu] * sCB;
+              for (int ir = 0; ir != r.size(); ++ir) out[ir] += smu * rbessel[ir][ld] * coeff * pow(r[ir], lk);
             }
-            for (int ir = 0; ir != r.size(); ++ir) out[ir] += smu * rbessel[ir][ld] * coeff * pow(r[ir], lk);
           }
         }
       }

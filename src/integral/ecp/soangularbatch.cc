@@ -109,7 +109,7 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
   for (int a = max(0, h-ang0_[1]-ang0_[2]); a <= min(ang0_[0], h); ++a) {
     for (int b = max(0, h-a-ang0_[2]); b <= min(ang0_[1], h-a); ++b) {
       const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
-      if (c0_[index] > 1e-15) {
+      if (abs(c0_[index]) > 1e-15) {
 
         double smu = 0.0;
         for (int j = 0; j != usp.size(); ++j) {
@@ -156,7 +156,7 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
   for (int a = max(0, h-ang1_[1]-ang1_[2]); a <= min(ang1_[0], h); ++a) {
     for (int b = max(0, h-a-ang1_[2]); b <= min(ang1_[1], h-a); ++b) {
       const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
-      if (c1_[index] > 1e-15) {
+      if (abs(c1_[index]) > 1e-15) {
 
         double smu = 0.0;
         for (int j = 0; j != usp.size(); ++j) {
