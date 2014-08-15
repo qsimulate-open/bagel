@@ -397,9 +397,10 @@ class RASCivector_impl : public RASCivector_base<RASBlock<DataType>> {
     template <class T>
     std::shared_ptr<T> transpose_impl(std::shared_ptr<const RASDeterminants> det = nullptr) const {
       if (!det) det = det_->transpose();
+      const int phase = 1 - (((det->nelea()*det->neleb())%2) << 1);
       auto out = std::make_shared<T>(det);
-      this->for_each_block( [&out]
-        (std::shared_ptr<const RBlock> b) { blas::transpose(b->data(), b->lenb(), b->lena(), out->block(b->stringsa(), b->stringsb())->data(), 1.0); }
+      this->for_each_block( [&out, &phase]
+        (std::shared_ptr<const RBlock> b) { blas::transpose(b->data(), b->lenb(), b->lena(), out->block(b->stringsa(), b->stringsb())->data(), static_cast<double>(phase)); }
       );
       return out;
     }
