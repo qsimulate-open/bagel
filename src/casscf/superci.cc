@@ -138,7 +138,6 @@ void SuperCI::compute() {
       cout << " " << endl;
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
       cout << "    * Max iteration reached in the CASSCF macro interations. *     " << endl << endl;
-//      throw runtime_error("Max iteration reached in the CASSCF macro interation.");
     }
     mute_stdcout();
 

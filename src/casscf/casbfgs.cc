@@ -159,6 +159,7 @@ void CASBFGS::compute() {
     }
     mute_stdcout();
   }
+  resume_stdcout();
   // ============================
   // macro iteration to here
   // ============================
