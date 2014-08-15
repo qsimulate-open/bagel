@@ -789,10 +789,10 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
     map<int, vector<tuple<size_t, bitset<nbit__>>>> RI_map;
 
     // gathering operations
-    for (auto& ispace : *sdet->stringspacea()) {
-      vector<tuple<size_t, int, size_t>> kmap;
-      for (size_t ia = 0; ia < ispace->size(); ++ia) {
-        const bitset<nbit__> sabit = sdet->string_bits_a(ia+ispace->offset());
+    for (auto& source_aspace : *sdet->stringspacea()) {
+      vector<tuple<size_t, int>> kmap;
+      for (size_t ia = 0; ia < source_aspace->size(); ++ia) {
+        const bitset<nbit__> sabit = sdet->string_bits_a(ia+source_aspace->offset());
         const bitset<nbit__> tabit = sabit ^ bitset<nbit__>(1 << k); // flips occupation k
         // counting nelea should tell me whether flipping k was in the right direction or not
         if (tabit.count()==na_target) {
@@ -801,17 +801,16 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
 
           const int phase = sign(tabit, k);
           const size_t target_lex = tdet->lexical_zero<0>(tabit);
-          kmap.emplace_back(ia, phase, target_lex);
-          RI_map[ispace->tag()].emplace_back(target_lex, tabit);
+          kmap.emplace_back(ia, phase);
+          RI_map[source_aspace->tag()].emplace_back(target_lex, tabit);
         }
       }
 
-      for (auto& iblock : cc.allowed_blocks<0>(ispace)) {
+      for (auto& iblock : cc.allowed_blocks<0>(source_aspace)) {
         auto cp_block = make_shared<Matrix>(iblock->lenb(), kmap.size());
-        for (size_t ia = 0; ia < kmap.size(); ++ia) {
+        for (size_t ia = 0; ia < kmap.size(); ++ia)
           blas::ax_plus_y_n(get<1>(kmap[ia]), iblock->data() + iblock->lenb()*get<0>(kmap[ia]), iblock->lenb(), cp_block->element_ptr(0, ia));
-        }
-        Cp_map[ispace->tag()].emplace(iblock->stringsb()->tag(), cp_block);
+        Cp_map[source_aspace->tag()].emplace(iblock->stringsb()->tag(), cp_block);
       }
     }
 
@@ -832,8 +831,8 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
         if (reduced_RI.empty()) continue;
 
         for (auto& source_bspace : *sdet->stringspaceb()) {
-          if (Cp_map.find(source_bspace->tag())==Cp_map.end()) continue;
           shared_ptr<const Matrix> full_cp = Cp_map[aspace_RI.first][source_bspace->tag()];
+          if (!full_cp) continue;
           auto reduced_cp = make_shared<Matrix>(full_cp->ndim(), reduced_RI.size());
           current = 0;
           for (auto& i : reduced_positions)
@@ -843,10 +842,11 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
           map<pair<int, int>, double> sparse_coords;
           for (size_t ib = 0; ib < target_bspace->size(); ++ib) {
             for (auto& iterij : tdet->phib(ib+target_bspace->offset())) {
-              if (iterij.source < source_bspace->offset() || iterij.source >= source_bspace->offset()+source_bspace->size()) continue;
-              const int i = iterij.ij%norb;
-              const int j = iterij.ij/norb;
-              sparse_coords[{ib,iterij.source-source_bspace->offset()}] += iterij.sign * (*Jp)(k,i,j);
+              if (iterij.source >= source_bspace->offset() && iterij.source < source_bspace->offset()+source_bspace->size()) {
+                const int i = iterij.ij%norb;
+                const int j = iterij.ij/norb;
+                sparse_coords[{ib,iterij.source-source_bspace->offset()}] += iterij.sign * (*Jp)(k,i,j);
+              }
             }
           }
 

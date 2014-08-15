@@ -117,6 +117,8 @@ void ProductRASCI::compute() {
 
   pdebug.tick_print("guess generation");
 
+  cout << "  - total size of configuration space: " << denom_->size() << endl;
+
   // nuclear energy retrieved from geometry
   const double nuc_core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
 
