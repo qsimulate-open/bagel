@@ -50,20 +50,19 @@ void CASBFGS::compute() {
   shared_ptr<const Matrix> xstart;
   vector<double> evals;
 
+  mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     const shared_ptr<const Coeff> cold = coeff_;
     const shared_ptr<const Matrix> xold = x->copy();
 
     // first perform CASCI to obtain RDMs
-    mute_stdcout();
     if (iter) fci_->update(coeff_);
     fci_->compute();
     fci_->compute_rdm12();
     // get energy
     energy_ = fci_->energy();
     evals.push_back((fci_->energy())[0]);
-    resume_stdcout();
 
     shared_ptr<Matrix> natorb_mat = x->clone();
     {
@@ -114,7 +113,6 @@ void CASBFGS::compute() {
       diis = make_shared<HPW_DIIS<Matrix>>(10, cold, unit);
     }
     // extrapolation using BFGS
-    mute_stdcout();
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
     *x *= *natorb_mat;
@@ -123,7 +121,6 @@ void CASBFGS::compute() {
     bfgs->check_step(evals, sigma, xlog);
     shared_ptr<RotFile> a = bfgs->more_sorensen_extrapolate(sigma, xlog);
     cout << " ---------------------------------------------------- " << endl << endl;
-    resume_stdcout();
 
     // restore the matrix from RotFile
     shared_ptr<const Matrix> amat = a->unpack<Matrix>();
@@ -146,6 +143,7 @@ void CASBFGS::compute() {
     // setting error of macro iteration
     const double gradient = sigma->rms();
 
+    resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
     if (gradient < thresh_) {
@@ -158,8 +156,8 @@ void CASBFGS::compute() {
       cout << " " << endl;
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
       cout << "    * Max iteration reached in the CASSCF macro interations. *     " << endl << endl;
-//      throw runtime_error("Max iteration reached in the CASSCF macro interation.");
     }
+    mute_stdcout();
   }
   // ============================
   // macro iteration to here
