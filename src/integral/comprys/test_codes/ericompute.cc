@@ -1802,6 +1802,8 @@ complex<double> compute_mixederi (vector<atomic_orbital> basis, vector<molecular
     }
   }
 
+  const complex<double> imag(0.0, 1.0);
+  Full_ERI *= imag;
   return Full_ERI;
 
 }
