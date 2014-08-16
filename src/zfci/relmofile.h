@@ -106,30 +106,7 @@ class RelMOFile {
 
     static std::unordered_map<std::bitset<2>, std::shared_ptr<const RelDFFull>>
         compute_full(std::array<std::array<std::shared_ptr<const Matrix>,4>,2> rocoeff, std::array<std::array<std::shared_ptr<const Matrix>,4>,2> iocoeff,
-                     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half, const bool appj, const bool appjj = false) {
-      std::unordered_map<std::bitset<2>, std::shared_ptr<const RelDFFull>> out;
-      // TODO : DFDistT needs to be modified to handle cases where number of nodes is larger than half->nocc() * cdata.mdim()
-      for (size_t t = 0; t != 4; ++t) {
-        assert(!appj || !appjj);
-        std::list<std::shared_ptr<RelDFFull>> dffull;
-        for (auto& i : half[t/2]) {
-          if (i->get_real()->nocc() * rocoeff[0][0]->mdim() > mpi__->size())
-            i = appj ? i->apply_J() : i->apply_J()->apply_J();
-          dffull.push_back(std::make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
-        }
-        DFock::factorize(dffull);
-        assert(dffull.size() == 1);
-        dffull.front()->scale(dffull.front()->fac()); // take care of the factor
-        out[std::bitset<2>(t)] = dffull.front();
-        if ((half[0]).front()->get_real()->nocc() * rocoeff[0][0]->mdim() <= mpi__->size()) {
-          if (appj)
-            out.at(std::bitset<2>(t)) = out.at(std::bitset<2>(t))->apply_J();
-          else if (appjj)
-            out.at(std::bitset<2>(t)) = out.at(std::bitset<2>(t))->apply_JJ();
-        }
-      }
-      return out;
-    }
+                     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half, const bool appj, const bool appjj = false);
 };
 
 

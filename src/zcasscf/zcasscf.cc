@@ -25,6 +25,7 @@
 
 #include <fstream>
 #include <src/rel/dirac.h>
+#include <src/math/quatmatrix.h>
 #include <src/zcasscf/zcasscf.h>
 
 using namespace std;
@@ -255,7 +256,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 
 shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
   // input should be 1rdm in kramers format
-  shared_ptr<ZMatrix> tmp = rdm1->copy();
+  auto tmp = make_shared<QuatMatrix>(*rdm1);
   bool unitmat = false;
   { // check for unit matrix
     auto unit = tmp->clone();
@@ -265,8 +266,8 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
   }
 
   if (!unitmat) {
-    vector<double> vec(rdm1->ndim());
-    zquatev_(tmp->ndim(), tmp->data(), vec.data());
+    VectorB vec(rdm1->ndim());
+    tmp->diagonalize(vec);
 
     map<int,int> emap;
     auto buf2 = tmp->clone();
