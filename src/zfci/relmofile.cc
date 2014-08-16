@@ -284,11 +284,9 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
 unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const array<shared_ptr<const ZMatrix>,2> coeff) {
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> out;
   // TODO : remove redundancy
-  for (size_t i = 0; i != 4; ++i) 
+  for (size_t i = 0; i != 4; ++i)
     out[bitset<2>(i)] = make_shared<ZMatrix>(*coeff[i/2] % *core_fock_ * *coeff[i%2]);
   out[bitset<2>("11")] = out[bitset<2>("00")]->get_conjg();
-  out[bitset<2>("00")]->print("mo1e 00", 10);
-  out[bitset<2>("11")]->print("mo1e 11", 10);
 
   assert(out.size() == 4);
   // symmetry requirement
