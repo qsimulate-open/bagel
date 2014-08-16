@@ -67,12 +67,14 @@ double london_energy(std::string filename) {
 BOOST_AUTO_TEST_SUITE(TEST_LONDON)
 
 BOOST_AUTO_TEST_CASE(LONDON) {
-  BOOST_CHECK(compare(london_energy("hf_svp_london_hf"),      -99.70397733));
-  BOOST_CHECK(compare(london_energy("hf_svp_london_dfhf"),    -99.70391005));
-  BOOST_CHECK(compare(london_energy("hf_svp_common_dfhf"),    -98.55057515));
-  BOOST_CHECK(compare(london_energy("hf_svp_london_coulomb"), -99.82461004));
-  BOOST_CHECK(compare(london_energy("hcl_svp_london_coulomb"), -461.37730038));
-  BOOST_CHECK(compare(london_energy("hcl_svp_common_coulomb"), -457.89462676));
+  BOOST_CHECK(compare(london_energy("hf_svp_london_hf"),         -99.70397733));
+  BOOST_CHECK(compare(london_energy("hf_svp_london_dfhf"),       -99.70391005));
+  BOOST_CHECK(compare(london_energy("hf_svp_common_dfhf"),       -98.55057515));
+  BOOST_CHECK(compare(london_energy("hf_svp_london_coulomb"),    -99.82461004));
+  BOOST_CHECK(compare(london_energy("hf_svp_london_gaunt"),      -99.81352977));
+  BOOST_CHECK(compare(london_energy("hcl_svp_london_coulomb"),  -461.37730038));
+  BOOST_CHECK(compare(london_energy("hcl_svp_common_coulomb"),  -457.89462676));
+  BOOST_CHECK(compare(london_energy("hcl_svp_common_gaunt"),    -457.78609470));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
