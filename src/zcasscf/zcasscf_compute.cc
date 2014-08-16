@@ -105,13 +105,15 @@ void ZCASBFGS::compute() {
     // get energy
     if (nact_) {
       optimize_electrons == true ? ele_energy.push_back((fci_->energy())[0]) : pos_energy.push_back((fci_->energy())[0]);
+      energy_ = fci_->energy();
     } else {
-      assert(nstate_ == 1);
+      assert(nstate_ == 1 && energy_.size() == 1);
       optimize_electrons == true ? ele_energy.resize(iter/2+1) : pos_energy.resize((iter-1)/2+1);
       optimize_electrons == true ? ele_energy[iter/2] = geom_->nuclear_repulsion() : pos_energy[(iter-1)/2] = geom_->nuclear_repulsion();
       auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore_) * *coeff_);
       for (int i = 0; i != nclosed_*2; ++i)
         optimize_electrons == true ? ele_energy[iter/2] += 0.5*mo->element(i,i).real() : pos_energy[(iter-1)/2] += 0.5*mo->element(i,i).real();
+      energy_[0] = optimize_electrons == true ? ele_energy[iter/2] : pos_energy[(iter-1)/2];
     }
 
     // compute approximate diagonal hessian
@@ -228,11 +230,7 @@ void ZCASBFGS::compute() {
 
     // print energy
     resume_stdcout();
-    if (optimize_electrons) {
-      print_iteration(iter, 0, 0, ele_energy, gradient, timer.tick());
-    } else {
-      print_iteration(iter, 0, 0, pos_energy, gradient, timer.tick());
-    }
+    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
     if (gradient < thresh_ && !optimize_electrons) pos_conv = true;
     if (gradient < thresh_ &&  optimize_electrons) ele_conv = true;
@@ -247,7 +245,12 @@ void ZCASBFGS::compute() {
       mute_stdcout();
       break;
     }
-    rms_grad_ = gradient;
+    if (iter == max_iter_-1) {
+      rms_grad_ = gradient;
+      cout << " " << endl;
+      if (real(rms_grad_) > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
+      cout << "    * Max iteration reached during BFGS optimization. *     " << endl << endl;
+    }
     mute_stdcout();
   }
   if (energy_.size() == 0)

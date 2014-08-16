@@ -67,7 +67,7 @@ void ZSuperCI::compute() {
       fci_->compute();
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
-      energy_.push_back((fci_->energy())[0]);
+      energy_ = fci_->energy();
       fci_time.tick_print("FCI and RDMs");
     }
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirtnr_*2);
@@ -89,15 +89,14 @@ void ZSuperCI::compute() {
     grad_ca(f, fact, grad);
 
     if (!nact_) { // compute energy
-      assert(nstate_ == 1);
-      energy_.resize(iter+1);
+      assert(nstate_ == 1 && energy_.size() == 1);
       auto hcoremo = make_shared<ZMatrix>(coeff_->slice(0,nclosed_*2) % *hcore_ * coeff_->slice(0,nclosed_*2));
       *hcoremo += *f->get_submatrix(0, 0, nclosed_*2, nclosed_*2);
       double etmp = 0.0;
       for (int j=0; j!= nclosed_*2; ++j)
         etmp += 0.5 * hcoremo->element(j,j).real();
       etmp += geom_->nuclear_repulsion();
-      energy_.push_back(etmp);
+      energy_[0] = etmp;
     }
 
     // setting error of macro iteration
@@ -171,7 +170,7 @@ void ZSuperCI::compute() {
       rms_grad_ = gradient;
       cout << " " << endl;
       if (real(rms_grad_) > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
-      cout << "    * Max iteration reached in the ZCASSCF macro interations. *     " << endl << endl;
+      cout << "    * Max iteration reached in the Super CI macro interations. *     " << endl << endl;
     }
     mute_stdcout();
 
