@@ -240,7 +240,7 @@ void ZCASBFGS::compute() {
     if (only_electrons) optimize_electrons = true;
     if ((ele_conv && only_electrons) || (pos_conv && ele_conv)) {
       cout << " " << endl;
-      cout << "    * ZCASBFGS optimization converged    " << endl << endl;
+      cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
       rms_grad_ = gradient;
       mute_stdcout();
       break;
@@ -249,7 +249,7 @@ void ZCASBFGS::compute() {
       rms_grad_ = gradient;
       cout << " " << endl;
       if (real(rms_grad_) > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
-      cout << "    * Max iteration reached during BFGS optimization. *     " << endl << endl;
+      cout << "    * Max iteration reached during the quasi-Newton optimization. *     " << endl << endl;
     }
     mute_stdcout();
   }

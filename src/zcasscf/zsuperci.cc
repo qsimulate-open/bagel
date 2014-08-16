@@ -111,7 +111,7 @@ void ZSuperCI::compute() {
       }
       rms_grad_ = gradient;
       cout << " " << endl;
-      cout << "    * ZSuperCI optimization converged    " << endl << endl;
+      cout << "    * Super CI optimization converged. *    " << endl << endl;
       mute_stdcout();
       break;
     }

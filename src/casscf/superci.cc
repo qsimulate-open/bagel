@@ -97,6 +97,10 @@ void SuperCI::compute() {
     gradient = grad->rms();
     if (gradient < thresh_) {
       rms_grad_ = gradient;
+      resume_stdcout();
+      cout << " " << endl;
+      cout << "    * Super CI optimization converged. *    " << endl << endl;
+      mute_stdcout();
       break;
     }
 
@@ -137,7 +141,7 @@ void SuperCI::compute() {
       rms_grad_ = gradient;
       cout << " " << endl;
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
-      cout << "    * Max iteration reached in the CASSCF macro interations. *     " << endl << endl;
+      cout << "    * Max iteration reached in the Super CI macro interations. *     " << endl << endl;
     }
     mute_stdcout();
 

@@ -148,6 +148,9 @@ void CASBFGS::compute() {
 
     if (gradient < thresh_) {
       rms_grad_ = gradient;
+      cout << " " << endl;
+      cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
+      mute_stdcout();
       break;
     }
 
@@ -155,7 +158,7 @@ void CASBFGS::compute() {
       rms_grad_ = gradient;
       cout << " " << endl;
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
-      cout << "    * Max iteration reached in the CASSCF macro interations. *     " << endl << endl;
+      cout << "    * Max iteration reached during the quasi-Newton optimization. *     " << endl << endl;
     }
     mute_stdcout();
   }
