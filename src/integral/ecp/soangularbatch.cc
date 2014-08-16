@@ -205,17 +205,16 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
   const int end1   = basisinfo_[1]->contraction_ranges(cont1_).second;
 
   for (int ir = 0; ir != r.size(); ++ir) {
-    vector<double> b((l0_+l+1)*(l1_+l+1));
-
+    vector<double> b((l0_+l+1)*(l1_+l+1), 0.0);
     for (int i0 = begin0; i0 != end0; ++i0) {
       const double coef0 = basisinfo_[0]->contractions()[cont0_][i0];
       const double exp0 = basisinfo_[0]->exponents(i0);
-      const double fac0 = coef0 * exp(-exp0*r[ir]*(r[ir]-2.0*dAB_));
+      const double fac0 = coef0 * exp(-exp0 * pow(dAB_-r[ir], 2));
 
       for (int i1 = begin1; i1 != end1; ++i1) {
         const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
         const double exp1 = basisinfo_[1]->exponents(i1);
-        const double fac1 = coef1 * exp(-exp1*r[ir]*(r[ir]-2.0*dCB_));
+        const double fac1 = coef1 * exp(-exp1 * pow(dCB_-r[ir], 2));
 
         const double exp01 = exp(-exp0*exp1*dACsq_/(exp0+exp1));
         for (int i = 0; i <= l0_+l; ++i) {
