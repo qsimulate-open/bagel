@@ -53,6 +53,8 @@ class RelDFHalf : public RelDFBase {
     RelDFHalf(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> bas);
     RelDFHalf(const RelDFHalf& o);
 
+    int nocc() const { return dfhalf_[0]->nocc(); }
+
     std::array<std::shared_ptr<DFHalfDist>, 2> get_data() const { return dfhalf_; }
     std::shared_ptr<DFHalfDist> get_real() const { return dfhalf_[0]; }
     std::shared_ptr<DFHalfDist> get_imag() const { return dfhalf_[1]; }
@@ -64,6 +66,7 @@ class RelDFHalf : public RelDFBase {
 
     std::shared_ptr<RelDFHalf> copy() const { return std::make_shared<RelDFHalf>(*this); }
     std::shared_ptr<RelDFHalf> apply_J() const;
+    std::shared_ptr<RelDFHalf> apply_JJ() const;
 
     // zaxpy
     void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFHalf> o);
