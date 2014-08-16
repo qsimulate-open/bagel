@@ -46,6 +46,7 @@ void ZSuperCI::compute() {
   double gradient = 1.0e10;
 
   cout << "     See casscf.log for further information on FCI output " << endl << endl;
+  mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     if (iter >= diis_start_ && gradient < 1.0e-2 && diis == nullptr) {
@@ -61,14 +62,12 @@ void ZSuperCI::compute() {
     // first perform CASCI to obtain RDMs
     if (nact_) {
       Timer fci_time(0);
-      mute_stdcout(/*fci*/true);
       if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
-      energy_.push_back((fci_->energy())[0]);
-      resume_stdcout();
+      energy_ = fci_->energy();
       fci_time.tick_print("FCI and RDMs");
     }
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirtnr_*2);
@@ -90,26 +89,30 @@ void ZSuperCI::compute() {
     grad_ca(f, fact, grad);
 
     if (!nact_) { // compute energy
-      assert(nstate_ == 1);
-      energy_.resize(iter+1);
+      assert(nstate_ == 1 && energy_.size() == 1);
       auto hcoremo = make_shared<ZMatrix>(coeff_->slice(0,nclosed_*2) % *hcore_ * coeff_->slice(0,nclosed_*2));
       *hcoremo += *f->get_submatrix(0, 0, nclosed_*2, nclosed_*2);
       double etmp = 0.0;
       for (int j=0; j!= nclosed_*2; ++j)
         etmp += 0.5 * hcoremo->element(j,j).real();
       etmp += geom_->nuclear_repulsion();
-      energy_.push_back(etmp);
+      energy_[0] = etmp;
     }
 
     // setting error of macro iteration
     gradient = grad->rms();
     if (gradient < thresh_) {
+      resume_stdcout();
       // print out...
       if (!nact_) {
         print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
       } else {
         print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
       }
+      rms_grad_ = gradient;
+      cout << " " << endl;
+      cout << "    * Super CI optimization converged. *    " << endl << endl;
+      mute_stdcout();
       break;
     }
 
@@ -119,11 +122,9 @@ void ZSuperCI::compute() {
     shared_ptr<const ZRotFile> cc;
     {
       Timer microiter_time(0);
-      mute_stdcout(/*fci*/true);
       ZSuperCIMicro micro(shared_from_this(), grad, denom, f, fact, factp, gaa);
       micro.compute();
       cc = micro.cc();
-      resume_stdcout();
       microiter_time.tick_print("Microiterations");
     }
 
@@ -163,9 +164,18 @@ void ZSuperCI::compute() {
     }
 
     // print out...
+    resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+    if (iter == max_iter_-1) {
+      rms_grad_ = gradient;
+      cout << " " << endl;
+      if (real(rms_grad_) > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
+      cout << "    * Max iteration reached in the Super CI macro interations. *     " << endl << endl;
+    }
+    mute_stdcout();
 
   }
+  resume_stdcout();
 
   // TODO : block diagonalize coeff_ in nclosed and nvirt
 

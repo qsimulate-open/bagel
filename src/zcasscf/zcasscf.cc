@@ -127,6 +127,7 @@ void ZCASSCF::init() {
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
   nact_ = idata_->get<int>("nact_cas", nact_);
+  if (!nact_) energy_.resize(1);
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
@@ -171,7 +172,7 @@ void ZCASSCF::init() {
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
-    mute_stdcout(/*fci*/true);
+    mute_stdcout();
     fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_, /*restricted*/true);
     resume_stdcout();
   }
@@ -191,26 +192,23 @@ void ZCASSCF::print_header() const {
 void ZCASSCF::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, const double time) const {
   if (energy.size() != 1 && iter) cout << endl;
   int i = 0;
-  cout << "Cycle" << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
-               << setw(20) << fixed << setprecision(12) << energy[(energy.size() > 0 ? energy.size()-1 : 0)] << "   "
+  for (auto& e : energy) {
+    cout << "Cycle" << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
+               << setw(20) << fixed << setprecision(12) << e << "   "
                << setw(10) << scientific << setprecision(4) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
                << time << endl;
+    ++i;
+  }
 }
 
 
 static streambuf* backup_stream_;
 static ofstream* ofs_;
 
-void ZCASSCF::mute_stdcout(const bool fci) const {
-  if (fci) {
-    ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
-    ofs_ = ofs;
-    backup_stream_ = cout.rdbuf(ofs->rdbuf());
-  } else {
-    ofstream* ofs(new ofstream("microiter.log",(backup_stream_ ? ios::app : ios::trunc)));
-    ofs_ = ofs;
-    backup_stream_ = cout.rdbuf(ofs->rdbuf());
-  }
+void ZCASSCF::mute_stdcout() const {
+  ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
+  ofs_ = ofs;
+  backup_stream_ = cout.rdbuf(ofs->rdbuf());
 }
 
 
