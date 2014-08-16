@@ -60,17 +60,16 @@ void ZCASBFGS::compute() {
   const bool only_electrons = idata_->get<bool>("only_electrons", false);
   if (only_electrons)  cout << "     Orbital optimization for electronic orbitals only " << endl;
   cout << "     See casscf.log for further information on FCI output " << endl << endl;
+  mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      mute_stdcout();
       if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
-      resume_stdcout();
     }
 
     // calculate 1RDM in an original basis set
@@ -153,7 +152,6 @@ void ZCASBFGS::compute() {
     shared_ptr<ZRotFile> pos_rot;
     bool reset;
     Timer more_sorensen_timer(0);
-    mute_stdcout();
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
     if (optimize_electrons) {
@@ -168,7 +166,6 @@ void ZCASBFGS::compute() {
       kramers_adapt(pos_rot, nclosed_, nact_, nneg_/2);
     }
     cout << " ---------------------------------------------------- " << endl << endl;
-    resume_stdcout();
     more_sorensen_timer.tick_print("More-Sorensen/Hebden extrapolation");
 
     shared_ptr<ZMatrix> amat;
@@ -230,6 +227,7 @@ void ZCASBFGS::compute() {
     }
 
     // print energy
+    resume_stdcout();
     if (optimize_electrons) {
       print_iteration(iter, 0, 0, ele_energy, gradient, timer.tick());
     } else {
@@ -246,15 +244,18 @@ void ZCASBFGS::compute() {
       cout << " " << endl;
       cout << "    * ZCASBFGS optimization converged    " << endl << endl;
       rms_grad_ = gradient;
+      mute_stdcout();
       break;
     }
     rms_grad_ = gradient;
+    mute_stdcout();
   }
   if (energy_.size() == 0)
     optimize_electrons == true ? energy_.push_back(ele_energy.back()) : energy_.push_back(pos_energy.back());
 
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
+  resume_stdcout();
   if (nact_) {
     fci_->update(coeff_, /*restricted*/true);
     fci_->compute();
