@@ -47,6 +47,12 @@ void ZSuperCI::compute() {
 
   cout << "     See casscf.log for further information on FCI output " << endl << endl;
   mute_stdcout();
+  double orthonorm;
+  {
+    auto unit = coeff_->clone(); unit->unit();
+    orthonorm = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
+    if (orthonorm > 1.0e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
+  }
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     if (iter >= diis_start_ && gradient < 1.0e-2 && diis == nullptr) {
@@ -171,6 +177,11 @@ void ZSuperCI::compute() {
       cout << " " << endl;
       if (real(rms_grad_) > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
       cout << "    * Max iteration reached in the Super CI macro interations. *     " << endl << endl;
+    }
+    {
+      auto unit = coeff_->clone(); unit->unit();
+      auto orthonorm2 = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
+      assert(orthonorm2 / orthonorm < 1.0e+01);
     }
     mute_stdcout();
 

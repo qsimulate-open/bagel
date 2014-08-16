@@ -59,6 +59,12 @@ void ZCASBFGS::compute() {
   bool optimize_electrons = idata_->get<bool>("optimize_electrons", true);
   const bool only_electrons = idata_->get<bool>("only_electrons", false);
   if (only_electrons)  cout << "     Orbital optimization for electronic orbitals only " << endl;
+  double orthonorm;
+  {
+    auto unit = coeff_->clone(); unit->unit();
+    orthonorm = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
+    if (orthonorm > 1.0e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
+  }
   cout << "     See casscf.log for further information on FCI output " << endl << endl;
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -250,6 +256,11 @@ void ZCASBFGS::compute() {
       cout << " " << endl;
       if (real(rms_grad_) > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
       cout << "    * Max iteration reached during the quasi-Newton optimization. *     " << endl << endl;
+    }
+    {
+      auto unit = coeff_->clone(); unit->unit();
+      auto orthonorm2 = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
+      assert(orthonorm2 / orthonorm < 1.0e+01);
     }
     mute_stdcout();
   }
