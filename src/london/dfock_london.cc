@@ -62,7 +62,6 @@ void DFock_London::two_electron_part(const shared_ptr<const ZMatrix> coeff, cons
 
     driver(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange);
     if (gaunt_) {
-      assert(!breit_);
       driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
     }
   }
