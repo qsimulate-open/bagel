@@ -181,7 +181,8 @@ void ZSuperCI::compute() {
     {
       auto unit = coeff_->clone(); unit->unit();
       auto orthonorm2 = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
-      assert(orthonorm2 / orthonorm < 1.0e+01);
+      if (orthonorm2 / orthonorm > 1.0e+01)
+        throw logic_error("should not happen");
     }
     mute_stdcout();
 
