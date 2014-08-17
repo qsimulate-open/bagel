@@ -46,10 +46,11 @@ void ComplexERIBatch::root_weight(const int ps) {
   assert(breit_ == 0);
 
   // standard 2-D interpolation
-  if (any_of(T_, T_+ps, [](complex<double>k){return (k.imag() != 0.0);})) {
+  if (any_of(T_, T_+ps, [](complex<double>k){return (k.imag() != 0.0);})
+    || any_of(T_, T_+ps, [](complex<double>k){return (k.real() < 0.0);})) {
     complexeriroot__.root(rank_, T_, roots_, weights_, ps);
 
-  // cheaper 1-D interpolation if T_ are all real
+  // cheaper 1-D interpolation if T_ are all real and positive
   } else {
     const double num = rank_*ps;
     double* const T_temp = stack_->template get<double>(ps);
