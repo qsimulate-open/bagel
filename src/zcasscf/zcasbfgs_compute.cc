@@ -234,6 +234,9 @@ void ZCASBFGS::compute() {
       *pos_x *= *expa;
     }
 
+    // synchronization
+    mpi__->broadcast(const_pointer_cast<ZMatrix>(coeff_)->data(), coeff_->size(), 0);
+
     // print energy
     resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());

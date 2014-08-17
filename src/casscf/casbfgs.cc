@@ -140,6 +140,9 @@ void CASBFGS::compute() {
 //    cout << setprecision(10) << (*coeff_ - *diis->start()**x).norm() << endl;
     }
 
+    // synchronization
+    mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
+
     // setting error of macro iteration
     const double gradient = sigma->rms();
 

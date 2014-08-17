@@ -169,6 +169,9 @@ void ZSuperCI::compute() {
       coeff_ = make_shared<const ZMatrix>(*ctmp2);
     }
 
+    // synchronization
+    mpi__->broadcast(const_pointer_cast<ZMatrix>(coeff_)->data(), coeff_->size(), 0);
+
     // print out...
     resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
