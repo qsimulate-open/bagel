@@ -74,15 +74,15 @@ void R2Batch::compute_ssss(const double integral_thresh) {
                 ++screening_size_;
                 indexecp_.push_back(i);
               } else {
-                T_[index] = -1.0;
+                T_[index] = -3.0;
                 coeff_[index] = 0.0;
               }
             } else {
-              T_[index] = -1.0;
+              T_[index] = -3.0;
               coeff_[index] = 0.0;
             }
           } else {
-            T_[index] = -1.0;
+            T_[index] = -3.0;
             coeff_[index] = 0.0;
           }
         }

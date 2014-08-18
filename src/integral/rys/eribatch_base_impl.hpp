@@ -158,7 +158,9 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
 
   // compute P values
   int index01 = 0;
-  std::fill_n(T_, primsize_, -1.0);
+
+  // Initial value must be outside the interpolation range, which for London integrals starts at -2.0
+  std::fill_n(T_, primsize_, -3.0);
   screening_size_ = 0;
   const double cxq_min = minexp2 + minexp3;
   const double cxq_inv_min = 1.0 / cxq_min;
