@@ -63,7 +63,7 @@ void ZCASBFGS::compute() {
   {
     auto unit = coeff_->clone(); unit->unit();
     orthonorm = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
-    if (orthonorm > 1.0e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
+    if (orthonorm > 2.5e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
   }
   cout << "     See casscf.log for further information on FCI output " << endl << endl;
   mute_stdcout();
