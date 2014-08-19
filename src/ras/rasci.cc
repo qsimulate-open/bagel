@@ -84,7 +84,7 @@ void RASCI::common_init() {
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 
   // TODO allow for zero electron (quick return)
-  if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in RASCI");
+  if (nelea_ < 0 || neleb_ < 0) throw runtime_error("#electrons cannot be negative in RASCI");
   //for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
 
 #ifndef NORDMS
