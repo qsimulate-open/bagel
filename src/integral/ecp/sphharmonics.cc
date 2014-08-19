@@ -43,6 +43,9 @@ SphHarmonics::SphHarmonics(const array<int, 2> lm, const array<double, 3> c)
 SphHarmonics::SphHarmonics(const int l, const int m, const array<double, 3> c)
  : angular_momentum_{{l, m}}, centre_(c) {
 
+  if (abs(m) > l)
+    throw runtime_error ("SphHarmonics.zlm: |m| > l");
+
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
   theta_ = acos(centre_[2]/r);
   phi_ = atan2(centre_[1], centre_[0]);
@@ -129,46 +132,44 @@ double SphHarmonics::zlm() const {
 
   const double cth = cos(theta_);
   const int am = abs(m);
-  if (am > l)
-    throw runtime_error ("SphHarmonics.zlm: |m| > l");
 
   const double plm = LegendrePolynomial(l, am, cth);
-  double fact = 1.0;
-  for (int i = 1; i <= 2*am; ++i) {
-    fact *= l - am + i;
-  }
-  const double coef = sqrt((2*l+1) * 0.25 * fact / pi__);
-  if (m == 0) {
-    return coef * plm;
-  } else if (m > 0) {
-    return sqrt(2.0) * pow(-1.0, m) * coef * plm * cos(am*phi_);
-  } else {
-    return sqrt(2.0) * pow(-1.0, m) * coef * plm * sin(am*phi_);
+
+  double coef0 = 1.0;
+  for (unsigned int i = l + am; i > (l - am); i--) coef0 *= i;
+  const double coef = sqrt((2*l+1)/(4.0*pi__*coef0));
+
+  double out = coef * plm;
+  if (m > 0) {
+    out *= sqrt(2.0) * pow(-1.0, m) * cos(am*phi_);
+  } else if (m < 0) {
+    out *= sqrt(2.0) * pow(-1.0, m) * sin(am*phi_);
   }
 
+  return out;
 }
 
 double SphHarmonics::zlm(const int l, const int m) const {
 
-  const double cth = cos(theta_);
   const int am = abs(m);
   if (am > l)
     throw runtime_error ("SphHarmonics.zlm: |m| > l");
+  const double cth = cos(theta_);
 
   const double plm = LegendrePolynomial(l, am, cth);
-  double fact = 1.0;
-  for (int i = 1; i <= 2*am; ++i) {
-    fact *= l - am + i;
-  }
-  const double coef = sqrt((2*l+1) * 0.25 * fact/pi__);
-  if (m == 0) {
-    return coef * plm;
-  } else if (m > 0) {
-    return sqrt(2.0) * pow(-1.0, m) * coef * plm * cos(am*phi_);
-  } else {
-    return sqrt(2.0) * pow(-1.0, m) * coef * plm * sin(am*phi_);
+
+  double coef0 = 1.0;
+  for (unsigned int i = l + am; i > (l - am); i--) coef0 *= i;
+  const double coef = sqrt((2*l+1)/(4.0*pi__*coef0));
+
+  double out = coef * plm;
+  if (m > 0) {
+    out *= sqrt(2.0) * pow(-1.0, m) * cos(am*phi_);
+  } else if (m < 0) {
+    out *= sqrt(2.0) * pow(-1.0, m) * sin(am*phi_);
   }
 
+  return out;
 }
 
 void SphHarmonics::print() const {
