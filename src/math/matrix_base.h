@@ -254,11 +254,11 @@ class Matrix_base : public btas::Tensor2<DataType> {
     }
 
     virtual void fill_upper_negative() {
-      assert(ndim() == mdim());
-      for (size_t i = 0; i != mdim(); ++i) {
-        assert(element(i, i) == 0.0);
-        for (size_t j = i+1; j != ndim(); ++j)
-          element(i, j) = -element(j, i);
+      assert(ndim_ == mdim_);
+      for (size_t i = 0; i != mdim_; ++i) {
+        assert(abs(data_[i+i*ndim_]) < 1e-15);
+        for (size_t j = i+1; j != ndim_; ++j)
+          data_[i+j*ndim_] = -data_[j+i*ndim_];
       }
     }
 

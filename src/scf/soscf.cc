@@ -95,7 +95,7 @@ void SOSCF::compute() {
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SOSCF iteration converged." << endl << endl;
       const double onee_energy = ((*sohcore_ * *aodensity_).trace()).real();
-      const double twoe_energy = energy_ - onee_energy;
+      const double twoe_energy = energy_ - geom_->nuclear_repulsion() - onee_energy;
       cout << indent << "    - One-electron energy" << setw(20) << fixed << setprecision(8) << onee_energy << endl;
       cout << indent << "    - Two-electron energy" << setw(20) << fixed << setprecision(8) << twoe_energy << endl;
       break;
