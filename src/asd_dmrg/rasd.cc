@@ -237,7 +237,7 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
   input->put("nclosed", ref->nclosed());
   read_restricted(input, site);
   {
-    //Muffle hide_cout;
+    Muffle hide_cout("asd_dmrg.log", true);
     // ProductRAS calculations
     if (!system) {
       auto prod_ras = make_shared<ProductRASCI>(input, ref, environment);
