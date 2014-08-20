@@ -268,58 +268,57 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
   assert(civecs.size()==nstates_);
 
   // store the coefficients and sector bases by block: BlockKey corresponds to the block's information
-  map<BlockKey, pair<shared_ptr<Matrix>, vector<pair<int, shared_ptr<const RASBlockVectors>>>>> basisdata;
+  map<BlockKey, shared_ptr<Matrix>> basisdata;
 
   // arrange all the 'singular values' to get the best ones
-  multimap<double, pair<BlockKey, const int>> singular_values;
+  multimap<double, tuple<BlockKey, const int>> singular_values;
+
+  // arrange all the determinant objects for later use
+  map<BlockKey, shared_ptr<const RASDeterminants>> detmap;
 
   // non-orthogonal basis to do the diagonalization
-  map<BlockKey, vector<shared_ptr<const RASBlockVectors>>> cibasis;
-  for (auto& ivec : civecs)
-    for (auto& isec : ivec->sectors())
-      cibasis[isec.first].push_back(isec.second);
+  map<BlockKey, shared_ptr<const Matrix>> cibasis;
+  {
+    map<BlockKey, vector<shared_ptr<const Matrix>>> tmp_cibasis;
+    for (auto& ivec : civecs) {
+      for (auto& isec : ivec->sectors()) {
+        tmp_cibasis[isec.first].push_back(isec.second);
+        if (detmap.find(isec.first)==detmap.end())
+          detmap[isec.first] = isec.second->det();
+      }
+    }
+
+    for (auto& basis_sector : tmp_cibasis) {
+      const int bsize = accumulate(basis_sector.second.begin(), basis_sector.second.end(), 0, [] (int x, shared_ptr<const Matrix> m) { return x+m->mdim(); });
+      auto tmp_mat = make_shared<Matrix>(basis_sector.second.front()->ndim(), bsize);
+      int current = 0;
+      for (auto& ib : basis_sector.second) {
+        copy_n(ib->data(), ib->size(), tmp_mat->element_ptr(0, current));
+        current += ib->mdim();
+      }
+      cibasis.emplace(basis_sector.first, tmp_mat);
+    }
+  }
+
+  // list of all the vectors that get coupled together in the density matrix
+  // rho = \sum_n \sum_{x,y in outer_products[n]} |x> w_n <y|
+  map<BlockKey, vector<tuple<double, shared_ptr<const Matrix>>>> outer_products;
+  for (int i = 0; i < nstates_; ++i)
+    for (auto& isec : civecs[i]->sectors())
+      outer_products[isec.first].emplace_back(weights_[i], isec.second);
 
   // RDM is block diagonal by sector
   for (auto& isec : cibasis) {
-    // form basis for sector
-    vector<pair<int, shared_ptr<const RASBlockVectors>>> sectorbasis;
-    {
-      int offset = 0;
-      for (auto& i : isec.second) {
-        sectorbasis.emplace_back(offset, i);
-        offset += i->mdim();
-      }
-    }
-    const size_t bsize = accumulate(isec.second.begin(), isec.second.end(), 0ul, [] (size_t a, shared_ptr<const Matrix> m) { return a+m->mdim(); });
+    shared_ptr<const Matrix> sectorbasis = isec.second;
 
     // build overlap matrix
-    Matrix overlap(bsize, bsize);
-    for (auto i = sectorbasis.begin(); i != sectorbasis.end(); ++i) {
-      shared_ptr<const Matrix> imat = i->second;
-      for (auto j = sectorbasis.begin(); j != i; ++j) {
-        if (i->second->left_state().key()==j->second->left_state().key()) {
-          shared_ptr<const Matrix> jmat = j->second;
-          assert(imat->ndim()==jmat->ndim());
-          dgemm_("T", "N", imat->mdim(), jmat->mdim(), imat->ndim(), 1.0, imat->data(), imat->ndim(), jmat->data(), jmat->ndim(),
-                                                                     0.0, overlap.element_ptr(i->first, j->first), overlap.ndim());
-        }
-      }
-      dgemm_("T", "N", imat->mdim(), imat->mdim(), imat->ndim(), 1.0, imat->data(), imat->ndim(), imat->data(), imat->ndim(),
-                                                                 0.0, overlap.element_ptr(i->first, i->first), overlap.ndim());
-    }
-    overlap.fill_upper();
+    Matrix overlap(*sectorbasis % *sectorbasis);
 
     // build rdm
-    Matrix rdm(bsize, bsize);
-    for (int ist = 0; ist < nstates_; ++ist) {
-      shared_ptr<const Matrix> sector = civecs[ist]->sector(isec.first);
-      Matrix tmp(sector->mdim(), bsize);
-      for (auto& ib : sectorbasis)
-        dgemm_("T", "N", sector->mdim(), ib.second->mdim(), sector->ndim(), 1.0, sector->data(), sector->ndim(), ib.second->data(), ib.second->ndim(),
-                                                                            0.0, tmp.element_ptr(0, ib.first), tmp.ndim());
-
-      dgemm_("T", "N", bsize, bsize, sector->mdim(), weights_[ist], tmp.data(), tmp.ndim(), tmp.data(), tmp.ndim(),
-                                                               1.0, rdm.data(), rdm.ndim());
+    Matrix rdm = *overlap.clone();
+    for (auto& op : outer_products[isec.first]) {
+      Matrix tmp(*get<1>(op) % *sectorbasis);
+      dgemm_("T", "N", rdm.ndim(), rdm.mdim(), tmp.ndim(), get<0>(op), tmp.data(), tmp.ndim(), tmp.data(), tmp.ndim(), 1.0, rdm.data(), rdm.ndim());
     }
 
     Matrix orthonormalize(*overlap.tildex(1.0e-12));
@@ -328,9 +327,9 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
       VectorB eigs(best_states->ndim());
       best_states->diagonalize(eigs);
       best_states = make_shared<Matrix>(orthonormalize * *best_states);
-      basisdata.emplace(isec.first, make_pair(best_states, sectorbasis));
+      basisdata.emplace(isec.first, best_states);
       for (int i = 0; i < eigs.size(); ++i)
-        singular_values.emplace(eigs(i), make_pair(isec.first, i));
+        singular_values.emplace(eigs(i), make_tuple(isec.first, i));
     }
   }
 
@@ -342,22 +341,17 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
   double partial_trace = 0.0;
   for (auto i = singular_values.rbegin(); i != singular_values.rend(); ++i, ++nvectors) {
     if (nvectors==ntrunc_) break;
-    BlockKey bk = i->second.first;
-    const int position = i->second.second;
+    BlockKey bk = get<0>(i->second);
+    const int position = get<1>(i->second);
 
-    shared_ptr<const Matrix> coeff = basisdata[bk].first;
-    vector<pair<int, shared_ptr<const RASBlockVectors>>>& sectorbasis = basisdata[bk].second;
-
-    shared_ptr<const RASDeterminants> det = sectorbasis.front().second->det();
+    shared_ptr<const Matrix> coeff = basisdata[bk];
+    shared_ptr<const Matrix> sectorbasis = cibasis[bk];
+    shared_ptr<const RASDeterminants> det = detmap[bk];
 
     auto tmp = make_shared<RASCivec>(det);
-    for (auto& ic : sectorbasis) {
-      shared_ptr<const RASBlockVectors> vecs = ic.second;
-      dgemv_("N", det->size(), vecs->mdim(), 1.0, vecs->data(), vecs->ndim(), coeff->element_ptr(ic.first, position), 1,
-                                             1.0, tmp->data(), 1);
-    }
+    dgemv_("N", det->size(), sectorbasis->mdim(), 1.0, sectorbasis->data(), sectorbasis->ndim(), coeff->element_ptr(0, position), 1, 1.0, tmp->data(), 1);
 
-    output_vectors[i->second.first].push_back(tmp);
+    output_vectors[get<0>(i->second)].push_back(tmp);
     partial_trace += i->first;
   }
   cout << "  discarded weights: " << setw(12) << setprecision(8) << scientific <<  1.0 - partial_trace << fixed << endl;
