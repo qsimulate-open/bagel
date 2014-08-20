@@ -44,9 +44,12 @@ class RASD : public ASD_DMRG {
   private:
     void read_restricted(std::shared_ptr<PTree> input, const int site) const;
 
-    std::map<BlockKey, std::shared_ptr<const RASDvec>> diagonalize_site_RDM(const std::vector<std::shared_ptr<ProductRASCivec>>& civecs) const;
+    std::map<BlockKey, std::shared_ptr<const RASDvec>> diagonalize_site_RDM(const std::vector<std::shared_ptr<ProductRASCivec>>& civecs, const double perturbation = 0.0) const;
     std::shared_ptr<Matrix> compute_sigma2e(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop) const;
     std::shared_ptr<Matrix> compute_spin(std::shared_ptr<const RASDvec> cc) const;
+
+    void apply_perturbation(std::shared_ptr<const RASBlockVectors> cc, std::vector<GammaSQ> oplist, std::map<BlockKey, std::shared_ptr<const RASDeterminants>>& detmap,
+                            const double weight, std::map<BlockKey, std::vector<std::tuple<double, std::shared_ptr<const Matrix>>>>& outer_products) const;
 };
 
 }

@@ -27,6 +27,7 @@
 #include <src/asd_dmrg/gamma_forest_asd.h>
 #include <src/asd_dmrg/product_rasci.h>
 #include <src/ras/form_sigma.h>
+#include <src/ras/apply_operator.h>
 
 #define DEBUG
 
@@ -243,7 +244,7 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
       auto prod_ras = make_shared<ProductRASCI>(input, ref, environment);
       prod_ras->compute();
       // diagonalize RDM to get RASCivecs
-      map<BlockKey, shared_ptr<const RASDvec>> civecs = diagonalize_site_RDM(prod_ras->civectors());
+      map<BlockKey, shared_ptr<const RASDvec>> civecs = diagonalize_site_RDM(prod_ras->civectors(), perturb_);
       map<BlockKey, shared_ptr<const Matrix>> h_2e;
       map<BlockKey, shared_ptr<const Matrix>> spinmap;
       for (auto& ici : civecs) {
@@ -264,7 +265,7 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
   }
 }
 
-map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector<shared_ptr<ProductRASCivec>>& civecs) const {
+map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector<shared_ptr<ProductRASCivec>>& civecs, const double perturbation) const {
   assert(civecs.size()==nstates_);
 
   // store the coefficients and sector bases by block: BlockKey corresponds to the block's information
@@ -278,34 +279,55 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
 
   // non-orthogonal basis to do the diagonalization
   map<BlockKey, shared_ptr<const Matrix>> cibasis;
-  {
-    map<BlockKey, vector<shared_ptr<const Matrix>>> tmp_cibasis;
-    for (auto& ivec : civecs) {
-      for (auto& isec : ivec->sectors()) {
-        tmp_cibasis[isec.first].push_back(isec.second);
-        if (detmap.find(isec.first)==detmap.end())
-          detmap[isec.first] = isec.second->det();
-      }
-    }
-
-    for (auto& basis_sector : tmp_cibasis) {
-      const int bsize = accumulate(basis_sector.second.begin(), basis_sector.second.end(), 0, [] (int x, shared_ptr<const Matrix> m) { return x+m->mdim(); });
-      auto tmp_mat = make_shared<Matrix>(basis_sector.second.front()->ndim(), bsize);
-      int current = 0;
-      for (auto& ib : basis_sector.second) {
-        copy_n(ib->data(), ib->size(), tmp_mat->element_ptr(0, current));
-        current += ib->mdim();
-      }
-      cibasis.emplace(basis_sector.first, tmp_mat);
-    }
-  }
 
   // list of all the vectors that get coupled together in the density matrix
   // rho = \sum_n \sum_{x,y in outer_products[n]} |x> w_n <y|
   map<BlockKey, vector<tuple<double, shared_ptr<const Matrix>>>> outer_products;
-  for (int i = 0; i < nstates_; ++i)
-    for (auto& isec : civecs[i]->sectors())
-      outer_products[isec.first].emplace_back(weights_[i], isec.second);
+
+  // construct the non-orthogonal basis and the outer product vectors
+  {
+    // first, collect all of the vectors that belong in the state vectors
+    for (int ist = 0; ist < nstates_; ++ist) {
+      for (auto& isec : civecs[ist]->sectors()) {
+        if (detmap.find(isec.first)==detmap.end())
+          detmap[isec.first] = isec.second->det();
+        outer_products[isec.first].emplace_back(weights_[ist], isec.second);
+      }
+    }
+
+    // add in perturbative correction
+    if (perturbation != 0.0) {
+      for (int ist = 0; ist < nstates_; ++ist) {
+        for (auto& isec : civecs[ist]->sectors()) {
+          // "diagonal" perturbation: sum_{i,j} [ (i^dagger j)_alpha (i^dagger_j)_beta ]
+          apply_perturbation(isec.second, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+
+          // spinflip perturbations
+          apply_perturbation(isec.second, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+
+          // ET/HT perturbations
+          apply_perturbation(isec.second, {GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::AnnihilateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::CreateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::CreateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+        }
+      }
+
+    }
+
+    for (auto& basis_sector : outer_products) {
+      const int bsize = accumulate(basis_sector.second.begin(), basis_sector.second.end(), 0, [] (int x, tuple<double, shared_ptr<const Matrix>> m) { return x+get<1>(m)->mdim(); });
+      auto tmp_mat = make_shared<Matrix>(get<1>(basis_sector.second.front())->ndim(), bsize);
+      int current = 0;
+      for (auto& ib : basis_sector.second) {
+        copy_n(get<1>(ib)->data(), get<1>(ib)->size(), tmp_mat->element_ptr(0, current));
+        current += get<1>(ib)->mdim();
+      }
+      cibasis.emplace(basis_sector.first, tmp_mat);
+    }
+  }
 
   // RDM is block diagonal by sector
   for (auto& isec : cibasis) {
@@ -364,4 +386,53 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
   }
 
   return out;
+}
+
+void RASD::apply_perturbation(shared_ptr<const RASBlockVectors> cc, vector<GammaSQ> oplist, map<BlockKey, shared_ptr<const RASDeterminants>>& detmap,
+                        const double weight, map<BlockKey, vector<tuple<double, shared_ptr<const Matrix>>>>& outer_products) const
+{
+  pair<int, int> dele(0, 0);
+  for (auto& op : oplist) {
+    if (op==GammaSQ::CreateAlpha || op==GammaSQ::AnnihilateAlpha)
+      dele.first += (op==GammaSQ::CreateAlpha ? 1 : -1);
+    else
+      dele.second += (op==GammaSQ::CreateBeta ? 1 : -1);
+  }
+
+  shared_ptr<const RASDeterminants> sdet = cc->det();
+  const BlockKey basekey = cc->left_state().key();
+  // block should have opposite action as dets
+  const BlockKey Tkey(basekey.nelea - dele.first, basekey.neleb - dele.second);
+  shared_ptr<const RASDeterminants> tdet;
+  if (detmap.find(Tkey)!=detmap.end()) {
+    tdet = detmap[Tkey];
+  }
+  else {
+    if (sdet->nelea()+dele.first < 0 || sdet->neleb()+dele.second < 0) return;
+    tdet = sdet->clone(sdet->nelea()+dele.first, sdet->neleb()+dele.second);
+    detmap[Tkey] = tdet;
+  }
+
+  if (tdet->size()!=0) {
+    ApplyOperator apply;
+    const int nstates = cc->mdim();
+    const int norb = tdet->norb();
+    for (int ist = 0; ist < nstates; ++ist) {
+      auto tmp = make_shared<Matrix>(tdet->size(), 1);
+      RASCivecView view(tdet, tmp->data());
+      if (oplist.size()==1) {
+        for (int p = 0; p < norb; ++p)
+          apply(1.0, cc->civec(ist), view, oplist, {p});
+      }
+      else if (oplist.size()==2) {
+        for (int p = 0; p < norb; ++p)
+          for (int q = 0; q < norb; ++q)
+            apply(1.0, cc->civec(ist), view, oplist, {q, p});
+      }
+      else {
+        assert(false);
+      }
+      outer_products[Tkey].emplace_back(weight, tmp);
+    }
+  }
 }

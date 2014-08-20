@@ -86,7 +86,8 @@ void ASD_DMRG::compute() {
       cout << "  " << print_progress(site, ">>", ">>") << setw(16) << dmrg_timer.tick() << endl;
     }
 
-    vector<bool> conv(nstates_, false);
+    bool conv = true;
+    bool drop_perturb = true;
 
     cout << endl;
     for (int i = 0; i < nstates_; ++i) {
@@ -97,13 +98,30 @@ void ASD_DMRG::compute() {
       cout << setw(6) << iter << setw(6) << i << setw(22) << setprecision(12) << sweep_average << setw(16) << setprecision(12) << sweep_range
                                                                             << setw(16) << setprecision(12) << energies_[i] - sweep_average << endl;
 
-      conv[i] = ( abs(sweep_range) <= thresh_ && energies_[i] - sweep_average <= thresh_ );
+      if (abs(sweep_range)>thresh_ || energies_[i]-sweep_average>thresh_)
+        conv = false;
+      if (energies_[i]-sweep_average>perturb_thresh_)
+        drop_perturb = false;
       energies_[i] = sweep_average;
       sweep_energies_[i].clear();
     }
     cout << endl;
 
-    if (all_of(conv.begin(), conv.end(), [] (const bool t) { return t;})) {
+    if (perturb_!=0.0) {
+      conv = false;
+      if (drop_perturb) {
+        perturb_ *= 0.1;
+        if (perturb_<perturb_min_) {
+          cout << "  o perturbation turned off" << endl;
+          perturb_ = 0.0;
+        }
+        else {
+          cout << "  o perturbation lowered to " << perturb_ << endl;
+        }
+      }
+    }
+
+    if (conv) {
       cout << "  * Converged!" << endl;
       break;
     }

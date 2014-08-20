@@ -56,6 +56,9 @@ class ASD_DMRG {
     int ntrunc_; ///< Number of states to keep in each DMRG block. Same as \f$M\f$ in the DMRG literature
 
     double thresh_; ///< convergence threshold
+    double perturb_; ///< magnitude of perturbation added to RDM
+    double perturb_thresh_; ///< threshold at which to decrease the perturbation
+    double perturb_min_; ///< minimum value of perturbation (below this, it is just set to zero)
 
     /// Prints graphical depiction of sweep process, mainly probably useful for debugging
     std::string print_progress(const int position, const std::string left_symbol, const std::string right_symbol) const;
