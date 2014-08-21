@@ -257,8 +257,6 @@ void FormSigmaProdRAS::branch_2(shared_ptr<const RASBlockVectors> cc_sector, sha
   const BlockInfo bstate(bETkey.nelea, bETkey.neleb, nccstates);
   RASBlockVectors sector_r(b_det, BlockInfo(bETkey.nelea, bETkey.neleb, nccstates));
 
-  assert(S->extent(0)==sector_r.mdim() && S->extent(1)==b_sector->mdim());
-
   const int phase = (1 - (((cc_sector->det()->nelea()+cc_sector->det()->neleb())%2) << 1));
 
   for (int r = 0; r < rnorb; ++r) {
@@ -374,8 +372,6 @@ void FormSigmaProdRAS::branch_4(shared_ptr<const RASBlockVectors> cc_sector, sha
   shared_ptr<const RASDeterminants> b_det = do_bHT ? b_sector->det() : sigma->space()->det(cc_sector->det()->nelea(), cc_sector->det()->neleb()-1);
 
   RASBlockVectors sector_r(b_det, BlockInfo(bHTkey.nelea, bHTkey.neleb, nccstates));
-
-  assert(S->extent(1)==sector_r.mdim() && S->extent(0)==b_sector->mdim());
 
   shared_ptr<RASBlockVectors> bb_sector = do_bbHT ? sigma->sector(bbHTkey) : nullptr;
   shared_ptr<RASBlockVectors> tmp_bb = do_bbHT ? make_shared<RASBlockVectors>(bb_sector->det(), BlockInfo(bbHTkey.nelea, bbHTkey.neleb, nccstates)) : nullptr;
