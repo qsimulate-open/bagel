@@ -39,7 +39,14 @@ Qvec::Qvec(const int n, const int m, shared_ptr<const Matrix> coeff, const size_
   shared_ptr<const DFHalfDist> half = fci->jop()->mo2e_1ext();
 
   // J^{-1}(D|xy)
-  shared_ptr<const DFFullDist> full = half->compute_second_transform(coeff->slice(nclosed, nclosed+m))->apply_JJ();
+  // TODO : DFDistT needs to be modified to handle cases where number of nodes is larger than half->nocc() * cdata.mdim()
+  shared_ptr<const DFFullDist> full;
+  if (half->nocc() * coeff->mdim() > mpi__->size()) {
+    full = half->apply_JJ()->compute_second_transform(coeff->slice(nclosed, nclosed+m));
+  } else {
+    full = half->compute_second_transform(coeff->slice(nclosed, nclosed+m))->apply_JJ();
+  }
+
 
   // [D|tu] = (D|xy)Gamma_xy,tu
   shared_ptr<const DFFullDist> prdm = full->apply_2rdm(*rdm);

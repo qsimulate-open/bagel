@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: zqvec.h
-// Copyright (C) 2013 Toru Shiozaki
+// Filename: quatmatrix.h
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -22,26 +22,32 @@
 // along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
+//
+#ifndef __SRC_MATH_QUATMATRIX_H
+#define __SRC_MATH_QUATMATRIX_H
 
-
-#ifndef __BAGEL_SRC_ZCASSCF_ZQVEC_H
-#define __BAGEL_SRC_ZCASSCF_ZQVEC_H
-
-#include <src/zfci/zharrison.h> // 2RDM and transformed integrals
+#include <src/math/zmatrix.h>
+#include <src/math/algo.h>
 
 namespace bagel {
 
-class ZQvec : public ZMatrix {
-  protected:
-
+class QuatMatrix : public ZMatrix {
   public:
-    ZQvec(const int n, const int m, std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> coeff, const int nclosed,
-          std::shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit); // FIXME : this constructor has a bug
+    QuatMatrix(const ZMatrix& o) : ZMatrix(o) { }
+    QuatMatrix(ZMatrix&& o) : ZMatrix(std::move(o)) { }
+    // TODO : implement symmetry checking function, and constructor that can take "00" and "01" matrices and build the rest of the matrix
 
-    ZQvec(const ZMatrix& a) : ZMatrix(a) {}
+    void diagonalize(VecView eig) override {
+      assert(ndim() == mdim());
+      // TODO parallelize
+      zquatev_(ndim(), data(), eig.data());
+      synchronize();
+    }
 
-    ZQvec(const int n, const int m, std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> rcoeff, std::shared_ptr<const ZMatrix> acoeff, const int nclosed,
-          std::shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit);
+    void synchronize() {
+      mpi__->broadcast(data(), size(), 0);
+    }
+
 };
 
 }

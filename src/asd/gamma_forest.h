@@ -31,6 +31,8 @@
 #include <src/ras/civector.h>
 #include <src/math/matrix.h>
 #include <src/util/taskqueue.h>
+#include <src/asd/coupling.h>
+#include <src/asd/dimersubspace.h>
 #include <src/asd/gamma_sq.h>
 
 namespace bagel {
@@ -39,7 +41,7 @@ template <typename VecType>
 class GammaBranch {
   protected:
     std::array<std::shared_ptr<GammaBranch<VecType>>, 4> branches_;
-    std::map<int, std::shared_ptr<const VecType>> bras_; // use offsets in the hamiltonian as a unique identifier
+    std::map<int, std::shared_ptr<const VecType>> bras_; // use tags as unique identifier
     std::map<int, std::shared_ptr<Matrix>> gammas_;
 
     bool active_;
@@ -47,46 +49,46 @@ class GammaBranch {
   public:
     GammaBranch() : active_(false) {}
 
-    void insert(std::shared_ptr<const VecType> bra, const int offset, const std::list<GammaSQ>& gsq) {
+    void insert(std::shared_ptr<const VecType> bra, const int bra_tag, const std::list<GammaSQ>& gsq) {
       if (gsq.empty()) {
-        bras_.emplace(offset,bra);
+        bras_.emplace(bra_tag, bra);
       } else {
-        auto first = gsq.front();
-        auto rest = gsq; rest.pop_front();
+        auto first = gsq.back();
+        auto rest = gsq; rest.pop_back();
         std::shared_ptr<GammaBranch<VecType>> target = branches_[static_cast<int>(first)];
 
         target->activate();
-        target->insert(bra, offset, rest);
+        target->insert(bra, bra_tag, rest);
       }
     }
 
-    std::shared_ptr<const Matrix> search(const int offset, const std::list<GammaSQ>& gsq) const {
+    std::shared_ptr<const Matrix> search(const int tag, const std::list<GammaSQ>& gsq) const {
       if (gsq.empty()) {
-        assert(gammas_.find(offset)!=gammas_.end()); return gammas_.find(offset)->second;
+        assert(gammas_.find(tag)!=gammas_.end()); return gammas_.find(tag)->second;
       } else {
-        auto first = gsq.front();
-        auto rest = gsq; rest.pop_front();
-        return branch(first)->search(offset, rest);
+        auto first = gsq.back();
+        auto rest = gsq; rest.pop_back();
+        return branch(first)->search(tag, rest);
       }
     }
 
-    std::shared_ptr<Matrix> search(const int offset, const std::list<GammaSQ>& gsq) {
+    std::shared_ptr<Matrix> search(const int tag, const std::list<GammaSQ>& gsq) {
       if (gsq.empty()) {
-        assert(gammas_.find(offset)!=gammas_.end()); return gammas_.find(offset)->second;
+        assert(gammas_.find(tag)!=gammas_.end()); return gammas_.find(tag)->second;
       } else {
-        auto first = gsq.front();
-        auto rest = gsq; rest.pop_front();
-        return branch(first)->search(offset, rest);
+        auto first = gsq.back();
+        auto rest = gsq; rest.pop_back();
+        return branch(first)->search(tag, rest);
       }
     }
 
-    bool exist(const int offset, const std::list<GammaSQ>& gsq) const {
+    bool exist(const int tag, const std::list<GammaSQ>& gsq) const {
       if (gsq.empty())
-        return gammas_.find(offset) != gammas_.end();
+        return gammas_.find(tag) != gammas_.end();
       else {
-        auto first = gsq.front();
-        auto rest = gsq; rest.pop_front();
-        return branch(first) ? branch(first)->exist(offset, rest) : false;
+        auto first = gsq.back();
+        auto rest = gsq; rest.pop_back();
+        return branch(first) ? branch(first)->exist(tag, rest) : false;
       }
     }
 
@@ -161,10 +163,10 @@ class GammaTree {
 
     std::shared_ptr<GammaBranch<VecType>> base() { return base_; }
 
-    void insert(std::shared_ptr<const VecType> bra, const int offset, const std::list<GammaSQ>& ops) { base_->insert(bra, offset, ops); }
-    std::shared_ptr<      Matrix> search(const int offset, const std::list<GammaSQ>& address)       { return base_->search(offset, address); }
-    std::shared_ptr<const Matrix> search(const int offset, const std::list<GammaSQ>& address) const { return base_->search(offset, address); }
-    bool exist(const int offset, const std::list<GammaSQ>& address) const { return base_->exist(offset, address); }
+    void insert(std::shared_ptr<const VecType> bra, const int tag, const std::list<GammaSQ>& ops) { base_->insert(bra, tag, ops); }
+    std::shared_ptr<      Matrix> search(const int tag, const std::list<GammaSQ>& address)       { return base_->search(tag, address); }
+    std::shared_ptr<const Matrix> search(const int tag, const std::list<GammaSQ>& address) const { return base_->search(tag, address); }
+    bool exist(const int tag, const std::list<GammaSQ>& address) const { return base_->exist(tag, address); }
 
     std::shared_ptr<const VecType> ket() const { return ket_; }
 
@@ -203,7 +205,7 @@ class GammaTask {
           if (b==a_ && j==static_cast<int>(operation_)) continue;
           std::shared_ptr<const VecType> bvec = avec->apply(b, action(j), spin(j));
           for (auto& jbra : second->bras())
-            dot_product(jbra.second, bvec, second->gammas().find(jbra.first)->second->element_ptr(0, a_ + norb*b));
+            dot_product(jbra.second, bvec, second->gammas().find(jbra.first)->second->element_ptr(0, a_*norb + b));
 
           for (int k = 0; k < nops; ++k) {
             std::shared_ptr<GammaBranch<VecType>> third = second->branch(k);
@@ -213,7 +215,7 @@ class GammaTask {
               if (b==c && k==j) continue;
               std::shared_ptr<const VecType> cvec = bvec->apply(c, action(k), spin(k));
               for (auto& kbra : third->bras())
-                dot_product(kbra.second, cvec, third->gammas().find(kbra.first)->second->element_ptr(0, a_ + norb * b + norb * norb * c));
+                dot_product(kbra.second, cvec, third->gammas().find(kbra.first)->second->element_ptr(0, a_*norb*norb + b*norb + c));
             }
           }
         }
@@ -243,30 +245,30 @@ class GammaForest {
     GammaForest() {}
 
     template <int unit>
-    void insert(std::shared_ptr<const VecType> ket, const int ioffset, std::shared_ptr<const VecType> bra, const int joffset, const std::list<GammaSQ>& ops) {
-      std::shared_ptr<GammaTree<VecType>> gtree = tree<unit>(ket, ioffset);
-      gtree->insert(bra, joffset, ops);
+    void insert(std::shared_ptr<const VecType> bra, const int bra_tag, std::shared_ptr<const VecType> ket, const int ket_tag, const std::list<GammaSQ>& ops) {
+      std::shared_ptr<GammaTree<VecType>> gtree = tree<unit>(ket, ket_tag);
+      gtree->insert(bra, bra_tag, ops);
     }
 
     template <int unit>
-    std::shared_ptr<Matrix> get(const int ioffset, const int joffset, const std::list<GammaSQ>& ops) {
-      auto itree = forests_[unit].find(ioffset); assert(itree!=forests_[unit].end());
-      return itree->second->search(joffset, ops);
+    std::shared_ptr<Matrix> get(const int bra_tag, const int ket_tag, const std::list<GammaSQ>& ops) {
+      auto itree = forests_[unit].find(ket_tag); assert(itree!=forests_[unit].end());
+      return itree->second->search(bra_tag, ops);
     }
 
     template <int unit>
-    std::shared_ptr<const Matrix> get(const int ioffset, const int joffset, const std::list<GammaSQ>& ops) const {
-      auto itree = forests_[unit].find(ioffset); assert(itree!=forests_[unit].end());
-      return itree->second->search(joffset, ops);
+    std::shared_ptr<const Matrix> get(const int bra_tag, const int ket_tag, const std::list<GammaSQ>& ops) const {
+      auto itree = forests_[unit].find(ket_tag); assert(itree!=forests_[unit].end());
+      return itree->second->search(bra_tag, ops);
     }
 
     template <int unit>
-    bool exist(const int ioffset, const int joffset, const std::list<GammaSQ>& ops) const {
-      auto itree = forests_[unit].find(ioffset);
+    bool exist(const int bra_tag, const int ket_tag, const std::list<GammaSQ>& ops) const {
+      auto itree = forests_[unit].find(ket_tag);
       if (itree == forests_[unit].end())
         return false;
       else
-        return itree->second->exist(joffset, ops);
+        return itree->second->exist(bra_tag, ops);
     }
 
     int norb() const { return forests_[0].begin()->second->norb(); }
@@ -368,17 +370,23 @@ class GammaForest {
       tasks.compute();
     }
 
+    void couple_blocks(const DimerSubspace<VecType>& AB, const DimerSubspace<VecType>& ABp); // implemented in gamma_coupling.hpp
+
   private:
     template <int unit>
-    std::shared_ptr<GammaTree<VecType>> tree(std::shared_ptr<const VecType> ket, const int ioffset) {
-      typename std::map<int, std::shared_ptr<GammaTree<VecType>>>::iterator itree = forests_[unit].find(ioffset);
+    std::shared_ptr<GammaTree<VecType>> tree(std::shared_ptr<const VecType> ket, const int ket_tag) {
+      typename std::map<int, std::shared_ptr<GammaTree<VecType>>>::iterator itree = forests_[unit].find(ket_tag);
       if (itree == forests_[unit].end()) {
-        forests_[unit].emplace(ioffset, std::make_shared<GammaTree<VecType>>(ket));
-        itree = forests_[unit].find(ioffset);
+        forests_[unit].emplace(ket_tag, std::make_shared<GammaTree<VecType>>(ket));
+        itree = forests_[unit].find(ket_tag);
       }
       return itree->second;
     }
 };
+
+#define ASD_HEADERS
+#include <src/asd/gamma_coupling.hpp>
+#undef ASD_HEADERS
 
 template <>
 void GammaForest<DistDvec, 2>::compute();
@@ -523,7 +531,7 @@ class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
               if (!bblock) continue;
 
               for (auto& jbra : second->bras())
-                dot_product(jbra.second, bblock, second->gammas().find(jbra.first)->second->element_ptr(iket*jbra.second->ij(), a_ + norb*b));
+                dot_product(jbra.second, bblock, second->gammas().find(jbra.first)->second->element_ptr(iket*jbra.second->ij(), a_*norb + b));
 
               for (int k = 0; k < nops; ++k) {
                 std::shared_ptr<GammaBranch<RASDvec>> third = second->branch(k);
@@ -534,7 +542,7 @@ class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
                   std::shared_ptr<const RASBlock<double>> cblock = next_block(third, bblock, c, action(k), spin(k));
                   if (!cblock) continue;
                   for (auto& kbra : third->bras())
-                    dot_product(kbra.second, cblock, third->gammas().find(kbra.first)->second->element_ptr(iket*kbra.second->ij(), a_+norb*b+norb*norb*c));
+                    dot_product(kbra.second, cblock, third->gammas().find(kbra.first)->second->element_ptr(iket*kbra.second->ij(), a_*norb*norb + b*norb + c));
                 }
               }
             }

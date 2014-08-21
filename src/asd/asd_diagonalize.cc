@@ -108,13 +108,12 @@ shared_ptr<Matrix> ASD_base::apply_hamiltonian(const Matrix& o, const vector<Dim
         dgemm_("T", "N", jAB->dimerstates(), nstates, iAB->dimerstates(), 1.0, hamiltonian_->element_ptr(ioff, joff), hamiltonian_->ndim(),
                                                                                o.element_ptr(ioff, 0), o.ndim(),
                                                                           1.0, out->element_ptr(joff, 0), out->ndim());
-      }
-      else {
-        shared_ptr<const Matrix> block = couple_blocks<true>(*iAB, *jAB);
+      } else {
+        shared_ptr<const Matrix> block = couple_blocks<true>(*jAB, *iAB);
 
         if (block) {
-          dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
-          dgemm_("T", "N", block->mdim(), nstates, block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
+          dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
+          dgemm_("T", "N", block->mdim(), nstates, block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
         }
       }
     }
@@ -123,8 +122,7 @@ shared_ptr<Matrix> ASD_base::apply_hamiltonian(const Matrix& o, const vector<Dim
       dgemm_("N", "N", iAB->dimerstates(), nstates, iAB->dimerstates(), 1.0, hamiltonian_->element_ptr(ioff, ioff), hamiltonian_->ndim(),
                                                                              o.element_ptr(ioff, 0), o.ndim(),
                                                                         1.0, out->element_ptr(ioff, 0), out->ndim());
-    }
-    else {
+    } else {
       shared_ptr<const Matrix> block = compute_diagonal_block<true>(*iAB);
       dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), out->ndim());
     }

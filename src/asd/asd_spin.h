@@ -27,15 +27,38 @@
 #define __asd_asd_spin_h
 
 #include <src/math/sparsematrix.h>
+#include <src/asd/coupling.h>
+#include <src/asd/dimersubspace.h>
 
 namespace bagel {
+
+template <typename VecType>
+class ASDSpinMap {
+  protected:
+    std::map<std::pair<int,int>, double> coords_;
+  public:
+    ASDSpinMap() { }
+
+    const std::map<std::pair<int,int>, double>& coords() const { return coords_; }
+    template<typename... Args>
+    void emplace(Args&&... t) { coords_.emplace(std::forward<Args>(t)...); }
+
+    void couple_blocks(const DimerSubspace<VecType>& AB, const DimerSubspace<VecType>& ApBp);
+    void diagonal_block(const DimerSubspace<VecType>& AB);
+};
+
+#define ASD_HEADERS
+#include <src/asd/asd_spin_coupling.hpp>
+#undef  ASD_HEADERS
+
 
 class ASDSpin : public SparseMatrix {
   protected:
     const int max_spin_;
 
   public:
-    ASDSpin(const int dimension, std::map<std::pair<int,int>, double>& coords, const int max) : SparseMatrix(dimension, dimension, coords), max_spin_(max) {}
+    template<typename T>
+    ASDSpin(const int dimension, const ASDSpinMap<T>& spinmap, const int max) : SparseMatrix(dimension, dimension, spinmap.coords()), max_spin_(max) {}
 
     const int max() const { return max_spin_; }
 

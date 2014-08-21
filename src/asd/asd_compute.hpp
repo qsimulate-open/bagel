@@ -29,7 +29,7 @@
 #define BAGEL_ASD_COMPUTE_H
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::compute() {
+void ASD<VecType>::compute() {
   Timer asdtime;
   std::cout << std::endl << " ===== Starting construction of dimer Hamiltonian " << std::endl;
   std::cout << "   o Dimer space:" << std::endl;
@@ -39,16 +39,16 @@ void MultiExcitonHamiltonian<VecType>::compute() {
 
   auto gammaforest = std::make_shared<GammaForest<VecType, 2>>();
   {
-    std::map<std::pair<int,int>, double> spinmap;
+    auto spinmap = std::make_shared<ASDSpinMap<VecType>>();
     for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
       for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
-        gamma_couple_blocks(*iAB, *jAB, gammaforest);
-        spin_couple_blocks(*iAB, *jAB, spinmap);
+        gammaforest->couple_blocks(*jAB, *iAB);
+        spinmap->couple_blocks(*jAB, *iAB);
       }
-      gamma_couple_blocks(*iAB, *iAB, gammaforest);
-      compute_diagonal_spin_block(*iAB, spinmap);
+      gammaforest->couple_blocks(*iAB, *iAB);
+      spinmap->diagonal_block(*iAB);
     }
-    spin_ = std::make_shared<ASDSpin>(dimerstates_, spinmap, max_spin_);
+    spin_ = std::make_shared<ASDSpin>(dimerstates_, *spinmap, max_spin_);
   }
 
   std::cout << "  o Preparing Gamma trees and building spin operator - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
@@ -80,11 +80,12 @@ void MultiExcitonHamiltonian<VecType>::compute() {
       for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
         const int joff = jAB->offset();
 
-        std::shared_ptr<Matrix> block = couple_blocks<true>(*iAB, *jAB);
+// TODO remove this comment once the gammaforst issue has been fixed (bra and ket have been exchanged)
+        std::shared_ptr<Matrix> block = couple_blocks<true>(*jAB, *iAB);
 
         if (block) {
-          hamiltonian_->add_block(1.0, ioff, joff, block->ndim(), block->mdim(), block);
-          hamiltonian_->add_block(1.0, joff, ioff, block->mdim(), block->ndim(), block->transpose());
+          hamiltonian_->add_block(1.0, joff, ioff, block->ndim(), block->mdim(), block);
+          hamiltonian_->add_block(1.0, ioff, joff, block->mdim(), block->ndim(), block->transpose());
         }
       }
     }
@@ -100,10 +101,10 @@ void MultiExcitonHamiltonian<VecType>::compute() {
 
   adiabats_ = cc->copy();
 
-  if ( dipoles_ ) { // TODO Redo to make better use of memory
+  if (dipoles_) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;
     std::shared_ptr<const Reference> dimerref = dimer_->sref();
-    DimerDipole dipole = DimerDipole(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->active_refs().first->nact(), dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
+    DimerDipole dipole(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->active_refs().first->nact(), dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
     std::array<std::string,3> mu_labels = {{"x", "y", "z"}};
     for (int i = 0; i < 3; ++i) {
       std::string label("mu_");

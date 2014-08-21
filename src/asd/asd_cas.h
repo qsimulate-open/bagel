@@ -30,22 +30,21 @@
 
 namespace bagel {
 
-class ASD_CAS : public MultiExcitonHamiltonian<Dvec> {
-   public:
-      ASD_CAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCAS> cispace) :
-        MultiExcitonHamiltonian<Dvec>(input, dimer, cispace)
-      {
-        cispace_->intermediates();
-      }
+class ASD_CAS : public ASD<Dvec> {
+  public:
+    ASD_CAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCAS> cispace)
+      : ASD<Dvec>(input, dimer, cispace) {
+      cispace_->intermediates();
+    }
 
-   private:
-      std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
-      std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, const double* modata) const override;
+  private:
+    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
+    std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, const double* modata) const override;
 
-      void sigma_aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* h1, const double* h2) const;
-      void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
-      void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, const double* mo2e_ptr) const;
-      void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
+    void sigma_aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* h1, const double* h2) const;
+    void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
+    void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, const double* mo2e_ptr) const;
+    void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
 };
 
 }

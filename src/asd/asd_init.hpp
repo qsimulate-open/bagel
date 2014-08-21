@@ -29,9 +29,9 @@
 #define BAGEL_ASD_INIT_H
 
 template <class VecType>
-MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace_base<VecType>> cispace) :
-  ASD_base(input, dimer), cispace_(cispace)
-{
+ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace_base<VecType>> cispace)
+ : ASD_base(input, dimer), cispace_(cispace) {
+
   Timer timer;
 
   cispace_->complete();
@@ -59,7 +59,7 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
 }
 
 template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const {
+std::shared_ptr<Matrix> ASD<VecType>::compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const {
 
   auto out = std::make_shared<Matrix>(dimerstates_, dimerstates_);
 
@@ -68,12 +68,13 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_1e_prop(std::s
     for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
       const int joff = jAB->offset();
 
-      std::array<MonomerKey,4> keys {{ iAB->template monomerkey<0>(), iAB->template monomerkey<1>(),
-                                       jAB->template monomerkey<0>(), jAB->template monomerkey<1>() }};
+// TODO remove this comment once the gammaforst issue has been fixed (bra and ket have been exchanged)
+      std::array<MonomerKey,4> keys {{ jAB->template monomerkey<0>(), jAB->template monomerkey<1>(),
+                                       iAB->template monomerkey<0>(), iAB->template monomerkey<1>() }};
       std::shared_ptr<Matrix> out_block = compute_offdiagonal_1e<true>(keys, hAB);
 
-      out->add_block(1.0, ioff, joff, out_block->ndim(), out_block->mdim(), out_block);
-      out->add_block(1.0, joff, ioff, out_block->mdim(), out_block->ndim(), out_block->transpose());
+      out->add_block(1.0, joff, ioff, out_block->ndim(), out_block->mdim(), out_block);
+      out->add_block(1.0, ioff, joff, out_block->mdim(), out_block->ndim(), out_block->transpose());
     }
     std::shared_ptr<const Matrix> tmp = compute_diagonal_1e(*iAB, hAA->data(), hBB->data(), core);
     out->add_block(1.0, ioff, ioff, tmp->ndim(), tmp->mdim(), tmp);

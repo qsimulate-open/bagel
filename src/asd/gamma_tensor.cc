@@ -34,24 +34,24 @@ struct init {
     {GammaSQ::CreateBeta},
     {GammaSQ::AnnihilateAlpha},
     {GammaSQ::AnnihilateBeta},
-    {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha},
-    {GammaSQ::AnnihilateBeta,  GammaSQ::CreateBeta},
-    {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta},
-    {GammaSQ::AnnihilateBeta,  GammaSQ::CreateAlpha},
+    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha},
+    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta},
+    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha},
+    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta},
     {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha},
     {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},
-    {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha},
+    {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta},
     {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha},
     {GammaSQ::CreateBeta,  GammaSQ::CreateBeta},
-    {GammaSQ::CreateBeta,  GammaSQ::CreateAlpha},
-    {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha},
-    {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::CreateBeta},
-    {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::CreateAlpha},
-    {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta},
-    {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta},
-    {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha},
-    {GammaSQ::AnnihilateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateAlpha},
-    {GammaSQ::AnnihilateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta}
+    {GammaSQ::CreateAlpha, GammaSQ::CreateBeta},
+    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha},
+    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},
+    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha},
+    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta},
+    {GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha},
+    {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha},
+    {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta},
+    {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta}
   }; }
 };
 }
@@ -60,7 +60,6 @@ const std::list<std::list<GammaSQ>> GammaTensor::oplist_(init::call());
 
 
 GammaTensor& GammaTensor::operator=(const GammaTensor& o) {
-  assert(sparse_.size() == o.sparse_.size() && norb_ == o.norb_);
   auto ptr = o.sparse_.begin();
   for (auto& i : sparse_) {
     assert(i.first == ptr->first);
@@ -72,7 +71,6 @@ GammaTensor& GammaTensor::operator=(const GammaTensor& o) {
 
 
 GammaTensor& GammaTensor::operator=(GammaTensor&& o) {
-  assert(sparse_.size() == o.sparse_.size() && norb_ == o.norb_);
   auto ptr = o.sparse_.begin();
   for (auto& i : sparse_) {
     assert(i.first == ptr->first);

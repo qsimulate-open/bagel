@@ -30,7 +30,7 @@ using namespace std;
 using namespace bagel;
 using namespace btas;
 
-void ASD_base::compute_rdm() const {
+void ASD_base::compute_rdm() {
   const int norbA = dimer_->active_refs().first->nact();
   const int norbB = dimer_->active_refs().second->nact();
 
@@ -51,49 +51,49 @@ void ASD_base::compute_rdm() const {
       auto& jkey = j.first;
       if (get<0>(jkey) == istate && get<2>(ikey) == get<1>(jkey)) {
         auto tag = make_tuple(get<0>(ikey), get<1>(ikey), get<2>(jkey));
-        auto data = make_shared<Tensor3<double>>(get<1>(ikey).nstates(), get<2>(jkey).nstates(), get<0>(ikey).size);
-        contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *data, {0,3,2});
-        half.emplace(tag, data);
+        if (half.exist(tag)) {
+          contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *half.get_block(tag), {0,3,2});
+        } else {
+          auto data = make_shared<Tensor3<double>>(get<1>(ikey).nstates(), get<2>(jkey).nstates(), i.second->extent(2));
+          contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *data, {0,3,2});
+          half.emplace(tag, data);
+        }
       }
     }
   }
 
-  GammaTensor full;
+  worktensor_ = make_shared<GammaTensor>();
   for (auto& i : half) {
     for (auto& j : st) {
       auto& ikey = i.first;
       auto& jkey = j.first;
       if (get<0>(jkey) == istate && get<1>(ikey) == get<1>(jkey)) {
         auto tag = make_tuple(get<0>(ikey), get<2>(jkey), get<2>(ikey));
-        // we need to compute it only when gamamtensor_[1] has a non zero block.
-        if (gammatensor_[1]->exist(tag)) {
-          // TODO check operator ranks and see if this computation is necessary
-          if (full.exist(tag)) {
-            contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 1.0, *full.get_block(tag), {3,1,2});
-          } else {
-            auto data = make_shared<Tensor3<double>>(get<2>(jkey).nstates(), get<2>(ikey).nstates(), get<0>(ikey).size);
-            contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 0.0, *data, {3,1,2});
-            full.emplace(tag, data);
-          }
+
+        // TODO check if this transformation is necessary
+        if (worktensor_->exist(tag)) {
+          contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 1.0, *worktensor_->get_block(tag), {3,1,2});
+        } else {
+          auto data = make_shared<Tensor3<double>>(get<2>(jkey).nstates(), get<2>(ikey).nstates(), i.second->extent(2));
+          contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 0.0, *data, {3,1,2});
+          worktensor_->emplace(tag, data);
         }
       }
     }
   }
 
-#if 0
+  const auto subspaces = subspaces_base();
+
   // diagonal term
-  for (auto& subspace : subspaces_) {
-    compute_pure_terms(subspace, jop_);
-    std::shared_ptr<Matrix> block = compute_diagonal_block<false>(subspace);
+  for (auto& subspace : subspaces) {
+    compute_diagonal_block<false>(subspace);
   }
-#endif
   // off diagonal term
-#if 0
-  for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
-    for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
-      rdm += *couple_blocks<false>(*iAB, *jAB);
+  for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
+    for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
+      couple_blocks<false>(*jAB, *iAB);
+//    rdm += *couple_blocks<false>(*iAB, *jAB);
     }
   }
-#endif
 
 }

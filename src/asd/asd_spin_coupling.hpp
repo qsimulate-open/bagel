@@ -29,24 +29,24 @@
 #define BAGEL_ASD_SPIN_COUPLING_H
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<std::pair<int, int>, double>& spinmap) {
+void ASDSpinMap<VecType>::couple_blocks(const DimerSubspace<VecType>& AB, const DimerSubspace<VecType>& ApBp) {
   const Coupling term_type = coupling_type(AB, ApBp);
 
   auto spin_block = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
   if ( (term_type == Coupling::abFlip) || (term_type == Coupling::baFlip) ) {
-    std::shared_ptr<VecType> SA, SB;
+    std::shared_ptr<VecType> SAp, SBp;
 
-    std::shared_ptr<const VecType> Ap = ApBp.template ci<0>();
-    std::shared_ptr<const VecType> Bp = ApBp.template ci<1>();
+    std::shared_ptr<const VecType> A = AB.template ci<0>();
+    std::shared_ptr<const VecType> B = AB.template ci<1>();
     switch (term_type) {
       case Coupling::abFlip :
-        SA = AB.template ci<0>()->spin_lower(Ap->det());
-        SB = AB.template ci<1>()->spin_raise(Bp->det());
+        SAp = ApBp.template ci<0>()->spin_lower(A->det());
+        SBp = ApBp.template ci<1>()->spin_raise(B->det());
         break;
       case Coupling::baFlip :
-        SA = AB.template ci<0>()->spin_raise(Ap->det());
-        SB = AB.template ci<1>()->spin_lower(Bp->det());
+        SAp = ApBp.template ci<0>()->spin_raise(A->det());
+        SBp = ApBp.template ci<1>()->spin_lower(B->det());
         break;
       default: assert(false); break; // Control should never be able to reach here...
     }
@@ -60,13 +60,13 @@ void MultiExcitonHamiltonian<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpa
 
     for (int iAp = 0; iAp < nAp; ++iAp) {
       for (int iA = 0; iA < nA; ++iA) {
-        AdotAp.push_back(SA->data(iA)->dot_product(*Ap->data(iAp)));
+        AdotAp.push_back(SAp->data(iAp)->dot_product(*A->data(iA)));
       }
     }
 
     for (int iBp = 0; iBp < nBp; ++iBp) {
       for (int iB = 0; iB < nB; ++iB) {
-        BdotBp.push_back(SB->data(iB)->dot_product(*Bp->data(iBp)));
+        BdotBp.push_back(SBp->data(iBp)->dot_product(*B->data(iB)));
       }
     }
 
@@ -93,8 +93,8 @@ void MultiExcitonHamiltonian<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpa
       for (int jspin = 0; jspin < m; ++jspin) {
         const double ele = spin_block->element(ispin, jspin);
         if ( std::fabs(ele) > 1.0e-4)  {
-          spinmap.emplace(std::make_pair(ispin + ioff, jspin + joff), ele);
-          spinmap.emplace(std::make_pair(jspin + joff, ispin + ioff), ele);
+          this->emplace(std::make_pair(ispin + ioff, jspin + joff), ele);
+          this->emplace(std::make_pair(jspin + joff, ispin + ioff), ele);
         }
       }
     }
@@ -106,7 +106,7 @@ void MultiExcitonHamiltonian<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpa
 //   S^2 = [ (S^A)^2 + (S^B)^2 ] + (S^2 - (S^A)^2 - (S^B)^2)
 //       = [ (S^A)^2 + (S^B)^2 ] + 2 S_z^A S_z^B
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap) {
+void ASDSpinMap<VecType>::diagonal_block(const DimerSubspace<VecType>& subspace) {
   std::shared_ptr<const VecType> Ap = subspace.template ci<0>();
   std::shared_ptr<const VecType> Bp = subspace.template ci<1>();
   std::shared_ptr<const VecType> SA = Ap->spin();
@@ -152,12 +152,12 @@ void MultiExcitonHamiltonian<VecType>::compute_diagonal_spin_block(DSubSpace& su
     for (int jspin = 0; jspin < ispin; ++jspin) {
       const double ele = spin_block->element(ispin,jspin);
       if (std::fabs(ele) > 1.0e-4) {
-        spinmap.emplace(std::make_pair(ispin + offset, jspin + offset), ele);
-        spinmap.emplace(std::make_pair(jspin + offset, ispin + offset), ele);
+        this->emplace(std::make_pair(ispin + offset, jspin + offset), ele);
+        this->emplace(std::make_pair(jspin + offset, ispin + offset), ele);
       }
     }
     const double ele = spin_block->element(ispin, ispin);
-    if (std::fabs(ele) > 1.0e-4) spinmap.emplace(std::make_pair(ispin + offset, ispin + offset), ele);
+    if (std::fabs(ele) > 1.0e-4) this->emplace(std::make_pair(ispin + offset, ispin + offset), ele);
   }
 }
 

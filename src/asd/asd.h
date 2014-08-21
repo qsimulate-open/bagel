@@ -33,7 +33,7 @@ namespace bagel {
 
 /// Template for ASD
 template <class VecType>
-class MultiExcitonHamiltonian : public ASD_base {
+class ASD : public ASD_base {
   protected: using DSubSpace = DimerSubspace<VecType>;
   protected: using DCISpace = DimerCISpace_base<VecType>;
   protected: using CiType = typename VecType::Ci;
@@ -49,7 +49,7 @@ class MultiExcitonHamiltonian : public ASD_base {
     }
 
   public:
-    MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace);
+    ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace);
 
     void compute() override;
 
@@ -60,14 +60,10 @@ class MultiExcitonHamiltonian : public ASD_base {
 
     // Diagonal block stuff
     void compute_pure_terms(DSubSpace& subspace, std::shared_ptr<const DimerJop> jop);
+    void compute_diagonal_2rdm(DSubSpace& subspace);
 
     virtual std::shared_ptr<VecType> form_sigma(std::shared_ptr<const VecType> ccvec, std::shared_ptr<const MOFile> jop) const = 0;
     virtual std::shared_ptr<VecType> form_sigma_1e(std::shared_ptr<const VecType> ccvec, const double* modata) const = 0;
-
-    // Gamma Tree building
-    void gamma_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::shared_ptr<GammaForest<VecType,2>> gammaforest);
-    void spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<std::pair<int, int>, double>& spinmap); // Off-diagonal driver for S^2
-    void compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap);
 
 };
 
@@ -75,9 +71,7 @@ class MultiExcitonHamiltonian : public ASD_base {
 #define ASD_HEADERS
 #include <src/asd/asd_compute.hpp>
 #include <src/asd/asd_compute_diagonal.hpp>
-#include <src/asd/asd_gamma_coupling.hpp>
 #include <src/asd/asd_init.hpp>
-#include <src/asd/asd_spin_coupling.hpp>
 #undef ASD_HEADERS
 
 }

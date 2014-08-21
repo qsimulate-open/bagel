@@ -130,10 +130,10 @@ std::shared_ptr<const Matrix> DimerJop::coulomb_matrix() const { return matrices
 
 template <int A, int B, int C, int D> std::pair<int, int> DimerJop::index(int a, int b, int c, int d) const {
   int iA = 0, jB = 0;
-  if (A == 0) iA += a; else jB += a;
-  if (B == 0) iA = b + iA*nact_.first; else jB = b + jB*nact_.second;
+  if (D == 0) iA = d; else jB = d;
   if (C == 0) iA = c + iA*nact_.first; else jB = c + jB*nact_.second;
-  if (D == 0) iA = d + iA*nact_.first; else jB = d + jB*nact_.second;
+  if (B == 0) iA = b + iA*nact_.first; else jB = b + jB*nact_.second;
+  if (A == 0) iA = a + iA*nact_.first; else jB = a + jB*nact_.second;
   return {iA,jB};
 }
 

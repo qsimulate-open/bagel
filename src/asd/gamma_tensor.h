@@ -41,31 +41,23 @@ namespace asd {
 
 // Store Gamma Tensor as a block-sparse tensor.
 class GammaTensor {
-  protected:
+  public:
     struct listGammaSQ {
       std::list<GammaSQ> list;
-      int size;
-      listGammaSQ(std::list<GammaSQ>& l, int s) : list(l), size(s) { }
-      listGammaSQ(std::list<GammaSQ>&& l, int s) : list(l), size(s) { }
+      listGammaSQ(std::list<GammaSQ>& l) : list(l) { }
+      listGammaSQ(std::list<GammaSQ>&& l) : list(l) { }
 
-      bool operator<(const listGammaSQ& o) const { return std::make_pair(list,size) < std::make_pair(o.list,o.size); }
-      bool operator==(const listGammaSQ& o) const { return std::make_pair(list,size) == std::make_pair(o.list,o.size); }
-
-      int calculate_norb() const {
-        const double o = std::pow(size, 1.0/list.size());
-        const long int n = std::lrint(o);
-        assert(std::fabs(o - n) < 1.0e-15);
-        return n;
-      }
+      bool operator==(const listGammaSQ& o) const { return list == o.list; }
+      bool operator< (const listGammaSQ& o) const { return list <  o.list; }
       void print() const {
         for (auto& i : list) std::cout << i << " ";
-        std::cout << "size: " << size << std::endl;
+        std::cout << std::endl;
       }
     };
 
+  protected:
     using SparseMap = std::map<std::tuple<listGammaSQ, MonomerKey, MonomerKey>, std::shared_ptr<btas::Tensor3<double>>>;
     SparseMap sparse_;
-    int norb_;
 
     static const std::list<std::list<GammaSQ>> oplist_;
 
@@ -79,14 +71,13 @@ class GammaTensor {
     GammaTensor(asd::Wrap<GammaForest<T,N>,M> forest, const std::vector<DimerSubspace<T>>& sp) {
       std::shared_ptr<GammaForest<T,N>> f = forest.f;
 
-      norb_ = f->norb();
       // initialize operator space
       for (auto o : oplist_) {
         for (auto& i : sp)
-          for (auto& j : sp)
+          for (auto& j : sp) {
             if (f->template exist<M>(i.template tag<M>(), j.template tag<M>(), o)) {
               std::shared_ptr<Matrix> mat = f->template get<M>(i.template tag<M>(), j.template tag<M>(), o);
-              btas::CRange<3> range(i.template monomerkey<M>().nstates(), j.template monomerkey<M>().nstates(), std::lrint(std::pow(norb_, o.size())));
+              btas::CRange<3> range(i.template monomerkey<M>().nstates(), j.template monomerkey<M>().nstates(), mat->mdim());
               // checking ndim
               assert(mat->ndim() == range.extent(0)*range.extent(1));
               // checking mdim
@@ -95,28 +86,19 @@ class GammaTensor {
               assert(mat->storage().size() == range.area());
               // convert this matrix to 3-tensor
               auto tensor = std::make_shared<btas::Tensor3<double>>(range, std::move(mat->storage()));
-              // add matrix
-              sparse_.emplace(std::make_tuple(listGammaSQ(o, mat->mdim()), i.template monomerkey<M>(), j.template monomerkey<M>()), tensor);
+              sparse_.emplace(std::make_tuple(listGammaSQ(o), i.template monomerkey<M>(), j.template monomerkey<M>()), tensor);
             }
-      }
-    }
-
-    // constructor that takes sparsity information
-    GammaTensor(const std::list<std::tuple<listGammaSQ, MonomerKey, MonomerKey>>& o) {
-      norb_ = std::get<0>(o.front()).calculate_norb();
-      for (auto& i : o) {
-        assert(norb_ == std::get<0>(i).calculate_norb());
-        sparse_.emplace(i, std::make_shared<btas::Tensor3<double>>(std::get<1>(i).nstates(), std::get<2>(i).nstates(), std::get<0>(i).size));
+          }
       }
     }
 
     // copy constructor
-    GammaTensor(const GammaTensor& o) : norb_(o.norb_) {
+    GammaTensor(const GammaTensor& o) {
       for (auto& i : o.sparse_)
         sparse_.emplace(i.first, std::make_shared<btas::Tensor3<double>>(*i.second));
     }
     // move constructor
-    GammaTensor(GammaTensor&& o) : norb_(o.norb_) {
+    GammaTensor(GammaTensor&& o) {
       for (auto& i : o.sparse_)
         sparse_.emplace(i.first, i.second);
     }
@@ -125,8 +107,13 @@ class GammaTensor {
     GammaTensor& operator=(const GammaTensor& o);
     GammaTensor& operator=(GammaTensor&& o);
 
-    std::shared_ptr<GammaTensor> clone() const { return std::make_shared<GammaTensor>(blocks()); }
     std::shared_ptr<GammaTensor> copy() const { return std::make_shared<GammaTensor>(*this); }
+    std::shared_ptr<GammaTensor> clone() const {
+      auto out = std::make_shared<GammaTensor>();
+      for (auto& i : sparse_)
+        out->emplace(i.first, std::make_shared<btas::Tensor3<double>>(i.second->range(), 0.0));
+      return out;
+    }
 
     auto begin() -> decltype(sparse_.begin()) { return sparse_.begin(); }
     auto end() -> decltype(sparse_.end()) { return sparse_.end(); }
@@ -137,6 +124,9 @@ class GammaTensor {
 
     int nblocks() const { return sparse_.size(); }
     bool exist(const std::tuple<listGammaSQ, MonomerKey, MonomerKey> tag) const { return sparse_.find(tag) != sparse_.end(); }
+    bool exist(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
+      return exist(std::make_tuple(std::list<GammaSQ>(o), i, j));
+    }
 
     template <typename... Args>
     auto emplace(Args... args) -> decltype(sparse_.emplace(std::forward<Args>(args)...)) { return sparse_.emplace(std::forward<Args>(args)...); }
@@ -144,19 +134,13 @@ class GammaTensor {
     std::shared_ptr<btas::Tensor3<double>> get_block(const std::tuple<listGammaSQ, MonomerKey, MonomerKey> tag) { return sparse_.at(tag); }
     std::shared_ptr<const btas::Tensor3<double>> get_block(const std::tuple<listGammaSQ, MonomerKey, MonomerKey> tag) const { return sparse_.at(tag); }
     std::shared_ptr<const btas::Tensor3<double>> get_block(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
-      return sparse_.at(std::make_tuple(listGammaSQ(std::list<GammaSQ>(o), std::lrint(std::pow(norb_, o.size()))), i, j));
+      return sparse_.at(std::make_tuple(std::list<GammaSQ>(o), i, j));
     }
 
     MatView get_block_as_matview(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
-      auto tensor = sparse_.at(std::make_tuple(listGammaSQ(std::list<GammaSQ>(o), std::lrint(std::pow(norb_, o.size()))), i, j));
+      auto tensor = sparse_.at(std::make_tuple(std::list<GammaSQ>(o), i, j));
       btas::CRange<2> range(tensor->extent(0)*tensor->extent(1), tensor->extent(2));
       return MatView(btas::make_view(range, tensor->storage()), /*localized*/false);
-    }
-
-    std::list<std::tuple<listGammaSQ, MonomerKey, MonomerKey>> blocks() const {
-      std::list<std::tuple<listGammaSQ, MonomerKey, MonomerKey>> out;
-      for (auto& i : sparse_) out.push_back(i.first);
-      return out;
     }
 };
 

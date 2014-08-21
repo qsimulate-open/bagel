@@ -25,6 +25,7 @@
 
 #include <fstream>
 #include <src/rel/dirac.h>
+#include <src/math/quatmatrix.h>
 #include <src/zcasscf/zcasscf.h>
 
 using namespace std;
@@ -35,14 +36,14 @@ ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<
   if ((dynamic_pointer_cast<const RelReference>(ref))) {
       auto relref = dynamic_pointer_cast<const RelReference>(ref);
       coeff_ = relref->relcoeff();
-      no_kramers_init_ = true;
+      ref_ = ref;
   } else {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
       nr_coeff_ = ref->coeff();
     }
   }
 // relref needed for many things below ; TODO eliminate dependence on ref_ being a relref
-  {
+  if (!dynamic_pointer_cast<const RelReference>(ref)) {
     auto idata_tmp = make_shared<PTree>(*idata_);
     const int ctmp = idata_->get<int>("charge", 0);
     const int nele = geom->nele();
@@ -50,7 +51,7 @@ ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<
       idata_tmp->erase("charge");
       idata_tmp->put<int>("charge", ctmp - 1);
     }
-    auto scf = make_shared<Dirac>(idata_tmp, geom_);
+    auto scf = make_shared<Dirac>(idata_tmp, geom_, ref);
     scf->compute();
     ref_ = scf->conv_to_ref();
   }
@@ -68,7 +69,8 @@ void ZCASSCF::init() {
   if (!geom_->dfs())
     geom_ = geom_->relativistic(relref->gaunt());
 
-  nneg_ = relref->nneg();
+  const bool kramers_coeff = idata_->get<bool>("kramers_coeff", false);
+  nneg_ = kramers_coeff ? geom_->nbasis()*2 : relref->nneg();
 
   // set hcore and overlap
   hcore_   = make_shared<RelHcore>(geom_);
@@ -96,12 +98,22 @@ void ZCASSCF::init() {
       coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
       coeff_ = coeff;
     }
+  } else if (kramers_coeff) {
+    shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
+    coeff_ = ctmp;
+  } else {
+    shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
+    shared_ptr<ZMatrix> coeff = ctmp->clone();
+    const int npos = ctmp->mdim() - nneg_;
+    coeff->copy_block(0, 0, ctmp->mdim(), npos, ctmp->slice(nneg_, nneg_+npos));
+    coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
+    coeff_ = coeff;
   }
 
   // get maxiter from the input
   max_iter_ = idata_->get<int>("maxiter", 100);
   // get maxiter from the input
-  max_micro_iter_ = idata_->get<int>("maxiter_micro", 100);
+  max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
   // get nstate from the input
   nstate_ = idata_->get<int>("nstate", 1);
 #if 0
@@ -116,6 +128,7 @@ void ZCASSCF::init() {
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
   nact_ = idata_->get<int>("nact_cas", nact_);
+  if (!nact_) energy_.resize(1);
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
@@ -151,14 +164,19 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-    init_kramers_coeff();
+  mute_stdcout();
+  if (kramers_coeff) {
+    shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
+    coeff_ = make_shared<const ZMatrix>(*tmp);
+  } else {
+    init_kramers_coeff(); // coeff_ now in block format
+  }
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
-    mute_stdcout(/*fci*/true);
-    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_);
-    resume_stdcout();
+    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_, /*restricted*/true);
   }
+  resume_stdcout();
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
@@ -175,26 +193,23 @@ void ZCASSCF::print_header() const {
 void ZCASSCF::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, const double time) const {
   if (energy.size() != 1 && iter) cout << endl;
   int i = 0;
-  cout << "Cycle" << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
-               << setw(20) << fixed << setprecision(12) << energy[(energy.size() > 0 ? energy.size()-1 : 0)] << "   "
+  for (auto& e : energy) {
+    cout << "Cycle" << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
+               << setw(20) << fixed << setprecision(12) << e << "   "
                << setw(10) << scientific << setprecision(4) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
                << time << endl;
+    ++i;
+  }
 }
 
 
 static streambuf* backup_stream_;
 static ofstream* ofs_;
 
-void ZCASSCF::mute_stdcout(const bool fci) const {
-  if (fci) {
-    ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
-    ofs_ = ofs;
-    backup_stream_ = cout.rdbuf(ofs->rdbuf());
-  } else {
-    ofstream* ofs(new ofstream("microiter.log",(backup_stream_ ? ios::app : ios::trunc)));
-    ofs_ = ofs;
-    backup_stream_ = cout.rdbuf(ofs->rdbuf());
-  }
+void ZCASSCF::mute_stdcout() const {
+  ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
+  ofs_ = ofs;
+  backup_stream_ = cout.rdbuf(ofs->rdbuf());
 }
 
 
@@ -212,21 +227,22 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore) const {
-  // form natural orbitals
-  VectorB eig(nact_*2);
-  auto tmp = make_shared<ZMatrix>(*rdm1);
-  tmp->diagonalize(eig);
-  const ZMatView ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2);
-  // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik
-  auto natorb = make_shared<ZMatrix>(ocoeff * *tmp->get_conjg());
+shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore) {
+   // natural orbitals required
+   shared_ptr<ZMatrix> natorb;
+   if (occup_.size() > 0) {
+     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2));
+   } else {
+     auto natorb_transform = make_natural_orbitals(rdm1)->get_conjg();
+     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2) * *natorb_transform);
+   }
 
-  // scale using eigen values
-  for (int i = 0; i != nact_*2; ++i) {
-    assert(eig[i] >= -1.0e-14);
-    const double fac = eig[i] > 0 ? sqrt(eig[i]) : 0.0;
-    for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
-  }
+   // scale using occupation numbers
+   for (int i = 0; i != nact_*2; ++i) {
+     assert(occup_[i] >= -1.0e-14);
+     const double fac = occup_[i] > 0 ? sqrt(occup_[i]) : 0.0;
+     for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
+   }
 
   shared_ptr<ZMatrix> zero;
   if (!with_hcore) {
@@ -240,7 +256,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 
 shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
   // input should be 1rdm in kramers format
-  shared_ptr<ZMatrix> tmp = rdm1->copy();
+  auto tmp = make_shared<QuatMatrix>(*rdm1);
   bool unitmat = false;
   { // check for unit matrix
     auto unit = tmp->clone();
@@ -250,18 +266,18 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
   }
 
   if (!unitmat) {
-    unique_ptr<double[]> vec(new double[rdm1->ndim()]);
-    zquatev_(tmp->ndim(), tmp->data(), vec.get()); // TODO : maybe replace with standard diagonalize
+    VectorB vec(rdm1->ndim());
+    tmp->diagonalize(vec);
 
     map<int,int> emap;
     auto buf2 = tmp->clone();
     vector<double> vec2(tmp->ndim());
     // sort eigenvectors so that buf is close to a unit matrix
     // target column
-    for (int i = 0; i != tmp->ndim(); ++i) {
+    for (int i = 0; i != tmp->ndim()/2; ++i) {
       // first find the source column
       tuple<int, double> max = make_tuple(-1, 0.0);
-      for (int j = 0; j != tmp->ndim(); ++j)
+      for (int j = 0; j != tmp->ndim()/2; ++j)
         if (sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))) > get<1>(max))
           max = make_tuple(j, sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))));
 
@@ -271,7 +287,9 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
 
       // copy to the target
       copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), buf2->element_ptr(0,i));
+      copy_n(tmp->element_ptr(0,get<0>(max)+tmp->ndim()/2), tmp->ndim(), buf2->element_ptr(0,i+tmp->ndim()/2));
       vec2[i] = vec[get<0>(max)];
+      vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
     }
 
     // fix the phase
@@ -279,11 +297,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
       if (real(buf2->element(i,i)) < 0.0)
         blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
     }
-    // copy eigenvalues TODO: change to blas
-    for (int i=0; i!=tmp->ndim()/2; ++i)
-      vec2[tmp->ndim()/2 + i] = vec2[i];
     occup_ = vec2;
-    coeff_ = update_coeff(coeff_, buf2);
     return buf2;
   } else { // set occupation numbers, but coefficients don't need to be updated
     vector<double> vec2(tmp->ndim());
@@ -311,19 +325,20 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm1_transform(const shared_ptr<ZMatri
 shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatrix> coeff, shared_ptr<const ZMatrix> rdm2) const {
   shared_ptr<ZMatrix> tmp = rdm2->clone();
   auto start = make_shared<const ZMatrix>(*coeff);
+  shared_ptr<const ZMatrix> start_conjg = start->get_conjg();
   int ndim  = coeff->ndim();
   int ndim2 = rdm2->ndim();
   unique_ptr<complex<double>[]> buf(new complex<double>[ndim2*ndim2]);
   // first half transformation
   zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, rdm2->data(), ndim2*ndim, start->data(), ndim, 0.0, buf.get(), ndim2*ndim);
   for (int i = 0; i != ndim; ++i)
-    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, buf.get()+i*ndim2*ndim, ndim2, start->data(), ndim, 0.0, tmp->data()+i*ndim2*ndim, ndim2);
+    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, buf.get()+i*ndim2*ndim, ndim2, start_conjg->data(), ndim, 0.0, tmp->data()+i*ndim2*ndim, ndim2);
   // then tranpose
   blas::transpose(tmp->data(), ndim2, ndim2, buf.get());
   // and do it again
   zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, buf.get(), ndim2*ndim, start->data(), ndim, 0.0, tmp->data(), ndim2*ndim);
   for (int i = 0; i != ndim; ++i)
-    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, tmp->data()+i*ndim2*ndim, ndim2, start->data(), ndim, 0.0, buf.get()+i*ndim2*ndim, ndim2);
+    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, tmp->data()+i*ndim2*ndim, ndim2, start_conjg->data(), ndim, 0.0, buf.get()+i*ndim2*ndim, ndim2);
   // to make sure for non-symmetric density matrices (and anyway this should be cheap).
   blas::transpose(buf.get(), ndim2, ndim2, tmp->data());
   auto out = make_shared<const ZMatrix>(*tmp);
@@ -332,7 +347,7 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatri
 
 
 shared_ptr<const ZMatrix> ZCASSCF::update_coeff(shared_ptr<const ZMatrix> cold, shared_ptr<const ZMatrix> natorb) const {
-  // see active_fock for explanation of conjugation for natorb
+  // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
   auto cnew = make_shared<ZMatrix>(*cold);
   int n    = natorb->ndim();
   int nbas = cold->ndim();
@@ -356,52 +371,11 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
-  // TODO : address diagonalization issues for nclosed=1
-  assert(nact_ > 0);
-  // calculate 1RDM in an original basis set then and active fock with hcore contribution
-  shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
-  shared_ptr<const ZMatrix> afockao = active_fock(rdm1, /*with_hcore*/true);
-
-  const ZMatView ocoeff = coeff_->slice(0, nclosed_*2);
-  const ZMatView vcoeff = coeff_->slice(nocc_*2, nbasis_*2);
-
-  auto trans = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
-  trans->unit();
-  if (nclosed_) {
-    auto ofock = make_shared<ZMatrix>(ocoeff % *afockao * ocoeff);
-    VectorB eig(ofock->ndim());
-    if (nclosed_ == 1) {
-      ofock->diagonalize(eig);
-    } else if (nclosed_ > 1) {
-      zquatev_(ofock->ndim(), ofock->data(), eig.data());
-    }
-    trans->copy_block(0, 0, nclosed_*2, nclosed_*2, ofock->data());
-  }
-  auto vfock = make_shared<ZMatrix>(vcoeff % *afockao * vcoeff);
-  unique_ptr<double[]> eig(new double[vfock->ndim()]);
-  zquatev_(vfock->ndim(), vfock->data(), eig.get());
-  // move_positronic_orbitals;
-  {
-    auto move_one = [this, &vfock](const int offset, const int block1, const int block2) {
-      shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(vfock->ndim(), block1+block2);
-      scratch->copy_block(0,      0, vfock->ndim(), block2, vfock->slice(offset+block1, offset+block1+block2));
-      scratch->copy_block(0, block2, vfock->ndim(), block1, vfock->slice(offset,        offset+block1));
-      vfock->copy_block(0, offset, vfock->ndim(), block1+block2, scratch);
-    };
-    const int nneg2 = nneg_/2;
-    move_one(           0, nneg2, nvirt_-nneg2);
-    move_one(nvirt_, nneg2, nvirt_-nneg2);
-  }
-  trans->copy_block(nocc_*2, nocc_*2, nvirt_*2, nvirt_*2, vfock->data());
-  return make_shared<const ZMatrix>(*coeff_ * *trans);
-
-}
-
-
  shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
    // store both pos and neg energy states, only thing saved thus far
    // TODO : modify to be more like CASSCF than dirac, will need to add FCI stuff
-   auto out =  make_shared<RelReference>(geom_, coeff_, energy_.back(), 0, nocc_, nvirt_, gaunt_, breit_);
+   shared_ptr<ZMatrix> ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false); // transform coefficient to striped structure
+   auto coeff = make_shared<const ZMatrix>(*ctmp);
+   auto out =  make_shared<RelReference>(geom_, coeff, energy_.back(), 0, nocc_, nvirt_, gaunt_, breit_);
    return out;
  }
