@@ -214,8 +214,8 @@ void FormSigmaProdRAS::aET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_double->civec(ist), {GammaSQ::CreateAlpha}, {s});
         Matrix pa(P->extent(0), P->extent(1));
-        blas::ax_plus_y_n(1.0, &(*P)(0,0,r,s), pa.size(), pa.data());
-        blas::ax_plus_y_n(-1.0, &(*P)(0,0,s,r), pa.size(), pa.data());
+        blas::ax_plus_y_n(1.0, &(*P)(0,0,s,r), pa.size(), pa.data());
+        blas::ax_plus_y_n(-1.0, &(*P)(0,0,r,s), pa.size(), pa.data());
         dgemm_("N", "T", double_sector->ndim(), double_sector->mdim(), nccstates, 1.0, tmp_double->data(), tmp_double->ndim(),
                                                             pa.data(), pa.ndim(), 1.0, double_sector->data(), double_sector->ndim());
       }
@@ -272,8 +272,8 @@ void FormSigmaProdRAS::bET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_bb->civec(ist), {GammaSQ::CreateBeta}, {s});
         Matrix pbb(P_bb->extent(0), P_bb->extent(1));
-        blas::ax_plus_y_n(1.0, &(*P_bb)(0,0,r,s), pbb.size(), pbb.data());
-        blas::ax_plus_y_n(-1.0, &(*P_bb)(0,0,s,r), pbb.size(), pbb.data());
+        blas::ax_plus_y_n(1.0, &(*P_bb)(0,0,s,r), pbb.size(), pbb.data());
+        blas::ax_plus_y_n(-1.0, &(*P_bb)(0,0,r,s), pbb.size(), pbb.data());
         dgemm_("N", "T", bb_sector->ndim(), bb_sector->mdim(), nccstates, 1.0, tmp_bb->data(), tmp_bb->ndim(),
                                                             pbb.data(), pbb.ndim(), 1.0, bb_sector->data(), bb_sector->ndim());
       }
@@ -285,7 +285,7 @@ void FormSigmaProdRAS::bET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_ab->civec(ist), {GammaSQ::CreateAlpha}, {s});
         dgemm_("N", "T", ab_sector->ndim(), ab_sector->mdim(), nccstates, 1.0, tmp_ab->data(), tmp_ab->ndim(),
-                                      &(*P_ab)(0,0,r,s), P_ab->extent(0), 1.0, ab_sector->data(), ab_sector->ndim());
+                                      &(*P_ab)(0,0,s,r), P_ab->extent(0), 1.0, ab_sector->data(), ab_sector->ndim());
       }
     }
   }
@@ -336,8 +336,8 @@ void FormSigmaProdRAS::aHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_aa->civec(ist), {GammaSQ::AnnihilateAlpha}, {s});
         Matrix pa(P->extent(0), P->extent(1));
-        blas::ax_plus_y_n(1.0, &(*P)(0,0,s,r), pa.size(), pa.data());
-        blas::ax_plus_y_n(-1.0, &(*P)(0,0,r,s), pa.size(), pa.data());
+        blas::ax_plus_y_n(1.0, &(*P)(0,0,r,s), pa.size(), pa.data());
+        blas::ax_plus_y_n(-1.0, &(*P)(0,0,s,r), pa.size(), pa.data());
         dgemm_("N", "N", aa_sector->ndim(), aa_sector->mdim(), nccstates, 1.0, tmp_aa->data(), tmp_aa->ndim(),
                                                     pa.data(), pa.ndim(), 1.0, aa_sector->data(), aa_sector->ndim());
       }
@@ -396,8 +396,8 @@ void FormSigmaProdRAS::bHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_bb->civec(ist), {GammaSQ::AnnihilateBeta}, {s});
         Matrix pbb(P_bb->extent(0), P_bb->extent(1));
-        blas::ax_plus_y_n(1.0, &(*P_bb)(0,0,s,r), pbb.size(), pbb.data());
-        blas::ax_plus_y_n(-1.0, &(*P_bb)(0,0,r,s), pbb.size(), pbb.data());
+        blas::ax_plus_y_n(1.0, &(*P_bb)(0,0,r,s), pbb.size(), pbb.data());
+        blas::ax_plus_y_n(-1.0, &(*P_bb)(0,0,s,r), pbb.size(), pbb.data());
         dgemm_("N", "N", bb_sector->ndim(), bb_sector->mdim(), nccstates, 1.0, tmp_bb->data(), tmp_bb->ndim(),
                                                   pbb.data(), pbb.ndim(), 1.0, bb_sector->data(), bb_sector->ndim());
       }
@@ -409,7 +409,7 @@ void FormSigmaProdRAS::bHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_ab->civec(ist), {GammaSQ::AnnihilateAlpha}, {s});
         dgemm_("N", "N", ab_sector->ndim(), ab_sector->mdim(), nccstates, -1.0, tmp_ab->data(), tmp_ab->ndim(),
-                                       &(*P_ab)(0,0,r,s), P_ab->extent(0), 1.0, ab_sector->data(), ab_sector->ndim());
+                                       &(*P_ab)(0,0,s,r), P_ab->extent(0), 1.0, ab_sector->data(), ab_sector->ndim());
       }
     }
   }
@@ -433,7 +433,7 @@ void FormSigmaProdRAS::aexc_branch(shared_ptr<const RASBlockVectors> cc_sector, 
       sector_rs.zero();
       for (int ist = 0; ist < nccstates; ++ist)
         apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}, {s,r});
-      dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qaa)(0,0,s,r), Qaa->extent(0),
+      dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qaa)(0,0,r,s), Qaa->extent(0),
                                                                                         1.0, sigma_sector->data(), sigma_sector->ndim());
 
     }
@@ -458,7 +458,7 @@ void FormSigmaProdRAS::bexc_branch(shared_ptr<const RASBlockVectors> cc_sector, 
       sector_rs.zero();
       for (int ist = 0; ist < nccstates; ++ist)
         apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}, {s,r});
-      dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qbb)(0,0,s,r), Qbb->extent(0),
+      dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qbb)(0,0,r,s), Qbb->extent(0),
                                                                                         1.0, sigma_sector->data(), sigma_sector->ndim());
 
     }
@@ -488,7 +488,7 @@ void FormSigmaProdRAS::abflip_branch(shared_ptr<const RASBlockVectors> cc_sector
       sector_rs.zero();
       for (int ist = 0; ist < nccstates; ++ist)
         apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateBeta,GammaSQ::CreateAlpha}, {s, r});
-      dgemm_("N", "T", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,s,r), Qab->extent(0),
+      dgemm_("N", "T", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,r,s), Qab->extent(0),
                                                                                      1.0, sigma_sector->data(), sigma_sector->ndim());
     }
   }
@@ -516,7 +516,7 @@ void FormSigmaProdRAS::baflip_branch(shared_ptr<const RASBlockVectors> cc_sector
       for (int ist = 0; ist < nccstates; ++ist)
         apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateAlpha,GammaSQ::CreateBeta}, {s, r});
 
-      dgemm_("N", "N", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,r,s), Qab->extent(0),
+      dgemm_("N", "N", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,s,r), Qab->extent(0),
                                                                                      1.0, sigma_sector->data(), sigma_sector->ndim());
     }
   }
@@ -692,7 +692,7 @@ void FormSigmaProdRAS::resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView
             const int i = iterij.ij%norb;
             const int j = iterij.ij/norb;
             if (i < k)
-              fdata[iterij.source] += static_cast<double>(kphase*iterij.sign) * ((*Jp)(k, i, j) - (*Jp)(i, k, j));
+              fdata[iterij.source] += static_cast<double>(kphase*iterij.sign) * ((*Jp)(j, i, k) - (*Jp)(j, k, i));
           }
         }
       }
@@ -745,7 +745,7 @@ void FormSigmaProdRAS::resolve_S_adag_a_a(const RASCivecView cc, RASCivecView si
             if (!sdet->allowed(sabit)) continue;
             const int kphase = sign(sabit, k);
             const size_t source_ia = sdet->lexical_offset<0>(sabit);
-            fdata[source_ia] += static_cast<double>(kphase*iterij.sign) * ((*Jp)(k, i, j) - (*Jp)(j, i, k));
+            fdata[source_ia] += static_cast<double>(kphase*iterij.sign) * ((*Jp)(j, i, k) - (*Jp)(k, i, j));
           }
         }
       }
@@ -841,7 +841,7 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
               if (iterij.source >= source_bspace->offset() && iterij.source < source_bspace->offset()+source_bspace->size()) {
                 const int i = iterij.ij%norb;
                 const int j = iterij.ij/norb;
-                sparse_coords[{ib,iterij.source-source_bspace->offset()}] += iterij.sign * (*Jp)(k,i,j);
+                sparse_coords[{ib,iterij.source-source_bspace->offset()}] += iterij.sign * (*Jp)(j,i,k);
               }
             }
           }

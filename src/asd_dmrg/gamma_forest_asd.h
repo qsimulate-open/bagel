@@ -47,20 +47,20 @@ class GammaForestASD : public GammaForest<VecType, 1> {
         {GammaSQ::CreateBeta},
         {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha},
         {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},
-        {GammaSQ::AnnihilateAlpha,  GammaSQ::AnnihilateBeta},
-        {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha},
-        {GammaSQ::AnnihilateBeta,  GammaSQ::CreateBeta},
-        {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta},
-        {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta},
-        {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha},
-        {GammaSQ::AnnihilateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta},
-        {GammaSQ::AnnihilateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateAlpha},
+        {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha},
+        {GammaSQ::CreateAlpha,     GammaSQ::AnnihilateAlpha},
+        {GammaSQ::CreateBeta,      GammaSQ::AnnihilateBeta},
+        {GammaSQ::CreateBeta,      GammaSQ::AnnihilateAlpha},
+        {GammaSQ::CreateBeta,      GammaSQ::CreateAlpha,     GammaSQ::AnnihilateAlpha},
+        {GammaSQ::CreateAlpha,     GammaSQ::CreateAlpha,     GammaSQ::AnnihilateAlpha},
+        {GammaSQ::CreateBeta,      GammaSQ::CreateBeta,      GammaSQ::AnnihilateBeta},
+        {GammaSQ::CreateAlpha,     GammaSQ::CreateBeta,      GammaSQ::AnnihilateBeta},
       };
 
-      for (auto& i : monomer_states) {
+      for (auto& ket : monomer_states) {
         for (auto& coupling : possible_couplings) {
-          int new_nelea = i.first.nelea;
-          int new_neleb = i.first.neleb;
+          int new_nelea = ket.first.nelea;
+          int new_neleb = ket.first.neleb;
           for (GammaSQ& operation : coupling) {
             switch (operation) {
               case GammaSQ::AnnihilateAlpha:
@@ -74,11 +74,11 @@ class GammaForestASD : public GammaForest<VecType, 1> {
             }
           }
 
-          for (auto& j : monomer_states) {
-            if (BlockKey(new_nelea, new_neleb)==j.first) {
+          for (auto& bra : monomer_states) {
+            if (BlockKey(new_nelea, new_neleb)==bra.first) {
 #ifdef DEBUG
-              std::cout << "inserting: <" << j.first.nelea << ", " << j.first.neleb << "|";
-              for (auto opiter = coupling.rbegin(); opiter != coupling.rend(); ++opiter) {
+              std::cout << "inserting: <" << bra.first.nelea << ", " << bra.first.neleb << "|";
+              for (auto opiter = coupling.begin(); opiter != coupling.end(); ++opiter) {
                 GammaSQ operation = *opiter;
                 if ( operation == GammaSQ::AnnihilateAlpha || operation == GammaSQ::CreateAlpha )
                   std::cout << "(A)";
@@ -87,10 +87,10 @@ class GammaForestASD : public GammaForest<VecType, 1> {
                 if ( operation == GammaSQ::CreateAlpha || operation == GammaSQ::CreateBeta )
                   std::cout << "^t";
               }
-              std::cout << "|" << i.first.nelea << ", " << i.first.neleb << ">" << std::endl;
+              std::cout << "|" << ket.first.nelea << ", " << ket.first.neleb << ">" << std::endl;
 #endif
-              sparselist_.emplace_back(coupling, BlockInfo(j.first.nelea, j.first.neleb, j.second->ij()), BlockInfo(i.first.nelea, i.first.neleb, i.second->ij()));
-              this->template insert<0>(i.second, block_tag(i.first), j.second, block_tag(j.first), coupling);
+              sparselist_.emplace_back(coupling, BlockInfo(bra.first.nelea, bra.first.neleb, bra.second->ij()), BlockInfo(ket.first.nelea, ket.first.neleb, ket.second->ij()));
+              this->template insert<0>(bra.second, block_tag(bra.first), ket.second, block_tag(ket.first), coupling);
             }
           }
         }

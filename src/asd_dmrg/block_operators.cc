@@ -35,8 +35,8 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
   for (auto& binfo : left->blocks()) {
     const BlockKey bk = binfo.key();
     { // build pure parts
-      shared_ptr<const btas::Tensor3<double>> gamma_aa = left->coupling({GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}).at({bk,bk}).data;
-      shared_ptr<const btas::Tensor3<double>> gamma_bb = left->coupling({GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}).at({bk,bk}).data;
+      shared_ptr<const btas::Tensor3<double>> gamma_aa = left->coupling({GammaSQ::CreateAlpha,GammaSQ::AnnihilateAlpha}).at({bk,bk}).data;
+      shared_ptr<const btas::Tensor3<double>> gamma_bb = left->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta }).at({bk,bk}).data;
 
       const int gsize = gamma_aa->extent(0) * gamma_aa->extent(1);
       assert(gsize == binfo.nstates*binfo.nstates);
@@ -71,7 +71,7 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
 
       const BlockKey abkey(bk.nelea-1, bk.neleb+1);
       if (left->contains(abkey)) {
-        shared_ptr<btas::Tensor3<double>> gamma_ab = left->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta}).at({abkey,bk}).data;
+        shared_ptr<btas::Tensor3<double>> gamma_ab = left->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({abkey,bk}).data;
         auto Qab = make_shared<btas::Tensor4<double>>(gamma_ab->extent(0), gamma_ab->extent(1), rnorb, rnorb);
         const int gabsize = gamma_ab->extent(0)*gamma_ab->extent(1);
         dgemm_("N", "T", gabsize, rnorb*rnorb, lnorb*lnorb, -1.0, gamma_ab->data(), gabsize, exchange.data(), exchange.ndim(),
@@ -87,8 +87,8 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
       const BlockKey akey(bk.nelea+1, bk.neleb);
       if (left->contains(akey)) {
         shared_ptr<const btas::Tensor3<double>> gamma_a = left->coupling({GammaSQ::CreateAlpha}).at({akey,bk}).data;
-        shared_ptr<const btas::Tensor3<double>> gamma_aaa = left->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}).at({akey,bk}).data;
-        shared_ptr<const btas::Tensor3<double>> gamma_abb = left->coupling({GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha}).at({akey,bk}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_aaa = left->coupling({GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({akey,bk}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_abb = left->coupling({GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({akey,bk}).data;
 
         const int asize = gamma_aaa->extent(0) * gamma_aaa->extent(1);
 
@@ -103,8 +103,8 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
       const BlockKey bkey(bk.nelea, bk.neleb+1);
       if (left->contains(bkey)) {
         shared_ptr<const btas::Tensor3<double>> gamma_b = left->coupling({GammaSQ::CreateBeta}).at({bkey,bk}).data;
-        shared_ptr<const btas::Tensor3<double>> gamma_baa = left->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta}).at({bkey, bk}).data;
-        shared_ptr<const btas::Tensor3<double>> gamma_bbb = left->coupling({GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta}).at({bkey, bk}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_baa = left->coupling({GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({bkey, bk}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_bbb = left->coupling({GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({bkey, bk}).data;
 
         const int bsize = gamma_bbb->extent(0) * gamma_bbb->extent(1);
 
@@ -137,7 +137,7 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
 
       const BlockKey abkey(bk.nelea-1, bk.neleb-1);
       if (left->contains(abkey))
-        P_ab_.emplace(bk, compute_Pxx(abkey, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta}, 1.0));
+        P_ab_.emplace(bk, compute_Pxx(abkey, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}, 1.0));
     }
 
     { // D_a, D_b

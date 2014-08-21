@@ -139,7 +139,7 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
       shared_ptr<const RASBlockVectors> source = sector.second;
       shared_ptr<RASBlockVectors> target = out->sector(lowered_key);
       auto spin_lower = make_shared<Matrix>(target->mdim(), source->mdim());
-      shared_ptr<const btas::Tensor3<double>> gamma_ab = left_->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta}).at({lowered_key, sector.first}).data;
+      shared_ptr<const btas::Tensor3<double>> gamma_ab = left_->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({lowered_key, sector.first}).data;
       assert(gamma_ab->extent(0)==spin_lower->ndim() && gamma_ab->extent(1)==spin_lower->mdim());
       const int lnorb = left()->norb();
       for (int r = 0; r < lnorb; ++r)
@@ -160,7 +160,7 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
       shared_ptr<const RASBlockVectors> source = sector.second;
       shared_ptr<RASBlockVectors> target = out->sector(raised_key);
       auto spin_raise = make_shared<Matrix>(source->mdim(), target->mdim());
-      shared_ptr<const btas::Tensor3<double>> gamma_ab = left_->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta}).at({sector.first, raised_key}).data;
+      shared_ptr<const btas::Tensor3<double>> gamma_ab = left_->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({sector.first, raised_key}).data;
       assert(gamma_ab->extent(0)==spin_raise->ndim() && gamma_ab->extent(1)==spin_raise->mdim());
       const int lnorb = left()->norb();
       for (int r = 0; r < lnorb; ++r)

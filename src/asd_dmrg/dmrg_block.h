@@ -79,8 +79,8 @@ class DMRG_Block {
         const int bratag = forest.block_tag(brakey);
         const int kettag = forest.block_tag(ketkey);
 
-        assert(forest.template exist<0>(kettag, bratag, gammalist));
-        std::shared_ptr<const Matrix> mat = forest.template get<0>(kettag, bratag, gammalist);
+        assert(forest.template exist<0>(bratag, kettag, gammalist));
+        std::shared_ptr<const Matrix> mat = forest.template get<0>(bratag, kettag, gammalist);
         btas::CRange<3> range(brakey.nstates, ketkey.nstates, std::lrint(std::pow(norb(), gammalist.size())));
         // checking ndim
         assert(mat->ndim() == range.extent(0)*range.extent(1));
