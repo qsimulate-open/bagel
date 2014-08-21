@@ -114,38 +114,38 @@ void FormSigmaProdRAS::interaction_terms(shared_ptr<const ProductRASCivec> cc, s
     const bool do_flipdn = cc->left()->contains(BlockKey(cc_key.nelea+1, cc_key.neleb-1));
 
     if (do_aET || do_aaET) {
-      branch_1(cc_sector, sigma, blockops);
-      ptime.tick_print("branch-1");
+      aET_branch(cc_sector, sigma, blockops);
+      ptime.tick_print("aET-branch");
     }
 
     if (do_bET || do_bbET || do_abET) {
-      branch_2(cc_sector, sigma, blockops);
-      ptime.tick_print("branch-2");
+      bET_branch(cc_sector, sigma, blockops);
+      ptime.tick_print("bET-branch");
     }
 
     if (do_aHT || do_aaHT) {
-      branch_3(cc_sector, sigma, blockops);
-      ptime.tick_print("branch-3");
+      aHT_branch(cc_sector, sigma, blockops);
+      ptime.tick_print("aHT-branch");
     }
 
     if (do_bHT || do_bbHT || do_abHT) {
-      branch_4(cc_sector, sigma, blockops);
-      ptime.tick_print("branch-4");
+      bHT_branch(cc_sector, sigma, blockops);
+      ptime.tick_print("bHT-branch");
     }
 
-    // always compute branch 5 and 6
-    branch_5(cc_sector, sigma, blockops);
-    branch_6(cc_sector, sigma, blockops);
-    ptime.tick_print("branch-5&6");
+    // always compute these
+    aexc_branch(cc_sector, sigma, blockops);
+    bexc_branch(cc_sector, sigma, blockops);
+    ptime.tick_print("exc-branches");
 
     if (do_flipup) {
-      branch_7(cc_sector, sigma, blockops);
-      ptime.tick_print("branch-7");
+      abflip_branch(cc_sector, sigma, blockops);
+      ptime.tick_print("abflip-branch");
     }
 
     if (do_flipdn) {
-      branch_8(cc_sector, sigma, blockops);
-      ptime.tick_print("branch-8");
+      baflip_branch(cc_sector, sigma, blockops);
+      ptime.tick_print("baflip-branch");
     }
 
     if (do_aET) {
@@ -170,7 +170,7 @@ void FormSigmaProdRAS::interaction_terms(shared_ptr<const ProductRASCivec> cc, s
   }
 }
 
-void FormSigmaProdRAS::branch_1(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
+void FormSigmaProdRAS::aET_branch(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
   ApplyOperator apply;
   const int rnorb = cc_sector->det()->norb();
   // S_alpha^+
@@ -223,7 +223,7 @@ void FormSigmaProdRAS::branch_1(shared_ptr<const RASBlockVectors> cc_sector, sha
   }
 }
 
-void FormSigmaProdRAS::branch_2(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
+void FormSigmaProdRAS::bET_branch(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
   ApplyOperator apply;
   const int rnorb = cc_sector->det()->norb();
 
@@ -291,7 +291,7 @@ void FormSigmaProdRAS::branch_2(shared_ptr<const RASBlockVectors> cc_sector, sha
   }
 }
 
-void FormSigmaProdRAS::branch_3(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
+void FormSigmaProdRAS::aHT_branch(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
   ApplyOperator apply;
   const int rnorb = cc_sector->det()->norb();
 
@@ -346,7 +346,7 @@ void FormSigmaProdRAS::branch_3(shared_ptr<const RASBlockVectors> cc_sector, sha
 }
 
 // should only enter this code if at least one of the terms will be computed
-void FormSigmaProdRAS::branch_4(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
+void FormSigmaProdRAS::bHT_branch(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
   ApplyOperator apply;
   const int rnorb = cc_sector->det()->norb();
 
@@ -416,7 +416,7 @@ void FormSigmaProdRAS::branch_4(shared_ptr<const RASBlockVectors> cc_sector, sha
 }
 
 
-void FormSigmaProdRAS::branch_5(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
+void FormSigmaProdRAS::aexc_branch(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
   ApplyOperator apply;
   const int rnorb = cc_sector->det()->norb();
 
@@ -440,7 +440,7 @@ void FormSigmaProdRAS::branch_5(shared_ptr<const RASBlockVectors> cc_sector, sha
   }
 }
 
-void FormSigmaProdRAS::branch_6(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
+void FormSigmaProdRAS::bexc_branch(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
   ApplyOperator apply;
   const int rnorb = cc_sector->det()->norb();
 
@@ -466,7 +466,7 @@ void FormSigmaProdRAS::branch_6(shared_ptr<const RASBlockVectors> cc_sector, sha
 
 }
 
-void FormSigmaProdRAS::branch_7(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
+void FormSigmaProdRAS::abflip_branch(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
   ApplyOperator apply;
   const int rnorb = cc_sector->det()->norb();
 
@@ -494,7 +494,7 @@ void FormSigmaProdRAS::branch_7(shared_ptr<const RASBlockVectors> cc_sector, sha
   }
 }
 
-void FormSigmaProdRAS::branch_8(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
+void FormSigmaProdRAS::baflip_branch(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops) const {
   ApplyOperator apply;
   const int rnorb = cc_sector->det()->norb();
 
