@@ -72,11 +72,11 @@ void ApplyOperator::operator()(const double fac, const RASCivecView source, RASC
       auto sblock = get_block(source, dhp, tblock);
       if (sblock) apply_block(sblock, tblock, false);
     }
-  } else if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}}) {
+  } else if (operations == vector<GammaSQ>{{GammaSQ::CreateAlpha,GammaSQ::AnnihilateAlpha}}) {
     assert(*sdet == *tdet);
 
-    const int r = orbitals.back();  // annihilation operator on target
-    const int s = orbitals.front(); // creation operator on target
+    const int r = orbitals.front();  // annihilation operator on target
+    const int s = orbitals.back(); // creation operator on target
 
     bitset<nbit__> mask1; mask1.set(r); mask1.set(s);
     bitset<nbit__> mask2; mask2.set(r);
@@ -104,11 +104,11 @@ void ApplyOperator::operator()(const double fac, const RASCivecView source, RASC
         }
       }
     }
-  } else if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}}) {
+  } else if (operations == vector<GammaSQ>{{GammaSQ::CreateBeta,GammaSQ::AnnihilateBeta}}) {
     assert(*sdet == *tdet);
 
-    const int r = orbitals.back();  // annihilation operator on target
-    const int s = orbitals.front(); // creation operator on target
+    const int r = orbitals.front();  // annihilation operator on target
+    const int s = orbitals.back(); // creation operator on target
 
     bitset<nbit__> mask1; mask1.set(r); mask1.set(s);
     bitset<nbit__> mask2; mask2.set(r);
@@ -136,9 +136,9 @@ void ApplyOperator::operator()(const double fac, const RASCivecView source, RASC
         }
       }
     }
-  } else if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta}}) {
-    const int r = orbitals.back(); // beta annihilation on target
-    const int s = orbitals.front();  // alpha creation on target
+  } else if (operations == vector<GammaSQ>{{GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}}) {
+    const int r = orbitals.front(); // beta annihilation on target
+    const int s = orbitals.back();  // alpha creation on target
 
     // loop over blocks in the target
     for (auto& tblock : target.blocks()) {
@@ -173,9 +173,9 @@ void ApplyOperator::operator()(const double fac, const RASCivecView source, RASC
         }
       }
     }
-  } else if (operations == vector<GammaSQ>{{GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha}}) {
-    const int r = orbitals.back(); // alpha annihilation on target
-    const int s = orbitals.front();  // beta creation on target
+  } else if (operations == vector<GammaSQ>{{GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta}}) {
+    const int r = orbitals.front(); // alpha annihilation on target
+    const int s = orbitals.back();  // beta creation on target
 
     // loop over blocks in the target
     for (auto& tblock : target.blocks()) {

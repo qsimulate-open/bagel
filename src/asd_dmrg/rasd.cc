@@ -300,12 +300,12 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
       for (int ist = 0; ist < nstates_; ++ist) {
         for (auto& isec : civecs[ist]->sectors()) {
           // "diagonal" perturbation: sum_{i,j} [ (i^dagger j)_alpha (i^dagger_j)_beta ]
-          apply_perturbation(isec.second, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
-          apply_perturbation(isec.second, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta}, detmap, weights_[ist]*perturbation, outer_products);
 
           // spinflip perturbations
-          apply_perturbation(isec.second, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta}, detmap, weights_[ist]*perturbation, outer_products);
-          apply_perturbation(isec.second, {GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
 
           // ET/HT perturbations
           apply_perturbation(isec.second, {GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
@@ -427,7 +427,7 @@ void RASD::apply_perturbation(shared_ptr<const RASBlockVectors> cc, vector<Gamma
       else if (oplist.size()==2) {
         for (int p = 0; p < norb; ++p)
           for (int q = 0; q < norb; ++q)
-            apply(1.0, cc->civec(ist), view, oplist, {q, p});
+            apply(1.0, cc->civec(ist), view, oplist, {p, q});
       }
       else {
         assert(false);

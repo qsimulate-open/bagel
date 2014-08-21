@@ -432,7 +432,7 @@ void FormSigmaProdRAS::aexc_branch(shared_ptr<const RASBlockVectors> cc_sector, 
       // apply (r^dagger s)_alpha to the Civecs
       sector_rs.zero();
       for (int ist = 0; ist < nccstates; ++ist)
-        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateAlpha,GammaSQ::CreateAlpha}, {s,r});
+        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateAlpha,GammaSQ::AnnihilateAlpha}, {r,s});
       dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qaa)(0,0,r,s), Qaa->extent(0),
                                                                                         1.0, sigma_sector->data(), sigma_sector->ndim());
 
@@ -457,7 +457,7 @@ void FormSigmaProdRAS::bexc_branch(shared_ptr<const RASBlockVectors> cc_sector, 
       // apply (r^dagger s)_beta to the Civecs
       sector_rs.zero();
       for (int ist = 0; ist < nccstates; ++ist)
-        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateBeta,GammaSQ::CreateBeta}, {s,r});
+        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateBeta,GammaSQ::AnnihilateBeta}, {r,s});
       dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qbb)(0,0,r,s), Qbb->extent(0),
                                                                                         1.0, sigma_sector->data(), sigma_sector->ndim());
 
@@ -487,7 +487,7 @@ void FormSigmaProdRAS::abflip_branch(shared_ptr<const RASBlockVectors> cc_sector
       // apply (r^dagger_alpha s_beta) to the civec
       sector_rs.zero();
       for (int ist = 0; ist < nccstates; ++ist)
-        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateBeta,GammaSQ::CreateAlpha}, {s, r});
+        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateAlpha,GammaSQ::AnnihilateBeta}, {r, s});
       dgemm_("N", "T", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,r,s), Qab->extent(0),
                                                                                      1.0, sigma_sector->data(), sigma_sector->ndim());
     }
@@ -514,7 +514,7 @@ void FormSigmaProdRAS::baflip_branch(shared_ptr<const RASBlockVectors> cc_sector
       // apply (r^dagger_beta s_alpha) to the civec
       sector_rs.zero();
       for (int ist = 0; ist < nccstates; ++ist)
-        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::AnnihilateAlpha,GammaSQ::CreateBeta}, {s, r});
+        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateBeta,GammaSQ::AnnihilateAlpha}, {r, s});
 
       dgemm_("N", "N", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), &(*Qab)(0,0,s,r), Qab->extent(0),
                                                                                      1.0, sigma_sector->data(), sigma_sector->ndim());
