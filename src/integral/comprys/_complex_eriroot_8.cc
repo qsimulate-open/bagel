@@ -17324,7 +17324,7 @@ void ComplexERIRootList::complex_eriroot8(const complex<double>* ta, complex<dou
   for (int i = 1; i <= n; ++i) {
     complex<double> t = ta[i-1];
     offset += 8;
-    if (t == -3.0) {
+    if (isnan(t.real())) {
       fill_n(rr+offset, 8, 0.5);
       fill_n(ww+offset, 8, 0.0);
     } else if (t.real() < -2) {

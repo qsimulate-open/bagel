@@ -113,7 +113,7 @@ void CoulombBatch_Base<DataType, IntType>::compute_ssss(const double integral_th
           screening_[screening_size_] = index;
           ++screening_size_;
         } else {
-          T_[index] = -3.0;
+          T_[index] = nan("");
           coeff_[index] = 0.0;
         }
       }
