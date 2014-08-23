@@ -152,9 +152,9 @@ void MultiSite::set_active(const std::shared_ptr<const PTree> idata) {
   for (int site = 0; site < nsites_; ++site)
     active_refs_.push_back(isolated_refs_[site]->set_active(active_orbitals[site]));
 
-  const int nclosed = accumulate(active_refs_.begin(), isolated_refs_.end(), 0, [] (int x, shared_ptr<const Reference> r) { return x + r->nclosed(); });
-  const int nactive = accumulate(active_refs_.begin(), isolated_refs_.end(), 0, [] (int x, shared_ptr<const Reference> r) { return x + r->nact(); });
-  const int nvirt = accumulate(active_refs_.begin(), isolated_refs_.end(), 0, [] (int x, shared_ptr<const Reference> r) { return x + r->nvirt(); });
+  const int nclosed = accumulate(active_refs_.begin(), active_refs_.end(), 0, [] (int x, shared_ptr<const Reference> r) { return x + r->nclosed(); });
+  const int nactive = accumulate(active_refs_.begin(), active_refs_.end(), 0, [] (int x, shared_ptr<const Reference> r) { return x + r->nact(); });
+  const int nvirt = accumulate(active_refs_.begin(), active_refs_.end(), 0, [] (int x, shared_ptr<const Reference> r) { return x + r->nvirt(); });
 
   shared_ptr<const Geometry> sgeom = sref_->geom();
 
@@ -278,18 +278,18 @@ void MultiSite::scf(const shared_ptr<const PTree> idata) {
   auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
   shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", hfdata, sref_->geom(), sref_));
   rhf->compute();
-  auto ref = rhf->conv_to_ref();
+  sref_ = rhf->conv_to_ref();
   stopwatch.tick_print("Multisite SCF");
 
-  const int nclosed = ref->nclosed();
+  const int nclosed = sref_->nclosed();
 
-  shared_ptr<const Matrix> density = ref->coeff()->form_density_rhf(nclosed);
-  const MatView coeff = ref->coeff()->slice(0,nclosed);
+  shared_ptr<const Matrix> density = sref_->coeff()->form_density_rhf(nclosed);
+  const MatView coeff = sref_->coeff()->slice(0,nclosed);
 
   shared_ptr<const PTree> localize_data = idata->get_child_optional("localization");
   if (!localize_data) localize_data = make_shared<const PTree>();
 
-  auto fock  = make_shared<const Fock<1>>(ref->geom(), ref->hcore(), density, coeff);
+  auto fock  = make_shared<const Fock<1>>(sref_->geom(), sref_->hcore(), density, coeff);
   stopwatch.tick_print("Multisite Fock matrix formation");
 
   localize(localize_data, fock);
@@ -298,7 +298,7 @@ void MultiSite::scf(const shared_ptr<const PTree> idata) {
   set_active(idata);
   stopwatch.tick_print("Set active space");
 
-  MatView active_mos = ref->coeff()->slice(nclosed, nclosed + ref->nact());
+  MatView active_mos = sref_->coeff()->slice(nclosed, nclosed + sref_->nact());
   Matrix fock_mo(active_mos % *fock * active_mos);
   VectorB eigs(active_mos.mdim());
   vector<int> active_blocks;
