@@ -175,11 +175,11 @@ void MultiSite::set_active(const std::shared_ptr<const PTree> idata) {
     shared_ptr<const Reference> isoref = isolated_refs_[site];
     shared_ptr<const Reference> actref = active_refs_[site];
     const int nclosed_occ = isoref->nclosed() - actref->nclosed();
-    const int nactive_occ = isoref->nvirt() - actref->nvirt();
+    const int nvirt_occ = isoref->nvirt() - actref->nvirt();
     auto actview = make_shared<const MatView>(actref->coeff()->slice(actref->nclosed(), actref->nclosed()+actref->nact()));
     svd_info.emplace_back(actview, make_pair(source_closed, source_closed + isoref->nclosed()), nclosed_occ, to_string(site), true);
     source_closed += isoref->nclosed();
-    svd_info.emplace_back(actview, make_pair(source_virt, source_virt + isoref->nvirt()), nactive_occ, to_string(site), false);
+    svd_info.emplace_back(actview, make_pair(source_virt, source_virt + isoref->nvirt()), nvirt_occ, to_string(site), false);
     source_virt += isoref->nvirt();
   }
 
@@ -298,7 +298,7 @@ void MultiSite::scf(const shared_ptr<const PTree> idata) {
   set_active(idata);
   stopwatch.tick_print("Set active space");
 
-  MatView active_mos = sref_->coeff()->slice(nclosed, nclosed + sref_->nact());
+  MatView active_mos = sref_->coeff()->slice(sref_->nclosed(), sref_->nclosed() + sref_->nact());
   Matrix fock_mo(active_mos % *fock * active_mos);
   VectorB eigs(active_mos.mdim());
   vector<int> active_blocks;
@@ -307,6 +307,6 @@ void MultiSite::scf(const shared_ptr<const PTree> idata) {
   shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs, active_blocks);
   Matrix transformed_mos(active_mos * *active_transformation);
   shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
-  scoeff->copy_block(0, nclosed, scoeff->ndim(), transformed_mos.mdim(), transformed_mos);
+  scoeff->copy_block(0, sref_->nclosed(), scoeff->ndim(), transformed_mos.mdim(), transformed_mos);
   sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*scoeff)));
 }
