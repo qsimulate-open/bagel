@@ -65,7 +65,7 @@ class MultiSite {
     std::shared_ptr<const Reference> isolated_refs(const int i) const { return isolated_refs_.at(i); }
     std::shared_ptr<const Reference> active_refs(const int i) const { return active_refs_.at(i); }
 
-////////////////////////////////////////
+    std::shared_ptr<const Reference> conv_to_ref() const { return sref_; }
 
     // Utility functions
     /// Sets active space of sref_ using overlaps with isolated_ref_ active spaces
@@ -77,19 +77,6 @@ class MultiSite {
 
     /// Creates a Reference object for an ASD calculation
     std::shared_ptr<Reference> build_reference(const int site, const std::vector<bool> meanfield) const;
-
-  private:
-    void construct_geometry(); ///< Forms super geometry (sgeom_) and optionally projects isolated geometries and supergeometry to a specified basis
-    void embed_refs();         ///< Forms two references to be used in CI calculations where the inactive monomer is included as "embedding"
-    /// Reads information on monomer subspaces from input
-    void get_spaces(std::shared_ptr<const PTree> idata, std::vector<std::vector<int>>& spaces_A, std::vector<std::vector<int>>& spaces_B);
-
-    /// Takes monomer references, projections them onto the supergeom basis, and arranges the
-    /// to follow (closedA, closedB, activeA, activeB, virtA, virtB) and returns the result
-    std::shared_ptr<const Matrix> form_projected_coeffs();
-
-    /// Lowdin orthogonalizes the result of form_projected_coeffs
-    std::shared_ptr<const Matrix> construct_coeff();
 };
 
 }
