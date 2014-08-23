@@ -56,12 +56,12 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, vector<shared_ptr<const Refe
   // pull out all of the orbitals and put them in closed, active, virtual order
   int current = 0;
   for (auto& r : isolated_refs_) {
-    copy_n(r->coeff()->element_ptr(0,0),                      r->nclosed(), coeff.element_ptr(0, current));
+    copy_n(r->coeff()->element_ptr(0,0),                      r->nclosed()*sgeom->nbasis(), coeff.element_ptr(0, current));
     closed_bounds_.push_back({current, current+r->nclosed()});
     current += r->nclosed();
   }
   for (auto& r : isolated_refs_) {
-    copy_n(r->coeff()->element_ptr(0,r->nclosed()+r->nact()), r->nvirt(),   coeff.element_ptr(0, current));
+    copy_n(r->coeff()->element_ptr(0,r->nclosed()+r->nact()), r->nvirt()*sgeom->nbasis(),   coeff.element_ptr(0, current));
     virt_bounds_.push_back({current, current+r->nvirt()});
     current += r->nvirt();
   }
