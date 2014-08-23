@@ -77,17 +77,17 @@ void ECPBatch::compute() {
     for (int iyC = 0; iyC <= ang1_ - izC; ++iyC) {
       const int ixC = ang1_ - izC - iyC;
       const array<int, 3> lC = {ixC, iyC, izC};
-      for (int contA = 0; contA != basisinfo_[0]->contractions().size(); ++contA)
-      for (int contC = 0; contC != basisinfo_[1]->contractions().size(); ++contC) {
+      for (int contA = 0; contA != cont0_; ++contA)
+      for (int contC = 0; contC != cont1_; ++contC) {
         double tmp = 0.0;
         for (auto& aiter : mol_->atoms()) {
           shared_ptr<const ECP> aiter_ecp = aiter->ecp_parameters();
 
           AngularBatch radint(aiter_ecp, basisinfo_, contA, contC, lA, lC, false, max_iter_, integral_thresh_);
           radint.integrate();
-          tmp += radint.integral().front();
+          tmp += radint.integral(0);
         }
-        const int index = i + contA * asize_ * basisinfo_[1]->contractions().size() + contC * asize_;
+        const int index = contA * cont1_ * asize_ + contC * asize_ + i;
         current_data[index] = tmp;
       }
       ++i;

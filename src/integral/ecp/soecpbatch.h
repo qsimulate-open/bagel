@@ -52,7 +52,7 @@ class SOECPBatch : public Integral {
     int ang0_, ang1_, cont0_, cont1_;
     int asize_final_, asize_;
     bool swap01_;
-    size_t size_alloc_;
+    size_t size_block_, size_alloc_;
     double* stack_save_;
 
     bool allocated_here_;

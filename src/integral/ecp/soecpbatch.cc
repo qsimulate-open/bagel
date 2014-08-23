@@ -57,19 +57,19 @@ SOECPBatch::SOECPBatch(const array<shared_ptr<const Shell>,2>& info, const share
 
 
 SOECPBatch::~SOECPBatch() {
-  stack_->release(3*size_alloc_, stack_save_);
+  stack_->release(size_alloc_, stack_save_);
   if (allocated_here_) resources__->release(stack_);
 }
 
 
 void SOECPBatch::compute() {
 
-  double* const intermediate_c = stack_->get(3*size_alloc_);
-  fill_n(intermediate_c, 3*size_alloc_, 0.0);
+  double* const intermediate_c = stack_->get(size_alloc_);
+  fill_n(intermediate_c, size_alloc_, 0.0);
 
-  double* current_data = intermediate_c;
-  double* current_data1 = intermediate_c + size_alloc_;
-  double* current_data2 = intermediate_c + 2*size_alloc_;
+  double* current_data  = intermediate_c;
+  double* current_data1 = intermediate_c + size_block_;
+  double* current_data2 = intermediate_c + 2*size_block_;
 
   int i = 0;
   for (int izA = 0; izA <= ang0_; ++izA)
@@ -80,8 +80,8 @@ void SOECPBatch::compute() {
     for (int iyC = 0; iyC <= ang1_ - izC; ++iyC) {
       const int ixC = ang1_ - izC - iyC;
       const array<int, 3> lC = {ixC, iyC, izC};
-      for (int contA = 0; contA != basisinfo_[0]->contractions().size(); ++contA)
-      for (int contC = 0; contC != basisinfo_[1]->contractions().size(); ++contC) {
+      for (int contA = 0; contA != cont0_; ++contA)
+      for (int contC = 0; contC != cont1_; ++contC) {
         double iaa = 0.0;
         double rab = 0.0;
         double iab = 0.0;
@@ -94,7 +94,7 @@ void SOECPBatch::compute() {
           rab += radint.integral(1);
           iab += radint.integral(2);
         }
-        const int index = i + contA * asize_ * basisinfo_[1]->contractions().size() + contC * asize_;
+        const int index = contA * cont1_ * asize_ + contC * asize_ + i;
         if (swap01_) {
           current_data[index]  =-iaa;
           current_data1[index] =-rab;
@@ -113,16 +113,16 @@ void SOECPBatch::compute() {
   get_data(current_data1, data1_);
   get_data(current_data2, data2_);
 
-  stack_->release(3*size_alloc_, intermediate_c);
+  stack_->release(size_alloc_, intermediate_c);
 
 }
 
 void SOECPBatch::get_data(const double* intermediate, double* data) const {
 
-  fill_n(data, size_alloc_, 0.0);
+  fill_n(data, size_block_, 0.0);
 
-  double* const intermediate_fi = stack_->get(size_alloc_);
-  copy_n(intermediate, size_alloc_, intermediate_fi);
+  double* const intermediate_fi = stack_->get(size_block_);
+  copy_n(intermediate, size_block_, intermediate_fi);
 
   if (spherical_) {
     double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
@@ -140,7 +140,7 @@ void SOECPBatch::get_data(const double* intermediate, double* data) const {
     sort.sortfunc_call(sort_index, data, intermediate_fi, cont1_, cont0_, 1, swap01_);
   }
 
-  stack_->release(size_alloc_, intermediate_fi);
+  stack_->release(size_block_, intermediate_fi);
 
 }
 
@@ -166,14 +166,13 @@ void SOECPBatch::common_init() {
   asize_final_ = (basisinfo_[0]->spherical() ? (2*ang0_+1) : (ang0_+1)*(ang0_+2)/2)
                * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
 
-  size_alloc_ = cont0_ * cont1_ * asize_;
+  size_block_ = cont0_ * cont1_ * asize_;
+  size_alloc_ = 3 * size_block_;
+  stack_save_ = stack_->get(size_alloc_);
 
-  stack_save_ = stack_->get(3*size_alloc_);
-
-  double* pointer = stack_save_;
-  data_  = pointer;   pointer += size_alloc_;
-  data1_ = pointer;   pointer += size_alloc_;
-  data2_ = pointer;   pointer += size_alloc_;
+  data_  = stack_save_;
+  data1_ = stack_save_ + size_block_;
+  data2_ = stack_save_ + 2*size_block_;
 
 }
 

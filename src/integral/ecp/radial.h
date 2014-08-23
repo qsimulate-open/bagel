@@ -57,7 +57,7 @@ class RadialInt {
     ~RadialInt() {}
 
     void integrate();
-    std::vector<double> integral() { return integral_; }
+    std::vector<double> integral() const { return integral_; }
     double integral(const int ic = 0) const { return integral_.at(ic); }
 
     virtual std::vector<double> compute(const std::vector<double> r) = 0;
