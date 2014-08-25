@@ -36,6 +36,7 @@ using namespace std;
 using namespace bagel;
 
 /* Implementing the method as described by Harrison and Zarrabian */
+#ifndef HAVE_MPI_H
 shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, shared_ptr<const RelMOFile> jop, const vector<int>& conv) const {
   auto sigmavec = make_shared<RelZDvec>(space_, nstate_);
   auto sigmavec_trans = sigmavec->clone(); // important note: the space stays the same after transposition
@@ -49,18 +50,10 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
       if (conv[istate]) continue;
 
       shared_ptr<const ZCivec> cc = ccvec->find(nelea, neleb)->data(istate);
-#ifdef HAVE_MPI_H
-      sigma_one_parallel(cc, sigmavec, jop, istate, /*diag*/true, /*transpose*/false);
-#else
       sigma_one(cc, sigmavec, jop, istate, /*diag*/true, /*transpose*/false);
-#endif
 
       shared_ptr<const ZCivec> cc_trans = cc->transpose();
-#ifdef HAVE_MPI_H
-      sigma_one_parallel(cc_trans, sigmavec_trans, jop, istate, /*diag*/false, /*transpose*/true);
-#else
       sigma_one(cc_trans, sigmavec_trans, jop, istate, /*diag*/false, /*transpose*/true);
-#endif
     }
   }
 
@@ -82,6 +75,47 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
 
   return sigmavec;
 }
+
+#else
+
+shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, shared_ptr<const RelMOFile> jop, const vector<int>& conv) const {
+  auto sigmavec = make_shared<RelZDvec>(space_, nstate_);
+  auto sigmavec_trans = sigmavec->clone(); // important note: the space stays the same after transposition
+
+  int icnt = 0;
+  for (auto& isp : space_->detmap()) {
+    shared_ptr<const Determinants> base_det = isp.second;
+    const int nelea = base_det->nelea();
+    const int neleb = base_det->neleb();
+
+    for (int istate = 0; istate != nstate_; ++istate) {
+      if (conv[istate]) continue;
+
+      shared_ptr<const ZCivec> cc = ccvec->find(nelea, neleb)->data(istate);
+      icnt = sigma_one_parallel(icnt, cc, sigmavec, jop, istate, /*diag*/true, /*transpose*/false);
+
+      shared_ptr<const ZCivec> cc_trans = cc->transpose();
+      icnt = sigma_one_parallel(icnt, cc_trans, sigmavec_trans, jop, istate, /*diag*/false, /*transpose*/true);
+    }
+  }
+
+  for (auto& isp : space_->detmap()) {
+    const int nelea = isp.second->nelea();
+    const int neleb = isp.second->neleb();
+    shared_ptr<ZDvec> sigma = sigmavec->find(nelea, neleb);
+    shared_ptr<ZDvec> sigma_trans = sigmavec_trans->find(neleb, nelea);
+
+    // daxpy for each Civec
+    for (int ist = 0; ist != nstate_; ++ist) {
+      if (conv[ist]) continue;
+      sigma->data(ist)->ax_plus_y(1.0, *sigma_trans->data(ist)->transpose());
+      mpi__->allreduce(sigma->data(ist)->data(), sigma->data(ist)->size());
+    }
+  }
+
+  return sigmavec;
+}
+#endif
 
 
 void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigmavec, shared_ptr<const RelMOFile> jop,
