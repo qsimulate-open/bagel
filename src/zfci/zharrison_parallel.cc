@@ -53,8 +53,10 @@ int ZHarrison::sigma_one_parallel(const int icnt,   shared_ptr<const ZCivec> cc,
   if (comp(cnt++)) {
     shared_ptr<ZCivec> sigma = sigmavec->find(nelea, neleb)->data(istate);
     sigma_aa(cc, sigma, jop, trans);
+  }
 
-    if (!noab && diag) {
+  if (!noab && diag) {
+    if (comp(cnt++)) {
       shared_ptr<ZCivec> sigma = sigmavec->find(nelea, neleb)->data(istate);
       shared_ptr<const Determinants> int_det = int_space_->finddet(nelea-1, neleb-1);
       auto d = make_shared<ZDvec>(int_det, ij);
