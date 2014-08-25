@@ -29,9 +29,6 @@
 #include <src/fci/hztasks.h>
 #include <src/smith/prim_op.h>
 
-// toggle for timing print out.
-static const bool tprint = false;
-
 using namespace std;
 using namespace bagel;
 
