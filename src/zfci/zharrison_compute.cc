@@ -49,10 +49,18 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
       if (conv[istate]) continue;
 
       shared_ptr<const ZCivec> cc = ccvec->find(nelea, neleb)->data(istate);
+#ifdef HAVE_MPI_H
+      sigma_one_parallel(cc, sigmavec, jop, istate, /*diag*/true, /*transpose*/false);
+#else
       sigma_one(cc, sigmavec, jop, istate, /*diag*/true, /*transpose*/false);
+#endif
 
       shared_ptr<const ZCivec> cc_trans = cc->transpose();
+#ifdef HAVE_MPI_H
+      sigma_one_parallel(cc_trans, sigmavec_trans, jop, istate, /*diag*/false, /*transpose*/true);
+#else
       sigma_one(cc_trans, sigmavec_trans, jop, istate, /*diag*/false, /*transpose*/true);
+#endif
     }
   }
 
@@ -66,6 +74,9 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
     for (int ist = 0; ist != nstate_; ++ist) {
       if (conv[ist]) continue;
       sigma->data(ist)->ax_plus_y(1.0, *sigma_trans->data(ist)->transpose());
+#ifdef HAVE_MPI_H
+      mpi__->allreduce(sigma->data(ist)->data(), sigma->data(ist)->size());
+#endif
     }
   }
 

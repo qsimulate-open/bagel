@@ -152,6 +152,8 @@ class ZHarrison : public Method {
 
     void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
                    const int istate, const bool diag, const bool trans) const;
+    void sigma_one_parallel(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
+                   const int istate, const bool diag, const bool trans) const;
 
   public:
     ZHarrison() { }
