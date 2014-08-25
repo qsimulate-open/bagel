@@ -215,12 +215,13 @@ shared_ptr<Reference> Dimer::build_reference(const int site, const vector<bool> 
   assert(nsites==2 && (site==0 || site==1));
 
   vector<shared_ptr<const MatView>> closed_orbitals = {make_shared<MatView>(sref_->coeff()->slice(0, sref_->nclosed()))};
-  const MatView active_orbitals = sref_->coeff()->slice(sref_->nclosed() + (site==0 ? 0 : active_refs_.first->nact()), sref_->nclosed() + (site==0 ? active_refs_.first->nact() : active_refs_.first->nact() + active_refs_.second->nact()));
+  const MatView active_orbitals = sref_->coeff()->slice(sref_->nclosed() + (site==0 ? 0 : active_refs_.first->nact()),
+                                                        sref_->nclosed() + active_refs_.first->nact() + (site==0 ? 0 : active_refs_.second->nact()));
 
   int current = sref_->nclosed();
   for (int i = 0; i < nsites; ++i) {
     const int cur_nact = (i==0 ? active_refs_.first->nact() : active_refs_.second->nact());
-    const int cur_nocc = (i==0 ? isolated_refs_.first->nclosed() - active_refs_.first->nact() : isolated_refs_.first->nclosed() - active_refs_.second->nclosed());
+    const int cur_nocc = (i==0 ? isolated_refs_.first->nclosed() - active_refs_.first->nclosed() : isolated_refs_.first->nclosed() - active_refs_.second->nclosed());
 
     if (i!=site && meanfield[i])
       closed_orbitals.push_back(make_shared<const MatView>(sref_->coeff()->slice(current, current+cur_nocc)));
