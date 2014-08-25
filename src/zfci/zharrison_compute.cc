@@ -67,9 +67,6 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
     for (int ist = 0; ist != nstate_; ++ist) {
       if (conv[ist]) continue;
       sigma->data(ist)->ax_plus_y(1.0, *sigma_trans->data(ist)->transpose());
-#ifdef HAVE_MPI_H
-      mpi__->allreduce(sigma->data(ist)->data(), sigma->data(ist)->size());
-#endif
     }
   }
 
