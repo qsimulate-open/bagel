@@ -28,13 +28,16 @@
 #include <src/asd_dmrg/product_rasci.h>
 #include <src/ras/form_sigma.h>
 #include <src/ras/apply_operator.h>
+#include <src/dimer/dimer_jop.h>
+#include <src/util/muffle.h>
+#include <src/ras/rasci.h>
 
 #define DEBUG
 
 using namespace std;
 using namespace bagel;
 
-RASD::RASD(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer) : ASD_DMRG(input, dimer) { }
+RASD::RASD(const shared_ptr<const PTree> input, shared_ptr<MultiSite> multisite) : ASD_DMRG(input, multisite) { }
 
 void RASD::read_restricted(shared_ptr<PTree> input, const int site) const {
   auto restricted = input_->get_child("restricted");

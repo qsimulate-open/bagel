@@ -28,6 +28,7 @@
 
 #include <src/asd_dmrg/asd_dmrg.h>
 #include <src/asd_dmrg/product_civec.h>
+#include <src/fci/mofile.h>
 
 namespace bagel {
 
@@ -39,7 +40,7 @@ class RASD : public ASD_DMRG {
     std::shared_ptr<DMRG_Block> decimate_block(std::shared_ptr<PTree> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> system, std::shared_ptr<DMRG_Block> environment, const int site) override;
 
   public:
-    RASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer);
+    RASD(const std::shared_ptr<const PTree> input, std::shared_ptr<MultiSite> multisite);
 
   private:
     void read_restricted(std::shared_ptr<PTree> input, const int site) const;

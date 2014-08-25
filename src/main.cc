@@ -31,6 +31,7 @@
 #include <src/molecule/localization.h>
 #include <src/asd/construct_asd.h>
 #include <src/asd_dmrg/rasd.h>
+#include <src/multisite/multisite.h>
 #include <src/util/archive.h>
 
 // debugging
@@ -61,6 +62,7 @@ int main(int argc, char** argv) {
     shared_ptr<Geometry> geom;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
+    shared_ptr<MultiSite> multisite;
 
     map<string, shared_ptr<const void>> saved;
     bool dodf = true;
@@ -139,8 +141,20 @@ int main(int argc, char** argv) {
       } else if (title == "asd") {
           auto asd = construct_ASD(itree, dimer);
           asd->compute();
+      } else if (title == "multisite") {
+          vector<shared_ptr<const Reference>> site_refs;
+          auto sitenames = itree->get_vector<string>("refs");
+          for (auto& s : sitenames)
+            site_refs.push_back(static_pointer_cast<const Reference>(saved.at(s)));
+          auto ms = make_shared<MultiSite>(itree, site_refs);
+          ms->scf(itree);
+          multisite = ms;
+          ref = ms->conv_to_ref();
+          *geom = *ref->geom();
       } else if (title == "asd_dmrg") {
-          auto asd = make_shared<RASD>(itree, dimer);
+          if (!multisite)
+            throw runtime_error("multisite must be called before asd_dmrg");
+          auto asd = make_shared<RASD>(itree, multisite);
           asd->compute();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");

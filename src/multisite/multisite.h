@@ -58,6 +58,8 @@ class MultiSite {
     // Constructors
     MultiSite(std::shared_ptr<const PTree> input, std::vector<std::shared_ptr<const Reference>> refs); ///< Conjoins the provided Reference objects
 
+    int nsites() const { return nsites_; }
+
     // Return functions
     std::vector<std::shared_ptr<const Reference>> isolated_refs() const { return isolated_refs_; }
     std::vector<std::shared_ptr<const Reference>> active_refs() const { return active_refs_; }

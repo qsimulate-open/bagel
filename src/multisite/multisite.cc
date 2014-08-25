@@ -77,25 +77,23 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, vector<shared_ptr<const Refe
                                  accumulate(isolated_refs_.begin(), isolated_refs_.end(), 0, [] (int x, shared_ptr<const Reference> r) { return x + r->nvirt(); }));
 }
 
-#if 0 // I'll do the SCF stuff first
-shared_ptr<Reference> Dimer::build_reference(const int site, const vector<bool> meanfield) const {
-  const int nsites = meanfield.size();
-  assert(nsites==2 && (site==0 || site==1));
+shared_ptr<Reference> MultiSite::build_reference(const int site, const vector<bool> meanfield) const {
+  assert(meanfield.size()==nsites_ && site<nsites_ && site>=0);
 
   vector<shared_ptr<const MatView>> closed_orbitals = {make_shared<MatView>(sref_->coeff()->slice(0, sref_->nclosed()))};
-  const MatView active_orbitals = sref_->coeff()->slice(sref_->nclosed() + (site==0 ? 0 : active_refs_.first->nact()), sref_->nclosed() + (site==0 ? active_refs_.first->nact() : active_refs_.first->nact() + active_refs_.second->nact()));
+  const int act_start = accumulate(active_refs_.begin(), active_refs_.begin() + site, sref_->nclosed(),
+                                    [] (int x, shared_ptr<const Reference> r) { return x + r->nact(); });
+  const int act_fence = act_start + active_refs_[site]->nact();
+  const MatView active_orbitals = sref_->coeff()->slice(act_start, act_fence);
 
   int current = sref_->nclosed();
-  for (int i = 0; i < nsites; ++i) {
-    const int cur_nact = (i==0 ? active_refs_.first->nact() : active_refs_.second->nact());
-    const int cur_nocc = (i==0 ? isolated_refs_.first->nclosed() - active_refs_.first->nact() : isolated_refs_.first->nclosed() - active_refs_.second->nclosed());
-
-    if (i!=site && meanfield[i])
-      closed_orbitals.push_back(make_shared<const MatView>(sref_->coeff()->slice(current, current+cur_nocc)));
-    current += cur_nact;
+  for (int i = 0; i < nsites_; ++i) {
+    if (meanfield[i] && i!=site)
+      closed_orbitals.push_back(make_shared<const MatView>(sref_->coeff()->slice(current, current+isolated_refs_[i]->nclosed()-active_refs_[i]->nclosed())));
+    current += active_refs_[i]->nact();
   }
 
-  const int nclosed = accumulate(closed_orbitals.begin(), closed_orbitals.end(), 0, [] (const int a, shared_ptr<const MatView> m) { return a + m->mdim(); });
+  const int nclosed = accumulate(closed_orbitals.begin(), closed_orbitals.end(), 0, [] (int x, shared_ptr<const MatView> m) { return x + m->mdim(); });
   const int nact = active_orbitals.mdim();
 
   auto out = make_shared<Matrix>(sref_->geom()->nbasis(), nclosed+nact);
@@ -103,10 +101,9 @@ shared_ptr<Reference> Dimer::build_reference(const int site, const vector<bool> 
   current = 0;
   closed_orbitals.push_back(make_shared<MatView>(active_orbitals));
   for (auto& orbitals : closed_orbitals) {
-    copy_n(orbitals->data(), orbitals->mdim()*orbitals->ndim(), out->element_ptr(0, current));
+    copy_n(orbitals->data(), orbitals->size(), out->element_ptr(0, current));
     current += orbitals->mdim();
   }
 
-  return make_shared<Reference>(sgeom_, make_shared<Coeff>(move(*out)), nclosed, nact, 0);
+  return make_shared<Reference>(sref_->geom(), make_shared<Coeff>(move(*out)), nclosed, nact, 0);
 }
-#endif

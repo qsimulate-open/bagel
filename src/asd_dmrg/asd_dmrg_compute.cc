@@ -41,7 +41,7 @@ void ASD_DMRG::compute() {
   // Seed lattice
   cout << " ===== Start growing DMRG chain =====" << endl;
   {
-    shared_ptr<const Reference> ref = dimer_->build_reference(0, vector<bool>(nsites_, true));
+    shared_ptr<const Reference> ref = multisite_->build_reference(0, vector<bool>(nsites_, true));
     // CI calculation on site 1 with all other sites at meanfield
     left_block = compute_first_block(prepare_growing_input(0), ref);
     left_blocks_.push_back(left_block);
@@ -52,7 +52,7 @@ void ASD_DMRG::compute() {
   for (int site = 1; site < nsites_-1; ++site) {
     vector<bool> meanfield(nsites_, true);
     fill_n(meanfield.begin(), site, false);
-    shared_ptr<const Reference> ref = dimer_->build_reference(site, meanfield);
+    shared_ptr<const Reference> ref = multisite_->build_reference(site, meanfield);
     left_block = grow_block(prepare_growing_input(site), ref, left_block, site);
     left_blocks_.push_back(left_block);
     cout << "  " << print_progress(site, ">>", "..") << setw(16) << dmrg_timer.tick() << endl;
@@ -68,7 +68,7 @@ void ASD_DMRG::compute() {
     for (int site = nsites_-1; site > 0; --site) {
       left_block = left_blocks_[site-1];
       right_block = (site == nsites_-1) ? nullptr : right_blocks_[nsites_ - site - 2];
-      shared_ptr<const Reference> ref = dimer_->build_reference(site, vector<bool>(nsites_, false));
+      shared_ptr<const Reference> ref = multisite_->build_reference(site, vector<bool>(nsites_, false));
 
       right_block = decimate_block(prepare_sweeping_input(site), ref, right_block, left_block, site);
       right_blocks_[nsites_ - site - 1] = right_block;
@@ -79,7 +79,7 @@ void ASD_DMRG::compute() {
     for (int site = 0; site < nsites_-1; ++site) {
       left_block = (site == 0) ? nullptr : left_blocks_[site-1];
       right_block = right_blocks_[nsites_ - site - 2];
-      shared_ptr<const Reference> ref = dimer_->build_reference(site, vector<bool>(nsites_, false));
+      shared_ptr<const Reference> ref = multisite_->build_reference(site, vector<bool>(nsites_, false));
 
       left_block = decimate_block(prepare_sweeping_input(site), ref, left_block, right_block, site);
       left_blocks_[site] = left_block;

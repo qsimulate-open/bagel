@@ -30,10 +30,8 @@
 using namespace std;
 using namespace bagel;
 
-ASD_DMRG::ASD_DMRG(shared_ptr<const PTree> input, shared_ptr<const Dimer> dimer) : input_(input), dimer_(dimer) {
-  // Hardcoded to dimer for now
-  nsites_ = 2;
-
+ASD_DMRG::ASD_DMRG(shared_ptr<const PTree> input, shared_ptr<const MultiSite> multisite) : input_(input), multisite_(multisite) {
+  nsites_ = multisite->nsites();
   nstates_ = input_->get<int>("nstates", 1);
   ntrunc_ = input_->get<int>("ntrunc");
   thresh_ = input_->get<double>("thresh", 1.0e-8);

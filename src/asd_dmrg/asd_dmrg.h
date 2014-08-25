@@ -26,7 +26,7 @@
 #ifndef __ASD_DMRG_ASD_DMRG_H
 #define __ASD_DMRG_ASD_DMRG_H
 
-#include <src/dimer/dimer.h>
+#include <src/multisite/multisite.h>
 #include <src/asd_dmrg/dmrg_block.h>
 
 namespace bagel {
@@ -37,8 +37,7 @@ class ASD_DMRG {
     /// Input block given to ASD_DMRG
     std::shared_ptr<const PTree> input_;
     /// contains orbital information
-    /// should be replaced with a suitable "nmer" type class in the future
-    std::shared_ptr<const Dimer> dimer_;
+    std::shared_ptr<const MultiSite> multisite_;
 
     /// DMRG_Block representing L block containing l sites is in left_blocks_[l-1]
     std::vector<std::shared_ptr<DMRG_Block>> left_blocks_;
@@ -77,7 +76,7 @@ class ASD_DMRG {
 
   public:
     /// Unlike MEH classes, ASD_DMRG will also be the driver for CI calculations
-    ASD_DMRG(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer);
+    ASD_DMRG(const std::shared_ptr<const PTree> input, std::shared_ptr<const MultiSite> multisite);
 
     /// Driver for calculation
     void compute();
