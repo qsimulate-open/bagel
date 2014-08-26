@@ -41,8 +41,8 @@ template <typename VecType>
 class GammaBranch {
   protected:
     std::array<std::shared_ptr<GammaBranch<VecType>>, 4> branches_;
-    std::map<int, std::shared_ptr<const VecType>> bras_; // use tags as unique identifier
-    std::map<int, std::shared_ptr<Matrix>> gammas_;
+    std::map<size_t, std::shared_ptr<const VecType>> bras_; // use tags as unique identifier
+    std::map<size_t, std::shared_ptr<Matrix>> gammas_;
 
     bool active_;
 
@@ -100,8 +100,8 @@ class GammaBranch {
     std::shared_ptr<GammaBranch<VecType>>& branch(const GammaSQ sq) { return branch(static_cast<int>(sq)); }
     const std::shared_ptr<GammaBranch<VecType>>& branch(const GammaSQ sq) const { return branch(static_cast<int>(sq)); }
 
-    const std::map<int, std::shared_ptr<const VecType>>& bras() const { return bras_; }
-    std::map<int, std::shared_ptr<Matrix>>& gammas() { return gammas_; }
+    const std::map<size_t, std::shared_ptr<const VecType>>& bras() const { return bras_; }
+    std::map<size_t, std::shared_ptr<Matrix>>& gammas() { return gammas_; }
 
     bool if_contributes(std::set<int> needed) {
       bool contributes = false;
@@ -163,10 +163,10 @@ class GammaTree {
 
     std::shared_ptr<GammaBranch<VecType>> base() { return base_; }
 
-    void insert(std::shared_ptr<const VecType> bra, const int tag, const std::list<GammaSQ>& ops) { base_->insert(bra, tag, ops); }
-    std::shared_ptr<      Matrix> search(const int tag, const std::list<GammaSQ>& address)       { return base_->search(tag, address); }
-    std::shared_ptr<const Matrix> search(const int tag, const std::list<GammaSQ>& address) const { return base_->search(tag, address); }
-    bool exist(const int tag, const std::list<GammaSQ>& address) const { return base_->exist(tag, address); }
+    void insert(std::shared_ptr<const VecType> bra, const size_t tag, const std::list<GammaSQ>& ops) { base_->insert(bra, tag, ops); }
+    std::shared_ptr<      Matrix> search(const size_t tag, const std::list<GammaSQ>& address)       { return base_->search(tag, address); }
+    std::shared_ptr<const Matrix> search(const size_t tag, const std::list<GammaSQ>& address) const { return base_->search(tag, address); }
+    bool exist(const size_t tag, const std::list<GammaSQ>& address) const { return base_->exist(tag, address); }
 
     std::shared_ptr<const VecType> ket() const { return ket_; }
 
@@ -239,31 +239,31 @@ class GammaTask {
 template <typename VecType, int N>
 class GammaForest {
   protected:
-    std::array<std::map<int, std::shared_ptr<GammaTree<VecType>>>, N> forests_;
+    std::array<std::map<size_t, std::shared_ptr<GammaTree<VecType>>>, N> forests_;
 
   public:
     GammaForest() {}
 
     template <int unit>
-    void insert(std::shared_ptr<const VecType> bra, const int bra_tag, std::shared_ptr<const VecType> ket, const int ket_tag, const std::list<GammaSQ>& ops) {
+    void insert(std::shared_ptr<const VecType> bra, const size_t bra_tag, std::shared_ptr<const VecType> ket, const size_t ket_tag, const std::list<GammaSQ>& ops) {
       std::shared_ptr<GammaTree<VecType>> gtree = tree<unit>(ket, ket_tag);
       gtree->insert(bra, bra_tag, ops);
     }
 
     template <int unit>
-    std::shared_ptr<Matrix> get(const int bra_tag, const int ket_tag, const std::list<GammaSQ>& ops) {
+    std::shared_ptr<Matrix> get(const size_t bra_tag, const size_t ket_tag, const std::list<GammaSQ>& ops) {
       auto itree = forests_[unit].find(ket_tag); assert(itree!=forests_[unit].end());
       return itree->second->search(bra_tag, ops);
     }
 
     template <int unit>
-    std::shared_ptr<const Matrix> get(const int bra_tag, const int ket_tag, const std::list<GammaSQ>& ops) const {
+    std::shared_ptr<const Matrix> get(const size_t bra_tag, const size_t ket_tag, const std::list<GammaSQ>& ops) const {
       auto itree = forests_[unit].find(ket_tag); assert(itree!=forests_[unit].end());
       return itree->second->search(bra_tag, ops);
     }
 
     template <int unit>
-    bool exist(const int bra_tag, const int ket_tag, const std::list<GammaSQ>& ops) const {
+    bool exist(const size_t bra_tag, const size_t ket_tag, const std::list<GammaSQ>& ops) const {
       auto itree = forests_[unit].find(ket_tag);
       if (itree == forests_[unit].end())
         return false;
@@ -374,8 +374,8 @@ class GammaForest {
 
   private:
     template <int unit>
-    std::shared_ptr<GammaTree<VecType>> tree(std::shared_ptr<const VecType> ket, const int ket_tag) {
-      typename std::map<int, std::shared_ptr<GammaTree<VecType>>>::iterator itree = forests_[unit].find(ket_tag);
+    std::shared_ptr<GammaTree<VecType>> tree(std::shared_ptr<const VecType> ket, const size_t ket_tag) {
+      typename std::map<size_t, std::shared_ptr<GammaTree<VecType>>>::iterator itree = forests_[unit].find(ket_tag);
       if (itree == forests_[unit].end()) {
         forests_[unit].emplace(ket_tag, std::make_shared<GammaTree<VecType>>(ket));
         itree = forests_[unit].find(ket_tag);
