@@ -37,8 +37,6 @@ using namespace bagel;
 int ZHarrison::sigma_one_parallel(const int icnt,   shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigmavec, shared_ptr<const RelMOFile> jop,
                                   const int istate, const bool diag, const bool trans) const {
 
-  Timer pdebug(2);
-
   const int ij = norb_*norb_;
   shared_ptr<const Determinants> base_det = cc->det();
   // diagonal output
@@ -55,7 +53,6 @@ int ZHarrison::sigma_one_parallel(const int icnt,   shared_ptr<const ZCivec> cc,
   if (comp(cnt++)) {
     shared_ptr<ZCivec> sigma = sigmavec->find(nelea, neleb)->data(istate);
     sigma_aa(cc, sigma, jop, trans);
-    pdebug.tick_print("taskaa");
   }
 
   if (!noab && diag) {
@@ -69,14 +66,11 @@ int ZHarrison::sigma_one_parallel(const int icnt,   shared_ptr<const ZCivec> cc,
       /* Resembles more the Knowles & Handy FCI terms */
 
       sigma_2e_annih_ab(cc, d);
-      pdebug.tick_print("task2ab-1");
 
       // (a^+ b^+ b a) and (a^+ b^+ a b) contributions
       sigma_2e_h0101_h1001(d, e, jop);
-      pdebug.tick_print("task2ab-2 (0)");
 
       sigma_2e_create_ab(sigma, e);
-      pdebug.tick_print("task2ab-3 (0)");
     }
   }
 
@@ -88,23 +82,19 @@ int ZHarrison::sigma_one_parallel(const int icnt,   shared_ptr<const ZCivec> cc,
         auto e = make_shared<ZDvec>(int_det, ij);
 
         sigma_2e_annih_ab(cc, d);
-        pdebug.tick_print("task2ab-1");
 
         // output area
         shared_ptr<ZCivec> sigma_1 = sigmavec->find(nelea-1, neleb+1)->data(istate);
 
         // (b^+b^+ b a) contribution
         sigma_2e_h<1,1,0,1>(d, e, jop, trans);
-        pdebug.tick_print("task2ab-2 (+1)");
         sigma_2e_create_bb(sigma_1, e);
-        pdebug.tick_print("task2ab-3 (+1)");
       }
       // output area
       shared_ptr<ZCivec> sigma_1 = sigmavec->find(nelea-1, neleb+1)->data(istate);
 
       // (b^+ a) contribution
       sigma_1e_ab(cc, sigma_1, jop, trans);
-      pdebug.tick_print("task2ab-4 (+1)");
     }
   }
 
@@ -142,17 +132,14 @@ int ZHarrison::sigma_one_parallel(const int icnt,   shared_ptr<const ZCivec> cc,
       auto e = make_shared<ZDvec>(int_det, ij);
 
       sigma_2e_annih_aa(cc, d);
-      pdebug.tick_print("task2aa-1 (1)");
 
       // (a^+ b^+ a a) contribution
       sigma_2e_h<0,1,0,0>(d, e, jop, trans);
-      pdebug.tick_print("task2aa-2 (1)");
 
       assert(neleb+1 <= norb_);
       // +1 sector
       shared_ptr<ZCivec> sigma_1 = sigmavec->find(nelea-1, neleb+1)->data(istate);
       sigma_2e_create_ab(sigma_1, e);
-      pdebug.tick_print("task2aa-3 (1)");
     }
   }
 
@@ -163,14 +150,11 @@ int ZHarrison::sigma_one_parallel(const int icnt,   shared_ptr<const ZCivec> cc,
       auto e = make_shared<ZDvec>(int_det, ij);
 
       sigma_2e_annih_aa(cc, d);
-      pdebug.tick_print("task2aa-1 (+2)");
 
       // +2 sector
       shared_ptr<ZCivec> sigma_2 = sigmavec->find(nelea-2, neleb+2)->data(istate);
       sigma_2e_h<1,1,0,0>(d, e, jop, trans, 0.5);
-      pdebug.tick_print("task2aa-2 (+2)");
       sigma_2e_create_bb(sigma_2, e);
-      pdebug.tick_print("task2aa-3 (+2)");
     }
   }
 #endif
