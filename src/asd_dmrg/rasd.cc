@@ -396,10 +396,10 @@ void RASD::apply_perturbation(shared_ptr<const RASBlockVectors> cc, vector<Gamma
 {
   pair<int, int> dele(0, 0);
   for (auto& op : oplist) {
-    if (op==GammaSQ::CreateAlpha || op==GammaSQ::AnnihilateAlpha)
-      dele.first += (op==GammaSQ::CreateAlpha ? 1 : -1);
+    if (is_alpha(op))
+      dele.first += (is_alpha(op) ? 1 : -1);
     else
-      dele.second += (op==GammaSQ::CreateBeta ? 1 : -1);
+      dele.second += (is_beta(op) ? 1 : -1);
   }
 
   shared_ptr<const RASDeterminants> sdet = cc->det();

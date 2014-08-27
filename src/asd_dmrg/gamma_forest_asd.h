@@ -78,15 +78,8 @@ class GammaForestASD : public GammaForest<VecType, 1> {
             if (BlockKey(new_nelea, new_neleb)==bra.first) {
 #ifdef DEBUG
               std::cout << "inserting: <" << bra.first.nelea << ", " << bra.first.neleb << "|";
-              for (auto opiter = coupling.begin(); opiter != coupling.end(); ++opiter) {
-                GammaSQ operation = *opiter;
-                if ( operation == GammaSQ::AnnihilateAlpha || operation == GammaSQ::CreateAlpha )
-                  std::cout << "(A)";
-                else
-                  std::cout << "(B)";
-                if ( operation == GammaSQ::CreateAlpha || operation == GammaSQ::CreateBeta )
-                  std::cout << "^t";
-              }
+              for (auto opiter = coupling.begin(); opiter != coupling.end(); ++opiter)
+                std::cout << is_alpha(*opiter) ? "(A)" : "(B)" << is_creation(*opiter) ? "^t" : "";
               std::cout << "|" << ket.first.nelea << ", " << ket.first.neleb << ">" << std::endl;
 #endif
               sparselist_.emplace_back(coupling, BlockInfo(bra.first.nelea, bra.first.neleb, bra.second->ij()), BlockInfo(ket.first.nelea, ket.first.neleb, ket.second->ij()));

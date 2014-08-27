@@ -26,6 +26,8 @@
 #ifndef __BAGEL_ASD_GAMMA_SQ_H
 #define __BAGEL_ASD_GAMMA_SQ_H
 
+#include <bitset>
+
 namespace bagel {
 
 enum class GammaSQ {
@@ -34,6 +36,14 @@ enum class GammaSQ {
   CreateBeta = 2,
   AnnihilateBeta = 3
 };
+
+namespace {
+  bool is_alpha(const GammaSQ& a) { return !std::bitset<2>(static_cast<int>(a))[1]; }
+  bool is_beta(const GammaSQ& a) { return std::bitset<2>(static_cast<int>(a))[1]; }
+  bool is_creation(const GammaSQ& a) { return !std::bitset<2>(static_cast<int>(a))[0]; }
+  bool is_annihilation(const GammaSQ& a) { return std::bitset<2>(static_cast<int>(a))[0]; }
+  GammaSQ conjugate(const GammaSQ& a) { return GammaSQ(static_cast<int>(a) ^ 1); }
+}
 
 inline std::ostream& operator<<(std::ostream& out, const GammaSQ value){
   static std::map<GammaSQ, std::string> strings;

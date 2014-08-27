@@ -53,8 +53,8 @@ void ApplyOperator::operator()(const double fac, const RASCivecView source, RASC
   array<int, 4> dhp = {0, 0, 0, 0};
   for (int op = 0; op < nops; ++op) {
     const int orb = orbitals[op];
-    const bool spin = (operations[op]==GammaSQ::AnnihilateAlpha || operations[op]==GammaSQ::CreateAlpha);
-    const int delta = (operations[op]==GammaSQ::CreateAlpha || operations[op]==GammaSQ::CreateBeta) ? 1 : -1;
+    const bool spin = is_alpha(operations[op]);
+    const int delta = is_creation(operations[op]) ? 1 : -1;
     if (orb < ras[0]) // in RASI
       (spin ? dhp[0] : dhp[1]) -= delta;
     else if (orb >= ras[0]+ras[1]) // in RASIII
@@ -64,8 +64,8 @@ void ApplyOperator::operator()(const double fac, const RASCivecView source, RASC
 
   if (operations.size() == 1) {
     const int r = orbitals.front(); // operator
-    const bool spin = operations.front()==GammaSQ::CreateAlpha || operations.front()==GammaSQ::AnnihilateAlpha;
-    const bool action = operations.front()==GammaSQ::CreateAlpha || operations.front()==GammaSQ::CreateBeta;
+    const bool spin = is_alpha(operations.front());
+    const bool action = is_creation(operations.front());
     RAS::Apply_block apply_block(r, action, spin);
     for (auto& tblock : target.blocks()) {
       if (!tblock) continue;

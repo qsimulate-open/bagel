@@ -77,8 +77,8 @@ class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
       constexpr int nops = 4;
       const int norb = tree_->ket()->det()->norb();
 
-      auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
-      auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); };
+      auto action = [] (const int op) { return is_creation(GammaSQ(op)); };
+      auto spin = [] (const int op) { return is_alpha(GammaSQ(op)); };
 
       const bool base_action = action(operation_);
       const bool base_spin = spin(operation_);

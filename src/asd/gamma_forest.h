@@ -187,8 +187,8 @@ class GammaTask {
       constexpr int nops = 4;
       const int norb = tree_->norb();
 
-      auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
-      auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); };
+      auto action = [] (const int op) { return is_creation(GammaSQ(op)); };
+      auto spin = [] (const int op) { return is_alpha(GammaSQ(op)); };
 
       std::shared_ptr<GammaBranch<VecType>> first = tree_->base()->branch(operation_);
       assert(first->active()); // This should have been checked before sending it to the TaskQueue
@@ -501,8 +501,8 @@ class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
       constexpr int nops = 4;
       const int norb = tree_->norb();
 
-      auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
-      auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); };
+      auto action = [] (const int op) { return is_creation(GammaSQ(op)); };
+      auto spin = [] (const int op) { return is_alpha(GammaSQ(op)); };
 
       std::shared_ptr<GammaBranch<RASDvec>> first = tree_->base()->branch(operation_);
       assert(first->active()); // This should have been checked before sending it to the TaskQueue
