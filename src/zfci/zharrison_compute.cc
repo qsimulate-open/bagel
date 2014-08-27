@@ -350,6 +350,7 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
 
   // TODO can be reduced by a factor of two by using symmetry
   // TODO not efficient code
+#if 0
   for (int i = 0; i < norb_; ++i) { // beta
     for (int j = 0; j < norb_; ++j) { // beta
       if (i == j) continue;
@@ -372,6 +373,34 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
       }
     }
   }
+#else
+  TaskQueue<function<void(void)>> tq(lbt);
+  size_t bindex = 0;
+  for (auto& b : base_det->string_bits_b()) {
+    tq.emplace_back(
+      [this, &e, &int_det, &la, &lbs, &lbt, bindex, &target_base, b] () {
+        for (int i = 0; i < norb_; ++i) { // beta
+          for (int j = 0; j < i; ++j) { // beta
+            if (!b[i] || !b[j]) { // looking for particles to annihilate
+              continue;
+            }
+            const complex<double>* source_ij = e->data(i+norb_*j)->data();
+            const complex<double>* source_ji = e->data(j+norb_*i)->data();
+            bitset<nbit__> cb = b;
+            cb.reset(i); cb.reset(j);
+            const double sign = Determinants::sign(b, i, j);
+            const size_t bdlex = int_det->lexical<1>(cb);
+
+            zaxpy_(la, -sign, source_ij+bdlex, lbs, target_base+bindex, lbt);
+            zaxpy_(la,  sign, source_ji+bdlex, lbs, target_base+bindex, lbt);
+          }
+        }
+      }
+    );
+    ++bindex;
+  }
+  tq.compute();
+#endif
 }
 
 
