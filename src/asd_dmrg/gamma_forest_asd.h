@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: gamma_forest_one.h
+// Filename: gamma_forest_asd.h
 // Copyright (C) 2014 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
