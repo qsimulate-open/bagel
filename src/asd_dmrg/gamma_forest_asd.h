@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __ASD_GAMMA_FOREST_ASD_H
-#define __ASD_GAMMA_FOREST_ASD_H
+#ifndef __ASD_DMRG_GAMMA_FOREST_ASD_H
+#define __ASD_DMRG_GAMMA_FOREST_ASD_H
 
 #include <vector>
 #include <list>
@@ -88,12 +88,6 @@ class GammaForestASD : public GammaForest<VecType, 1> {
           }
         }
       }
-
-      this->compute();
-
-#ifdef DEBUG
-      this->for_each_branch([] (std::shared_ptr<GammaBranch<VecType>> b) { for (auto& i : b->gammas()) i.second->print(); });
-#endif
     }
 
     SparseList sparselist() const { return sparselist_; }

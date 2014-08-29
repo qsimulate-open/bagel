@@ -169,6 +169,7 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
   }
 
   GammaForestASD<RASDvec> forest(states);
+  forest.compute();
   return make_shared<DMRG_Block>(move(forest), h_2e, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
 }
 
