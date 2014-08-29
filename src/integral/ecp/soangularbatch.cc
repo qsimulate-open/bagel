@@ -297,6 +297,9 @@ vector<double> SOBatch::compute(const vector<double> r) {
 
 void SOBatch::init() {
 
+  l0_ = ang0_[0] + ang0_[1] + ang0_[2];
+  l1_ = ang1_[0] + ang1_[1] + ang1_[2];
+
   for (int i = 0; i != 3; ++i) {
     AB_[i] = basisinfo_[0]->position(i) - so_->position(i);
     CB_[i] = basisinfo_[1]->position(i) - so_->position(i);
@@ -334,9 +337,6 @@ void SOBatch::init() {
       }
     }
   }
-
-  l0_ = ang0_[0] + ang0_[1] + ang0_[2];
-  l1_ = ang1_[0] + ang1_[1] + ang1_[2];
 
   for (int l = 0; l <= max(l0_, l1_) + so_->so_maxl(); ++l) {
     vector<double> zAB_l(2*l+1, 0.0), zCB_l(2*l+1, 0.0);
