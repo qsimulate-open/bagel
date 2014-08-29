@@ -285,9 +285,9 @@ void AngularBatch::init() {
     vector<double> zAB_l(2*l+1, 0.0), zCB_l(2*l+1, 0.0);
     for (int m = 0; m <= 2*l; ++m) {
       auto shAB = make_shared<SphHarmonics>(l, m-l, AB_);
-      zAB_l[m] = (dAB_ == 0 ? (1.0/sqrt(4.0*pi__)) : shAB->zlm());
+      zAB_l[m] = (dAB_ < 1e-12 ? (1.0/sqrt(4.0*pi__)) : shAB->zlm());
       auto shCB = make_shared<SphHarmonics>(l, m-l, CB_);
-      zCB_l[m] = (dCB_ == 0 ? (1.0/sqrt(4.0*pi__)) : shCB->zlm());
+      zCB_l[m] = (dCB_ < 1e-12 ? (1.0/sqrt(4.0*pi__)) : shCB->zlm());
     }
     zAB_.push_back(zAB_l);
     zCB_.push_back(zCB_l);

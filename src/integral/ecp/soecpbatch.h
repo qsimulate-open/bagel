@@ -66,11 +66,11 @@ class SOECPBatch : public Integral {
                    std::shared_ptr<StackMem> = nullptr);
     ~SOECPBatch();
 
-    double* data() { return data_; }
+    double* data() const { return data_; }
     virtual double* data(const int i) override { assert(i == 0); return data_; }
 
-    double* data1() { return data1_; }
-    double* data2() { return data2_; }
+    double* data1() const { return data1_; }
+    double* data2() const { return data2_; }
 
     bool swap01() const { return swap01_; }
 

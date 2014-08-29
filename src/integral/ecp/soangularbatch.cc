@@ -249,16 +249,19 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
         const int hmax = min(c0, g - abs(ld1-l));
         for (int i = 0; i != fm0lm1_[l-1].size(); ++i) {
           tuple<int, int, int, double> fmm = fm0lm1_[l-1][i];
-          const int ic = get<0>(fmm);
+          const int id = get<0>(fmm);
           const int m0 = get<1>(fmm);
           const int m1 = get<2>(fmm);
           const double f = get<3>(fmm);
           for (int h = hmin; h <= hmax; h += 2)
-            sum[ic] += (angularA(h, ld0, usp[m0]) * angularC(g-h, ld1, usp[m1]) - angularA(h, ld0, usp[m1]) * angularC(g-h, ld1, usp[m0]))*f;
+            sum[id] += (angularA(h, ld0, usp[m0]) * angularC(g-h, ld1, usp[m1]) - angularA(h, ld0, usp[m1]) * angularC(g-h, ld1, usp[m0]))*f;
         }
         for (int ir = 0; ir != r.size(); ++ir) {
           const double p = rbessel[ir][ld0*(l1_+l+1)+ld1] * pow(r[ir], g);
-          for (int id = 0; id != 3; ++id) out[id*r.size() + ir] += sum[id] * p;
+          for (int id = 0; id != 3; ++id) {
+            const int index = id*r.size() + ir;
+            out[index] += sum[id] * p;
+          }
         }
 
       }
@@ -358,7 +361,7 @@ void SOBatch::init() {
     for (int m0 = 0; m0 <= 2*l; ++m0)
     for (int m1 = 0; m1 <= m0-1; ++m1) {
       const array<double, 3> f = fm0lm1(l, m0-l, m1-l);
-      for (int i = 0; i < 3; ++i) if (f[i] !=  0.0) {
+      for (int i = 0; i < 3; ++i) if (abs(f[i]) > 1e-15) {
         fmm[index] = make_tuple(i, m0, m1, f[i]);
         ++index;
       }

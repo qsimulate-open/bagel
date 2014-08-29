@@ -66,7 +66,7 @@ void ECPBatch::compute() {
 
   double* const intermediate_c = stack_->get(size_alloc_);
   fill_n(intermediate_c, size_alloc_, 0.0);
-  double* current_data = intermediate_c;
+  double* const current_data = intermediate_c;
 
   int i = 0;
   for (int izA = 0; izA <= ang0_; ++izA)
