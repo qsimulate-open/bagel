@@ -28,7 +28,6 @@
 
 #include <algorithm>
 
-#include <src/asd/gamma_tensor.h>
 #include <src/asd_dmrg/gamma_forest_asd.h>
 
 namespace bagel {

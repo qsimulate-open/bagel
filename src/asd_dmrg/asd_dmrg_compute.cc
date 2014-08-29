@@ -31,8 +31,6 @@
 using namespace std;
 using namespace bagel;
 
-using DMRG_Block = GammaTensor;
-
 void ASD_DMRG::compute() {
   Timer dmrg_timer;
 
