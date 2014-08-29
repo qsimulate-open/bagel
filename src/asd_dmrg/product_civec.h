@@ -95,6 +95,7 @@ class ProductRASCivec {
 
     int nelea() const { return nelea_; }
     int neleb() const { return neleb_; }
+    int nele()  const { return nelea_ + neleb_; }
 
     size_t size() const {
       return std::accumulate(sectors_.begin(), sectors_.end(), 0ul, [] (const size_t a, const std::pair<const BlockKey, std::shared_ptr<RASBlockVectors>>& p) { return a+p.second->size(); });
