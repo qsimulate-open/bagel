@@ -23,16 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __ASD_DMRG_GAMMA_FOREST_PROD_ASD_H
-#define __ASD_DMRG_GAMMA_FOREST_PROD_ASD_H
+#ifndef __BAGEL_ASD_DMRG_GAMMA_FOREST_PROD_ASD_H
+#define __BAGEL_ASD_DMRG_GAMMA_FOREST_PROD_ASD_H
 
 #include <vector>
 #include <list>
 
 #include <src/asd/gamma_forest.h>
 #include <src/asd_dmrg/block_key.h>
-#include <src/asd_dmrg/dmrg_block.h>
-#include <src/asd_dmrg/product_civec.h>
 
 namespace bagel {
 
@@ -45,10 +43,12 @@ struct ProductState {
   bool operator<(const ProductState& o) const { return std::make_tuple(block, ci, state) < std::make_tuple(o.block, o.ci, o.state); }
 };
 
+class ProductRASCivec;
+
 class GammaForestProdASD {
   protected:
     std::set<std::tuple<std::list<GammaSQ>, BlockKey, BlockKey>> sparseset_;
-    using SparseList = std::list<std::tuple<std::list<GammaSQ>, /*bra*/ProductState, /*ket*/ProductState>>;
+    using SparseList = std::list<std::tuple<std::list<GammaSQ>, BlockInfo, BlockInfo>>;
     SparseList sparselist_;
     std::map<BlockKey, std::vector<std::shared_ptr<const ProductRASCivec>>> block_states_;
     std::vector<std::list<GammaSQ>> possible_couplings_;
@@ -64,6 +64,8 @@ class GammaForestProdASD {
     void compute();
 
     bool exist(BlockKey bra, BlockKey ket, std::list<GammaSQ> gammalist) const { return sparseset_.count(make_tuple(gammalist,bra,ket)); }
+    std::shared_ptr<const Matrix> get(BlockKey bra, BlockKey ket, std::list<GammaSQ> gammalist) const { return gammas_.at(make_tuple(gammalist,bra,ket)); }
+    SparseList sparselist() const { return sparselist_; }
 
   private:
     BlockKey apply_key(BlockKey bk, const std::list<GammaSQ>& op) const {
@@ -81,8 +83,6 @@ class GammaForestProdASD {
       }
       return bk;
     }
-
-    SparseList sparselist() const { return sparselist_; }
 
     size_t state_tag(const ProductState& b) const {
       return b.block.nelea + b.block.neleb*nele_ + (b.ci.nelea + b.ci.neleb*nele_ + b.state*nele_*nele_)*nele_*nele_;

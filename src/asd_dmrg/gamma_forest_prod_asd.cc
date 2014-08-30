@@ -24,6 +24,7 @@
 //
 
 #include <src/asd_dmrg/gamma_forest_prod_asd.h>
+#include <src/asd_dmrg/product_civec.h>
 #include <src/math/btas_interface.h>
 
 using namespace bagel;
