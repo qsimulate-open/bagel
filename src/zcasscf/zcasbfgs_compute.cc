@@ -154,6 +154,12 @@ void ZCASBFGS::compute() {
     grad_va(cfock, qvec, rdm1, grad);
     grad_ca(cfock, afock, qvec, rdm1, grad);
     *grad *= 2.0;
+    if (pos_conv) {
+      auto newgrad = copy_positronic_rotations(grad);
+      cout << setprecision(4) << scientific << " Positron gradient RMS = " << newgrad->rms() << endl;
+      if (newgrad->rms() > thresh_) pos_conv = false;
+      if (newgrad->rms() > thresh_) cout << " POSITRONS NOT CONVERGED " << endl;
+    }
 
     shared_ptr<ZRotFile> xlog;
     shared_ptr<ZRotFile> ele_rot;
@@ -162,6 +168,7 @@ void ZCASBFGS::compute() {
     Timer more_sorensen_timer(0);
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
+    // grad is altered during optimization of subspace rotations
     if (optimize_electrons) {
       cout << " --- Optimizing electrons --- " << endl;
       xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
