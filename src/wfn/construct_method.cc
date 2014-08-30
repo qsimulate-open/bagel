@@ -33,9 +33,6 @@
 #include <src/ras/distrasci.h>
 #include <src/zfci/zharrison.h>
 #include <src/casscf/superci.h>
-#if 0
-#include <src/casscf/werner.h>
-#endif
 #include <src/casscf/cashybrid.h>
 #include <src/casscf/casbfgs.h>
 #include <src/nevpt2/nevpt2.h>
@@ -105,10 +102,6 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<SuperCI>(itree, geom, ref);
       else if (algorithm == "hybrid")
         out = make_shared<CASHYBRID>(itree, geom, ref);
-#if 0
-      else if (algorithm == "werner" || algorithm == "knowles")
-        out = make_shared<WernerKnowles>(itree, geom, ref);
-#endif
       else if (algorithm == "bfgs")
         out = make_shared<CASBFGS>(itree, geom, ref);
       else
