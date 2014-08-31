@@ -216,7 +216,7 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
         const double exp1 = basisinfo_[1]->exponents(i1);
         const double fac1 = coef1 * exp(-exp1 * pow(dCB_-r[ir], 2));
 
-        const double exp01 = exp(-exp0*exp1*dACsq_/(exp0+exp1));
+        const double exp01 = 1.0;
         for (int i = 0; i <= l0_+l; ++i) {
           const double bessel0 = fac0 * msbessel.compute(i, 2.0*exp0*dAB_*r[ir]);
           for (int j = 0; j <= l1_+l; ++j) {
