@@ -279,7 +279,6 @@ vector<double> SOBatch::compute(const vector<double> r) {
 
   for (auto& ishso : shells_so) {
     const int l = ishso->angular_number();
-    assert (l > 0);
     vector<double> p = project(l, r);
     for (int i = 0; i != ishso->ecp_exponents().size(); ++i)
       if (ishso->ecp_coefficients(i) != 0) {

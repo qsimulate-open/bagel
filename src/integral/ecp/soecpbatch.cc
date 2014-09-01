@@ -87,12 +87,13 @@ void SOECPBatch::compute() {
         double iab = 0.0;
         for (auto& aiter : mol_->atoms()) {
           shared_ptr<const SOECP> aiter_ecp = aiter->so_parameters();
-
-          SOBatch radint(aiter_ecp, basisinfo_, contA, contC, lA, lC, false, max_iter_, integral_thresh_);
-          radint.integrate();
-          iaa += radint.integral(0);
-          rab += radint.integral(1);
-          iab += radint.integral(2);
+          if (aiter_ecp->so_maxl() > 0) {
+            SOBatch radint(aiter_ecp, basisinfo_, contA, contC, lA, lC, false, max_iter_, integral_thresh_);
+            radint.integrate();
+            iaa += radint.integral(0);
+            rab += radint.integral(1);
+            iab += radint.integral(2);
+          }
         }
         const int index = contA * cont1_ * asize_ + contC * asize_ + i;
         if (swap01_) {
