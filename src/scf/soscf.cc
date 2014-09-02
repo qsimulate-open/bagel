@@ -47,20 +47,25 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 void SOSCF::initial_guess() {
   sooverlap_ = sooverlap();
   sotildex_ = sotildex();
+  shared_ptr<const DistZMatrix> sohcore = sohcore_->distmatrix();
+  shared_ptr<const DistZMatrix> sotildex = sotildex_->distmatrix();
+  shared_ptr<const DistZMatrix> sooverlap = sooverlap_->distmatrix();
+  shared_ptr<const DistZMatrix> socoeff;
 
   if (socoeff_ == nullptr) {
-    shared_ptr<const ZMatrix> sofock = sohcore_;
-    shared_ptr<ZMatrix> intermediate = make_shared<ZMatrix>(*sotildex_ % *sofock * *sotildex_);
+    shared_ptr<const DistZMatrix> sofock = sohcore;
+    shared_ptr<DistZMatrix> intermediate = make_shared<DistZMatrix>(*sotildex % *sofock * *sotildex);
     intermediate->diagonalize(soeig());
-    socoeff_ = make_shared<ZMatrix>(*sotildex_ * *intermediate);
+    socoeff = make_shared<DistZMatrix>(*sotildex * *intermediate);
   } else {
-    aodensity_ = aodensity();
-    auto sofock = make_shared<const SOFock>(geom_, sohcore_, make_shared<ZMatrix>(socoeff_->slice(0, nocc_ * 2)));
-    shared_ptr<ZMatrix> intermediate = make_shared<ZMatrix>(*sotildex_ % *sofock * *sotildex_);
+    aodensity_ = socoeff->form_density_rhf(2*nocc_);
+    shared_ptr<const ZMatrix> sofock = make_shared<const SOFock>(geom_, sohcore, aodensity_);
+    shared_ptr<DistZMatrix> intermediate = make_shared<DistZMatrix>(*sotildex % *sofock * *sotildex);
     intermediate->diagonalize(soeig());
-    socoeff_ = make_shared<ZMatrix>(*sotildex_ * *intermediate);
+    socoeff = make_shared<DistZMatrix>(*sotildex * *intermediate);
   }
-  aodensity_ = aodensity();
+  aodensity_ = socoeff->form_density_rhf(2*nocc_);
+  socoeff_ = make_shared<ZMatrix>(*socoeff->matrix());
 }
 
 void SOSCF::compute() {
@@ -75,12 +80,13 @@ void SOSCF::compute() {
 
   DIIS<DistZMatrix, ZMatrix> diis(diis_size_);
 
+  shared_ptr<const DistZMatrix> socoeff;
   for (int iter = 0; iter != max_iter_; ++iter) {
-    shared_ptr<const ZMatrix> sofock = make_shared<const SOFock> (geom_, sohcore_, make_shared<ZMatrix>(socoeff_->slice(0, nocc_ * 2)));
+    shared_ptr<const ZMatrix> sofock = make_shared<const SOFock> (geom_, sohcore_, make_shared<ZMatrix>(socoeff_->slice(0, 2*nocc_)));
     const complex<double> energy = 0.5 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
     assert(energy.imag() < 1e-8);
     energy_ = energy.real();
-    auto error_vector = make_shared<const ZMatrix>(*sofock * *aodensity_ * *sooverlap_ - *sooverlap_ * *aodensity_ * *sofock);
+    auto error_vector = make_shared<const DistZMatrix>(*sofock * *aodensity_ * *sooverlap_ - *sooverlap_ * *aodensity_ * *sofock);
     auto real_error_vector = error_vector->get_real_part();
     const double error = real_error_vector->rms();
 
@@ -108,62 +114,30 @@ void SOSCF::compute() {
       sofock = diis.extrapolate({sofock, error_vector});
     }
 
-    shared_ptr<ZMatrix> intermediate = make_shared<ZMatrix>(*sotildex_ % *sofock * *sotildex_);
+    shared_ptr<DistZMatrix> intermediate = make_shared<DistZMatrix>(*sotildex_ % *sofock * *sotildex_);
     intermediate->diagonalize(soeig());
-    socoeff_ = make_shared<ZMatrix>(*sotildex_ * *intermediate);
-    aodensity_ = aodensity();
+    socoeff = make_shared<const DistZMatrix>(*sotildex_ * *intermediate);
+    socoeff_ = make_shared<const ZMatrix>(*socoeff->matrix());
+    aodensity_ = socoeff->form_density_rhf(2*nocc_);
   }
 }
 
 shared_ptr<const ZMatrix> SOSCF::sotildex() {
-  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(2 * tildex_->ndim(), 2 * tildex_->mdim());
-  out->zero();
-  out->add_real_block(complex<double>(1.0, 0.0), 0, 0, tildex_->ndim(), tildex_->mdim(), *tildex_);
-  out->add_real_block(complex<double>(1.0, 0.0), tildex_->ndim(), tildex_->mdim(), tildex_->ndim(), tildex_->mdim(), *tildex_);
+  shared_ptr<const DistMatrix> tildex = tildex_->distmatrix();
+  auto sotildex = make_shared<DistZMatrix>(2 * tildex->ndim(), 2 * tildex->mdim());
+  sotildex->zero();
+  sotildex->add_real_block(complex<double>(1.0, 0.0), 0, 0, tildex->ndim(), tildex->mdim(), *tildex);
+  sotildex->add_real_block(complex<double>(1.0, 0.0), tildex->ndim(), tildex->mdim(), tildex->ndim(), tildex->mdim(), *tildex);
+  auto out = make_shared<const ZMatrix>(*sotildex->matrix());
   return out;
 }
 
 shared_ptr<const ZMatrix> SOSCF::sooverlap() {
-  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(2 * overlap_->ndim(), 2 * overlap_->mdim());
-  out->zero();
-  out->add_real_block(complex<double>(1.0, 0.0), 0, 0, overlap_->ndim(), overlap_->mdim(), *overlap_);
-  out->add_real_block(complex<double>(1.0, 0.0), overlap_->ndim(), overlap_->mdim(), overlap_->ndim(), overlap_->mdim(), *overlap_);
+  shared_ptr<const DistMatrix> overlap = overlap_->distmatrix();
+  auto sooverlap = make_shared<DistZMatrix>(2 * overlap->ndim(), 2 * overlap->mdim());
+  sooverlap->zero();
+  sooverlap->add_real_block(complex<double>(1.0, 0.0), 0, 0, overlap->ndim(), overlap->mdim(), *overlap);
+  sooverlap->add_real_block(complex<double>(1.0, 0.0), overlap->ndim(), overlap->mdim(), overlap->ndim(), overlap->mdim(), *overlap);
+  auto out = make_shared<const ZMatrix>(*sooverlap->matrix());
   return out;
 }
-
-std::shared_ptr<const ZMatrix> SOSCF::aodensity() {
-  const int n = geom_->nbasis();
-  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(2*n, 2*n);
-  out->zero();
-
-  shared_ptr<const ZMatrix> coeffa = socoeff_->get_submatrix(0, 0, n, nocc_*2);
-  shared_ptr<const ZMatrix> coeffb = socoeff_->get_submatrix(n, 0, n, nocc_*2);
-
-  shared_ptr<const Matrix> rcoeffa = coeffa->get_real_part();
-  shared_ptr<const Matrix> icoeffa = coeffa->get_imag_part();
-  shared_ptr<const Matrix> rcoeffb = coeffb->get_real_part();
-  shared_ptr<const Matrix> icoeffb = coeffb->get_imag_part();
-
-  shared_ptr<const Matrix> reDaa = make_shared<const Matrix>((*rcoeffa ^ *rcoeffa) + (*icoeffa ^ *icoeffa));
-  shared_ptr<const Matrix> imDaa = make_shared<const Matrix>(((*rcoeffa ^ *icoeffa) * (-1.0)) + (*icoeffa ^ *rcoeffa));
-  out->add_real_block(complex<double>(1.0, 0.0), 0, 0, n , n, *reDaa);
-  out->add_real_block(complex<double>(0.0, 1.0), 0, 0, n , n, *imDaa);
-
-  shared_ptr<const Matrix> reDbb = make_shared<const Matrix>((*rcoeffb ^ *rcoeffb) + (*icoeffb ^ *icoeffb));
-  shared_ptr<const Matrix> imDbb = make_shared<const Matrix>(((*rcoeffb ^ *icoeffb) * (-1.0)) + (*icoeffb ^ *rcoeffb));
-  out->add_real_block(complex<double>(1.0, 0.0), n, n, n , n, *reDbb);
-  out->add_real_block(complex<double>(0.0, 1.0), n, n, n , n, *imDbb);
-
-  shared_ptr<const Matrix> reDab = make_shared<const Matrix>((*rcoeffa ^ *rcoeffb) + (*icoeffa ^ *icoeffb));
-  shared_ptr<const Matrix> imDab = make_shared<const Matrix>(((*rcoeffa ^ *icoeffb) * (-1.0)) + (*icoeffa ^ *rcoeffb));
-  out->add_real_block(complex<double>(1.0, 0.0), 0, n, n , n, *reDab);
-  out->add_real_block(complex<double>(0.0, 1.0), 0, n, n , n, *imDab);
-
-  shared_ptr<const Matrix> reDba = make_shared<const Matrix>((*rcoeffb ^ *rcoeffa) + (*icoeffb ^ *icoeffa));
-  shared_ptr<const Matrix> imDba = make_shared<const Matrix>(((*rcoeffb ^ *icoeffa) * (-1.0)) + (*icoeffb ^ *rcoeffa));
-  out->add_real_block(complex<double>(1.0, 0.0), n, 0, n , n, *reDba);
-  out->add_real_block(complex<double>(0.0, 1.0), n, 0, n , n, *imDba);
-
-  return out;
-}
-
