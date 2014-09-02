@@ -93,7 +93,7 @@ ProductRASCI::ProductRASCI(shared_ptr<const PTree> input, shared_ptr<const Refer
   ref_ = make_shared<Reference>(ref_->geom(), std::make_shared<Coeff>(move(*coeff)), ref_->nclosed(), ref_->nact() + left_->norb(), 0);
   jop_ = make_shared<DimerJop>(ref_, ref_->nclosed(), ref_->nclosed() + norb_, ref_->nclosed() + ref_->nact(), ref_->coeff());
 
-  blockops_ = make_shared<BlockOperators>(left_, jop_);
+  blockops_ = left_->compute_block_ops(jop_);
 
   construct_denom();
 }

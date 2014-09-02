@@ -31,8 +31,8 @@
 using namespace bagel;
 using namespace std;
 
-DMRG_Block::DMRG_Block(GammaForestASD<RASDvec>&& forest, const map<BlockKey, shared_ptr<const Matrix>> h2e, const map<BlockKey,
-           shared_ptr<const Matrix>> spin, shared_ptr<const Matrix> coeff) : H2e_(h2e), spin_(spin), coeff_(coeff) {
+DMRG_Block1::DMRG_Block1(GammaForestASD<RASDvec>&& forest, const map<BlockKey, shared_ptr<const Matrix>> h2e, const map<BlockKey,
+           shared_ptr<const Matrix>> spin, shared_ptr<const Matrix> coeff) : DMRG_Block(coeff), H2e_(h2e), spin_(spin) {
   // Build set of blocks
   for (auto& i : h2e) {
     assert(i.second->ndim() == i.second->mdim());
@@ -69,9 +69,9 @@ DMRG_Block::DMRG_Block(GammaForestASD<RASDvec>&& forest, const map<BlockKey, sha
   }
 }
 
-DMRG_Block::DMRG_Block(GammaForestProdASD&& forest, const map<BlockKey, shared_ptr<const Matrix>> h2e,
+DMRG_Block1::DMRG_Block1(GammaForestProdASD&& forest, const map<BlockKey, shared_ptr<const Matrix>> h2e,
                                                     const map<BlockKey, shared_ptr<const Matrix>> spin,
-                                                    shared_ptr<const Matrix> coeff) : H2e_(h2e), spin_(spin), coeff_(coeff) {
+                                                    shared_ptr<const Matrix> coeff) : DMRG_Block(coeff), H2e_(h2e), spin_(spin) {
   // Build set of blocks
   for (auto& i : h2e) {
     assert(i.second->ndim() == i.second->mdim());
@@ -103,4 +103,30 @@ DMRG_Block::DMRG_Block(GammaForestProdASD&& forest, const map<BlockKey, shared_p
     CouplingBlock cb(brakey, ketkey, tensor);
     sparse_[gammalist].emplace(cb.key(), cb);
   }
+}
+
+shared_ptr<Matrix> DMRG_Block1::spin_lower(const BlockKey k) const {
+  BlockKey lowered_key(k.nelea-1, k.neleb+1);
+  assert(contains(lowered_key));
+  shared_ptr<const btas::Tensor3<double>> gamma = coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({lowered_key, k}).data;
+
+  auto out = make_shared<Matrix>(gamma->extent(0), gamma->extent(1));
+
+  for (int r = 0; r < norb(); ++r)
+    blas::ax_plus_y_n(1.0, &(*gamma)(0, 0, r + r*norb()), out->size(), out->data());
+
+  return out;
+}
+
+shared_ptr<Matrix> DMRG_Block1::spin_raise(const BlockKey k) const {
+  BlockKey raised_key(k.nelea+1, k.neleb-1);
+  assert(contains(raised_key));
+  shared_ptr<const btas::Tensor3<double>> gamma = coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({k, raised_key}).data;
+
+  auto out = make_shared<Matrix>(gamma->extent(0), gamma->extent(1));
+
+  for (int r = 0; r < norb(); ++r)
+    blas::ax_plus_y_n(1.0, &(*gamma)(0, 0, r + r*norb()), out->size(), out->data());
+
+  return out->transpose();
 }

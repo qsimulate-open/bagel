@@ -30,6 +30,7 @@
 
 #include <src/asd_dmrg/gamma_forest_asd.h>
 #include <src/asd_dmrg/gamma_forest_prod_asd.h>
+#include <src/asd_dmrg/block_operators.h>
 #include <src/ras/civector.h>
 
 namespace bagel {
@@ -41,27 +42,14 @@ struct CouplingBlock {
   std::pair<BlockKey, BlockKey> key() const { return {states.first.key(), states.second.key()}; }
 };
 
-/// Store matrix representations of all of the operators needed to apply the Hamiltonian to a tensor-product state
 class DMRG_Block {
   protected:
-    using SparseMap = std::map<std::list<GammaSQ>, std::map<std::pair<BlockKey, BlockKey>, CouplingBlock>>;
-
-    SparseMap sparse_;
-    std::map<BlockKey, std::shared_ptr<const Matrix>> H2e_;
-    std::map<BlockKey, std::shared_ptr<const Matrix>> spin_;
     std::set<BlockInfo> blocks_;
-
     std::shared_ptr<const Matrix> coeff_; ///< Coefficients for orbitals stored in DMRG_Block
 
   public:
-    /// default constructor
-    DMRG_Block() { }
-
-    /// constructor that takes an Rvalue reference to a GammaForestASD
-    DMRG_Block(GammaForestASD<RASDvec>&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, const std::map<BlockKey,
-               std::shared_ptr<const Matrix>> spin, std::shared_ptr<const Matrix> coeff);
-    DMRG_Block(GammaForestProdASD&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, const std::map<BlockKey,
-               std::shared_ptr<const Matrix>> spin, std::shared_ptr<const Matrix> coeff);
+    DMRG_Block() {}
+    DMRG_Block(std::shared_ptr<const Matrix> c) : coeff_(c) {}
 
     bool contains(const BlockKey& k) const {
       auto iter = std::find_if(blocks_.begin(), blocks_.end(), [&k] (const BlockInfo& b) { return (b.nelea==k.nelea && b.neleb==k.neleb); });
@@ -80,11 +68,41 @@ class DMRG_Block {
       return *iter;
     }
 
+    std::shared_ptr<const Matrix> coeff() const { return coeff_; }
+
+    virtual std::shared_ptr<Matrix> spin(const BlockKey k) const = 0;
+    virtual std::shared_ptr<Matrix> spin_lower(const BlockKey k) const = 0;
+    virtual std::shared_ptr<Matrix> spin_raise(const BlockKey k) const = 0;
+
+    virtual std::shared_ptr<const BlockOperators> compute_block_ops(std::shared_ptr<DimerJop> jop) const = 0;
+};
+
+/// Store matrix representations of all of the operators needed to apply the Hamiltonian to a tensor-product state
+class DMRG_Block1 : public std::enable_shared_from_this<DMRG_Block1>, public DMRG_Block {
+  protected:
+    using SparseMap = std::map<std::list<GammaSQ>, std::map<std::pair<BlockKey, BlockKey>, CouplingBlock>>;
+
+    SparseMap sparse_;
+    std::map<BlockKey, std::shared_ptr<const Matrix>> H2e_;
+    std::map<BlockKey, std::shared_ptr<const Matrix>> spin_;
+  public:
+    /// default constructor
+    DMRG_Block1() { }
+
+    /// constructor that takes an Rvalue reference to a GammaForestASD
+    DMRG_Block1(GammaForestASD<RASDvec>&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, const std::map<BlockKey,
+               std::shared_ptr<const Matrix>> spin, std::shared_ptr<const Matrix> coeff);
+    DMRG_Block1(GammaForestProdASD&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, const std::map<BlockKey,
+               std::shared_ptr<const Matrix>> spin, std::shared_ptr<const Matrix> coeff);
+
     const std::map<std::pair<BlockKey, BlockKey>, CouplingBlock>& coupling(const std::list<GammaSQ>& l) const { return sparse_.at(l); }
     std::shared_ptr<const Matrix> h2e(const BlockKey& b) const { return H2e_.at(b); }
-    std::shared_ptr<const Matrix> spin(const BlockKey& b) const { return spin_.at(b); }
 
-    std::shared_ptr<const Matrix> coeff() const { return coeff_; }
+    std::shared_ptr<Matrix> spin(const BlockKey b) const override { return spin_.at(b)->copy(); }
+    std::shared_ptr<Matrix> spin_lower(const BlockKey b) const override;
+    std::shared_ptr<Matrix> spin_raise(const BlockKey b) const override;
+
+    std::shared_ptr<const BlockOperators> compute_block_ops(std::shared_ptr<DimerJop> jop) const override { return std::make_shared<BlockOperators1>(shared_from_this(), jop); }
 };
 
 }

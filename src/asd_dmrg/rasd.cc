@@ -170,7 +170,7 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
 
   GammaForestASD<RASDvec> forest(states);
   forest.compute();
-  return make_shared<DMRG_Block>(move(forest), h_2e, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
+  return make_shared<DMRG_Block1>(move(forest), h_2e, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
 }
 
 shared_ptr<DMRG_Block> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> left, const int site) {
@@ -232,7 +232,7 @@ shared_ptr<DMRG_Block> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared
 #if 1
   return nullptr;
 #else
-  return make_shared<DMRG_Block>(/*stuff*/);
+  return make_shared<DMRG_Block1>(/*stuff*/);
 #endif
 }
 
@@ -260,7 +260,8 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
         sweep_energies_[i].push_back(prod_ras->energy(i));
 
       GammaForestASD<RASDvec> forest(civecs);
-      return make_shared<DMRG_Block>(move(forest), h_2e, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
+      forest.compute();
+      return make_shared<DMRG_Block1>(move(forest), h_2e, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
     }
     else {
       throw logic_error("Full DMRG sweep not yet implemented!");
@@ -398,9 +399,9 @@ void RASD::apply_perturbation(shared_ptr<const RASBlockVectors> cc, vector<Gamma
   pair<int, int> dele(0, 0);
   for (auto& op : oplist) {
     if (is_alpha(op))
-      dele.first += (is_alpha(op) ? 1 : -1);
+      dele.first += (is_creation(op) ? 1 : -1);
     else
-      dele.second += (is_beta(op) ? 1 : -1);
+      dele.second += (is_creation(op) ? 1 : -1);
   }
 
   shared_ptr<const RASDeterminants> sdet = cc->det();

@@ -90,9 +90,6 @@ void ProductRASCI::construct_denom() {
       const int nstates = sec.second->nstates();
       vector<RASCivecView> vecs = sec.second->civecs();
 
-      shared_ptr<const btas::Tensor4<double>> Qaa = blockops_->Q_aa(sec.first);
-      shared_ptr<const btas::Tensor4<double>> Qbb = blockops_->Q_bb(sec.first);
-
       for (int i = 0; i < nstates; ++i) {
         // initialize to sum of pure terms
         RASCivecView civec = vecs[i];
@@ -109,14 +106,14 @@ void ProductRASCI::construct_denom() {
 
             double alphaE = 0.0;
             for (int r = 0; r < rnorb; ++r)
-              alphaE += (*Qaa)(i,i,r,r)*abit[r];
+              alphaE += blockops_->Q_aa(sec.first,i,i,r,r)*abit[r];
 
             for (size_t ib = 0; ib < lb; ++ib) {
               const bitset<nbit__> bbit = block->string_bits_b(ib);
 
               double betaE = 0.0;
               for (int r = 0; r < rnorb; ++r)
-                betaE += (*Qbb)(i,i,r,r)*bbit[r];
+                betaE += blockops_->Q_bb(sec.first,i,i,r,r)*bbit[r];
 
               data_base[ib] += alphaE + betaE;
             }

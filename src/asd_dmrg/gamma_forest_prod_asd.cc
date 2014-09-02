@@ -41,7 +41,8 @@ GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<const Pro
   map<ProductState, shared_ptr<RASDvec>> vecmap;
   for (auto& state_block : block_states) {
     const int nstates = state_block.second.size();
-    shared_ptr<const DMRG_Block> block = state_block.second.front()->left();
+    shared_ptr<const DMRG_Block1> block = dynamic_pointer_cast<const DMRG_Block1>(state_block.second.front()->left());
+    assert(block);
     for (auto& binfo : block->blocks()) {
       const int nb = binfo.nstates;
       for (int i = 0; i < nb; ++i) {
@@ -174,7 +175,8 @@ void GammaForestProdASD::compute() {
       const int nketstates = ket_states.second.size();
       auto gamma_matrix = make_shared<Matrix>(nbrastates*nketstates, nijk);
 
-      shared_ptr<const DMRG_Block> dmrgblock = ket_states.second.front()->left();
+      shared_ptr<const DMRG_Block1> dmrgblock = dynamic_pointer_cast<const DMRG_Block1>(ket_states.second.front()->left());
+      assert(dmrgblock);
       assert(dmrgblock == block_states_.at(bra_key).front()->left());
 
       for (auto& kbinfo : dmrgblock->blocks()) {

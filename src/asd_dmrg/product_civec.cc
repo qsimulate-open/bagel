@@ -118,7 +118,7 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
   auto out = this->clone();
   for (auto& sector : sectors()) {
     { // pure block part
-      shared_ptr<Matrix> spinmat = this->left()->spin(sector.first)->copy();
+      shared_ptr<Matrix> spinmat = this->left()->spin(sector.first);
       const double SAB = 0.5 * static_cast<double>((sector.first.nelea - sector.first.neleb)*sector.second->det()->nspin());
       spinmat->add_diag(SAB);
       shared_ptr<const RASBlockVectors> source = sector.second;
@@ -138,12 +138,7 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
     if (this->left()->contains(lowered_key)) {
       shared_ptr<const RASBlockVectors> source = sector.second;
       shared_ptr<RASBlockVectors> target = out->sector(lowered_key);
-      auto spin_lower = make_shared<Matrix>(target->mdim(), source->mdim());
-      shared_ptr<const btas::Tensor3<double>> gamma_ab = left_->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({lowered_key, sector.first}).data;
-      assert(gamma_ab->extent(0)==spin_lower->ndim() && gamma_ab->extent(1)==spin_lower->mdim());
-      const int lnorb = left()->norb();
-      for (int r = 0; r < lnorb; ++r)
-        blas::ax_plus_y_n(1.0, &(*gamma_ab)(0,0,r*lnorb + r), target->mdim()*source->mdim(), spin_lower->data());
+      shared_ptr<Matrix> spin_lower = this->left()->spin_lower(sector.first);
 
       BlockInfo left_state(target->left_state().nelea, target->left_state().neleb, source->mdim());
       RASBlockVectors raised_sector(target->det(), left_state);
@@ -159,19 +154,14 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
     if (this->left()->contains(raised_key)) {
       shared_ptr<const RASBlockVectors> source = sector.second;
       shared_ptr<RASBlockVectors> target = out->sector(raised_key);
-      auto spin_raise = make_shared<Matrix>(source->mdim(), target->mdim());
-      shared_ptr<const btas::Tensor3<double>> gamma_ab = left_->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({sector.first, raised_key}).data;
-      assert(gamma_ab->extent(0)==spin_raise->ndim() && gamma_ab->extent(1)==spin_raise->mdim());
-      const int lnorb = left()->norb();
-      for (int r = 0; r < lnorb; ++r)
-        blas::ax_plus_y_n(1.0, &(*gamma_ab)(0,0,r*lnorb + r), target->mdim()*source->mdim(), spin_raise->data());
+      shared_ptr<Matrix> spin_raise = this->left()->spin_raise(sector.first);
 
       BlockInfo left_state(target->left_state().nelea, target->left_state().neleb, source->mdim());
       RASBlockVectors lowered_sector(target->det(), left_state);
       for (int ist = 0; ist < source->mdim(); ++ist)
         RAS::spin_lower_impl(source->civec(ist), lowered_sector.civec(ist));
 
-      dgemm_("N", "N", target->ndim(), target->mdim(), lowered_sector.mdim(), 1.0, lowered_sector.data(), lowered_sector.ndim(), spin_raise->data(), spin_raise->ndim(),
+      dgemm_("N", "T", target->ndim(), target->mdim(), lowered_sector.mdim(), 1.0, lowered_sector.data(), lowered_sector.ndim(), spin_raise->data(), spin_raise->ndim(),
                                                                              1.0, target->data(), target->ndim());
     }
   }

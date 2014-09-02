@@ -24,11 +24,12 @@
 //
 
 #include <src/asd_dmrg/block_operators.h>
+#include <src/asd_dmrg/dmrg_block.h>
 
 using namespace std;
 using namespace bagel;
 
-BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<DimerJop> jop) {
+BlockOperators1::BlockOperators1(shared_ptr<const DMRG_Block1> left, shared_ptr<DimerJop> jop) : left_(left) {
   const int rnorb = jop->monomer_jop<0>()->nocc();
   const int lnorb = jop->monomer_jop<1>()->nocc();
 
@@ -164,3 +165,10 @@ BlockOperators::BlockOperators(shared_ptr<const DMRG_Block> left, shared_ptr<Dim
   }
 }
 
+shared_ptr<Matrix> BlockOperators1::gamma_a(const BlockKey bk, int i) const {
+  return get_mat_block(left_->coupling({GammaSQ::CreateAlpha}).at({BlockKey(bk.nelea+1,bk.neleb), bk}).data, i);
+}
+
+shared_ptr<Matrix> BlockOperators1::gamma_b(const BlockKey bk, int i) const {
+  return get_mat_block(left_->coupling({GammaSQ::CreateBeta}).at({BlockKey(bk.nelea,bk.neleb+1), bk}).data, i);
+}
