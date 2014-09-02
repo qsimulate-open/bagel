@@ -3,9 +3,9 @@
   { "name" : "Shane",   "surname" : "Parker",      "start" : "2012",  "end" : "",     "email" : "shane.parker@u.northwestern.edu",      "affiliation" : "Northwestern University" },
   { "name" : "Ryan",    "surname" : "Reynolds",    "start" : "2013",  "end" : "",     "email" : "ryanreynolds2018@u.northwestern.edu",  "affiliation" : "Northwestern University" },
   { "name" : "Hai-Anh", "surname" : "Le",          "start" : "2013",  "end" : "",     "email" : "anh@u.northwestern.edu",               "affiliation" : "Northwestern University" },
-  { "name" : "Jefferson","surname" : "Bates",      "start" : "2014",  "end" : "",     "email" : "jefferson.bates@northwestern.edu",     "affiliation" : "Northwestern University" }
-  { "name" : "Inkoo",   "surname" : "Kim",         "start" : "2014",  "end" : "",     "email" : "inkoo.kim@northwestern.edu",           "affiliation" : "Northwestern University" }
+  { "name" : "Jefferson","surname" : "Bates",      "start" : "2014",  "end" : "",     "email" : "jefferson.bates@northwestern.edu",     "affiliation" : "Northwestern University" },
+  { "name" : "Inkoo",   "surname" : "Kim",         "start" : "2014",  "end" : "",     "email" : "inkoo.kim@northwestern.edu",           "affiliation" : "Northwestern University" },
   { "name" : "Matthew", "surname" : "MacLeod",     "start" : "2012",  "end" : "2014", "email" : "",                                     "affiliation" : "" },
   { "name" : "Matthew", "surname" : "Kelley",      "start" : "2012",  "end" : "2013", "email" : "",                                     "affiliation" : "" },
-  { "name" : "Michael", "surname" : "Caldwell",    "start" : "2013",  "end" : "2013", "email" : "",                                     "affiliation" : "" },
+  { "name" : "Michael", "surname" : "Caldwell",    "start" : "2013",  "end" : "2013", "email" : "",                                     "affiliation" : "" }
 ]
