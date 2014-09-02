@@ -270,6 +270,7 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
   const size_t lb = cc->lenb();
   assert(lb == d->lenb());
 
+#if 0
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j != norb_; ++j) {
       if (i == j) continue;
@@ -284,6 +285,32 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
       }
     }
   }
+#else
+  TaskQueue<function<void(void)>> tq(norb_*norb_);
+  for (int i = 0; i != norb_; ++i) {
+    for (int j = 0; j != norb_; ++j) {
+      if (i == j) continue;
+      tq.emplace_back(
+        [this, &d, &source, i, j, &cc, &lb] () {
+          complex<double>* target = d->data(j+norb_*i)->data();
+          size_t aindex = 0;
+          for (auto& a : d->det()->string_bits_a()) {
+            if (a[i] || a[j]) {
+              ++aindex;
+              continue;
+            }
+            auto ca = a; ca.set(i); ca.set(j);
+            const double factor = Determinants::sign(a, i, j) * (i < j ? -1.0 : 1.0);
+            const size_t offas = cc->det()->lexical<0>(ca);
+            blas::ax_plus_y_n(factor, source+lb*offas, lb, target+lb*aindex);
+            ++aindex;
+          }
+        }
+      );
+    }
+  }
+  tq.compute();
+#endif
 }
 
 
@@ -350,7 +377,7 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
 
   // TODO can be reduced by a factor of two by using symmetry
   // TODO not efficient code
-#if 0
+#if 1
   for (int i = 0; i < norb_; ++i) { // beta
     for (int j = 0; j < norb_; ++j) { // beta
       if (i == j) continue;
