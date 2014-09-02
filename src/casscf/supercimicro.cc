@@ -125,18 +125,7 @@ void SuperCIMicro::sigma_at_at_(shared_ptr<const RotFile> cc, shared_ptr<RotFile
   const int nbasis = casscf_->nbasis();
   if (!nact || !nvirt) return;
 
-  shared_ptr<Matrix> gtup = gaa_->copy();
-  for (int i = 0; i != nact; ++i) {
-    for (int j = 0; j != nact; ++j) {
-#if 0
-      const double fac = (casscf_->occup(i)*casscf_->occup(j) > occup_thresh) ? 1.0/std::sqrt(casscf_->occup(i)*casscf_->occup(j)) : 0.0;
-#else
-      const double fac = 1.0;
-#endif
-      gtup->element(j,i) *= fac;
-    }
-  }
-  dgemm_("N", "N", nvirt, nact, nact, 1.0, cc->ptr_va(), nvirt, gtup->data(), nact, 1.0, sigma->ptr_va(), nvirt);
+  dgemm_("N", "N", nvirt, nact, nact, 1.0, cc->ptr_va(), nvirt, gaa_->data(), nact, 1.0, sigma->ptr_va(), nvirt);
   dgemm_("N", "N", nvirt, nact, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nbasis, cc->ptr_va(), nvirt, 1.0, sigma->ptr_va(), nvirt);
 }
 

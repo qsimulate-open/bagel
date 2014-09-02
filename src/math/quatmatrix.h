@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: jvec.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: quatmatrix.h
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -22,28 +22,31 @@
 // along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
+//
+#ifndef __SRC_MATH_QUATMATRIX_H
+#define __SRC_MATH_QUATMATRIX_H
 
-
-#ifndef __BAGEL_SRC_CASSCF_JVEC_H
-#define __BAGEL_SRC_CASSCF_JVEC_H
-
-#include <src/fci/fci.h>
-#include <src/scf/coeff.h>
+#include <src/math/zmatrix.h>
+#include <src/math/algo.h>
 
 namespace bagel {
 
-class Jvec {
-  protected:
-    std::shared_ptr<const DFHalfDist> half_;
-    std::shared_ptr<const DFFullDist> jvec_;
-    std::shared_ptr<const RDM<2>> rdm2_all_;
-
+class QuatMatrix : public ZMatrix {
   public:
-    Jvec(std::shared_ptr<FCI> fci, std::shared_ptr<const Coeff> c, const size_t, const size_t, const size_t);
+    QuatMatrix(const ZMatrix& o) : ZMatrix(o) { }
+    QuatMatrix(ZMatrix&& o) : ZMatrix(std::move(o)) { }
+    // TODO : implement symmetry checking function, and constructor that can take "00" and "01" matrices and build the rest of the matrix
 
-    const std::shared_ptr<const DFHalfDist> half() const { return half_; }
-    const std::shared_ptr<const DFFullDist> jvec() const { return jvec_; }
-    const std::shared_ptr<const RDM<2>> rdm2_all() const { return rdm2_all_; }
+    void diagonalize(VecView eig) override {
+      assert(ndim() == mdim());
+      // TODO parallelize
+      zquatev_(ndim(), data(), eig.data());
+      synchronize();
+    }
+
+    void synchronize() {
+      mpi__->broadcast(data(), size(), 0);
+    }
 
 };
 

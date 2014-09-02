@@ -37,7 +37,6 @@ void CASBFGS::compute() {
 
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 
-  shared_ptr<HPW_DIIS<Matrix>> diis;
   shared_ptr<SRBFGS<RotFile>> bfgs;
 
   // ============================
@@ -50,20 +49,19 @@ void CASBFGS::compute() {
   shared_ptr<const Matrix> xstart;
   vector<double> evals;
 
+  mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     const shared_ptr<const Coeff> cold = coeff_;
     const shared_ptr<const Matrix> xold = x->copy();
 
     // first perform CASCI to obtain RDMs
-    mute_stdcout();
     if (iter) fci_->update(coeff_);
     fci_->compute();
     fci_->compute_rdm12();
     // get energy
     energy_ = fci_->energy();
     evals.push_back((fci_->energy())[0]);
-    resume_stdcout();
 
     shared_ptr<Matrix> natorb_mat = x->clone();
     {
@@ -107,14 +105,8 @@ void CASBFGS::compute() {
       shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
       bfgs = make_shared<SRBFGS<RotFile>>(denom);
     }
-    if (false) {
-      xstart = xold->copy();
-      shared_ptr<Matrix> unit = make_shared<Matrix>(xold->mdim(), xold->mdim());
-      unit->unit();
-      diis = make_shared<HPW_DIIS<Matrix>>(10, cold, unit);
-    }
+
     // extrapolation using BFGS
-    mute_stdcout();
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
     *x *= *natorb_mat;
@@ -123,33 +115,31 @@ void CASBFGS::compute() {
     bfgs->check_step(evals, sigma, xlog);
     shared_ptr<RotFile> a = bfgs->more_sorensen_extrapolate(sigma, xlog);
     cout << " ---------------------------------------------------- " << endl << endl;
-    resume_stdcout();
 
     // restore the matrix from RotFile
     shared_ptr<const Matrix> amat = a->unpack<Matrix>();
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 
-    if (!diis) {
-      coeff_ = make_shared<const Coeff>(*coeff_**expa);
-      // for next BFGS extrapolation
-      *x *= *expa;
-    } else {
-      auto tmp3 = make_shared<const Matrix>(*natorb_mat * *expa ^ *natorb_mat);
-      shared_ptr<const Matrix> mcc = diis->extrapolate(tmp3);
-      coeff_ = make_shared<const Coeff>(*mcc);
-      // update x
-      x = make_shared<Matrix>(*xstart * *diis->extrap());
-//    cout << setprecision(10) << (*coeff_ - *diis->start()**x).norm() << endl;
-    }
+    // updating coefficients
+    coeff_ = make_shared<const Coeff>(*coeff_**expa);
+    // for next BFGS extrapolation
+    *x *= *expa;
+
+    // synchronization
+    mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
 
     // setting error of macro iteration
     const double gradient = sigma->rms();
 
+    resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
     if (gradient < thresh_) {
       rms_grad_ = gradient;
+      cout << " " << endl;
+      cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
+      mute_stdcout();
       break;
     }
 
@@ -157,10 +147,11 @@ void CASBFGS::compute() {
       rms_grad_ = gradient;
       cout << " " << endl;
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
-      cout << "    * Max iteration reached in the CASSCF macro interations. *     " << endl << endl;
-//      throw runtime_error("Max iteration reached in the CASSCF macro interation.");
+      cout << "    * Max iteration reached during the quasi-Newton optimization. *     " << endl << endl;
     }
+    mute_stdcout();
   }
+  resume_stdcout();
   // ============================
   // macro iteration to here
   // ============================

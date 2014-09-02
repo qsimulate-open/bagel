@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: casbfgs.h
-// Copyright (C) 2014 Toru Shiozaki
+// Filename: zcashybrid.cc
+// Copyright (C) 2014 Jefferson Bates
 //
 // Author: Jefferson Bates <jefferson.bates@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -25,15 +25,15 @@
 
 
 #include <src/scf/scf.h>
-#include <src/casscf/casscf.h>
-#include <src/casscf/superci.h>
-#include <src/casscf/casbfgs.h>
-#include <src/casscf/cashybrid.h>
+#include <src/zcasscf/zcasscf.h>
+#include <src/zcasscf/zsuperci.h>
+#include <src/zcasscf/zcasbfgs.h>
+#include <src/zcasscf/zcashybrid.h>
 
  using namespace std;
  using namespace bagel;
 
-void CASHYBRID::compute() {
+void ZCASHYBRID::compute() {
 
   double global_thresh = idata_->get<double>("thresh", 1.0e-8);
   shared_ptr<Method> active_method;
@@ -48,32 +48,38 @@ void CASHYBRID::compute() {
       idata->erase("thresh");
       idata->put("thresh",  thresh_switch_);
     }
-    active_method = make_shared<SuperCI>(idata, geom_, ref_);
+    active_method = make_shared<ZSuperCI>(idata, geom_, ref_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
-    double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
-    if (grad < global_thresh) {
-      cout << "      * CASSCF converged *    " << endl;
+    complex<double> grad = dynamic_pointer_cast<ZCASSCF>(active_method)->rms_grad();
+    if (real(grad) < global_thresh) {
+      cout << "      * ZCASSCF converged *    " << endl;
       return;
     }
   }
 
   // construct and compute step-restricted BFGS
   {
-    active_method = make_shared<CASBFGS>(idata_, geom_, refout_);
+    auto idata = make_shared<PTree>(*idata_);
+    idata->erase("kramers_coeff");
+    idata->put("kramers_coeff", true);
+    active_method = make_shared<ZCASBFGS>(idata, geom_, refout_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
-    double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
-    if (grad < global_thresh) {
+    complex<double> grad = dynamic_pointer_cast<ZCASSCF>(active_method)->rms_grad();
+    if (real(grad) < global_thresh) {
       cout << " " << endl;
-      cout << "      * CASSCF converged *    " << endl;
+      cout << "    * ZCASSCF converged *    " << endl;
+    } else {
+      cout << " " << endl;
+      cout << "    * ZCASSCF did NOT converge *    " << endl;
     }
   }
 
 }
 
 
-shared_ptr<const Reference> CASHYBRID::conv_to_ref() const {
+shared_ptr<const Reference> ZCASHYBRID::conv_to_ref() const {
   assert(refout_);
   return refout_;
 }

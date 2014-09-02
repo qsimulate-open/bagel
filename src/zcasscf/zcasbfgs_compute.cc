@@ -59,18 +59,23 @@ void ZCASBFGS::compute() {
   bool optimize_electrons = idata_->get<bool>("optimize_electrons", true);
   const bool only_electrons = idata_->get<bool>("only_electrons", false);
   if (only_electrons)  cout << "     Orbital optimization for electronic orbitals only " << endl;
+  double orthonorm;
+  {
+    auto unit = coeff_->clone(); unit->unit();
+    orthonorm = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
+    if (orthonorm > 2.5e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
+  }
   cout << "     See casscf.log for further information on FCI output " << endl << endl;
+  mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      mute_stdcout(/*fci*/true);
       if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
-      resume_stdcout();
     }
 
     // calculate 1RDM in an original basis set
@@ -106,13 +111,15 @@ void ZCASBFGS::compute() {
     // get energy
     if (nact_) {
       optimize_electrons == true ? ele_energy.push_back((fci_->energy())[0]) : pos_energy.push_back((fci_->energy())[0]);
+      energy_ = fci_->energy();
     } else {
-      assert(nstate_ == 1);
+      assert(nstate_ == 1 && energy_.size() == 1);
       optimize_electrons == true ? ele_energy.resize(iter/2+1) : pos_energy.resize((iter-1)/2+1);
       optimize_electrons == true ? ele_energy[iter/2] = geom_->nuclear_repulsion() : pos_energy[(iter-1)/2] = geom_->nuclear_repulsion();
       auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore_) * *coeff_);
       for (int i = 0; i != nclosed_*2; ++i)
         optimize_electrons == true ? ele_energy[iter/2] += 0.5*mo->element(i,i).real() : pos_energy[(iter-1)/2] += 0.5*mo->element(i,i).real();
+      energy_[0] = optimize_electrons == true ? ele_energy[iter/2] : pos_energy[(iter-1)/2];
     }
 
     // compute approximate diagonal hessian
@@ -126,7 +133,6 @@ void ZCASBFGS::compute() {
         diagonal_shift->fill(level_shift_);
         denom->ax_plus_y(-1.0, diagonal_shift);
       }
-      srbfgs = make_shared<SRBFGS<ZRotFile>>(denom);
       { // electronic rotation bfgs
         auto newdenom = copy_electronic_rotations(denom);
         ele_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom);
@@ -148,15 +154,21 @@ void ZCASBFGS::compute() {
     grad_va(cfock, qvec, rdm1, grad);
     grad_ca(cfock, afock, qvec, rdm1, grad);
     *grad *= 2.0;
+    if (pos_conv) {
+      auto newgrad = copy_positronic_rotations(grad);
+      cout << setprecision(4) << scientific << " Positron gradient RMS = " << newgrad->rms() << endl;
+      if (newgrad->rms() > thresh_) pos_conv = false;
+      if (newgrad->rms() > thresh_) cout << " POSITRONS NOT CONVERGED " << endl;
+    }
 
     shared_ptr<ZRotFile> xlog;
     shared_ptr<ZRotFile> ele_rot;
     shared_ptr<ZRotFile> pos_rot;
     bool reset;
     Timer more_sorensen_timer(0);
-    mute_stdcout(/*fci*/true);
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
+    // grad is altered during optimization of subspace rotations
     if (optimize_electrons) {
       cout << " --- Optimizing electrons --- " << endl;
       xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
@@ -169,7 +181,6 @@ void ZCASBFGS::compute() {
       kramers_adapt(pos_rot, nclosed_, nact_, nneg_/2);
     }
     cout << " ---------------------------------------------------- " << endl << endl;
-    resume_stdcout();
     more_sorensen_timer.tick_print("More-Sorensen/Hebden extrapolation");
 
     shared_ptr<ZMatrix> amat;
@@ -230,12 +241,12 @@ void ZCASBFGS::compute() {
       *pos_x *= *expa;
     }
 
+    // synchronization
+    mpi__->broadcast(const_pointer_cast<ZMatrix>(coeff_)->data(), coeff_->size(), 0);
+
     // print energy
-    if (optimize_electrons) {
-      print_iteration(iter, 0, 0, ele_energy, gradient, timer.tick());
-    } else {
-      print_iteration(iter, 0, 0, pos_energy, gradient, timer.tick());
-    }
+    resume_stdcout();
+    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
     if (gradient < thresh_ && !optimize_electrons) pos_conv = true;
     if (gradient < thresh_ &&  optimize_electrons) ele_conv = true;
@@ -245,15 +256,31 @@ void ZCASBFGS::compute() {
     if (only_electrons) optimize_electrons = true;
     if ((ele_conv && only_electrons) || (pos_conv && ele_conv)) {
       cout << " " << endl;
-      cout << "    * ZCASBFGS optimization converged    " << endl << endl;
+      cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
+      rms_grad_ = gradient;
+      mute_stdcout();
       break;
     }
+    if (iter == max_iter_-1) {
+      rms_grad_ = gradient;
+      cout << " " << endl;
+      if (real(rms_grad_) > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
+      cout << "    * Max iteration reached during the quasi-Newton optimization. *     " << endl << endl;
+    }
+    {
+      auto unit = coeff_->clone(); unit->unit();
+      auto orthonorm2 = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
+      if (orthonorm2 / orthonorm > 1.0e+01)
+        throw logic_error("should not happen");
+    }
+    mute_stdcout();
   }
   if (energy_.size() == 0)
     optimize_electrons == true ? energy_.push_back(ele_energy.back()) : energy_.push_back(pos_energy.back());
 
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
+  resume_stdcout();
   if (nact_) {
     fci_->update(coeff_, /*restricted*/true);
     fci_->compute();

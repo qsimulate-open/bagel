@@ -25,6 +25,7 @@
 
 #include <fstream>
 #include <src/rel/dirac.h>
+#include <src/math/quatmatrix.h>
 #include <src/zcasscf/zcasscf.h>
 
 using namespace std;
@@ -127,6 +128,7 @@ void ZCASSCF::init() {
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
   nact_ = idata_->get<int>("nact_cas", nact_);
+  if (!nact_) energy_.resize(1);
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
@@ -162,6 +164,7 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
+  mute_stdcout();
   if (kramers_coeff) {
     shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
     coeff_ = make_shared<const ZMatrix>(*tmp);
@@ -171,10 +174,9 @@ void ZCASSCF::init() {
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
-    mute_stdcout(/*fci*/true);
     fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_, /*restricted*/true);
-    resume_stdcout();
   }
+  resume_stdcout();
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
@@ -191,26 +193,23 @@ void ZCASSCF::print_header() const {
 void ZCASSCF::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, const double time) const {
   if (energy.size() != 1 && iter) cout << endl;
   int i = 0;
-  cout << "Cycle" << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
-               << setw(20) << fixed << setprecision(12) << energy[(energy.size() > 0 ? energy.size()-1 : 0)] << "   "
+  for (auto& e : energy) {
+    cout << "Cycle" << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
+               << setw(20) << fixed << setprecision(12) << e << "   "
                << setw(10) << scientific << setprecision(4) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
                << time << endl;
+    ++i;
+  }
 }
 
 
 static streambuf* backup_stream_;
 static ofstream* ofs_;
 
-void ZCASSCF::mute_stdcout(const bool fci) const {
-  if (fci) {
-    ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
-    ofs_ = ofs;
-    backup_stream_ = cout.rdbuf(ofs->rdbuf());
-  } else {
-    ofstream* ofs(new ofstream("microiter.log",(backup_stream_ ? ios::app : ios::trunc)));
-    ofs_ = ofs;
-    backup_stream_ = cout.rdbuf(ofs->rdbuf());
-  }
+void ZCASSCF::mute_stdcout() const {
+  ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
+  ofs_ = ofs;
+  backup_stream_ = cout.rdbuf(ofs->rdbuf());
 }
 
 
@@ -257,7 +256,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 
 shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
   // input should be 1rdm in kramers format
-  shared_ptr<ZMatrix> tmp = rdm1->copy();
+  auto tmp = make_shared<QuatMatrix>(*rdm1);
   bool unitmat = false;
   { // check for unit matrix
     auto unit = tmp->clone();
@@ -267,8 +266,8 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
   }
 
   if (!unitmat) {
-    vector<double> vec(rdm1->ndim());
-    zquatev_(tmp->ndim(), tmp->data(), vec.data());
+    VectorB vec(rdm1->ndim());
+    tmp->diagonalize(vec);
 
     map<int,int> emap;
     auto buf2 = tmp->clone();

@@ -109,6 +109,11 @@ shared_ptr<RelDFHalf> RelDFHalf::apply_J() const {
 }
 
 
+shared_ptr<RelDFHalf> RelDFHalf::apply_JJ() const {
+  return make_shared<RelDFHalf>(array<shared_ptr<DFHalfDist>,2>{{dfhalf_[0]->apply_JJ(), dfhalf_[1]->apply_JJ()}}, cartesian_, basis_);
+}
+
+
 void RelDFHalf::set_sum_diff() {
   df2_[0] = dfhalf_[0]->copy();
   df2_[0]->ax_plus_y(1.0, dfhalf_[1]);
