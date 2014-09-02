@@ -5,8 +5,8 @@ $json = json_decode($file, true);
 echo '<ul>';
 foreach ($json as $name) {
     echo '<li style="margin-top:10px"><strong>'.$name['name'].' '.$name['surname'] .'</strong> ('.$name['start'].'&ndash;'.$name['end'].') ';
-    echo ($name['affiliation']==""?'&nbsp;':$name['affiliation']).'<br />';
-    echo ($name['email']==""?'&nbsp;':$name['email']).'</li>';
+    echo ($name['affiliation']==""?'':$name['affiliation'].'<br />');
+    echo ($name['email']==""?'':$name['email']).'</li>';
 }
 echo '</ul>';
 echo '<div style="margin-top:30px">Generated from bagel/doc/<a href="'.$authors.'">authors.json</a></div>';
