@@ -241,30 +241,21 @@ void ZHarrison::sigma_1e_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigm
 
   // One-electron part
   for (int i = 0; i != norb_; ++i) {
-    size_t aindex = 0;
     for (auto& a : sigmadet->string_bits_a()) {
-      if (a[i]) {
-        ++aindex;
-        continue;
-      }
+      if (a[i]) continue;
       auto ca = a; ca.set(i);
       const complex<double>* source =    cc->data() + lbs * ccdet->lexical<0>(ca);
-            complex<double>* target = sigma->data() + lbt * aindex;
+            complex<double>* target = sigma->data() + lbt * sigmadet->lexical<0>(a);
       const double asign = ccdet->sign<0>(ca, i);
 
       for (int j = 0; j != norb_; ++j) {
-        size_t bindex = 0;
         for (auto& b : ccdet->string_bits_b()) {
-          if (b[j]) {
-            ++bindex;
-            continue;
-          }
+          if (b[j]) continue;
           auto cb = b; cb.set(j);
           const complex<double> fac = h1->element(j,i) * (sigmadet->sign<1>(b, j) * asign);
-          target[sigmadet->lexical<1>(cb)] += fac * source[bindex];
+          target[sigmadet->lexical<1>(cb)] += fac * source[ccdet->lexical<1>(b)];
         }
       }
-      ++aindex;
 
     }
   }
