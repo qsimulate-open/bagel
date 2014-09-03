@@ -27,6 +27,7 @@
 #include <src/asd_dmrg/gamma_forest_asd.h>
 #include <src/asd_dmrg/product_rasci.h>
 #include <src/ras/form_sigma.h>
+#include <src/asd_dmrg/form_sigma.h>
 #include <src/ras/apply_operator.h>
 #include <src/dimer/dimer_jop.h>
 #include <src/util/muffle.h>
@@ -88,6 +89,23 @@ shared_ptr<Matrix> RASD::compute_sigma2e(shared_ptr<const RASDvec> cc, shared_pt
   return out;
 }
 
+// TODO how am I going to ensure that I get the right formatting in Jop?
+shared_ptr<Matrix> RASD::compute_sigma2e(vector<shared_ptr<ProductRASCivec>> cc, shared_ptr<const DimerJop> jop) const {
+  const int nstates = cc.size();
+  FormSigmaProdRAS form_2e(input_->get_child("ras")->get<int>("batchsize", 512));
+  auto jop_2e = make_shared<DimerJop>(cc.front()->space()->norb(), cc.front()->left()->norb(), jop->mo1e()->clone(), jop->mo2e()->copy());
+  shared_ptr<const BlockOperators> blockops = cc.front()->left()->compute_block_ops(jop_2e);
+  vector<shared_ptr<ProductRASCivec>> sigma = form_2e(cc, blockops, jop_2e, vector<bool>(nstates, false));
+
+  auto out = make_shared<Matrix>(nstates, nstates);
+  for (int i = 0; i < nstates; ++i) {
+    for (int j = 0; j < i; ++j)
+      out->element(i,j) = out->element(j,i) = cc.at(i)->dot_product(*sigma.at(j));
+    out->element(i,i) = cc.at(i)->dot_product(*sigma.at(i));
+  }
+  return out;
+}
+
 shared_ptr<Matrix> RASD::compute_spin(shared_ptr<const RASDvec> cc) const {
   const int nstates = cc->ij();
   shared_ptr<const RASDvec> sigma = cc->spin();
@@ -96,6 +114,22 @@ shared_ptr<Matrix> RASD::compute_spin(shared_ptr<const RASDvec> cc) const {
     for (int j = 0; j < i; ++j)
       out->element(i,j) = out->element(j,i) = cc->data(i)->dot_product(*sigma->data(j));
     out->element(i,i) = cc->data(i)->dot_product(*sigma->data(i));
+  }
+  return out;
+}
+
+shared_ptr<Matrix> RASD::compute_spin(vector<shared_ptr<ProductRASCivec>> cc) const {
+  const int nstates = cc.size();
+
+  vector<shared_ptr<const ProductRASCivec>> spin_vec;
+  for (auto& c : cc)
+    spin_vec.push_back(c->spin());
+
+  auto out = make_shared<Matrix>(nstates, nstates);
+  for (int i = 0; i < nstates; ++i) {
+    for (int j = 0; j < i; ++j)
+      out->element(i,j) = out->element(j,i) = cc.at(i)->dot_product(*spin_vec.at(j));
+    out->element(i,i) = cc.at(i)->dot_product(*spin_vec.at(i));
   }
   return out;
 }
