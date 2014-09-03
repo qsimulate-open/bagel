@@ -47,8 +47,6 @@ class FormSigmaProdRAS {
     void pure_block_and_ras(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop) const;
     void interaction_terms(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop) const;
 
-    // TODO: rename these something that makes sense
-
     /// Branch 1: \f$\alpha^\dagger, \alpha^\dagger\alpha^\dagger\f$
     void aET_branch(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
     /// Branch 2: \f$\beta^\dagger, \alpha^\dagger\beta^\dagger\f$
