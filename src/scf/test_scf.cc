@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(DF_HF) {
     BOOST_CHECK(compare(scf_energy("hc_svp_rohf"),        -38.16810629));
     BOOST_CHECK(compare(scf_energy("hf_new_dfhf"),        -99.97989929));
     BOOST_CHECK(compare(scf_energy("hcl_svp_dfhf"),      -459.93784632));
-    BOOST_CHECK(compare(scf_energy("ecp_cuh2"),          -196.12254012));
+    BOOST_CHECK(compare(scf_energy("hf_ecp_cuh2"),       -196.12254012));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
