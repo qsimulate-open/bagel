@@ -295,28 +295,25 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
     }
   }
 #else
-  TaskQueue<function<void(void)>> tq(norb_*norb_);
-  for (int i = 0; i != norb_; ++i) {
-    for (int j = 0; j != norb_; ++j) {
-      if (i == j) continue;
-      tq.emplace_back(
-        [this, &d, &source, i, j, &cc, &lb] () {
-          complex<double>* target = d->data(j+norb_*i)->data();
-          size_t aindex = 0;
-          for (auto& a : d->det()->string_bits_a()) {
-            if (a[i] || a[j]) {
-              ++aindex;
-              continue;
-            }
+  TaskQueue<function<void(void)>> tq(d->lena());
+  size_t aindex = 0;
+  for (auto& a : d->det()->string_bits_a()) {
+    tq.emplace_back(
+      [this, &d, &source, a, aindex, &cc, &lb] () {
+        for (int i = 0; i != norb_; ++i) {
+          for (int j = 0; j != norb_; ++j) {
+            if (i == j) continue;
+            if (a[i] || a[j]) continue;
+            complex<double>* target = d->data(j+norb_*i)->data();
             auto ca = a; ca.set(i); ca.set(j);
             const double factor = Determinants::sign(a, i, j) * (i < j ? -1.0 : 1.0);
             const size_t offas = cc->det()->lexical<0>(ca);
             blas::ax_plus_y_n(factor, source+lb*offas, lb, target+lb*aindex);
-            ++aindex;
           }
         }
-      );
-    }
+      }
+    );
+    ++aindex;
   }
   tq.compute();
 #endif
