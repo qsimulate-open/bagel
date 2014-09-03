@@ -42,7 +42,7 @@ class SOHcore_base : public Matrix1e {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<Matrix1e>(*this);
-      ar & soiaa_ & soiab_ * soiab_;
+      ar & soiaa_ & soiab_ & soiab_;
     }
 
   public:
