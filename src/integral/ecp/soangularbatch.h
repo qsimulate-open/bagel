@@ -41,8 +41,8 @@ class SOBatch : public RadialInt {
     std::shared_ptr<const SOECP> so_;
     int cont0_, cont1_;
     std::array<int, 3> ang0_, ang1_;
-    std::array<double, 3> AB_, CB_, AC_;
-    double dAB_, dCB_, dACsq_;
+    std::array<double, 3> AB_, CB_;
+    double dAB_, dCB_;
     std::vector<double> c0_, c1_;
     std::vector<std::map<int, std::array<int, 3>>> map_;
 

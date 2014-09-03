@@ -196,7 +196,7 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
 vector<double> SOBatch::project(const int l, const vector<double> r) {
 
   const static MSphBesselI msbessel;
-  vector<vector<double>> rbessel(r.size());
+  vector<vector<double>> rbessel0(r.size()), rbessel1(r.size());
 
   const int begin0 = basisinfo_[0]->contraction_ranges(cont0_).first;
   const int end0   = basisinfo_[0]->contraction_ranges(cont0_).second;
@@ -205,29 +205,25 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
   const int end1   = basisinfo_[1]->contraction_ranges(cont1_).second;
 
   for (int ir = 0; ir != r.size(); ++ir) {
-    vector<double> b((l0_+l+1)*(l1_+l+1), 0.0);
+    vector<double> b0(l0_+l+1, 0.0);
     for (int i0 = begin0; i0 != end0; ++i0) {
       const double coef0 = basisinfo_[0]->contractions()[cont0_][i0];
       const double exp0 = basisinfo_[0]->exponents(i0);
       const double fac0 = coef0 * exp(-exp0 * pow(dAB_-r[ir], 2));
-
-      for (int i1 = begin1; i1 != end1; ++i1) {
-        const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
-        const double exp1 = basisinfo_[1]->exponents(i1);
-        const double fac1 = coef1 * exp(-exp1 * pow(dCB_-r[ir], 2));
-
-        const double exp01 = 1.0;
-        for (int i = 0; i <= l0_+l; ++i) {
-          const double bessel0 = fac0 * msbessel.compute(i, 2.0*exp0*dAB_*r[ir]);
-          for (int j = 0; j <= l1_+l; ++j) {
-            const double bessel1 = fac1 * msbessel.compute(j, 2.0*exp1*dCB_*r[ir]);
-            b[i*(l1_+l+1)+j] += exp01 * bessel0 * bessel1;
-          }
-        }
-      }
+      for (int i = 0; i <= l0_+l; ++i)
+        b0[i] += fac0 * msbessel.compute(i, 2.0*exp0*dAB_*r[ir]);
     }
+    rbessel0[ir] = b0;
 
-    rbessel[ir] = b;
+    vector<double> b1(l1_+l+1, 0.0);
+    for (int i1 = begin1; i1 != end1; ++i1) {
+      const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
+      const double exp1 = basisinfo_[1]->exponents(i1);
+      const double fac1 = coef1 * exp(-exp1 * pow(dCB_-r[ir], 2));
+      for (int i = 0; i <= l1_+l; ++i)
+        b1[i] += fac1 * msbessel.compute(i, 2.0*exp1*dCB_*r[ir]);
+    }
+    rbessel1[ir] = b1;
   }
 
   vector<vector<double>> usp(2*l+1);
@@ -257,7 +253,7 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
             sum[id] += (angularA(h, ld0, usp[m0]) * angularC(g-h, ld1, usp[m1]) - angularA(h, ld0, usp[m1]) * angularC(g-h, ld1, usp[m0]))*f;
         }
         for (int ir = 0; ir != r.size(); ++ir) {
-          const double p = rbessel[ir][ld0*(l1_+l+1)+ld1] * pow(r[ir], g);
+          const double p = rbessel0[ir][ld0] * rbessel1[ir][ld1] * pow(r[ir], g);
           for (int id = 0; id != 3; ++id) {
             const int index = id*r.size() + ir;
             out[index] += sum[id] * p;
@@ -305,11 +301,9 @@ void SOBatch::init() {
   for (int i = 0; i != 3; ++i) {
     AB_[i] = basisinfo_[0]->position(i) - so_->position(i);
     CB_[i] = basisinfo_[1]->position(i) - so_->position(i);
-    AC_[i] = basisinfo_[0]->position(i) - basisinfo_[1]->position(i);
   }
   dAB_ = sqrt(pow(AB_[0], 2) + pow(AB_[1], 2) + pow(AB_[2], 2));
   dCB_ = sqrt(pow(CB_[0], 2) + pow(CB_[1], 2) + pow(CB_[2], 2));
-  dACsq_ = pow(AC_[0], 2) + pow(AC_[1], 2) + pow(AC_[2], 2);
 
   c0_.resize(ANG_HRR_END*ANG_HRR_END*ANG_HRR_END);
   c1_.resize(ANG_HRR_END*ANG_HRR_END*ANG_HRR_END);
