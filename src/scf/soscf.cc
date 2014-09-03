@@ -39,8 +39,7 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
     throw runtime_error("SOSCF requires density fitting!");
 
   soeig_ = VectorB(geom_->nbasis() * 2);
-  sohcore_base_ = make_shared<const SOHcore_base>(geom);
-  sohcore_ = make_shared<SOHcore>(geom_, sohcore_base_);
+  sohcore_ = make_shared<SOHcore>(geom_, hcore_);
 }
 
 void SOSCF::initial_guess() {

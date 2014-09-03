@@ -29,14 +29,14 @@
 
 #include <src/math/zmatrix.h>
 #include <src/wfn/geometry.h>
-#include <src/scf/sohcore_base.h>
+#include <src/molecule/hcore.h>
 
 namespace bagel {
 
 class SOHcore : public ZMatrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const SOHcore_base> hcore_;
+    std::shared_ptr<const Hcore> hcore_;
 
     void form_sohcore();
 
@@ -50,7 +50,7 @@ class SOHcore : public ZMatrix {
 
   public:
     SOHcore() { }
-    SOHcore(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const SOHcore_base> h);
+    SOHcore(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Hcore> h);
 
 };
 

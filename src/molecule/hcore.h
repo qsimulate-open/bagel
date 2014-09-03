@@ -33,6 +33,7 @@ namespace bagel {
 
 class Hcore : public Matrix1e {
   protected:
+    std::shared_ptr<Matrix> soiaa_, sorab_, soiab_;
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
   private:
@@ -41,12 +42,16 @@ class Hcore : public Matrix1e {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<Matrix1e>(*this);
+      ar & soiaa_ & soiab_ & soiab_;
     }
 
   public:
     Hcore() { }
     Hcore(const std::shared_ptr<const Molecule>);
 
+    std::shared_ptr<const Matrix> soiaa() const { return soiaa_;}
+    std::shared_ptr<const Matrix> sorab() const { return sorab_;}
+    std::shared_ptr<const Matrix> soiab() const { return soiab_;}
 };
 
 }

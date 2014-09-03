@@ -31,7 +31,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SOHcore)
 
-SOHcore::SOHcore(const shared_ptr<const Geometry> geom, const shared_ptr<const SOHcore_base> h)
+SOHcore::SOHcore(const shared_ptr<const Geometry> geom, const shared_ptr<const Hcore> h)
             : ZMatrix(2 * geom->nbasis(), 2 * geom->nbasis()), geom_(geom), hcore_(h) {
   form_sohcore();
 }

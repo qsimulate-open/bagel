@@ -39,7 +39,6 @@ class SOSCF : public SCF_base {
 
     std::shared_ptr<const ZMatrix> aodensity_;
     std::shared_ptr<const SOHcore> sohcore_;
-    std::shared_ptr<const SOHcore_base> sohcore_base_;
     std::shared_ptr<const ZMatrix> socoeff_;
     std::shared_ptr<const ZMatrix> sooverlap_;
     std::shared_ptr<const ZMatrix> sotildex_;
@@ -52,7 +51,7 @@ class SOSCF : public SCF_base {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<SCF_base>(*this);
-      ar & dodf_ & aodensity_ & sohcore_ & sohcore_base_ & socoeff_
+      ar & dodf_ & aodensity_ & sohcore_ & socoeff_
          & sooverlap_ & socoeff_ & sotildex_;
     }
 
