@@ -34,14 +34,10 @@ namespace bagel {
 
 class DimerJop : public Jop {
   protected:
-    // Array is big enough to store all possible coulomb matrices just for simplicity
-    std::array<std::shared_ptr<const Matrix>, 16> matrices_;
-
     std::pair<std::shared_ptr<MOFile>, std::shared_ptr<MOFile>> jops_;
 
-    std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> monomer_mo1es_;
-    std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> monomer_mo2es_;
-
+    // Array is big enough to store all possible coulomb matrices just for simplicity
+    std::array<std::shared_ptr<const Matrix>, 16> matrices_;
     std::shared_ptr<const Matrix> cross_mo1e_;
 
     std::pair<int, int> nact_;
@@ -49,13 +45,7 @@ class DimerJop : public Jop {
   public:
     DimerJop(const std::shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB,
       std::shared_ptr<const Coeff> coeff); // note that in DimerJop, I'm forcing a HZ Jop
-
-    // Functions to kind of make DimerJop behave like a pair of shared_ptr<Jop>
-    double* mo1e_first() const { return monomer_mo1es_.first->data(); };
-    double* mo1e_second() const { return monomer_mo1es_.second->data(); };
-
-    double* mo2e_first() const { return monomer_mo2es_.first->data(); };
-    double* mo2e_second() const { return monomer_mo2es_.second->data(); };
+    DimerJop(const int nactA, const int nactB, std::shared_ptr<CSymMatrix> mo1e, std::shared_ptr<Matrix> mo2e);
 
     std::shared_ptr<const Matrix> cross_mo1e() const { return cross_mo1e_; }
 
@@ -79,6 +69,8 @@ class DimerJop : public Jop {
     std::shared_ptr<const Matrix> coulomb_matrix() const;
 
   private:
+    void common_init(const int norbA, const int norbB);
+
     template <int unit> const int nact() const { return ( unit == 0 ? nact_.first : nact_.second ); }
     template <int unit> const int active(const int a) const { return a + unit * nact_.first; }
 
