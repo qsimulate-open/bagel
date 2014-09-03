@@ -26,7 +26,6 @@
 #include <src/scf/soscf.h>
 #include <src/scf/sofock.h>
 #include <src/math/diis.h>
-#include <src/scf/atomicdensities.h>
 
 using namespace std;
 using namespace bagel;

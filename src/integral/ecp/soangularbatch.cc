@@ -282,7 +282,7 @@ vector<double> SOBatch::compute(const vector<double> r) {
     vector<double> p = project(l, r);
     for (int i = 0; i != ishso->ecp_exponents().size(); ++i)
       if (ishso->ecp_coefficients(i) != 0) {
-        const double ecpcoeff = 16.0 * pi__ * pi__ * ishso->ecp_coefficients(i); /* 2/(2l+1) may or may not be necessary */
+        const double ecpcoeff = 16.0 * pi__ * pi__ * ishso->ecp_coefficients(i); // 2/(2l+1) not needed for Stuggart basis sets
         for (int ir = 0; ir != r.size(); ++ir) {
           const double coeff = ecpcoeff * pow(r[ir], ishso->ecp_r_power(i)) * exp(-ishso->ecp_exponents(i) * r[ir] * r[ir]);
           for (int id = 0; id != 3; ++id) {
