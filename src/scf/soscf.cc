@@ -139,3 +139,8 @@ shared_ptr<const ZMatrix> SOSCF::sooverlap() {
   auto out = make_shared<const ZMatrix>(*sooverlap->matrix());
   return out;
 }
+
+shared_ptr<const Reference> SOSCF::conv_to_ref() const { // TODO: proper reference here
+  auto out = make_shared<Reference>(energy_);
+  return out;
+}

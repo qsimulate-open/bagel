@@ -70,7 +70,7 @@ class SOSCF : public SCF_base {
 
     bool dodf() const { return dodf_; }
 
-    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
+    std::shared_ptr<const Reference> conv_to_ref() const override;
 };
 
 }
