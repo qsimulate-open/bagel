@@ -168,6 +168,50 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
   return out;
 }
 
+shared_ptr<ProductRASCivec> ProductRASCivec::spin_lower() const {
+  auto out = make_shared<ProductRASCivec>(space_, left_, nelea_-1, neleb_+1);
+  for (auto& source_sector : sectors()) {
+    BlockKey cckey = source_sector.first;
+    {
+      BlockKey lower_key(cckey.nelea-1, cckey.neleb+1);
+      shared_ptr<const Matrix> spin_lower_block = this->left()->spin_lower(cckey);
+      shared_ptr<Matrix> target_sector = out->sector(lower_key);
+      dgemm_("N", "T", target_sector->ndim(), target_sector->mdim(), source_sector.second->mdim(), 1.0, source_sector.second->data(), source_sector.second->ndim(),
+                                                        spin_lower_block->data(), spin_lower_block->ndim(), 1.0, target_sector->data(), target_sector->ndim());
+    }
+
+    {
+      shared_ptr<const RASBlockVectors> target_sector = out->sector(cckey);
+      for (int ist = 0; ist < target_sector->mdim(); ++ist)
+        RAS::spin_lower_impl(source_sector.second->civec(ist), target_sector->civec(ist));
+    }
+  }
+
+  return out;
+}
+
+shared_ptr<ProductRASCivec> ProductRASCivec::spin_raise() const {
+  auto out = make_shared<ProductRASCivec>(space_, left_, nelea_+1, neleb_-1);
+  for (auto& source_sector : sectors()) {
+    BlockKey cckey = source_sector.first;
+    {
+      BlockKey raise_key(cckey.nelea+1, cckey.neleb-1);
+      shared_ptr<const Matrix> spin_raise_block = this->left()->spin_raise(cckey);
+      shared_ptr<Matrix> target_sector = out->sector(raise_key);
+      dgemm_("N", "T", target_sector->ndim(), target_sector->mdim(), source_sector.second->mdim(), 1.0, source_sector.second->data(), source_sector.second->ndim(),
+                                                        spin_raise_block->data(), spin_raise_block->ndim(), 1.0, target_sector->data(), target_sector->ndim());
+    }
+
+    {
+      shared_ptr<const RASBlockVectors> target_sector = out->sector(cckey);
+      for (int ist = 0; ist < target_sector->mdim(); ++ist)
+        RAS::spin_raise_impl(source_sector.second->civec(ist), target_sector->civec(ist));
+    }
+  }
+
+  return out;
+}
+
 double ProductRASCivec::spin_expectation() const { return this->dot_product(*spin()); }
 
 void ProductRASCivec::spin_decontaminate(const double thresh) {

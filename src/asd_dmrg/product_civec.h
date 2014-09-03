@@ -116,9 +116,12 @@ class ProductRASCivec {
       return (*space_==*o.space_ && std::make_pair(nelea_,neleb_)==std::make_pair(o.nelea(),o.neleb()) && lblocks()==o.lblocks());
     }
 
-    std::shared_ptr<ProductRASCivec> spin() const;
     double spin_expectation() const;
     void spin_decontaminate(const double thresh = 1.0e-8);
+
+    std::shared_ptr<ProductRASCivec> spin() const;
+    std::shared_ptr<ProductRASCivec> spin_lower() const;
+    std::shared_ptr<ProductRASCivec> spin_raise() const;
 
     void scale(const double a);
     void ax_plus_y(const double& a, const ProductRASCivec& o);
