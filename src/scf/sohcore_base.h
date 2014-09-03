@@ -36,6 +36,15 @@ class SOHcore_base : public Matrix1e {
     std::shared_ptr<Matrix> soiaa_, sorab_, soiab_;
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Matrix1e>(*this);
+      ar & soiaa_ & soiab_ * soiab_;
+    }
+
   public:
     SOHcore_base() { }
     SOHcore_base(const std::shared_ptr<const Molecule>);

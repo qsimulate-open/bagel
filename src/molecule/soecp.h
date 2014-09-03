@@ -40,6 +40,13 @@ class SOECP {
     std::vector<std::shared_ptr<const Shell_ECP>> shells_so_;
     int so_maxl_;
 
+  private:
+    friend class boost::serialization::access;
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & shells_so_ & so_maxl_;
+    }
+
   public:
     SOECP() : shells_so_(1, std::make_shared<const Shell_ECP>()), so_maxl_(0) {}
     SOECP(std::vector<std::shared_ptr<const Shell_ECP>> shells_so) : shells_so_(shells_so) {

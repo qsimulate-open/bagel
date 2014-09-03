@@ -39,7 +39,15 @@ class SOFock : public ZMatrix {
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const ZMatrix> previous_;
     std::shared_ptr<const ZMatrix> socoeff_;
+
     void form_sofock();
+
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<ZMatrix>(*this) & geom_ & previous_ & socoeff_;
+    }
 
   public:
     SOFock(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const ZMatrix> previous, const std::shared_ptr<const ZMatrix> socoeff);
