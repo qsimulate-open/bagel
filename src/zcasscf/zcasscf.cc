@@ -74,10 +74,8 @@ void ZCASSCF::init() {
   const bool kramers_coeff = idata_->get<bool>("kramers_coeff", false);
   const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
   const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->nele());
-  if (mvo) cout << "       * Generating Modified Virtual Orbitals from a Fock matrix of " << ncore_mvo << " electrons " << endl;
-  cout << " geom_->nele() = " << geom_->nele() << endl;
   if (ncore_mvo == geom_->nele()) {
-    cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the valence +++ "<< endl;
+    cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
     mvo = false;
   }
   nneg_ = kramers_coeff ? geom_->nbasis()*2 : relref->nneg();
@@ -396,8 +394,14 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
 shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcore_mvo) {
   // function to compute the modified virtual orbitals, either by diagonalization of a Fock matrix or of the one-electron Hamiltonian
   // Procedures described in Jensen et al; JCP 87, 451 (1987) (hcore) and Bauschlicher; JCP 72 880 (1980) (Fock)
-  assert(geom_->nele() >= ncore);
+  cout << " " << endl;
+  if (!hcore_mvo) {
+    cout << "       * Generating Modified Virtual Orbitals from a Fock matrix of " << ncore << " electrons " << endl << endl;
+  } else {
+    cout << "       * Generating Modified Virtual Orbitals from the 1 electron Hamiltonian of " << ncore << " electrons " << endl << endl;
+  }
   assert(geom_->nele()%2 == 0);
+  assert(geom_->nele() >= ncore);
   const int hfvirt = nocc_ + nvirtnr_ - geom_->nele()/2;
 
   // transformation from the striped format to the block format
@@ -420,11 +424,6 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
 
   // make a striped coeff
   shared_ptr<ZMatrix> ecoeff = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false);
-  {
-    auto unit = ecoeff->clone(); unit->unit();
-    double orthonorm = ((*ecoeff % *overlap_ * *ecoeff) - *unit).rms();
-   cout << setprecision(4) << scientific << " orthonormality rms = " << orthonorm << endl;
-  }
 
   shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom_, hcore_, ecoeff->slice_copy(0, ncore*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
 
