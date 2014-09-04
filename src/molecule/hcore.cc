@@ -41,18 +41,10 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
 
-Hcore::Hcore(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
-
-  soiaa_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    soiaa_->zero();
-  sorab_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    sorab_->zero();
-  soiab_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    soiab_->zero();
+Hcore::Hcore(const shared_ptr<const Molecule> mol) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
 
   init(mol);
   fill_upper();
-
-  soiaa_->fill_upper_negative();
-  sorab_->fill_upper_negative();
-  soiab_->fill_upper_negative();
 }
 
 void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
@@ -104,9 +96,9 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
       SOECPBatch soecp(input, mol);
       soecp.compute();
 
-      soiaa_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data());
-      sorab_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data1());
-      soiab_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data2());
+      hso_->construct_iaa(offsetb1, offsetb0, dimb1, dimb0, soecp.data());
+      hso_->construct_rab(offsetb1, offsetb0, dimb1, dimb0, soecp.data1());
+      hso_->construct_iab(offsetb1, offsetb0, dimb1, dimb0, soecp.data2());
     }
   }
 

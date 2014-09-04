@@ -28,12 +28,13 @@
 #define __SRC_MOLECULE_HCORE_H
 
 #include <src/molecule/matrix1e.h>
+#include <src/molecule/hso.h>
 
 namespace bagel {
 
 class Hcore : public Matrix1e {
   protected:
-    std::shared_ptr<Matrix> soiaa_, sorab_, soiab_;
+    std::shared_ptr<HSO> hso_;
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
   private:
@@ -41,17 +42,15 @@ class Hcore : public Matrix1e {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Matrix1e>(*this);
-      ar & soiaa_ & soiab_ & soiab_;
+      ar & boost::serialization::base_object<Matrix1e>(*this) & hso_;
     }
 
   public:
     Hcore() { }
     Hcore(const std::shared_ptr<const Molecule>);
 
-    std::shared_ptr<const Matrix> soiaa() const { return soiaa_;}
-    std::shared_ptr<const Matrix> sorab() const { return sorab_;}
-    std::shared_ptr<const Matrix> soiab() const { return soiab_;}
+    void antisymmetrize_hso() const { hso_->antisymmetrize(); }
+    std::shared_ptr<HSO> hso() const { return hso_; }
 };
 
 }
