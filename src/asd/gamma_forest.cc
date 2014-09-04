@@ -42,6 +42,14 @@ void GammaForest<DistDvec, 2>::compute() {
   for (auto& iforest : forests_) {
     for (auto& itreemap : iforest) {
       shared_ptr<DistTree> itree = itreemap.second;
+      const int nket = itree->ket()->ij();
+      for (auto& brapair : itree->base()->bras()) {
+        double* target = itree->base()->gammas().at(brapair.first)->data();
+        const int nbra = brapair.second->ij();
+        for (int k = 0; k < nket; ++k)
+          for (int b = 0; b < nbra; ++b, ++target)
+            *target = brapair.second->data(b)->dot_product(*itree->ket()->data(k));
+      }
 
       const int norb = itree->ket()->det()->norb();
       for (int i = 0; i < nops; ++i) {

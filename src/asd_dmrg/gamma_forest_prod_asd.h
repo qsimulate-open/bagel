@@ -50,7 +50,7 @@ class GammaForestProdASD {
     std::set<std::tuple<std::list<GammaSQ>, BlockKey, BlockKey>> sparseset_;
     using SparseList = std::list<std::tuple<std::list<GammaSQ>, BlockInfo, BlockInfo>>;
     SparseList sparselist_;
-    std::map<BlockKey, std::vector<std::shared_ptr<const ProductRASCivec>>> block_states_;
+    std::map<BlockKey, std::vector<std::shared_ptr<ProductRASCivec>>> block_states_;
     std::vector<std::list<GammaSQ>> possible_couplings_;
 
     std::shared_ptr<GammaForest<RASDvec, 1>> forest_;
@@ -59,11 +59,15 @@ class GammaForestProdASD {
     size_t nele_;
 
   public:
-    GammaForestProdASD(std::map<BlockKey, std::vector<std::shared_ptr<const ProductRASCivec>>> block_states);
+    GammaForestProdASD(std::map<BlockKey, std::vector<std::shared_ptr<ProductRASCivec>>> block_states);
 
     void compute();
 
-    bool exist(BlockKey bra, BlockKey ket, std::list<GammaSQ> gammalist) const { return sparseset_.count(make_tuple(gammalist,bra,ket)); }
+    bool exist(BlockKey bra, BlockKey ket, std::list<GammaSQ> gammalist) const {
+      auto iter = std::find_if(sparselist_.begin(), sparselist_.end(), [&bra, &ket, &gammalist] (std::tuple<std::list<GammaSQ>, BlockInfo, BlockInfo> sparse) {
+        return std::make_tuple(bra, ket, gammalist) == std::make_tuple(std::get<1>(sparse).key(), std::get<2>(sparse).key(), std::get<0>(sparse)); });
+      return iter != sparselist_.end();
+    }
     std::shared_ptr<const Matrix> get(BlockKey bra, BlockKey ket, std::list<GammaSQ> gammalist) const { return gammas_.at(make_tuple(gammalist,bra,ket)); }
     SparseList sparselist() const { return sparselist_; }
 

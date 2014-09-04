@@ -31,7 +31,7 @@ using namespace bagel;
 using namespace std;
 
 // collect information to get ready for compute, but does not run compute
-GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<const ProductRASCivec>>> block_states) : block_states_(block_states) {
+GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<ProductRASCivec>>> block_states) : block_states_(block_states) {
   // set nele which will be used for the striding
   nele_ = 0;
   for (auto& i : block_states)
@@ -144,7 +144,11 @@ tuple<int, int, int> GammaForestProdASD::get_indices(const bitset<3> bit, const 
 
   const int norb = lnorb + rnorb;
 
-  const int ijk = accumulate(indices.rbegin(), indices.rend(), 1, [norb] (int ij, int index) { return index + ij*norb; });
+  int ijk = 0;
+  for (int i = size-1; i >= 0; --i) {
+    int ind = bit[i] ? indices[i] : indices[i] + rnorb;
+    ijk = ind + ijk*norb;
+  }
 
   vector<int> block_indices, ci_indices;
   for (int i = 0; i < size; ++i) (bit[i] ? ci_indices : block_indices).push_back(indices[i]);
@@ -160,6 +164,7 @@ tuple<int, int, int> GammaForestProdASD::get_indices(const bitset<3> bit, const 
 void GammaForestProdASD::compute() {
   // first hit compute on forest
   forest_->compute();
+  cout << "computing gammaforest done " << endl;
 
   const int lnorb = block_states_.begin()->second.front()->left()->norb();
   const int rnorb = block_states_.begin()->second.front()->space()->norb();
@@ -167,9 +172,11 @@ void GammaForestProdASD::compute() {
 
   // loop over block states to allocate tree
   for (auto& ket_states : block_states_) {
+    BlockInfo ket_info(ket_states.first.nelea, ket_states.first.neleb, ket_states.second.size());
     for (auto& coupling : possible_couplings_) {
       BlockKey bra_key = apply_key(ket_states.first, coupling);
       if (block_states_.find(bra_key)==block_states_.end()) continue;
+      BlockInfo bra_info(bra_key.nelea, bra_key.neleb, block_states_.at(bra_key).size());
       const int nijk = accumulate(coupling.begin(), coupling.end(), 1, [norb] (int x, GammaSQ a) { return x*norb; });
       const int nbrastates = block_states_.at(bra_key).size();
       const int nketstates = ket_states.second.size();
@@ -226,7 +233,7 @@ void GammaForestProdASD::compute() {
             const int nijk_part = accumulate(blockops.begin(), blockops.end(), 1, [lnorb] (int x, GammaSQ a) { return x*lnorb; }) *
                                   accumulate(ciops.begin(), ciops.end(), 1, [rnorb] (int x, GammaSQ a) { return x*rnorb; });
 
-            shared_ptr<const btas::Tensor3<double>> block_part = dmrgblock->coupling(blockops).at({block_bra, block_ket}).data;
+            shared_ptr<const btas::Tensor3<double>> block_part = blockops.empty() ? nullptr : dmrgblock->coupling(blockops).at({block_bra, block_ket}).data;
 
             for (int ijk_part = 0; ijk_part < nijk_part; ++ijk_part) {
               int ijk, block_index, ci_index;
@@ -241,7 +248,7 @@ void GammaForestProdASD::compute() {
                   ps_ket.state = ket_k;
 
                   shared_ptr<const Matrix> ras_part = forest_->get<0>(state_tag(ps_bra), state_tag(ps_ket), ciops);
-                  const double block_gamma_ss = (*block_part)(bra_k, ket_k, block_index);
+                  const double block_gamma_ss = blockops.empty() ? 1.0 : (*block_part)(bra_k, ket_k, block_index);
 
                   // fill in part of gamma
                   double* target = gamma_matrix->element_ptr(0, ijk);
@@ -256,6 +263,7 @@ void GammaForestProdASD::compute() {
         }
       }
       gammas_.emplace(make_tuple(coupling, bra_key, ket_states.first), gamma_matrix);
+      sparselist_.emplace_back(coupling, bra_info, ket_info);
     }
   }
 }
