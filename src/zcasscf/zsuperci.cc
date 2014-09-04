@@ -71,10 +71,11 @@ void ZSuperCI::compute() {
       if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
+      fci_time.tick_print("ZFCI");
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
+      fci_time.tick_print("RDMs");
       energy_ = fci_->energy();
-      fci_time.tick_print("FCI and RDMs");
     }
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirtnr_*2);
 

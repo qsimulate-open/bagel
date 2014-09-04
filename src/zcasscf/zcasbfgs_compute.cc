@@ -74,10 +74,13 @@ void ZCASBFGS::compute() {
       if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
+      fci_time.tick_print("ZFCI");
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
+      fci_time.tick_print("RDMs");
     }
 
+    Timer onebody(0);
     // calculate 1RDM in an original basis set
     shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
 
@@ -107,6 +110,7 @@ void ZCASBFGS::compute() {
     if (nact_) {
       qvec = make_shared<ZQvec>(nbasis_*2, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2,nocc_*2), nclosed_, fci_, gaunt_, breit_)->get_conjg();
     }
+    onebody.tick_print("One body operators");
 
     // get energy
     if (nact_) {
