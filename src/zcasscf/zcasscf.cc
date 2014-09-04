@@ -69,7 +69,17 @@ void ZCASSCF::init() {
   if (!geom_->dfs())
     geom_ = geom_->relativistic(relref->gaunt());
 
+  // coefficient parameters
+        bool mvo = idata_->get<bool>("generate_mvo", false);
   const bool kramers_coeff = idata_->get<bool>("kramers_coeff", false);
+  const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
+  const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->nele());
+  if (mvo) cout << "       * Generating Modified Virtual Orbitals from a Fock matrix of " << ncore_mvo << " electrons " << endl;
+  cout << " geom_->nele() = " << geom_->nele() << endl;
+  if (ncore_mvo == geom_->nele()) {
+    cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the valence +++ "<< endl;
+    mvo = false;
+  }
   nneg_ = kramers_coeff ? geom_->nbasis()*2 : relref->nneg();
 
   // set hcore and overlap
@@ -171,6 +181,8 @@ void ZCASSCF::init() {
   } else {
     init_kramers_coeff(); // coeff_ now in block format
   }
+
+  if (mvo) coeff_ = generate_mvo(ncore_mvo, hcore_mvo);
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
@@ -379,3 +391,63 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
    auto out =  make_shared<RelReference>(geom_, coeff, energy_.back(), 0, nocc_, nvirt_, gaunt_, breit_);
    return out;
  }
+
+
+shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcore_mvo) {
+  // function to compute the modified virtual orbitals, either by diagonalization of a Fock matrix or of the one-electron Hamiltonian
+  // Procedures described in Jensen et al; JCP 87, 451 (1987) (hcore) and Bauschlicher; JCP 72 880 (1980) (Fock)
+  assert(geom_->nele() >= ncore);
+  assert(geom_->nele()%2 == 0);
+  const int hfvirt = nocc_ + nvirtnr_ - geom_->nele()/2;
+
+  // transformation from the striped format to the block format
+  auto quaternion = [](shared_ptr<ZMatrix> o, bool back_trans) {
+    shared_ptr<ZMatrix> scratch = o->clone();
+    const int m2 = o->mdim()/2;
+    if (!back_trans) {
+      for (int j=0; j!=m2; ++j) {
+        scratch->copy_block(0,      j, o->ndim(), 1, o->slice(j*2  , j*2+1));
+        scratch->copy_block(0, m2 + j, o->ndim(), 1, o->slice(j*2+1, j*2+2));
+      }
+    } else {
+      for (int j=0; j!=m2; ++j) {
+        scratch->copy_block(0, j*2,   o->ndim(), 1, o->slice(j, j+1));
+        scratch->copy_block(0, j*2+1, o->ndim(), 1, o->slice(m2 + j, m2 + j+1));
+      }
+    }
+    *o = *scratch;
+  };
+
+  // make a striped coeff
+  shared_ptr<ZMatrix> ecoeff = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false);
+  {
+    auto unit = ecoeff->clone(); unit->unit();
+    double orthonorm = ((*ecoeff % *overlap_ * *ecoeff) - *unit).rms();
+   cout << setprecision(4) << scientific << " orthonormality rms = " << orthonorm << endl;
+  }
+
+  shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom_, hcore_, ecoeff->slice_copy(0, ncore*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
+
+  // take virtual part out and make block format
+  shared_ptr<ZMatrix> vcoeff = ecoeff->slice_copy(geom_->nele(), geom_->nele()+hfvirt*2);
+  quaternion(vcoeff, /*back_trans*/false);
+
+  auto mofock = make_shared<QuatMatrix>(*vcoeff % *mvofock * *vcoeff);
+  VectorB eig(mofock->ndim());
+  mofock->diagonalize(eig);
+  // update orbitals and back transform
+  *vcoeff *= *mofock;
+  quaternion(vcoeff, /*back_trans*/true);
+
+  // copy in modified virtuals
+  ecoeff->copy_block(0, geom_->nele(), ecoeff->ndim(), hfvirt*2, vcoeff->data());
+
+  auto ctmp = format_coeff(nclosed_, nact_, nvirt_, ecoeff, /*striped*/true);
+  {
+    auto unit = ctmp->clone(); unit->unit();
+    double orthonorm = ((*ctmp % *overlap_ * *ctmp) - *unit).rms();
+    if (orthonorm > 1.0e-12) throw logic_error("MVO Coefficient not sufficiently orthonormal");
+  }
+
+  return ctmp;
+}
