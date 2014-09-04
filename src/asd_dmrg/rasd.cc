@@ -256,7 +256,7 @@ shared_ptr<DMRG_Block> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared
     spinmap.emplace(cc.first, compute_spin(cc.second));
   }
 
-  forest.compute();
+  GammaForestProdASD forest(states);
   cout << "construct forest" << endl;
   forest.compute();
   cout << "compute GammaForestProdASD" << endl;
