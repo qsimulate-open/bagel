@@ -130,3 +130,19 @@ shared_ptr<Matrix> DMRG_Block1::spin_raise(const BlockKey k) const {
 
   return out->transpose();
 }
+
+shared_ptr<const BlockOperators> DMRG_Block1::compute_block_ops(shared_ptr<DimerJop> jop) const {
+  return make_shared<BlockOperators1>(shared_from_this(), jop);
+}
+
+DMRG_Block2::DMRG_Block2(shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const DMRG_Block1> rb) : left_block_(lb), right_block_(rb) {
+
+}
+
+shared_ptr<Matrix> DMRG_Block2::spin(const BlockKey b) const {
+  return nullptr;
+}
+
+shared_ptr<const BlockOperators> DMRG_Block2::compute_block_ops(std::shared_ptr<DimerJop> jop) const {
+  return nullptr;
+}

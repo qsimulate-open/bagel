@@ -85,6 +85,7 @@ class DMRG_Block1 : public std::enable_shared_from_this<DMRG_Block1>, public DMR
     SparseMap sparse_;
     std::map<BlockKey, std::shared_ptr<const Matrix>> H2e_;
     std::map<BlockKey, std::shared_ptr<const Matrix>> spin_;
+
   public:
     /// default constructor
     DMRG_Block1() { }
@@ -102,7 +103,28 @@ class DMRG_Block1 : public std::enable_shared_from_this<DMRG_Block1>, public DMR
     std::shared_ptr<Matrix> spin_lower(const BlockKey b) const override;
     std::shared_ptr<Matrix> spin_raise(const BlockKey b) const override;
 
-    std::shared_ptr<const BlockOperators> compute_block_ops(std::shared_ptr<DimerJop> jop) const override { return std::make_shared<BlockOperators1>(shared_from_this(), jop); }
+    std::shared_ptr<const BlockOperators> compute_block_ops(std::shared_ptr<DimerJop> jop) const override;
+};
+
+/// Combines two DMRG_Blocks to make one double block
+class DMRG_Block2 : public std::enable_shared_from_this<DMRG_Block2>, public DMRG_Block {
+  protected:
+    std::shared_ptr<const DMRG_Block1> left_block_;
+    std::shared_ptr<const DMRG_Block1> right_block_;
+
+  public:
+    ///default constructor
+    DMRG_Block2() { }
+
+    /// constructor taking a pair of DMRG_Block1 objects
+    DMRG_Block2(std::shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const DMRG_Block1> rb);
+
+    std::shared_ptr<Matrix> spin(const BlockKey b) const override;
+
+    std::shared_ptr<Matrix> spin_lower(const BlockKey b) const override { assert(false); return nullptr; }
+    std::shared_ptr<Matrix> spin_raise(const BlockKey b) const override { assert(false); return nullptr; }
+
+    std::shared_ptr<const BlockOperators> compute_block_ops(std::shared_ptr<DimerJop> jop) const override;
 };
 
 }

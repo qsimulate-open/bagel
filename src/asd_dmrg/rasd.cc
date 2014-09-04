@@ -134,9 +134,9 @@ shared_ptr<Matrix> RASD::compute_spin(vector<shared_ptr<ProductRASCivec>> cc) co
   return out;
 }
 
-shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref) {
+shared_ptr<DMRG_Block1> RASD::compute_first_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref) {
   map<BlockKey, shared_ptr<const RASDvec>> states;
-  map<BlockKey, shared_ptr<const Matrix>> h_2e;
+  map<BlockKey, shared_ptr<const Matrix>> hmap;
   map<BlockKey, shared_ptr<const Matrix>> spinmap;
   Timer rastime;
 
@@ -159,26 +159,26 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
       shared_ptr<const Matrix> spinmatrix = compute_spin(civecs);
 
       // Combines data for vectors with the same nelea and neleb
-      auto organize_data = [&states, &h_2e, &spinmap] (shared_ptr<const RASDvec> civecs, shared_ptr<const Matrix> ham2e, shared_ptr<const Matrix> spinmat) {
+      auto organize_data = [&states, &hmap, &spinmap] (shared_ptr<const RASDvec> civecs, shared_ptr<const Matrix> ham2e, shared_ptr<const Matrix> spinmat) {
         BlockKey key(civecs->det()->nelea(), civecs->det()->neleb());
         if (states.find(key) == states.end()) {
-          assert(h_2e.find(key) == h_2e.end());
+          assert(hmap.find(key) == hmap.end());
           states.emplace(key, civecs);
-          h_2e.emplace(key, ham2e);
+          hmap.emplace(key, ham2e);
           spinmap.emplace(key, spinmat);
         }
         else {
-          assert(h_2e.find(key) != h_2e.end());
+          assert(hmap.find(key) != hmap.end());
           vector<shared_ptr<RASCivec>> tmpvecs = states[key]->dvec();
           vector<shared_ptr<RASCivec>> new_vecs = civecs->dvec();
           tmpvecs.insert(tmpvecs.end(), new_vecs.begin(), new_vecs.end());
           states[key] = make_shared<RASDvec>(tmpvecs);
 
           const int newsize = ham2e->ndim();
-          const int oldsize = h_2e[key]->ndim();
-          shared_ptr<Matrix> tmp2e = h_2e[key]->resize(oldsize+newsize, oldsize+newsize);
+          const int oldsize = hmap[key]->ndim();
+          shared_ptr<Matrix> tmp2e = hmap[key]->resize(oldsize+newsize, oldsize+newsize);
           tmp2e->copy_block(oldsize, oldsize, newsize, newsize, *ham2e);
-          h_2e[key] = tmp2e;
+          hmap[key] = tmp2e;
 
           shared_ptr<Matrix> tmpspin = spinmap[key]->resize(oldsize+newsize, oldsize+newsize);
           tmpspin->copy_block(oldsize, oldsize, newsize, newsize, *spinmat);
@@ -204,10 +204,10 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
 
   GammaForestASD<RASDvec> forest(states);
   forest.compute();
-  return make_shared<DMRG_Block1>(move(forest), h_2e, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
+  return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
 }
 
-shared_ptr<DMRG_Block> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> left, const int site) {
+shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block1> left, const int site) {
   map<BlockKey, vector<shared_ptr<ProductRASCivec>>> states;
   map<BlockKey, shared_ptr<const Matrix>> hmap;
   map<BlockKey, shared_ptr<const Matrix>> spinmap;
@@ -265,7 +265,7 @@ shared_ptr<DMRG_Block> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared
   return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, coeff);
 }
 
-shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> system, shared_ptr<DMRG_Block> environment, const int site) {
+shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block1> system, shared_ptr<DMRG_Block1> environment, const int site) {
   Timer decimatetime;
   // assume the input is already fully formed, this may be revisited later
   input->put("nclosed", ref->nclosed());
@@ -278,10 +278,10 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
       prod_ras->compute();
       // diagonalize RDM to get RASCivecs
       map<BlockKey, shared_ptr<const RASDvec>> civecs = diagonalize_site_RDM(prod_ras->civectors(), perturb_);
-      map<BlockKey, shared_ptr<const Matrix>> h_2e;
+      map<BlockKey, shared_ptr<const Matrix>> hmap;
       map<BlockKey, shared_ptr<const Matrix>> spinmap;
       for (auto& ici : civecs) {
-        h_2e.emplace(ici.first, compute_sigma2e(ici.second, prod_ras->jop()->monomer_jop<0>()));
+        hmap.emplace(ici.first, compute_sigma2e(ici.second, prod_ras->jop()->monomer_jop<0>()));
         spinmap.emplace(ici.first, compute_spin(ici.second));
       }
 
@@ -290,11 +290,42 @@ shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<
 
       GammaForestASD<RASDvec> forest(civecs);
       forest.compute();
-      return make_shared<DMRG_Block1>(move(forest), h_2e, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
+      return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
     }
     else {
-      throw logic_error("Full DMRG sweep not yet implemented!");
+      auto block_pair = make_shared<DMRG_Block2>(system, environment);
+#if 0
+      auto prod_ras = make_shared<ProductRASCI>(input, ref, block_pair);
+      prod_ras->compute();
+      map<BlockKey, vector<shared_ptr<ProductRASCivec>>> civecs = diagonalize_site_and_block_RDM(prod_ras->civectors(), perturb_);
+
+      const int norb = civecs.begin()->second.front()->det()->norb() + system->norb();
+      const int nsysorb = civecs.begin()->second.front()->norb() + system->norb();
+      shared_ptr<DimerJop> jop;
+      { // make an appropriate DimerJop
+        shared_ptr<const DimerJop> tmpjop = prod_ras->jop();
+        auto mo1e = make_shared<CSymMatrix>(nsysorb);
+        auto mo2e = make_shared<Matrix>(nsysorb*nsysorb, nsysorb*nsysorb);
+        btas::TensorView mo2eView = btas::make_rview(btas::CRange<4>(norb,norb,norb,norb), tmpjop->mo2e()->storage());
+        btas::TensorView mo2eSlice = btas::make_rview(mo2eView.range().slice({0, 0, 0, 0}, {nsysorb, nsysorb, nsysorb}), mo2eView.storage());
+        copy(mo2eSlice.begin(), mo2eSlice.end(), mo2e->begin());
+        jop = make_shared<DimerJop>(civecs.begin()->second.front()->det()->norb(), system->norb(), mo1e, mo2e);
+      }
+
+      map<BlockKey, shared_ptr<const Matrix>> hmap;
+      map<BlockKey, shared_ptr<const Matrix>> spinmap;
+      for (auto& c : civecs) {
+        hmap.emplace(c.first, compute_sigma2e(civecs, jop));
+        spinmap.emplace(c.first, compute_spin(civecs));
+      }
+
+      GammaForestProdASD forest(civecs);
+      forest.compute();
+      return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact())->merge(system->coeff()));
+#else
+      throw logic_error("Multi-site sweeps not yet implemented.");
       return nullptr;
+#endif
     }
   }
 }

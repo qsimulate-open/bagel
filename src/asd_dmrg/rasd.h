@@ -35,9 +35,9 @@ namespace bagel {
 /// Implementation of ASD_DMRG_Base with RAS model
 class RASD : public ASD_DMRG {
   protected:
-    std::shared_ptr<DMRG_Block> compute_first_block(std::vector<std::shared_ptr<PTree>> input, std::shared_ptr<const Reference> ref) override;
-    std::shared_ptr<DMRG_Block> grow_block(std::vector<std::shared_ptr<PTree>> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> left, const int site) override;
-    std::shared_ptr<DMRG_Block> decimate_block(std::shared_ptr<PTree> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> system, std::shared_ptr<DMRG_Block> environment, const int site) override;
+    std::shared_ptr<DMRG_Block1> compute_first_block(std::vector<std::shared_ptr<PTree>> input, std::shared_ptr<const Reference> ref) override;
+    std::shared_ptr<DMRG_Block1> grow_block(std::vector<std::shared_ptr<PTree>> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block1> left, const int site) override;
+    std::shared_ptr<DMRG_Block1> decimate_block(std::shared_ptr<PTree> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block1> system, std::shared_ptr<DMRG_Block1> environment, const int site) override;
 
   public:
     RASD(const std::shared_ptr<const PTree> input, std::shared_ptr<MultiSite> multisite);

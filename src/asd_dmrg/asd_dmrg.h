@@ -40,9 +40,9 @@ class ASD_DMRG {
     std::shared_ptr<const MultiSite> multisite_;
 
     /// DMRG_Block representing L block containing l sites is in left_blocks_[l-1]
-    std::vector<std::shared_ptr<DMRG_Block>> left_blocks_;
+    std::vector<std::shared_ptr<DMRG_Block1>> left_blocks_;
     /// DMRG_Block representing R block containing l sites is in right_blocks_[l-1]
-    std::vector<std::shared_ptr<DMRG_Block>> right_blocks_;
+    std::vector<std::shared_ptr<DMRG_Block1>> right_blocks_;
 
     std::vector<double> weights_; ///< weights to use when building RDM
 
@@ -63,16 +63,16 @@ class ASD_DMRG {
     std::string print_progress(const int position, const std::string left_symbol, const std::string right_symbol) const;
 
     /// Kicks off by doing a CAS calculation in the first site with the rest of the sites at mean-field
-    virtual std::shared_ptr<DMRG_Block> compute_first_block(std::vector<std::shared_ptr<PTree>> inputs, std::shared_ptr<const Reference> ref) = 0;
+    virtual std::shared_ptr<DMRG_Block1> compute_first_block(std::vector<std::shared_ptr<PTree>> inputs, std::shared_ptr<const Reference> ref) = 0;
     /// Adds one site to the block
-    virtual std::shared_ptr<DMRG_Block> grow_block(std::vector<std::shared_ptr<PTree>> inputs, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> left, const int site) = 0;
+    virtual std::shared_ptr<DMRG_Block1> grow_block(std::vector<std::shared_ptr<PTree>> inputs, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block1> left, const int site) = 0;
     /** Performs one step in the sweep by adding one site to the system block
         @param input input describing the desired total system wavefunction
         @param ref one-particle reference for site
         @param system block to be grown
         @param environment block being decimated
     */
-    virtual std::shared_ptr<DMRG_Block> decimate_block(std::shared_ptr<PTree> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> system, std::shared_ptr<DMRG_Block> environment, const int site) = 0;
+    virtual std::shared_ptr<DMRG_Block1> decimate_block(std::shared_ptr<PTree> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block1> system, std::shared_ptr<DMRG_Block1> environment, const int site) = 0;
 
   public:
     /// Unlike MEH classes, ASD_DMRG will also be the driver for CI calculations
