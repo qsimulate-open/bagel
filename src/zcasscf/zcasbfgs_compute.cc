@@ -71,6 +71,7 @@ void ZCASBFGS::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
+      Timer fci_time(0);
       if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
