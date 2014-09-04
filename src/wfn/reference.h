@@ -83,7 +83,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
   public:
     Reference() { }
-    Reference(const double en) : energy_(en) { } // TODO: temporary fix for SOSCF
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
               const int nclo, const int nact, const int nvirt,
               const double en = 0.0,
