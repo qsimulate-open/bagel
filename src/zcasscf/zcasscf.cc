@@ -179,9 +179,11 @@ void ZCASSCF::init() {
   } else {
     init_kramers_coeff(); // coeff_ now in block format
   }
+  resume_stdcout();
 
   if (mvo) coeff_ = generate_mvo(ncore_mvo, hcore_mvo);
 
+  mute_stdcout();
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
     fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_, /*restricted*/true);
@@ -396,10 +398,11 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   // Procedures described in Jensen et al; JCP 87, 451 (1987) (hcore) and Bauschlicher; JCP 72 880 (1980) (Fock)
   cout << " " << endl;
   if (!hcore_mvo) {
-    cout << "       * Generating Modified Virtual Orbitals from a Fock matrix of " << ncore << " electrons " << endl << endl;
+    cout << "   * Generating Modified Virtual Orbitals from a Fock matrix of " << ncore << " electrons " << endl << endl;
   } else {
-    cout << "       * Generating Modified Virtual Orbitals from the 1 electron Hamiltonian of " << ncore << " electrons " << endl << endl;
+    cout << "   * Generating Modified Virtual Orbitals from the 1 electron Hamiltonian of " << ncore << " electrons " << endl << endl;
   }
+  mute_stdcout();
   assert(geom_->nele()%2 == 0);
   assert(geom_->nele() >= ncore);
   const int hfvirt = nocc_ + nvirtnr_ - geom_->nele()/2;
@@ -448,5 +451,6 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
     if (orthonorm > 1.0e-12) throw logic_error("MVO Coefficient not sufficiently orthonormal");
   }
 
+  resume_stdcout();
   return ctmp;
 }
