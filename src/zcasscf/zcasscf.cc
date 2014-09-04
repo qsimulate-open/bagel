@@ -74,7 +74,7 @@ void ZCASSCF::init() {
   const bool kramers_coeff = idata_->get<bool>("kramers_coeff", false);
   const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
   const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->nele());
-  if (ncore_mvo == geom_->nele()) {
+  if (mvo && ncore_mvo == geom_->nele()) {
     cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
     mvo = false;
   }
