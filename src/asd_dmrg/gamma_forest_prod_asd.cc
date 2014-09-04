@@ -155,8 +155,8 @@ tuple<int, int, int> GammaForestProdASD::get_indices(const bitset<3> bit, const 
   if (block_is_reversed) reverse(block_indices.begin(), block_indices.end());
   if (ci_is_reversed) reverse(ci_indices.begin(), ci_indices.end());
 
-  const int block_index = accumulate(block_indices.rbegin(), block_indices.rend(), 1, [lnorb] (int ij, int index) { return index + ij*lnorb; });
-  const int ci_index = accumulate(ci_indices.rbegin(), ci_indices.rend(), 1, [rnorb] (int ij, int index) { return index + ij*rnorb; });
+  const int block_index = accumulate(block_indices.rbegin(), block_indices.rend(), 0, [lnorb] (int ij, int index) { return index + ij*lnorb; });
+  const int ci_index = accumulate(ci_indices.rbegin(), ci_indices.rend(), 0, [rnorb] (int ij, int index) { return index + ij*rnorb; });
 
   return make_tuple(ijk, block_index, ci_index);
 }
