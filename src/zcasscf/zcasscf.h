@@ -53,6 +53,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     double thresh_;
     double thresh_micro_;
+    std::complex<double> rms_grad_;
     std::complex<double> level_shift_;
 
     int nstate_;
@@ -74,7 +75,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void init();
     void init_kramers_coeff();
 
-    void mute_stdcout(const bool fci) const;
+    void mute_stdcout() const;
     void resume_stdcout() const;
 
     std::shared_ptr<ZHarrison> fci_;
@@ -110,6 +111,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     static std::shared_ptr<ZMatrix> format_coeff(const int nclosed, const int nact, const int nvirt, std::shared_ptr<const ZMatrix> coeff, const bool striped = true);
     // kramers adapt for RotFile is a static function!
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
+    // function to generate modified virtual MOs from either a Fock matrix or the one-electron Hamiltonian
+    std::shared_ptr<const ZMatrix> generate_mvo(const int ncore, const bool hcore_mvo = false);
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
@@ -124,6 +127,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
     double occup(const int i) const { return occup_[i]; }
+    std::complex<double> rms_grad() const { return rms_grad_; };
 
 };
 

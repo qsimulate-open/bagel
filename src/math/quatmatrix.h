@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sohcore_base.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: quatmatrix.h
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -22,29 +22,34 @@
 // along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
+//
+#ifndef __SRC_MATH_QUATMATRIX_H
+#define __SRC_MATH_QUATMATRIX_H
 
-
-#ifndef __SRC_MOLECULE_SOHCORE_BASE_H
-#define __SRC_MOLECULE_SOHCORE_BASE_H
-
-#include <src/molecule/matrix1e.h>
+#include <src/math/zmatrix.h>
+#include <src/math/algo.h>
 
 namespace bagel {
 
-class SOHcore_base : public Matrix1e {
-  protected:
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
-
+class QuatMatrix : public ZMatrix {
   public:
-    SOHcore_base() { }
-    SOHcore_base(const std::shared_ptr<const Molecule>);
+    QuatMatrix(const ZMatrix& o) : ZMatrix(o) { }
+    QuatMatrix(ZMatrix&& o) : ZMatrix(std::move(o)) { }
+    // TODO : implement symmetry checking function, and constructor that can take "00" and "01" matrices and build the rest of the matrix
+
+    void diagonalize(VecView eig) override {
+      assert(ndim() == mdim());
+      // TODO parallelize
+      zquatev_(ndim(), data(), eig.data());
+      synchronize();
+    }
+
+    void synchronize() {
+      mpi__->broadcast(data(), size(), 0);
+    }
 
 };
 
 }
 
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::SOHcore_base)
-
 #endif
-

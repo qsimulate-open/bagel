@@ -29,13 +29,11 @@
 #include <src/fci/hztasks.h>
 #include <src/smith/prim_op.h>
 
-// toggle for timing print out.
-static const bool tprint = false;
-
 using namespace std;
 using namespace bagel;
 
 /* Implementing the method as described by Harrison and Zarrabian */
+#ifndef HAVE_MPI_H
 shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, shared_ptr<const RelMOFile> jop, const vector<int>& conv) const {
   auto sigmavec = make_shared<RelZDvec>(space_, nstate_);
   auto sigmavec_trans = sigmavec->clone(); // important note: the space stays the same after transposition
@@ -71,6 +69,47 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
 
   return sigmavec;
 }
+
+#else
+
+shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, shared_ptr<const RelMOFile> jop, const vector<int>& conv) const {
+  auto sigmavec = make_shared<RelZDvec>(space_, nstate_);
+  auto sigmavec_trans = sigmavec->clone(); // important note: the space stays the same after transposition
+
+  int icnt = 0;
+  for (auto& isp : space_->detmap()) {
+    shared_ptr<const Determinants> base_det = isp.second;
+    const int nelea = base_det->nelea();
+    const int neleb = base_det->neleb();
+
+    for (int istate = 0; istate != nstate_; ++istate) {
+      if (conv[istate]) continue;
+
+      shared_ptr<const ZCivec> cc = ccvec->find(nelea, neleb)->data(istate);
+      icnt = sigma_one_parallel(icnt, cc, sigmavec, jop, istate, /*diag*/true, /*transpose*/false);
+
+      shared_ptr<const ZCivec> cc_trans = cc->transpose();
+      icnt = sigma_one_parallel(icnt, cc_trans, sigmavec_trans, jop, istate, /*diag*/false, /*transpose*/true);
+    }
+  }
+
+  for (auto& isp : space_->detmap()) {
+    const int nelea = isp.second->nelea();
+    const int neleb = isp.second->neleb();
+    shared_ptr<ZDvec> sigma = sigmavec->find(nelea, neleb);
+    shared_ptr<ZDvec> sigma_trans = sigmavec_trans->find(neleb, nelea);
+
+    // daxpy for each Civec
+    for (int ist = 0; ist != nstate_; ++ist) {
+      if (conv[ist]) continue;
+      sigma->data(ist)->ax_plus_y(1.0, *sigma_trans->data(ist)->transpose());
+      mpi__->allreduce(sigma->data(ist)->data(), sigma->data(ist)->size());
+    }
+  }
+
+  return sigmavec;
+}
+#endif
 
 
 void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigmavec, shared_ptr<const RelMOFile> jop,
@@ -202,22 +241,31 @@ void ZHarrison::sigma_1e_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigm
 
   // One-electron part
   for (int i = 0; i != norb_; ++i) {
+    size_t aindex = 0;
     for (auto& a : sigmadet->string_bits_a()) {
-      if (a[i]) continue;
+      if (a[i]) {
+        ++aindex;
+        continue;
+      }
       auto ca = a; ca.set(i);
       const complex<double>* source =    cc->data() + lbs * ccdet->lexical<0>(ca);
-            complex<double>* target = sigma->data() + lbt * sigmadet->lexical<0>(a);
+            complex<double>* target = sigma->data() + lbt * aindex;
       const double asign = ccdet->sign<0>(ca, i);
 
       for (int j = 0; j != norb_; ++j) {
+        size_t bindex = 0;
         for (auto& b : ccdet->string_bits_b()) {
-          if (b[j]) continue;
+          if (b[j]) {
+            ++bindex;
+            continue;
+          }
           auto cb = b; cb.set(j);
           const complex<double> fac = h1->element(j,i) * (sigmadet->sign<1>(b, j) * asign);
-          target[sigmadet->lexical<1>(cb)] += fac * source[ccdet->lexical<1>(b)];
+          target[sigmadet->lexical<1>(cb)] += fac * source[bindex];
+          ++bindex;
         }
       }
-
+      ++aindex;
     }
   }
 }
@@ -231,6 +279,7 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
   const size_t lb = cc->lenb();
   assert(lb == d->lenb());
 
+#if 0
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j != norb_; ++j) {
       if (i == j) continue;
@@ -245,6 +294,29 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
       }
     }
   }
+#else
+  TaskQueue<function<void(void)>> tq(d->lena());
+  size_t aindex = 0;
+  for (auto& a : d->det()->string_bits_a()) {
+    tq.emplace_back(
+      [this, &d, &source, a, aindex, &cc, &lb] () {
+        for (int i = 0; i != norb_; ++i) {
+          for (int j = 0; j != norb_; ++j) {
+            if (i == j) continue;
+            if (a[i] || a[j]) continue;
+            complex<double>* target = d->data(j+norb_*i)->data();
+            auto ca = a; ca.set(i); ca.set(j);
+            const double factor = Determinants::sign(a, i, j) * (i < j ? -1.0 : 1.0);
+            const size_t offas = cc->det()->lexical<0>(ca);
+            blas::ax_plus_y_n(factor, source+lb*offas, lb, target+lb*aindex);
+          }
+        }
+      }
+    );
+    ++aindex;
+  }
+  tq.compute();
+#endif
 }
 
 
@@ -311,6 +383,7 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
 
   // TODO can be reduced by a factor of two by using symmetry
   // TODO not efficient code
+#if 0
   for (int i = 0; i < norb_; ++i) { // beta
     for (int j = 0; j < norb_; ++j) { // beta
       if (i == j) continue;
@@ -333,6 +406,34 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
       }
     }
   }
+#else
+  TaskQueue<function<void(void)>> tq(lbt);
+  size_t bindex = 0;
+  for (auto& b : base_det->string_bits_b()) {
+    tq.emplace_back(
+      [this, &e, &int_det, &la, &lbs, &lbt, bindex, &target_base, b] () {
+        for (int i = 0; i < norb_; ++i) { // beta
+          for (int j = 0; j < i; ++j) { // beta
+            if (!b[i] || !b[j]) { // looking for particles to annihilate
+              continue;
+            }
+            const complex<double>* source_ij = e->data(i+norb_*j)->data();
+            const complex<double>* source_ji = e->data(j+norb_*i)->data();
+            bitset<nbit__> cb = b;
+            cb.reset(i); cb.reset(j);
+            const double sign = Determinants::sign(b, i, j);
+            const size_t bdlex = int_det->lexical<1>(cb);
+
+            zaxpy_(la, -sign, source_ij+bdlex, lbs, target_base+bindex, lbt);
+            zaxpy_(la,  sign, source_ji+bdlex, lbs, target_base+bindex, lbt);
+          }
+        }
+      }
+    );
+    ++bindex;
+  }
+  tq.compute();
+#endif
 }
 
 

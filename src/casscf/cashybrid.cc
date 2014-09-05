@@ -65,6 +65,7 @@ void CASHYBRID::compute() {
     refout_ = active_method->conv_to_ref();
     double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
     if (grad < global_thresh) {
+      cout << " " << endl;
       cout << "      * CASSCF converged *    " << endl;
     }
   }

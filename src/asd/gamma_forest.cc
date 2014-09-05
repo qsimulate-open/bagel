@@ -102,7 +102,7 @@ class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
             if (!bblock) continue;
 
             for (auto& jbra : second->bras())
-              dot_product(jbra.second, bblock, second->gammas()[jbra.first]->element_ptr(istate_*jbra.second->ij(), a_ + norb*b));
+              dot_product(jbra.second, bblock, second->gammas()[jbra.first]->element_ptr(istate_*jbra.second->ij(), a_*norb + b));
 
             for (int k = 0; k < nops; ++k) {
               shared_ptr<GammaBranch<DistRASDvec>> third = second->branch(k);
@@ -113,7 +113,7 @@ class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
                 shared_ptr<const RASBlock<double>> cblock = next_block(third, bblock, c, action(k), spin(k));
                 if (!cblock) continue;
                 for (auto& kbra : third->bras())
-                  dot_product(kbra.second, cblock, third->gammas()[kbra.first]->element_ptr(istate_*kbra.second->ij(), a_+norb*b+norb*norb*c));
+                  dot_product(kbra.second, cblock, third->gammas()[kbra.first]->element_ptr(istate_*kbra.second->ij(), a_*norb*norb + b*norb + c));
               }
             }
           }

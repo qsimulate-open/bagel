@@ -41,12 +41,8 @@ using namespace bagel;
 
 void SuperCI::compute() {
   // DIIS: will be turned on at iter = diis_start_ (>1),
-  //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner
-  //       paper on Brueckner CC
+  //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner paper on Brueckner CC
   shared_ptr<HPW_DIIS<Matrix>> diis;
-
-  // BFGS: optional quasi-second-order MCSCF
-//shared_ptr<BFGS<RotFile>> bfgs;
 
   // ============================
   // macro iteration from here
@@ -97,6 +93,10 @@ void SuperCI::compute() {
     gradient = grad->rms();
     if (gradient < thresh_) {
       rms_grad_ = gradient;
+      resume_stdcout();
+      cout << " " << endl;
+      cout << "    * Super CI optimization converged. *    " << endl << endl;
+      mute_stdcout();
       break;
     }
 
@@ -137,8 +137,7 @@ void SuperCI::compute() {
       rms_grad_ = gradient;
       cout << " " << endl;
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
-      cout << "    * Max iteration reached in the CASSCF macro interations. *     " << endl << endl;
-//      throw runtime_error("Max iteration reached in the CASSCF macro interation.");
+      cout << "    * Max iteration reached in the Super CI macro interations. *     " << endl << endl;
     }
     mute_stdcout();
 

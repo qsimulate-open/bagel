@@ -1,5 +1,5 @@
 //
-// Filename: zquartev.cc
+// Filename: zquatev.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>

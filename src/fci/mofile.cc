@@ -143,7 +143,13 @@ shared_ptr<const Matrix> Jop::compute_mo2e(const int nstart, const int nfence) {
   shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(cdata);
 
   // second index transformation and (D|ii) = J^-1/2_DE (E|ii)
-  shared_ptr<DFFullDist> buf = half->compute_second_transform(cdata)->apply_J();
+  // TODO : DFDistT needs to be modified to handle cases where number of nodes is larger than half->nocc() * cdata.mdim()
+  shared_ptr<DFFullDist> buf;
+  if (half->nocc() * cdata.mdim() > mpi__->size()) {
+    buf = half->compute_second_transform(cdata)->apply_J();
+  } else {
+    buf = half->apply_J()->compute_second_transform(cdata);
+  }
 
   // we want to store half-transformed quantity for latter convenience
   mo2e_1ext_ = half;

@@ -94,10 +94,6 @@ void Optimize::compute() {
         auto opt = make_shared<Opt<SuperCI>>(idata_, methodblock, geom_);
         opt->compute();
         geom_ = opt->geometry();
-      } else if (algorithm == "werner" || algorithm == "knowles") {
-        auto opt = make_shared<Opt<WernerKnowles>>(idata_, methodblock, geom_);
-        opt->compute();
-        geom_ = opt->geometry();
       } else {
         throw runtime_error("unknown CASSCF algorithm specified.");
       }

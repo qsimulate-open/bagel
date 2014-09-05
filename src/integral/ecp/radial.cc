@@ -32,15 +32,22 @@ using namespace std;
 void RadialInt::integrate() {
   Timer radialtime;
 
+  integral_.resize(nc_);
+
   int n0 = 31;
   vector<int> sigma1(n0);
 //transform_Becke(n0);
   transform_Ahlrichs(n0);
+  assert(r_.size() == n0);
   vector<double> f = compute(r_);
-  assert(f.size() == n0);
-  for (int i = 0; i != r_.size(); ++i) sigma1[i] = i;
+  assert(f.size() == n0*nc_);
+  for (int i = 0; i != n0; ++i) sigma1[i] = i;
 
-  double previous = inner_product(f.begin(), f.end(), w_.begin(), 0);
+  vector<double> previous(nc_, 0.0);
+  for (int ic = 0; ic != nc_; ++ic)
+    for (int i = 0; i != n0; ++i) previous[ic] = f[ic*n0+i] * w_[i];
+    //previous[ic] = inner_product(f.begin()+ic*n0, f.begin()+(ic+1)*n0-1, w_.begin(), 0);
+
   int n1 = n0*2+1;
 
   for (int iter = 1; iter != max_iter_; ++iter) {
@@ -50,7 +57,9 @@ void RadialInt::integrate() {
 
     vector<int> sigma0(sigma1);
     sigma1.resize(n1);
-    f.resize(n1);
+    f.resize(n1*nc_);
+    for (int ic = nc_-1; ic > 0; --ic)
+      for (int i = 0; i < n0; ++i) f[ic*n1+i] = f[ic*n0+i];
 
     vector<double> rr(n0+1);
     for (int i = 0; i != n0; ++i) {
@@ -62,28 +71,41 @@ void RadialInt::integrate() {
     rr[n0] = r_[2*n0];
 
     vector<double> tmp = compute(rr);
-    for (int i = 0; i <= n0; ++i) f[n0+i] = tmp[i];
+    for (int ic = 0; ic != nc_; ++ic)
+      for (int i = 0; i <= n0; ++i) f[ic*n1+n0+i] = tmp[ic*(n0+1)+i];
 
-    double ans = 0.0;
-    for (int i = 0; i != r_.size(); ++i) ans += f[i] * w_[sigma1[i]];
+    vector<double> ans(nc_, 0.0);
+    for (int ic = 0; ic != nc_; ++ic)
+      for (int i = 0; i != n1; ++i) ans[ic] += f[ic*n1+i] * w_[sigma1[i]];
 
-    const double error = ans - previous;
-    if (print_intermediate_)
-       cout << "Iter = " << setw(5) << iter << setw(10) << "npts = " << setw(10) << n1
-                 << setw(10) << "ans = " << setw(20) << setprecision(10) << ans
-                 << setw(10) << "err = " << setw(20) << setprecision(10) << error << endl;
-    if (fabs(error) < thresh_int_) {
+    vector<double> error(nc_, 0.0);
+    double maxerror = 0.0;
+    for (int ic = 0; ic != nc_; ++ic) {
+      error[ic] = fabs(ans[ic] - previous[ic]);
+      if (error[ic] > maxerror) maxerror = error[ic];
+    }
+    if (print_intermediate_) {
+       cout << "Iter = " << setw(5) << iter << setw(10) << "npts = " << setw(10) << n1 << endl;
+       for (int ic = 0; ic != nc_; ++ic)
+         cout << setw(10) << "ans[" << ic << "] = " << setw(20) << setprecision(12) << ans[ic]
+              << setw(10) << "err[" << ic << "] = " << setw(20) << setprecision(12) << error[ic] << endl;
+    }
+    if (maxerror <= thresh_int_) {
       if (print_intermediate_) {
-        cout << "Integration converged..." << endl;
-        cout << "Radial integral = " << ans << endl;
-        cout << "Radial time = " << radialtime.tick() << endl;
+        cout << "Integration converged in " << iter << " interations:   ";
+        for (int ic = 0; ic != nc_; ++ic) {
+          cout << setw(20) << setprecision(12) << ans[ic];
+          if (nc_ > 1) cout << ",  ";
+        }
+        cout << endl;
+        radialtime.tick_print("ECP radial integration");
       }
-      integral_ = ans;
+      for (int ic = 0; ic != nc_; ++ic)  integral_[ic] = ans[ic];
       break;
     } else if (iter == max_iter_-1) {
-      cout << "Max iteration exceeded..." << endl;
+      throw runtime_error("Max iteration exceeded in ecp/radial...");
     }
-    previous = ans;
+    for (int ic = 0; ic != nc_; ++ic) previous[ic] = ans[ic];
     x_.clear();
     w_.clear();
     r_.clear();

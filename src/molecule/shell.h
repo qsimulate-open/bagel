@@ -93,22 +93,22 @@ class Shell : public Shell_base {
     // default constructor for adding null basis
     Shell(const bool sph);
 
-    bool dummy() const { return dummy_; };
-    int num_primitive() const { return exponents_.size(); };
-    int num_contracted() const { return contractions_.size(); };
+    bool dummy() const { return dummy_; }
+    int num_primitive() const { return exponents_.size(); }
+    int num_contracted() const { return contractions_.size(); }
 
-    double exponents(const int i) const { return exponents_[i]; };
-    const std::vector<double>& exponents() const { return exponents_; };
-    const double* exponents_pointer() const { return &(exponents_[0]); };
-    const std::vector<double> contractions(const int i) const { return contractions_[i]; };
-    const std::vector<std::vector<double>>& contractions() const { return contractions_; };
-    const std::pair<int, int>& contraction_ranges(const int i) const { return contraction_ranges_[i]; };
-    const std::vector<std::pair<int, int>>& contraction_ranges() const { return contraction_ranges_; };
+    double exponents(const int i) const { return exponents_[i]; }
+    const std::vector<double>& exponents() const { return exponents_; }
+    const double* exponents_pointer() const { return &(exponents_[0]); }
+    const std::vector<double> contractions(const int i) const { return contractions_[i]; }
+    const std::vector<std::vector<double>>& contractions() const { return contractions_; }
+    const std::pair<int, int>& contraction_ranges(const int i) const { return contraction_ranges_[i]; }
+    const std::vector<std::pair<int, int>>& contraction_ranges() const { return contraction_ranges_; }
 
-    const std::vector<int>& contraction_upper() const { return contraction_upper_; };
-    const std::vector<int>& contraction_lower() const { return contraction_lower_; };
+    const std::vector<int>& contraction_upper() const { return contraction_upper_; }
+    const std::vector<int>& contraction_lower() const { return contraction_lower_; }
 
-    int nbasis() const { return nbasis_; };
+    int nbasis() const { return nbasis_; }
     std::string show() const override;
 
     std::shared_ptr<const Shell> move_atom(const std::array<double,3>&) const;
@@ -127,7 +127,7 @@ class Shell : public Shell_base {
     // magnetism
     bool magnetism() const { return magnetism_; }
     double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
-    const std::array<double,3>& vector_potential() const { return vector_potential_; };
+    const std::array<double,3>& vector_potential() const { return vector_potential_; }
     void add_phase(const std::array<double,3>& phase_input);
 
     void init_relativistic();

@@ -33,14 +33,12 @@
 #include <src/ras/distrasci.h>
 #include <src/zfci/zharrison.h>
 #include <src/casscf/superci.h>
-#if 0
-#include <src/casscf/werner.h>
-#endif
 #include <src/casscf/cashybrid.h>
 #include <src/casscf/casbfgs.h>
 #include <src/nevpt2/nevpt2.h>
 #include <src/zcasscf/zcasscf.h>
 #include <src/zcasscf/zcasbfgs.h>
+#include <src/zcasscf/zcashybrid.h>
 #include <src/zcasscf/zsuperci.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dmp2.h>
@@ -104,10 +102,6 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<SuperCI>(itree, geom, ref);
       else if (algorithm == "hybrid")
         out = make_shared<CASHYBRID>(itree, geom, ref);
-#if 0
-      else if (algorithm == "werner" || algorithm == "knowles")
-        out = make_shared<WernerKnowles>(itree, geom, ref);
-#endif
       else if (algorithm == "bfgs")
         out = make_shared<CASBFGS>(itree, geom, ref);
       else
@@ -120,10 +114,12 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else if (title == "nevpt2")  out = make_shared<NEVPT2>(itree, geom, ref);
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
-      if (algorithm == "bfgs" || algorithm == "")
-        out = make_shared<ZCASBFGS>(itree, geom, ref);
-      else if (algorithm == "superci")
+      if (algorithm == "superci" || algorithm == "")
         out = make_shared<ZSuperCI>(itree, geom, ref);
+      else if (algorithm == "hybrid")
+        out = make_shared<ZCASHYBRID>(itree, geom, ref);
+      else if (algorithm == "bfgs")
+        out = make_shared<ZCASBFGS>(itree, geom, ref);
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     }
