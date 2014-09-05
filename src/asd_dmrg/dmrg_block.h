@@ -106,11 +106,25 @@ class DMRG_Block1 : public std::enable_shared_from_this<DMRG_Block1>, public DMR
     std::shared_ptr<const BlockOperators> compute_block_ops(std::shared_ptr<DimerJop> jop) const override;
 };
 
+namespace DMRG {
+struct BlockPair {
+  BlockInfo left;
+  BlockInfo right;
+  int offset;
+
+  BlockPair(BlockInfo l, BlockInfo r, int o) : left(l), right(r), offset(o) {}
+
+  int nstates() { return left.nstates*right.nstates; }
+};
+}
+
 /// Combines two DMRG_Blocks to make one double block
 class DMRG_Block2 : public std::enable_shared_from_this<DMRG_Block2>, public DMRG_Block {
   protected:
     std::shared_ptr<const DMRG_Block1> left_block_;
     std::shared_ptr<const DMRG_Block1> right_block_;
+
+    std::map<BlockKey, std::vector<DMRG::BlockPair>> pairmap_;
 
   public:
     ///default constructor

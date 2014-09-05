@@ -136,7 +136,22 @@ shared_ptr<const BlockOperators> DMRG_Block1::compute_block_ops(shared_ptr<Dimer
 }
 
 DMRG_Block2::DMRG_Block2(shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const DMRG_Block1> rb) : left_block_(lb), right_block_(rb) {
+  // left block runs first in the resulting pairmap_ vectors
+  for (auto& left : lb->blocks()) {
+    for (auto& right : rb->blocks()) {
+      BlockKey bk(left.nelea+right.nelea, left.neleb+right.neleb);
+      const int offset = pairmap_.find(bk)==pairmap_.end() ? 0 : pairmap_[bk].back().offset + pairmap_[bk].back().nstates();
+      pairmap_[bk].emplace_back(left, right, offset);
+    }
+  }
 
+  for (auto& p : pairmap_) {
+    BlockKey key = p.first;
+    const int nstates = accumulate(p.second.begin(), p.second.end(), 0, [] (int x, DMRG::BlockPair bp) { return x + bp.nstates(); });
+    blocks_.insert(BlockInfo(key.nelea, key.neleb, nstates));
+  }
+
+  coeff_ = lb->coeff()->merge(rb->coeff());
 }
 
 shared_ptr<Matrix> DMRG_Block2::spin(const BlockKey b) const {
