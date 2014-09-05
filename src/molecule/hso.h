@@ -64,13 +64,13 @@ class HSO {
       soiab_->copy_block(offset1, offset0, dim1, dim0, data);
     }
 
-    void get_mpi_data() { // for parallel run
+    void allreduce() { // for parallel run
       soiaa_->allreduce();
       sorab_->allreduce();
       soiab_->allreduce();
     }
 
-    void antisymmetrize() {
+    void fill_upper_negative() {
       soiaa_->fill_upper_negative();
       sorab_->fill_upper_negative();
       soiab_->fill_upper_negative();
