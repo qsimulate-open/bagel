@@ -42,6 +42,7 @@ void SOHcore::form_sohcore() {
   const complex<double> real(1.0, 0.0);
   const complex<double> imag(0.0, 1.0);
 
+  hcore_->hso()->get_mpi_data();
   hcore_->antisymmetrize_hso();
 
   add_real_block(real, 0, 0, nbasis, nbasis, *hcore_);
