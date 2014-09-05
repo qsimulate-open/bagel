@@ -114,7 +114,7 @@ struct BlockPair {
 
   BlockPair(BlockInfo l, BlockInfo r, int o) : left(l), right(r), offset(o) {}
 
-  int nstates() { return left.nstates*right.nstates; }
+  int nstates() const { return left.nstates*right.nstates; }
 };
 }
 

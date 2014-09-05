@@ -27,6 +27,7 @@
 
 #include <src/asd_dmrg/dmrg_block.h>
 #include <src/ras/civector.h>
+#include <src/asd_dmrg/kronecker.h>
 
 using namespace bagel;
 using namespace std;
@@ -155,7 +156,67 @@ DMRG_Block2::DMRG_Block2(shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const
 }
 
 shared_ptr<Matrix> DMRG_Block2::spin(const BlockKey b) const {
-  return nullptr;
+  const vector<DMRG::BlockPair>& sec_pairs = pairmap_.at(b);
+  BlockInfo binfo = blockinfo(b);
+  auto out = make_shared<Matrix>(binfo.nstates, binfo.nstates);
+
+  for (auto& bp : sec_pairs) {
+    { // S^2_L
+      auto lspin = left_block_->spin(bp.left);
+      Matrix eye(bp.right.nstates, bp.right.nstates);
+      eye.unit();
+      out->add_block(1.0, bp.offset, bp.offset, bp.nstates(), bp.nstates(), kronecker_product(false, eye, false, *lspin));
+    }
+
+    { // S^2_R
+      auto rspin = right_block_->spin(bp.right);
+      Matrix eye(bp.left.nstates, bp.left.nstates);
+      eye.unit();
+      out->add_block(1.0, bp.offset, bp.offset, bp.nstates(), bp.nstates(), kronecker_product(false, *rspin, false, eye));
+    }
+
+    { // 2 * S^z_A S^z_B
+      const double sza_szb = 0.5 * static_cast<double>((bp.left.nelea-bp.left.neleb)*(bp.right.nelea-bp.right.neleb));
+      for (int i = 0; i < bp.nstates(); ++i)
+        out->element(i+bp.offset, i+bp.offset) += sza_szb;
+    }
+
+    { // S^+_L S^-_R
+      BlockKey lk(bp.left.nelea+1, bp.left.neleb-1);
+      BlockKey rk(bp.right.nelea-1, bp.right.neleb+1);
+
+      auto iter = find_if(sec_pairs.begin(), sec_pairs.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
+        return make_pair(bp.left.key(), bp.right.key())==make_pair(lk, rk); }
+      );
+
+      if (iter != sec_pairs.end()) {
+        DMRG::BlockPair tp = *iter;
+        auto lowerL = left_block_->spin_lower(bp.left);
+        auto raiseR = right_block_->spin_raise(bp.right);
+
+        out->add_block(1.0, tp.offset, bp.offset, tp.nstates(), bp.nstates(), kronecker_product(false, *raiseR, false, *lowerL));
+      }
+    }
+
+    { // S^-_L S^+_R
+      BlockKey lk(bp.left.nelea-1, bp.left.neleb+1);
+      BlockKey rk(bp.right.nelea+1, bp.right.neleb-1);
+
+      auto iter = find_if(sec_pairs.begin(), sec_pairs.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
+        return make_pair(bp.left.key(), bp.right.key())==make_pair(lk, rk); }
+      );
+
+      if (iter != sec_pairs.end()) {
+        DMRG::BlockPair tp = *iter;
+        auto raiseL = left_block_->spin_raise(bp.left);
+        auto lowerR = right_block_->spin_lower(bp.right);
+
+        out->add_block(1.0, tp.offset, bp.offset, tp.nstates(), bp.nstates(), kronecker_product(false, *lowerR, false, *raiseL));
+      }
+    }
+  }
+
+  return out;
 }
 
 shared_ptr<const BlockOperators> DMRG_Block2::compute_block_ops(std::shared_ptr<DimerJop> jop) const {
