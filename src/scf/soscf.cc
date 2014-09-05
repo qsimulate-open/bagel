@@ -40,7 +40,7 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
     throw runtime_error("SOSCF requires density fitting!");
 
   soeig_ = VectorB(geom_->nbasis() * 2);
-  sohcore_ = make_shared<SOHcore>(geom_, hcore_);
+  sohcore_ = make_shared<const SOHcore>(geom_, hcore_);
 }
 
 void SOSCF::compute() {
@@ -114,11 +114,11 @@ void SOSCF::compute() {
 
     auto intermediate = make_shared<DistZMatrix>(*sotildex % *distfock * *sotildex);
     intermediate->diagonalize(soeig());
-    auto socoeff = make_shared<const DistZMatrix>(*sotildex * *intermediate);
+    socoeff = make_shared<const DistZMatrix>(*sotildex * *intermediate);
     aodensity = socoeff->form_density_rhf(2*nocc_);
   }
 
-    socoeff_ = socoeff->matrix();
+    socoeff_ = make_shared<const ZMatrix>(*socoeff->matrix());
 }
 
 shared_ptr<const ZMatrix> SOSCF::sotildex() {
