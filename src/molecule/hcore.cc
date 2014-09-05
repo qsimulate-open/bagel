@@ -33,6 +33,7 @@
 #include <src/integral/rys/r1batch.h>
 #include <src/integral/rys/r2batch.h>
 #include <src/integral/ecp/ecpbatch.h>
+#include <src/integral/ecp/soecpbatch.h>
 #include <src/integral/libint/libint.h>
 
 using namespace std;
@@ -40,13 +41,11 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
 
-Hcore::Hcore(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
+Hcore::Hcore(const shared_ptr<const Molecule> mol) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
 
   init(mol);
   fill_upper();
-
 }
-
 
 void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
 
@@ -92,6 +91,14 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
       ecp.compute();
 
       add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, ecp.data());
+    }
+    {
+      SOECPBatch soecp(input, mol);
+      soecp.compute();
+
+      hso_->construct_iaa(offsetb1, offsetb0, dimb1, dimb0, soecp.data());
+      hso_->construct_rab(offsetb1, offsetb0, dimb1, dimb0, soecp.data1());
+      hso_->construct_iab(offsetb1, offsetb0, dimb1, dimb0, soecp.data2());
     }
   }
 

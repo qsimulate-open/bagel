@@ -32,10 +32,11 @@
 
 namespace bagel {
 
+// USP = Unitary Sphere Polynomial = x^i y^j z^k
 struct SphUSPList {
   private:
 
-    std::function<std::vector<double>(const int)> sphuspfunc[ANG_HRR_END+1];
+    std::function<std::vector<double>(const int)> sphuspfunc[10];
 
     static std::vector<double> sphusp_0(const int);
     static std::vector<double> sphusp_1(const int);
@@ -45,6 +46,9 @@ struct SphUSPList {
     static std::vector<double> sphusp_5(const int);
     static std::vector<double> sphusp_6(const int);
     static std::vector<double> sphusp_7(const int);
+    static std::vector<double> sphusp_8(const int);
+    static std::vector<double> sphusp_9(const int);
+    static std::vector<double> sphusp_10(const int);
 
   public:
     SphUSPList() {
@@ -56,9 +60,12 @@ struct SphUSPList {
       sphuspfunc[5] = &sphusp_5;
       sphuspfunc[6] = &sphusp_6;
       sphuspfunc[7] = &sphusp_7;
+      sphuspfunc[8] = &sphusp_8;
+      sphuspfunc[9] = &sphusp_9;
+      sphuspfunc[10] = &sphusp_10;
     }
 
-    std::vector<double> sphuspfunc_call(const int l, const int m) const { return sphuspfunc[l](m); }
+    std::vector<double> sphuspfunc_call(const int l, const int m) const { assert(l <= 10); return sphuspfunc[l](m); }
 
 };
 

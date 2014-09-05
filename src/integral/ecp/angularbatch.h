@@ -52,7 +52,6 @@ class AngularBatch : public RadialInt {
     void map_angular_number();
 
     double integrate3SHs(std::array<std::pair<int, int>, 3> lm) const;
-    double integrate2SH1USP(const std::pair<int, int> lm1, const int l, const std::vector<double> usp2, const std::array<int, 3> ijk) const;
     std::vector<double> project_AB(const int l, const std::vector<double> usp, const std::vector<double> r);
     std::vector<double> project_CB(const int l, const std::vector<double> usp, const std::vector<double> r);
 

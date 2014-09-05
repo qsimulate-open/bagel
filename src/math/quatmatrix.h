@@ -40,7 +40,7 @@ class QuatMatrix : public ZMatrix {
     void diagonalize(VecView eig) override {
       assert(ndim() == mdim());
       // TODO parallelize
-      zquatev_(ndim(), data(), eig.data()); 
+      zquatev_(ndim(), data(), eig.data());
       synchronize();
     }
 

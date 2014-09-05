@@ -64,13 +64,9 @@ ECPBatch::~ECPBatch() {
 
 void ECPBatch::compute() {
 
-  const double zero = 0.0;
-  const SortList sort(spherical_);
-
-  fill_n(data_, size_alloc_, zero);
-  double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
-  fill_n(intermediate_c, cont0_ * cont1_ * asize_, zero);
-  double* current_data = intermediate_c;
+  double* const intermediate_c = stack_->get(size_alloc_);
+  fill_n(intermediate_c, size_alloc_, 0.0);
+  double* const current_data = intermediate_c;
 
   int i = 0;
   for (int izA = 0; izA <= ang0_; ++izA)
@@ -81,26 +77,35 @@ void ECPBatch::compute() {
     for (int iyC = 0; iyC <= ang1_ - izC; ++iyC) {
       const int ixC = ang1_ - izC - iyC;
       const array<int, 3> lC = {ixC, iyC, izC};
-      for (int contA = 0; contA != basisinfo_[0]->contractions().size(); ++contA)
-      for (int contC = 0; contC != basisinfo_[1]->contractions().size(); ++contC) {
+      for (int contA = 0; contA != cont0_; ++contA)
+      for (int contC = 0; contC != cont1_; ++contC) {
         double tmp = 0.0;
         for (auto& aiter : mol_->atoms()) {
           shared_ptr<const ECP> aiter_ecp = aiter->ecp_parameters();
 
           AngularBatch radint(aiter_ecp, basisinfo_, contA, contC, lA, lC, false, max_iter_, integral_thresh_);
           radint.integrate();
-          tmp += radint.integral();
+          tmp += radint.integral(0);
         }
-        const int index = i + contA * asize_intermediate_ * basisinfo_[1]->contractions().size() + contC * asize_intermediate_;
+        const int index = contA * cont1_ * asize_ + contC * asize_ + i;
         current_data[index] = tmp;
       }
       ++i;
     }
   }
 
-  double* const intermediate_fi = stack_->get(cont0_ * cont1_ * asize_intermediate_);
-  const unsigned int array_size = cont0_ * cont1_ * asize_intermediate_;
-  copy_n(intermediate_c, array_size, intermediate_fi);
+  get_data(current_data, data_);
+
+  stack_->release(size_alloc_, intermediate_c);
+
+}
+
+void ECPBatch::get_data(double* intermediate, double* data) {
+
+  fill_n(data, size_alloc_, 0.0);
+
+  double* const intermediate_fi = stack_->get(size_alloc_);
+  copy_n(intermediate, size_alloc_, intermediate_fi);
 
   if (spherical_) {
     double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
@@ -110,16 +115,15 @@ void ECPBatch::compute() {
 
     const static SortList sort(true);
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);
+    sort.sortfunc_call(sort_index, data, intermediate_i, cont1_, cont0_, 1, swap01_);
     stack_->release(cont0_ * cont1_ * asize_final_, intermediate_i);
   } else {
     const static SortList sort(false);
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort.sortfunc_call(sort_index, data_, intermediate_fi, cont1_, cont0_, 1, swap01_);
+    sort.sortfunc_call(sort_index, data, intermediate_fi, cont1_, cont0_, 1, swap01_);
   }
 
-  stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);
-  stack_->release(cont0_*cont1_*asize_, intermediate_c);
+  stack_->release(size_alloc_, intermediate_fi);
 
 }
 
@@ -141,17 +145,11 @@ void ECPBatch::common_init() {
   cont0_ = basisinfo_[0]->num_contracted();
   cont1_ = basisinfo_[1]->num_contracted();
 
-  amax_ = ang0_ + ang1_;
-  amax1_ = amax_ + 1;
-  amin_ = ang0_;
-
-  asize_ = 0;
-  for (int i = amin_; i != amax1_; ++i) asize_ += (i+1)*(i+2) / 2;
-  asize_intermediate_ = (ang0_+1) * (ang0_+2) * (ang1_+1) * (ang1_+2) / 4;
+  asize_ = (ang0_+1) * (ang0_+2) * (ang1_+1) * (ang1_+2) / 4;
   asize_final_ = (basisinfo_[0]->spherical() ? (2*ang0_+1) : (ang0_+1)*(ang0_+2)/2)
                * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
 
-  size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
+  size_alloc_ = cont0_ * cont1_ * asize_;
 
   stack_save_ = stack_->get(size_alloc_);
   data_ = stack_save_;

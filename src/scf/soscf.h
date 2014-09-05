@@ -34,28 +34,39 @@ namespace bagel {
 
 class SOSCF : public SCF_base {
   protected:
-    std::shared_ptr<const Matrix> aodensity_;
+
+    bool dodf_;
+
     std::shared_ptr<const SOHcore> sohcore_;
-    std::shared_ptr<const SOHcore_base> sohcore_base_;
-    std::shared_ptr<const Coeff> socoeff_;
-    std::shared_ptr<const Matrix> sooverlap_;
-    std::shared_ptr<const Matrix> sotildex_;
+    std::shared_ptr<const ZMatrix> socoeff_;
+    std::shared_ptr<const ZMatrix> sooverlap_;
+    std::shared_ptr<const ZMatrix> sotildex_;
     VectorB soeig_;
     
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<SCF_base>(*this);
+      ar & dodf_ & sohcore_ & socoeff_ & sooverlap_ & socoeff_ & sotildex_;
+    }
 
   public:
     SOSCF() { }
     SOSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = nullptr);
 
-    void initial_guess();
-
     void compute() override;
 
-    std::shared_ptr<const Matrix> sooverlap();
-    std::shared_ptr<const Matrix> sotildex();
+    std::shared_ptr<const ZMatrix> sooverlap();
+    std::shared_ptr<const ZMatrix> sotildex();
+    VectorB& soeig() { return soeig_; }
 
-    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
+    bool dodf() const { return dodf_; }
+
+    std::shared_ptr<const Reference> conv_to_ref() const override;
 };
 
 }
