@@ -64,10 +64,16 @@ class HSO {
       soiab_->copy_block(offset1, offset0, dim1, dim0, data);
     }
 
-    void antisymmetrize() {
-      soiaa_->allreduce(); soiaa_->fill_upper_negative();
-      sorab_->allreduce(); sorab_->fill_upper_negative();
-      soiab_->allreduce(); soiab_->fill_upper_negative();
+    void allreduce() { // for parallel run
+      soiaa_->allreduce();
+      sorab_->allreduce();
+      soiab_->allreduce();
+    }
+
+    void fill_upper_negative() {
+      soiaa_->fill_upper_negative();
+      sorab_->fill_upper_negative();
+      soiab_->fill_upper_negative();
     }
 
     std::shared_ptr<const Matrix> soiaa() const { return soiaa_;}

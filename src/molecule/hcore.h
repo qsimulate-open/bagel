@@ -49,7 +49,6 @@ class Hcore : public Matrix1e {
     Hcore() { }
     Hcore(const std::shared_ptr<const Molecule>);
 
-    void antisymmetrize_hso() const { hso_->antisymmetrize(); }
     std::shared_ptr<HSO> hso() const { return hso_; }
 };
 
