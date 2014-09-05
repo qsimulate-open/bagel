@@ -264,8 +264,47 @@ shared_ptr<Matrix> DMRG_Block2::spin_lower(const BlockKey b) const {
 }
 
 shared_ptr<Matrix> DMRG_Block2::spin_raise(const BlockKey b) const {
+  assert(contains(BlockKey(b.nelea+1, b.neleb-1)));
 
-  return nullptr;
+  BlockInfo source_info = blockinfo(b);
+  BlockInfo target_info = blockinfo(BlockKey(b.nelea+1, b.neleb-1));
+
+  auto out = make_shared<Matrix>(target_info.nstates, source_info.nstates);
+
+  const vector<DMRG::BlockPair> pvec = pairmap_.at(b);
+  for (auto& source : pvec) {
+    { // raise on the left block
+      BlockKey lk(source.left.nelea+1, source.left.neleb-1);
+      BlockKey rk = source.right.key();
+      auto iter = find_if(pvec.begin(), pvec.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
+        return make_pair(bp.left.key(), bp.right.key())==make_pair(lk,rk);
+      });
+      if (iter != pvec.end()) {
+        DMRG::BlockPair tp = *iter;
+        auto raiseL = left_block_->spin_raise(source.left);
+        Matrix eyeR(source.right.nstates, source.right.nstates); eyeR.unit();
+
+        out->add_block(1.0, tp.offset, source.offset, tp.nstates(), source.nstates(), kronecker_product(false, eyeR, false, *raiseL));
+      }
+    }
+
+    { // raise on the right block
+      BlockKey lk = source.left.key();
+      BlockKey rk(source.right.nelea+1, source.right.neleb-1);
+      auto iter = find_if(pvec.begin(), pvec.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
+        return make_pair(bp.left.key(), bp.right.key())==make_pair(lk,rk);
+      });
+      if (iter != pvec.end()) {
+        DMRG::BlockPair tp = *iter;
+        Matrix eyeL(source.left.nstates, source.left.nstates); eyeL.unit();
+        auto raiseR = right_block_->spin_raise(source.right);
+
+        out->add_block(1.0, tp.offset, source.offset, tp.nstates(), source.nstates(), kronecker_product(false, *raiseR, false, eyeL));
+      }
+    }
+  }
+
+  return out;
 }
 
 shared_ptr<const BlockOperators> DMRG_Block2::compute_block_ops(std::shared_ptr<DimerJop> jop) const {
