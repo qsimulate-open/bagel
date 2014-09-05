@@ -134,9 +134,8 @@ class DMRG_Block2 : public std::enable_shared_from_this<DMRG_Block2>, public DMR
     DMRG_Block2(std::shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const DMRG_Block1> rb);
 
     std::shared_ptr<Matrix> spin(const BlockKey b) const override;
-
-    std::shared_ptr<Matrix> spin_lower(const BlockKey b) const override { assert(false); return nullptr; }
-    std::shared_ptr<Matrix> spin_raise(const BlockKey b) const override { assert(false); return nullptr; }
+    std::shared_ptr<Matrix> spin_lower(const BlockKey b) const override;
+    std::shared_ptr<Matrix> spin_raise(const BlockKey b) const override;
 
     std::shared_ptr<const BlockOperators> compute_block_ops(std::shared_ptr<DimerJop> jop) const override;
 };
