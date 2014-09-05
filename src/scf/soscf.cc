@@ -43,33 +43,33 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   sohcore_ = make_shared<SOHcore>(geom_, hcore_);
 }
 
-void SOSCF::initial_guess() {
+void SOSCF::compute() {
+  Timer scftime;
+
   sooverlap_ = sooverlap();
   sotildex_ = sotildex();
+
   shared_ptr<const DistZMatrix> sohcore = sohcore_->distmatrix();
   shared_ptr<const DistZMatrix> sotildex = sotildex_->distmatrix();
   shared_ptr<const DistZMatrix> sooverlap = sooverlap_->distmatrix();
-  shared_ptr<const DistZMatrix> socoeff;
+  shared_ptr<const DistZMatrix> socoeff, aodensity;
 
   if (socoeff_ == nullptr) {
-    shared_ptr<const DistZMatrix> sofock = sohcore;
-    shared_ptr<DistZMatrix> intermediate = make_shared<DistZMatrix>(*sotildex % *sofock * *sotildex);
+    shared_ptr<const DistZMatrix> distfock = sohcore;
+    auto intermediate = make_shared<DistZMatrix>(*sotildex % *distfock * *sotildex);
     intermediate->diagonalize(soeig());
     socoeff = make_shared<DistZMatrix>(*sotildex * *intermediate);
   } else {
-    aodensity_ = socoeff->form_density_rhf(2*nocc_);
-    shared_ptr<const ZMatrix> sofock = make_shared<const SOFock>(geom_, sohcore, aodensity_);
-    shared_ptr<DistZMatrix> intermediate = make_shared<DistZMatrix>(*sotildex % *sofock * *sotildex);
+    socoeff = socoeff_->distmatrix();
+    aodensity = socoeff->form_density_rhf(2*nocc_);
+    auto sofock = make_shared<const SOFock>(geom_, sohcore_, aodensity->matrix());
+    shared_ptr<const DistZMatrix> distfock = sofock->distmatrix();
+    auto intermediate = make_shared<DistZMatrix>(*sotildex % *distfock * *sotildex);
     intermediate->diagonalize(soeig());
     socoeff = make_shared<DistZMatrix>(*sotildex * *intermediate);
   }
-  aodensity_ = socoeff->form_density_rhf(2*nocc_);
-  socoeff_ = make_shared<ZMatrix>(*socoeff->matrix());
-}
 
-void SOSCF::compute() {
-  Timer scftime;
-  initial_guess();
+  aodensity = socoeff->form_density_rhf(2*nocc_);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
@@ -79,15 +79,14 @@ void SOSCF::compute() {
 
   DIIS<DistZMatrix, ZMatrix> diis(diis_size_);
 
-  shared_ptr<const DistZMatrix> socoeff;
   for (int iter = 0; iter != max_iter_; ++iter) {
-    shared_ptr<const ZMatrix> sofock = make_shared<const SOFock> (geom_, sohcore_, make_shared<ZMatrix>(socoeff_->slice(0, 2*nocc_)));
-    const complex<double> energy = 0.5 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
+    auto sofock = make_shared<const SOFock> (geom_, sohcore_, make_shared<ZMatrix>(socoeff->matrix()->slice(0, 2*nocc_)));
+    shared_ptr<const DistZMatrix> distfock = sofock->distmatrix();
+    const complex<double> energy = 0.5 * ((*sohcore_ + *sofock) * *aodensity->matrix()).trace() + geom_->nuclear_repulsion();
     assert(energy.imag() < 1e-8);
     energy_ = energy.real();
-    auto error_vector = make_shared<const DistZMatrix>(*sofock * *aodensity_ * *sooverlap_ - *sooverlap_ * *aodensity_ * *sofock);
-    auto real_error_vector = error_vector->get_real_part();
-    const double error = real_error_vector->rms();
+    auto error_vector = make_shared<const DistZMatrix>(*distfock * *aodensity * *sooverlap - *sooverlap * *aodensity * *distfock);
+    const double error = error_vector->rms();
 
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << scftime.tick();
@@ -99,7 +98,7 @@ void SOSCF::compute() {
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SOSCF iteration converged." << endl << endl;
-      const double onee_energy = ((*sohcore_ * *aodensity_).trace()).real();
+      const double onee_energy = ((*sohcore_ * *aodensity->matrix()).trace()).real();
       const double twoe_energy = energy_ - geom_->nuclear_repulsion() - onee_energy;
       cout << indent << "    - One-electron energy" << setw(20) << fixed << setprecision(8) << onee_energy << endl;
       cout << indent << "    - Two-electron energy" << setw(20) << fixed << setprecision(8) << twoe_energy << endl;
@@ -110,34 +109,33 @@ void SOSCF::compute() {
     }
 
     if (iter >= diis_start_) {
-      sofock = diis.extrapolate({sofock, error_vector});
+      distfock = diis.extrapolate({distfock, error_vector});
     }
 
-    shared_ptr<DistZMatrix> intermediate = make_shared<DistZMatrix>(*sotildex_ % *sofock * *sotildex_);
+    auto intermediate = make_shared<DistZMatrix>(*sotildex % *distfock * *sotildex);
     intermediate->diagonalize(soeig());
-    socoeff = make_shared<const DistZMatrix>(*sotildex_ * *intermediate);
-    socoeff_ = make_shared<const ZMatrix>(*socoeff->matrix());
-    aodensity_ = socoeff->form_density_rhf(2*nocc_);
+    auto socoeff = make_shared<const DistZMatrix>(*sotildex * *intermediate);
+    aodensity = socoeff->form_density_rhf(2*nocc_);
   }
+
+    socoeff_ = socoeff->matrix();
 }
 
 shared_ptr<const ZMatrix> SOSCF::sotildex() {
-  shared_ptr<const DistMatrix> tildex = tildex_->distmatrix();
-  auto sotildex = make_shared<DistZMatrix>(2 * tildex->ndim(), 2 * tildex->mdim());
-  sotildex->zero();
-  sotildex->add_real_block(complex<double>(1.0, 0.0), 0, 0, tildex->ndim(), tildex->mdim(), *tildex);
-  sotildex->add_real_block(complex<double>(1.0, 0.0), tildex->ndim(), tildex->mdim(), tildex->ndim(), tildex->mdim(), *tildex);
-  auto out = make_shared<const ZMatrix>(*sotildex->matrix());
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(2 * tildex_->ndim(), 2 * tildex_->mdim());
+  out->zero();
+  out->add_real_block(complex<double>(1.0, 0.0), 0, 0, tildex_->ndim(), tildex_->mdim(), *tildex_);
+  out->add_real_block(complex<double>(1.0, 0.0), tildex_->ndim(), tildex_->mdim(), tildex_->ndim(), tildex_->mdim(), *tildex_);
+
   return out;
 }
 
 shared_ptr<const ZMatrix> SOSCF::sooverlap() {
-  shared_ptr<const DistMatrix> overlap = overlap_->distmatrix();
-  auto sooverlap = make_shared<DistZMatrix>(2 * overlap->ndim(), 2 * overlap->mdim());
-  sooverlap->zero();
-  sooverlap->add_real_block(complex<double>(1.0, 0.0), 0, 0, overlap->ndim(), overlap->mdim(), *overlap);
-  sooverlap->add_real_block(complex<double>(1.0, 0.0), overlap->ndim(), overlap->mdim(), overlap->ndim(), overlap->mdim(), *overlap);
-  auto out = make_shared<const ZMatrix>(*sooverlap->matrix());
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(2 * overlap_->ndim(), 2 * overlap_->mdim());
+  out->zero();
+  out->add_real_block(complex<double>(1.0, 0.0), 0, 0, overlap_->ndim(), overlap_->mdim(), *overlap_);
+  out->add_real_block(complex<double>(1.0, 0.0), overlap_->ndim(), overlap_->mdim(), overlap_->ndim(), overlap_->mdim(), *overlap_);
+
   return out;
 }
 

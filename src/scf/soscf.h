@@ -37,7 +37,6 @@ class SOSCF : public SCF_base {
 
     bool dodf_;
 
-    std::shared_ptr<const ZMatrix> aodensity_;
     std::shared_ptr<const SOHcore> sohcore_;
     std::shared_ptr<const ZMatrix> socoeff_;
     std::shared_ptr<const ZMatrix> sooverlap_;
@@ -51,16 +50,13 @@ class SOSCF : public SCF_base {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<SCF_base>(*this);
-      ar & dodf_ & aodensity_ & sohcore_ & socoeff_
-         & sooverlap_ & socoeff_ & sotildex_;
+      ar & dodf_ & sohcore_ & socoeff_ & sooverlap_ & socoeff_ & sotildex_;
     }
 
   public:
     SOSCF() { }
     SOSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = nullptr);
-
-    void initial_guess();
 
     void compute() override;
 
