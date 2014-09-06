@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd_dmrg/block_operators.cc
+// Filename: asd_dmrg/block_ops_1.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>

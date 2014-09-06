@@ -308,5 +308,5 @@ shared_ptr<Matrix> DMRG_Block2::spin_raise(const BlockKey b) const {
 }
 
 shared_ptr<const BlockOperators> DMRG_Block2::compute_block_ops(std::shared_ptr<DimerJop> jop) const {
-  return nullptr;
+  return make_shared<BlockOperators2>(shared_from_this(), jop);
 }

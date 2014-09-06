@@ -33,6 +33,7 @@ namespace bagel {
 
 class DMRG_Block;
 class DMRG_Block1;
+class DMRG_Block2;
 
 /// Base class for access to contracted operators. All operators are keyed by the ket of the operation. The contracted operators that get built are the following:
 /** \f[ \hat H^{L'L} = \sum_{p,q} h_{pq} \hat p^\dagger \hat q + \frac{1}{2} \sum_{pqrs} (pq|rs)p^\dagger r^\dagger s q \f]
@@ -135,6 +136,42 @@ class BlockOperators1 : public BlockOperators {
       std::copy_n(&(*g)(0, 0, i, j, k), out->size(), out->data());
       return out;
     }
+};
+
+/// Operators for two blocks
+class BlockOperators2 : public BlockOperators {
+  protected:
+    std::shared_ptr<const DMRG_Block2> blocks_;
+    std::shared_ptr<const BlockOperators1> left_ops_;
+    std::shared_ptr<const BlockOperators1> right_ops_;
+    std::shared_ptr<DimerJop> jop_;
+
+  public:
+    BlockOperators2(std::shared_ptr<const DMRG_Block2> blocks, std::shared_ptr<DimerJop> jop);
+
+    std::shared_ptr<Matrix>     ham(const BlockKey bk) const override;
+    std::shared_ptr<Matrix>    Q_aa(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<Matrix>    Q_bb(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<Matrix>    Q_ab(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<Matrix>     S_a(const BlockKey bk, int i) const override;
+    std::shared_ptr<Matrix>     S_b(const BlockKey bk, int i) const override;
+    std::shared_ptr<Matrix>    P_aa(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<Matrix>    P_bb(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<Matrix>    P_ab(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<Matrix> gamma_a(const BlockKey bk, int i) const override;
+    std::shared_ptr<Matrix> gamma_b(const BlockKey bk, int i) const override;
+
+    double  ham(const BlockKey bk, int brastate, int ketstate) const override { return ham(bk)->element(brastate,ketstate); }
+    double Q_aa(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return Q_aa(bk, i, j)->element(brastate, ketstate); }
+    double Q_bb(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return Q_bb(bk, i, j)->element(brastate, ketstate); }
+    double Q_ab(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return Q_ab(bk, i, j)->element(brastate, ketstate); }
+    double  S_a(const BlockKey bk, int brastate, int ketstate, int i) const override { return S_a(bk, i)->element(brastate, ketstate); }
+    double  S_b(const BlockKey bk, int brastate, int ketstate, int i) const override { return S_b(bk, i)->element(brastate, ketstate); }
+    double P_aa(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return P_aa(bk, i, j)->element(brastate, ketstate); }
+    double P_bb(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return P_bb(bk, i, j)->element(brastate, ketstate); }
+    double P_ab(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return P_ab(bk, i, j)->element(brastate, ketstate); }
+    double  D_a(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const override;
+    double  D_b(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const override;
 };
 
 }

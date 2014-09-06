@@ -133,6 +133,9 @@ class DMRG_Block2 : public std::enable_shared_from_this<DMRG_Block2>, public DMR
     /// constructor taking a pair of DMRG_Block1 objects
     DMRG_Block2(std::shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const DMRG_Block1> rb);
 
+    std::shared_ptr<const DMRG_Block1> left_block() const { return left_block_; }
+    std::shared_ptr<const DMRG_Block1> right_block() const { return right_block_; }
+
     std::shared_ptr<Matrix> spin(const BlockKey b) const override;
     std::shared_ptr<Matrix> spin_lower(const BlockKey b) const override;
     std::shared_ptr<Matrix> spin_raise(const BlockKey b) const override;
