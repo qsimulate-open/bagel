@@ -115,7 +115,13 @@ void ZCASBFGS::compute() {
 
     // get energy
     if (nact_) {
-      optimize_electrons == true ? ele_energy.push_back((fci_->energy())[0]) : pos_energy.push_back((fci_->energy())[0]);
+      // try state averaged energy to determine quadratic parameter
+      assert(fci_->energy().size() > 0);
+      double sa_en = 0.0;
+      for (auto& i : fci_->energy())
+        sa_en += i;
+      sa_en /= double((fci_->energy()).size());
+      optimize_electrons == true ? ele_energy.push_back(sa_en) : pos_energy.push_back(sa_en);
       energy_ = fci_->energy();
     } else {
       assert(nstate_ == 1 && energy_.size() == 1);
