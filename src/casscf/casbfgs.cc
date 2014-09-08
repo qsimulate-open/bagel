@@ -61,7 +61,14 @@ void CASBFGS::compute() {
     fci_->compute_rdm12();
     // get energy
     energy_ = fci_->energy();
-    evals.push_back((fci_->energy())[0]);
+    {
+      // use state averaged energy to update trust radius
+      double sa_en = 0.0;
+      for (auto& i : fci_->energy())
+        sa_en += i;
+      sa_en /= double((fci_->energy()).size());
+      evals.push_back(sa_en);
+    }
 
     shared_ptr<Matrix> natorb_mat = x->clone();
     {

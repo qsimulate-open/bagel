@@ -115,7 +115,7 @@ void ZCASBFGS::compute() {
 
     // get energy
     if (nact_) {
-      // try state averaged energy to determine quadratic parameter
+      // use state averaged energy to update trust radius
       assert(fci_->energy().size() > 0);
       double sa_en = 0.0;
       for (auto& i : fci_->energy())
