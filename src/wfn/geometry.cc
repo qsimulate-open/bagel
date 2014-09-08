@@ -603,15 +603,16 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
 
 void Geometry::compute_relativistic_integrals(const bool do_gaunt) {
   df_->average_3index();
+  shared_ptr<Matrix> d2 = df_->data2()->copy();
 
   if (!magnetism_) {
-    dfs_  = form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
+    dfs_  = form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true, d2);
     if (do_gaunt)
-      dfsl_ = form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+      dfsl_ = form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true, d2);
   } else {
-    dfs_  = form_fit<ComplexDFDist_ints<ComplexSmallERIBatch>>(overlap_thresh_, true, 0.0, true);
+    dfs_  = form_fit<ComplexDFDist_ints<ComplexSmallERIBatch>>(overlap_thresh_, true, 0.0, true, d2);
     if (do_gaunt)
-      dfsl_ = form_fit<ComplexDFDist_ints<ComplexMixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+      dfsl_ = form_fit<ComplexDFDist_ints<ComplexMixedERIBatch>>(overlap_thresh_, true, 0.0, true, d2);
   }
 
   // suppress some of the printing
