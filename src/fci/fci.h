@@ -211,7 +211,7 @@ class FCI : public Method {
     // returns CI vectors
     std::shared_ptr<Dvec> civectors() const { return cc_; }
 
-    // These are needed for the RDM stuff, apparently
+    // functions for RDM computation
     void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
     void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
 

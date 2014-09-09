@@ -72,12 +72,12 @@ tuple<int, vector<shared_ptr<const Shell>>> DFDist::get_ashell(const vector<shar
     StaticDist d(naux_, mpi__->size());
     tie(start, end) = d.range(mpi__->rank());
     int num = 0;
-    for (auto iter = all.begin(); iter != all.end(); ++iter) {
+    for (auto& s : all) {
       if (num >= start && num < end) {
         if (out2.empty()) out1 = num;
-        out2.push_back(*iter);
+        out2.push_back(s);
       }
-      num += (*iter)->nbasis();
+      num += s->nbasis();
     }
   } else {
     cout << endl << "   *** Warning *** Since the number of auxiliary shells is too small, we do not parallelize the Fock builder." << endl << endl;
