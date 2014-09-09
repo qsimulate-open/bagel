@@ -231,7 +231,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
         }
       }
     }
-    timer.tick_print("Breit: 2-index mulitplied");
+    timer.tick_print("Breit: 2-index multiplied");
 
   } else {
     half_complex_exch2 = half_complex_exch;

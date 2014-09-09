@@ -66,12 +66,7 @@ shared_ptr<Reference> Reference_London::project_coeff(shared_ptr<const Geometry>
   auto c = make_shared<ZCoeff>(*snew * mixed * *zcoeff_);
 
   auto out = make_shared<Reference_London>(geomin, c, nclosed_, nact_, zcoeff_->mdim()-nclosed_-nact_, energy_);
-  assert (!coeffA_ && !coeffB_);
-  //if (coeffA_) {
-  //  assert(coeffB_);
-  //   out->coeffA_ = make_shared<Coeff>(*snew * mixed * *coeffA_);
-  //  out->coeffB_ = make_shared<Coeff>(*snew * mixed * *coeffB_);
-  //}
+  if (coeffA_ || coeffB_) throw runtime_error("UHF with GIAO basis has not been implemented.");
   return out;
 }
 

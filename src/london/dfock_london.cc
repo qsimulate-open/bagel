@@ -243,7 +243,7 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
         }
       }
     }
-    timer.tick_print("Breit: 2-index mulitplied");
+    timer.tick_print("Breit: 2-index multiplied");
     */
 
   } else {
