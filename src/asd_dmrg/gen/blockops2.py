@@ -272,6 +272,10 @@ class Integrals:
         elif self.int_type == "P":
             assert size == 2
             out = "%s(%s)" % (ptr_name, self.index([total_indices[0], total_indices[1], Cindices[0], Cindices[1]]))
+        elif self.int_type == "PJK":
+            assert size == 2
+            out = "(%s(%s) - %s(%s))" % (ptr_name, self.index([total_indices[0], total_indices[1], Cindices[0], Cindices[1]]),
+                                         ptr_name, self.index([total_indices[1], total_indices[0], Cindices[0], Cindices[1]]))
         elif self.int_type == "S":
             assert size == 3
             out = "%s(%s)" % (ptr_name, self.index([Cindices[0], total_indices[1], total_indices[0], total_indices[2]]))
@@ -305,26 +309,44 @@ class OperatorProduct:
 
     def compatible(self, other):
         return OpList.__eq__(self.left, other.left) and OpList.__eq__(self.right, other.right) and \
-               self.integrals.int_type == "S" and other.integrals.int_type == "S"
+               (self.integrals.int_type == "S" and other.integrals.int_type == "S" or \
+                self.integrals.int_type == "P" and other.integrals.int_type == "P")
 
     def combine(self, other):
         fac = 0.0
         partition = 0
-        if self.integrals.partition in [ "101", "001" ]:
-            assert other.integrals.partition in [ "110", "010" ]
-            fac = self.factor()
-            for i, p in enumerate(reversed(self.integrals.partition)):
-                if p == "1":
-                    partition += 1 << i
-        elif self.integrals.partition in [ "110", "010" ]:
-            assert other.integrals.partition in [ "101", "001" ]
-            fac = other.factor()
-            for i, p in enumerate(reversed(other.integrals.partition)):
-                if p == "1":
-                    partition += 1 << i
-        else:
-            raise Exception("Incompatible!")
-        return OperatorProduct(self.left, self.right, Integrals(partition, 3, False, False, "SJK"), fac)
+        if self.integrals.int_type == "S":
+            if self.integrals.partition in [ "101", "001" ]:
+                assert other.integrals.partition in [ "110", "010" ]
+                fac = self.factor()
+                for i, p in enumerate(reversed(self.integrals.partition)):
+                    if p == "1":
+                        partition += 1 << i
+            elif self.integrals.partition in [ "110", "010" ]:
+                assert other.integrals.partition in [ "101", "001" ]
+                fac = other.factor()
+                for i, p in enumerate(reversed(other.integrals.partition)):
+                    if p == "1":
+                        partition += 1 << i
+            else:
+                raise Exception("Incompatible!")
+            return OperatorProduct(self.left, self.right, Integrals(partition, 3, False, False, "SJK"), fac)
+        elif self.integrals.int_type == "P":
+            if self.integrals.partition == "01":
+                assert other.integrals.partition == "10"
+                fac = self.factor()
+                for i, p in enumerate(reversed(self.integrals.partition)):
+                    if p == "1":
+                        partition += 1 << i
+            elif self.integrals.partition == "10":
+                assert other.integrals.partition == "01"
+                fac = other.factor()
+                for i, p in enumerate(reversed(other.integrals.partition)):
+                    if p == "1":
+                        partition += 1 << i
+            else:
+                raise Exception("Incompatible!")
+            return OperatorProduct(self.left, self.right, Integrals(partition, 2, self.left.conj, self.left.rev, "PJK"), fac)
 
     def __str__(self):
         return "%1.1f <L'|%s|L> (x) <R'|%s|R>" % (self.factor(), self.left, self.right)
@@ -385,8 +407,8 @@ def generate_operator(opname, contracted_operators, ninput):
     print()
 
     print("%sconst int %s = jop_->nocc();" % (indent(), norb))
-    print("%sconst int %s = blocks_->left()->norb();" %(indent(), lnorb))
-    print("%sconst int %s = blocks_->right()->norb();" %(indent(), rnorb))
+    print("%sconst int %s = blocks_->left_block()->norb();" %(indent(), lnorb))
+    print("%sconst int %s = blocks_->right_block()->norb();" %(indent(), rnorb))
     print("%sconst int %s = %s - (%s + %s);" % (indent(), loffset, norb, lnorb, rnorb))
     print("%sconst int %s = %s - %s; // convenience variable for offset of right orbitals from zero" % (indent(), roffset, norb, rnorb))
     print()
@@ -447,18 +469,18 @@ def generate_operator(opname, contracted_operators, ninput):
             print()
             print("%s// I (x) %s" % (indent(), opname))
             print("%sMatrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();" % indent())
-            print("%sMatrix Rterms = *right_ops_->%s(%s);" % (indent(), opname, inp_string))
+            print("%sMatrix Rterms = *right_ops_->%s(spair.right.key(), %s);" % (indent(), opname, inp_string))
             print()
-            print("%sout->add_block(tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));" % indent())
+            print("%sout->add_block(1.0, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));" % indent())
 
         if (pure_left):
             nops += 1
             print()
             print("%s// %s (x) I" % (indent(), opname))
-            print("%sMatrix Lterms = *left_ops_->%s(%s);" % (indent(), opname, inp_string))
+            print("%sMatrix Lterms = *left_ops_->%s(tpair.right.key(), %s);" % (indent(), opname, inp_string))
             print("%sMatrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();" % indent())
             print()
-            print("%sout->add_block(tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));" % indent())
+            print("%sout->add_block(1.0, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));" % indent())
 
         # preprocess collection into terms that can be combined
         combined_collection = []
@@ -473,6 +495,8 @@ def generate_operator(opname, contracted_operators, ninput):
         while len(combined_collection) != 0:
             seed =  [ combined_collection.pop(0) ]
             for i in reversed(range(len(combined_collection))):
+                #if len(seed[0].left) ==1 and len(combined_collection[i].left) ==1 and len(seed[0].right)==2 and OpList.__eq__(seed[0].left, combined_collection[i].left) or \
+                #   len(seed[0].right)==1 and len(combined_collection[i].right)==1 and len(seed[0].left) ==2 and OpList.__eq__(seed[0].right, combined_collection[i].right):
                 if len(seed[0].left) ==1 and len(combined_collection[i].left) ==1 and OpList.__eq__(seed[0].left, combined_collection[i].left) or \
                    len(seed[0].right)==1 and len(combined_collection[i].right)==1 and OpList.__eq__(seed[0].right, combined_collection[i].right):
                     seed.append(combined_collection.pop(i))
@@ -488,7 +512,7 @@ def generate_operator(opname, contracted_operators, ninput):
                 print("%s{ // %s" % (indent(), term_string))
                 open_code_block()
 
-            shorter = "left" if len(oprod.left)==1 else "right"
+            shorter = "left" if len(oprod.left)==1 and len(oprod.right)==2 else "right"
 
             lgammas = [ ]
             rgammas = [ ]
@@ -515,9 +539,9 @@ def generate_operator(opname, contracted_operators, ninput):
 
             # find individual tensors
             for LG in lgammas:
-                print("%sshared_ptr<const btas::Tensor3<double>> %s = blocks_->left()->coupling({%s}).at({%s.left.key(),%s.left.key()}).data;" % (indent(), LG[0], LG[1], LG[2], LG[3]))
+                print("%sshared_ptr<const btas::Tensor3<double>> %s = blocks_->left_block()->coupling({%s}).at({%s.left.key(),%s.left.key()}).data;" % (indent(), LG[0], LG[1], LG[2], LG[3]))
             for RG in rgammas:
-                print("%sshared_ptr<const btas::Tensor3<double>> %s = blocks_->right()->coupling({%s}).at({%s.right.key(),%s.right.key()}).data;" % (indent(), RG[0], RG[1], RG[2], RG[3]))
+                print("%sshared_ptr<const btas::Tensor3<double>> %s = blocks_->right_block()->coupling({%s}).at({%s.right.key(),%s.right.key()}).data;" % (indent(), RG[0], RG[1], RG[2], RG[3]))
 
             print()
 
@@ -562,7 +586,7 @@ def generate_operator(opname, contracted_operators, ninput):
                 rtrans = "true" if oprod.right.conj else "false"
                 ltrans = "true" if oprod.left.conj else "false"
 
-                print("%sout->add_block(tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(%s, Rmat, %s, Lmat));" % (indent(), rtrans, ltrans))
+                print("%sout->add_block(1.0, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(%s, Rmat, %s, Lmat));" % (indent(), rtrans, ltrans))
 
                 for i in range(len(oprod.left)):
                     close_code_block()
@@ -592,7 +616,7 @@ def generate_operator(opname, contracted_operators, ninput):
                 rtrans = "true" if oprod.right.conj else "false"
                 ltrans = "true" if oprod.left.conj else "false"
 
-                print("%sout->add_block(tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(%s, Rmat, %s, Lmat));" % (indent(), rtrans, ltrans))
+                print("%sout->add_block(1.0, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(%s, Rmat, %s, Lmat));" % (indent(), rtrans, ltrans))
 
                 # close Right loops
                 for i in range(len(oprod.right)):
@@ -607,6 +631,7 @@ def generate_operator(opname, contracted_operators, ninput):
         print()
 
     close_code_block()
+    print("%sreturn out;" % indent())
     close_code_block()
 
 
