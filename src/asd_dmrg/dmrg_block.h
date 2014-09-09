@@ -31,6 +31,7 @@
 #include <src/asd_dmrg/gamma_forest_asd.h>
 #include <src/asd_dmrg/gamma_forest_prod_asd.h>
 #include <src/asd_dmrg/block_operators.h>
+#include <src/asd_dmrg/kronecker.h>
 #include <src/ras/civector.h>
 
 namespace bagel {
@@ -132,6 +133,8 @@ class DMRG_Block2 : public std::enable_shared_from_this<DMRG_Block2>, public DMR
 
     /// constructor taking a pair of DMRG_Block1 objects
     DMRG_Block2(std::shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const DMRG_Block1> rb);
+
+    const std::vector<DMRG::BlockPair>& blockpairs(BlockKey bk) const { return pairmap_.at(bk); }
 
     std::shared_ptr<const DMRG_Block1> left_block() const { return left_block_; }
     std::shared_ptr<const DMRG_Block1> right_block() const { return right_block_; }
