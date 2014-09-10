@@ -118,7 +118,21 @@ class BlockOperators1 : public BlockOperators {
     double  D_a(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const override { return (*D_a_.at(bk))(brastate, ketstate, i, j, k); }
     double  D_b(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const override { return (*D_b_.at(bk))(brastate, ketstate, i, j, k); }
 
+    const MatView Q_aa_as_matview(const BlockKey bk) const { return get_as_matview(Q_aa_.at(bk)); }
+    const MatView Q_bb_as_matview(const BlockKey bk) const { return get_as_matview(Q_bb_.at(bk)); }
+    const MatView Q_ab_as_matview(const BlockKey bk) const { return get_as_matview(Q_ab_.at(bk)); }
+    const MatView  S_a_as_matview(const BlockKey bk) const { return get_as_matview(S_a_.at(bk)); }
+    const MatView  S_b_as_matview(const BlockKey bk) const { return get_as_matview(S_b_.at(bk)); }
+    const MatView P_aa_as_matview(const BlockKey bk) const { return get_as_matview(P_aa_.at(bk)); }
+    const MatView P_bb_as_matview(const BlockKey bk) const { return get_as_matview(P_bb_.at(bk)); }
+    const MatView P_ab_as_matview(const BlockKey bk) const { return get_as_matview(P_ab_.at(bk)); }
+
   private:
+    template <typename TensorType>
+    const MatView get_as_matview(std::shared_ptr<const TensorType> t) const {
+      return MatView(btas::group(btas::group(*t, 0, 2), 1, t->rank()), /*localized*/false);
+    }
+
     std::shared_ptr<Matrix> get_mat_block(std::shared_ptr<const btas::Tensor3<double>> g, const int i) const {
       auto out = std::make_shared<Matrix>(g->extent(0), g->extent(1));
       std::copy_n(&(*g)(0, 0, i), out->size(), out->data());
