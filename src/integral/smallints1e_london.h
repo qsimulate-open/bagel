@@ -30,7 +30,7 @@
 #include <src/molecule/molecule.h>
 #include <src/integral/comprys/complexeribatch.h>
 
-// computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data
+// computes (sigma pi)Operator(sigma pi), and returns 4 blocks of data
 
 namespace bagel {
 
@@ -75,7 +75,7 @@ class SmallInts1e_London {
     }
 
   public:
-    SmallInts1e_London(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol)
+    SmallInts1e_London(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol = nullptr)
       : mol_(mol), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
 
       for (int i = 0; i != Nblocks(); ++i)
