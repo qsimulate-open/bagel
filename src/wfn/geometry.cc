@@ -579,7 +579,7 @@ void Geometry::get_electric_field(shared_ptr<const PTree>& geominfo) {
 }
 
 
-shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
+shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt, const bool do_coulomb) const {
   cout << "  *** Geometry (Relativistic) ***" << endl;
   Timer timer;
   // basically the same
@@ -592,7 +592,9 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
     atom.push_back(!magnetism_ ? i->relativistic() : i->relativistic(magnetic_field_, london_));
 
   geom->atoms_ = atom;
-  geom->compute_relativistic_integrals(do_gaunt);
+
+  if (do_coulomb)
+    geom->compute_relativistic_integrals(do_gaunt);
 
   cout << endl;
   timer.tick_print("Geometry relativistic (total)");

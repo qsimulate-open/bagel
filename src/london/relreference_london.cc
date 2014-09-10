@@ -39,9 +39,9 @@ shared_ptr<Reference> RelReference_London::project_coeff(shared_ptr<const Geomet
   RelOverlap_London overlap(geomin);
   shared_ptr<ZMatrix> sinv = overlap.inverse();
 
-  geomin = geomin->relativistic(false);
+  shared_ptr<const Geometry> relgeomin = geomin->relativistic(false, false);
   MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(geom_, geomin);
-  MixedBasisArray<SmallInts1e_London<ComplexOverlapBatch>, ZMatrix> smallovl(geom_, geomin);
+  MixedBasisArray<SmallInts1e_London<ComplexOverlapBatch>, ZMatrix> smallovl(geom_, relgeomin);
 
   const int nb = geomin->nbasis();
   const int mb = geom_->nbasis();
