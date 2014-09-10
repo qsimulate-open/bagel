@@ -494,7 +494,7 @@ void R2RootList::r2root3(const double* ta, double* rr, double* ww, const int n) 
   for (int i = 1; i <= n; ++i) {
     double t = ta[i-1];
     offset += 3;
-    if (t < 0.0) {
+    if (isnan(t)) {
       fill_n(rr+offset, 3, 0.5);
       fill_n(ww+offset, 3, 0.0);
     } else if (t >= 131072.0) {
@@ -503,6 +503,7 @@ void R2RootList::r2root3(const double* ta, double* rr, double* ww, const int n) 
         rr[offset+r] = 1.0 - ax[3-r-1] / t;
       }
     } else {
+      assert(t >= 0);
       int it;
       double bigT = 0.0;
       if (t >= 64.0 && t < 131072.0) {

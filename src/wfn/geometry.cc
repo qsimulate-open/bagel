@@ -73,6 +73,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
 
   /* Set up atoms_ */
   basisfile_ = to_lower(geominfo->get<string>("basis", ""));
+  const bool use_finite = geominfo->get<bool>("finite_nucleus", false);
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
   } else if (basisfile_ == "molden") {
@@ -91,7 +92,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
     auto atoms = geominfo->get_child("geometry");
     const bool use_ecp_basis_ = (basisfile_.find("ecp") != string::npos) ? true : false;
     for (auto& a : *atoms)
-      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, use_ecp_basis_));
+      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, use_ecp_basis_, use_finite));
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
   for (auto& i : atoms_)
@@ -602,15 +603,16 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
 
 void Geometry::compute_relativistic_integrals(const bool do_gaunt) {
   df_->average_3index();
+  shared_ptr<Matrix> d2 = df_->data2()->copy();
 
   if (!magnetism_) {
-    dfs_  = form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
+    dfs_  = form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true, d2);
     if (do_gaunt)
-      dfsl_ = form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+      dfsl_ = form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true, d2);
   } else {
-    dfs_  = form_fit<ComplexDFDist_ints<ComplexSmallERIBatch>>(overlap_thresh_, true, 0.0, true);
+    dfs_  = form_fit<ComplexDFDist_ints<ComplexSmallERIBatch>>(overlap_thresh_, true, 0.0, true, d2);
     if (do_gaunt)
-      dfsl_ = form_fit<ComplexDFDist_ints<ComplexMixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+      dfsl_ = form_fit<ComplexDFDist_ints<ComplexMixedERIBatch>>(overlap_thresh_, true, 0.0, true, d2);
   }
 
   // suppress some of the printing

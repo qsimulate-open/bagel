@@ -62,8 +62,7 @@ void DFock_London::two_electron_part(const shared_ptr<const ZMatrix> coeff, cons
 
     driver(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange);
     if (gaunt_) {
-      throw logic_error("Gaunt integral not yet implemented for DFock_London.");
-      //driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
+      driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
     }
   }
 }
@@ -149,7 +148,6 @@ list<shared_ptr<RelDF_London>> DFock_London::make_dfdists(vector<shared_ptr<cons
     assert(k == dfs.end());
 
   } else { // Gaunt Term
-    throw logic_error("Gaunt term not yet implemented");
     auto k = dfs.begin();
     for (auto& i : xyz)
       dfdists.push_back(make_shared<RelDF_London>(*k++, make_pair(i,Comp::L), xyz));
@@ -192,8 +190,9 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
     dfs = tmp1->split_complex_blocks();
     dfs.push_back(tmp0);
   } else if (gaunt) {
-    throw logic_error("Gaunt integral not yet implemented for DFock_London.");
-    //dfs = geom_->dfsl()->split_complex_blocks();
+    auto tmp2 = dynamic_pointer_cast<const ComplexDFDist>(geom_->dfsl());
+    assert(tmp2);
+    dfs = tmp2->split_complex_blocks();
   }
 
   list<shared_ptr<RelDF_London>> dfdists = make_dfdists(dfs, gaunt);
@@ -244,7 +243,7 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
         }
       }
     }
-    timer.tick_print("Breit: 2-index mulitplied");
+    timer.tick_print("Breit: 2-index multiplied");
     */
 
   } else {
@@ -258,7 +257,6 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
   for (auto& i : half_complex_exch)
     i->set_sum_diff();
   if (half_complex_exch != half_complex_exch2) {
-    throw logic_error("This should only be called with the Gaunt & Breit terms, which have not yet been implemented");
     for (auto& i : half_complex_exch2)
       i->set_sum_diff();
   }

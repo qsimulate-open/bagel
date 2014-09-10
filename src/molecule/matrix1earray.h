@@ -29,12 +29,17 @@
 
 #include <src/molecule/matrix1e.h>
 #include <src/molecule/zmatrix1e.h>
+#include <src/util/taskqueue.h>
 
 namespace bagel {
+
+template <int N, typename MatType>
+class Matrix1eArrayTask;
 
 // specialized matrix for N component 1e integrals
 template <int N, typename MatType = Matrix>
 class Matrix1eArray {
+  friend class Matrix1eArrayTask<N, MatType>;
   protected:
     std::array<std::shared_ptr<MatType>, N> matrices_;
 
@@ -114,7 +119,8 @@ void Matrix1eArray<N, MatType>::init(std::shared_ptr<const Molecule> mol) {
 
   // identical to Matrix1e::init()
   // only lower half will be stored
-  // TODO rewrite. thread. parallel. distribute
+  const size_t nshell = accumulate(mol->atoms().begin(), mol->atoms().end(), 0, [](int r, std::shared_ptr<const Atom> p) { return r+p->nshell(); });
+  TaskQueue<Matrix1eArrayTask<N, MatType>> task(nshell*(nshell+1)/2);
 
   size_t oa0 = 0;
   int u = 0;
@@ -125,7 +131,7 @@ void Matrix1eArray<N, MatType>::init(std::shared_ptr<const Molecule> mol) {
       size_t ob1 = oa0;
       for (auto& b1 : (*a0)->shells()) {
         if (u++ % mpi__->size() == mpi__->rank()) {
-          computebatch({{b1, b0}}, ob0, ob1, mol);
+          task.emplace_back(std::array<std::shared_ptr<const Shell>,2>{{b1, b0}}, ob0, ob1, mol, this);
         }
         ob1 += b1->nbasis();
       }
@@ -139,7 +145,7 @@ void Matrix1eArray<N, MatType>::init(std::shared_ptr<const Molecule> mol) {
         size_t ob1 = oa1;
         for (auto& b1 : (*a1)->shells()) {
           if (u++ % mpi__->size() == mpi__->rank()) {
-            computebatch({{b1, b0}}, ob0, ob1, mol);
+            task.emplace_back(std::array<std::shared_ptr<const Shell>,2>{{b1, b0}}, ob0, ob1, mol, this);
           }
           ob1 += b1->nbasis();
         }
@@ -149,9 +155,23 @@ void Matrix1eArray<N, MatType>::init(std::shared_ptr<const Molecule> mol) {
     }
     oa0 += (*a0)->nbasis();
   }
+  task.compute();
   for (auto& i : matrices_) i->allreduce();
 
 }
+
+template <int N, typename MatType = Matrix>
+class Matrix1eArrayTask {
+  protected:
+    Matrix1eArray<N, MatType>* parent_;
+    size_t ob0, ob1;
+    std::array<std::shared_ptr<const Shell>,2> bas;
+    std::shared_ptr<const Molecule> mol;
+  public:
+    Matrix1eArrayTask<N, MatType>(std::array<std::shared_ptr<const Shell>,2> a, size_t b, size_t c, std::shared_ptr<const Molecule> m, Matrix1eArray<N, MatType>* d)
+      : parent_(d), ob0(b), ob1(c), bas(a), mol(m) { }
+    void compute() const { parent_->computebatch(bas, ob0, ob1, mol); }
+};
 
 }
 

@@ -1891,4 +1891,197 @@ vector<pair<vector<int>,complex<double>>> get_comparison_smallERI (const array<s
 }
 
 
+vector<pair<vector<int>,complex<double>>> get_comparison_mixedERI (const array<shared_ptr<const bagel::Shell>,4>& basisinfo, const array<double,3> magnetic_field, const int ia, const int ib) {
+
+  const bool normalize_basis = 0;
+  const bool scale_input = 0;
+  const bool orthogonalize = 0;
+
+  const vector<double> field = { magnetic_field[0], magnetic_field[1], magnetic_field[2] };
+#if 0
+  cout << "Magnetic field:  { ";
+  for (int i=0; i!=3; i++) {
+    cout << field[i];
+    if (i!=2) cout << ", ";
+    else cout << " }" << endl;
+  }
+#endif
+
+  // Declare vectors to be used below
+  vector<double> positions = {};
+  vector<int> full_angular = {};
+  vector<int> angular = {};
+  vector<int> ncontracted = {};
+  vector<bool> spherical = {};
+  vector<vector<int>> nprimitive = {};
+  vector<vector<double>> exponents = {};
+  vector<vector<double>> contraction_coefficients = {};
+  nprimitive.resize(4);
+  exponents.resize(4);
+  contraction_coefficients.resize(4);
+
+#if 1 // Check to ensure that A_ = dummy orbital, B_ = auxiliary function
+  for (int i=0; i!=3; i++) assert(basisinfo[0]->vector_potential(i) == 0.0);
+  for (int i=0; i!=3; i++) assert(basisinfo[1]->vector_potential(i) == 0.0);
+  for (int i=0; i!=3; i++) assert(basisinfo[0]->position(i) == 0.0);
+  assert(basisinfo[0]->angular_number() == 0);
+#endif
+
+  // Pull input data from the four bagel::Shells
+  for (int i=0; i!=4; i++) {
+    spherical.push_back (basisinfo[i]->spherical());
+
+    full_angular.push_back (basisinfo[i]->angular_number());
+    for (int k=0; k!=3; k++) {
+      positions.push_back (basisinfo[i]->position(k));
+    }
+    const int nexponents = basisinfo[i]->num_primitive();
+    int counter = 0;
+    ncontracted.push_back (basisinfo[i]->num_contracted());
+    for (int j=0; j!=nexponents; j++) {
+      exponents[i].push_back (basisinfo[i]->exponents(j));
+    }
+    for (int j=0; j!=ncontracted[i]; j++) {
+      const int start = basisinfo[i]->contraction_ranges(j).first;
+      const int finish = basisinfo[i]->contraction_ranges(j).second;
+      const int nfunctions = finish - start;
+      nprimitive[i].push_back (nfunctions);
+      counter = counter + nfunctions;
+      for (int k=start; k!=finish; k++) {
+        contraction_coefficients[i].push_back (basisinfo[i]->contractions(j)[k]);
+      }
+    }
+    assert (counter == nexponents);
+  }
+  assert (spherical[0]==spherical[1]);
+  assert (spherical[2]==spherical[3]);
+
+  vector<int> basis_size = {};
+  vector<vector<vector<int>>> cartesian_all = {};
+  vector<vector<vector<double>>> spherical_all = {};
+  for (int i=0; i!=4; i++) {
+    basis_size.push_back (((full_angular[i]+1)*(full_angular[i]+2))/2);
+    cartesian_all.push_back (assign_angular (full_angular[i]));
+    spherical_all.push_back (spherical_combinations(full_angular[i],spherical[i]));
+  }
+
+#if 0
+  for (int i=0; i!=4; i++) {
+    cout << "MO coefficients for center " << i+1 << ":" << endl;
+    for (int j=0; j!=spherical_all[i].size(); j++) {
+      for (int k=0; k!=spherical_all[i][j].size(); k++) {
+        cout << spherical_all[i][j][k] << "  ";
+        cout << endl;
+      }
+    }
+    cout << "Positions for center " << i+1 << ":" << endl;
+    for (int j=0; j!=3; j++) {
+      cout << "    " << positions[3*i+j] << endl;
+    }
+  }
+#endif
+
+  const int ang0 = spherical_all[0].size();
+  const int ang1 = spherical_all[1].size();
+  const int ang2 = spherical_all[2].size();
+  const int ang3 = spherical_all[3].size();
+
+  // Check that the right values have been assigned for the number of angular momentum possibilities
+#if 1
+  assert (spherical[0] || ang0 == basis_size[0]);
+  assert (spherical[1] || ang1 == basis_size[1]);
+  assert (spherical[2] || ang2 == basis_size[2]);
+  assert (spherical[3] || ang3 == basis_size[3]);
+  assert (!spherical[0] || ang0 == (2*full_angular[0] + 1) );
+  assert (!spherical[1] || ang1 == (2*full_angular[1] + 1) );
+  assert (!spherical[2] || ang2 == (2*full_angular[2] + 1) );
+  assert (!spherical[3] || ang3 == (2*full_angular[3] + 1) );
+#endif
+
+  const int fnc0 = ncontracted[0];
+  const int fnc1 = ncontracted[1];
+  const int fnc2 = ncontracted[2];
+  const int fnc3 = ncontracted[3];
+
+  const int total = ang0*ang1*ang2*ang3*fnc0*fnc1*fnc2*fnc3;
+  vector<pair<vector<int>,complex<double>>> out = {};
+
+  const int nbasis_contracted = basis_size[0] + basis_size[1] + basis_size[2] + basis_size[3];
+
+  // Iterate over all possible combinations of contracted basis functions and angular momentum for a given shell
+  for (int p=0; p!=fnc3; p++) {
+    for (int l=0; l!=ang3; l++) {
+      for (int o=0; o!=fnc2; o++) {
+        for (int k=0; k!=ang2; k++) {
+          for (int n=0; n!=fnc1; n++) {
+            for (int j=0; j!=ang1; j++) {
+              for (int m=0; m!=fnc0; m++) {
+                for (int i=0; i!=ang0; i++) {
+
+                  vector<int> indices = {i,j,k,l,m,n,o,p};
+                  vector<int> ordered_indices = {p,l,o,k,n,j,m,i};
+                  vector<int> ordered_indices2 = {l,k,j,i,p,o,n,m};
+                  //const int nbasis = nprimitive[0][m] + nprimitive[1][n] + nprimitive[2][o] + nprimitive[3][p];
+                  vector<double> positions_now = {};
+                  vector<int> angular_now = {};
+                  vector<double> exponents_now = {};
+                  vector<double> contractions_now = {};
+                  vector<int> nprimitive_now = {};
+                  vector<vector<complex<double>>> orbitals = {};
+                  orbitals.resize(4);
+
+                  for (int q=0; q!=4; q++) {
+                    for (int x=0; x!=basis_size[q]; x++) {
+                      const int s = indices[q];
+                      const int t = indices[4+q];
+                      nprimitive_now.push_back(nprimitive[q][t]);
+                      for (int r=0; r!=nprimitive[q][t]; r++) {
+                        for (int u=0; u!=3; u++) {
+                          positions_now.push_back (positions[3*q+u]);
+                          angular_now.push_back (cartesian_all[q][x][u]);
+                        }
+                      }
+                      int position = 0;
+                      for (int v=0; v!=t; v++) position += nprimitive[q][v];
+                      for (int w=0; w!=nprimitive[q][t]; w++) {
+                        exponents_now.push_back (exponents[q][position+w]);
+                        contractions_now.push_back (contraction_coefficients[q][position+w]);
+                      }
+                      for (int y=0; y!=4; y++) {
+                        if (y==q) orbitals[y].push_back(spherical_all[q][s][x]);
+                        else orbitals[y].push_back(0.0);
+                      }
+                    }
+                  }
+                  for (int q=0; q!=4; q++) {
+                    assert (orbitals[q].size()==nbasis_contracted);
+                    //cout << "Mol. Orbital " << q+1 << ":  ";
+                    //for (int z=0; z!=orbitals[q].size(); z++) {
+                    //  cout << orbitals[q][z] << "  ";
+                    //}
+                    //cout << endl;
+                  }
+
+                  // Compute the ERI for this particular term!
+                  pair<vector<atomic_orbital>,vector<molecular_orbital>> input = prepare_orbitals (nbasis_contracted, normalize_basis, scale_input, orthogonalize, field,
+                             positions_now, angular_now, exponents_now, contractions_now, nprimitive_now, orbitals[0], orbitals[1], orbitals[2], orbitals[3]);
+                  complex<double> eri = compute_mixederi (input.first, input.second, field, ia, ib);
+                  pair<vector<int>,complex<double>> result (ordered_indices, eri);
+                  out.push_back(result);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  assert (total == out.size());
+
+  return out;
+
+}
+
+
 }

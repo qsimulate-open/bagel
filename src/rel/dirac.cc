@@ -50,6 +50,7 @@ Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 
 
 void Dirac::common_init(const shared_ptr<const PTree> idata) {
+  Timer init_time;
   cout << "  *** Dirac HF ***" << endl << endl;
 
   // reading input keywords
@@ -63,6 +64,8 @@ void Dirac::common_init(const shared_ptr<const PTree> idata) {
   nele_ = geom_->nele()-ncharge_;
 
   hcore_ = make_shared<const RelHcore>(geom_);
+  init_time.tick_print("1-electron integrals");
+
   overlap_ = make_shared<const RelOverlap>(geom_);
   s12_ = overlap_->tildex(thresh_overlap_);
 
