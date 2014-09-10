@@ -393,7 +393,7 @@ def generate_operator(opname, contracted_operators, ninput):
 
     print("%sconst vector<DMRG::BlockPair>& %s = blocks_->blockpairs(bk);" % (indent(), svec))
     if not diag:
-        print("%sconst vector<DMRG::BlockPair>& %s = blocks_->blockpairs(bk);" % (indent(), tvec))
+        print("%sconst vector<DMRG::BlockPair>& %s = blocks_->blockpairs(target_bk);" % (indent(), tvec))
 
     print()
 

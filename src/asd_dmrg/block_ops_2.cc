@@ -94,7 +94,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
   assert(blocks_->contains(target_bk));
 
   const vector<DMRG::BlockPair>& source_pvec = blocks_->blockpairs(bk);
-  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(bk);
+  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(target_bk);
 
   const BlockInfo source_info = blocks_->blockinfo(bk);
   const BlockInfo target_info = blocks_->blockinfo(target_bk);
@@ -382,7 +382,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
   assert(blocks_->contains(target_bk));
 
   const vector<DMRG::BlockPair>& source_pvec = blocks_->blockpairs(bk);
-  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(bk);
+  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(target_bk);
 
   const BlockInfo source_info = blocks_->blockinfo(bk);
   const BlockInfo target_info = blocks_->blockinfo(target_bk);
@@ -986,7 +986,7 @@ shared_ptr<Matrix> BlockOperators2::Q_ab(BlockKey bk, const int i, const int j) 
   assert(blocks_->contains(target_bk));
 
   const vector<DMRG::BlockPair>& source_pvec = blocks_->blockpairs(bk);
-  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(bk);
+  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(target_bk);
 
   const BlockInfo source_info = blocks_->blockinfo(bk);
   const BlockInfo target_info = blocks_->blockinfo(target_bk);
@@ -1104,7 +1104,7 @@ shared_ptr<Matrix> BlockOperators2::P_aa(BlockKey bk, const int i, const int j) 
   assert(blocks_->contains(target_bk));
 
   const vector<DMRG::BlockPair>& source_pvec = blocks_->blockpairs(bk);
-  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(bk);
+  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(target_bk);
 
   const BlockInfo source_info = blocks_->blockinfo(bk);
   const BlockInfo target_info = blocks_->blockinfo(target_bk);
@@ -1194,7 +1194,7 @@ shared_ptr<Matrix> BlockOperators2::P_bb(BlockKey bk, const int i, const int j) 
   assert(blocks_->contains(target_bk));
 
   const vector<DMRG::BlockPair>& source_pvec = blocks_->blockpairs(bk);
-  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(bk);
+  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(target_bk);
 
   const BlockInfo source_info = blocks_->blockinfo(bk);
   const BlockInfo target_info = blocks_->blockinfo(target_bk);
@@ -1284,7 +1284,7 @@ shared_ptr<Matrix> BlockOperators2::P_ab(BlockKey bk, const int i, const int j) 
   assert(blocks_->contains(target_bk));
 
   const vector<DMRG::BlockPair>& source_pvec = blocks_->blockpairs(bk);
-  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(bk);
+  const vector<DMRG::BlockPair>& target_pvec = blocks_->blockpairs(target_bk);
 
   const BlockInfo source_info = blocks_->blockinfo(bk);
   const BlockInfo target_info = blocks_->blockinfo(target_bk);
