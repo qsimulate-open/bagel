@@ -51,5 +51,11 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
   mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
 
   auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
+
+  // make coefficient orthogonal
+  ZMatrix unit = *c % overlap * *c;
+  unit.inverse_half();
+  *c *= unit;
+
   return make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_);
 }

@@ -26,7 +26,7 @@
 #include <src/london/relreference_london.h>
 #include <src/london/reloverlap_london.h>
 #include <src/integral/compos/complexoverlapbatch.h>
-#include <src/integral/compos/complexkineticbatch.h>
+#include <src/integral/smallints1e_london.h>
 #include <src/molecule/mixedbasis.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelReference_London)
@@ -39,18 +39,33 @@ shared_ptr<Reference> RelReference_London::project_coeff(shared_ptr<const Geomet
   RelOverlap_London overlap(geomin);
   shared_ptr<ZMatrix> sinv = overlap.inverse();
 
-  // TODO Kinetic energy uses the magnetic field of the new geometry - is this correct?
+  geomin = geomin->relativistic(false);
   MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(geom_, geomin);
-  MixedBasis<ComplexKineticBatch, ZMatrix, const array<double,3>> tmixed(geom_, geomin, geomin->magnetic_field());
+  MixedBasisArray<SmallInts1e_London<ComplexOverlapBatch>, ZMatrix> smallovl(geom_, geomin);
+
   const int nb = geomin->nbasis();
   const int mb = geom_->nbasis();
-  tmixed.scale(0.5/(c__*c__));
+  const complex<double> r2 (0.25 / (c__*c__));
+  const complex<double> i2 (0.0, r2.real());
+
   ZMatrix mixed(nb*4, mb*4);
   mixed.copy_block(0,    0, nb, mb, smixed);
   mixed.copy_block(nb,  mb, nb, mb, smixed);
-  mixed.copy_block(2*nb, 2*mb, nb, mb, tmixed);
-  mixed.copy_block(3*nb, 3*mb, nb, mb, tmixed);
+  mixed.add_block( r2, 2*nb, 2*mb, nb, mb, *smallovl.data(0));
+  mixed.add_block( r2, 3*nb, 3*mb, nb, mb, *smallovl.data(0));
+  mixed.add_block( i2, 2*nb, 2*mb, nb, mb, *smallovl.data(1));
+  mixed.add_block(-i2, 3*nb, 3*mb, nb, mb, *smallovl.data(1));
+  mixed.add_block( i2, 2*nb, 3*mb, nb, mb, *smallovl.data(2));
+  mixed.add_block( i2, 3*nb, 2*mb, nb, mb, *smallovl.data(2));
+  mixed.add_block( r2, 2*nb, 3*mb, nb, mb, *smallovl.data(3));
+  mixed.add_block(-r2, 3*nb, 2*mb, nb, mb, *smallovl.data(3));
 
   auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
+
+  // make coefficient orthogonal
+  ZMatrix unit = *c % overlap * *c;
+  unit.inverse_half();
+  *c *= unit;
+
   return make_shared<RelReference_London>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_);
 }

@@ -60,13 +60,20 @@ Reference_London::Reference_London(shared_ptr<const Geometry> g, shared_ptr<cons
 
 
 shared_ptr<Reference> Reference_London::project_coeff(shared_ptr<const Geometry> geomin) const {
-  shared_ptr<ZMatrix> snew = make_shared<ZOverlap>(geomin);
-  snew->inverse();
+
+  // project to a new basis
+  const ZOverlap snew(geomin);
+  ZOverlap snewinv = snew;
+  snewinv.inverse();
   MixedBasis<ComplexOverlapBatch, ZMatrix> mixed(geom_, geomin);
-  auto c = make_shared<ZCoeff>(*snew * mixed * *zcoeff_);
+  auto c = make_shared<ZCoeff>(snewinv * mixed * *zcoeff_);
+
+  // make coefficient orthogonal (under the overlap metric)
+  ZMatrix unit = *c % snew * *c;
+  unit.inverse_half();
+  *c *= unit;
 
   auto out = make_shared<Reference_London>(geomin, c, nclosed_, nact_, zcoeff_->mdim()-nclosed_-nact_, energy_);
   if (coeffA_ || coeffB_) throw runtime_error("UHF with GIAO basis has not been implemented.");
   return out;
 }
-
