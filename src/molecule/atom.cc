@@ -35,7 +35,7 @@ using namespace bagel;
 static const AtomMap atommap_;
 
 Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas,
-           shared_ptr<const PTree> elem, const bool aux, const bool ecp)
+           shared_ptr<const PTree> elem, const bool aux, const bool ecp, const bool default_finite)
 : spherical_(spherical), use_ecp_basis_(false), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
   name_ = to_lower(inp->get<string>("atom"));
   if (basis_.find("ecp") != string::npos) use_ecp_basis_ = true;
@@ -66,7 +66,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
       use_ecp_basis_ = true;
     }
   }
-  atom_exponent_ = inp->get<double>("exponent", 0.0);
+  atom_exponent_ = inp->get<double>("exponent", default_finite ? atommap_.nuclear_exponent(name_) : 0.0);
 }
 
 

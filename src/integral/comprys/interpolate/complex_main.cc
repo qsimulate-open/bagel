@@ -684,7 +684,10 @@ ofs << "\n\
   for (int i = 1; i <= n; ++i) {\n\
     complex<double> t = ta[i-1];\n\
     offset += " << nroot << ";\n\
-    if (t.real() < " << MINTR << ") {\n\
+    if (isnan(t)) {\n\
+      fill_n(rr+offset, " << nroot << ", 0.5);\n\
+      fill_n(ww+offset, " << nroot << ", 0.0);\n\
+    } else if (t.real() < " << MINTR << ") {\n\
       throw runtime_error (\"ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength\");\n\
     } else if (t.real() >= " << MAXTR << ") {\n";
 //      cout << \"T = \" << t << \", need " << nroot << " roots:  Used high-T approximation\" << endl;\n

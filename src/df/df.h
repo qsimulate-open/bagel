@@ -130,7 +130,7 @@ class DFDist_ints : public DFDist {
 
   public:
     DFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
-                const double thr, const bool inverse, const double dum, const bool average = false) : DFDist(nbas, naux) {
+                const double thr, const bool inverse, const double dum, const bool average = false, const std::shared_ptr<Matrix> data2 = nullptr) : DFDist(nbas, naux) {
 
       // 3index Integral is now made in DFBlock.
       std::vector<std::shared_ptr<const Shell>> ashell, b1shell, b2shell;
@@ -155,8 +155,13 @@ class DFDist_ints : public DFDist {
 
       // 3-index integrals
       compute_3index(myashell, b1shell, b2shell, asize, b1size, b2size, astart, thr, inverse);
+
       // 2-index integrals
-      compute_2index(ashell, thr, inverse);
+      if (data2)
+        data2_ = data2;
+      else
+        compute_2index(ashell, thr, inverse);
+
       // 3-index integrals, post process
       if (average)
         average_3index();
