@@ -67,8 +67,8 @@ void ZSuperCI::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      Timer fci_time(0);
       if (iter) fci_->update(coeff_, /*restricted*/true);
+      Timer fci_time(0);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
       fci_time.tick_print("ZFCI");
