@@ -75,6 +75,61 @@ class MixedBasis : public MatType {
 
 };
 
+
+template<typename TBatch, typename MatType=Matrix, typename... Value>
+class MixedBasisArray {
+  protected:
+
+    std::array<std::shared_ptr<MatType>,TBatch::Nblocks()> matrices_;
+
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, Value... tail) {
+      // input = [b1, b0]
+      const int dimb1 = input[0]->nbasis();
+      const int dimb0 = input[1]->nbasis();
+      TBatch batch(input, tail...);
+      batch.compute();
+
+      for (int i = 0; i != TBatch::Nblocks(); ++i)
+        matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
+    }
+
+  public:
+    MixedBasisArray(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const Molecule> g1, Value... tail) {
+      for(int i = 0; i < TBatch::Nblocks(); ++i)
+        matrices_[i] = std::make_shared<MatType>(g1->nbasis(), g0->nbasis());
+
+      size_t off0 = 0;
+      for (auto& catom0 : g0->atoms()) {
+        for (auto& b0 : catom0->shells()) {
+          size_t off1 = 0;
+          for (auto& catom1 : g1->atoms())
+            for (auto& b1 : catom1->shells()) {
+              computebatch(std::array<std::shared_ptr<const Shell>,2>{{b1, b0}}, off0, off1, tail...);
+              off1 += b1->nbasis();
+            }
+          off0 += b0->nbasis();
+        }
+      }
+    }
+
+    constexpr static int Nblocks() { return TBatch::Nblocks(); }
+
+    std::shared_ptr<const MatType> data(const int i) const { return matrices_[i]; }
+
+    void print(const std::string in = "", const int size = 10) const {
+      for (int k = 0; k != TBatch::Nblocks(); ++k) {
+        std::cout << "++++ " << in << " ++++ Block " << k << " ++++" << std::endl;
+        for (int i = 0; i != std::min(size, matrices_[k]->ndim()); ++i) {
+          for (int j = 0; j != std::min(size, matrices_[k]->mdim()); ++j) {
+            std::cout << std::fixed << std::setw(12) << std::setprecision(9) << matrices_[k]->element(i, j) << " ";
+          }
+          std::cout << std::endl;
+        }
+      }
+    }
+
+};
+
 }
 
 #endif
