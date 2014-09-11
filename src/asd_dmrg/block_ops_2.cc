@@ -32,7 +32,7 @@ using namespace bagel;
 BlockOperators2::BlockOperators2(shared_ptr<const DMRG_Block2> blocks, shared_ptr<DimerJop> jop) : blocks_(blocks), jop_(jop) {
   const int norb = jop->nocc();
   Matrix mo1e = *jop->mo1e()->matrix();
-  btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(norb, norb, norb, norb), jop->mo2e()->storage());
+  const btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(norb, norb, norb, norb), jop->mo2e()->storage());
 
   const int rasnorb = norb - (blocks->left_block()->norb() + blocks->right_block()->norb());
   const int lnorb = blocks->left_block()->norb();
@@ -44,10 +44,22 @@ BlockOperators2::BlockOperators2(shared_ptr<const DMRG_Block2> blocks, shared_pt
     auto left2e = make_shared<Matrix>(leftsize*leftsize, leftsize*leftsize);
     auto low = {0, 0, 0, 0};
     auto up = {leftsize, leftsize, leftsize, leftsize};
-    btas::TensorView4<double> mo2eslice = btas::make_view(mo2e.range().slice(low, up), mo2e.storage());
+    const btas::TensorView4<double> mo2eslice = btas::make_view(mo2e.range().slice(low, up), mo2e.storage());
     copy(mo2eslice.begin(), mo2eslice.end(), left2e->begin());
     auto leftjop = make_shared<DimerJop>(rasnorb, lnorb, left1e, left2e);
     left_ops_ = make_shared<BlockOperators1>(blocks->left_block(), leftjop);
+  }
+
+  { // make double block one to be used for intra BlockOperators1
+    const int blocksize = lnorb + rnorb;
+    auto block1e = make_shared<CSymMatrix>(mo1e.get_submatrix(rasnorb, rasnorb, blocksize, blocksize));
+    auto block2e = make_shared<Matrix>(blocksize*blocksize, blocksize*blocksize);
+    auto low = {rasnorb, rasnorb, rasnorb, rasnorb};
+    auto up = {norb, norb, norb, norb};
+    const btas::TensorView4<double> mo2eslice = btas::make_view(mo2e.range().slice(low, up), mo2e.storage());
+    copy(mo2eslice.begin(), mo2eslice.end(), block2e->begin());
+    auto intrajop = make_shared<DimerJop>(lnorb, rnorb, block1e, block2e);
+    intra_ops_ = make_shared<BlockOperators1>(blocks->left_block(), intrajop);
   }
 
   { // make right jop to be used for right BlockOperators1

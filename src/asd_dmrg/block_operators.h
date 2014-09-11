@@ -158,6 +158,7 @@ class BlockOperators2 : public BlockOperators {
     std::shared_ptr<const DMRG_Block2> blocks_;
     std::shared_ptr<const BlockOperators1> left_ops_;
     std::shared_ptr<const BlockOperators1> right_ops_;
+    std::shared_ptr<const BlockOperators1> intra_ops_;
     std::shared_ptr<DimerJop> jop_;
 
   public:
