@@ -46,16 +46,6 @@ class R2Batch: public RnBatch {
       root_weight(primsize_*natom_*max_rterms_);
     }
 
-
-    R2Batch(const std::array<std::shared_ptr<const Shell>,2>& _info,
-            const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      : RnBatch (_info, mol, L, A) {
-      const double integral_thresh = PRIM_SCREEN_THRESH;
-      compute_ssss(integral_thresh);
-      root_weight(primsize_*natom_*max_rterms_);
-    }
-
-
     ~R2Batch() {}
 
 };

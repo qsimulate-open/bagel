@@ -96,27 +96,18 @@ void GNAIBatch::compute() {
   const SortList sort(spherical1_);
 
   // perform VRR
-  const int natom_unit = natom_ / (2 * L_ + 1);
-  assert(natom_ % (2 * L_ + 1) == 0);
   for (int xj = 0; xj != screening_size_; ++xj) {
     const int i = screening_[xj];
     const int iprim = i / natom_;
-    const int resid = i % natom_;
-    const int cell  = resid / natom_unit - L_;
-    const int iatom = resid % natom_unit;
-    double disp[3];
-    disp[0] = disp[1] = 0.0;
-    disp[2] = A_ * cell;
+    const int iatom = i % natom_;
     const int offset_iprim = iprim * acsize;
-
-    if (cell != 0) throw logic_error("I haven't thought about periodic cases");
 
     const double* croots = &roots_[i * rank_];
     const double* cweights = &weights_[i * rank_];
     double PC[3];
-    PC[0] = P_[i*3  ] - mol_->atoms(iatom)->position(0) - disp[0];
-    PC[1] = P_[i*3+1] - mol_->atoms(iatom)->position(1) - disp[1];
-    PC[2] = P_[i*3+2] - mol_->atoms(iatom)->position(2) - disp[2];
+    PC[0] = P_[i*3  ] - mol_->atoms(iatom)->position(0);
+    PC[1] = P_[i*3+1] - mol_->atoms(iatom)->position(1);
+    PC[2] = P_[i*3+2] - mol_->atoms(iatom)->position(2);
     for (int r = 0; r != rank_; ++r) {
       r1x[r] = P_[i*3  ] - ax - PC[0] * croots[r];
       r1y[r] = P_[i*3+1] - ay - PC[1] * croots[r];
