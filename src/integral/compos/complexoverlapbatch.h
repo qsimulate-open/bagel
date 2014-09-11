@@ -45,10 +45,6 @@ class ComplexOverlapBatch : public OSIntegral<std::complex<double>,Int_t::London
     ComplexOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = nullptr)
     : OSIntegral<std::complex<double>,Int_t::London>(basis, stack) { common_init(); }
 
-    // TODO mol is not used - find an elegant way to eliminate this constructor.
-    ComplexOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
-    : OSIntegral<std::complex<double>,Int_t::London>(basis, stack) { common_init(); }
-
     // TODO This redundancy should be avoidable
     constexpr static int Nblocks() { return 1; }
 
