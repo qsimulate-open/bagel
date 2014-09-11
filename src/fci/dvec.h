@@ -76,16 +76,14 @@ class Dvector {
       const bool alloc = data();
       ar << det_ << lena_ << lenb_ << ij_ << alloc;
       if (alloc) ar << data_;
-      else       ar << dvec_;
+      ar << dvec_;
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int version) {
       bool alloc;
       ar >> det_ >> lena_ >> lenb_ >> ij_ >> alloc;
-      if (alloc)
-        ar >> data_;
-      else
-        ar >> dvec_;
+      if (alloc) ar >> data_;
+      ar >> dvec_;
     }
 
   public:
