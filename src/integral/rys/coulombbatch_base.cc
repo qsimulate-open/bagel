@@ -30,16 +30,15 @@ using namespace bagel;
 
 
 template <typename DataType, Int_t IntType>
-CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const array<shared_ptr<const Shell>,2>& _info, const shared_ptr<const Molecule> mol, const int deriv,
-                                                        shared_ptr<StackMem> stack, const int L, const double A)
- : RysIntegral<DataType, IntType>(_info, stack), mol_(mol), L_(L), A_(A) {
+CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const array<shared_ptr<const Shell>,2>& _info, const shared_ptr<const Molecule> mol, const int deriv, shared_ptr<StackMem> stack)
+ : RysIntegral<DataType, IntType>(_info, stack), mol_(mol) {
 
   deriv_rank_ = deriv;
 
   if (_info.size() != 2) throw logic_error("CoulombBatch_base should be called with shell pairs");
 
   // natom_
-  natom_ = mol_->natom() * (2 * L + 1);
+  natom_ = mol_->natom();
 
   this->set_swap_info();
   this->set_ab_cd();
