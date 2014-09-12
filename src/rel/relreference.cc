@@ -43,9 +43,11 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
   shared_ptr<RelReference> out;
   if (rel_ && !giao_) {
 
+
     // in this case we first form overlap matrices
     RelOverlap overlap(geomin);
-    shared_ptr<ZMatrix> sinv = overlap.inverse();
+    RelOverlap sinv = overlap;
+    sinv.inverse();
 
     MixedBasis<OverlapBatch> smixed(geom_, geomin);
     MixedBasis<KineticBatch> tmixed(geom_, geomin);
@@ -59,7 +61,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed);
     mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
 
-    auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
+    auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
 
     // make coefficient orthogonal
     ZMatrix unit = *c % overlap * *c;
@@ -72,7 +74,8 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
     // in this case we first form overlap matrices
     RelOverlap_London overlap(geomin);
-    shared_ptr<ZMatrix> sinv = overlap.inverse();
+    RelOverlap_London sinv = overlap;
+    sinv.inverse();
 
     shared_ptr<const Geometry> relgeomin = geomin->relativistic(false, false);
     MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(geom_, geomin);
@@ -95,7 +98,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     mixed.add_block( r2, 2*nb, 3*mb, nb, mb, *smallovl.data(3));
     mixed.add_block(-r2, 3*nb, 2*mb, nb, mb, *smallovl.data(3));
 
-    auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
+    auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
 
     // make coefficient orthogonal
     ZMatrix unit = *c % overlap * *c;

@@ -69,7 +69,7 @@ shared_ptr<ZMatrix> RelOverlap_London::tildex(const double thresh) const {
 }
 
 
-shared_ptr<ZMatrix> RelOverlap_London::inverse() const {
+void RelOverlap_London::inverse() {
   shared_ptr<ZMatrix> out = clone();
   ZMatrix oinv(*overlap_);
   oinv.inverse();
@@ -83,5 +83,5 @@ shared_ptr<ZMatrix> RelOverlap_London::inverse() const {
   out->copy_block(0, 0, n, n, oinv);
   out->copy_block(n, n, n, n, oinv);
   out->copy_block(2*n, 2*n, 2*n, 2*n, soverlap);
-  return out;
+  copy_n(out->data(), 16*n*n, data());
 }
