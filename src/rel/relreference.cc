@@ -25,8 +25,13 @@
 
 #include <src/rel/relreference.h>
 #include <src/rel/reloverlap.h>
+#include <src/molecule/zoverlap.h>
+#include <src/london/reloverlap_london.h>
 #include <src/integral/os/overlapbatch.h>
+#include <src/integral/compos/complexoverlapbatch.h>
 #include <src/integral/os/kineticbatch.h>
+#include <src/integral/smallints1e_london.h>
+#include <src/molecule/mixedbasis.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelReference)
 
@@ -34,28 +39,90 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geomin) const {
-  // in this case we first form overlap matrices
-  RelOverlap overlap(geomin);
-  shared_ptr<ZMatrix> sinv = overlap.inverse();
 
-  MixedBasis<OverlapBatch> smixed(geom_, geomin);
-  MixedBasis<KineticBatch> tmixed(geom_, geomin);
-  const int nb = geomin->nbasis();
-  const int mb = geom_->nbasis();
-  const complex<double> one(1.0);
-  const complex<double> sca = one * (0.5/(c__*c__));
-  ZMatrix mixed(nb*4, mb*4);
-  mixed.copy_real_block(one,    0,    0, nb, mb, smixed);
-  mixed.copy_real_block(one,   nb,   mb, nb, mb, smixed);
-  mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed);
-  mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
+  shared_ptr<RelReference> out;
+  if (rel_ && !giao_) {
 
-  auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
+    // in this case we first form overlap matrices
+    RelOverlap overlap(geomin);
+    shared_ptr<ZMatrix> sinv = overlap.inverse();
 
-  // make coefficient orthogonal
-  ZMatrix unit = *c % overlap * *c;
-  unit.inverse_half();
-  *c *= unit;
+    MixedBasis<OverlapBatch> smixed(geom_, geomin);
+    MixedBasis<KineticBatch> tmixed(geom_, geomin);
+    const int nb = geomin->nbasis();
+    const int mb = geom_->nbasis();
+    const complex<double> one(1.0);
+    const complex<double> sca = one * (0.5/(c__*c__));
+    ZMatrix mixed(nb*4, mb*4);
+    mixed.copy_real_block(one,    0,    0, nb, mb, smixed);
+    mixed.copy_real_block(one,   nb,   mb, nb, mb, smixed);
+    mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed);
+    mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
 
-  return make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_);
+    auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
+
+    // make coefficient orthogonal
+    ZMatrix unit = *c % overlap * *c;
+    unit.inverse_half();
+    *c *= unit;
+
+    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, giao_);
+
+  } else if (rel_ && giao_) {
+
+    // in this case we first form overlap matrices
+    RelOverlap_London overlap(geomin);
+    shared_ptr<ZMatrix> sinv = overlap.inverse();
+
+    shared_ptr<const Geometry> relgeomin = geomin->relativistic(false, false);
+    MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(geom_, geomin);
+    MixedBasisArray<SmallInts1e_London<ComplexOverlapBatch>, ZMatrix> smallovl(geom_, relgeomin);
+
+    const int nb = geomin->nbasis();
+    const int mb = geom_->nbasis();
+    const complex<double> r2 (0.25 / (c__*c__));
+    const complex<double> i2 (0.0, r2.real());
+
+    ZMatrix mixed(nb*4, mb*4);
+    mixed.copy_block(0,    0, nb, mb, smixed);
+    mixed.copy_block(nb,  mb, nb, mb, smixed);
+    mixed.add_block( r2, 2*nb, 2*mb, nb, mb, *smallovl.data(0));
+    mixed.add_block( r2, 3*nb, 3*mb, nb, mb, *smallovl.data(0));
+    mixed.add_block( i2, 2*nb, 2*mb, nb, mb, *smallovl.data(1));
+    mixed.add_block(-i2, 3*nb, 3*mb, nb, mb, *smallovl.data(1));
+    mixed.add_block( i2, 2*nb, 3*mb, nb, mb, *smallovl.data(2));
+    mixed.add_block( i2, 3*nb, 2*mb, nb, mb, *smallovl.data(2));
+    mixed.add_block( r2, 2*nb, 3*mb, nb, mb, *smallovl.data(3));
+    mixed.add_block(-r2, 3*nb, 2*mb, nb, mb, *smallovl.data(3));
+
+    auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
+
+    // make coefficient orthogonal
+    ZMatrix unit = *c % overlap * *c;
+    unit.inverse_half();
+    *c *= unit;
+
+    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, giao_);
+
+  } else if (!rel_ && giao_) {
+
+    // project to a new basis
+    const ZOverlap snew(geomin);
+    ZOverlap snewinv = snew;
+    snewinv.inverse();
+    MixedBasis<ComplexOverlapBatch, ZMatrix> mixed(geom_, geomin);
+    auto c = make_shared<ZCoeff>(snewinv * mixed * *relcoeff_);
+
+    // make coefficient orthogonal (under the overlap metric)
+    ZMatrix unit = *c % snew * *c;
+    unit.inverse_half();
+    *c *= unit;
+
+    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, giao_);
+    if (coeffA_ || coeffB_) throw runtime_error("UHF with GIAO basis has not been implemented.");
+
+  } else {
+    throw logic_error("Invalid RelReference formed");
+  }
+  return out;
 }

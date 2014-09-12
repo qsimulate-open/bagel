@@ -40,17 +40,20 @@ class RelReference : public Reference {
     std::shared_ptr<const ZMatrix> relcoeff_;
     std::shared_ptr<const ZMatrix> relcoeff_full_;
 
+    bool rel_;
+    bool giao_;
+
   private:
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & relcoeff_full_;
+      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & relcoeff_full_ & rel_ & giao_;
     }
 
   public:
     RelReference() { }
-    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en, const int nneg, const int nocc, const int nvirt, const bool ga, const bool br)
-     : Reference(g, nullptr, nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c) {
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en, const int nneg, const int nocc, const int nvirt, const bool ga, const bool br, const bool rel = true, const bool giao = false)
+     : Reference(g, nullptr, nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c), rel_(rel), giao_(giao) {
     }
 
     std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
@@ -60,6 +63,9 @@ class RelReference : public Reference {
     bool gaunt() const { return gaunt_; }
     bool breit() const { return breit_; }
     int nneg() const { return nneg_; }
+
+    bool rel() const { return rel_; }
+    bool giao() const { return giao_; }
 
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
 

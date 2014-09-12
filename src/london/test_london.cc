@@ -26,7 +26,7 @@
 #include <sstream>
 #include <src/london/scf_london.h>
 #include <src/london/dirac_london.h>
-#include <src/london/reference_london.h>
+#include <src/rel/relreference.h>
 
 using namespace bagel;
 

@@ -25,7 +25,7 @@
 
 
 #include <src/london/scf_base_london.h>
-#include <src/london/reference_london.h>
+#include <src/rel/relreference.h>
 #include <src/util/timer.h>
 #include <src/math/diis.h>
 #include <iostream>
@@ -81,9 +81,12 @@ SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const share
 
   // if ref is passed to this
   if (re != nullptr) {
-    auto cref = dynamic_pointer_cast<const Reference_London>(re);
+    auto cref = dynamic_pointer_cast<const RelReference>(re);
     assert(cref);
-    coeff_ = cref->zcoeff();
+    if (cref->rel() || !cref->giao()) {
+      throw runtime_error("Invalid reference provided for SCF_London");
+    }
+    coeff_ = make_shared<ZCoeff>(*cref->relcoeff());
   }
 
   cout << endl;
