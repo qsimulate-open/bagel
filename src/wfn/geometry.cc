@@ -292,6 +292,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 }
 
 
+// used when a new Geometry block is provided in input
 Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard)
   : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_) {
 
@@ -334,7 +335,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   const string prevbasis = basisfile_;
   basisfile_ = to_lower(geominfo->get<string>("basis", basisfile_));
   // if so, construct atoms
-  if (prevbasis != basisfile_ || atoms) {
+  if (prevbasis != basisfile_ || atoms || newfield) {
     atoms_.clear();
     shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
@@ -651,8 +652,6 @@ void Geometry::compute_integrals(const double thresh) const {
 
 
 void Geometry::init_magnetism() {
-  Timer timer;
-
   magnetism_ = true;
   if (london_ && nonzero_magnetic_field())
     cout << "  Using London orbital basis to enforce gauge-invariance" << endl;
@@ -675,8 +674,4 @@ void Geometry::init_magnetism() {
   for (auto& i : atoms_)
     atom.push_back(i->apply_magnetic_field(fieldin));
   atoms_ = atom;
-
-  cout << endl;
-  timer.tick_print("Magnetic field overhead");
-  cout << endl;
 }
