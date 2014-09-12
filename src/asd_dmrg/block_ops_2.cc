@@ -94,8 +94,59 @@ BlockOperators2::BlockOperators2(shared_ptr<const DMRG_Block2> blocks, shared_pt
 shared_ptr<Matrix> BlockOperators2::gamma_a(const BlockKey bk, int i) const { return nullptr; }
 shared_ptr<Matrix> BlockOperators2::gamma_b(const BlockKey bk, int i) const { return nullptr; }
 
-double BlockOperators2::D_a(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const { return 0.0; }
-double BlockOperators2::D_b(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const { return 0.0; }
+double BlockOperators2::D_a(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const {
+  const DMRG::BlockPair source_pair = *find_if(blocks_->blockpairs(bk).begin(), blocks_->blockpairs(bk).end(), [ketstate] (const DMRG::BlockPair bp)
+    { return (ketstate >= bp.offset && ketstate < bp.offset+bp.nstates()); } );
+
+  const BlockKey target_key(bk.nelea+1, bk.neleb);
+  const DMRG::BlockPair target_pair = *find_if(blocks_->blockpairs(target_key).begin(), blocks_->blockpairs(target_key).end(), [brastate] (const DMRG::BlockPair bp)
+    { return (brastate >= bp.offset && brastate < bp.offset+bp.nstates()); } );
+
+  const int left_ketstate = (ketstate - source_pair.offset) % source_pair.left.nstates;
+  const int right_ketstate = (ketstate - source_pair.offset) / source_pair.left.nstates;
+
+  const int left_brastate = (brastate - target_pair.offset) % target_pair.left.nstates;
+  const int right_brastate = (brastate - target_pair.offset) / target_pair.left.nstates;
+
+  double out = 0.0;
+
+  if (source_pair.left.key() == target_pair.left.key()) {
+    if (left_ketstate==left_brastate)
+      out += right_ops_->D_a(source_pair.right.key(), right_brastate, right_ketstate, i, j, k);
+  }
+  else if (source_pair.right.key() == target_pair.right.key()) {
+    if (right_ketstate==right_brastate)
+      out += left_ops_->D_a(source_pair.left.key(), left_brastate, left_ketstate, i, j, k);
+  }
+  return out;
+}
+
+double BlockOperators2::D_b(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const {
+  const DMRG::BlockPair source_pair = *find_if(blocks_->blockpairs(bk).begin(), blocks_->blockpairs(bk).end(), [ketstate] (const DMRG::BlockPair bp)
+    { return (ketstate >= bp.offset && ketstate < bp.offset+bp.nstates()); } );
+
+  const BlockKey target_key(bk.nelea, bk.neleb+1);
+  const DMRG::BlockPair target_pair = *find_if(blocks_->blockpairs(target_key).begin(), blocks_->blockpairs(target_key).end(), [brastate] (const DMRG::BlockPair bp)
+    { return (brastate >= bp.offset && brastate < bp.offset+bp.nstates()); } );
+
+  const int left_ketstate = (ketstate - source_pair.offset) % source_pair.left.nstates;
+  const int right_ketstate = (ketstate - source_pair.offset) / source_pair.left.nstates;
+
+  const int left_brastate = (brastate - target_pair.offset) % target_pair.left.nstates;
+  const int right_brastate = (brastate - target_pair.offset) / target_pair.left.nstates;
+
+  double out = 0.0;
+
+  if (source_pair.left.key() == target_pair.left.key()) {
+    if (left_ketstate==left_brastate)
+      out += right_ops_->D_b(source_pair.right.key(), right_brastate, right_ketstate, i, j, k);
+  }
+  else if (source_pair.right.key() == target_pair.right.key()) {
+    if (right_ketstate==right_brastate)
+      out += left_ops_->D_b(source_pair.left.key(), left_brastate, left_ketstate, i, j, k);
+  }
+  return out;
+}
 
 #define UNORDERED
 
