@@ -73,14 +73,16 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
   // 4-component GIAO wavefunction
   } else if (rel_ && giao) {
+
+    if (!geomin->magnetism() || !geom_->magnetism())
+      throw std::runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
     // in this case we first form overlap matrices
     RelOverlap_London overlap(geomin);
     RelOverlap_London sinv = overlap;
     sinv.inverse();
 
-    shared_ptr<const Geometry> relgeomin = geomin->relativistic(false, false);
     MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(geom_, geomin);
-    MixedBasisArray<SmallInts1e_London<ComplexOverlapBatch>, ZMatrix> smallovl(geom_, relgeomin);
+    MixedBasisArray<SmallInts1e_London<ComplexOverlapBatch>, ZMatrix> smallovl(geom_, geomin);
 
     const int nb = geomin->nbasis();
     const int mb = geom_->nbasis();

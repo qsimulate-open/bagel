@@ -112,6 +112,10 @@ tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const
 
 
 shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
+
+  if (geomin->magnetism())
+    throw std::runtime_error("Projection from real to GIAO basis set is not implemented.   Use the GIAO code at zero-field.");
+
   // project to a new basis
   const Overlap snew(geomin);
   Overlap snewinv = snew;
@@ -129,14 +133,6 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
     assert(coeffB_);
     out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_);
     out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_);
-  }
-
-  // if a magnetic field is added from zero-field reference
-  if (geomin->magnetism()) {
-    assert(!geom_->magnetism());
-    auto tmpcoeff = make_shared<ZMatrix>(*coeff_, 1.0);
-    auto tmpref = make_shared<RelReference>(geom_, tmpcoeff, energy_, 0, nclosed_, nvirt_, /*gaunt_*/ false, /*breit_*/ false, /*rel_*/ false);
-    out = tmpref->project_coeff(geomin);
   }
 
   return out;
