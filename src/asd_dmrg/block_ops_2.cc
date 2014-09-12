@@ -25,6 +25,7 @@
 
 #include <src/asd_dmrg/block_operators.h>
 #include <src/asd_dmrg/dmrg_block.h>
+#include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -90,12 +91,260 @@ BlockOperators2::BlockOperators2(shared_ptr<const DMRG_Block2> blocks, shared_pt
   }
 }
 
-shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const { return nullptr; }
 shared_ptr<Matrix> BlockOperators2::gamma_a(const BlockKey bk, int i) const { return nullptr; }
 shared_ptr<Matrix> BlockOperators2::gamma_b(const BlockKey bk, int i) const { return nullptr; }
 
 double BlockOperators2::D_a(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const { return 0.0; }
 double BlockOperators2::D_b(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const { return 0.0; }
+
+#define UNORDERED
+
+// all of the offdiagonal blocks get an extra factor of two so I can call H = 0.5 * (H + H^t) at the end
+shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
+  const vector<DMRG::BlockPair>& block_pairs = blocks_->blockpairs(bk);
+
+  BlockInfo binfo = blocks_->blockinfo(bk);
+
+  auto out = make_shared<Matrix>(binfo.nstates, binfo.nstates);
+
+  const int rnorb = blocks_->right_block()->norb();
+
+  for (auto& source_pair : block_pairs) {
+    { // diag parts
+      // H_A (x) I_B + I_A (x) H_B
+      shared_ptr<const Matrix> leftham = left_ops_->ham(source_pair.left);
+      Matrix leftunit = *leftham->clone(); leftunit.unit();
+      shared_ptr<const Matrix> rightham = right_ops_->ham(source_pair.right);
+      Matrix rightunit = *rightham->clone(); rightunit.unit();
+
+      Matrix diag = kronecker_product(false, rightunit, false, *leftham) + kronecker_product(false, *rightham, false, leftunit);
+
+      // Q_aa (x) A^t   A
+      const MatView Q_aa_view = intra_ops_->Q_aa_as_matview(source_pair.left.key());
+      const MatView gamma_aa_view(btas::make_view(btas::CRange<2>(source_pair.right.nstates*source_pair.right.nstates, rnorb*rnorb),
+                               blocks_->right_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({source_pair.right.key(),source_pair.right.key()}).data->storage()), false);
+
+      const MatView Q_bb_view = intra_ops_->Q_bb_as_matview(source_pair.left.key());
+      const MatView gamma_bb_view(btas::make_view(btas::CRange<2>(source_pair.right.nstates*source_pair.right.nstates, rnorb*rnorb),
+                               blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({source_pair.right.key(),source_pair.right.key()}).data->storage()), false);
+
+      Matrix ham_block = (Q_aa_view % gamma_aa_view) + (Q_bb_view % gamma_bb_view);
+
+      SMITH::sort_indices<0,2,1,3,1,1,1,1>(ham_block.data(), diag.data(), source_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, source_pair.right.nstates);
+
+      out->add_block(1.0, source_pair.offset, source_pair.offset, source_pair.nstates(), source_pair.nstates(), diag);
+    }
+
+    { // Q_ab (x) A^t   B
+      const BlockKey left_target(bk.nelea-1, bk.neleb+1);
+      const BlockKey right_target(bk.nelea+1, bk.neleb-1);
+
+      auto iter = find_if(block_pairs.begin(), block_pairs.end(), [&left_target, &right_target] ( DMRG::BlockPair bp)
+        { return make_pair(bp.left.key(), bp.right.key())==make_pair(left_target, right_target); }
+      );
+
+      if (iter != block_pairs.end()) {
+        DMRG::BlockPair target_pair = *iter;
+
+        const MatView Q_ab_view = intra_ops_->Q_ab_as_matview(source_pair.left.key());
+        const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.right.nstates*source_pair.right.nstates, rnorb*rnorb),
+                                 blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({source_pair.right.key(),right_target}).data->storage()), false);
+
+        // TODO maybe it would make more sense to reorder the block_ops in the first place?
+#ifdef UNORDERED
+        Matrix Qab(Q_ab_view);
+        SMITH::sort_indices<0,2,1,1,1,0,1>(Q_ab_view.data(), Qab.data(), Qab.ndim(), rnorb, rnorb);
+
+        Matrix ham_block = Qab % gamma_view;
+#else
+        Matrix ham_block = Q_ab_view % gamma_view;
+#endif
+
+        SMITH::sort_indices<0,2,3,1,2,1,0,1>(ham_block.data(), out->element_ptr(target_pair.offset, source_pair.offset), target_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, target_pair.right.nstates);
+      }
+    }
+
+    { // P_aa (x) A^t A^t
+      const BlockKey left_target(bk.nelea-2, bk.neleb  );
+      const BlockKey right_target(bk.nelea+2, bk.neleb  );
+      auto iter = find_if(block_pairs.begin(), block_pairs.end(), [&left_target, &right_target] ( DMRG::BlockPair bp)
+        { return make_pair(bp.left.key(), bp.right.key())==make_pair(left_target, right_target); }
+      );
+
+      if (iter != block_pairs.end()) {
+        DMRG::BlockPair target_pair = *iter;
+
+        const MatView P_aa_view = intra_ops_->P_aa_as_matview(source_pair.left.key());
+        const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.right.nstates*source_pair.right.nstates, rnorb*rnorb),
+                                 blocks_->right_block()->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}).at({source_pair.right.key(),right_target}).data->storage()), false);
+
+        Matrix ham_block = P_aa_view % gamma_view;
+
+#ifdef UNORDERED
+        SMITH::sort_indices<0,2,3,1,-2,1,0,1>(ham_block.data(), out->element_ptr(target_pair.offset, source_pair.offset), target_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, target_pair.right.nstates);
+#else
+        SMITH::sort_indices<0,2,3,1,2,1,0,1>(ham_block.data(), out->element_ptr(target_pair.offset, source_pair.offset), target_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, target_pair.right.nstates);
+#endif
+      }
+    }
+
+    { // P_bb (x) B^t B^t
+      const BlockKey left_target(bk.nelea  , bk.neleb-2);
+      const BlockKey right_target(bk.nelea  , bk.neleb+2);
+      auto iter = find_if(block_pairs.begin(), block_pairs.end(), [&left_target, &right_target] ( DMRG::BlockPair bp)
+        { return make_pair(bp.left.key(), bp.right.key())==make_pair(left_target, right_target); }
+      );
+
+      if (iter != block_pairs.end()) {
+        DMRG::BlockPair target_pair = *iter;
+
+        const MatView P_bb_view = intra_ops_->P_bb_as_matview(source_pair.left.key());
+        const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.right.nstates*source_pair.right.nstates, rnorb*rnorb),
+                                 blocks_->right_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}).at({source_pair.right.key(),right_target}).data->storage()), false);
+
+        Matrix ham_block = P_bb_view % gamma_view;
+
+#ifdef UNORDERED
+        SMITH::sort_indices<0,2,3,1,-2,1,0,1>(ham_block.data(), out->element_ptr(target_pair.offset, source_pair.offset), target_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, target_pair.right.nstates);
+#else
+        SMITH::sort_indices<0,2,3,1,2,1,0,1>(ham_block.data(), out->element_ptr(target_pair.offset, source_pair.offset), target_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, target_pair.right.nstates);
+#endif
+      }
+    }
+
+    { // P_ab (x) A^t B^t
+      const BlockKey left_target(bk.nelea-1, bk.neleb-1);
+      const BlockKey right_target(bk.nelea+1, bk.neleb+1);
+      auto iter = find_if(block_pairs.begin(), block_pairs.end(), [&left_target, &right_target] ( DMRG::BlockPair bp)
+        { return make_pair(bp.left.key(), bp.right.key())==make_pair(left_target, right_target); }
+      );
+
+      if (iter != block_pairs.end()) {
+        DMRG::BlockPair target_pair = *iter;
+
+        const MatView P_ab_view = intra_ops_->P_ab_as_matview(source_pair.left.key());
+        const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.right.nstates*source_pair.right.nstates, rnorb*rnorb),
+                                 blocks_->right_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({source_pair.right.key(),right_target}).data->storage()), false);
+
+#ifdef UNORDERED
+        Matrix Pab(P_ab_view);
+        SMITH::sort_indices<0,2,1,1,1,0,1>(P_ab_view.data(), Pab.data(), Pab.ndim(), rnorb, rnorb);
+
+        Matrix ham_block = Pab % gamma_view;
+#else
+        Matrix ham_block = P_ab_view % gamma_view;
+#endif
+
+        SMITH::sort_indices<0,2,3,1,2,1,0,1>(ham_block.data(), out->element_ptr(target_pair.offset, source_pair.offset), target_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, target_pair.right.nstates);
+      }
+    }
+
+    { // S_a (x)   A
+      const BlockKey left_target(bk.nelea+1, bk.neleb  );
+      const BlockKey right_target(bk.nelea-1, bk.neleb  );
+      auto iter = find_if(block_pairs.begin(), block_pairs.end(), [&left_target, &right_target] ( DMRG::BlockPair bp)
+        { return make_pair(bp.left.key(), bp.right.key())==make_pair(left_target, right_target); }
+      );
+
+      if (iter != block_pairs.end()) {
+        DMRG::BlockPair target_pair = *iter;
+
+        const MatView S_a_view = intra_ops_->S_a_as_matview(source_pair.left.key());
+        const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.right.nstates*source_pair.right.nstates, rnorb),
+                                 blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({source_pair.right.key(),right_target}).data->storage()), false);
+
+        Matrix ham_block = S_a_view % gamma_view;
+
+        SMITH::sort_indices<0,2,3,1,2,1,0,1>(ham_block.data(), out->element_ptr(target_pair.offset, source_pair.offset), target_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, target_pair.right.nstates);
+      }
+    }
+
+    { // D_a (x)   A^t A^t A + A^t B^t B
+      const BlockKey left_target(bk.nelea+1, bk.neleb  );
+      const BlockKey right_target(bk.nelea-1, bk.neleb  );
+      auto iter = find_if(block_pairs.begin(), block_pairs.end(), [&left_target, &right_target] ( DMRG::BlockPair bp)
+        { return make_pair(bp.left.key(), bp.right.key())==make_pair(left_target, right_target); }
+      );
+
+      if (iter != block_pairs.end()) {
+        DMRG::BlockPair target_pair = *iter;
+
+        const MatView D_a_view = intra_ops_->D_a_as_matview(source_pair.left.key());
+        shared_ptr<const btas::Tensor3<double>> gamma_aa = blocks_->right_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({source_pair.right.key(),right_target}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_bb = blocks_->right_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({source_pair.right.key(),right_target}).data;
+        const MatView gamma_aa_view(btas::make_view(btas::CRange<2>(target_pair.right.nstates*source_pair.right.nstates, rnorb, rnorb, rnorb), gamma_aa->storage()), false);
+        const MatView gamma_bb_view(btas::make_view(btas::CRange<2>(target_pair.right.nstates*source_pair.right.nstates, rnorb, rnorb, rnorb), gamma_bb->storage()), false);
+
+        Matrix gamma(gamma_aa_view + gamma_bb_view);
+
+#ifdef UNORDERED
+        Matrix Da(D_a_view);
+        SMITH::sort_indices<0,3,2,1,1,1,0,1>(D_a_view.data(), Da.data(), Da.ndim(), rnorb, rnorb, rnorb);
+
+        Matrix ham_block = Da % gamma;
+#else
+        Matrix ham_block = D_a_view % gamma;
+#endif
+
+        SMITH::sort_indices<0,2,3,1,2,1,0,1>(ham_block.data(), out->element_ptr(target_pair.offset, source_pair.offset), target_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, target_pair.right.nstates);
+      }
+    }
+
+    { // S_b (x)   B
+      const BlockKey left_target(bk.nelea  , bk.neleb+1);
+      const BlockKey right_target(bk.nelea  , bk.neleb-1);
+      auto iter = find_if(block_pairs.begin(), block_pairs.end(), [&left_target, &right_target] ( DMRG::BlockPair bp)
+        { return make_pair(bp.left.key(), bp.right.key())==make_pair(left_target, right_target); }
+      );
+
+      if (iter != block_pairs.end()) {
+        DMRG::BlockPair target_pair = *iter;
+
+        const MatView S_b_view = intra_ops_->S_b_as_matview(source_pair.left.key());
+        const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.right.nstates*source_pair.right.nstates, rnorb),
+                                 blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({source_pair.right.key(),right_target}).data->storage()), false);
+
+        Matrix ham_block = S_b_view % gamma_view;
+
+        SMITH::sort_indices<0,2,3,1,2,1,0,1>(ham_block.data(), out->element_ptr(target_pair.offset, source_pair.offset), target_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, target_pair.right.nstates);
+      }
+    }
+
+    { // D_b (x)   B^t A^t A + B^t B^t B
+      const BlockKey left_target(bk.nelea  , bk.neleb+1);
+      const BlockKey right_target(bk.nelea  , bk.neleb-1);
+      auto iter = find_if(block_pairs.begin(), block_pairs.end(), [&left_target, &right_target] ( DMRG::BlockPair bp)
+        { return make_pair(bp.left.key(), bp.right.key())==make_pair(left_target, right_target); }
+      );
+
+      if (iter != block_pairs.end()) {
+        DMRG::BlockPair target_pair = *iter;
+
+        const MatView D_b_view = intra_ops_->D_b_as_matview(source_pair.left.key());
+        shared_ptr<const btas::Tensor3<double>> gamma_aa = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({source_pair.right.key(),right_target}).data;
+        shared_ptr<const btas::Tensor3<double>> gamma_bb = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({source_pair.right.key(),right_target}).data;
+        const MatView gamma_aa_view(btas::make_view(btas::CRange<2>(target_pair.right.nstates*source_pair.right.nstates, rnorb, rnorb, rnorb), gamma_aa->storage()), false);
+        const MatView gamma_bb_view(btas::make_view(btas::CRange<2>(target_pair.right.nstates*source_pair.right.nstates, rnorb, rnorb, rnorb), gamma_bb->storage()), false);
+
+        Matrix gamma(gamma_aa_view + gamma_bb_view);
+
+#ifdef UNORDERED
+        Matrix Db(D_b_view);
+        SMITH::sort_indices<0,3,2,1,1,1,0,1>(D_b_view.data(), Db.data(), Db.ndim(), rnorb, rnorb, rnorb);
+
+        Matrix ham_block = Db % gamma;
+#else
+        Matrix ham_block = D_b_view % gamma;
+#endif
+
+        SMITH::sort_indices<0,2,3,1,2,1,0,1>(ham_block.data(), out->element_ptr(target_pair.offset, source_pair.offset), target_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, target_pair.right.nstates);
+      }
+    }
+  }
+
+  out->symmetrize();
+  return out;
+}
 
 /*-----------------------------------------------------------------------------------------------------
   All code below this point was generated by gen/blockops.py

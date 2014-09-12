@@ -126,6 +126,8 @@ class BlockOperators1 : public BlockOperators {
     const MatView P_aa_as_matview(const BlockKey bk) const { return get_as_matview(P_aa_.at(bk)); }
     const MatView P_bb_as_matview(const BlockKey bk) const { return get_as_matview(P_bb_.at(bk)); }
     const MatView P_ab_as_matview(const BlockKey bk) const { return get_as_matview(P_ab_.at(bk)); }
+    const MatView  D_a_as_matview(const BlockKey bk) const { return get_as_matview(D_a_.at(bk)); }
+    const MatView  D_b_as_matview(const BlockKey bk) const { return get_as_matview(D_b_.at(bk)); }
 
   private:
     template <typename TensorType>
