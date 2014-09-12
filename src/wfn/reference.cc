@@ -24,6 +24,7 @@
 //
 
 #include <src/wfn/reference.h>
+#include <src/rel/relreference.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/molecule/mixedbasis.h>
 #include <src/fci/fci.h>
@@ -129,6 +130,15 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
     out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_);
     out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_);
   }
+
+  // if a magnetic field is added from zero-field reference
+  if (geomin->magnetism()) {
+    assert(!geom_->magnetism());
+    auto tmpcoeff = make_shared<ZMatrix>(*coeff_, 1.0);
+    auto tmpref = make_shared<RelReference>(geom_, tmpcoeff, energy_, 0, nclosed_, nvirt_, /*gaunt_*/ false, /*breit_*/ false, /*rel_*/ false);
+    out = tmpref->project_coeff(geomin);
+  }
+
   return out;
 }
 

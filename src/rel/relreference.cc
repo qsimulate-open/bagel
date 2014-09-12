@@ -41,9 +41,10 @@ using namespace bagel;
 shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geomin) const {
 
   shared_ptr<Reference> out;
+  const bool giao = (geomin->magnetism() || geom_->magnetism());
 
   // standard 4-component wavefunction
-  if (rel_ && !giao_) {
+  if (rel_ && !giao) {
     // in this case we first form overlap matrices
     RelOverlap overlap(geomin);
     RelOverlap sinv = overlap;
@@ -68,10 +69,10 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, giao_);
+    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_);
 
   // 4-component GIAO wavefunction
-  } else if (rel_ && giao_) {
+  } else if (rel_ && giao) {
     // in this case we first form overlap matrices
     RelOverlap_London overlap(geomin);
     RelOverlap_London sinv = overlap;
@@ -105,10 +106,10 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, giao_);
+    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_);
 
   // Non-relativistic GIAO wavefunction
-  } else if (!rel_ && giao_) {
+  } else if (!rel_ && giao) {
     // project to a new basis
     const ZOverlap overlap(geomin);
     ZOverlap sinv = overlap;
@@ -121,7 +122,9 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, giao_);
+    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_);
+    if (!geomin->magnetism())
+      throw std::runtime_error("Projection from GIAO to real non-rel. basis would give complex coefficients.  Use the GIAO code at zero-field or restart.");
 
   } else {
     throw logic_error("Invalid RelReference formed");

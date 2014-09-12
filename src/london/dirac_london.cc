@@ -167,7 +167,7 @@ void Dirac_London::print_eig() const {
 shared_ptr<const Reference> Dirac_London::conv_to_ref() const {
   // we store only positive state coefficients
   const size_t npos = coeff_->mdim() - nneg_;
-  auto out = make_shared<RelReference>(geom_, coeff_, energy_, nneg_, nele_, npos-nele_, gaunt_, breit_, true, true);
+  auto out = make_shared<RelReference>(geom_, coeff_, energy_, nneg_, nele_, npos-nele_, gaunt_, breit_, true);
   vector<double> eigp(eig_.begin()+nneg_, eig_.end());
   vector<double> eigm(eig_.begin(), eig_.begin()+nneg_);
   VectorB eig(eig_.size());
@@ -192,56 +192,28 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
   } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
     auto relref = dynamic_pointer_cast<const RelReference>(ref_);
 
-    if (relref->rel() && relref->giao()) {
+    if (relref->rel()) {
       // Relativistic, GIAO-based reference
       shared_ptr<ZMatrix> fock = make_shared<DFock_London>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
       DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
       interm.diagonalize(eig);
       coeff = make_shared<const DistZMatrix>(*s12 * interm);
 
-    } else if (!relref->rel() && relref->giao()) {
+    } else if (!relref->rel()) {
       // Non-relativistic, GIAO-based reference
       const int nocc = ref_->nocc();
       shared_ptr<ZMatrix> fock;
-      if (nocc*2 == nele_) {
-        auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
-        ocoeff->add_block(1.0, 0,    0, n, nocc, relref->relcoeff()->slice(0,nocc));
-        ocoeff->add_block(1.0, n, nocc, n, nocc, relref->relcoeff()->slice(0,nocc));
-        fock = make_shared<DFock_London>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
-    }
-    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
-    interm.diagonalize(eig);
-    coeff = make_shared<const DistZMatrix>(*s12 * interm);
-    } else if (!relref->giao()) {
-      throw logic_error("Reference objects from Gaussian calculations cannot currently be used with London code.");
-    }
-  } else if (ref_->coeff()->ndim() == n) {
-    // Non-relativistic Gaussian orbital reference
-    throw logic_error("Reference objects from Gaussian calculations cannot currently be used with London code.");
-    /*
-    const int nocc = ref_->nocc();
-    shared_ptr<ZMatrix> fock;
-    if (nocc*2 == nele_) {
+      assert(nocc*2 == nele_);
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
-      ocoeff->add_block(1.0, 0,    0, n, nocc, ref_->coeff()->data());
-      ocoeff->add_block(1.0, n, nocc, n, nocc, ref_->coeff()->data());
-      fock = make_shared<DFock_London>(geom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
-    } else {
-      const int nocca = ref_->noccA();
-      const int noccb = ref_->noccB();
-      assert(nocca+noccb == nele_);
-      auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
-     ocoeff->add_block(1.0, 0,     0, n, nocca, ref_->coeffA()->data());
-      ocoeff->add_block(1.0, n, nocca, n, noccb, ref_->coeffB()->data());
-      fock = make_shared<DFock_London>(geom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
+      ocoeff->add_block(1.0, 0,    0, n, nocc, relref->relcoeff()->slice(0,nocc));
+      ocoeff->add_block(1.0, n, nocc, n, nocc, relref->relcoeff()->slice(0,nocc));
+      fock = make_shared<DFock_London>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
+      DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
+      interm.diagonalize(eig);
+      coeff = make_shared<const DistZMatrix>(*s12 * interm);
     }
-    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
-    interm.diagonalize(eig);
-    coeff = make_shared<const DistZMatrix>(*s12 * interm);
-    */
   } else {
-    assert(ref_->coeff()->ndim() == n*4);
-    throw logic_error("not yet implemented");
+    throw logic_error("Invalid Reference passed to Dirac_London");
   }
   return coeff;
 }

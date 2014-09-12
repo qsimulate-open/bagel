@@ -83,7 +83,7 @@ SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const share
   if (re != nullptr) {
     auto cref = dynamic_pointer_cast<const RelReference>(re);
     assert(cref);
-    if (cref->rel() || !cref->giao()) {
+    if (cref->rel()) {
       throw runtime_error("Invalid reference provided for SCF_London");
     }
     coeff_ = make_shared<ZCoeff>(*cref->relcoeff());

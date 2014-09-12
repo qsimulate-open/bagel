@@ -185,7 +185,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
     auto relref = dynamic_pointer_cast<const RelReference>(ref_);
-    assert(relref->rel() && !relref->giao());
+    assert(relref->rel());
     shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig);

@@ -197,7 +197,7 @@ void SCF_London::compute() {
 
 
 shared_ptr<const Reference> SCF_London::conv_to_ref() const {
-  auto out = make_shared<RelReference>(geom_, coeff_, energy_, 0, nocc_, coeff_->mdim()-nocc_, /*gaunt_*/ false, /*breit_*/ false, /*rel_*/ false, /*giao_*/ true);
+  auto out = make_shared<RelReference>(geom_, coeff_, energy_, 0, nocc_, coeff_->mdim()-nocc_, /*gaunt_*/ false, /*breit_*/ false, /*rel_*/ false);
   out->set_eig(eig_);
   return out;
 }
