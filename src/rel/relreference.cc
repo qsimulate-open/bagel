@@ -40,10 +40,10 @@ using namespace bagel;
 
 shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geomin) const {
 
-  shared_ptr<RelReference> out;
+  shared_ptr<Reference> out;
+
+  // standard 4-component wavefunction
   if (rel_ && !giao_) {
-
-
     // in this case we first form overlap matrices
     RelOverlap overlap(geomin);
     RelOverlap sinv = overlap;
@@ -70,8 +70,8 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
     out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, giao_);
 
+  // 4-component GIAO wavefunction
   } else if (rel_ && giao_) {
-
     // in this case we first form overlap matrices
     RelOverlap_London overlap(geomin);
     RelOverlap_London sinv = overlap;
@@ -107,22 +107,21 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
     out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, giao_);
 
+  // Non-relativistic GIAO wavefunction
   } else if (!rel_ && giao_) {
-
     // project to a new basis
-    const ZOverlap snew(geomin);
-    ZOverlap snewinv = snew;
-    snewinv.inverse();
+    const ZOverlap overlap(geomin);
+    ZOverlap sinv = overlap;
+    sinv.inverse();
     MixedBasis<ComplexOverlapBatch, ZMatrix> mixed(geom_, geomin);
-    auto c = make_shared<ZCoeff>(snewinv * mixed * *relcoeff_);
+    auto c = make_shared<ZCoeff>(sinv * mixed * *relcoeff_);
 
     // make coefficient orthogonal (under the overlap metric)
-    ZMatrix unit = *c % snew * *c;
+    ZMatrix unit = *c % overlap * *c;
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, giao_);
-    if (coeffA_ || coeffB_) throw runtime_error("UHF with GIAO basis has not been implemented.");
+    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, giao_);
 
   } else {
     throw logic_error("Invalid RelReference formed");
