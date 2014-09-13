@@ -456,18 +456,21 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices, shared_ptr<const ZMatrix> coeff_in) const {
-  const int naobasis = coeff_in->ndim();
-  const int nmobasis = coeff_in->mdim()/2;
 
-  int nactive = active_indices.size();
+shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
+  // assumes coefficient is in striped format
+  if (active_indices.size() != nact_) throw logic_error("ZCASSCF::set_active - Number of active indices does not match number of active orbitals");
+
+  const int naobasis = coeff_->ndim();
+  const int nmobasis = coeff_->mdim()/4;
+    cout << " nmobasis = " << nmobasis << endl;
 
   auto coeff = coeff_;
-  auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis);
+  auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
 
   int iclosed = 0;
   int iactive = nclosed_;
-  int ivirt   = nclosed_ + nactive_;
+  int ivirt   = nclosed_ + nact_;
 
   auto cp   = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) {
     copy_n(coeff->element_ptr(0,i*2), naobasis, tmp_coeff->element_ptr(0, pos*2));
@@ -480,6 +483,9 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices, shared_pt
     else if ( i < nclosed_ ) cp(i, iclosed);
     else cp(i, ivirt);
   }
+
+  // copy positrons
+  tmp_coeff->copy_block(0, nmobasis*2, naobasis, nmobasis*2, coeff_->slice(nmobasis*2, nmobasis*4));
 
   return make_shared<const ZMatrix>(*tmp_coeff);
 }
