@@ -45,6 +45,7 @@
 #include <src/mp2/mp2.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
+#include <src/periodic/pscf.h>
 #include <src/london/scf_london.h>
 #include <src/london/dirac_london.h>
 #include <src/wfn/construct_method.h>
@@ -123,6 +124,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     }
+    else if (title == "pscf") out = make_shared<PSCF>(itree, geom, ref);
   } else {
     if (title == "hf")              out = make_shared<SCF_London>(itree, geom, ref);
     else if (title == "dhf")        out = make_shared<Dirac_London>(itree, geom, ref);

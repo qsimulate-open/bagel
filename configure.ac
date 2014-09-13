@@ -159,6 +159,7 @@ AC_CONFIG_FILES([Makefile
                  src/casscf/Makefile
                  src/zcasscf/Makefile
                  src/nevpt2/Makefile
+                 src/periodic/Makefile
                  src/rel/Makefile
                  src/ks/Makefile
                  src/opt/Makefile
