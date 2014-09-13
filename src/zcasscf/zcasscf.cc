@@ -172,16 +172,18 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  mute_stdcout();
-  if (kramers_coeff) {
-    shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
-    coeff_ = make_shared<const ZMatrix>(*tmp);
-  } else {
-    init_kramers_coeff(); // coeff_ now in block format
+  if (!kramers_coeff) {
+    mute_stdcout();
+    init_kramers_coeff();
+    resume_stdcout();
   }
-  resume_stdcout();
 
   if (mvo) coeff_ = generate_mvo(ncore_mvo, hcore_mvo);
+
+
+  // format coefficient into blocks as {c,a,v}
+  shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
+  coeff_ = make_shared<const ZMatrix>(*tmp);
 
   mute_stdcout();
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
@@ -396,6 +398,8 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
 shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcore_mvo) {
   // function to compute the modified virtual orbitals, either by diagonalization of a Fock matrix or of the one-electron Hamiltonian
   // Procedures described in Jensen et al; JCP 87, 451 (1987) (hcore) and Bauschlicher; JCP 72 880 (1980) (Fock)
+  // assumes coeff_ is in striped format ordered as {e-,p+}
+  mute_stdcout();
   cout << " " << endl;
   if (!hcore_mvo) {
     cout << "   * Generating Modified Virtual Orbitals from a Fock matrix of " << ncore << " electrons " << endl << endl;
@@ -426,7 +430,7 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   };
 
   // make a striped coeff
-  shared_ptr<ZMatrix> ecoeff = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false);
+  shared_ptr<ZMatrix> ecoeff = coeff_->copy();
 
   shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom_, hcore_, ecoeff->slice_copy(0, ncore*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
 
@@ -444,15 +448,14 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   // copy in modified virtuals
   ecoeff->copy_block(0, geom_->nele(), ecoeff->ndim(), hfvirt*2, vcoeff->data());
 
-  auto ctmp = format_coeff(nclosed_, nact_, nvirt_, ecoeff, /*striped*/true);
   {
-    auto unit = ctmp->clone(); unit->unit();
-    double orthonorm = ((*ctmp % *overlap_ * *ctmp) - *unit).rms();
+    auto unit = ecoeff->clone(); unit->unit();
+    double orthonorm = ((*ecoeff % *overlap_ * *ecoeff) - *unit).rms();
     if (orthonorm > 1.0e-12) throw logic_error("MVO Coefficient not sufficiently orthonormal");
   }
 
   resume_stdcout();
-  return ctmp;
+  return ecoeff;
 }
 
 
