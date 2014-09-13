@@ -129,6 +129,8 @@ void ZCASSCF::init_kramers_coeff() {
   }
   shared_ptr<ZMatrix> ctmp2 = coeff_->clone();
 
+#if 0
+  // blocked format
   int i = 0;
   ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
   ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
@@ -136,8 +138,8 @@ void ZCASSCF::init_kramers_coeff() {
   ctmp2->copy_block(0, i, coeff_->ndim(), nact_, tmp[1]->slice(nclosed_, nocc_)); i += nact_;
   ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[0]->slice(nocc_, nocc_+nvirt_)); i += nvirt_;
   ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[1]->slice(nocc_, nocc_+nvirt_));
-
-  if (false) { // striped format
+#else
+  // striped format
     int n = coeff_->ndim();
     // closed
     for (int j=0; j!=nclosed_; ++j) {
@@ -162,7 +164,7 @@ void ZCASSCF::init_kramers_coeff() {
       ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
       ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
     }
-  }
+#endif
   coeff_ = ctmp2;
 }
 
