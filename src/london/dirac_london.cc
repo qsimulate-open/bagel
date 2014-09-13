@@ -25,10 +25,10 @@
 
 #include <src/util/constants.h>
 #include <src/london/dirac_london.h>
-#include <src/london/dfock_london.h>
 #include <src/math/zmatrix.h>
 #include <src/math/matrix.h>
 #include <src/math/diis.h>
+#include <src/rel/dfock.h>
 #include <src/rel/relreference.h>
 
 using namespace std;
@@ -102,7 +102,7 @@ void Dirac_London::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer ptime(1);
 
-    auto fock = make_shared<DFock_London>(geom_, hcore_, coeff->matrix()->slice_copy(nneg_, nele_+nneg_), gaunt_, breit_, do_grad_, robust_);
+    auto fock = make_shared<DFock>(geom_, hcore_, coeff->matrix()->slice_copy(nneg_, nele_+nneg_), gaunt_, breit_, do_grad_, robust_);
 
 // TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
 #if 0
@@ -194,7 +194,7 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
 
     if (relref->rel()) {
       // Relativistic, GIAO-based reference
-      shared_ptr<ZMatrix> fock = make_shared<DFock_London>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
+      shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
       DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
       interm.diagonalize(eig);
       coeff = make_shared<const DistZMatrix>(*s12 * interm);
@@ -207,7 +207,7 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
       ocoeff->add_block(1.0, 0,    0, n, nocc, relref->relcoeff()->slice(0,nocc));
       ocoeff->add_block(1.0, n, nocc, n, nocc, relref->relcoeff()->slice(0,nocc));
-      fock = make_shared<DFock_London>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
       DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
       interm.diagonalize(eig);
       coeff = make_shared<const DistZMatrix>(*s12 * interm);
