@@ -185,7 +185,7 @@ void ZCASSCF::init() {
     for (auto& i : *iactive) active_indices.insert(lexical_cast<int>(i->data()) - 1);
     cout << " " << endl;
     cout << "    ==== Active orbitals : ===== " << endl;
-    for (auto& i : active_indices) cout << "         Orbital " << i << endl;
+    for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
     cout << "    ============================ " << endl << endl;
     coeff_ = set_active(active_indices);
   }
