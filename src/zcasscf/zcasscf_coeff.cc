@@ -31,6 +31,7 @@ using namespace bagel;
 
 
 void ZCASSCF::init_kramers_coeff() {
+  mute_stdcout();
   // Kramers-adapted coefficient via quaternion diagonalization
   const int nele = geom_->nele()-charge_;
 
@@ -165,6 +166,7 @@ void ZCASSCF::init_kramers_coeff() {
       ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
     }
 #endif
+  resume_stdcout();
   coeff_ = ctmp2;
 }
 

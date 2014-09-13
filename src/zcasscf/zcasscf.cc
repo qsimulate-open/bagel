@@ -172,11 +172,8 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  if (!kramers_coeff) {
-    mute_stdcout();
+  if (!kramers_coeff)
     init_kramers_coeff();
-    resume_stdcout();
-  }
 
   if (mvo) coeff_ = generate_mvo(ncore_mvo, hcore_mvo);
 
