@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: pscf.h
+// Filename: lattice.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -23,33 +23,24 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_SRC_PERIODIC_PSCF_H
-#define __BAGEL_SRC_PERIODIC_PSCF_H
 
-#include <src/wfn/method.h>
 #include <src/periodic/lattice.h>
 
-namespace bagel {
+using namespace std;
+using namespace bagel;
 
-class PSCF : public Method {
-  protected:
-    std::shared_ptr<const Lattice> lattice_;
-    double energy_;
-    bool dodf_;
+Lattice::Lattice(const shared_ptr<const Geometry> g) : unit_cell_(g) {
 
-  public:
-    PSCF() { }
-    PSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
-         const std::shared_ptr<const Reference> re = nullptr);
-    virtual ~PSCF() {  }
-
-    virtual void compute() override;
-    double energy() const { return energy_; };
-
-    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
-};
-
+  ndim_ = g->lattice_vectors().size();
 }
 
-#endif
 
+void Lattice::print_lattice_vectors() const {
+
+  const string indent = "    ";
+  cout << indent << setw(4) << " Basic lattice vectors:" << endl;
+  for (int i = 0; i != ndim_; ++i)
+    cout << indent << indent << setprecision(6) << "(" << setw(10) << unit_cell_->lattice_vectors(i)[0] << ", "
+                                                       << setw(10) << unit_cell_->lattice_vectors(i)[1] << ", "
+                                                       << setw(10) << unit_cell_->lattice_vectors(i)[2] << ") " << endl;
+}

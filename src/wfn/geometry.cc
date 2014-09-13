@@ -63,6 +63,18 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
   }
   const bool angstrom = geominfo->get<bool>("angstrom", false);
 
+  /* Set up lattice */
+  shared_ptr<const PTree> vectors = geominfo->get_child_optional("lattice_vectors");
+  if (vectors) {
+    int dim = 0;
+    for (auto& ivec : *vectors) {
+      string id = "a" + to_string(dim+1);
+      const array<double, 3> vec = ivec->get_array<double, 3>(id);
+      lattice_vectors_.push_back(vec);
+      ++dim;
+    }
+  }
+
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   const bool tesla = geominfo->get<bool>("tesla", false);

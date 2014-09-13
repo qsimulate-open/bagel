@@ -57,6 +57,9 @@ class Geometry : public Molecule {
     bool magnetism_;
     bool london_;
 
+    // Lattice parameters
+    std::vector<std::array<double, 3>> lattice_vectors_;
+
   private:
     // serialization
     friend class boost::serialization::access;
@@ -136,6 +139,11 @@ class Geometry : public Molecule {
     std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;
     void compute_relativistic_integrals(const bool do_gaunt);
     void discard_relativistic() const;
+
+    // Lattice
+    std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
+    std::array<double, 3> lattice_vectors(const int i) const { return lattice_vectors_[i]; };
+
 
 };
 

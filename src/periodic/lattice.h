@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: pscf.h
+// Filename: lattice.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -23,30 +23,29 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_SRC_PERIODIC_PSCF_H
-#define __BAGEL_SRC_PERIODIC_PSCF_H
 
-#include <src/wfn/method.h>
-#include <src/periodic/lattice.h>
+#ifndef __BAGEL_SRC_PERIODIC_LATTICE_H
+#define __BAGEL_SRC_PERIODIC_LATTICE_H
+
+#include <src/wfn/geometry.h>
 
 namespace bagel {
 
-class PSCF : public Method {
+class Lattice {
   protected:
-    std::shared_ptr<const Lattice> lattice_;
-    double energy_;
-    bool dodf_;
+    int ndim_;
+    std::shared_ptr<const Geometry> unit_cell_;
+
+    double nuclear_repulsion_;
+    void compute_nuclear_repulsion() const;
 
   public:
-    PSCF() { }
-    PSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
-         const std::shared_ptr<const Reference> re = nullptr);
-    virtual ~PSCF() {  }
+    Lattice() { }
+    Lattice(const std::shared_ptr<const Geometry> g);
+    ~Lattice() { }
 
-    virtual void compute() override;
-    double energy() const { return energy_; };
-
-    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
+    double nuclear_repulsion() const { return nuclear_repulsion_; };
+    void print_lattice_vectors() const;
 };
 
 }

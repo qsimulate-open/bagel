@@ -24,19 +24,20 @@
 //
 
 
-#include <src/periodic/pscf.h>
-#include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <src/periodic/pscf.h>
 
 using namespace std;
 using namespace bagel;
 
 PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
- : Method(idata, geom, re), dodf_(idata->get<bool>("df",true)) {
+  : Method(idata, geom, re), lattice_(make_shared<const Lattice>(geom)), dodf_(idata->get<bool>("df",true)) {
   cout << "  *** Periodic Hartree--Fock ***" << endl << endl;
   if (dodf_)
     throw runtime_error("Periodic code does not work with density fitting yet!");
+
+  lattice_->print_lattice_vectors();
 }
 
 void PSCF::compute() {
