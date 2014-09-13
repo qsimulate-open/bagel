@@ -454,3 +454,32 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   resume_stdcout();
   return ctmp;
 }
+
+
+shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices, shared_ptr<const ZMatrix> coeff_in) const {
+  const int naobasis = coeff_in->ndim();
+  const int nmobasis = coeff_in->mdim()/2;
+
+  int nactive = active_indices.size();
+
+  auto coeff = coeff_;
+  auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis);
+
+  int iclosed = 0;
+  int iactive = nclosed_;
+  int ivirt   = nclosed_ + nactive_;
+
+  auto cp   = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) {
+    copy_n(coeff->element_ptr(0,i*2), naobasis, tmp_coeff->element_ptr(0, pos*2));
+    copy_n(coeff->element_ptr(0,i*2+1), naobasis, tmp_coeff->element_ptr(0, pos*2+1));
+    ++pos;
+  };
+
+  for (int i = 0; i < nmobasis; ++i) {
+    if ( active_indices.find(i) != active_indices.end() ) cp(i, iactive);
+    else if ( i < nclosed_ ) cp(i, iclosed);
+    else cp(i, ivirt);
+  }
+
+  return make_shared<const ZMatrix>(*tmp_coeff);
+}
