@@ -177,6 +177,18 @@ void ZCASSCF::init() {
 
   if (mvo) coeff_ = generate_mvo(ncore_mvo, hcore_mvo);
 
+  // specify active orbitals and move into the active space
+  set<int> active_indices;
+  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+  if (iactive) {
+    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+    for (auto& i : *iactive) active_indices.insert(lexical_cast<int>(i->data()) - 1);
+    cout << " " << endl;
+    cout << "    ==== Active orbitals : ===== " << endl;
+    for (auto& i : active_indices) cout << "         Orbital " << i << endl;
+    cout << "    ============================ " << endl << endl;
+    coeff_ = set_active(active_indices);
+  }
 
   // format coefficient into blocks as {c,a,v}
   shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
@@ -463,7 +475,6 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
 
   const int naobasis = coeff_->ndim();
   const int nmobasis = coeff_->mdim()/4;
-    cout << " nmobasis = " << nmobasis << endl;
 
   auto coeff = coeff_;
   auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
