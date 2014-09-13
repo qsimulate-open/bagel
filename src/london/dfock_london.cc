@@ -68,7 +68,7 @@ void DFock_London::two_electron_part(const shared_ptr<const ZMatrix> coeff, cons
 }
 
 
-void DFock_London::add_Jop_block(shared_ptr<const RelDF_London> dfdata, list<shared_ptr<const CDMatrix>> cd, const double scale) {
+void DFock_London::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const CDMatrix>> cd, const double scale) {
 
   const int n = geom_->nbasis();
   vector<shared_ptr<ZMatrix>> dat = dfdata->compute_Jop(cd);
@@ -81,7 +81,7 @@ void DFock_London::add_Jop_block(shared_ptr<const RelDF_London> dfdata, list<sha
 
   //if basis1 != basis2, get transpose to fill in opposite corner
   if (dfdata->not_diagonal()) {
-    shared_ptr<const RelDF_London> swap = dfdata->swap();
+    shared_ptr<const RelDF> swap = dfdata->swap();
     int j = 0;
     for (auto& i : swap->basis()) {
       add_block(i->fac(swap->cartesian())*scale, n*i->basis(0), n*i->basis(1), n, n, dat[j++]->transpose_conjg());
@@ -132,32 +132,32 @@ void DFock_London::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHa
 }
 
 
-list<shared_ptr<RelDF_London>> DFock_London::make_dfdists(vector<shared_ptr<const ComplexDFDist>> dfs, bool mixed) {
+list<shared_ptr<RelDF>> DFock_London::make_dfdists(vector<shared_ptr<const ComplexDFDist>> dfs, bool mixed) {
   const vector<int> xyz = { Comp::X, Comp::Y, Comp::Z };
 
-  list<shared_ptr<RelDF_London>> dfdists;
+  list<shared_ptr<RelDF>> dfdists;
   if (!mixed) { // Regular DHF
     auto k = dfs.begin();
     for (auto& i : xyz) {
       for (auto& j : xyz)
         if (i <= j)
-          dfdists.push_back(make_shared<RelDF_London>(*k++, make_pair(i,j), vector<int>{Comp::L}));
+          dfdists.push_back(make_shared<RelDF>(*k++, make_pair(i,j), vector<int>{Comp::L}));
     }
     // large-large
-    dfdists.push_back(make_shared<RelDF_London>(*k++, make_pair(Comp::L,Comp::L), vector<int>{Comp::L}));
+    dfdists.push_back(make_shared<RelDF>(*k++, make_pair(Comp::L,Comp::L), vector<int>{Comp::L}));
     assert(k == dfs.end());
 
   } else { // Gaunt Term
     auto k = dfs.begin();
     for (auto& i : xyz)
-      dfdists.push_back(make_shared<RelDF_London>(*k++, make_pair(i,Comp::L), xyz));
+      dfdists.push_back(make_shared<RelDF>(*k++, make_pair(i,Comp::L), xyz));
     assert(k == dfs.end());
   }
   return dfdists;
 }
 
 
-list<shared_ptr<RelDFHalf>> DFock_London::make_half_complex(list<shared_ptr<RelDF_London>> dfdists, array<shared_ptr<const Matrix>,4> rocoeff,
+list<shared_ptr<RelDFHalf>> DFock_London::make_half_complex(list<shared_ptr<RelDF>> dfdists, array<shared_ptr<const Matrix>,4> rocoeff,
                                                      array<shared_ptr<const Matrix>,4> iocoeff) {
   list<shared_ptr<RelDFHalf>> half_complex;
   for (auto& i : dfdists) {
@@ -195,7 +195,7 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
     dfs = tmp2->split_complex_blocks();
   }
 
-  list<shared_ptr<RelDF_London>> dfdists = make_dfdists(dfs, gaunt);
+  list<shared_ptr<RelDF>> dfdists = make_dfdists(dfs, gaunt);
   // Note that we are NOT using dagger-ed coefficients! -1 factor for imaginary will be compensated by CDMatrix and Exop
   list<shared_ptr<RelDFHalf>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
   // apply J^{-1/2}
