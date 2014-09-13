@@ -48,6 +48,7 @@ double london_energy(std::string filename) {
 
     if (method == "molecule") {
       geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
+      if (ref_) ref_ = ref_->project_coeff(geom);
     } else if (method == "hf") {
       auto scf = std::make_shared<SCF_London>(itree, geom, ref_);
       scf->compute();
