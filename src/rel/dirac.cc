@@ -180,9 +180,11 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
 
   shared_ptr<const DistZMatrix> coeff;
   if (!ref_) {
+    // No reference; starting from hcore
     DistZMatrix interm = *s12 % *hcore * *s12;
     interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
+
   } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
     auto relref = dynamic_pointer_cast<const RelReference>(ref_);
     assert(relref->rel());
@@ -191,20 +193,18 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else if (ref_->coeff()->ndim() == n) {
-    // non-relativistic reference.
+    // Non-relativistic, real reference
+    assert(!geom_->magnetism());
     const int nocc = ref_->nocc();
     shared_ptr<ZMatrix> fock;
     if (nocc*2 == nele_) {
+      // RHF
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
       ocoeff->add_real_block(1.0, 0,    0, n, nocc, ref_->coeff()->slice(0,nocc));
       ocoeff->add_real_block(1.0, n, nocc, n, nocc, ref_->coeff()->slice(0,nocc));
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
-    } else if (!((2*nocc - nele_)%2)) {
-      auto ocoeff = make_shared<ZMatrix>(n*4, 2*nele_);
-      ocoeff->add_real_block(1.0, 0,    0, n, nele_, ref_->coeff()->slice(0,nele_));
-      ocoeff->add_real_block(1.0, n, nele_, n, nele_, ref_->coeff()->slice(0,nele_));
-      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
-    } else {
+    } else if (ref_->noccB() != 0) {
+      // UHF & ROHF
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
       assert(nocca+noccb == nele_);
@@ -212,13 +212,19 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       ocoeff->add_real_block(1.0, 0,     0, n, nocca, ref_->coeffA()->slice(0,nocca));
       ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->slice(nocca,nocca+noccb));
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
+    } else {
+      // CASSCF
+      auto ocoeff = make_shared<ZMatrix>(n*4, 2*nele_);
+      ocoeff->add_real_block(1.0, 0,     0, n, nele_, ref_->coeff()->slice(0,nele_));
+      ocoeff->add_real_block(1.0, n, nele_, n, nele_, ref_->coeff()->slice(0,nele_));
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else {
     assert(ref_->coeff()->ndim() == n*4);
-    throw logic_error("not yet implemented");
+    throw logic_error("Invalid Reference provided for Dirac.  (Initial guess not implemented.)");
   }
   return coeff;
 }
