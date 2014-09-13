@@ -137,6 +137,8 @@ void ZCASSCF::init() {
   nact_ = idata_->get<int>("nact", 0);
   nact_ = idata_->get<int>("nact_cas", nact_);
   if (!nact_) energy_.resize(1);
+  // option for printing natural orbital occupation numbers
+  natocc_ = idata_->get<bool>("natocc",false);
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
@@ -259,6 +261,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
      auto natorb_transform = make_natural_orbitals(rdm1)->get_conjg();
      natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2) * *natorb_transform);
    }
+   if (natocc_) print_natocc();
 
    // scale using occupation numbers
    for (int i = 0; i != nact_*2; ++i) {
@@ -467,6 +470,15 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   return ecoeff;
 }
 
+
+void ZCASSCF::print_natocc() const {
+  assert(occup_.size() > 0);
+  cout << "  ========       state-averaged       ======== " << endl;
+  cout << "  ======== natural occupation numbers ======== " << endl;
+  for (int i=0; i!=occup_.size()/2; ++i)
+    cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
+  cout << "  ============================================ " << endl;
+}
 
 
 shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {

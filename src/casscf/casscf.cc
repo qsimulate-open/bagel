@@ -70,6 +70,8 @@ void CASSCF::common_init() {
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
   thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
+  // option for printing natural orbitals
+  natocc_ = idata_->get<bool>("natocc",false);
 
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
@@ -275,6 +277,7 @@ shared_ptr<Matrix> CASSCF::form_natural_orbs() {
   coeff_ = update_coeff(coeff_, natorb.first);
   // occupation number of the natural orbitals
   occup_ = natorb.second;
+  if (natocc_) print_natocc();
   return natorb.first;
 }
 
@@ -314,6 +317,7 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   shared_ptr<Matrix> fact, factp, gaa;
   shared_ptr<RotFile>  denom;
   one_body_operators(f, fact, factp, gaa, denom);
+  if (natocc_) print_natocc();
 
   *f *= 2.0;
 
@@ -334,4 +338,15 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   out->set_erdm1(erdm);
   out->set_nstate(nstate_);
   return out;
+}
+
+
+void CASSCF::print_natocc() const {
+  assert(occup_.size() > 0);
+  cout << " " << endl;
+  cout << "  ========       state-averaged       ======== " << endl;
+  cout << "  ======== natural occupation numbers ======== " << endl;
+  for (int i=0; i!=occup_.size(); ++i)
+    cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
+  cout << "  ============================================ " << endl;
 }

@@ -116,6 +116,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     std::shared_ptr<const Matrix> hcore() const { return hcore_; };
 
     std::shared_ptr<const Coeff> coeff() const { return coeff_; };
+    void print_natocc() const;
 };
 
 static const double occup_thresh = 1.0e-10;
