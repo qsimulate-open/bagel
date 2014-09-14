@@ -25,7 +25,7 @@
 
 #include <sstream>
 #include <src/london/scf_london.h>
-#include <src/london/dirac_london.h>
+#include <src/rel/dirac.h>
 #include <src/rel/relreference.h>
 
 using namespace bagel;
@@ -55,7 +55,7 @@ double london_energy(std::string filename) {
       ref_ = scf->conv_to_ref();
       energy = ref_->energy();
     } else if (method == "dhf") {
-      auto rel = std::make_shared<Dirac_London>(itree, geom, ref_);
+      auto rel = std::make_shared<Dirac>(itree, geom, ref_);
       rel->compute();
       ref_ = rel->conv_to_ref();
       energy = ref_->energy();

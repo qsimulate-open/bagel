@@ -27,6 +27,10 @@
 #include <src/util/constants.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dfock.h>
+#include <src/rel/relhcore.h>
+#include <src/london/relhcore_london.h>
+#include <src/rel/reloverlap.h>
+#include <src/london/reloverlap_london.h>
 #include <src/math/zmatrix.h>
 #include <src/math/matrix.h>
 #include <src/math/diis.h>
@@ -43,6 +47,7 @@ Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 
   // when computing gradient, we store half-transform integrals
   do_grad_ = idata->get<bool>("gradient", false);
+  if (do_grad_ && geom_->magnetism()) throw runtime_error("Gradient integrals have not been implemented for a GIAO basis.");
 
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
@@ -63,13 +68,18 @@ void Dirac::common_init(const shared_ptr<const PTree> idata) {
   ncharge_ = idata->get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
 
-  hcore_ = make_shared<const RelHcore>(geom_);
+  if (!geom_->magnetism()) {
+    hcore_ = make_shared<const RelHcore>(geom_);
+    overlap_ = make_shared<const RelOverlap>(geom_);
+  } else {
+    hcore_ = make_shared<const RelHcore_London>(geom_);
+    overlap_ = make_shared<const RelOverlap_London>(geom_);
+  }
   init_time.tick_print("1-electron integrals");
 
-  overlap_ = make_shared<const RelOverlap>(geom_);
   s12_ = overlap_->tildex(thresh_overlap_);
 
-  nneg_ = s12_->mdim()/2; 
+  nneg_ = s12_->mdim()/2;
   assert(s12_->mdim() % 2 == 0);
 
   if (breit_ && !gaunt_) throw runtime_error("Breit cannot be turned on if Gaunt is off");
@@ -94,7 +104,7 @@ void Dirac::compute() {
   cout << indent << "    * DIIS with orbital gradients will be used." << endl << endl;
   scftime.tick_print("SCF startup");
   cout << endl;
-  cout << indent << "=== Dirac RHF iteration (" + geom_->basisfile() + ", RKB) ===" << endl << indent << endl;
+  cout << indent << "=== Dirac RHF iteration (" + geom_->basisfile() + ", " << (geom_->magnetism() ? "RMB" : "RKB") << ") ===" << endl << indent << endl;
 
   DIIS<DistZMatrix, ZMatrix> diis(5);
 
@@ -187,11 +197,27 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
 
   } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
     auto relref = dynamic_pointer_cast<const RelReference>(ref_);
-    assert(relref->rel());
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
-    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
-    interm.diagonalize(eig);
-    coeff = make_shared<const DistZMatrix>(*s12 * interm);
+
+    if (relref->rel()) {
+      // Relativistic (4-component) reference
+      shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
+      DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
+      interm.diagonalize(eig);
+      coeff = make_shared<const DistZMatrix>(*s12 * interm);
+    } else {
+      // Non-relativistic, GIAO-based reference
+      assert(geom_->magnetism());
+      const int nocc = ref_->nocc();
+      shared_ptr<ZMatrix> fock;
+      assert(nocc*2 == nele_);
+      auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
+      ocoeff->add_block(1.0, 0,    0, n, nocc, relref->relcoeff()->slice(0,nocc));
+      ocoeff->add_block(1.0, n, nocc, n, nocc, relref->relcoeff()->slice(0,nocc));
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
+      DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
+      interm.diagonalize(eig);
+      coeff = make_shared<const DistZMatrix>(*s12 * interm);
+    }
   } else if (ref_->coeff()->ndim() == n) {
     // Non-relativistic, real reference
     assert(!geom_->magnetism());
