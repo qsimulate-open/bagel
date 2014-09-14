@@ -58,7 +58,7 @@ class Geometry : public Molecule {
     bool london_;
 
     // Lattice parameters
-    std::vector<std::array<double, 3>> lattice_vectors_;
+    std::vector<std::array<double, 3>> primitive_vectors_;
 
   private:
     // serialization
@@ -141,8 +141,8 @@ class Geometry : public Molecule {
     void discard_relativistic() const;
 
     // Lattice
-    std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
-    std::array<double, 3> lattice_vectors(const int i) const { return lattice_vectors_[i]; };
+    std::vector<std::array<double, 3>> primitive_vectors() const { return primitive_vectors_; }
+    std::array<double, 3> primitive_vectors(const int i) const { return primitive_vectors_[i]; };
 
 
 };

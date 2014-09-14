@@ -34,7 +34,7 @@ namespace bagel {
 class Lattice {
   protected:
     int ndim_;
-    std::shared_ptr<const Geometry> unit_cell_;
+    std::shared_ptr<const Geometry> primitive_cell_;
 
     double nuclear_repulsion_;
     double compute_nuclear_repulsion() const;
@@ -44,9 +44,9 @@ class Lattice {
     Lattice(const std::shared_ptr<const Geometry> g);
     ~Lattice() { }
 
-    std::shared_ptr<const Geometry> unit_cell() const { return unit_cell_; }
+    std::shared_ptr<const Geometry> primitive_cell() const { return primitive_cell_; }
     double nuclear_repulsion() const { return nuclear_repulsion_; };
-    void print_lattice_vectors() const;
+    void print_primitive_vectors() const;
 };
 
 }

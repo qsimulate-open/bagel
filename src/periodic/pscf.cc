@@ -37,13 +37,13 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   if (dodf_)
     throw runtime_error("Periodic code does not work with density fitting yet!");
 
-  lattice_->print_lattice_vectors();
+  lattice_->print_primitive_vectors();
 }
 
 void PSCF::compute() {
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
-  cout << indent << fixed << setprecision(10) << setw(15) << lattice_->unit_cell()->nuclear_repulsion() << endl << endl;
+  cout << indent << fixed << setprecision(10) << setw(15) << lattice_->primitive_cell()->nuclear_repulsion() << endl << endl;
 
   cout << indent << "=== Lattice Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << lattice_->nuclear_repulsion() << endl << endl;

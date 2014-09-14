@@ -64,13 +64,15 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
   const bool angstrom = geominfo->get<bool>("angstrom", false);
 
   /* Set up lattice */
-  shared_ptr<const PTree> vectors = geominfo->get_child_optional("lattice_vectors");
+  shared_ptr<const PTree> vectors = geominfo->get_child_optional("primitive_vectors");
   if (vectors) {
     int dim = 0;
     for (auto& ivec : *vectors) {
       string id = "a" + to_string(dim+1);
-      const array<double, 3> vec = ivec->get_array<double, 3>(id);
-      lattice_vectors_.push_back(vec);
+      array<double, 3> vec = ivec->get_array<double, 3>(id);
+      const double norm = sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
+      for (int i = 1; i != 3; ++i) vec[i] /= norm;
+      primitive_vectors_.push_back(vec);
       ++dim;
     }
   }
