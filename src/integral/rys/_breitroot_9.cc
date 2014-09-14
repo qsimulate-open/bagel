@@ -1030,7 +1030,7 @@ void BreitRootList::breitroot9(const double* ta, double* rr, double* ww, const i
   for (int i = 1; i <= n; ++i) {
     double t = ta[i-1];
     offset += 9;
-    if (isnan(t)) {
+    if (!(t == t)) {
       fill_n(rr+offset, 9, 0.5);
       fill_n(ww+offset, 9, 0.0);
     } else if (t >= 64.0) {

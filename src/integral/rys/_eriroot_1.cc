@@ -150,7 +150,7 @@ void ERIRootList::eriroot1(const double* ta, double* rr, double* ww, const int n
   for (int i = 1; i <= n; ++i) {
     double t = ta[i-1];
     offset += 1;
-    if (isnan(t)) {
+    if (!(t == t)) {
       fill_n(rr+offset, 1, 0.5);
       fill_n(ww+offset, 1, 0.0);
     } else if (t >= 64.0) {

@@ -20308,7 +20308,7 @@ void ComplexERIRootList::complex_eriroot9(const complex<double>* ta, complex<dou
   for (int i = 1; i <= n; ++i) {
     complex<double> t = ta[i-1];
     offset += 9;
-    if (isnan(t.real())) {
+    if (!(t == t)) {
       fill_n(rr+offset, 9, 0.5);
       fill_n(ww+offset, 9, 0.0);
     } else if (t.real() < -2) {

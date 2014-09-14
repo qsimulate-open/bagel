@@ -590,7 +590,7 @@ void BreitRootList::breitroot5(const double* ta, double* rr, double* ww, const i
   for (int i = 1; i <= n; ++i) {
     double t = ta[i-1];
     offset += 5;
-    if (isnan(t)) {
+    if (!(t == t)) {
       fill_n(rr+offset, 5, 0.5);
       fill_n(ww+offset, 5, 0.0);
     } else if (t >= 64.0) {

@@ -368,7 +368,7 @@ void Spin2RootList::spin2root3(const double* ta, double* rr, double* ww, const i
   for (int i = 1; i <= n; ++i) {
     double t = ta[i-1];
     offset += 3;
-    if (isnan(t)) {
+    if (!(t == t)) {
       fill_n(rr+offset, 3, 0.5);
       fill_n(ww+offset, 3, 0.0);
     } else if (t >= 64.0) {
