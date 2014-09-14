@@ -37,6 +37,8 @@ class PSCF : public Method {
     double energy_;
     bool dodf_;
 
+    const std::string indent = "  ";
+
   public:
     PSCF() { }
     PSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,

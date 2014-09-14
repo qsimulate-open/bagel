@@ -32,15 +32,55 @@ using namespace bagel;
 Lattice::Lattice(const shared_ptr<const Geometry> g) : unit_cell_(g) {
 
   ndim_ = g->lattice_vectors().size();
+  if (ndim_ > 3)
+    cout << "  *** Warning: Dimension in P-SCF is greater than 3!" << endl;
+  nuclear_repulsion_ = compute_nuclear_repulsion();
+
 }
 
+double Lattice::compute_nuclear_repulsion() const {
+
+  double out = 0.0;
+
+  vector<array<double, 3>> vecs = unit_cell_->lattice_vectors();
+
+  const int ncells = 1; // Temporary
+
+  auto cell0 = make_shared<const Geometry>(*unit_cell_);
+  vector<shared_ptr<const Atom>> atoms0 = cell0->atoms();
+  array<double, 3> disp;
+  for (int idim = 0; idim != ndim_; ++idim) {
+    const array<double, 3> a = vecs[idim];
+    for (int i0 = -ncells; i0 <= ncells; ++i0) {
+      disp[0] = i0 * a[0];
+      disp[1] = i0 * a[1];
+      disp[2] = i0 * a[2];
+      auto cell = make_shared<const Geometry>(*unit_cell_, disp);
+      vector<shared_ptr<const Atom>> atoms = cell->atoms();
+      for (auto iter0 = atoms0.begin(); iter0 != atoms0.end(); ++iter0) {
+        const double c0 = (*iter0)->atom_charge();
+        auto ia0 = distance(atoms0.begin(), iter0);
+        for (auto iter1 = atoms.begin(); iter1 != atoms.end(); ++iter1) {
+          const double c = (*iter1)->atom_charge();
+          auto ia1 = distance(atoms.begin(), iter1);
+          if (i0 == 0 && ia0 == ia1) continue;
+          out += c0 * c / (*iter0)->distance(*iter1);
+        }
+      }
+    }
+  }
+
+  return out;
+}
 
 void Lattice::print_lattice_vectors() const {
 
-  const string indent = "    ";
-  cout << indent << setw(4) << " Basic lattice vectors:" << endl;
+  const string indent = "  ";
+  cout << indent << "=== Lattice vector(s) ===" << endl << indent << endl;
+
   for (int i = 0; i != ndim_; ++i)
-    cout << indent << indent << setprecision(6) << "(" << setw(10) << unit_cell_->lattice_vectors(i)[0] << ", "
-                                                       << setw(10) << unit_cell_->lattice_vectors(i)[1] << ", "
-                                                       << setw(10) << unit_cell_->lattice_vectors(i)[2] << ") " << endl;
+    cout << indent << fixed << setprecision(6) << "(" << setw(10) << unit_cell_->lattice_vectors(i)[0] << ", "
+                                                      << setw(10) << unit_cell_->lattice_vectors(i)[1] << ", "
+                                                      << setw(10) << unit_cell_->lattice_vectors(i)[2] << ") " << endl;
+  cout << endl;
 }

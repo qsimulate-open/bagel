@@ -37,13 +37,14 @@ class Lattice {
     std::shared_ptr<const Geometry> unit_cell_;
 
     double nuclear_repulsion_;
-    void compute_nuclear_repulsion() const;
+    double compute_nuclear_repulsion() const;
 
   public:
     Lattice() { }
     Lattice(const std::shared_ptr<const Geometry> g);
     ~Lattice() { }
 
+    std::shared_ptr<const Geometry> unit_cell() const { return unit_cell_; }
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     void print_lattice_vectors() const;
 };
