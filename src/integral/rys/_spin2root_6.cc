@@ -700,7 +700,7 @@ void Spin2RootList::spin2root6(const double* ta, double* rr, double* ww, const i
   for (int i = 1; i <= n; ++i) {
     double t = ta[i-1];
     offset += 6;
-    if (!(t == t)) {
+    if (std::isnan(t)) {
       fill_n(rr+offset, 6, 0.5);
       fill_n(ww+offset, 6, 0.0);
     } else if (t >= 64.0) {
