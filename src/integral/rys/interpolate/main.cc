@@ -531,7 +531,7 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
   for (int i = 1; i <= n; ++i) {\n\
     double t = ta[i-1];\n\
     offset += " << nroot << ";\n\
-    if (isnan(t)) {\n\
+    if (!(t == t)) {\n\
       fill_n(rr+offset, " << nroot << ", 0.5);\n\
       fill_n(ww+offset, " << nroot << ", 0.0);\n";
 #ifndef DAWSON
