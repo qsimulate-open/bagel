@@ -50,6 +50,7 @@ class Lattice {
     int ndim() const { return ndim_; }
     int ncell() const {return ncell_; }
     void print_primitive_vectors() const;
+    void print_lattice_coordinates() const; // write .XYZ file
 };
 
 }

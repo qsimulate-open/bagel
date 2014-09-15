@@ -84,3 +84,32 @@ void Lattice::print_primitive_vectors() const {
                                                       << setw(10) << primitive_cell_->primitive_vectors(i)[2] << ") " << endl;
   cout << endl;
 }
+
+void Lattice::print_lattice_coordinates() const {
+
+  std::ofstream ofs;
+  ofs.open("lattice.xyz");
+  const int natom = pow(2*ncell_+1, 2) * primitive_cell_->natom();
+  ofs << natom << endl;
+  ofs << "[Lattice XYZ Format]" << endl;
+
+  const array<double, 3> a1 = primitive_cell_->primitive_vectors(0);
+  const array<double, 3> a2 = primitive_cell_->primitive_vectors(1);
+
+  array<double, 3> disp;
+  for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
+    for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
+      disp[0] = i1 * a1[0] + i2 * a2[0];
+      disp[1] = i1 * a1[1] + i2 * a2[1];
+      disp[2] = i1 * a1[2] + i2 * a2[2];
+      auto cell = make_shared<const Geometry>(*primitive_cell_, disp);
+      for (auto& atom : cell->atoms()) {
+        string name = atom->name();
+        name[0] = toupper(name[0]);
+        ofs << name << fixed << setprecision(6) << setw(14) << atom->position(0) << "   "
+                                                << setw(14) << atom->position(1) << "   "
+                                                << setw(14) << atom->position(2) << endl;
+      }
+    }
+  }
+}

@@ -38,6 +38,7 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
     throw runtime_error("Periodic code does not work with density fitting yet!");
 
   lattice_->print_primitive_vectors();
+  lattice_->print_lattice_coordinates();
 }
 
 void PSCF::compute() {
