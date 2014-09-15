@@ -49,10 +49,18 @@ class ComplexDFDist : public DFDist, public ComplexDF_base {
     size_t naux() const { return naux_; }
 
     // compute half transforms; c is dimensioned by nbasis_;
-    std::shared_ptr<ComplexDFHalfDist> complex_compute_half_transform(const ZMatView c) const;
+    std::shared_ptr<DFHalfDist> compute_half_transform(const ZMatView c) const override;
+    std::shared_ptr<DFHalfDist> compute_half_transform(const MatView c) const override {
+      throw std::runtime_error("ComplexDFDist::compute_half_transform(...) has only been implemented for complex arguments");
+      return nullptr;
+    }
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
-    std::shared_ptr<ComplexDFHalfDist> complex_compute_half_transform_swap(const ZMatView c) const;
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const ZMatView c) const override;
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const MatView c) const override {
+      throw std::runtime_error("ComplexDFDist::compute_half_transform_swap(...) has only been implemented for complex arguments");
+      return nullptr;
+    }
 
     // split up smalleri integrals into 6 dfdist objects
     std::vector<std::shared_ptr<const DFDist>> split_blocks() const override;
@@ -61,9 +69,22 @@ class ComplexDFDist : public DFDist, public ComplexDF_base {
     std::array<std::shared_ptr<const DFDist>,2> split_real_imag() const;
 
     // compute a J operator, given density matrices in AO basis
-    std::shared_ptr<ZMatrix> complex_compute_Jop(const std::shared_ptr<const ZMatrix> den) const;
-    std::shared_ptr<ZMatrix> complex_compute_Jop(const std::shared_ptr<const ComplexDF_base> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const;
-    std::shared_ptr<ZMatrix> complex_compute_Jop_from_cd(std::shared_ptr<const ZVectorB> cd) const;
+    std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ZMatrix> den) const override;
+    std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ComplexDF_base> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const override;
+    std::shared_ptr<ZMatrix> compute_Jop_from_cd(std::shared_ptr<const ZVectorB> cd) const override;
+
+    std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const Matrix> den) const override {
+      throw std::runtime_error("ComplexDFDist::compute_Jop has only been implemented for complex arguments");
+      return nullptr;
+    }
+    std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const std::shared_ptr<const Matrix> den, const bool onlyonce = false) const override {
+      throw std::runtime_error("ComplexDFDist::compute_Jop has only been implemented for complex arguments");
+      return nullptr;
+    }
+    std::shared_ptr<Matrix> compute_Jop_from_cd(std::shared_ptr<const VectorB> cd) const override {
+      throw std::runtime_error("ComplexDFDist::compute_Jop has only been implemented for complex arguments");
+      return nullptr;
+    }
 };
 
 template<class TBatch>
@@ -160,9 +181,9 @@ class ComplexDFHalfDist : public DFHalfDist, public ComplexDF_base {
   public:
     ComplexDFHalfDist(const std::shared_ptr<const ParallelDF> df, const int nocc) : DFHalfDist(df, nocc), ComplexDF_base() { }
 
-    std::shared_ptr<ZMatrix> complex_form_2index(std::shared_ptr<const ComplexDFHalfDist> o, const double a, const bool swap = false) const;
-    std::shared_ptr<ComplexDFHalfDist> complex_apply_J() const { return complex_apply_J(df_->data2()); }
-    std::shared_ptr<ComplexDFHalfDist> complex_apply_J(const std::shared_ptr<const Matrix> o) const;
+    std::shared_ptr<ZMatrix> complex_form_2index(std::shared_ptr<const DFHalfDist> o, const double a, const bool swap = false) const;
+    std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const override;
+    using DFHalfDist::apply_J;
 };
 
 }

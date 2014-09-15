@@ -44,7 +44,7 @@ void ComplexDF_base::assign_complex_blocks(ParallelDF& source) {
 
 shared_ptr<ZVectorB> ComplexDF_base::complex_compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
   if (real_block_.size() != 1 || imag_block_.size() !=1 ) throw logic_error("compute_Jop so far assumes block_.size() == 2 for complex integrals");
-  if (!dat2) throw logic_error("ComplexDF_base::compute_cd was called without 2-index integrals");
+  if (!dat2) throw logic_error("ComplexDF_base::complex_compute_cd was called without 2-index integrals");
 
   // D = (D|rs)*d_rs  (using zgemm3m-like algorithm for complex multiplication)
   shared_ptr<VectorB> tmpr, tmpi;
