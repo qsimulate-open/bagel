@@ -32,29 +32,29 @@ using namespace bagel;
 Lattice::Lattice(const shared_ptr<const Geometry> g) : primitive_cell_(g) {
 
   ndim_ = g->primitive_vectors().size();
+  ncell_ = 5; // temporary
   if (ndim_ > 3)
     cout << "  *** Warning: Dimension in P-SCF is greater than 3!" << endl;
-  nuclear_repulsion_ = compute_nuclear_repulsion();
+  nuclear_repulsion_ = compute_nuclear_repulsion_2D();
 
 }
 
-double Lattice::compute_nuclear_repulsion() const {
+double Lattice::compute_nuclear_repulsion_2D() const {
 
   double out = 0.0;
 
-  vector<array<double, 3>> vecs = primitive_cell_->primitive_vectors();
-
-  const int ncells = 1; // Temporary
+  assert(ndim_ == 2);
+  const array<double, 3> a1 = primitive_cell_->primitive_vectors(0);
+  const array<double, 3> a2 = primitive_cell_->primitive_vectors(1);
 
   auto cell0 = make_shared<const Geometry>(*primitive_cell_);
   vector<shared_ptr<const Atom>> atoms0 = cell0->atoms();
   array<double, 3> disp;
-  for (int idim = 0; idim != ndim_; ++idim) {
-    const array<double, 3> a = vecs[idim];
-    for (int i0 = -ncells; i0 <= ncells; ++i0) {
-      disp[0] = i0 * a[0];
-      disp[1] = i0 * a[1];
-      disp[2] = i0 * a[2];
+  for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
+    for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
+      disp[0] = i1 * a1[0] + i2 * a2[0];
+      disp[1] = i1 * a1[1] + i2 * a2[1];
+      disp[2] = i1 * a1[2] + i2 * a2[2];
       auto cell = make_shared<const Geometry>(*primitive_cell_, disp);
       vector<shared_ptr<const Atom>> atoms = cell->atoms();
       for (auto iter0 = atoms0.begin(); iter0 != atoms0.end(); ++iter0) {
@@ -63,7 +63,7 @@ double Lattice::compute_nuclear_repulsion() const {
         for (auto iter1 = atoms.begin(); iter1 != atoms.end(); ++iter1) {
           const double c = (*iter1)->atom_charge();
           auto ia1 = distance(atoms.begin(), iter1);
-          if (i0 == 0 && ia0 == ia1) continue;
+          if (i1 == 0 && i2 == 0 && ia0 == ia1) continue;
           out += c0 * c / (*iter0)->distance(*iter1);
         }
       }

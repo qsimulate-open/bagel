@@ -34,10 +34,11 @@ namespace bagel {
 class Lattice {
   protected:
     int ndim_;
+    int ncell_;
     std::shared_ptr<const Geometry> primitive_cell_;
 
     double nuclear_repulsion_;
-    double compute_nuclear_repulsion() const;
+    double compute_nuclear_repulsion_2D() const;
 
   public:
     Lattice() { }
@@ -46,6 +47,8 @@ class Lattice {
 
     std::shared_ptr<const Geometry> primitive_cell() const { return primitive_cell_; }
     double nuclear_repulsion() const { return nuclear_repulsion_; };
+    int ndim() const { return ndim_; }
+    int ncell() const {return ncell_; }
     void print_primitive_vectors() const;
 };
 
