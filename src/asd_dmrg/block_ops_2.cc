@@ -91,8 +91,93 @@ BlockOperators2::BlockOperators2(shared_ptr<const DMRG_Block2> blocks, shared_pt
   }
 }
 
-shared_ptr<Matrix> BlockOperators2::gamma_a(const BlockKey bk, int i) const { return nullptr; }
-shared_ptr<Matrix> BlockOperators2::gamma_b(const BlockKey bk, int i) const { return nullptr; }
+shared_ptr<Matrix> BlockOperators2::gamma_a(const BlockKey bk, int i) const {
+  const int lnorb = blocks_->left_block()->norb();
+  const BlockInfo binfo = blocks_->blockinfo(bk);
+  const BlockKey target_bk(bk.nelea+1, bk.neleb);
+  assert(blocks_->contains(target_bk));
+  const BlockInfo tinfo = blocks_->blockinfo(target_bk);
+
+  auto out = make_shared<Matrix>(tinfo.nstates, binfo.nstates);
+
+  const vector<DMRG::BlockPair>& target_pairs = blocks_->blockpairs(target_bk);
+  if (i < lnorb) { // i in L block
+    for (auto& spair : blocks_->blockpairs(bk)) {
+      BlockInfo rblock = spair.right;
+      BlockInfo lsource = spair.left;
+
+      auto iter = find_if(target_pairs.begin(), target_pairs.end(), [&rblock, &lsource] (DMRG::BlockPair bp)
+        { return make_pair(BlockKey(lsource.nelea+1, lsource.neleb), rblock.key())==make_pair(bp.left.key(), bp.right.key()); } );
+      if (iter != target_pairs.end()) {
+        Matrix Runit(rblock.nstates, rblock.nstates); Runit.unit();
+        Matrix Lgamma = *left_ops_->gamma_a(lsource.key(), i);
+
+        out->add_block(1.0, iter->offset, spair.offset, iter->nstates(), spair.nstates(), kronecker_product(false, Runit, false, Lgamma));
+      }
+    }
+  }
+  else {
+    for (auto& spair : blocks_->blockpairs(bk)) {
+      BlockInfo lblock = spair.left;
+      BlockInfo rsource = spair.right;
+
+      auto iter = find_if(target_pairs.begin(), target_pairs.end(), [&lblock, &rsource] (DMRG::BlockPair bp)
+        { return make_pair(lblock.key(), BlockKey(rsource.nelea+1, rsource.neleb))==make_pair(bp.left.key(), bp.right.key()); } );
+      if (iter != target_pairs.end()) {
+        Matrix Lunit(lblock.nstates, lblock.nstates); Lunit.unit();
+        Matrix Rgamma = *right_ops_->gamma_a(rsource.key(), i - lnorb);
+
+        out->add_block(1.0, iter->offset, spair.offset, iter->nstates(), spair.nstates(), kronecker_product(false, Rgamma, false, Lunit));
+      }
+    }
+  }
+
+  return out;
+}
+
+shared_ptr<Matrix> BlockOperators2::gamma_b(const BlockKey bk, int i) const {
+  const int lnorb = blocks_->left_block()->norb();
+  const BlockInfo binfo = blocks_->blockinfo(bk);
+  const BlockKey target_bk(bk.nelea, bk.neleb+1);
+  assert(blocks_->contains(target_bk));
+  const BlockInfo tinfo = blocks_->blockinfo(target_bk);
+
+  auto out = make_shared<Matrix>(tinfo.nstates, binfo.nstates);
+
+  const vector<DMRG::BlockPair>& target_pairs = blocks_->blockpairs(target_bk);
+  if (i < lnorb) { // i in L block
+    for (auto& spair : blocks_->blockpairs(bk)) {
+      BlockInfo rblock = spair.right;
+      BlockInfo lsource = spair.left;
+
+      auto iter = find_if(target_pairs.begin(), target_pairs.end(), [&rblock, &lsource] (DMRG::BlockPair bp)
+        { return make_pair(BlockKey(lsource.nelea, lsource.neleb+1), rblock.key())==make_pair(bp.left.key(), bp.right.key()); } );
+      if (iter != target_pairs.end()) {
+        Matrix Runit(rblock.nstates, rblock.nstates); Runit.unit();
+        Matrix Lgamma = *left_ops_->gamma_b(lsource.key(), i);
+
+        out->add_block(1.0, iter->offset, spair.offset, iter->nstates(), spair.nstates(), kronecker_product(false, Runit, false, Lgamma));
+      }
+    }
+  }
+  else {
+    for (auto& spair : blocks_->blockpairs(bk)) {
+      BlockInfo lblock = spair.left;
+      BlockInfo rsource = spair.right;
+
+      auto iter = find_if(target_pairs.begin(), target_pairs.end(), [&lblock, &rsource] (DMRG::BlockPair bp)
+        { return make_pair(lblock.key(), BlockKey(rsource.nelea, rsource.neleb+1))==make_pair(bp.left.key(), bp.right.key()); } );
+      if (iter != target_pairs.end()) {
+        Matrix Lunit(lblock.nstates, lblock.nstates); Lunit.unit();
+        Matrix Rgamma = *right_ops_->gamma_b(rsource.key(), i - lnorb);
+
+        out->add_block(1.0, iter->offset, spair.offset, iter->nstates(), spair.nstates(), kronecker_product(false, Rgamma, false, Lunit));
+      }
+    }
+  }
+
+  return out;
+}
 
 double BlockOperators2::D_a(const BlockKey bk, int brastate, int ketstate, int i, int j, int k) const {
   const DMRG::BlockPair source_pair = *find_if(blocks_->blockpairs(bk).begin(), blocks_->blockpairs(bk).end(), [ketstate] (const DMRG::BlockPair bp)
