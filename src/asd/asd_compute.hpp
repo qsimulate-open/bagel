@@ -101,10 +101,6 @@ void ASD<VecType>::compute() {
 
   adiabats_ = cc->copy();
 
-  //compute RDM
-  compute_rdm();
-
-
   if (dipoles_) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;
     std::shared_ptr<const Reference> dimerref = dimer_->sref();
