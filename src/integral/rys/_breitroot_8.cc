@@ -920,7 +920,7 @@ void BreitRootList::breitroot8(const double* ta, double* rr, double* ww, const i
   for (int i = 1; i <= n; ++i) {
     double t = ta[i-1];
     offset += 8;
-    if (!(t == t)) {
+    if (std::isnan(t)) {
       fill_n(rr+offset, 8, 0.5);
       fill_n(ww+offset, 8, 0.0);
     } else if (t >= 64.0) {
