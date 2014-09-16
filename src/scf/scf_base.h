@@ -72,6 +72,8 @@ class SCF_base_ : public Method {
 
     bool restart_;
 
+    void get_coeff(const std::shared_ptr<const Reference> ref) { coeff_ = ref->coeff(); }
+
   private:
     // serialization
     friend class boost::serialization::access;
@@ -111,6 +113,10 @@ class SCF_base_ : public Method {
     std::shared_ptr<DFHalfDist> half() const { return half_; }
     void discard_half() { half_.reset(); }
 };
+
+// specialized for GIAO cases
+template <>
+void SCF_base_<ZMatrix, ZOverlap, ZHcore, std::enable_if<true>::type>::get_coeff(const std::shared_ptr<const Reference> ref);
 
 using SCF_base = SCF_base_<Matrix, Overlap, Hcore>;
 using SCF_base_London = SCF_base_<ZMatrix, ZOverlap, ZHcore>;

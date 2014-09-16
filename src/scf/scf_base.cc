@@ -25,6 +25,7 @@
 
 
 #include <src/scf/scf_base.h>
+#include <src/rel/relreference.h>
 #include <src/util/timer.h>
 #include <src/math/diis.h>
 #include <iostream>
@@ -80,7 +81,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
 
   // if ref is passed to this
   if (re != nullptr) {
-//    coeff_ = re->coeff();
+    get_coeff(re);
   }
   cout << endl;
 }
@@ -90,6 +91,17 @@ template <typename MatType, typename OvlType, typename HcType, class Enable>
 void SCF_base_<MatType, OvlType, HcType, Enable>::init_schwarz() {
   schwarz_ = geom_->schwarz();
 }
+
+
+// Specialized for GIAO
+template <>
+void SCF_base_<ZMatrix, ZOverlap, ZHcore, enable_if<true>::type>::get_coeff(const shared_ptr<const Reference> ref) {
+  auto cref = dynamic_pointer_cast<const RelReference>(ref);
+  assert(cref);
+  if (cref->rel()) throw runtime_error("Invalid reference provided for SCF_London");
+  coeff_ = make_shared<ZCoeff>(*cref->relcoeff());
+}
+
 
 template class SCF_base_<Matrix, Overlap, Hcore>;
 template class SCF_base_<ZMatrix, ZOverlap, ZHcore>;
