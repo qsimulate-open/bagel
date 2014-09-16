@@ -684,7 +684,7 @@ ofs << "\n\
   for (int i = 1; i <= n; ++i) {\n\
     complex<double> t = ta[i-1];\n\
     offset += " << nroot << ";\n\
-    if (isnan(t)) {\n\
+    if (std::isnan(t.real())) {\n\
       fill_n(rr+offset, " << nroot << ", 0.5);\n\
       fill_n(ww+offset, " << nroot << ", 0.0);\n\
     } else if (t.real() < " << MINTR << ") {\n\

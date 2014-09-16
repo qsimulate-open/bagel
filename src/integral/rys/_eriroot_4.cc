@@ -478,7 +478,7 @@ void ERIRootList::eriroot4(const double* ta, double* rr, double* ww, const int n
   for (int i = 1; i <= n; ++i) {
     double t = ta[i-1];
     offset += 4;
-    if (isnan(t)) {
+    if (std::isnan(t)) {
       fill_n(rr+offset, 4, 0.5);
       fill_n(ww+offset, 4, 0.0);
     } else if (t >= 64.0) {

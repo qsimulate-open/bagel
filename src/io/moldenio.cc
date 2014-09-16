@@ -39,15 +39,16 @@ MoldenIO::MoldenIO(const string filename) : FileIO(filename) {
 void MoldenIO::const_scales() {
   vector<double> s_scale = { 1.0 };
   vector<double> p_scale = { 1.0, 1.0, 1.0 };
-  vector<double> d_scale = { 1.0, ::sqrt(3.0), 1.0, ::sqrt(3.0), ::sqrt(3.0), 1.0 };
-  // TODO The f functions are definitely not right, but I'll get to that later
-  vector<double> f_scale = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+  vector<double> d_scale = { 1.0, sqrt(3.0), 1.0, sqrt(3.0), sqrt(3.0), 1.0 };
+  vector<double> f_scale = { 1.0, sqrt(5.0), sqrt(5.0), 1.0, sqrt(5.0), sqrt(15.0), sqrt(5.0), sqrt(5.0), sqrt(5.0), 1.0 };
+  vector<double> g_scale = { 1.0, sqrt(7.0), sqrt(35.0/3.0), sqrt(7.0), 1.0, sqrt(7.0), sqrt(35.0), sqrt(35.0), sqrt(7.0), sqrt(35.0/3.0), sqrt(35.0), sqrt(35.0/3.0), sqrt(7.0), sqrt(7.0), 1.0 };
 
 
   scaling_.push_back(s_scale);
   scaling_.push_back(p_scale);
   scaling_.push_back(d_scale);
   scaling_.push_back(f_scale);
+  scaling_.push_back(g_scale);
 }
 
 void MoldenIO::const_maps() {
@@ -59,17 +60,17 @@ void MoldenIO::const_maps() {
     vector<int> cart_p_order = { 0, 1, 2 };
     vector<int> cart_d_order = { 0, 3, 1, 4, 5, 2 };
     vector<int> cart_f_order = { 0, 4, 3, 1, 5, 9, 8, 6, 7, 2 };
+    vector<int> cart_g_order = { 0, 3, 9, 5, 1, 4,12,13, 6,10,14,11, 7, 8, 2};
 
-    vector<vector<int>> m2b_cart = {cart_s_order, cart_p_order, cart_d_order, cart_f_order};
-    m2b_cart_.insert(m2b_cart_.end(), m2b_cart.begin(), m2b_cart.end());
+    m2b_cart_ = vector<vector<int>>{cart_s_order, cart_p_order, cart_d_order, cart_f_order, cart_g_order};
 
     vector<int> sph_s_order = { 0 };
     vector<int> sph_p_order = { 0, 1, 2 };
     vector<int> sph_d_order = { 3, 4, 1, 2, 0 };
     vector<int> sph_f_order = { 5, 6, 3, 4, 1, 2, 0 };
+    vector<int> sph_g_order = { 7, 8, 5, 6, 3, 4, 1, 2, 0 };
 
-    vector<vector<int>> m2b_sph = {sph_s_order, sph_p_order, sph_d_order, sph_f_order};
-    m2b_sph_.insert(m2b_sph_.end(), m2b_sph.begin(), m2b_sph.end());
+    m2b_sph_ = vector<vector<int>>{sph_s_order, sph_p_order, sph_d_order, sph_f_order, sph_g_order};
   }
 
   /************************************************************
@@ -80,17 +81,17 @@ void MoldenIO::const_maps() {
     vector<int> cart_p_order = { 0, 1, 2 };
     vector<int> cart_d_order = { 0, 2, 5, 1, 3, 4 };
     vector<int> cart_f_order = { 0, 3, 9, 2, 1, 4, 7, 8, 6, 5 };
+    vector<int> cart_g_order = { 0, 4,14, 1, 5, 3, 8,12,13, 2, 9,11, 6, 7,10};
 
-    vector<vector<int>> b2m_cart = {cart_s_order, cart_p_order, cart_d_order, cart_f_order};
-    b2m_cart_.insert(b2m_cart_.end(), b2m_cart.begin(), b2m_cart.end());
+    b2m_cart_ = vector<vector<int>>{cart_s_order, cart_p_order, cart_d_order, cart_f_order, cart_g_order};
 
     vector<int> sph_s_order = { 0 };
     vector<int> sph_p_order = { 0, 1, 2 };
     vector<int> sph_d_order = { 4, 2, 3, 0, 1 };
     vector<int> sph_f_order = { 6, 4, 5, 2, 3, 0, 1 };
+    vector<int> sph_g_order = { 8, 6, 7, 4, 5, 2, 3, 0, 1};
 
-    vector<vector<int>> b2m_sph = {sph_s_order, sph_p_order, sph_d_order, sph_f_order};
-    b2m_sph_.insert(b2m_sph_.end(), b2m_sph.begin(), b2m_sph.end());
+    b2m_sph_ = vector<vector<int>>{sph_s_order, sph_p_order, sph_d_order, sph_f_order, sph_g_order};
   }
 }
 
