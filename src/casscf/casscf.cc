@@ -51,6 +51,18 @@ void CASSCF::common_init() {
   if (geom_->nirrep() > 1) throw runtime_error("CASSCF: C1 only at the moment.");
   print_header();
 
+  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+  if (iactive) {
+    set<int> active_indices;
+    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+    for (auto& i : *iactive) active_indices.insert(lexical_cast<int>(i->data()) - 1);
+    ref_ = ref_->set_active(active_indices);
+    cout << " " << endl;
+    cout << "    ==== Active orbitals : ===== " << endl;
+    for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
+    cout << "    ============================ " << endl << endl;
+  }
+
   // first set coefficient
   coeff_ = ref_->coeff();
 #if 0
@@ -103,7 +115,11 @@ void CASSCF::common_init() {
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
   mute_stdcout();
-  fci_ = make_shared<KnowlesHandy>(idata_, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+  {
+    auto idata = make_shared<PTree>(*idata_);
+    idata->erase("active");
+    fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+  }
   resume_stdcout();
 
 
