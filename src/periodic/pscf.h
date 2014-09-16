@@ -43,7 +43,7 @@ class PSCF : public Method {
     PSCF() { }
     PSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
          const std::shared_ptr<const Reference> re = nullptr);
-    virtual ~PSCF() {  }
+    virtual ~PSCF() { }
 
     virtual void compute() override;
     double energy() const { return energy_; };

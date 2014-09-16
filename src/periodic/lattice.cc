@@ -31,46 +31,99 @@ using namespace bagel;
 
 Lattice::Lattice(const shared_ptr<const Geometry> g) : primitive_cell_(g) {
 
-  ndim_ = g->primitive_vectors().size();
-  ncell_ = 5; // temporary
-  if (ndim_ > 3)
-    cout << "  *** Warning: Dimension in P-SCF is greater than 3!" << endl;
-  nuclear_repulsion_ = compute_nuclear_repulsion_2D();
-
+  init();
 }
 
-double Lattice::compute_nuclear_repulsion_2D() const {
+double Lattice::compute_nuclear_repulsion() const {
 
   double out = 0.0;
 
-  assert(ndim_ == 2);
-  const array<double, 3> a1 = primitive_cell_->primitive_vectors(0);
-  const array<double, 3> a2 = primitive_cell_->primitive_vectors(1);
-
   auto cell0 = make_shared<const Geometry>(*primitive_cell_);
   vector<shared_ptr<const Atom>> atoms0 = cell0->atoms();
-  array<double, 3> disp;
-  for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
-    for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
-      disp[0] = i1 * a1[0] + i2 * a2[0];
-      disp[1] = i1 * a1[1] + i2 * a2[1];
-      disp[2] = i1 * a1[2] + i2 * a2[2];
-      auto cell = make_shared<const Geometry>(*primitive_cell_, disp);
-      vector<shared_ptr<const Atom>> atoms = cell->atoms();
-      for (auto iter0 = atoms0.begin(); iter0 != atoms0.end(); ++iter0) {
-        const double c0 = (*iter0)->atom_charge();
-        auto ia0 = distance(atoms0.begin(), iter0);
-        for (auto iter1 = atoms.begin(); iter1 != atoms.end(); ++iter1) {
-          const double c = (*iter1)->atom_charge();
-          auto ia1 = distance(atoms.begin(), iter1);
-          if (i1 == 0 && i2 == 0 && ia0 == ia1) continue;
-          out += c0 * c / (*iter0)->distance(*iter1);
-        }
+  int icell0 = 0;
+  for (int i = 0; i != ndim_; ++i) icell0 += ncell_ * pow(2 * ncell_ + 1, i);
+  int count = 0;
+  for (auto& disp : lattice_vectors_) {
+    auto cell = make_shared<const Geometry>(*primitive_cell_, disp);
+    vector<shared_ptr<const Atom>> atoms = cell->atoms();
+    for (auto iter0 = atoms0.begin(); iter0 != atoms0.end(); ++iter0) {
+      const double c0 = (*iter0)->atom_charge();
+      auto ia0 = distance(atoms0.begin(), iter0);
+      for (auto iter1 = atoms.begin(); iter1 != atoms.end(); ++iter1) {
+        const double c = (*iter1)->atom_charge();
+        auto ia1 = distance(atoms.begin(), iter1);
+        if (count == icell0 && ia0 == ia1) continue;
+        out += c0 * c / (*iter0)->distance(*iter1);
       }
     }
+    ++ count;
   }
 
   return out;
+}
+
+void Lattice::init() {
+
+  ndim_ = primitive_cell_->primitive_vectors().size();
+  if (ndim_ > 3)
+    cout << "  *** Warning: Dimension in P-SCF is greater than 3!" << endl;
+
+  ncell_ = 5; // temporary
+  num_lattice_pts_ = pow(2*ncell_+1, ndim_) * primitive_cell_->natom();
+  lattice_vectors_.resize(num_lattice_pts_);
+
+  /* Set up lattice vectors */
+  switch (ndim_) {
+    case 1:
+      {
+        const array<double, 3> a1 = primitive_cell_->primitive_vectors(0);
+        array<double, 3> disp;
+        for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
+          disp[0] = i1 * a1[0];
+          disp[1] = i1 * a1[1];
+          disp[2] = i1 * a1[2];
+          lattice_vectors_[i1 + ncell_] = disp;
+        }
+        break;
+      }
+    case 2:
+      {
+        const array<double, 3> a1 = primitive_cell_->primitive_vectors(0);
+        const array<double, 3> a2 = primitive_cell_->primitive_vectors(1);
+        array<double, 3> disp;
+        int count = 0;
+        for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
+          for (int i2 = -ncell_; i2 <= ncell_; ++i2, ++count) {
+            disp[0] = i1 * a1[0] + i2 * a2[0];
+            disp[1] = i1 * a1[1] + i2 * a2[1];
+            disp[2] = i1 * a1[2] + i2 * a2[2];
+            lattice_vectors_[count] = disp;
+          }
+        }
+        break;
+      }
+    case 3:
+      {
+        const array<double, 3> a1 = primitive_cell_->primitive_vectors(0);
+        const array<double, 3> a2 = primitive_cell_->primitive_vectors(1);
+        const array<double, 3> a3 = primitive_cell_->primitive_vectors(2);
+        array<double, 3> disp;
+        int count = 0;
+        for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
+          for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
+            for (int i3 = -ncell_; i3 <= ncell_; ++i3, ++count) {
+              disp[0] = i1 * a1[0] + i2 * a2[0] + i3 * a3[0];
+              disp[1] = i1 * a1[1] + i2 * a2[1] + i3 * a3[1];
+              disp[2] = i1 * a1[2] + i2 * a2[2] + i3 * a3[2];
+              lattice_vectors_[count] = disp;
+            }
+          }
+        }
+        break;
+      }
+  }
+
+  nuclear_repulsion_ = compute_nuclear_repulsion();
 }
 
 void Lattice::print_primitive_vectors() const {
@@ -89,27 +142,17 @@ void Lattice::print_lattice_coordinates() const {
 
   std::ofstream ofs;
   ofs.open("lattice.xyz");
-  const int natom = pow(2*ncell_+1, 2) * primitive_cell_->natom();
-  ofs << natom << endl;
+  ofs << num_lattice_pts_ << endl;
   ofs << "[Lattice XYZ Format]" << endl;
 
-  const array<double, 3> a1 = primitive_cell_->primitive_vectors(0);
-  const array<double, 3> a2 = primitive_cell_->primitive_vectors(1);
-
-  array<double, 3> disp;
-  for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
-    for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
-      disp[0] = i1 * a1[0] + i2 * a2[0];
-      disp[1] = i1 * a1[1] + i2 * a2[1];
-      disp[2] = i1 * a1[2] + i2 * a2[2];
-      auto cell = make_shared<const Geometry>(*primitive_cell_, disp);
-      for (auto& atom : cell->atoms()) {
-        string name = atom->name();
-        name[0] = toupper(name[0]);
-        ofs << name << fixed << setprecision(6) << setw(14) << atom->position(0) << "   "
-                                                << setw(14) << atom->position(1) << "   "
-                                                << setw(14) << atom->position(2) << endl;
-      }
+  for (auto& disp : lattice_vectors_) {
+    auto cell = make_shared<const Geometry>(*primitive_cell_, disp);
+    for (auto& atom : cell->atoms()) {
+      string name = atom->name();
+      name[0] = toupper(name[0]);
+      ofs << name << fixed << setprecision(6) << setw(14) << atom->position(0) << "   "
+                                              << setw(14) << atom->position(1) << "   "
+                                              << setw(14) << atom->position(2) << endl;
     }
   }
 }

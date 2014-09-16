@@ -34,21 +34,28 @@ namespace bagel {
 class Lattice {
   protected:
     int ndim_;
-    int ncell_;
+    int ncell_; // tmp
+    int num_lattice_pts_;
     std::shared_ptr<const Geometry> primitive_cell_;
+    std::vector<std::array<double, 3>> lattice_vectors_;
 
     double nuclear_repulsion_;
-    double compute_nuclear_repulsion_2D() const;
+    double compute_nuclear_repulsion() const;
 
   public:
     Lattice() { }
     Lattice(const std::shared_ptr<const Geometry> g);
-    ~Lattice() { }
+    virtual ~Lattice() { }
 
-    std::shared_ptr<const Geometry> primitive_cell() const { return primitive_cell_; }
-    double nuclear_repulsion() const { return nuclear_repulsion_; };
     int ndim() const { return ndim_; }
     int ncell() const {return ncell_; }
+    int num_lattice_pts() const { return num_lattice_pts_; }
+    std::shared_ptr<const Geometry> primitive_cell() const { return primitive_cell_; }
+    std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
+    std::array<double, 3> lattice_vectors(const int i) const { return lattice_vectors_[i]; }
+
+    void init();
+    double nuclear_repulsion() const { return nuclear_repulsion_; };
     void print_primitive_vectors() const;
     void print_lattice_coordinates() const; // write .XYZ file
 };
