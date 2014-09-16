@@ -1,3 +1,4 @@
+#if 0
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: scf_base_london.h
@@ -113,4 +114,5 @@ class SCF_base_London : public Method {
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::SCF_base_London)
 
+#endif
 #endif

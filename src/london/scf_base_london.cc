@@ -1,3 +1,4 @@
+#if 0
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: scf_base_london.cc
@@ -97,3 +98,4 @@ void SCF_base_London::init_schwarz() {
   schwarz_ = geom_->schwarz();
 }
 
+#endif

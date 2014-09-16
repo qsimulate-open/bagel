@@ -35,9 +35,9 @@
 using namespace std;
 using namespace bagel;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(SCF_base)
 
-SCF_base::SCF_base(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
+template <typename MatType, typename OvlType, typename HcType, class Enable>
+SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
  : Method(idat, geom, re), eig_(geom->nbasis()) {
 
   // if this is called by Opt
@@ -46,9 +46,9 @@ SCF_base::SCF_base(const shared_ptr<const PTree> idat, const shared_ptr<const Ge
   restart_ = idata_->get<bool>("restart", false);
 
   Timer scfb;
-  overlap_ = make_shared<const Overlap>(geom);
+  overlap_ = make_shared<const OvlType>(geom);
   scfb.tick_print("Overlap matrix");
-  hcore_ = make_shared<const Hcore>(geom);
+  hcore_ = make_shared<const HcType>(geom);
   scfb.tick_print("Hcore matrix");
 
   max_iter_ = idata_->get<int>("maxiter", 100);
@@ -80,13 +80,20 @@ SCF_base::SCF_base(const shared_ptr<const PTree> idat, const shared_ptr<const Ge
 
   // if ref is passed to this
   if (re != nullptr) {
-    coeff_ = re->coeff();
+//    coeff_ = re->coeff();
   }
   cout << endl;
 }
 
 
-void SCF_base::init_schwarz() {
+template <typename MatType, typename OvlType, typename HcType, class Enable>
+void SCF_base_<MatType, OvlType, HcType, Enable>::init_schwarz() {
   schwarz_ = geom_->schwarz();
 }
+
+template class SCF_base_<Matrix, Overlap, Hcore>;
+template class SCF_base_<ZMatrix, ZOverlap, ZHcore>;
+
+BOOST_CLASS_EXPORT_IMPLEMENT(SCF_base)
+BOOST_CLASS_EXPORT_IMPLEMENT(SCF_base_London)
 
