@@ -39,6 +39,9 @@ ZHcore::ZHcore(const shared_ptr<const Molecule> mol) : ZMatrix1e(mol) {
   init(mol);
   fill_upper_conjg();
 
+  if (mol->atoms().front()->use_ecp_basis())
+    throw runtime_error("ECP is not available with a GIAO basis.");
+
 }
 
 
