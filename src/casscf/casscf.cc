@@ -51,6 +51,18 @@ void CASSCF::common_init() {
   if (geom_->nirrep() > 1) throw runtime_error("CASSCF: C1 only at the moment.");
   print_header();
 
+  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+  if (iactive) {
+    set<int> active_indices;
+    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+    for (auto& i : *iactive) active_indices.insert(lexical_cast<int>(i->data()) - 1);
+    ref_ = ref_->set_active(active_indices);
+    cout << " " << endl;
+    cout << "    ==== Active orbitals : ===== " << endl;
+    for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
+    cout << "    ============================ " << endl << endl;
+  }
+
   // first set coefficient
   coeff_ = ref_->coeff();
 #if 0
@@ -70,6 +82,8 @@ void CASSCF::common_init() {
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
   thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
+  // option for printing natural orbitals
+  natocc_ = idata_->get<bool>("natocc",false);
 
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
@@ -101,7 +115,11 @@ void CASSCF::common_init() {
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
   mute_stdcout();
-  fci_ = make_shared<KnowlesHandy>(idata_, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+  {
+    auto idata = make_shared<PTree>(*idata_);
+    idata->erase("active");
+    fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+  }
   resume_stdcout();
 
 
@@ -275,6 +293,7 @@ shared_ptr<Matrix> CASSCF::form_natural_orbs() {
   coeff_ = update_coeff(coeff_, natorb.first);
   // occupation number of the natural orbitals
   occup_ = natorb.second;
+  if (natocc_) print_natocc();
   return natorb.first;
 }
 
@@ -314,6 +333,7 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   shared_ptr<Matrix> fact, factp, gaa;
   shared_ptr<RotFile>  denom;
   one_body_operators(f, fact, factp, gaa, denom);
+  if (natocc_) print_natocc();
 
   *f *= 2.0;
 
@@ -334,4 +354,15 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   out->set_erdm1(erdm);
   out->set_nstate(nstate_);
   return out;
+}
+
+
+void CASSCF::print_natocc() const {
+  assert(occup_.size() > 0);
+  cout << " " << endl;
+  cout << "  ========       state-averaged       ======== " << endl;
+  cout << "  ======== natural occupation numbers ======== " << endl;
+  for (int i=0; i!=occup_.size(); ++i)
+    cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
+  cout << "  ============================================ " << endl;
 }

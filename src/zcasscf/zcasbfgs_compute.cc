@@ -220,6 +220,7 @@ void ZCASBFGS::compute() {
     } else {
       kramers_adapt(expa, nneg_/2);
     }
+    expa->purify_unitary();
 
     cold = coeff_->copy();
     if (optimize_electrons) {
