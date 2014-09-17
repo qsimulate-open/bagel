@@ -132,7 +132,7 @@ class BlockOperators1 : public BlockOperators {
   private:
     template <typename TensorType>
     const MatView get_as_matview(std::shared_ptr<const TensorType> t) const {
-      return MatView(btas::group(btas::group(*t, 0, 2), 1, t->rank()), /*localized*/false);
+      return MatView(btas::make_view(btas::CRange<2>(t->extent(0)*t->extent(1), t->size()/(t->extent(0)*t->extent(1))), t->storage()), false);
     }
 
     std::shared_ptr<Matrix> get_mat_block(std::shared_ptr<const btas::Tensor3<double>> g, const int i) const {
