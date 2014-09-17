@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __src_scf_fock_base_h
-#define __src_scf_fock_base_h
+#ifndef __SRC_SCF_FOCK_BASE_H
+#define __SRC_SCF_FOCK_BASE_H
 
 #include <src/wfn/geometry.h>
 #include <src/molecule/matrix1e.h>

@@ -38,39 +38,42 @@
 using namespace std;
 using namespace bagel;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(Matrix1e)
-
-Matrix1e::Matrix1e(const shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()) {
+template <typename MatType, class Enable>
+Matrix1e_<MatType, Enable>::Matrix1e_(const shared_ptr<const Molecule> mol) : MatType(mol->nbasis(), mol->nbasis()) {
   zero();
 }
 
 
-Matrix1e::Matrix1e(const Matrix1e& o) : Matrix(o.ndim(), o.mdim()) {
+template <typename MatType, class Enable>
+Matrix1e_<MatType, Enable>::Matrix1e_(const Matrix1e_<MatType, Enable>& o) : MatType(o.ndim(), o.mdim()) {
   copy_n(o.data(), size(), data());
 }
 
 
 namespace bagel {
-class Matrix1eTask {
+template <typename MatType, class Enable = typename std::enable_if<(std::is_same<MatType, Matrix>::value || std::is_same<MatType, ZMatrix>::value)>::type>
+class Matrix1eTask_ {
   protected:
-    Matrix1e* parent_;
+    Matrix1e_<MatType>* parent_;
     size_t ob0, ob1;
     array<shared_ptr<const Shell>,2> bas; 
     shared_ptr<const Molecule> mol;
   public:
-    Matrix1eTask(array<shared_ptr<const Shell>,2> a, size_t b, size_t c, shared_ptr<const Molecule> m, Matrix1e* d)
+    Matrix1eTask_(array<shared_ptr<const Shell>,2> a, size_t b, size_t c, shared_ptr<const Molecule> m, Matrix1e_<MatType>* d)
       : parent_(d), ob0(b), ob1(c), bas(a), mol(m) { }
     void compute() const { parent_->computebatch(bas, ob0, ob1, mol); }
 };
 }
 
-void Matrix1e::init(shared_ptr<const Molecule> mol) {
+
+template <typename MatType, class Enable>
+void Matrix1e_<MatType, Enable>::init(shared_ptr<const Molecule> mol) {
 
   // CAUTION only lower half will be stored
   const size_t nshell = accumulate(mol->atoms().begin(), mol->atoms().end(), 0, [](int r, shared_ptr<const Atom> p) { return r+p->nshell(); });
-  TaskQueue<Matrix1eTask> task(nshell*(nshell+1)/2);
+  TaskQueue<Matrix1eTask_<MatType, Enable>> task(nshell*(nshell+1)/2);
 
-  size_t oa0 = 0; 
+  size_t oa0 = 0;
   int u = 0;
   for (auto a0 = mol->atoms().begin(); a0 != mol->atoms().end(); ++a0) {
     // iatom1 = iatom1;
@@ -106,5 +109,13 @@ void Matrix1e::init(shared_ptr<const Molecule> mol) {
   task.compute();
   allreduce();
 }
+
+
+template class Matrix1e_<Matrix>;
+template class Matrix1e_<ZMatrix>;
+
+
+BOOST_CLASS_EXPORT_IMPLEMENT(Matrix1e)
+BOOST_CLASS_EXPORT_IMPLEMENT(ZMatrix1e)
 
 

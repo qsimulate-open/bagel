@@ -27,7 +27,7 @@
 #ifndef __SRC_MOLECULE_ZKINETIC_H
 #define __SRC_MOLECULE_ZKINETIC_H
 
-#include <src/molecule/zmatrix1e.h>
+#include <src/molecule/matrix1e.h>
 
 namespace bagel {
 

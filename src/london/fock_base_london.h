@@ -24,11 +24,11 @@
 //
 
 
-#ifndef __src_london_fock_base_london_h
-#define __src_london_fock_base_london_h
+#ifndef __SRC_LONDON_FOCK_BASE_LONDON_H
+#define __SRC_LONDON_FOCK_BASE_LONDON_H
 
 #include <src/wfn/geometry.h>
-#include <src/molecule/zmatrix1e.h>
+#include <src/molecule/matrix1e.h>
 
 namespace bagel {
 
