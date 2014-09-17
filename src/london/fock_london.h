@@ -31,7 +31,7 @@
 #include <src/integral/libint/libint.h>
 #include <src/integral/comprys/complexeribatch.h>
 #include <src/scf/scf_base.h>
-#include <src/london/fock_base_london.h>
+#include <src/scf/fock_base.h>
 
 namespace bagel {
 
