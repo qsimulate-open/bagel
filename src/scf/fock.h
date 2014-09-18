@@ -83,6 +83,10 @@ class Fock : public Fock_base {
     std::shared_ptr<DFHalfDist> half() const { return half_; }
 };
 
+// specialized for non-DF cases
+template <>
+void Fock<0>::fock_two_electron_part(std::shared_ptr<const Matrix> den);
+
 }
 
 extern template class bagel::Fock<0>;
