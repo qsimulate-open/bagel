@@ -44,7 +44,7 @@ T kronecker_product(const bool atrans, const T& A, const bool btrans, const T& B
 
   T out(n*p, m*q);
   for (int ja = 0; ja < m; ++ja) {
-    for (int ia = 0; ia < m; ++ia) {
+    for (int ia = 0; ia < n; ++ia) {
       const double aval = atrans ? A(ja, ia) : A(ia, ja);
       out.add_block(aval, ia*p, ja*q, p, q, Bptr->data());
     }
