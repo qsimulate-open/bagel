@@ -34,13 +34,14 @@ using namespace bagel;
 ProductRASCivec::ProductRASCivec(shared_ptr<RASSpace> space, shared_ptr<const DMRG_Block> left, const int nelea, const int neleb) :
   space_(space), left_(left), nelea_(nelea), neleb_(neleb) {
 
-  for (auto& block : lblocks()) {
+  for (auto& block : left_->blocks()) {
     const int na = nelea_ - block.nelea;
     const int nb = neleb_ - block.neleb;
 
     if (na >= 0 && na <= space->norb() && nb >= 0 && nb <= space->norb()) {
       shared_ptr<RASDeterminants> det = space_->det(na, nb);
-      sectors_.emplace(block, make_shared<RASBlockVectors>(det, block));
+      if (det->size() > 0)
+        sectors_.emplace(block, make_shared<RASBlockVectors>(det, block));
     }
   }
 }
@@ -91,16 +92,16 @@ void ProductRASCivec::scale(const double a) {
 double ProductRASCivec::dot_product(const ProductRASCivec& o) const {
   assert(matches(o));
   double out = 0.0;
-  for (auto& b : lblocks())
-    out += sectors_.at(b)->dot_product(*o.sectors_.at(b));
+  for (auto& s : sectors_)
+    out += s.second->dot_product(*o.sectors_.at(s.first));
   return out;
 }
 
 
 void ProductRASCivec::ax_plus_y(const double& a, const ProductRASCivec& o) {
   assert(matches(o));
-  for (auto& b : lblocks())
-    sectors_.at(b)->ax_plus_y(a, *o.sectors_.at(b));
+  for (auto& s : sectors_)
+    s.second->ax_plus_y(a, *o.sectors_.at(s.first));
 }
 
 void ProductRASCivec::print(const double thresh) const {
@@ -135,7 +136,7 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
     // mixed part
     // S_-^L S_+^RAS
     BlockKey lowered_key(sector.first.nelea-1,sector.first.neleb+1);
-    if (this->left()->contains(lowered_key)) {
+    if (this->contains_block(lowered_key)) {
       shared_ptr<const RASBlockVectors> source = sector.second;
       shared_ptr<RASBlockVectors> target = out->sector(lowered_key);
       shared_ptr<Matrix> spin_lower = this->left()->spin_lower(sector.first);
@@ -151,7 +152,7 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
 
     // S_+^L S_-^RAS
     BlockKey raised_key(sector.first.nelea+1,sector.first.neleb-1);
-    if (this->left()->contains(raised_key)) {
+    if (this->contains_block(raised_key)) {
       shared_ptr<const RASBlockVectors> source = sector.second;
       shared_ptr<RASBlockVectors> target = out->sector(raised_key);
       shared_ptr<Matrix> spin_raise = this->left()->spin_raise(sector.first);
@@ -165,6 +166,7 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
                                                                              1.0, target->data(), target->ndim());
     }
   }
+
   return out;
 }
 

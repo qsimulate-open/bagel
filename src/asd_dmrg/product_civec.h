@@ -104,7 +104,9 @@ class ProductRASCivec {
     std::shared_ptr<const DMRG_Block> left() const { return left_; }
     std::shared_ptr<RASSpace> space() { return space_; }
     std::shared_ptr<const RASSpace> space() const { return space_; }
-    const std::set<BlockInfo>& lblocks() const { return left_->blocks(); }
+    //const std::set<BlockInfo>& lblocks() const { return left_->blocks(); }
+
+    bool contains_block(const BlockKey bk) const { return sectors_.find(bk)!=sectors_.end(); }
 
     std::map<BlockKey, std::shared_ptr<RASBlockVectors>>& sectors() { return sectors_; }
     const std::map<BlockKey, std::shared_ptr<RASBlockVectors>>& sectors() const { return sectors_; }
@@ -113,7 +115,7 @@ class ProductRASCivec {
     std::shared_ptr<const RASBlockVectors> sector(const BlockKey& b) const { return sectors_.at(b); }
 
     bool matches(const ProductRASCivec& o) const {
-      return (*space_==*o.space_ && std::make_pair(nelea_,neleb_)==std::make_pair(o.nelea(),o.neleb()) && lblocks()==o.lblocks());
+      return (*space_==*o.space_ && std::make_pair(nelea_,neleb_)==std::make_pair(o.nelea(),o.neleb()) && left_->blocks()==o.left_->blocks());
     }
 
     double spin_expectation() const;

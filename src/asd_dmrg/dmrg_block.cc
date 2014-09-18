@@ -181,9 +181,9 @@ shared_ptr<Matrix> DMRG_Block2::spin(const BlockKey b) const {
         out->element(i+bp.offset, i+bp.offset) += sza_szb;
     }
 
-    { // S^+_L S^-_R
-      BlockKey lk(bp.left.nelea+1, bp.left.neleb-1);
-      BlockKey rk(bp.right.nelea-1, bp.right.neleb+1);
+    { // S^-_L S^+_R
+      BlockKey lk(bp.left.nelea-1, bp.left.neleb+1);
+      BlockKey rk(bp.right.nelea+1, bp.right.neleb-1);
 
       auto iter = find_if(sec_pairs.begin(), sec_pairs.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
         return make_pair(bp.left.key(), bp.right.key())==make_pair(lk, rk); }
@@ -198,9 +198,9 @@ shared_ptr<Matrix> DMRG_Block2::spin(const BlockKey b) const {
       }
     }
 
-    { // S^-_L S^+_R
-      BlockKey lk(bp.left.nelea-1, bp.left.neleb+1);
-      BlockKey rk(bp.right.nelea+1, bp.right.neleb-1);
+    { // S^+_L S^-_R
+      BlockKey lk(bp.left.nelea+1, bp.left.neleb-1);
+      BlockKey rk(bp.right.nelea-1, bp.right.neleb+1);
 
       auto iter = find_if(sec_pairs.begin(), sec_pairs.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
         return make_pair(bp.left.key(), bp.right.key())==make_pair(lk, rk); }
@@ -227,15 +227,15 @@ shared_ptr<Matrix> DMRG_Block2::spin_lower(const BlockKey b) const {
 
   auto out = make_shared<Matrix>(target_info.nstates, source_info.nstates);
 
-  const vector<DMRG::BlockPair> pvec = pairmap_.at(b);
-  for (auto& source : pvec) {
+  const vector<DMRG::BlockPair> target_pvec = pairmap_.at(target_info.key());
+  for (auto& source : pairmap_.at(b)) {
     { // lower on the left block
       BlockKey lk(source.left.nelea-1, source.left.neleb+1);
       BlockKey rk = source.right.key();
-      auto iter = find_if(pvec.begin(), pvec.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
+      auto iter = find_if(target_pvec.begin(), target_pvec.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
         return make_pair(bp.left.key(), bp.right.key())==make_pair(lk,rk);
       });
-      if (iter != pvec.end()) {
+      if (iter != target_pvec.end()) {
         DMRG::BlockPair tp = *iter;
         auto lowerL = left_block_->spin_lower(source.left);
         Matrix eyeR(source.right.nstates, source.right.nstates); eyeR.unit();
@@ -247,10 +247,10 @@ shared_ptr<Matrix> DMRG_Block2::spin_lower(const BlockKey b) const {
     { // lower on the right block
       BlockKey lk = source.left.key();
       BlockKey rk(source.right.nelea-1, source.right.neleb+1);
-      auto iter = find_if(pvec.begin(), pvec.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
+      auto iter = find_if(target_pvec.begin(), target_pvec.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
         return make_pair(bp.left.key(), bp.right.key())==make_pair(lk,rk);
       });
-      if (iter != pvec.end()) {
+      if (iter != target_pvec.end()) {
         DMRG::BlockPair tp = *iter;
         Matrix eyeL(source.left.nstates, source.left.nstates); eyeL.unit();
         auto lowerR = right_block_->spin_lower(source.right);
@@ -271,15 +271,15 @@ shared_ptr<Matrix> DMRG_Block2::spin_raise(const BlockKey b) const {
 
   auto out = make_shared<Matrix>(target_info.nstates, source_info.nstates);
 
-  const vector<DMRG::BlockPair> pvec = pairmap_.at(b);
-  for (auto& source : pvec) {
+  const vector<DMRG::BlockPair> target_pvec = pairmap_.at(target_info.key());
+  for (auto& source : pairmap_.at(b)) {
     { // raise on the left block
       BlockKey lk(source.left.nelea+1, source.left.neleb-1);
       BlockKey rk = source.right.key();
-      auto iter = find_if(pvec.begin(), pvec.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
+      auto iter = find_if(target_pvec.begin(), target_pvec.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
         return make_pair(bp.left.key(), bp.right.key())==make_pair(lk,rk);
       });
-      if (iter != pvec.end()) {
+      if (iter != target_pvec.end()) {
         DMRG::BlockPair tp = *iter;
         auto raiseL = left_block_->spin_raise(source.left);
         Matrix eyeR(source.right.nstates, source.right.nstates); eyeR.unit();
@@ -291,10 +291,10 @@ shared_ptr<Matrix> DMRG_Block2::spin_raise(const BlockKey b) const {
     { // raise on the right block
       BlockKey lk = source.left.key();
       BlockKey rk(source.right.nelea+1, source.right.neleb-1);
-      auto iter = find_if(pvec.begin(), pvec.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
+      auto iter = find_if(target_pvec.begin(), target_pvec.end(), [&lk, &rk] (const DMRG::BlockPair& bp) {
         return make_pair(bp.left.key(), bp.right.key())==make_pair(lk,rk);
       });
-      if (iter != pvec.end()) {
+      if (iter != target_pvec.end()) {
         DMRG::BlockPair tp = *iter;
         Matrix eyeL(source.left.nstates, source.left.nstates); eyeL.unit();
         auto raiseR = right_block_->spin_raise(source.right);

@@ -100,18 +100,18 @@ void FormSigmaProdRAS::interaction_terms(shared_ptr<const ProductRASCivec> cc, s
     const BlockKey cc_key = isec.first;
 
     // really ugly but verbose
-    const bool do_aET    = cc->left()->contains(BlockKey(cc_key.nelea-1, cc_key.neleb  ));
-    const bool do_bET    = cc->left()->contains(BlockKey(cc_key.nelea  , cc_key.neleb-1));
-    const bool do_aHT    = cc->left()->contains(BlockKey(cc_key.nelea+1, cc_key.neleb  ));
-    const bool do_bHT    = cc->left()->contains(BlockKey(cc_key.nelea  , cc_key.neleb+1));
-    const bool do_aaET   = cc->left()->contains(BlockKey(cc_key.nelea-2, cc_key.neleb  ));
-    const bool do_bbET   = cc->left()->contains(BlockKey(cc_key.nelea  , cc_key.neleb-2));
-    const bool do_abET   = cc->left()->contains(BlockKey(cc_key.nelea-1, cc_key.neleb-1));
-    const bool do_aaHT   = cc->left()->contains(BlockKey(cc_key.nelea+2, cc_key.neleb  ));
-    const bool do_bbHT   = cc->left()->contains(BlockKey(cc_key.nelea  , cc_key.neleb+2));
-    const bool do_abHT   = cc->left()->contains(BlockKey(cc_key.nelea+1, cc_key.neleb+1));
-    const bool do_flipup = cc->left()->contains(BlockKey(cc_key.nelea-1, cc_key.neleb+1));
-    const bool do_flipdn = cc->left()->contains(BlockKey(cc_key.nelea+1, cc_key.neleb-1));
+    const bool do_aET    = cc->contains_block(BlockKey(cc_key.nelea-1, cc_key.neleb  ));
+    const bool do_bET    = cc->contains_block(BlockKey(cc_key.nelea  , cc_key.neleb-1));
+    const bool do_aHT    = cc->contains_block(BlockKey(cc_key.nelea+1, cc_key.neleb  ));
+    const bool do_bHT    = cc->contains_block(BlockKey(cc_key.nelea  , cc_key.neleb+1));
+    const bool do_aaET   = cc->contains_block(BlockKey(cc_key.nelea-2, cc_key.neleb  ));
+    const bool do_bbET   = cc->contains_block(BlockKey(cc_key.nelea  , cc_key.neleb-2));
+    const bool do_abET   = cc->contains_block(BlockKey(cc_key.nelea-1, cc_key.neleb-1));
+    const bool do_aaHT   = cc->contains_block(BlockKey(cc_key.nelea+2, cc_key.neleb  ));
+    const bool do_bbHT   = cc->contains_block(BlockKey(cc_key.nelea  , cc_key.neleb+2));
+    const bool do_abHT   = cc->contains_block(BlockKey(cc_key.nelea+1, cc_key.neleb+1));
+    const bool do_flipup = cc->contains_block(BlockKey(cc_key.nelea-1, cc_key.neleb+1));
+    const bool do_flipdn = cc->contains_block(BlockKey(cc_key.nelea+1, cc_key.neleb-1));
 
     if (do_aET || do_aaET) {
       aET_branch(cc_sector, sigma, blockops);
@@ -179,8 +179,8 @@ void FormSigmaProdRAS::aET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
   const BlockKey singleETkey(cckey.nelea-1, cckey.neleb);
   const BlockKey doubleETkey(cckey.nelea-2, cckey.neleb);
 
-  const bool do_single = sigma->left()->contains(singleETkey);
-  const bool do_double = sigma->left()->contains(doubleETkey);
+  const bool do_single = sigma->contains_block(singleETkey);
+  const bool do_double = sigma->contains_block(doubleETkey);
   // not sure how you could do a double but not a single, but that's a different problem
   assert(do_single || do_double);
 
@@ -232,9 +232,9 @@ void FormSigmaProdRAS::bET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
   const BlockKey bbETkey(cckey.nelea, cckey.neleb-2);
   const BlockKey abETkey(cckey.nelea-1, cckey.neleb-1);
 
-  const bool do_b = sigma->left()->contains(bETkey);
-  const bool do_bb = sigma->left()->contains(bbETkey);
-  const bool do_ab = sigma->left()->contains(abETkey);
+  const bool do_b  = sigma->contains_block(bETkey);
+  const bool do_bb = sigma->contains_block(bbETkey);
+  const bool do_ab = sigma->contains_block(abETkey);
   assert(do_b || do_bb || do_ab);
 
   const int nccstates = cc_sector->nstates();
@@ -299,8 +299,8 @@ void FormSigmaProdRAS::aHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
   const BlockKey aHTkey(cckey.nelea+1, cckey.neleb);
   const BlockKey aaHTkey(cckey.nelea+2, cckey.neleb);
 
-  const bool do_aHT = sigma->left()->contains(aHTkey);
-  const bool do_aaHT = sigma->left()->contains(aaHTkey);
+  const bool do_aHT  = sigma->contains_block(aHTkey);
+  const bool do_aaHT = sigma->contains_block(aaHTkey);
   // not sure how you could do a aa but not a a, but that's a different problem
   assert(do_aHT || do_aaHT);
 
@@ -351,9 +351,9 @@ void FormSigmaProdRAS::bHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
   const BlockKey bbHTkey(cckey.nelea, cckey.neleb+2);
   const BlockKey abHTkey(cckey.nelea+1, cckey.neleb+1);
 
-  const bool do_bHT = sigma->left()->contains(bHTkey);
-  const bool do_bbHT = sigma->left()->contains(bbHTkey);
-  const bool do_abHT = sigma->left()->contains(abHTkey);
+  const bool do_bHT  = sigma->contains_block(bHTkey);
+  const bool do_bbHT = sigma->contains_block(bbHTkey);
+  const bool do_abHT = sigma->contains_block(abHTkey);
   assert(do_bHT || do_bbHT || do_abHT);
 
   const int nccstates = cc_sector->nstates();
@@ -467,7 +467,7 @@ void FormSigmaProdRAS::abflip_branch(shared_ptr<const RASBlockVectors> cc_sector
   const BlockKey cckey = cc_sector->left_state().key();
   const BlockKey flipkey(cckey.nelea-1, cckey.neleb+1);
 
-  assert(sigma->left()->contains(flipkey));
+  assert(sigma->contains_block(flipkey));
 
   shared_ptr<const RASDeterminants> flipdet = sigma->sector(flipkey)->det();
   shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(flipkey);
@@ -494,7 +494,7 @@ void FormSigmaProdRAS::baflip_branch(shared_ptr<const RASBlockVectors> cc_sector
   const int nccstates = cc_sector->mdim();
   const BlockKey cckey = cc_sector->left_state().key();
   const BlockKey flipkey(cckey.nelea+1, cckey.neleb-1);
-  assert(sigma->left()->contains(flipkey));
+  assert(sigma->contains_block(flipkey));
 
   shared_ptr<const RASDeterminants> flipdet = sigma->sector(flipkey)->det();
   shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(flipkey);
@@ -516,7 +516,7 @@ void FormSigmaProdRAS::baflip_branch(shared_ptr<const RASBlockVectors> cc_sector
 
 void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop) const {
   const BlockKey aETkey(cc_sector->left_state().nelea-1, cc_sector->left_state().neleb);
-  assert(sigma->left()->contains(aETkey));
+  assert(sigma->contains_block(aETkey));
   shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(aETkey);
   const int nccstates = cc_sector->mdim();
   const BlockInfo tmpinfo(aETkey.nelea, aETkey.neleb, nccstates);
@@ -545,7 +545,7 @@ void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_s
 
 void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop) const {
   const BlockKey aHTkey(cc_sector->left_state().nelea+1, cc_sector->left_state().neleb);
-  assert(sigma->left()->contains(aHTkey));
+  assert(sigma->contains_block(aHTkey));
   shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(aHTkey);
   const int nccstates = cc_sector->mdim();
   const BlockInfo tmpinfo(aHTkey.nelea, aHTkey.neleb, nccstates);
@@ -575,7 +575,7 @@ void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_s
 
 void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops,  shared_ptr<const DimerJop> jop) const {
   const BlockKey bETkey(cc_sector->left_state().nelea, cc_sector->left_state().neleb-1);
-  assert(sigma->left()->contains(bETkey));
+  assert(sigma->contains_block(bETkey));
   shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(bETkey);
   const int nccstates = cc_sector->mdim();
   const BlockInfo tmpinfo(bETkey.nelea, bETkey.neleb, nccstates);
@@ -611,7 +611,7 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
 
 void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop) const {
   const BlockKey bHTkey(cc_sector->left_state().nelea, cc_sector->left_state().neleb+1);
-  assert(sigma->left()->contains(bHTkey));
+  assert(sigma->contains_block(bHTkey));
   shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(bHTkey);
   const int nccstates = cc_sector->mdim();
   const BlockInfo tmpinfo(bHTkey.nelea, bHTkey.neleb, nccstates);
