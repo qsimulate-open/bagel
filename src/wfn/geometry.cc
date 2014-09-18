@@ -70,6 +70,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
     for (auto& ivec : *vectors) {
       string id = "a" + to_string(dim+1);
       array<double, 3> vec = ivec->get_array<double, 3>(id);
+      if (angstrom) for (auto& i : vec) i /= angstrom ? au2angstrom__ : 1.0;
       primitive_vectors_.push_back(vec);
       ++dim;
     }
