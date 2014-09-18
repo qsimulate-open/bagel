@@ -150,9 +150,9 @@ void Lattice::print_lattice_coordinates() const {
     for (auto& atom : cell->atoms()) {
       string name = atom->name();
       name[0] = toupper(name[0]);
-      ofs << name << fixed << setprecision(6) << setw(14) << atom->position(0) << "   "
-                                              << setw(14) << atom->position(1) << "   "
-                                              << setw(14) << atom->position(2) << endl;
+      ofs << name << fixed << setprecision(6) << setw(14) << atom->position(0) * au2angstrom__ << "   "
+                                              << setw(14) << atom->position(1) * au2angstrom__ << "   "
+                                              << setw(14) << atom->position(2) * au2angstrom__ << endl;
     }
   }
 }
