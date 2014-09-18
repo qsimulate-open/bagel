@@ -70,7 +70,7 @@ class ComplexDFDist : public DFDist, public ComplexDF_base {
 
     // compute a J operator, given density matrices in AO basis
     std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ZMatrix> den) const override;
-    std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ComplexDF_base> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const override;
+    std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const override;
     std::shared_ptr<ZMatrix> compute_Jop_from_cd(std::shared_ptr<const ZVectorB> cd) const override;
 
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const Matrix> den) const override {
