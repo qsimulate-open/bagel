@@ -228,8 +228,8 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     std::cout << "    .. warning .. use a new Fock builder if possible (coeff_ required)" << std::endl;
 #endif
 
-    std::shared_ptr<const DFDist> df = geom_->df();
-    assert(std::dynamic_pointer_cast<const ComplexDFDist>(df));
+    auto df = std::dynamic_pointer_cast<const ComplexDFDist>(geom_->df());
+    assert(df);
 
     // some constants
     assert(ndim() == df->nbasis0());
@@ -253,18 +253,16 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     if (nocc == 0) return;
     pdebug.tick_print("Compute coeff (redundant)");
 
-    std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(coeff->slice(0,nocc));
-    assert(std::dynamic_pointer_cast<ComplexDFHalfDist>(halfbj));
+    std::shared_ptr<ComplexDFHalfDist> halfbj = df->complex_compute_half_transform(coeff->slice(0,nocc));
     pdebug.tick_print("First index transform");
 
-    auto half = std::dynamic_pointer_cast<ComplexDFHalfDist>(halfbj->apply_J());
-    assert(half);
+    std::shared_ptr<ComplexDFHalfDist> half = halfbj->complex_apply_J();
     pdebug.tick_print("Metric multiply");
 
     *this += *half->complex_form_2index(half, -0.5);
     pdebug.tick_print("Exchange build");
 
-    *this += *df->compute_Jop(density_);
+    *this += *df->complex_compute_Jop(density_);
     pdebug.tick_print("Coulomb build");
   }
 
@@ -277,16 +275,14 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const ZMatView ocoeff, c
 #if 1
   Timer pdebug(3);
 
-  std::shared_ptr<const DFDist> df = geom_->df();
-  assert(std::dynamic_pointer_cast<const ComplexDFDist>(df));
+  auto df = std::dynamic_pointer_cast<const ComplexDFDist>(geom_->df());
+  assert(df);
 
   if (scale_exchange != 0.0) {
-    std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(ocoeff);
-    assert(std::dynamic_pointer_cast<ComplexDFHalfDist>(halfbj));
+    std::shared_ptr<ComplexDFHalfDist> halfbj = df->complex_compute_half_transform(ocoeff);
     pdebug.tick_print("First index transform");
 
-    auto half = std::dynamic_pointer_cast<ComplexDFHalfDist>(halfbj->apply_J());
-    assert(half);
+    std::shared_ptr<ComplexDFHalfDist> half = halfbj->complex_apply_J();
     pdebug.tick_print("Metric multiply");
 
     *this += *half->complex_form_2index(half, -1.0*scale_exchange);
@@ -295,16 +291,16 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const ZMatView ocoeff, c
     if (rhf) {
       auto oc = std::make_shared<ZMatrix>(ocoeff);
       auto coeff = std::make_shared<const ZMatrix>(*oc->transpose()*2.0);
-      *this += *df->compute_Jop(half, coeff, true);
+      *this += *df->complex_compute_Jop(half, coeff, true);
     } else {
-      *this += *df->compute_Jop(density_);
+      *this += *df->complex_compute_Jop(density_);
       throw std::runtime_error("So far, only RHF has been set up with London orbitals, so this should not be called.");
     }
     // when gradient is requested..
     if (store_half_)
       half_ = half;
   } else {
-    *this += *df->compute_Jop(density_);
+    *this += *df->complex_compute_Jop(density_);
     throw std::runtime_error("scale_exchange == 0.0 ??  This should not be the case for any London orbital methods.");
   }
   pdebug.tick_print("Coulomb build");

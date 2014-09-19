@@ -64,22 +64,14 @@ class DFDist : public ParallelDF {
     void add_direct_product(std::vector<std::shared_ptr<const VectorB>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
-    virtual std::shared_ptr<DFHalfDist> compute_half_transform(const MatView c) const;
+    std::shared_ptr<DFHalfDist> compute_half_transform(const MatView c) const;
     template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
     std::shared_ptr<DFHalfDist> compute_half_transform(std::shared_ptr<T> c) const { return compute_half_transform(*c); }
-    virtual std::shared_ptr<DFHalfDist> compute_half_transform(const ZMatView c) const {
-      throw std::runtime_error("DFDist::compute_half_transform(...) has only been implemented for real arguments");
-      return nullptr;
-    }
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
-    virtual std::shared_ptr<DFHalfDist> compute_half_transform_swap(const MatView c) const;
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const MatView c) const;
     template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
     std::shared_ptr<DFHalfDist> compute_half_transform_swap(std::shared_ptr<T> c) const { return compute_half_transform_swap(*c); }
-    virtual std::shared_ptr<DFHalfDist> compute_half_transform_swap(const ZMatView c) const {
-      throw std::runtime_error("DFDist::compute_half_transform_swap(...) has only been implemented for real arguments");
-      return nullptr;
-    }
 
     std::shared_ptr<DFDist> copy() const;
     std::shared_ptr<DFDist> clone() const;
@@ -207,7 +199,7 @@ class DFHalfDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::make_shared<Matrix>(*df_->data2()**df_->data2())); }
     std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const DFDist> d) const { return apply_J(d->data2()); }
     std::shared_ptr<DFHalfDist> apply_JJ(const std::shared_ptr<const DFDist> d) const { return apply_J(std::make_shared<Matrix>(*d->data2()**d->data2())); }
-    virtual std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const;
+    std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const;
 
 };
 
