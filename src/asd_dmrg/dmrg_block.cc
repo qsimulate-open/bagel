@@ -106,6 +106,12 @@ DMRG_Block1::DMRG_Block1(GammaForestProdASD&& forest, const map<BlockKey, shared
   }
 }
 
+string DMRG_Block1::block_info_to_string(const BlockKey bk, const int state) const {
+  stringstream ss;
+  ss << "|na:" << bk.nelea << ",nb:" << bk.neleb << "," << state << ">";
+  return ss.str();
+}
+
 shared_ptr<Matrix> DMRG_Block1::spin_lower(const BlockKey k) const {
   BlockKey lowered_key(k.nelea-1, k.neleb+1);
   assert(contains(lowered_key));
@@ -153,6 +159,19 @@ DMRG_Block2::DMRG_Block2(shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const
   }
 
   coeff_ = lb->coeff()->merge(rb->coeff());
+}
+
+string DMRG_Block2::block_info_to_string(const BlockKey bk, const int state) const {
+  stringstream ss;
+  for (auto& bp : pairmap_.at(bk)) {
+    if (state >= bp.offset && state < bp.offset+bp.nstates()) {
+      const int lstate = (state - bp.offset) % bp.left.nstates;
+      const int rstate = (state - bp.offset) / bp.left.nstates;
+      ss << left_block_->block_info_to_string(bp.left, lstate) << " (x) " << right_block_->block_info_to_string(bp.right, rstate);
+      break;
+    }
+  }
+  return ss.str();
 }
 
 shared_ptr<Matrix> DMRG_Block2::spin(const BlockKey b) const {

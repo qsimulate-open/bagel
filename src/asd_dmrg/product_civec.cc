@@ -108,7 +108,7 @@ void ProductRASCivec::print(const double thresh) const {
   for (auto& isec: sectors_) {
     const int nstate = isec.second->nstates();
     for (int ist = 0; ist < nstate; ++ist) {
-      cout << "    |na:" << isec.first.nelea << ",nb:" << isec.first.neleb << "," << ist << "> (x)" << endl;
+      cout << "    " << left_->block_info_to_string(isec.first, ist) << " (x)" << endl;
       isec.second->civec(ist).print(thresh);
     }
     cout << endl;

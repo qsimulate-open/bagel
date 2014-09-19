@@ -69,6 +69,8 @@ class DMRG_Block {
       return *iter;
     }
 
+    virtual std::string block_info_to_string(const BlockKey k, const int state) const = 0;
+
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
 
     virtual std::shared_ptr<Matrix> spin(const BlockKey k) const = 0;
@@ -96,6 +98,8 @@ class DMRG_Block1 : public std::enable_shared_from_this<DMRG_Block1>, public DMR
                std::shared_ptr<const Matrix>> spin, std::shared_ptr<const Matrix> coeff);
     DMRG_Block1(GammaForestProdASD&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, const std::map<BlockKey,
                std::shared_ptr<const Matrix>> spin, std::shared_ptr<const Matrix> coeff);
+
+    std::string block_info_to_string(const BlockKey k, const int state) const override;
 
     const std::map<std::pair<BlockKey, BlockKey>, CouplingBlock>& coupling(const std::list<GammaSQ>& l) const { return sparse_.at(l); }
     std::shared_ptr<const Matrix> h2e(const BlockKey& b) const { return H2e_.at(b); }
@@ -133,6 +137,8 @@ class DMRG_Block2 : public std::enable_shared_from_this<DMRG_Block2>, public DMR
 
     /// constructor taking a pair of DMRG_Block1 objects
     DMRG_Block2(std::shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const DMRG_Block1> rb);
+
+    std::string block_info_to_string(const BlockKey k, const int state) const override;
 
     const std::vector<DMRG::BlockPair>& blockpairs(BlockKey bk) const { return pairmap_.at(bk); }
 
