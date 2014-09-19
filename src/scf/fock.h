@@ -34,16 +34,11 @@
 
 namespace bagel {
 
-template<int DF, typename MatType = Matrix>
-class Fock : public Fock_base_<MatType> {
-  private:
-    using DataType = typename MatType::value_type;
-
+template<int DF>
+class Fock : public Fock_base {
   protected:
-    void fock_two_electron_part(std::shared_ptr<const MatType> den = nullptr);
-    void fock_two_electron_part_with_coeff(const MatView_<DataType> coeff, const bool rhf, const double scale_ex);
-
-    std::shared_ptr<MatType> build_exchange(std::shared_ptr<DFHalfDist> half, double scale) { return half->form_2index(half, scale); }
+    void fock_two_electron_part(std::shared_ptr<const Matrix> den = nullptr);
+    void fock_two_electron_part_with_coeff(const MatView coeff, const bool rhf, const double scale_ex);
 
     // when DF gradients are requested
     bool store_half_;
@@ -54,81 +49,51 @@ class Fock : public Fock_base_<MatType> {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Fock_base_<MatType>>(*this) & store_half_;
+      ar & boost::serialization::base_object<Fock_base>(*this) & store_half_;
     }
 
   public:
     Fock() { }
     // Fock operator for DF cases
     template<int DF1 = DF, class = typename std::enable_if<DF1==1>::type>
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const MatType> b, const std::shared_ptr<const MatType> c,
-         const MatView_<DataType> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
-     : Fock_base_<MatType>(a,b,c), store_half_(store) {
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
+         const MatView ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
+     : Fock_base(a,b,c), store_half_(store) {
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
       fock_one_electron_part();
     }
     // the same is above.
     template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const MatType> b, const std::shared_ptr<const MatType> c,
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
          std::shared_ptr<T> o, const bool store = false, const bool rhf = false, const double scale_ex = 1.0) : Fock(a,b,c,*o,store,rhf,scale_ex) { }
 
     // Fock operator
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const MatType> b, const std::shared_ptr<const MatType> c, const std::vector<double>& d) : Fock(a,b,c,c,d) {}
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c, const std::vector<double>& d) : Fock(a,b,c,c,d) {}
 
     // Fock operator with a different density matrix for exchange
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const MatType> b, const std::shared_ptr<const MatType> c, std::shared_ptr<const MatType> ex,
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c, std::shared_ptr<const Matrix> ex,
          const std::vector<double>& d)
-     : Fock_base_<MatType>(a,b,c,d), store_half_(false) {
+     : Fock_base(a,b,c,d), store_half_(false) {
       fock_two_electron_part(ex);
       fock_one_electron_part();
     }
 
     std::shared_ptr<DFHalfDist> half() const { return half_; }
-
-    using Fock_base_<MatType>::ndim;
-    using Fock_base_<MatType>::mdim;
-    using Fock_base_<MatType>::geom_;
-    using Fock_base_<MatType>::density_;
-    using Fock_base_<MatType>::previous_;
-    using Fock_base_<MatType>::schwarz_;
-    using Fock_base_<MatType>::schwarz_thresh_;
-    using Fock_base_<MatType>::element;
-    using Fock_base_<MatType>::fill_upper;
-    using Fock_base_<MatType>::fock_one_electron_part;
-
 };
 
-// template specializations for non-DF cases
+// specialized for non-DF cases
 template <>
-void Fock<0, Matrix>::fock_two_electron_part(std::shared_ptr<const Matrix> den);
-template <>
-void Fock<0, ZMatrix>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den);
-
-// specialization for complex basis
-template <>
-std::shared_ptr<ZMatrix> Fock<0, ZMatrix>::build_exchange(std::shared_ptr<DFHalfDist> half, double scale);
-template <>
-std::shared_ptr<ZMatrix> Fock<1, ZMatrix>::build_exchange(std::shared_ptr<DFHalfDist> half, double scale);
+void Fock<0>::fock_two_electron_part(std::shared_ptr<const Matrix> den);
 
 }
 
-extern template class bagel::Fock<0, bagel::Matrix>;
-extern template class bagel::Fock<1, bagel::Matrix>;
-
-// because commas confuse the preprocessor
-namespace {
-  using Fock_0 = bagel::Fock<0, bagel::Matrix>;
-  using Fock_1 = bagel::Fock<1, bagel::Matrix>;
-  using Fock_2 = bagel::Fock<0, bagel::ZMatrix>;
-  using Fock_3 = bagel::Fock<1, bagel::ZMatrix>;
-}
+extern template class bagel::Fock<0>;
+extern template class bagel::Fock<1>;
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(Fock_0)
-BOOST_CLASS_EXPORT_KEY(Fock_1)
-BOOST_CLASS_EXPORT_KEY(Fock_2)
-BOOST_CLASS_EXPORT_KEY(Fock_3)
+BOOST_CLASS_EXPORT_KEY(bagel::Fock<0>)
+BOOST_CLASS_EXPORT_KEY(bagel::Fock<1>)
 
 #endif

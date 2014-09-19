@@ -95,7 +95,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
       throw std::runtime_error("ParallelDF::compute_Jop has only been implemented for real arguments");
       return nullptr;
     }
-    virtual std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const {
+    virtual std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ComplexDF_base> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const {
       throw std::runtime_error("ParallelDF::compute_Jop has only been implemented for real arguments");
       return nullptr;
     }

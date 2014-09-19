@@ -175,15 +175,9 @@ shared_ptr<ZMatrix> ComplexDFDist::compute_Jop(const shared_ptr<const ZMatrix> d
 }
 
 
-shared_ptr<ZMatrix> ComplexDFDist::compute_Jop(const shared_ptr<const ParallelDF> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
+shared_ptr<ZMatrix> ComplexDFDist::compute_Jop(const shared_ptr<const ComplexDF_base> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  auto tmp1 = dynamic_pointer_cast<const ComplexDFDist>(o);
-  auto tmp2 = dynamic_pointer_cast<const ComplexDFHalfDist>(o);
-  assert((tmp1 || tmp2) && (!tmp1 || !tmp2));
-
-  shared_ptr<const ZVectorB> tmp0;
-  if (tmp1) tmp0 = tmp1->complex_compute_cd(den, data2_, onlyonce);
-  if (tmp2) tmp0 = tmp2->complex_compute_cd(den, data2_, onlyonce);
+  shared_ptr<const ZVectorB> tmp0 = o->complex_compute_cd(den, data2_, onlyonce);
   // then compute J operator J_{rs} = |E*) (E|rs)
   return compute_Jop_from_cd(tmp0);
 }

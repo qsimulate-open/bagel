@@ -69,7 +69,7 @@ void SCF_London::compute() {
       if (dodf_ && geom_->spherical()) {
         auto aden = make_shared<const AtomicDensities>(geom_);
         auto zaden = std::make_shared<ZMatrix>(*aden, 1.0);
-        auto focka = make_shared<const Fock<1, ZMatrix>>(geom_, hcore_, zaden, schwarz_);
+        auto focka = make_shared<const Fock_London<1>>(geom_, hcore_, zaden, schwarz_);
         fock = focka->distmatrix();
       }
 
@@ -80,9 +80,9 @@ void SCF_London::compute() {
       shared_ptr<const ZMatrix> focka;
       if (!dodf_) {
         aodensity_ = coeff_->form_density_rhf(nocc_, 0, 2.0);
-        focka = make_shared<const Fock<0, ZMatrix>>(geom_, hcore_, aodensity_, schwarz_);
+        focka = make_shared<const Fock_London<0>>(geom_, hcore_, aodensity_, schwarz_);
       } else {
-        focka = make_shared<const Fock<1, ZMatrix>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+        focka = make_shared<const Fock_London<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
       DistZMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
       intermediate.diagonalize(eig());
@@ -124,10 +124,10 @@ void SCF_London::compute() {
 #endif
     if (!dodf_) {
       shared_ptr<ZMatrix> prev = previous_fock->copy();
-      previous_fock = make_shared<Fock<0, ZMatrix>>(geom_, previous_fock, densitychange, schwarz_);
+      previous_fock = make_shared<Fock_London<0>>(geom_, previous_fock, densitychange, schwarz_);
       mpi__->broadcast(const_pointer_cast<ZMatrix>(previous_fock)->data(), previous_fock->size(), 0);
     } else {
-      previous_fock = make_shared<Fock<1, ZMatrix>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      previous_fock = make_shared<Fock_London<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
     }
     shared_ptr<const DistZMatrix> fock = previous_fock->distmatrix();
 
@@ -149,7 +149,7 @@ void SCF_London::compute() {
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
-      if (do_grad_) half_ = dynamic_pointer_cast<const Fock<1, ZMatrix>>(previous_fock)->half();
+      if (do_grad_) half_ = dynamic_pointer_cast<const Fock_London<1>>(previous_fock)->half();
       break;
     } else if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;
