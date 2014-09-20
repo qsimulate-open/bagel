@@ -483,6 +483,7 @@ void ZCASSCF::print_natocc() const {
 
 shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
   // assumes coefficient is in striped format
+  assert(geom_->nele()%2 == 0); // TODO : generalize to open shells
   if (active_indices.size() != nact_) throw logic_error("ZCASSCF::set_active - Number of active indices does not match number of active orbitals");
 
   const int naobasis = coeff_->ndim();
@@ -491,9 +492,13 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
   auto coeff = coeff_;
   auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
 
+  int nclosed = geom_->nele()/2;
+  for (auto& iter : active_indices)
+    if (iter < geom_->nele()/2) --nclosed;
+
   int iclosed = 0;
-  int iactive = nclosed_;
-  int ivirt   = nclosed_ + nact_;
+  int iactive = nclosed;
+  int ivirt   = nclosed + nact_;
 
   auto cp   = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) {
     copy_n(coeff->element_ptr(0,i*2), naobasis, tmp_coeff->element_ptr(0, pos*2));
@@ -503,7 +508,7 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
 
   for (int i = 0; i < nmobasis; ++i) {
     if ( active_indices.find(i) != active_indices.end() ) cp(i, iactive);
-    else if ( i < nclosed_ ) cp(i, iclosed);
+    else if ( i < geom_->nele()/2 ) cp(i, iclosed);
     else cp(i, ivirt);
   }
 
