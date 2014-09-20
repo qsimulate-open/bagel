@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: pscf.h
+// Filename: pmatrix1e.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -23,36 +23,41 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_SRC_PERIODIC_PSCF_H
-#define __BAGEL_SRC_PERIODIC_PSCF_H
 
-#include <src/wfn/method.h>
+#ifndef __SRC_PERIODIC_PMATRIX1E_H
+#define __SRC_PERIODIC_PMATRIX1E_H
+
 #include <src/periodic/lattice.h>
-#include <src/periodic/phcore.h>
 
 namespace bagel {
 
-class PSCF : public Method {
+// Periodic version of Matrix1e (1e integrals)
+class PMatrix1e : public Matrix {
+  friend class PMatrix1eTask;
   protected:
-    std::shared_ptr<const Lattice> lattice_;
-    double energy_;
-    bool dodf_;
+    virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Lattice>, const int) = 0;
+    virtual void init(std::shared_ptr<const Lattice>);
 
-    const std::string indent = "  ";
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Matrix>(*this);
+    }
 
   public:
-    PSCF() { }
-    PSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
-         const std::shared_ptr<const Reference> re = nullptr);
-    virtual ~PSCF() { }
+    PMatrix1e() { }
+    PMatrix1e(const std::shared_ptr<const Lattice>);
+    PMatrix1e(const PMatrix1e&);
+    virtual ~PMatrix1e() { }
 
-    virtual void compute() override;
-    double energy() const { return energy_; };
-
-    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
 
 }
 
-#endif
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::PMatrix1e)
 
+#endif
