@@ -81,8 +81,8 @@ void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const 
     int j = 0;
     for (auto& i : swap->basis()) {
       add_block(i->fac(swap->cartesian())*scale, n*i->basis(0), n*i->basis(1), n, n, dat[j++]->transpose_conjg());
-      // conjg does not matter because (1) offdiagonal of Coulomb is real; (2) offdiagonal of Gaunt and Breit is zero. 
-      // (2) is due to [sigma_w, sigma_w']_+ = \delta_ww' -- tricky! 
+      // Without magnetic field, conjg does not matter because (1) offdiagonal of Coulomb is real; (2) offdiagonal of Gaunt and Breit is zero.
+      // (2) is due to [sigma_w, sigma_w']_+ = \delta_ww' -- tricky!
     }
   }
 }
@@ -188,12 +188,15 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   list<shared_ptr<RelDF>> dfdists = make_dfdists(dfs, gaunt);
   // Note that we are NOT using dagger-ed coefficients! -1 factor for imaginary will be compensated by CDMatrix and Exop
   list<shared_ptr<RelDFHalf>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
+
+  const string printtag = !gaunt ? "Coulomb" : "Gaunt";
+  timer.tick_print(printtag + ": half trans");
+
   // apply J^{-1/2}
   for (auto& i : half_complex)
     i = i->apply_J();
 
-  const string printtag = !gaunt ? "Coulomb" : "Gaunt";
-  timer.tick_print(printtag + ": half trans");
+  timer.tick_print(printtag + ": metric multiply");
 
   // split
   list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
@@ -209,6 +212,9 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   assert(!gaunt || half_complex_exch.size() == 24);
 
   if (breit) {
+
+    if (geom_->magnetism()) throw logic_error("Breit integrals have not been implemented with a GIAO basis set.");
+
     // first make a copy of half_complex_exch
     for (auto& i : half_complex_exch)
       half_complex_exch2.push_back(i->copy());
@@ -237,7 +243,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     half_complex_exch2 = half_complex_exch;
   }
 
-  // this is a necessary condition if we use symmetry below (Exop) 
+  // this is a necessary condition if we use symmetry below (Exop)
   assert(half_complex_exch.size() == half_complex_exch2.size());
 
   // will use the zgemm3m-like algorithm

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: zmatrix1e.h
+// Filename: unpack.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
@@ -23,42 +23,26 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+// Small helper class which is needed to store variadic template arguments as a tuple and reuse later
+// Currently only used in <src/integral/smallints1e_london.h>
+// See http://stackoverflow.com/questions/7858817/
 
-#ifndef __SRC_MOLECULE_ZMATRIX1E_H
-#define __SRC_MOLECULE_ZMATRIX1E_H
+#ifndef __SRC_UTIL_UNPACK_H
+#define __SRC_UTIL_UNPACK_H
 
-#include <src/molecule/molecule.h>
-#include <src/math/zmatrix.h>
+namespace {
 
-namespace bagel {
+  template<int ...>
+  struct seq { };
 
-// specialized matrix for 1e integrals
-class ZMatrix1e : public ZMatrix {
-  friend class ZMatrix1eTask;
-  protected:
-    virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) = 0;
-    virtual void init(std::shared_ptr<const Molecule>);
+  template<int N, int ...S>
+  struct gens : gens<N-1, N-1, S...> { };
 
-  private:
-    // serialization
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<ZMatrix>(*this);
-    }
-
-  public:
-    ZMatrix1e() { }
-    ZMatrix1e(const std::shared_ptr<const Molecule>);
-    ZMatrix1e(const ZMatrix1e&);
-    virtual ~ZMatrix1e() { }
-
-};
+  template<int ...S>
+  struct gens<0, S...> {
+    typedef seq<S...> type;
+  };
 
 }
-
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::ZMatrix1e)
 
 #endif

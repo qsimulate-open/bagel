@@ -40,7 +40,7 @@ class CDMatrix;
 class RelDF : public RelDFBase, public std::enable_shared_from_this<RelDF> {
   protected:
     std::vector<int> alpha_;
-    std::shared_ptr<const DFDist> dfdata_;
+    std::array<std::shared_ptr<const DFDist>,2> dfdata_;
     bool swap_;
 
     void set_basis() {
@@ -62,7 +62,10 @@ class RelDF : public RelDFBase, public std::enable_shared_from_this<RelDF> {
     RelDF(const RelDF&, bool);
     RelDF() = delete;
 
-    std::shared_ptr<const DFDist> df() const { return dfdata_; }
+    std::array<std::shared_ptr<const DFDist>, 2> get_data() const { return dfdata_; }
+    std::shared_ptr<const DFDist> get_real() const { return dfdata_[0]; }
+    std::shared_ptr<const DFDist> get_imag() const { return dfdata_[1]; }
+
     bool not_diagonal() const { return cartesian_.first != cartesian_.second; }
     bool swapped() const { return swap_; }
     std::shared_ptr<const RelDF> swap() const;

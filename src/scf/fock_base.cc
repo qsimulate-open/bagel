@@ -30,10 +30,9 @@
 using namespace std;
 using namespace bagel;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(Fock_base)
-
-Fock_base::Fock_base(const shared_ptr<const Geometry> geom, const shared_ptr<const Matrix> previous, const std::shared_ptr<const Matrix> den, const vector<double>& schwarz)
- : Matrix1e(geom), geom_(geom), previous_(previous), density_(den), schwarz_(schwarz) {
+template <typename MatType, class Enable>
+Fock_base_<MatType, Enable>::Fock_base_(const shared_ptr<const Geometry> geom, const shared_ptr<const MatType> previous, const std::shared_ptr<const MatType> den, const vector<double>& schwarz)
+ : Matrix1e_<MatType>(geom), geom_(geom), previous_(previous), density_(den), schwarz_(schwarz) {
 
   schwarz_thresh_ = geom->schwarz_thresh();
 
@@ -41,30 +40,21 @@ Fock_base::Fock_base(const shared_ptr<const Geometry> geom, const shared_ptr<con
 }
 
 
-void Fock_base::fock_one_electron_part() {
+template <typename MatType, class Enable>
+void Fock_base_<MatType, Enable>::fock_one_electron_part() {
 
-  const int nbasis = ndim();
   assert(ndim() == mdim());
 
-  const int nirrep = geom_->nirrep();
-  if (nirrep != 1) {
-    Matrix intermediate(nbasis, nbasis);
-    for (int i = 1; i != nirrep; ++i) {
-      SymMat symm(geom_, i);
-      Matrix tmp = symm % (*this) * symm;
-      intermediate += tmp;
-    }
-    *this += intermediate;
-    *this *= 1.0/nirrep;
-  }
+  apply_symmetry();
 
   *this += *previous_;
 
-  fill_upper();
+  fill_upper_conjg();
 }
 
 
-void Fock_base::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule>) {
+template <typename MatType, class Enable>
+void Fock_base_<MatType, Enable>::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule>) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
@@ -78,4 +68,35 @@ void Fock_base::computebatch(const array<shared_ptr<const Shell>,2>& input, cons
   }
 }
 
+
+template <typename MatType, class Enable>
+void Fock_base_<MatType, Enable>::apply_symmetry() {
+  const int nirrep = geom_->nirrep();
+  if (nirrep != 1) {
+    const int nbasis = ndim();
+    Matrix intermediate(nbasis, nbasis);
+    for (int i = 1; i != nirrep; ++i) {
+      SymMat symm(geom_, i);
+      Matrix tmp = symm % (*this) * symm;
+      intermediate += tmp;
+    }
+    *this += intermediate;
+    *this *= 1.0/nirrep;
+  }
+}
+
+
+// Specialized for GIAO
+template <>
+void Fock_base_<ZMatrix, enable_if<true>::type>::apply_symmetry() {
+  if (geom_->nirrep() != 1)
+    throw runtime_error("Methods with a GIAO basis currently cannot make use of symmetry.");
+}
+
+
+template class Fock_base_<Matrix>;
+template class Fock_base_<ZMatrix>;
+
+BOOST_CLASS_EXPORT_IMPLEMENT(Fock_base)
+BOOST_CLASS_EXPORT_IMPLEMENT(Fock_base_London)
 

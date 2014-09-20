@@ -28,7 +28,6 @@
 #define __SRC_MOLECULE_MATRIX1EARRAY_H
 
 #include <src/molecule/matrix1e.h>
-#include <src/molecule/zmatrix1e.h>
 #include <src/util/taskqueue.h>
 
 namespace bagel {

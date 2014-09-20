@@ -24,7 +24,7 @@
 //
 
 #include <src/london/scf_london.h>
-#include <src/london/reference_london.h>
+#include <src/rel/relreference.h>
 #include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
 
@@ -197,7 +197,7 @@ void SCF_London::compute() {
 
 
 shared_ptr<const Reference> SCF_London::conv_to_ref() const {
-  auto out = make_shared<Reference_London>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
+  auto out = make_shared<RelReference>(geom_, coeff_, energy_, 0, nocc_, coeff_->mdim()-nocc_, /*gaunt_*/ false, /*breit_*/ false, /*rel_*/ false);
   out->set_eig(eig_);
   return out;
 }
