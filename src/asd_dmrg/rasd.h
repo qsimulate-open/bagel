@@ -53,7 +53,7 @@ class RASD : public ASD_DMRG {
     /// compute 2e hamiltonian for RASCivecs
     std::shared_ptr<Matrix> compute_sigma2e(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop) const;
     /// compute 2e hamiltonian for ProductRASCivecs
-    std::shared_ptr<Matrix> compute_sigma2e(std::vector<std::shared_ptr<ProductRASCivec>> cc, std::shared_ptr<const DimerJop> jop) const;
+    std::shared_ptr<Matrix> compute_sigma2e(const std::vector<std::shared_ptr<ProductRASCivec>>& cc, std::shared_ptr<const DimerJop> jop) const;
     // compute spin matrix for RASCivecs
     std::shared_ptr<Matrix> compute_spin(std::shared_ptr<const RASDvec> cc) const;
     // compute spin matrix for ProductRASCivecs

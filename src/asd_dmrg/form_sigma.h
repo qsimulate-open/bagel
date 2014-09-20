@@ -40,7 +40,7 @@ class FormSigmaProdRAS {
     FormSigmaProdRAS(const int b = 512) : batchsize_(b) {}
 
     /// Applies Hamiltonian to cc using the provided MOFile, skipping the vectors marked as converged
-    std::vector<std::shared_ptr<ProductRASCivec>> operator()(std::vector<std::shared_ptr<ProductRASCivec>>& ccvec, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop, const std::vector<bool>& conv) const;
+    std::vector<std::shared_ptr<ProductRASCivec>> operator()(const std::vector<std::shared_ptr<ProductRASCivec>>& ccvec, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop, const std::vector<bool>& conv) const;
 
   private:
     // Helper functions for sigma formation

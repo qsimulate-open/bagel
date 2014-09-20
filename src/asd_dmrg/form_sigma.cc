@@ -33,7 +33,7 @@
 using namespace std;
 using namespace bagel;
 
-vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(vector<shared_ptr<ProductRASCivec>>& ccvec,
+vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(const vector<shared_ptr<ProductRASCivec>>& ccvec,
                      shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop, const vector<bool>& conv) const {
 
   const int nstate = ccvec.size();

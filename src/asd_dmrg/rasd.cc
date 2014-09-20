@@ -90,7 +90,7 @@ shared_ptr<Matrix> RASD::compute_sigma2e(shared_ptr<const RASDvec> cc, shared_pt
 }
 
 // TODO how am I going to ensure that I get the right formatting in Jop?
-shared_ptr<Matrix> RASD::compute_sigma2e(vector<shared_ptr<ProductRASCivec>> cc, shared_ptr<const DimerJop> jop) const {
+shared_ptr<Matrix> RASD::compute_sigma2e(const vector<shared_ptr<ProductRASCivec>>& cc, shared_ptr<const DimerJop> jop) const {
   const int nstates = cc.size();
   FormSigmaProdRAS form_2e(input_->get_child("ras")->get<int>("batchsize", 512));
   auto jop_2e = make_shared<DimerJop>(cc.front()->space()->norb(), cc.front()->left()->norb(), jop->mo1e()->clone(), jop->mo2e()->copy());
@@ -235,8 +235,8 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
         vector<shared_ptr<ProductRASCivec>> tmpvecs;
         for (auto& c : civecs) {
           shared_ptr<ProductRASCivec> out = c->spin_lower();
-          c->normalize();
-          tmpvecs.push_back(c);
+          out->normalize();
+          tmpvecs.push_back(out);
         }
 
         key = BlockKey(key.nelea-1, key.neleb+1);

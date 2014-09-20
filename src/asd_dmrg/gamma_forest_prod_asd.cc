@@ -44,13 +44,15 @@ GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<ProductRA
     shared_ptr<const DMRG_Block1> block = dynamic_pointer_cast<const DMRG_Block1>(state_block.second.front()->left());
     assert(block);
     for (auto& binfo : block->blocks()) {
-      const int nb = binfo.nstates;
-      for (int i = 0; i < nb; ++i) {
-        vector<shared_ptr<RASCivec>> tmp;
-        for (int j = 0; j < nstates; ++j)
-          tmp.push_back(make_shared<RASCivec>(state_block.second.at(j)->sector(binfo.key())->civec(i)));
-        auto dvec = make_shared<RASDvec>(tmp);
-        vecmap.emplace(ProductState(binfo.key(), BlockKey(dvec->det()->nelea(), dvec->det()->neleb()), i), dvec);
+      if (state_block.second.front()->contains_block(binfo.key())) {
+        const int nb = binfo.nstates;
+        for (int i = 0; i < nb; ++i) {
+          vector<shared_ptr<RASCivec>> tmp;
+          for (int j = 0; j < nstates; ++j)
+            tmp.push_back(make_shared<RASCivec>(state_block.second.at(j)->sector(binfo.key())->civec(i)));
+          auto dvec = make_shared<RASDvec>(tmp);
+          vecmap.emplace(ProductState(binfo.key(), BlockKey(dvec->det()->nelea(), dvec->det()->neleb()), i), dvec);
+        }
       }
     }
   }
@@ -176,7 +178,10 @@ void GammaForestProdASD::compute() {
     for (auto& coupling : possible_couplings_) {
       BlockKey bra_key = apply_key(ket_states.first, coupling);
       if (block_states_.find(bra_key)==block_states_.end()) continue;
-      BlockInfo bra_info(bra_key.nelea, bra_key.neleb, block_states_.at(bra_key).size());
+
+      const vector<shared_ptr<ProductRASCivec>>& bra_states = block_states_.at(bra_key);
+      BlockInfo bra_info(bra_key.nelea, bra_key.neleb, bra_states.size());
+
       const int nijk = accumulate(coupling.begin(), coupling.end(), 1, [norb] (int x, GammaSQ a) { return x*norb; });
       const int nbrastates = block_states_.at(bra_key).size();
       const int nketstates = ket_states.second.size();
@@ -184,9 +189,10 @@ void GammaForestProdASD::compute() {
 
       shared_ptr<const DMRG_Block1> dmrgblock = dynamic_pointer_cast<const DMRG_Block1>(ket_states.second.front()->left());
       assert(dmrgblock);
-      assert(dmrgblock == block_states_.at(bra_key).front()->left());
+      assert(dmrgblock == bra_states.front()->left());
 
       for (auto& kbinfo : dmrgblock->blocks()) {
+        if (!ket_states.second.front()->contains_block(kbinfo)) continue;
         // key for the RAS part of the wavefunction
         BlockKey krkey(ket_states.first.nelea - kbinfo.nelea, ket_states.first.neleb - kbinfo.neleb);
 
@@ -202,7 +208,7 @@ void GammaForestProdASD::compute() {
 
           // apply blockops to kbinfo
           BlockKey bbkey = apply_key(kbinfo.key(), blockops);
-          if (dmrgblock->contains(bbkey)) {
+          if (bra_states.front()->contains_block(bbkey)) {
             BlockInfo bbinfo = dmrgblock->blockinfo(bbkey);
 
             int Mbra = bbinfo.nstates;
