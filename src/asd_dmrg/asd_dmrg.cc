@@ -32,7 +32,7 @@ using namespace bagel;
 
 ASD_DMRG::ASD_DMRG(shared_ptr<const PTree> input, shared_ptr<const MultiSite> multisite) : input_(input), multisite_(multisite) {
   nsites_ = multisite->nsites();
-  nstates_ = input_->get<int>("nstates", 1);
+  nstate_ = input_->get<int>("nstate", 1);
   ntrunc_ = input_->get<int>("ntrunc");
   thresh_ = input_->get<double>("thresh", 1.0e-8);
   maxiter_ = input_->get<int>("maxiter", 10);
@@ -43,12 +43,12 @@ ASD_DMRG::ASD_DMRG(shared_ptr<const PTree> input, shared_ptr<const MultiSite> mu
 
   auto winput = input_->get_child_optional("weights");
   if (winput)
-    weights_ = input_->get_vector<double>("weights", nstates_);
+    weights_ = input_->get_vector<double>("weights", nstate_);
   else
-    weights_.resize(nstates_, 1.0/static_cast<double>(nstates_));
+    weights_.resize(nstate_, 1.0/static_cast<double>(nstate_));
 
-  energies_.resize(nstates_);
-  sweep_energies_.resize(nstates_);
+  energies_.resize(nstate_);
+  sweep_energies_.resize(nstate_);
 }
 
 string ASD_DMRG::print_progress(const int position, const string left_symbol, const string right_symbol) const {
@@ -100,7 +100,7 @@ shared_ptr<PTree> ASD_DMRG::prepare_sweeping_input(const int site) const {
 
   out->erase("charge"); out->put("charge", input_->get<string>("charge", "0"));
   out->erase("nspin"); out->put("nspin", input_->get<string>("nspin", "0"));
-  out->erase("nstates"); out->put("nstates", input_->get<string>("nstates", "1"));
+  out->erase("nstate"); out->put("nstate", input_->get<string>("nstate", "1"));
 
   return out;
 }

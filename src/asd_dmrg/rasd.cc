@@ -285,7 +285,7 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
         spinmap.emplace(ici.first, compute_spin(ici.second));
       }
 
-      for (int i = 0; i < nstates_; ++i)
+      for (int i = 0; i < nstate_; ++i)
         sweep_energies_[i].push_back(prod_ras->energy(i));
 
       GammaForestASD<RASDvec> forest(civecs);
@@ -331,7 +331,7 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
 }
 
 map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector<shared_ptr<ProductRASCivec>>& civecs, const double perturbation) const {
-  assert(civecs.size()==nstates_);
+  assert(civecs.size()==nstate_);
 
   // store the coefficients and sector bases by block: BlockKey corresponds to the block's information
   map<BlockKey, shared_ptr<Matrix>> basisdata;
@@ -352,7 +352,7 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
   // construct the non-orthogonal basis and the outer product vectors
   {
     // first, collect all of the vectors that belong in the state vectors
-    for (int ist = 0; ist < nstates_; ++ist) {
+    for (int ist = 0; ist < nstate_; ++ist) {
       for (auto& isec : civecs[ist]->sectors()) {
         if (detmap.find(isec.first)==detmap.end())
           detmap[isec.first] = isec.second->det();
@@ -362,7 +362,7 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
 
     // add in perturbative correction
     if (perturbation != 0.0) {
-      for (int ist = 0; ist < nstates_; ++ist) {
+      for (int ist = 0; ist < nstate_; ++ist) {
         for (auto& isec : civecs[ist]->sectors()) {
           // "diagonal" perturbation: sum_{i,j} [ (i^dagger j)_alpha (i^dagger_j)_beta ]
           apply_perturbation(isec.second, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);

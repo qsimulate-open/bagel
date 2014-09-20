@@ -88,7 +88,7 @@ void ASD_DMRG::compute() {
     bool drop_perturb = true;
 
     cout << endl;
-    for (int i = 0; i < nstates_; ++i) {
+    for (int i = 0; i < nstate_; ++i) {
       auto mnmx = minmax_element(sweep_energies_[i].begin(), sweep_energies_[i].end());
       const double sweep_average = accumulate(sweep_energies_[i].begin(), sweep_energies_[i].end(), 0.0)/static_cast<double>(sweep_energies_[i].size());
       const double sweep_range = *mnmx.second - *mnmx.first;

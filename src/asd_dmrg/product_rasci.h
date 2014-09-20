@@ -60,7 +60,7 @@ class ProductRASCI {
     int max_holes_; ///< maximum number of holes in RASI on single site
     int max_particles_; ///< maximum number of particles in RASIII on single site
 
-    int nstates_; ///< number of roots to compute for the product space
+    int nstate_; ///< number of roots to compute for the product space
     std::vector<double> energy_; ///< total energies of the roots computed
 
     std::vector<std::shared_ptr<ProductRASCivec>> cc_; ///< CI vector at convergence
