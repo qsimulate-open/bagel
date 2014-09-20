@@ -70,8 +70,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
     for (auto& ivec : *vectors) {
       string id = "a" + to_string(dim+1);
       array<double, 3> vec = ivec->get_array<double, 3>(id);
-      const double norm = sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
-      for (int i = 1; i != 3; ++i) vec[i] /= norm;
+      if (angstrom) for (auto& i : vec) i /= angstrom ? au2angstrom__ : 1.0;
       primitive_vectors_.push_back(vec);
       ++dim;
     }

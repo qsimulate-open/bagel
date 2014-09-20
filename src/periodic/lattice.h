@@ -57,6 +57,7 @@ class Lattice {
     void init();
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     void print_primitive_vectors() const;
+    void print_lattice_vectors() const;
     void print_lattice_coordinates() const; // write .XYZ file
 };
 

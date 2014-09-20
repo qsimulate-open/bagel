@@ -69,8 +69,9 @@ void Lattice::init() {
     cout << "  *** Warning: Dimension in P-SCF is greater than 3!" << endl;
 
   ncell_ = 5; // temporary
-  num_lattice_pts_ = pow(2*ncell_+1, ndim_) * primitive_cell_->natom();
-  lattice_vectors_.resize(num_lattice_pts_);
+  const int num_vec = pow(2*ncell_+1, ndim_);
+  lattice_vectors_.resize(num_vec);
+  num_lattice_pts_ = num_vec * primitive_cell_->natom();
 
   /* Set up lattice vectors */
   switch (ndim_) {
@@ -138,6 +139,18 @@ void Lattice::print_primitive_vectors() const {
   cout << endl;
 }
 
+void Lattice::print_lattice_vectors() const {
+
+  const string indent = "  ";
+  cout << indent << "=== Lattice vectors ===" << endl << indent << endl;
+
+  for (auto& vec: lattice_vectors_)
+    cout << indent << fixed << setprecision(6) << "(" << setw(10) << vec[0] << ", "
+                                                      << setw(10) << vec[1] << ", "
+                                                      << setw(10) << vec[2] << ") " << endl;
+  cout << endl;
+}
+
 void Lattice::print_lattice_coordinates() const {
 
   std::ofstream ofs;
@@ -150,9 +163,9 @@ void Lattice::print_lattice_coordinates() const {
     for (auto& atom : cell->atoms()) {
       string name = atom->name();
       name[0] = toupper(name[0]);
-      ofs << name << fixed << setprecision(6) << setw(14) << atom->position(0) << "   "
-                                              << setw(14) << atom->position(1) << "   "
-                                              << setw(14) << atom->position(2) << endl;
+      ofs << name << fixed << setprecision(6) << setw(14) << atom->position(0) * au2angstrom__ << "   "
+                                              << setw(14) << atom->position(1) * au2angstrom__ << "   "
+                                              << setw(14) << atom->position(2) * au2angstrom__ << endl;
     }
   }
 }
