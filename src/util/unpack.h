@@ -27,8 +27,8 @@
 // Currently only used in <src/integral/smallints1e_london.h>
 // See http://stackoverflow.com/questions/7858817/
 
-#ifndef __SRC_LONDON_UNPACK_H
-#define __SRC_LONDON_UNPACK_H
+#ifndef __SRC_UTIL_UNPACK_H
+#define __SRC_UTIL_UNPACK_H
 
 namespace {
 

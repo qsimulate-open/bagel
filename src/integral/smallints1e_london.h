@@ -29,7 +29,7 @@
 
 #include <src/molecule/molecule.h>
 #include <src/integral/comprys/complexeribatch.h>
-#include <src/london/unpack.h>
+#include <src/util/unpack.h>
 
 // computes (sigma pi)Operator(sigma pi), and returns 4 blocks of data
 

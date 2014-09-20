@@ -60,15 +60,13 @@ shared_ptr<ZMatrix> RelOverlap::tildex(const double thresh) const {
 
 
 void RelOverlap::inverse() {
-  shared_ptr<ZMatrix> out = clone();
   Matrix oinv(*overlap_);
   oinv.inverse_symmetric();
   Matrix kinv(*kinetic_);
   kinv.inverse_symmetric();
   const int n = oinv.ndim();
-  out->copy_real_block(1.0, 0, 0, n, n, oinv);
-  out->copy_real_block(1.0, n, n, n, n, oinv);
-  out->copy_real_block(2*(c__*c__), 2*n, 2*n, n, n, kinv);
-  out->copy_real_block(2*(c__*c__), 3*n, 3*n, n, n, kinv);
-  copy_n(out->data(), 16*n*n, data());
+  copy_real_block(1.0, 0, 0, n, n, oinv);
+  copy_real_block(1.0, n, n, n, n, oinv);
+  copy_real_block(2*(c__*c__), 2*n, 2*n, n, n, kinv);
+  copy_real_block(2*(c__*c__), 3*n, 3*n, n, n, kinv);
 }

@@ -70,7 +70,6 @@ shared_ptr<ZMatrix> RelOverlap_London::tildex(const double thresh) const {
 
 
 void RelOverlap_London::inverse() {
-  shared_ptr<ZMatrix> out = clone();
   ZMatrix oinv(*overlap_);
   oinv.inverse();
   const int n = oinv.ndim();
@@ -80,8 +79,7 @@ void RelOverlap_London::inverse() {
   if (soverlap.ndim() != 2*oinv.ndim())
     throw logic_error("positive and negative energy states have different linear dependency");
 
-  out->copy_block(0, 0, n, n, oinv);
-  out->copy_block(n, n, n, n, oinv);
-  out->copy_block(2*n, 2*n, 2*n, 2*n, soverlap);
-  copy_n(out->data(), 16*n*n, data());
+  copy_block(0, 0, n, n, oinv);
+  copy_block(n, n, n, n, oinv);
+  copy_block(2*n, 2*n, 2*n, 2*n, soverlap);
 }
