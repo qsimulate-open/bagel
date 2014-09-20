@@ -82,6 +82,7 @@ void CASBFGS::compute() {
     sigma->zero();
 
     // compute one-body operators
+    Timer onebody;
     // * preparation
     const MatView ccoeff = coeff_->slice(0, nclosed_);
     // * core Fock operator
@@ -112,6 +113,7 @@ void CASBFGS::compute() {
       shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
       bfgs = make_shared<SRBFGS<RotFile>>(denom);
     }
+    onebody.tick_print("One body operators");
 
     // extrapolation using BFGS
     cout << " " << endl;

@@ -78,7 +78,6 @@ void SuperCI::compute() {
     shared_ptr<RotFile> denom;
     Timer onebody(0);
     one_body_operators(f, fact, factp, gaa, denom);
-    onebody.tick_print("One body operators");
 
     // first, <proj|H|0> is computed
     grad->zero();
@@ -88,6 +87,7 @@ void SuperCI::compute() {
     grad_va(fact, grad);
     // <r/i|H|0> = 2f_ri - f^inact_is d_sr - 2(is|tu)P_rs,tu = 2f_ri - fact_ri
     grad_ca(f, fact, grad);
+    onebody.tick_print("One body operators");
 
     // setting error of macro iteration
     gradient = grad->rms();
