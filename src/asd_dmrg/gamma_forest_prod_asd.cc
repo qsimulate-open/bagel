@@ -102,6 +102,10 @@ GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<ProductRA
               list<GammaSQ> ordered_ciops;
               tie(conj, ignore, ordered_ciops) = try_permutations(ciops);
 
+              if (conj) swap(bra_ptr, ket_ptr);
+
+              // block states are orthonormal so we need to skip this set if the block operator is the identity
+              //   and the coupling is between different block states
               if (!(ordered_ciops.size()==coupling.size() && bra_ptr->first.state!=ket_ptr->first.state)) {
                 forest_->insert<0>(bra_ptr->second, state_tag(bra_ptr->first), ket_ptr->second, state_tag(ket_ptr->first), ordered_ciops);
               }
@@ -115,7 +119,9 @@ GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<ProductRA
 
 tuple</*conj*/bool, /*rev*/bool, list<GammaSQ>> GammaForestProdASD::try_permutations(const list<GammaSQ>& gammalist) const {
   if (gammalist.empty()) return make_tuple(false, false, gammalist);
+  // loop through all possibilities of conjugating or reversing
   for (int conjrev = 0; conjrev < 4; ++conjrev) {
+    // first bit --> conjugate, second bit --> reverse
     const bool rev = bitset<2>(conjrev)[1];
     const bool conj = bitset<2>(conjrev)[0];
 
@@ -130,10 +136,9 @@ tuple</*conj*/bool, /*rev*/bool, list<GammaSQ>> GammaForestProdASD::try_permutat
 }
 
 tuple<int, int, int> GammaForestProdASD::get_indices(const bitset<3> bit, const int size, const int ijk_local, const int lnorb, const bool block_is_reversed, const int rnorb, const bool ci_is_reversed) const {
-  vector<int> strides(size);
-  strides[0] = 1;
+  vector<int> strides(size, 1);
   for (int i = 1; i < size; ++i)
-    strides[i] = strides[i-1] * (bit[i] ? rnorb : lnorb);
+    strides[i] = strides[i-1] * (bit[i-1] ? rnorb : lnorb);
 
   vector<int> indices(size);
   int current = ijk_local;
@@ -220,20 +225,26 @@ void GammaForestProdASD::compute() {
             BlockKey ci_bra(bra_key.nelea - block_bra.nelea, bra_key.neleb - block_bra.neleb);
             BlockKey ci_ket(ket_states.first.nelea - block_ket.nelea, ket_states.first.neleb - block_ket.neleb);
 
+            // these are just specifiers of the RAS part of the state
             ProductState ps_bra(block_bra, ci_bra, 0);
             ProductState ps_ket(block_ket, ci_ket, 0);
 
-            // figure out how the operations need to be reordered so they are in the set of computed couplings
+            // figure out how the operations need to be reordered so they are in the set of possible_couplings_
             bool block_conj, block_rev, ci_conj, ci_rev;
             tie(block_conj, block_rev, blockops) = try_permutations(blockops);
             tie(ci_conj, ci_rev, ciops) = try_permutations(ciops);
 
-            const int phase = (block_rev^ci_rev ? -1 : 1) * (part==2 || part==5 ? -1 : 1) * static_cast<int>(1 - (((blockops.size()*(block_bra.nelea+block_bra.neleb))%2) << 1));
+            // first part: phase from reversing order of operators (should only happen when both are creation or annihilation)
+            // second part: the phase from rearranging the operators so that the ci operators are on the right
+            //   sign only changes if part = "010" or "101"
+            // third part: phase from moving ci operators past block ket TODO: double check
+            const int phase = (block_rev^ci_rev ? -1 : 1) * (part==2 || part==5 ? -1 : 1) * static_cast<int>(1 - (((ciops.size()*(block_ket.nelea+block_ket.neleb))%2) << 1));
 
             // swap where appropriate
             if (block_conj) swap(block_bra, block_ket);
+            if (block_conj) swap(Mbra, Mket);
+
             if (ci_conj) swap(ci_bra, ci_ket);
-            if (ci_conj) swap(Mbra, Mket);
             if (ci_conj) swap(ps_bra, ps_ket);
 
             const int nijk_part = accumulate(blockops.begin(), blockops.end(), 1, [lnorb] (int x, GammaSQ a) { return x*lnorb; }) *
