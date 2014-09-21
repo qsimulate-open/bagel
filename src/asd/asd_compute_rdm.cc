@@ -90,7 +90,8 @@ void ASD_base::compute_rdm() {
   }
   // off diagonal term
   for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
-    for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
+  //for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
+    for (auto jAB = subspaces.begin(); jAB != subspaces.end(); ++jAB) {
       couple_blocks<false>(*jAB, *iAB);
 //    rdm += *couple_blocks<false>(*iAB, *jAB);
     }
