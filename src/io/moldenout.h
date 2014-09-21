@@ -36,6 +36,7 @@ class MoldenOut : public MoldenIO {
 
       void write_geom();
       void write_mos();
+      void write_rel_mos();
 
    public:
       MoldenOut(std::string filename);
