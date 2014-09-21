@@ -173,33 +173,32 @@ void GammaForestProdASD::compute() {
   forest_->compute();
   cout << "computing gammaforest done " << endl;
 
-  const int lnorb = block_states_.begin()->second.front()->left()->norb();
+  shared_ptr<const DMRG_Block1> dmrgblock = dynamic_pointer_cast<const DMRG_Block1>(block_states_.begin()->second.front()->left());
+  const int lnorb = dmrgblock->norb();
   const int rnorb = block_states_.begin()->second.front()->space()->norb();
   const int norb = lnorb + rnorb;
 
   // loop over block states to allocate tree
-  for (auto& ket_states : block_states_) {
-    BlockInfo ket_info(ket_states.first.nelea, ket_states.first.neleb, ket_states.second.size());
+  for (auto& ket_iter : block_states_) {
+    const vector<shared_ptr<ProductRASCivec>>& ket_states = ket_iter.second;
+    BlockInfo ket_info(ket_iter.first.nelea, ket_iter.first.neleb, ket_states.size());
     for (auto& coupling : possible_couplings_) {
-      BlockKey bra_key = apply_key(ket_states.first, coupling);
+      BlockKey bra_key = apply_key(ket_info.key(), coupling);
       if (block_states_.find(bra_key)==block_states_.end()) continue;
 
       const vector<shared_ptr<ProductRASCivec>>& bra_states = block_states_.at(bra_key);
       BlockInfo bra_info(bra_key.nelea, bra_key.neleb, bra_states.size());
 
       const int nijk = accumulate(coupling.begin(), coupling.end(), 1, [norb] (int x, GammaSQ a) { return x*norb; });
-      const int nbrastates = block_states_.at(bra_key).size();
-      const int nketstates = ket_states.second.size();
-      auto gamma_matrix = make_shared<Matrix>(nbrastates*nketstates, nijk);
+      auto gamma_matrix = make_shared<Matrix>(bra_info.nstates*ket_info.nstates, nijk);
 
-      shared_ptr<const DMRG_Block1> dmrgblock = dynamic_pointer_cast<const DMRG_Block1>(ket_states.second.front()->left());
-      assert(dmrgblock);
       assert(dmrgblock == bra_states.front()->left());
+      assert(dmrgblock == ket_states.front()->left());
 
       for (auto& kbinfo : dmrgblock->blocks()) {
-        if (!ket_states.second.front()->contains_block(kbinfo)) continue;
+        if (!ket_states.front()->contains_block(kbinfo)) continue;
         // key for the RAS part of the wavefunction
-        BlockKey krkey(ket_states.first.nelea - kbinfo.nelea, ket_states.first.neleb - kbinfo.neleb);
+        BlockKey krkey(ket_info.nelea - kbinfo.nelea, ket_info.neleb - kbinfo.neleb);
 
         // loop through all the ways to divide the operators between block and ras
         const int npart = 1 << coupling.size();
@@ -223,7 +222,7 @@ void GammaForestProdASD::compute() {
             BlockKey block_bra = bbinfo.key();
             BlockKey block_ket = kbinfo.key();
             BlockKey ci_bra(bra_key.nelea - block_bra.nelea, bra_key.neleb - block_bra.neleb);
-            BlockKey ci_ket(ket_states.first.nelea - block_ket.nelea, ket_states.first.neleb - block_ket.neleb);
+            BlockKey ci_ket(ket_info.nelea - block_ket.nelea, ket_info.neleb - block_ket.neleb);
 
             // these are just specifiers of the RAS part of the state
             ProductState ps_bra(block_bra, ci_bra, 0);
@@ -270,7 +269,7 @@ void GammaForestProdASD::compute() {
                   // fill in part of gamma
                   double* target = gamma_matrix->element_ptr(0, ijk);
                   if (ci_conj)
-                    blas::transpose(ras_part->element_ptr(0, ci_index), nketstates, nbrastates, target, static_cast<double>(phase)*block_gamma_ss);
+                    blas::transpose(ras_part->element_ptr(0, ci_index), ket_info.nstates, bra_info.nstates, target, static_cast<double>(phase)*block_gamma_ss);
                   else
                     blas::ax_plus_y_n(static_cast<double>(phase)*block_gamma_ss, ras_part->element_ptr(0, ci_index), ras_part->ndim(), target);
                 }
@@ -279,7 +278,7 @@ void GammaForestProdASD::compute() {
           }
         }
       }
-      gammas_.emplace(make_tuple(coupling, bra_key, ket_states.first), gamma_matrix);
+      gammas_.emplace(make_tuple(coupling, bra_key, ket_info.key()), gamma_matrix);
       sparselist_.emplace_back(coupling, bra_info, ket_info);
     }
   }
