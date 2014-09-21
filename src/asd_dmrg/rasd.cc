@@ -249,19 +249,37 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
                                     << fixed << setw(10) << setprecision(2) << growtime.tick() << endl;
   }
 
-
   assert(jop);
+  map<BlockKey, vector<shared_ptr<ProductRASCivec>>> ortho_states;
   for (auto& cc : states) {
-    hmap.emplace(cc.first, compute_sigma2e(cc.second, jop));
-    spinmap.emplace(cc.first, compute_spin(cc.second));
+    // orthogonalize the civecs first just in case
+    Matrix overlap(cc.second.size(), cc.second.size());
+    for (int i = 0; i < cc.second.size(); ++i) {
+      for (int j = 0; j < i; ++j)
+        overlap(i,j) = overlap(j,i) = cc.second[i]->dot_product(*cc.second[j]);
+      overlap(i,i) = cc.second[i]->dot_product(*cc.second[i]);
+    }
+    Matrix ortho = *overlap.tildex();
+
+    vector<shared_ptr<ProductRASCivec>> tmpvec;
+    for (int i = 0; i < ortho.mdim(); ++i) {
+      auto tmp = cc.second.front()->clone();
+      for (int j = 0; j < ortho.ndim(); ++j)
+        tmp->ax_plus_y(ortho(j,i), *cc.second[j]);
+      tmpvec.push_back(tmp);
+    }
+
+    hmap.emplace(cc.first, compute_sigma2e(tmpvec, jop));
+    spinmap.emplace(cc.first, compute_spin(tmpvec));
+    ortho_states.emplace(cc.first, move(tmpvec));
   }
 
-  GammaForestProdASD forest(states);
   cout << "construct forest" << endl;
+  GammaForestProdASD forest(ortho_states);
   forest.compute();
   cout << "compute GammaForestProdASD" << endl;
 
-  shared_ptr<Matrix> coeff = ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact())->merge(states.begin()->second.front()->left()->coeff());
+  shared_ptr<Matrix> coeff = ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact())->merge(left->coeff());
   return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, coeff);
 }
 
