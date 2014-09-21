@@ -51,6 +51,7 @@ class RASBlockVectors : public Matrix {
       std::copy_n(o.data(), size(), data());
     }
 
+    /// Returns a set of RASCivecView objects that interpret the BlockVector as CI vectors
     std::vector<RASCivecView> civecs() {
       std::vector<RASCivecView> out;
       const int nst = nstates();
@@ -58,7 +59,9 @@ class RASBlockVectors : public Matrix {
         out.emplace_back(det_, element_ptr(0,i));
       return out;
     }
+    /// Interpret the i-th vector as a RASCivecView
     RASCivecView civec(const int i) { return RASCivecView(det_, element_ptr(0,i)); }
+    /// Interpret the i-th vector as a const RASCivecView
     const RASCivecView civec(const int i) const { return RASCivecView(det_, element_ptr(0,i)); }
 
     BlockInfo left_state() const { return left_state_; }
@@ -97,6 +100,7 @@ class ProductRASCivec {
     int neleb() const { return neleb_; }
     int nele()  const { return nelea_ + neleb_; }
 
+    /// Total size of configuration space.
     size_t size() const {
       return std::accumulate(sectors_.begin(), sectors_.end(), 0ul, [] (const size_t a, const std::pair<const BlockKey, std::shared_ptr<RASBlockVectors>>& p) { return a+p.second->size(); });
     }
@@ -104,8 +108,8 @@ class ProductRASCivec {
     std::shared_ptr<const DMRG_Block> left() const { return left_; }
     std::shared_ptr<RASSpace> space() { return space_; }
     std::shared_ptr<const RASSpace> space() const { return space_; }
-    //const std::set<BlockInfo>& lblocks() const { return left_->blocks(); }
 
+    /// Check whether a block with the given key exists.
     bool contains_block(const BlockKey bk) const { return sectors_.find(bk)!=sectors_.end(); }
 
     std::map<BlockKey, std::shared_ptr<RASBlockVectors>>& sectors() { return sectors_; }
@@ -114,6 +118,9 @@ class ProductRASCivec {
     std::shared_ptr<RASBlockVectors> sector(const BlockKey& b) { return sectors_.at(b); }
     std::shared_ptr<const RASBlockVectors> sector(const BlockKey& b) const { return sectors_.at(b); }
 
+    /// Check whether two ProductRASCivecs are compatible.
+    /** ProductRASCivecs are compatible if they have the same RAS structure,
+        the same total number of electrons, and the same DMRG_Block. */
     bool matches(const ProductRASCivec& o) const {
       return (*space_==*o.space_ && std::make_pair(nelea_,neleb_)==std::make_pair(o.nelea(),o.neleb()) && left_->blocks()==o.left_->blocks());
     }
