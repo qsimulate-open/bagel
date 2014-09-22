@@ -492,9 +492,10 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
   auto coeff = coeff_;
   auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
 
-  int nclosed = geom_->nele()/2;
+  int nclosed_start = geom_->nele()/2 - charge_;
+  int nclosed       = nclosed_start;
   for (auto& iter : active_indices)
-    if (iter < geom_->nele()/2) --nclosed;
+    if (iter < nclosed_start) --nclosed;
 
   int iclosed = 0;
   int iactive = nclosed;
@@ -507,8 +508,8 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
   };
 
   for (int i = 0; i < nmobasis; ++i) {
-    if ( active_indices.find(i) != active_indices.end() ) cp(i, iactive);
-    else if ( i < geom_->nele()/2 ) cp(i, iclosed);
+    if (active_indices.find(i) != active_indices.end()) cp(i, iactive);
+    else if (i < nclosed_start) cp(i, iclosed);
     else cp(i, ivirt);
   }
 
