@@ -36,7 +36,12 @@ struct BlockKey {
 
   BlockKey(const int na, const int nb) : nelea(na), neleb(nb) {}
 
-  bool operator<(const BlockKey& o) const { return std::make_pair(nelea, neleb) < std::make_pair(o.nelea, o.neleb); }
+  bool operator<(const BlockKey& o) const {
+    if (nelea+neleb==o.nelea+o.neleb)
+      return std::make_pair(nelea,neleb) < std::make_pair(o.nelea, o.neleb);
+    else
+      return nelea+neleb < o.nelea+o.neleb;
+  }
   bool operator==(const BlockKey& o) const { return std::make_pair(nelea, neleb) == std::make_pair(o.nelea, o.neleb); }
 };
 
