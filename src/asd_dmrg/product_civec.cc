@@ -242,3 +242,43 @@ void ProductRASCivec::spin_decontaminate(const double thresh) {
     k += 2;
   }
 }
+
+map<BlockKey, vector<shared_ptr<ProductRASCivec>>> ProductRASCivec::split() const {
+  shared_ptr<const DMRG_Block2> doubleblock = dynamic_pointer_cast<const DMRG_Block2>(left_);
+  if (!doubleblock)
+    throw logic_error("ProductRASCivec::split() should only be called from a vector containing a DMRG_Block2 object.");
+
+  shared_ptr<const DMRG_Block1> rightblock = doubleblock->right_block();
+  shared_ptr<const DMRG_Block1> leftblock = doubleblock->left_block();
+
+  set<BlockKey> used_rightblocks;
+  for (auto& sec : sectors_) {
+    const BlockKey& bk = sec.first;
+    for (auto& bp : doubleblock->blockpairs(bk))
+      used_rightblocks.insert(bp.right);
+  }
+
+  map<BlockKey, vector<shared_ptr<ProductRASCivec>>> out;
+  for (BlockKey rightkey : used_rightblocks) {
+    const BlockInfo rightinfo = rightblock->blockinfo(rightkey);
+    vector<shared_ptr<ProductRASCivec>> outvec;
+    for (int i = 0; i < rightinfo.nstates; ++i) {
+      auto tmpout = make_shared<ProductRASCivec>(space_, leftblock, nelea_ - rightinfo.nelea, neleb_ - rightinfo.neleb);
+      for (auto& outsec : tmpout->sectors()) {
+        const BlockInfo leftinfo = leftblock->blockinfo(outsec.first);
+
+        BlockKey combinedkey(rightinfo.nelea+leftinfo.nelea, rightinfo.neleb+leftinfo.neleb);
+        const vector<DMRG::BlockPair>& pairs = doubleblock->blockpairs(combinedkey);
+        auto iter = find_if(pairs.begin(), pairs.end(), [&leftinfo, &rightinfo] (const DMRG::BlockPair& bp)
+          { return make_pair(leftinfo, rightinfo)==make_pair(bp.left, bp.right); });
+        assert(iter!= pairs.end());
+        const int stateindex = i*leftinfo.nstates + iter->offset;
+        copy_n(sectors_.at(combinedkey)->element_ptr(0, stateindex), outsec.second->size(), outsec.second->data());
+      }
+      outvec.push_back(tmpout);
+    }
+    out.emplace(rightkey, move(outvec));
+  }
+
+  return out;
+}

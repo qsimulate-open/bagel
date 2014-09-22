@@ -150,6 +150,12 @@ class ProductRASCivec {
     }
 
     void print(const double thresh = 0.05) const;
+
+    /// Splits a vector by the "right" block.
+    /** Only defined if left_ is a DMRG_Block2 object, in which case it splits the vector
+        into a map such that the right block key is the map key and the mapped object
+        is a \f$|L\rangle \otimes |\mbox{RAS}\rangle\f$ type vector. */
+    std::map<BlockKey, std::vector<std::shared_ptr<ProductRASCivec>>> split() const;
 };
 
 }
