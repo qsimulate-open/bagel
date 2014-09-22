@@ -274,10 +274,8 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
     ortho_states.emplace(cc.first, move(tmpvec));
   }
 
-  cout << "construct forest" << endl;
   GammaForestProdASD forest(ortho_states);
   forest.compute();
-  cout << "compute GammaForestProdASD" << endl;
 
   shared_ptr<Matrix> coeff = ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact())->merge(left->coeff());
   return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, coeff);
@@ -312,38 +310,34 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
     }
     else {
       auto block_pair = make_shared<DMRG_Block2>(system, environment);
-#if 0
       auto prod_ras = make_shared<ProductRASCI>(input, ref, block_pair);
       prod_ras->compute();
+
       map<BlockKey, vector<shared_ptr<ProductRASCivec>>> civecs = diagonalize_site_and_block_RDM(prod_ras->civectors(), perturb_);
 
-      const int norb = civecs.begin()->second.front()->det()->norb() + system->norb();
-      const int nsysorb = civecs.begin()->second.front()->norb() + system->norb();
-      shared_ptr<DimerJop> jop;
-      { // make an appropriate DimerJop
-        shared_ptr<const DimerJop> tmpjop = prod_ras->jop();
-        auto mo1e = make_shared<CSymMatrix>(nsysorb);
-        auto mo2e = make_shared<Matrix>(nsysorb*nsysorb, nsysorb*nsysorb);
-        btas::TensorView mo2eView = btas::make_rview(btas::CRange<4>(norb,norb,norb,norb), tmpjop->mo2e()->storage());
-        btas::TensorView mo2eSlice = btas::make_rview(mo2eView.range().slice({0, 0, 0, 0}, {nsysorb, nsysorb, nsysorb}), mo2eView.storage());
-        copy(mo2eSlice.begin(), mo2eSlice.end(), mo2e->begin());
-        jop = make_shared<DimerJop>(civecs.begin()->second.front()->det()->norb(), system->norb(), mo1e, mo2e);
-      }
+      const int nrasorb = civecs.begin()->second.front()->space()->norb();
+      const int nsysorb = nrasorb + system->norb();
+      const int norb = nsysorb + environment->norb();
+
+      // make an appropriate DimerJop
+      auto mo2e = make_shared<Matrix>(nsysorb*nsysorb, nsysorb*nsysorb);
+      const btas::TensorView4<double> mo2eView = btas::make_view(btas::CRange<4>(norb,norb,norb,norb), prod_ras->jop()->mo2e()->storage());
+      auto low = {0, 0, 0, 0};
+      auto up = {nsysorb, nsysorb, nsysorb, nsysorb};
+      const btas::TensorView4<double> mo2eSlice = btas::make_view(mo2eView.range().slice(low, up), mo2eView.storage());
+      copy(mo2eSlice.begin(), mo2eSlice.end(), mo2e->begin());
+      auto jop = make_shared<DimerJop>(nrasorb, system->norb(), make_shared<CSymMatrix>(nsysorb), mo2e);
 
       map<BlockKey, shared_ptr<const Matrix>> hmap;
       map<BlockKey, shared_ptr<const Matrix>> spinmap;
       for (auto& c : civecs) {
-        hmap.emplace(c.first, compute_sigma2e(civecs, jop));
-        spinmap.emplace(c.first, compute_spin(civecs));
+        hmap.emplace(c.first, compute_sigma2e(c.second, jop));
+        spinmap.emplace(c.first, compute_spin(c.second));
       }
 
       GammaForestProdASD forest(civecs);
       forest.compute();
       return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact())->merge(system->coeff()));
-#else
-      throw logic_error("Multi-site sweeps not yet implemented.");
-      return nullptr;
-#endif
     }
   }
 }
