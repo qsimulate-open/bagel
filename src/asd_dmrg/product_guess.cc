@@ -51,7 +51,7 @@ void ProductRASCI::model_guess(vector<shared_ptr<ProductRASCivec>>& out) {
 
   for (auto& p : ordered_elements) {
     basis.insert(basis.end(), p.second.begin(), p.second.end());
-    if (basis.size() >= nguess_)
+    if (basis.size() >= max(nguess_, nstate_))
       break;
   }
   const int guess_size = basis.size();
