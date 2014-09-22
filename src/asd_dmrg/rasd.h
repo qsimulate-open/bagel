@@ -48,7 +48,7 @@ class RASD : public ASD_DMRG {
     /// diagonalize site RDM
     std::map<BlockKey, std::shared_ptr<const RASDvec>> diagonalize_site_RDM(const std::vector<std::shared_ptr<ProductRASCivec>>& civecs, const double perturbation = 0.0) const;
     /// diagonalize site+block RDM
-    std::map<BlockKey, std::shared_ptr<const RASDvec>> diagonalize_site_and_block_RDM(const std::vector<std::vector<std::shared_ptr<ProductRASCivec>>>& civecs, const double perturbation = 0.0) const;
+    std::map<BlockKey, std::vector<std::shared_ptr<ProductRASCivec>>> diagonalize_site_and_block_RDM(const std::vector<std::shared_ptr<ProductRASCivec>>& civecs, const double perturbation = 0.0) const;
 
     /// compute 2e hamiltonian for RASCivecs
     std::shared_ptr<Matrix> compute_sigma2e(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop) const;

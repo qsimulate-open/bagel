@@ -352,7 +352,7 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
   assert(civecs.size()==nstate_);
 
   // store the coefficients and sector bases by block: BlockKey corresponds to the block's information
-  map<BlockKey, shared_ptr<Matrix>> basisdata;
+  map<BlockKey, shared_ptr<Matrix>> coeffmap;
 
   // arrange all the 'singular values' to get the best ones
   multimap<double, tuple<BlockKey, const int>> singular_values;
@@ -432,7 +432,7 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
       VectorB eigs(best_states->ndim());
       best_states->diagonalize(eigs);
       best_states = make_shared<Matrix>(orthonormalize * *best_states);
-      basisdata.emplace(isec.first, best_states);
+      coeffmap.emplace(isec.first, best_states);
       for (int i = 0; i < eigs.size(); ++i)
         singular_values.emplace(eigs(i), make_tuple(isec.first, i));
     }
@@ -449,7 +449,7 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
     BlockKey bk = get<0>(i->second);
     const int position = get<1>(i->second);
 
-    shared_ptr<const Matrix> coeff = basisdata[bk];
+    shared_ptr<const Matrix> coeff = coeffmap[bk];
     shared_ptr<const Matrix> sectorbasis = cibasis[bk];
     shared_ptr<const RASDeterminants> det = detmap[bk];
 
@@ -459,7 +459,9 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
     output_vectors[get<0>(i->second)].push_back(tmp);
     partial_trace += i->first;
   }
-  cout << "  discarded weights: " << setw(12) << setprecision(8) << scientific <<  1.0 - partial_trace << fixed << endl;
+  const double total_trace = accumulate(singular_values.begin(), singular_values.end(), 0.0,
+                                          [] (double x, pair<double, tuple<BlockKey, int>> s) { return x + s.first; } );
+  cout << "  discarded weights: " << setw(12) << setprecision(8) << scientific <<  total_trace - partial_trace << fixed << endl;
 
   // Process into Dvecs: These vectors will become blocks so now BlockKey should be a descriptor of the block vector
   map<BlockKey, shared_ptr<const RASDvec>> out;
@@ -518,4 +520,136 @@ void RASD::apply_perturbation(shared_ptr<const RASBlockVectors> cc, vector<Gamma
       outer_products[Tkey].emplace_back(weight, tmp);
     }
   }
+}
+
+map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_block_RDM(const vector<shared_ptr<ProductRASCivec>>& civecs, const double perturbation) const {
+  assert(civecs.size()==nstate_);
+
+  // for convenience since this will come up a lot in this function
+  using ProdVec = vector<shared_ptr<ProductRASCivec>>;
+
+  // first organize by environment block (right block in DMRG_Block2 object)
+  shared_ptr<const DMRG_Block2> doubleblock = dynamic_pointer_cast<const DMRG_Block2>(civecs.front()->left());
+  assert(doubleblock);
+
+  // store the coefficients and sector bases by block: BlockKey corresponds to the block's information
+  map<BlockKey, shared_ptr<const Matrix>> coeffmap;
+
+  // arrange all the 'singular values' to get the best ones
+  multimap<double, tuple<BlockKey, const int>> singular_values;
+
+  // arrange all the determinant objects for later use
+  map<BlockKey, shared_ptr<const RASDeterminants>> detmap;
+
+  // non-orthogonal basis in which to do the diagonalization
+  map<BlockKey, ProdVec> cibasis;
+
+  // list of all the vectors that get coupled together in the density matrix
+  // rho = \sum_n \sum_{x,y in outer_products[n]} |x> w_n <y|
+  map<BlockKey, vector<tuple<double, ProdVec>>> outer_products;
+
+  // construct the non-orthogonal basis and the outer product vectors
+  {
+    // first, collect all of the vectors that belong in the state vectors
+    for (int ist = 0; ist < nstate_; ++ist) {
+      map<BlockKey, ProdVec> splitvec = civecs[ist]->split();
+      for (auto& i : splitvec) {
+        for (auto& isec : i.second.front()->sectors())
+          if (detmap.find(isec.first)==detmap.end())
+            detmap[isec.first] = isec.second->det();
+
+        outer_products[i.first].emplace_back(weights_[ist], move(i.second));
+      }
+    }
+
+#if 0
+    // add in perturbative correction
+    if (perturbation != 0.0) {
+      for (int ist = 0; ist < nstate_; ++ist) {
+        for (auto& isec : civecs[ist]->sectors()) {
+          // "diagonal" perturbation: sum_{i,j} [ (i^dagger j)_alpha (i^dagger_j)_beta ]
+          apply_perturbation(isec.second, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+
+          // spinflip perturbations
+          apply_perturbation(isec.second, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+
+          // ET/HT perturbations
+          apply_perturbation(isec.second, {GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::AnnihilateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::CreateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(isec.second, {GammaSQ::CreateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+        }
+      }
+    }
+#endif
+
+    for (auto& basis_sector : outer_products) {
+      ProdVec tmpvec;
+      for (auto& i : basis_sector.second)
+        tmpvec.insert(tmpvec.end(), get<1>(i).begin(), get<1>(i).end());
+      cibasis.emplace(basis_sector.first, move(tmpvec));
+    }
+  }
+
+  // RDM is block diagonal by sector
+  for (auto& isec : cibasis) {
+    ProdVec sectorbasis = isec.second;
+
+    // build overlap matrix
+    Matrix overlap(sectorbasis.size(), sectorbasis.size());
+    for (int i = 0; i < sectorbasis.size(); ++i) {
+      for (int j = 0; j < i; ++j)
+        overlap(i,j) = overlap(j,i) = sectorbasis[i]->dot_product(*sectorbasis[j]);
+      overlap(i,i) = sectorbasis[i]->dot_product(*sectorbasis[i]);
+    }
+
+    // build rdm
+    Matrix rdm = *overlap.clone();
+    for (auto& op : outer_products[isec.first]) {
+      Matrix tmp(get<1>(op).size(), sectorbasis.size());
+      for (int i = 0; i < tmp.mdim(); ++i)
+        for (int j = 0; j < tmp.ndim(); ++j)
+          tmp(j,i) = sectorbasis[i]->dot_product(*get<1>(op)[j]);
+      dgemm_("T", "N", rdm.ndim(), rdm.mdim(), tmp.ndim(), get<0>(op), tmp.data(), tmp.ndim(), tmp.data(), tmp.ndim(), 1.0, rdm.data(), rdm.ndim());
+    }
+
+    Matrix orthonormalize(*overlap.tildex(1.0e-12));
+    if (orthonormalize.mdim() > 0) {
+      auto best_states = make_shared<Matrix>(orthonormalize % rdm * orthonormalize);
+      VectorB eigs(best_states->ndim());
+      best_states->diagonalize(eigs);
+      best_states = make_shared<Matrix>(orthonormalize * *best_states);
+      coeffmap.emplace(isec.first, best_states);
+      for (int i = 0; i < eigs.size(); ++i)
+        singular_values.emplace(eigs(i), make_tuple(isec.first, i));
+    }
+  }
+
+  map<BlockKey, ProdVec> out;
+
+  // Pick the top singular values
+  int nvectors = 0;
+  double partial_trace = 0.0;
+  for (auto i = singular_values.rbegin(); i != singular_values.rend(); ++i, ++nvectors) {
+    if (nvectors==ntrunc_) break;
+    BlockKey bk = get<0>(i->second);
+    const int position = get<1>(i->second);
+
+    shared_ptr<const Matrix> coeff = coeffmap[bk];
+    const ProdVec& sectorbasis = cibasis[bk];
+
+    auto tmp = sectorbasis.front()->clone();
+    for (int j = 0; j < sectorbasis.size(); ++j)
+      tmp->ax_plus_y(coeff->element(j, position), *sectorbasis[j]);
+
+    out[BlockKey(tmp->nelea(), tmp->neleb())].push_back(tmp);
+    partial_trace += i->first;
+  }
+  const double total_trace = accumulate(singular_values.begin(), singular_values.end(), 0.0,
+                                          [] (double x, pair<double, tuple<BlockKey, int>> s) { return x + s.first; } );
+  cout << "  discarded weights: " << setw(12) << setprecision(8) << scientific <<  total_trace - partial_trace << fixed << endl;
+
+  return out;
 }
