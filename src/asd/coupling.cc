@@ -37,13 +37,15 @@ Coupling bagel::coupling_type(const DimerSubspace_base& AB, const DimerSubspace_
 Coupling bagel::coupling_type(const array<MonomerKey,4>& keys) {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
+  // <AB|
   pair<int,int> neleaAB {A.nelea(), B.nelea()};
   pair<int,int> nelebAB {A.neleb(), B.neleb()};
 
+  // |A'B'>
   pair<int,int> neleaApBp {Ap.nelea(), Bp.nelea()};
   pair<int,int> nelebApBp {Ap.neleb(), Bp.neleb()};
 
-  // AlphaTransfer and BetaTransfer
+  // AlphaTransfer(AT) and BetaTransfer(BT)
   pair<int,int> AT {neleaAB.first - neleaApBp.first, neleaAB.second - neleaApBp.second};
   pair<int,int> BT {nelebAB.first - nelebApBp.first, nelebAB.second - nelebApBp.second};
 

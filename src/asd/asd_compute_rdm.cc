@@ -86,14 +86,13 @@ void ASD_base::compute_rdm() {
 
   // diagonal term
   for (auto& subspace : subspaces) {
-    compute_diagonal_block<false>(subspace);
+    //rdm += compute_diagonal_block<false>(subspace);
   }
   // off diagonal term
   for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
   //for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
     for (auto jAB = subspaces.begin(); jAB != subspaces.end(); ++jAB) {
-      couple_blocks<false>(*jAB, *iAB);
-//    rdm += *couple_blocks<false>(*iAB, *jAB);
+      //rdm += couple_blocks_test<false>(*jAB, *iAB);
     }
   }
 
