@@ -43,6 +43,10 @@ void MultiSite::localize(const shared_ptr<const PTree> idata, shared_ptr<const M
   shared_ptr<OrbitalLocalization> localization;
   auto input_data = make_shared<PTree>(*idata);
   input_data->erase("virtual"); input_data->put("virtual", "true");
+  if (input_data->get_child_optional("region_sizes")) {
+    cout << "WARNING: The region_sizes keyword will be ignored for multisite preparation." << endl;
+    input_data->erase("region_sizes");
+  }
 
   vector<int> sizes;
   for (auto& g : geoms_)
@@ -60,6 +64,9 @@ void MultiSite::localize(const shared_ptr<const PTree> idata, shared_ptr<const M
   shared_ptr<const Matrix> local_coeff = localization->localize();
   vector<pair<int, int>> orbital_subspaces = localization->orbital_subspaces();
 
+  // this function requires exactly two subspaces (closed and virtual) to have been localized
+  assert(orbital_subspaces.size()==2);
+
   vector<pair<int, int>> region_bounds;
   {
     int current = 0;
@@ -68,6 +75,8 @@ void MultiSite::localize(const shared_ptr<const PTree> idata, shared_ptr<const M
       current += g->nbasis();
     }
   }
+
+  vector<vector<pair<int, int>>> site_bounds;
 
   assert(sref_->coeff()->mdim() == accumulate(orbital_subspaces.begin(), orbital_subspaces.end(), 0ull,
                              [] (unsigned long long o, const pair<int,int>& p) { return o + p.second - p.first; }));
@@ -83,6 +92,8 @@ void MultiSite::localize(const shared_ptr<const PTree> idata, shared_ptr<const M
   for (const pair<int, int>& subspace : orbital_subspaces) {
     vector<set<int>> orbital_sets(nsites_);
     const int nsuborbs = subspace.second - subspace.first;
+
+    vector<pair<int,int>> subspace_site_bounds;
 
     vector<vector<double>> lowdin_populations(nsuborbs);
     for (auto& p : lowdin_populations)
@@ -123,9 +134,22 @@ void MultiSite::localize(const shared_ptr<const PTree> idata, shared_ptr<const M
       subspace = subspace * subfock;
 
       copy_n(subspace.data(), subspace.size(), out_coeff->element_ptr(0, imo));
+      subspace_site_bounds.emplace_back(imo, imo+subset.size());
       imo += subset.size();
     }
+    site_bounds.emplace_back(move(subspace_site_bounds));
   }
+
+  // Beware: if the number of subspaces changes beyond just closed and virtual, this will need to be updated
+  if (site_bounds.front().front().first < site_bounds.back().front().first) {
+    closed_bounds_ = site_bounds.front();
+    virt_bounds_ = site_bounds.back();
+  }
+  else {
+    closed_bounds_ = site_bounds.back();
+    virt_bounds_ = site_bounds.front();
+  }
+  active_bounds_.clear();
 
   sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
 }
@@ -156,8 +180,6 @@ void MultiSite::set_active(const std::shared_ptr<const PTree> idata) {
   const int nactive = accumulate(active_refs_.begin(), active_refs_.end(), 0, [] (int x, shared_ptr<const Reference> r) { return x + r->nact(); });
   const int nvirt = accumulate(active_refs_.begin(), active_refs_.end(), 0, [] (int x, shared_ptr<const Reference> r) { return x + r->nvirt(); });
 
-  shared_ptr<const Geometry> sgeom = sref_->geom();
-
   // TODO: this implementation requires specifying the number of active orbitals that are coming from each subset.
   //  This is probably fine, but it is not strictly necessary.
 
@@ -169,21 +191,17 @@ void MultiSite::set_active(const std::shared_ptr<const PTree> idata) {
   //  bool   --> closed(true)/virtual(false)
   vector<tuple<shared_ptr<const MatView>, pair<int, int>, int, string, bool>> svd_info;
 
-  int source_closed = 0;
-  int source_virt = accumulate(isolated_refs_.begin(), isolated_refs_.end(), 0, [] (int x, shared_ptr<const Reference> r) { return x + r->nclosed(); });
   for (int site = 0; site < nsites_; ++site) {
     shared_ptr<const Reference> isoref = isolated_refs_[site];
     shared_ptr<const Reference> actref = active_refs_[site];
     const int nclosed_occ = isoref->nclosed() - actref->nclosed();
     const int nvirt_occ = isoref->nvirt() - actref->nvirt();
     auto actview = make_shared<const MatView>(actref->coeff()->slice(actref->nclosed(), actref->nclosed()+actref->nact()));
-    svd_info.emplace_back(actview, make_pair(source_closed, source_closed + isoref->nclosed()), nclosed_occ, to_string(site), true);
-    source_closed += isoref->nclosed();
-    svd_info.emplace_back(actview, make_pair(source_virt, source_virt + isoref->nvirt()), nvirt_occ, to_string(site), false);
-    source_virt += isoref->nvirt();
+    svd_info.emplace_back(actview, closed_bounds_[site], nclosed_occ, to_string(site), true);
+    svd_info.emplace_back(actview, virt_bounds_[site], nvirt_occ, to_string(site), false);
   }
 
-  Overlap S(sgeom);
+  Overlap S(sref_->geom());
 
   shared_ptr<Matrix> out_coeff = sref_->coeff()->copy();
   size_t closed_position = 0;
@@ -267,7 +285,7 @@ void MultiSite::set_active(const std::shared_ptr<const PTree> idata) {
     }
   }
 
-  sref_ = make_shared<Reference>(sgeom, make_shared<Coeff>(*out_coeff), nclosed, nactive, nvirt);
+  sref_ = make_shared<Reference>(sref_->geom(), make_shared<Coeff>(*out_coeff), nclosed, nactive, nvirt);
 }
 
 // RHF and then localize

@@ -33,13 +33,11 @@ using namespace bagel;
 MultiSite::MultiSite(shared_ptr<const PTree> input, vector<shared_ptr<const Reference>> refs) : input_(input), nsites_(refs.size()) {
   // build the super geometry
   const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
-  vector<shared_ptr<const Geometry>> geovec;
-  for (auto& r : refs) {
-    geovec.push_back(mdata ? make_shared<Geometry>(*r->geom(), mdata) : r->geom());
-    geoms_.push_back(r->geom());
-  }
+  for (auto& r : refs)
+    geoms_.push_back(mdata ? make_shared<Geometry>(*r->geom(), mdata) : r->geom());
 
   auto envdata = input_->get_child_optional("environment");
+  vector<shared_ptr<const Geometry>> geovec = geoms_;
   if (envdata) {
     Muffle hide_cout;
     geovec.push_back(make_shared<Geometry>(envdata));
