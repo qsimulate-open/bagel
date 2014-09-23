@@ -34,18 +34,18 @@ namespace bagel {
 enum class Coupling {
   none = 0,       ///< no coupling
   diagonal = 1,   ///< no change in occupation patterns
-  aET = 2,        ///< alpha transfer (A --> B)
-  inv_aET = -2,   ///< inverse alpha transfer (B --> A)
-  bET = 3,        ///< beta transfer (A --> B)
-  inv_bET = -3,   ///< inverse beta transfer (B --> A)
+  aET = 2,        ///< alpha transfer (A <-- B)
+  inv_aET = -2,   ///< inverse alpha transfer (A --> B)
+  bET = 3,        ///< beta transfer (A <-- B)
+  inv_bET = -3,   ///< inverse beta transfer (A --> B)
   abFlip = 4,     ///< alpha-beta flip
   baFlip = -4,    ///< beta-alpha flip
-  abET = 5,       ///< alpha+beta transfer (A --> B)
-  inv_abET = -5,  ///< inverse alpha+beta (B --> A)
-  aaET = 6,       ///< alpha+alpha transfer (A --> B)
-  inv_aaET = -6,  ///< inverse alpha+alpha transfer (B --> A)
-  bbET = 7,       ///< beta+beta transfer (A --> B)
-  inv_bbET = -7   ///< inverse beta+beta transfer (B --> A)
+  abET = 5,       ///< alpha+beta transfer (A <-- B)
+  inv_abET = -5,  ///< inverse alpha+beta (A --> B)
+  aaET = 6,       ///< alpha+alpha transfer (A <-- B)
+  inv_aaET = -6,  ///< inverse alpha+alpha transfer (A --> B)
+  bbET = 7,       ///< beta+beta transfer (A <-- B)
+  inv_bbET = -7   ///< inverse beta+beta transfer (A --> B)
 };
 
 inline std::ostream& operator<<(std::ostream& out, const Coupling value){
