@@ -61,6 +61,8 @@ class RASD : public ASD_DMRG {
 
     void apply_perturbation(std::shared_ptr<const RASBlockVectors> cc, std::vector<GammaSQ> oplist, std::map<BlockKey, std::shared_ptr<const RASDeterminants>>& detmap,
                             const double weight, std::map<BlockKey, std::vector<std::tuple<double, std::shared_ptr<const Matrix>>>>& outer_products) const;
+    void apply_perturbation(std::vector<std::shared_ptr<ProductRASCivec>> ccvec, const BlockKey cckey, std::vector<GammaSQ> oplist,
+                        const double weight, std::map<BlockKey, std::vector<std::tuple<double, std::vector<std::shared_ptr<ProductRASCivec>>>>>& outer_products) const;
 };
 
 }

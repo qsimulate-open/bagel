@@ -556,28 +556,27 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
       }
     }
 
-#if 0
     // add in perturbative correction
     if (perturbation != 0.0) {
-      for (int ist = 0; ist < nstate_; ++ist) {
-        for (auto& isec : civecs[ist]->sectors()) {
+      map<BlockKey, vector<tuple<double, ProdVec>>> tmp_outerproducts;
+      for (auto& op : outer_products) {
+        for (auto& i : op.second) {
           // "diagonal" perturbation: sum_{i,j} [ (i^dagger j)_alpha (i^dagger_j)_beta ]
-          apply_perturbation(isec.second, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
-          apply_perturbation(isec.second, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(get<1>(i), op.first, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, get<0>(i)*perturbation, outer_products);
+          apply_perturbation(get<1>(i), op.first, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta}, get<0>(i)*perturbation, outer_products);
 
           // spinflip perturbations
-          apply_perturbation(isec.second, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta}, detmap, weights_[ist]*perturbation, outer_products);
-          apply_perturbation(isec.second, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(get<1>(i), op.first, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta}, get<0>(i)*perturbation, outer_products);
+          apply_perturbation(get<1>(i), op.first, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha}, get<0>(i)*perturbation, outer_products);
 
           // ET/HT perturbations
-          apply_perturbation(isec.second, {GammaSQ::AnnihilateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
-          apply_perturbation(isec.second, {GammaSQ::AnnihilateBeta}, detmap, weights_[ist]*perturbation, outer_products);
-          apply_perturbation(isec.second, {GammaSQ::CreateAlpha}, detmap, weights_[ist]*perturbation, outer_products);
-          apply_perturbation(isec.second, {GammaSQ::CreateBeta}, detmap, weights_[ist]*perturbation, outer_products);
+          apply_perturbation(get<1>(i), op.first, {GammaSQ::AnnihilateAlpha}, get<0>(i)*perturbation, outer_products);
+          apply_perturbation(get<1>(i), op.first, {GammaSQ::AnnihilateBeta}, get<0>(i)*perturbation, outer_products);
+          apply_perturbation(get<1>(i), op.first, {GammaSQ::CreateAlpha}, get<0>(i)*perturbation, outer_products);
+          apply_perturbation(get<1>(i), op.first, {GammaSQ::CreateBeta}, get<0>(i)*perturbation, outer_products);
         }
       }
     }
-#endif
 
     for (auto& basis_sector : outer_products) {
       ProdVec tmpvec;
@@ -646,4 +645,54 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
   cout << "  discarded weights: " << setw(12) << setprecision(8) << scientific <<  total_trace - partial_trace << fixed << endl;
 
   return out;
+}
+
+void RASD::apply_perturbation(vector<shared_ptr<ProductRASCivec>> ccvec, const BlockKey cckey, vector<GammaSQ> oplist,
+                        const double weight, map<BlockKey, vector<tuple<double, vector<shared_ptr<ProductRASCivec>>>>>& outer_products) const
+{
+  pair<int, int> dele(0, 0);
+  for (auto& op : oplist) {
+    if (is_alpha(op))
+      dele.first += (is_creation(op) ? 1 : -1);
+    else
+      dele.second += (is_creation(op) ? 1 : -1);
+  }
+
+  shared_ptr<const DMRG_Block> dmrgblock = ccvec.front()->left();
+  shared_ptr<RASSpace> rasspace = ccvec.front()->space();
+
+  const int tnelea = ccvec.front()->nelea() + dele.first;
+  const int tneleb = ccvec.front()->neleb() + dele.second;
+  const int norb = rasspace->norb();
+
+  for (auto& cc : ccvec) {
+    auto out = make_shared<ProductRASCivec>(rasspace, dmrgblock, tnelea, tneleb);
+    if (out->size() > 0) {
+      ApplyOperator apply;
+      for (auto& target_iter : out->sectors()) {
+        const BlockKey target_key = target_iter.first;
+        shared_ptr<RASBlockVectors> target_sector = target_iter.second;
+        // perturbation is applied only to the CI part
+        if (cc->contains_block(target_key)) {
+          shared_ptr<const RASBlockVectors> source_sector = cc->sector(target_key);
+          assert(target_sector->mdim()==source_sector->mdim());
+          const int Msec = target_sector->mdim();
+          for (int ist = 0; ist < Msec; ++ist) {
+            if (oplist.size()==1) {
+              for (int p = 0; p < norb; ++p)
+                apply(1.0, source_sector->civec(ist), target_sector->civec(ist), oplist, {p});
+            } else if (oplist.size()==2) {
+              for (int p = 0; p < norb; ++p)
+                for (int q = 0; q < norb; ++q)
+                  apply(1.0, source_sector->civec(ist), target_sector->civec(ist), oplist, {p, q});
+            } else {
+              assert(false);
+            }
+          }
+        }
+      }
+      const BlockKey target_key(cckey.nelea - dele.first, cckey.neleb - dele.second);
+      outer_products[target_key].emplace_back(weight, vector<shared_ptr<ProductRASCivec>>{{out}});
+    }
+  }
 }
