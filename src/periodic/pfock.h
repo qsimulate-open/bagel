@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: pscf.h
+// Filename: pfock.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -23,34 +23,32 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_SRC_PERIODIC_PSCF_H
-#define __BAGEL_SRC_PERIODIC_PSCF_H
 
-#include <src/wfn/method.h>
+#ifndef __SRC_PERIODIC_PFOCK_H
+#define __SRC_PERIODIC_PFOCK_H
+
 #include <src/periodic/lattice.h>
-#include <src/periodic/phcore.h>
-#include <src/periodic/pfock.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 
-class PSCF : public Method {
+class PFock : public ZMatrix {
   protected:
     std::shared_ptr<const Lattice> lattice_;
-    double energy_;
-    bool dodf_;
+    std::shared_ptr<const ZMatrix> previous_;
+    std::shared_ptr<const ZMatrix> pcoeff_;
 
-    const std::string indent = "  ";
+    int nblock_, blocksize_;
+
+    // Fourier transform
+    void ft();
+    // Inverse fourier transform
+    void ift();
 
   public:
-    PSCF() { }
-    PSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
-         const std::shared_ptr<const Reference> re = nullptr);
-    virtual ~PSCF() { }
+    PFock(std::shared_ptr<const Lattice> lattice, std::shared_ptr<const ZMatrix> previous, std::shared_ptr<const ZMatrix> pcoeff);
+    ~PFock() { }
 
-    virtual void compute() override;
-    double energy() const { return energy_; };
-
-    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
 
 }

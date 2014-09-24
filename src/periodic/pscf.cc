@@ -26,6 +26,7 @@
 
 #include <iomanip>
 #include <algorithm>
+#include <src/util/timer.h>
 #include <src/periodic/pscf.h>
 
 using namespace std;
@@ -42,6 +43,8 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
 }
 
 void PSCF::compute() {
+
+  Timer pscftime;
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << lattice_->primitive_cell()->nuclear_repulsion() << endl << endl;

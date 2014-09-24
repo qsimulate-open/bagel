@@ -50,6 +50,7 @@ class Lattice {
     std::vector<std::array<double, 3>> lattice_rvectors_;
     // parameter to determine the number of k points
     int q_;
+    int num_kpoints_;
 
     double dot(std::array<double, 3> b, std::array<double, 3> c);
     std::array<double, 3> cross(std::array<double, 3> b, std::array<double, 3> c, double s = 1.0);
@@ -75,7 +76,7 @@ class Lattice {
     std::vector<std::array<double, 3>> lattice_rvectors() const { return lattice_rvectors_; }
     std::array<double, 3> lattice_rvectors(const int i) const { return lattice_rvectors_[i]; }
     void generate_kpoints();
-    int num_kpoints() const { return pow(q_, ndim_); }
+    int num_kpoints() const { return num_kpoints_; }
 
     void print_primitive_vectors() const;
     void print_lattice_vectors() const;

@@ -166,8 +166,8 @@ void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
   for (int r = 1; r <= q_; ++r)
     u[count++] = (2.0 * r - q_ - 1.0) / (2.0 * q_);
 
-  const int n = pow(q_, ndim_);
-  lattice_rvectors_.resize(n);
+  num_kpoints_ = pow(q_, ndim_);
+  lattice_rvectors_.resize(num_kpoints_);
 
   /* set up recriprocal lattice vectors */
   switch(ndim_) {
