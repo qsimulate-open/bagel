@@ -267,7 +267,7 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 
       Matrix ham_block = (gamma_aa_view ^ Q_aa_view) + (gamma_bb_view ^ Q_bb_view);
 
-      SMITH::sort_indices<0,2,1,3,1,1,1,1>(ham_block.data(), diag.data(), source_pair.right.nstates, source_pair.right.nstates, source_pair.left.nstates, source_pair.left.nstates);
+      SMITH::sort_indices<0,2,1,3,1,1,1,1>(ham_block.data(), diag.data(), source_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, source_pair.right.nstates);
 
       out->add_block(1.0, source_pair.offset, source_pair.offset, source_pair.nstates(), source_pair.nstates(), diag);
     }
