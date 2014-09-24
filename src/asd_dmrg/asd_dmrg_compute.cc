@@ -96,7 +96,7 @@ void ASD_DMRG::compute() {
       cout << setw(6) << iter << setw(6) << i << setw(22) << setprecision(12) << sweep_average << setw(16) << setprecision(12) << sweep_range
                                                                             << setw(16) << setprecision(12) << energies_[i] - sweep_average << endl;
 
-      if (abs(sweep_range)>thresh_ || energies_[i]-sweep_average>thresh_)
+      if (energies_[i]-sweep_average>thresh_)
         conv = false;
       if (energies_[i]-sweep_average>perturb_thresh_)
         drop_perturb = false;
