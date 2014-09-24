@@ -558,8 +558,8 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
 
     // add in perturbative correction
     if (perturbation != 0.0) {
-      map<BlockKey, vector<tuple<double, ProdVec>>> tmp_outerproducts;
-      for (auto& op : outer_products) {
+      map<BlockKey, vector<tuple<double, ProdVec>>> tmp_outerproducts = outer_products;
+      for (auto& op : tmp_outerproducts) {
         for (auto& i : op.second) {
           // "diagonal" perturbation: sum_{i,j} [ (i^dagger j)_alpha (i^dagger_j)_beta ]
           apply_perturbation(get<1>(i), op.first, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, get<0>(i)*perturbation, outer_products);
@@ -647,7 +647,7 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
   return out;
 }
 
-void RASD::apply_perturbation(vector<shared_ptr<ProductRASCivec>> ccvec, const BlockKey cckey, vector<GammaSQ> oplist,
+void RASD::apply_perturbation(const vector<shared_ptr<ProductRASCivec>>& ccvec, const BlockKey cckey, vector<GammaSQ> oplist,
                         const double weight, map<BlockKey, vector<tuple<double, vector<shared_ptr<ProductRASCivec>>>>>& outer_products) const
 {
   pair<int, int> dele(0, 0);
@@ -664,6 +664,10 @@ void RASD::apply_perturbation(vector<shared_ptr<ProductRASCivec>> ccvec, const B
   const int tnelea = ccvec.front()->nelea() + dele.first;
   const int tneleb = ccvec.front()->neleb() + dele.second;
   const int norb = rasspace->norb();
+
+  if (tnelea<0 || tneleb<0)
+    return;
+
 
   for (auto& cc : ccvec) {
     auto out = make_shared<ProductRASCivec>(rasspace, dmrgblock, tnelea, tneleb);
