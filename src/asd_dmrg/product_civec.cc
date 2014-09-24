@@ -104,16 +104,24 @@ void ProductRASCivec::ax_plus_y(const double& a, const ProductRASCivec& o) {
     s.second->ax_plus_y(a, *o.sectors_.at(s.first));
 }
 
+
 void ProductRASCivec::print(const double thresh) const {
   for (auto& isec: sectors_) {
+    bool sector_printed = false;
     const int nstate = isec.second->nstates();
     for (int ist = 0; ist < nstate; ++ist) {
-      cout << "    " << left_->block_info_to_string(isec.first, ist) << " (x)" << endl;
-      isec.second->civec(ist).print(thresh);
+      auto ci = isec.second->civec(ist);
+      if (ci.norm() > thresh) {
+        cout << "    " << left_->block_info_to_string(isec.first, ist) << " (x)" << endl;
+        ci.print(thresh);
+        sector_printed = true;
+      }
     }
-    cout << endl;
+    if (sector_printed)
+      cout << endl;
   }
 }
+
 
 shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
   auto out = this->clone();
@@ -170,6 +178,7 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin() const {
   return out;
 }
 
+
 shared_ptr<ProductRASCivec> ProductRASCivec::spin_lower() const {
   auto out = make_shared<ProductRASCivec>(space_, left_, nelea_-1, neleb_+1);
   for (auto& source_sector : sectors()) {
@@ -191,6 +200,7 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin_lower() const {
 
   return out;
 }
+
 
 shared_ptr<ProductRASCivec> ProductRASCivec::spin_raise() const {
   auto out = make_shared<ProductRASCivec>(space_, left_, nelea_+1, neleb_-1);
@@ -214,7 +224,9 @@ shared_ptr<ProductRASCivec> ProductRASCivec::spin_raise() const {
   return out;
 }
 
+
 double ProductRASCivec::spin_expectation() const { return this->dot_product(*spin()); }
+
 
 void ProductRASCivec::spin_decontaminate(const double thresh) {
   const int nspin = nelea() - neleb();
@@ -242,6 +254,7 @@ void ProductRASCivec::spin_decontaminate(const double thresh) {
     k += 2;
   }
 }
+
 
 map<BlockKey, vector<shared_ptr<ProductRASCivec>>> ProductRASCivec::split() const {
   shared_ptr<const DMRG_Block2> doubleblock = dynamic_pointer_cast<const DMRG_Block2>(left_);
