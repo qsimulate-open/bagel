@@ -83,7 +83,7 @@ class ProductRASCI {
     int ras(const int i) const { return ras_[i]; }
     double core_energy() const { return jop_->core_energy(); }
 
-    std::shared_ptr<const DimerJop> jop() const { return jop_; }
+    std::shared_ptr<DimerJop> jop() const { return jop_; }
 
     std::vector<double> energy() const { return energy_; }
     double energy(const int i) const { return energy_.at(i); }

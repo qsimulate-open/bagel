@@ -40,12 +40,12 @@ class FormSigmaProdRAS {
     FormSigmaProdRAS(const int b = 512) : batchsize_(b) {}
 
     /// Applies Hamiltonian to cc using the provided MOFile, skipping the vectors marked as converged
-    std::vector<std::shared_ptr<ProductRASCivec>> operator()(const std::vector<std::shared_ptr<ProductRASCivec>>& ccvec, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop, const std::vector<bool>& conv) const;
+    std::vector<std::shared_ptr<ProductRASCivec>> operator()(const std::vector<std::shared_ptr<ProductRASCivec>>& ccvec, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<DimerJop> jop, const std::vector<bool>& conv) const;
 
   private:
     // Helper functions for sigma formation
-    void pure_block_and_ras(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop) const;
-    void interaction_terms(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<const DimerJop> jop) const;
+    void pure_block_and_ras(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<DimerJop> jop) const;
+    void interaction_terms(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<DimerJop> jop) const;
 
     /// Branch 1: \f$\alpha^\dagger, \alpha^\dagger\alpha^\dagger\f$
     void aET_branch(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
@@ -65,16 +65,16 @@ class FormSigmaProdRAS {
     void baflip_branch(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
 
     /// Computes 3-operator aET terms
-    void compute_sigma_3aET(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blockops,  std::shared_ptr<const DimerJop> jop) const;
+    void compute_sigma_3aET(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blockops,  std::shared_ptr<DimerJop> jop) const;
 
     /// Computes 3-operator aHT terms
-    void compute_sigma_3aHT(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blockops,  std::shared_ptr<const DimerJop> jop) const;
+    void compute_sigma_3aHT(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blockops,  std::shared_ptr<DimerJop> jop) const;
 
     /// Computes 3-operator bET terms
-    void compute_sigma_3bET(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blockops,  std::shared_ptr<const DimerJop> jop) const;
+    void compute_sigma_3bET(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blockops,  std::shared_ptr<DimerJop> jop) const;
 
     /// Computes 3-operator bHT terms
-    void compute_sigma_3bHT(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blockops,  std::shared_ptr<const DimerJop> jop) const;
+    void compute_sigma_3bHT(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blockops,  std::shared_ptr<DimerJop> jop) const;
 
     /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\alpha j^\dagger_\alpha k_\alpha (jk|pi)f$
     void resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<btas::Tensor3<double>> Jp) const;

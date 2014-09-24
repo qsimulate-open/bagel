@@ -34,7 +34,7 @@ using namespace std;
 using namespace bagel;
 
 vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(const vector<shared_ptr<ProductRASCivec>>& ccvec,
-                     shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop, const vector<bool>& conv) const {
+                     shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop, const vector<bool>& conv) const {
 
   const int nstate = ccvec.size();
   vector<shared_ptr<ProductRASCivec>> sigmavec;
@@ -69,8 +69,8 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(const vector<sh
   return sigmavec;
 }
 
-void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop) const {
   Timer ptime;
+void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop) const {
   for (auto& sector : sigma->sectors()) {
     // first prepare pure block part which will be a nsecstates x nsecstates matrix
     const int nsecstates = sector.second->nstates();
@@ -92,8 +92,8 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
 }
 
 
-void FormSigmaProdRAS::interaction_terms(shared_ptr<const ProductRASCivec> cc, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop) const {
-  Timer ptime;
+void FormSigmaProdRAS::interaction_terms(shared_ptr<const ProductRASCivec> cc, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop) const {
+  Timer ptime(2);
 
   for (auto& isec : cc->sectors()) {
     shared_ptr<const RASBlockVectors> cc_sector = isec.second;
@@ -514,7 +514,7 @@ void FormSigmaProdRAS::baflip_branch(shared_ptr<const RASBlockVectors> cc_sector
   }
 }
 
-void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop) const {
+void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop) const {
   const BlockKey aETkey(cc_sector->left_state().nelea-1, cc_sector->left_state().neleb);
   assert(sigma->contains_block(aETkey));
   shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(aETkey);
@@ -543,7 +543,7 @@ void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_s
   }
 }
 
-void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop) const {
+void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop) const {
   const BlockKey aHTkey(cc_sector->left_state().nelea+1, cc_sector->left_state().neleb);
   assert(sigma->contains_block(aHTkey));
   shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(aHTkey);
@@ -573,7 +573,7 @@ void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_s
   }
 }
 
-void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops,  shared_ptr<const DimerJop> jop) const {
+void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops,  shared_ptr<DimerJop> jop) const {
   const BlockKey bETkey(cc_sector->left_state().nelea, cc_sector->left_state().neleb-1);
   assert(sigma->contains_block(bETkey));
   shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(bETkey);
@@ -609,7 +609,7 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
 }
 
 
-void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<const DimerJop> jop) const {
+void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_sector, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop) const {
   const BlockKey bHTkey(cc_sector->left_state().nelea, cc_sector->left_state().neleb+1);
   assert(sigma->contains_block(bHTkey));
   shared_ptr<RASBlockVectors> sigma_sector = sigma->sector(bHTkey);
