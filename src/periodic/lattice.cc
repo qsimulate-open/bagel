@@ -67,8 +67,12 @@ void Lattice::init() {
   ndim_ = primitive_cell_->primitive_vectors().size();
   if (ndim_ > 3)
     cout << "  *** Warning: Dimension in P-SCF is greater than 3!" << endl;
+  primitive_rvectors_.resize(ndim_);
 
-  ncell_ = 5; // temporary
+  /* TODO: temp parameters */
+  ncell_ = 25;
+  q_ = 10;
+
   const int num_vec = pow(2*ncell_+1, ndim_);
   lattice_vectors_.resize(num_vec);
   num_lattice_pts_ = num_vec * primitive_cell_->natom();
@@ -85,6 +89,9 @@ void Lattice::init() {
           disp[2] = i1 * a1[2];
           lattice_vectors_[i1 + ncell_] = disp;
         }
+        const double a1sq = dot(a1, a1);
+        volume_ = sqrt(a1sq);
+        for (int i = 0; i != 3; ++i) primitive_rvectors_[0][i] = 2.0 * pi__ * a1[i] / a1sq;
         break;
       }
     case 2:
@@ -101,6 +108,12 @@ void Lattice::init() {
             lattice_vectors_[count] = disp;
           }
         }
+        array<double, 3> a12 = cross(a1, a2);
+        const double a12sq = dot(a12, a12);
+        volume_ = sqrt(a12sq);
+        const double scale = 2.0 * pi__ / a12sq;
+        primitive_rvectors_[0] = cross(a2, a12, scale);
+        primitive_rvectors_[1] = cross(a12, a1, scale);
         break;
       }
     case 3:
@@ -120,11 +133,90 @@ void Lattice::init() {
             }
           }
         }
+        array<double, 3> a23 = cross(a2, a3);
+        volume_ = sqrt(dot(a1, a23));
+        const double scale = 2.0 * pi__ / volume_;
+        primitive_rvectors_[0] = cross(a2, a3, scale);
+        primitive_rvectors_[1] = cross(a3, a1, scale);
+        primitive_rvectors_[2] = cross(a1, a2, scale);
         break;
       }
   }
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
+}
+
+double Lattice::dot(array<double, 3> b, array<double, 3> c) { return b[0] * c[0] + b[1] * c[1] + b[2] * c[2]; }
+
+array<double, 3> Lattice::cross(array<double, 3> b, array<double, 3> c, double s) {
+
+  array<double, 3> out;
+  out[0] = (b[1] * c[2] - b[2] * c[1]) / s;
+  out[1] = (b[2] * c[0] - b[0] * c[2]) / s;
+  out[2] = (b[0] * c[1] - b[1] * c[0]) / s;
+
+  return out;
+}
+
+void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
+
+  vector<double> u(q_, 0.0);
+  int count = 0;
+  for (int r = 1; r <= q_; ++r)
+    u[count++] = (2.0 * r - q_ - 1.0) / (2.0 * q_);
+
+  const int n = pow(q_, ndim_);
+  lattice_rvectors_.resize(n);
+
+  /* set up recriprocal lattice vectors */
+  switch(ndim_) {
+    case 1:
+      {
+        const array<double, 3> b1 = primitive_rvectors_[0];
+        for (int i = 0; i != q_; ++i) {
+          array<double, 3> kvec;
+          kvec[0] = u[i] * b1[0];
+          kvec[1] = u[i] * b1[1];
+          kvec[2] = u[i] * b1[2];
+          lattice_rvectors_[i] = kvec;
+        }
+        break;
+      }
+    case 2:
+      {
+        const array<double, 3> b1 = primitive_rvectors_[0];
+        const array<double, 3> b2 = primitive_rvectors_[1];
+        for (int i = 0; i != q_; ++i) {
+          for (int j = 0; j != q_; ++j) {
+            array<double, 3> kvec;
+            kvec[0] = u[i] * b1[0] + u[j] * b2[0];
+            kvec[1] = u[i] * b1[1] + u[j] * b2[1];
+            kvec[2] = u[i] * b1[2] + u[j] * b2[2];
+            lattice_rvectors_[i * q_ + j] = kvec;
+          }
+        }
+        break;
+      }
+    case 3:
+      {
+        const array<double, 3> b1 = primitive_rvectors_[0];
+        const array<double, 3> b2 = primitive_rvectors_[1];
+        const array<double, 3> b3 = primitive_rvectors_[2];
+        for (int i = 0; i != q_; ++i) {
+          for (int j = 0; j != q_; ++j) {
+            for (int k = 0; k != q_; ++k) {
+              array<double, 3> kvec;
+              kvec[0] = u[i] * b1[0] + u[j] * b2[0] + u[k] * b3[0];
+              kvec[1] = u[i] * b1[1] + u[j] * b2[1] + u[k] * b3[1];
+              kvec[2] = u[i] * b1[2] + u[j] * b2[2] + u[k] * b3[2];
+              lattice_rvectors_[i * q_ * q_ + j * q_ + k] = kvec;
+            }
+          }
+        }
+        break;
+      }
+  }
+
 }
 
 void Lattice::print_primitive_vectors() const {
@@ -145,6 +237,18 @@ void Lattice::print_lattice_vectors() const {
   cout << indent << "=== Lattice vectors ===" << endl << indent << endl;
 
   for (auto& vec: lattice_vectors_)
+    cout << indent << fixed << setprecision(6) << "(" << setw(10) << vec[0] << ", "
+                                                      << setw(10) << vec[1] << ", "
+                                                      << setw(10) << vec[2] << ") " << endl;
+  cout << endl;
+}
+
+void Lattice::print_reciprocal_lattice_vectors() const {
+
+  const string indent = "  ";
+  cout << indent << "=== Reciprocal Lattice vectors ===" << endl << indent << endl;
+
+  for (auto& vec: lattice_rvectors_)
     cout << indent << fixed << setprecision(6) << "(" << setw(10) << vec[0] << ", "
                                                       << setw(10) << vec[1] << ", "
                                                       << setw(10) << vec[2] << ") " << endl;
