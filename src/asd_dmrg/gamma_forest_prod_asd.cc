@@ -260,18 +260,28 @@ void GammaForestProdASD::compute() {
                 for (int ket_k = 0; ket_k < Mket; ++ket_k) {
                   if (blockops.empty() && ket_k!=bra_k) continue; // block states are orthonormal
 
-                  ps_bra.state = bra_k;
-                  ps_ket.state = ket_k;
+                  if (block_conj ^ ci_conj) {
+                    ps_bra.state = ket_k;
+                    ps_ket.state = bra_k;
+                  }
+                  else {
+                    ps_bra.state = bra_k;
+                    ps_ket.state = ket_k;
+                  }
 
                   shared_ptr<const Matrix> ras_part = forest_->get<0>(state_tag(ps_bra), state_tag(ps_ket), ciops);
                   const double block_gamma_ss = blockops.empty() ? 1.0 : (*block_part)(bra_k, ket_k, block_index);
 
                   // fill in part of gamma
                   double* target = gamma_matrix->element_ptr(0, ijk);
-                  if (ci_conj)
-                    blas::transpose(ras_part->element_ptr(0, ci_index), ket_info.nstates, bra_info.nstates, target, static_cast<double>(phase)*block_gamma_ss);
-                  else
+                  if (ci_conj) {
+                    Matrix tmp(bra_info.nstates, ket_info.nstates);
+                    blas::transpose(ras_part->element_ptr(0, ci_index), ket_info.nstates, bra_info.nstates, tmp.data(), static_cast<double>(phase)*block_gamma_ss);
+                    blas::ax_plus_y_n(1.0, tmp.data(), tmp.size(), target);
+                  }
+                  else {
                     blas::ax_plus_y_n(static_cast<double>(phase)*block_gamma_ss, ras_part->element_ptr(0, ci_index), ras_part->ndim(), target);
+                  }
                 }
               }
             }
