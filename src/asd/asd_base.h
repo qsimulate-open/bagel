@@ -63,6 +63,10 @@ class ASD_base {
 
     std::vector<double> energies_; ///< Adiabatic energies
 
+    // Dimer reduced density matrices
+    std::shared_ptr<RDM<1>> onerdm_; // First-order RDM
+    std::shared_ptr<RDM<2>> twordm_; // Second-order RDM
+
     // Total system quantities
     int dimerstates_; ///< Total size of dimer Hamiltonian. Counted up during initialization
 
@@ -85,6 +89,7 @@ class ASD_base {
     // Gamma Tensor
     std::array<std::shared_ptr<const GammaTensor>,2> gammatensor_;
     std::shared_ptr<GammaTensor> worktensor_;
+    std::shared_ptr<GammaTensor> worktensor2_;
 
     std::vector<std::vector<ModelBlock>> models_to_form_; ///< Contains specifications to construct model spaces
     std::vector<std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>>> models_; ///< models that have been built
@@ -107,8 +112,14 @@ class ASD_base {
     template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_bbET(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
     template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_diagonal_block(const DimerSubspace_base& subspace) const { assert(false); return nullptr; }
 
-    template <bool _N, typename return_type = typename std::conditional<_N, Matrix, RDM<2>>::type>
-    std::shared_ptr<return_type> couple_blocks_test(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
+    std::shared_ptr<RDM<1>> compute_rdm1_monomerA(const DimerSubspace_base& subspace) const;
+    std::shared_ptr<RDM<1>> compute_rdm1_monomerB(const DimerSubspace_base& subspace) const;
+    std::shared_ptr<RDM<1>> couple_blocks_1rdm(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
+    std::shared_ptr<RDM<2>> couple_blocks_2rdm(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<1>>::type> compute_aET1(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<1>>::type> compute_bET1(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<1>>::type> compute_inv_aET1(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<1>>::type> compute_inv_bET1(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
     template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_inv_aET(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
     template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_inv_bET(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
     template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_baFlip(const std::array<MonomerKey,4>&) const { assert(false); return nullptr; }
@@ -149,7 +160,12 @@ template<> std::shared_ptr<Matrix> ASD_base::compute_abET<true>(const std::array
 template<> std::shared_ptr<Matrix> ASD_base::compute_aaET<true>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<Matrix> ASD_base::compute_bbET<true>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<Matrix> ASD_base::compute_diagonal_block<true>(const DimerSubspace_base& subspace) const;
-//ASD RDM
+//ASD 1RDM
+template<> std::shared_ptr<RDM<1>> ASD_base::compute_aET1<false>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<RDM<1>> ASD_base::compute_bET1<false>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<RDM<1>> ASD_base::compute_inv_aET1<false>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<RDM<1>> ASD_base::compute_inv_bET1<false>(const std::array<MonomerKey,4>&) const;
+//ASD 2RDM
 template<> std::shared_ptr<RDM<2>> ASD_base::compute_offdiagonal_1e<false>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
 template<> std::shared_ptr<RDM<2>> ASD_base::compute_inter_2e<false>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<RDM<2>> ASD_base::compute_aET<false>(const std::array<MonomerKey,4>&) const;
@@ -218,63 +234,6 @@ std::shared_ptr<return_type> ASD_base::couple_blocks(const DimerSubspace_base& A
   if (flip) transpose_call(out);
   return out;
 }
-
-//TEST
-template <bool _N, typename return_type>
-std::shared_ptr<return_type> ASD_base::couple_blocks_test(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
-
-  Coupling term_type = coupling_type(AB, ApBp);
-
-  const DimerSubspace_base* space1 = &AB;
-  const DimerSubspace_base* space2 = &ApBp;
-
-  std::shared_ptr<return_type> out;
-  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
-
-  switch(term_type) {
-    case Coupling::none :
-      out = nullptr; break;
-
-    case Coupling::diagonal :
-      out = compute_inter_2e<_N>(keys); break;
-
-    case Coupling::aET :
-      out = compute_aET<_N>(keys); break;
-    case Coupling::inv_aET :
-      out = compute_inv_aET<_N>(keys); break;
-
-    case Coupling::bET :
-      out = compute_bET<_N>(keys); break;
-    case Coupling::inv_bET :
-      out = compute_inv_bET<_N>(keys); break;
-
-    case Coupling::abFlip :
-      out = compute_abFlip<_N>(keys); break;
-    case Coupling::baFlip :
-      out = compute_baFlip<_N>(keys); break;
-
-    case Coupling::abET :
-      out = compute_abET<_N>(keys); break;
-    case Coupling::inv_abET :
-      out = compute_inv_abET<_N>(keys); break;
-
-    case Coupling::aaET :
-      out = compute_aaET<_N>(keys); break;
-    case Coupling::inv_aaET :
-      out = compute_inv_aaET<_N>(keys); break;
-
-    case Coupling::bbET :
-      out = compute_bbET<_N>(keys); break;
-    case Coupling::inv_bbET :
-      out = compute_inv_bbET<_N>(keys); break;
-
-    default :
-      throw std::logic_error("Asking for a coupling type that has not been written.");
-  }
-
-  return out;
-}
-
 
 } //bagel
 
