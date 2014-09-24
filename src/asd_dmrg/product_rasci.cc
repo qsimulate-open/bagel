@@ -106,7 +106,7 @@ void ProductRASCI::print_header() const {
 
 
 void ProductRASCI::compute() {
-  Timer pdebug(0);
+  Timer pdebug(2);
 
   // Creating an initial CI vector
   vector<shared_ptr<ProductRASCivec>> cc(nstate_);

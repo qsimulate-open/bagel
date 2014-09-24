@@ -44,7 +44,7 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(const vector<sh
 #ifdef NOPENOPE_HAVE_MPI_H
     if ( istate % mpi__->size() == mpi__->rank() ) {
 #endif
-      Timer pdebug;
+      Timer pdebug(2);
       shared_ptr<const ProductRASCivec> cc = ccvec.at(istate);
       shared_ptr<ProductRASCivec> sigma = sigmavec.at(istate);
 
@@ -69,8 +69,8 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(const vector<sh
   return sigmavec;
 }
 
-  Timer ptime;
 void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop) const {
+  Timer ptime(2);
   for (auto& sector : sigma->sectors()) {
     // first prepare pure block part which will be a nsecstates x nsecstates matrix
     const int nsecstates = sector.second->nstates();
