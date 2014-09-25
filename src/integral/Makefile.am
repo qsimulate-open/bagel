@@ -9,7 +9,7 @@ rys/_r2root_1.cc rys/_r2root_2.cc rys/_r2root_3.cc rys/_r2root_4.cc rys/_r2root_
 comprys/_complex_eriroot_1.cc comprys/_complex_eriroot_2.cc comprys/_complex_eriroot_3.cc comprys/_complex_eriroot_4.cc comprys/_complex_eriroot_5.cc comprys/_complex_eriroot_6.cc comprys/_complex_eriroot_7.cc comprys/_complex_eriroot_8.cc comprys/_complex_eriroot_9.cc comprys/_complex_eriroot_10.cc comprys/_complex_eriroot_11.cc comprys/_complex_eriroot_12.cc comprys/_complex_eriroot_13.cc \
 rys/_breitroot_1.cc rys/_breitroot_2.cc rys/_breitroot_3.cc rys/_breitroot_4.cc rys/_breitroot_5.cc rys/_breitroot_6.cc rys/_breitroot_7.cc rys/_breitroot_8.cc rys/_breitroot_9.cc rys/_breitroot_10.cc rys/_breitroot_11.cc rys/_breitroot_12.cc rys/_breitroot_13.cc \
 rys/_spin2root_1.cc rys/_spin2root_2.cc rys/_spin2root_3.cc rys/_spin2root_4.cc rys/_spin2root_5.cc rys/_spin2root_6.cc rys/_spin2root_7.cc rys/_spin2root_8.cc rys/_spin2root_9.cc rys/_spin2root_10.cc rys/_spin2root_11.cc rys/_spin2root_12.cc rys/_spin2root_13.cc \
-compos/complexoverlapbatch.cc compos/covrr.cc compos/complexkineticbatch.cc compos/complexmomentumbatch.cc \
+compos/complexoverlapbatch.cc compos/covrr.cc compos/complexkineticbatch.cc compos/complexmomentumbatch.cc compos/point_complexmomentumbatch.cc \
 comprys/complexeribatch.cc rys/eribatch.cc rys/gradbatch.cc rys/gnaibatch.cc rys/slaterbatch.cc rys/breitbatch.cc rys/rysintegral.cc rys/coulombbatch_base.cc rys/coulombbatch_energy.cc \
 rys/compute.cc comprys/ccompute.cc rys/bcompute.cc rys/gcompute.cc rys/gncompute.cc rys/scompute.cc rys/vrr_optim.cc rys/bvrr_optim.cc rys/svrr_optim.cc rys/usvrr_optim.cc \
 rys/naibatch.cc comprys/complexnaibatch.cc rys/r0batch.cc rys/r1batch.cc rys/r2batch.cc rys/eribatch_base.cc\
