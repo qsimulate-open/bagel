@@ -181,11 +181,10 @@ void Point_ComplexMomentumBatch::perform_VRR(complex<double>* intermediate) {
                 dy = minus1y - 2.0 * cb * worksy[iy+amax2 * (jy+1)] - imag * A_By * worksy[iy + amax2 * jy];
                 dz = minus1z - 2.0 * cb * worksz[iz+amax2 * (jz+1)] - imag * A_Bz * worksz[iz + amax2 * jz];
 
-                //current_data[cnt              ] = -imag * dx * Sy * Sz;
-                //current_data[cnt+size_block_  ] = -imag * Sx * dy * Sz;
-                //current_data[cnt+size_block_*2] = -imag * Sx * Sy * dz;
+                current_data[cnt              ] = -imag * dx * Sy * Sz;
+                current_data[cnt+size_block_  ] = -imag * Sx * dy * Sz;
+                current_data[cnt+size_block_*2] = -imag * Sx * Sy * dz;
 
-// TODO only dia
                 current_data[cnt              ] += field_y_half * Sx * Sy * oz;
                 current_data[cnt+size_block_  ] += field_z_half * ox * Sy * Sz;
                 current_data[cnt+size_block_*2] += field_x_half * Sx * oy * Sz;
