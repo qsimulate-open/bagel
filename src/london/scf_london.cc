@@ -27,8 +27,6 @@
 #include <src/rel/relreference.h>
 #include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
-#include <src/prop/momentum_london.h>
-#include <src/prop/momentum_point.h>
 
 using namespace bagel;
 using namespace std;
@@ -146,7 +144,7 @@ void SCF_London::compute() {
     auto error_vector = make_shared<const DistZMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     const double error = error_vector->rms();
 
-    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(12) << energy_ << "   "
+    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
 
     if (error < thresh_scf_) {
@@ -187,7 +185,7 @@ void SCF_London::compute() {
   }
 
 
-  //TODO If we're going to compute dipole moments in SCF_London, this is the place to do it
+  //TODO To report dipole moments with a GIAO basis, we'd need to implement multipole integrals over GIAO
 #if 0
   if (!geom_->external()) {
     if (dodf_) aodensity_ = aodensity->matrix();
@@ -196,134 +194,6 @@ void SCF_London::compute() {
   }
 #endif
 
-#if 1
-  // For total currents, integrated over all space
-  auto mom = make_shared<Momentum_London>(geom_);
-  array<shared_ptr<ZMatrix>,3> pi = mom->compute();
-
-  overlap_->print("overlap matrix in AO basis", 40);
-  pi[0]->print("integrated x-current in AO basis", 40);
-  pi[1]->print("integrated y-current in AO basis", 40);
-  pi[2]->print("integrated z-current in AO basis", 40);
-
-  shared_ptr<const ZMatrix> ocoeff = coeff_->slice_copy(0, nocc_);
-  //shared_ptr<const ZMatrix> ocoeff = coeff_->slice_copy(0, coeff_->mdim());
-  ocoeff->print("MO Coefficient matrix", 40);
-
-  auto ovlmo = make_shared<ZMatrix>(2 * *ocoeff % *overlap_ * *ocoeff);
-  auto x_current = make_shared<ZMatrix>(-2.0 * *ocoeff % *(pi[0])* *ocoeff);
-  auto y_current = make_shared<ZMatrix>(-2.0 * *ocoeff % *(pi[1])* *ocoeff);
-  auto z_current = make_shared<ZMatrix>(-2.0 * *ocoeff % *(pi[2])* *ocoeff);
-
-  ovlmo->print("overlap matrix in MO basis", 40);
-  x_current->print("integrated x-current in MO basis", 40);
-  y_current->print("integrated y-current in MO basis", 40);
-  z_current->print("integrated z-current in MO basis", 40);
-
-  const complex<double> ovltot = ovlmo->trace();
-  const complex<double> xtot = x_current->trace();
-  const complex<double> ytot = y_current->trace();
-  const complex<double> ztot = z_current->trace();
-
-  cout << "total self-overlap = " << ovltot << endl;
-  cout << "total x-current = " << xtot << endl;
-  cout << "total y-current = " << ytot << endl;
-  cout << "total z-current = " << ztot << endl;
-
-  const complex<double> ovlprod = aodensity->dot_product(*overlap_);
-  const complex<double> xprod = -1.0*aodensity->dot_product(*(pi[0]));
-  const complex<double> yprod = -1.0*aodensity->dot_product(*(pi[1]));
-  const complex<double> zprod = -1.0*aodensity->dot_product(*(pi[2]));
-
-  cout << endl;
-  cout << "recalculated self-overlap = " << ovlprod << endl;
-  cout << "recalculated x-current = " << xprod << endl;
-  cout << "recalculated y-current = " << yprod << endl;
-  cout << "recalculated z-current = " << zprod << endl;
-
-#endif
-
-#if 1
-  // For point current
-  const array<double,3> loc = idata_->get_array<double,3>("point", {{0.0, 0.0, 0.0}});
-  auto mom = make_shared<Momentum_Point>(geom_, loc);
-  array<shared_ptr<ZMatrix>,3> pi = mom->compute();
-
-  overlap_->print("overlap matrix in AO basis", 40);
-  pi[0]->print("point x-current in AO basis", 40);
-  pi[1]->print("point y-current in AO basis", 40);
-  pi[2]->print("point z-current in AO basis", 40);
-
-  shared_ptr<const ZMatrix> ocoeff = coeff_->slice_copy(0, nocc_);
-  //shared_ptr<const ZMatrix> ocoeff = coeff_->slice_copy(0, coeff_->mdim());
-  ocoeff->print("MO Coefficient matrix", 40);
-
-  auto ovlmo = make_shared<ZMatrix>(2 * *ocoeff % *overlap_ * *ocoeff);
-  auto x_current = make_shared<ZMatrix>(-2.0 * *ocoeff % *(pi[0])* *ocoeff);
-  auto y_current = make_shared<ZMatrix>(-2.0 * *ocoeff % *(pi[1])* *ocoeff);
-  auto z_current = make_shared<ZMatrix>(-2.0 * *ocoeff % *(pi[2])* *ocoeff);
-
-  ovlmo->print("overlap matrix in MO basis", 40);
-  x_current->print("point x-current in MO basis", 40);
-  y_current->print("point y-current in MO basis", 40);
-  z_current->print("point z-current in MO basis", 40);
-
-  const complex<double> ovltot = ovlmo->trace();
-  const complex<double> xtot = x_current->trace();
-  const complex<double> ytot = y_current->trace();
-  const complex<double> ztot = z_current->trace();
-
-  cout << "total self-overlap = " << ovltot << endl;
-  cout << "total x-current = " << xtot << endl;
-  cout << "total y-current = " << ytot << endl;
-  cout << "total z-current = " << ztot << endl;
-
-  const complex<double> ovlprod = aodensity->dot_product(*overlap_);
-  const complex<double> xprod = -1.0*aodensity->dot_product(*(pi[0]));
-  const complex<double> yprod = -1.0*aodensity->dot_product(*(pi[1]));
-  const complex<double> zprod = -1.0*aodensity->dot_product(*(pi[2]));
-
-  cout << endl;
-  cout << "recalculated self-overlap = " << ovlprod << endl;
-  cout << "recalculated x-current = " << xprod << endl;
-  cout << "recalculated y-current = " << yprod << endl;
-  cout << "recalculated z-current = " << zprod << endl;
-#endif
-
-#if 1
-  // To print out many points
-  vector<array<double,3>> coords;
-
-  for (int i=0; i<=20; ++i) {
-    for (int j=0; j<=20; ++j) {
-      array<double,3> current = {{ -5.0+0.5*i, -5.0+0.5*j, 1.00  }};
-      coords.push_back(current);
-    }
-  }
-
-  cout << "       x                y                z             Re(pi_x)         Im(pi_x)         Re(pi_y)         Im(pi_y)         Re(pi_z)         Im(pi_z)" << endl;
-
-  for (int i=0; i!=coords.size(); ++i) {
-    auto mom = make_shared<Momentum_Point>(geom_, coords[i]);
-    array<shared_ptr<ZMatrix>,3> pi = mom->compute();
-    cout << fixed << setprecision(12);
-    const complex<double> xprod = -1.0*aodensity->dot_product(*(pi[0]));
-    const complex<double> yprod = -1.0*aodensity->dot_product(*(pi[1]));
-    const complex<double> zprod = -1.0*aodensity->dot_product(*(pi[2]));
-
-    cout << ((coords[i][0] < 0) ? "" : " ") << coords[i][0] << "  "
-         << ((coords[i][1] < 0) ? "" : " ") << coords[i][1] << "  "
-         << ((coords[i][2] < 0) ? "" : " ") << coords[i][2] << "  "
-         << ((xprod.real() < 0) ? "" : " ") << xprod.real() << "  "
-         << ((xprod.imag() < 0) ? "" : " ") << xprod.imag() << "  "
-         << ((yprod.real() < 0) ? "" : " ") << yprod.real() << "  "
-         << ((yprod.imag() < 0) ? "" : " ") << yprod.imag() << "  "
-         << ((zprod.real() < 0) ? "" : " ") << zprod.real() << "  "
-         << ((zprod.imag() < 0) ? "" : " ") << zprod.imag() << "  "
-         << endl;
-  }
-
-#endif
 }
 
 

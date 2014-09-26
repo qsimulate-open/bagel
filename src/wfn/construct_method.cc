@@ -46,6 +46,7 @@
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/london/scf_london.h>
+#include <src/london/current.h>
 #include <src/wfn/construct_method.h>
 
 using namespace std;
@@ -121,10 +122,11 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<ZCASBFGS>(itree, geom, ref);
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
-    }
+    } else if (title == "current")  throw runtime_error("Charge currents are only available when using a GIAO basis set reference.");
   } else {
     if (title == "hf")              out = make_shared<SCF_London>(itree, geom, ref);
     else if (title == "dhf")        out = make_shared<Dirac>(itree, geom, ref);
+    else if (title == "current")    out = make_shared<Current>(itree, geom, ref);
     else if (title == "fci")        throw runtime_error("FCI method has not been implemented with an applied magnetic field.");
     else if (title == "ks")         throw runtime_error("KS method has not been implemented with an applied magnetic field.");
     else if (title == "uhf")        throw runtime_error("UHF method has not been implemented with an applied magnetic field.");
