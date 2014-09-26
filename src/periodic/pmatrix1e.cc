@@ -40,15 +40,8 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(PMatrix1e)
 
-PMatrix1e::PMatrix1e(const shared_ptr<const Lattice> lattice)
-  : Matrix(lattice->primitive_cell()->nbasis() * lattice->ncell(), lattice->primitive_cell()->nbasis()) {
-  zero();
-}
-
-
-PMatrix1e::PMatrix1e(const PMatrix1e& o) : Matrix(o.ndim(), o.mdim()) {
-  copy_n(o.data(), size(), data());
-}
+PMatrix1e::PMatrix1e(const shared_ptr<const Lattice> lattice) : nbasis_(lattice->primitive_cell()->nbasis()), nblock_(lattice->lattice_vectors().size()),
+                                                          data_(make_shared<Data>(nbasis_, nblock_)) { }
 
 namespace bagel {
 class PMatrix1eTask {
@@ -71,7 +64,7 @@ void PMatrix1e::init(shared_ptr<const Lattice> lattice) {
   const size_t nshell = accumulate(cell0->atoms().begin(), cell0->atoms().end(), 0, [](int r, shared_ptr<const Atom> p) { return r+p->nshell(); });
   TaskQueue<PMatrix1eTask> task(nshell * nshell * lattice->ncell());
 
-  int m = 0;
+  int g = 0;
   int u = 0;
   /* loop over all cells in direct space */
   for (auto& disp : lattice->lattice_vectors()) {
@@ -80,14 +73,14 @@ void PMatrix1e::init(shared_ptr<const Lattice> lattice) {
     size_t oa0 = 0;
     for (auto a0 = cell0->atoms().begin(); a0 != cell0->atoms().end(); ++a0) { /* cell 0 */
       size_t oa1 = 0;
-      for (auto a1 = cell->atoms().begin(); a1 != cell->atoms().end(); ++a1) { /* cell m */
+      for (auto a1 = cell->atoms().begin(); a1 != cell->atoms().end(); ++a1) { /* cell g */
 
         size_t ob0 = oa0;
         for (auto& b0 : (*a0)->shells()) {
           size_t ob1 = oa1;
           for (auto& b1 : (*a1)->shells()) {
             if (u++ % mpi__->size() == mpi__->rank())
-              task.emplace_back(array<shared_ptr<const Shell>,2>{{b1, b0}}, ob0, ob1, lattice, this, m);
+              task.emplace_back(array<shared_ptr<const Shell>,2>{{b1, b0}}, ob0, ob1, lattice, this, g);
             ob1 += b1->nbasis();
           }
           ob0 += b0->nbasis();
@@ -96,10 +89,9 @@ void PMatrix1e::init(shared_ptr<const Lattice> lattice) {
       }
       oa0 += (*a0)->nbasis();
     }
-
-    ++m;
+    ++g;
   }
 
   task.compute();
-  allreduce();
+  data_->allreduce();
 }

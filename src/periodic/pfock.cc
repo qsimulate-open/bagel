@@ -29,39 +29,9 @@
 using namespace std;
 using namespace bagel;
 
-PFock::PFock(shared_ptr<const Lattice> l, shared_ptr<const ZMatrix> h, shared_ptr<const ZMatrix> c)
-  : ZMatrix(l->primitive_cell()->nbasis(), l->primitive_cell()->nbasis()), lattice_(l), previous_(h), pcoeff_(c) {
+PFock::PFock(shared_ptr<const Lattice> l, shared_ptr<const PFock> h, shared_ptr<const ZMatrix> c)
+  : lattice_(l), previous_(h), pcoeff_(c) {
 
   nblock_ = l->num_kpoints();
   blocksize_ = l->primitive_cell()->nbasis();
-
-}
-
-void PFock::ft() {
-
-  shared_ptr<ZMatrix> tmp = make_shared<ZMatrix>(*this);
-  zero();
-
-  int k = 0;
-  for (auto& kvec : lattice_->lattice_rvectors()) {
-    shared_ptr<ZMatrix> kblock = make_shared<ZMatrix>(blocksize_, blocksize_);
-    kblock->zero();
-    int g = 0;
-    for (auto& gvec : lattice_->lattice_vectors()) {
-      complex<double> factor(0.0, gvec[0] * kvec[0] + gvec[1] * kvec[1] + gvec[2] * kvec[2]);
-      factor = std::exp(factor);
-      const int offset = g * blocksize_;
-      shared_ptr<ZMatrix> gblock = tmp->get_submatrix(offset, offset, blocksize_, blocksize_);
-      gblock->scale(factor);
-      *kblock += *gblock;
-      ++g;
-    }
-    add_block(complex<double>(1.0, 0.0), blocksize_ * k, blocksize_ * k,  blocksize_, blocksize_, kblock);
-    ++k;
-  }
-
-}
-
-void PFock::ift() {
-
 }

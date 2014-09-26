@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: pmatrix1e.h
+// Filename: data.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,46 +24,58 @@
 //
 
 
-#ifndef __SRC_PERIODIC_PMATRIX1E_H
-#define __SRC_PERIODIC_PMATRIX1E_H
+#ifndef __SRC_PERIODIC_DATA_H
+#define __SRC_PERIODIC_DATA_H
 
-#include <src/periodic/data.h>
-#include <src/periodic/lattice.h>
+#include <src/math/matrix.h>
 
 namespace bagel {
 
-// Periodic version of Matrix1e (1e integrals)
-class PMatrix1e {
-  friend class PMatrix1eTask;
+/* Store data in direct space */
+class Data {
   protected:
-    int nbasis_;
+    int blocksize_;
     int nblock_;
-    std::shared_ptr<Data> data_;    // (g, i, j)
 
-    virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Lattice>, const int) = 0;
-    virtual void init(std::shared_ptr<const Lattice>);
+    std::vector<std::shared_ptr<Matrix>> data_;     // (g, i, j)
 
   private:
     // serialization
     friend class boost::serialization::access;
-
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & nbasis_ & nblock_ & data_;
+      ar & blocksize_ & nblock_ & data_;
     }
 
   public:
-    PMatrix1e() { }
-    PMatrix1e(const std::shared_ptr<const Lattice>);
-    virtual ~PMatrix1e() { }
+    Data() { }
+    Data(const int bsize, const int nblock) : blocksize_(bsize), nblock_(nblock) {
+      data_.resize(nblock);
+      for (int i = 0; i != nblock; ++i) {
+        auto block = std::make_shared<Matrix>(bsize, bsize);
+        block->zero();
+        data_[i] = block;
+      }
+    }
 
-    std::shared_ptr<Data> data() const { return data_; }
+    ~Data() { }
 
+    const int blocksize() const { return blocksize_; }
+    const int nblock() const { return nblock_; }
+
+    std::shared_ptr<Matrix> operator[] (int i) { assert(i < nblock_ && i >= 0); return data_[i]; };
+
+    std::vector<std::shared_ptr<Matrix>> data() const { return data_; }
+    std::shared_ptr<Matrix> data(const int i) const { return data_[i]; }
+
+    void allreduce() {
+      for (auto& block : data_) block->allreduce();
+    }
 };
 
 }
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::PMatrix1e)
+BOOST_CLASS_EXPORT_KEY(bagel::Data)
 
 #endif

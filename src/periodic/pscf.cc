@@ -53,5 +53,11 @@ void PSCF::compute() {
   cout << indent << fixed << setprecision(10) << setw(15) << lattice_->nuclear_repulsion() << endl << endl;
 
   energy_ = 0.0;
+  const double error = 0.0;
+  const int iter = 1;
+
+  cout << indent << "=== Periodic RHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
+  cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
+                                    << setw(17) << error << setw(15) << setprecision(2) << pscftime.tick() << endl;
 
 }

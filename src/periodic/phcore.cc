@@ -44,20 +44,19 @@ void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
-  const int nbasis = lattice->primitive_cell()->nbasis();
 
   {
     KineticBatch kinetic(input);
     kinetic.compute();
 
-    copy_block(offsetb1 + block * nbasis, offsetb0, dimb1, dimb0, kinetic.data());
+    (*data_)[block]->copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
   {
     auto mol = make_shared<const Geometry>(*(lattice->primitive_cell()), lattice->lattice_vectors(block));
     NAIBatch nai(input, mol);
     nai.compute();
 
-    add_block(1.0, offsetb1 + block * nbasis, offsetb0, dimb1, dimb0, nai.data());
+    (*data_)[block]->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
 
 }
