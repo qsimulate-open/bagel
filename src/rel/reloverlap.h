@@ -47,8 +47,8 @@ class RelOverlap : public ZMatrix {
       compute_();
     }
 
-    std::shared_ptr<ZMatrix> tildex(const double thresh) const;
-    std::shared_ptr<ZMatrix> inverse(const double thresh = 1.0e-8) const;
+    std::shared_ptr<ZMatrix> tildex(const double thresh) const override;
+    void inverse() override;
 };
 
 }

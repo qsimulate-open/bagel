@@ -25,15 +25,25 @@
 
 
 #include <src/rel/reldf.h>
+#include <src/df/complexdf.h>
 
 using namespace std;
 using namespace bagel;
 
-RelDF::RelDF(shared_ptr<const DFDist> df, pair<int, int> cartesian, const std::vector<int> alpha) : RelDFBase(cartesian), alpha_(alpha), dfdata_(df), swap_(false) {
+RelDF::RelDF(shared_ptr<const DFDist> df, pair<int, int> cartesian, const std::vector<int> alpha) : RelDFBase(cartesian), alpha_(alpha), swap_(false) {
+  if (!dynamic_pointer_cast<const ComplexDFDist>(df)) {
+    dfdata_[0] = df;
+    dfdata_[1] = nullptr;
+  } else {
+    auto cdf = dynamic_pointer_cast<const ComplexDFDist>(df);
+    array<shared_ptr<const DFDist>,2> tmp = cdf->split_real_imag();
+    dfdata_[0] = tmp[0];
+    dfdata_[1] = tmp[1];
+  }
   set_basis();
 }
 
-RelDF::RelDF(const RelDF& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfdata_(o.df()), swap_(o.swap_) {
+RelDF::RelDF(const RelDF& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfdata_(o.get_data()), swap_(o.swap_) {
   set_basis();
   if (coo) {
     swap_ ^= true;
@@ -85,10 +95,37 @@ vector<shared_ptr<ZMatrix>> RelDF::compute_Jop(list<shared_ptr<const CDMatrix>>&
   }
 
   vector<shared_ptr<ZMatrix>> out;
-  for (auto& i : sum) {
-    shared_ptr<const Matrix> rdat = dfdata_->compute_Jop_from_cd(i->get_real_part());
-    shared_ptr<const Matrix> idat = dfdata_->compute_Jop_from_cd(i->get_imag_part());
-    out.push_back(make_shared<ZMatrix>(*rdat, *idat));
+
+  // real
+  if (!get_imag()) {
+    for (auto& i : sum) {
+      shared_ptr<const Matrix> rdat = get_real()->compute_Jop_from_cd(i->get_real_part());
+      shared_ptr<const Matrix> idat = get_real()->compute_Jop_from_cd(i->get_imag_part());
+      out.push_back(make_shared<ZMatrix>(*rdat, *idat));
+    }
+
+  // complex (GIAO)
+  } else {
+    // get_real() + get_imag() needed for 3-multiplication algorithm
+    auto dfri = make_shared<DFDist>(get_real());
+    const int n = get_real()->block().size();
+    for (int i=0; i!=n; ++i) {
+      dfri->add_block(get_real()->block(i)->copy());
+      dfri->block(i)->ax_plus_y(1.0, get_imag()->block(i));
+    }
+    for (auto& i : sum) {
+      shared_ptr<const VectorB> cdr = i->get_real_part();
+      shared_ptr<const VectorB> cdi = i->get_imag_part();
+      auto cdri = make_shared<const VectorB> (*cdr + *cdi);
+
+      shared_ptr<Matrix> rdat = get_real()->compute_Jop_from_cd(cdr);
+      shared_ptr<Matrix> tmpdat = get_imag()->compute_Jop_from_cd(cdi);
+      shared_ptr<Matrix> idat = dfri->compute_Jop_from_cd(cdri);
+      *idat -= *rdat;
+      *idat -= *tmpdat;
+      *rdat -= *tmpdat;
+      out.push_back(make_shared<ZMatrix>(*rdat, *idat));
+    }
   }
 
   return out;

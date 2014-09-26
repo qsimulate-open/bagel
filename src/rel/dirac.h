@@ -28,8 +28,6 @@
 #define __SRC_REL_DIRAC_H
 
 #include <src/wfn/method.h>
-#include <src/rel/relhcore.h>
-#include <src/rel/reloverlap.h>
 #include <src/rel/reldfhalf.h>
 
 namespace bagel {
@@ -53,8 +51,8 @@ class Dirac : public Method {
     // for Fock build
     bool robust_;
 
-    std::shared_ptr<const RelHcore> hcore_;
-    std::shared_ptr<const RelOverlap> overlap_;
+    std::shared_ptr<const ZMatrix> hcore_;
+    std::shared_ptr<const ZMatrix> overlap_;
     std::shared_ptr<const ZMatrix> s12_;
 
     std::shared_ptr<const ZMatrix> coeff_;
@@ -64,7 +62,7 @@ class Dirac : public Method {
 
     // if gradient is requested, half-transformed integrals will be reused
     bool do_grad_;
-    std::list<std::shared_ptr<RelDFHalf>> half_; 
+    std::list<std::shared_ptr<RelDFHalf>> half_;
 
   public:
     Dirac(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr);

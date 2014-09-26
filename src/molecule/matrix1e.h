@@ -32,9 +32,13 @@
 
 namespace bagel {
 
+template <typename T, class U> class Matrix1eTask_;
+
 // specialized matrix for 1e integrals
-class Matrix1e : public Matrix {
-  friend class Matrix1eTask;
+template <typename MatType = Matrix, class Enable = typename std::enable_if<(std::is_same<MatType, Matrix>::value || std::is_same<MatType, ZMatrix>::value)>::type>
+class Matrix1e_ : public MatType{
+
+  friend class Matrix1eTask_<MatType, Enable>;
   protected:
     virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) = 0;
     virtual void init(std::shared_ptr<const Molecule>);
@@ -45,20 +49,32 @@ class Matrix1e : public Matrix {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Matrix>(*this);
+      ar & boost::serialization::base_object<MatType>(*this);
     }
 
   public:
-    Matrix1e() { }
-    Matrix1e(const std::shared_ptr<const Molecule>);
-    Matrix1e(const Matrix1e&);
-    virtual ~Matrix1e() { }
+    Matrix1e_() { }
+    Matrix1e_(const std::shared_ptr<const Molecule>);
+    Matrix1e_(const Matrix1e_&);
+    virtual ~Matrix1e_() { }
+
+    using MatType::zero;
+    using MatType::size;
+    using MatType::data;
+    using MatType::allreduce;
 
 };
 
+using Matrix1e = Matrix1e_<Matrix>;
+using ZMatrix1e = Matrix1e_<ZMatrix>;
+
 }
+
+extern template class bagel::Matrix1e_<bagel::Matrix>;
+extern template class bagel::Matrix1e_<bagel::ZMatrix>;
 
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::Matrix1e)
+BOOST_CLASS_EXPORT_KEY(bagel::ZMatrix1e)
 
 #endif

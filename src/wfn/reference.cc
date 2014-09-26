@@ -24,6 +24,7 @@
 //
 
 #include <src/wfn/reference.h>
+#include <src/rel/relreference.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/molecule/mixedbasis.h>
 #include <src/fci/fci.h>
@@ -39,7 +40,7 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      vector<shared_ptr<RDM<1>>> _rdm1, vector<shared_ptr<RDM<2>>> _rdm2,
                      shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av,
                      shared_ptr<const CIWfn> ci)
- : geom_(g), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), ciwfn_(ci), rdm1_(_rdm1), rdm2_(_rdm2),
+ : geom_(g), noccA_(0), noccB_(0), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), ciwfn_(ci), rdm1_(_rdm1), rdm2_(_rdm2),
    rdm1_av_(_rdm1_av), rdm2_av_(_rdm2_av) {
 
   // we need to make sure that all the quantities are consistent in every MPI process
@@ -111,6 +112,10 @@ tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const
 
 
 shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
+
+  if (geomin->magnetism())
+    throw std::runtime_error("Projection from real to GIAO basis set is not implemented.   Use the GIAO code at zero-field.");
+
   // project to a new basis
   const Overlap snew(geomin);
   Overlap snewinv = snew;
@@ -129,6 +134,7 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
     out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_);
     out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_);
   }
+
   return out;
 }
 

@@ -25,6 +25,7 @@
 
 #include <src/io/moldenout.h>
 #include <src/util/atommap.h>
+#include <src/rel/relreference.h>
 
 using namespace bagel;
 using namespace std;
@@ -47,7 +48,11 @@ MoldenOut& MoldenOut::operator<< (shared_ptr<const Molecule> mol) {
 MoldenOut& MoldenOut::operator<< (shared_ptr<const Reference> ref) {
   ref_ = ref;
 
-  write_mos();
+  if (dynamic_pointer_cast<const RelReference>(ref_)) {
+    write_rel_mos();
+  } else {
+    write_mos();
+  }
 
   return *this;
 }
@@ -118,6 +123,100 @@ void MoldenOut::write_mos() {
   const double* modata = ref_->coeff()->data();
 
   VectorB eigvec = ref_->eig();
+  if (eigvec.empty()) eigvec = VectorB(num_mos);
+
+  auto ieig = eigvec.begin();
+
+  for (int i = 0; i < num_mos; ++ieig, ++i) {
+
+    ofs_ << " Ene=" << setw(12) << setprecision(6) << fixed << *ieig << endl;
+
+    /* At the moment only thinking about RHF, so assume spin is Alpha */
+    ofs_ << " Spin=" << "  Alpha" << endl;
+
+    /* At the moment, assuming occupation can be 2 or 0. Should be fine for RHF */
+    string occ_string = nocc-- > 0 ? "  2.000" : "  0.000";
+    ofs_ << " Occup=" << occ_string << endl;
+
+    int j = 0;
+    for (auto& iatom : atoms) {
+      for (auto& ishell : iatom->shells()) {
+        for (int icont = 0; icont != ishell->num_contracted(); ++icont) {
+          vector<int> corder = (is_spherical ? b2m_sph_.at(ishell->angular_number()) : b2m_cart_.at(ishell->angular_number()));
+          vector<double> scales = (is_spherical ? vector<double>(corder.size(), 1.0) : scaling_.at(ishell->angular_number())) ;
+          for (auto& iorder : corder) {
+             ofs_ << fixed << setw(4) << ++j << setw(22) << setprecision(16) << modata[iorder] / scales.at(iorder) << endl;
+          }
+          modata += corder.size();
+        }
+      }
+    }
+  }
+}
+
+
+void MoldenOut::write_rel_mos() {
+  // presently uses only the real parts of L+ and L- basis functions to compute the orbital plots.
+  // TODO : generalize to handle imaginary part properly
+  // TODO : merge with non-rel write_mos
+  vector<shared_ptr<const Atom>> atoms = mol_->atoms();
+  const bool is_spherical = mol_->spherical();
+  shared_ptr<const RelReference> relref = dynamic_pointer_cast<const RelReference>(ref_);
+
+  const int num_atoms = mol_->natom();
+
+  /************************************************************
+  *  Print GTO section                                        *
+  ************************************************************/
+  ofs_ << "[GTO]" << endl;
+
+  AtomMap am;
+  auto iatom = atoms.begin();
+  for (int ii = 0; ii != num_atoms; ++iatom, ++ii) {
+    ofs_ << ii+1 << endl;
+
+    vector<shared_ptr<const Shell>> shells = (*iatom)->shells();
+    for (auto& ishell : shells) {
+      string ang_l = am.angular_string(ishell->angular_number());
+      vector<double> exponents = ishell->exponents();
+
+      int num_contracted = ishell->contractions().size();
+      for (int jj = 0; jj < num_contracted; ++jj) {
+        pair<int,int> range = ishell->contraction_ranges(jj);
+
+        ofs_ << setw(2) << ang_l << setw(8) << range.second - range.first << endl;
+        for (int kk = range.first; kk < range.second; ++kk) {
+          ofs_ << setiosflags(ios_base::scientific)
+               << setw(20) << setprecision(8) << exponents[kk]
+               << setw(20) << setprecision(8)
+               << ishell->contractions(jj)[kk]*denormalize(ishell->angular_number(), exponents[kk]) << endl;
+        }
+      }
+    }
+    ofs_ << endl;
+  }
+  ofs_ << endl;
+  if (is_spherical) ofs_ << "[5D]" << endl;
+  ofs_ << "[MO]" << endl;
+
+  const int num_mos = relref->relcoeff()->mdim()/2;
+  int nocc = relref->nocc()/2;
+
+  // extract pseudo-kramers "+" coefficient
+  shared_ptr<Matrix> ecoeff = make_shared<Matrix>(relref->relcoeff()->ndim(), relref->nneg()/2);
+  shared_ptr<Matrix> real_relcoeff = relref->relcoeff()->get_real_part();
+  for (int i=0; i!= num_mos; ++i) {
+    copy_n(real_relcoeff->element_ptr(0, i*2), ecoeff->ndim(), ecoeff->element_ptr(0, i));
+  }
+  auto ec2 = make_shared<Matrix>(*ecoeff->get_submatrix(0,0,ecoeff->ndim()/4,ecoeff->mdim()) += *ecoeff->get_submatrix(ecoeff->ndim()/4,0,ecoeff->ndim()/4,ecoeff->mdim()));
+
+  const double* modata = ec2->data();
+
+  VectorB eigvec(num_mos);
+  for (int i=0; i!=num_mos; ++i) {
+    copy(ref_->eig().begin()+i*2, ref_->eig().begin()+i*2+1, eigvec.begin()+i);
+  }
+
   if (eigvec.empty()) eigvec = VectorB(num_mos);
 
   auto ieig = eigvec.begin();
