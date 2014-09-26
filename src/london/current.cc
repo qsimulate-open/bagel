@@ -99,31 +99,48 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
 }
 
 
+namespace bagel {
+  class CurrentTask {
+    protected:
+      Current* parent_;
+      size_t pos_;
+
+    public:
+      CurrentTask(size_t pos, Current* par)
+        : parent_(par), pos_(pos) { }
+      void compute() const { parent_->computepoint(pos_); }
+  };
+}
+
+
 void Current::compute() {
 
+  TaskQueue<CurrentTask> task(coords_.size()+1);
   currents_.resize(coords_.size());
 
-  // TODO thread, parallel
-  for (int i=0; i!=coords_.size(); ++i) {
-    auto mom = make_shared<Momentum_Point>(geom_, coords_[i]);
-    array<shared_ptr<ZMatrix>,3> pi = mom->compute();
-    currents_[i] = computepoint(pi);
-  }
+  // TODO distribute across nodes also
+  for (int i=-1; i!=coords_.size(); ++i)
+    task.emplace_back(i, this);
 
-  {
-    auto mom = make_shared<Momentum_London>(geom_);
-    array<shared_ptr<ZMatrix>,3> pi = mom->compute();
-    total_current_ = computepoint(pi);
-  }
-
+  task.compute();
   print();
 
 }
 
 
-array<double,3> Current::computepoint(array<shared_ptr<ZMatrix>,3> pi) {
+void Current::computepoint(const size_t pos) {
   array<double,3> out;
   array<shared_ptr<ZMatrix>,3> ao_current;
+  array<shared_ptr<ZMatrix>,3> pi;
+
+  // TODO Merge Momentum_London and Momentum_Point?
+  if (pos == -1) {
+    auto mom = make_shared<Momentum_London>(geom_);
+    pi = mom->compute();
+  } else {
+    auto mom = make_shared<Momentum_Point>(geom_, coords_[pos]);
+    pi = mom->compute();
+  }
 
   // First build the current matrix in AO basis
   if (relativistic_) {
@@ -189,11 +206,15 @@ array<double,3> Current::computepoint(array<shared_ptr<ZMatrix>,3> pi) {
     out[i] = std::real(density_->dot_product(*ao_current[i]));
   }
 
-  return out;
+  if (pos == -1)
+    total_current_ = out;
+  else
+    currents_[pos] = out;
+
 }
 
 
-void Current::print() {
+void Current::print() const {
   cout << fixed << setprecision(10);
   cout << "   x-coord        y-coord        z-coord        x-current      y-current      z-current" << endl;
   for (int i=0; i!=coords_.size(); ++i) {
@@ -209,3 +230,4 @@ void Current::print() {
   cout << endl << "Total integrated current = ( " << total_current_[0] << ", " << total_current_[1] << ", " << total_current_[2] << " ). " << endl << endl;;
 
 }
+

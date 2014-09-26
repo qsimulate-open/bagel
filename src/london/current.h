@@ -32,6 +32,9 @@
 namespace bagel {
 
 class Current : public Method {
+
+  friend class CurrentTask;
+
   protected:
     bool relativistic_;
     bool paramagnetic_;
@@ -43,8 +46,8 @@ class Current : public Method {
     std::vector<std::array<double,3>> currents_;
     std::array<double,3> total_current_;
 
-    std::array<double,3> computepoint(std::array<std::shared_ptr<ZMatrix>,3> pi);
-    void print();
+    void computepoint(const size_t pos);
+    void print() const;
 
   public:
     Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re);
