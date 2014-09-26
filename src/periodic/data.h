@@ -68,6 +68,10 @@ class Data {
     std::vector<std::shared_ptr<Matrix>> data() const { return data_; }
     std::shared_ptr<Matrix> data(const int i) const { return data_[i]; }
 
+    void zero() {
+      for (auto& block : data_) block->zero();
+    }
+
     void allreduce() {
       for (auto& block : data_) block->allreduce();
     }

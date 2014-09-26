@@ -63,8 +63,18 @@ class KData {
     const int blocksize() const { return blocksize_; }
     const int nblock() const { return nblock_; }
 
+    std::shared_ptr<ZMatrix> operator[] (int i) { assert(i < nblock_ && i >= 0); return kdata_[i]; };
+
     std::vector<std::shared_ptr<ZMatrix>> kdata() const { return kdata_; }
     std::shared_ptr<ZMatrix> kdata(const int i) const { return kdata_[i]; }
+
+    void zero() {
+      for (auto& block : kdata_) block->zero();
+    }
+
+    void allreduce() {
+      for (auto& block : kdata_) block->allreduce();
+    }
 };
 
 }
