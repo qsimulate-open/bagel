@@ -93,15 +93,15 @@ class SCF_base_ : public Method {
 
     virtual void compute() override = 0;
 
-    const std::shared_ptr<const Coeff_<MatType>> coeff() const { return coeff_; };
-    void set_coeff(const std::shared_ptr<Coeff_<MatType>> o) { coeff_ = o; };
+    const std::shared_ptr<const Coeff_<MatType>> coeff() const { return coeff_; }
+    void set_coeff(const std::shared_ptr<Coeff_<MatType>> o) { coeff_ = o; }
 
-    const std::shared_ptr<const HcType> hcore() const { return hcore_; };
-    const std::vector<double>& schwarz() const { return schwarz_; };
+    const std::shared_ptr<const HcType> hcore() const { return hcore_; }
+    const std::vector<double>& schwarz() const { return schwarz_; }
 
-    int nocc() const { return nocc_; };
-    int noccB() const { return noccB_; };
-    double energy() const { return energy_; };
+    int nocc() const { return nocc_; }
+    int noccB() const { return noccB_; }
+    double energy() const { return energy_; }
 
     double thresh_overlap() const { return thresh_overlap_; }
     double thresh_scf() const { return thresh_scf_; }
