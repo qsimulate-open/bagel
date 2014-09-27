@@ -144,7 +144,6 @@ int MPI_Interface::ireduce_scatter(double* sendbuf, double* recvbuf, int* recvcn
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   MPI_Request c;
-  // I hate const_cast. Blame the MPI C binding
   MPI_Ireduce_scatter(sendbuf, recvbuf, recvcnts, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, &c);
   rq.push_back(c);
 #endif
