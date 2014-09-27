@@ -183,6 +183,11 @@ void zquatev_(const int n2, complex<double>* const D, double* const eig) {
        D[j+n+n2*(i+n)] = conj(D[j+n2*i]);
     }
   }
+
+  // eigen values using symmetry
+  for (int i = 0; i != n; ++i) {
+    eig[n+i] = eig[i];
+  }
 }
 
 }
