@@ -39,12 +39,14 @@ class Current : public Method {
     bool relativistic_;
     bool paramagnetic_;
     bool diamagnetic_;
+    size_t ngrid_;
 
     std::shared_ptr<const ZMatrix> density_;
 
-    std::vector<std::array<double,3>> coords_;
-    std::vector<std::array<double,3>> currents_;
-    std::array<double,3> total_current_;
+    std::vector<double> coords_;
+
+    // size = 3*(ngrid_+1); last 3 entries give the total integrated current
+    std::vector<double> currents_;
 
     void computepoint(const size_t pos);
     void print() const;

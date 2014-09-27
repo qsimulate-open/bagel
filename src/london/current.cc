@@ -66,6 +66,7 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
   array<double,3> start_pos = idata->get_array<double,3>("start_pos", {{0.0, 0.0, 0.0}});
   array<double,3> inc_size = idata->get_array<double,3>("inc_size", {{0.5, 0.5, 0.5}});
   const array<int,3> ngrid = idata->get_array<int,3>("ngrid", {{1, 1, 1}});
+  ngrid_ = ngrid[0]*ngrid[1]*ngrid[2];
 
   if (angstrom) {
     for (int i=0; i!=3; ++i) {
@@ -77,11 +78,14 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
   for (int i=0; i!=ngrid[0]; ++i) {
     for (int j=0; j!=ngrid[1]; ++j) {
       for (int k=0; k!=ngrid[2]; ++k) {
-        const array<double,3> tmp = {{ start_pos[0]+i*inc_size[0], start_pos[1]+j*inc_size[1], start_pos[2]+k*inc_size[2] }};
-        coords_.push_back(tmp);
+        coords_.push_back(start_pos[0]+i*inc_size[0]);
+        coords_.push_back(start_pos[1]+j*inc_size[1]);
+        coords_.push_back(start_pos[2]+k*inc_size[2]);
       }
     }
   }
+
+  assert(ngrid_*3 == coords_.size());
 
   // Form density matrix
   const double scale = relativistic_ ? 1.0 : 2.0;
@@ -89,7 +93,7 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
 
   const string mtype = relativistic_ ? "Dirac-Fock" : "RHF";
   const string ctype = paramagnetic_ ? (diamagnetic_ ? "total" : "paramagnetic") : "diamagnetic";
-  cout << "Computing "  << mtype << " " << ctype << " current at " << coords_.size() << " gridpoint" << ((coords_.size() > 1) ? "s" : "") << ". " << endl;
+  cout << "Computing "  << mtype << " " << ctype << " current at " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << ". " << endl;
 
   if (relativistic_ && (!paramagnetic_ || !diamagnetic_))
     cout << "CAUTION: The diamagnetic/paramagnetic separation is not well-founded for relativistic methods.  Recommend using total current." << endl;
@@ -115,14 +119,20 @@ namespace bagel {
 
 void Current::compute() {
 
-  TaskQueue<CurrentTask> task(coords_.size()+1);
-  currents_.resize(coords_.size());
+  // The last Task will compute integrated currents
+  TaskQueue<CurrentTask> task(ngrid_+1);
+  currents_.resize(3*(ngrid_+1), 0.0);
 
-  // TODO distribute across nodes also
-  for (int i=-1; i!=coords_.size(); ++i)
-    task.emplace_back(i, this);
+  for (int i=0; i<=ngrid_; ++i)
+    if (i % mpi__->size() == mpi__->rank())
+      task.emplace_back(i, this);
 
   task.compute();
+
+//  for (int i=-1; i!=ngrid_; ++i)
+//    mpi__->broadcast(i->data(), 3, mpi__->rank());
+
+  mpi__->allreduce(currents_.data(), 3*(ngrid_+1));
   print();
 
 }
@@ -133,12 +143,12 @@ void Current::computepoint(const size_t pos) {
   array<shared_ptr<ZMatrix>,3> ao_current;
   array<shared_ptr<ZMatrix>,3> pi;
 
-  // TODO Merge Momentum_London and Momentum_Point?
-  if (pos == -1) {
+  if (pos == ngrid_) {
     auto mom = make_shared<Momentum_London>(geom_);
     pi = mom->compute();
   } else {
-    auto mom = make_shared<Momentum_Point>(geom_, coords_[pos]);
+    array<double,3> tmp = {{ coords_[3*pos], coords_[3*pos+1], coords_[3*pos+2] }};
+    auto mom = make_shared<Momentum_Point>(geom_, tmp);
     pi = mom->compute();
   }
 
@@ -206,10 +216,9 @@ void Current::computepoint(const size_t pos) {
     out[i] = std::real(density_->dot_product(*ao_current[i]));
   }
 
-  if (pos == -1)
-    total_current_ = out;
-  else
-    currents_[pos] = out;
+  currents_[3*pos+0] = out[0];
+  currents_[3*pos+1] = out[1];
+  currents_[3*pos+2] = out[2];
 
 }
 
@@ -217,17 +226,17 @@ void Current::computepoint(const size_t pos) {
 void Current::print() const {
   cout << fixed << setprecision(10);
   cout << "   x-coord        y-coord        z-coord        x-current      y-current      z-current" << endl;
-  for (int i=0; i!=coords_.size(); ++i) {
-    cout << ((coords_[i][0] < 0) ? "" : " ") << coords_[i][0] << "  "
-         << ((coords_[i][1] < 0) ? "" : " ") << coords_[i][1] << "  "
-         << ((coords_[i][2] < 0) ? "" : " ") << coords_[i][2] << "  "
-         << ((currents_[i][0] < 0) ? "" : " ") << currents_[i][0] << "  "
-         << ((currents_[i][1] < 0) ? "" : " ") << currents_[i][1] << "  "
-         << ((currents_[i][2] < 0) ? "" : " ") << currents_[i][2] << "  "
+  for (int i=0; i!=ngrid_; ++i) {
+    cout << ((coords_[3*i+0] < 0) ? "" : " ") << coords_[3*i+0] << "  "
+         << ((coords_[3*i+1] < 0) ? "" : " ") << coords_[3*i+1] << "  "
+         << ((coords_[3*i+2] < 0) ? "" : " ") << coords_[3*i+2] << "  "
+         << ((currents_[3*i+0] < 0) ? "" : " ") << currents_[3*i+0] << "  "
+         << ((currents_[3*i+1] < 0) ? "" : " ") << currents_[3*i+1] << "  "
+         << ((currents_[3*i+2] < 0) ? "" : " ") << currents_[3*i+2] << "  "
          << endl;
   }
 
-  cout << endl << "Total integrated current = ( " << total_current_[0] << ", " << total_current_[1] << ", " << total_current_[2] << " ). " << endl << endl;;
+  cout << endl << "Total integrated current = ( " << currents_[3*ngrid_+0] << ", " << currents_[3*ngrid_+1] << ", " << currents_[3*ngrid_+2] << " ). " << endl << endl;;
 
 }
 
