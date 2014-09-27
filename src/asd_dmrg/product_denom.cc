@@ -90,6 +90,18 @@ void ProductRASCI::construct_denom() {
       const int nstates = sec.second->nstates();
       vector<RASCivecView> vecs = sec.second->civecs();
 
+      Matrix Qaa(rnorb, nstates);
+      Matrix Qbb(rnorb, nstates);
+
+      for (int r = 0; r < rnorb; ++r) {
+        shared_ptr<const Matrix> qaa_r = blockops_->Q_aa(sec.first,r,r);
+        shared_ptr<const Matrix> qbb_r = blockops_->Q_bb(sec.first,r,r);
+        for (int i = 0; i < nstates; ++i) {
+          Qaa(r, i) = qaa_r->element(i,i);
+          Qbb(r, i) = qbb_r->element(i,i);
+        }
+      }
+
       for (int i = 0; i < nstates; ++i) {
         // initialize to sum of pure terms
         RASCivecView civec = vecs[i];
@@ -106,14 +118,14 @@ void ProductRASCI::construct_denom() {
 
             double alphaE = 0.0;
             for (int r = 0; r < rnorb; ++r)
-              alphaE += blockops_->Q_aa(sec.first,i,i,r,r)*abit[r];
+              alphaE += Qaa(r, i)*abit[r];
 
             for (size_t ib = 0; ib < lb; ++ib) {
               const bitset<nbit__> bbit = block->string_bits_b(ib);
 
               double betaE = 0.0;
               for (int r = 0; r < rnorb; ++r)
-                betaE += blockops_->Q_bb(sec.first,i,i,r,r)*bbit[r];
+                betaE += Qbb(r, i)*bbit[r];
 
               data_base[ib] += alphaE + betaE;
             }
