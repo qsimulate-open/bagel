@@ -372,7 +372,9 @@ def generate_operator(opname, contracted_operators, ninput):
         size = len(op)
         npart = 1 << size
         for partitioning in range(1, npart - 1):
-            split_factor = -1.0 if partitioning==2 or partitioning==5 else 1.0
+            # used to figure out the sign of rearranging the operators so all of the "right" operators are on the right
+            inverse_partition = ((1 << size) - 1) ^ partitioning
+            split_factor = -1.0 if inverse_partition==2 or inverse_partition==5 else 1.0
             (left, right) = op.split(partitioning)
             (lterm, rterm) = (Term(left), Term(right))
             op_prod = OperatorProduct(lterm, rterm, Integrals(partitioning, 4 - ninput, lterm.rev ^ lterm.conj, rterm.rev ^ rterm.conj, op.integrals), op.factor*split_factor)
@@ -421,6 +423,10 @@ def generate_operator(opname, contracted_operators, ninput):
     print("%sfor (auto& spair : %s) {" % (indent(), svec))
     open_code_block()
 
+    print("%s// phase accumulated by moving an operator past the whole left ket block" % indent())
+    print("%sconst int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%%2) << 1);" % indent());
+    print()
+
     for key, collection in opcollection.iteritems():
         pure_left = False
         pure_right = False
@@ -450,18 +456,28 @@ def generate_operator(opname, contracted_operators, ninput):
 
         #print(la, lb, ra, rb)
 
-        print("%sBlockKey left_target(bk.nelea%s,bk.neleb%s);" % (indent(), la, lb))
-        print("%sBlockKey right_target(bk.nelea%s,bk.neleb%s);" % (indent(), ra, rb))
-        print()
-        print("%sauto iter = find_if(%s.begin(), %s.end(), [&left_target, &right_target] (DMRG::BlockPair bp)" % (indent(), tvec, tvec))
-        print("%s  { return make_pair(bp.left.key(), bp.right.key())==make_pair(left_target, right_target); }" % indent())
-        print("%s);" % indent())
+        both_diag = (la, lb, ra, rb) == ("  ", "  ", "  ", "  ")
 
-        print("%sif(iter!=%s.end()) {" % (indent(), tvec))
-        open_code_block()
+        if not both_diag:
+            if (la, lb)==("  ", "  "):
+                print("%sconst BlockKey left_target = spair.left.key();" % indent())
+            else:
+                print("%sconst BlockKey left_target(spair.left.nelea%s, spair.left.neleb%s);" % (indent(), la.strip(), lb.strip()))
+            if (ra, rb)==("  ", "  "):
+                print("%sconst BlockKey right_target = spair.right.key();" % indent())
+            else:
+                print("%sconst BlockKey right_target(spair.right.nelea%s, spair.right.neleb%s);" % (indent(), ra.strip(), rb.strip()))
+            print()
+            print("%sauto iter = find_if(%s.begin(), %s.end(), [&left_target, &right_target] (DMRG::BlockPair bp)" % (indent(), tvec, tvec))
+            print("%s  { return make_pair(bp.left.key(), bp.right.key())==make_pair(left_target, right_target); }" % indent())
+            print("%s);" % indent())
 
-        print("%sDMRG::BlockPair tpair = *iter;" % indent())
+            print("%sif(iter!=%s.end()) {" % (indent(), tvec))
+            open_code_block()
 
+            print("%sDMRG::BlockPair tpair = *iter;" % indent())
+
+        tpair = "spair" if both_diag else "tpair"
         nops = 0
 
         if (pure_right):
@@ -471,16 +487,17 @@ def generate_operator(opname, contracted_operators, ninput):
             print("%sMatrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();" % indent())
             print("%sMatrix Rterms = *right_ops_->%s(spair.right.key(), %s);" % (indent(), opname, inp_string))
             print()
-            print("%sout->add_block(1.0, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));" % indent())
+            phase = "left_phase" if (ninput%2==1) else "1.0"
+            print("%sout->add_block(%s, %s.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));" % (indent(), phase, tpair))
 
         if (pure_left):
             nops += 1
             print()
             print("%s// %s (x) I" % (indent(), opname))
-            print("%sMatrix Lterms = *left_ops_->%s(tpair.right.key(), %s);" % (indent(), opname, inp_string))
+            print("%sMatrix Lterms = *left_ops_->%s(spair.left.key(), %s);" % (indent(), opname, inp_string))
             print("%sMatrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();" % indent())
             print()
-            print("%sout->add_block(1.0, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));" % indent())
+            print("%sout->add_block(1.0, %s.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));" % (indent(), tpair))
 
         # preprocess collection into terms that can be combined
         combined_collection = []
@@ -586,7 +603,9 @@ def generate_operator(opname, contracted_operators, ninput):
                 rtrans = "true" if oprod.right.conj else "false"
                 ltrans = "true" if oprod.left.conj else "false"
 
-                print("%sout->add_block(1.0, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(%s, Rmat, %s, Lmat));" % (indent(), rtrans, ltrans))
+                phase = "left_phase" if len(oprod.right)%2==1 else 1.0
+
+                print("%sout->add_block(%s, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(%s, Rmat, %s, Lmat));" % (indent(), phase, rtrans, ltrans))
 
                 for i in range(len(oprod.left)):
                     close_code_block()
@@ -616,7 +635,9 @@ def generate_operator(opname, contracted_operators, ninput):
                 rtrans = "true" if oprod.right.conj else "false"
                 ltrans = "true" if oprod.left.conj else "false"
 
-                print("%sout->add_block(1.0, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(%s, Rmat, %s, Lmat));" % (indent(), rtrans, ltrans))
+                phase = "left_phase" if len(oprod.right)%2==1 else 1.0
+
+                print("%sout->add_block(%s, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(%s, Rmat, %s, Lmat));" % (indent(), phase, rtrans, ltrans))
 
                 # close Right loops
                 for i in range(len(oprod.right)):
@@ -626,7 +647,8 @@ def generate_operator(opname, contracted_operators, ninput):
                 close_code_block()
                 print()
 
-        close_code_block()
+        if not both_diag:
+            close_code_block()
         close_code_block()
         print()
 
