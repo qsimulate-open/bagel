@@ -32,6 +32,8 @@
 #include <src/zfci/relmofile.h>
 #include <src/rel/reloverlap.h>
 #include <src/smith/prim_op.h>
+#include <src/london/reloverlap_london.h>
+#include <src/london/relhcore_london.h>
 
 using namespace std;
 using namespace bagel;
@@ -53,7 +55,12 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
     geom_ = geom_->relativistic(gaunt_);
 
   // calculates the core fock matrix
-  shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
+  shared_ptr<const ZMatrix> hcore;
+  if (!geom_->magnetism())
+    hcore = make_shared<RelHcore>(geom_);
+  else
+    hcore = make_shared<RelHcore_London>(geom_);
+
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
     core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
@@ -69,7 +76,12 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
   }
 
   // then compute Kramers adapated coefficient matrices
-  auto overlap = make_shared<RelOverlap>(geom_);
+  shared_ptr<const ZMatrix> overlap;
+  if (!geom_->magnetism())
+    overlap = make_shared<RelOverlap>(geom_);
+  else
+    overlap = make_shared<RelOverlap_London>(geom_);
+
   if (!restricted) {
     kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
   } else {
