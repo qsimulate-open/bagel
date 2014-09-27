@@ -33,9 +33,6 @@
 #include <src/ras/distrasci.h>
 #include <src/zfci/zharrison.h>
 #include <src/casscf/superci.h>
-#if 0
-#include <src/casscf/werner.h>
-#endif
 #include <src/casscf/cashybrid.h>
 #include <src/casscf/casbfgs.h>
 #include <src/nevpt2/nevpt2.h>
@@ -49,7 +46,6 @@
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/london/scf_london.h>
-#include <src/london/dirac_london.h>
 #include <src/wfn/construct_method.h>
 
 using namespace std;
@@ -105,10 +101,6 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<SuperCI>(itree, geom, ref);
       else if (algorithm == "hybrid")
         out = make_shared<CASHYBRID>(itree, geom, ref);
-#if 0
-      else if (algorithm == "werner" || algorithm == "knowles")
-        out = make_shared<WernerKnowles>(itree, geom, ref);
-#endif
       else if (algorithm == "bfgs")
         out = make_shared<CASBFGS>(itree, geom, ref);
       else
@@ -132,7 +124,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     }
   } else {
     if (title == "hf")              out = make_shared<SCF_London>(itree, geom, ref);
-    else if (title == "dhf")        out = make_shared<Dirac_London>(itree, geom, ref);
+    else if (title == "dhf")        out = make_shared<Dirac>(itree, geom, ref);
     else if (title == "fci")        throw runtime_error("FCI method has not been implemented with an applied magnetic field.");
     else if (title == "ks")         throw runtime_error("KS method has not been implemented with an applied magnetic field.");
     else if (title == "uhf")        throw runtime_error("UHF method has not been implemented with an applied magnetic field.");

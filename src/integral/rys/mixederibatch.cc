@@ -84,7 +84,7 @@ void MixedERIBatch::compute() {
 
 void MixedERIBatch::eri_compute(double* eri) const {
 
-  // shells_[0] is aux function, shelles_[1] and [2] are basis
+  // shells_[0] is aux function, shells_[1] and [2] are basis
 
   const int s0size = shells_[0]->nbasis();
   const int s2size = shells_[2]->nbasis();

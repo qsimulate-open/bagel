@@ -27,6 +27,7 @@
 #include <src/scf/scf.h>
 #include <src/scf/rohf.h>
 #include <src/scf/uhf.h>
+#include <src/scf/soscf.h>
 #include <src/wfn/reference.h>
 
 using namespace bagel;
@@ -58,6 +59,10 @@ double scf_energy(std::string filename, std::string extension = ".json") {
       ref = scf->conv_to_ref();
     } else if (method == "rohf") {
       auto scf = std::make_shared<ROHF>(itree, geom, ref);
+      scf->compute();
+      ref = scf->conv_to_ref();
+    } else if (method == "soscf") {
+      auto scf = std::make_shared<SOSCF>(itree, geom, ref);
       scf->compute();
       ref = scf->conv_to_ref();
 #ifndef DISABLE_SERIALIZATION
@@ -95,7 +100,8 @@ BOOST_AUTO_TEST_CASE(DF_HF) {
     BOOST_CHECK(compare(scf_energy("hc_svp_rohf"),        -38.16810629));
     BOOST_CHECK(compare(scf_energy("hf_new_dfhf"),        -99.97989929));
     BOOST_CHECK(compare(scf_energy("hcl_svp_dfhf"),      -459.93784632));
-    BOOST_CHECK(compare(scf_energy("ecp_cuh2"),          -196.12254012));
+    BOOST_CHECK(compare(scf_energy("cuh2_ecp_hf"),       -196.12254012));
+    BOOST_CHECK(compare(scf_energy("hbr_ecp_sohf"),       -13.68431370));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

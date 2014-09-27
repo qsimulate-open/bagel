@@ -41,12 +41,8 @@ using namespace bagel;
 
 void SuperCI::compute() {
   // DIIS: will be turned on at iter = diis_start_ (>1),
-  //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner
-  //       paper on Brueckner CC
+  //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner paper on Brueckner CC
   shared_ptr<HPW_DIIS<Matrix>> diis;
-
-  // BFGS: optional quasi-second-order MCSCF
-//shared_ptr<BFGS<RotFile>> bfgs;
 
   // ============================
   // macro iteration from here
@@ -82,7 +78,6 @@ void SuperCI::compute() {
     shared_ptr<RotFile> denom;
     Timer onebody(0);
     one_body_operators(f, fact, factp, gaa, denom);
-    onebody.tick_print("One body operators");
 
     // first, <proj|H|0> is computed
     grad->zero();
@@ -92,6 +87,7 @@ void SuperCI::compute() {
     grad_va(fact, grad);
     // <r/i|H|0> = 2f_ri - f^inact_is d_sr - 2(is|tu)P_rs,tu = 2f_ri - fact_ri
     grad_ca(f, fact, grad);
+    onebody.tick_print("One body operators");
 
     // setting error of macro iteration
     gradient = grad->rms();

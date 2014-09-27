@@ -60,7 +60,9 @@ void CASHYBRID::compute() {
 
   // construct and compute step-restricted BFGS
   {
-    active_method = make_shared<CASBFGS>(idata_, geom_, refout_);
+    auto idata = make_shared<PTree>(*idata_);
+    idata->erase("active");
+    active_method = make_shared<CASBFGS>(idata, geom_, refout_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
     double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();

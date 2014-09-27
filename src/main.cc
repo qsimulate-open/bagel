@@ -27,7 +27,6 @@
 #include <src/io/moldenout.h>
 #include <src/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
-#include <src/london/reference_london.h>
 #include <src/molecule/localization.h>
 #include <src/asd/construct_asd.h>
 #include <src/asd_dmrg/rasd.h>

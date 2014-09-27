@@ -17,7 +17,7 @@ using namespace bagel;
 using namespace std;
 using namespace boost;
 
-constexpr int LMAX = 7;
+constexpr int LMAX = 10;
 
 int main() {
 

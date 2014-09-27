@@ -31,12 +31,10 @@
 #include <src/wfn/reference.h>
 #include <src/rel/breit2index.h>
 #include <src/rel/reldf.h>
-#include <src/london/reldf_london.h>
 
 namespace bagel {
 
 class RelDF;
-class RelDF_London;
 
 class RelDFHalf : public RelDFBase {
   protected:
@@ -46,8 +44,6 @@ class RelDFHalf : public RelDFBase {
 
   public:
     RelDFHalf(std::shared_ptr<const RelDF>, std::vector<std::shared_ptr<const SpinorInfo>> bas,
-                  std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
-    RelDFHalf(std::shared_ptr<const RelDF_London>, std::vector<std::shared_ptr<const SpinorInfo>> bas,
                   std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
 
     RelDFHalf(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> bas);

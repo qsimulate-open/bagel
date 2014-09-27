@@ -41,35 +41,41 @@ class Small1e_London : public Matrix1eArray<4*Batch::Nblocks(), ZMatrix> {
       for (auto& i : mol->atoms())
         shells.insert(shells.end(), i->shells().begin(), i->shells().end());
 
-      // TODO thread, parallel
+      const size_t nshell = accumulate(mol->atoms().begin(), mol->atoms().end(), 0, [](int r, std::shared_ptr<const Atom> p) { return r+p->nshell(); });
+      TaskQueue<Matrix1eArrayTask<4*Batch::Nblocks(), ZMatrix>> task(nshell*(nshell+1)/2);
+
       int o0 = 0;
+      int u = 0;
       for (auto& a0 : shells) {
         int o1 = 0;
         for (auto& a1 : shells) {
-          std::array<std::shared_ptr<const Shell>,2> input = {{a1, a0}};
-          computebatch(input, o0, o1, mol);
+          if (u++ % mpi__->size() == mpi__->rank()) {
+            std::array<std::shared_ptr<const Shell>,2> input = {{a1, a0}};
+            task.emplace_back(input, o0, o1, mol, this);
+          }
           o1 += a1->nbasis();
         }
         o0 += a0->nbasis();
       }
+      task.compute();
+      for (auto& i : this->matrices_) i->allreduce();
     }
 
-
-  public:
-    Small1e_London(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<4*Batch::Nblocks(), ZMatrix>(mol) {
-      init(mol);
-    }
-
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) override {
       // input = [b1, b0]
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      SmallInts1e_London<Batch> batch(input, mol);
+      SmallInts1e_London<Batch, std::shared_ptr<const Molecule>> batch(input, mol);
       batch.compute();
 
       for (int i = 0; i != this->Nblocks(); ++i)
         this->matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
+    }
+
+  public:
+    Small1e_London(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<4*Batch::Nblocks(), ZMatrix>(mol) {
+      init(mol);
     }
 
     void print(const std::string name = "") const override {

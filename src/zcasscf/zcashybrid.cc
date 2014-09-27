@@ -61,8 +61,10 @@ void ZCASHYBRID::compute() {
   // construct and compute step-restricted BFGS
   {
     auto idata = make_shared<PTree>(*idata_);
+    idata->erase("active");
     idata->erase("kramers_coeff");
     idata->put("kramers_coeff", true);
+    idata->erase("generate_mvo");
     active_method = make_shared<ZCASBFGS>(idata, geom_, refout_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();

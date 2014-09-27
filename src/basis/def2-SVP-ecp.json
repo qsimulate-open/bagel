@@ -1,0 +1,98 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: def2-SVP-ecp.json
+// Copyright (C) 2014 Toru Shiozaki
+//
+// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+{
+  "I" : [
+    {
+      "valence" : [
+        {
+          "angular" : "s",
+          "prim" : [445.90489176, 23.336842412, 19.583446104, 8.5112089186, 2.1996161861, 1.0668970454],
+          "cont" : [[0.20037290389E-02, -0.14989397324, 0.36436474913, -0.75538138199, 0.82816359356, 0.42161048110]]
+        }, {
+          "angular" : "s",
+          "prim" : [11.720547572, 1.7625986449],
+          "cont" : [[-0.16160234511E-01, 0.35271525193]]
+        }, {
+          "angular" : "s",
+          "prim" : [0.28697476318],
+          "cont" : [[1.000000000]]
+        }, {
+          "angular" : "s",
+          "prim" : [0.11227609607],
+          "cont" : [[1.000000000]]
+        }, {
+          "angular" : "p",
+          "prim" : [20.499027254, 10.558754576, 1.5015895485, 0.64597173095],
+          "cont" : [[10.77159335656E-01, -0.38370372780, 0.83554174719, 0.16787259488]]
+        }, {
+          "angular" : "p",
+          "prim" : [3.0288656771],
+          "cont" : [[1.000000000]]
+        }, {
+          "angular" : "p",
+          "prim" : [0.34506591841],
+          "cont" : [[1.000000000]]
+        }, {
+          "angular" : "p",
+          "prim" : [0.11134513813],
+          "cont" : [[1.000000000]]
+        }, {
+          "angular" : "d",
+          "prim" : [51.235354920, 15.616239482, 4.5266002139, 2.0529808766, 0.87640281623],
+          "cont" : [[0.40345130346E-02, -0.50768108881E-02, 0.29151065356, 0.51145783605, 0.31232025297]]
+        }, {
+          "angular" : "d",
+          "prim" : [0.30900000000],
+          "cont" : [[1.0000000]]
+        }
+      ],
+      "ncore" : "28",
+      "core" : [
+        {
+          "ecp_angular" : "f",
+          "ecp_exp" : [19.4586090, 19.3492600, 4.8237670, 4.8843150],
+          "ecp_coef" : [-21.8420400, -28.4681910, -0.2437130, -0.3208040],
+          "ecp_r" : [2, 2, 2, 2]
+        }, {
+          "ecp_angular" : "s",
+          "ecp_exp" : [40.01583500, 17.42974700, 9.00548400, 19.4586090, 19.3492600, 4.8237670, 4.8843150],
+          "ecp_coef" : [49.99429300, 281.02531700, 61.57332600, 21.8420400, 28.4681910, 0.2437130, 0.3208040],
+          "ecp_r" : [2, 2, 2, 2, 2, 2, 2]
+        }, {
+          "ecp_angular" : "p",
+          "ecp_exp" : [15.35546600, 14.97183300, 8.96016400, 8.25909600, 19.4586090, 19.3492600, 4.8237670, 4.8843150],
+          "ecp_coef" : [67.44284100, 134.88113700, 14.67505100, 29.37566600, 21.8420400, 28.4681910, 0.2437130, 0.3208040],
+          "ecp_r" : [2, 2, 2, 2, 2, 2, 2, 2]
+        }, {
+          "ecp_angular" : "d",
+          "ecp_exp" : [15.06890800, 14.55532200, 6.71864700, 6.45639300, 1.19177900, 1.29115700, 19.4586090, 19.3492600, 4.8237670, 4.8843150],
+          "ecp_coef" : [35.43952900, 53.17605700, 9.06719500, 13.20693700, 0.08933500, 0.05238000, 21.8420400, 28.4681910, 0.2437130, 0.3208040],
+          "ecp_r" : [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+        }
+      ]
+    }
+  ]
+}

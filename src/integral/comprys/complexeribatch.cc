@@ -25,6 +25,7 @@
 
 #include <src/integral/comprys/complexeribatch.h>
 #include <src/integral/comprys/comperirootlist.h>
+#include <src/integral/rys/erirootlist.h>
 #include <complex>
 
 using namespace std;
@@ -42,10 +43,32 @@ ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, 
 
 
 void ComplexERIBatch::root_weight(const int ps) {
-  if (breit_ == 0) {
+  assert(breit_ == 0);
+
+  // standard 2-D interpolation
+  if (any_of(T_, T_+ps, [](complex<double>k){return (k.imag() != 0.0);})
+    || any_of(T_, T_+ps, [](complex<double>k){return (k.real() < 0.0);})) {
     complexeriroot__.root(rank_, T_, roots_, weights_, ps);
+
+  // cheaper 1-D interpolation if T_ are all real and positive
   } else {
-    throw runtime_error("Relativistic calculations have not been set up for London orbitals");
+    const double num = rank_*ps;
+    double* const T_temp = stack_->template get<double>(ps);
+    double* const roots_temp = stack_->template get<double>(num);
+    double* const weights_temp = stack_->template get<double>(num);
+
+    for (int i=0; i!=ps; ++i) {
+      T_temp[i] = T_[i].real();
+    }
+    eriroot__.root(rank_, T_temp, roots_temp, weights_temp, ps);
+    for (int i=0; i!=num; ++i) {
+      roots_[i] = roots_temp[i];
+      weights_[i] = weights_temp[i];
+    }
+
+    stack_->release(num, weights_temp);
+    stack_->release(num, roots_temp);
+    stack_->release(ps, T_temp);
   }
 }
 

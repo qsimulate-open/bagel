@@ -37,7 +37,6 @@ void CASBFGS::compute() {
 
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 
-  shared_ptr<HPW_DIIS<Matrix>> diis;
   shared_ptr<SRBFGS<RotFile>> bfgs;
 
   // ============================
@@ -62,7 +61,14 @@ void CASBFGS::compute() {
     fci_->compute_rdm12();
     // get energy
     energy_ = fci_->energy();
-    evals.push_back((fci_->energy())[0]);
+    {
+      // use state averaged energy to update trust radius
+      double sa_en = 0.0;
+      for (auto& i : fci_->energy())
+        sa_en += i;
+      sa_en /= double((fci_->energy()).size());
+      evals.push_back(sa_en);
+    }
 
     shared_ptr<Matrix> natorb_mat = x->clone();
     {
@@ -76,6 +82,7 @@ void CASBFGS::compute() {
     sigma->zero();
 
     // compute one-body operators
+    Timer onebody;
     // * preparation
     const MatView ccoeff = coeff_->slice(0, nclosed_);
     // * core Fock operator
@@ -106,12 +113,8 @@ void CASBFGS::compute() {
       shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
       bfgs = make_shared<SRBFGS<RotFile>>(denom);
     }
-    if (false) {
-      xstart = xold->copy();
-      shared_ptr<Matrix> unit = make_shared<Matrix>(xold->mdim(), xold->mdim());
-      unit->unit();
-      diis = make_shared<HPW_DIIS<Matrix>>(10, cold, unit);
-    }
+    onebody.tick_print("One body operators");
+
     // extrapolation using BFGS
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
@@ -127,18 +130,10 @@ void CASBFGS::compute() {
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 
-    if (!diis) {
-      coeff_ = make_shared<const Coeff>(*coeff_**expa);
-      // for next BFGS extrapolation
-      *x *= *expa;
-    } else {
-      auto tmp3 = make_shared<const Matrix>(*natorb_mat * *expa ^ *natorb_mat);
-      shared_ptr<const Matrix> mcc = diis->extrapolate(tmp3);
-      coeff_ = make_shared<const Coeff>(*mcc);
-      // update x
-      x = make_shared<Matrix>(*xstart * *diis->extrap());
-//    cout << setprecision(10) << (*coeff_ - *diis->start()**x).norm() << endl;
-    }
+    // updating coefficients
+    coeff_ = make_shared<const Coeff>(*coeff_**expa);
+    // for next BFGS extrapolation
+    *x *= *expa;
 
     // synchronization
     mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);

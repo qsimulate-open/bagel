@@ -48,16 +48,19 @@ class Shell_base {
 
   public:
     Shell_base() { }
+  protected:
     Shell_base(const bool spherical, const std::array<double,3>& position, int angular_num);
     Shell_base(const bool sph);
+
+  public:
     virtual ~Shell_base() { }
 
-    bool spherical() const { return spherical_; };
+    bool spherical() const { return spherical_; }
 
-    double position(const int i) const { return position_[i]; };
-    const std::array<double,3>& position() const { return position_; };
+    double position(const int i) const { return position_[i]; }
+    const std::array<double,3>& position() const { return position_; }
 
-    int angular_number() const { return angular_number_; };
+    int angular_number() const { return angular_number_; }
 
     virtual std::string show() const;
 

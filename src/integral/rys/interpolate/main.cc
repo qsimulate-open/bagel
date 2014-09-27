@@ -531,7 +531,7 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
   for (int i = 1; i <= n; ++i) {\n\
     double t = ta[i-1];\n\
     offset += " << nroot << ";\n\
-    if (t < 0.0) {\n\
+    if (std::isnan(t)) {\n\
       fill_n(rr+offset, " << nroot << ", 0.5);\n\
       fill_n(ww+offset, " << nroot << ", 0.0);\n";
 #ifndef DAWSON
@@ -543,6 +543,7 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
         ww[offset+r] = aw[r]*" + tafactor + ";\n\
       }\n\
     } else {\n\
+      assert(t >= 0);\n\
       int it = static_cast<int>(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< ");\n";
 #else
       ofs << "\
@@ -551,7 +552,8 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
         ww[offset+r] = aw[" << nroot << "-r-1] / t;\n\
         rr[offset+r] = 1.0 - ax[" << nroot << "-r-1] / t;\n\
       }\n\
-    } else {\n";
+    } else {\n\
+      assert(t >= 0);\n";
     if (MAXT < T_INFTY) {
       ofs << "\
       vector<double> rr_infty(" << nroot << "); \n\

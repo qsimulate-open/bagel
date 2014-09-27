@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: sohcore.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -31,32 +31,30 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SOHcore)
 
-SOHcore::SOHcore(const shared_ptr<const Geometry> geom, const shared_ptr<const SOHcore_base> h)
-            : Matrix(2 * geom->nbasis(), 2 * geom->nbasis()), geom_(geom), hcore_(h) {
+SOHcore::SOHcore(const shared_ptr<const Geometry> geom, const shared_ptr<const Hcore> h)
+            : ZMatrix(2 * geom->nbasis(), 2 * geom->nbasis()), geom_(geom), hcore_(h) {
   form_sohcore();
 }
 
-// TODO: so1, so2, ecp
-shared_ptr<const Matrix> SOHcore::so1() {
-  return make_shared<Matrix>(hcore_->ndim(), hcore_->mdim());
-}
-
-shared_ptr<const Matrix> SOHcore::so2() {
-  return make_shared<Matrix>(hcore_->ndim(), hcore_->mdim());
-}
-
-shared_ptr<const Matrix> SOHcore::ecp() {
-  shared_ptr<Matrix> out = make_shared<Matrix>(hcore_->ndim(), hcore_->mdim());
-  *out += *hcore_;
-  return out;
-}
-
 void SOHcore::form_sohcore() {
-  shared_ptr<const Matrix> ecpmat = ecp();
 
-  add_block(1.0, 0, 0, hcore_->ndim(), hcore_->mdim(), ecpmat);
-  add_block(1.0, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), ecpmat);
+  const int nbasis = geom_->nbasis();
+  const complex<double> real(1.0, 0.0);
+  const complex<double> imag(0.0, 1.0);
 
-  add_block(1.0, 0, hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), so1());
-  add_block(1.0, hcore_->ndim(), 0, hcore_->ndim(), hcore_->mdim(), so2());
+  hcore_->hso()->allreduce();
+  hcore_->hso()->fill_upper_negative();
+
+  add_real_block(real, 0, 0, nbasis, nbasis, *hcore_);
+  add_real_block(imag, 0, 0, nbasis, nbasis, *hcore_->hso()->soiaa());
+
+  add_real_block(real, nbasis, nbasis, nbasis, nbasis, *hcore_);
+  add_real_block(-imag, nbasis, nbasis, nbasis, nbasis, *hcore_->hso()->soiaa());
+
+  add_real_block(real, 0, nbasis, nbasis, nbasis, *hcore_->hso()->sorab());
+  add_real_block(imag, 0, nbasis, nbasis, nbasis, *hcore_->hso()->soiab());
+
+  add_real_block(-real, nbasis, 0, nbasis, nbasis, *hcore_->hso()->sorab());
+  add_real_block( imag, nbasis, 0, nbasis, nbasis, *hcore_->hso()->soiab());
+
 }

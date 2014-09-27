@@ -35,7 +35,6 @@ const static CCarSphList carsphlist;
 ComplexMixedERIBatch::ComplexMixedERIBatch(std::array<std::shared_ptr<const Shell>,4> info, const double dummy)
   : shells_{{info[1],info[2],info[3]}}, stack_(resources__->get()) {
 
-  throw logic_error("Trying to construct a ComplexMixedERIBatch.  This shouldn't be necessary until we implement the Gaunt interaction with London orbitals.");
   assert(info[0]->dummy());
 
   size_block_ = shells_[0]->nbasis()*shells_[1]->nbasis()*shells_[2]->nbasis();
@@ -52,14 +51,13 @@ ComplexMixedERIBatch::~ComplexMixedERIBatch() {
 
 void ComplexMixedERIBatch::compute() {
 
-  throw logic_error("Trying to compute a ComplexMixedERIBatch.  This shouldn't be necessary until we implement the Gaunt interaction with London orbitals.");
-  /*
   const int s0size = shells_[0]->nbasis();
   const int s1size = shells_[1]->nbasis();
   const int s2size = shells_[2]->nbasis();
   const int a1size_inc = shells_[1]->aux_increment()->nbasis();
   const int a1size_dec = shells_[1]->aux_decrement() ? shells_[1]->aux_decrement()->nbasis() : 0;
-  const int a1 = a1size_inc + a1size_dec;
+  const int a1size_same = shells_[1]->aux_same() ? shells_[1]->aux_same()->nbasis() : 0;
+  const int a1 = a1size_inc + a1size_dec + a1size_same;
 
   // first compute uncontracted ERI with auxiliary basis (cartesian)
 
@@ -81,21 +79,19 @@ void ComplexMixedERIBatch::compute() {
 
   stack_->release(s0size*a1*s2size, ints);
   stack_->release(s0size*a1*s2size, eri);
-  */
 }
 
 
 void ComplexMixedERIBatch::eri_compute(complex<double>* eri) const {
 
-  throw logic_error("Trying to compute integrals for a ComplexMixedERIBatch.  This shouldn't be necessary until we implement the Gaunt interaction with London orbitals.");
-  /*
-  // shells_[0] is aux function, shelles_[1] and [2] are basis
+  // shells_[0] is aux function, shells_[1] and [2] are basis
 
   const int s0size = shells_[0]->nbasis();
   const int s2size = shells_[2]->nbasis();
   const int a1size_inc = shells_[1]->aux_increment()->nbasis();
   const int a1size_dec = shells_[1]->aux_decrement() ? shells_[1]->aux_decrement()->nbasis() : 0;
-  const int a1 = a1size_inc + a1size_dec;
+  const int a1size_same = shells_[1]->aux_same() ? shells_[1]->aux_same()->nbasis() : 0;
+  const int a1 = a1size_inc + a1size_dec + a1size_same;
 
   auto dummy = make_shared<const Shell>(shells_[0]->spherical());
   auto m = [&s0size, &a1](const size_t& i, const size_t& j, const size_t k){ return i+s0size*(j+a1*k); };
@@ -153,5 +149,37 @@ void ComplexMixedERIBatch::eri_compute(complex<double>* eri) const {
 
     stack_->release(s0size * a1size_dec * s2cart, tmp);
   }
-*/
+
+  // Unchanged angular momentum (common origin only)
+  if (shells_[1]->aux_same()) {
+    const size_t a1size_id = a1size_inc + a1size_dec;
+    shared_ptr<const Shell> cart2 = shells_[2]->cartesian_shell();
+    const int s2cart = cart2->nbasis();
+    auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_same(), cart2}},
+                                      2.0, 0.0, true, stack_);
+    eric->compute();
+
+    complex<double>* tmp = stack_->get<complex<double>>(s0size*a1size_same*s2cart);
+    if (shells_[1]->spherical()) {
+      // TODO this could be improved
+      complex<double>* tmp2 = stack_->get<complex<double>>(s0size*a1size_same*s2size);
+      blas::transpose(eric->data(), s0size*a1size_same, s2cart, tmp);
+
+      const int carsphindex = shells_[2]->angular_number() * ANG_HRR_END;
+      carsphlist.carsphfunc_call(carsphindex, s0size*a1size_same*cart2->num_contracted(), tmp, tmp2);
+
+      blas::transpose(tmp2, s2size, s0size*a1size_same, tmp);
+      stack_->release(s0size*a1size_same*s2size, tmp2);
+    } else {
+      copy_n(eric->data(), s0size*a1size_same*s2cart, tmp);
+    }
+
+    for (int i = 0; i != s2size; ++i)
+      copy_n(tmp + i*s0size*a1size_same, s0size*a1size_same, eri + m(0,a1size_id,i));
+
+    stack_->release(s0size * a1size_same * s2cart, tmp);
+  }
+
+
+
 }

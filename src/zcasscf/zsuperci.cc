@@ -51,7 +51,7 @@ void ZSuperCI::compute() {
   {
     auto unit = coeff_->clone(); unit->unit();
     orthonorm = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
-    if (orthonorm > 1.0e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
+    if (orthonorm > 2.5e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
   }
   for (int iter = 0; iter != max_iter_; ++iter) {
 
@@ -67,23 +67,23 @@ void ZSuperCI::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      Timer fci_time(0);
       if (iter) fci_->update(coeff_, /*restricted*/true);
+      Timer fci_time(0);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
+      fci_time.tick_print("ZFCI");
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
+      fci_time.tick_print("RDMs");
       energy_ = fci_->energy();
-      fci_time.tick_print("FCI and RDMs");
     }
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirtnr_*2);
 
-    // compute one-boedy operators
+    // compute one-body operators
     shared_ptr<ZMatrix> f, fact, factp, gaa;
     shared_ptr<ZRotFile> denom;
     Timer onebody(0);
     one_body_operators(f, fact, factp, gaa, denom);
-    onebody.tick_print("One body operators");
 
     // first, <proj|H|0> is computed
     grad->zero();
@@ -93,6 +93,8 @@ void ZSuperCI::compute() {
     grad_va(fact, grad);
     // <r/i|H|0> = f_ri - f^inact_is d_sr - (is|tu)P_rs,tu = f_ri - fact_ri
     grad_ca(f, fact, grad);
+
+    onebody.tick_print("One body operators");
 
     if (!nact_) { // compute energy
       assert(nstate_ == 1 && energy_.size() == 1);

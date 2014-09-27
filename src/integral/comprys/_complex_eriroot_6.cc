@@ -11632,7 +11632,10 @@ void ComplexERIRootList::complex_eriroot6(const complex<double>* ta, complex<dou
   for (int i = 1; i <= n; ++i) {
     complex<double> t = ta[i-1];
     offset += 6;
-    if (t.real() < -2) {
+    if (std::isnan(t.real())) {
+      fill_n(rr+offset, 6, 0.5);
+      fill_n(ww+offset, 6, 0.0);
+    } else if (t.real() < -2) {
       throw runtime_error ("ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength");
     } else if (t.real() >= 66) {
       t = 1.0/sqrt(t);

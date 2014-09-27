@@ -85,7 +85,6 @@ tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRo
     a = srbfgs->more_sorensen_extrapolate(newgrad, newrot);
   } else {
     // positronic optimization results in a negative level shift so use Hebden method
-    srbfgs->initiate_trust_radius(newgrad);
     a = srbfgs->extrapolate(newgrad, newrot);
   }
 

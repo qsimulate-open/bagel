@@ -128,12 +128,12 @@ class Geometry : public Molecule {
 
     // type T should be a derived class of DFDist
     template<typename T>
-    std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0, const bool average = false) const {
-      return std::make_shared<T>(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam, average);
+    std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0, const bool average = false, const std::shared_ptr<Matrix> d2 = nullptr) const {
+      return std::make_shared<T>(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam, average, d2);
     }
 
     // initialize relativistic components
-    std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;
+    std::shared_ptr<const Geometry> relativistic(const bool do_gaunt, const bool do_coulomb = true) const;
     void compute_relativistic_integrals(const bool do_gaunt);
     void discard_relativistic() const;
 

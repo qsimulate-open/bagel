@@ -23,22 +23,27 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __scf_scf_base_h
-#define __scf_scf_base_h
+#ifndef __SCF_SCF_BASE_H
+#define __SCF_SCF_BASE_H
 
 #include <src/molecule/overlap.h>
+#include <src/molecule/zoverlap.h>
 #include <src/molecule/hcore.h>
+#include <src/molecule/zhcore.h>
 #include <src/scf/fock.h>
 #include <src/wfn/method.h>
 
 namespace bagel {
 
-class SCF_base : public Method {
+template <typename MatType = Matrix, typename OvlType = Overlap, typename HcType = Hcore,
+          class Enable = typename std::enable_if<((std::is_same<MatType, Matrix>::value && std::is_same<OvlType, Overlap>::value && std::is_same<HcType, Hcore>::value)
+                      || (std::is_same<MatType, ZMatrix>::value && std::is_same<OvlType, ZOverlap>::value && std::is_same<HcType, ZHcore>::value))>::type>
+class SCF_base_ : public Method {
   protected:
-    std::shared_ptr<const Matrix> tildex_;
-    std::shared_ptr<const Overlap> overlap_;
-    std::shared_ptr<const Hcore> hcore_;
-    std::shared_ptr<const Coeff> coeff_;
+    std::shared_ptr<const MatType> tildex_;
+    std::shared_ptr<const OvlType> overlap_;
+    std::shared_ptr<const HcType> hcore_;
+    std::shared_ptr<const Coeff_<MatType>> coeff_;
 
     int max_iter_;
 
@@ -63,9 +68,11 @@ class SCF_base : public Method {
     // when gradient is requested, we store half-transformed integrals
     // TODO so far only implemented in closed-shell SCF
     bool do_grad_;
-    std::shared_ptr<DFHalfDist> half_; 
+    std::shared_ptr<DFHalfDist> half_;
 
     bool restart_;
+
+    void get_coeff(const std::shared_ptr<const Reference> ref) { coeff_ = ref->coeff(); }
 
   private:
     // serialization
@@ -79,17 +86,17 @@ class SCF_base : public Method {
     }
 
   public:
-    SCF_base() { }
-    SCF_base(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry>,
+    SCF_base_() { }
+    SCF_base_(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry>,
              const std::shared_ptr<const Reference>, const bool need_schwarz = false);
-    virtual ~SCF_base() { }
+    virtual ~SCF_base_() { }
 
     virtual void compute() override = 0;
 
-    const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
-    void set_coeff(const std::shared_ptr<Coeff> o) { coeff_ = o; };
+    const std::shared_ptr<const Coeff_<MatType>> coeff() const { return coeff_; };
+    void set_coeff(const std::shared_ptr<Coeff_<MatType>> o) { coeff_ = o; };
 
-    const std::shared_ptr<const Hcore> hcore() const { return hcore_; };
+    const std::shared_ptr<const HcType> hcore() const { return hcore_; };
     const std::vector<double>& schwarz() const { return schwarz_; };
 
     int nocc() const { return nocc_; };
@@ -107,9 +114,20 @@ class SCF_base : public Method {
     void discard_half() { half_.reset(); }
 };
 
+// specialized for GIAO cases
+template <>
+void SCF_base_<ZMatrix, ZOverlap, ZHcore, std::enable_if<true>::type>::get_coeff(const std::shared_ptr<const Reference> ref);
+
+using SCF_base = SCF_base_<Matrix, Overlap, Hcore>;
+using SCF_base_London = SCF_base_<ZMatrix, ZOverlap, ZHcore>;
+
 }
+
+extern template class bagel::SCF_base_<bagel::Matrix, bagel::Overlap, bagel::Hcore>;
+extern template class bagel::SCF_base_<bagel::ZMatrix, bagel::ZOverlap, bagel::ZHcore>;
 
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::SCF_base)
+BOOST_CLASS_EXPORT_KEY(bagel::SCF_base_London)
 
 #endif

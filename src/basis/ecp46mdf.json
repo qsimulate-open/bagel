@@ -1,0 +1,113 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: ecp46mdf.json
+// Copyright (C) 2014 Toru Shiozaki
+//
+// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+{
+  "I" : [
+    {
+      "valence" : [
+        {
+          "angular" : "s",
+          "prim" : [5.311170,3.762566,1.628957],
+          "cont" : [[-0.098005,0.297109,-0.533922]]
+        }, {
+          "angular" : "s",
+          "prim" : [1.163541],
+          "cont" : [[1.000000000]]
+        }, {
+          "angular" : "s",
+          "prim" : [0.289886],
+          "cont" : [[1.000000000]]
+        }, {
+          "angular" : "s",
+          "prim" : [0.114132],
+          "cont" : [[1.000000000]]
+        }, {
+          "angular" : "p",
+          "prim" : [5.727873,4.068994,1.743004],
+          "cont" : [[-0.018074,0.062840,-0.195622]]
+        }, {
+          "angular" : "p",
+          "prim" : [0.378180],
+          "cont" : [[1.000000000]]
+        }, {
+          "angular" : "p",
+          "prim" : [0.162712],
+          "cont" : [[1.0000000]]
+        }, {
+          "angular" : "p",
+          "prim" : [0.066961],
+          "cont" : [[1.0000000]]
+        }
+      ],
+      "ncore" : "46",
+      "core" : [
+        {
+          "ecp_angular" : "g",
+          "ecp_exp" : [1.000000000],
+          "ecp_coef" : [0.000000000],
+          "ecp_r" : [2]
+        }, {
+          "ecp_angular" : "s",
+          "ecp_exp" : [3.380230, 1.973454],
+          "ecp_coef" : [83.107547, 5.099343],
+          "ecp_r" : [2, 2]
+        }, {
+          "ecp_angular" : "p",
+          "ecp_exp" : [2.925323,3.073557, 1.903188, 1.119689],
+          "ecp_coef" : [27.299020, 55.607847, 0.778322, 1.751128],
+          "ecp_r" : [2, 2, 2, 2]
+        }, {
+          "ecp_angular" : "d",
+          "ecp_exp" : [1.999036, 1.967767, 0.998982, 0.972272],
+          "ecp_coef" : [8.234552, 12.488097, 2.177334, 3.167401],
+          "ecp_r" : [2, 2, 2, 2]
+        }, {
+          "ecp_angular" : "f",
+          "ecp_exp" : [2.928812, 2.904069, 0.287352, 0.489380],
+          "ecp_coef" : [-11.777154, -15.525522, -0.148550, -0.273682],
+          "ecp_r" : [2, 2, 2, 2]
+        }
+      ],
+      "so" : [
+        {
+          "ecp_angular" : "p",
+          "ecp_exp" : [2.925323, 3.073557, 1.903188, 1.119689],
+          "ecp_coef" : [-54.598040, 55.607847, -1.556643, 1.751128],
+          "ecp_r" : [2, 2, 2, 2]
+        }, {
+          "ecp_angular" : "d",
+          "ecp_exp" : [1.999036, 1.967767, 0.998982, 0.972272],
+          "ecp_coef" : [-8.234552, 8.325398, -2.177334, 2.111601],
+          "ecp_r" : [2, 2, 2, 2]
+        }, {
+          "ecp_angular" : "f",
+          "ecp_exp" : [2.928812, 2.904069, 0.287352, 0.489380],
+          "ecp_coef" : [7.851436, -7.762761, 0.099033, -0.136841],
+          "ecp_r" : [2, 2, 2, 2]
+        }
+      ]
+    }
+  ]
+}

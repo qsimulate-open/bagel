@@ -24,6 +24,7 @@
 //
 
 #include <algorithm>
+#include <cassert>
 #include <src/integral/rys/breitrootlist.h>
 
 using namespace std;
@@ -259,7 +260,7 @@ void BreitRootList::breitroot2(const double* ta, double* rr, double* ww, const i
   for (int i = 1; i <= n; ++i) {
     double t = ta[i-1];
     offset += 2;
-    if (t < 0.0) {
+    if (std::isnan(t)) {
       fill_n(rr+offset, 2, 0.5);
       fill_n(ww+offset, 2, 0.0);
     } else if (t >= 64.0) {
@@ -269,6 +270,7 @@ void BreitRootList::breitroot2(const double* ta, double* rr, double* ww, const i
         ww[offset+r] = aw[r]*t*t*t;
       }
     } else {
+      assert(t >= 0);
       int it = static_cast<int>(t*   0.500000000000000);
       t = (t-it*2.000000000000000-   1.000000000000000) *   1.000000000000000;
       const double t2 = t * 2.0;
