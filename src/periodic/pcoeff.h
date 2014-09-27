@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: poverlap.h
+// Filename: pcoeff.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,39 +24,36 @@
 //
 
 
-#ifndef __SRC_PERIODIC_POVERLAP_H
-#define __SRC_PERIODIC_POVERLAP_H
+#ifndef __SRC_PERIODIC_PCOEFF_H
+#define __SRC_PERIODIC_PCOEFF_H
 
-#include <src/periodic/pmatrix1e.h>
+#include <src/periodic/lattice.h>
 
 namespace bagel {
 
-class POverlap : public PMatrix1e {
-  protected:
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Lattice>, const int) override;
-
+class PCoeff : public PMatrix1e {
   private:
+
+  protected:
     // serialization
     friend class boost::serialization::access;
+
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<PMatrix1e>(*this);
     }
 
   public:
-    POverlap() { }
-    POverlap(const std::shared_ptr<const Lattice>);
+    PCoeff() { }
+    PCoeff(std::shared_ptr<const Lattice> l) : PMatrix1e(l) { }
 
-    ~POverlap() { }
-
-    std::shared_ptr<Data> tildex(const double thresh_overlap) const;
+    ~PCoeff() { }
 
 };
 
 }
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::POverlap)
+BOOST_CLASS_EXPORT_KEY(bagel::PCoeff)
 
 #endif
-

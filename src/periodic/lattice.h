@@ -35,6 +35,7 @@ class Lattice {
   protected:
     int ndim_;
     int ncell_; // tmp
+    int num_lattice_vectors_;
     int num_lattice_pts_;
     std::shared_ptr<const Geometry> primitive_cell_;
     std::vector<std::array<double, 3>> lattice_vectors_;
@@ -55,6 +56,8 @@ class Lattice {
     double dot(std::array<double, 3> b, std::array<double, 3> c);
     std::array<double, 3> cross(std::array<double, 3> b, std::array<double, 3> c, double s = 1.0);
 
+    int nele_;
+
   public:
     Lattice() { }
     Lattice(const std::shared_ptr<const Geometry> g);
@@ -63,6 +66,7 @@ class Lattice {
     int ndim() const { return ndim_; }
     int ncell() const {return ncell_; }
     int num_lattice_pts() const { return num_lattice_pts_; }
+    int num_lattice_vectors() const { return num_lattice_vectors_; }
     std::shared_ptr<const Geometry> primitive_cell() const { return primitive_cell_; }
     std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
     std::array<double, 3> lattice_vectors(const int i) const { return lattice_vectors_[i]; }
@@ -82,6 +86,8 @@ class Lattice {
     void print_lattice_vectors() const;
     void print_reciprocal_lattice_vectors() const;
     void print_lattice_coordinates() const; // write .XYZ file
+
+    const int nele();
 };
 
 }

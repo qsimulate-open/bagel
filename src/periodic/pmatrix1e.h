@@ -59,6 +59,9 @@ class PMatrix1e {
 
     std::shared_ptr<Data> data() const { return data_; }
 
+    int nbasis() const { return nbasis_; }
+    int nblock() const { return nblock_; }
+
 };
 
 }

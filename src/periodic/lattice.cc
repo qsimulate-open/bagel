@@ -73,9 +73,10 @@ void Lattice::init() {
   ncell_ = 25;
   q_ = 10;
 
-  const int num_vec = pow(2*ncell_+1, ndim_);
-  lattice_vectors_.resize(num_vec);
-  num_lattice_pts_ = num_vec * primitive_cell_->natom();
+  num_lattice_vectors_ = pow(2*ncell_+1, ndim_);
+  lattice_vectors_.resize(num_lattice_vectors_);
+  num_lattice_pts_ = num_lattice_vectors_ * primitive_cell_->natom();
+  nele_ = primitive_cell_->nele() * num_lattice_vectors_;
 
   /* Set up lattice vectors */
   switch (ndim_) {
