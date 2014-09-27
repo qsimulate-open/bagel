@@ -138,6 +138,14 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
     }
   }
 
+  if (localize_first) {
+    assert(nsubspaces==2);
+    if (orbital_subspaces[0].first > orbital_subspaces[1].first)
+      nvirt_ = {subsets_A[0].size(), subsets_B[0].size()};
+    else
+      nvirt_ = {subsets_A[1].size(), subsets_B[1].size()};
+  }
+
   sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
 }
 
@@ -172,8 +180,8 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   const int noccA = isolated_refs_.first->nclosed();
   const int noccB = isolated_refs_.second->nclosed();
 
-  const int nexternA = isolated_refs_.first->nvirt();
-  const int nexternB = isolated_refs_.second->nvirt();
+  const int nexternA = nvirt_.first;
+  const int nexternB = nvirt_.second;
 
   // Update Dimer info
   const int nclosedA = active_refs_.first->nclosed();
@@ -306,10 +314,8 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     }
   }
 
-  auto out = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nexternA+nexternB - (nclosed+nact));
-
-
-  sref_ = out;
+  nvirt_ = {nexternA - nactA, nexternB - nactB};
+  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nexternA+nexternB - (nclosed+nact));
 }
 
 // RHF and then localize

@@ -57,6 +57,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
   isolated_refs_ = {A, tmpref};
   shared_ptr<const Matrix> coeff = construct_coeff();
 
+  nvirt_ = {A->nvirt(), A->nvirt()};
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), 2*A->nclosed(), 2*A->nact(), 2*A->nvirt());
 }
 
@@ -67,6 +68,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, share
   isolated_refs_ = {A, B};
   shared_ptr<const Matrix> coeff = construct_coeff();
 
+  nvirt_ = {A->nvirt(), B->nvirt()};
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed()+B->nclosed(), A->nact()+B->nact(), A->nvirt()+B->nvirt());
 }
 
