@@ -53,9 +53,10 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
     std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_; ///< Reference objects for monomers with the other monomer included as an embedding
     std::pair<Ref<Reference>, Ref<Reference>> active_refs_;   ///< Reference objects of the isolated monomers AFTER the active spaces have been chosen
 
+    std::pair<int, int> nvirt_; ///< number of virtual orbitals in sref_ for each unit (needs to be updated when sref_ is
+
     std::shared_ptr<const Geometry>   sgeom_;                 ///< Supergeometry, i.e., Geometry of dimer
     /// Superreference, i.e., Reference of dimer
-    /// sref_->coeff() is organized such that the MOs run as (closedA, closedB, activeA, activeB, virtA, virtB)
     std::shared_ptr<const Reference>  sref_;
 
     double active_thresh_;                                    ///< overlap threshold for inclusion in the active space
