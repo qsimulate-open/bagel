@@ -33,13 +33,9 @@
 namespace bagel {
 
 // Periodic version of Matrix1e (1e integrals)
-class PMatrix1e {
+class PMatrix1e : public Data {
   friend class PMatrix1eTask;
   protected:
-    int nbasis_;
-    int nblock_;
-    std::shared_ptr<Data> data_;    // (g, i, j)
-
     virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Lattice>, const int) = 0;
     virtual void init(std::shared_ptr<const Lattice>);
 
@@ -49,19 +45,13 @@ class PMatrix1e {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & nbasis_ & nblock_ & data_;
+      ar & boost::serialization::base_object<Data>(*this);
     }
 
   public:
     PMatrix1e() { }
     PMatrix1e(const std::shared_ptr<const Lattice>);
     virtual ~PMatrix1e() { }
-
-    std::shared_ptr<Data> data() const { return data_; }
-
-    int nbasis() const { return nbasis_; }
-    int nblock() const { return nblock_; }
-
 };
 
 }

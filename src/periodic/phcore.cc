@@ -49,14 +49,14 @@ void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
     KineticBatch kinetic(input);
     kinetic.compute();
 
-    (*data_)[block]->copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
+    data_[block]->copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
   {
     auto mol = make_shared<const Geometry>(*(lattice->primitive_cell()), lattice->lattice_vectors(block));
     NAIBatch nai(input, mol);
     nai.compute();
 
-    (*data_)[block]->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    data_[block]->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
 
 }
