@@ -27,7 +27,7 @@
 #ifndef __SRC_PERIODIC_PDATA_H
 #define __SRC_PERIODIC_PDATA_H
 
-#include <src/math/matrix.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 
@@ -37,7 +37,7 @@ class PData {
     int blocksize_;
     int nblock_;
 
-    std::vector<std::shared_ptr<Matrix>> pdata_;     // (g, i, j)
+    std::vector<std::shared_ptr<ZMatrix>> pdata_;     // (g, i, j)
 
   private:
     // serialization
@@ -52,7 +52,7 @@ class PData {
     PData(const int bsize, const int nblock) : blocksize_(bsize), nblock_(nblock) {
       pdata_.resize(nblock);
       for (int i = 0; i != nblock; ++i) {
-        auto block = std::make_shared<Matrix>(bsize, bsize);
+        auto block = std::make_shared<ZMatrix>(bsize, bsize);
         block->zero();
         pdata_[i] = block;
       }
@@ -63,10 +63,10 @@ class PData {
     const int blocksize() const { return blocksize_; }
     const int nblock() const { return nblock_; }
 
-    std::shared_ptr<Matrix> operator[] (int i) { assert(i < nblock_ && i >= 0); return pdata_[i]; };
+    std::shared_ptr<ZMatrix> operator[] (int i) { assert(i < nblock_ && i >= 0); return pdata_[i]; };
 
-    std::vector<std::shared_ptr<Matrix>> pdata() const { return pdata_; }
-    std::shared_ptr<Matrix> pdata(const int i) const { return pdata_[i]; }
+    std::vector<std::shared_ptr<ZMatrix>> pdata() const { return pdata_; }
+    std::shared_ptr<ZMatrix> pdata(const int i) const { return pdata_[i]; }
 
     void zero() {
       for (auto& block : pdata_) block->zero();

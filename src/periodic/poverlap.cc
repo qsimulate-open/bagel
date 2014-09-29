@@ -46,8 +46,10 @@ void POverlap::computebatch(const array<shared_ptr<const Shell>,2>& input, const
 
   OverlapBatch overlap(input);
   overlap.compute();
+  Matrix o(dimb1, dimb0);
+  o.copy_block(0, 0, dimb1, dimb0, overlap.data());
 
-  pdata_[block]->copy_block(offsetb1, offsetb0, dimb1, dimb0, overlap.data());
+  pdata_[block]->copy_real_block(1.0, offsetb1, offsetb0, dimb1, dimb0, o);
 
 }
 

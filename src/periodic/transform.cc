@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-Transform::Transform(const int blocksize, shared_ptr<PData> pdata, shared_ptr<KData> kdata, const vector<array<double, 3>> gvec, const vector<array<double, 3>> kvec)
+Transform::Transform(const int blocksize, shared_ptr<PData> pdata, shared_ptr<PData> kdata, const vector<array<double, 3>> gvec, const vector<array<double, 3>> kvec)
   : nbasis_(blocksize), pdata_(pdata), kdata_(kdata), gvector_(gvec), kvector_(kvec) {
 
   num_gvector_ = gvec.size();
@@ -49,11 +49,12 @@ void Transform::ft() {
     kblock->zero();
     int g = 0;
     for (auto& gvec : gvector_) {
-      shared_ptr<Matrix> gblock = (*pdata_)[g];
+      shared_ptr<ZMatrix> gblock = (*pdata_)[g];
       complex<double> factor(0.0, gvec[0]* kvec[0] + gvec[1] * kvec[1] + gvec[2] * kvec[2]);
       factor = std::exp(factor);
-      auto tmp = make_shared<ZMatrix>(*gblock, factor);
-      *kblock += *tmp;
+      auto tmp1 = make_shared<ZMatrix>(*(gblock->get_real_part()), factor); // gblock should be real
+      auto tmp2 = make_shared<ZMatrix>(*(gblock->get_imag_part()), factor);
+      *kblock += *tmp1 + *tmp2;
       ++g;
     }
     (*kdata_)[k] = kblock;
@@ -67,7 +68,7 @@ void Transform::ift() {
 
   int g = 0;
   for (auto& gvec : gvector_) {
-    auto gblock = make_shared<Matrix>(nbasis_, nbasis_);
+    auto gblock = make_shared<ZMatrix>(nbasis_, nbasis_);
     gblock->zero();
     int k = 0;
     for (auto& kvec : kvector_) {
@@ -76,7 +77,7 @@ void Transform::ift() {
       factor = std::exp(factor);
       auto tmp1 = make_shared<ZMatrix>(*(kblock->get_real_part()), factor);
       auto tmp2 = make_shared<ZMatrix>(*(kblock->get_imag_part()), factor);
-      *gblock += *(tmp1->get_real_part()) + *(tmp2->get_real_part());
+      *gblock += *tmp1 + *tmp2;
       ++k;
     }
     (*pdata_)[g] = gblock;
