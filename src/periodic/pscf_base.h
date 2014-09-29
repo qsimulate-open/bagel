@@ -53,10 +53,13 @@ class PSCF_base : public Method {
     VectorB eig_;
     double energy_;
 
+    // in a unit cell
     int nocc_;
     int noccB_;
 
     const std::string indent = "  ";
+
+    bool restart_;
 
   public:
     PSCF_base() { }

@@ -40,6 +40,7 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
 
   Timer pscf;
 
+  restart_ = idata_->get<bool>("restart", false);
   overlap_ = make_shared<const POverlap>(lattice_);
   pscf.tick_print("Periodic overlap matrix");
   hcore_ = make_shared<const PHcore>(lattice_);
