@@ -28,33 +28,36 @@
 #define __SRC_PERIODIC_PFOCK_H
 
 #include <src/periodic/lattice.h>
-#include <src/periodic/kdata.h>
 #include <src/periodic/pdata.h>
-#include <src/periodic/phcore.h>
 
 namespace bagel {
 
 class PFock : public PData {
   protected:
-
     std::shared_ptr<const Lattice> lattice_;
-    std::shared_ptr<const PFock> previous_;
-    std::shared_ptr<const ZMatrix> pcoeff_;
+    std::shared_ptr<const PData> previous_;
+    std::shared_ptr<const PData> pcoeff_;
 
-    int nblock_, blocksize_;
-
-    // Fourier transform
-    void ft();
-    // Inverse fourier transform
-    void ift();
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<PData>(*this)
+         & lattice_ & previous_ & pcoeff_;
+    }
 
   public:
-    PFock(std::shared_ptr<const Lattice> lattice, std::shared_ptr<const PFock> previous, std::shared_ptr<const ZMatrix> pcoeff);
+    PFock() { }
+    PFock(std::shared_ptr<const Lattice> lattice, std::shared_ptr<const PData> previous, std::shared_ptr<const PData> pcoeff);
     ~PFock() { }
 
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::PFock)
 
 #endif
 

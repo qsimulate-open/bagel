@@ -29,9 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-PFock::PFock(shared_ptr<const Lattice> l, shared_ptr<const PFock> h, shared_ptr<const ZMatrix> c)
-  : lattice_(l), previous_(h), pcoeff_(c) {
+BOOST_CLASS_EXPORT_IMPLEMENT(PFock)
 
-  nblock_ = l->num_kpoints();
-  blocksize_ = l->primitive_cell()->nbasis();
-}
+PFock::PFock(shared_ptr<const Lattice> l, shared_ptr<const PData> h, shared_ptr<const PData> c)
+  : PData(l->num_kpoints(), l->primitive_cell()->nbasis()), lattice_(l), previous_(h), pcoeff_(c) { }

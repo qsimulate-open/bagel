@@ -32,6 +32,8 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(PSCF)
+
 PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : PSCF_base(idata, geom, re), dodf_(idata->get<bool>("df",true)) {
   cout << "  *** Periodic Hartree--Fock ***" << endl << endl;

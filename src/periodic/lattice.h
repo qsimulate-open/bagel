@@ -58,6 +58,15 @@ class Lattice {
 
     int nele_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & ndim_ & ncell_ & num_lattice_vectors_ & num_lattice_pts_ & primitive_cell_ & lattice_vectors_
+         & nuclear_repulsion_ & volume_ & primitive_rvectors_ & lattice_rvectors_ & q_ & num_kpoints_ & nele_;
+    }
+
   public:
     Lattice() { }
     Lattice(const std::shared_ptr<const Geometry> g);
@@ -91,6 +100,9 @@ class Lattice {
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Lattice)
 
 #endif
 

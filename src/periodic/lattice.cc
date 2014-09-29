@@ -29,6 +29,8 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
+
 Lattice::Lattice(const shared_ptr<const Geometry> g) : primitive_cell_(g) {
 
   init();

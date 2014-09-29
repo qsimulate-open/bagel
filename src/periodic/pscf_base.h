@@ -30,7 +30,6 @@
 #include <src/periodic/lattice.h>
 #include <src/periodic/phcore.h>
 #include <src/periodic/poverlap.h>
-#include <src/periodic/pcoeff.h>
 
 namespace bagel {
 
@@ -40,7 +39,7 @@ class PSCF_base : public Method {
     std::shared_ptr<const PData> tildex_;
     std::shared_ptr<const POverlap> overlap_;
     std::shared_ptr<const PHcore> hcore_;
-    std::shared_ptr<const PCoeff> coeff_;
+    std::shared_ptr<const PData> coeff_;
 
     int max_iter_;
 
@@ -61,6 +60,17 @@ class PSCF_base : public Method {
 
     bool restart_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Method>(*this);
+      ar & lattice_ & tildex_ & overlap_ & hcore_ & coeff_
+         & max_iter_ & diis_start_ & diis_size_ & thresh_overlap_ & thresh_scf_
+         & eig_ & energy_ & nocc_ & noccB_ & restart_;
+    }
+
   public:
     PSCF_base() { }
     PSCF_base(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
@@ -70,8 +80,8 @@ class PSCF_base : public Method {
 
     virtual void compute() override = 0;
 
-    const std::shared_ptr<const PCoeff> coeff() const { return coeff_; }
-    void set_coeff(const std::shared_ptr<PCoeff> o) { coeff_ = o; };
+    const std::shared_ptr<const PData> coeff() const { return coeff_; }
+    void set_coeff(const std::shared_ptr<PData> o) { coeff_ = o; };
 
     const std::shared_ptr<const PHcore> hcore() const { return hcore_; }
 
@@ -88,6 +98,9 @@ class PSCF_base : public Method {
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::PSCF_base)
 
 #endif
 

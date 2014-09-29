@@ -37,6 +37,15 @@ class PSCF : public PSCF_base {
   protected:
     bool dodf_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) {
+      ar << boost::serialization::base_object<PSCF_base>(*this);
+      ar << dodf_;
+    }
+
   public:
     PSCF() { }
     PSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
@@ -50,6 +59,9 @@ class PSCF : public PSCF_base {
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::PSCF)
 
 #endif
 
