@@ -29,7 +29,6 @@
 #include <src/asd_dmrg/form_sigma.h>
 #include <src/ras/form_sigma.h>
 #include <src/ras/apply_operator.h>
-#include <src/ras/sparse_ij.h>
 
 using namespace std;
 using namespace bagel;
@@ -529,13 +528,15 @@ void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_s
   shared_ptr<const Matrix> J = jop->coulomb_matrix<0,1,0,0>();
   const int phase = (1 - (((cc_sector->det()->nelea()+cc_sector->det()->neleb())%2) << 1));
 
+  auto sparseij = make_shared<Sparse_IJ>(cc_sector->det()->stringspaceb(), sigma_sector->det()->stringspaceb());
+
   for (int p = 0; p < lnorb; ++p ) {
     tmp_sector.zero();
     auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
     copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
     for (int ist = 0; ist < nccstates; ++ist) {
       resolve_S_adag_adag_a(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
-      resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
+      resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp, sparseij);
     }
 
     shared_ptr<const Matrix> gamma_a = blockops->gamma_a(aETkey, p);
@@ -559,13 +560,15 @@ void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_s
 
   const int phase = (1 - (((tmp_sector.det()->nelea()+tmp_sector.det()->neleb())%2) << 1));
 
+  auto sparseij = make_shared<Sparse_IJ>(cc_sector->det()->stringspaceb(), sigma_sector->det()->stringspaceb());
+
   for (int p = 0; p < lnorb; ++p ) {
     tmp_sector.zero();
     auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
     copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
     for (int ist = 0; ist < nccstates; ++ist) {
       resolve_S_adag_a_a(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
-      resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
+      resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp, sparseij);
     }
 
     shared_ptr<const Matrix> gamma_a = blockops->gamma_a(cc_sector->left_state(), p);
@@ -595,13 +598,15 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
   for (int icc = 0; icc < nccstates; ++icc)
     cc_trans.push_back(cc_sector->civec(icc).transpose());
 
+  auto sparseij = make_shared<Sparse_IJ>(cc_trans.front()->det()->stringspaceb(), sigma_trans.det()->stringspaceb());
+
   for (int p = 0; p < lnorb; ++p) {
     tmp_sector.zero();
     auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
     copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
     for (int ist = 0; ist < nccstates; ++ist) {
       resolve_S_adag_adag_a(*cc_trans[ist], tmp_sector.civec(ist), Jp);
-      resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp);
+      resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp, sparseij);
     }
 
     shared_ptr<const Matrix> gamma_b = blockops->gamma_b(bETkey, p);
@@ -635,13 +640,15 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
   for (int icc = 0; icc < nccstates; ++icc)
     cc_trans.push_back(cc_sector->civec(icc).transpose());
 
+  auto sparseij = make_shared<Sparse_IJ>(cc_trans.front()->det()->stringspaceb(), sigma_trans.det()->stringspaceb());
+
   for (int p = 0; p < lnorb; ++p ) {
     tmp_sector.zero();
     auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
     copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
     for (int ist = 0; ist < nccstates; ++ist) {
       resolve_S_adag_a_a(*cc_trans[ist], tmp_sector.civec(ist), Jp);
-      resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp);
+      resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp, sparseij);
     }
 
     shared_ptr<const Matrix> gamma_b = blockops->gamma_b(cc_sector->left_state(), p);
@@ -762,7 +769,7 @@ void FormSigmaProdRAS::resolve_S_adag_a_a(const RASCivecView cc, RASCivecView si
 
 // computes \sum_{ijk} (k)_alpha i^+_beta j_beta (pk|ij)
 // (k) can be creation or annihilation and is determined based on the electron count of sigma
-void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, shared_ptr<btas::Tensor3<double>> Jp) const {
+void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, shared_ptr<btas::Tensor3<double>> Jp, shared_ptr<Sparse_IJ> sparseij) const {
   shared_ptr<const RASDeterminants> sdet = cc.det();
   shared_ptr<const RASDeterminants> tdet = sigma.det();
 
@@ -773,14 +780,13 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
 
   const int norb = sdet->norb();
   assert(norb == tdet->norb());
-
-  auto sparseij = make_shared<Sparse_IJ>(sdet->stringspaceb(), tdet->stringspaceb());
+  if (!sparseij) sparseij = make_shared<Sparse_IJ>(sdet->stringspaceb(), tdet->stringspaceb());
 
   // k^?_alpha i^+_beta j_beta portion. the harder part
   for (int k = 0; k < norb; ++k) {
     // map<taga, map<tagb, pair<Cprime, list of target destinations>>>
-    map<int, map<int, shared_ptr<Matrix>>> Cp_map;
-    map<int, vector<tuple<size_t, bitset<nbit__>>>> RI_map;
+    unordered_map<int, unordered_map<int, shared_ptr<Matrix>>> Cp_map;
+    unordered_map<int, vector<tuple<size_t, bitset<nbit__>>>> RI_map;
 
     // gathering operations
     for (auto& source_aspace : *sdet->stringspacea()) {
@@ -789,10 +795,7 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
         const bitset<nbit__> sabit = sdet->string_bits_a(ia+source_aspace->offset());
         const bitset<nbit__> tabit = sabit ^ bitset<nbit__>(1 << k); // flips occupation k
         // counting nelea should tell me whether flipping k was in the right direction or not
-        if (tabit.count()==na_target) {
-          // if too many holes or particles
-          if (!tdet->allowed(tabit)) continue;
-
+        if (tabit.count()==na_target && tdet->allowed(tabit)) {
           const int phase = sign(tabit, k);
           const size_t target_lex = tdet->lexical_zero<0>(tabit);
           kmap.emplace_back(ia, phase);

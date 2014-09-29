@@ -29,6 +29,7 @@
 #include <src/dimer/dimer_jop.h>
 #include <src/asd_dmrg/product_civec.h>
 #include <src/asd_dmrg/block_operators.h>
+#include <src/ras/sparse_ij.h>
 
 namespace bagel {
 
@@ -83,7 +84,7 @@ class FormSigmaProdRAS {
     void resolve_S_adag_a_a(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<btas::Tensor3<double>> Jp) const;
 
     /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\beta j_\beta k_\alpha (ij|pk)f$ and \f$\hat S_p = \sum_{i,j,k}
-    void resolve_S_abb(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<btas::Tensor3<double>> Jp) const;
+    void resolve_S_abb(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<btas::Tensor3<double>> Jp, std::shared_ptr<Sparse_IJ> sparse = nullptr) const;
 };
 
 }
