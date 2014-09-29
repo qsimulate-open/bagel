@@ -784,56 +784,45 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
 
   // k^?_alpha i^+_beta j_beta portion. the harder part
   for (int k = 0; k < norb; ++k) {
-    // map<taga, map<tagb, pair<Cprime, list of target destinations>>>
-    unordered_map<int, unordered_map<int, shared_ptr<Matrix>>> Cp_map;
-    unordered_map<int, vector<tuple<size_t, bitset<nbit__>>>> RI_map;
+    // map<taga, vector<tuple<source_lex, sign, target_lex, target_bit>>>
+    unordered_map<int, vector<tuple<size_t, int, size_t, bitset<nbit__>>>> RI_map;
 
-    // gathering operations
+    // collecting information for the gathering operations
     for (auto& source_aspace : *sdet->stringspacea()) {
-      vector<tuple<size_t, int>> kmap;
+      vector<tuple<size_t, int, size_t, bitset<nbit__>>>& RI_aspace = RI_map[source_aspace->tag()];
       for (size_t ia = 0; ia < source_aspace->size(); ++ia) {
         const bitset<nbit__> sabit = sdet->string_bits_a(ia+source_aspace->offset());
         const bitset<nbit__> tabit = sabit ^ bitset<nbit__>(1 << k); // flips occupation k
+
         // counting nelea should tell me whether flipping k was in the right direction or not
         if (tabit.count()==na_target && tdet->allowed(tabit)) {
           const int phase = sign(tabit, k);
           const size_t target_lex = tdet->lexical_zero<0>(tabit);
-          kmap.emplace_back(ia, phase);
-          RI_map[source_aspace->tag()].emplace_back(target_lex, tabit);
+          RI_aspace.emplace_back(ia, phase, target_lex, tabit);
         }
-      }
-
-      for (auto& iblock : cc.allowed_blocks<0>(source_aspace)) {
-        auto cp_block = make_shared<Matrix>(iblock->lenb(), kmap.size());
-        for (size_t ia = 0; ia < kmap.size(); ++ia)
-          blas::ax_plus_y_n(get<1>(kmap[ia]), iblock->data() + iblock->lenb()*get<0>(kmap[ia]), iblock->lenb(), cp_block->element_ptr(0, ia));
-        Cp_map[source_aspace->tag()].emplace(iblock->stringsb()->tag(), cp_block);
       }
     }
 
     for (auto& target_bspace : *tdet->stringspaceb()) {
-      for (auto& aspace_RI : RI_map) {
-        vector<int> reduced_positions;
-        vector<tuple<size_t,bitset<nbit__>>> reduced_RI;
-        int current = 0;
-        for (auto& i : aspace_RI.second) {
-          shared_ptr<const RASString> target_aspace = tdet->space<0>(get<1>(i));
-          if (tdet->allowed(target_bspace, target_aspace)) {
-            reduced_positions.push_back(current);
+      for (auto& source_aspace : *sdet->stringspacea()) {
+        vector<tuple<size_t, int, size_t, bitset<nbit__>>>& aspace_RI = RI_map[source_aspace->tag()];
+
+        vector<tuple<size_t,int,size_t,bitset<nbit__>>> reduced_RI;
+        for (auto& i : aspace_RI) {
+          shared_ptr<const RASString> target_aspace = tdet->space<0>(get<3>(i));
+          if (tdet->allowed(target_bspace, target_aspace))
             reduced_RI.push_back(i);
-          }
-          ++current;
         }
 
         if (reduced_RI.empty()) continue;
 
-        for (auto& source_bspace : *sdet->stringspaceb()) {
-          shared_ptr<const Matrix> full_cp = Cp_map[aspace_RI.first][source_bspace->tag()];
-          if (!full_cp) continue;
-          auto reduced_cp = make_shared<Matrix>(full_cp->ndim(), reduced_RI.size());
-          current = 0;
-          for (auto& i : reduced_positions)
-            copy_n(full_cp->element_ptr(0,i), full_cp->ndim(), reduced_cp->element_ptr(0,current++));
+        for (auto& source_block : cc.allowed_blocks<0>(source_aspace)) {
+          auto source_bspace = source_block->stringsb();
+          const size_t slb = source_bspace->size();
+          auto reduced_cp = make_shared<Matrix>(slb, reduced_RI.size());
+          int current = 0;
+          for (auto& i : reduced_RI)
+            blas::ax_plus_y_n(get<1>(i), source_block->data() + slb*get<0>(i), slb, reduced_cp->element_ptr(0,current++));
 
           // Now build an F matrix in sparse format
           shared_ptr<SparseMatrix> sparseF = sparseij->sparse_matrix(target_bspace->tag(), source_bspace->tag());
@@ -848,9 +837,9 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
             // scatter
             current = 0;
             for (auto& ireduced : reduced_RI) {
-              shared_ptr<const RASString> target_aspace = tdet->space<0>(get<1>(ireduced));
+              shared_ptr<const RASString> target_aspace = tdet->space<0>(get<3>(ireduced));
               shared_ptr<RASBlock<double>> target_block = sigma.block(target_bspace, target_aspace);
-              blas::ax_plus_y_n(1.0, V.element_ptr(0,current++), V.ndim(), target_block->data() + target_block->lenb()*get<0>(ireduced));
+              blas::ax_plus_y_n(1.0, V.element_ptr(0,current++), V.ndim(), target_block->data() + target_block->lenb()*get<2>(ireduced));
             }
           }
         }
