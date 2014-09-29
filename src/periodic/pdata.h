@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: data.h
+// Filename: pdata.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -49,14 +49,8 @@ class PData {
 
   public:
     PData() { }
-    PData(const int bsize, const int nblock) : blocksize_(bsize), nblock_(nblock) {
-      pdata_.resize(nblock);
-      for (int i = 0; i != nblock; ++i) {
-        auto block = std::make_shared<ZMatrix>(bsize, bsize);
-        block->zero();
-        pdata_[i] = block;
-      }
-    }
+    PData(const int bsize, const int nblock);
+    PData(const PData&);
 
     ~PData() { }
 
@@ -64,6 +58,7 @@ class PData {
     const int nblock() const { return nblock_; }
 
     std::shared_ptr<ZMatrix> operator[] (int i) { assert(i < nblock_ && i >= 0); return pdata_[i]; };
+    std::shared_ptr<const ZMatrix> operator() (const int i) const { assert(i < nblock_ && i >= 0); return pdata_[i]; };
 
     std::vector<std::shared_ptr<ZMatrix>> pdata() const { return pdata_; }
     std::shared_ptr<ZMatrix> pdata(const int i) const { return pdata_[i]; }
@@ -75,6 +70,9 @@ class PData {
     void allreduce() {
       for (auto& block : pdata_) block->allreduce();
     }
+
+    std::shared_ptr<const PData> ft(const std::vector<std::array<double, 3>>, const std::vector<std::array<double, 3>>);
+    std::shared_ptr<const PData> ift(const std::vector<std::array<double, 3>>, const std::vector<std::array<double, 3>>);
 };
 
 }
