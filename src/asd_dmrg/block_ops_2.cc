@@ -1060,13 +1060,13 @@ shared_ptr<Matrix> BlockOperators2::Q_aa(BlockKey bk, const int i, const int j) 
       Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
       Matrix Rterms = *right_ops_->Q_aa(spair.right.key(), i, j);
 
-      out->add_block(1.0, spair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));
+      out->add_block(1.0, spair.offset, spair.offset, spair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));
 
       // Q_aa (x) I
       Matrix Lterms = *left_ops_->Q_aa(spair.left.key(), i, j);
       Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
 
-      out->add_block(1.0, spair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));
+      out->add_block(1.0, spair.offset, spair.offset, spair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));
     }
 
     { //  + 1.0 <L'|  B |L> (x) <R'|B^t |R>
@@ -1212,13 +1212,13 @@ shared_ptr<Matrix> BlockOperators2::Q_bb(BlockKey bk, const int i, const int j) 
       Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
       Matrix Rterms = *right_ops_->Q_bb(spair.right.key(), i, j);
 
-      out->add_block(1.0, spair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));
+      out->add_block(1.0, spair.offset, spair.offset, spair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));
 
       // Q_bb (x) I
       Matrix Lterms = *left_ops_->Q_bb(spair.left.key(), i, j);
       Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
 
-      out->add_block(1.0, spair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));
+      out->add_block(1.0, spair.offset, spair.offset, spair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));
     }
 
     { //  + 1.0 <L'|  B |L> (x) <R'|B^t |R>

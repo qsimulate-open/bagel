@@ -488,7 +488,7 @@ def generate_operator(opname, contracted_operators, ninput):
             print("%sMatrix Rterms = *right_ops_->%s(spair.right.key(), %s);" % (indent(), opname, inp_string))
             print()
             phase = "left_phase" if (ninput%2==1) else "1.0"
-            print("%sout->add_block(%s, %s.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));" % (indent(), phase, tpair))
+            print("%sout->add_block(%s, %s.offset, spair.offset, %s.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));" % (indent(), phase, tpair, tpair))
 
         if (pure_left):
             nops += 1
@@ -497,7 +497,7 @@ def generate_operator(opname, contracted_operators, ninput):
             print("%sMatrix Lterms = *left_ops_->%s(spair.left.key(), %s);" % (indent(), opname, inp_string))
             print("%sMatrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();" % indent())
             print()
-            print("%sout->add_block(1.0, %s.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));" % (indent(), tpair))
+            print("%sout->add_block(1.0, %s.offset, spair.offset, %s.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));" % (indent(), tpair, tpair))
 
         # preprocess collection into terms that can be combined
         combined_collection = []
