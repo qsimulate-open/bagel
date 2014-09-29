@@ -47,7 +47,8 @@ class OpList:
         out = ""
         if (len(self.ops)!=0):
             for o in self.ops:
-                out += "%3s " % o
+                out += " %s" % o
+            out += " "
             return out
         else:
             return "  I"
@@ -446,7 +447,7 @@ def generate_operator(opname, contracted_operators, ninput):
             elif t.factor() < 0:
                 sgn = " - "
             terms_computed += "%s%1.1f %s (x) %s" % (sgn, abs(t.factor()), t.left.matel("L"), t.right.matel("R"))
-        print("%s{ // %s" % (indent(), terms_computed))
+        print("%s{ // %s" % (indent(), terms_computed.strip()))
         open_code_block()
 
         la = key[0:2]

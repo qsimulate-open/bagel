@@ -476,7 +476,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
     // phase accumulated by moving an operator past the whole left ket block
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
-    { //  - 1.0 <L'|A^t   B |L> (x) <R'|B^t |R>
+    { // - 1.0 <L'| A^t B |L> (x) <R'| B^t |R>
       const BlockKey left_target(spair.left.nelea+1, spair.left.neleb-1);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb+1);
 
@@ -506,7 +506,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
       }
     }
 
-    { //  + 1.0 <L'|  B |L> (x) <R'|A^t B^t |R>
+    { // + 1.0 <L'| B |L> (x) <R'| A^t B^t |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb-1);
       const BlockKey right_target(spair.right.nelea+1, spair.right.neleb+1);
 
@@ -536,7 +536,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
       }
     }
 
-    { //  + 1.0 <L'|  A |L> (x) <R'|A^t A^t |R>
+    { // + 1.0 <L'| A |L> (x) <R'| A^t A^t |R>
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea+2, spair.right.neleb);
 
@@ -566,7 +566,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
       }
     }
 
-    { //  S_a (x) I  + 1.0 <L'|A^t |L> (x) <R'|A^t   A |R> - 1.0 <L'|A^t |L> (x) <R'|A^t   A |R> + 1.0 <L'|A^t |L> (x) <R'|B^t   B |R>
+    { // S_a (x) I  + 1.0 <L'| A^t |L> (x) <R'| A^t A |R> - 1.0 <L'| A^t |L> (x) <R'| A^t A |R> + 1.0 <L'| A^t |L> (x) <R'| B^t B |R>
       const BlockKey left_target(spair.left.nelea+1, spair.left.neleb);
       const BlockKey right_target = spair.right.key();
 
@@ -581,7 +581,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
         Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
 
         out->add_block(1.0, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));
-        { // ["1.0 <L'|A^t |L> (x) <R'|A^t   A |R>", "1.0 <L'|A^t |L> (x) <R'|B^t   B |R>"]
+        { // ["1.0 <L'| A^t |L> (x) <R'| A^t A |R>", "1.0 <L'| A^t |L> (x) <R'| B^t B |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma1 = blocks_->right_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma2 = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.right.key(),spair.right.key()}).data;
@@ -607,7 +607,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
       }
     }
 
-    { //  + 1.0 <L'|A^t A^t |L> (x) <R'|  A |R>
+    { // + 1.0 <L'| A^t A^t |L> (x) <R'| A |R>
       const BlockKey left_target(spair.left.nelea+2, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb);
 
@@ -637,7 +637,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
       }
     }
 
-    { //  I (x) S_a - 1.0 <L'|A^t   A |L> (x) <R'|A^t |R> + 1.0 <L'|A^t   A |L> (x) <R'|A^t |R> + 1.0 <L'|B^t   B |L> (x) <R'|A^t |R>
+    { // I (x) S_a - 1.0 <L'| A^t A |L> (x) <R'| A^t |R> + 1.0 <L'| A^t A |L> (x) <R'| A^t |R> + 1.0 <L'| B^t B |L> (x) <R'| A^t |R>
       const BlockKey left_target = spair.left.key();
       const BlockKey right_target(spair.right.nelea+1, spair.right.neleb);
 
@@ -652,7 +652,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
         Matrix Rterms = *right_ops_->S_a(spair.right.key(), i);
 
         out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));
-        { // ["-1.0 <L'|A^t   A |L> (x) <R'|A^t |R>", "1.0 <L'|B^t   B |L> (x) <R'|A^t |R>"]
+        { // ["-1.0 <L'| A^t A |L> (x) <R'| A^t |R>", "1.0 <L'| B^t B |L> (x) <R'| A^t |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma1 = blocks_->left_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Lgamma2 = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.left.key(),spair.left.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
@@ -678,7 +678,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
       }
     }
 
-    { //  - 1.0 <L'|B^t |L> (x) <R'|A^t   B |R>
+    { // - 1.0 <L'| B^t |L> (x) <R'| A^t B |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb+1);
       const BlockKey right_target(spair.right.nelea+1, spair.right.neleb-1);
 
@@ -708,7 +708,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
       }
     }
 
-    { //  + 1.0 <L'|A^t B^t |L> (x) <R'|  B |R>
+    { // + 1.0 <L'| A^t B^t |L> (x) <R'| B |R>
       const BlockKey left_target(spair.left.nelea+1, spair.left.neleb+1);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb-1);
 
@@ -767,7 +767,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
     // phase accumulated by moving an operator past the whole left ket block
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
-    { //  - 1.0 <L'|B^t   A |L> (x) <R'|A^t |R>
+    { // - 1.0 <L'| B^t A |L> (x) <R'| A^t |R>
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb+1);
       const BlockKey right_target(spair.right.nelea+1, spair.right.neleb);
 
@@ -797,7 +797,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
       }
     }
 
-    { //  + 1.0 <L'|  B |L> (x) <R'|B^t B^t |R>
+    { // + 1.0 <L'| B |L> (x) <R'| B^t B^t |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb-1);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb+2);
 
@@ -827,7 +827,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
       }
     }
 
-    { //  - 1.0 <L'|B^t A^t |L> (x) <R'|  A |R>
+    { // - 1.0 <L'| B^t A^t |L> (x) <R'| A |R>
       const BlockKey left_target(spair.left.nelea+1, spair.left.neleb+1);
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb);
 
@@ -857,7 +857,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
       }
     }
 
-    { //  S_b (x) I  + 1.0 <L'|B^t |L> (x) <R'|B^t   B |R> - 1.0 <L'|B^t |L> (x) <R'|B^t   B |R> + 1.0 <L'|B^t |L> (x) <R'|A^t   A |R>
+    { // S_b (x) I  + 1.0 <L'| B^t |L> (x) <R'| B^t B |R> - 1.0 <L'| B^t |L> (x) <R'| B^t B |R> + 1.0 <L'| B^t |L> (x) <R'| A^t A |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb+1);
       const BlockKey right_target = spair.right.key();
 
@@ -872,7 +872,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
         Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
 
         out->add_block(1.0, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));
-        { // ["1.0 <L'|B^t |L> (x) <R'|B^t   B |R>", "1.0 <L'|B^t |L> (x) <R'|A^t   A |R>"]
+        { // ["1.0 <L'| B^t |L> (x) <R'| B^t B |R>", "1.0 <L'| B^t |L> (x) <R'| A^t A |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma1 = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.right.key(),spair.right.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma2 = blocks_->right_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
@@ -898,7 +898,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
       }
     }
 
-    { //  - 1.0 <L'|A^t |L> (x) <R'|B^t   A |R>
+    { // - 1.0 <L'| A^t |L> (x) <R'| B^t A |R>
       const BlockKey left_target(spair.left.nelea+1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb+1);
 
@@ -928,7 +928,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
       }
     }
 
-    { //  - 1.0 <L'|  A |L> (x) <R'|B^t A^t |R>
+    { // - 1.0 <L'| A |L> (x) <R'| B^t A^t |R>
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea+1, spair.right.neleb+1);
 
@@ -958,7 +958,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
       }
     }
 
-    { //  I (x) S_b - 1.0 <L'|B^t   B |L> (x) <R'|B^t |R> + 1.0 <L'|B^t   B |L> (x) <R'|B^t |R> + 1.0 <L'|A^t   A |L> (x) <R'|B^t |R>
+    { // I (x) S_b - 1.0 <L'| B^t B |L> (x) <R'| B^t |R> + 1.0 <L'| B^t B |L> (x) <R'| B^t |R> + 1.0 <L'| A^t A |L> (x) <R'| B^t |R>
       const BlockKey left_target = spair.left.key();
       const BlockKey right_target(spair.right.nelea, spair.right.neleb+1);
 
@@ -973,7 +973,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
         Matrix Rterms = *right_ops_->S_b(spair.right.key(), i);
 
         out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rterms, false, Lident));
-        { // ["-1.0 <L'|B^t   B |L> (x) <R'|B^t |R>", "1.0 <L'|A^t   A |L> (x) <R'|B^t |R>"]
+        { // ["-1.0 <L'| B^t B |L> (x) <R'| B^t |R>", "1.0 <L'| A^t A |L> (x) <R'| B^t |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma1 = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.left.key(),spair.left.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Lgamma2 = blocks_->left_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
@@ -999,7 +999,7 @@ shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
       }
     }
 
-    { //  + 1.0 <L'|B^t B^t |L> (x) <R'|  B |R>
+    { // + 1.0 <L'| B^t B^t |L> (x) <R'| B |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb+2);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb-1);
 
@@ -1054,7 +1054,7 @@ shared_ptr<Matrix> BlockOperators2::Q_aa(BlockKey bk, const int i, const int j) 
     // phase accumulated by moving an operator past the whole left ket block
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
-    { //  I (x) Q_aa +  Q_aa (x) I
+    { // I (x) Q_aa +  Q_aa (x) I
 
       // I (x) Q_aa
       Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
@@ -1069,7 +1069,7 @@ shared_ptr<Matrix> BlockOperators2::Q_aa(BlockKey bk, const int i, const int j) 
       out->add_block(1.0, spair.offset, spair.offset, spair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));
     }
 
-    { //  + 1.0 <L'|  B |L> (x) <R'|B^t |R>
+    { // + 1.0 <L'| B |L> (x) <R'| B^t |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb-1);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb+1);
 
@@ -1097,7 +1097,7 @@ shared_ptr<Matrix> BlockOperators2::Q_aa(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  + 1.0 <L'|  A |L> (x) <R'|A^t |R>
+    { // + 1.0 <L'| A |L> (x) <R'| A^t |R>
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea+1, spair.right.neleb);
 
@@ -1125,7 +1125,7 @@ shared_ptr<Matrix> BlockOperators2::Q_aa(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  - 1.0 <L'|B^t |L> (x) <R'|  B |R>
+    { // - 1.0 <L'| B^t |L> (x) <R'| B |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb+1);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb-1);
 
@@ -1153,7 +1153,7 @@ shared_ptr<Matrix> BlockOperators2::Q_aa(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  - 1.0 <L'|A^t |L> (x) <R'|  A |R>
+    { // - 1.0 <L'| A^t |L> (x) <R'| A |R>
       const BlockKey left_target(spair.left.nelea+1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb);
 
@@ -1206,7 +1206,7 @@ shared_ptr<Matrix> BlockOperators2::Q_bb(BlockKey bk, const int i, const int j) 
     // phase accumulated by moving an operator past the whole left ket block
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
-    { //  I (x) Q_bb +  Q_bb (x) I
+    { // I (x) Q_bb +  Q_bb (x) I
 
       // I (x) Q_bb
       Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
@@ -1221,7 +1221,7 @@ shared_ptr<Matrix> BlockOperators2::Q_bb(BlockKey bk, const int i, const int j) 
       out->add_block(1.0, spair.offset, spair.offset, spair.nstates(), spair.nstates(), kronecker_product(false, Rident, false, Lterms));
     }
 
-    { //  + 1.0 <L'|  B |L> (x) <R'|B^t |R>
+    { // + 1.0 <L'| B |L> (x) <R'| B^t |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb-1);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb+1);
 
@@ -1249,7 +1249,7 @@ shared_ptr<Matrix> BlockOperators2::Q_bb(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  + 1.0 <L'|  A |L> (x) <R'|A^t |R>
+    { // + 1.0 <L'| A |L> (x) <R'| A^t |R>
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea+1, spair.right.neleb);
 
@@ -1277,7 +1277,7 @@ shared_ptr<Matrix> BlockOperators2::Q_bb(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  - 1.0 <L'|A^t |L> (x) <R'|  A |R>
+    { // - 1.0 <L'| A^t |L> (x) <R'| A |R>
       const BlockKey left_target(spair.left.nelea+1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb);
 
@@ -1305,7 +1305,7 @@ shared_ptr<Matrix> BlockOperators2::Q_bb(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  - 1.0 <L'|B^t |L> (x) <R'|  B |R>
+    { // - 1.0 <L'| B^t |L> (x) <R'| B |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb+1);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb-1);
 
@@ -1362,7 +1362,7 @@ shared_ptr<Matrix> BlockOperators2::Q_ab(BlockKey bk, const int i, const int j) 
     // phase accumulated by moving an operator past the whole left ket block
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
-    { //  I (x) Q_ab
+    { // I (x) Q_ab
       const BlockKey left_target = spair.left.key();
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb+1);
 
@@ -1380,7 +1380,7 @@ shared_ptr<Matrix> BlockOperators2::Q_ab(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  - 1.0 <L'|  A |L> (x) <R'|B^t |R>
+    { // - 1.0 <L'| A |L> (x) <R'| B^t |R>
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb+1);
 
@@ -1408,7 +1408,7 @@ shared_ptr<Matrix> BlockOperators2::Q_ab(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  Q_ab (x) I
+    { // Q_ab (x) I
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb+1);
       const BlockKey right_target = spair.right.key();
 
@@ -1426,7 +1426,7 @@ shared_ptr<Matrix> BlockOperators2::Q_ab(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  + 1.0 <L'|B^t |L> (x) <R'|  A |R>
+    { // + 1.0 <L'| B^t |L> (x) <R'| A |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb+1);
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb);
 
@@ -1483,7 +1483,7 @@ shared_ptr<Matrix> BlockOperators2::P_aa(BlockKey bk, const int i, const int j) 
     // phase accumulated by moving an operator past the whole left ket block
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
-    { //  - 1.0 <L'|  A |L> (x) <R'|  A |R> + 1.0 <L'|  A |L> (x) <R'|  A |R>
+    { // - 1.0 <L'| A |L> (x) <R'| A |R> + 1.0 <L'| A |L> (x) <R'| A |R>
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb);
 
@@ -1511,7 +1511,7 @@ shared_ptr<Matrix> BlockOperators2::P_aa(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  I (x) P_aa
+    { // I (x) P_aa
       const BlockKey left_target = spair.left.key();
       const BlockKey right_target(spair.right.nelea-2, spair.right.neleb);
 
@@ -1529,7 +1529,7 @@ shared_ptr<Matrix> BlockOperators2::P_aa(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  P_aa (x) I
+    { // P_aa (x) I
       const BlockKey left_target(spair.left.nelea-2, spair.left.neleb);
       const BlockKey right_target = spair.right.key();
 
@@ -1576,7 +1576,7 @@ shared_ptr<Matrix> BlockOperators2::P_bb(BlockKey bk, const int i, const int j) 
     // phase accumulated by moving an operator past the whole left ket block
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
-    { //  - 1.0 <L'|  B |L> (x) <R'|  B |R> + 1.0 <L'|  B |L> (x) <R'|  B |R>
+    { // - 1.0 <L'| B |L> (x) <R'| B |R> + 1.0 <L'| B |L> (x) <R'| B |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb-1);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb-1);
 
@@ -1604,7 +1604,7 @@ shared_ptr<Matrix> BlockOperators2::P_bb(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  I (x) P_bb
+    { // I (x) P_bb
       const BlockKey left_target = spair.left.key();
       const BlockKey right_target(spair.right.nelea, spair.right.neleb-2);
 
@@ -1622,7 +1622,7 @@ shared_ptr<Matrix> BlockOperators2::P_bb(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  P_bb (x) I
+    { // P_bb (x) I
       const BlockKey left_target(spair.left.nelea, spair.left.neleb-2);
       const BlockKey right_target = spair.right.key();
 
@@ -1669,7 +1669,7 @@ shared_ptr<Matrix> BlockOperators2::P_ab(BlockKey bk, const int i, const int j) 
     // phase accumulated by moving an operator past the whole left ket block
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
-    { //  P_ab (x) I
+    { // P_ab (x) I
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb-1);
       const BlockKey right_target = spair.right.key();
 
@@ -1687,7 +1687,7 @@ shared_ptr<Matrix> BlockOperators2::P_ab(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  + 1.0 <L'|  A |L> (x) <R'|  B |R>
+    { // + 1.0 <L'| A |L> (x) <R'| B |R>
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb-1);
 
@@ -1715,7 +1715,7 @@ shared_ptr<Matrix> BlockOperators2::P_ab(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  I (x) P_ab
+    { // I (x) P_ab
       const BlockKey left_target = spair.left.key();
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb-1);
 
@@ -1733,7 +1733,7 @@ shared_ptr<Matrix> BlockOperators2::P_ab(BlockKey bk, const int i, const int j) 
       }
     }
 
-    { //  - 1.0 <L'|  B |L> (x) <R'|  A |R>
+    { // - 1.0 <L'| B |L> (x) <R'| A |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb-1);
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb);
 
