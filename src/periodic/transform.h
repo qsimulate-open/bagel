@@ -29,7 +29,7 @@
 
 #include <complex>
 #include <algorithm>
-#include <src/periodic/data.h>
+#include <src/periodic/pdata.h>
 #include <src/periodic/kdata.h>
 
 namespace bagel {
@@ -39,7 +39,7 @@ class Transform {
     int nbasis_;
 
     // 3-index objects
-    std::shared_ptr<Data> data_;    // (g, i, j)
+    std::shared_ptr<PData> pdata_;    // (g, i, j)
     std::shared_ptr<KData> kdata_;  // (k, i, j)
 
     std::vector<std::array<double, 3>> gvector_;
@@ -47,7 +47,7 @@ class Transform {
     int num_gvector_, num_kvector_;
 
   public:
-    Transform(const int, std::shared_ptr<Data>, std::shared_ptr<KData>,
+    Transform(const int, std::shared_ptr<PData>, std::shared_ptr<KData>,
               const std::vector<std::array<double, 3>>, const std::vector<std::array<double, 3>>);
     ~Transform() { }
 
@@ -57,7 +57,7 @@ class Transform {
     void ift();
 
     const int nbasis() { return nbasis_; }
-    const std::shared_ptr<const Data> data() const { return data_; }
+    const std::shared_ptr<const PData> pdata() const { return pdata_; }
     const std::shared_ptr<const KData> kdata() const { return kdata_; }
 
     const std::vector<std::array<double, 3>> gvector() const { return gvector_; }

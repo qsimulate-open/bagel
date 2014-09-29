@@ -37,7 +37,7 @@ namespace bagel {
 class PSCF_base : public Method {
   protected:
     std::shared_ptr<const Lattice> lattice_;
-    std::shared_ptr<const Data> tildex_;
+    std::shared_ptr<const PData> tildex_;
     std::shared_ptr<const POverlap> overlap_;
     std::shared_ptr<const PHcore> hcore_;
     std::shared_ptr<const PCoeff> coeff_;

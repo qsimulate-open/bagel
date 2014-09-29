@@ -40,7 +40,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(PMatrix1e)
 
-PMatrix1e::PMatrix1e(const shared_ptr<const Lattice> lattice) : Data(lattice->primitive_cell()->nbasis(), lattice->num_lattice_vectors()) { }
+PMatrix1e::PMatrix1e(const shared_ptr<const Lattice> lattice) : PData(lattice->primitive_cell()->nbasis(), lattice->num_lattice_vectors()) { }
 
 namespace bagel {
 class PMatrix1eTask {

@@ -29,14 +29,14 @@
 
 #include <src/periodic/lattice.h>
 #include <src/periodic/kdata.h>
-#include <src/periodic/data.h>
+#include <src/periodic/pdata.h>
 
 namespace bagel {
 
 class PFock {
   protected:
 
-    std::shared_ptr<Data> data_;
+    std::shared_ptr<PData> pdata_;
     std::shared_ptr<KData> kdata_;
 
     std::shared_ptr<const Lattice> lattice_;
@@ -54,7 +54,7 @@ class PFock {
     PFock(std::shared_ptr<const Lattice> lattice, std::shared_ptr<const PFock> previous, std::shared_ptr<const ZMatrix> pcoeff);
     ~PFock() { }
 
-    const std::shared_ptr<const Data> data() const { return data_; }
+    const std::shared_ptr<const PData> pdata() const { return pdata_; }
     const std::shared_ptr<const KData> kdata() const { return kdata_; }
 };
 

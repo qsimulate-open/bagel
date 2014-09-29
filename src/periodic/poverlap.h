@@ -49,7 +49,7 @@ class POverlap : public PMatrix1e {
 
     ~POverlap() { }
 
-    std::shared_ptr<Data> tildex(const double thresh_overlap) const;
+    std::shared_ptr<PData> tildex(const double thresh_overlap) const;
 
 };
 
