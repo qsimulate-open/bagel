@@ -208,25 +208,28 @@ void ZSuperCI::compute() {
 
 
 void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& fact, shared_ptr<ZMatrix>& factp, shared_ptr<ZMatrix>& gaa,
-                                  shared_ptr<ZRotFile>& denom) {
+                                  shared_ptr<ZRotFile>& denom, const bool superci) {
   assert(coeff_->mdim()== nbasis_*2);
 
-  // qvec ; electronic contributions only
   shared_ptr<const ZMatrix> qvec;
-  if (nact_) {
+  if (nact_ && superci) {
+    // qvec ; electronic contributions only
     // extract electronic orbitals from coeff
     auto coefftmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
     coefftmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
     coefftmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2, nocc_*2+nvirtnr_));
     coefftmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
     qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coefftmp, coefftmp->slice_copy(nclosed_*2, nocc_*2), nclosed_, fci_, gaunt_, breit_);
+  } else if (nact_) {
+    // qvec for electrons and positrons
+    qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2, nocc_*2), nclosed_, fci_, gaunt_, breit_);
   }
 
   // calculate 1RDM in an original basis set
   shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
   // make natural orbitals, update coeff_ and transform rdm1
   shared_ptr<ZMatrix> natorb_coeff;
-  if (nact_) {
+  if (nact_ && superci) {
     natorb_coeff = make_natural_orbitals(rdm1);
     coeff_ = update_coeff(coeff_, natorb_coeff);
     qvec = update_qvec(qvec, natorb_coeff);
@@ -260,10 +263,11 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   }
   if (nact_) { // x-active Fock operator : cfock_xs^ n_s + Q_xt^*
     fact = qvec->get_conjg();
+    assert(occup_.size() > 0);
     for (int i = 0; i != nact_*2; ++i)
       zaxpy_(qvec->ndim(), occup_[i], cfock->element_ptr(0,nclosed_*2+i), 1, fact->data()+i*qvec->ndim(), 1);
   }
-  if (nact_) { // active Fock' operator (Fts+Fst) / (ns+nt)
+  if (nact_ && superci) { // active Fock' operator (Fts+Fst) / (ns+nt)
     factp = make_shared<ZMatrix>(nact_*2, nact_*2);
     shared_ptr<ZMatrix> fact_conjg = fact->get_conjg();
     for (int i = 0; i != nact_*2; ++i) {
@@ -277,7 +281,8 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   }
 
   // G matrix (active-active) D_rs,tu Factp_tu - delta_rs nr sum_v Factp_vv
-  if (nact_) {
+  if (nact_ && superci) {
+    assert(occup_.size() > 0);
     gaa = factp->clone();
     shared_ptr<const ZMatrix> nat_rdm2 = natorb_rdm2_transform(natorb_coeff, fci_->rdm2_av());
     zgemv_("N", nact_*nact_*4, nact_*nact_*4, 1.0, nat_rdm2->data(), nact_*nact_*4, factp->get_conjg()->data(), 1, 0.0, gaa->data(), 1);
