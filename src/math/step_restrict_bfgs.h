@@ -616,7 +616,6 @@ class SRBFGS {
           } else if (rk < 0) {
             std::cout << " step does not satisfy Taylor expansion criteria " << std::endl;
             std::cout << " scaling down the trust radius " << std::endl;
-            auto t2 = two_loop_inverse_hessian(_grad);
             trust_radius_ = trust_radius_ / alpha_;
             reset = true;
           }
