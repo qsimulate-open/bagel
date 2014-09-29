@@ -29,6 +29,7 @@
 #include <src/asd_dmrg/form_sigma.h>
 #include <src/ras/form_sigma.h>
 #include <src/ras/apply_operator.h>
+#include <src/ras/sparse_ij.h>
 
 using namespace std;
 using namespace bagel;
@@ -773,6 +774,8 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
   const int norb = sdet->norb();
   assert(norb == tdet->norb());
 
+  auto sparseij = make_shared<Sparse_IJ>(sdet->stringspaceb(), tdet->stringspaceb());
+
   // k^?_alpha i^+_beta j_beta portion. the harder part
   for (int k = 0; k < norb; ++k) {
     // map<taga, map<tagb, pair<Cprime, list of target destinations>>>
@@ -830,20 +833,14 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
             copy_n(full_cp->element_ptr(0,i), full_cp->ndim(), reduced_cp->element_ptr(0,current++));
 
           // Now build an F matrix in sparse format
-          map<pair<int, int>, double> sparse_coords;
-          for (size_t ib = 0; ib < target_bspace->size(); ++ib) {
-            for (auto& iterij : tdet->phib(ib+target_bspace->offset())) {
-              if (iterij.source >= source_bspace->offset() && iterij.source < source_bspace->offset()+source_bspace->size()) {
-                const int i = iterij.ij%norb;
-                const int j = iterij.ij/norb;
-                sparse_coords[{ib,iterij.source-source_bspace->offset()}] += iterij.sign * (*Jp)(j,i,k);
-              }
-            }
-          }
+          shared_ptr<SparseMatrix> sparseF = sparseij->sparse_matrix(target_bspace->tag(), source_bspace->tag());
 
-          if (!sparse_coords.empty()) {
-            SparseMatrix sparseF(target_bspace->size(), source_bspace->size(), sparse_coords);
-            Matrix V(sparseF * *reduced_cp);
+          if (sparseF) {
+            sparseF->zero();
+            for (auto& iter : sparseij->sparse_data(target_bspace->tag(), source_bspace->tag()))
+              *iter.ptr += static_cast<double>(iter.sign) * (*Jp)(iter.j, iter.i, k);
+
+            Matrix V(*sparseF * *reduced_cp);
 
             // scatter
             current = 0;
