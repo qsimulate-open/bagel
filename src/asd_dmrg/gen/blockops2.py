@@ -386,7 +386,7 @@ def generate_operator(opname, contracted_operators, ninput):
     diag = action[0]=="  " and action[1]=="  "
 
     if not diag:
-        print("%sBlockKey target_bk(bk.nelea%s,bk.neleb%s);" % (indent(), action[0], action[1]))
+        print("%sBlockKey target_bk(bk.nelea%s,bk.neleb%s);" % (indent(), action[0].strip(), action[1].strip()))
         print("%sassert(blocks_->contains(target_bk));" % indent())
 
     print()

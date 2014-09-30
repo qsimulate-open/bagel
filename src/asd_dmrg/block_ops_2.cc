@@ -457,7 +457,7 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 -------------------------------------------------------------------------------------------------------*/
 
 shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
-  BlockKey target_bk(bk.nelea+1,bk.neleb  );
+  BlockKey target_bk(bk.nelea+1,bk.neleb);
   assert(blocks_->contains(target_bk));
 
   const vector<DMRG::BlockPair>& source_pvec = blocks_->blockpairs(bk);
@@ -748,7 +748,7 @@ shared_ptr<Matrix> BlockOperators2::S_a(BlockKey bk, const int i) const {
 
 
 shared_ptr<Matrix> BlockOperators2::S_b(BlockKey bk, const int i) const {
-  BlockKey target_bk(bk.nelea  ,bk.neleb+1);
+  BlockKey target_bk(bk.nelea,bk.neleb+1);
   assert(blocks_->contains(target_bk));
 
   const vector<DMRG::BlockPair>& source_pvec = blocks_->blockpairs(bk);
@@ -1464,7 +1464,7 @@ shared_ptr<Matrix> BlockOperators2::Q_ab(BlockKey bk, const int i, const int j) 
 
 
 shared_ptr<Matrix> BlockOperators2::P_aa(BlockKey bk, const int i, const int j) const {
-  BlockKey target_bk(bk.nelea-2,bk.neleb  );
+  BlockKey target_bk(bk.nelea-2,bk.neleb);
   assert(blocks_->contains(target_bk));
 
   const vector<DMRG::BlockPair>& source_pvec = blocks_->blockpairs(bk);
@@ -1557,7 +1557,7 @@ shared_ptr<Matrix> BlockOperators2::P_aa(BlockKey bk, const int i, const int j) 
 
 
 shared_ptr<Matrix> BlockOperators2::P_bb(BlockKey bk, const int i, const int j) const {
-  BlockKey target_bk(bk.nelea  ,bk.neleb-2);
+  BlockKey target_bk(bk.nelea,bk.neleb-2);
   assert(blocks_->contains(target_bk));
 
   const vector<DMRG::BlockPair>& source_pvec = blocks_->blockpairs(bk);
