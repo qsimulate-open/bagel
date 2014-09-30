@@ -1487,7 +1487,7 @@ shared_ptr<Matrix> BlockOperators2::P_aa(BlockKey bk, const int i, const int j) 
     // phase accumulated by moving an operator past the whole left ket block
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
-    { // - 1.0 <L'| A |L> (x) <R'| A |R> + 1.0 <L'| A |L> (x) <R'| A |R>
+    { // - 0.5 <L'| A |L> (x) <R'| A |R> + 0.5 <L'| A |L> (x) <R'| A |R>
       const BlockKey left_target(spair.left.nelea-1, spair.left.neleb);
       const BlockKey right_target(spair.right.nelea-1, spair.right.neleb);
 
@@ -1508,7 +1508,7 @@ shared_ptr<Matrix> BlockOperators2::P_aa(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * (mo2e(a+loffset, p+roffset, i, j) - mo2e(p+roffset, a+loffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-0.5 * (mo2e(a+loffset, p+roffset, i, j) - mo2e(p+roffset, a+loffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(true, Rmat, true, Lmat));
         }
@@ -1580,7 +1580,7 @@ shared_ptr<Matrix> BlockOperators2::P_bb(BlockKey bk, const int i, const int j) 
     // phase accumulated by moving an operator past the whole left ket block
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
-    { // - 1.0 <L'| B |L> (x) <R'| B |R> + 1.0 <L'| B |L> (x) <R'| B |R>
+    { // - 0.5 <L'| B |L> (x) <R'| B |R> + 0.5 <L'| B |L> (x) <R'| B |R>
       const BlockKey left_target(spair.left.nelea, spair.left.neleb-1);
       const BlockKey right_target(spair.right.nelea, spair.right.neleb-1);
 
@@ -1601,7 +1601,7 @@ shared_ptr<Matrix> BlockOperators2::P_bb(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * (mo2e(a+loffset, p+roffset, i, j) - mo2e(p+roffset, a+loffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-0.5 * (mo2e(a+loffset, p+roffset, i, j) - mo2e(p+roffset, a+loffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(true, Rmat, true, Lmat));
         }
