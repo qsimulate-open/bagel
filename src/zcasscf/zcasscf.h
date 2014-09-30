@@ -116,8 +116,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> generate_mvo(const int ncore, const bool hcore_mvo = false);
     void print_natocc() const;
     std::shared_ptr<const ZMatrix> set_active(std::set<int> active_indices) const;
-    void one_body_operators(std::shared_ptr<ZMatrix>& f, std::shared_ptr<ZMatrix>& fact, std::shared_ptr<ZMatrix>& factp, std::shared_ptr<ZMatrix>& gaa,
-                            std::shared_ptr<ZRotFile>& denom, const bool superci = true);
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
