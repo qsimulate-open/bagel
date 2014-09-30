@@ -234,10 +234,10 @@ void GammaForestProdASD::compute() {
             tie(ci_conj, ci_rev, ciops) = try_permutations(ciops);
 
             // first part: phase from reversing order of operators (should only happen when both are creation or annihilation)
-            // second part: the phase from rearranging the operators so that the ci operators are on the right
+            // second part: the phase from rearranging the operators so that the block operators are on the right
             //   sign only changes if part = "010" or "101"
-            // third part: phase from moving ci operators past block ket TODO: double check
-            const int phase = (block_rev^ci_rev ? -1 : 1) * (part==2 || part==5 ? -1 : 1) * static_cast<int>(1 - (((ciops.size()*(block_ket.nelea+block_ket.neleb))%2) << 1));
+            // third part: phase from moving block operators past ci ket TODO: double check
+            const int phase = (block_rev^ci_rev ? -1 : 1) * (part==2 || part==5 ? -1 : 1) * static_cast<int>(1 - (((blockops.size()*(ci_ket.nelea+ci_ket.neleb))%2) << 1));
 
             // swap where appropriate
             if (block_conj) swap(block_bra, block_ket);
