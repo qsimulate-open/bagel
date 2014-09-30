@@ -121,13 +121,15 @@ shared_ptr<Matrix> BlockOperators2::gamma_a(const BlockKey bk, int i) const {
       BlockInfo lblock = spair.left;
       BlockInfo rsource = spair.right;
 
+      const int phase = 1 - (((lblock.nelea + lblock.neleb)%2) << 1);
+
       auto iter = find_if(target_pairs.begin(), target_pairs.end(), [&lblock, &rsource] (DMRG::BlockPair bp)
         { return make_pair(lblock.key(), BlockKey(rsource.nelea+1, rsource.neleb))==make_pair(bp.left.key(), bp.right.key()); } );
       if (iter != target_pairs.end()) {
         Matrix Lunit(lblock.nstates, lblock.nstates); Lunit.unit();
         Matrix Rgamma = *right_ops_->gamma_a(rsource.key(), i - lnorb);
 
-        out->add_block(1.0, iter->offset, spair.offset, iter->nstates(), spair.nstates(), kronecker_product(false, Rgamma, false, Lunit));
+        out->add_block(phase, iter->offset, spair.offset, iter->nstates(), spair.nstates(), kronecker_product(false, Rgamma, false, Lunit));
       }
     }
   }
@@ -165,13 +167,15 @@ shared_ptr<Matrix> BlockOperators2::gamma_b(const BlockKey bk, int i) const {
       BlockInfo lblock = spair.left;
       BlockInfo rsource = spair.right;
 
+      const int phase = 1 - (((lblock.nelea + lblock.neleb)%2) << 1);
+
       auto iter = find_if(target_pairs.begin(), target_pairs.end(), [&lblock, &rsource] (DMRG::BlockPair bp)
         { return make_pair(lblock.key(), BlockKey(rsource.nelea, rsource.neleb+1))==make_pair(bp.left.key(), bp.right.key()); } );
       if (iter != target_pairs.end()) {
         Matrix Lunit(lblock.nstates, lblock.nstates); Lunit.unit();
         Matrix Rgamma = *right_ops_->gamma_b(rsource.key(), i - lnorb);
 
-        out->add_block(1.0, iter->offset, spair.offset, iter->nstates(), spair.nstates(), kronecker_product(false, Rgamma, false, Lunit));
+        out->add_block(phase, iter->offset, spair.offset, iter->nstates(), spair.nstates(), kronecker_product(false, Rgamma, false, Lunit));
       }
     }
   }
