@@ -374,8 +374,7 @@ def generate_operator(opname, contracted_operators, ninput):
         npart = 1 << size
         for partitioning in range(1, npart - 1):
             # used to figure out the sign of rearranging the operators so all of the "right" operators are on the right
-            inverse_partition = ((1 << size) - 1) ^ partitioning
-            split_factor = -1.0 if inverse_partition==2 or inverse_partition==5 else 1.0
+            split_factor = -1.0 if partitioning==2 or partitioning==5 else 1.0
             (left, right) = op.split(partitioning)
             (lterm, rterm) = (Term(left), Term(right))
             op_prod = OperatorProduct(lterm, rterm, Integrals(partitioning, 4 - ninput, lterm.rev ^ lterm.conj, rterm.rev ^ rterm.conj, op.integrals), op.factor*split_factor)
