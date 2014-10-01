@@ -40,8 +40,13 @@ ProductRASCI::ProductRASCI(shared_ptr<const PTree> input, shared_ptr<const Refer
 
   max_iter_ = input_->get<int>("maxiter", 100);
   davidson_subspace_ = input_->get<int>("davidson_subspace", 20);
+
   thresh_ = input_->get<double>("thresh", 1.0e-8);
   print_thresh_ = input_->get<double>("print_thresh", 0.05);
+
+  preconverge_ = input_->get<bool>("preconverge", true);
+  preconv_iter_ = input_->get<int>("preconv_iter", 10);
+  preconv_thresh_ = input_->get<int>("preconv_thresh", 1.0e-6);
 
   batchsize_ = input_->get<int>("batchsize", 512);
 

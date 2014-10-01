@@ -49,6 +49,10 @@ class ProductRASCI {
     double thresh_; ///< convergence threshold
     double print_thresh_; ///< printing threshold
 
+    bool preconverge_; ///< whether to pre-diagonalize the initial guess using just the "diagonal" part of the hamiltonian
+    double preconv_thresh_; ///< threshold at which to preconverge with diagonal portions
+    int preconv_iter_; ///< maximum number of iterations for preconvergence
+
     int batchsize_; ///< batchsize used in sigma_aa and sigma_bb portions of FormSigma
 
     int nelea_; ///< total number of \f$\alpha\f$ electrons in product space

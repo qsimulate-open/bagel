@@ -69,6 +69,42 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(const vector<sh
   return sigmavec;
 }
 
+vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::diagonal(const vector<shared_ptr<ProductRASCivec>>& ccvec,
+                     shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop, const vector<bool>& conv) const {
+
+  const int nstate = ccvec.size();
+  vector<shared_ptr<ProductRASCivec>> sigmavec;
+  for_each(ccvec.begin(), ccvec.end(), [&sigmavec] (shared_ptr<const ProductRASCivec> c) { sigmavec.push_back(c->clone()); });
+
+  for (int istate = 0; istate != nstate; ++istate) {
+#ifdef NOPENOPE_HAVE_MPI_H
+    if ( istate % mpi__->size() == mpi__->rank() ) {
+#endif
+      Timer pdebug(2);
+      shared_ptr<const ProductRASCivec> cc = ccvec.at(istate);
+      shared_ptr<ProductRASCivec> sigma = sigmavec.at(istate);
+
+      // pure terms
+      pure_block_and_ras(cc, sigma, blockops, jop);
+      pdebug.tick_print("pure");
+
+      diagonal_terms(cc, sigma, blockops, jop);
+      pdebug.tick_print("interaction");
+#ifdef HAVE_MPI_H
+    }
+#endif
+  }
+
+#ifdef NOPENOPE_HAVE_MPI_H
+  for (int istate = 0; istate != nstate; ++istate) {
+    if (!conv[istate])
+      sigmavec.at(istate)->broadcast(istate & mpi__->size()); // This broadcast function is not yet written
+  }
+#endif
+
+  return sigmavec;
+}
+
 void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop) const {
   Timer ptime(2);
   for (auto& sector : sigma->sectors()) {
@@ -88,6 +124,18 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
     for(int ist = 0; ist < nsecstates; ++ist)
       form_pure_ras(cc_sector->civec(ist), sigma_sector->civec(ist), jop->monomer_jop<0>());
     ptime.tick_print("pure_ras");
+  }
+}
+
+
+void FormSigmaProdRAS::diagonal_terms(shared_ptr<const ProductRASCivec> cc, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop) const {
+  Timer ptime(2);
+
+  for (auto& isec : cc->sectors()) {
+    shared_ptr<const RASBlockVectors> cc_sector = isec.second;
+
+    aexc_branch(cc_sector, sigma, blockops);
+    bexc_branch(cc_sector, sigma, blockops);
   }
 }
 

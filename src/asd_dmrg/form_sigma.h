@@ -42,11 +42,13 @@ class FormSigmaProdRAS {
 
     /// Applies Hamiltonian to cc using the provided MOFile, skipping the vectors marked as converged
     std::vector<std::shared_ptr<ProductRASCivec>> operator()(const std::vector<std::shared_ptr<ProductRASCivec>>& ccvec, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<DimerJop> jop, const std::vector<bool>& conv) const;
+    std::vector<std::shared_ptr<ProductRASCivec>> diagonal(const std::vector<std::shared_ptr<ProductRASCivec>>& ccvec, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<DimerJop> jop, const std::vector<bool>& conv) const;
 
   private:
     // Helper functions for sigma formation
     void pure_block_and_ras(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<DimerJop> jop) const;
     void interaction_terms(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<DimerJop> jop) const;
+    void diagonal_terms(std::shared_ptr<const ProductRASCivec> cc, std::shared_ptr<ProductRASCivec> sigma, std::shared_ptr<const BlockOperators> blockops, std::shared_ptr<DimerJop> jop) const;
 
     /// Branch 1: \f$\alpha^\dagger, \alpha^\dagger\alpha^\dagger\f$
     void aET_branch(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blocksops) const;
