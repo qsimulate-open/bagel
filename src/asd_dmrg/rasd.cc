@@ -433,7 +433,7 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
       dgemm_("T", "N", rdm.ndim(), rdm.mdim(), tmp.ndim(), get<0>(op), tmp.data(), tmp.ndim(), tmp.data(), tmp.ndim(), 1.0, rdm.data(), rdm.ndim());
     }
 
-    Matrix orthonormalize(*overlap.tildex(1.0e-12));
+    Matrix orthonormalize(*overlap.tildex(1.0e-14));
     if (orthonormalize.mdim() > 0) {
       auto best_states = make_shared<Matrix>(orthonormalize % rdm * orthonormalize);
       VectorB eigs(best_states->ndim());
@@ -621,7 +621,7 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
       dgemm_("T", "N", rdm.ndim(), rdm.mdim(), tmp.ndim(), get<0>(op), tmp.data(), tmp.ndim(), tmp.data(), tmp.ndim(), 1.0, rdm.data(), rdm.ndim());
     }
 
-    Matrix orthonormalize(*overlap.tildex(1.0e-12));
+    Matrix orthonormalize(*overlap.tildex(1.0e-14));
     if (orthonormalize.mdim() > 0) {
       auto best_states = make_shared<Matrix>(orthonormalize % rdm * orthonormalize);
       VectorB eigs(best_states->ndim());
