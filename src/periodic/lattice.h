@@ -38,6 +38,7 @@ class Lattice {
     int num_lattice_vectors_;
     int num_lattice_pts_;
     std::shared_ptr<const Geometry> primitive_cell_;
+    // real lattice vectors g
     std::vector<std::array<double, 3>> lattice_vectors_;
 
     double nuclear_repulsion_;
@@ -46,9 +47,9 @@ class Lattice {
     // ``volume'' of a unit cell
     double volume_;
     // primitive reciprocal lattice vectors
-    std::vector<std::array<double, 3>> primitive_rvectors_;
-    // recriprocal lattice vectors
-    std::vector<std::array<double, 3>> lattice_rvectors_;
+    std::vector<std::array<double, 3>> primitive_kvectors_;
+    // recriprocal lattice vectors k
+    std::vector<std::array<double, 3>> lattice_kvectors_;
     // parameter to determine the number of k points
     int q_;
     int num_kpoints_;
@@ -64,7 +65,7 @@ class Lattice {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & ndim_ & ncell_ & num_lattice_vectors_ & num_lattice_pts_ & primitive_cell_ & lattice_vectors_
-         & nuclear_repulsion_ & volume_ & primitive_rvectors_ & lattice_rvectors_ & q_ & num_kpoints_ & nele_;
+         & nuclear_repulsion_ & volume_ & primitive_kvectors_ & lattice_kvectors_ & q_ & num_kpoints_ & nele_;
     }
 
   public:
@@ -84,16 +85,16 @@ class Lattice {
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     double volume() const { return volume_; }
 
-    std::vector<std::array<double, 3>> primitive_rvectors() { return primitive_rvectors_; }
-    std::array<double, 3> primitive_rvectors(const int i) { return primitive_rvectors_[i]; }
-    std::vector<std::array<double, 3>> lattice_rvectors() const { return lattice_rvectors_; }
-    std::array<double, 3> lattice_rvectors(const int i) const { return lattice_rvectors_[i]; }
+    std::vector<std::array<double, 3>> primitive_kvectors() { return primitive_kvectors_; }
+    std::array<double, 3> primitive_kvectors(const int i) { return primitive_kvectors_[i]; }
+    std::vector<std::array<double, 3>> lattice_kvectors() const { return lattice_kvectors_; }
+    std::array<double, 3> lattice_kvectors(const int i) const { return lattice_kvectors_[i]; }
     void generate_kpoints();
     int num_kpoints() const { return num_kpoints_; }
 
     void print_primitive_vectors() const;
     void print_lattice_vectors() const;
-    void print_reciprocal_lattice_vectors() const;
+    void print_lattice_kvectors() const;
     void print_lattice_coordinates() const; // write .XYZ file
 
     const int nele();

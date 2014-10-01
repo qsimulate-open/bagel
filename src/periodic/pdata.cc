@@ -41,13 +41,14 @@ PData::PData(const int bsize, const int nblock) : blocksize_(bsize), nblock_(nbl
 }
 
 PData::PData(const PData& o) : blocksize_(o.blocksize()), nblock_(o.nblock()) {
+
   pdata_.resize(nblock_);
   for (int i = 0; i != nblock_; ++i)
     pdata_[i] = o.pdata(i);
 
 }
 
-shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const vector<array<double, 3>> kvector) {
+shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const vector<array<double, 3>> kvector) const {
 
   PData out(blocksize_, kvector.size());
 
@@ -72,7 +73,7 @@ shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const 
   return make_shared<const PData>(out);
 }
 
-shared_ptr<const PData> PData::ift(const vector<array<double, 3>> gvector, const vector<array<double, 3>> kvector) {
+shared_ptr<const PData> PData::ift(const vector<array<double, 3>> gvector, const vector<array<double, 3>> kvector) const {
 
   PData out(blocksize_, gvector.size());
 

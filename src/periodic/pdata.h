@@ -54,8 +54,8 @@ class PData {
 
     ~PData() { }
 
-    const int blocksize() const { return blocksize_; }
-    const int nblock() const { return nblock_; }
+    int blocksize() const { return blocksize_; }
+    int nblock() const { return nblock_; }
 
     std::shared_ptr<ZMatrix>& operator[] (int i) { assert(i < nblock_ && i >= 0); return pdata_[i]; };
     std::shared_ptr<const ZMatrix> operator() (const int i) const { assert(i < nblock_ && i >= 0); return pdata_[i]; };
@@ -71,8 +71,18 @@ class PData {
       for (auto& block : pdata_) block->allreduce();
     }
 
-    std::shared_ptr<const PData> ft(const std::vector<std::array<double, 3>>, const std::vector<std::array<double, 3>>);
-    std::shared_ptr<const PData> ift(const std::vector<std::array<double, 3>>, const std::vector<std::array<double, 3>>);
+    void print(const std::string tag = "", const int size = 10) const {
+      for (auto& block : pdata_) block->print(tag, size);
+    }
+
+    std::shared_ptr<const PData> form_density_rhf(const int n) const;
+
+    // Fourier transform
+    std::shared_ptr<const PData> ft(const std::vector<std::array<double, 3>> gvector /*real space*/,
+                                    const std::vector<std::array<double, 3>> kvector /*k space */) const;
+    // Inverse Fourier transform
+    std::shared_ptr<const PData> ift(const std::vector<std::array<double, 3>> gvector /*real space*/,
+                                     const std::vector<std::array<double, 3>> kvector /*k space */) const;
 };
 
 }
