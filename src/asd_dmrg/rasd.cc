@@ -313,6 +313,9 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
       auto prod_ras = make_shared<ProductRASCI>(input, ref, block_pair);
       prod_ras->compute();
 
+      for (int i = 0; i < nstate_; ++i)
+        sweep_energies_[i].push_back(prod_ras->energy(i));
+
       map<BlockKey, vector<shared_ptr<ProductRASCivec>>> civecs = diagonalize_site_and_block_RDM(prod_ras->civectors(), perturb_);
 
       const int nrasorb = civecs.begin()->second.front()->space()->norb();
