@@ -79,17 +79,17 @@ class BlockOperators1 : public BlockOperators {
   protected:
     std::shared_ptr<const DMRG_Block1> left_;
 
-    std::map<BlockKey, std::shared_ptr<const Matrix>> ham_;
-    std::map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> Q_aa_;
-    std::map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> Q_bb_;
-    std::map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> Q_ab_;
-    std::map<BlockKey, std::shared_ptr<const btas::Tensor3<double>>> S_a_;
-    std::map<BlockKey, std::shared_ptr<const btas::Tensor3<double>>> S_b_;
-    std::map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> P_aa_;
-    std::map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> P_bb_;
-    std::map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> P_ab_;
-    std::map<BlockKey, std::shared_ptr<const btas::TensorN<double,5>>> D_a_;
-    std::map<BlockKey, std::shared_ptr<const btas::TensorN<double,5>>> D_b_;
+    std::unordered_map<BlockKey, std::shared_ptr<const Matrix>> ham_;
+    std::unordered_map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> Q_aa_;
+    std::unordered_map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> Q_bb_;
+    std::unordered_map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> Q_ab_;
+    std::unordered_map<BlockKey, std::shared_ptr<const btas::Tensor3<double>>> S_a_;
+    std::unordered_map<BlockKey, std::shared_ptr<const btas::Tensor3<double>>> S_b_;
+    std::unordered_map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> P_aa_;
+    std::unordered_map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> P_bb_;
+    std::unordered_map<BlockKey, std::shared_ptr<const btas::Tensor4<double>>> P_ab_;
+    std::unordered_map<BlockKey, std::shared_ptr<const btas::TensorN<double,5>>> D_a_;
+    std::unordered_map<BlockKey, std::shared_ptr<const btas::TensorN<double,5>>> D_b_;
 
   public:
     BlockOperators1(std::shared_ptr<const DMRG_Block1> left, std::shared_ptr<DimerJop> jop);

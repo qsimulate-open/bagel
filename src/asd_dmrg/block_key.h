@@ -57,4 +57,14 @@ struct BlockInfo : public BlockKey {
 
 }
 
+namespace std {
+template <> struct hash<bagel::BlockKey> {
+  typedef bagel::BlockKey argument_type;
+  typedef std::size_t result_type;
+
+  result_type operator()(const argument_type& k) const { return k.nelea + (k.neleb << 16); }
+};
+
+}
+
 #endif
