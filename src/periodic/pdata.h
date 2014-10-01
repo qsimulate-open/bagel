@@ -57,7 +57,7 @@ class PData {
     const int blocksize() const { return blocksize_; }
     const int nblock() const { return nblock_; }
 
-    std::shared_ptr<ZMatrix> operator[] (int i) { assert(i < nblock_ && i >= 0); return pdata_[i]; };
+    std::shared_ptr<ZMatrix>& operator[] (int i) { assert(i < nblock_ && i >= 0); return pdata_[i]; };
     std::shared_ptr<const ZMatrix> operator() (const int i) const { assert(i < nblock_ && i >= 0); return pdata_[i]; };
 
     std::vector<std::shared_ptr<ZMatrix>> pdata() const { return pdata_; }
