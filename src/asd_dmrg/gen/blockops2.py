@@ -265,18 +265,18 @@ class Integrals:
             out = "%s(%s)" % (ptr_name, self.index( [total_indices[0], Cindices[0], total_indices[1], Cindices[1]] ))
         elif self.int_type == "QK":
             assert size == 2
-            out = "%s(%s)" % (ptr_name, self.index( [total_indices[0], total_indices[1], Cindices[0], Cindices[1]] ))
+            out = "%s(%s)" % (ptr_name, self.index( [total_indices[0], total_indices[1], Cindices[1], Cindices[0]] ))
         elif self.int_type == "QJK":
             assert size == 2
             out = "(%s(%s) - %s(%s))" % (ptr_name, self.index([total_indices[0], Cindices[0], total_indices[1], Cindices[1]]),
-                                         ptr_name, self.index([total_indices[0], total_indices[1], Cindices[0], Cindices[1]]))
+                                         ptr_name, self.index([Cindices[0], total_indices[0], total_indices[1], Cindices[1]]))
         elif self.int_type == "P":
             assert size == 2
-            out = "%s(%s)" % (ptr_name, self.index([total_indices[0], total_indices[1], Cindices[0], Cindices[1]]))
+            out = "%s(%s)" % (ptr_name, self.index([total_indices[0], total_indices[1], Cindices[1], Cindices[0]]))
         elif self.int_type == "PJK":
             assert size == 2
-            out = "(%s(%s) - %s(%s))" % (ptr_name, self.index([total_indices[0], total_indices[1], Cindices[0], Cindices[1]]),
-                                         ptr_name, self.index([total_indices[1], total_indices[0], Cindices[0], Cindices[1]]))
+            out = "(%s(%s) - %s(%s))" % (ptr_name, self.index([total_indices[0], total_indices[1], Cindices[1], Cindices[0]]),
+                                         ptr_name, self.index([total_indices[0], total_indices[1], Cindices[0], Cindices[1]]))
         elif self.int_type == "S":
             assert size == 3
             out = "%s(%s)" % (ptr_name, self.index([Cindices[0], total_indices[1], total_indices[0], total_indices[2]]))

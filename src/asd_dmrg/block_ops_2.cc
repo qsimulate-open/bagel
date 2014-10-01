@@ -1122,7 +1122,7 @@ shared_ptr<Matrix> BlockOperators2::Q_aa(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * (mo2e(p+roffset, i, a+loffset, j) - mo2e(p+roffset, a+loffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-1.0 * (mo2e(p+roffset, i, a+loffset, j) - mo2e(i, p+roffset, a+loffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rmat, true, Lmat));
         }
@@ -1178,7 +1178,7 @@ shared_ptr<Matrix> BlockOperators2::Q_aa(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * (mo2e(a+loffset, i, p+roffset, j) - mo2e(a+loffset, p+roffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(1.0 * (mo2e(a+loffset, i, p+roffset, j) - mo2e(i, a+loffset, p+roffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(true, Rmat, false, Lmat));
         }
@@ -1246,7 +1246,7 @@ shared_ptr<Matrix> BlockOperators2::Q_bb(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * (mo2e(p+roffset, i, a+loffset, j) - mo2e(p+roffset, a+loffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-1.0 * (mo2e(p+roffset, i, a+loffset, j) - mo2e(i, p+roffset, a+loffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rmat, true, Lmat));
         }
@@ -1330,7 +1330,7 @@ shared_ptr<Matrix> BlockOperators2::Q_bb(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * (mo2e(a+loffset, i, p+roffset, j) - mo2e(a+loffset, p+roffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(1.0 * (mo2e(a+loffset, i, p+roffset, j) - mo2e(i, a+loffset, p+roffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(true, Rmat, false, Lmat));
         }
@@ -1405,7 +1405,7 @@ shared_ptr<Matrix> BlockOperators2::Q_ab(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * mo2e(p+roffset, a+loffset, i, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(1.0 * mo2e(p+roffset, a+loffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(false, Rmat, true, Lmat));
         }
@@ -1451,7 +1451,7 @@ shared_ptr<Matrix> BlockOperators2::Q_ab(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * mo2e(a+loffset, p+roffset, i, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-1.0 * mo2e(a+loffset, p+roffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(true, Rmat, false, Lmat));
         }
@@ -1508,7 +1508,7 @@ shared_ptr<Matrix> BlockOperators2::P_aa(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(0.5 * (mo2e(a+loffset, p+roffset, i, j) - mo2e(p+roffset, a+loffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(0.5 * (mo2e(a+loffset, p+roffset, j, i) - mo2e(a+loffset, p+roffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(true, Rmat, true, Lmat));
         }
@@ -1601,7 +1601,7 @@ shared_ptr<Matrix> BlockOperators2::P_bb(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(0.5 * (mo2e(a+loffset, p+roffset, i, j) - mo2e(p+roffset, a+loffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(0.5 * (mo2e(a+loffset, p+roffset, j, i) - mo2e(a+loffset, p+roffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(true, Rmat, true, Lmat));
         }
@@ -1712,7 +1712,7 @@ shared_ptr<Matrix> BlockOperators2::P_ab(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * mo2e(p+roffset, a+loffset, i, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-1.0 * mo2e(p+roffset, a+loffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(true, Rmat, true, Lmat));
         }
@@ -1758,7 +1758,7 @@ shared_ptr<Matrix> BlockOperators2::P_ab(BlockKey bk, const int i, const int j) 
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * mo2e(a+loffset, p+roffset, i, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(1.0 * mo2e(a+loffset, p+roffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           out->add_block(left_phase, tpair.offset, spair.offset, tpair.nstates(), spair.nstates(), kronecker_product(true, Rmat, true, Lmat));
         }
