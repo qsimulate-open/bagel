@@ -276,7 +276,9 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> ProductRASCivec::split() cons
     const BlockInfo rightinfo = rightblock->blockinfo(rightkey);
     vector<shared_ptr<ProductRASCivec>> outvec;
 
-    const int nele_lc = (nelea_ + neleb_) - (rightinfo.nelea + rightinfo.neleb);
+    const int nele_r  = rightinfo.nelea + rightinfo.neleb;
+    const int nele_lc = (nelea_ + neleb_) - nele_r;
+
     for (int i = 0; i < rightinfo.nstates; ++i) {
       auto tmpout = make_shared<ProductRASCivec>(space_, leftblock, nelea_ - rightinfo.nelea, neleb_ - rightinfo.neleb);
       for (auto& outsec : tmpout->sectors()) {
@@ -289,7 +291,9 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> ProductRASCivec::split() cons
         assert(iter!= pairs.end());
         const int stateindex = i*leftinfo.nstates + iter->offset;
         copy_n(sectors_.at(combinedkey)->element_ptr(0, stateindex), outsec.second->size(), outsec.second->data());
-        if (nele_lc%2==1)
+
+        // phase is from rearranging |CI> |L> |R> to |R> |CI> |L>
+        if ((nele_lc*nele_r)%2==1)
           outsec.second->scale(-1.0);
       }
       outvec.push_back(tmpout);

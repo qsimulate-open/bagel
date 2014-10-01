@@ -367,11 +367,21 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
   // construct the non-orthogonal basis and the outer product vectors
   {
     // first, collect all of the vectors that belong in the state vectors
+    // phase comes from rearranging |CI>|L> to |L>|CI>
     for (int ist = 0; ist < nstate_; ++ist) {
       for (auto& isec : civecs[ist]->sectors()) {
+        const int nele_block = isec.first.nelea + isec.first.neleb;
+        const int nele_ci = isec.second->det()->nelea() + isec.second->det()->neleb();
         if (detmap.find(isec.first)==detmap.end())
           detmap[isec.first] = isec.second->det();
-        outer_products[isec.first].emplace_back(weights_[ist], isec.second);
+        if ((nele_block*nele_ci)%2==1) {
+          auto tmp = isec.second->copy();
+          tmp->scale(-1.0);
+          outer_products[isec.first].emplace_back(weights_[ist], isec.second);
+        }
+        else {
+          outer_products[isec.first].emplace_back(weights_[ist], isec.second);
+        }
       }
     }
 
