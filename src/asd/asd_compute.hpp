@@ -101,7 +101,10 @@ void ASD<VecType>::compute() {
 
   adiabats_ = cc->copy();
 
-  //compute rdm
+  //RDM computation
+  monomer_rdm();
+  std::cout << "test end in compute()" << std::endl;
+  assert(false);
   compute_rdm();
 
 

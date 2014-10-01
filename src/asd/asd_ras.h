@@ -35,6 +35,7 @@ class ASD_RAS : public ASD<RASDvec> {
     ASD_RAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerRAS> cispace);
 
   private:
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12_monomer(int, std::array<RASDvec,4>&) const override;
     std::shared_ptr<RASDvec> form_sigma(std::shared_ptr<const RASDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
     std::shared_ptr<RASDvec> form_sigma_1e(std::shared_ptr<const RASDvec> ccvec, const double* modata) const override;
 

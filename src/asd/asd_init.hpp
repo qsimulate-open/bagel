@@ -56,6 +56,7 @@ ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dime
   }
   max_spin_ = maxspin + 1;
 
+  std::cout << "!@# number of elements in 'subspaces_' = " << subspaces_.size() << std::endl;//TODO:delete
 }
 
 template <class VecType>

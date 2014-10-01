@@ -35,6 +35,7 @@ class ASD_DistRAS : public ASD<DistRASDvec> {
     ASD_DistRAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerDistRAS> cispace);
 
   private:
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12_monomer(int, std::array<DistRASDvec,4>&) const override;
     std::shared_ptr<DistRASDvec> form_sigma(std::shared_ptr<const DistRASDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
     std::shared_ptr<DistRASDvec> form_sigma_1e(std::shared_ptr<const DistRASDvec> ccvec, const double* modata) const override;
 
