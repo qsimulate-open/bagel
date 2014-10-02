@@ -103,9 +103,10 @@ void ASD<VecType>::compute() {
 
   //RDM computation
   monomer_rdm();
+  compute_rdm();
+
   std::cout << "test end in compute()" << std::endl;
   assert(false);
-  compute_rdm();
 
 
   if (dipoles_) { // TODO Redo to make better use of memory

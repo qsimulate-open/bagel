@@ -30,9 +30,12 @@ using namespace std;
 using namespace bagel;
 using namespace btas;
 
-void ASD_base::compute_rdm() {
-  const int norbA = dimer_->active_refs().first->nact();
-  const int norbB = dimer_->active_refs().second->nact();
+//***************************************************************************************************************
+void
+ASD_base::compute_rdm () {
+//***************************************************************************************************************
+//const int norbA = dimer_->active_refs().first->nact();
+//const int norbB = dimer_->active_refs().second->nact();
 
   // compute transformed gammas (J',J,zeta)
   StateTensor st(adiabats_, subspaces_base());
@@ -126,8 +129,13 @@ void ASD_base::compute_rdm() {
     }
   }
 
-  const auto subspaces = subspaces_base();
+//const auto subspaces = subspaces_base();
 
+  //diagonal subspaces
+//for (auto AB = 
+
+
+#if 0
   //RDM
   onerdm_ = make_shared<RDM<1>>(norbA+norbB);
   twordm_ = make_shared<RDM<2>>(norbA+norbB);
@@ -173,7 +181,6 @@ void ASD_base::compute_rdm() {
 
 
 
-#if 0
 //  *twordm_ += *compute_diagonal_block<false>(subspace);
   }
   // off diagonal term
