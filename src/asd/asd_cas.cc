@@ -240,7 +240,7 @@ ASD_CAS::compute_rdm12_monomer (int ioff, std::array<Dvec,4>& fourvecs) const {
       for (int ip = 0; ip != nstAp; ++ip) { // |I>
         for (int jp = 0; jp != nstBp; ++jp) { // |J>
           const int ijp = jp + (ip*nstBp);
-          const double coef = adiabats_->element(ioff+ij,ioff+ijp);
+          const double coef = adiabats_->element(ioff+ij,0) * adiabats_->element(ioff+ijp,0); // C_(I'J') * C_(IJ) TODO: 0 = ground state only
 
           if(j == jp) { //delta_J'J
             shared_ptr<RDM<1>> r1;
@@ -262,20 +262,46 @@ ASD_CAS::compute_rdm12_monomer (int ioff, std::array<Dvec,4>& fourvecs) const {
             *rdm2B += *r2;
           }
 
-        }
-      }
-      //check delta_J'J
+        } //jp
+      } //ip
 
-      //if passed
+    } //j
+  } //i
 
-
-    //for (int k = 0; k != nactA; ++k) {
-    //  cout << "p,q=" << k << "," << k << ":" << r1->element(k,k) << endl;
-    //}
-    }
+  auto out1 = std::make_shared<RDM<1>>(nactA+nactB);
+  out1->zero();
+  {
+    //Monomer A
+    auto low = {0,0};
+    auto up  = {nactA,nactA};
+    auto outv = make_rwview(out1->range().slice(low,up), out1->storage());
+    copy(rdm1A->begin(), rdm1A->end(), outv.begin());
+  }
+  {
+    //Monomer B
+    auto low = {nactA,nactA};
+    auto up  = {nactA+nactB,nactA+nactB};
+    auto outv = make_rwview(out1->range().slice(low,up), out1->storage());
+    copy(rdm1B->begin(), rdm1B->end(), outv.begin());
+  }
+  auto out2 = std::make_shared<RDM<2>>(nactA+nactB);
+  out2->zero();
+  {
+    //Monomer A
+    auto low = {0,0,0,0};
+    auto up  = {nactA,nactA,nactA,nactA};
+    auto outv = make_rwview(out2->range().slice(low,up), out2->storage());
+    copy(rdm2A->begin(), rdm2A->end(), outv.begin());
+  }
+  {
+    //Monomer B
+    auto low = {nactA,nactA,nactA,nactA};
+    auto up  = {nactA+nactB,nactA+nactB,nactA+nactB,nactA+nactB};
+    auto outv = make_rwview(out2->range().slice(low,up), out2->storage());
+    copy(rdm2B->begin(), rdm2B->end(), outv.begin());
   }
 
-  return std::make_tuple(rdm1A, rdm2A);
+  return std::make_tuple(out1, out2);
 
 }
 
