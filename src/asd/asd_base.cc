@@ -120,33 +120,34 @@ shared_ptr<Matrix> ASD_base::compute_intra(const DimerSubspace_base& AB, shared_
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_diagonal_block<true>(const DimerSubspace_base& subspace) const {
+
+shared_ptr<Matrix> ASD_base::compute_diagonal_block_H(const DimerSubspace_base& subspace) const {
   const double core = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy();
 
   auto out = compute_intra(subspace, jop_, core);
   array<MonomerKey,4> keys {{ subspace.monomerkey<0>(), subspace.monomerkey<1>(), subspace.monomerkey<0>(), subspace.monomerkey<1>() }};
-  *out += *compute_inter_2e<true>(keys);
+  *out += *compute_inter_2e_H(keys);
 
   return out;
 }
 
 
 //***************************************************************************************************************
-template <>
+
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
-ASD_base::compute_diagonal_block<false>(const DimerSubspace_base& subspace) const {
+ASD_base::compute_diagonal_block_RDM(const DimerSubspace_base& subspace) const {
+// 1e is not considered (TODO maybe there is contribution?)
 //***************************************************************************************************************
 
   array<MonomerKey,4> keys {{ subspace.monomerkey<0>(), subspace.monomerkey<1>(), subspace.monomerkey<0>(), subspace.monomerkey<1>() }};
-  auto out = compute_inter_2e<false>(keys);
+  auto out = compute_inter_2e_RDM(keys);
 
   return out;
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e<true>(const array<MonomerKey,4>& keys, shared_ptr<const Matrix> hAB) const {
+
+shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e_H(const array<MonomerKey,4>& keys, shared_ptr<const Matrix> hAB) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   Coupling term_type = coupling_type(keys);
@@ -198,17 +199,19 @@ shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e<true>(const array<MonomerKey
 
 
 //***************************************************************************************************************
-template <>
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
-ASD_base::compute_offdiagonal_1e<false>(const array<MonomerKey,4>& keys, shared_ptr<const Matrix> hAB) const {
+
+//tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
+//ASD_base::compute_offdiagonal_1e_RDM(const array<MonomerKey,4>& keys, shared_ptr<const Matrix> hAB) const {
+// Unsed function!
 //***************************************************************************************************************
-  return make_tuple(nullptr,nullptr);
-}
+//assert(false);
+//return make_tuple(nullptr,nullptr);
+//}
 
 
 // This term will couple off-diagonal blocks since it has no delta functions involved
-template <>
-shared_ptr<Matrix> ASD_base::compute_inter_2e<true>(const array<MonomerKey,4>& keys) const {
+
+shared_ptr<Matrix> ASD_base::compute_inter_2e_H(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   // alpha-alpha
@@ -236,16 +239,46 @@ shared_ptr<Matrix> ASD_base::compute_inter_2e<true>(const array<MonomerKey,4>& k
 
 
 //***************************************************************************************************************
-template <>
+
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
-ASD_base::compute_inter_2e<false>(const array<MonomerKey,4>& keys) const {
+ASD_base::compute_inter_2e_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
-  return make_tuple(nullptr,nullptr);
+  auto& B  = keys[1]; 
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  const int nactT = nactA+nactB;
+  auto out = make_shared<RDM<2>>(nactA+nactB);
+
+  // alpha-alpha
+  auto gamma_AA_alpha = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
+  auto gamma_BB_alpha = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
+
+  // beta-beta
+  auto gamma_AA_beta = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+  auto gamma_BB_beta = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+
+  auto rdmAA = make_shared<Matrix>(gamma_AA_alpha % gamma_BB_alpha);
+  auto rdmBB = make_shared<Matrix>(gamma_AA_beta  % gamma_BB_beta);
+
+  // P(p,q',r',s) : p15
+  auto rdmt = rdmAA->clone();
+  SMITH::sort_indices<0,3,2,1, 0,1, 1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa
+  SMITH::sort_indices<0,3,2,1, 1,1, 1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb
+
+  auto low = {    0, nactA, nactA,     0};
+  auto up  = {nactA, nactT, nactT, nactA};
+  auto outv = make_rwview(out->range().slice(low, up), out->storage());
+  copy(rdmt->begin(), rdmt->end(), outv.begin());
+
+
+  return make_tuple(nullptr,out);
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_aET<true>(const array<MonomerKey,4>& keys) const {
+
+shared_ptr<Matrix> ASD_base::compute_aET_H(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
 
@@ -294,16 +327,16 @@ shared_ptr<Matrix> ASD_base::compute_aET<true>(const array<MonomerKey,4>& keys) 
 }
 
 //***************************************************************************************************************
-template <>
+
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
-ASD_base::compute_aET<false>(const array<MonomerKey,4>& keys) const {
+ASD_base::compute_aET_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   return make_tuple(nullptr,nullptr);
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_bET<true>(const array<MonomerKey,4>& keys) const {
+
+shared_ptr<Matrix> ASD_base::compute_bET_H(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
 
@@ -356,16 +389,16 @@ shared_ptr<Matrix> ASD_base::compute_bET<true>(const array<MonomerKey,4>& keys) 
 
 
 //***************************************************************************************************************
-template <>
+
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
-ASD_base::compute_bET<false>(const array<MonomerKey,4>& keys) const {
+ASD_base::compute_bET_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   return make_tuple(nullptr,nullptr);
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_abFlip<true>(const array<MonomerKey,4>& keys) const {
+
+shared_ptr<Matrix> ASD_base::compute_abFlip_H(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha});
@@ -384,16 +417,16 @@ shared_ptr<Matrix> ASD_base::compute_abFlip<true>(const array<MonomerKey,4>& key
 
 
 //***************************************************************************************************************
-template <>
+
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
-ASD_base::compute_abFlip<false>(const array<MonomerKey,4>& keys) const {
+ASD_base::compute_abFlip_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   return make_tuple(nullptr,nullptr);
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_abET<true>(const array<MonomerKey,4>& keys) const {
+
+shared_ptr<Matrix> ASD_base::compute_abET_H(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta});
@@ -411,16 +444,16 @@ shared_ptr<Matrix> ASD_base::compute_abET<true>(const array<MonomerKey,4>& keys)
 }
 
 //***************************************************************************************************************
-template <>
+
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
-ASD_base::compute_abET<false>(const array<MonomerKey,4>& keys) const {
+ASD_base::compute_abET_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   return make_tuple(nullptr,nullptr);
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_aaET<true>(const array<MonomerKey,4>& keys) const {
+
+shared_ptr<Matrix> ASD_base::compute_aaET_H(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
   auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
@@ -438,16 +471,16 @@ shared_ptr<Matrix> ASD_base::compute_aaET<true>(const array<MonomerKey,4>& keys)
 
 
 //***************************************************************************************************************
-template <>
+
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
-ASD_base::compute_aaET<false>(const array<MonomerKey,4>& keys) const {
+ASD_base::compute_aaET_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   return make_tuple(nullptr,nullptr);
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_bbET<true>(const array<MonomerKey,4>& keys) const {
+
+shared_ptr<Matrix> ASD_base::compute_bbET_H(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateBeta});
   auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
@@ -465,9 +498,9 @@ shared_ptr<Matrix> ASD_base::compute_bbET<true>(const array<MonomerKey,4>& keys)
 
 
 //***************************************************************************************************************
-template <>
+
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
-ASD_base::compute_bbET<false>(const array<MonomerKey,4>& keys) const {
+ASD_base::compute_bbET_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   return make_tuple(nullptr,nullptr);
 }
@@ -528,3 +561,91 @@ void ASD_base::print(const double thresh) const {
   if (dipoles_) {for (auto& prop : properties_) print_property(prop.first, prop.second, nstates_); }
 }
 
+//***************************************************************************************************************
+shared_ptr<Matrix>
+ASD_base::couple_blocks_H(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
+//***************************************************************************************************************
+
+  Coupling term_type = coupling_type(AB, ApBp);
+
+  const DimerSubspace_base* space1 = &AB;
+  const DimerSubspace_base* space2 = &ApBp;
+
+  bool flip = (static_cast<int>(term_type) < 0);
+  if (flip) {
+    term_type = Coupling(-1*static_cast<int>(term_type));
+    std::swap(space1,space2);
+  }
+
+  shared_ptr<Matrix> out;
+  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
+
+  switch(term_type) {
+    case Coupling::none :
+      out = nullptr; break;
+    case Coupling::diagonal :
+      out = compute_inter_2e_H(keys); break;
+    case Coupling::aET :
+      out = compute_aET_H(keys); break;
+    case Coupling::bET :
+      out = compute_bET_H(keys); break;
+    case Coupling::abFlip :
+      out = compute_abFlip_H(keys); break;
+    case Coupling::abET :
+      out = compute_abET_H(keys); break;
+    case Coupling::aaET :
+      out = compute_aaET_H(keys); break;
+    case Coupling::bbET :
+      out = compute_bbET_H(keys); break;
+    default :
+      throw std::logic_error("Asking for a coupling type that has not been written.");
+  }
+
+  /* if we are computing the Hamiltonian and flip = true, then we tranpose the output (see above) */
+  if (flip) *out->transpose();
+
+  return out;
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>>
+ASD_base::couple_blocks_RDM(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
+//***************************************************************************************************************
+
+  Coupling term_type = coupling_type(AB, ApBp);
+
+  const DimerSubspace_base* space1 = &AB;
+  const DimerSubspace_base* space2 = &ApBp;
+
+  bool flip = (static_cast<int>(term_type) < 0);
+  if (flip) {
+    term_type = Coupling(-1*static_cast<int>(term_type));
+    std::swap(space1,space2);
+  }
+
+  tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> out;
+  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
+
+  switch(term_type) {
+    case Coupling::none :
+      out = make_tuple(nullptr,nullptr); break;
+    case Coupling::diagonal :
+      out = compute_inter_2e_RDM(keys); break;
+    case Coupling::aET :
+      out = compute_aET_RDM(keys); break;
+    case Coupling::bET :
+      out = compute_bET_RDM(keys); break;
+    case Coupling::abFlip :
+      out = compute_abFlip_RDM(keys); break;
+    case Coupling::abET :
+      out = compute_abET_RDM(keys); break;
+    case Coupling::aaET :
+      out = compute_aaET_RDM(keys); break;
+    case Coupling::bbET :
+      out = compute_bbET_RDM(keys); break;
+    default :
+      throw std::logic_error("Asking for a coupling type that has not been written.");
+  }
+
+  return out;
+}

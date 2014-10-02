@@ -129,24 +129,38 @@ ASD_base::compute_rdm () {
     }
   }
 
-//const auto subspaces = subspaces_base();
+  const auto subspaces = subspaces_base();
 
-  //diagonal subspaces
-//for (auto AB = 
 
+  // diagonal subspaces
+  for (auto& subspace : subspaces) {
+    shared_ptr<RDM<1>> r1;
+    shared_ptr<RDM<2>> r2;
+    tie(r1,r2) = compute_diagonal_block_RDM(subspace);
+    if (r1) assert(false); //*onerdm_ += *r1;
+    if (r2) *twordm_ += *r2;
+  }
+  
+  // off diagonal subspaces
+  for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
+    for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
+      shared_ptr<RDM<1>> r1;
+      shared_ptr<RDM<2>> r2;
+      tie(r1,r2) = couple_blocks_RDM(*jAB, *iAB); //Lower-triangular (i<->j)
+      if (r1) *onerdm_ += *r1;
+      if (r2) *twordm_ += *r2;
+    }
+  }
+
+}
 
 #if 0
-  //RDM
-  onerdm_ = make_shared<RDM<1>>(norbA+norbB);
-  twordm_ = make_shared<RDM<2>>(norbA+norbB);
-
   shared_ptr<RDM<1>> ptr1;
   shared_ptr<RDM<2>> ptr2;
 
 //int n = 3;
 //Matrix K(n,n);
 //K.unit();
-
 //btas::CRange<2> range(n*n, 1);
 //const MatView gammaview(btas::make_view(range, K.storage()), /*localized*/true);
 //
@@ -196,4 +210,3 @@ ASD_base::compute_rdm () {
     }
   }
 #endif
-}
