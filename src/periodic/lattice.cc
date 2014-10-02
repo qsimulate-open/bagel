@@ -235,6 +235,18 @@ void Lattice::print_primitive_vectors() const {
   cout << endl;
 }
 
+void Lattice::print_primitive_kvectors() const {
+
+  const string indent = "  ";
+  cout << indent << "=== Primitive reciprocal lattice vector(s) ===" << endl << indent << endl;
+
+  for (int i = 0; i != ndim_; ++i)
+    cout << indent << fixed << setprecision(6) << "(" << setw(10) << primitive_kvectors(i)[0] << ", "
+                                                      << setw(10) << primitive_kvectors(i)[1] << ", "
+                                                      << setw(10) << primitive_kvectors(i)[2] << ") " << endl;
+  cout << endl;
+}
+
 void Lattice::print_lattice_vectors() const {
 
   const string indent = "  ";

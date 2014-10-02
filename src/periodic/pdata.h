@@ -72,7 +72,8 @@ class PData {
     }
 
     void print(const std::string tag = "", const int size = 10) const {
-      for (auto& block : pdata_) block->print(tag, size);
+      pdata_.front()->print(tag, size);
+      for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) (*iblock)->print("", size);
     }
 
     std::shared_ptr<const PData> form_density_rhf(const int n) const;
