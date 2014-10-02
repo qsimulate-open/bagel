@@ -84,7 +84,7 @@ void ASD_DMRG::compute() {
       cout << "  " << print_progress(site, ">>", ">>") << setw(16) << dmrg_timer.tick() << endl;
     }
 
-    bool conv = true;
+    bool conv = perturb_ == 0.0;
     bool drop_perturb = true;
 
     cout << endl;
@@ -96,17 +96,15 @@ void ASD_DMRG::compute() {
       cout << setw(6) << iter << setw(6) << i << setw(22) << setprecision(12) << sweep_average << setw(16) << setprecision(12) << sweep_range
                                                                             << setw(16) << setprecision(12) << energies_[i] - sweep_average << endl;
 
-      if (abs(energies_[i]-sweep_average)>thresh_)
-        conv = false;
-      if (abs(energies_[i]-sweep_average)>perturb_thresh_)
-        drop_perturb = false;
+      conv &= abs(energies_[i] - sweep_average) < thresh_;
+      drop_perturb &= abs(energies_[i] - sweep_average) < perturb_thresh_;
+
       energies_[i] = sweep_average;
       sweep_energies_[i].clear();
     }
     cout << endl;
 
-    if (perturb_!=0.0) {
-      conv = false;
+    if (perturb_ != 0.0) {
       if (drop_perturb) {
         perturb_ *= 0.1;
         if (perturb_<perturb_min_) {
@@ -117,11 +115,105 @@ void ASD_DMRG::compute() {
           cout << "  o perturbation lowered to " << perturb_ << endl;
         }
       }
+
+      if (conv) {
+        cout << "  * Converged!" << endl;
+        break;
+      }
+    }
+  }
+
+  // should probably compute some properties before down sweeping
+
+  if (down_sweep_)
+    down_sweep();
+}
+
+void ASD_DMRG::down_sweep() {
+  cout << endl << " ===== Down sweeping =====" << endl;
+
+  if (!is_sorted(down_sweep_truncs_.rbegin(), down_sweep_truncs_.rend())) {
+    cout << "  o Sorting list of truncations into descending order. Was there some reason to have them unordered?" << endl;
+    sort(down_sweep_truncs_.rbegin(), down_sweep_truncs_.rend());
+  }
+
+  Timer dmrg_timer(0);
+
+  vector<tuple<int, vector<double>>> trunc_convergence;
+  trunc_convergence.emplace_back(ntrunc_, energies_);
+
+  perturb_ = 0.0;
+
+  for (int ntrunc : down_sweep_truncs_) {
+    ntrunc_ = ntrunc;
+
+    vector<double> energies(nstate_, 0.0);
+
+    shared_ptr<DMRG_Block1> left_block, right_block;
+
+    cout << "  o Starting sweep with M = " << ntrunc_ << endl;
+    for (int iter = 0; iter < maxiter_; ++iter) {
+    // Start sweeping backwards
+      for (int site = nsites_-1; site > 0; --site) {
+        left_block = left_blocks_[site-1];
+        right_block = (site == nsites_-1) ? nullptr : right_blocks_[nsites_ - site - 2];
+        shared_ptr<const Reference> ref = multisite_->build_reference(site, vector<bool>(nsites_, false));
+
+        right_block = decimate_block(prepare_sweeping_input(site), ref, right_block, left_block, site);
+        right_blocks_[nsites_ - site - 1] = right_block;
+        cout << "  " << print_progress(site, "<<", "<<") << setw(16) << dmrg_timer.tick() << endl;
+      }
+
+    // Sweep forwards
+      for (int site = 0; site < nsites_-1; ++site) {
+        left_block = (site == 0) ? nullptr : left_blocks_[site-1];
+        right_block = right_blocks_[nsites_ - site - 2];
+        shared_ptr<const Reference> ref = multisite_->build_reference(site, vector<bool>(nsites_, false));
+
+        left_block = decimate_block(prepare_sweeping_input(site), ref, left_block, right_block, site);
+        left_blocks_[site] = left_block;
+        cout << "  " << print_progress(site, ">>", ">>") << setw(16) << dmrg_timer.tick() << endl;
+      }
+
+      bool conv = true;
+      cout << endl;
+      for (int i = 0; i < nstate_; ++i) {
+        auto mnmx = minmax_element(sweep_energies_[i].begin(), sweep_energies_[i].end());
+        const double sweep_average = accumulate(sweep_energies_[i].begin(), sweep_energies_[i].end(), 0.0)/static_cast<double>(sweep_energies_[i].size());
+        const double sweep_range = *mnmx.second - *mnmx.first;
+
+        cout << setw(6) << iter << setw(6) << i << setw(22) << setprecision(12) << sweep_average << setw(16) << setprecision(12) << sweep_range
+                                                                              << setw(16) << setprecision(12) << energies[i] - sweep_average << endl;
+
+        conv &= abs(energies[i]-sweep_average) < thresh_;
+
+        energies[i] = sweep_average;
+        sweep_energies_[i].clear();
+      }
+      cout << endl;
+
+      if (conv) {
+        cout << "  * Converged!" << endl;
+        break;
+      }
     }
 
-    if (conv) {
-      cout << "  * Converged!" << endl;
-      break;
-    }
+    trunc_convergence.emplace_back(ntrunc_, energies);
+  }
+
+  cout << endl;
+
+  cout << " Convergence with M:" << endl;
+
+  cout << setw(6) << "M";
+  for (int ist = 0; ist < nstate_; ++ist)
+    cout << setw(22) << string("state ") + to_string(ist);
+  cout << endl;
+
+  for (auto& i : trunc_convergence) {
+    cout << setw(6) << get<0>(i);
+    for (auto& j : get<1>(i))
+      cout << setw(22) << setprecision(16) << j;
+    cout << endl;
   }
 }

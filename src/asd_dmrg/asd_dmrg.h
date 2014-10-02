@@ -59,10 +59,13 @@ class ASD_DMRG {
     double perturb_thresh_; ///< threshold at which to decrease the perturbation
     double perturb_min_; ///< minimum value of perturbation (below this, it is just set to zero)
 
+    bool down_sweep_; ///< controls whether to sweep with decreasing values of ntrunc_ after the main calculation
+    std::vector<int> down_sweep_truncs_; ///< descending list of values to use for ntrunc_
+
     /// Prints graphical depiction of sweep process, mainly probably useful for debugging
     std::string print_progress(const int position, const std::string left_symbol, const std::string right_symbol) const;
 
-    /// Kicks off by doing a CAS calculation in the first site with the rest of the sites at mean-field
+    /// Kicks off by doing a CAS/RAS calculation in the first site with the rest of the sites at mean-field
     virtual std::shared_ptr<DMRG_Block1> compute_first_block(std::vector<std::shared_ptr<PTree>> inputs, std::shared_ptr<const Reference> ref) = 0;
     /// Adds one site to the block
     virtual std::shared_ptr<DMRG_Block1> grow_block(std::vector<std::shared_ptr<PTree>> inputs, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block1> left, const int site) = 0;
@@ -80,6 +83,9 @@ class ASD_DMRG {
 
     /// Driver for calculation
     void compute();
+
+    /// runs calculations for smaller values of M after the main calculation has finished
+    void down_sweep();
 
   private:
     /// Prepare several input files used for growing the chain

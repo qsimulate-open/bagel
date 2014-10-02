@@ -41,6 +41,11 @@ ASD_DMRG::ASD_DMRG(shared_ptr<const PTree> input, shared_ptr<const MultiSite> mu
   perturb_thresh_ = input_->get<double>("perturb_thresh", 0.0001);
   perturb_min_ = input_->get<double>("perturb_min", 1.0e-6);
 
+  auto down = input_->get_child_optional("down_sweep_truncs");
+  down_sweep_ = static_cast<bool>(down);
+  if (down_sweep_)
+    down_sweep_truncs_ = input_->get_vector<int>("down_sweep_truncs");
+
   auto winput = input_->get_child_optional("weights");
   if (winput)
     weights_ = input_->get_vector<double>("weights", nstate_);
