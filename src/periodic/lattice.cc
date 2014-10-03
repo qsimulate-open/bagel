@@ -137,7 +137,7 @@ void Lattice::init() {
           }
         }
         array<double, 3> a23 = cross(a2, a3);
-        volume_ = sqrt(dot(a1, a23));
+        volume_ = dot(a1, a23);
         const double scale = 2.0 * pi__ / volume_;
         primitive_kvectors_[0] = cross(a2, a3, scale);
         primitive_kvectors_[1] = cross(a3, a1, scale);
@@ -155,9 +155,9 @@ double Lattice::dot(array<double, 3> b, array<double, 3> c) { return b[0] * c[0]
 array<double, 3> Lattice::cross(array<double, 3> b, array<double, 3> c, double s) {
 
   array<double, 3> out;
-  out[0] = (b[1] * c[2] - b[2] * c[1]) / s;
-  out[1] = (b[2] * c[0] - b[0] * c[2]) / s;
-  out[2] = (b[0] * c[1] - b[1] * c[0]) / s;
+  out[0] = (b[1] * c[2] - b[2] * c[1]) * s;
+  out[1] = (b[2] * c[0] - b[0] * c[2]) * s;
+  out[2] = (b[0] * c[1] - b[1] * c[0]) * s;
 
   return out;
 }
@@ -238,7 +238,7 @@ void Lattice::print_primitive_vectors() const {
 void Lattice::print_primitive_kvectors() const {
 
   const string indent = "  ";
-  cout << indent << "=== Primitive reciprocal lattice vector(s) ===" << endl << indent << endl;
+  cout << indent << "=== Scaled primitive reciprocal lattice vector(s) ===" << endl << indent << endl;
 
   for (int i = 0; i != ndim_; ++i)
     cout << indent << fixed << setprecision(6) << "(" << setw(10) << primitive_kvectors(i)[0] << ", "
