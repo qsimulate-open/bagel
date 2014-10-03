@@ -76,7 +76,7 @@ class PData {
       for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) (*iblock)->print("", size);
     }
 
-    std::shared_ptr<const PData> form_density_rhf(const int n) const;
+    std::shared_ptr<const PData> form_density_rhf(const int n, const int offset) const;
 
     // Fourier transform
     std::shared_ptr<const PData> ft(const std::vector<std::array<double, 3>> gvector /*real space*/,

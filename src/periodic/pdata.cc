@@ -24,6 +24,7 @@
 //
 
 #include <src/periodic/pdata.h>
+#include <src/math/matop.h>
 
 using namespace std;
 using namespace bagel;
@@ -45,7 +46,18 @@ PData::PData(const PData& o) : blocksize_(o.blocksize()), nblock_(o.nblock()) {
   pdata_.resize(nblock_);
   for (int i = 0; i != nblock_; ++i)
     pdata_[i] = o.pdata(i);
+}
 
+shared_ptr<const PData> PData::form_density_rhf(const int n, const int offset) const {
+
+  PData out(n, nblock_);
+  for (int i = 0; i != nblock_; ++i) {
+    const ZMatrix tmp = pdata_[i]->slice(offset, offset + n);
+    auto den = make_shared<ZMatrix>(tmp ^ tmp);
+    out[i] = den;
+  }
+
+  return make_shared<const PData>(out);
 }
 
 shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const vector<array<double, 3>> kvector) const {
