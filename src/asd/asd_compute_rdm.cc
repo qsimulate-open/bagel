@@ -151,6 +151,8 @@ ASD_base::compute_rdm () {
       if (r2) *twordm_ += *r2;
     }
   }
+  
+  onerdm_->print();
 
 }
 

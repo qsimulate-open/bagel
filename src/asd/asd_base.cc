@@ -331,7 +331,40 @@ shared_ptr<Matrix> ASD_base::compute_aET_H(const array<MonomerKey,4>& keys) cons
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
 ASD_base::compute_aET_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
-  return make_tuple(nullptr,nullptr);
+
+  auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  const int nactT = nactA+nactB;
+  auto out1 = make_shared<RDM<1>>(nactA+nactB);
+  auto out2 = make_shared<RDM<2>>(nactA+nactB);
+
+  const int neleA = Ap.nelea() + Ap.neleb();
+
+
+  //1RDM
+  {
+    auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha});
+    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha});
+    
+    auto rdm = make_shared<Matrix>(gamma_A % gamma_B);
+    auto rdmt = rdm->clone();
+
+    // P(p,q') : p10
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    SMITH::sort_indices<0,1, 0,1, 1,1>(rdm->data(), rdmt->data(), nactA, nactB);
+    rdmt->scale(fac);
+ 
+    auto low = {    0, nactA};
+    auto up  = {nactA, nactT};
+    auto outv = make_rwview(out1->range().slice(low, up), out1->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+  }
+  return make_tuple(out1,out2);
 }
 
 
@@ -393,7 +426,37 @@ shared_ptr<Matrix> ASD_base::compute_bET_H(const array<MonomerKey,4>& keys) cons
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
 ASD_base::compute_bET_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
-  return make_tuple(nullptr,nullptr);
+  auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  const int nactT = nactA+nactB;
+  auto out1 = make_shared<RDM<1>>(nactA+nactB);
+  auto out2 = make_shared<RDM<2>>(nactA+nactB);
+
+  const int neleA = Ap.nelea() + Ap.neleb();
+  //RDM1
+  {
+    auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta});
+    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta});
+    
+    auto rdm = make_shared<Matrix>(gamma_A % gamma_B);
+    auto rdmt = rdm->clone();
+    
+    // P(p,q') : p10
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    SMITH::sort_indices<0,1, 0,1, 1,1>(rdm->data(), rdmt->data(), nactA, nactB);
+    rdmt->scale(fac);
+    
+    auto low = {    0, nactA};
+    auto up  = {nactA, nactT};
+    auto outv = make_rwview(out1->range().slice(low, up), out1->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+  }
+  return make_tuple(out1,out2);
 }
 
 
