@@ -43,26 +43,59 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   if (nocc_ != noccB_)
     throw runtime_error("PSCF only works for closed shell systems.");
 
+  cout << indent << "=== V(unit cell) in direct space ===" << endl << indent << endl;
+  cout << indent << fixed << setprecision(10) << setw(15) << lattice_->volume() << endl << endl;
+
   lattice_->print_primitive_vectors();
   lattice_->print_lattice_coordinates();
+  lattice_->print_primitive_kvectors();
+
 }
 
 void PSCF::compute() {
 
   Timer pscftime;
 
+  shared_ptr<const PData> koverlap = overlap_->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+  shared_ptr<const PData> ktildex  = tildex_->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+  shared_ptr<PData> kcoeff;
+
+  const int nkblock = lattice_->num_lattice_kvectors();
+  const int blocksize = overlap_->blocksize();
+
+  if (coeff_ == nullptr) {
+    shared_ptr<const PData> kfock = hcore_->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+    auto intermediate = make_shared<PData>(blocksize, nkblock);
+    for (int i = 0; i != nkblock; ++i) {
+      const ZMatrix kblock = *((*ktildex)(i)) % *((*kfock)(i)) * *((*ktildex)(i));
+      (*intermediate)[i] = make_shared<ZMatrix>(kblock);
+    }
+    kcoeff = make_shared<PData>(blocksize, nkblock);
+    for (int i = 0; i != nkblock; ++i) {
+      const ZMatrix kblock = *((*ktildex)(i)) * *((*intermediate)(i));
+      (*kcoeff)[i] = make_shared<ZMatrix>(kblock);
+    }
+  } else {
+    throw runtime_error("Working on it...");
+  }
+
+  shared_ptr<const PData> aodensity = kcoeff->form_density_rhf(nocc_);
+
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
-  cout << indent << fixed << setprecision(10) << setw(15) << lattice_->primitive_cell()->nuclear_repulsion() << endl << endl;
+  cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
 
   cout << indent << "=== Lattice Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << lattice_->nuclear_repulsion() << endl << endl;
 
-  energy_ = 0.0;
-  const double error = 0.0;
-  const int iter = 1;
+  cout << indent << "    * DIIS with orbital gradients will be used." << endl << endl;
+  pscftime.tick_print("PSCF startup");
+  cout << endl;
 
-  cout << indent << "=== Periodic RHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
-  cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
-                                    << setw(17) << error << setw(15) << setprecision(2) << pscftime.tick() << endl;
+  cout << indent << "=== PSCF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
+
+  for (int iter = 0; iter !=  max_iter_; ++iter) {
+
+  }
+
 
 }
