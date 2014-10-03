@@ -63,20 +63,11 @@ class PData {
     std::vector<std::shared_ptr<ZMatrix>> pdata() const { return pdata_; }
     std::shared_ptr<ZMatrix> pdata(const int i) const { return pdata_[i]; }
 
-    void zero() {
-      for (auto& block : pdata_) block->zero();
-    }
+    void zero();
+    void allreduce();
+    void print(const std::string tag = "", const int size = 10) const;
 
-    void allreduce() {
-      for (auto& block : pdata_) block->allreduce();
-    }
-
-    void print(const std::string tag = "", const int size = 10) const {
-      pdata_.front()->print(tag, size);
-      for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) (*iblock)->print("", size);
-    }
-
-    std::shared_ptr<const PData> form_density_rhf(const int n, const int offset) const;
+    std::shared_ptr<const PData> form_density_rhf(const int n, const int offset = 0) const;
 
     // Fourier transform
     std::shared_ptr<const PData> ft(const std::vector<std::array<double, 3>> gvector /*real space*/,

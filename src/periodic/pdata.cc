@@ -48,6 +48,15 @@ PData::PData(const PData& o) : blocksize_(o.blocksize()), nblock_(o.nblock()) {
     pdata_[i] = o.pdata(i);
 }
 
+void PData::zero() { for (auto& block : pdata_) block->zero(); }
+
+void PData::allreduce() { for (auto& block : pdata_) block->allreduce(); }
+
+void PData::print(const string tag, const int size) const {
+  pdata_.front()->print(tag, size);
+  for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) (*iblock)->print("", size);
+}
+
 shared_ptr<const PData> PData::form_density_rhf(const int n, const int offset) const {
 
   PData out(n, nblock_);

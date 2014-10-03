@@ -52,7 +52,7 @@ class Lattice {
     std::vector<std::array<double, 3>> lattice_kvectors_;
     // parameter to determine the number of k points
     int q_;
-    int num_kpoints_;
+    int num_lattice_kvectors_;
 
     double dot(std::array<double, 3> b, std::array<double, 3> c);
     std::array<double, 3> cross(std::array<double, 3> b, std::array<double, 3> c, double s = 1.0);
@@ -65,7 +65,7 @@ class Lattice {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & ndim_ & ncell_ & num_lattice_vectors_ & num_lattice_pts_ & primitive_cell_ & lattice_vectors_
-         & nuclear_repulsion_ & volume_ & primitive_kvectors_ & lattice_kvectors_ & q_ & num_kpoints_ & nele_;
+         & nuclear_repulsion_ & volume_ & primitive_kvectors_ & lattice_kvectors_ & q_ & num_lattice_kvectors_ & nele_;
     }
 
   public:
@@ -77,6 +77,8 @@ class Lattice {
     int ncell() const {return ncell_; }
     int num_lattice_pts() const { return num_lattice_pts_; }
     int num_lattice_vectors() const { return num_lattice_vectors_; }
+    int num_lattice_kvectors() const { return num_lattice_kvectors_; }
+
     std::shared_ptr<const Geometry> primitive_cell() const { return primitive_cell_; }
     std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
     std::array<double, 3> lattice_vectors(const int i) const { return lattice_vectors_[i]; }
@@ -90,7 +92,6 @@ class Lattice {
     std::vector<std::array<double, 3>> lattice_kvectors() const { return lattice_kvectors_; }
     std::array<double, 3> lattice_kvectors(const int i) const { return lattice_kvectors_[i]; }
     void generate_kpoints();
-    int num_kpoints() const { return num_kpoints_; }
 
     void print_primitive_vectors() const;
     void print_primitive_kvectors() const;
