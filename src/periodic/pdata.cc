@@ -59,10 +59,10 @@ shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const 
     int g = 0;
     for (auto& gvec : gvector) {
       shared_ptr<const ZMatrix> gblock = pdata(g);
-      complex<double> factor(0.0, gvec[0]* kvec[0] + gvec[1] * kvec[1] + gvec[2] * kvec[2]);
+      complex<double> factor(0.0, -gvec[0]* kvec[0] - gvec[1] * kvec[1] - gvec[2] * kvec[2]);
       factor = exp(factor);
-      auto tmp1 = make_shared<ZMatrix>(*(gblock->get_real_part()), factor); // gblock should be real
-      auto tmp2 = make_shared<ZMatrix>(*(gblock->get_imag_part()), factor);
+      auto tmp1 = make_shared<const ZMatrix>(*(gblock->get_real_part()), factor); // gblock should be real
+      auto tmp2 = make_shared<const ZMatrix>(*(gblock->get_imag_part()), factor);
       *kblock += *tmp1 + *tmp2;
       ++g;
     }
@@ -84,14 +84,15 @@ shared_ptr<const PData> PData::ift(const vector<array<double, 3>> gvector, const
     int k = 0;
     for (auto& kvec : kvector) {
       shared_ptr<const ZMatrix> kblock = pdata(k);
-      complex<double> factor(0.0, -gvec[0]* kvec[0] - gvec[1] * kvec[1] - gvec[2] * kvec[2]);
+      complex<double> factor(0.0, gvec[0]* kvec[0] + gvec[1] * kvec[1] + gvec[2] * kvec[2]);
       factor = exp(factor);
-      auto tmp1 = make_shared<ZMatrix>(*(kblock->get_real_part()), factor);
-      auto tmp2 = make_shared<ZMatrix>(*(kblock->get_imag_part()), factor);
+      auto tmp1 = make_shared<const ZMatrix>(*(kblock->get_real_part()), factor);
+      auto tmp2 = make_shared<const ZMatrix>(*(kblock->get_imag_part()), factor);
       *gblock += *tmp1 + *tmp2;
       ++k;
     }
     out[g] = gblock;
+    out[g]->scale(1.0/kvector.size());
     ++g;
   }
 
