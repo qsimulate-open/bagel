@@ -245,7 +245,6 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 
   auto out = make_shared<Matrix>(binfo.nstates, binfo.nstates);
 
-  const int rnorb = blocks_->right_block()->norb();
   const int lnorb = blocks_->left_block()->norb();
 
   for (auto& source_pair : block_pairs) {
@@ -364,7 +363,7 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
                                  blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),left_target}).data->storage()), false);
 
         Matrix Pab(P_ab_view);
-        SMITH::sort_indices<0,2,1,0,1,1,1>(P_ab_view.data(), Pab.data(), Pab.ndim(), rnorb, rnorb);
+        SMITH::sort_indices<0,2,1,0,1,1,1>(P_ab_view.data(), Pab.data(), Pab.ndim(), lnorb, lnorb);
 
         Matrix ham_block = gamma_view ^ Pab;
 
