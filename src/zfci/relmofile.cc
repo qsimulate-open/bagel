@@ -332,13 +332,13 @@ unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const a
   // TODO : remove redundancy
   for (size_t i = 0; i != 4; ++i)
     out[bitset<2>(i)] = make_shared<ZMatrix>(*coeff[i/2] % *core_fock_ * *coeff[i%2]);
-  out[bitset<2>("11")] = out[bitset<2>("00")]->get_conjg();
+  //out[bitset<2>("11")] = out[bitset<2>("00")]->get_conjg();  // This shortcut requires time-reversal symmetry
 
   assert(out.size() == 4);
   // symmetry requirement
   assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
   // Kramers requirement
-  assert((*out[bitset<2>("11")] - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8);
+  assert((*out[bitset<2>("11")] - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8 || geom_->magnetism());
 
   return out;
 }
