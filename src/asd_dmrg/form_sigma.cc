@@ -54,7 +54,7 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(const vector<sh
 
       interaction_terms(cc, sigma, blockops, jop);
       pdebug.tick_print("interaction");
-#ifdef HAVE_MPI_H
+#ifdef NOPENOPE_HAVE_MPI_H
     }
 #endif
   }
@@ -89,8 +89,8 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::diagonal(const vector<shar
       pdebug.tick_print("pure");
 
       diagonal_terms(cc, sigma, blockops, jop);
-      pdebug.tick_print("interaction");
-#ifdef HAVE_MPI_H
+      pdebug.tick_print("diagonal");
+#ifdef NOPENOPE_HAVE_MPI_H
     }
 #endif
   }
