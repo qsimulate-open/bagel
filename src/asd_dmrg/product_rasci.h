@@ -73,6 +73,9 @@ class ProductRASCI {
     std::shared_ptr<RASSpace> space_; ///< space of determinants used in calculation
     std::shared_ptr<ProductRASCivec> denom_; ///< denominator used in Davidson routine
 
+    double max_coulomb_site_; ///< maximum \f$(ij|ij)^{1/2}\f$ where \f$i\f$ and \f$j\f$ are site orbitals, used for screening
+    std::shared_ptr<Matrix> site_block_coulomb_; ///< \f$M(i,p) = (ip|ip)^{1/2}\f$ where \f$i\in\mbox{isite}\f$ and \f$p\in\mbox{block}\f$
+
   public:
     /// Constructor
     ProductRASCI(std::shared_ptr<const PTree> input, std::shared_ptr<const Reference> ref, std::shared_ptr<const DMRG_Block> left);

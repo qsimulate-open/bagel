@@ -98,6 +98,16 @@ ProductRASCI::ProductRASCI(shared_ptr<const PTree> input, shared_ptr<const Refer
   ref_ = make_shared<Reference>(ref_->geom(), std::make_shared<Coeff>(move(*coeff)), ref_->nclosed(), ref_->nact() + left_->norb(), 0);
   jop_ = make_shared<DimerJop>(ref_, ref_->nclosed(), ref_->nclosed() + norb_, ref_->nclosed() + ref_->nact(), ref_->coeff());
 
+  max_coulomb_site_ = 0.0;
+  for (int i = 0; i < norb_; ++i)
+    for (int j = 0; j < norb_; ++j)
+      max_coulomb_site_ = max(max_coulomb_site_, abs(jop_->mo2e(i,j,i,j)));
+
+  site_block_coulomb_ = make_shared<Matrix>(norb_, left_->norb());
+  for (int p = 0; p < left_->norb(); ++p)
+    for (int i = 0; i < norb_; ++i)
+      site_block_coulomb_->element(i, p) = abs(jop_->mo2e(i, p+norb_, i, p+norb_));
+
   blockops_ = left_->compute_block_ops(jop_);
 
   construct_denom();
