@@ -28,13 +28,28 @@
 using namespace std;
 using namespace bagel;
 
+BlockSparseMatrix::BlockSparseMatrix(shared_ptr<Matrix> m) : ndim_(m->ndim()), mdim_(m->mdim()) {
+  data_.emplace(make_pair(0,0), m);
+}
+
 BlockSparseMatrix::BlockSparseMatrix(const int n, const int m, map<pair<size_t, size_t>, shared_ptr<Matrix>> d) : data_(d), ndim_(n), mdim_(m) {
   assert(all_of(d.begin(), d.end(), [&n, &m] (pair<pair<size_t, size_t>, shared_ptr<Matrix>> p) {
     return (p.first.first + p.second->ndim() <= n && p.first.second + p.second->mdim() <= m);
   }));
 }
 
-void mat_block_multiply(const double alpha, const bool Atrans, const Matrix& A, const bool Btrans, const BlockSparseMatrix& B, const double beta, Matrix& C) {
+// TODO: optimize by avoiding calls to element()
+shared_ptr<VectorB> BlockSparseMatrix::diagonal() const {
+  const size_t outdim = min(ndim_, mdim_);
+
+  auto out = make_shared<VectorB>(outdim);
+  for (size_t i = 0; i < outdim; ++i)
+    (*out)(i) = element(i,i);
+
+  return out;
+}
+
+void mat_block_multiply(const bool Atrans, const bool Btrans, const double alpha, const Matrix& A, const BlockSparseMatrix& B, const double beta, Matrix& C) {
   assert((Atrans ? A.mdim() : A.ndim())==C.ndim() &&
          (Btrans ? B.ndim() : B.mdim())==C.mdim() &&
          (Atrans ? A.ndim() : A.mdim())==(Btrans ? B.mdim() : B.ndim()));

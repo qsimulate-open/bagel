@@ -41,18 +41,39 @@ class BlockSparseMatrix {
     int size_;
 
   public:
+    /// A single block (so actually a dense matrix)
+    BlockSparseMatrix(std::shared_ptr<Matrix> m);
+    /// Pre-determined blocking structure
     BlockSparseMatrix(const int n, const int m, std::map<std::pair<size_t, size_t>, std::shared_ptr<Matrix>> d);
     // for completeness, a constructor that accepts a matrix and a threshold should probably exist at some point
 
     std::map<std::pair<size_t, size_t>, std::shared_ptr<Matrix>>& data() { return data_; }
     const std::map<std::pair<size_t, size_t>, std::shared_ptr<Matrix>>& data() const { return data_; }
 
+    /// get block based on starting location. this is the best way to alter the data
+    std::shared_ptr<Matrix> get_block(size_t nstart, size_t mstart) { return (data_.find({nstart, mstart})!=data_.end() ? data_[{nstart,mstart}] : nullptr); }
+    /// const get block based on starting location.
+    std::shared_ptr<const Matrix> get_block(size_t nstart, size_t mstart) const { return (data_.find({nstart, mstart})!=data_.end() ? data_.at({nstart,mstart}) : nullptr); }
+
     int ndim() const { return ndim_; }
     int mdim() const { return mdim_; }
     int size() const { return size_; }
+
+    /// element-wise read-only: is slow and not recommended.
+    double element(const int n, const int m) const {
+      auto iter = find_if(data_.begin(), data_.end(), [&n, &m] (std::pair<std::pair<size_t, size_t>, std::shared_ptr<Matrix>> p)
+        { return (n >= p.first.first && n < p.first.first + p.second->ndim()) && (m >= p.first.second && m < p.first.second + p.second->mdim()); });
+      if (iter!=data_.end())
+        return iter->second->element(n - iter->first.first, m - iter->first.second);
+      else
+        return 0.0;
+    }
+
+    /// returns a VectorB containing the diagonal elements
+    std::shared_ptr<VectorB> diagonal() const;
 };
 
-void mat_block_multiply(double alpha, bool Atrans, const Matrix& A, bool btrans, const BlockSparseMatrix& B, double beta, Matrix& C);
+void mat_block_multiply(bool Atrans, bool Btrans, double alpha, const Matrix& A, const BlockSparseMatrix& B, double beta, Matrix& C);
 
 }
 
