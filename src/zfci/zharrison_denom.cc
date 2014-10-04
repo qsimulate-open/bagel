@@ -47,13 +47,14 @@ void ZHarrison::const_denom() {
       jop->element(j, i) = 0.5*jop_->mo2e("0000", j, i, j, i).real();
       kop->element(j, i) = 0.5*jop_->mo2e("1111", j, i, i, j).real();
       // assert for Kramers and symmetry
+      // TODO why do none of these three fail with magnetic field?
       assert(fabs(jop_->mo2e("0000", j, i, j, i).imag()) < 1.0e-8);
       assert(fabs(jop_->mo2e("1111", j, i, i, j).imag()) < 1.0e-8);
       assert(fabs(jop_->mo2e("0101", j, i, j, i).imag()) < 1.0e-8);
     }
     (*h)(i) = jop_->mo1e("00", i,i).real();
     // assert for Kramers and symmetry
-    assert(abs(jop_->mo1e("00", i,i) - jop_->mo1e("11", i,i)) < 1.0e-8);
+    assert((abs(jop_->mo1e("00", i,i) - jop_->mo1e("11", i,i)) < 1.0e-8) || !tsymm_);
     assert(abs(jop_->mo1e("00", i,i).imag()) < 1.0e-8);
   }
   denom_t.tick_print("jop, kop");
