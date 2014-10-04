@@ -59,7 +59,7 @@ void PData::print(const string tag, const int size) const {
 
 shared_ptr<const PData> PData::form_density_rhf(const int n, const int offset) const {
 
-  PData out(n, nblock_);
+  PData out(blocksize_, nblock_);
   for (int i = 0; i != nblock_; ++i) {
     const ZMatrix tmp = pdata_[i]->slice(offset, offset + n);
     auto den = make_shared<ZMatrix>(tmp ^ tmp);
