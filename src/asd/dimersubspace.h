@@ -71,7 +71,7 @@ class DimerSubspace_base {
     std::pair<int,int> charge() const { return {key_.first.q, key_.second.q}; }
 
     int dimerstates() const { return nstatesA() * nstatesB(); }
-    int dimerindex(const int iA, const int iB) const { return (iA + iB*nstatesA()); }
+    int dimerindex(const int iA, const int iB) const { return (iA + iB*nstatesA()); } // 00,10,20,...,01,11,21,... 
     std::string string(const int i, const int j) const {
       std::string out = stringA() + lexical_cast<std::string>(i) + std::string(" ") + stringB() + lexical_cast<std::string>(j);
       return out;

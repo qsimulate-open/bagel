@@ -5,7 +5,6 @@
 
 
 #include <src/asd/asd_base.h>
-#include <src/asd/state_tensor.h>
 
 //***************************************************************************************************************
 template <class VecType>
@@ -61,10 +60,10 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
     tie(r1,r2) = compute_rdm12_monomer(ioff, fourvecs);
     if(r1) *onerdm_ += *r1;
     if(r2) *twordm_ += *r2;
-
   }
 
   //PRINT
+  std::cout << "!@# Monomer RDM print" << std::endl;
   std::cout << "Active space: A(" << nactA << "), B(" << nactB << ")" << std::endl;
   onerdm_->print(1.0e-6);
 

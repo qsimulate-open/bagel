@@ -327,7 +327,6 @@ shared_ptr<Matrix> ASD_base::compute_aET_H(const array<MonomerKey,4>& keys) cons
 }
 
 //***************************************************************************************************************
-
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
 ASD_base::compute_aET_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
@@ -364,6 +363,49 @@ ASD_base::compute_aET_RDM(const array<MonomerKey,4>& keys) const {
     auto outv = make_rwview(out1->range().slice(low, up), out1->storage());
     copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
+
+  //2RDM
+  {
+    auto gamma_A  = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha});
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});
+
+    auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B1);
+    auto rdm2 = make_shared<Matrix>(gamma_A % gamma_B2);
+    auto rdmt = rdm1->clone();
+
+    // P(p,q',r',s') : p15
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    SMITH::sort_indices<0,3,1,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactB, nactB, nactB);
+    SMITH::sort_indices<0,2,1,3, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB);
+    rdmt->scale(fac);
+
+    auto low = {    0, nactA, nactA, nactA};
+    auto up  = {nactA, nactT, nactT, nactT};
+    auto outv = make_rwview(out2->range().slice(low, up), out2->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+  }
+  {
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+    auto gamma_B  = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha});
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B);
+    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B);
+    auto rdmt = rdm1->clone();
+
+    //P(p,q',r,s) : p15
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    SMITH::sort_indices<0,3,1,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+    SMITH::sort_indices<0,3,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+    rdmt->scale(fac);
+
+    auto low = {    0, nactA,     0,     0};
+    auto up  = {nactA, nactT, nactA, nactA};
+    auto outv = make_rwview(out2->range().slice(low, up), out2->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+  }
+
   return make_tuple(out1,out2);
 }
 
@@ -422,7 +464,6 @@ shared_ptr<Matrix> ASD_base::compute_bET_H(const array<MonomerKey,4>& keys) cons
 
 
 //***************************************************************************************************************
-
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
 ASD_base::compute_bET_RDM(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
@@ -456,6 +497,49 @@ ASD_base::compute_bET_RDM(const array<MonomerKey,4>& keys) const {
     auto outv = make_rwview(out1->range().slice(low, up), out1->storage());
     copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
+
+  //RDM2
+  {
+    auto gamma_A  = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta});
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
+
+    auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B1);
+    auto rdm2 = make_shared<Matrix>(gamma_A % gamma_B2);
+    auto rdmt = rdm1->clone();
+
+    // P(p,q',r',s') : p15
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    SMITH::sort_indices<0,2,1,3, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactB, nactB, nactB);
+    SMITH::sort_indices<0,3,1,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB);
+    rdmt->scale(fac);
+
+    auto low = {    0, nactA, nactA, nactA};
+    auto up  = {nactA, nactT, nactT, nactT};
+    auto outv = make_rwview(out2->range().slice(low, up), out2->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+  }
+  {
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+    auto gamma_B  = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta});
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B);
+    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B);
+    auto rdmt = rdm1->clone();
+
+    // P(p,q',r,s) : p15
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    SMITH::sort_indices<1,3,0,2, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+    SMITH::sort_indices<0,3,1,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+    rdmt->scale(fac);
+
+    auto low = {    0, nactA,     0,     0};
+    auto up  = {nactA, nactT, nactA, nactA};
+    auto outv = make_rwview(out2->range().slice(low, up), out2->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+  }
+
   return make_tuple(out1,out2);
 }
 
@@ -480,11 +564,39 @@ shared_ptr<Matrix> ASD_base::compute_abFlip_H(const array<MonomerKey,4>& keys) c
 
 
 //***************************************************************************************************************
-
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
 ASD_base::compute_abFlip_RDM(const array<MonomerKey,4>& keys) const {
+// if ab-flip, account ba-flip arising from (N,M)
+// if(M,N) is ba-flip then (N,M) is ab-flip and this will include ba-flip of (M,N) too.
 //***************************************************************************************************************
-  return make_tuple(nullptr,nullptr);
+  auto& B = keys[1];
+  auto& Bp = keys[3];
+
+  assert(gammatensor_[0]->exist(keys[0], keys[2], {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}));
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  const int nactT = nactA+nactB;
+
+  auto out = make_shared<RDM<2>>(nactA+nactB);
+
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha});
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta});
+
+  auto rdm = make_shared<Matrix>(gamma_A % gamma_B);
+  auto rdmt = rdm->clone();
+
+  // P(p,q',r',s) : p4  ab-flip of (M,N)
+  SMITH::sort_indices<0,3,2,1, 0,1, -1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB); //ab-flip
+  SMITH::sort_indices<1,2,3,0, 1,1, -1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB); //ba-flip of (N,M) p15B
+
+  auto low = {    0, nactA, nactA,     0};
+  auto up  = {nactA, nactT, nactT, nactA};
+  auto outv = make_rwview(out->range().slice(low, up), out->storage());
+  assert(rdmt->size() == outv.size());
+  copy(rdmt->begin(), rdmt->end(), outv.begin());
+
+  return make_tuple(nullptr,out);
 }
 
 
@@ -507,11 +619,37 @@ shared_ptr<Matrix> ASD_base::compute_abET_H(const array<MonomerKey,4>& keys) con
 }
 
 //***************************************************************************************************************
-
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
 ASD_base::compute_abET_RDM(const array<MonomerKey,4>& keys) const {
+// for (M,N)
+// if inverse ab-ET / compute (N,M)
 //***************************************************************************************************************
-  return make_tuple(nullptr,nullptr);
+  auto& B = keys[1]; auto& Bp = keys[3];
+
+  assert(gammatensor_[0]->exist(keys[0], keys[2], {GammaSQ::CreateAlpha, GammaSQ::CreateBeta}));
+
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta});
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});
+
+  auto rdm  = make_shared<Matrix>(gamma_A % gamma_B);
+  auto rdmt = rdm->clone();
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  const int nactT = nactA+nactB;
+
+  // P(p,q',r,s') : p14B
+  SMITH::sort_indices<0,2,1,3, 0,1, -1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
+  SMITH::sort_indices<1,3,0,2, 1,1, -1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
+
+  auto out = make_shared<RDM<2>>(nactA+nactB);
+  auto low = {    0, nactA,     0, nactA};
+  auto up  = {nactA, nactT, nactA, nactT};
+  auto outv = make_rwview(out->range().slice(low, up), out->storage());
+  assert(rdmt->size() == outv.size());
+  copy(rdmt->begin(), rdmt->end(), outv.begin());
+
+  return make_tuple(nullptr,out);
 }
 
 
@@ -534,11 +672,36 @@ shared_ptr<Matrix> ASD_base::compute_aaET_H(const array<MonomerKey,4>& keys) con
 
 
 //***************************************************************************************************************
-
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
 ASD_base::compute_aaET_RDM(const array<MonomerKey,4>& keys) const {
+//off-diagonal subspaces only!
+// if(M,N) is inverse-aa-ET, swap M,N as (N,M) will be aa-ET and contribute to 2RDM
 //***************************************************************************************************************
-  return make_tuple(nullptr,nullptr);
+  auto& B = keys[1]; auto& Bp = keys[3];
+
+  assert(gammatensor_[0]->exist(keys[0], keys[2], {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}));
+
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
+
+  auto rdm  = make_shared<Matrix>(gamma_A % gamma_B);
+  auto rdmt = rdm->clone();
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  const int nactT = nactA+nactB;
+
+  // P(p,q',r,s') : p1B
+  SMITH::sort_indices<0,3,1,2, 0,1, 1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
+
+  auto out = make_shared<RDM<2>>(nactA+nactB);
+  auto low = {    0, nactA,     0, nactA};
+  auto up  = {nactA, nactT, nactA, nactT};
+  auto outv = make_rwview(out->range().slice(low, up), out->storage());
+  assert(rdmt->size() == outv.size());
+  copy(rdmt->begin(), rdmt->end(), outv.begin());
+
+  return make_tuple(nullptr,out);
 }
 
 
@@ -561,11 +724,35 @@ shared_ptr<Matrix> ASD_base::compute_bbET_H(const array<MonomerKey,4>& keys) con
 
 
 //***************************************************************************************************************
-
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
 ASD_base::compute_bbET_RDM(const array<MonomerKey,4>& keys) const {
+// cf. aaET
 //***************************************************************************************************************
-  return make_tuple(nullptr,nullptr);
+  auto& B = keys[1]; auto& Bp = keys[3];
+
+  assert(gammatensor_[0]->exist(keys[0], keys[2], {GammaSQ::CreateBeta, GammaSQ::CreateBeta}));
+
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::CreateBeta});
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
+
+  auto rdm  = make_shared<Matrix>(gamma_A % gamma_B);
+  auto rdmt = rdm->clone();
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  const int nactT = nactA+nactB;
+
+  // P(p,q',r,s') : p14B
+  SMITH::sort_indices<0,3,1,2, 0,1, 1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
+
+  auto out = make_shared<RDM<2>>(nactA+nactB);
+  auto low = {    0, nactA,     0, nactA};
+  auto up  = {nactA, nactT, nactA, nactT};
+  auto outv = make_rwview(out->range().slice(low, up), out->storage());
+  assert(rdmt->size() == outv.size());
+  copy(rdmt->begin(), rdmt->end(), outv.begin());
+
+  return make_tuple(nullptr,out);
 }
 
 
@@ -665,7 +852,8 @@ ASD_base::couple_blocks_H(const DimerSubspace_base& AB, const DimerSubspace_base
   }
 
   /* if we are computing the Hamiltonian and flip = true, then we tranpose the output (see above) */
-  if (flip) *out->transpose();
+//if (flip) out = out->transpose(); // same as below??
+  if (flip) transpose_call(out);
 
   return out;
 }
@@ -685,7 +873,7 @@ ASD_base::couple_blocks_RDM(const DimerSubspace_base& AB, const DimerSubspace_ba
     term_type = Coupling(-1*static_cast<int>(term_type));
     std::swap(space1,space2);
   }
-
+  
   tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> out;
   std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
 
@@ -709,6 +897,6 @@ ASD_base::couple_blocks_RDM(const DimerSubspace_base& AB, const DimerSubspace_ba
     default :
       throw std::logic_error("Asking for a coupling type that has not been written.");
   }
-
+  
   return out;
 }

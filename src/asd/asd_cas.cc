@@ -233,13 +233,13 @@ ASD_CAS::compute_rdm12_monomer (int ioff, std::array<Dvec,4>& fourvecs) const {
   //const int istate = 0;
 
   //Monomer A
-  for (int i = 0; i != nstA; ++i) { // <I'|
-    for (int j = 0; j != nstB; ++j) { // <J'|
-      const int ij = j + (i*nstB);
+  for (int j = 0; j != nstB; ++j) { // <J'|
+    for (int i = 0; i != nstA; ++i) { // <I'|
+      const int ij = i + (j*nstA); //cf. dimerindex()
 
-      for (int ip = 0; ip != nstAp; ++ip) { // |I>
-        for (int jp = 0; jp != nstBp; ++jp) { // |J>
-          const int ijp = jp + (ip*nstBp);
+      for (int jp = 0; jp != nstBp; ++jp) { // |J>
+        for (int ip = 0; ip != nstAp; ++ip) { // |I>
+          const int ijp = ip + (jp*nstAp);
           const double coef = adiabats_->element(ioff+ij,0) * adiabats_->element(ioff+ijp,0); // C_(I'J') * C_(IJ) TODO: 0 = ground state only
 
           if(j == jp) { //delta_J'J
@@ -262,11 +262,11 @@ ASD_CAS::compute_rdm12_monomer (int ioff, std::array<Dvec,4>& fourvecs) const {
             *rdm2B += *r2;
           }
 
-        } //jp
-      } //ip
+        } //ip
+      } //jp
 
-    } //j
-  } //i
+    } //i
+  } //j
 
   auto out1 = std::make_shared<RDM<1>>(nactA+nactB);
   out1->zero();
