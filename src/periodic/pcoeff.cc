@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: pcoeff.h
+// Filename: pcoeff.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,41 +24,31 @@
 //
 
 
-#ifndef __SRC_PERIODIC_PCOEFF_H
-#define __SRC_PERIODIC_PCOEFF_H
+#include <src/periodic/pcoeff.h>
 
-#include <src/periodic/pdata.h>
-#include <src/periodic/lattice.h>
+using namespace std;
+using namespace bagel;
 
-namespace bagel {
+PCoeff::PCoeff(const int blocksize, const int nblock) : PData(blocksize, nblock) { }
 
-class PCoeff : public PData {
-  private:
+PCoeff::PCoeff(shared_ptr<const Lattice> l) : PData(l->primitive_cell()->nbasis(), l->num_lattice_kvectors()) { }
 
-  protected:
-    // serialization
-    friend class boost::serialization::access;
+PCoeff::PCoeff(const PData& o) : PData(o.blocksize(), o.nblock()) {
 
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<PData>(*this);
-    }
-
-  public:
-    PCoeff() { }
-    PCoeff(std::shared_ptr<const Lattice> l);
-    PCoeff(const int blocksize, const int nblock);
-    PCoeff(const PData&);
-
-    ~PCoeff() { }
-
-    std::shared_ptr<const PData> form_density_rhf(const int n, const int offset = 0) const;
-
-};
-
+  pdata_.resize(nblock_);
+  for (int i = 0; i != nblock_; ++i)
+    pdata_[i] = o.pdata(i);
 }
 
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::PCoeff)
+shared_ptr<const PData> PCoeff::form_density_rhf(const int n, const int offset) const {
 
-#endif
+  PData out(blocksize_, nblock_);
+  for (int i = 0; i != nblock_; ++i) {
+    const ZMatrix tmp = pdata_[i]->slice(offset, offset + n);
+    auto den = make_shared<ZMatrix>(tmp ^ tmp);
+    out[i] = den;
+  }
+
+  return make_shared<const PData>(out);
+}
+

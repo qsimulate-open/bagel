@@ -30,6 +30,7 @@
 #include <src/periodic/lattice.h>
 #include <src/periodic/phcore.h>
 #include <src/periodic/poverlap.h>
+#include <src/periodic/pcoeff.h>
 
 namespace bagel {
 
@@ -39,7 +40,7 @@ class PSCF_base : public Method {
     std::shared_ptr<const PData> tildex_;
     std::shared_ptr<const POverlap> overlap_;
     std::shared_ptr<const PHcore> hcore_;
-    std::shared_ptr<const PData> coeff_;
+    std::shared_ptr<const PCoeff> coeff_;
 
     int max_iter_;
 
@@ -81,7 +82,7 @@ class PSCF_base : public Method {
     virtual void compute() override = 0;
 
     const std::shared_ptr<const PData> coeff() const { return coeff_; }
-    void set_coeff(const std::shared_ptr<PData> o) { coeff_ = o; };
+    void set_coeff(const std::shared_ptr<PCoeff> o) { coeff_ = o; };
 
     const std::shared_ptr<const PHcore> hcore() const { return hcore_; }
 

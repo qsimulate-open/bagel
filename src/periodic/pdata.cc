@@ -57,18 +57,6 @@ void PData::print(const string tag, const int size) const {
   for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) (*iblock)->print("", size);
 }
 
-shared_ptr<const PData> PData::form_density_rhf(const int n, const int offset) const {
-
-  PData out(blocksize_, nblock_);
-  for (int i = 0; i != nblock_; ++i) {
-    const ZMatrix tmp = pdata_[i]->slice(offset, offset + n);
-    auto den = make_shared<ZMatrix>(tmp ^ tmp);
-    out[i] = den;
-  }
-
-  return make_shared<const PData>(out);
-}
-
 shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const vector<array<double, 3>> kvector) const {
 
   PData out(blocksize_, kvector.size());

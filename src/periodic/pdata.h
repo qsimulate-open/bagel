@@ -67,8 +67,6 @@ class PData {
     void allreduce();
     void print(const std::string tag = "", const int size = 10) const;
 
-    std::shared_ptr<const PData> form_density_rhf(const int n, const int offset = 0) const;
-
     // Fourier transform
     std::shared_ptr<const PData> ft(const std::vector<std::array<double, 3>> gvector /*real space*/,
                                     const std::vector<std::array<double, 3>> kvector /*k space */) const;
