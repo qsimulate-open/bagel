@@ -36,6 +36,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(PHcore)
 PHcore::PHcore(const shared_ptr<const Lattice> lattice) : PMatrix1e(lattice) {
 
   init(lattice);
+  fill_upper_negative();
 }
 
 void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Lattice> lattice, const int block) {

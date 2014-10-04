@@ -52,6 +52,8 @@ void PData::zero() { for (auto& block : pdata_) block->zero(); }
 
 void PData::allreduce() { for (auto& block : pdata_) block->allreduce(); }
 
+void PData::fill_upper_negative() { for (auto&block : pdata_) block->fill_upper_negative(); }
+
 void PData::print(const string tag, const int size) const {
   pdata_.front()->print(tag, size);
   for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) (*iblock)->print("", size);

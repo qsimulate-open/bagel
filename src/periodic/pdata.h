@@ -65,6 +65,7 @@ class PData {
 
     void zero();
     void allreduce();
+    void fill_upper_negative();
     void print(const std::string tag = "", const int size = 10) const;
 
     // Fourier transform
