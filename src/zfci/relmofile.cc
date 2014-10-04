@@ -38,8 +38,8 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co, const bool gaunt, const bool breit)
- : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit) {
+RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co, const bool gaunt, const bool breit, const bool tsymm)
+ : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit), tsymm_(tsymm) {
   // density fitting is assumed
   assert(geom_->df());
 }
@@ -237,17 +237,18 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
 
   shared_ptr<ZMatrix> fock_tilde;
 
-  if (!geom_->magnetism()) {
+  if (tsymm_) {
     fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
   } else {
     fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
   }
 
-  // diagonalization - uses quaternion symmetry if no magnetic field
+  // diagonalization - uses quaternion symmetry if applicable
   {
     VectorB eig(fock_tilde->ndim());
     fock_tilde->diagonalize(eig);
-    if (geom_->magnetism()) {
+
+    if (!tsymm_) {
       const int n = geom_->nbasis();
 
       // check that pos & neg energy eigenvalues are properly separated
@@ -338,7 +339,7 @@ unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const a
   // symmetry requirement
   assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
   // Kramers requirement
-  assert((*out[bitset<2>("11")] - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8 || geom_->magnetism());
+  assert((*out[bitset<2>("11")] - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8 || !tsymm_);
 
   return out;
 }
@@ -428,7 +429,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
         continue;
 
       // we will construct (1111, 1010, 1101, 0100) later
-      if ((!geom_->magnetism() && i == 15) || i == 10 || i == 13 || i == 4)
+      if ((tsymm_ && i == 15) || i == 10 || i == 13 || i == 4)
         continue;
 
       // we compute: 0000, 0010, 1001, 0101, 0011, 1011
@@ -463,7 +464,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
     compute(out, true, breit_);
 
   // Kramers and particle symmetry
-  if (!geom_->magnetism())
+  if (tsymm_)
     out[bitset<4>("1111")] = out.at(bitset<4>("0000"))->get_conjg();
 
   out[bitset<4>("1010")] = out.at(bitset<4>("0101"))->clone();

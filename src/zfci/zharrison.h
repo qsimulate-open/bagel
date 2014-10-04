@@ -56,6 +56,9 @@ class ZHarrison : public Method {
     bool gaunt_;
     bool breit_;
 
+    // enforce time-reversal symmetry
+    bool tsymm_;
+
     // number of states
     int nstate_;
     std::vector<int> states_;
@@ -98,7 +101,7 @@ class ZHarrison : public Method {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Method>(*this);
-      ar << max_iter_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_
+      ar << max_iter_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_ << tsymm_
          << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
       // for jop_
       std::shared_ptr<const ZMatrix> coeff = jop_->coeff_input();
@@ -107,7 +110,7 @@ class ZHarrison : public Method {
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Method>(*this);
-      ar >> max_iter_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_
+      ar >> max_iter_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_ >> tsymm_
          >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_ >> restarted_;
       std::shared_ptr<const ZMatrix> coeff;
       ar >> coeff;
@@ -167,7 +170,7 @@ class ZHarrison : public Method {
 
     void update(std::shared_ptr<const ZMatrix> coeff, const bool restricted = false) {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, restricted);
+      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, restricted, tsymm_);
 
       // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;

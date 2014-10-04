@@ -56,6 +56,9 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   gaunt_ = rr->gaunt();
   breit_ = rr->breit();
 
+  // so far invoke Kramer's symmetry for any case without magnetic field
+  tsymm_ = !geom_->magnetism();
+
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (norb_  < 0)
