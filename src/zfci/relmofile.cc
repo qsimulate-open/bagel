@@ -235,13 +235,47 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
   shared_ptr<ZMatrix> s12 = overlap->tildex(1.0e-9);
   quaternion(s12);
 
-  auto fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
+  shared_ptr<ZMatrix> fock_tilde;
 
-  // quaternion diagonalization
+  if (!geom_->magnetism()) {
+    fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
+  } else {
+    fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
+  }
+
+  // diagonalization - uses quaternion symmetry if no magnetic field
   {
     VectorB eig(fock_tilde->ndim());
     fock_tilde->diagonalize(eig);
+    if (geom_->magnetism()) {
+      const int n = geom_->nbasis();
+
+      // check that pos & neg energy eigenvalues are properly separated
+      assert(*std::min_element(eig.begin()+2*n, eig.begin()+4*n) - *std::max_element(eig.begin(), eig.begin()+2*n) > 10000.0);
+      assert(4*n == fock_tilde->ndim());
+
+      // need to reorder things so negative energy states don't all come at the beginning
+      // TODO there should be a more efficient way...
+      VectorB tempv(4*n);
+      auto tempm = make_shared<ZMatrix>(4*n, 4*n);
+      for (int i=0; i!=n; ++i) {
+        tempv[0*n+i] = eig[0*n+2*i];
+        tempv[1*n+i] = eig[2*n+2*i];
+        tempv[2*n+i] = eig[0*n+2*i+1];
+        tempv[3*n+i] = eig[2*n+2*i+1];
+
+        for (int j=0; j!=4*n; ++j) {
+          tempm->element(j, 0*n+i) = fock_tilde->element(j, 0*n+2*i);
+          tempm->element(j, 1*n+i) = fock_tilde->element(j, 2*n+2*i);
+          tempm->element(j, 2*n+i) = fock_tilde->element(j, 0*n+2*i+1);
+          tempm->element(j, 3*n+i) = fock_tilde->element(j, 2*n+2*i+1);
+        }
+      }
+      eig = tempv;
+      fock_tilde = tempm;
+    }
   }
+
   // re-order to kramers format and move negative energy states to virtual space
   ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
   { // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
