@@ -25,6 +25,7 @@
 
 #include <src/asd/asd_base.h>
 #include <src/asd/state_tensor.h>
+#include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -152,7 +153,32 @@ ASD_base::compute_rdm () {
     }
   }
   
-  onerdm_->print();
+
+  cout << "!@# Unsymmetrized 1RDM" << endl;
+  onerdm_->print(1.0e-6);
+
+  //Symmetrize: D_AB (calculated) D_BA (uncalc.& symmetrized here)
+  const int nactA = dimer_->active_refs().first->nact();
+  const int nactB = dimer_->active_refs().second->nact();
+  const int nactT = nactA + nactB;  
+  auto matBA = std::make_shared<Matrix>(nactB,nactA); //D_BA empty
+  {
+    auto low = {0, nactA};
+    auto up  = {nactA, nactT};
+    auto view = btas::make_view(onerdm_->range().slice(low,up), onerdm_->storage()); //D_AB sector of D (read ptr)
+    auto matAB = std::make_shared<Matrix>(nactA,nactB); //D_AB empty
+    std::copy(view.begin(), view.end(), matAB->begin()); //D_AB filled
+    SMITH::sort_indices<1,0, 0,1, 1,1>(matAB->data(), matBA->data(), nactA, nactB); // transpose and fill D_BA
+  }
+  {
+    auto low = {nactA, 0};
+    auto up  = {nactT, nactA};
+    auto outv = btas::make_rwview(onerdm_->range().slice(low,up), onerdm_->storage()); //D_BA sector of D (read & write ptr)
+    std::copy(matBA->begin(), matBA->end(), outv.begin()); //copy D_BA -> D_BA sector of D
+  }
+
+  cout << "!@# Symmetrized 1RDM" << endl;
+  onerdm_->print(1.0e-6);
 
 }
 
