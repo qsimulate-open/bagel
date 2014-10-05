@@ -330,16 +330,17 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
 
 unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const array<shared_ptr<const ZMatrix>,2> coeff) {
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> out;
-  // TODO : remove redundancy
-  for (size_t i = 0; i != 4; ++i)
+  const int n = tsymm_ ? 3 : 4;
+  for (size_t i = 0; i != n; ++i)
     out[bitset<2>(i)] = make_shared<ZMatrix>(*coeff[i/2] % *core_fock_ * *coeff[i%2]);
-  //out[bitset<2>("11")] = out[bitset<2>("00")]->get_conjg();  // This shortcut requires time-reversal symmetry
+  if (tsymm_)
+    out[bitset<2>("11")] = out[bitset<2>("00")]->get_conjg();
 
   assert(out.size() == 4);
   // symmetry requirement
   assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
   // Kramers requirement
-  assert((*out[bitset<2>("11")] - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8 || !tsymm_);
+  assert((*make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]) - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8 || !tsymm_);
 
   return out;
 }
