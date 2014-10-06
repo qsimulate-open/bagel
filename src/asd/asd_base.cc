@@ -264,8 +264,10 @@ ASD_base::compute_inter_2e_RDM(const array<MonomerKey,4>& keys) const {
 
   // P(p,q',r',s) : p15
   auto rdmt = rdmAA->clone();
-  SMITH::sort_indices<0,3,2,1, 0,1, 1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa
-  SMITH::sort_indices<0,3,2,1, 1,1, 1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb
+  SMITH::sort_indices<0,3,2,1, 0,1, -1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa
+  SMITH::sort_indices<1,2,3,0, 1,1, -1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa of (N,M)
+  SMITH::sort_indices<0,3,2,1, 1,1, -1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb
+  SMITH::sort_indices<1,2,3,0, 1,1, -1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb of (N,M)
 
   auto low = {    0, nactA, nactA,     0};
   auto up  = {nactA, nactT, nactT, nactA};
