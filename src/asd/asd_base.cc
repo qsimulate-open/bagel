@@ -397,7 +397,7 @@ ASD_base::compute_aET_RDM(const array<MonomerKey,4>& keys) const {
     //P(p,q',r,s) : p15
     int fac = {neleA%2 == 0 ? 1 : -1};
     SMITH::sort_indices<0,3,1,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB);
-    SMITH::sort_indices<0,3,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+    SMITH::sort_indices<0,3,1,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB);
     rdmt->scale(fac);
 
     auto low = {    0, nactA,     0,     0};
@@ -530,7 +530,7 @@ ASD_base::compute_bET_RDM(const array<MonomerKey,4>& keys) const {
 
     // P(p,q',r,s) : p15
     int fac = {neleA%2 == 0 ? 1 : -1};
-    SMITH::sort_indices<1,3,0,2, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+    SMITH::sort_indices<0,3,1,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB);
     SMITH::sort_indices<0,3,1,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB);
     rdmt->scale(fac);
 
