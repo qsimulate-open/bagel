@@ -222,7 +222,7 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
     inp->put("nclosed", ref->nclosed());
     read_restricted(inp, site);
     {
-      //Muffle hide_cout;
+      Muffle hide_cout("asd_dmrg.log", true);
       // ProductRAS calculations
       auto prod_ras = make_shared<ProductRASCI>(inp, ref, left);
       prod_ras->compute();
