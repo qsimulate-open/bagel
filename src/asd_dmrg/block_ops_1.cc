@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-BlockOperators1::BlockOperators1(shared_ptr<const DMRG_Block1> left, shared_ptr<DimerJop> jop) : left_(left) {
+BlockOperators1::BlockOperators1(shared_ptr<const DMRG_Block1> left, shared_ptr<DimerJop> jop, const double thresh) : BlockOperators(thresh), left_(left) {
   const int rnorb = jop->monomer_jop<0>()->nocc();
   const int lnorb = jop->monomer_jop<1>()->nocc();
 
@@ -165,10 +165,18 @@ BlockOperators1::BlockOperators1(shared_ptr<const DMRG_Block1> left, shared_ptr<
   }
 }
 
-shared_ptr<Matrix> BlockOperators1::gamma_a(const BlockKey bk, int i) const {
+shared_ptr<BlockSparseMatrix> BlockOperators1::gamma_a(const BlockKey bk, int i) const {
+  return get_sparse_mat_block(left_->coupling({GammaSQ::CreateAlpha}).at({BlockKey(bk.nelea+1,bk.neleb), bk}).data, i);
+}
+
+shared_ptr<BlockSparseMatrix> BlockOperators1::gamma_b(const BlockKey bk, int i) const {
+  return get_sparse_mat_block(left_->coupling({GammaSQ::CreateBeta}).at({BlockKey(bk.nelea,bk.neleb+1), bk}).data, i);
+}
+
+shared_ptr<Matrix> BlockOperators1::gamma_a_as_matrix(const BlockKey bk, int i) const {
   return get_mat_block(left_->coupling({GammaSQ::CreateAlpha}).at({BlockKey(bk.nelea+1,bk.neleb), bk}).data, i);
 }
 
-shared_ptr<Matrix> BlockOperators1::gamma_b(const BlockKey bk, int i) const {
+shared_ptr<Matrix> BlockOperators1::gamma_b_as_matrix(const BlockKey bk, int i) const {
   return get_mat_block(left_->coupling({GammaSQ::CreateBeta}).at({BlockKey(bk.nelea,bk.neleb+1), bk}).data, i);
 }

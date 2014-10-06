@@ -28,6 +28,7 @@
 
 #include <src/dimer/dimer_jop.h>
 #include <src/asd_dmrg/block_key.h>
+#include <src/math/blocksparsematrix.h>
 
 namespace bagel {
 
@@ -48,18 +49,23 @@ class DMRG_Block2;
     \f[ \hat D_{q_\tau^\dagger r_\tau s_\alpha}^{L'L} = \sum_s \Gamma^{L'L}_{p_\alpha^\dagger} (ps|rq) \f]
     \f[ \hat D_{q_\tau^\dagger r_\tau s_\beta}^{L'L} = \sum_s \Gamma^{L'L}_{p_\beta^\dagger} (ps|rq) \f] */
 class BlockOperators {
+  protected:
+    double thresh_; ///< threshold for building BlockSparseMatrix objects
+
   public:
+    BlockOperators(const double thresh) : thresh_(thresh) {}
+
     virtual std::shared_ptr<Matrix>     ham(const BlockKey bk) const  = 0;
-    virtual std::shared_ptr<Matrix>    Q_aa(const BlockKey bk, int i, int j) const  = 0;
-    virtual std::shared_ptr<Matrix>    Q_bb(const BlockKey bk, int i, int j) const  = 0;
-    virtual std::shared_ptr<Matrix>    Q_ab(const BlockKey bk, int i, int j) const  = 0;
-    virtual std::shared_ptr<Matrix>     S_a(const BlockKey bk, int i) const  = 0;
-    virtual std::shared_ptr<Matrix>     S_b(const BlockKey bk, int i) const  = 0;
-    virtual std::shared_ptr<Matrix>    P_aa(const BlockKey bk, int i, int j) const  = 0;
-    virtual std::shared_ptr<Matrix>    P_bb(const BlockKey bk, int i, int j) const  = 0;
-    virtual std::shared_ptr<Matrix>    P_ab(const BlockKey bk, int i, int j) const  = 0;
-    virtual std::shared_ptr<Matrix> gamma_a(const BlockKey bk, int i) const  = 0;
-    virtual std::shared_ptr<Matrix> gamma_b(const BlockKey bk, int i) const  = 0;
+    virtual std::shared_ptr<BlockSparseMatrix>    Q_aa(const BlockKey bk, int i, int j) const  = 0;
+    virtual std::shared_ptr<BlockSparseMatrix>    Q_bb(const BlockKey bk, int i, int j) const  = 0;
+    virtual std::shared_ptr<BlockSparseMatrix>    Q_ab(const BlockKey bk, int i, int j) const  = 0;
+    virtual std::shared_ptr<BlockSparseMatrix>     S_a(const BlockKey bk, int i) const  = 0;
+    virtual std::shared_ptr<BlockSparseMatrix>     S_b(const BlockKey bk, int i) const  = 0;
+    virtual std::shared_ptr<BlockSparseMatrix>    P_aa(const BlockKey bk, int i, int j) const  = 0;
+    virtual std::shared_ptr<BlockSparseMatrix>    P_bb(const BlockKey bk, int i, int j) const  = 0;
+    virtual std::shared_ptr<BlockSparseMatrix>    P_ab(const BlockKey bk, int i, int j) const  = 0;
+    virtual std::shared_ptr<BlockSparseMatrix> gamma_a(const BlockKey bk, int i) const  = 0;
+    virtual std::shared_ptr<BlockSparseMatrix> gamma_b(const BlockKey bk, int i) const  = 0;
 
     virtual double  ham(const BlockKey bk, int brastate, int ketstate) const  = 0;
     virtual double Q_aa(const BlockKey bk, int brastate, int ketstate, int i, int j) const  = 0;
@@ -92,19 +98,30 @@ class BlockOperators1 : public BlockOperators {
     std::unordered_map<BlockKey, std::shared_ptr<const btas::TensorN<double,5>>> D_b_;
 
   public:
-    BlockOperators1(std::shared_ptr<const DMRG_Block1> left, std::shared_ptr<DimerJop> jop);
+    BlockOperators1(std::shared_ptr<const DMRG_Block1> left, std::shared_ptr<DimerJop> jop, const double thresh = 1.0e-12);
 
     std::shared_ptr<Matrix>     ham(const BlockKey bk) const override { return ham_.at(bk)->copy(); }
-    std::shared_ptr<Matrix>    Q_aa(const BlockKey bk, int i, int j) const override { return get_mat_block(Q_aa_.at(bk), i, j); }
-    std::shared_ptr<Matrix>    Q_bb(const BlockKey bk, int i, int j) const override { return get_mat_block(Q_bb_.at(bk), i, j); }
-    std::shared_ptr<Matrix>    Q_ab(const BlockKey bk, int i, int j) const override { return get_mat_block(Q_ab_.at(bk), i, j); }
-    std::shared_ptr<Matrix>     S_a(const BlockKey bk, int i) const override { return get_mat_block(S_a_.at(bk), i); }
-    std::shared_ptr<Matrix>     S_b(const BlockKey bk, int i) const override { return get_mat_block(S_b_.at(bk), i); }
-    std::shared_ptr<Matrix>    P_aa(const BlockKey bk, int i, int j) const override { return get_mat_block(P_aa_.at(bk), i, j); }
-    std::shared_ptr<Matrix>    P_bb(const BlockKey bk, int i, int j) const override { return get_mat_block(P_bb_.at(bk), i, j); }
-    std::shared_ptr<Matrix>    P_ab(const BlockKey bk, int i, int j) const override { return get_mat_block(P_ab_.at(bk), i, j); }
-    std::shared_ptr<Matrix> gamma_a(const BlockKey bk, int i) const override;
-    std::shared_ptr<Matrix> gamma_b(const BlockKey bk, int i) const override;
+    std::shared_ptr<BlockSparseMatrix>    Q_aa(const BlockKey bk, int i, int j) const override { return get_sparse_mat_block(Q_aa_.at(bk), i, j); }
+    std::shared_ptr<BlockSparseMatrix>    Q_bb(const BlockKey bk, int i, int j) const override { return get_sparse_mat_block(Q_bb_.at(bk), i, j); }
+    std::shared_ptr<BlockSparseMatrix>    Q_ab(const BlockKey bk, int i, int j) const override { return get_sparse_mat_block(Q_ab_.at(bk), i, j); }
+    std::shared_ptr<BlockSparseMatrix>     S_a(const BlockKey bk, int i) const override { return get_sparse_mat_block(S_a_.at(bk), i); }
+    std::shared_ptr<BlockSparseMatrix>     S_b(const BlockKey bk, int i) const override { return get_sparse_mat_block(S_b_.at(bk), i); }
+    std::shared_ptr<BlockSparseMatrix>    P_aa(const BlockKey bk, int i, int j) const override { return get_sparse_mat_block(P_aa_.at(bk), i, j); }
+    std::shared_ptr<BlockSparseMatrix>    P_bb(const BlockKey bk, int i, int j) const override { return get_sparse_mat_block(P_bb_.at(bk), i, j); }
+    std::shared_ptr<BlockSparseMatrix>    P_ab(const BlockKey bk, int i, int j) const override { return get_sparse_mat_block(P_ab_.at(bk), i, j); }
+    std::shared_ptr<BlockSparseMatrix> gamma_a(const BlockKey bk, int i) const override;
+    std::shared_ptr<BlockSparseMatrix> gamma_b(const BlockKey bk, int i) const override;
+
+    std::shared_ptr<Matrix>    Q_aa_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(Q_aa_.at(bk), i, j); }
+    std::shared_ptr<Matrix>    Q_bb_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(Q_bb_.at(bk), i, j); }
+    std::shared_ptr<Matrix>    Q_ab_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(Q_ab_.at(bk), i, j); }
+    std::shared_ptr<Matrix>     S_a_as_matrix(const BlockKey bk, int i) const { return get_mat_block(S_a_.at(bk), i); }
+    std::shared_ptr<Matrix>     S_b_as_matrix(const BlockKey bk, int i) const { return get_mat_block(S_b_.at(bk), i); }
+    std::shared_ptr<Matrix>    P_aa_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(P_aa_.at(bk), i, j); }
+    std::shared_ptr<Matrix>    P_bb_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(P_bb_.at(bk), i, j); }
+    std::shared_ptr<Matrix>    P_ab_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(P_ab_.at(bk), i, j); }
+    std::shared_ptr<Matrix> gamma_a_as_matrix(const BlockKey bk, int i) const;
+    std::shared_ptr<Matrix> gamma_b_as_matrix(const BlockKey bk, int i) const;
 
     double  ham(const BlockKey bk, int brastate, int ketstate) const override { return ham_.at(bk)->element(brastate,ketstate); }
     double Q_aa(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return (*Q_aa_.at(bk))(brastate, ketstate, i, j); }
@@ -133,6 +150,11 @@ class BlockOperators1 : public BlockOperators {
     template <typename TensorType>
     const MatView get_as_matview(std::shared_ptr<const TensorType> t) const {
       return MatView(btas::make_view(btas::CRange<2>(t->extent(0)*t->extent(1), t->size()/(t->extent(0)*t->extent(1))), t->storage()), false);
+    }
+
+    template <typename... Args>
+    std::shared_ptr<BlockSparseMatrix> get_sparse_mat_block(Args... args) const {
+      return std::make_shared<BlockSparseMatrix>(get_mat_block(args...));
     }
 
     std::shared_ptr<Matrix> get_mat_block(std::shared_ptr<const btas::Tensor3<double>> g, const int i) const {
@@ -164,20 +186,21 @@ class BlockOperators2 : public BlockOperators {
     std::shared_ptr<DimerJop> jop_;
 
   public:
-    BlockOperators2(std::shared_ptr<const DMRG_Block2> blocks, std::shared_ptr<DimerJop> jop);
+    BlockOperators2(std::shared_ptr<const DMRG_Block2> blocks, std::shared_ptr<DimerJop> jop, const double thresh = 1.0e-13);
 
     std::shared_ptr<Matrix>     ham(const BlockKey bk) const override;
-    std::shared_ptr<Matrix>    Q_aa(const BlockKey bk, int i, int j) const override;
-    std::shared_ptr<Matrix>    Q_bb(const BlockKey bk, int i, int j) const override;
-    std::shared_ptr<Matrix>    Q_ab(const BlockKey bk, int i, int j) const override;
-    std::shared_ptr<Matrix>     S_a(const BlockKey bk, int i) const override;
-    std::shared_ptr<Matrix>     S_b(const BlockKey bk, int i) const override;
-    std::shared_ptr<Matrix>    P_aa(const BlockKey bk, int i, int j) const override;
-    std::shared_ptr<Matrix>    P_bb(const BlockKey bk, int i, int j) const override;
-    std::shared_ptr<Matrix>    P_ab(const BlockKey bk, int i, int j) const override;
-    std::shared_ptr<Matrix> gamma_a(const BlockKey bk, int i) const override;
-    std::shared_ptr<Matrix> gamma_b(const BlockKey bk, int i) const override;
+    std::shared_ptr<BlockSparseMatrix>    Q_aa(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<BlockSparseMatrix>    Q_bb(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<BlockSparseMatrix>    Q_ab(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<BlockSparseMatrix>     S_a(const BlockKey bk, int i) const override;
+    std::shared_ptr<BlockSparseMatrix>     S_b(const BlockKey bk, int i) const override;
+    std::shared_ptr<BlockSparseMatrix>    P_aa(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<BlockSparseMatrix>    P_bb(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<BlockSparseMatrix>    P_ab(const BlockKey bk, int i, int j) const override;
+    std::shared_ptr<BlockSparseMatrix> gamma_a(const BlockKey bk, int i) const override;
+    std::shared_ptr<BlockSparseMatrix> gamma_b(const BlockKey bk, int i) const override;
 
+    // these should all be replaced with more direct functions
     double  ham(const BlockKey bk, int brastate, int ketstate) const override { return ham(bk)->element(brastate,ketstate); }
     double Q_aa(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return Q_aa(bk, i, j)->element(brastate, ketstate); }
     double Q_bb(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return Q_bb(bk, i, j)->element(brastate, ketstate); }

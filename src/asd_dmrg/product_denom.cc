@@ -94,11 +94,11 @@ void ProductRASCI::construct_denom() {
       Matrix Qbb(rnorb, nstates);
 
       for (int r = 0; r < rnorb; ++r) {
-        shared_ptr<const Matrix> qaa_r = blockops_->Q_aa(sec.first,r,r);
-        shared_ptr<const Matrix> qbb_r = blockops_->Q_bb(sec.first,r,r);
+        shared_ptr<const VectorB> qaa_r = blockops_->Q_aa(sec.first,r,r)->diagonal();
+        shared_ptr<const VectorB> qbb_r = blockops_->Q_bb(sec.first,r,r)->diagonal();
         for (int i = 0; i < nstates; ++i) {
-          Qaa(r, i) = qaa_r->element(i,i);
-          Qbb(r, i) = qbb_r->element(i,i);
+          Qaa(r, i) = (*qaa_r)(i);
+          Qbb(r, i) = (*qbb_r)(i);
         }
       }
 

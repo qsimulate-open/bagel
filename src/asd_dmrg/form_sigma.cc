@@ -26,6 +26,7 @@
 #include <map>
 
 #include <src/math/sparsematrix.h>
+#include <src/math/blocksparsematrix.h>
 #include <src/asd_dmrg/form_sigma.h>
 #include <src/ras/form_sigma.h>
 #include <src/ras/apply_operator.h>
@@ -115,6 +116,7 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
 
     shared_ptr<RASBlockVectors> sigma_sector = sector.second;
     shared_ptr<const RASBlockVectors> cc_sector = cc->sector(sector.first);
+    // TODO: would this benefit from being blocksparse?
     dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, cc_sector->data(), cc_sector->ndim(), pure_block.data(), pure_block.ndim(),
                                                                                       0.0, sigma_sector->data(), sigma_sector->ndim());
     ptime.tick_print("pure_block");
@@ -251,9 +253,8 @@ void FormSigmaProdRAS::aET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::CreateAlpha}, {r});
     if (do_single) {
-      shared_ptr<const Matrix> Sr = blockops->S_a(singleETkey, r);
-      dgemm_("N", "N", single_sector->ndim(), single_sector->mdim(), sector_r.mdim(), phase, sector_r.data(), sector_r.ndim(),
-                                                            Sr->data(), Sr->ndim(), 1.0, single_sector->data(), single_sector->ndim());
+      shared_ptr<const BlockSparseMatrix> Sr = blockops->S_a(singleETkey, r);
+      mat_block_multiply(false, false, phase, sector_r, *Sr, 1.0, *single_sector);
     }
     if (do_double) {
       for (int s = 0; s < r; ++s) {
@@ -261,9 +262,8 @@ void FormSigmaProdRAS::aET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_double->civec(ist), {GammaSQ::CreateAlpha}, {s});
 
-        auto Prs = make_shared<Matrix>(*blockops->P_aa(cckey, s, r) - *blockops->P_aa(cckey, r, s));
-        dgemm_("N", "T", double_sector->ndim(), double_sector->mdim(), nccstates, 1.0, tmp_double->data(), tmp_double->ndim(),
-                                                            Prs->data(), Prs->ndim(), 1.0, double_sector->data(), double_sector->ndim());
+        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_aa(cckey, s, r);
+        mat_block_multiply(false, true, 2.0, *tmp_double, *Prs, 1.0, *double_sector);
       }
     }
   }
@@ -306,9 +306,8 @@ void FormSigmaProdRAS::bET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::CreateBeta}, {r});
     if (do_b) {
-      shared_ptr<const Matrix> Sr = blockops->S_b(bETkey, r);
-      dgemm_("N", "N", b_sector->ndim(), b_sector->mdim(), sector_r.mdim(), phase, sector_r.data(), sector_r.ndim(),
-                                                  Sr->data(), Sr->ndim(), 1.0, b_sector->data(), b_sector->ndim());
+      shared_ptr<const BlockSparseMatrix> Sr = blockops->S_b(bETkey, r);
+      mat_block_multiply(false, false, phase, sector_r, *Sr, 1.0, *b_sector);
     }
 
     if (do_bb) {
@@ -317,9 +316,8 @@ void FormSigmaProdRAS::bET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_bb->civec(ist), {GammaSQ::CreateBeta}, {s});
 
-        auto Prs = make_shared<Matrix>(*blockops->P_bb(cckey, s, r) - *blockops->P_bb(cckey, r, s));
-        dgemm_("N", "T", bb_sector->ndim(), bb_sector->mdim(), nccstates, 1.0, tmp_bb->data(), tmp_bb->ndim(),
-                                                            Prs->data(), Prs->ndim(), 1.0, bb_sector->data(), bb_sector->ndim());
+        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_bb(cckey, s, r);
+        mat_block_multiply(false, true, 2.0, *tmp_bb, *Prs, 1.0, *bb_sector);
       }
     }
 
@@ -329,9 +327,8 @@ void FormSigmaProdRAS::bET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_ab->civec(ist), {GammaSQ::CreateAlpha}, {s});
 
-        shared_ptr<const Matrix> Prs = blockops->P_ab(cckey, s, r);
-        dgemm_("N", "T", ab_sector->ndim(), ab_sector->mdim(), nccstates, 1.0, tmp_ab->data(), tmp_ab->ndim(),
-                                      Prs->data(), Prs->ndim(), 1.0, ab_sector->data(), ab_sector->ndim());
+        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_ab(cckey, s, r);
+        mat_block_multiply(false, true, 1.0, *tmp_ab, *Prs, 1.0, *ab_sector);
       }
     }
   }
@@ -369,9 +366,8 @@ void FormSigmaProdRAS::aHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::AnnihilateAlpha}, {r});
     if (do_aHT) {
-      shared_ptr<const Matrix> Sr = blockops->S_a(cckey, r);
-      dgemm_("N", "T", a_sector->ndim(), a_sector->mdim(), sector_r.mdim(), phase, sector_r.data(), sector_r.ndim(),
-                                                  Sr->data(), Sr->ndim(), 1.0, a_sector->data(), a_sector->ndim());
+      shared_ptr<const BlockSparseMatrix> Sr = blockops->S_a(cckey, r);
+      mat_block_multiply(false, true, phase, sector_r, *Sr, 1.0, *a_sector);
     }
 
     if (do_aaHT) {
@@ -380,9 +376,8 @@ void FormSigmaProdRAS::aHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_aa->civec(ist), {GammaSQ::AnnihilateAlpha}, {s});
 
-        auto Prs = make_shared<Matrix>(*blockops->P_aa(aaHTkey, r, s) - *blockops->P_aa(aaHTkey, s, r));
-        dgemm_("N", "N", aa_sector->ndim(), aa_sector->mdim(), nccstates, 1.0, tmp_aa->data(), tmp_aa->ndim(),
-                                                    Prs->data(), Prs->ndim(), 1.0, aa_sector->data(), aa_sector->ndim());
+        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_aa(aaHTkey, r, s);
+        mat_block_multiply(false, false, 2.0, *tmp_aa, *Prs, 1.0, *aa_sector);
       }
     }
   }
@@ -424,9 +419,8 @@ void FormSigmaProdRAS::bHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::AnnihilateBeta}, {r});
     if (do_bHT) {
-      shared_ptr<const Matrix> Sr = blockops->S_b(cckey, r);
-      dgemm_("N", "T", b_sector->ndim(), b_sector->mdim(), sector_r.mdim(), phase, sector_r.data(), sector_r.ndim(),
-                                                  Sr->data(), Sr->ndim(), 1.0, b_sector->data(), b_sector->ndim());
+      shared_ptr<const BlockSparseMatrix> Sr = blockops->S_b(cckey, r);
+      mat_block_multiply(false, true, phase, sector_r, *Sr, 1.0, *b_sector);
     }
 
     if (do_bbHT) {
@@ -435,9 +429,8 @@ void FormSigmaProdRAS::bHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_bb->civec(ist), {GammaSQ::AnnihilateBeta}, {s});
 
-        auto Prs = make_shared<const Matrix>(*blockops->P_bb(bbHTkey, r, s) - *blockops->P_bb(bbHTkey, s, r));
-        dgemm_("N", "N", bb_sector->ndim(), bb_sector->mdim(), nccstates, 1.0, tmp_bb->data(), tmp_bb->ndim(),
-                                                  Prs->data(), Prs->ndim(), 1.0, bb_sector->data(), bb_sector->ndim());
+        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_bb(bbHTkey, r, s);
+        mat_block_multiply(false, false, 2.0, *tmp_bb, *Prs, 1.0, *bb_sector);
       }
     }
 
@@ -447,9 +440,8 @@ void FormSigmaProdRAS::bHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
         for (int ist = 0; ist < nccstates; ++ist)
           apply(1.0, sector_r.civec(ist), tmp_ab->civec(ist), {GammaSQ::AnnihilateAlpha}, {s});
 
-        shared_ptr<const Matrix> Prs = blockops->P_ab(abHTkey, s, r);
-        dgemm_("N", "N", ab_sector->ndim(), ab_sector->mdim(), nccstates, -1.0, tmp_ab->data(), tmp_ab->ndim(),
-                                       Prs->data(), Prs->ndim(), 1.0, ab_sector->data(), ab_sector->ndim());
+        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_ab(abHTkey, s, r);
+        mat_block_multiply(false, false, -1.0, *tmp_ab, *Prs, 1.0, *ab_sector);
       }
     }
   }
@@ -473,9 +465,8 @@ void FormSigmaProdRAS::aexc_branch(shared_ptr<const RASBlockVectors> cc_sector, 
       for (int ist = 0; ist < nccstates; ++ist)
         apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateAlpha,GammaSQ::AnnihilateAlpha}, {r,s});
 
-      shared_ptr<const Matrix> Qrs = blockops->Q_aa(cckey, r, s);
-      dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), Qrs->data(), Qrs->ndim(),
-                                                                                        1.0, sigma_sector->data(), sigma_sector->ndim());
+      shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_aa(cckey, r, s);
+      mat_block_multiply(false, true, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
 
     }
   }
@@ -498,10 +489,8 @@ void FormSigmaProdRAS::bexc_branch(shared_ptr<const RASBlockVectors> cc_sector, 
       for (int ist = 0; ist < nccstates; ++ist)
         apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateBeta,GammaSQ::AnnihilateBeta}, {r,s});
 
-      shared_ptr<const Matrix> Qrs = blockops->Q_bb(cckey, r, s);
-      dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), Qrs->data(), Qrs->ndim(),
-                                                                                        1.0, sigma_sector->data(), sigma_sector->ndim());
-
+      shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_bb(cckey, r, s);
+      mat_block_multiply(false, true, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
     }
   }
 
@@ -528,9 +517,8 @@ void FormSigmaProdRAS::abflip_branch(shared_ptr<const RASBlockVectors> cc_sector
       for (int ist = 0; ist < nccstates; ++ist)
         apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateAlpha,GammaSQ::AnnihilateBeta}, {r, s});
 
-      shared_ptr<const Matrix> Qrs = blockops->Q_ab(cckey, r, s);
-      dgemm_("N", "T", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), Qrs->data(), Qrs->ndim(),
-                                                                                     1.0, sigma_sector->data(), sigma_sector->ndim());
+      shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_ab(cckey, r, s);
+      mat_block_multiply(false, true, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
     }
   }
 }
@@ -555,9 +543,8 @@ void FormSigmaProdRAS::baflip_branch(shared_ptr<const RASBlockVectors> cc_sector
       for (int ist = 0; ist < nccstates; ++ist)
         apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateBeta,GammaSQ::AnnihilateAlpha}, {r, s});
 
-      shared_ptr<const Matrix> Qrs = blockops->Q_ab(flipkey, s, r);
-      dgemm_("N", "N", sigma_sector->ndim(), sigma_sector->mdim(), sector_rs.mdim(), 1.0, sector_rs.data(), sector_rs.ndim(), Qrs->data(), Qrs->ndim(),
-                                                                                     1.0, sigma_sector->data(), sigma_sector->ndim());
+      shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_ab(flipkey, s, r);
+      mat_block_multiply(false, false, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
     }
   }
 }
@@ -587,9 +574,8 @@ void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_s
       resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp, sparseij);
     }
 
-    shared_ptr<const Matrix> gamma_a = blockops->gamma_a(aETkey, p);
-    dgemm_("N", "N", sigma_sector->ndim(), sigma_sector->mdim(), cc_sector->mdim(), phase, tmp_sector.data(), tmp_sector.ndim(),
-                                              gamma_a->data(), gamma_a->ndim(), 1.0, sigma_sector->data(), sigma_sector->ndim());
+    shared_ptr<const BlockSparseMatrix> gamma_a = blockops->gamma_a(aETkey, p);
+    mat_block_multiply(false, false, phase, tmp_sector, *gamma_a, 1.0, *sigma_sector);
   }
 }
 
@@ -619,9 +605,8 @@ void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_s
       resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp, sparseij);
     }
 
-    shared_ptr<const Matrix> gamma_a = blockops->gamma_a(cc_sector->left_state(), p);
-    dgemm_("N", "T", sigma_sector->ndim(), sigma_sector->mdim(), cc_sector->mdim(), phase, tmp_sector.data(), tmp_sector.ndim(),
-                                              gamma_a->data(), gamma_a->ndim(), 1.0, sigma_sector->data(), sigma_sector->ndim());
+    shared_ptr<const BlockSparseMatrix> gamma_a = blockops->gamma_a(cc_sector->left_state(), p);
+    mat_block_multiply(false, true, phase, tmp_sector, *gamma_a, 1.0, *sigma_sector);
   }
 }
 
@@ -657,9 +642,8 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
       resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp, sparseij);
     }
 
-    shared_ptr<const Matrix> gamma_b = blockops->gamma_b(bETkey, p);
-    dgemm_("N", "N", sigma_trans.ndim(), sigma_trans.mdim(), cc_sector->mdim(), phase, tmp_sector.data(), tmp_sector.ndim(),
-                                              gamma_b->data(), gamma_b->ndim(), 1.0, sigma_trans.data(), sigma_trans.ndim());
+    shared_ptr<const BlockSparseMatrix> gamma_b = blockops->gamma_b(bETkey, p);
+    mat_block_multiply(false, false, phase, tmp_sector, *gamma_b, 1.0, sigma_trans);
   }
 
   for (int isg = 0; isg < sigma_sector->mdim(); ++isg)
@@ -699,9 +683,8 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
       resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp, sparseij);
     }
 
-    shared_ptr<const Matrix> gamma_b = blockops->gamma_b(cc_sector->left_state(), p);
-    dgemm_("N", "T", sigma_trans.ndim(), sigma_trans.mdim(), cc_sector->mdim(), phase, tmp_sector.data(), tmp_sector.ndim(),
-                                              gamma_b->data(), gamma_b->ndim(), 1.0, sigma_trans.data(), sigma_trans.ndim());
+    shared_ptr<const BlockSparseMatrix> gamma_b = blockops->gamma_b(cc_sector->left_state(), p);
+    mat_block_multiply(false, true, phase, tmp_sector, *gamma_b, 1.0, sigma_trans);
   }
 
   for (int isg = 0; isg < sigma_sector->mdim(); ++isg)
