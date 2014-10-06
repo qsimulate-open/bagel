@@ -32,4 +32,14 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(PFock)
 
 PFock::PFock(shared_ptr<const Lattice> l, shared_ptr<const PData> h, shared_ptr<const PData> c)
-  : PData(l->primitive_cell()->nbasis(), l->num_lattice_kvectors()), lattice_(l), previous_(h), pcoeff_(c) { }
+  : PData(l->primitive_cell()->nbasis(), l->num_lattice_vectors()), lattice_(l), previous_(h), pcoeff_(c) {
+
+  assert(h->blocksize() == blocksize_ && c->blocksize() == blocksize_);
+  assert(h->nblock() == nblock_ && c->nblock() == nblock_);
+}
+
+void PFock::form_pfock() {
+
+  for (int i = 0; i != nblock_; ++i)
+    *(pdata_[i]) += *((*previous_)(i));
+}

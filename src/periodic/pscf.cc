@@ -27,6 +27,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <src/util/timer.h>
+#include <src/math/diis.h>
 #include <src/periodic/pscf.h>
 
 using namespace std;
@@ -50,6 +51,7 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   lattice_->print_lattice_coordinates();
   lattice_->print_primitive_kvectors();
 
+  eig_ = VectorB(geom_->nbasis());
 }
 
 void PSCF::compute() {
@@ -58,22 +60,22 @@ void PSCF::compute() {
 
   shared_ptr<const PData> koverlap = overlap_->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
   shared_ptr<const PData> ktildex  = tildex_->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
-  shared_ptr<PData> kcoeff;
+  shared_ptr<const PData> khcore   = hcore_->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
 
   const int nkblock = lattice_->num_lattice_kvectors();
   const int blocksize = overlap_->blocksize();
+  auto kcoeff = make_shared<PCoeff>(blocksize, nkblock);
+  shared_ptr<const PData> coeff;
 
   if (coeff_ == nullptr) {
-    shared_ptr<const PData> kfock = hcore_->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+    shared_ptr<const PData> kfock = khcore;
     auto intermediate = make_shared<PData>(blocksize, nkblock);
     for (int i = 0; i != nkblock; ++i) {
       const ZMatrix kblock = *((*ktildex)(i)) % *((*kfock)(i)) * *((*ktildex)(i));
       (*intermediate)[i] = make_shared<ZMatrix>(kblock);
-    }
-    kcoeff = make_shared<PData>(blocksize, nkblock);
-    for (int i = 0; i != nkblock; ++i) {
-      const ZMatrix kblock = *((*ktildex)(i)) * *((*intermediate)(i));
-      (*kcoeff)[i] = make_shared<ZMatrix>(kblock);
+      (*kcoeff)[i] = make_shared<ZMatrix>(*((*ktildex)(i)) * *((*intermediate)(i)));
+      coeff = kcoeff->ift(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+      coeff_ = make_shared<const PCoeff>(*coeff);
     }
   } else {
     throw runtime_error("Working on it...");
@@ -92,10 +94,58 @@ void PSCF::compute() {
   cout << endl;
 
   cout << indent << "=== PSCF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
+  DIIS<ZMatrix, ZMatrix> diis(diis_size_);
 
   for (int iter = 0; iter !=  max_iter_; ++iter) {
+    auto fock = make_shared<const PFock>(lattice_, hcore_, coeff);
+    shared_ptr<const PData> kfock = fock->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+    vector<complex<double>> energy(nkblock);
+    double error = 0.0;
+    double max_imag = 0.0;
+    auto error_vector = make_shared<PData>(blocksize, nkblock);
+    for (int i = 0; i != nkblock; ++i) {
+      energy[i] = 0.5 * ((*((*khcore)(i)) + *((*kfock)(i)) * *((*aodensity)(i))).trace()) + lattice_->nuclear_repulsion();
+      assert(energy[i].imag() < 1e-8);
+      if (abs(energy[i].imag()) > max_imag) max_imag = abs(energy[i].imag());
+      (*error_vector)[i] = make_shared<ZMatrix>(*((*kfock)(i)) * *((*aodensity)(i)) * *((*koverlap)(i))
+                                              - *((*koverlap)(i)) * *((*aodensity)(i)) * *((*kfock)(i)));
+      const double block_error = (*error_vector)(i)->rms();
+      if (abs(block_error) > error) error = abs(block_error);
+      cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy[i].real() << "   ";
+    }
+    cout << setw(17) << error << setw(15) << setprecision(2) << pscftime.tick();
+    if (abs(max_imag) > 1e-12) {
+      cout << "  *** Warning *** Im(E) = " << setw(15) << fixed << setprecision(12) << max_imag << endl;
+    } else {
+      cout << endl;
+    }
 
+    if (error < thresh_scf_) {
+      cout << indent << endl << indent << "  * PSCF iteration converged." << endl << endl;
+      break;
+    } else if (iter == max_iter_-1) {
+      cout << indent << endl << indent << "  * Max iteration reached in SOSCF." << endl << endl;
+      break;
+    }
+
+    auto newfock = make_shared<PData>(blocksize, nkblock);
+    if (iter >= diis_start_) {
+      for (int i = 0; i != nkblock; ++i)
+        (*newfock)[i] = diis.extrapolate({(*kfock)(i), (*error_vector)(i)});
+    }
+
+    auto intermediate = make_shared<PData>(blocksize, nkblock);
+    for (int i = 0; i != nkblock; ++i) {
+      const ZMatrix kblock = *((*ktildex)(i)) % *((*newfock)(i)) * *((*ktildex)(i));
+      (*intermediate)[i] = make_shared<ZMatrix>(kblock);
+      (*intermediate)[i]->diagonalize(eig());
+      (*kcoeff)[i] = make_shared<ZMatrix>(*((*ktildex)(i)) * *((*intermediate)(i)));
+    }
+
+    aodensity = kcoeff->form_density_rhf(nocc_);
+    coeff = kcoeff->ift(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
   }
 
+  coeff_ = make_shared<const PCoeff>(*coeff);
 
 }

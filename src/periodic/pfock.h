@@ -52,6 +52,7 @@ class PFock : public PData {
     PFock(std::shared_ptr<const Lattice> lattice, std::shared_ptr<const PData> previous, std::shared_ptr<const PData> pcoeff);
     ~PFock() { }
 
+    void form_pfock();  /* add 2-electron part */
 };
 
 }
