@@ -60,7 +60,7 @@ class BlockSparseMatrix {
 
     /// element-wise read-only: is slow and not recommended.
     double element(const int n, const int m) const {
-      auto iter = find_if(data_.begin(), data_.end(), [&n, &m] (std::pair<std::pair<size_t, size_t>, std::shared_ptr<Matrix>> p)
+      auto iter = std::find_if(data_.begin(), data_.end(), [&n, &m] (std::pair<std::pair<size_t, size_t>, std::shared_ptr<Matrix>> p)
         { return (n >= p.first.first && n < p.first.first + p.second->ndim()) && (m >= p.first.second && m < p.first.second + p.second->mdim()); });
       if (iter!=data_.end())
         return iter->second->element(n - iter->first.first, m - iter->first.second);
