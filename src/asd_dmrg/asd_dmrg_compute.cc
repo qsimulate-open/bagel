@@ -88,7 +88,7 @@ void ASD_DMRG::compute() {
       cout << "  " << print_progress(site, ">>", ">>") << setw(16) << dmrg_timer.tick() << endl;
     }
 
-    bool conv = (perturb_ == 0.0);
+    bool conv = (perturb_ < perturb_min_);
     bool drop_perturb = true;
 
     cout << endl;
@@ -115,7 +115,7 @@ void ASD_DMRG::compute() {
     if (perturb_ != 0.0) {
       if (drop_perturb) {
         perturb_ *= 0.1;
-        if (perturb_<perturb_min_) {
+        if (perturb_ < perturb_min_) {
           cout << "  o perturbation turned off" << endl;
           perturb_ = 0.0;
         }
@@ -123,11 +123,11 @@ void ASD_DMRG::compute() {
           cout << "  o perturbation lowered to " << perturb_ << endl;
         }
       }
+    }
 
-      if (conv) {
-        cout << "  * Converged!" << endl;
-        break;
-      }
+    if (conv) {
+      cout << "  * Converged!" << endl;
+      break;
     }
   }
 
