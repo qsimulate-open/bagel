@@ -49,7 +49,7 @@ shared_ptr<VectorB> BlockSparseMatrix::diagonal() const {
   return out;
 }
 
-void mat_block_multiply(const bool Atrans, const bool Btrans, const double alpha, const Matrix& A, const BlockSparseMatrix& B, const double beta, Matrix& C) {
+void bagel::mat_block_multiply(const bool Atrans, const bool Btrans, const double alpha, const Matrix& A, const BlockSparseMatrix& B, const double beta, Matrix& C) {
   assert((Atrans ? A.mdim() : A.ndim())==C.ndim() &&
          (Btrans ? B.ndim() : B.mdim())==C.mdim() &&
          (Atrans ? A.ndim() : A.mdim())==(Btrans ? B.mdim() : B.ndim()));
@@ -59,15 +59,15 @@ void mat_block_multiply(const bool Atrans, const bool Btrans, const double alpha
 
   const int n = Atrans ? A.mdim() : A.ndim();
 
-  for (auto block : B.data()) {
-    const int bnstart = block.first.second;
+  for (auto& block : B.data()) {
+    const int bnstart = block.first.first;
     const int bmstart = block.first.second;
     shared_ptr<const Matrix> bmat = block.second;
 
     const int m = Btrans ? bmat->ndim() : bmat->mdim();
     const int k = Btrans ? bmat->mdim() : bmat->ndim();
 
-    const int kstart = Btrans ? bmstart : bmstart;
+    const int kstart = Btrans ? bmstart : bnstart;
 
     const double* adata = Atrans ? A.element_ptr(kstart, 0) : A.element_ptr(0, kstart);
 

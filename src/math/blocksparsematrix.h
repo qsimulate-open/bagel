@@ -38,7 +38,6 @@ class BlockSparseMatrix {
 
     int ndim_;
     int mdim_;
-    int size_;
 
   public:
     /// A single block (so actually a dense matrix)
@@ -57,7 +56,7 @@ class BlockSparseMatrix {
 
     int ndim() const { return ndim_; }
     int mdim() const { return mdim_; }
-    int size() const { return size_; }
+    int size() const { return accumulate(data_.begin(), data_.end(), 0, [] (int x, std::pair<std::pair<size_t, size_t>, std::shared_ptr<Matrix>> p) { return x + p.second->size(); }); }
 
     /// element-wise read-only: is slow and not recommended.
     double element(const int n, const int m) const {
