@@ -118,3 +118,12 @@ shared_ptr<const PData> PData::ift(const vector<array<double, 3>> gvector, const
 
   return make_shared<const PData>(out);
 }
+
+shared_ptr<PData> PData::tildex(const double thresh_overlap) const {
+
+  auto out = make_shared<PData>(blocksize_, nblock_);
+  for (int i = 0; i != nblock_; ++i)
+    (*out)[i] = pdata_[i]->tildex(thresh_overlap);
+
+  return out;
+}

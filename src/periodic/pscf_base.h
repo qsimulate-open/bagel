@@ -37,8 +37,8 @@ namespace bagel {
 class PSCF_base : public Method {
   protected:
     std::shared_ptr<const Lattice> lattice_;
-    std::shared_ptr<const PData> tildex_;
-    std::shared_ptr<const POverlap> overlap_;
+    std::shared_ptr<const PData> ktildex_;
+    std::shared_ptr<const PData> koverlap_;
     std::shared_ptr<const PHcore> hcore_;
     std::shared_ptr<const PCoeff> coeff_;
 
@@ -67,7 +67,7 @@ class PSCF_base : public Method {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<Method>(*this);
-      ar & lattice_ & tildex_ & overlap_ & hcore_ & coeff_
+      ar & lattice_ & ktildex_ & koverlap_ & hcore_ & coeff_
          & max_iter_ & diis_start_ & diis_size_ & thresh_overlap_ & thresh_scf_
          & eig_ & energy_ & nocc_ & noccB_ & restart_;
     }

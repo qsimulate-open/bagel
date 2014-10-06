@@ -75,6 +75,8 @@ class PData {
     // Inverse Fourier transform
     std::shared_ptr<const PData> ift(const std::vector<std::array<double, 3>> gvector /*real space*/,
                                      const std::vector<std::array<double, 3>> kvector /*k space */) const;
+
+    std::shared_ptr<PData> tildex(const double thresh_overlap) const;
 };
 
 }

@@ -43,7 +43,9 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
   Timer pscf;
 
   restart_ = idata_->get<bool>("restart", false);
-  overlap_ = make_shared<const POverlap>(lattice_);
+  auto overlap = make_shared<const POverlap>(lattice_);
+  koverlap_ = overlap->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+  koverlap_->print_real_part("k-overlap", 100);
   pscf.tick_print("Periodic overlap matrix");
   hcore_ = make_shared<const PHcore>(lattice_);
   pscf.tick_print("Periodic hcore matrix");
@@ -65,7 +67,8 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
   if (nocc_ + noccB_ != geom_->nele() - ncharge)
     throw runtime_error("*** nocc and nact for the unit cell are not consistently specified!");
 
-  tildex_ = overlap_->tildex(thresh_overlap_);
+  ktildex_ = koverlap_->tildex(thresh_overlap_);
+  ktildex_->print_real_part("k-tildex", 100);
   pscf.tick_print("Periodic overlap orthogonalization");
 
   cout << endl;

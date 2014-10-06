@@ -52,12 +52,3 @@ void POverlap::computebatch(const array<shared_ptr<const Shell>,2>& input, const
   pdata_[block]->copy_real_block(1.0, offsetb1, offsetb0, dimb1, dimb0, o);
 
 }
-
-shared_ptr<PData> POverlap::tildex(const double thresh_overlap) const {
-
-  auto out = make_shared<PData>(blocksize_, nblock_);
-  for (int i = 0; i != nblock_; ++i)
-    (*out)[i] = pdata_[i]->tildex(thresh_overlap);
-
-  return out;
-}
