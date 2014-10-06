@@ -67,6 +67,7 @@ class PData {
     void allreduce();
     void fill_upper_negative();
     void print(const std::string tag = "", const int size = 10) const;
+    void print_real_part(const std::string tag = "", const int size = 10) const;
 
     // Fourier transform
     std::shared_ptr<const PData> ft(const std::vector<std::array<double, 3>> gvector /*real space*/,

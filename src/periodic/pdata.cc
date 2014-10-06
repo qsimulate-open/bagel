@@ -59,6 +59,15 @@ void PData::print(const string tag, const int size) const {
   for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) (*iblock)->print("", size);
 }
 
+void PData::print_real_part(const string tag, const int size) const {
+  assert(pdata_.front()->get_imag_part()->rms() < 1e-10);
+  pdata_.front()->get_real_part()->print(tag, size);
+  for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) {
+    assert((*iblock)->get_imag_part()->rms() < 1e-10);
+    (*iblock)->get_real_part()->print("", size);
+  }
+}
+
 shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const vector<array<double, 3>> kvector) const {
 
   PData out(blocksize_, kvector.size());
