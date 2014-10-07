@@ -183,7 +183,7 @@ ASD_base::compute_rdm () {
   cout << "!@# Symmetrized 1RDM" << endl;
   onerdm_->print(1.0e-6);
 
-  //Symmetrize: d(ABAA) note p18B
+  //Symmetrize: d(ABAA) note p18B, 19B
   {
     auto low = {0,nactA,0,0};
     auto up  = {nactA,nactT,nactA,nactA};
@@ -192,7 +192,7 @@ ASD_base::compute_rdm () {
     copy(view.begin(), view.end(), inmat->begin()); //d_ABAA filled
     { //d(AAAB)
       auto outmat = make_shared<Matrix>(nactA*nactA,nactA*nactB); //empty d_AAAB
-      SMITH::sort_indices<0,3,2,1, 0,1, -1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactA); //reorder and fill d_AAAB
+      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactA); //reorder and fill d_AAAB
       auto low = {0,0,0,nactA};
       auto up  = {nactA,nactA,nactA,nactT};
       auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_AAAB sector of d
@@ -208,7 +208,7 @@ ASD_base::compute_rdm () {
     } 
     { //d(AABA)
       auto outmat = make_shared<Matrix>(nactA*nactA,nactB*nactA); //empty d_AABA
-      SMITH::sort_indices<3,0,1,2, 0,1, -1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactA); //reorder and fill d_AABA
+      SMITH::sort_indices<3,2,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactA); //reorder and fill d_AABA
       auto low = {0,0,nactA,0};
       auto up  = {nactA,nactA,nactT,nactA};
       auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_AABA sector of d
@@ -216,7 +216,7 @@ ASD_base::compute_rdm () {
     } 
   }
  
-  //Symmetrize: d(ABBB) note p18B
+  //Symmetrize: d(ABBB) note p18B, 19B
   {
     auto low = {0,nactA,nactA,nactA};
     auto up  = {nactA,nactT,nactT,nactT};
@@ -225,7 +225,7 @@ ASD_base::compute_rdm () {
     copy(view.begin(), view.end(), inmat->begin()); //d_ABBB filled
     { //d(BBAB)
       auto outmat = make_shared<Matrix>(nactB*nactB,nactA*nactB); //empty d_BBAB
-      SMITH::sort_indices<2,1,0,3, 0,1, -1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactB); //reorder and fill d_BBAB
+      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactB); //reorder and fill d_BBAB
       auto low = {nactA,nactA,0,nactA};
       auto up  = {nactT,nactT,nactA,nactT};
       auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAB sector of d
@@ -241,7 +241,7 @@ ASD_base::compute_rdm () {
     } 
     { //d(BBBA)
       auto outmat = make_shared<Matrix>(nactB*nactB,nactB*nactA); //empty d_BBBA
-      SMITH::sort_indices<1,2,3,0, 0,1, -1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactB); //reorder and fill d_BBBA
+      SMITH::sort_indices<3,2,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactB); //reorder and fill d_BBBA
       auto low = {nactA,nactA,nactA,0};
       auto up  = {nactT,nactT,nactT,nactA};
       auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BBBA sector of d
