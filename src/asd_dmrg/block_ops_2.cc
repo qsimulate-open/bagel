@@ -99,7 +99,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::gamma_a(const BlockKey bk, int i)
   assert(blocks_->contains(target_bk));
   const BlockInfo tinfo = blocks_->blockinfo(target_bk);
 
-  auto out = make_shared<Matrix>(tinfo.nstates, binfo.nstates);
+  auto out = make_shared<Matrix>(tinfo.nstates, binfo.nstates, true);
 
   const vector<DMRG::BlockPair>& target_pairs = blocks_->blockpairs(target_bk);
   if (i < lnorb) { // i in L block
@@ -146,7 +146,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::gamma_b(const BlockKey bk, int i)
   assert(blocks_->contains(target_bk));
   const BlockInfo tinfo = blocks_->blockinfo(target_bk);
 
-  auto out = make_shared<Matrix>(tinfo.nstates, binfo.nstates);
+  auto out = make_shared<Matrix>(tinfo.nstates, binfo.nstates, true);
 
   const vector<DMRG::BlockPair>& target_pairs = blocks_->blockpairs(target_bk);
   if (i < lnorb) { // i in L block
@@ -262,11 +262,11 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
       // Q_aa (x) A^t   A
       const MatView Q_aa_view = intra_ops_->Q_aa_as_matview(source_pair.right.key());
       const MatView gamma_aa_view(btas::make_view(btas::CRange<2>(source_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb),
-                               blocks_->left_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),source_pair.left.key()}).data->storage()), false);
+                               blocks_->left_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),source_pair.left.key()}).data->storage()), true);
 
       const MatView Q_bb_view = intra_ops_->Q_bb_as_matview(source_pair.right.key());
       const MatView gamma_bb_view(btas::make_view(btas::CRange<2>(source_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb),
-                               blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({source_pair.left.key(),source_pair.left.key()}).data->storage()), false);
+                               blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({source_pair.left.key(),source_pair.left.key()}).data->storage()), true);
 
       Matrix ham_block = (gamma_aa_view ^ Q_aa_view) + (gamma_bb_view ^ Q_bb_view);
 
@@ -288,7 +288,7 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 
         const MatView Q_ab_view = intra_ops_->Q_ab_as_matview(source_pair.right.key());
         const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb),
-                                 blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),left_target}).data->storage()), false);
+                                 blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),left_target}).data->storage()), true);
 
         // TODO maybe it would make more sense to reorder the block_ops in the first place?
         Matrix Qab(Q_ab_view);
@@ -316,7 +316,7 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 
         const MatView P_aa_view = intra_ops_->P_aa_as_matview(source_pair.right.key());
         const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb),
-                                 blocks_->left_block()->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),left_target}).data->storage()), false);
+                                 blocks_->left_block()->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),left_target}).data->storage()), true);
 
         Matrix ham_block = gamma_view ^ P_aa_view;
         Matrix tmp(target_pair.nstates(), source_pair.nstates());
@@ -339,7 +339,7 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 
         const MatView P_bb_view = intra_ops_->P_bb_as_matview(source_pair.right.key());
         const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb),
-                                 blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}).at({source_pair.left.key(),left_target}).data->storage()), false);
+                                 blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}).at({source_pair.left.key(),left_target}).data->storage()), true);
 
         Matrix ham_block = P_bb_view ^ gamma_view;
         Matrix tmp(target_pair.nstates(), source_pair.nstates());
@@ -362,7 +362,7 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 
         const MatView P_ab_view = intra_ops_->P_ab_as_matview(source_pair.right.key());
         const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb),
-                                 blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),left_target}).data->storage()), false);
+                                 blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),left_target}).data->storage()), true);
 
         Matrix Pab(P_ab_view);
         SMITH::sort_indices<0,2,1,0,1,1,1>(P_ab_view.data(), Pab.data(), Pab.ndim(), lnorb, lnorb);
@@ -388,14 +388,14 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 
         const MatView S_a_view = intra_ops_->S_a_as_matview(source_pair.right.key());
         const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb),
-                                 blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({source_pair.left.key(),left_target}).data->storage()), false);
+                                 blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({source_pair.left.key(),left_target}).data->storage()), true);
 
 
         const MatView D_a_view = intra_ops_->D_a_as_matview(source_pair.right.key());
         shared_ptr<const btas::Tensor3<double>> gamma_aaa = blocks_->left_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),left_target}).data;
         shared_ptr<const btas::Tensor3<double>> gamma_abb = blocks_->left_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({source_pair.left.key(),left_target}).data;
-        const MatView gamma_aaa_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb*lnorb), gamma_aaa->storage()), false);
-        const MatView gamma_abb_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb*lnorb), gamma_abb->storage()), false);
+        const MatView gamma_aaa_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb*lnorb), gamma_aaa->storage()), true);
+        const MatView gamma_abb_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb*lnorb), gamma_abb->storage()), true);
 
         Matrix gamma_akk(gamma_aaa_view + gamma_abb_view);
 
@@ -424,14 +424,14 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 
         const MatView S_b_view = intra_ops_->S_b_as_matview(source_pair.right.key());
         const MatView gamma_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb),
-                                 blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({source_pair.left.key(),left_target}).data->storage()), false);
+                                 blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({source_pair.left.key(),left_target}).data->storage()), true);
 
 
         const MatView D_b_view = intra_ops_->D_b_as_matview(source_pair.right.key());
         shared_ptr<const btas::Tensor3<double>> gamma_bbb = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({source_pair.left.key(),left_target}).data;
         shared_ptr<const btas::Tensor3<double>> gamma_baa = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),left_target}).data;
-        const MatView gamma_bbb_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb*lnorb), gamma_bbb->storage()), false);
-        const MatView gamma_baa_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb*lnorb), gamma_baa->storage()), false);
+        const MatView gamma_bbb_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb*lnorb), gamma_bbb->storage()), true);
+        const MatView gamma_baa_view(btas::make_view(btas::CRange<2>(target_pair.left.nstates*source_pair.left.nstates, lnorb*lnorb*lnorb), gamma_baa->storage()), true);
 
         Matrix gamma_bkk(gamma_bbb_view + gamma_baa_view);
 

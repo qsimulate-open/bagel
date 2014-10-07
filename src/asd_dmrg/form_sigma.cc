@@ -105,8 +105,10 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
     shared_ptr<RASBlockVectors> sigma_sector = sector.second;
     shared_ptr<const RASBlockVectors> cc_sector = cc->sector(sector.first);
     // TODO: would this benefit from being blocksparse?
-    dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, cc_sector->data(), cc_sector->ndim(), pure_block.data(), pure_block.ndim(),
-                                                                                      0.0, sigma_sector->data(), sigma_sector->ndim());
+    if (mpi__->rank() == 0) {
+      dgemm_("N","T", sigma_sector->ndim(), sigma_sector->mdim(), sigma_sector->mdim(), 1.0, cc_sector->data(), cc_sector->ndim(), pure_block.data(), pure_block.ndim(),
+                                                                                        0.0, sigma_sector->data(), sigma_sector->ndim());
+    }
     ptime.tick_print("pure_block");
 
     // now do individual form_sigmas for the RAS parts
