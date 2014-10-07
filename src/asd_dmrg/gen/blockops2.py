@@ -480,13 +480,13 @@ def generate_operator(opname, contracted_operators, ninput):
         tpair = "spair" if both_diag else "tpair"
         nops = 0
 
-        print("%sauto out_block = make_shared<Matrix>(%s.nstates(), spair.nstates());" % (indent(), tpair))
+        print("%sauto out_block = make_shared<Matrix>(%s.nstates(), spair.nstates(), true);" % (indent(), tpair))
 
         if (pure_right):
             nops += 1
             print()
             print("%s// I (x) %s" % (indent(), opname))
-            print("%sMatrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();" % indent())
+            print("%sMatrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();" % indent())
             print("%sMatrix Rterms = *right_ops_->%s_as_matrix(spair.right.key(), %s);" % (indent(), opname, inp_string))
             print()
             phase = "left_phase" if (ninput%2==1) else "1.0"
@@ -497,7 +497,7 @@ def generate_operator(opname, contracted_operators, ninput):
             print()
             print("%s// %s (x) I" % (indent(), opname))
             print("%sMatrix Lterms = *left_ops_->%s_as_matrix(spair.left.key(), %s);" % (indent(), opname, inp_string))
-            print("%sMatrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();" % indent())
+            print("%sMatrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();" % indent())
             print()
             print("%sout_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));" % (indent()))
 
@@ -568,8 +568,8 @@ def generate_operator(opname, contracted_operators, ninput):
 
             print()
 
-            print("%sMatrix Lmat(%s->extent(0), %s->extent(1));" % (indent(), lgammas[0][0], lgammas[0][0]))
-            print("%sMatrix Rmat(%s->extent(0), %s->extent(1));" % (indent(), rgammas[0][0], rgammas[0][0]))
+            print("%sMatrix Lmat(%s->extent(0), %s->extent(1), true);" % (indent(), lgammas[0][0], lgammas[0][0]))
+            print("%sMatrix Rmat(%s->extent(0), %s->extent(1), true);" % (indent(), rgammas[0][0], rgammas[0][0]))
 
             print()
 

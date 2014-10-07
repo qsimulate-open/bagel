@@ -491,13 +491,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -528,13 +528,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int a = 0; a < lnorb; ++a) {
           Lmat.zero();
@@ -565,13 +565,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int a = 0; a < lnorb; ++a) {
           Lmat.zero();
@@ -602,11 +602,11 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // S_a (x) I
         Matrix Lterms = *left_ops_->S_a_as_matrix(spair.left.key(), i);
-        Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
+        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
         out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
 
@@ -615,8 +615,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
           shared_ptr<const btas::Tensor3<double>> Rgamma1 = blocks_->right_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma2 = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-          Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-          Matrix Rmat(Rgamma1->extent(0), Rgamma1->extent(1));
+          Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+          Matrix Rmat(Rgamma1->extent(0), Rgamma1->extent(1), true);
 
           for (int a = 0; a < lnorb; ++a) {
             Lmat.zero();
@@ -649,13 +649,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -686,10 +686,10 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) S_a
-        Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
+        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->S_a_as_matrix(spair.right.key(), i);
 
         out_block->ax_plus_y(left_phase, kronecker_product(false, Rterms, false, Lident));
@@ -699,8 +699,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
           shared_ptr<const btas::Tensor3<double>> Lgamma2 = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.left.key(),spair.left.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-          Matrix Lmat(Lgamma1->extent(0), Lgamma1->extent(1));
-          Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+          Matrix Lmat(Lgamma1->extent(0), Lgamma1->extent(1), true);
+          Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
           for (int p = 0; p < rnorb; ++p) {
             Rmat.zero();
@@ -733,13 +733,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int a = 0; a < lnorb; ++a) {
           Lmat.zero();
@@ -770,13 +770,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -836,13 +836,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -873,13 +873,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int a = 0; a < lnorb; ++a) {
           Lmat.zero();
@@ -910,13 +910,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -947,11 +947,11 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // S_b (x) I
         Matrix Lterms = *left_ops_->S_b_as_matrix(spair.left.key(), i);
-        Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
+        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
         out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
 
@@ -960,8 +960,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
           shared_ptr<const btas::Tensor3<double>> Rgamma1 = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.right.key(),spair.right.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma2 = blocks_->right_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-          Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-          Matrix Rmat(Rgamma1->extent(0), Rgamma1->extent(1));
+          Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+          Matrix Rmat(Rgamma1->extent(0), Rgamma1->extent(1), true);
 
           for (int a = 0; a < lnorb; ++a) {
             Lmat.zero();
@@ -994,13 +994,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int a = 0; a < lnorb; ++a) {
           Lmat.zero();
@@ -1031,13 +1031,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int a = 0; a < lnorb; ++a) {
           Lmat.zero();
@@ -1068,10 +1068,10 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) S_b
-        Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
+        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->S_b_as_matrix(spair.right.key(), i);
 
         out_block->ax_plus_y(left_phase, kronecker_product(false, Rterms, false, Lident));
@@ -1081,8 +1081,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
           shared_ptr<const btas::Tensor3<double>> Lgamma2 = blocks_->left_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-          Matrix Lmat(Lgamma1->extent(0), Lgamma1->extent(1));
-          Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+          Matrix Lmat(Lgamma1->extent(0), Lgamma1->extent(1), true);
+          Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
           for (int p = 0; p < rnorb; ++p) {
             Rmat.zero();
@@ -1115,13 +1115,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1167,17 +1167,17 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
     { // I (x) Q_aa +  Q_aa (x) I
-      auto out_block = make_shared<Matrix>(spair.nstates(), spair.nstates());
+      auto out_block = make_shared<Matrix>(spair.nstates(), spair.nstates(), true);
 
       // I (x) Q_aa
-      Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
+      Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
       Matrix Rterms = *right_ops_->Q_aa_as_matrix(spair.right.key(), i, j);
 
       out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
 
       // Q_aa (x) I
       Matrix Lterms = *left_ops_->Q_aa_as_matrix(spair.left.key(), i, j);
-      Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
+      Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
       out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
 
@@ -1196,13 +1196,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
       if(iter!=pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1231,13 +1231,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
       if(iter!=pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1266,13 +1266,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
       if(iter!=pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1301,13 +1301,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
       if(iter!=pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1351,17 +1351,17 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
     const int left_phase = 1 - (((spair.left.nelea+spair.left.neleb)%2) << 1);
 
     { // I (x) Q_bb +  Q_bb (x) I
-      auto out_block = make_shared<Matrix>(spair.nstates(), spair.nstates());
+      auto out_block = make_shared<Matrix>(spair.nstates(), spair.nstates(), true);
 
       // I (x) Q_bb
-      Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
+      Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
       Matrix Rterms = *right_ops_->Q_bb_as_matrix(spair.right.key(), i, j);
 
       out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
 
       // Q_bb (x) I
       Matrix Lterms = *left_ops_->Q_bb_as_matrix(spair.left.key(), i, j);
-      Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
+      Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
       out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
 
@@ -1380,13 +1380,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
       if(iter!=pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1415,13 +1415,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
       if(iter!=pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1450,13 +1450,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
       if(iter!=pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1485,13 +1485,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
       if(iter!=pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1549,10 +1549,10 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) Q_ab
-        Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
+        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->Q_ab_as_matrix(spair.right.key(), i, j);
 
         out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
@@ -1573,13 +1573,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1608,11 +1608,11 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // Q_ab (x) I
         Matrix Lterms = *left_ops_->Q_ab_as_matrix(spair.left.key(), i, j);
-        Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
+        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
         out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
 
@@ -1632,13 +1632,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1696,13 +1696,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1731,10 +1731,10 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) P_aa
-        Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
+        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->P_aa_as_matrix(spair.right.key(), i, j);
 
         out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
@@ -1755,11 +1755,11 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // P_aa (x) I
         Matrix Lterms = *left_ops_->P_aa_as_matrix(spair.left.key(), i, j);
-        Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
+        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
         out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
 
@@ -1808,13 +1808,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1843,10 +1843,10 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) P_bb
-        Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
+        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->P_bb_as_matrix(spair.right.key(), i, j);
 
         out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
@@ -1867,11 +1867,11 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // P_bb (x) I
         Matrix Lterms = *left_ops_->P_bb_as_matrix(spair.left.key(), i, j);
-        Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
+        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
         out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
 
@@ -1920,11 +1920,11 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // P_ab (x) I
         Matrix Lterms = *left_ops_->P_ab_as_matrix(spair.left.key(), i, j);
-        Matrix Rident(spair.right.nstates, spair.right.nstates); Rident.unit();
+        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
         out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
 
@@ -1944,13 +1944,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();
@@ -1979,10 +1979,10 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) P_ab
-        Matrix Lident(spair.left.nstates, spair.left.nstates); Lident.unit();
+        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->P_ab_as_matrix(spair.right.key(), i, j);
 
         out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
@@ -2003,13 +2003,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
       if(iter!=target_pvec.end()) {
         DMRG::BlockPair tpair = *iter;
 
-        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates());
+        auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1));
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1));
+        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
+        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
 
         for (int p = 0; p < rnorb; ++p) {
           Rmat.zero();

@@ -149,7 +149,7 @@ class BlockOperators1 : public BlockOperators {
   private:
     template <typename TensorType>
     const MatView get_as_matview(std::shared_ptr<const TensorType> t) const {
-      return MatView(btas::make_view(btas::CRange<2>(t->extent(0)*t->extent(1), t->size()/(t->extent(0)*t->extent(1))), t->storage()), false);
+      return MatView(btas::make_view(btas::CRange<2>(t->extent(0)*t->extent(1), t->size()/(t->extent(0)*t->extent(1))), t->storage()), true);
     }
 
     template <typename... Args>
@@ -158,19 +158,19 @@ class BlockOperators1 : public BlockOperators {
     }
 
     std::shared_ptr<Matrix> get_mat_block(std::shared_ptr<const btas::Tensor3<double>> g, const int i) const {
-      auto out = std::make_shared<Matrix>(g->extent(0), g->extent(1));
+      auto out = std::make_shared<Matrix>(g->extent(0), g->extent(1), true);
       std::copy_n(&(*g)(0, 0, i), out->size(), out->data());
       return out;
     }
 
     std::shared_ptr<Matrix> get_mat_block(std::shared_ptr<const btas::Tensor4<double>> g, const int i, const int j) const {
-      auto out = std::make_shared<Matrix>(g->extent(0), g->extent(1));
+      auto out = std::make_shared<Matrix>(g->extent(0), g->extent(1), true);
       std::copy_n(&(*g)(0, 0, i, j), out->size(), out->data());
       return out;
     }
 
     std::shared_ptr<Matrix> get_mat_block(std::shared_ptr<const btas::TensorN<double,5>> g, const int i, const int j, const int k) const {
-      auto out = std::make_shared<Matrix>(g->extent(0), g->extent(1));
+      auto out = std::make_shared<Matrix>(g->extent(0), g->extent(1), true);
       std::copy_n(&(*g)(0, 0, i, j, k), out->size(), out->data());
       return out;
     }
