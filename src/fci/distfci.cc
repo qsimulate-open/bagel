@@ -57,7 +57,7 @@ void DistFCI::common_init() {
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
   davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
-  thresh_ = idata_->get<double>("thresh", 1.0e-20);
+  thresh_ = idata_->get<double>("thresh", 1.0e-10);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
 
