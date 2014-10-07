@@ -257,22 +257,6 @@ ASD_base::compute_rdm () {
     auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABBA sector of d
     auto inmat = make_shared<Matrix>(nactA*nactB,nactB*nactA); //empty d_ABBA
     copy(view.begin(), view.end(), inmat->begin()); //d_ABBA filled
-    { //d(AABB)
-      auto outmat = make_shared<Matrix>(nactA*nactA,nactB*nactB); //empty d_AABB
-      SMITH::sort_indices<0,3,2,1, 0,1, -1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactA); //reorder and fill d_AABB
-      auto low = {0,0,nactA,nactA};
-      auto up  = {nactA,nactA,nactT,nactT};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_AABB sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_AABB into d_AABB sector of d
-    } 
-    { //d(BBAA)
-      auto outmat = make_shared<Matrix>(nactB*nactB,nactA*nactA); //empty d_BBAA
-      SMITH::sort_indices<2,1,0,3, 0,1, -1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactA); //reorder and fill d_BBAA
-      auto low = {nactA,nactA,0,0};
-      auto up  = {nactT,nactT,nactA,nactA};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAA sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBAA into d_BBAA sector of d
-    } 
     { //d(BAAB)
       auto outmat = make_shared<Matrix>(nactB*nactA,nactA*nactB); //empty d_BAAB
       SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactA); //reorder and fill d_BAAB
@@ -280,6 +264,23 @@ ASD_base::compute_rdm () {
       auto up  = {nactT,nactA,nactA,nactT};
       auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BAAB sector of d
       copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BAAB into d_BAAB sector of d
+    } 
+  }
+
+  //Symmetrize: d(AABB) note 19
+  { //d(AABB)
+    auto low = {0,0,nactA,nactA};
+    auto up  = {nactA,nactA,nactT,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AABB sector of d
+    auto inmat = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_AABB
+    copy(view.begin(), view.end(), inmat->begin()); //d_AABB filled
+    { //d(BBAA)
+      auto outmat = make_shared<Matrix>(nactB*nactB*nactA*nactA,1); //empty d_BBAA
+      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactB, nactB); //reorder and fill d_BBAA
+      auto low = {nactA,nactA,0,0};
+      auto up  = {nactT,nactT,nactA,nactA};
+      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAA sector of d
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBAA into d_BBAA sector of d
     } 
   }
 
