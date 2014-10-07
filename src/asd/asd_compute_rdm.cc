@@ -325,6 +325,255 @@ ASD_base::compute_rdm () {
   auto rdm1 = onerdm_->rdm1_mat(0);
   rdm1->print("1RDM",nactT);
 
+  double  e1 = ddot_(nactT*nactT, int1->element_ptr(0,0), 1, rdm1->element_ptr(0,0), 1);
+  cout << "1E energy = " << e1 << endl;
+
+  double e2 = 0.0;
+  //AAAA
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,0,0>();
+    auto int2 = make_shared<Matrix>(nactA*nactA*nactA*nactA,1);
+    SMITH::sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactA); //conver to chemist not.
+
+    auto low = {0,0,0,0};
+    auto up  = {nactA,nactA,nactA,nactA};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AAAA sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactA,nactA,1); //empty d_AAAA (note: the dimension specification actually do not matter)
+    copy(view.begin(), view.end(), rdm2->begin()); //d_AAAA filled
+    cout << "2E energy (AAAA) = " << 0.5 * ddot_(nactA*nactA*nactA*nactA, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactA*nactA, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+
+  //BBBB
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,1,1>();
+    auto int2 = make_shared<Matrix>(1,nactB*nactB*nactB*nactB);
+    SMITH::sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactB, nactB, nactB, nactB); //conver to chemist not.
+
+    auto low = {nactA,nactA,nactA,nactA};
+    auto up  = {nactT,nactT,nactT,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BBBB sector of d
+    auto rdm2 = make_shared<Matrix>(1,nactB*nactB*nactB*nactB); //empty d_BBBB
+    copy(view.begin(), view.end(), rdm2->begin()); //d_BBBB filled
+    cout << "2E energy (BBBB) = " << 0.5 * ddot_(nactB*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactB*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+
+  cout << "(3A,1B) part:" << endl;
+  //AAAB
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,0,1>(); // <pq|rs'> in (pqr,s') format
+    auto int2 = make_shared<Matrix>(nactA*nactA*nactA*nactB,1);
+    SMITH::sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not.
+    auto low = {    0,    0,    0,nactA};
+    auto up  = {nactA,nactA,nactA,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AAAB sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactA*nactB,1); //empty d_AAAB
+    copy(view.begin(), view.end(), rdm2->begin()); //d_AAAB filled
+    cout << "2E energy (AAAB) = " << 0.5 * ddot_(nactA*nactA*nactA*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactA*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+
+  //AABA
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,0,0>(); // <pq'|rs> in (prs,q') format 
+    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactA,1);
+    SMITH::sort_indices<0,1,3,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not. [ij|k'l]
+
+    auto low = {    0,    0,nactA,    0};
+    auto up  = {nactA,nactA,nactT,nactA};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AABA sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactA,1); //empty d_AABA
+    copy(view.begin(), view.end(), rdm2->begin()); //d_AABA filled
+    cout << "2E energy (AABA) = " << 0.5 * ddot_(nactA*nactA*nactB*nactA, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactA*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+
+  //BAAA
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,0,0>(); // <p'q|rs> in (qrs,p') format 
+    auto int2 = make_shared<Matrix>(nactB,nactA*nactA*nactA);
+    SMITH::sort_indices<3,1,0,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not.
+
+    auto low = {nactA,    0,    0,    0};
+    auto up  = {nactT,nactA,nactA,nactA};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BAAA sector of d
+    auto rdm2 = make_shared<Matrix>(nactB,nactA*nactA*nactA); //empty d_BAAA
+    copy(view.begin(), view.end(), rdm2->begin()); //d_BAAA filled
+    cout << "2E energy (BAAA) = " << 0.5 * ddot_(nactB*nactA*nactA*nactA, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactA*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+
+  //ABAA
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,1,0>(); // <pq|r's> in (pqs,r') format 
+    auto int2 = make_shared<Matrix>(nactA*nactB*nactA*nactA,1);
+    SMITH::sort_indices<0,3,1,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not. [pr'|qs]=[ij'|kl]
+
+    auto low = {    0,nactA,    0,    0};
+    auto up  = {nactA,nactT,nactA,nactA};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABAA sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactB*nactA*nactA,1); //empty d_ABAA
+    copy(view.begin(), view.end(), rdm2->begin()); //d_ABAA filled
+    cout << "2E energy (ABAA) = " << 0.5 * ddot_(nactA*nactB*nactA*nactA, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactA*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+
+
+
+  cout << "(1A,3B) part:" << endl;
+  //ABBB
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,1,1>(); // <pq'|r's'> in (p,q'r's') format 
+    auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
+    SMITH::sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [pr'|q's']=[ij'|k'l']
+
+    auto low = {    0,nactA,nactA,nactA};
+    auto up  = {nactA,nactT,nactT,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABBB sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_ABBB
+    copy(view.begin(), view.end(), rdm2->begin()); //d_ABBB filled
+    cout << "2E energy (ABBB) = " << 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+  //BABB
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,0,1>(); // <p'q'|rs'> in (r,p'q's') format 
+    auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
+    SMITH::sort_indices<1,0,2,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r|q's']=[i'j|k'l']
+
+    auto low = {nactA,    0,nactA,nactA};
+    auto up  = {nactT,nactA,nactT,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BABB sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_BABB
+    copy(view.begin(), view.end(), rdm2->begin()); //d_ABBB filled
+    cout << "2E energy (BABB) = " << 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+  //BBAB
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,1,1>(); // <p'q|r's'> in (q,p'r's') format 
+    auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
+    SMITH::sort_indices<1,2,0,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r'|qs']=[i'j'|kl']
+
+    auto low = {nactA,nactA,    0,nactA};
+    auto up  = {nactT,nactT,nactA,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAB sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_BBAB
+    copy(view.begin(), view.end(), rdm2->begin()); //d_ABBB filled
+    cout << "2E energy (BBAB) = " << 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+  //BBBA
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,1,0>(); // <p'q'|r's> in (s,p'q'r') format 
+    auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
+    SMITH::sort_indices<1,3,2,0, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r'|q's]=[i'j'|k'l]
+
+    auto low = {nactA,nactA,nactA,    0};
+    auto up  = {nactT,nactT,nactT,nactA};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BBBA sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_BBBA
+    copy(view.begin(), view.end(), rdm2->begin()); //d_BBBA filled
+    cout << "2E energy (BBBA) = " << 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+
+  cout << "(2A,2B) part:" << endl;
+  //AABB
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,0,1>(); // <pq'|rs'> in (pr,q's') format 
+    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    SMITH::sort_indices<0,1,2,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr|q's']=[ij|k'l']
+
+    auto low = {    0,    0,nactA,nactA};
+    auto up  = {nactA,nactA,nactT,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AABB sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_AABB
+    copy(view.begin(), view.end(), rdm2->begin()); //d_AABB filled
+    cout << "2E energy (AABB) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+  //BBAA
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,1,0>(); // <p'q|r's> in (qs,p'r') format 
+    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r'|qs]=[i'j'|kl]
+
+    auto low = {nactA,nactA,    0,    0};
+    auto up  = {nactT,nactT,nactA,nactA};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAA sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_BBAA
+    copy(view.begin(), view.end(), rdm2->begin()); //d_BBAA filled
+    cout << "2E energy (BBAA) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+
+  //ABAB
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,1,1>(); // <pq|r's'> in (pq,r's') format 
+    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    SMITH::sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr'|qs']=[ij'|kl']
+
+    auto low = {    0,nactA,    0,nactA};
+    auto up  = {nactA,nactT,nactA,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABAB sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_ABAB
+    copy(view.begin(), view.end(), rdm2->begin()); //d_ABAB filled
+    cout << "2E energy (ABAB) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+  //BABA
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,0,0>(); // <p'q'|rs> in (rs,p'q') format 
+    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    SMITH::sort_indices<2,0,3,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r|q's]=[i'j|k'l]
+
+    auto low = {nactA,    0,nactA,    0};
+    auto up  = {nactT,nactA,nactT,nactA};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BABA sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_BABA
+    copy(view.begin(), view.end(), rdm2->begin()); //d_BABA filled
+    cout << "2E energy (BABA) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+
+  //ABBA
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,1,0>(); // <pq'|r's> in (ps,q'r') format 
+    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    SMITH::sort_indices<0,3,2,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr'|q's]=[ij'|k'l]
+
+    auto low = {    0,nactA,nactA,    0};
+    auto up  = {nactA,nactT,nactT,nactA};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABBA sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_ABBA
+    copy(view.begin(), view.end(), rdm2->begin()); //d_ABBA filled
+    cout << "2E energy (ABBA) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+  //BAAB
+  {
+    shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,0,1>(); // <p'q|rs'> in (qr,p's') format 
+    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    SMITH::sort_indices<2,1,0,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r|qs']=[i'j|kl']
+
+    auto low = {nactA,    0,    0,nactA};
+    auto up  = {nactT,nactA,nactA,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BAAB sector of d
+    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_BAAB
+    copy(view.begin(), view.end(), rdm2->begin()); //d_BAAB filled
+    cout << "2E energy (BAAB) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
+    e2 += 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+  }
+  
+  //Energy print
+  cout << "nuclear repulsion= " << dimer_->sref()->geom()->nuclear_repulsion() << endl;
+  cout << "core energy      = " << jop_->core_energy() << endl;
+  cout << "nuc + core energy= " << dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy() << endl;
+  cout << "1E energy = " <<  e1 << endl;
+  cout << "2E energy = " <<  e2 << endl;
+  cout << "Total energy = " << dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy() + e1 + e2 << endl;
 }
 
 //int n = 3;
