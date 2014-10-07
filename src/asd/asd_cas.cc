@@ -193,7 +193,7 @@ void ASD_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
 //***************************************************************************************************************
 //TODO pair< tuple<rdm1,rdm2> for A, tuple<rdm1,rdm2> for B >
 std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-ASD_CAS::compute_rdm12_monomer (int ioff, std::array<Dvec,4>& fourvecs) const {
+ASD_CAS::compute_rdm12_monomer (std::pair<int,int> offset, std::array<Dvec,4>& fourvecs) const {
 //returns monomer 1&2RDMs
 //cf. ASD_RAS, ASD_DistCAS, ASD_DistRAS for the same function with different vector types
 //***************************************************************************************************************
@@ -205,6 +205,10 @@ ASD_CAS::compute_rdm12_monomer (int ioff, std::array<Dvec,4>& fourvecs) const {
 
   auto& B  = fourvecs[2]; // <J'|
   auto& Bp = fourvecs[3]; // |J>
+
+  //Offsets
+  const int ioff = std::get<0>(offset);
+  const int joff = std::get<1>(offset);
 
   const int nactA = dimer_->active_refs().first->nact(); //dimer_ (ASD_base)
   const int nactB = dimer_->active_refs().second->nact();
@@ -240,7 +244,7 @@ ASD_CAS::compute_rdm12_monomer (int ioff, std::array<Dvec,4>& fourvecs) const {
       for (int jp = 0; jp != nstBp; ++jp) { // |J>
         for (int ip = 0; ip != nstAp; ++ip) { // |I>
           const int ijp = ip + (jp*nstAp);
-          const double coef = adiabats_->element(ioff+ij,0) * adiabats_->element(ioff+ijp,0); // C_(I'J') * C_(IJ) TODO: 0 = ground state only
+          const double coef = adiabats_->element(ioff+ij,0) * adiabats_->element(joff+ijp,0); // C_(I'J') * C_(IJ) TODO: 0 = ground state only
 
           if(j == jp) { //delta_J'J
             shared_ptr<RDM<1>> r1;

@@ -140,7 +140,7 @@ ASD_base::compute_diagonal_block_RDM(const DimerSubspace_base& subspace) const {
 //***************************************************************************************************************
 
   array<MonomerKey,4> keys {{ subspace.monomerkey<0>(), subspace.monomerkey<1>(), subspace.monomerkey<0>(), subspace.monomerkey<1>() }};
-  auto out = compute_inter_2e_RDM(keys);
+  auto out = compute_inter_2e_RDM(keys, /*subspace diagonal*/true);
 
   return out;
 }
@@ -241,7 +241,7 @@ shared_ptr<Matrix> ASD_base::compute_inter_2e_H(const array<MonomerKey,4>& keys)
 //***************************************************************************************************************
 
 tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> 
-ASD_base::compute_inter_2e_RDM(const array<MonomerKey,4>& keys) const {
+ASD_base::compute_inter_2e_RDM(const array<MonomerKey,4>& keys, const bool subdia) const {
 //***************************************************************************************************************
   auto& B  = keys[1]; 
   auto& Bp = keys[3];
@@ -262,18 +262,40 @@ ASD_base::compute_inter_2e_RDM(const array<MonomerKey,4>& keys) const {
   auto rdmAA = make_shared<Matrix>(gamma_AA_alpha % gamma_BB_alpha);
   auto rdmBB = make_shared<Matrix>(gamma_AA_beta  % gamma_BB_beta);
 
-  // P(p,q',r',s) : p15
-  auto rdmt = rdmAA->clone();
-  SMITH::sort_indices<0,3,2,1, 0,1, -1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa
-  SMITH::sort_indices<1,2,3,0, 1,1, -1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa of (N,M)
-  SMITH::sort_indices<0,3,2,1, 1,1, -1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb
-  SMITH::sort_indices<1,2,3,0, 1,1, -1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb of (N,M)
+  auto rdmAB = make_shared<Matrix>(gamma_AA_alpha % gamma_BB_beta);
+  auto rdmBA = make_shared<Matrix>(gamma_AA_beta  % gamma_BB_alpha);
 
-  auto low = {    0, nactA, nactA,     0};
-  auto up  = {nactA, nactT, nactT, nactA};
-  auto outv = make_rwview(out->range().slice(low, up), out->storage());
-  copy(rdmt->begin(), rdmt->end(), outv.begin());
+  {// P(p,q',r',s) : p15
+    auto rdmt = rdmAA->clone();
+    SMITH::sort_indices<0,3,2,1, 0,1, -1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa
+    SMITH::sort_indices<0,3,2,1, 1,1, -1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb
+    if (!subdia) {
+      SMITH::sort_indices<1,2,3,0, 1,1, -1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa of (N,M)
+      SMITH::sort_indices<1,2,3,0, 1,1, -1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb of (N,M)
+    }
+    auto low = {    0, nactA, nactA,     0};
+    auto up  = {nactA, nactT, nactT, nactA};
+    auto outv = make_rwview(out->range().slice(low, up), out->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+  }
 
+  {// d_pqr's' : p19
+    auto rdmt = rdmAA->clone();
+    SMITH::sort_indices<0,1,2,3, 0,1, 1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa
+    SMITH::sort_indices<0,1,2,3, 1,1, 1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb
+    SMITH::sort_indices<0,1,2,3, 1,1, 1,1>(rdmAB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa bb
+    SMITH::sort_indices<0,1,2,3, 1,1, 1,1>(rdmBA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb aa
+    if (!subdia) {
+      SMITH::sort_indices<1,0,3,2, 1,1, 1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa of (N,M)
+      SMITH::sort_indices<1,0,3,2, 1,1, 1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb of (N,M)
+      SMITH::sort_indices<1,0,3,2, 1,1, 1,1>(rdmAB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb of (N,M)
+      SMITH::sort_indices<1,0,3,2, 1,1, 1,1>(rdmBA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb of (N,M)
+    }
+    auto low = {    0,     0, nactA, nactA};
+    auto up  = {nactA, nactA, nactT, nactT};
+    auto outv = make_rwview(out->range().slice(low, up), out->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+  }
 
   return make_tuple(nullptr,out);
 }
@@ -407,7 +429,7 @@ ASD_base::compute_aET_RDM(const array<MonomerKey,4>& keys) const {
     auto outv = make_rwview(out2->range().slice(low, up), out2->storage());
     copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
-
+  
   return make_tuple(out1,out2);
 }
 
@@ -883,7 +905,7 @@ ASD_base::couple_blocks_RDM(const DimerSubspace_base& AB, const DimerSubspace_ba
     case Coupling::none :
       out = make_tuple(nullptr,nullptr); break;
     case Coupling::diagonal :
-      out = compute_inter_2e_RDM(keys); break;
+      out = compute_inter_2e_RDM(keys, /*subspace diagonal*/false); break;
     case Coupling::aET :
       out = compute_aET_RDM(keys); break;
     case Coupling::bET :

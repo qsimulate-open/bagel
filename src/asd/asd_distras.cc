@@ -51,7 +51,7 @@ shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma_1e(shared_ptr<const DistRASDvec>
   return nullptr;
 }
 
-std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> ASD_DistRAS::compute_rdm12_monomer (int ioff, std::array<DistRASDvec,4>& fourvecs) const {
+std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> ASD_DistRAS::compute_rdm12_monomer (std::pair<int,int> offset, std::array<DistRASDvec,4>& fourvecs) const {
   std::cout << "ASD_DistRAS: compute_rdm12_monomer called" << std::endl;
   assert(false);
 }

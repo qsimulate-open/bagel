@@ -6,6 +6,8 @@
 
 #include <src/asd/asd_base.h>
 
+//#include <src/asd/coupling.h>
+
 //***************************************************************************************************************
 template <class VecType>
 void 
@@ -38,6 +40,7 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
     isub++;
     const int ioff = AB.offset();
     std::cout << "Dimer Subspace #" << isub << ": offset = " << ioff << std::endl;
+    auto offset = std::make_pair(ioff,ioff);
 
     std::shared_ptr<const VecType> ccvecA = AB.template ci<0>(); //Dvec, RASDvec, DistDvec, DistRASDvec
     std::cout << "CI vectors of Monomer A" << std::endl;
@@ -57,10 +60,46 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
                                    AB.template monomerkey<1>(), AB.template monomerkey<1>()};
     std::cout << keys[0].nstates() << std::endl; //TODO:delete
 
-    tie(r1,r2) = compute_rdm12_monomer(ioff, fourvecs);
+    tie(r1,r2) = compute_rdm12_monomer(offset, fourvecs);
     if(r1) *onerdm_ += *r1;
     if(r2) *twordm_ += *r2;
   }
+
+/*
+  // Offdiagonal Dimer subspaces
+  for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+    for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+      //Lower-triangular (i<->j)
+      auto offset = std::make_pair(jAB->offset(),iAB->offset());
+
+      std::shared_ptr<const VecType> ccvecA  = jAB->template ci<0>(); //Dvec, RASDvec, DistDvec, DistRASDvec
+      std::shared_ptr<const VecType> ccvecAp = iAB->template ci<0>();
+      std::shared_ptr<const VecType> ccvecB  = jAB->template ci<1>();
+      std::shared_ptr<const VecType> ccvecBp = iAB->template ci<1>();
+      // A Ap B Bp
+      std::array<VecType,4> fourvecs { ccvecA, ccvecAp, ccvecB, ccvecBp };
+
+      std::shared_ptr<RDM<1>> r1;
+      std::shared_ptr<RDM<2>> r2;
+      Coupling term_type = coupling_type(*jAB, *iAB);
+      switch(term_type) {
+        case Coupling::diagonal :
+          std::cout << "Offdiagonal subspace, diagonal coupling, offset = " << std::get<0>(offset) << " and " << std::get<1>(offset) << std::endl;
+          tie(r1,r2) = compute_rdm12_monomer(offset, fourvecs);
+          break;
+        default : //do nothing
+          break;
+      }
+      if (r1) {
+        *onerdm_ += *r1; //TODO : *2
+      }
+      if (r2) {
+        *twordm_ += *r2;
+      }
+
+    }
+  }
+*/
 
   //PRINT
   std::cout << "!@# Monomer RDM print" << std::endl;

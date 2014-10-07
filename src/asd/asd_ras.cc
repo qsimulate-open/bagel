@@ -46,7 +46,7 @@ shared_ptr<RASDvec> ASD_RAS::form_sigma_1e(shared_ptr<const RASDvec> ccvec, cons
   return form(ccvec, modata);
 }
 
-std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer (int ioff, std::array<RASDvec,4>& fourvecs) const {
+std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer (std::pair<int,int> offset, std::array<RASDvec,4>& fourvecs) const {
   std::cout << "ASD_RAS: compute_rdm12_monomer called" << std::endl;
   assert(false);
 }

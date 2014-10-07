@@ -111,7 +111,7 @@ class ASD_base {
 
     //RDM
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> couple_blocks_RDM(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
-    std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_inter_2e_RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_inter_2e_RDM(const std::array<MonomerKey,4>&, const bool) const;
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_aET_RDM(const std::array<MonomerKey,4>&) const;
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_bET_RDM(const std::array<MonomerKey,4>&) const; 
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_abFlip_RDM(const std::array<MonomerKey,4>&) const;
