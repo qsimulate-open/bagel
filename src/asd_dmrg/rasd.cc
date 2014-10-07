@@ -415,6 +415,9 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
         copy_n(get<1>(ib)->data(), get<1>(ib)->size(), tmp_mat->element_ptr(0, current));
         current += get<1>(ib)->mdim();
       }
+#ifdef HAVE_MPI_H
+      tmp_mat->synchronize();
+#endif
       cibasis.emplace(basis_sector.first, tmp_mat);
     }
   }
@@ -439,6 +442,10 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
       VectorB eigs(best_states->ndim());
       best_states->diagonalize(eigs);
       best_states = make_shared<Matrix>(orthonormalize * *best_states);
+#ifdef HAVE_MPI_H
+      best_states->synchronize();
+      mpi__->broadcast(eigs.data(), eigs.size(), 0);
+#endif
       coeffmap.emplace(isec.first, best_states);
       for (int i = 0; i < eigs.size(); ++i)
         singular_values.emplace(eigs(i), make_tuple(isec.first, i));
@@ -462,6 +469,9 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
 
     auto tmp = make_shared<RASCivec>(det);
     dgemv_("N", det->size(), sectorbasis->mdim(), 1.0, sectorbasis->data(), sectorbasis->ndim(), coeff->element_ptr(0, position), 1, 1.0, tmp->data(), 1);
+#ifdef HAVE_MPI_H
+    tmp->synchronize();
+#endif
 
     output_vectors[get<0>(i->second)].push_back(tmp);
     partial_trace += i->first;
@@ -524,6 +534,9 @@ void RASD::apply_perturbation(shared_ptr<const RASBlockVectors> cc, vector<Gamma
       else {
         assert(false);
       }
+#ifdef HAVE_MPI_H
+      tmp->synchronize();
+#endif
       outer_products[Tkey].emplace_back(weight, tmp);
     }
   }
@@ -627,6 +640,10 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
       VectorB eigs(best_states->ndim());
       best_states->diagonalize(eigs);
       best_states = make_shared<Matrix>(orthonormalize * *best_states);
+#ifdef HAVE_MPI_H
+      best_states->synchronize();
+      mpi__->broadcast(eigs.data(), eigs.size(), 0);
+#endif
       coeffmap.emplace(isec.first, best_states);
       for (int i = 0; i < eigs.size(); ++i)
         singular_values.emplace(eigs(i), make_tuple(isec.first, i));
@@ -650,6 +667,9 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
     for (int j = 0; j < sectorbasis.size(); ++j)
       tmp->ax_plus_y(coeff->element(j, position), *sectorbasis[j]);
 
+#ifdef HAVE_MPI_H
+    tmp->synchronize();
+#endif
     out[BlockKey(tmp->nelea(), tmp->neleb())].push_back(tmp);
     partial_trace += i->first;
   }
@@ -708,6 +728,9 @@ void RASD::apply_perturbation(const vector<shared_ptr<ProductRASCivec>>& ccvec, 
           }
         }
       }
+#ifdef HAVE_MPI_H
+      out->synchronize();
+#endif
       const BlockKey target_key(cckey.nelea - dele.first, cckey.neleb - dele.second);
       outer_products[target_key].emplace_back(weight, vector<shared_ptr<ProductRASCivec>>{{out}});
     }

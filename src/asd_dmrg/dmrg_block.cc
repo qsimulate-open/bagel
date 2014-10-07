@@ -64,6 +64,9 @@ DMRG_Block1::DMRG_Block1(GammaForestASD<RASDvec>&& forest, const map<BlockKey, s
     assert(mat->storage().size() == range.area());
     // convert this matrix to 3-tensor
     auto tensor = make_shared<btas::Tensor3<double>>(range, move(mat->storage()));
+#ifdef HAVE_MPI_H
+    mpi__->broadcast(tensor->data(), tensor->size(), 0);
+#endif
     // add matrix
     CouplingBlock cb(brakey, ketkey, tensor);
     sparse_[gammalist].emplace(cb.key(), cb);
@@ -100,6 +103,9 @@ DMRG_Block1::DMRG_Block1(GammaForestProdASD&& forest, const map<BlockKey, shared
     assert(mat->storage().size() == range.area());
     // convert this matrix to 3-tensor
     auto tensor = make_shared<btas::Tensor3<double>>(range, move(mat->storage()));
+#ifdef HAVE_MPI_H
+    mpi__->broadcast(tensor->data(), tensor->size(), 0);
+#endif
     // add matrix
     CouplingBlock cb(brakey, ketkey, tensor);
     sparse_[gammalist].emplace(cb.key(), cb);
