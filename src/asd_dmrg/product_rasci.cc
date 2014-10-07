@@ -193,7 +193,7 @@ void ProductRASCI::compute() {
         }
         //cc.at(ist)->spin_decontaminate();
         cc.at(ist)->normalize();
-        //cc.at(ist)->synchronize();
+        cc.at(ist)->synchronize();
       }
     }
 

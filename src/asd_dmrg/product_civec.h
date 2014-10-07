@@ -150,6 +150,8 @@ class ProductRASCivec {
     }
 
     void allreduce();
+    void broadcast(int rank = 0);
+    void synchronize();
 
     void print(const double thresh = 0.05) const;
 

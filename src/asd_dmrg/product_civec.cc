@@ -111,6 +111,17 @@ void ProductRASCivec::allreduce() {
 }
 
 
+void ProductRASCivec::broadcast(const int rank) {
+  for (auto& s : sectors_)
+    s.second->broadcast(rank);
+}
+
+
+void ProductRASCivec::synchronize() {
+  broadcast();
+}
+
+
 void ProductRASCivec::print(const double thresh) const {
   for (auto& isec: sectors_) {
     bool sector_printed = false;
