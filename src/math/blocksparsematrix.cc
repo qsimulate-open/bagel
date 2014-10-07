@@ -59,9 +59,12 @@ void bagel::mat_block_multiply(const bool Atrans, const bool Btrans, const doubl
 
   const int n = Atrans ? A.mdim() : A.ndim();
 
+  C.scale(beta);
+  Matrix D = *C.clone();
+
   for (auto& block : B.data()) {
-    const int bnstart = block.first.first;
-    const int bmstart = block.first.second;
+    const size_t bnstart = block.first.first;
+    const size_t bmstart = block.first.second;
     shared_ptr<const Matrix> bmat = block.second;
 
     const int m = Btrans ? bmat->ndim() : bmat->mdim();
@@ -71,8 +74,9 @@ void bagel::mat_block_multiply(const bool Atrans, const bool Btrans, const doubl
 
     const double* adata = Atrans ? A.element_ptr(kstart, 0) : A.element_ptr(0, kstart);
 
-    double* cdata = Btrans ? C.element_ptr(0, bnstart) : C.element_ptr(0, bmstart);
+    double* cdata = Btrans ? D.element_ptr(0, bnstart) : D.element_ptr(0, bmstart);
 
-    dgemm_(At.c_str(), Bt.c_str(), n, m, k, alpha, adata, A.ndim(), bmat->data(), bmat->ndim(), beta, cdata, C.ndim());
+    dgemm_(At.c_str(), Bt.c_str(), n, m, k, alpha, adata, A.ndim(), bmat->data(), bmat->ndim(), 1.0, cdata, C.ndim());
   }
+  C += D;
 }
