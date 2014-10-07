@@ -171,7 +171,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
 
   assert(gaunt || !breit);
   if (gaunt) throw logic_error("Gaunt not implemented yet in ZQvec");
-  assert((rcoeff->slice(nclosed*2,(nclosed+nact)*2) - *fci->jop()->coeff()).rms() < 1.0e-15);
+  assert((*acoeff - *fci->jop()->coeff()).rms() < 1.0e-15);
   assert(nbasis == rcoeff->mdim());
 
   // (1) Sepeate real and imaginary parts for coeffs
