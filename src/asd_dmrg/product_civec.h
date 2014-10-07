@@ -149,6 +149,8 @@ class ProductRASCivec {
       return nrm;
     }
 
+    void allreduce();
+
     void print(const double thresh = 0.05) const;
 
     /// Splits a vector by the "right" block.

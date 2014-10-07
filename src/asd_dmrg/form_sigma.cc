@@ -42,28 +42,22 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::operator()(const vector<sh
   for_each(ccvec.begin(), ccvec.end(), [&sigmavec] (shared_ptr<const ProductRASCivec> c) { sigmavec.push_back(c->clone()); });
 
   for (int istate = 0; istate != nstate; ++istate) {
-#ifdef NOPENOPE_HAVE_MPI_H
-    if ( istate % mpi__->size() == mpi__->rank() ) {
-#endif
-      Timer pdebug(2);
-      shared_ptr<const ProductRASCivec> cc = ccvec.at(istate);
-      shared_ptr<ProductRASCivec> sigma = sigmavec.at(istate);
+    Timer pdebug(2);
+    shared_ptr<const ProductRASCivec> cc = ccvec.at(istate);
+    shared_ptr<ProductRASCivec> sigma = sigmavec.at(istate);
 
-      // pure terms
-      pure_block_and_ras(cc, sigma, blockops, jop);
-      pdebug.tick_print("pure");
+    // pure terms
+    pure_block_and_ras(cc, sigma, blockops, jop);
+    pdebug.tick_print("pure");
 
-      interaction_terms(cc, sigma, blockops, jop);
-      pdebug.tick_print("interaction");
-#ifdef NOPENOPE_HAVE_MPI_H
-    }
-#endif
+    interaction_terms(cc, sigma, blockops, jop);
+    pdebug.tick_print("interaction");
   }
 
-#ifdef NOPENOPE_HAVE_MPI_H
+#ifdef HAVE_MPI_H
   for (int istate = 0; istate != nstate; ++istate) {
     if (!conv[istate])
-      sigmavec.at(istate)->broadcast(istate & mpi__->size()); // This broadcast function is not yet written
+      sigmavec.at(istate)->allreduce();
   }
 #endif
 
@@ -78,28 +72,22 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::diagonal(const vector<shar
   for_each(ccvec.begin(), ccvec.end(), [&sigmavec] (shared_ptr<const ProductRASCivec> c) { sigmavec.push_back(c->clone()); });
 
   for (int istate = 0; istate != nstate; ++istate) {
-#ifdef NOPENOPE_HAVE_MPI_H
-    if ( istate % mpi__->size() == mpi__->rank() ) {
-#endif
-      Timer pdebug(2);
-      shared_ptr<const ProductRASCivec> cc = ccvec.at(istate);
-      shared_ptr<ProductRASCivec> sigma = sigmavec.at(istate);
+    Timer pdebug(2);
+    shared_ptr<const ProductRASCivec> cc = ccvec.at(istate);
+    shared_ptr<ProductRASCivec> sigma = sigmavec.at(istate);
 
-      // pure terms
-      pure_block_and_ras(cc, sigma, blockops, jop);
-      pdebug.tick_print("pure");
+    // pure terms
+    pure_block_and_ras(cc, sigma, blockops, jop);
+    pdebug.tick_print("pure");
 
-      diagonal_terms(cc, sigma, blockops, jop);
-      pdebug.tick_print("diagonal");
-#ifdef NOPENOPE_HAVE_MPI_H
-    }
-#endif
+    diagonal_terms(cc, sigma, blockops, jop);
+    pdebug.tick_print("diagonal");
   }
 
-#ifdef NOPENOPE_HAVE_MPI_H
+#ifdef HAVE_MPI_H
   for (int istate = 0; istate != nstate; ++istate) {
     if (!conv[istate])
-      sigmavec.at(istate)->broadcast(istate & mpi__->size()); // This broadcast function is not yet written
+      sigmavec.at(istate)->allreduce();
   }
 #endif
 
@@ -123,8 +111,14 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
 
     // now do individual form_sigmas for the RAS parts
     FormSigmaRAS form_pure_ras(batchsize_);
-    for(int ist = 0; ist < nsecstates; ++ist)
+    for(int ist = 0; ist < nsecstates; ++ist) {
+#ifdef HAVE_MPI_H
+      if (ist%mpi__->size() == mpi__->rank())
+        form_pure_ras(cc_sector->civec(ist), sigma_sector->civec(ist), jop->monomer_jop<0>());
+#else
       form_pure_ras(cc_sector->civec(ist), sigma_sector->civec(ist), jop->monomer_jop<0>());
+#endif
+    }
     ptime.tick_print("pure_ras");
   }
 }
@@ -248,22 +242,38 @@ void FormSigmaProdRAS::aET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
 
   const int phase = (1 - (((cc_sector->det()->nelea()+cc_sector->det()->neleb())%2) << 1));
 
+#ifdef HAVE_MPI_H
+  int mpi_counter = 0;
+#endif
+
   for (int r = 0; r < rnorb; ++r) {
     sector_r.zero();
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::CreateAlpha}, {r});
     if (do_single) {
-      shared_ptr<const BlockSparseMatrix> Sr = blockops->S_a(singleETkey, r);
-      mat_block_multiply(false, false, phase, sector_r, *Sr, 1.0, *single_sector);
+#ifdef HAVE_MPI_H
+      if (mpi_counter++ % mpi__->size() == mpi__->rank()) {
+#endif
+        shared_ptr<const BlockSparseMatrix> Sr = blockops->S_a(singleETkey, r);
+        mat_block_multiply(false, false, phase, sector_r, *Sr, 1.0, *single_sector);
+#ifdef HAVE_MPI_H
+      }
+#endif
     }
     if (do_double) {
       for (int s = 0; s < r; ++s) {
-        tmp_double->zero();
-        for (int ist = 0; ist < nccstates; ++ist)
-          apply(1.0, sector_r.civec(ist), tmp_double->civec(ist), {GammaSQ::CreateAlpha}, {s});
+#ifdef HAVE_MPI_H
+        if (mpi_counter++ % mpi__->size() == mpi__->rank()) {
+#endif
+          tmp_double->zero();
+          for (int ist = 0; ist < nccstates; ++ist)
+            apply(1.0, sector_r.civec(ist), tmp_double->civec(ist), {GammaSQ::CreateAlpha}, {s});
 
-        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_aa(cckey, s, r);
-        mat_block_multiply(false, true, 2.0, *tmp_double, *Prs, 1.0, *double_sector);
+          shared_ptr<const BlockSparseMatrix> Prs = blockops->P_aa(cckey, s, r);
+          mat_block_multiply(false, true, 2.0, *tmp_double, *Prs, 1.0, *double_sector);
+#ifdef HAVE_MPI_H
+        }
+#endif
       }
     }
   }
@@ -301,34 +311,56 @@ void FormSigmaProdRAS::bET_branch(shared_ptr<const RASBlockVectors> cc_sector, s
 
   const int phase = (1 - (((cc_sector->det()->nelea()+cc_sector->det()->neleb())%2) << 1));
 
+#ifdef HAVE_MPI_H
+  int mpi_counter = 0;
+#endif
+
   for (int r = 0; r < rnorb; ++r) {
     sector_r.zero();
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::CreateBeta}, {r});
     if (do_b) {
-      shared_ptr<const BlockSparseMatrix> Sr = blockops->S_b(bETkey, r);
-      mat_block_multiply(false, false, phase, sector_r, *Sr, 1.0, *b_sector);
+#ifdef HAVE_MPI_H
+      if (mpi_counter++ % mpi__->size() == mpi__->rank()) {
+#endif
+        shared_ptr<const BlockSparseMatrix> Sr = blockops->S_b(bETkey, r);
+        mat_block_multiply(false, false, phase, sector_r, *Sr, 1.0, *b_sector);
+#ifdef HAVE_MPI_H
+      }
+#endif
     }
 
     if (do_bb) {
       for (int s = 0; s < r; ++s) {
-        tmp_bb->zero();
-        for (int ist = 0; ist < nccstates; ++ist)
-          apply(1.0, sector_r.civec(ist), tmp_bb->civec(ist), {GammaSQ::CreateBeta}, {s});
+#ifdef HAVE_MPI_H
+        if (mpi_counter++ % mpi__->size() == mpi__->rank()) {
+#endif
+          tmp_bb->zero();
+          for (int ist = 0; ist < nccstates; ++ist)
+            apply(1.0, sector_r.civec(ist), tmp_bb->civec(ist), {GammaSQ::CreateBeta}, {s});
 
-        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_bb(cckey, s, r);
-        mat_block_multiply(false, true, 2.0, *tmp_bb, *Prs, 1.0, *bb_sector);
+          shared_ptr<const BlockSparseMatrix> Prs = blockops->P_bb(cckey, s, r);
+          mat_block_multiply(false, true, 2.0, *tmp_bb, *Prs, 1.0, *bb_sector);
+#ifdef HAVE_MPI_H
+        }
+#endif
       }
     }
 
     if (do_ab) {
       for (int s = 0; s < rnorb; ++s) {
-        tmp_ab->zero();
-        for (int ist = 0; ist < nccstates; ++ist)
-          apply(1.0, sector_r.civec(ist), tmp_ab->civec(ist), {GammaSQ::CreateAlpha}, {s});
+#ifdef HAVE_MPI_H
+        if (mpi_counter++ % mpi__->size() == mpi__->rank()) {
+#endif
+          tmp_ab->zero();
+          for (int ist = 0; ist < nccstates; ++ist)
+            apply(1.0, sector_r.civec(ist), tmp_ab->civec(ist), {GammaSQ::CreateAlpha}, {s});
 
-        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_ab(cckey, s, r);
-        mat_block_multiply(false, true, 1.0, *tmp_ab, *Prs, 1.0, *ab_sector);
+          shared_ptr<const BlockSparseMatrix> Prs = blockops->P_ab(cckey, s, r);
+          mat_block_multiply(false, true, 1.0, *tmp_ab, *Prs, 1.0, *ab_sector);
+#ifdef HAVE_MPI_H
+        }
+#endif
       }
     }
   }
@@ -361,23 +393,39 @@ void FormSigmaProdRAS::aHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
 
   const int phase = (1 - (((sector_r.det()->nelea()+sector_r.det()->neleb())%2) << 1));
 
+#ifdef HAVE_MPI_H
+  int mpi_counter = 0;
+#endif
+
   for (int r = 0; r < rnorb; ++r) {
     sector_r.zero();
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::AnnihilateAlpha}, {r});
     if (do_aHT) {
-      shared_ptr<const BlockSparseMatrix> Sr = blockops->S_a(cckey, r);
-      mat_block_multiply(false, true, phase, sector_r, *Sr, 1.0, *a_sector);
+#ifdef HAVE_MPI_H
+      if (mpi_counter++ % mpi__->size() == mpi__->rank()) {
+#endif
+        shared_ptr<const BlockSparseMatrix> Sr = blockops->S_a(cckey, r);
+        mat_block_multiply(false, true, phase, sector_r, *Sr, 1.0, *a_sector);
+#ifdef HAVE_MPI_H
+      }
+#endif
     }
 
     if (do_aaHT) {
       for (int s = 0; s < r; ++s) {
-        tmp_aa->zero();
-        for (int ist = 0; ist < nccstates; ++ist)
-          apply(1.0, sector_r.civec(ist), tmp_aa->civec(ist), {GammaSQ::AnnihilateAlpha}, {s});
+#ifdef HAVE_MPI_H
+        if (mpi_counter++ % mpi__->size() == mpi__->rank()) {
+#endif
+          tmp_aa->zero();
+          for (int ist = 0; ist < nccstates; ++ist)
+            apply(1.0, sector_r.civec(ist), tmp_aa->civec(ist), {GammaSQ::AnnihilateAlpha}, {s});
 
-        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_aa(aaHTkey, r, s);
-        mat_block_multiply(false, false, 2.0, *tmp_aa, *Prs, 1.0, *aa_sector);
+          shared_ptr<const BlockSparseMatrix> Prs = blockops->P_aa(aaHTkey, r, s);
+          mat_block_multiply(false, false, 2.0, *tmp_aa, *Prs, 1.0, *aa_sector);
+#ifdef HAVE_MPI_H
+        }
+#endif
       }
     }
   }
@@ -414,34 +462,56 @@ void FormSigmaProdRAS::bHT_branch(shared_ptr<const RASBlockVectors> cc_sector, s
 
   const int phase = (1 - (((sector_r.det()->nelea()+sector_r.det()->neleb())%2) << 1));
 
+#ifdef HAVE_MPI_H
+  int mpi_counter = 0;
+#endif
+
   for (int r = 0; r < rnorb; ++r) {
     sector_r.zero();
     for (int ist = 0; ist < nccstates; ++ist)
       apply(1.0, cc_sector->civec(ist), sector_r.civec(ist), {GammaSQ::AnnihilateBeta}, {r});
     if (do_bHT) {
-      shared_ptr<const BlockSparseMatrix> Sr = blockops->S_b(cckey, r);
-      mat_block_multiply(false, true, phase, sector_r, *Sr, 1.0, *b_sector);
+#ifdef HAVE_MPI_H
+      if (mpi_counter++ % mpi__->size() == mpi__->rank()) {
+#endif
+        shared_ptr<const BlockSparseMatrix> Sr = blockops->S_b(cckey, r);
+        mat_block_multiply(false, true, phase, sector_r, *Sr, 1.0, *b_sector);
+#ifdef HAVE_MPI_H
+      }
+#endif
     }
 
     if (do_bbHT) {
       for (int s = 0; s < r; ++s) {
-        tmp_bb->zero();
-        for (int ist = 0; ist < nccstates; ++ist)
-          apply(1.0, sector_r.civec(ist), tmp_bb->civec(ist), {GammaSQ::AnnihilateBeta}, {s});
+#ifdef HAVE_MPI_H
+        if (mpi_counter++ % mpi__->size() == mpi__->rank()) {
+#endif
+          tmp_bb->zero();
+          for (int ist = 0; ist < nccstates; ++ist)
+            apply(1.0, sector_r.civec(ist), tmp_bb->civec(ist), {GammaSQ::AnnihilateBeta}, {s});
 
-        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_bb(bbHTkey, r, s);
-        mat_block_multiply(false, false, 2.0, *tmp_bb, *Prs, 1.0, *bb_sector);
+          shared_ptr<const BlockSparseMatrix> Prs = blockops->P_bb(bbHTkey, r, s);
+          mat_block_multiply(false, false, 2.0, *tmp_bb, *Prs, 1.0, *bb_sector);
+#ifdef HAVE_MPI_H
+        }
+#endif
       }
     }
 
     if (do_abHT) {
       for (int s = 0; s < rnorb; ++s) {
-        tmp_ab->zero();
-        for (int ist = 0; ist < nccstates; ++ist)
-          apply(1.0, sector_r.civec(ist), tmp_ab->civec(ist), {GammaSQ::AnnihilateAlpha}, {s});
+#ifdef HAVE_MPI_H
+        if (mpi_counter++ % mpi__->size() == mpi__->rank()) {
+#endif
+          tmp_ab->zero();
+          for (int ist = 0; ist < nccstates; ++ist)
+            apply(1.0, sector_r.civec(ist), tmp_ab->civec(ist), {GammaSQ::AnnihilateAlpha}, {s});
 
-        shared_ptr<const BlockSparseMatrix> Prs = blockops->P_ab(abHTkey, s, r);
-        mat_block_multiply(false, false, -1.0, *tmp_ab, *Prs, 1.0, *ab_sector);
+          shared_ptr<const BlockSparseMatrix> Prs = blockops->P_ab(abHTkey, s, r);
+          mat_block_multiply(false, false, -1.0, *tmp_ab, *Prs, 1.0, *ab_sector);
+#ifdef HAVE_MPI_H
+        }
+#endif
       }
     }
   }
@@ -461,13 +531,18 @@ void FormSigmaProdRAS::aexc_branch(shared_ptr<const RASBlockVectors> cc_sector, 
   for (int r = 0; r < rnorb; ++r) {
     for (int s = 0; s < rnorb; ++s) {
       // apply (r^dagger s)_alpha to the Civecs
-      sector_rs.zero();
-      for (int ist = 0; ist < nccstates; ++ist)
-        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateAlpha,GammaSQ::AnnihilateAlpha}, {r,s});
+#ifdef HAVE_MPI_H
+      if ((r + s*rnorb) % mpi__->size() == mpi__->rank()) {
+#endif
+        sector_rs.zero();
+        for (int ist = 0; ist < nccstates; ++ist)
+          apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateAlpha,GammaSQ::AnnihilateAlpha}, {r,s});
 
-      shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_aa(cckey, r, s);
-      mat_block_multiply(false, true, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
-
+        shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_aa(cckey, r, s);
+        mat_block_multiply(false, true, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
+#ifdef HAVE_MPI_H
+      }
+#endif
     }
   }
 }
@@ -484,13 +559,19 @@ void FormSigmaProdRAS::bexc_branch(shared_ptr<const RASBlockVectors> cc_sector, 
 
   for (int r = 0; r < rnorb; ++r) {
     for (int s = 0; s < rnorb; ++s) {
-      // apply (r^dagger s)_beta to the Civecs
-      sector_rs.zero();
-      for (int ist = 0; ist < nccstates; ++ist)
-        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateBeta,GammaSQ::AnnihilateBeta}, {r,s});
+#ifdef HAVE_MPI_H
+      if ((r + s*rnorb) % mpi__->size() == mpi__->rank()) {
+#endif
+        // apply (r^dagger s)_beta to the Civecs
+        sector_rs.zero();
+        for (int ist = 0; ist < nccstates; ++ist)
+          apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateBeta,GammaSQ::AnnihilateBeta}, {r,s});
 
-      shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_bb(cckey, r, s);
-      mat_block_multiply(false, true, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
+        shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_bb(cckey, r, s);
+        mat_block_multiply(false, true, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
+#ifdef HAVE_MPI_H
+      }
+#endif
     }
   }
 
@@ -513,12 +594,18 @@ void FormSigmaProdRAS::abflip_branch(shared_ptr<const RASBlockVectors> cc_sector
   for (int r = 0; r < rnorb; ++r) {
     for (int s = 0; s < rnorb; ++s) {
       // apply (r^dagger_alpha s_beta) to the civec
-      sector_rs.zero();
-      for (int ist = 0; ist < nccstates; ++ist)
-        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateAlpha,GammaSQ::AnnihilateBeta}, {r, s});
+#ifdef HAVE_MPI_H
+      if ((r + s*rnorb) % mpi__->size() == mpi__->rank()) {
+#endif
+        sector_rs.zero();
+        for (int ist = 0; ist < nccstates; ++ist)
+          apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateAlpha,GammaSQ::AnnihilateBeta}, {r, s});
 
-      shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_ab(cckey, r, s);
-      mat_block_multiply(false, true, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
+        shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_ab(cckey, r, s);
+        mat_block_multiply(false, true, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
+#ifdef HAVE_MPI_H
+      }
+#endif
     }
   }
 }
@@ -538,13 +625,19 @@ void FormSigmaProdRAS::baflip_branch(shared_ptr<const RASBlockVectors> cc_sector
   RASBlockVectors sector_rs(flipdet, BlockInfo(flipkey.nelea, flipkey.neleb, nccstates));
   for (int r = 0; r < rnorb; ++r) {
     for (int s = 0; s < rnorb; ++s) {
-      // apply (r^dagger_beta s_alpha) to the civec
-      sector_rs.zero();
-      for (int ist = 0; ist < nccstates; ++ist)
-        apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateBeta,GammaSQ::AnnihilateAlpha}, {r, s});
+#ifdef HAVE_MPI_H
+      if ((r + s*rnorb) % mpi__->size() == mpi__->rank()) {
+#endif
+        // apply (r^dagger_beta s_alpha) to the civec
+        sector_rs.zero();
+        for (int ist = 0; ist < nccstates; ++ist)
+          apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateBeta,GammaSQ::AnnihilateAlpha}, {r, s});
 
-      shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_ab(flipkey, s, r);
-      mat_block_multiply(false, false, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
+        shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_ab(flipkey, s, r);
+        mat_block_multiply(false, false, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
+#ifdef HAVE_MPI_H
+      }
+#endif
     }
   }
 }
@@ -567,16 +660,22 @@ void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_s
   auto phik = make_shared<PhiKLists>(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea());
 
   for (int p = 0; p < lnorb; ++p ) {
-    tmp_sector.zero();
-    auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
-    copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
-    for (int ist = 0; ist < nccstates; ++ist) {
-      resolve_S_adag_adag_a(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
-      resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp, phik, sparseij);
-    }
+#ifdef HAVE_MPI_H
+    if (p % mpi__->size() == mpi__->rank()) {
+#endif
+      tmp_sector.zero();
+      auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
+      copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
+      for (int ist = 0; ist < nccstates; ++ist) {
+        resolve_S_adag_adag_a(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
+        resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp, phik, sparseij);
+      }
 
-    shared_ptr<const BlockSparseMatrix> gamma_a = blockops->gamma_a(aETkey, p);
-    mat_block_multiply(false, false, phase, tmp_sector, *gamma_a, 1.0, *sigma_sector);
+      shared_ptr<const BlockSparseMatrix> gamma_a = blockops->gamma_a(aETkey, p);
+      mat_block_multiply(false, false, phase, tmp_sector, *gamma_a, 1.0, *sigma_sector);
+#ifdef HAVE_MPI_H
+    }
+#endif
   }
 }
 
@@ -599,16 +698,22 @@ void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_s
   auto phik = make_shared<PhiKLists>(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea());
 
   for (int p = 0; p < lnorb; ++p ) {
-    tmp_sector.zero();
-    auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
-    copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
-    for (int ist = 0; ist < nccstates; ++ist) {
-      resolve_S_adag_a_a(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
-      resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp, phik, sparseij);
-    }
+#ifdef HAVE_MPI_H
+    if (p % mpi__->size() == mpi__->rank()) {
+#endif
+      tmp_sector.zero();
+      auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
+      copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
+      for (int ist = 0; ist < nccstates; ++ist) {
+        resolve_S_adag_a_a(cc_sector->civec(ist), tmp_sector.civec(ist), Jp);
+        resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp, phik, sparseij);
+      }
 
-    shared_ptr<const BlockSparseMatrix> gamma_a = blockops->gamma_a(cc_sector->left_state(), p);
-    mat_block_multiply(false, true, phase, tmp_sector, *gamma_a, 1.0, *sigma_sector);
+      shared_ptr<const BlockSparseMatrix> gamma_a = blockops->gamma_a(cc_sector->left_state(), p);
+      mat_block_multiply(false, true, phase, tmp_sector, *gamma_a, 1.0, *sigma_sector);
+#ifdef HAVE_MPI_H
+    }
+#endif
   }
 }
 
@@ -638,16 +743,22 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
   auto phik = make_shared<PhiKLists>(cc_trans.front()->det()->stringspacea(), sigma_trans.det()->stringspacea());
 
   for (int p = 0; p < lnorb; ++p) {
-    tmp_sector.zero();
-    auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
-    copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
-    for (int ist = 0; ist < nccstates; ++ist) {
-      resolve_S_adag_adag_a(*cc_trans[ist], tmp_sector.civec(ist), Jp);
-      resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp, phik, sparseij);
-    }
+#ifdef HAVE_MPI_H
+    if (p % mpi__->size() == mpi__->rank()) {
+#endif
+      tmp_sector.zero();
+      auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
+      copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
+      for (int ist = 0; ist < nccstates; ++ist) {
+        resolve_S_adag_adag_a(*cc_trans[ist], tmp_sector.civec(ist), Jp);
+        resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp, phik, sparseij);
+      }
 
-    shared_ptr<const BlockSparseMatrix> gamma_b = blockops->gamma_b(bETkey, p);
-    mat_block_multiply(false, false, phase, tmp_sector, *gamma_b, 1.0, sigma_trans);
+      shared_ptr<const BlockSparseMatrix> gamma_b = blockops->gamma_b(bETkey, p);
+      mat_block_multiply(false, false, phase, tmp_sector, *gamma_b, 1.0, sigma_trans);
+#ifdef HAVE_MPI_H
+    }
+#endif
   }
 
   for (int isg = 0; isg < sigma_sector->mdim(); ++isg)
@@ -681,16 +792,22 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
   auto phik = make_shared<PhiKLists>(cc_trans.front()->det()->stringspacea(), sigma_trans.det()->stringspacea());
 
   for (int p = 0; p < lnorb; ++p ) {
-    tmp_sector.zero();
-    auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
-    copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
-    for (int ist = 0; ist < nccstates; ++ist) {
-      resolve_S_adag_a_a(*cc_trans[ist], tmp_sector.civec(ist), Jp);
-      resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp, phik, sparseij);
-    }
+#ifdef HAVE_MPI_H
+    if (p % mpi__->size() == mpi__->rank()) {
+#endif
+      tmp_sector.zero();
+      auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
+      copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
+      for (int ist = 0; ist < nccstates; ++ist) {
+        resolve_S_adag_a_a(*cc_trans[ist], tmp_sector.civec(ist), Jp);
+        resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp, phik, sparseij);
+      }
 
-    shared_ptr<const BlockSparseMatrix> gamma_b = blockops->gamma_b(cc_sector->left_state(), p);
-    mat_block_multiply(false, true, phase, tmp_sector, *gamma_b, 1.0, sigma_trans);
+      shared_ptr<const BlockSparseMatrix> gamma_b = blockops->gamma_b(cc_sector->left_state(), p);
+      mat_block_multiply(false, true, phase, tmp_sector, *gamma_b, 1.0, sigma_trans);
+#ifdef HAVE_MPI_H
+    }
+#endif
   }
 
   for (int isg = 0; isg < sigma_sector->mdim(); ++isg)

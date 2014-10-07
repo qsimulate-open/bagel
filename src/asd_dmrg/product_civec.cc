@@ -105,6 +105,12 @@ void ProductRASCivec::ax_plus_y(const double& a, const ProductRASCivec& o) {
 }
 
 
+void ProductRASCivec::allreduce() {
+  for (auto& s : sectors_)
+    s.second->allreduce();
+}
+
+
 void ProductRASCivec::print(const double thresh) const {
   for (auto& isec: sectors_) {
     bool sector_printed = false;
