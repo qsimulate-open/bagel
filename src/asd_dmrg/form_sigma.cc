@@ -826,7 +826,7 @@ void FormSigmaProdRAS::resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView
   const size_t sla = sdet->lena();
 
   // k^+_alpha i^+_alpha j_alpha portion. the way easy part
-  Matrix F(sla, batchsize_);
+  Matrix F(sla, batchsize_, true);
   for (auto& targetspace : *tdet->stringspacea()) {
     const int nbatches = (targetspace->size()-1)/batchsize_ + 1;
     for (int batch = 0; batch < nbatches; ++batch) {
@@ -879,7 +879,7 @@ void FormSigmaProdRAS::resolve_S_adag_a_a(const RASCivecView cc, RASCivecView si
   const size_t sla = sdet->lena();
 
   // i^+_alpha j^_alpha k_alpha portion. the way easy part
-  Matrix F(sla, batchsize_);
+  Matrix F(sla, batchsize_, true);
   for (auto& targetspace : *tdet->stringspacea()) {
     const int nbatches = (targetspace->size()-1)/batchsize_ + 1;
     for (int batch = 0; batch < nbatches; ++batch) {
@@ -953,7 +953,7 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
         for (auto& source_block : cc.allowed_blocks<0>(source_aspace)) {
           auto source_bspace = source_block->stringsb();
           const size_t slb = source_bspace->size();
-          auto reduced_cp = make_shared<Matrix>(slb, reduced_RI.size());
+          auto reduced_cp = make_shared<Matrix>(slb, reduced_RI.size(), true);
           int current = 0;
           for (auto& i : reduced_RI)
             blas::ax_plus_y_n(i.sign, source_block->data() + slb*i.source, slb, reduced_cp->element_ptr(0,current++));
