@@ -417,7 +417,7 @@ void DistFCI::compute() {
     // compute errors
     vector<double> errors;
     for (int i = 0; i != nstate_; ++i) {
-      errors.push_back(errvec[i]->variance());
+      errors.push_back(errvec[i]->rms());
       conv[i] = static_cast<int>(errors[i] < thresh_);
     }
     pdebug.tick_print("error");
