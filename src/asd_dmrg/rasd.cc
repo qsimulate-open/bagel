@@ -86,10 +86,12 @@ shared_ptr<Matrix> RASD::compute_sigma2e(shared_ptr<const RASDvec> cc, shared_pt
       out->element(i,j) = out->element(j,i) = cc->data(i)->dot_product(*sigma->data(j));
     out->element(i,i) = cc->data(i)->dot_product(*sigma->data(i));
   }
+#ifdef HAVE_MPI_H
+  out->synchronize();
+#endif
   return out;
 }
 
-// TODO how am I going to ensure that I get the right formatting in Jop?
 shared_ptr<Matrix> RASD::compute_sigma2e(const vector<shared_ptr<ProductRASCivec>>& cc, shared_ptr<const DimerJop> jop) const {
   const int nstates = cc.size();
   FormSigmaProdRAS form_2e(input_->get_child("ras")->get<int>("batchsize", 512));
@@ -103,6 +105,9 @@ shared_ptr<Matrix> RASD::compute_sigma2e(const vector<shared_ptr<ProductRASCivec
       out->element(i,j) = out->element(j,i) = cc.at(i)->dot_product(*sigma.at(j));
     out->element(i,i) = cc.at(i)->dot_product(*sigma.at(i));
   }
+#ifdef HAVE_MPI_H
+  out->synchronize();
+#endif
   return out;
 }
 
@@ -115,6 +120,9 @@ shared_ptr<Matrix> RASD::compute_spin(shared_ptr<const RASDvec> cc) const {
       out->element(i,j) = out->element(j,i) = cc->data(i)->dot_product(*sigma->data(j));
     out->element(i,i) = cc->data(i)->dot_product(*sigma->data(i));
   }
+#ifdef HAVE_MPI_H
+  out->synchronize();
+#endif
   return out;
 }
 
@@ -131,6 +139,9 @@ shared_ptr<Matrix> RASD::compute_spin(vector<shared_ptr<ProductRASCivec>> cc) co
       out->element(i,j) = out->element(j,i) = cc.at(i)->dot_product(*spin_vec.at(j));
     out->element(i,i) = cc.at(i)->dot_product(*spin_vec.at(i));
   }
+#ifdef HAVE_MPI_H
+  out->synchronize();
+#endif
   return out;
 }
 
@@ -292,31 +303,38 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
     if (!system) {
       auto prod_ras = make_shared<ProductRASCI>(input, ref, environment);
       prod_ras->compute();
+      decimatetime.tick_print("ProductRASCI calculation");
       // diagonalize RDM to get RASCivecs
       map<BlockKey, shared_ptr<const RASDvec>> civecs = diagonalize_site_RDM(prod_ras->civectors(), perturb_);
+      decimatetime.tick_print("diagonalize site RDM");
       map<BlockKey, shared_ptr<const Matrix>> hmap;
       map<BlockKey, shared_ptr<const Matrix>> spinmap;
       for (auto& ici : civecs) {
         hmap.emplace(ici.first, compute_sigma2e(ici.second, prod_ras->jop()->monomer_jop<0>()));
         spinmap.emplace(ici.first, compute_spin(ici.second));
       }
+      decimatetime.tick_print("compute renormalized 2e energy and spin");
 
       for (int i = 0; i < nstate_; ++i)
         sweep_energies_[i].push_back(prod_ras->energy(i));
 
       GammaForestASD<RASDvec> forest(civecs);
       forest.compute();
+      decimatetime.tick_print("renormalize");
       return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
     }
     else {
       auto block_pair = make_shared<DMRG_Block2>(system, environment);
+      decimatetime.tick_print("Build double block");
       auto prod_ras = make_shared<ProductRASCI>(input, ref, block_pair);
       prod_ras->compute();
+      decimatetime.tick_print("ProductRASCI calculation");
 
       for (int i = 0; i < nstate_; ++i)
         sweep_energies_[i].push_back(prod_ras->energy(i));
 
       map<BlockKey, vector<shared_ptr<ProductRASCivec>>> civecs = diagonalize_site_and_block_RDM(prod_ras->civectors(), perturb_);
+      decimatetime.tick_print("diagonalize system RDM");
 
       const int nrasorb = civecs.begin()->second.front()->space()->norb();
       const int nsysorb = nrasorb + system->norb();
@@ -337,9 +355,12 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
         hmap.emplace(c.first, compute_sigma2e(c.second, jop));
         spinmap.emplace(c.first, compute_spin(c.second));
       }
+      decimatetime.tick_print("compute renormalized 2e energy and spin");
 
       GammaForestProdASD forest(civecs);
       forest.compute();
+      decimatetime.tick_print("renormalize blocks");
+
       return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact())->merge(system->coeff()));
     }
   }
@@ -623,6 +644,9 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
         overlap(i,j) = overlap(j,i) = sectorbasis[i]->dot_product(*sectorbasis[j]);
       overlap(i,i) = sectorbasis[i]->dot_product(*sectorbasis[i]);
     }
+#ifdef HAVE_MPI_H
+    overlap.synchronize();
+#endif
 
     // build rdm
     Matrix rdm = *overlap.clone();
@@ -633,6 +657,9 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
           tmp(j,i) = sectorbasis[i]->dot_product(*get<1>(op)[j]);
       dgemm_("T", "N", rdm.ndim(), rdm.mdim(), tmp.ndim(), get<0>(op), tmp.data(), tmp.ndim(), tmp.data(), tmp.ndim(), 1.0, rdm.data(), rdm.ndim());
     }
+#ifdef HAVE_MPI_H
+    rdm.synchronize();
+#endif
 
     Matrix orthonormalize(*overlap.tildex(1.0e-14));
     if (orthonormalize.mdim() > 0) {
