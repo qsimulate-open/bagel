@@ -270,6 +270,28 @@ class Matrix_base : public btas::Tensor2<DataType> {
           element(i, j) = element(j, i) = 0.5*(element(i, j)+element(j, i));
     }
 
+    void antisymmetrize() {
+      assert(ndim() == mdim());
+      const size_t n = mdim();
+      for (size_t i = 0; i != n; ++i) {
+        for (size_t j = i; j != n; ++j) {
+          element(i, j) = 0.5*(element(i, j)-element(j, i));
+          element(j, i) = -element(i, j);
+        }
+      }
+    }
+
+    void hermite() {
+      assert(ndim() == mdim());
+      const size_t n = mdim();
+      for (size_t i = 0; i != n; ++i) {
+        for (size_t j = i; j != n; ++j) {
+          element(i, j) = 0.5*(element(i, j)+detail::conj(element(j, i)));
+          element(j, i) = detail::conj(element(i, j));
+        }
+      }
+    }
+
     virtual void diagonalize(VecView vec) = 0;
 
     void zero() { DataType z(0.0); fill(z); }

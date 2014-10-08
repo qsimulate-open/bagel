@@ -82,9 +82,6 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
       return MatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
     }
 
-    // antisymmetrize
-    void antisymmetrize();
-
     // diagonalize this matrix (overwritten by a coefficient matrix)
     void diagonalize(VecView vec) override;
     std::shared_ptr<Matrix> diagonalize_blocks(VectorB& eig, std::vector<int> blocks) { return diagonalize_blocks_impl<Matrix>(eig, blocks); }

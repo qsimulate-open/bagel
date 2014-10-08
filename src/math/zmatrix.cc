@@ -232,24 +232,6 @@ shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
 }
 
 
-void ZMatrix::antisymmetrize() {
-  assert(ndim() == mdim());
-
-  shared_ptr<ZMatrix> trans = transpose();
-  *this -= *trans;
-  *this *= 0.5;
-}
-
-
-void ZMatrix::hermite() {
-  assert(ndim() == mdim());
-
-  shared_ptr<ZMatrix> trans = transpose_conjg();
-  *this += *trans;
-  *this *= 0.5;
-}
-
-
 void ZMatrix::purify_unitary() {
   assert(ndim() == mdim());
   // Schmidt orthogonalization

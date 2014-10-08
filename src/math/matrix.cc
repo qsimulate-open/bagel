@@ -190,14 +190,6 @@ shared_ptr<Matrix> Matrix::transpose(const double factor) const {
 }
 
 
-void Matrix::antisymmetrize() {
-  assert(ndim() == mdim());
-  shared_ptr<Matrix> trans = transpose();
-  *this -= *trans;
-  *this *= 0.5;
-}
-
-
 void Matrix::purify_unitary() {
   assert(ndim() == mdim());
   for (int i = 0; i != ndim(); ++i) {
