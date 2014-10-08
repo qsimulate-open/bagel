@@ -85,10 +85,8 @@ class SRBFGS {
     double prev_level_shift() const { return prev_level_shift_; }
 
     // sets initial trust radius ; presently not used
-    void initiate_trust_radius(std::shared_ptr<const T> _grad) {
-      // to make sure, inputs are copied.
-      auto grad = std::make_shared<T>(*_grad);
-      trust_radius_ = std::sqrt(detail::real(grad->dot_product(grad)));
+    void initiate_trust_radius() {
+      trust_radius_ = 0.4;
     }
 
 
@@ -438,12 +436,13 @@ class SRBFGS {
 
       // initialize trust radius
       if (prev_value() == nullptr && trust_radius_ == 0.0) {
-        initiate_trust_radius(grad);
+        initiate_trust_radius();
       }
 
       // compute Newton step and compare norm to trust radius
       auto acopy = two_loop_inverse_hessian(grad);
       auto anorm = acopy->norm();
+      std::cout << std::setprecision(6) << " Initial Step Length = " << anorm << std::endl;
       if (anorm  > trust_radius_) {
         std::cout << std::setprecision(6) << " step norm = " << anorm << " | trust_radius = " << trust_radius_ << std::endl;
         std::cout << " NEWTON STEP NORM EXCEEDS THE TRUST RADIUS : Level shifting will be used " << std::endl;
@@ -455,6 +454,8 @@ class SRBFGS {
         auto shift = grad->clone();
         shift->fill(tshift);
         acopy = level_shift_inverse_hessian(grad, shift);
+        std::cout << " Level Shift = " << tshift << std::endl;
+        std::cout << " Step Length = " << acopy->norm() << " | trust radius = " << trust_radius_ << std::endl;
       }
       acopy->scale(-1.0);
       if (!with_shift) {
@@ -475,7 +476,7 @@ class SRBFGS {
       auto value  = std::make_shared<T>(*_value);
 
       if (prev_value() == nullptr && trust_radius_ == 0.0) {
-        initiate_trust_radius(grad);
+        initiate_trust_radius();
       }
 
       auto p = two_loop_inverse_hessian(grad);
@@ -610,13 +611,12 @@ class SRBFGS {
             std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
           } else if (rk > 0.75) {
             std::cout << " condition (iii) satisfied : trust radius increased " << std::endl;
-            trust_radius_ = std::min(1.2 * trust_radius_, 0.75);
+            trust_radius_ = std::min(alpha_ * trust_radius_, 0.75);
             std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
           } else if (rk < 0) {
             std::cout << " step does not satisfy Taylor expansion criteria " << std::endl;
             std::cout << " scaling down the trust radius " << std::endl;
-            auto t2 = two_loop_inverse_hessian(_grad);
-            trust_radius_ = std::min(trust_radius_ / alpha_, t2->norm() / 2.0);
+            trust_radius_ = trust_radius_ / alpha_;
             reset = true;
           }
         } else { // conditions for tighter optimization

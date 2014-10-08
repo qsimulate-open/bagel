@@ -70,6 +70,15 @@
         "title"   : "Model hamiltonian analysis of singlet fission from first principles",
         "doi"     : "10.1021/jp505082a",
         "type"    : "article"
+      },
+      {
+        "author"  : "S. M. Parker and T. Shiozaki",
+        "journal" : "Journal of Chemical Theory and Computation",
+        "volume"  : "10",
+        "pages"   : "3738&ndash;3744",
+        "title"   : "Quasi-diabatic states from active space decomposition",
+        "doi"     : "10.1021/ct5004753",
+        "type"    : "article"
       }
     ]
   }

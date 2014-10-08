@@ -67,8 +67,8 @@ void ZSuperCI::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      Timer fci_time(0);
       if (iter) fci_->update(coeff_, /*restricted*/true);
+      Timer fci_time(0);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
       fci_time.tick_print("ZFCI");
@@ -79,12 +79,11 @@ void ZSuperCI::compute() {
     }
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirtnr_*2);
 
-    // compute one-boedy operators
+    // compute one-body operators
     shared_ptr<ZMatrix> f, fact, factp, gaa;
     shared_ptr<ZRotFile> denom;
     Timer onebody(0);
     one_body_operators(f, fact, factp, gaa, denom);
-    onebody.tick_print("One body operators");
 
     // first, <proj|H|0> is computed
     grad->zero();
@@ -94,6 +93,8 @@ void ZSuperCI::compute() {
     grad_va(fact, grad);
     // <r/i|H|0> = f_ri - f^inact_is d_sr - (is|tu)P_rs,tu = f_ri - fact_ri
     grad_ca(f, fact, grad);
+
+    onebody.tick_print("One body operators");
 
     if (!nact_) { // compute energy
       assert(nstate_ == 1 && energy_.size() == 1);
@@ -208,7 +209,6 @@ void ZSuperCI::compute() {
 
 void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& fact, shared_ptr<ZMatrix>& factp, shared_ptr<ZMatrix>& gaa,
                                   shared_ptr<ZRotFile>& denom) {
-  bool a2approx = idata_->get<bool>("a2approx", false);
   assert(coeff_->mdim()== nbasis_*2);
 
   // qvec ; electronic contributions only
@@ -219,11 +219,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     coefftmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
     coefftmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2, nocc_*2+nvirtnr_));
     coefftmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
-    if (!a2approx) {
-      qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coefftmp, coefftmp->slice_copy(nclosed_*2, nocc_*2), nclosed_, fci_, gaunt_, breit_);
-    } else {
-      qvec = make_shared<const ZMatrix>(nocc_*2+nvirtnr_*2, nact_*2);
-    }
+    qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coefftmp, coefftmp->slice_copy(nclosed_*2, nocc_*2), nclosed_, fci_, gaunt_, breit_);
   }
 
   // calculate 1RDM in an original basis set
@@ -284,8 +280,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   if (nact_) {
     gaa = factp->clone();
     shared_ptr<const ZMatrix> nat_rdm2 = natorb_rdm2_transform(natorb_coeff, fci_->rdm2_av());
-    if (!a2approx)
-      zgemv_("N", nact_*nact_*4, nact_*nact_*4, 1.0, nat_rdm2->data(), nact_*nact_*4, factp->get_conjg()->data(), 1, 0.0, gaa->data(), 1);
+    zgemv_("N", nact_*nact_*4, nact_*nact_*4, 1.0, nat_rdm2->data(), nact_*nact_*4, factp->get_conjg()->data(), 1, 0.0, gaa->data(), 1);
     complex<double> p = complex<double> (0.0,0.0);
     for (int i = 0; i != nact_*2; ++i) p += occup_[i] * factp->element(i,i);
     for (int i = 0; i != nact_*2; ++i) gaa->element(i,i) -= occup_[i] * p;

@@ -50,6 +50,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     bool gaunt_;
     bool breit_;
     bool no_kramers_init_;
+    bool natocc_;
 
     double thresh_;
     double thresh_micro_;
@@ -113,6 +114,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
     // function to generate modified virtual MOs from either a Fock matrix or the one-electron Hamiltonian
     std::shared_ptr<const ZMatrix> generate_mvo(const int ncore, const bool hcore_mvo = false);
+    void print_natocc() const;
+    std::shared_ptr<const ZMatrix> set_active(std::set<int> active_indices) const;
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
@@ -128,6 +131,10 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double thresh_micro() const { return thresh_micro_; }
     double occup(const int i) const { return occup_[i]; }
     std::complex<double> rms_grad() const { return rms_grad_; };
+    // function to copy electronic rotations from a rotation file TODO: make lambda
+    std::shared_ptr<ZRotFile> copy_electronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
+    // function to copy positronic rotations from a rotation file TODO: make lambda
+    std::shared_ptr<ZRotFile> copy_positronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
 
 };
 

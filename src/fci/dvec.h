@@ -82,10 +82,14 @@ class Dvector {
     void load(Archive& ar, const unsigned int version) {
       bool alloc;
       ar >> det_ >> lena_ >> lenb_ >> ij_ >> alloc;
-      if (alloc)
+      if (alloc) {
         ar >> data_;
-      else
+        DataType* tmp = data_.data();
+        for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
+          dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
+      } else {
         ar >> dvec_;
+      }
     }
 
   public:

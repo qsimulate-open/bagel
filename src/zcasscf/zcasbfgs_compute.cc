@@ -71,9 +71,9 @@ void ZCASBFGS::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      Timer fci_time(0);
       if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
+      Timer fci_time(0);
       fci_->compute();
       fci_time.tick_print("ZFCI");
       cout << " Computing RDMs from FCI calculation " << endl;
@@ -111,26 +111,18 @@ void ZCASBFGS::compute() {
     if (nact_) {
       qvec = make_shared<ZQvec>(nbasis_*2, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2,nocc_*2), nclosed_, fci_, gaunt_, breit_)->get_conjg();
     }
-    onebody.tick_print("One body operators");
 
-    // get energy
-    if (nact_) {
-      // use state averaged energy to update trust radius
-      assert(fci_->energy().size() > 0);
-      double sa_en = 0.0;
-      for (auto& i : fci_->energy())
-        sa_en += i;
-      sa_en /= double((fci_->energy()).size());
-      optimize_electrons == true ? ele_energy.push_back(sa_en) : pos_energy.push_back(sa_en);
-      energy_ = fci_->energy();
-    } else {
-      assert(nstate_ == 1 && energy_.size() == 1);
-      optimize_electrons == true ? ele_energy.resize(iter/2+1) : pos_energy.resize((iter-1)/2+1);
-      optimize_electrons == true ? ele_energy[iter/2] = geom_->nuclear_repulsion() : pos_energy[(iter-1)/2] = geom_->nuclear_repulsion();
-      auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore_) * *coeff_);
-      for (int i = 0; i != nclosed_*2; ++i)
-        optimize_electrons == true ? ele_energy[iter/2] += 0.5*mo->element(i,i).real() : pos_energy[(iter-1)/2] += 0.5*mo->element(i,i).real();
-      energy_[0] = optimize_electrons == true ? ele_energy[iter/2] : pos_energy[(iter-1)/2];
+    // compute orbital gradients
+    shared_ptr<ZRotFile> grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
+    grad_vc(cfock, afock, grad);
+    grad_va(cfock, qvec, rdm1, grad);
+    grad_ca(cfock, afock, qvec, rdm1, grad);
+    *grad *= 2.0;
+    if (pos_conv) {
+      auto newgrad = copy_positronic_rotations(grad);
+      cout << setprecision(4) << scientific << " Positron gradient RMS = " << newgrad->rms() << endl;
+      if (newgrad->rms() > thresh_) pos_conv = false;
+      if (newgrad->rms() > thresh_) cout << " POSITRONS NOT CONVERGED " << endl;
     }
 
     // compute approximate diagonal hessian
@@ -158,18 +150,26 @@ void ZCASBFGS::compute() {
         pos_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom);
       }
     }
+    onebody.tick_print("One body operators");
 
-    // compute orbital gradients
-    shared_ptr<ZRotFile> grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
-    grad_vc(cfock, afock, grad);
-    grad_va(cfock, qvec, rdm1, grad);
-    grad_ca(cfock, afock, qvec, rdm1, grad);
-    *grad *= 2.0;
-    if (pos_conv) {
-      auto newgrad = copy_positronic_rotations(grad);
-      cout << setprecision(4) << scientific << " Positron gradient RMS = " << newgrad->rms() << endl;
-      if (newgrad->rms() > thresh_) pos_conv = false;
-      if (newgrad->rms() > thresh_) cout << " POSITRONS NOT CONVERGED " << endl;
+    // get energy
+    if (nact_) {
+      // use state averaged energy to update trust radius
+      assert(fci_->energy().size() > 0);
+      double sa_en = 0.0;
+      for (auto& i : fci_->energy())
+        sa_en += i;
+      sa_en /= double((fci_->energy()).size());
+      optimize_electrons == true ? ele_energy.push_back(sa_en) : pos_energy.push_back(sa_en);
+      energy_ = fci_->energy();
+    } else {
+      assert(nstate_ == 1 && energy_.size() == 1);
+      optimize_electrons == true ? ele_energy.resize(iter/2+1) : pos_energy.resize((iter-1)/2+1);
+      optimize_electrons == true ? ele_energy[iter/2] = geom_->nuclear_repulsion() : pos_energy[(iter-1)/2] = geom_->nuclear_repulsion();
+      auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore_) * *coeff_);
+      for (int i = 0; i != nclosed_*2; ++i)
+        optimize_electrons == true ? ele_energy[iter/2] += 0.5*mo->element(i,i).real() : pos_energy[(iter-1)/2] += 0.5*mo->element(i,i).real();
+      energy_[0] = optimize_electrons == true ? ele_energy[iter/2] : pos_energy[(iter-1)/2];
     }
 
     shared_ptr<ZRotFile> xlog;
@@ -220,6 +220,7 @@ void ZCASBFGS::compute() {
     } else {
       kramers_adapt(expa, nneg_/2);
     }
+    expa->purify_unitary();
 
     cold = coeff_->copy();
     if (optimize_electrons) {
