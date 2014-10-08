@@ -503,10 +503,29 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
 
   // Process into Dvecs: These vectors will become blocks so now BlockKey should be a descriptor of the block vector
   map<BlockKey, shared_ptr<const RASDvec>> out;
+  cout << "  o Renormalized blocks have" << endl;
+#ifdef DEBUG
+  resources__->proc()->cout_on();
+#endif
   for (auto& dvec : output_vectors) {
     auto tmp = make_shared<RASDvec>(dvec.second);
+
+#ifdef DEBUG
+    for (int i = 0; i < mpi__->size(); ++i) {
+      if (i == mpi__->rank()) {
+        cout << "    === rank " << i << " ===" << endl;
+#endif
+        cout << "    + " << tmp->ij() << " states with (" << tmp->det()->nelea() << ", " << tmp->det()->neleb() << ")" << endl;
+#ifdef DEBUG
+      }
+      mpi__->barrier();
+    }
+#endif
     out.emplace(BlockKey(tmp->det()->nelea(), tmp->det()->neleb()), tmp);
   }
+#ifdef DEBUG
+  resources__->proc()->cout_off();
+#endif
 
   return out;
 }
@@ -700,6 +719,28 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
     out[BlockKey(tmp->nelea(), tmp->neleb())].push_back(tmp);
     partial_trace += i->first;
   }
+
+  cout << "  o Renormalized blocks have" << endl;
+#ifdef DEBUG
+  resources__->proc()->cout_on();
+#endif
+  for (auto& o : out) {
+#ifdef DEBUG
+    for (int i = 0; i < mpi__->size(); ++i) {
+      if (i == mpi__->rank()) {
+        cout << "      === rank " << i << " ===" << endl;
+#endif
+        cout << "    + " << o.second.size() << " states with (" << o.first.nelea << ", " << o.first.neleb << ")" << endl;
+#ifdef DEBUG
+      }
+      mpi__->barrier();
+    }
+#endif
+  }
+#ifdef DEBUG
+  resources__->proc()->cout_off();
+#endif
+
   const double total_trace = accumulate(singular_values.begin(), singular_values.end(), 0.0,
                                           [] (double x, pair<double, tuple<BlockKey, int>> s) { return x + s.first; } );
   cout << "  discarded weights: " << setw(12) << setprecision(8) << scientific <<  total_trace - partial_trace << fixed << endl;

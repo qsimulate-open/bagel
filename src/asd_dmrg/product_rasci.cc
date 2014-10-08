@@ -127,12 +127,27 @@ void ProductRASCI::compute() {
   vector<shared_ptr<ProductRASCivec>> cc(nstate_);
   generate(cc.begin(), cc.end(), [this] () { return make_shared<ProductRASCivec>(space_, left_, nelea_, neleb_); });
 
+#ifdef DEBUG
+  resources__->proc()->cout_on();
+  for (int i = 0 ; i < mpi__->size(); ++i) {
+    if (i == mpi__->rank()) {
+      cout << "rank " << i << ":" << endl;
+#endif
+      cout << "  - block states:" << endl;
+      for (auto& i : denom_->sectors())
+        cout << "    - " << i.second->mdim() << " states with " << i.first.nelea << " alpha and " << i.first.neleb << "beta electrons" << endl;
+      cout << "  - total size of configuration space: " << denom_->size() << endl;
+#ifdef DEBUG
+    }
+    mpi__->barrier();
+  }
+  resources__->proc()->cout_off();
+#endif
+
   // find determinants that have small diagonal energies
   model_guess(cc);
 
   pdebug.tick_print("guess generation");
-
-  cout << "  - total size of configuration space: " << denom_->size() << endl;
 
   // nuclear energy retrieved from geometry
   const double nuc_core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
