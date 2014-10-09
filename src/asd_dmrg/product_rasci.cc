@@ -140,6 +140,7 @@ void ProductRASCI::compute() {
 #ifdef DEBUG
     }
     mpi__->barrier();
+    this_thread::sleep_for(sleeptime__);
   }
   resources__->proc()->cout_off();
 #endif

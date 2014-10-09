@@ -526,6 +526,7 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
 #ifdef DEBUG
       }
       mpi__->barrier();
+      this_thread::sleep_for(sleeptime__);
     }
 #endif
     out.emplace(BlockKey(tmp->det()->nelea(), tmp->det()->neleb()), tmp);
@@ -741,6 +742,7 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
 #ifdef DEBUG
       }
       mpi__->barrier();
+      this_thread::sleep_for(sleeptime__);
     }
 #endif
   }
