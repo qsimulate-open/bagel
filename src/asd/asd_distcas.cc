@@ -45,3 +45,8 @@ std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> ASD_DistCAS::comput
   std::cout << "ASD_DistCAS: compute_rdm12_monomer called" << std::endl;
   assert(false);
 }
+
+std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> ASD_DistCAS::compute_rdm34_monomer (std::pair<int,int> offset, std::array<DistDvec,4>& fourvecs) const {
+  std::cout << "ASD_DistCAS: compute_rdm34_monomer called" << std::endl;
+  assert(false);
+}

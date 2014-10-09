@@ -63,6 +63,14 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
     tie(r1,r2) = compute_rdm12_monomer(offset, fourvecs);
     if(r1) *onerdm_ += *r1;
     if(r2) *twordm_ += *r2;
+
+    //3&4RDM
+    std::shared_ptr<RDM<3>> r3;
+    std::shared_ptr<RDM<4>> r4;
+    tie(r3,r4) = compute_rdm34_monomer(offset, fourvecs);
+    if(r3) *threerdm_ += *r3;
+    if(r4) *fourrdm_  += *r4;
+
   }
 
 /*

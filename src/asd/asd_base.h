@@ -66,6 +66,8 @@ class ASD_base {
     // Dimer reduced density matrices
     std::shared_ptr<RDM<1>> onerdm_; // First-order RDM
     std::shared_ptr<RDM<2>> twordm_; // Second-order RDM
+    std::shared_ptr<RDM<3>> threerdm_; // Third-order RDM
+    std::shared_ptr<RDM<4>> fourrdm_; // Fourth-order RDM
 
     // Total system quantities
     int dimerstates_; ///< Total size of dimer Hamiltonian. Counted up during initialization
@@ -89,7 +91,7 @@ class ASD_base {
     // Gamma Tensor
     std::array<std::shared_ptr<const GammaTensor>,2> gammatensor_;
     std::shared_ptr<GammaTensor> worktensor_;
-    std::shared_ptr<GammaTensor> worktensor2_;
+  //std::shared_ptr<GammaTensor> worktensor2_;
 
     std::vector<std::vector<ModelBlock>> models_to_form_; ///< Contains specifications to construct model spaces
     std::vector<std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>>> models_; ///< models that have been built

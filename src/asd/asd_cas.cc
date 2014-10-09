@@ -27,6 +27,8 @@
 #include <src/fci/hztasks.h>
 #include <src/fci/prop1etask.h>
 
+#include <src/smith/prim_op.h>
+
 using namespace std;
 using namespace bagel;
 
@@ -191,7 +193,243 @@ void ASD_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
 }
 
 //***************************************************************************************************************
-//TODO pair< tuple<rdm1,rdm2> for A, tuple<rdm1,rdm2> for B >
+tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>>
+ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) const {
+// taken from fci/fci_rdm.cc
+//***************************************************************************************************************
+
+  std::cout << "ASD_CAS: compute_rdm34_monomer called" << std::endl;
+  
+  //Dvec decomposition
+  auto& A  = fourvecs[0]; // <I'>
+  auto& Ap = fourvecs[1]; // |I>
+
+  auto& B  = fourvecs[2]; // <J'|
+  auto& Bp = fourvecs[3]; // |J>
+
+  //Offsets
+  const int ioff = std::get<0>(offset);
+  const int joff = std::get<1>(offset);
+  
+  const int nactA = dimer_->active_refs().first->nact(); //dimer_ (ASD_base)
+  const int nactB = dimer_->active_refs().second->nact();
+  const int nactT = nactA+nactB;
+
+  auto rdm3A = std::make_shared<RDM<3>>(nactA);
+  auto rdm4A = std::make_shared<RDM<4>>(nactA);
+  auto rdm3B = std::make_shared<RDM<3>>(nactB);
+  auto rdm4B = std::make_shared<RDM<4>>(nactB);
+
+  const int nstA  = A.ij();
+  const int nstAp = Ap.ij();
+  std::cout << "<I'| x |I> = " << nstA << " x " << nstAp << std::endl;
+
+  const int nstB  = B.ij();
+  const int nstBp = Bp.ij();
+  std::cout << "<J'| x |J> = " << nstA << " x " << nstAp << std::endl;
+
+  assert(nstA == nstB && nstAp == nstBp);
+
+  //currently, Diagonal subspace only
+  assert(nstA == nstAp);
+
+  //ground state only
+  //const int istate = 0;
+
+  //Monomer A
+  for (int j = 0; j != nstB; ++j) { // <J'|
+    for (int i = 0; i != nstA; ++i) { // <I'|
+      const int ij = i + (j*nstA); //cf. dimerindex()
+
+      for (int jp = 0; jp != nstBp; ++jp) { // |J>
+        for (int ip = 0; ip != nstAp; ++ip) { // |I>
+          const int ijp = ip + (jp*nstAp);
+          const double coef = adiabats_->element(ioff+ij,0) * adiabats_->element(joff+ijp,0); // C_(I'J') * C_(IJ) TODO: 0 = ground state only
+
+          if(j == jp) { //delta_J'J
+            shared_ptr<RDM<3>> r3;
+            shared_ptr<RDM<4>> r4;
+            tie(r3,r4) = compute_rdm34_from_civec(A.data(i), Ap.data(ip)); // <I'|E(op)|I>
+            r3->scale(coef);
+            *rdm3A += *r3;
+            r4->scale(coef);
+            *rdm4A += *r4;
+          }
+
+          if(i == ip) { //delta_I'I
+            shared_ptr<RDM<3>> r3;
+            shared_ptr<RDM<4>> r4;
+            tie(r3,r4) = compute_rdm34_from_civec(B.data(j), Bp.data(jp)); // <J'|E(op)|J>
+            r3->scale(coef);
+            *rdm3B += *r3;
+            r4->scale(coef);
+            *rdm4B += *r4;
+          }
+
+        } //ip
+      } //jp
+
+    } //i
+  } //j
+
+  auto out3 = std::make_shared<RDM<3>>(nactA+nactB);
+  out3->zero();
+  {
+    //Monomer A
+    auto low = {    0,    0,    0,    0,    0,    0};
+    auto up  = {nactA,nactA,nactA,nactA,nactA,nactA};
+    auto outv = make_rwview(out3->range().slice(low,up), out3->storage());
+    copy(rdm3A->begin(), rdm3A->end(), outv.begin());
+  }
+  {
+    //Monomer B
+    auto low = {nactA,nactA,nactA,nactA,nactA,nactA};
+    auto up  = {nactT,nactT,nactT,nactT,nactT,nactT};
+    auto outv = make_rwview(out3->range().slice(low,up), out3->storage());
+    copy(rdm3B->begin(), rdm3B->end(), outv.begin());
+  }
+  auto out4 = std::make_shared<RDM<4>>(nactA+nactB);
+  out4->zero();
+  {
+    //Monomer A
+    auto low = {    0,    0,    0,    0,    0,    0,    0,    0};
+    auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactA};
+    auto outv = make_rwview(out4->range().slice(low,up), out4->storage());
+    copy(rdm4A->begin(), rdm4A->end(), outv.begin());
+  }
+  {
+    //Monomer B
+    auto low = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactA};
+    auto up  = {nactT,nactT,nactT,nactT,nactT,nactT,nactT,nactT};
+    auto outv = make_rwview(out4->range().slice(low,up), out4->storage());
+    copy(rdm4B->begin(), rdm4B->end(), outv.begin());
+  }
+
+  return make_tuple(out3, out4);
+
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>>
+ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
+//***************************************************************************************************************
+
+  //ADDED
+  const int norb = cbra->det()->norb();
+//const int nelea =  ->nelea();
+//const int neleb =  ->neleb()
+  //END
+
+  auto rdm3 = make_shared<RDM<3>>(norb);
+  auto rdm4 = make_shared<RDM<4>>(norb);
+
+  // first make <I|E_ij|0>
+  auto dbra = make_shared<Dvec>(cbra->det(), norb*norb);
+  dbra->zero();
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
+  auto ebra = make_shared<Dvec>(cbra->det(), norb*norb*norb*norb);
+  auto tmp = make_shared<Dvec>(cbra->det(), norb*norb);
+  int ijkl = 0;
+  int ij = 0;
+  for (auto iter = dbra->dvec().begin(); iter != dbra->dvec().end(); ++iter, ++ij) {
+    const int j = ij/norb;
+    const int i = ij-j*norb;
+    tmp->zero();
+    sigma_2a1(*iter, tmp);
+    sigma_2a2(*iter, tmp);
+    int kl = 0;
+    for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
+      *ebra->data(ijkl) = **t;
+      const int l = kl/norb;
+      const int k = kl-l*norb;
+      if (l == i) *ebra->data(ijkl) -= *dbra->data(k+j*norb);
+    }
+  }
+
+  // size of the RI space
+  const size_t nri = ebra->lena() * ebra->lenb();
+  assert(nri == dbra->lena()*dbra->lenb());
+
+  // first form <0|E_ij,kl|I><I|E_mn|0>
+  {
+    auto tmp3 = make_shared<RDM<3>>(norb);
+    dgemm_("T", "N", dbra->ij(), ebra->ij(), nri, 1.0, dbra->data(), nri, ebra->data(), nri, 0.0, tmp3->data(), dbra->ij());
+
+    // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
+    // we assume that rdm2_[ist] is set
+    for (int i0 = 0; i0 != norb; ++i0) {
+      for (int i1 = 0; i1 != norb; ++i1) {
+        for (int i2 = 0; i2 != norb; ++i2) {
+          for (int i3 = 0; i3 != norb; ++i3) {
+            // i4 and i5 correspond to m and n (they should be transposed here)
+            for (int i5 = 0; i5 != norb; ++i5) {
+              for (int i4 = 0; i4 != norb; ++i4) {
+                rdm3->element(i5, i4, i3, i2, i1, i0) = tmp3->element(i4, i5, i3, i2, i1, i0);
+              }
+            //rdm3->element(i5, i3, i3, i2, i1, i0) -= rdm2_[ist]->element(i5, i2, i1, i0);
+            //rdm3->element(i5, i1, i3, i2, i1, i0) -= rdm2_[ist]->element(i3, i2, i5, i0);
+              rdm3->element(i5, i3, i3, i2, i1, i0) -= twordm_->element(i5, i2, i1, i0);
+              rdm3->element(i5, i1, i3, i2, i1, i0) -= twordm_->element(i3, i2, i5, i0);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
+  {
+    {
+      auto tmp4 = make_shared<RDM<4>>(norb);
+      dgemm_("T", "N", ebra->ij(), ebra->ij(), nri, 1.0, ebra->data(), nri, ebra->data(), nri, 0.0, tmp4->data(), ebra->ij());
+      SMITH::sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(tmp4->data(), rdm4->data(), norb, norb, norb, norb, norb, norb, norb, norb);
+      for (int l = 0; l != norb; ++l)
+        for (int d = 0; d != norb; ++d)
+          for (int k = 0; k != norb; ++k)
+            for (int c = 0; c != norb; ++c)
+              for (int j = 0; j != norb; ++j)
+                for (int b = 0; b != norb; ++b)
+                  for (int i = 0; i != norb; ++i)
+                    for (int a = 0; a != norb; ++a) {
+                    //if (c == i && d == j) rdm4->element(a,i,b,j,c,k,d,l) -= rdm2_[ist]->element(a,k,b,l);
+                    //if (c == j && d == i) rdm4->element(a,i,b,j,c,k,d,l) -= rdm2_[ist]->element(a,l,b,k);
+                      if (c == i && d == j) rdm4->element(a,i,b,j,c,k,d,l) -= twordm_->element(a,k,b,l);
+                      if (c == j && d == i) rdm4->element(a,i,b,j,c,k,d,l) -= twordm_->element(a,l,b,k);
+                      if (c == i)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,k,b,j,d,l);
+                      if (c == j)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,i,b,k,d,l);
+                      if (d == i)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,l,b,j,c,k);
+                      if (d == j)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,i,b,l,c,k);
+                    }
+    }
+  }
+#if 0
+  // Checking 4RDM by comparing with 3RDM
+  auto debug = make_shared<RDM<3>>(*rdm3);
+  cout << "printing out rdm" << endl;
+  for (int l = 0; l != norb_; ++l)
+    for (int d = 0; d != norb_; ++d)
+      for (int k = 0; k != norb_; ++k)
+        for (int c = 0; c != norb_; ++c)
+          for (int j = 0; j != norb_; ++j)
+            for (int b = 0; b != norb_; ++b)
+    for (int i = 0; i != norb_; ++i) {
+      debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(i,i,b,j,c,k,d,l);
+//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,i,i,c,k,d,l);
+//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,c,k,i,i,d,l);
+//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,c,k,d,l,i,i);
+    }
+  debug->print(1.0e-8);
+  cout << "printing out rdm - end" << endl;
+#endif
+
+  return tie(rdm3, rdm4);
+}
+
+
+//***************************************************************************************************************
 std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
 ASD_CAS::compute_rdm12_monomer (std::pair<int,int> offset, std::array<Dvec,4>& fourvecs) const {
 //returns monomer 1&2RDMs
