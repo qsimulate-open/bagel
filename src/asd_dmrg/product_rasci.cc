@@ -133,9 +133,13 @@ void ProductRASCI::compute() {
     if (i == mpi__->rank()) {
       cout << "rank " << i << ":" << endl;
 #endif
+#if 0
       cout << "  - block states:" << endl;
       for (auto& i : denom_->sectors())
-        cout << "    - " << i.second->mdim() << " states with " << i.first.nelea << " alpha and " << i.first.neleb << "beta electrons" << endl;
+        cout << "    - " << i.second->mdim() << " states with " << i.first.nelea << " alpha and " << i.first.neleb << " beta electrons" << endl;
+#else
+      cout << "  - block states: " << left_->nstates() << endl;
+#endif
       cout << "  - total size of configuration space: " << denom_->size() << endl;
 #ifdef DEBUG
     }
