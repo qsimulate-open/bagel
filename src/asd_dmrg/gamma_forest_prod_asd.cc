@@ -57,6 +57,16 @@ GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<ProductRA
     }
   }
 
+#ifdef HAVE_MPI_H
+  // make a "lexical" ordering for ProductStates that will be used to distribute based on bra vectors
+  unordered_map<size_t, int> product_lex;
+  {
+    size_t counter = 0;
+    for (auto& p : vecmap)
+      product_lex.emplace(state_tag(p.first), counter++);
+  }
+#endif
+
   possible_couplings_ = {
     {GammaSQ::CreateAlpha},
     {GammaSQ::CreateBeta},
@@ -107,7 +117,13 @@ GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<ProductRA
               // block states are orthonormal so we need to skip this set if the block operator is the identity
               //   and the coupling is between different block states
               if (!(ordered_ciops.size()==coupling.size() && bra_ptr->first.state!=ket_ptr->first.state)) {
-                forest_->insert<0>(bra_ptr->second, state_tag(bra_ptr->first), ket_ptr->second, state_tag(ket_ptr->first), ordered_ciops);
+#ifdef HAVE_MPI_H
+                if (product_lex[state_tag(bra_ptr->first)] % mpi__->size() == mpi__->rank()) {
+#endif
+                  forest_->insert<0>(bra_ptr->second, state_tag(bra_ptr->first), ket_ptr->second, state_tag(ket_ptr->first), ordered_ciops);
+#ifdef HAVE_MPI_H
+                }
+#endif
               }
             }
           }
@@ -169,9 +185,10 @@ tuple<int, int, int> GammaForestProdASD::get_indices(const bitset<3> bit, const 
 }
 
 void GammaForestProdASD::compute() {
+  Timer ftimer(3);
   // first hit compute on forest
   forest_->compute();
-  cout << "computing gammaforest done " << endl;
+  ftimer.tick_print("Computed gamma forest with RAS parts");
 
   shared_ptr<const DMRG_Block1> dmrgblock = dynamic_pointer_cast<const DMRG_Block1>(block_states_.begin()->second.front()->left());
   const int lnorb = dmrgblock->norb();
@@ -269,6 +286,10 @@ void GammaForestProdASD::compute() {
                     ps_ket.state = ket_k;
                   }
 
+#ifdef HAVE_MPI_H
+                  if (!forest_->exist<0>(state_tag(ps_bra), state_tag(ps_ket), ciops))
+                    continue;
+#endif
                   shared_ptr<const Matrix> ras_part = forest_->get<0>(state_tag(ps_bra), state_tag(ps_ket), ciops);
                   const double block_gamma_ss = blockops.empty() ? 1.0 : (*block_part)(bra_k, ket_k, block_index);
 
@@ -288,8 +309,10 @@ void GammaForestProdASD::compute() {
           }
         }
       }
+      gamma_matrix->allreduce();
       gammas_.emplace(make_tuple(coupling, bra_key, ket_info.key()), gamma_matrix);
       sparselist_.emplace_back(coupling, bra_info, ket_info);
     }
   }
+  ftimer.tick_print("combine RAS and Block parts");
 }

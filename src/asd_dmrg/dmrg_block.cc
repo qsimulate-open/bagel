@@ -34,11 +34,14 @@ using namespace std;
 
 DMRG_Block1::DMRG_Block1(GammaForestASD<RASDvec>&& forest, const map<BlockKey, shared_ptr<const Matrix>> h2e, const map<BlockKey,
            shared_ptr<const Matrix>> spin, shared_ptr<const Matrix> coeff) : DMRG_Block(coeff), H2e_(h2e), spin_(spin) {
+  Timer dmrgtime(2);
+
   // Build set of blocks
   for (auto& i : h2e) {
     assert(i.second->ndim() == i.second->mdim());
     blocks_.emplace(i.first.nelea, i.first.neleb, i.second->ndim());
   }
+  dmrgtime.tick_print("prepare blocks");
 
   // initialize operator space
   for (auto o : forest.sparselist()) {
@@ -66,6 +69,7 @@ DMRG_Block1::DMRG_Block1(GammaForestASD<RASDvec>&& forest, const map<BlockKey, s
     auto tensor = make_shared<btas::Tensor3<double>>(range, move(mat->storage()));
 #ifdef HAVE_MPI_H
     mpi__->broadcast(tensor->data(), tensor->size(), 0);
+    dmrgtime.tick_print("broadcast");
 #endif
     // add matrix
     CouplingBlock cb(brakey, ketkey, tensor);
@@ -76,11 +80,14 @@ DMRG_Block1::DMRG_Block1(GammaForestASD<RASDvec>&& forest, const map<BlockKey, s
 DMRG_Block1::DMRG_Block1(GammaForestProdASD&& forest, const map<BlockKey, shared_ptr<const Matrix>> h2e,
                                                     const map<BlockKey, shared_ptr<const Matrix>> spin,
                                                     shared_ptr<const Matrix> coeff) : DMRG_Block(coeff), H2e_(h2e), spin_(spin) {
+  Timer dmrgtime(2);
+
   // Build set of blocks
   for (auto& i : h2e) {
     assert(i.second->ndim() == i.second->mdim());
     blocks_.emplace(i.first.nelea, i.first.neleb, i.second->ndim());
   }
+  dmrgtime.tick_print("build block info");
 
   // initialize operator space
   for (auto o : forest.sparselist()) {

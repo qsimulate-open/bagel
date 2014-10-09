@@ -319,9 +319,12 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
         sweep_energies_[i].push_back(prod_ras->energy(i));
 
       GammaForestASD<RASDvec> forest(civecs);
+      decimatetime.tick_print("construct GammaForestASD");
       forest.compute();
       decimatetime.tick_print("renormalize");
-      return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
+      auto out = make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
+      decimatetime.tick_print("dmrg block");
+      return out;
     }
     else {
       auto block_pair = make_shared<DMRG_Block2>(system, environment);
@@ -349,6 +352,8 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
       copy(mo2eSlice.begin(), mo2eSlice.end(), mo2e->begin());
       auto jop = make_shared<DimerJop>(nrasorb, system->norb(), make_shared<CSymMatrix>(nsysorb), mo2e);
 
+      decimatetime.tick_print("make jop");
+
       map<BlockKey, shared_ptr<const Matrix>> hmap;
       map<BlockKey, shared_ptr<const Matrix>> spinmap;
       for (auto& c : civecs) {
@@ -358,10 +363,12 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
       decimatetime.tick_print("compute renormalized 2e energy and spin");
 
       GammaForestProdASD forest(civecs);
+      decimatetime.tick_print("construct GammaForestProdASD");
       forest.compute();
       decimatetime.tick_print("renormalize blocks");
 
-      return make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact())->merge(system->coeff()));
+      auto out = make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact())->merge(system->coeff()));
+      return out;
     }
   }
 }
@@ -407,7 +414,7 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
     }
 
     // add in perturbative correction
-    if (perturbation != 0.0) {
+    if (perturbation >= perturb_thresh_) {
       for (int ist = 0; ist < nstate_; ++ist) {
         for (auto& isec : civecs[ist]->sectors()) {
           // "diagonal" perturbation: sum_{i,j} [ (i^dagger j)_alpha (i^dagger_j)_beta ]
@@ -623,7 +630,7 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
     }
 
     // add in perturbative correction
-    if (perturbation != 0.0) {
+    if (perturbation >= perturb_thresh_) {
       map<BlockKey, vector<tuple<double, ProdVec>>> tmp_outerproducts = outer_products;
       for (auto& op : tmp_outerproducts) {
         for (auto& i : op.second) {
