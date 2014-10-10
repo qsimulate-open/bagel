@@ -198,7 +198,7 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
 // taken from fci/fci_rdm.cc
 //***************************************************************************************************************
 
-  std::cout << "ASD_CAS: compute_rdm34_monomer called" << std::endl;
+  std::cout << "ASD_CAS: compute_rdm34_monomer called: " << get<0>(offset) << std::endl;
   
   //Dvec decomposition
   auto& A  = fourvecs[0]; // <I'>
@@ -210,6 +210,7 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
   //Offsets
   const int ioff = std::get<0>(offset);
   const int joff = std::get<1>(offset);
+  assert(ioff == joff); //diagonal only at the moment
   
   const int nactA = dimer_->active_refs().first->nact(); //dimer_ (ASD_base)
   const int nactB = dimer_->active_refs().second->nact();
@@ -249,6 +250,7 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
           if(j == jp) { //delta_J'J
             shared_ptr<RDM<3>> r3;
             shared_ptr<RDM<4>> r4;
+            cout << "j=jp:" << i << j << ip << jp << endl; cout.flush();
             tie(r3,r4) = compute_rdm34_from_civec(A.data(i), Ap.data(ip)); // <I'|E(op)|I>
             r3->scale(coef);
             *rdm3A += *r3;
@@ -259,6 +261,7 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
           if(i == ip) { //delta_I'I
             shared_ptr<RDM<3>> r3;
             shared_ptr<RDM<4>> r4;
+            cout << "i=ip:" << i << j << ip << jp << endl; cout.flush();
             tie(r3,r4) = compute_rdm34_from_civec(B.data(j), Bp.data(jp)); // <J'|E(op)|J>
             r3->scale(coef);
             *rdm3B += *r3;
@@ -272,6 +275,7 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
     } //i
   } //j
 
+  cout << "partial rdm complete" << endl; cout.flush();
   auto out3 = std::make_shared<RDM<3>>(nactA+nactB);
   out3->zero();
   {
@@ -288,6 +292,7 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
     auto outv = make_rwview(out3->range().slice(low,up), out3->storage());
     copy(rdm3B->begin(), rdm3B->end(), outv.begin());
   }
+  cout << "rdm3 copy complete" << endl; cout.flush();
   auto out4 = std::make_shared<RDM<4>>(nactA+nactB);
   out4->zero();
   {
@@ -304,6 +309,7 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
     auto outv = make_rwview(out4->range().slice(low,up), out4->storage());
     copy(rdm4B->begin(), rdm4B->end(), outv.begin());
   }
+  cout << "rdm4 copy complete" << endl; cout.flush();
 
   return make_tuple(out3, out4);
 
@@ -313,7 +319,7 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>>
 ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
 //***************************************************************************************************************
-
+  cout << "ASD_CAS::compute_rdm34_from_civec" << endl; cout.flush();
   //ADDED
   const int norb = cbra->det()->norb();
 //const int nelea =  ->nelea();
@@ -323,11 +329,12 @@ ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<cons
   auto rdm3 = make_shared<RDM<3>>(norb);
   auto rdm4 = make_shared<RDM<4>>(norb);
 
-  // first make <I|E_ij|0>
+  // first make <I|E_ij|bra>
   auto dbra = make_shared<Dvec>(cbra->det(), norb*norb);
   dbra->zero();
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
+  cout << "dbra" << endl; cout.flush();
 
   // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
   auto ebra = make_shared<Dvec>(cbra->det(), norb*norb*norb*norb);
@@ -348,10 +355,48 @@ ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<cons
       if (l == i) *ebra->data(ijkl) -= *dbra->data(k+j*norb);
     }
   }
+  cout << "ebra" << endl; cout.flush();
+
+  //ADDED: make dket & eket
+  //dket = <I|E_ij|ket>
+  shared_ptr<Dvec> dket;
+  if (cbra != cket) {
+    dket = make_shared<Dvec>(cket->det(), norb*norb);
+    dket->zero();
+    sigma_2a1(cket, dket);
+    sigma_2a2(cket, dket);
+  } else {
+    dket = dbra;
+  }
+  cout << "dket" << endl; cout.flush();
+  //eket = <I|E_ij,kl|ket>
+  auto eket = make_shared<Dvec>(cket->det(), norb*norb*norb*norb);
+  auto tmpk = make_shared<Dvec>(cket->det(), norb*norb);
+  ijkl = 0;
+  ij = 0;
+  for (auto iter = dket->dvec().begin(); iter != dket->dvec().end(); ++iter, ++ij) {
+    const int j = ij/norb;
+    const int i = ij-j*norb;
+    tmpk->zero();
+    sigma_2a1(*iter, tmpk);
+    sigma_2a2(*iter, tmpk);
+    int kl = 0;
+    for (auto t = tmpk->dvec().begin(); t != tmpk->dvec().end(); ++t, ++ijkl, ++kl) {
+      *eket->data(ijkl) = **t;
+      const int l = kl/norb;
+      const int k = kl-l*norb;
+      if (l == i) *eket->data(ijkl) -= *dket->data(k+j*norb);
+    }
+  }
+  cout << "dket" << endl; cout.flush();
+  //END
 
   // size of the RI space
   const size_t nri = ebra->lena() * ebra->lenb();
   assert(nri == dbra->lena()*dbra->lenb());
+  //ADDED
+  assert(nri == eket->lena() * eket->lenb() && nri == dket->lena() * dket->lenb());
+  //END
 
   // first form <0|E_ij,kl|I><I|E_mn|0>
   {
@@ -379,6 +424,7 @@ ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<cons
       }
     }
   }
+  cout << "rdm3" << endl; cout.flush();
 
   // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
   {
@@ -405,6 +451,7 @@ ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<cons
                     }
     }
   }
+  cout << "rdm4" << endl; cout.flush();
 #if 0
   // Checking 4RDM by comparing with 3RDM
   auto debug = make_shared<RDM<3>>(*rdm3);
