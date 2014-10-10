@@ -119,6 +119,10 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     // returns transpose(*this)
     std::shared_ptr<Matrix> transpose(const double a = 1.0) const;
 
+    // for template classes which take either Matrix or ZMatrix
+    std::shared_ptr<Matrix> transpose_conjg(const double a = 1.0) const { return transpose(a); }
+    std::shared_ptr<Matrix> get_conjg() const { return copy(); }
+
     using Matrix_base<double>::ax_plus_y;
     using Matrix_base<double>::dot_product;
     void ax_plus_y(const double a, const Matrix& o) { this->ax_plus_y_impl(a, o); }

@@ -120,9 +120,9 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     // returns log(*this)
     std::shared_ptr<ZMatrix> log(const int deg = 6) const;
     // returns transpose(*this)
-    std::shared_ptr<ZMatrix> transpose() const;
+    std::shared_ptr<ZMatrix> transpose(const std::complex<double> a = 1.0) const;
     // returns hermite-conjugate(*this)
-    std::shared_ptr<ZMatrix> transpose_conjg() const;
+    std::shared_ptr<ZMatrix> transpose_conjg(const std::complex<double> a = 1.0) const;
 
     using Matrix_base<std::complex<double>>::ax_plus_y;
     using Matrix_base<std::complex<double>>::dot_product;

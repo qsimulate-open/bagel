@@ -218,16 +218,16 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 }
 
 
-shared_ptr<ZMatrix> ZMatrix::transpose() const {
+shared_ptr<ZMatrix> ZMatrix::transpose(const complex<double> factor) const {
   auto out = make_shared<ZMatrix>(mdim(), ndim(), localized_);
-  blas::transpose(data(), ndim(), mdim(), out->data());
+  blas::transpose(data(), ndim(), mdim(), out->data(), factor);
   return out;
 }
 
 
-shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
+shared_ptr<ZMatrix> ZMatrix::transpose_conjg(const complex<double> factor) const {
   auto out = make_shared<ZMatrix>(mdim(), ndim(), localized_);
-  blas::transpose_conjg(data(), ndim(), mdim(), out->data());
+  blas::transpose_conjg(data(), ndim(), mdim(), out->data(), factor);
   return out;
 }
 
