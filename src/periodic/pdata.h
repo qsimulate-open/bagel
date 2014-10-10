@@ -65,7 +65,7 @@ class PData {
 
     void zero();
     void allreduce();
-    void fill_upper_negative();
+    void fill_upper_conjg();
     void print(const std::string tag = "", const int size = 10) const;
     void print_real_part(const std::string tag = "", const int size = 10) const;
 
