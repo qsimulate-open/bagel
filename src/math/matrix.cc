@@ -84,6 +84,7 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 void Matrix::diagonalize(VecView eig) {
   if (ndim() != mdim()) throw logic_error("illegal call of Matrix::diagonalize(double*)");
   assert(eig.size() >= ndim());
+  assert(test_symmetric(1.0e-10));
   const int n = ndim();
   int info;
 
@@ -239,7 +240,7 @@ void Matrix::inverse() {
   int info;
   unique_ptr<int[]> ipiv(new int[n]);
   dgesv_(n, n, data(), n, ipiv.get(), buf->data(), n, info);
-  if (info) throw runtime_error("dsysv failed in Matrix::inverse()");
+  if (info) throw runtime_error("dgesv failed in Matrix::inverse()");
 
   copy_n(buf->data(), n*n, data());
 }
