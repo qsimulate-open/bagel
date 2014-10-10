@@ -91,8 +91,8 @@ void ZMatrix::diagonalize(VecView eig) {
   if (ndim() != mdim()) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)");
   assert(eig.size() >= ndim());
 
-  //assert that matrix is hermitian to ensure real eigenvalues
-  assert((*this - *(this->transpose_conjg())).norm()/size() < 1e-10);
+  // assert that matrix is hermitian to ensure real eigenvalues
+  assert(test_hermitian(1.0e-10));
 
   const int n = ndim();
   int info;
@@ -375,6 +375,27 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
   for (auto& o : *out)
     o = conj(*i++);
   return out;
+}
+
+
+bool ZMatrix::test_symmetric(const double thresh) const {
+  shared_ptr<ZMatrix> A = copy();
+  *A -= *A->transpose();
+  return (A->rms() < thresh);
+}
+
+
+bool ZMatrix::test_antisymmetric(const double thresh) const {
+  shared_ptr<ZMatrix> A = copy();
+  *A += *A->transpose();
+  return (A->rms() < thresh);
+}
+
+
+bool ZMatrix::test_hermitian(const double thresh) const {
+  shared_ptr<ZMatrix> A = copy();
+  *A -= *A->transpose_conjg();
+  return (A->rms() < thresh);
 }
 
 

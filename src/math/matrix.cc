@@ -388,6 +388,20 @@ void Matrix::rotate(vector<tuple<int, int, double>>& rotations) {
 }
 
 
+bool Matrix::test_symmetric(const double thresh) const {
+  shared_ptr<Matrix> A = copy();
+  *A -= *A->transpose();
+  return (A->rms() < thresh);
+}
+
+
+bool Matrix::test_antisymmetric(const double thresh) const {
+  shared_ptr<Matrix> A = copy();
+  *A += *A->transpose();
+  return (A->rms() < thresh);
+}
+
+
 #ifdef HAVE_SCALAPACK
 shared_ptr<DistMatrix> Matrix::distmatrix() const {
   return make_shared<DistMatrix>(*this);

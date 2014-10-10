@@ -264,6 +264,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
 
     void symmetrize() {
       assert(ndim() == mdim());
+      assert(test_symmetric());
       const size_t n = mdim();
       for (size_t i = 0; i != n; ++i)
         for (size_t j = i+1; j != n; ++j)
@@ -272,6 +273,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
 
     void antisymmetrize() {
       assert(ndim() == mdim());
+      assert(test_antisymmetric());
       const size_t n = mdim();
       for (size_t i = 0; i != n; ++i) {
         for (size_t j = i; j != n; ++j) {
@@ -283,6 +285,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
 
     void hermite() {
       assert(ndim() == mdim());
+      assert(test_hermitian());
       const size_t n = mdim();
       for (size_t i = 0; i != n; ++i) {
         for (size_t j = i; j != n; ++j) {
@@ -291,6 +294,11 @@ class Matrix_base : public btas::Tensor2<DataType> {
         }
       }
     }
+
+    // check the symmetry of a matrix
+    virtual bool test_symmetric(const double thresh = 1.0e-8) const = 0;
+    virtual bool test_antisymmetric(const double thresh = 1.0e-8) const = 0;
+    virtual bool test_hermitian(const double thresh = 1.0e-8) const = 0;
 
     virtual void diagonalize(VecView vec) = 0;
 

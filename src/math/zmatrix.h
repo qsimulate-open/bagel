@@ -124,6 +124,10 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     // returns hermite-conjugate(*this)
     std::shared_ptr<ZMatrix> transpose_conjg(const std::complex<double> a = 1.0) const;
 
+    bool test_symmetric(const double thresh = 1.0e-8) const override;
+    bool test_antisymmetric(const double thresh = 1.0e-8) const override;
+    bool test_hermitian(const double thresh = 1.0e-8) const override;
+
     using Matrix_base<std::complex<double>>::ax_plus_y;
     using Matrix_base<std::complex<double>>::dot_product;
     void ax_plus_y(const std::complex<double> a, const ZMatrix& o) { this->ax_plus_y_impl(a, o); }
