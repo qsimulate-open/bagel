@@ -237,43 +237,49 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
   //ground state only
   //const int istate = 0;
 
-  //Monomer A
-  for (int j = 0; j != nstB; ++j) { // <J'|
-    for (int i = 0; i != nstA; ++i) { // <I'|
-      const int ij = i + (j*nstA); //cf. dimerindex()
+  //MonomerA
+  for (int i = 0; i != nstA; ++i) {//<I'|
+    for (int ip = 0; ip != nstAp; ++ip) {// |I>
+  
+      shared_ptr<RDM<3>> r3;
+      shared_ptr<RDM<4>> r4;
+      tie(r3,r4) = compute_rdm34_from_civec(A.data(i), Ap.data(ip)); // <I'|E(op)|I>
 
-      for (int jp = 0; jp != nstBp; ++jp) { // |J>
-        for (int ip = 0; ip != nstAp; ++ip) { // |I>
-          const int ijp = ip + (jp*nstAp);
-          const double coef = adiabats_->element(ioff+ij,0) * adiabats_->element(joff+ijp,0); // C_(I'J') * C_(IJ) TODO: 0 = ground state only
+      double csum = 0.0; //coeff sum
+      for (int j = 0; j != nstB; ++j) { // delta_J'J
+        const int ij  = i  + (j*nstA);
+        const int ijp = ip + (j*nstAp);
+        csum += adiabats_->element(ioff+ij,0) * adiabats_->element(joff+ijp,0);
+      } //I'I
 
-          if(j == jp) { //delta_J'J
-            shared_ptr<RDM<3>> r3;
-            shared_ptr<RDM<4>> r4;
-            cout << "j=jp:" << i << j << ip << jp << endl; cout.flush();
-            tie(r3,r4) = compute_rdm34_from_civec(A.data(i), Ap.data(ip)); // <I'|E(op)|I>
-            r3->scale(coef);
-            *rdm3A += *r3;
-            r4->scale(coef);
-            *rdm4A += *r4;
-          }
+      r3->scale(csum);
+      *rdm3A += *r3;
+      r4->scale(csum);
+      *rdm4A += *r4;
+    } //|I>
+  } //<I'|
+  //MonomerB
+  for (int j = 0; j != nstB; ++j) {//<J'|
+    for (int jp = 0; jp != nstBp; ++jp) {// |J>
+  
+      shared_ptr<RDM<3>> r3;
+      shared_ptr<RDM<4>> r4;
+      tie(r3,r4) = compute_rdm34_from_civec(B.data(j), Bp.data(jp)); // <J'|E(op)|J>
 
-          if(i == ip) { //delta_I'I
-            shared_ptr<RDM<3>> r3;
-            shared_ptr<RDM<4>> r4;
-            cout << "i=ip:" << i << j << ip << jp << endl; cout.flush();
-            tie(r3,r4) = compute_rdm34_from_civec(B.data(j), Bp.data(jp)); // <J'|E(op)|J>
-            r3->scale(coef);
-            *rdm3B += *r3;
-            r4->scale(coef);
-            *rdm4B += *r4;
-          }
+      double csum = 0.0; //coeff sum
+      for (int i = 0; i != nstA; ++i) { // delta_I'I
+        const int ij  = i + (j*nstA);
+        const int ijp = i + (jp*nstAp);
+        csum += adiabats_->element(ioff+ij,0) * adiabats_->element(joff+ijp,0);
+      } //I'I
 
-        } //ip
-      } //jp
-
-    } //i
-  } //j
+      r3->scale(csum);
+      *rdm3B += *r3;
+      r4->scale(csum);
+      *rdm4B += *r4;
+    } //|J>
+  } //<J'|
+  //END NEW
 
   cout << "partial rdm complete" << endl; cout.flush();
   auto out3 = std::make_shared<RDM<3>>(nactA+nactB);
@@ -521,6 +527,7 @@ ASD_CAS::compute_rdm12_monomer (std::pair<int,int> offset, std::array<Dvec,4>& f
   //ground state only
   //const int istate = 0;
 
+/*
   //Monomer A
   for (int j = 0; j != nstB; ++j) { // <J'|
     for (int i = 0; i != nstA; ++i) { // <I'|
@@ -556,6 +563,52 @@ ASD_CAS::compute_rdm12_monomer (std::pair<int,int> offset, std::array<Dvec,4>& f
 
     } //i
   } //j
+*/
+
+  //NEW
+  //MonomerA
+  for (int i = 0; i != nstA; ++i) {//<I'|
+    for (int ip = 0; ip != nstAp; ++ip) {// |I>
+  
+      shared_ptr<RDM<1>> r1;
+      shared_ptr<RDM<2>> r2;
+      tie(r1,r2) = compute_rdm12_from_civec(A.data(i), Ap.data(ip)); // <I'|E(op)|I>
+
+      double csum = 0.0; //coeff sum
+      for (int j = 0; j != nstB; ++j) { // delta_J'J
+        const int ij  = i  + (j*nstA);
+        const int ijp = ip + (j*nstAp);
+        csum += adiabats_->element(ioff+ij,0) * adiabats_->element(joff+ijp,0);
+      } //I'I
+
+      r1->scale(csum);
+      *rdm1A += *r1;
+      r2->scale(csum);
+      *rdm2A += *r2;
+    } //|I>
+  } //<I'|
+  //MonomerB
+  for (int j = 0; j != nstB; ++j) {//<J'|
+    for (int jp = 0; jp != nstBp; ++jp) {// |J>
+  
+      shared_ptr<RDM<1>> r1;
+      shared_ptr<RDM<2>> r2;
+      tie(r1,r2) = compute_rdm12_from_civec(B.data(j), Bp.data(jp)); // <J'|E(op)|J>
+
+      double csum = 0.0; //coeff sum
+      for (int i = 0; i != nstA; ++i) { // delta_I'I
+        const int ij  = i + (j*nstA);
+        const int ijp = i + (jp*nstAp);
+        csum += adiabats_->element(ioff+ij,0) * adiabats_->element(joff+ijp,0);
+      } //I'I
+
+      r1->scale(csum);
+      *rdm1B += *r1;
+      r2->scale(csum);
+      *rdm2B += *r2;
+    } //|J>
+  } //<J'|
+  //END NEW
 
   auto out1 = std::make_shared<RDM<1>>(nactA+nactB);
   out1->zero();
