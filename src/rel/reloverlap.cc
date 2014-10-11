@@ -44,7 +44,7 @@ shared_ptr<ZMatrix> RelOverlap::tildex(const double thresh) const {
   Matrix k = tildeo % *kinetic_ * tildeo;
   const bool nosing = k.inverse_half(thresh*1.0e2);
   if (!nosing)
-    throw logic_error("positive and negative energy states have different linear dependency"); 
+    throw logic_error("positive and negative energy states have different linear dependency");
   const Matrix tildek = tildeo * k;
 
   const int n = tildeo.ndim();
@@ -55,11 +55,18 @@ shared_ptr<ZMatrix> RelOverlap::tildex(const double thresh) const {
   out->copy_real_block(1.0, n, m, n, m, tildeo);
   out->copy_real_block(c__/sqrt(0.5), 2*n, 2*m, n, m, tildek);
   out->copy_real_block(c__/sqrt(0.5), 3*n, 3*m, n, m, tildek);
+
+  // check numerical stability of the orthogonalization
+  assert((*out % *this * *out).test_unit());
+
   return out;
 }
 
 
 void RelOverlap::inverse() {
+#ifndef NDEBUG
+  shared_ptr<ZMatrix> ref = this->copy();
+#endif
   Matrix oinv(*overlap_);
   oinv.inverse_symmetric();
   Matrix kinv(*kinetic_);
@@ -69,4 +76,9 @@ void RelOverlap::inverse() {
   copy_real_block(1.0, n, n, n, n, oinv);
   copy_real_block(2*(c__*c__), 2*n, 2*n, n, n, kinv);
   copy_real_block(2*(c__*c__), 3*n, 3*n, n, n, kinv);
+
+  // check numerical stability of the inversion
+#ifndef NDEBUG
+  assert((*ref * *this).test_unit());
+#endif
 }

@@ -65,11 +65,19 @@ shared_ptr<ZMatrix> RelOverlap_London::tildex(const double thresh) const {
   out->copy_block(0, 0, n, m, tildeo);
   out->copy_block(n, m, n, m, tildeo);
   out->copy_block(2*n, 2*m, 2*n, 2*m, tildes);
+
+  // check numerical stability of the orthogonalization
+  assert((*out % *this * *out).test_unit());
+
   return out;
 }
 
 
 void RelOverlap_London::inverse() {
+#ifndef NDEBUG
+  shared_ptr<ZMatrix> ref = this->copy();
+#endif
+
   ZMatrix oinv(*overlap_);
   oinv.inverse();
   const int n = oinv.ndim();
@@ -82,4 +90,9 @@ void RelOverlap_London::inverse() {
   copy_block(0, 0, n, n, oinv);
   copy_block(n, n, n, n, oinv);
   copy_block(2*n, 2*n, 2*n, 2*n, soverlap);
+
+  // check numerical stability of the inversion
+#ifndef NDEBUG
+  assert((*ref * *this).test_unit());
+#endif
 }
