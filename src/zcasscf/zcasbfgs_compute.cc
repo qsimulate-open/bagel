@@ -208,6 +208,7 @@ void ZCASBFGS::compute() {
 
     // restore the matrix from RotFile
     VectorB teig(amat->ndim());
+    cout << "Diagonalizing rotation matrix (condition number will be large)" << endl;
     amat->diagonalize(teig);
     auto amat_sav = amat->copy();
     for (int i = 0; i != amat->ndim(); ++i) {
