@@ -119,6 +119,18 @@ void Matrix::diagonalize(VecView eig) {
 #endif
 
   if (info) throw runtime_error("dsyev/pdsyevd failed in Matrix");
+
+#ifndef NDEBUG
+  double max_eig = 0.0;
+  double min_eig = 100.0;
+  for (int i=0; i!=ndim(); ++i) {
+    if (std::abs(eig(i)) > max_eig) max_eig = std::abs(eig(i));
+    if (std::abs(eig(i)) < min_eig) min_eig = std::abs(eig(i));
+  }
+  const double condition_number = max_eig / min_eig;
+  if (condition_number > 1.0e8)
+    cout << "    - condition number = " << setw(14) << scientific << setprecision(4) << condition_number << " - watch for numerical error in diagonalization" << endl;
+#endif
 }
 
 
