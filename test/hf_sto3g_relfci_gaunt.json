@@ -22,6 +22,7 @@
 {
   "title" : "zfci",
   "state" : [1],
+  "davidson_subspace" : "4",
   "thresh" : 5.0e-10
 }
 

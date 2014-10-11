@@ -43,6 +43,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
+  davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
   thresh_ = idata_->get<double>("thresh", 1.0e-10);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
@@ -197,7 +198,7 @@ void ZHarrison::compute() {
     pdebug.tick_print("guess generation");
 
     // Davidson utility
-    davidson_ = make_shared<DavidsonDiag<RelZDvec, ZMatrix>>(nstate_, max_iter_);
+    davidson_ = make_shared<DavidsonDiag<RelZDvec, ZMatrix>>(nstate_, davidson_subspace_);
   }
 
   // nuclear energy retrieved from geometry
@@ -273,7 +274,7 @@ void ZHarrison::compute() {
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
-                              << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
+                              << setw(17) << fixed << setprecision(12) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
                               << fcitime.tick() << endl;
       energy_[i] = energies[i]+nuc_core;
