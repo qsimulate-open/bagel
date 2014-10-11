@@ -412,10 +412,10 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
 bool ZMatrix::test_symmetric(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A -= *A->transpose();
-  const double err = A->rms();
+  const double err = A->norm()/A->size();
 #ifndef NDEBUG
   if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - ZMatrix symmetry not fully satisfied: error rms = " << err << std::endl;
+    cout << scientific << setprecision(2) << "    - ZMatrix symmetry not fully satisfied: error norm/size = " << err << std::endl;
 #endif
   return (err < thresh);
 }
@@ -424,10 +424,10 @@ bool ZMatrix::test_symmetric(const double thresh) const {
 bool ZMatrix::test_antisymmetric(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A += *A->transpose();
-  const double err = A->rms();
+  const double err = A->norm()/A->size();
 #ifndef NDEBUG
   if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - ZMatrix antisymmetry not fully satisfied: error rms = " << err << std::endl;
+    cout << scientific << setprecision(2) << "    - ZMatrix antisymmetry not fully satisfied: error norm/size = " << err << std::endl;
 #endif
   return (err < thresh);
 }
@@ -436,10 +436,10 @@ bool ZMatrix::test_antisymmetric(const double thresh) const {
 bool ZMatrix::test_hermitian(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A -= *A->transpose_conjg();
-  const double err = A->rms();
+  const double err = A->norm()/A->size();
 #ifndef NDEBUG
   if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - Hermitian symmetry not fully satisfied: error rms = " << err << std::endl;
+    cout << scientific << setprecision(2) << "    - Hermitian symmetry not fully satisfied: error norm/size = " << err << std::endl;
 #endif
   return (err < thresh);
 }
@@ -450,10 +450,10 @@ bool ZMatrix::test_unit(const double thresh) const {
   shared_ptr<ZMatrix> B = A->clone();
   B->unit();
   *A -= *B;
-  const double err = A->rms();
+  const double err = A->norm()/A->size();
 #ifndef NDEBUG
   if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - Inversion not perfectly accurate: error rms = " << err << std::endl;
+    cout << scientific << setprecision(2) << "    - Inversion not perfectly accurate: error norm/size = " << err << std::endl;
 #endif
   return (err < thresh);
 }
