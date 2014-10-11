@@ -123,10 +123,10 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     std::shared_ptr<Matrix> transpose_conjg(const double a = 1.0) const { return transpose(a); }
     std::shared_ptr<Matrix> get_conjg() const { return copy(); }
 
-    bool test_symmetric(const double thresh = 1.0e-8) const override;
-    bool test_antisymmetric(const double thresh = 1.0e-8) const override;
-    bool test_hermitian(const double thresh = 1.0e-8) const override { return test_symmetric(thresh); }
-    bool test_unit(const double thresh = 1.0e-8) const override;
+    bool is_symmetric(const double thresh = 1.0e-8) const override;
+    bool is_antisymmetric(const double thresh = 1.0e-8) const override;
+    bool is_hermitian(const double thresh = 1.0e-8) const override { return is_symmetric(thresh); }
+    bool is_identity(const double thresh = 1.0e-8) const override;
 
     using Matrix_base<double>::ax_plus_y;
     using Matrix_base<double>::dot_product;

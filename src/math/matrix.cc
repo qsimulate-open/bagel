@@ -84,7 +84,7 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 void Matrix::diagonalize(VecView eig) {
   if (ndim() != mdim()) throw logic_error("illegal call of Matrix::diagonalize(double*)");
   assert(eig.size() >= ndim());
-  assert(test_symmetric(1.0e-10));
+  assert(is_symmetric(1.0e-10));
   const int n = ndim();
   int info;
 
@@ -258,7 +258,9 @@ void Matrix::inverse() {
   if (info) throw runtime_error("dgesv failed in Matrix::inverse()");
 
   // check numerical stability of the inversion
-  assert((*ref * *buf).test_unit());
+#ifndef NDEBUG
+  assert((*ref * *buf).is_identity());
+#endif
 
   copy_n(buf->data(), n*n, data());
 }
@@ -304,7 +306,7 @@ bool Matrix::inverse_symmetric(const double thresh) {
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 
   // check numerical stability of the inversion
-  assert((*this * *ref).test_unit());
+  assert((*this * *ref).is_identity());
 #endif
 
   return rm.empty();
@@ -351,7 +353,7 @@ bool Matrix::inverse_half(const double thresh) {
 
 #ifndef NDEBUG
   // check numerical stability of the inversion - bypassed if we detect linear dependency
-  assert((*this % *ref * *this).test_unit() || !rm.empty());
+  assert((*this % *ref * *this).is_identity() || !rm.empty());
 #endif
 
   return rm.empty();
@@ -377,7 +379,7 @@ shared_ptr<Matrix> Matrix::tildex(const double thresh) const {
   }
 
   // check numerical stability of the orthogonalization
-  assert((*out % *this * *out).test_unit());
+  assert((*out % *this * *out).is_identity());
 
   return out;
 }
@@ -427,7 +429,7 @@ void Matrix::rotate(vector<tuple<int, int, double>>& rotations) {
 }
 
 
-bool Matrix::test_symmetric(const double thresh) const {
+bool Matrix::is_symmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A -= *A->transpose();
   const double err = A->norm()/A->size();
@@ -439,7 +441,7 @@ bool Matrix::test_symmetric(const double thresh) const {
 }
 
 
-bool Matrix::test_antisymmetric(const double thresh) const {
+bool Matrix::is_antisymmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A += *A->transpose();
   const double err = A->norm()/A->size();
@@ -451,7 +453,7 @@ bool Matrix::test_antisymmetric(const double thresh) const {
 }
 
 
-bool Matrix::test_unit(const double thresh) const {
+bool Matrix::is_identity(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   shared_ptr<Matrix> B = A->clone();
   B->unit();

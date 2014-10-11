@@ -92,7 +92,7 @@ void ZMatrix::diagonalize(VecView eig) {
   assert(eig.size() >= ndim());
 
   // assert that matrix is hermitian to ensure real eigenvalues
-  assert(test_hermitian(1.0e-10));
+  assert(is_hermitian(1.0e-10));
 
   const int n = ndim();
   int info;
@@ -303,7 +303,9 @@ void ZMatrix::inverse() {
   if (info) throw runtime_error("dsysv failed in ZMatrix::inverse()");
 
   // check numerical stability of the inversion
-  assert((*ref * *buf).test_unit());
+#ifndef NDEBUG
+  assert((*ref * *buf).is_identity());
+#endif
 
   copy_n(buf->data(), n*n, data());
 }
@@ -335,7 +337,7 @@ bool ZMatrix::inverse_half(const double thresh) {
 
 #ifndef NDEBUG
   // check numerical stability of the inversion - bypassed if we detect linear dependency
-  assert((*this % *ref * *this).test_unit() || lindep);
+  assert((*this % *ref * *this).is_identity() || lindep);
 #endif
 
   return !lindep;
@@ -362,7 +364,7 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
   }
 
   // check numerical stability of the orthogonalization
-  assert((*out % *this * *out).test_unit());
+  assert((*out % *this * *out).is_identity());
 
   return out;
 }
@@ -409,7 +411,7 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
 }
 
 
-bool ZMatrix::test_symmetric(const double thresh) const {
+bool ZMatrix::is_symmetric(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A -= *A->transpose();
   const double err = A->norm()/A->size();
@@ -421,7 +423,7 @@ bool ZMatrix::test_symmetric(const double thresh) const {
 }
 
 
-bool ZMatrix::test_antisymmetric(const double thresh) const {
+bool ZMatrix::is_antisymmetric(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A += *A->transpose();
   const double err = A->norm()/A->size();
@@ -433,7 +435,7 @@ bool ZMatrix::test_antisymmetric(const double thresh) const {
 }
 
 
-bool ZMatrix::test_hermitian(const double thresh) const {
+bool ZMatrix::is_hermitian(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A -= *A->transpose_conjg();
   const double err = A->norm()/A->size();
@@ -445,7 +447,7 @@ bool ZMatrix::test_hermitian(const double thresh) const {
 }
 
 
-bool ZMatrix::test_unit(const double thresh) const {
+bool ZMatrix::is_identity(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   shared_ptr<ZMatrix> B = A->clone();
   B->unit();

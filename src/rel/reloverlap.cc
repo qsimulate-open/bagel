@@ -57,7 +57,7 @@ shared_ptr<ZMatrix> RelOverlap::tildex(const double thresh) const {
   out->copy_real_block(c__/sqrt(0.5), 3*n, 3*m, n, m, tildek);
 
   // check numerical stability of the orthogonalization
-  assert((*out % *this * *out).test_unit());
+  assert((*out % *this * *out).is_identity());
 
   return out;
 }
@@ -79,6 +79,6 @@ void RelOverlap::inverse() {
 
   // check numerical stability of the inversion
 #ifndef NDEBUG
-  assert((*ref * *this).test_unit());
+  assert((*ref * *this).is_identity());
 #endif
 }
