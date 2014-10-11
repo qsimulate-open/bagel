@@ -43,11 +43,12 @@ class QuatMatrix : public ZMatrix {
       u->ax_plus_y(-1.0, *get_submatrix(n, m, n, m)->get_conjg());
       v->ax_plus_y( 1.0, *get_submatrix(0, m, n, m)->get_conjg());
 
-      const double val = u->norm() + v->norm();
-      const bool out = val/(n*m) < thresh;
-      if (!out)
-        std::cout << std::fixed << std::setprecision(12) << "Time-reversal symmetry not satisfied; error norm = " << val/(n*m) << std::endl;
-      return out;
+      const double err = (u->norm() + v->norm())/(n*m);
+#ifndef NDEBUG
+      if (100.0*err > thresh)
+        std::cout << std::scientific << std::setprecision(2) << "    - Time-reversal symmetry not fully satisfied: error norm/size = " << err << std::endl;
+#endif
+      return (err < thresh);
     }
 
   public:

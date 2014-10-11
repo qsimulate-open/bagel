@@ -430,14 +430,24 @@ void Matrix::rotate(vector<tuple<int, int, double>>& rotations) {
 bool Matrix::test_symmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A -= *A->transpose();
-  return (A->rms() < thresh);
+  const double err = A->rms();
+#ifndef NDEBUG
+  if (100.0*err > thresh)
+    cout << scientific << setprecision(2) << "    - Matrix symmetry not fully satisfied: error rms = " << err << std::endl;
+#endif
+  return (err < thresh);
 }
 
 
 bool Matrix::test_antisymmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A += *A->transpose();
-  return (A->rms() < thresh);
+  const double err = A->rms();
+#ifndef NDEBUG
+  if (100.0*err > thresh)
+    cout << scientific << setprecision(2) << "    - Matrix antisymmetry not fully satisfied: error rms = " << err << std::endl;
+#endif
+  return (err < thresh);
 }
 
 
@@ -446,7 +456,12 @@ bool Matrix::test_unit(const double thresh) const {
   shared_ptr<Matrix> B = A->clone();
   B->unit();
   *A -= *B;
-  return (A->rms() < thresh);
+  const double err = A->rms();
+#ifndef NDEBUG
+  if (100.0*err > thresh)
+    cout << scientific << setprecision(2) << "    - Inversion not perfectly accurate: error rms = " << err << std::endl;
+#endif
+  return (err < thresh);
 }
 
 
