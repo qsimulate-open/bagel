@@ -234,6 +234,9 @@ void Matrix::purify_idempotent(const Matrix& s) {
 void Matrix::inverse() {
   assert(ndim() == mdim());
   const int n = ndim();
+#ifndef NDEBUG
+  shared_ptr<Matrix> ref = this->copy();
+#endif
   shared_ptr<Matrix> buf = this->clone();
   buf->unit();
 
@@ -241,6 +244,9 @@ void Matrix::inverse() {
   unique_ptr<int[]> ipiv(new int[n]);
   dgesv_(n, n, data(), n, ipiv.get(), buf->data(), n, info);
   if (info) throw runtime_error("dgesv failed in Matrix::inverse()");
+
+  // check numerical stability of the inversion
+  assert((*ref * *buf).test_unit());
 
   copy_n(buf->data(), n*n, data());
 }
@@ -264,6 +270,9 @@ shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const 
 // compute S^{-1} using diagonalization
 bool Matrix::inverse_symmetric(const double thresh) {
   assert(ndim() == mdim());
+#ifndef NDEBUG
+  shared_ptr<Matrix> ref = this->copy();
+#endif
   const int n = ndim();
   VectorB vec(n);
   diagonalize(vec);
@@ -281,7 +290,11 @@ bool Matrix::inverse_symmetric(const double thresh) {
     cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
+
+  // check numerical stability of the inversion
+  assert((*this * *ref).test_unit());
 #endif
+
   return rm.empty();
 }
 
@@ -291,6 +304,9 @@ bool Matrix::inverse_half(const double thresh) {
   assert(ndim() == mdim());
   const int n = ndim();
   VectorB vec(n);
+#ifndef NDEBUG
+  shared_ptr<Matrix> ref = this->copy();
+#endif
 
 #ifdef HAVE_SCALAPACK
   if (localized_) {
@@ -320,6 +336,12 @@ bool Matrix::inverse_half(const double thresh) {
     cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
+
+#ifndef NDEBUG
+  // check numerical stability of the inversion - bypassed if we detect linear dependency
+  assert((*this % *ref * *this).test_unit() || !rm.empty());
+#endif
+
   return rm.empty();
 }
 
@@ -341,6 +363,10 @@ shared_ptr<Matrix> Matrix::tildex(const double thresh) const {
     }
     out = out->slice_copy(0,m);
   }
+
+  // check numerical stability of the orthogonalization
+  assert((*out % *this * *out).test_unit());
+
   return out;
 }
 
@@ -399,6 +425,15 @@ bool Matrix::test_symmetric(const double thresh) const {
 bool Matrix::test_antisymmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A += *A->transpose();
+  return (A->rms() < thresh);
+}
+
+
+bool Matrix::test_unit(const double thresh) const {
+  shared_ptr<Matrix> A = copy();
+  shared_ptr<Matrix> B = A->clone();
+  B->unit();
+  *A -= *B;
   return (A->rms() < thresh);
 }
 

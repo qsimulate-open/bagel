@@ -127,6 +127,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     bool test_symmetric(const double thresh = 1.0e-8) const override;
     bool test_antisymmetric(const double thresh = 1.0e-8) const override;
     bool test_hermitian(const double thresh = 1.0e-8) const override;
+    bool test_unit(const double thresh = 1.0e-8) const override;
 
     using Matrix_base<std::complex<double>>::ax_plus_y;
     using Matrix_base<std::complex<double>>::dot_product;

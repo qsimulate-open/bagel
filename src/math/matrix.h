@@ -126,6 +126,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     bool test_symmetric(const double thresh = 1.0e-8) const override;
     bool test_antisymmetric(const double thresh = 1.0e-8) const override;
     bool test_hermitian(const double thresh = 1.0e-8) const override { return test_symmetric(thresh); }
+    bool test_unit(const double thresh = 1.0e-8) const override;
 
     using Matrix_base<double>::ax_plus_y;
     using Matrix_base<double>::dot_product;

@@ -299,6 +299,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
     virtual bool test_symmetric(const double thresh = 1.0e-8) const = 0;
     virtual bool test_antisymmetric(const double thresh = 1.0e-8) const = 0;
     virtual bool test_hermitian(const double thresh = 1.0e-8) const = 0;
+    virtual bool test_unit(const double thresh = 1.0e-8) const = 0;
 
     virtual void diagonalize(VecView vec) = 0;
 

@@ -279,6 +279,9 @@ void ZMatrix::purify_idempotent(const ZMatrix& s) {
 void ZMatrix::inverse() {
   assert(ndim() == mdim());
   const int n = ndim();
+#ifndef NDEBUG
+  shared_ptr<ZMatrix> ref = this->copy();
+#endif
   shared_ptr<ZMatrix> buf = this->clone();
   buf->unit();
 
@@ -286,6 +289,9 @@ void ZMatrix::inverse() {
   unique_ptr<int[]> ipiv(new int[n]);
   zgesv_(n, n, data(), n, ipiv.get(), buf->data(), n, info);
   if (info) throw runtime_error("dsysv failed in ZMatrix::inverse()");
+
+  // check numerical stability of the inversion
+  assert((*ref * *buf).test_unit());
 
   copy_n(buf->data(), n*n, data());
 }
@@ -295,6 +301,9 @@ void ZMatrix::inverse() {
 bool ZMatrix::inverse_half(const double thresh) {
   assert(ndim() == mdim());
   const int n = ndim();
+#ifndef NDEBUG
+  shared_ptr<ZMatrix> ref = this->copy();
+#endif
   VectorB vec(n);
   diagonalize(vec);
 
@@ -311,6 +320,12 @@ bool ZMatrix::inverse_half(const double thresh) {
   *this = *this ^ *this;
 
   const bool lindep = std::any_of(vec.begin(), vec.end(), [&thresh] (const double& e) { return e < thresh; });
+
+#ifndef NDEBUG
+  // check numerical stability of the inversion - bypassed if we detect linear dependency
+  assert((*this % *ref * *this).test_unit() || lindep);
+#endif
+
   return !lindep;
 }
 
@@ -333,6 +348,10 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
     }
     out = out->slice_copy(0,m);
   }
+
+  // check numerical stability of the orthogonalization
+  assert((*out % *this * *out).test_unit());
+
   return out;
 }
 
@@ -395,6 +414,15 @@ bool ZMatrix::test_antisymmetric(const double thresh) const {
 bool ZMatrix::test_hermitian(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A -= *A->transpose_conjg();
+  return (A->rms() < thresh);
+}
+
+
+bool ZMatrix::test_unit(const double thresh) const {
+  shared_ptr<ZMatrix> A = copy();
+  shared_ptr<ZMatrix> B = A->clone();
+  B->unit();
+  *A -= *B;
   return (A->rms() < thresh);
 }
 
