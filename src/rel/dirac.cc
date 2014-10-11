@@ -115,6 +115,7 @@ void Dirac::compute() {
 
 // TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
 #if 0
+    assert(fock->is_hermitian());
     fock->hermite();
 #endif
     // distribute

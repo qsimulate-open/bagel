@@ -262,9 +262,10 @@ class Matrix_base : public btas::Tensor2<DataType> {
       }
     }
 
+    // Three functions to average upper and lower halves, enforcing a certain symmetry
+    // It is recommended that you assert is_symmetric() (etc.) if using these to suppress numerical noise
     void symmetrize() {
       assert(ndim() == mdim());
-      assert(is_symmetric());
       const size_t n = mdim();
       for (size_t i = 0; i != n; ++i)
         for (size_t j = i+1; j != n; ++j)
@@ -273,7 +274,6 @@ class Matrix_base : public btas::Tensor2<DataType> {
 
     void antisymmetrize() {
       assert(ndim() == mdim());
-      assert(is_antisymmetric());
       const size_t n = mdim();
       for (size_t i = 0; i != n; ++i) {
         for (size_t j = i; j != n; ++j) {
@@ -285,7 +285,6 @@ class Matrix_base : public btas::Tensor2<DataType> {
 
     void hermite() {
       assert(ndim() == mdim());
-      assert(is_hermitian());
       const size_t n = mdim();
       for (size_t i = 0; i != n; ++i) {
         for (size_t j = i; j != n; ++j) {
