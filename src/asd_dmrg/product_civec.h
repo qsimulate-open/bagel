@@ -102,7 +102,7 @@ class ProductRASCivec {
 
     /// Total size of configuration space.
     size_t size() const {
-      return std::accumulate(sectors_.begin(), sectors_.end(), 0ul, [] (const size_t a, const std::pair<const BlockKey, std::shared_ptr<RASBlockVectors>>& p) { return a+p.second->size(); });
+      return std::accumulate(sectors_.begin(), sectors_.end(), 0ull, [] (const size_t a, const std::pair<const BlockKey, std::shared_ptr<RASBlockVectors>>& p) { return a+p.second->size(); });
     }
 
     std::shared_ptr<const DMRG_Block> left() const { return left_; }

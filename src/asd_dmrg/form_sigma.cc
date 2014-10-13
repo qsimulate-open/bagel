@@ -843,7 +843,7 @@ void FormSigmaProdRAS::resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView
         const bitset<nbit__> tabit = targetspace->strings(ia);
         for (int k = 0; k < norb; ++k) {
           if (!tabit[k]) continue;
-          bitset<nbit__> tmpbit = tabit ^ bitset<nbit__>(1 << k);
+          bitset<nbit__> tmpbit = tabit ^ (bitset<nbit__>(1) << k);
           if (!sdet->allowed(tmpbit)) continue;
           const int kphase = sign(tmpbit, k);
           const size_t tmpia = sdet->lexical_offset<0>(tmpbit);
@@ -900,7 +900,7 @@ void FormSigmaProdRAS::resolve_S_adag_a_a(const RASCivecView cc, RASCivecView si
           const int j = iterij.ij/norb;
           for (int k = j+1; k < norb; ++k) {
             if (tmpbit[k]) continue;
-            const bitset<nbit__> sabit = tmpbit ^ bitset<nbit__>(1 << k);
+            const bitset<nbit__> sabit = tmpbit ^ (bitset<nbit__>(1) << k);
             if (!sdet->allowed(sabit)) continue;
             const int kphase = sign(sabit, k);
             const size_t source_ia = sdet->lexical_offset<0>(sabit);

@@ -93,7 +93,7 @@ class GammaForestProdASD {
     }
 
     std::tuple</*conj*/bool, /*rev*/bool, std::list<GammaSQ>> try_permutations(const std::list<GammaSQ>& gammalist) const;
-    std::tuple</*full_ijk*/int, /*block_index*/int, /*ci_index*/int> get_indices(std::bitset<3> bit, int size, int ijk_local, int lnorb, bool block_is_reversed, int rnorb, bool ci_is_reversed) const;
+    std::tuple</*full_ijk*/size_t, /*block_index*/size_t, /*ci_index*/size_t> get_indices(std::bitset<3> bit, int size, size_t ijk_local, int lnorb, bool block_is_reversed, int rnorb, bool ci_is_reversed) const;
 };
 
 }

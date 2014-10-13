@@ -156,14 +156,14 @@ void ApplyOperator::operator()(const double fac, const RASCivecView source, RASC
       for (size_t ib = 0; ib < tlb; ++ib) {
         bitset<nbit__> bbit = tblock->string_bits_b(ib);
         if (bbit[r])
-          valid_bbits.emplace_back(ib, nasign*sign(bbit, r), sblock->stringsb()->lexical_zero(bbit ^ bitset<nbit__>(1 << r)));
+          valid_bbits.emplace_back(ib, nasign*sign(bbit, r), sblock->stringsb()->lexical_zero(bbit ^ (bitset<nbit__>(1) << r)));
       }
 
       if (!valid_bbits.empty()) {
         for (size_t ia = 0; ia < tla; ++ia) {
           bitset<nbit__> tabit = tblock->string_bits_a(ia);
           if (!tabit[s]) {
-            bitset<nbit__> sabit = (tabit ^ bitset<nbit__>(1 << s));
+            bitset<nbit__> sabit = tabit ^ (bitset<nbit__>(1) << s);
             double* target_base = tblock->data() + ia*tlb;
             const double* source_base = sblock->data() + sblock->stringsa()->lexical_zero(sabit)*slb;
             const double c = fac * sign(sabit, s);
@@ -193,14 +193,14 @@ void ApplyOperator::operator()(const double fac, const RASCivecView source, RASC
       for (size_t ib = 0; ib < tlb; ++ib) {
         bitset<nbit__> bbit = tblock->string_bits_b(ib);
         if (!bbit[s])
-          valid_bbits.emplace_back(ib, nasign*sign(bbit, s), sblock->stringsb()->lexical_zero(bbit ^ bitset<nbit__>(1 << s)));
+          valid_bbits.emplace_back(ib, nasign*sign(bbit, s), sblock->stringsb()->lexical_zero(bbit ^ (bitset<nbit__>(1) << s)));
       }
 
       if (!valid_bbits.empty()) {
         for (size_t ia = 0; ia < tla; ++ia) {
           bitset<nbit__> tabit = tblock->string_bits_a(ia);
           if (tabit[r]) {
-            bitset<nbit__> sabit = (tabit ^ bitset<nbit__>(1 << r));
+            bitset<nbit__> sabit = tabit ^ (bitset<nbit__>(1) << r);
             double* target_base = tblock->data() + ia*tlb;
             const double* source_base = sblock->data() + sblock->stringsa()->lexical_zero(sabit)*slb;
             const double c = fac * sign(sabit, r);

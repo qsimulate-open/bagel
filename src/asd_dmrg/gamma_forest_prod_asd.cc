@@ -59,7 +59,7 @@ GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<ProductRA
 
 #ifdef HAVE_MPI_H
   // make a "lexical" ordering for ProductStates that will be used to distribute based on bra vectors
-  unordered_map<size_t, int> product_lex;
+  unordered_map<size_t, size_t> product_lex;
   {
     size_t counter = 0;
     for (auto& p : vecmap)
@@ -151,15 +151,15 @@ tuple</*conj*/bool, /*rev*/bool, list<GammaSQ>> GammaForestProdASD::try_permutat
   return make_tuple(false, false, list<GammaSQ>());
 }
 
-tuple<int, int, int> GammaForestProdASD::get_indices(const bitset<3> bit, const int size, const int ijk_local, const int lnorb, const bool block_is_reversed, const int rnorb, const bool ci_is_reversed) const {
-  vector<int> strides(size, 1);
-  for (int i = 1; i < size; ++i)
+tuple<size_t, size_t, size_t> GammaForestProdASD::get_indices(const bitset<3> bit, const int size, const size_t ijk_local, const int lnorb, const bool block_is_reversed, const int rnorb, const bool ci_is_reversed) const {
+  vector<size_t> strides(size, 1);
+  for (size_t i = 1; i < size; ++i)
     strides[i] = strides[i-1] * (bit[i-1] ? rnorb : lnorb);
 
-  vector<int> indices(size);
-  int current = ijk_local;
-  for (int i = size-1; i >= 0; --i) {
-    const int index = current / strides[i];
+  vector<size_t> indices(size);
+  size_t current = ijk_local;
+  for (size_t i = size-1; i >= 0; --i) {
+    const size_t index = current / strides[i];
     indices[i] = index;
     current -= index * strides[i];
   }
@@ -167,19 +167,19 @@ tuple<int, int, int> GammaForestProdASD::get_indices(const bitset<3> bit, const 
 
   const int norb = lnorb + rnorb;
 
-  int ijk = 0;
-  for (int i = size-1; i >= 0; --i) {
-    int ind = bit[i] ? indices[i] : indices[i] + rnorb;
+  size_t ijk = 0;
+  for (size_t i = size-1; i >= 0; --i) {
+    size_t ind = bit[i] ? indices[i] : indices[i] + rnorb;
     ijk = ind + ijk*norb;
   }
 
-  vector<int> block_indices, ci_indices;
+  vector<size_t> block_indices, ci_indices;
   for (int i = 0; i < size; ++i) (bit[i] ? ci_indices : block_indices).push_back(indices[i]);
   if (block_is_reversed) reverse(block_indices.begin(), block_indices.end());
   if (ci_is_reversed) reverse(ci_indices.begin(), ci_indices.end());
 
-  const int block_index = accumulate(block_indices.rbegin(), block_indices.rend(), 0, [lnorb] (int ij, int index) { return index + ij*lnorb; });
-  const int ci_index = accumulate(ci_indices.rbegin(), ci_indices.rend(), 0, [rnorb] (int ij, int index) { return index + ij*rnorb; });
+  const size_t block_index = accumulate(block_indices.rbegin(), block_indices.rend(), 0ull, [lnorb] (size_t ij, size_t index) { return index + ij*lnorb; });
+  const size_t ci_index = accumulate(ci_indices.rbegin(), ci_indices.rend(), 0, [rnorb] (size_t ij, size_t index) { return index + ij*rnorb; });
 
   return make_tuple(ijk, block_index, ci_index);
 }
@@ -206,7 +206,7 @@ void GammaForestProdASD::compute() {
       const vector<shared_ptr<ProductRASCivec>>& bra_states = block_states_.at(bra_key);
       BlockInfo bra_info(bra_key.nelea, bra_key.neleb, bra_states.size());
 
-      const int nijk = accumulate(coupling.begin(), coupling.end(), 1, [norb] (int x, GammaSQ a) { return x*norb; });
+      const size_t nijk = accumulate(coupling.begin(), coupling.end(), 1, [norb] (size_t x, GammaSQ a) { return x*norb; });
       auto gamma_matrix = make_shared<Matrix>(bra_info.nstates*ket_info.nstates, nijk);
 
       assert(dmrgblock == bra_states.front()->left());
@@ -263,13 +263,13 @@ void GammaForestProdASD::compute() {
             if (ci_conj) swap(ci_bra, ci_ket);
             if (ci_conj) swap(ps_bra, ps_ket);
 
-            const int nijk_part = accumulate(blockops.begin(), blockops.end(), 1, [lnorb] (int x, GammaSQ a) { return x*lnorb; }) *
-                                  accumulate(ciops.begin(), ciops.end(), 1, [rnorb] (int x, GammaSQ a) { return x*rnorb; });
+            const size_t nijk_part = accumulate(blockops.begin(), blockops.end(), 1, [lnorb] (size_t x, GammaSQ a) { return x*lnorb; }) *
+                                  accumulate(ciops.begin(), ciops.end(), 1, [rnorb] (size_t x, GammaSQ a) { return x*rnorb; });
 
             shared_ptr<const btas::Tensor3<double>> block_part = blockops.empty() ? nullptr : dmrgblock->coupling(blockops).at({block_bra, block_ket}).data;
 
-            for (int ijk_part = 0; ijk_part < nijk_part; ++ijk_part) {
-              int ijk, block_index, ci_index;
+            for (size_t ijk_part = 0; ijk_part < nijk_part; ++ijk_part) {
+              size_t ijk, block_index, ci_index;
               tie(ijk, block_index, ci_index) = get_indices(bit, coupling.size(), ijk_part, lnorb, block_conj^block_rev, rnorb, ci_conj^ci_rev);
 
               // loop through all vectors in the sector

@@ -39,7 +39,7 @@ ProductRASCI::ProductRASCI(shared_ptr<const PTree> input, shared_ptr<const Refer
   if (ref_->geom()->nirrep() > 1) throw runtime_error("RASCI: C1 only at the moment.");
 
   max_iter_ = input_->get<int>("maxiter", 100);
-  davidson_subspace_ = input_->get<int>("davidson_subspace", 20);
+  davidson_subspace_ = input_->get<int>("davidson_subspace", 5);
 
   thresh_ = input_->get<double>("thresh", 1.0e-8);
   print_thresh_ = input_->get<double>("print_thresh", 0.05);
