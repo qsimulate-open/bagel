@@ -32,10 +32,8 @@ shared_ptr<ZRotFile> ZCASBFGS::compute_denom(shared_ptr<const ZMatrix> cfock, sh
   auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
 
   shared_ptr<ZMatrix> cfockd;
-  if (nact_) {
+  if (nact_)
     cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
-    cfockd->hermite();
-  }
 
   // ia part (4.7a)
   if (nvirt_ && nclosed_) {

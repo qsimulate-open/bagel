@@ -48,6 +48,7 @@ void CASBFGS::compute() {
   x->unit();
   shared_ptr<const Matrix> xstart;
   vector<double> evals;
+  const int limited_memory = idata_->get<int>("limited_memory", 0);
 
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -121,7 +122,7 @@ void CASBFGS::compute() {
     *x *= *natorb_mat;
     auto xcopy = x->log(8);
     auto xlog  = make_shared<RotFile>(xcopy, nclosed_, nact_, nvirt_);
-    bfgs->check_step(evals, sigma, xlog);
+    bfgs->check_step(evals, sigma, xlog, /*tight*/false, limited_memory);
     shared_ptr<RotFile> a = bfgs->more_sorensen_extrapolate(sigma, xlog);
     cout << " ---------------------------------------------------- " << endl << endl;
 
