@@ -144,6 +144,9 @@ class ASD_base {
     std::vector<double> energy() const { return energies_; }
     double energy(const int i) const { return energies_.at(i); }
 
+    void debug_RDM() const;
+    void debug_energy() const;
+
 }; //ASD_base
 
 namespace {
