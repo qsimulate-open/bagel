@@ -28,6 +28,7 @@
 #define __BAGEL_SRC_PERIODIC_LATTICE_H
 
 #include <src/wfn/geometry.h>
+#include <src/periodic/pdfdist_ints.h>
 
 namespace bagel {
 
@@ -59,13 +60,18 @@ class Lattice {
 
     int nele_;
 
+    //  for density fitting calculations
+    double overlap_thresh_;
+    std::vector<std::shared_ptr<DFDist>> df_;
+
   private:
     // serialization
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & ndim_ & ncell_ & num_lattice_vectors_ & num_lattice_pts_ & primitive_cell_ & lattice_vectors_
-         & nuclear_repulsion_ & volume_ & primitive_kvectors_ & lattice_kvectors_ & q_ & num_lattice_kvectors_ & nele_;
+         & nuclear_repulsion_ & volume_ & primitive_kvectors_ & lattice_kvectors_ & q_ & num_lattice_kvectors_ & nele_
+         & overlap_thresh_;
     }
 
   public:
@@ -86,6 +92,7 @@ class Lattice {
     void init();
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     double volume() const { return volume_; }
+    const int nele();
 
     std::vector<std::array<double, 3>> primitive_kvectors() const { return primitive_kvectors_; }
     std::array<double, 3> primitive_kvectors(const int i) const { return primitive_kvectors_[i]; }
@@ -99,7 +106,11 @@ class Lattice {
     void print_lattice_kvectors() const;
     void print_lattice_coordinates() const; // write .XYZ file
 
-    const int nele();
+    // density fitting
+    double overlap_thresh() const { return overlap_thresh_; }
+    void form_df(const double thresh);
+    std::vector<std::shared_ptr<DFDist>> df() const { return df_; }
+    std::shared_ptr<DFDist> df(const int i) const { return df_[i]; }
 };
 
 }

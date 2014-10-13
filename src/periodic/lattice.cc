@@ -148,6 +148,9 @@ void Lattice::init() {
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
   generate_kpoints();
+
+  /* Density fitting */
+  form_df(overlap_thresh_);
 }
 
 double Lattice::dot(array<double, 3> b, array<double, 3> c) { return b[0] * c[0] + b[1] * c[1] + b[2] * c[2]; }
@@ -288,4 +291,24 @@ void Lattice::print_lattice_coordinates() const {
                                               << setw(14) << atom->position(2) * au2angstrom__ << endl;
     }
   }
+}
+
+
+void Lattice::form_df(const double thresh) { /*form df object for each block in direct space*/
+
+  df_.resize(num_lattice_vectors_);
+
+  const int nbasis = primitive_cell_->nbasis();
+  const int naux   = primitive_cell_->naux();
+  vector<shared_ptr<const Atom>> atoms0 = primitive_cell_->atoms();
+  int cnt = 0;
+  for (auto& g : lattice_vectors_) { /* 0g */
+    auto cell = make_shared<const Geometry>(*primitive_cell_, g);
+    vector<shared_ptr<const Atom>> atoms = cell->atoms();
+    vector<shared_ptr<const Atom>> aux_atoms = cell->aux_atoms();
+    df_[cnt] = make_shared<PDFDist_ints>(nbasis, naux, atoms0, atoms, aux_atoms, thresh, true);
+    ++cnt;
+  }
+
+  //TODO:
 }
