@@ -31,7 +31,7 @@
 
 namespace bagel {
 
-/* Store data in direct space */
+/* Store data in direct and k space (both complex for now) */
 class PData {
   protected:
     int blocksize_;
