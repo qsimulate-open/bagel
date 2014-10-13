@@ -971,6 +971,20 @@ ASD_base::debug_RDM() const {
     copy(view.begin(), view.end(), rdm2B->begin());
   }
 
+//auto rdm3A = std::make_shared<RDM<3>>(nactA);
+//{
+//  auto low = {0,0,0,0,0,0};
+//  auto up  = {nactA,nactA,nactA,nactA,nactA,nactA};
+//  auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+//  copy(view.begin(), view.end(), rdm3A->begin());
+//}
+//auto rdm3B = std::make_shared<RDM<3>>(nactB);
+//{
+//  auto low = {nactA,nactA,nactA,nactA,nactA,nactA};
+//  auto up  = {nactT,nactT,nactT,nactT,nactT,nactT};
+//  auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+//  copy(view.begin(), view.end(), rdm3B->begin());
+//}
 
   //1RDM
   { //Monomer A
@@ -1053,20 +1067,89 @@ ASD_base::debug_RDM() const {
     debug->print(1.0e-3);
   }
 
-  assert(false);
-}
-
-#if 0
-  //3RDM check (A) Gamma_ij,kl,mn
-  {
+  //3RDM: Gamma_ij,kl,mn
+  { //Trace A
     double sum = 0.0;
     for (int i = 0; i != nactA; ++i)
     for (int j = 0; j != nactA; ++j)
     for (int k = 0; k != nactA; ++k) {
       sum += threerdm_->element(i,i,j,j,k,k);
     }
-    std::cout << "3RDM Trace = " << sum << std::endl;
+    std::cout << "3RDM Trace (A)  = " << sum << std::endl;
   }
+  { //Trace B
+    double sum = 0.0;
+    for (int i = nactA; i != nactT; ++i)
+    for (int j = nactA; j != nactT; ++j)
+    for (int k = nactA; k != nactT; ++k) {
+      sum += threerdm_->element(i,i,j,j,k,k);
+    }
+    std::cout << "3RDM Trace (B)  = " << sum << std::endl;
+  }
+  { //Trace AB
+    double sum = 0.0;
+    for (int i = 0; i != nactT; ++i)
+    for (int j = 0; j != nactT; ++j)
+    for (int k = 0; k != nactT; ++k) {
+      sum += threerdm_->element(i,i,j,j,k,k);
+    }
+    std::cout << "3RDM Trace (AB) = " << sum << std::endl;
+  }
+
+  { //Gamma_ij,kl,mm : p21
+    std::cout << "3RDM(A) Partial Trace Sum_m (i,j,k,l,m,m)" << std::endl;
+    auto debug = std::make_shared<RDM<2>>(*rdm2A);
+    for (int i = 0; i != nactA; ++i)
+    for (int j = 0; j != nactA; ++j)
+    for (int k = 0; k != nactA; ++k) 
+    for (int l = 0; l != nactA; ++l) 
+    for (int m = 0; m != nactA; ++m) {
+      debug->element(i,j,k,l) -= 1.0/(neleA-2) * threerdm_->element(i,j,k,l,m,m);
+    }
+    debug->print(1.0e-8);
+  }
+  { //Gamma_ij,kk,mm : p21
+    std::cout << "3RDM(A) Partial Trace Sum_m (i,j,k,k,m,m)" << std::endl;
+    auto debug = std::make_shared<RDM<1>>(*rdm1A);
+    for (int i = 0; i != nactA; ++i)
+    for (int j = 0; j != nactA; ++j)
+    for (int k = 0; k != nactA; ++k) 
+    for (int m = 0; m != nactA; ++m) {
+      debug->element(i,j) -= 1.0/((neleA-2)*(neleA-1)) * threerdm_->element(i,j,k,k,m,m);
+    }
+    debug->print(1.0e-8);
+  }
+
+  { //Gamma_ij,kl,mm : p21
+    std::cout << "3RDM(B) Partial Trace Sum_m (i,j,k,l,m,m)" << std::endl;
+    auto debug = std::make_shared<RDM<2>>(*rdm2B);
+    for (int i = nactA; i != nactT; ++i)
+    for (int j = nactA; j != nactT; ++j)
+    for (int k = nactA; k != nactT; ++k) 
+    for (int l = nactA; l != nactT; ++l) 
+    for (int m = nactA; m != nactT; ++m) {
+      debug->element(i-nactA,j-nactA,k-nactA,l-nactA) -= 1.0/(neleA-2) * threerdm_->element(i,j,k,l,m,m);
+    }
+    debug->print(1.0e-8);
+  }
+  { //Gamma_ij,kk,mm : p21
+    std::cout << "3RDM(B) Partial Trace Sum_m (i,j,k,k,m,m)" << std::endl;
+    auto debug = std::make_shared<RDM<1>>(*rdm1B);
+    for (int i = nactA; i != nactT; ++i)
+    for (int j = nactA; j != nactT; ++j)
+    for (int k = nactA; k != nactT; ++k) 
+    for (int m = nactA; m != nactT; ++m) {
+      debug->element(i-nactA,j-nactA) -= 1.0/((neleA-2)*(neleA-1)) * threerdm_->element(i,j,k,k,m,m);
+    }
+    debug->print(1.0e-8);
+  }
+
+
+
+  assert(false);
+}
+
+#if 0
 
   //4RDM check (A) Gamma_ij,kl,mn,op
   {

@@ -35,9 +35,9 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
   
   //3&4RDM
   threerdm_ = std::make_shared<RDM<3>>(nactA+nactB);
-  fourrdm_  = std::make_shared<RDM<4>>(nactA+nactB);
+//fourrdm_  = std::make_shared<RDM<4>>(nactA+nactB);
   threerdm_->zero();
-  fourrdm_->zero();
+//fourrdm_->zero();
 
   // Diagonal Dimer subspaces
   int isub = 0;
@@ -78,24 +78,25 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
     if(r4) *fourrdm_  += *r4;
 
   }
+ 
 
-/*
   // Offdiagonal Dimer subspaces
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
-    for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
-      //Lower-triangular (i<->j)
-      auto offset = std::make_pair(jAB->offset(),iAB->offset());
+    for (auto jAB = subspaces_.begin(); jAB != subspaces_.end(); ++jAB) {
+      if (iAB == jAB) continue;
+      //TODO Lower-triangular (i<->j)
+      auto offset = std::make_pair(iAB->offset(),jAB->offset());
 
-      std::shared_ptr<const VecType> ccvecA  = jAB->template ci<0>(); //Dvec, RASDvec, DistDvec, DistRASDvec
-      std::shared_ptr<const VecType> ccvecAp = iAB->template ci<0>();
-      std::shared_ptr<const VecType> ccvecB  = jAB->template ci<1>();
-      std::shared_ptr<const VecType> ccvecBp = iAB->template ci<1>();
+      std::shared_ptr<const VecType> ccvecA  = iAB->template ci<0>(); // <I'(A)|//Dvec, RASDvec, DistDvec, DistRASDvec
+      std::shared_ptr<const VecType> ccvecB  = iAB->template ci<1>(); // <J'(B)|
+      std::shared_ptr<const VecType> ccvecAp = jAB->template ci<0>(); // |I(A)> 
+      std::shared_ptr<const VecType> ccvecBp = jAB->template ci<1>(); // |J(B)>
       // A Ap B Bp
       std::array<VecType,4> fourvecs { ccvecA, ccvecAp, ccvecB, ccvecBp };
 
       std::shared_ptr<RDM<1>> r1;
       std::shared_ptr<RDM<2>> r2;
-      Coupling term_type = coupling_type(*jAB, *iAB);
+      Coupling term_type = coupling_type(*iAB, *jAB);
       switch(term_type) {
         case Coupling::diagonal :
           std::cout << "Offdiagonal subspace, diagonal coupling, offset = " << std::get<0>(offset) << " and " << std::get<1>(offset) << std::endl;
@@ -105,7 +106,7 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
           break;
       }
       if (r1) {
-        *onerdm_ += *r1; //TODO : *2
+        *onerdm_ += *r1; //TODO : *2 if (lower triangular is used)
       }
       if (r2) {
         *twordm_ += *r2;
@@ -113,7 +114,7 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
 
     }
   }
-*/
+
 
   //PRINT
   std::cout << "!@# Monomer RDM print" << std::endl;
