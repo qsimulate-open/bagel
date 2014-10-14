@@ -200,7 +200,9 @@ int main(int argc, char** argv) {
     print_footer();
 
   } catch (const exception &e) {
-    cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;
+    resources__->proc()->cout_on();
+    cout << "  ERROR ON RANK " << mpi__->rank() << ": EXCEPTION RAISED:" << e.what() << endl;
+    resources__->proc()->cout_off();
     throw;
   } catch (...) {
     throw;
