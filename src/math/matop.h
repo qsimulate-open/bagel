@@ -305,7 +305,7 @@ auto operator%(const T& a,  const U& b) ->decltype(impl::multTN(a,b)) { return i
 template <class T, class U,
           class = typename std::enable_if<detail::is_matrix_pair<T,U>::value>::type
          >
-auto operator^(const T& a,  const U& b) ->decltype(impl::multTN(a,b)) { return impl::multNT(a,b); }
+auto operator^(const T& a,  const U& b) ->decltype(impl::multNT(a,b)) { return impl::multNT(a,b); }
 
 // operator*=
 template <class T, class U,
