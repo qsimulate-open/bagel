@@ -67,6 +67,16 @@ DMRG_Block1::DMRG_Block1(GammaForestASD<RASDvec>&& forest, const map<BlockKey, s
     assert(mat->storage().size() == range.area());
     // convert this matrix to 3-tensor
     auto tensor = make_shared<btas::Tensor3<double>>(range, move(mat->storage()));
+#ifdef DEBUG
+    resources__->proc()->cout_on();
+    for (int i = 0; i < mpi__->size(); ++i) {
+      if (i==mpi__->rank())
+        cout << "rank " << mpi__->rank() << " broadcast size " << tensor->size() << endl;
+      mpi__->barrier();
+      this_thread::sleep_for(10 * sleeptime__);
+    }
+    resources__->proc()->cout_off();
+#endif
 #ifdef HAVE_MPI_H
     mpi__->broadcast(tensor->data(), tensor->size(), 0);
     dmrgtime.tick_print("broadcast");
