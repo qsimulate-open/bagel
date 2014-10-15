@@ -840,18 +840,23 @@ void FormSigmaProdRAS::resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView
       // first build an F
       for (size_t ia = 0; ia < batchlength; ++ia) {
         double* const fdata = F.element_ptr(0, ia);
-        const bitset<nbit__> tabit = targetspace->strings(ia);
+        const bitset<nbit__> tabit = targetspace->strings(ia + batchstart);
         for (int k = 0; k < norb; ++k) {
           if (!tabit[k]) continue;
-          bitset<nbit__> tmpbit = tabit ^ (bitset<nbit__>(1) << k);
-          if (!sdet->allowed(tmpbit)) continue;
+          const bitset<nbit__> tmpbit = tabit ^ (bitset<nbit__>(1) << k);
           const int kphase = sign(tmpbit, k);
-          const size_t tmpia = sdet->lexical_offset<0>(tmpbit);
-          for (auto& iterij : sdet->phia(tmpia)) {
-            const int i = iterij.ij%norb;
-            const int j = iterij.ij/norb;
-            if (i < k)
-              fdata[iterij.source] += static_cast<double>(kphase*iterij.sign) * ((*Jp)(j, i, k) - (*Jp)(j, k, i));
+          for (int i = 0; i < k; ++i) {
+            if (!tmpbit[i]) continue;
+            const bitset<nbit__> tmp2bit = tmpbit ^ (bitset<nbit__>(1) << i);
+            for (int j = 0; j < norb; ++j) {
+              if (tmp2bit[j]) continue;
+              const bitset<nbit__> sbit = tmp2bit ^ (bitset<nbit__>(1) << j);
+              if (sdet->allowed(sbit)) {
+                const int ijphase = sign(sbit, i, j);
+                const size_t source_ia = sdet->lexical_offset<0>(sbit);
+                fdata[source_ia] += static_cast<double>(kphase * ijphase) * ((*Jp)(j, i, k) - (*Jp)(j, k, i));
+              }
+            }
           }
         }
       }
@@ -894,17 +899,23 @@ void FormSigmaProdRAS::resolve_S_adag_a_a(const RASCivecView cc, RASCivecView si
       const size_t offset = batchstart + targetspace->offset();
       for (size_t ia = 0; ia < batchlength; ++ia) {
         double* const fdata = F.element_ptr(0, ia);
-        for (auto& iterij : tdet->phia(ia + offset)) {
-          const bitset<nbit__> tmpbit = tdet->string_bits_a(iterij.source);
-          const int i = iterij.ij%norb;
-          const int j = iterij.ij/norb;
-          for (int k = j+1; k < norb; ++k) {
-            if (tmpbit[k]) continue;
-            const bitset<nbit__> sabit = tmpbit ^ (bitset<nbit__>(1) << k);
-            if (!sdet->allowed(sabit)) continue;
-            const int kphase = sign(sabit, k);
-            const size_t source_ia = sdet->lexical_offset<0>(sabit);
-            fdata[source_ia] += static_cast<double>(kphase*iterij.sign) * ((*Jp)(j, i, k) - (*Jp)(k, i, j));
+        const bitset<nbit__> tbit = tdet->string_bits_a(ia+offset);
+        for (int i = 0; i < norb; ++i) {
+          if (!tbit[i]) continue;
+          const bitset<nbit__> tmpbit = tbit ^ (bitset<nbit__>(1) << i);
+          for (int j = 0; j < norb; ++j) {
+            if (tmpbit[j]) continue;
+            const int ijphase = sign(tbit, i, j);
+            const bitset<nbit__> tmp2bit = tmpbit ^ (bitset<nbit__>(1) << j);
+            for (int k = j+1; k < norb; ++k) {
+              if (tmp2bit[k]) continue;
+              const bitset<nbit__> sbit = tmp2bit ^ (bitset<nbit__>(1) << k);
+              if (sdet->allowed(sbit)) {
+                const int kphase = sign(sbit, k);
+                const size_t source_ia = sdet->lexical_offset<0>(sbit);
+                fdata[source_ia] += static_cast<double>(kphase * ijphase) * ((*Jp)(j, i, k) - (*Jp)(k, i, j));
+              }
+            }
           }
         }
       }
