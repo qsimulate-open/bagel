@@ -140,6 +140,7 @@ void ASD_DMRG::compute() {
 void ASD_DMRG::down_sweep() {
   cout << endl << " ===== Down sweeping =====" << endl;
 
+  remove_if(down_sweep_truncs_.begin(), down_sweep_truncs_.end(), [this] (const int& t) { return t >= ntrunc_; });
   if (!is_sorted(down_sweep_truncs_.rbegin(), down_sweep_truncs_.rend())) {
     cout << "  o Sorting list of truncations into descending order. Was there some reason to have them unordered?" << endl;
     sort(down_sweep_truncs_.rbegin(), down_sweep_truncs_.rend());
