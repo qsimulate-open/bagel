@@ -238,7 +238,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       assert(nocca+noccb == nele_);
       auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
       ocoeff->add_real_block(1.0, 0,     0, n, nocca, ref_->coeffA()->slice(0,nocca));
-      ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->slice(nocca,nocca+noccb));
+      ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->slice(0,noccb));
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     } else {
       // CASSCF
