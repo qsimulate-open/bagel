@@ -133,8 +133,12 @@ template<>
 void RDM<1>::print(const double thresh) const {
   const double* ptr = data();
   for (int i = 0; i != norb(); ++i)
-    for (int j = 0; j != norb(); ++j)
-      cout << setw(12) << setprecision(7) << *ptr++ << endl;
+    for (int j = 0; j != norb(); ++j, ++ptr)
+    //cout << setw(12) << setprecision(7) << *ptr++ << endl;
+      if (fabs(*ptr) > thresh)
+        cout << setw(3) << j << setw(3)
+                        << i << setw(3)
+                        << setw(12) << setprecision(7) << *ptr << endl;
 }
 
 

@@ -34,9 +34,9 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
   twordm_->zero();
   
   //3&4RDM
-  threerdm_ = std::make_shared<RDM<3>>(nactA+nactB);
+//threerdm_ = std::make_shared<RDM<3>>(nactA+nactB);
 //fourrdm_  = std::make_shared<RDM<4>>(nactA+nactB);
-  threerdm_->zero();
+//threerdm_->zero();
 //fourrdm_->zero();
 
   // Diagonal Dimer subspaces
@@ -71,15 +71,15 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
     if(r2) *twordm_ += *r2;
 
     //3&4RDM
-    std::shared_ptr<RDM<3>> r3;
-    std::shared_ptr<RDM<4>> r4;
-    tie(r3,r4) = compute_rdm34_monomer(offset, fourvecs);
-    if(r3) *threerdm_ += *r3;
-    if(r4) *fourrdm_  += *r4;
+//  std::shared_ptr<RDM<3>> r3;
+//  std::shared_ptr<RDM<4>> r4;
+//  tie(r3,r4) = compute_rdm34_monomer(offset, fourvecs);
+//  if(r3) *threerdm_ += *r3;
+//  if(r4) *fourrdm_  += *r4;
 
   }
  
-
+/*
   // Offdiagonal Dimer subspaces
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
     for (auto jAB = subspaces_.begin(); jAB != subspaces_.end(); ++jAB) {
@@ -114,13 +114,15 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
 
     }
   }
-
+*/
 
   //PRINT
   std::cout << "!@# Monomer RDM print" << std::endl;
   std::cout << "Active space: A(" << nactA << "), B(" << nactB << ")" << std::endl;
   onerdm_->print(1.0e-6);
 
+  //APPROX 2RDM
+  approx2rdm_ = std::make_shared<RDM<2>>(*twordm_);
 }
 
 #endif

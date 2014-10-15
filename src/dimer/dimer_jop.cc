@@ -105,6 +105,9 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
     }
   }
 
+//mo2eA->zero(); //TEST: 1e only
+//mo2eB->zero();
+
   monomer_mo2es_ = {mo2eA, mo2eB};
 
   auto c1eA = make_shared<CSymMatrix>(mo1eA);

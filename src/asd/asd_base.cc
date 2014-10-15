@@ -1067,6 +1067,43 @@ ASD_base::debug_RDM() const {
     debug->print(1.0e-3);
   }
 
+
+  //construct approx twordm
+  cout << "Build approx 2RDM:" << endl;
+  for (int i = 0; i != nactA; ++i)
+  for (int j = nactA; j != nactT; ++j) {
+    approx2rdm_->element(i,i,j,j) = onerdm_->element(i,i) * onerdm_->element(j,j);
+    approx2rdm_->element(j,j,i,i) = approx2rdm_->element(i,i,j,j);
+    approx2rdm_->element(i,j,j,i) = -0.5*(onerdm_->element(i,i) * onerdm_->element(j,j));// - onerdm_->element(i,i);
+    approx2rdm_->element(j,i,i,j) = approx2rdm_->element(i,j,j,i); //-onerdm_->element(i,i) * onerdm_->element(j,j);// - onerdm_->element(j,j);
+  }
+  { //Dimer AB
+    double sum = 0.0;
+    for (int i = 0; i != nactT; ++i)
+    for (int j = 0; j != nactT; ++j) {
+      sum += approx2rdm_->element(i,i,j,j);
+    }
+    std::cout << "APPROX2RDM(AB) Trace = " << sum << std::endl;
+  }
+  { //difference
+    auto debug = make_shared<RDM<2>>(*twordm_);
+    for (int i = 0; i != nactT; ++i)
+    for (int j = 0; j != nactT; ++j)
+    for (int k = 0; k != nactT; ++k)
+    for (int l = 0; l != nactT; ++l) {
+      debug->element(i,j,k,l) -= approx2rdm_->element(i,j,k,l);
+    }
+    debug->print(1.0e-8);
+    auto low = {0,0,0,0};
+    auto up  = {nactT,nactT,nactT,nactT};
+    auto view = btas::make_view(debug->range().slice(low,up), debug->storage());
+    auto rdm2 = make_shared<Matrix>(nactT*nactT*nactT,nactT,1); 
+    copy(view.begin(), view.end(), rdm2->begin());
+    cout << "Norm of approx. 2RDM =" << rdm2->norm() << endl;
+  }
+
+  assert(false);
+
   //3RDM: Gamma_ij,kl,mn
   { //Trace A
     double sum = 0.0;
@@ -1537,4 +1574,156 @@ ASD_base::debug_energy() const {
   cout << "1E energy = " <<  e1 << endl;
   cout << "2E energy = " <<  e2 << endl;
   cout << "Total energy = " << dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy() + e1 + e2 << endl;
+}
+
+//***************************************************************************************************************
+void
+ASD_base::symmetrize_RDM() const {
+//***************************************************************************************************************
+
+  cout << "!@# Unsymmetrized 1RDM" << endl;
+  onerdm_->print(1.0e-6);
+
+  const int nactA = dimer_->active_refs().first->nact();
+  const int nactB = dimer_->active_refs().second->nact();
+  const int nactT = nactA + nactB;  
+
+  //Symmetrize: D_AB (calculated) D_BA (uncalc.& symmetrized here)
+  auto matBA = std::make_shared<Matrix>(nactB,nactA); //D_BA empty
+  {
+    auto low = {0, nactA};
+    auto up  = {nactA, nactT};
+    auto view = btas::make_view(onerdm_->range().slice(low,up), onerdm_->storage()); //D_AB sector of D (read ptr)
+    auto matAB = std::make_shared<Matrix>(nactA,nactB); //D_AB empty
+    std::copy(view.begin(), view.end(), matAB->begin()); //D_AB filled
+    SMITH::sort_indices<1,0, 0,1, 1,1>(matAB->data(), matBA->data(), nactA, nactB); // transpose and fill D_BA
+  }
+  {
+    auto low = {nactA, 0};
+    auto up  = {nactT, nactA};
+    auto outv = btas::make_rwview(onerdm_->range().slice(low,up), onerdm_->storage()); //D_BA sector of D (read & write ptr)
+    std::copy(matBA->begin(), matBA->end(), outv.begin()); //copy D_BA -> D_BA sector of D
+  }
+
+  cout << "!@# Symmetrized 1RDM" << endl;
+  onerdm_->print(1.0e-6);
+
+  //Symmetrize: d(ABAA) note p18B, 19B
+  {
+    auto low = {0,nactA,0,0};
+    auto up  = {nactA,nactT,nactA,nactA};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABAA sector of d
+    auto inmat = make_shared<Matrix>(nactA*nactB,nactA*nactA); //empty d_ABAA
+    copy(view.begin(), view.end(), inmat->begin()); //d_ABAA filled
+    { //d(AAAB)
+      auto outmat = make_shared<Matrix>(nactA*nactA,nactA*nactB); //empty d_AAAB
+      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactA); //reorder and fill d_AAAB
+      auto low = {0,0,0,nactA};
+      auto up  = {nactA,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_AAAB sector of d
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_AAAB into d_AAAB sector of d
+    } 
+    { //d(BAAA)
+      auto outmat = make_shared<Matrix>(nactB*nactA,nactA*nactA); //empty d_BAAA
+      SMITH::sort_indices<1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactA); //reorder and fill d_BAAA
+      auto low = {nactA,0,0,0};
+      auto up  = {nactT,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BAAA sector of d
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BAAA into d_BAAA sector of d
+    } 
+    { //d(AABA)
+      auto outmat = make_shared<Matrix>(nactA*nactA,nactB*nactA); //empty d_AABA
+      SMITH::sort_indices<3,2,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactA); //reorder and fill d_AABA
+      auto low = {0,0,nactA,0};
+      auto up  = {nactA,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_AABA sector of d
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_AABA into d_AABA sector of d
+    } 
+  }
+ 
+  //Symmetrize: d(ABBB) note p18B, 19B
+  {
+    auto low = {0,nactA,nactA,nactA};
+    auto up  = {nactA,nactT,nactT,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABBB sector of d
+    auto inmat = make_shared<Matrix>(nactA*nactB,nactB*nactB); //empty d_ABBB
+    copy(view.begin(), view.end(), inmat->begin()); //d_ABBB filled
+    { //d(BBAB)
+      auto outmat = make_shared<Matrix>(nactB*nactB,nactA*nactB); //empty d_BBAB
+      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactB); //reorder and fill d_BBAB
+      auto low = {nactA,nactA,0,nactA};
+      auto up  = {nactT,nactT,nactA,nactT};
+      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAB sector of d
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBAB into d_BBAB sector of d
+    } 
+    { //d(BABB)
+      auto outmat = make_shared<Matrix>(nactB*nactA,nactB*nactB); //empty d_BABB
+      SMITH::sort_indices<1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactB); //reorder and fill d_BABB
+      auto low = {nactA,0,nactA,nactA};
+      auto up  = {nactT,nactA,nactT,nactT};
+      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BABB sector of d
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BABB into d_BABB sector of d
+    } 
+    { //d(BBBA)
+      auto outmat = make_shared<Matrix>(nactB*nactB,nactB*nactA); //empty d_BBBA
+      SMITH::sort_indices<3,2,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactB); //reorder and fill d_BBBA
+      auto low = {nactA,nactA,nactA,0};
+      auto up  = {nactT,nactT,nactT,nactA};
+      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BBBA sector of d
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBBA into d_BBBA sector of d
+    } 
+  }
+
+
+  //Symmetrize: d(ABBA) note p19
+  {
+    auto low = {0,nactA,nactA,0};
+    auto up  = {nactA,nactT,nactT,nactA};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABBA sector of d
+    auto inmat = make_shared<Matrix>(nactA*nactB,nactB*nactA); //empty d_ABBA
+    copy(view.begin(), view.end(), inmat->begin()); //d_ABBA filled
+    { //d(BAAB)
+      auto outmat = make_shared<Matrix>(nactB*nactA,nactA*nactB); //empty d_BAAB
+      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactA); //reorder and fill d_BAAB
+      auto low = {nactA,0,0,nactA};
+      auto up  = {nactT,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BAAB sector of d
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BAAB into d_BAAB sector of d
+    } 
+  }
+
+  //Symmetrize: d(AABB) note 19
+  { //d(AABB)
+    auto low = {0,0,nactA,nactA};
+    auto up  = {nactA,nactA,nactT,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AABB sector of d
+    auto inmat = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_AABB
+    copy(view.begin(), view.end(), inmat->begin()); //d_AABB filled
+    { //d(BBAA)
+      auto outmat = make_shared<Matrix>(nactB*nactB*nactA*nactA,1); //empty d_BBAA
+      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactB, nactB); //reorder and fill d_BBAA
+      auto low = {nactA,nactA,0,0};
+      auto up  = {nactT,nactT,nactA,nactA};
+      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAA sector of d
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBAA into d_BBAA sector of d
+    } 
+  }
+
+  //Symmetrize: d(ABAB) note p19
+  {
+    auto low = {0,nactA,0,nactA};
+    auto up  = {nactA,nactT,nactA,nactT};
+    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABAB sector of d
+    auto inmat = make_shared<Matrix>(nactA*nactB,nactA*nactB); //empty d_ABAB
+    copy(view.begin(), view.end(), inmat->begin()); //d_ABAB filled
+    { //d(BABA)
+      auto outmat = make_shared<Matrix>(nactB*nactA,nactB*nactA); //empty d_BABA
+      SMITH::sort_indices<1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactB); //reorder and fill d_BABA
+      auto low = {nactA,0,nactA,0};
+      auto up  = {nactT,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BABA sector of d
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBBA into d_BABA sector of d
+    } 
+  }
+
 }

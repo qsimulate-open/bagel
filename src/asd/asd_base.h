@@ -66,6 +66,7 @@ class ASD_base {
     // Dimer reduced density matrices
     std::shared_ptr<RDM<1>> onerdm_; // First-order RDM
     std::shared_ptr<RDM<2>> twordm_; // Second-order RDM
+    std::shared_ptr<RDM<2>> approx2rdm_; // Second-order RDM
     std::shared_ptr<RDM<3>> threerdm_; // Third-order RDM
     std::shared_ptr<RDM<4>> fourrdm_; // Fourth-order RDM
 
@@ -144,6 +145,7 @@ class ASD_base {
     std::vector<double> energy() const { return energies_; }
     double energy(const int i) const { return energies_.at(i); }
 
+    void symmetrize_RDM() const;
     void debug_RDM() const;
     void debug_energy() const;
 

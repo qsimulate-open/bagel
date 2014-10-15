@@ -105,10 +105,6 @@ void ASD<VecType>::compute() {
   monomer_rdm();
   compute_rdm();
 
-  std::cout << "test end in compute()" << std::endl;
-  assert(false);
-
-
   if (dipoles_) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;
     std::shared_ptr<const Reference> dimerref = dimer_->sref();
