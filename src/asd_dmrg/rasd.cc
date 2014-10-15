@@ -586,12 +586,15 @@ void RASD::apply_perturbation(shared_ptr<const RASBlockVectors> cc, vector<Gamma
     tdet = detmap[Tkey];
   }
   else {
-    if (sdet->nelea()+dele.first < 0 || sdet->neleb()+dele.second < 0) return;
-    tdet = sdet->clone(sdet->nelea()+dele.first, sdet->neleb()+dele.second);
-    detmap[Tkey] = tdet;
+    const int na = sdet->nelea() + dele.first;
+    const int nb = sdet->neleb() + dele.second;
+    if (na >= 0 && na < sdet->norb() && nb >= 0 && nb < sdet->norb()) {
+      tdet = sdet->clone(na, nb);
+      detmap[Tkey] = tdet;
+    }
   }
 
-  if (tdet->size()!=0) {
+  if (tdet && tdet->size()!=0) {
     ApplyOperator apply;
     const int nstates = cc->mdim();
     const int norb = tdet->norb();
