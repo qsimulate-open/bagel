@@ -1727,3 +1727,54 @@ ASD_base::symmetrize_RDM() const {
   }
 
 }
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>>
+ASD_base::couple_blocks_RDM34(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
+//***************************************************************************************************************
+
+  Coupling term_type = coupling_type_RDM34(AB, ApBp);
+
+  const DimerSubspace_base* space1 = &AB;
+  const DimerSubspace_base* space2 = &ApBp;
+
+  bool flip = (static_cast<int>(term_type) < 0);
+  if (flip) {
+    term_type = Coupling(-1*static_cast<int>(term_type));
+    std::swap(space1,space2);
+  }
+  
+  tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> out;
+//std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
+
+  switch(term_type) {
+    case Coupling::none :
+      out = make_tuple(nullptr,nullptr); break;
+    case Coupling::diagonal :
+      out = make_tuple(nullptr,nullptr); break;
+    //out = compute_inter_2e_RDM(keys, /*subspace diagonal*/false); break;
+    case Coupling::aET :
+      out = make_tuple(nullptr,nullptr); break;
+    //out = compute_aET_RDM(keys); break;
+    case Coupling::bET :
+      out = make_tuple(nullptr,nullptr); break;
+    //out = compute_bET_RDM(keys); break;
+    case Coupling::abFlip :
+      out = make_tuple(nullptr,nullptr); break;
+    //out = compute_abFlip_RDM(keys); break;
+    case Coupling::abET :
+      out = make_tuple(nullptr,nullptr); break;
+    //out = compute_abET_RDM(keys); break;
+    case Coupling::aaET :
+      out = make_tuple(nullptr,nullptr); break;
+    //out = compute_aaET_RDM(keys); break;
+    case Coupling::bbET :
+      out = make_tuple(nullptr,nullptr); break;
+    //out = compute_bbET_RDM(keys); break;
+    default :
+      throw std::logic_error("Asking for a coupling type that has not been written.");
+  }
+  
+  return out;
+}
+

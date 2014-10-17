@@ -113,6 +113,7 @@ class ASD_base {
     std::shared_ptr<Matrix> compute_diagonal_block_H(const DimerSubspace_base& subspace) const;
 
     //RDM
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> couple_blocks_RDM34(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> couple_blocks_RDM(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_inter_2e_RDM(const std::array<MonomerKey,4>&, const bool) const;
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_aET_RDM(const std::array<MonomerKey,4>&) const;

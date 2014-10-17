@@ -80,7 +80,12 @@ Coupling bagel::coupling_type(const array<MonomerKey,4>& keys) {
 
 
 
-Coupling bagel::coupling_type_RDM(const array<MonomerKey,4>& keys) {
+Coupling bagel::coupling_type_RDM34(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) {
+  array<MonomerKey,4> keys {{ AB.monomerkey<0>(), AB.monomerkey<1>(), ApBp.monomerkey<0>(), ApBp.monomerkey<1>()}};
+  return coupling_type_RDM34(keys);
+}
+
+Coupling bagel::coupling_type_RDM34(const array<MonomerKey,4>& keys) {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   // <AB|

@@ -45,7 +45,21 @@ enum class Coupling {
   aaET = 6,       ///< alpha+alpha transfer (A <-- B)
   inv_aaET = -6,  ///< inverse alpha+alpha transfer (A --> B)
   bbET = 7,       ///< beta+beta transfer (A <-- B)
-  inv_bbET = -7   ///< inverse beta+beta transfer (A --> B)
+  inv_bbET = -7,  ///< inverse beta+beta transfer (A --> B)
+  //ADDED for RDM3
+  aaaET     =  8,
+  inv_aaaET = -8,
+  bbbET     =  9,
+  inv_bbbET = -9,
+  aabET     =  10,
+  inv_aabET = -10,
+  abbET     =  11,
+  inv_abbET = -11,
+  aETflp    =  12,
+  inv_aETflp = -12,
+  bETflp     =  13,
+  inv_bETflp = -13
+  //END ADDED
 };
 
 inline std::ostream& operator<<(std::ostream& out, const Coupling value){
@@ -73,6 +87,9 @@ inline std::ostream& operator<<(std::ostream& out, const Coupling value){
 
 Coupling coupling_type(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp);
 Coupling coupling_type(const std::array<MonomerKey,4>& keys);
+
+Coupling coupling_type_RDM34(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp);
+Coupling coupling_type_RDM34(const std::array<MonomerKey,4>& keys);
 
 }
 
