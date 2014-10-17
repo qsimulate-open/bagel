@@ -1771,6 +1771,19 @@ ASD_base::couple_blocks_RDM34(const DimerSubspace_base& AB, const DimerSubspace_
     case Coupling::bbET :
       out = make_tuple(nullptr,nullptr); break;
     //out = compute_bbET_RDM(keys); break;
+//Below: RDM3 explicit
+    case Coupling::aaaET :
+      out = make_tuple(nullptr,nullptr); break;
+    case Coupling::bbbET :
+      out = make_tuple(nullptr,nullptr); break;
+    case Coupling::aabET :
+      out = make_tuple(nullptr,nullptr); break;
+    case Coupling::abbET :
+      out = make_tuple(nullptr,nullptr); break;
+    case Coupling::aETflp :
+      out = make_tuple(nullptr,nullptr); break;
+    case Coupling::bETflp :
+      out = make_tuple(nullptr,nullptr); break;
     default :
       throw std::logic_error("Asking for a coupling type that has not been written.");
   }
