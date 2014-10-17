@@ -76,3 +76,70 @@ Coupling bagel::coupling_type(const array<MonomerKey,4>& keys) {
   else if (icouple == make_tuple( 0, 0,-2,+2)) return Coupling::inv_bbET;
   else                                         return Coupling::none;
 }
+
+
+
+
+Coupling bagel::coupling_type_RDM(const array<MonomerKey,4>& keys) {
+  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
+
+  // <AB|
+  pair<int,int> neleaAB {A.nelea(), B.nelea()};
+  pair<int,int> nelebAB {A.neleb(), B.neleb()};
+
+  // |A'B'>
+  pair<int,int> neleaApBp {Ap.nelea(), Bp.nelea()};
+  pair<int,int> nelebApBp {Ap.neleb(), Bp.neleb()};
+
+  // AlphaTransfer(AT) and BetaTransfer(BT)
+  pair<int,int> AT {neleaAB.first - neleaApBp.first, neleaAB.second - neleaApBp.second};
+  pair<int,int> BT {nelebAB.first - nelebApBp.first, nelebAB.second - nelebApBp.second};
+
+  /************************************************************
+  *  BT\AT  | ( 0, 0) | (+1,-1) | (-1,+1) | (+2,-2) | (-2,+2) *
+  *-----------------------------------------------------------*
+  * ( 0, 0) |  diag   |  aET    |  -aET   |  aaET   | -aaET   *
+  * (+1,-1) |  bET    |  dABT   |  ABflp  |  aabET  | -aETflp *
+  * (-1,+1) | -bET    | BAflp   | -dABT   |  aETflp | -aabET  *
+  * (+2,-2) |  bbET   | bbaET   |  bETflp |         |         *
+  * (-2,+2) | -bbET   | -bETflp | -bbaET  |         |         *
+  * (+3,-3) |  bbbET  |
+  * (-3,+3) | -bbbET  |
+  ************************************************************/
+
+  const auto icouple = make_tuple(AT.first, AT.second, BT.first, BT.second);
+
+  if      (icouple == make_tuple( 0, 0, 0, 0)) return Coupling::diagonal;
+  else if (icouple == make_tuple( 0, 0,+1,-1)) return Coupling::bET;
+  else if (icouple == make_tuple( 0, 0,-1,+1)) return Coupling::inv_bET;
+  else if (icouple == make_tuple(+1,-1, 0, 0)) return Coupling::aET;
+  else if (icouple == make_tuple(+1,-1,+1,-1)) return Coupling::abET;
+  else if (icouple == make_tuple(+1,-1,-1,+1)) return Coupling::baFlip;
+  else if (icouple == make_tuple(-1,+1, 0, 0)) return Coupling::inv_aET;
+  else if (icouple == make_tuple(-1,+1,+1,-1)) return Coupling::abFlip;
+  else if (icouple == make_tuple(-1,+1,-1,+1)) return Coupling::inv_abET;
+  else if (icouple == make_tuple(+2,-2, 0, 0)) return Coupling::aaET;
+  else if (icouple == make_tuple(-2,+2, 0, 0)) return Coupling::inv_aaET;
+  else if (icouple == make_tuple( 0, 0,+2,-2)) return Coupling::bbET;
+  else if (icouple == make_tuple( 0, 0,-2,+2)) return Coupling::inv_bbET;
+  //ADDED
+  else if (icouple == make_tuple( 0, 0,+3,-3)) return Coupling::bbbET;
+  else if (icouple == make_tuple( 0, 0,-3,+3)) return Coupling::inv_bbbET;
+
+  else if (icouple == make_tuple(+3,-3, 0, 0)) return Coupling::aaaET;
+  else if (icouple == make_tuple(-3,+3, 0, 0)) return Coupling::inv_aaaET;
+
+  else if (icouple == make_tuple(+1,-1,+2,-2)) return Coupling::abbET;
+  else if (icouple == make_tuple(-1,+1,-2,+2)) return Coupling::inv_abbET;
+
+  else if (icouple == make_tuple(+2,-2,+1,-1)) return Coupling::aabET;
+  else if (icouple == make_tuple(-2,+2,-1,+1)) return Coupling::inv_aabET;
+
+  else if (icouple == make_tuple(-1,+1,+2,-2)) return Coupling::bETflp;
+  else if (icouple == make_tuple(+1,-1,-2,+2)) return Coupling::inv_bETflp;
+
+  else if (icouple == make_tuple(+2,-2,-1,+1)) return Coupling::aETflp;
+  else if (icouple == make_tuple(-2,+2,+1,-1)) return Coupling::inv_aETflp;
+  //END ADDED
+  else                                         return Coupling::none;
+}
