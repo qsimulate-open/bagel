@@ -33,7 +33,14 @@ BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 
 Lattice::Lattice(const shared_ptr<const Geometry> g) : primitive_cell_(g) {
 
+  overlap_thresh_ = primitive_cell_->overlap_thresh();
   init();
+
+#if 0
+  cout << "Check orthogonalization of primitive lattice vectors and k-vectors +++" << endl;
+  for (int i = 0; i != ndim_; ++i)
+    cout << setprecision(9) << dot(primitive_cell_->primitive_vectors(i), primitive_kvectors_[i])/(2.0 * pi__) << endl;
+#endif
 }
 
 double Lattice::compute_nuclear_repulsion() const {
@@ -72,8 +79,8 @@ void Lattice::init() {
   primitive_kvectors_.resize(ndim_);
 
   /* TODO: temp parameters */
-  ncell_ = 25;
-  q_ = 10;
+  ncell_ = 5;
+  k_parameter_ = 10;
 
   num_lattice_vectors_ = pow(2*ncell_+1, ndim_);
   lattice_vectors_.resize(num_lattice_vectors_);
@@ -167,12 +174,12 @@ array<double, 3> Lattice::cross(array<double, 3> b, array<double, 3> c, double s
 
 void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
 
-  vector<double> u(q_, 0.0);
+  vector<double> u(k_parameter_, 0.0);
   int count = 0;
-  for (int r = 1; r <= q_; ++r)
-    u[count++] = (2.0 * r - q_ - 1.0) / (2.0 * q_);
+  for (int r = 1; r <= k_parameter_; ++r)
+    u[count++] = (2.0 * r - k_parameter_ - 1.0) / (2.0 * k_parameter_);
 
-  num_lattice_kvectors_ = pow(q_, ndim_);
+  num_lattice_kvectors_ = pow(k_parameter_, ndim_);
   lattice_kvectors_.resize(num_lattice_kvectors_);
 
   /* set up recriprocal lattice vectors */
@@ -180,7 +187,7 @@ void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
     case 1:
       {
         const array<double, 3> b1 = primitive_kvectors_[0];
-        for (int i = 0; i != q_; ++i) {
+        for (int i = 0; i != k_parameter_; ++i) {
           array<double, 3> kvec;
           kvec[0] = u[i] * b1[0];
           kvec[1] = u[i] * b1[1];
@@ -193,13 +200,13 @@ void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
       {
         const array<double, 3> b1 = primitive_kvectors_[0];
         const array<double, 3> b2 = primitive_kvectors_[1];
-        for (int i = 0; i != q_; ++i) {
-          for (int j = 0; j != q_; ++j) {
+        for (int i = 0; i != k_parameter_; ++i) {
+          for (int j = 0; j != k_parameter_; ++j) {
             array<double, 3> kvec;
             kvec[0] = u[i] * b1[0] + u[j] * b2[0];
             kvec[1] = u[i] * b1[1] + u[j] * b2[1];
             kvec[2] = u[i] * b1[2] + u[j] * b2[2];
-            lattice_kvectors_[i * q_ + j] = kvec;
+            lattice_kvectors_[i * k_parameter_ + j] = kvec;
           }
         }
         break;
@@ -209,14 +216,14 @@ void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
         const array<double, 3> b1 = primitive_kvectors_[0];
         const array<double, 3> b2 = primitive_kvectors_[1];
         const array<double, 3> b3 = primitive_kvectors_[2];
-        for (int i = 0; i != q_; ++i) {
-          for (int j = 0; j != q_; ++j) {
-            for (int k = 0; k != q_; ++k) {
+        for (int i = 0; i != k_parameter_; ++i) {
+          for (int j = 0; j != k_parameter_; ++j) {
+            for (int k = 0; k != k_parameter_; ++k) {
               array<double, 3> kvec;
               kvec[0] = u[i] * b1[0] + u[j] * b2[0] + u[k] * b3[0];
               kvec[1] = u[i] * b1[1] + u[j] * b2[1] + u[k] * b3[1];
               kvec[2] = u[i] * b1[2] + u[j] * b2[2] + u[k] * b3[2];
-              lattice_kvectors_[i * q_ * q_ + j * q_ + k] = kvec;
+              lattice_kvectors_[i * k_parameter_ * k_parameter_ + j * k_parameter_ + k] = kvec;
             }
           }
         }
