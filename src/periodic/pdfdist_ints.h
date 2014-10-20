@@ -27,51 +27,36 @@
 #define __SRC_PERIODIC_PDFDIST_INTS_H
 
 #include <src/df/df.h>
+#include <src/integral/os/overlapbatch.h>
 
 namespace bagel {
 
-/*periodic version of DFDist_ints*/
 class PDFDist_ints : public DFDist {
   protected:
-    void compute_3index(const std::vector<std::shared_ptr<const Shell>>& ashell,   /*aux   */
-                        const std::vector<std::shared_ptr<const Shell>>& b0shell,  /*cell 0*/
-                        const std::vector<std::shared_ptr<const Shell>>& bgshell); /*cell g*/
+    /// lattice vectors in direct space
+    std::vector<std::array<double, 3>> lattice_vectors_;
+    /// 3-index integrals (r sL'|iL) for each L' (sum over all lattice vectors L)
+    void pcompute_3index(const std::vector<std::shared_ptr<const Shell>>& ashell,   /*aux   */
+                         const std::vector<std::shared_ptr<const Shell>>& b0shell,  /*cell 0*/
+                         const std::vector<std::shared_ptr<const Shell>>& bgshell); /*cell g*/
+
+    /// 2-index integrals (i|j_L)^{-1} (sum over L)
+    void pcompute_2index(const std::vector<std::shared_ptr<const Shell>>& ashell, const double throverlap, const bool compute_inverse);
+
+    /// 1-index integrals (i|.)
+    VectorB data1_;
+    void compute_aux_charge(const std::vector<std::shared_ptr<const Shell>>& ashell);
+    /// P_{ij} = <i|.><.|j>
+    std::shared_ptr<const Matrix> projector_;
 
   public:
-    PDFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms_c0,
+    PDFDist_ints(std::vector<std::array<double, 3>> lattice_vectors,
+                 const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms_c0,
                  std::vector<std::shared_ptr<const Atom>>& atoms_cg, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
-                 const double thr, const bool inverse, const std::shared_ptr<Matrix> data2 = nullptr)
-    : DFDist(nbas, naux) {
+                 const double thr, const bool inverse, const std::shared_ptr<Matrix> data2 = nullptr);
 
-      // 3index integrals made in DFBlock.
-      std::vector<std::shared_ptr<const Shell>> ashell, b0shell, bgshell;
-      for (auto& i : aux_atoms)     ashell.insert(ashell.end(),  i->shells().begin(), i->shells().end());
-      for (auto& i : atoms_c0)     b0shell.insert(b0shell.end(), i->shells().begin(), i->shells().end());
-      for (auto& i : atoms_cg)     bgshell.insert(bgshell.end(), i->shells().begin(), i->shells().end());
-
-      // distribute auxiliary shells to each nodes
-      int astart;
-      std::vector<std::shared_ptr<const Shell>> myashell;
-      std::tie(astart, myashell) = get_ashell(ashell);
-
-      std::shared_ptr<const StaticDist> adist_shell = make_table(astart);
-      std::shared_ptr<const StaticDist> adist_averaged = std::make_shared<const StaticDist>(naux_, mpi__->size());
-
-      // make empty dfblocks
-      const size_t asize  = std::accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
-      const size_t b0size = std::accumulate(b0shell.begin(), b0shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
-      const size_t bgsize = std::accumulate(bgshell.begin(), bgshell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
-      block_.push_back(std::make_shared<DFBlock>(adist_shell, adist_averaged, asize, b0size, bgsize, astart, 0, 0));
-
-      // 3-index integrals
-      compute_3index(myashell, b0shell, bgshell);
-
-      // 2-index integrals
-      if (data2)
-        data2_ = data2;
-      else
-        compute_2index(ashell, thr, inverse);
-    }
+    std::vector<std::array<double, 3>> lattice_vectors() { return lattice_vectors_; }
+    int ncell() { return lattice_vectors_.size(); }
 };
 
 }

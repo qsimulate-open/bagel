@@ -32,35 +32,59 @@
 
 namespace bagel {
 
-class PDFIntTask {
+class PDFIntTask_2index {
   protected:
-    const std::array<std::shared_ptr<const Shell>,4> shell_;
-    const std::array<int,3> offset_; // at most 3 elements
-    std::shared_ptr<DFBlock> dfblocks_;
-
-    std::shared_ptr<ERIBatch> compute_batch(const std::array<std::shared_ptr<const Shell>,4>& input) const {
-      auto eribatch = std::make_shared<ERIBatch>(input, 2.0);
-      eribatch->compute();
-      return eribatch;
-    }
+    std::array<std::shared_ptr<const Shell>,4> shell_;
+    std::array<int,2> offset_;
+    DFDist* df_;
 
   public:
-    PDFIntTask(std::array<std::shared_ptr<const Shell>,4>&& shells, std::array<int,3>&& offset, std::shared_ptr<DFBlock>& df)
-     : shell_(shells), offset_(offset), dfblocks_(df) { };
+    // (i.|jL.) sum over L
+    PDFIntTask_2index(std::array<std::shared_ptr<const Shell>,4>&& sh, std::array<int,2>&& offset, DFDist* df)
+     : shell_(sh), offset_(offset), df_(df) { }
 
     void compute() {
-      std::shared_ptr<ERIBatch> eribatch = compute_batch(shell_);
 
-      /* b1size = nbasis in cell 0 ** b2size = nbasis in cell g */
-      assert(dfblocks_->b1size() == dfblocks_->b2size()); // problem here. Need to sum up the results.
-      const size_t nbin = dfblocks_->b1size();
-      const size_t naux = dfblocks_->asize();
+      auto eribatch = std::make_shared<ERIBatch>(shell_, 2.0);
       const double* eridata = eribatch->data();
-      for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0)
-        for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1, eridata += shell_[1]->nbasis())
-          std::copy_n(eridata, shell_[1]->nbasis(), dfblocks_->data() + offset_[2] + naux * (j1 + nbin * j0));
-    }
 
+      const size_t naux = df_->naux();
+
+      assert(offset_.size() == 3);
+      double* const data = df_->data2_->data();
+      for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0)
+        for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++eridata)
+          data[j0+j1*naux] += *eridata;
+    }
+};
+
+
+class PDFIntTask_3index {
+  protected:
+    const std::array<std::shared_ptr<const Shell>,4> shell_;
+    const std::array<int,3> offset_;
+    std::shared_ptr<DFBlock> dfblock_;
+
+  public:
+    // (r sL'|iL .) sum over L
+    PDFIntTask_3index(std::array<std::shared_ptr<const Shell>,4>&& shells, std::array<int,3>&& offset, std::shared_ptr<DFBlock>& df)
+     : shell_(shells), offset_(offset), dfblock_(df) { };
+
+    void compute() {
+
+      auto eribatch = std::make_shared<ERIBatch>(shell_, 2.0);
+
+      assert(dfblock_->b1size() == dfblock_->b2size());
+      const size_t nbin = dfblock_->b1size();
+      const size_t naux = dfblock_->asize();
+      const double* eridata = eribatch->data();
+
+      double* const data = dfblock_->data();
+      for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0)
+        for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1)
+          for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++eridata)
+            data[j2 + naux * (j1 + nbin * j0)] += *eridata;
+    }
 };
 
 

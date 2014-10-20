@@ -36,6 +36,7 @@ class DFFullDist;
 
 class DFDist : public ParallelDF {
   friend class DFIntTask_OLD<DFDist>;
+  friend class PDFIntTask_2index;
   protected:
     std::pair<const double*, std::shared_ptr<RysInt>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
