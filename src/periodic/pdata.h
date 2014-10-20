@@ -49,7 +49,7 @@ class PData {
 
   public:
     PData() { }
-    PData(const int bsize, const int nblock);
+    PData(const int bsize, const int nblock, const bool serial = false);
     PData(const PData&);
 
     ~PData() { }

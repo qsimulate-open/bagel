@@ -31,11 +31,11 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(PData)
 
-PData::PData(const int bsize, const int nblock) : blocksize_(bsize), nblock_(nblock) {
+PData::PData(const int bsize, const int nblock, const bool serial) : blocksize_(bsize), nblock_(nblock) {
 
   pdata_.resize(nblock);
   for (int i = 0; i != nblock; ++i) {
-    auto block = make_shared<ZMatrix>(bsize, bsize);
+    auto block = make_shared<ZMatrix>(bsize, bsize, serial);
     block->zero();
     pdata_[i] = block;
   }
