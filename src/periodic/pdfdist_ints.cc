@@ -41,9 +41,6 @@ PDFDist_ints::PDFDist_ints(vector<array<double, 3>> L,
   for (auto& i : atoms_c0)     b0shell.insert(b0shell.end(), i->shells().begin(), i->shells().end());
   for (auto& i : atoms_cg)     bgshell.insert(bgshell.end(), i->shells().begin(), i->shells().end());
 
-  data1_(ashell.size());
-
-  // distribute auxiliary shells to each nodes
   int astart;
   vector<shared_ptr<const Shell>> myashell;
   tie(astart, myashell) = get_ashell(ashell);
@@ -51,11 +48,18 @@ PDFDist_ints::PDFDist_ints(vector<array<double, 3>> L,
   shared_ptr<const StaticDist> adist_shell = make_table(astart);
   shared_ptr<const StaticDist> adist_averaged = make_shared<const StaticDist>(naux_, mpi__->size());
 
-  // make an empty dfblock_
+  // make an empty dfblock for (rs|i)
   const size_t asize  = accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); });
   const size_t b0size = accumulate(b0shell.begin(), b0shell.end(), 0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); });
   const size_t bgsize = accumulate(bgshell.begin(), bgshell.end(), 0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); });
   block_.push_back(make_shared<DFBlock>(adist_shell, adist_averaged, asize, b0size, bgsize, astart, 0, 0));
+
+  // charged part of coeff
+  auto coeffC_ = make_shared<btas::Tensor3<double>>(asize, b0size, bgsize);
+  //TODO: Implement this to get eta
+
+  // projection matrix
+  compute_aux_charge(ashell);
 
   // 3-index integrals (r sL'|iL) for each L' (sum over all lattice vectors L)
   pcompute_3index(myashell, b0shell, bgshell);
@@ -102,26 +106,26 @@ void PDFDist_ints::pcompute_3index(const vector<shared_ptr<const Shell>>& ashell
 
 
 void PDFDist_ints::compute_aux_charge(const vector<shared_ptr<const Shell>>& ashell) {
-  auto i1 = make_shared<const Shell>(ashell.front()->spherical());
-  double* tmp = data1_.data();
-  const int naux = data1_.size();
+  TaskQueue<PDFIntTask_aux> tasks(ashell.size());
+  data1_ = make_shared<VectorB>(naux_);
 
   // <a|.>
+  auto i1 = make_shared<const Shell>(ashell.front()->spherical());
   int j0 = 0;
   for (auto& i0 : ashell) {
-    OverlapBatch overlap(array<shared_ptr<const Shell>, 2>{{i1, i0}});
-    overlap.compute();
-    copy_n(overlap.data(), i0->nbasis(), &tmp[j0]);
+    tasks.emplace_back(array<shared_ptr<const Shell>,2>{{i1, i0}}, j0, this);
     j0 += i0->nbasis();
   }
 
-  const double q = data1_.rms() * naux;
-  for (auto& idata : data1_) idata /= q;
+  tasks.compute();
 
-  Matrix p(naux, naux);
-  for (int i = 0; i != naux; ++i)
-    for (int j = 0; i != naux; ++j)
-      p(i, j) = data1_(i) * data1_(j);
+  const double q = data1_->rms() * naux_;
+  for (auto& idata : *data1_) idata /= q;
+
+  Matrix p(naux_, naux_);
+  for (int i = 0; i != naux_; ++i)
+    for (int j = 0; i != naux_; ++j)
+      p(i, j) = (*data1_)(i) * (*data1_)(j);
 
   // P_{ij} = <i|.><.|j>
   projector_ = make_shared<const Matrix>(p);
@@ -159,10 +163,20 @@ void PDFDist_ints::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell
 
   time.tick_print("2-index integrals");
 
+  if (!projector_)
+    throw logic_error("failed attempt to project data2_ before computing the projection matrix");
+  *data2_ = *projector_ * *data2_ * *projector_;
+
+  // P_C = 1 - P
+  auto projectorC = make_shared<Matrix>(*projector_);
+  projectorC->unit();
+  *projectorC = *projectorC - *projector_;
+
   if (compute_inverse) {
-    //TODO: Need inverse ^-1 here, first data2_ has to be projected and made a positive definite matrix
-    //data2_->inverse_half(throverlap); // TODO: need to inverse ^-1 here
-    // will use data2_ within node
+    // make data2_ positive definite
+    *data2_ += *projectorC;
+    data2_->inverse();
+    // use data2_ within node
     data2_->localize();
     time.tick_print("computing inverse");
   }

@@ -32,6 +32,7 @@
 namespace bagel {
 
 class PDFDist_ints : public DFDist {
+  friend class PDFIntTask_aux;
   protected:
     /// lattice vectors in direct space
     std::vector<std::array<double, 3>> lattice_vectors_;
@@ -44,10 +45,13 @@ class PDFDist_ints : public DFDist {
     void pcompute_2index(const std::vector<std::shared_ptr<const Shell>>& ashell, const double throverlap, const bool compute_inverse);
 
     /// 1-index integrals (i|.)
-    VectorB data1_;
+    std::shared_ptr<VectorB> data1_;
     void compute_aux_charge(const std::vector<std::shared_ptr<const Shell>>& ashell);
     /// P_{ij} = <i|.><.|j>
     std::shared_ptr<const Matrix> projector_;
+
+    /// charged part of coeff
+    std::shared_ptr<btas::Tensor3<double>> coeffC_;
 
   public:
     PDFDist_ints(std::vector<std::array<double, 3>> lattice_vectors,
@@ -57,6 +61,8 @@ class PDFDist_ints : public DFDist {
 
     std::vector<std::array<double, 3>> lattice_vectors() { return lattice_vectors_; }
     int ncell() { return lattice_vectors_.size(); }
+
+    std::shared_ptr<const VectorB> data1() const { return data1_; }
 };
 
 }

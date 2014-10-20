@@ -29,8 +29,33 @@
 #include <src/df/dfblock.h>
 #include <src/molecule/shell.h>
 #include <src/integral/rys/eribatch.h>
+#include <src/integral/os/overlapbatch.h>
+#include <src/periodic/pdfdist_ints.h>
 
 namespace bagel {
+
+class PDFIntTask_aux {
+  protected:
+    std::array<std::shared_ptr<const Shell>,2> shell_;
+    int offset_;
+    PDFDist_ints* pdf_;
+
+  public:
+    // <i|.>
+    PDFIntTask_aux(std::array<std::shared_ptr<const Shell>,2>&& sh, int offset, PDFDist_ints* pdf)
+     : shell_(sh), offset_(offset), pdf_(pdf) { }
+
+    void compute() {
+
+      auto overlap = std::make_shared<OverlapBatch>(shell_);
+      const double* odata = overlap->data();
+      double* const data = pdf_->data1_->data();
+
+      for (int j0 = offset_; j0 != offset_ + shell_[1]->nbasis(); ++j0)
+        data[j0] = *odata;
+    }
+};
+
 
 class PDFIntTask_2index {
   protected:
@@ -50,7 +75,7 @@ class PDFIntTask_2index {
 
       const size_t naux = df_->naux();
 
-      assert(offset_.size() == 3);
+      assert(offset_.size() == 2);
       double* const data = df_->data2_->data();
       for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0)
         for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++eridata)
@@ -75,6 +100,7 @@ class PDFIntTask_3index {
       auto eribatch = std::make_shared<ERIBatch>(shell_, 2.0);
 
       assert(dfblock_->b1size() == dfblock_->b2size());
+      assert(offset_.size() == 3);
       const size_t nbin = dfblock_->b1size();
       const size_t naux = dfblock_->asize();
       const double* eridata = eribatch->data();
@@ -82,8 +108,8 @@ class PDFIntTask_3index {
       double* const data = dfblock_->data();
       for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0)
         for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1)
-          for (int j2 = offset_[2]; j2 != offset_[2] + shell_[1]->nbasis(); ++j2, ++eridata)
-            data[j2 + naux * (j1 + nbin * j0)] += *eridata;
+          for (int a = offset_[2]; a != offset_[2] + shell_[1]->nbasis(); ++a, ++eridata)
+            data[a + naux * (j1 + nbin * j0)] += *eridata;
     }
 };
 
