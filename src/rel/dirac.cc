@@ -189,10 +189,12 @@ shared_ptr<const Reference> Dirac::conv_to_ref() const {
 shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZMatrix> s12, const shared_ptr<const DistZMatrix> hcore) const {
   const int n = geom_->nbasis();
   VectorB eig(hcore->ndim());
+  string reftype;
 
   shared_ptr<const DistZMatrix> coeff;
   if (!ref_) {
     // No reference; starting from hcore
+    reftype = "1-electron Fock matrix";
     DistZMatrix interm = *s12 % *hcore * *s12;
     interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
@@ -202,12 +204,15 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
 
     if (relref->rel()) {
       // Relativistic (4-component) reference
+      reftype = "Dirac--Hartree--Fock";
       shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
       DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
       interm.diagonalize(eig);
       coeff = make_shared<const DistZMatrix>(*s12 * interm);
     } else {
       // Non-relativistic, GIAO-based reference
+      const string typeinfo = geom_->london() ? "GIAO" : "(common origin)";
+      reftype = typeinfo + " restricted Hartree--Fock";
       assert(geom_->magnetism());
       const int nocc = ref_->nocc();
       shared_ptr<ZMatrix> fock;
@@ -227,12 +232,14 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     shared_ptr<ZMatrix> fock;
     if (nocc*2 == nele_) {
       // RHF
+      reftype = "Hartree--Fock";
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
       ocoeff->add_real_block(1.0, 0,    0, n, nocc, ref_->coeff()->slice(0,nocc));
       ocoeff->add_real_block(1.0, n, nocc, n, nocc, ref_->coeff()->slice(0,nocc));
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     } else if (ref_->noccB() != 0) {
       // UHF & ROHF
+      reftype = "open-shell Hartree--Fock";
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
       assert(nocca+noccb == nele_);
@@ -242,6 +249,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     } else {
       // CASSCF
+      reftype = "CASSCF";
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nele_);
       ocoeff->add_real_block(1.0, 0,     0, n, nele_, ref_->coeff()->slice(0,nele_));
       ocoeff->add_real_block(1.0, n, nele_, n, nele_, ref_->coeff()->slice(0,nele_));
@@ -251,8 +259,10 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else {
+    reftype = "unknown";
     assert(ref_->coeff()->ndim() == n*4);
     throw logic_error("Invalid Reference provided for Dirac.  (Initial guess not implemented.)");
   }
+  cout << "  Generated initial guess based on " + reftype << (ref_ ? " reference." : ".") << endl << endl;
   return coeff;
 }
