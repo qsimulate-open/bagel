@@ -38,21 +38,52 @@ class PDFIntTask_aux {
   protected:
     std::array<std::shared_ptr<const Shell>,2> shell_;
     int offset_;
-    PDFDist_ints* pdf_;
+    std::shared_ptr<VectorB> pdf_;
 
   public:
     // <i|.>
-    PDFIntTask_aux(std::array<std::shared_ptr<const Shell>,2>&& sh, int offset, PDFDist_ints* pdf)
+    PDFIntTask_aux(std::array<std::shared_ptr<const Shell>,2>&& sh, int offset, std::shared_ptr<VectorB> pdf)
      : shell_(sh), offset_(offset), pdf_(pdf) { }
 
     void compute() {
 
       auto overlap = std::make_shared<OverlapBatch>(shell_);
       const double* odata = overlap->data();
-      double* const data = pdf_->data1_->data();
+      double* const data = pdf_->data();
 
-      for (int j0 = offset_; j0 != offset_ + shell_[1]->nbasis(); ++j0)
+      for (int j0 = offset_; j0 != offset_ + shell_[1]->nbasis(); ++j0, ++odata)
         data[j0] = *odata;
+    }
+};
+
+
+class PDFIntTask_coeff {
+  protected:
+    std::array<std::shared_ptr<const Shell>,2> shell_;
+    std::array<int,2> offset_;
+    PDFDist_ints* pdf_;
+
+  public:
+    // <r0|sL> <i|.> / q
+    PDFIntTask_coeff(std::array<std::shared_ptr<const Shell>,2>&& sh, std::array<int,2>&& offset, PDFDist_ints* pdf)
+     : shell_(sh), offset_(offset), pdf_(pdf) { }
+
+    void compute() {
+
+      auto overlap = std::make_shared<OverlapBatch>(shell_);
+      const double* odata = overlap->data();
+
+      const size_t naux = pdf_->naux();
+      const size_t nbas = pdf_->nbasis0();
+
+      double* const coeff = pdf_->coeffC_->data();
+      for (int j0 = offset_[0]; j0 != offset_[0] + shell_[1]->nbasis(); ++j0) {
+        for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++odata) {
+          const double* data1 = pdf_->data1_->data();
+          for (int a = 0; a != naux; ++a, ++data1)
+            coeff[a + naux * (j1 + nbas * j0)] = *odata / *data1;
+        }
+      }
     }
 };
 

@@ -54,12 +54,11 @@ PDFDist_ints::PDFDist_ints(vector<array<double, 3>> L,
   const size_t bgsize = accumulate(bgshell.begin(), bgshell.end(), 0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); });
   block_.push_back(make_shared<DFBlock>(adist_shell, adist_averaged, asize, b0size, bgsize, astart, 0, 0));
 
-  // charged part of coeff
-  auto coeffC_ = make_shared<btas::Tensor3<double>>(asize, b0size, bgsize);
-  //TODO: Implement this to get eta
-
   // projection matrix
   compute_aux_charge(ashell);
+
+  // charged part of coeff
+  compute_charged_coeff(b0shell, bgshell);
 
   // 3-index integrals (r sL'|iL) for each L' (sum over all lattice vectors L)
   pcompute_3index(myashell, b0shell, bgshell);
@@ -70,6 +69,31 @@ PDFDist_ints::PDFDist_ints(vector<array<double, 3>> L,
   else
     pcompute_2index(ashell, thr, inverse);
 
+}
+
+
+void PDFDist_ints::compute_charged_coeff(const vector<shared_ptr<const Shell>>& b0shell,
+                                         const vector<shared_ptr<const Shell>>& bgshell) {
+  Timer time;
+  auto coeffC_ = make_shared<btas::Tensor3<double>>(naux_, nindex1_, nindex2_);
+
+  if (!data1_)
+    throw logic_error("auxiliary charge has to be computed first");
+
+  TaskQueue<PDFIntTask_coeff> tasks(b0shell.size() * bgshell.size());
+
+  int j1 = 0;
+  for (auto& i1 : b0shell) {
+    int j0 = 0;
+    for (auto& i0 : bgshell) {
+      tasks.emplace_back((array<shared_ptr<const Shell>, 2>{{i0, i1}}), (array<int, 2>{{j1, j0}}), this);
+      j0 += i0->nbasis();
+    }
+    j1 += i1->nbasis();
+  }
+
+  tasks.compute();
+  time.tick_print("charged part of coefficient");
 }
 
 
@@ -113,7 +137,7 @@ void PDFDist_ints::compute_aux_charge(const vector<shared_ptr<const Shell>>& ash
   auto i1 = make_shared<const Shell>(ashell.front()->spherical());
   int j0 = 0;
   for (auto& i0 : ashell) {
-    tasks.emplace_back(array<shared_ptr<const Shell>,2>{{i1, i0}}, j0, this);
+    tasks.emplace_back(array<shared_ptr<const Shell>,2>{{i1, i0}}, j0, data1_);
     j0 += i0->nbasis();
   }
 

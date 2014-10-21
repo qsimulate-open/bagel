@@ -33,6 +33,7 @@ namespace bagel {
 
 class PDFDist_ints : public DFDist {
   friend class PDFIntTask_aux;
+  friend class PDFIntTask_coeff;
   protected:
     /// lattice vectors in direct space
     std::vector<std::array<double, 3>> lattice_vectors_;
@@ -52,6 +53,8 @@ class PDFDist_ints : public DFDist {
 
     /// charged part of coeff
     std::shared_ptr<btas::Tensor3<double>> coeffC_;
+    void compute_charged_coeff(const std::vector<std::shared_ptr<const Shell>>& b0shell,
+                               const std::vector<std::shared_ptr<const Shell>>& bgshell);
 
   public:
     PDFDist_ints(std::vector<std::array<double, 3>> lattice_vectors,
@@ -63,6 +66,7 @@ class PDFDist_ints : public DFDist {
     int ncell() { return lattice_vectors_.size(); }
 
     std::shared_ptr<const VectorB> data1() const { return data1_; }
+    std::shared_ptr<btas::Tensor3<double>> coeffC() const { return coeffC_; }
 };
 
 }
