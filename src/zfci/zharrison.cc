@@ -35,8 +35,6 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
-  print_header();
-
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
   assert(rr);
 
@@ -53,8 +51,12 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   for (int i = 0; i != states_.size(); ++i)
     nstate_ += states_[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
 
-  gaunt_ = rr->gaunt();
-  breit_ = rr->breit();
+  gaunt_ = idata_->get<bool>("gaunt",rr->gaunt());
+  breit_ = idata_->get<bool>("breit",rr->breit());
+  if (gaunt_ != rr->gaunt())
+    geom_ = geom_->relativistic(gaunt_);
+
+  print_header();
 
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
@@ -86,7 +88,9 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
 void ZHarrison::print_header() const {
   cout << "  ----------------------------" << endl;
   cout << "  Relativistic FCI calculation" << endl;
-  cout << "  ----------------------------" << endl << endl;
+  cout << "  ----------------------------" << endl;
+  cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
+  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl << endl;
 }
 
 

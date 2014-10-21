@@ -66,8 +66,11 @@ void ZCASSCF::init() {
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_);
 
-  if (!geom_->dfs())
-    geom_ = geom_->relativistic(relref->gaunt());
+  gaunt_ = idata_->get<bool>("gaunt",relref->gaunt());
+  breit_ = idata_->get<bool>("breit",relref->breit());
+
+  if (!geom_->dfs() || (gaunt_ != relref->gaunt()))
+    geom_ = geom_->relativistic(gaunt_);
 
   // coefficient parameters
         bool mvo = idata_->get<bool>("generate_mvo", false);
@@ -164,8 +167,6 @@ void ZCASSCF::init() {
   cout << "    * nact     : " << setw(6) << nact_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
 
-  gaunt_ = relref->gaunt();
-  breit_ = relref->breit();
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
 
