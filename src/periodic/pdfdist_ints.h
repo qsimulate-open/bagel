@@ -45,7 +45,7 @@ class PDFDist_ints : public DFDist {
     /// 2-index integrals (i|j_L)^{-1} (sum over L)
     void pcompute_2index(const std::vector<std::shared_ptr<const Shell>>& ashell, const double throverlap, const bool compute_inverse);
 
-    /// 1-index integrals (i|.)
+    /// normalised 1-index integrals (i|.)
     std::shared_ptr<VectorB> data1_;
     void compute_aux_charge(const std::vector<std::shared_ptr<const Shell>>& ashell);
     /// P_{ij} = <i|.><.|j>

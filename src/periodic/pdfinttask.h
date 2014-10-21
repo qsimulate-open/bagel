@@ -75,13 +75,14 @@ class PDFIntTask_coeff {
 
       const size_t naux = pdf_->naux();
       const size_t nbas = pdf_->nbasis0();
+      const double q = pdf_->data1_->rms() * naux;
 
       double* const coeff = pdf_->coeffC_->data();
       for (int j0 = offset_[0]; j0 != offset_[0] + shell_[1]->nbasis(); ++j0) {
         for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++odata) {
           const double* data1 = pdf_->data1_->data();
           for (int a = 0; a != naux; ++a, ++data1)
-            coeff[a + naux * (j1 + nbas * j0)] = *odata / *data1;
+            coeff[a + naux * (j1 + nbas * j0)] = *odata * *data1 / q;
         }
       }
     }
