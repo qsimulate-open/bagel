@@ -49,7 +49,7 @@ class GammaBranch {
   public:
     GammaBranch() : active_(false) {}
 
-    void insert(std::shared_ptr<const VecType> bra, const int bra_tag, const std::list<GammaSQ>& gsq) {
+    void insert(std::shared_ptr<const VecType> bra, const size_t bra_tag, const std::list<GammaSQ>& gsq) {
       if (gsq.empty()) {
         bras_.emplace(bra_tag, bra);
       } else {
@@ -62,7 +62,7 @@ class GammaBranch {
       }
     }
 
-    std::shared_ptr<const Matrix> search(const int tag, const std::list<GammaSQ>& gsq) const {
+    std::shared_ptr<const Matrix> search(const size_t tag, const std::list<GammaSQ>& gsq) const {
       if (gsq.empty()) {
         assert(gammas_.find(tag)!=gammas_.end()); return gammas_.find(tag)->second;
       } else {
@@ -72,7 +72,7 @@ class GammaBranch {
       }
     }
 
-    std::shared_ptr<Matrix> search(const int tag, const std::list<GammaSQ>& gsq) {
+    std::shared_ptr<Matrix> search(const size_t tag, const std::list<GammaSQ>& gsq) {
       if (gsq.empty()) {
         assert(gammas_.find(tag)!=gammas_.end()); return gammas_.find(tag)->second;
       } else {
@@ -82,7 +82,7 @@ class GammaBranch {
       }
     }
 
-    bool exist(const int tag, const std::list<GammaSQ>& gsq) const {
+    bool exist(const size_t tag, const std::list<GammaSQ>& gsq) const {
       if (gsq.empty())
         return gammas_.find(tag) != gammas_.end();
       else {
@@ -270,8 +270,6 @@ class GammaForest {
       else
         return itree->second->exist(bra_tag, ops);
     }
-
-    int norb() const { return forests_[0].begin()->second->norb(); }
 
     template<class Func>
     void for_each_branch(Func func) {
