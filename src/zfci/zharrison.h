@@ -172,7 +172,7 @@ class ZHarrison : public Method {
 
     void update(std::shared_ptr<const ZMatrix> coeff, const bool restricted = false) {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, restricted, tsymm_);
+      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, charge_, gaunt_, breit_, restricted, tsymm_);
 
       // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;

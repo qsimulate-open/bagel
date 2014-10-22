@@ -38,8 +38,8 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co, const bool gaunt, const bool breit, const bool tsymm)
- : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit), tsymm_(tsymm) {
+RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co, const int charge, const bool gaunt, const bool breit, const bool tsymm)
+ : charge_(charge), geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit), tsymm_(tsymm) {
   // density fitting is assumed
   assert(geom_->df());
 }
@@ -221,12 +221,12 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
     *o = *scratch;
   };
 
-  const int nocc    = nact + nclosed;
+  const int nocc = nact + nclosed;
 
   shared_ptr<ZMatrix> focktmp;
   shared_ptr<ZMatrix> ctmp;
   {
-    const int norb = geom_->nele();
+    const int norb = geom_->nele() - charge_;
     assert(norb <= coeff_->mdim());
     focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
   }
