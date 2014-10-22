@@ -203,7 +203,9 @@ shared_ptr<DMRG_Block1> RASD::compute_first_block(vector<shared_ptr<PTree>> inpu
         shared_ptr<RASDvec> tmpvec = civecs->spin_lower();
         for (auto& vec : tmpvec->dvec()) {
           vec->normalize();
+#ifdef HAVE_MPI_H
           vec->synchronize();
+#endif
         }
 
         organize_data(tmpvec, hamiltonian_2e, spinmatrix);
@@ -233,7 +235,7 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
 
   shared_ptr<const DimerJop> jop;
 
-  Timer growtime;
+  Timer growtime(2);
   for (auto& inp : inputs) {
     // finish preparing the input
     const int charge = inp->get<int>("charge");
@@ -278,16 +280,20 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
         overlap(i,j) = overlap(j,i) = cc.second[i]->dot_product(*cc.second[j]);
       overlap(i,i) = cc.second[i]->dot_product(*cc.second[i]);
     }
+#ifdef HAVE_MPI_H
     overlap.synchronize();
-    Matrix ortho = *overlap.tildex(1e-10);
-    ortho.synchronize();
+#endif
+    Matrix ortho = *overlap.tildex(1e-11);
 
     vector<shared_ptr<ProductRASCivec>> tmpvec;
+
     for (int i = 0; i < ortho.mdim(); ++i) {
       auto tmp = cc.second.front()->clone();
       for (int j = 0; j < ortho.ndim(); ++j)
         tmp->ax_plus_y(ortho(j,i), *cc.second[j]);
+#ifdef HAVE_MPI_H
       tmp->synchronize();
+#endif
       tmpvec.push_back(tmp);
     }
 
@@ -305,11 +311,12 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
   shared_ptr<Matrix> coeff = ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact())->merge(left->coeff());
   auto out = make_shared<DMRG_Block1>(move(forest), hmap, spinmap, coeff);
   growtime.tick_print("dmrg block");
+
   return out;
 }
 
 shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block1> system, shared_ptr<DMRG_Block1> environment, const int site) {
-  Timer decimatetime;
+  Timer decimatetime(2);
   // assume the input is already fully formed, this may be revisited later
   input->put("nclosed", ref->nclosed());
   read_restricted(input, site);
@@ -320,9 +327,11 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
       auto prod_ras = make_shared<ProductRASCI>(input, ref, environment);
       prod_ras->compute();
       decimatetime.tick_print("ProductRASCI calculation");
+
       // diagonalize RDM to get RASCivecs
       map<BlockKey, shared_ptr<const RASDvec>> civecs = diagonalize_site_RDM(prod_ras->civectors(), perturb_);
       decimatetime.tick_print("diagonalize site RDM");
+
       map<BlockKey, shared_ptr<const Matrix>> hmap;
       map<BlockKey, shared_ptr<const Matrix>> spinmap;
       for (auto& ici : civecs) {
@@ -336,10 +345,13 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
 
       GammaForestASD<RASDvec> forest(civecs);
       decimatetime.tick_print("construct GammaForestASD");
+
       forest.compute();
       decimatetime.tick_print("renormalize");
+
       auto out = make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
       decimatetime.tick_print("dmrg block");
+
       return out;
     }
     else {
@@ -351,6 +363,7 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
 
       for (int i = 0; i < nstate_; ++i)
         sweep_energies_[i].push_back(prod_ras->energy(i));
+      decimatetime.tick_print("add results to vector");
 
       map<BlockKey, vector<shared_ptr<ProductRASCivec>>> civecs = diagonalize_site_and_block_RDM(prod_ras->civectors(), perturb_);
       decimatetime.tick_print("diagonalize system RDM");
@@ -380,6 +393,7 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
 
       GammaForestProdASD forest(civecs);
       decimatetime.tick_print("construct GammaForestProdASD");
+
       forest.compute();
       decimatetime.tick_print("renormalize blocks");
 
@@ -463,6 +477,11 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
         copy_n(get<1>(ib)->data(), get<1>(ib)->size(), tmp_mat->element_ptr(0, current));
         current += get<1>(ib)->mdim();
       }
+      for (int j = 0; j < bsize; ++j) {
+        const double norm = blas::dot_product(tmp_mat->element_ptr(0,j), tmp_mat->ndim(), tmp_mat->element_ptr(0,j));
+        if (norm > 1.0e-30)
+          blas::scale_n(1.0/sqrt(norm), tmp_mat->element_ptr(0,j), tmp_mat->ndim());
+      }
 #ifdef HAVE_MPI_H
       tmp_mat->synchronize();
 #endif
@@ -477,7 +496,9 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
 
     // build overlap matrix
     Matrix overlap(*sectorbasis % *sectorbasis);
+#ifdef HAVE_MPI_H
     overlap.synchronize();
+#endif
     diagtime.tick_print("build overlap");
 
     // build rdm
@@ -486,14 +507,18 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
       Matrix tmp(*get<1>(op) % *sectorbasis);
       dgemm_("T", "N", rdm.ndim(), rdm.mdim(), tmp.ndim(), get<0>(op), tmp.data(), tmp.ndim(), tmp.data(), tmp.ndim(), 1.0, rdm.data(), rdm.ndim());
     }
+#ifdef HAVE_MPI_H
     rdm.synchronize();
+#endif
     diagtime.tick_print("build rdm");
 
     Matrix orthonormalize(*overlap.tildex(1.0e-10));
 
     if (orthonormalize.mdim() > 0) {
       auto best_states = make_shared<Matrix>(orthonormalize % rdm * orthonormalize);
+#ifdef HAVE_MPI_H
       best_states->synchronize();
+#endif
       VectorB eigs(best_states->ndim());
       best_states->diagonalize(eigs);
       best_states = make_shared<Matrix>(orthonormalize * *best_states);
@@ -624,6 +649,8 @@ void RASD::apply_perturbation(shared_ptr<const RASBlockVectors> cc, vector<Gamma
 map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_block_RDM(const vector<shared_ptr<ProductRASCivec>>& civecs, const double perturbation) const {
   assert(civecs.size()==nstate_);
 
+  Timer rdmtime(2);
+
   // for convenience since this will come up a lot in this function
   using ProdVec = vector<shared_ptr<ProductRASCivec>>;
 
@@ -661,6 +688,8 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
       }
     }
 
+    rdmtime.tick_print("outer products set up");;
+
     // add in perturbative correction
     if (perturbation >= perturb_thresh_) {
       map<BlockKey, vector<tuple<double, ProdVec>>> tmp_outerproducts = outer_products;
@@ -681,14 +710,24 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
           apply_perturbation(get<1>(i), op.first, {GammaSQ::CreateBeta}, get<0>(i)*perturbation, outer_products);
         }
       }
+
+      rdmtime.tick_print("perturbation applied");;
     }
 
+#if 0
+    // semi-normalize outer product vectors and pull the norm into the weight
+    map<BlockKey, vector<tuple<double, ProdVec>>> tmp_outerproducts = outer_products;
+    for (auto& op : tmp_outerproducts) {
+
+    }
+#endif
     for (auto& basis_sector : outer_products) {
       ProdVec tmpvec;
       for (auto& i : basis_sector.second)
         tmpvec.insert(tmpvec.end(), get<1>(i).begin(), get<1>(i).end());
       cibasis.emplace(basis_sector.first, move(tmpvec));
     }
+    rdmtime.tick_print("basis built");;
   }
 
   // RDM is block diagonal by sector
@@ -719,10 +758,17 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
     rdm.synchronize();
 #endif
 
-    Matrix orthonormalize(*overlap.tildex(1.0e-10));
+    Matrix orthonormalize(*overlap.tildex(1.0e-11));
+#ifdef HAVE_MPI_H
+    orthonormalize.synchronize();
+#endif
+    rdmtime.tick_print("ortho built");
+
     if (orthonormalize.mdim() > 0) {
       auto best_states = make_shared<Matrix>(orthonormalize % rdm * orthonormalize);
+#ifdef HAVE_MPI_H
       best_states->synchronize();
+#endif
       VectorB eigs(best_states->ndim());
       best_states->diagonalize(eigs);
       best_states = make_shared<Matrix>(orthonormalize * *best_states);
@@ -734,6 +780,7 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
       for (int i = 0; i < eigs.size(); ++i)
         singular_values.emplace(eigs(i), make_tuple(isec.first, i));
     }
+    rdmtime.tick_print("rdm block diagonalized");;
   }
 
   map<BlockKey, ProdVec> out;
@@ -805,11 +852,14 @@ void RASD::apply_perturbation(const vector<shared_ptr<ProductRASCivec>>& ccvec, 
 
   const int tnelea = ccvec.front()->nelea() + dele.first;
   const int tneleb = ccvec.front()->neleb() + dele.second;
+
+  const int blocknelea = cckey.nelea - dele.first;
+  const int blockneleb = cckey.neleb - dele.second;
+
   const int norb = rasspace->norb();
 
-  if (tnelea<0 || tneleb<0)
+  if (tnelea<0 || tneleb<0 || blocknelea<0 || blockneleb<0)
     return;
-
 
   for (auto& cc : ccvec) {
     auto out = make_shared<ProductRASCivec>(rasspace, dmrgblock, tnelea, tneleb);
@@ -840,7 +890,7 @@ void RASD::apply_perturbation(const vector<shared_ptr<ProductRASCivec>>& ccvec, 
 #ifdef HAVE_MPI_H
       out->synchronize();
 #endif
-      const BlockKey target_key(cckey.nelea - dele.first, cckey.neleb - dele.second);
+      const BlockKey target_key(blocknelea, blockneleb);
       outer_products[target_key].emplace_back(weight, vector<shared_ptr<ProductRASCivec>>{{out}});
     }
   }
