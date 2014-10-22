@@ -89,7 +89,8 @@ class GammaForestProdASD {
     }
 
     size_t state_tag(const ProductState& b) const {
-      return b.block.nelea + b.block.neleb*nele_ + (b.ci.nelea + b.ci.neleb*nele_ + b.state*nele_*nele_)*nele_*nele_;
+      return static_cast<size_t>(b.block.nelea) + static_cast<size_t>(b.block.neleb)*nele_
+             + (static_cast<size_t>(b.ci.nelea) + static_cast<size_t>(b.ci.neleb)*nele_ + static_cast<size_t>(b.state)*nele_*nele_)*nele_*nele_;
     }
 
     std::tuple</*conj*/bool, /*rev*/bool, std::list<GammaSQ>> try_permutations(const std::list<GammaSQ>& gammalist) const;

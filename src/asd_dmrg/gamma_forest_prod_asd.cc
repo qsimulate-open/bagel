@@ -58,7 +58,7 @@ GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<ProductRA
   }
 
 #ifdef HAVE_MPI_H
-  // make a "lexical" ordering for ProductStates that will be used to distribute based on bra vectors
+  // make a "lexical" ordering for ProductStates that will be used to distribute based on ket vectors
   unordered_map<size_t, size_t> product_lex;
   {
     size_t counter = 0;
@@ -118,7 +118,7 @@ GammaForestProdASD::GammaForestProdASD(map<BlockKey, vector<shared_ptr<ProductRA
               //   and the coupling is between different block states
               if (!(ordered_ciops.size()==coupling.size() && bra_ptr->first.state!=ket_ptr->first.state)) {
 #ifdef HAVE_MPI_H
-                if (product_lex[state_tag(bra_ptr->first)] % mpi__->size() == mpi__->rank()) {
+                if (product_lex[state_tag(ket_ptr->first)] % mpi__->size() == mpi__->rank()) {
 #endif
                   forest_->insert<0>(bra_ptr->second, state_tag(bra_ptr->first), ket_ptr->second, state_tag(ket_ptr->first), ordered_ciops);
 #ifdef HAVE_MPI_H
@@ -158,7 +158,7 @@ tuple<size_t, size_t, size_t> GammaForestProdASD::get_indices(const bitset<3> bi
 
   vector<size_t> indices(size);
   size_t current = ijk_local;
-  for (size_t i = size-1; i >= 0; --i) {
+  for (int i = size-1; i >= 0; --i) {
     const size_t index = current / strides[i];
     indices[i] = index;
     current -= index * strides[i];
@@ -168,7 +168,7 @@ tuple<size_t, size_t, size_t> GammaForestProdASD::get_indices(const bitset<3> bi
   const int norb = lnorb + rnorb;
 
   size_t ijk = 0;
-  for (size_t i = size-1; i >= 0; --i) {
+  for (int i = size-1; i >= 0; --i) {
     size_t ind = bit[i] ? indices[i] : indices[i] + rnorb;
     ijk = ind + ijk*norb;
   }
@@ -179,7 +179,7 @@ tuple<size_t, size_t, size_t> GammaForestProdASD::get_indices(const bitset<3> bi
   if (ci_is_reversed) reverse(ci_indices.begin(), ci_indices.end());
 
   const size_t block_index = accumulate(block_indices.rbegin(), block_indices.rend(), 0ull, [lnorb] (size_t ij, size_t index) { return index + ij*lnorb; });
-  const size_t ci_index = accumulate(ci_indices.rbegin(), ci_indices.rend(), 0, [rnorb] (size_t ij, size_t index) { return index + ij*rnorb; });
+  const size_t ci_index = accumulate(ci_indices.rbegin(), ci_indices.rend(), 0ull, [rnorb] (size_t ij, size_t index) { return index + ij*rnorb; });
 
   return make_tuple(ijk, block_index, ci_index);
 }
@@ -286,30 +286,39 @@ void GammaForestProdASD::compute() {
                     ps_ket.state = ket_k;
                   }
 
-#ifdef HAVE_MPI_H
-                  if (!forest_->exist<0>(state_tag(ps_bra), state_tag(ps_ket), ciops))
-                    continue;
-#endif
-                  shared_ptr<const Matrix> ras_part = forest_->get<0>(state_tag(ps_bra), state_tag(ps_ket), ciops);
-                  const double block_gamma_ss = blockops.empty() ? 1.0 : (*block_part)(bra_k, ket_k, block_index);
+                  assert(block_part ? (bra_k < block_part->extent(0) && ket_k < block_part->extent(1) && block_index < block_part->extent(2)) : true);
 
-                  // fill in part of gamma
-                  double* target = gamma_matrix->element_ptr(0, ijk);
-                  if (ci_conj) {
-                    Matrix tmp(bra_info.nstates, ket_info.nstates);
-                    blas::transpose(ras_part->element_ptr(0, ci_index), ket_info.nstates, bra_info.nstates, tmp.data(), static_cast<double>(phase)*block_gamma_ss);
-                    blas::ax_plus_y_n(1.0, tmp.data(), tmp.size(), target);
+#ifdef HAVE_MPI_H
+                  if (forest_->exist<0>(state_tag(ps_bra), state_tag(ps_ket), ciops)) {
+#endif
+                    shared_ptr<const Matrix> ras_part = forest_->get<0>(state_tag(ps_bra), state_tag(ps_ket), ciops);
+                    const double block_gamma_ss = blockops.empty() ? 1.0 : (*block_part)(bra_k, ket_k, block_index);
+
+                    assert(ci_index < ras_part->mdim());
+                    assert(ras_part->ndim()==gamma_matrix->ndim());
+
+                    // fill in part of gamma
+                    double* target = gamma_matrix->element_ptr(0, ijk);
+                    if (ci_conj) {
+                      Matrix tmp(bra_info.nstates, ket_info.nstates);
+                      blas::transpose(ras_part->element_ptr(0, ci_index), ket_info.nstates, bra_info.nstates, tmp.data(), static_cast<double>(phase)*block_gamma_ss);
+                      blas::ax_plus_y_n(1.0, tmp.data(), tmp.size(), target);
+                    }
+                    else {
+                      blas::ax_plus_y_n(static_cast<double>(phase)*block_gamma_ss, ras_part->element_ptr(0, ci_index), ras_part->ndim(), target);
+                    }
+#ifdef HAVE_MPI_H
                   }
-                  else {
-                    blas::ax_plus_y_n(static_cast<double>(phase)*block_gamma_ss, ras_part->element_ptr(0, ci_index), ras_part->ndim(), target);
-                  }
+#endif
                 }
               }
             }
           }
         }
       }
+#ifdef HAVE_MPI_H
       gamma_matrix->allreduce();
+#endif
       gammas_.emplace(make_tuple(coupling, bra_key, ket_info.key()), gamma_matrix);
       sparselist_.emplace_back(coupling, bra_info, ket_info);
     }
