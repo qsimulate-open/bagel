@@ -34,13 +34,14 @@ ASD_DMRG::ASD_DMRG(shared_ptr<const PTree> input, shared_ptr<const MultiSite> mu
   nsites_ = multisite->nsites();
   nstate_ = input_->get<int>("nstate", 1);
   ntrunc_ = input_->get<int>("ntrunc");
-  thresh_ = input_->get<double>("thresh", 1.0e-8);
-  maxiter_ = input_->get<int>("maxiter", 10);
+  thresh_ = input_->get<double>("thresh", 1.0e-6);
+  maxiter_ = input_->get<int>("maxiter", 50);
 
   perturb_ = input_->get<double>("perturb", 0.001);
   perturb_thresh_ = input_->get<double>("perturb_thresh", 0.0001);
-  perturb_min_ = input_->get<double>("perturb_min", 1.0e-6);
+  perturb_min_ = input_->get<double>("perturb_min", 1.0e-5);
 
+  down_thresh_ = input_->get<double>("down_thresh", 1.0e-8);
   auto down = input_->get_child_optional("down_sweep_truncs");
   down_sweep_ = static_cast<bool>(down);
   if (down_sweep_)

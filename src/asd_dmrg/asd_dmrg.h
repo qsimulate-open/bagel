@@ -54,11 +54,12 @@ class ASD_DMRG {
     int maxiter_; ///< Maximum number of full sweeps to perform
     int ntrunc_;  ///< Number of states to keep in each DMRG block. Same as \f$M\f$ in the DMRG literature
 
-    double thresh_; ///< convergence threshold
+    double thresh_; ///< convergence threshold for initial portion of calculation
     double perturb_; ///< magnitude of perturbation added to RDM
     double perturb_thresh_; ///< threshold at which to decrease the perturbation
     double perturb_min_; ///< minimum value of perturbation (below this, it is just set to zero)
 
+    double down_thresh_; ///< convergence threshold for sweeping downwards with smaller M. Should probably be tighter than thresh_
     bool down_sweep_; ///< controls whether to sweep with decreasing values of ntrunc_ after the main calculation
     std::vector<int> down_sweep_truncs_; ///< descending list of values to use for ntrunc_
 
