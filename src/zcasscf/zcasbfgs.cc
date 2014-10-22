@@ -35,7 +35,7 @@ complex<double> ZCASBFGS::find_level_shift(shared_ptr<const ZRotFile> rotmat) co
   /* returns the smallest Hessian value that is not below -mc^2 to be used as a level shift
      This particular choice of level shift parameter ensures that the initial diagonal guess has Np negative values
      where Np is the number of positronic orbitals */
-  double csq = 137.00 * 137.00;
+  double csq = c__*c__;
   complex<double> l0 = rotmat->data(0);
 
   for (int j = 1; j != rotmat->size(); ++j) {
