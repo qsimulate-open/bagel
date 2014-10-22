@@ -121,6 +121,8 @@ class CIBlock : public CIBlockInfo<StringType> {
     DataType* data() { return data_ptr_; }
     const DataType* data() const { return data_ptr_; }
 
+    const size_t offset() const { return offset_; }
+
     DataType& element(const size_t i) { return data_ptr_[i]; }
     const DataType& element(const size_t i) const { return data_ptr_[i]; }
 
