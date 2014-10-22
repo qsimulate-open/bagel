@@ -188,7 +188,8 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
     ircoeff[i] = rc->get_imag_part();
   }
   shared_ptr<ZMatrix> out;
-  auto compute = [&racoeff, &iacoeff, &rrcoeff, &ircoeff, &geom, &fci, &nact] (shared_ptr<ZMatrix>& out, const bool gaunt, const bool breit) {
+  auto compute = [&racoeff, &iacoeff, &rrcoeff, &ircoeff, &geom, &fci, &nact] (shared_ptr<ZMatrix>& out, const bool gaunt) {
+   // purpose : compute (ps|tu) Gamma_{tu,ws} for coulomb and gaunt case ; a factor -1.0 and different df objects are needed for gaunt
    // (1.5) dfdists
    vector<shared_ptr<const DFDist>> dfs;
    if (!gaunt) {
@@ -239,11 +240,11 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
    if (!gaunt)
      out = fullrs->form_2index(fulltu_d, 1.0, false);
    else
-     *out += *fullrs->form_2index(fulltu_d, -1.0, false); // TODO : breit
+     *out += *fullrs->form_2index(fulltu_d, -1.0, false);
   };
-  compute(out, false, false);
+  compute(out, false);
   if (gaunt)
-    compute(out, gaunt, false);
+    compute(out, gaunt);
 
   *this = *out;
 
