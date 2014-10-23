@@ -70,7 +70,12 @@ class PDFDist_ints : public DFDist {
     int ncell() { return lattice_vectors_.size(); }
 
     std::shared_ptr<const VectorB> data1() const { return data1_; }
-    std::shared_ptr<btas::Tensor3<double>> coeffC() const { return coeffC_; }
+    std::shared_ptr<const btas::Tensor3<double>> coeffC() const { return coeffC_; }
+
+    /// compute J_{rs} operator (r0 and sL'), given density matrices in AO basis
+    std::shared_ptr<Matrix> pcompute_Jop(const std::shared_ptr<const Matrix> den) const;
+    std::shared_ptr<Matrix> pcompute_Jop_from_coeff(std::shared_ptr<const VectorB> coeff) const;
+    std::shared_ptr<VectorB> pcompute_coeff(const std::shared_ptr<const Matrix> den) const;
 };
 
 }
