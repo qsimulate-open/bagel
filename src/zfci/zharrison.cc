@@ -57,6 +57,11 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   if (gaunt_ != rr->gaunt())
     geom_ = geom_->relativistic(gaunt_);
 
+  print_header();
+
+  // so far invoke Kramer's symmetry for any case without magnetic field
+  tsymm_ = !geom_->magnetism();
+
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (norb_  < 0)
@@ -69,15 +74,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
 
   nele_ = geom_->nele() - charge_ - ncore_*2;
 
-  // Invoke Kramer's symmetry when we have an even electron count and no magnetic field
-  if (!geom_->magnetism() && nele_%2 == 0)
-    tsymm_ = true;
-  else
-    tsymm_ = false;
-
   energy_.resize(nstate_);
-
-  print_header();
 
   space_ = make_shared<RelSpace>(norb_, nele_);
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
@@ -97,8 +94,7 @@ void ZHarrison::print_header() const {
   cout << "  Relativistic FCI calculation" << endl;
   cout << "  ----------------------------" << endl;
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
-  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
-  cout << "    * Time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl << endl;
+  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl << endl;
 }
 
 
