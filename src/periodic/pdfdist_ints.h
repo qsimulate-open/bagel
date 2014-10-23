@@ -38,9 +38,13 @@ class PDFDist_ints : public DFDist {
     /// lattice vectors in direct space
     std::vector<std::array<double, 3>> lattice_vectors_;
     /// 3-index integrals (r sL'|iL) for each L' (sum over all lattice vectors L)
-    void pcompute_3index(const std::vector<std::shared_ptr<const Shell>>& ashell,   /*aux   */
-                         const std::vector<std::shared_ptr<const Shell>>& b0shell,  /*cell 0*/
-                         const std::vector<std::shared_ptr<const Shell>>& bgshell); /*cell g*/
+    void pcompute_3index_00(const std::vector<std::shared_ptr<const Shell>>& ashell,   /*aux   */
+                            const std::vector<std::shared_ptr<const Shell>>& b0shell); /*cell 0*/
+
+    void pcompute_3index_0g(const std::vector<std::shared_ptr<const Shell>>& ashell,   /*aux   */
+                            const std::vector<std::shared_ptr<const Shell>>& b0shell,  /*cell 0*/
+                            const std::vector<std::shared_ptr<const Shell>>& bgshell); /*cell g*/
+
 
     /// 2-index integrals (i|j_L)^{-1} (sum over L)
     void pcompute_2index(const std::vector<std::shared_ptr<const Shell>>& ashell, const double throverlap, const bool compute_inverse);

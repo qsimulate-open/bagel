@@ -52,7 +52,8 @@ PDFDist_ints::PDFDist_ints(vector<array<double, 3>> L,
   const size_t asize  = accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); });
   const size_t b0size = accumulate(b0shell.begin(), b0shell.end(), 0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); });
   const size_t bgsize = accumulate(bgshell.begin(), bgshell.end(), 0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); });
-  block_.push_back(make_shared<DFBlock>(adist_shell, adist_averaged, asize, b0size, bgsize, astart, 0, 0));
+  block_.push_back(make_shared<DFBlock>(adist_shell, adist_averaged, asize, b0size, bgsize, astart, 0, 0)); // 0L
+  block_.push_back(make_shared<DFBlock>(adist_shell, adist_averaged, asize, b0size, bgsize, astart, 0, 0)); // 00
 
   // projection matrix
   compute_aux_charge(ashell);
@@ -61,7 +62,8 @@ PDFDist_ints::PDFDist_ints(vector<array<double, 3>> L,
   compute_charged_coeff(b0shell, bgshell);
 
   // 3-index integrals (r sL'|iL) for each L' (sum over all lattice vectors L)
-  pcompute_3index(myashell, b0shell, bgshell);
+  pcompute_3index_0g(myashell, b0shell, bgshell);
+  pcompute_3index_00(myashell, b0shell); // (rs|iL)
 
   // 2-index integrals (i|j_L)^{-1} (sum over L)
   if (data2)
@@ -97,9 +99,39 @@ void PDFDist_ints::compute_charged_coeff(const vector<shared_ptr<const Shell>>& 
 }
 
 
-void PDFDist_ints::pcompute_3index(const vector<shared_ptr<const Shell>>& ashell,
-                                   const vector<shared_ptr<const Shell>>& b0shell,
-                                   const vector<shared_ptr<const Shell>>& bgshell) {
+void PDFDist_ints::pcompute_3index_00(const vector<shared_ptr<const Shell>>& ashell,
+                                      const vector<shared_ptr<const Shell>>& b0shell) {
+  Timer time;
+
+  TaskQueue<PDFIntTask_3index> tasks(b0shell.size() * b0shell.size() * ashell.size() * ncell());
+  auto i3 = make_shared<const Shell>(ashell.front()->spherical());
+
+  int j2 = 0;
+  for (auto& i2 : b0shell) {
+    int j1 = 0;
+    for (auto& i1 : b0shell) {
+      int j0 = 0;
+      for (auto& i0 : ashell) {
+        for (auto& L : lattice_vectors_) {
+          auto i00 = make_shared<const Shell>(*(i0->move_atom(L)));
+          tasks.emplace_back((array<shared_ptr<const Shell>, 4>{{i3, i00, i1, i2}}), (array<int, 3>{{j2, j1, j0}}), block_[1]);
+        }
+        j0 += i0->nbasis();
+      }
+      j1 += i1->nbasis();
+    }
+    j2 += i2->nbasis();
+  }
+
+  tasks.compute();
+
+  time.tick_print("3-index 00 integrals");
+}
+
+
+void PDFDist_ints::pcompute_3index_0g(const vector<shared_ptr<const Shell>>& ashell,
+                                      const vector<shared_ptr<const Shell>>& b0shell,
+                                      const vector<shared_ptr<const Shell>>& bgshell) {
   Timer time;
 
   TaskQueue<PDFIntTask_3index> tasks(b0shell.size() * bgshell.size() * ashell.size() * ncell());
@@ -122,10 +154,9 @@ void PDFDist_ints::pcompute_3index(const vector<shared_ptr<const Shell>>& ashell
     j2 += i2->nbasis();
   }
 
-  time.tick_print("3-index integrals prep");
   tasks.compute();
 
-  time.tick_print("3-index integrals");
+  time.tick_print("3-index 0g integrals");
 }
 
 
