@@ -98,11 +98,11 @@ void ASD_DMRG::compute() {
       const double sweep_range = *mnmx.second - *mnmx.first;
 
       if (iter != 0)
-        cout << setw(6) << iter << setw(6) << i << setw(22) << setprecision(12) << sweep_average << setw(16) << setprecision(12) << sweep_range
-                                                                              << setw(16) << setprecision(12) << energies_[i] - sweep_average << endl;
+        cout << setw(6) << iter << setw(6) << i << setw(18) << setprecision(8) << sweep_average << setw(12) << setprecision(8) << sweep_range
+                                                                               << setw(12) << setprecision(8) << energies_[i] - sweep_average << endl;
       else
-        cout << setw(6) << iter << setw(6) << i << setw(22) << setprecision(12) << sweep_average << setw(16) << setprecision(12) << sweep_range
-                                                                                << setw(16) << "-------------" << endl;
+        cout << setw(6) << iter << setw(6) << i << setw(18) << setprecision(8) << sweep_average << setw(12) << setprecision(8) << sweep_range
+                                                                               << setw(12) << "---------" << endl;
 
       conv &= abs(energies_[i] - sweep_average) < thresh_;
       drop_perturb &= abs(energies_[i] - sweep_average) < perturb_thresh_;
@@ -192,11 +192,11 @@ void ASD_DMRG::down_sweep() {
         const double sweep_range = *mnmx.second - *mnmx.first;
 
         if (iter != 0)
-          cout << setw(6) << iter << setw(6) << i << setw(22) << setprecision(12) << sweep_average << setw(16) << setprecision(12) << sweep_range
-                                                                                  << setw(16) << setprecision(12) << energies[i] - sweep_average << endl;
+          cout << setw(6) << iter << setw(6) << i << setw(18) << setprecision(8) << sweep_average << setw(12) << setprecision(8) << sweep_range
+                                                                                  << setw(12) << setprecision(8) << energies[i] - sweep_average << endl;
         else
-          cout << setw(6) << iter << setw(6) << i << setw(22) << setprecision(12) << sweep_average << setw(16) << setprecision(12) << sweep_range
-                                                                                  << setw(16) << "-------------" << endl;
+          cout << setw(6) << iter << setw(6) << i << setw(18) << setprecision(8) << sweep_average << setw(12) << setprecision(8) << sweep_range
+                                                                                  << setw(12) << "-------------" << endl;
 
         conv &= abs(energies[i]-sweep_average) < down_thresh_;
 
