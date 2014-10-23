@@ -196,7 +196,7 @@ void ASD_DMRG::down_sweep() {
                                                                                   << setw(12) << setprecision(8) << energies[i] - sweep_average << endl;
         else
           cout << setw(6) << iter << setw(6) << i << setw(18) << setprecision(8) << sweep_average << setw(12) << setprecision(8) << sweep_range
-                                                                                  << setw(12) << "-------------" << endl;
+                                                                                  << setw(12) << "---------" << endl;
 
         conv &= abs(energies[i]-sweep_average) < down_thresh_;
 
