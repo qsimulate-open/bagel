@@ -57,10 +57,10 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   if (gaunt_ != rr->gaunt())
     geom_ = geom_->relativistic(gaunt_);
 
-  print_header();
-
-  // so far invoke Kramer's symmetry for any case without magnetic field
+  // Invoke Kramer's symmetry for any case without magnetic field
   tsymm_ = !geom_->magnetism();
+
+  print_header();
 
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
@@ -94,7 +94,8 @@ void ZHarrison::print_header() const {
   cout << "  Relativistic FCI calculation" << endl;
   cout << "  ----------------------------" << endl;
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
-  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl << endl;
+  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
+  cout << "    * Time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl << endl;
 }
 
 
