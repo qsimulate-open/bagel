@@ -77,13 +77,28 @@ std::vector<double> reference_relfci_energy3() {
   return out;
 }
 
+std::vector<double> reference_relfci_energy4() {
+  std::vector<double> out(2);
+  out[0] = -8845.56599033;
+  out[1] = -8845.56349544;
+  return out;
+}
+
+std::vector<double> reference_relfci_energy5() {
+  std::vector<double> out(1);
+  out[0] = -1.28898724;
+  return out;
+}
+
 
 BOOST_AUTO_TEST_SUITE(TEST_RELFCI)
 
 BOOST_AUTO_TEST_CASE(ZHARRISON) {
   BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_coulomb"), reference_relfci_energy()));
   BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_gaunt"), reference_relfci_energy2()));
-  BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_breit"), reference_relfci_energy3()));
+//  BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_breit"), reference_relfci_energy3()));
+  BOOST_CHECK(compare(relfci_energy("pb_london_relfci_coulomb"), reference_relfci_energy4()));
+  BOOST_CHECK(compare(relfci_energy("h2_tzvpp_london_relfci_coulomb"), reference_relfci_energy5()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

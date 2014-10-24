@@ -1,0 +1,67 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: custom-test.json
+// Copyright (C) 2014 Toru Shiozaki
+//
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+// Specialized basis set inputs used by TestSuite, truncated for speed
+// Not recommended for general use
+
+// Pb:  Dyall's DZ basis, truncated to only describe the core, used for relativistic full CI on lithium-like lead.
+
+{
+  "Pb" : [
+    {
+      "angular" : "s",
+      "prim" : [5.7879047000e+07, 1.4727786000e+07, 4.6698079000e+06, 1.6059372000e+06, 5.8984778000e+05, 2.2691267000e+05, 9.1063105000e+04, 3.7920869000e+04, 1.6339134000e+04, 7.2625289000e+03, 3.3216985000e+03, 7.4863789000e+02, 3.5261328000e+02, 9.1463274000e+01, 4.4710172000e+01, 1.0721457000e+01, 5.5271506000e+00, 2.0274627000e+00, 9.6204098000e-01, 2.3294403000e-01, 8.6859886000e-02],
+      "cont" : [[2.4894258000e-04, 6.1438740000e-04, 1.3173429000e-03, 2.6596303000e-03, 5.3452802000e-03, 1.0717639000e-02, 2.1626498000e-02, 4.3573795000e-02, 8.5999221000e-02, 1.5912462000e-01, 2.5476619000e-01, 2.0219279000e-01, 4.5188256000e-02, 1.4651958000e-03, -8.7712209000e-04, -2.3562200000e-04, 1.2069414000e-04, -4.4747883000e-05, 1.9655280000e-05, -4.8573139000e-06, 1.7946354000e-06]]
+    }, {
+      "angular" : "s",
+      "prim" : [5.7879047000e+07, 1.4727786000e+07, 4.6698079000e+06, 1.6059372000e+06, 5.8984778000e+05, 2.2691267000e+05, 9.1063105000e+04, 3.7920869000e+04, 1.6339134000e+04, 7.2625289000e+03, 3.3216985000e+03, 7.4863789000e+02, 3.5261328000e+02, 9.1463274000e+01, 4.4710172000e+01, 1.0721457000e+01, 5.5271506000e+00, 2.0274627000e+00, 9.6204098000e-01, 2.3294403000e-01, 8.6859886000e-02],
+      "cont" : [[-9.8099363000e-05, -2.4312134000e-04, -5.2384052000e-04, -1.0660886000e-03, -2.1639863000e-03, -4.3995962000e-03, -9.0239534000e-03, -1.8598219000e-02, -3.7845390000e-02, -7.3876514000e-02, -1.2941090000e-01, -1.0377699000e-01, 2.4767326000e-01, 3.2090503000e-01, 3.8253371000e-02, 7.3550135000e-04, -4.3931191000e-04, 1.5096857000e-04, -5.9331304000e-05, 1.5193723000e-05, -5.6366264000e-06]]
+    }, {
+      "angular" : "s",
+      "prim" : [1.5596475000e+03],
+      "cont" : [[1.0000000000e+00]]
+    }, {
+      "angular" : "s",
+      "prim" : [1.7750467000e+02],
+      "cont" : [[1.0000000000e+00]]
+    }, {
+      "angular" : "s",
+      "prim" : [2.3527288000e+01],
+      "cont" : [[1.0000000000e+00]]
+    }, {
+      "angular" : "p",
+      "prim" : [1.4431585000e+07, 2.5074331000e+06, 5.6044425000e+05, 1.4637279000e+05, 4.3157909000e+04, 1.4152440000e+04, 5.1258744000e+03, 2.0302193000e+03, 8.6682091000e+02, 3.9214842000e+02, 1.8535635000e+02, 4.4485764000e+01, 2.2422844000e+01, 1.0675176000e+01, 5.1917731000e+00, 2.0908307000e+00, 8.7171799000e-01, 2.1674529000e-01, 6.5825419000e-02],
+      "cont" : [[3.2182598000e-05, 1.0584053000e-04, 3.0135568000e-04, 8.3408440000e-04, 2.4148018000e-03, 7.5278161000e-03, 2.4244347000e-02, 7.3526118000e-02, 1.8734774000e-01, 3.4709327000e-01, 3.7106866000e-01, 1.1979900000e-02, 1.6566950000e-03, -9.7538472000e-04, 4.0503230000e-04, -1.5916485000e-04, 6.4473580000e-05, -1.6195478000e-05, 5.5374071000e-06]]
+    }, {
+      "angular" : "p",
+      "prim" : [8.9519283000e+01],
+      "cont" : [[1.0000000000e+00]]
+    }, {
+      "angular" : "d",
+      "prim" : [8.9122138000e+01],
+      "cont" : [[1.0000000000e+00]]
+    }
+  ]
+}

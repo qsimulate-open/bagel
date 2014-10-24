@@ -1,0 +1,34 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "custom-test",
+  "df_basis" : "custom-test-fit",
+  "angstrom" : "false",
+  "finite_nucleus" : "true",
+  "basis_type" : "giao",
+  "tesla" : "false",
+  "magnetic_field" : [  0.0020,  -0.0010,   0.0015   ],
+  "geometry" : [
+    { "atom" : "Pb",  "xyz" : [  5.000000,      2.200000,     -8.000000]}
+  ]
+},
+
+{
+  "title" : "dhf",
+  "thresh" : "1.0e-8",
+  "charge" : "+79",
+  "gaunt" : false,
+  "breit" : false
+},
+
+{
+  "title" : "zfci",
+  "charge" : "+79",
+  "davidson_subspace" : "3",
+  "thresh" : 1.0e-7,
+  "state" : [0,1]
+}
+
+]}
