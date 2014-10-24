@@ -28,6 +28,7 @@
 
 #include <src/ciutil/citraits.h>
 #include <src/ras/civector.h>
+#include <src/asd_dmrg/product_civec.h>
 #include <src/asd/gamma_sq.h>
 
 namespace bagel {
@@ -48,7 +49,10 @@ class ApplyOperator {
     ApplyOperator() {}
 
     /// \f[ |\mbox{target}\rangle \leftarrow a \hat E_{\mbox{operations}} |\mbox{source}\rangle + |\mbox{target}\rangle \f]
-    void operator()(const double a, const RASCivecView source, RASCivecView target, std::vector<GammaSQ> operations, std::vector<int> orbitals) const;
+    void operator()(const double a, const RASCivecView source, RASCivecView target, const std::vector<GammaSQ>& operations, const std::vector<int>& orbitals) const;
+
+    /// \f[ |\mbox{target}\rangle \leftarrow a \hat E_{\mbox{operations}} |\mbox{source}\rangle + |\mbox{target}\rangle \f]
+    void operator()(const double a, const RASBlockVectors& source, RASBlockVectors& target, const std::vector<GammaSQ>& operations, const std::vector<int>& orbitals) const;
 };
 
 }
