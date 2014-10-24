@@ -34,7 +34,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   {
-    std::stringstream ss; ss << "../../test/" << inp1 << ".json";
+    std::stringstream ss; ss << location__ << inp1 << ".json";
     auto idata = std::make_shared<const PTree>(ss.str());
     auto keys = idata->get_child("bagel");
     std::shared_ptr<Geometry> geom;
@@ -65,7 +65,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
 
   double energy = 0.0;
   {
-    std::stringstream ss; ss << "../../test/" << inp2 << ".json";
+    std::stringstream ss; ss << location__ << inp2 << ".json";
     auto idata = std::make_shared<const PTree>(ss.str());
     std::shared_ptr<const PTree> keys = idata->get_child("bagel");
     std::shared_ptr<const PTree> mol = *keys->begin();

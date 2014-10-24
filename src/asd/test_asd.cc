@@ -31,7 +31,7 @@ double asd_energy(std::string inp) {
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::stringstream ss; ss << "../../test/" << inp << ".json";
+  std::stringstream ss; ss << location__ << inp << ".json";
   auto idata = std::make_shared<const PTree>(ss.str());
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
@@ -94,7 +94,7 @@ std::vector<double> asd_models(std::string inp) {
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::stringstream ss; ss << "../../test/" << inp << ".json";
+  std::stringstream ss; ss << location__ << inp << ".json";
   auto idata = std::make_shared<const PTree>(ss.str());
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;

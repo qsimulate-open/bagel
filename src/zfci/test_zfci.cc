@@ -32,7 +32,7 @@ std::vector<double> relfci_energy(std::string inp) {
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::string filename = "../../test/" + inp + ".json";
+  std::string filename = location__ + inp + ".json";
   auto idata = std::make_shared<const PTree>(filename);
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
