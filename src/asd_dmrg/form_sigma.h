@@ -31,6 +31,7 @@
 #include <src/asd_dmrg/block_operators.h>
 #include <src/ras/sparse_ij.h>
 #include <src/asd_dmrg/phi_k_lists.h>
+#include <src/asd_dmrg/phi_ijk_lists.h>
 
 namespace bagel {
 
@@ -80,14 +81,18 @@ class FormSigmaProdRAS {
     /// Computes 3-operator bHT terms
     void compute_sigma_3bHT(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blockops,  std::shared_ptr<DimerJop> jop) const;
 
+    /// Computes \f$\hat S_p = \sum_{ijk} i^\dagger_\alpha j^\dagger_\alpha k_\alpha (jk|pi)\f$ or \f$\hat S_p^\dagger\f$,
+    /// depending on what type of PhiIJKLists is given to it.
+    void resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiIJKLists& phi_ijk) const;
+
     /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\alpha j^\dagger_\alpha k_\alpha (jk|pi)f$
-    void resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<btas::Tensor3<double>> Jp) const;
+    void resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView sigma, const double* Jp, std::shared_ptr<const PhiIJKLists> phi_ijk = nullptr) const;
 
     /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\alpha j_\alpha k_\alpha (ij|pk)f$
-    void resolve_S_adag_a_a(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<btas::Tensor3<double>> Jp) const;
+    void resolve_S_adag_a_a(const RASCivecView cc, RASCivecView sigma, const double* Jp, std::shared_ptr<const PhiIJKLists> phi_ijk = nullptr) const;
 
     /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\beta j_\beta k_\alpha (ij|pk)f$ and \f$\hat S_p = \sum_{i,j,k}
-    void resolve_S_abb(const RASCivecView cc, RASCivecView sigma, std::shared_ptr<btas::Tensor3<double>> Jp, std::shared_ptr<PhiKLists> phik = nullptr, std::shared_ptr<Sparse_IJ> sparse = nullptr) const;
+    void resolve_S_abb(const RASCivecView cc, RASCivecView sigma, const double* Jp, std::shared_ptr<PhiKLists> phik = nullptr, std::shared_ptr<Sparse_IJ> sparse = nullptr) const;
 };
 
 }
