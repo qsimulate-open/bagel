@@ -586,8 +586,7 @@ void FormSigmaProdRAS::abflip_branch(shared_ptr<const RASBlockVectors> cc_sector
       if ((r + s*rnorb) % mpi__->size() == mpi__->rank()) {
 #endif
         sector_rs.zero();
-        for (int ist = 0; ist < nccstates; ++ist)
-          apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateAlpha,GammaSQ::AnnihilateBeta}, {r, s});
+        apply(1.0, *cc_sector, sector_rs, {GammaSQ::CreateAlpha,GammaSQ::AnnihilateBeta}, {r, s});
 
         shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_ab(cckey, r, s);
         mat_block_multiply(false, true, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);
@@ -618,8 +617,7 @@ void FormSigmaProdRAS::baflip_branch(shared_ptr<const RASBlockVectors> cc_sector
 #endif
         // apply (r^dagger_beta s_alpha) to the civec
         sector_rs.zero();
-        for (int ist = 0; ist < nccstates; ++ist)
-          apply(1.0, cc_sector->civec(ist), sector_rs.civec(ist), {GammaSQ::CreateBeta,GammaSQ::AnnihilateAlpha}, {r, s});
+        apply(1.0, *cc_sector, sector_rs, {GammaSQ::CreateBeta,GammaSQ::AnnihilateAlpha}, {r, s});
 
         shared_ptr<const BlockSparseMatrix> Qrs = blockops->Q_ab(flipkey, s, r);
         mat_block_multiply(false, false, 1.0, sector_rs, *Qrs, 1.0, *sigma_sector);

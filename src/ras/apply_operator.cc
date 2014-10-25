@@ -247,11 +247,11 @@ void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, 
 
   assert(!(all_alpha && all_beta));
 
+  const RASCivecView tvec = target.civec(0);
+  const RASCivecView svec = source.civec(0);
+
   if (all_alpha || all_beta) {
     vector<tuple<size_t, int, size_t, int, size_t, int>> base_daxpy;
-
-    const RASCivecView tvec = target.civec(0);
-    const RASCivecView svec = source.civec(0);
 
     if (operations.size() == 1) {
       const int r = orbitals.front(); // operator
@@ -365,44 +365,58 @@ void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, 
         daxpy_(get<0>(i), f, source_data, get<3>(i), target_data, get<5>(i));
       }
     }
-  }
-#if 0
-  else {
+  } else {
+    unordered_map<size_t, vector<tuple<size_t, int, size_t>>> abits_map;
+    unordered_map<size_t, vector<tuple<size_t, int, size_t>>> bbits_map;
+
+    // <stringatag, stringbtag, source offset, source lenb, target offset, target lenb
+    vector<array<size_t, 6>> block_info;
+
     if (operations == vector<GammaSQ>{{GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}}) {
       const int r = orbitals.front(); // beta annihilation on target
       const int s = orbitals.back();  // alpha creation on target
 
       // loop over blocks in the target
-      for (auto& tblock : target.blocks()) {
+      for (auto& tblock : tvec.blocks()) {
         if (!tblock) continue;
-        auto sblock = get_block(source, dhp, tblock);
-        if (!sblock) continue;
+        auto sblock = get_block(svec, dhp, tblock);
+        if (sblock) {
+          const size_t slb = sblock->lenb();
+          const size_t tla = tblock->lena();
+          const size_t tlb = tblock->lenb();
 
-        const size_t slb = sblock->lenb();
-        const size_t tla = tblock->lena();
-        const size_t tlb = tblock->lenb();
+          bool compute_block = true;
 
-        // pre-process beta creation so it doesn't have to be done in a loop
-        vector<tuple<size_t, int, size_t>> valid_bbits;
-        const int nasign = (1 - ((tblock->stringsa()->nele()%2) << 1));
-        for (size_t ib = 0; ib < tlb; ++ib) {
-          bitset<nbit__> bbit = tblock->string_bits_b(ib);
-          if (bbit[r])
-            valid_bbits.emplace_back(ib, nasign*sign(bbit, r), sblock->stringsb()->lexical_zero(bbit ^ (bitset<nbit__>(1) << r)));
-        }
-
-        if (!valid_bbits.empty()) {
-          for (size_t ia = 0; ia < tla; ++ia) {
-            bitset<nbit__> tabit = tblock->string_bits_a(ia);
-            if (!tabit[s]) {
-              bitset<nbit__> sabit = tabit ^ (bitset<nbit__>(1) << s);
-              double* target_base = tblock->data() + ia*tlb;
-              const double* source_base = sblock->data() + sblock->stringsa()->lexical_zero(sabit)*slb;
-              const double c = fac * sign(sabit, s);
-              for (auto& iex : valid_bbits)
-                target_base[get<0>(iex)] += c * static_cast<double>(get<1>(iex)) * source_base[get<2>(iex)];
+          if (bbits_map.find(tblock->stringsb()->tag())==bbits_map.end()) {
+            vector<tuple<size_t, int, size_t>> valid_bbits;
+            const int nasign = (1 - ((tblock->stringsa()->nele()%2) << 1));
+            for (size_t ib = 0; ib < tlb; ++ib) {
+              const bitset<nbit__> bbit = tblock->string_bits_b(ib);
+              if (bbit[r])
+                valid_bbits.emplace_back(ib, nasign*sign(bbit, r), sblock->stringsb()->lexical_zero(bbit ^ (bitset<nbit__>(1) << r)));
             }
+            if (!valid_bbits.empty())
+              bbits_map.emplace(tblock->stringsb()->tag(), move(valid_bbits));
+            else
+              compute_block = false;
           }
+
+          if (abits_map.find(tblock->stringsa()->tag())==abits_map.end()) {
+            vector<tuple<size_t, int, size_t>> valid_abits;
+            for (size_t ia = 0; ia < tla; ++ia) {
+              const bitset<nbit__> abit = tblock->string_bits_a(ia);
+              if (!abit[s])
+                valid_abits.emplace_back(ia, sign(abit, s), sblock->stringsa()->lexical_zero(abit ^ (bitset<nbit__>(1) << s)));
+            }
+            if (!valid_abits.empty())
+              abits_map.emplace(tblock->stringsa()->tag(), move(valid_abits));
+            else
+              compute_block = false;
+          }
+
+          if (compute_block)
+            block_info.emplace_back(array<size_t, 6>{{tblock->stringsa()->tag(), tblock->stringsb()->tag(),
+                                     sblock->offset(), slb, tblock->offset(), tlb}});
         }
       }
     } else if (operations == vector<GammaSQ>{{GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta}}) {
@@ -410,41 +424,63 @@ void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, 
       const int s = orbitals.back();  // beta creation on target
 
       // loop over blocks in the target
-      for (auto& tblock : target.blocks()) {
+      for (auto& tblock : tvec.blocks()) {
         if (!tblock) continue;
-        auto sblock = get_block(source, dhp, tblock);
-        if (!sblock) continue;
+        auto sblock = get_block(svec, dhp, tblock);
+        if (sblock) {
+          const size_t slb = sblock->lenb();
+          const size_t tla = tblock->lena();
+          const size_t tlb = tblock->lenb();
 
-        const size_t slb = sblock->lenb();
-        const size_t tla = tblock->lena();
-        const size_t tlb = tblock->lenb();
+          bool compute_block = true;
 
-        // pre-process beta creation so it doesn't have to be done in a loop
-        vector<tuple<size_t, int, size_t>> valid_bbits;
-        const int nasign = -(1 - ((tblock->stringsa()->nele()%2) << 1));
-        for (size_t ib = 0; ib < tlb; ++ib) {
-          bitset<nbit__> bbit = tblock->string_bits_b(ib);
-          if (!bbit[s])
-            valid_bbits.emplace_back(ib, nasign*sign(bbit, s), sblock->stringsb()->lexical_zero(bbit ^ (bitset<nbit__>(1) << s)));
-        }
-
-        if (!valid_bbits.empty()) {
-          for (size_t ia = 0; ia < tla; ++ia) {
-            bitset<nbit__> tabit = tblock->string_bits_a(ia);
-            if (tabit[r]) {
-              bitset<nbit__> sabit = tabit ^ (bitset<nbit__>(1) << r);
-              double* target_base = tblock->data() + ia*tlb;
-              const double* source_base = sblock->data() + sblock->stringsa()->lexical_zero(sabit)*slb;
-              const double c = fac * sign(sabit, r);
-              for (auto& iex : valid_bbits)
-                target_base[get<0>(iex)] += c * static_cast<double>(get<1>(iex)) * source_base[get<2>(iex)];
+          if (bbits_map.find(tblock->stringsb()->tag())==bbits_map.end()) {
+            vector<tuple<size_t, int, size_t>> valid_bbits;
+            const int nasign = -(1 - ((tblock->stringsa()->nele()%2) << 1));
+            for (size_t ib = 0; ib < tlb; ++ib) {
+              bitset<nbit__> bbit = tblock->string_bits_b(ib);
+              if (!bbit[s])
+                valid_bbits.emplace_back(ib, nasign*sign(bbit, s), sblock->stringsb()->lexical_zero(bbit ^ (bitset<nbit__>(1) << s)));
             }
+            if (!valid_bbits.empty())
+              bbits_map.emplace(tblock->stringsb()->tag(), move(valid_bbits));
+            else
+              compute_block = false;
           }
+
+          if (abits_map.find(tblock->stringsa()->tag())==abits_map.end()) {
+            vector<tuple<size_t, int, size_t>> valid_abits;
+            for (size_t ia = 0; ia < tla; ++ia) {
+              const bitset<nbit__> abit = tblock->string_bits_a(ia);
+              if (abit[r])
+                valid_abits.emplace_back(ia, sign(abit, r), sblock->stringsa()->lexical_zero(abit ^ (bitset<nbit__>(1) << r)));
+            }
+            if (!valid_abits.empty())
+              abits_map.emplace(tblock->stringsa()->tag(), move(valid_abits));
+            else
+              compute_block = false;
+          }
+
+          if (compute_block)
+            block_info.emplace_back(array<size_t, 6>{{tblock->stringsa()->tag(), tblock->stringsb()->tag(),
+                                     sblock->offset(), slb, tblock->offset(), tlb}});
         }
       }
     }
     else
       throw logic_error("Not yet implemented!");
+
+    for (int m = 0; m < M; ++m) {
+      for (auto& block : block_info) {
+        for (auto& a : abits_map[block[0]]) {
+          const double* source_base = source.element_ptr(block[2] + block[3]*get<2>(a), m);
+          double* target_base = target.element_ptr(block[4] + block[5]*get<0>(a), m);
+          const double f = fac * static_cast<double>(get<1>(a));
+          for (auto& b : bbits_map[block[1]]) {
+            target_base[get<0>(b)] += f * static_cast<double>(get<1>(b)) * source_base[get<2>(b)];
+          }
+        }
+      }
+    }
   }
-#endif
 }

@@ -231,7 +231,7 @@ class RASString : public CIString_base_impl<3,RASString> {
     int nele2() const { return nele_ - subspace_[0].first - subspace_[2].first; }
     int nparticles() const { return subspace_[2].first; }
 
-    int tag() const { return nholes() + (nparticles() << 8); }
+    size_t tag() const { return nholes() + (nparticles() << 8); }
 
     template <int S> const std::pair<const int, const int> ras() const {
       static_assert(S == 0 || S == 1 || S == 2, "illegal call of RAString::ras");
