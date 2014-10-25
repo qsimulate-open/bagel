@@ -927,6 +927,20 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
   assert(abs(sdet->nelea()-tdet->nelea())==1);
   assert(sdet->neleb()==tdet->neleb());
 
+  // first, figure out maximum size of all the blocks
+  const size_t max_ccblock_size = (*max_element(cc.blocks().begin(), cc.blocks().end(),
+          [] (shared_ptr<const RASBlock<double>> a, shared_ptr<const RASBlock<double>> b) {
+            return ( a ? a->size() : 0) < ( b ? b->size() : 0);
+          }))->size();
+  const size_t max_sgblock_size = (*max_element(sigma.blocks().begin(), sigma.blocks().end(),
+          [] (shared_ptr<const RASBlock<double>> a, shared_ptr<const RASBlock<double>> b) {
+            return ( a ? a->size() : 0) < ( b ? b->size() : 0);
+          }))->size();
+
+  // allocate chunks of storage equal to the maximum possible size that may be needed. probably overkill, but also probably fine
+  unique_ptr<double[]> cprime(new double[max_ccblock_size]);
+  unique_ptr<double[]> V(new double[max_sgblock_size]);
+
   const int norb = sdet->norb();
   assert(norb == tdet->norb());
   if (!sparseij) sparseij = make_shared<Sparse_IJ>(sdet->stringspaceb(), tdet->stringspaceb());
@@ -935,6 +949,7 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
   // k^?_alpha i^+_beta j_beta portion. the harder part
   for (int k = 0; k < norb; ++k) {
     for (auto& target_bspace : *tdet->stringspaceb()) {
+      const size_t tlb = target_bspace->size();
       for (auto& source_aspace : *sdet->stringspacea()) {
         const vector<PhiKLists::PhiK>& full_phi = phik->data(k).at(source_aspace->tag());
         vector<PhiKLists::PhiK> reduced_RI;
@@ -950,10 +965,15 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
         for (auto& source_block : cc.allowed_blocks<0>(source_aspace)) {
           auto source_bspace = source_block->stringsb();
           const size_t slb = source_bspace->size();
-          auto reduced_cp = make_shared<Matrix>(slb, reduced_RI.size(), true);
+
+          // if this assert fails, max_ccblock_size is not a good enough upperbound
+          assert(max_ccblock_size >= slb * reduced_RI.size());
+
+          fill_n(cprime.get(), slb * reduced_RI.size(), 0.0);
+
           int current = 0;
           for (auto& i : reduced_RI)
-            blas::ax_plus_y_n(i.sign, source_block->data() + slb*i.source, slb, reduced_cp->element_ptr(0,current++));
+            blas::ax_plus_y_n(i.sign, source_block->data() + slb*i.source, slb, cprime.get() + current++*slb);
 
           // Now build an F matrix in sparse format
           shared_ptr<SparseMatrix> sparseF = sparseij->sparse_matrix(target_bspace->tag(), source_bspace->tag());
@@ -963,14 +983,17 @@ void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, 
             for (auto& iter : sparseij->sparse_data(target_bspace->tag(), source_bspace->tag()))
               *iter.ptr += static_cast<double>(iter.sign) * (*Jp)(iter.j, iter.i, k);
 
-            Matrix V(*sparseF * *reduced_cp);
+            // if this assert fails, max_sgblock_size is not a good enough upperbound
+            assert(max_sgblock_size >= tlb * reduced_RI.size());
+
+            dcsrmm_("N", tlb, reduced_RI.size(), slb, 1.0, sparseF->data(), sparseF->cols(), sparseF->rind(), cprime.get(), slb, 0.0, V.get(), tlb);
 
             // scatter
             current = 0;
             for (auto& i : reduced_RI) {
               const RASString* target_aspace = i.target_space;
               shared_ptr<RASBlock<double>> target_block = sigma.block(target_aspace->nholes(), target_bspace->nholes(), target_aspace->nparticles(), target_bspace->nparticles());
-              blas::ax_plus_y_n(1.0, V.element_ptr(0,current++), V.ndim(), target_block->data() + target_block->lenb()*i.target);
+              blas::ax_plus_y_n(1.0, V.get() + tlb*current++, tlb, target_block->data() + target_block->lenb()*i.target);
             }
           }
         }
