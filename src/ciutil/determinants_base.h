@@ -100,6 +100,15 @@ class Determinants_base {
     size_t lexical_offset(const std::bitset<nbit__>& bit) const { return (spin == 0 ? alphaspaces_ : betaspaces_)->lexical_offset(bit); }
 
     const std::vector<std::shared_ptr<const CIBlockInfo<StringType>>>& blockinfo() const { return blockinfo_; }
+    std::shared_ptr<const CIBlockInfo<StringType>> blockinfo(std::shared_ptr<const StringType> beta, std::shared_ptr<const StringType> alpha) const {
+      auto iter = std::find_if(blockinfo_.begin(), blockinfo_.end(),
+        [&alpha, &beta] (const std::shared_ptr<const CIBlockInfo<StringType>>& o) {
+          return (o->empty() ? false :
+            o->stringsa()->matches(alpha) &&
+            o->stringsb()->matches(beta));
+      });
+      return (iter != blockinfo_.end() ? *iter : nullptr);
+    }
     const std::shared_ptr<const CIStringSet<StringType>>& stringspacea() const { return alphaspaces_; }
     const std::shared_ptr<const CIStringSet<StringType>>& stringspaceb() const { return betaspaces_; }
 

@@ -104,7 +104,7 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
             for (int npa = npart; npa >= 0; --npa) {
               const int npb = npart - npa;
 
-              auto block = make_shared<const CIBlockInfo<RASString>>(space<0>(nha, npa), space<1>(nhb, npb));
+              auto block = make_shared<const CIBlockInfo<RASString>>(space<0>(nha, npa), space<1>(nhb, npb), size_);
               blockinfo_.push_back(block);
               if (!block->empty()) size_ += block->size();
             }
