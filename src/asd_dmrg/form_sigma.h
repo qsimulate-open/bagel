@@ -85,12 +85,6 @@ class FormSigmaProdRAS {
     /// depending on what type of PhiIJKLists is given to it.
     void resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiIJKLists& phi_ijk) const;
 
-    /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\alpha j^\dagger_\alpha k_\alpha (jk|pi)f$
-    void resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView sigma, const double* Jp, std::shared_ptr<const PhiIJKLists> phi_ijk = nullptr) const;
-
-    /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\alpha j_\alpha k_\alpha (ij|pk)f$
-    void resolve_S_adag_a_a(const RASCivecView cc, RASCivecView sigma, const double* Jp, std::shared_ptr<const PhiIJKLists> phi_ijk = nullptr) const;
-
     /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\beta j_\beta k_\alpha (ij|pk)f$ and \f$\hat S_p = \sum_{i,j,k}
     void resolve_S_abb(const RASCivecView cc, RASCivecView sigma, const double* Jp, std::shared_ptr<PhiKLists> phik = nullptr, std::shared_ptr<Sparse_IJ> sparse = nullptr) const;
 };
