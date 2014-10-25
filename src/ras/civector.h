@@ -476,12 +476,12 @@ class RASCivector_impl : public RASCivector_base<RASBlock<DataType>> {
     }
 
     void ax_plus_y(const double a, const Derived& o) { blas::ax_plus_y_n(a, o.data(), size(), data()); }
-    void ax_plus_y(const double a, std::shared_ptr<const Derived>& o) { blas::ax_plus_y_n(a, o->data(), size(), data()); }
+    void ax_plus_y(const double a, const std::shared_ptr<const Derived>& o) { blas::ax_plus_y_n(a, o->data(), size(), data()); }
 
     void scale(const DataType a) { blas::scale_n(a, data(), size()); }
 
     template <typename T>
-    void project_out(std::shared_ptr<const Derived> o) { ax_plus_y(-dot_product(*o), *o); }
+    void project_out(const std::shared_ptr<const Derived>& o) { ax_plus_y(-dot_product(*o), *o); }
 
     double norm() const { return std::sqrt(blas::dot_product(data(), size(), data())); }
     double variance() const { return blas::dot_product(data(), size(), data())/size(); }
@@ -493,7 +493,7 @@ class RASCivector_impl : public RASCivector_base<RASBlock<DataType>> {
       return normalize();
     }
 
-    double orthog(std::shared_ptr<const Derived> o) {
+    double orthog(const std::shared_ptr<const Derived>& o) {
       return orthog(std::list<std::shared_ptr<const Derived>>{o});
     }
 
@@ -601,7 +601,7 @@ class RASCivector : public RASCivector_impl<DataType, RASCivector<DataType>> {
     std::shared_ptr<DistRASCivector<DataType>> distcivec() const { return std::make_shared<DistRASCivector<DataType>>(*this); }
 
     DataType dot_product(const RASCivector<DataType>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(o); }
-    DataType dot_product(std::shared_ptr<const RASCivector<DataType>>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(*o); }
+    DataType dot_product(const std::shared_ptr<const RASCivector<DataType>>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(*o); }
 
     std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const { return this->template transpose_impl<RASCivector<DataType>>(det); }
 
@@ -731,7 +731,7 @@ class RASCivecView_ : public RASCivector_impl<DataType, RASCivecView_<DataType>>
     const DataType* data_impl() const { return data_ptr_; }
 
     DataType dot_product(const RASCivector<DataType>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(o); }
-    DataType dot_product(std::shared_ptr<const RASCivector<DataType>>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(*o); }
+    DataType dot_product(const std::shared_ptr<const RASCivector<DataType>>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(*o); }
     DataType dot_product(const RASCivecView_<DataType>& o) const { return this->template dot_product_impl<RASCivecView_<DataType>>(o); }
 
     std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const { return this->template transpose_impl<RASCivector<DataType>>(det); }
