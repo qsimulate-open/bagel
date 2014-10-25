@@ -71,7 +71,7 @@ class RASBlockVectors : public Matrix {
     int nstates() const { return left_state_.nstates; }
     std::shared_ptr<const RASDeterminants> det() const { return det_; }
 
-    RASBlockVectors transpose_civecs() const;
+    RASBlockVectors transpose_civecs(std::shared_ptr<const RASDeterminants> transdet = nullptr) const;
 
     using Matrix::data;
     using Matrix::element_ptr;

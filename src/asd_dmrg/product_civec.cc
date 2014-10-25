@@ -30,8 +30,8 @@
 using namespace std;
 using namespace bagel;
 
-RASBlockVectors RASBlockVectors::transpose_civecs() const {
-  shared_ptr<const RASDeterminants> transdet = det()->transpose();
+RASBlockVectors RASBlockVectors::transpose_civecs(shared_ptr<const RASDeterminants> transdet) const {
+  if (!transdet) transdet = det()->transpose();
   const int M = mdim();
   const int nasign = 1 - (((det()->nelea()*det()->neleb())%2) << 1);
 

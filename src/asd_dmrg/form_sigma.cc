@@ -712,8 +712,13 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
   const int nccstates = cc_sector->mdim();
   const BlockInfo tmpinfo(bETkey.nelea, bETkey.neleb, nccstates);
 
-  RASBlockVectors cc_trans = cc_sector->transpose_civecs();
-  RASBlockVectors sigma_trans(sigma_sector->det()->transpose(), sigma_sector->left_state());
+  shared_ptr<const RASDeterminants> ccdet = cc_sector->det();
+  shared_ptr<const RASDeterminants> sigmadet = sigma_sector->det();
+
+  shared_ptr<RASSpace> space = sigma->space();
+
+  RASBlockVectors cc_trans = cc_sector->transpose_civecs(space->det(ccdet->neleb(), ccdet->nelea()));
+  RASBlockVectors sigma_trans(space->det(sigmadet->neleb(), sigmadet->nelea()), sigma_sector->left_state());
   RASBlockVectors tmp_sector(sigma_trans.det(), tmpinfo);
 
   const int lnorb = jop->monomer_jop<1>()->nocc();
@@ -758,8 +763,13 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
   const int nccstates = cc_sector->mdim();
   const BlockInfo tmpinfo(bHTkey.nelea, bHTkey.neleb, nccstates);
 
-  RASBlockVectors cc_trans = cc_sector->transpose_civecs();
-  RASBlockVectors sigma_trans(sigma_sector->det()->transpose(), sigma_sector->left_state());
+  shared_ptr<const RASDeterminants> ccdet = cc_sector->det();
+  shared_ptr<const RASDeterminants> sigmadet = sigma_sector->det();
+
+  shared_ptr<RASSpace> space = sigma->space();
+
+  RASBlockVectors cc_trans = cc_sector->transpose_civecs(space->det(ccdet->neleb(), ccdet->nelea()));
+  RASBlockVectors sigma_trans(space->det(sigmadet->neleb(), sigmadet->nelea()), sigma_sector->left_state());
   RASBlockVectors tmp_sector(sigma_trans.det(), tmpinfo);
 
   const int lnorb = jop->monomer_jop<1>()->nocc();
