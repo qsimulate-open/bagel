@@ -644,7 +644,7 @@ void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_s
 
   auto sparseij = make_shared<Sparse_IJ>(cc_sector->det()->stringspaceb(), sigma_sector->det()->stringspaceb());
   auto phik = make_shared<PhiKLists>(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea());
-  auto phiijk = make_shared<PhiIJKLists>(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea(), true);
+  PhiIJKLists phiijk(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea(), true);
 
   for (int p = 0; p < lnorb; ++p ) {
 #ifdef HAVE_MPI_H
@@ -656,7 +656,7 @@ void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_s
       for (int ist = 0; ist < nccstates; ++ist) {
         resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp->data(), phik, sparseij);
       }
-      resolve_S_aaa(*cc_sector, tmp_sector, Jp->data(), *phiijk);
+      resolve_S_aaa(*cc_sector, tmp_sector, Jp->data(), phiijk);
 
       shared_ptr<const BlockSparseMatrix> gamma_a = blockops->gamma_a(aETkey, p);
       mat_block_multiply(false, false, phase, tmp_sector, *gamma_a, 1.0, *sigma_sector);
@@ -683,7 +683,7 @@ void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_s
 
   auto sparseij = make_shared<Sparse_IJ>(cc_sector->det()->stringspaceb(), sigma_sector->det()->stringspaceb());
   auto phik = make_shared<PhiKLists>(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea());
-  auto phiijk = make_shared<PhiIJKLists>(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea(), false);
+  PhiIJKLists phiijk(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea(), false);
 
   for (int p = 0; p < lnorb; ++p ) {
 #ifdef HAVE_MPI_H
@@ -695,7 +695,7 @@ void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_s
       for (int ist = 0; ist < nccstates; ++ist) {
         resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp->data(), phik, sparseij);
       }
-      resolve_S_aaa(*cc_sector, tmp_sector, Jp->data(), *phiijk);
+      resolve_S_aaa(*cc_sector, tmp_sector, Jp->data(), phiijk);
 
       shared_ptr<const BlockSparseMatrix> gamma_a = blockops->gamma_a(cc_sector->left_state(), p);
       mat_block_multiply(false, true, phase, tmp_sector, *gamma_a, 1.0, *sigma_sector);
@@ -712,6 +712,7 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
   const int nccstates = cc_sector->mdim();
   const BlockInfo tmpinfo(bETkey.nelea, bETkey.neleb, nccstates);
 
+  RASBlockVectors cc_trans = cc_sector->transpose_civecs();
   RASBlockVectors sigma_trans(sigma_sector->det()->transpose(), sigma_sector->left_state());
   RASBlockVectors tmp_sector(sigma_trans.det(), tmpinfo);
 
@@ -722,14 +723,9 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
 
   const int phase = (1 - (((cc_sector->det()->nelea()+cc_sector->det()->neleb())%2) << 1));
 
-  shared_ptr<RASDeterminants> trans_det = cc_sector->det()->transpose();
-  vector<shared_ptr<RASCivec>> cc_trans;
-  for (int icc = 0; icc < nccstates; ++icc)
-    cc_trans.push_back(cc_sector->civec(icc).transpose(trans_det));
-
-  auto sparseij = make_shared<Sparse_IJ>(cc_trans.front()->det()->stringspaceb(), sigma_trans.det()->stringspaceb());
-  auto phik = make_shared<PhiKLists>(cc_trans.front()->det()->stringspacea(), sigma_trans.det()->stringspacea());
-  auto phiijk = make_shared<PhiIJKLists>(cc_trans.front()->det()->stringspacea(), sigma_trans.det()->stringspacea(), true);
+  auto sparseij = make_shared<Sparse_IJ>(cc_trans.det()->stringspaceb(), sigma_trans.det()->stringspaceb());
+  auto phik = make_shared<PhiKLists>(cc_trans.det()->stringspacea(), sigma_trans.det()->stringspacea());
+  PhiIJKLists phiijk(cc_trans.det()->stringspacea(), sigma_trans.det()->stringspacea(), true);
 
   for (int p = 0; p < lnorb; ++p) {
 #ifdef HAVE_MPI_H
@@ -739,9 +735,9 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
       auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
       copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
       for (int ist = 0; ist < nccstates; ++ist) {
-        resolve_S_adag_adag_a(*cc_trans[ist], tmp_sector.civec(ist), Jp->data(), phiijk);
-        resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp->data(), phik, sparseij);
+        resolve_S_abb(cc_trans.civec(ist), tmp_sector.civec(ist), Jp->data(), phik, sparseij);
       }
+      resolve_S_aaa(cc_trans, tmp_sector, Jp->data(), phiijk);
 
       shared_ptr<const BlockSparseMatrix> gamma_b = blockops->gamma_b(bETkey, p);
       mat_block_multiply(false, false, phase, tmp_sector, *gamma_b, 1.0, sigma_trans);
@@ -762,6 +758,7 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
   const int nccstates = cc_sector->mdim();
   const BlockInfo tmpinfo(bHTkey.nelea, bHTkey.neleb, nccstates);
 
+  RASBlockVectors cc_trans = cc_sector->transpose_civecs();
   RASBlockVectors sigma_trans(sigma_sector->det()->transpose(), sigma_sector->left_state());
   RASBlockVectors tmp_sector(sigma_trans.det(), tmpinfo);
 
@@ -772,14 +769,9 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
 
   const int phase = (1 - (((tmp_sector.det()->nelea()+tmp_sector.det()->neleb())%2) << 1));
 
-  shared_ptr<RASDeterminants> trans_det = cc_sector->det()->transpose();
-  vector<shared_ptr<RASCivec>> cc_trans;
-  for (int icc = 0; icc < nccstates; ++icc)
-    cc_trans.push_back(cc_sector->civec(icc).transpose(trans_det));
-
-  auto sparseij = make_shared<Sparse_IJ>(cc_trans.front()->det()->stringspaceb(), sigma_trans.det()->stringspaceb());
-  auto phik = make_shared<PhiKLists>(cc_trans.front()->det()->stringspacea(), sigma_trans.det()->stringspacea());
-  auto phiijk = make_shared<PhiIJKLists>(cc_trans.front()->det()->stringspacea(), sigma_trans.det()->stringspacea(), false);
+  auto sparseij = make_shared<Sparse_IJ>(cc_trans.det()->stringspaceb(), sigma_trans.det()->stringspaceb());
+  auto phik = make_shared<PhiKLists>(cc_trans.det()->stringspacea(), sigma_trans.det()->stringspacea());
+  PhiIJKLists phiijk(cc_trans.det()->stringspacea(), sigma_trans.det()->stringspacea(), false);
 
   for (int p = 0; p < lnorb; ++p ) {
 #ifdef HAVE_MPI_H
@@ -789,9 +781,9 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
       auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
       copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
       for (int ist = 0; ist < nccstates; ++ist) {
-        resolve_S_adag_a_a(*cc_trans[ist], tmp_sector.civec(ist), Jp->data(), phiijk);
-        resolve_S_abb(*cc_trans[ist], tmp_sector.civec(ist), Jp->data(), phik, sparseij);
+        resolve_S_abb(cc_trans.civec(ist), tmp_sector.civec(ist), Jp->data(), phik, sparseij);
       }
+      resolve_S_aaa(cc_trans, tmp_sector, Jp->data(), phiijk);
 
       shared_ptr<const BlockSparseMatrix> gamma_b = blockops->gamma_b(cc_sector->left_state(), p);
       mat_block_multiply(false, true, phase, tmp_sector, *gamma_b, 1.0, sigma_trans);
@@ -803,6 +795,7 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
   for (int isg = 0; isg < sigma_sector->mdim(); ++isg)
     sigma_sector->civec(isg).ax_plus_y(1.0, *sigma_trans.civec(isg).transpose(sigma_sector->det()));
 }
+
 
 void FormSigmaProdRAS::resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiIJKLists& phi_ijk) const {
   shared_ptr<const RASDeterminants> sdet = cc.det();
@@ -853,125 +846,6 @@ void FormSigmaProdRAS::resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors&
   }
 }
 
-
-// resolves (S_p)_alpha = \sum_{ijk} (pk|ij) (k^+)_alpha i^+_alpha j_alpha
-void FormSigmaProdRAS::resolve_S_adag_adag_a(const RASCivecView cc, RASCivecView sigma, const double* Jp, shared_ptr<const PhiIJKLists> phi_ijk) const {
-  shared_ptr<const RASDeterminants> sdet = cc.det();
-  shared_ptr<const RASDeterminants> tdet = sigma.det();
-
-  const int norb = sdet->norb();
-  assert(norb == tdet->norb());
-
-  const size_t batchsize = batchsize_;
-  const size_t sla = sdet->lena();
-
-  // k^+_alpha i^+_alpha j_alpha portion. the way easy part
-  Matrix F(sla, min(batchsize, tdet->lena()), true);
-  for (auto& targetspace : *tdet->stringspacea()) {
-    const int nbatches = (targetspace->size()-1)/batchsize + 1;
-    for (int batch = 0; batch < nbatches; ++batch) {
-      const size_t batchstart = batch*batchsize;
-      const size_t batchlength = min(batchsize, targetspace->size() - batchstart);
-
-      F.zero();
-
-      // first build an F
-      for (size_t ia = 0; ia < batchlength; ++ia) {
-        double* const fdata = F.element_ptr(0, ia);
-        const bitset<nbit__> tabit = targetspace->strings(ia + batchstart);
-        for (int k = 0; k < norb; ++k) {
-          if (!tabit[k]) continue;
-          const bitset<nbit__> tmpbit = tabit ^ (bitset<nbit__>(1) << k);
-          const int kphase = sign(tmpbit, k);
-          for (int i = 0; i < k; ++i) {
-            if (!tmpbit[i]) continue;
-            const bitset<nbit__> tmp2bit = tmpbit ^ (bitset<nbit__>(1) << i);
-            for (int j = 0; j < norb; ++j) {
-              if (tmp2bit[j]) continue;
-              const bitset<nbit__> sbit = tmp2bit ^ (bitset<nbit__>(1) << j);
-              if (sdet->allowed(sbit)) {
-                const int ijphase = sign(sbit, i, j);
-                const size_t source_ia = sdet->lexical_offset<0>(sbit);
-                fdata[source_ia] += static_cast<double>(kphase * ijphase) * (Jp[j+norb*i+norb*norb*k] - Jp[j+norb*k+norb*norb*i]);
-              }
-            }
-          }
-        }
-      }
-
-      // Sp(beta, alpha) += \sum_alpha' C(beta, alpha') * F(alpha', alpha)
-      for (auto& ccblock : cc.blocks()) {
-        if (!ccblock) continue;
-        if (!tdet->allowed(targetspace, ccblock->stringsb())) continue;
-        shared_ptr<RASBlock<double>> target_block = sigma.block(ccblock->stringsb(), targetspace);
-
-        assert(ccblock->lenb() == target_block->lenb());
-        dgemm_("N", "N", target_block->lenb(), batchlength, ccblock->lena(), 1.0, ccblock->data(), ccblock->lenb(),
-                  F.element_ptr(ccblock->stringsa()->offset(), 0), F.ndim(), 1.0, target_block->data() + batchstart * target_block->lenb(), target_block->lenb());
-      }
-    }
-  }
-}
-
-// resolves (S_p)_alpha^\dagger = \sum_{ijk} (pk|ij) (i^+)_alpha j_alpha k_alpha
-void FormSigmaProdRAS::resolve_S_adag_a_a(const RASCivecView cc, RASCivecView sigma, const double* Jp, shared_ptr<const PhiIJKLists> phi_ijk) const {
-  shared_ptr<const RASDeterminants> sdet = cc.det();
-  shared_ptr<const RASDeterminants> tdet = sigma.det();
-
-  const int norb = sdet->norb();
-  assert(norb == tdet->norb());
-
-  const size_t batchsize = batchsize_;
-  const size_t sla = sdet->lena();
-
-  // i^+_alpha j^_alpha k_alpha portion. the way easy part
-  Matrix F(sla, min(batchsize, tdet->lena()), true);
-  for (auto& targetspace : *tdet->stringspacea()) {
-    const int nbatches = (targetspace->size()-1)/batchsize + 1;
-    for (int batch = 0; batch < nbatches; ++batch) {
-      const size_t batchstart = batch*batchsize;
-      const size_t batchlength = min(batchsize, targetspace->size() - batchstart);
-
-      F.zero();
-
-      // first build an F
-      const size_t offset = batchstart + targetspace->offset();
-      for (size_t ia = 0; ia < batchlength; ++ia) {
-        double* const fdata = F.element_ptr(0, ia);
-        const bitset<nbit__> tbit = tdet->string_bits_a(ia+offset);
-        for (int i = 0; i < norb; ++i) {
-          if (!tbit[i]) continue;
-          const bitset<nbit__> tmpbit = tbit ^ (bitset<nbit__>(1) << i);
-          for (int j = 0; j < norb; ++j) {
-            if (tmpbit[j]) continue;
-            const int ijphase = sign(tbit, i, j);
-            const bitset<nbit__> tmp2bit = tmpbit ^ (bitset<nbit__>(1) << j);
-            for (int k = j+1; k < norb; ++k) {
-              if (tmp2bit[k]) continue;
-              const bitset<nbit__> sbit = tmp2bit ^ (bitset<nbit__>(1) << k);
-              if (sdet->allowed(sbit)) {
-                const int kphase = sign(sbit, k);
-                const size_t source_ia = sdet->lexical_offset<0>(sbit);
-                fdata[source_ia] += static_cast<double>(kphase * ijphase) * (Jp[j+norb*i+norb*norb*k] - Jp[k+norb*i+norb*norb*j]);
-              }
-            }
-          }
-        }
-      }
-
-      // Sp(beta, alpha) += \sum_alpha' C(beta, alpha') * F(alpha', alpha)
-      for (auto& ccblock : cc.blocks()) {
-        if (!ccblock) continue;
-        if (!tdet->allowed(targetspace, ccblock->stringsb())) continue;
-        shared_ptr<RASBlock<double>> target_block = sigma.block(ccblock->stringsb(), targetspace);
-
-        assert(ccblock->lenb() == target_block->lenb());
-        dgemm_("N", "N", target_block->lenb(), batchlength, ccblock->lena(), 1.0, ccblock->data(), ccblock->lenb(),
-                  F.element_ptr(ccblock->stringsa()->offset(), 0), F.ndim(), 1.0, target_block->data() + batchstart * target_block->lenb(), target_block->lenb());
-      }
-    }
-  }
-}
 
 // computes \sum_{ijk} (k)_alpha i^+_beta j_beta (pk|ij)
 // (k) can be creation or annihilation and is determined based on the electron count of sigma

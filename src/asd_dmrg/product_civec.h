@@ -46,6 +46,9 @@ class RASBlockVectors : public Matrix {
     RASBlockVectors(std::shared_ptr<const RASDeterminants> det, const BlockInfo ls) : Matrix(det->size(), ls.nstates), det_(det), left_state_(ls) {
       assert(det);
     }
+    RASBlockVectors(std::shared_ptr<const RASDeterminants> det, const int M) : Matrix(det->size(), M), det_(det), left_state_(0, 0, M) {
+      assert(det);
+    }
     /// Copy-constructor
     RASBlockVectors(const RASBlockVectors& o) : RASBlockVectors(o.det_, o.left_state_) {
       std::copy_n(o.data(), size(), data());
@@ -67,6 +70,8 @@ class RASBlockVectors : public Matrix {
     BlockInfo left_state() const { return left_state_; }
     int nstates() const { return left_state_.nstates; }
     std::shared_ptr<const RASDeterminants> det() const { return det_; }
+
+    RASBlockVectors transpose_civecs() const;
 
     using Matrix::data;
     using Matrix::element_ptr;

@@ -30,6 +30,29 @@
 using namespace std;
 using namespace bagel;
 
+RASBlockVectors RASBlockVectors::transpose_civecs() const {
+  shared_ptr<const RASDeterminants> transdet = det()->transpose();
+  const int M = mdim();
+  const int nasign = 1 - (((det()->nelea()*det()->neleb())%2) << 1);
+
+  RASBlockVectors out(transdet, M);
+
+  for (auto& source_block : det()->blockinfo()) {
+    if (!source_block->empty()) {
+      auto target_block = transdet->blockinfo(source_block->stringsa(), source_block->stringsb());
+      assert(!target_block->empty());
+      for (int m = 0; m < M; ++m) {
+        const double* sourcedata = element_ptr(source_block->offset(), m);
+        double* targetdata = out.element_ptr(target_block->offset(), m);
+        blas::transpose(sourcedata, source_block->lenb(), source_block->lena(), targetdata, static_cast<double>(nasign));
+      }
+    }
+  }
+
+  return out;
+}
+
+
 // Constructor
 ProductRASCivec::ProductRASCivec(shared_ptr<RASSpace> space, shared_ptr<const DMRG_Block> left, const int nelea, const int neleb) :
   space_(space), left_(left), nelea_(nelea), neleb_(neleb) {
