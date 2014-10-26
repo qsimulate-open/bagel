@@ -39,11 +39,6 @@ class RASCivector_base {
     std::vector<std::shared_ptr<BlockType>> blocks_;
     std::shared_ptr<const RASDeterminants> det_;
 
-    const int hpaddress(const int na, const int nb) const {
-      const int N = na + nb;
-      return ( (N*(N+1))/2 + nb );
-    }
-
     template <class Func>
     void for_each_block(Func func) { for (auto& i: blocks_) if (i) func(i); }
 
@@ -65,8 +60,7 @@ class RASCivector_base {
     // Access to individual blocks
     std::shared_ptr<BlockType> block(const int& nha, const int& nhb, const int& npa, const int& npb) {
       if ( det_->allowed(nha, nhb, npa, npb) ) {
-        const int lp = (det_->max_particles()+1) * (det_->max_particles()+2) / 2;
-        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
+        return blocks_[det_->block_address(nha, nhb, npa, npb) ];
       }
       else return nullptr;
     }
@@ -79,8 +73,7 @@ class RASCivector_base {
 
     std::shared_ptr<const BlockType> block(const int& nha, const int& nhb, const int& npa, const int& npb) const {
       if ( det_->allowed(nha, nhb, npa, npb) ) {
-        const int lp = (det_->max_particles()+1) * (det_->max_particles()+2) / 2;
-        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
+        return blocks_[det_->block_address(nha, nhb, npa, npb)];
       }
       else return nullptr;
     }

@@ -60,6 +60,16 @@ class RASDeterminants : public Determinants_base<RASString>,
     static const int Alpha = 0;
     static const int Beta = 1;
 
+    int hpaddress(const int& na, const int& nb) const {
+      const int N = na + nb;
+      return ( (N*(N+1))/2 + nb );
+    }
+
+    int block_address(const int& nha, const int& nhb, const int& npa, const int& npb) const {
+      const int lp = (max_particles()+1) * (max_particles()+2) / 2;
+      return hpaddress(npa, npb) + lp * hpaddress(nha, nhb);
+    }
+
     bool operator==(const RASDeterminants& o) const
       { return ( nelea() == o.nelea() && neleb() == o.neleb() && max_holes_ == o.max_holes_ && max_particles_ == o.max_particles_ && ras_ == o.ras_ ); }
 
@@ -85,6 +95,29 @@ class RASDeterminants : public Determinants_base<RASString>,
         }
       }
       return out;
+    }
+
+    template <int spin>
+    std::vector<std::shared_ptr<const CIBlockInfo<RASString>>> matching_blocks(const std::shared_ptr<const RASString>& sp) const {
+      std::vector<std::shared_ptr<const CIBlockInfo<RASString>>> out;
+      for (auto& binfo : blockinfo_) {
+        if (!binfo->empty()) {
+          if (spin==0) {
+            if (sp->matches(binfo->stringsa()))
+              out.push_back(binfo);
+          }
+          else {
+            if (sp->matches(binfo->stringsb()))
+              out.push_back(binfo);
+          }
+        }
+      }
+      return out;
+    }
+
+    using Determinants_base<RASString>::blockinfo;
+    std::shared_ptr<const CIBlockInfo<RASString>> blockinfo(const int& nha, const int& nhb, const int& npa, const int& npb) const {
+      return this->blockinfo(block_address(nha, nhb, npa, npb));
     }
 
     const std::array<int, 3> ras() const { return ras_; }
