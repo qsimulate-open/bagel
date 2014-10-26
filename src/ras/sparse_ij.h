@@ -48,9 +48,9 @@ class Sparse_IJ {
   public:
     Sparse_IJ(std::shared_ptr<const CIStringSet<RASString>> source_stringspace, std::shared_ptr<const CIStringSet<RASString>> target_stringspace);
 
-    std::tuple<std::shared_ptr<SparseMatrix>, std::vector<SparseIJKey>> data(const int target_tag, const int source_tag) { return data_.at({target_tag, source_tag}); }
-    std::shared_ptr<SparseMatrix> sparse_matrix(const int target_tag, const int source_tag) { return std::get<0>(data_.at({target_tag, source_tag})); }
-    const std::vector<SparseIJKey>& sparse_data(const int target_tag, const int source_tag) { return std::get<1>(data_.at({target_tag, source_tag})); }
+    const std::tuple<std::shared_ptr<SparseMatrix>, std::vector<SparseIJKey>>& data(const int target_tag, const int source_tag) const { return data_.at({target_tag, source_tag}); }
+    const std::shared_ptr<SparseMatrix>& sparse_matrix(const int target_tag, const int source_tag) const { return std::get<0>(data_.at({target_tag, source_tag})); }
+    const std::vector<SparseIJKey>& sparse_data(const int target_tag, const int source_tag) const { return std::get<1>(data_.at({target_tag, source_tag})); }
 };
 
 }
