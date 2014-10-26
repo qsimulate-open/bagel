@@ -637,13 +637,12 @@ void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_s
   RASBlockVectors tmp_sector(sigma_sector->det(), tmpinfo);
 
   const int lnorb = jop->monomer_jop<1>()->nocc();
-  const int rnorb = jop->monomer_jop<0>()->nocc();
 
   shared_ptr<const Matrix> J = jop->coulomb_matrix<0,1,0,0>();
   const int phase = (1 - (((cc_sector->det()->nelea()+cc_sector->det()->neleb())%2) << 1));
 
-  auto sparseij = make_shared<Sparse_IJ>(cc_sector->det()->stringspaceb(), sigma_sector->det()->stringspaceb());
-  auto phik = make_shared<PhiKLists>(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea());
+  Sparse_IJ sparseij(cc_sector->det()->stringspaceb(), sigma_sector->det()->stringspaceb());
+  PhiKLists phik(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea());
   PhiIJKLists phiijk(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea(), true);
 
   for (int p = 0; p < lnorb; ++p ) {
@@ -651,12 +650,10 @@ void FormSigmaProdRAS::compute_sigma_3aET(shared_ptr<const RASBlockVectors> cc_s
     if (p % mpi__->size() == mpi__->rank()) {
 #endif
       tmp_sector.zero();
-      auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
-      copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
-      for (int ist = 0; ist < nccstates; ++ist) {
-        resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp->data(), phik, sparseij);
-      }
-      resolve_S_aaa(*cc_sector, tmp_sector, Jp->data(), phiijk);
+      const double* jdata = J->element_ptr(0, p);
+
+      resolve_S_aaa(*cc_sector, tmp_sector, jdata, phiijk);
+      resolve_S_abb(*cc_sector, tmp_sector, jdata, phik, sparseij);
 
       shared_ptr<const BlockSparseMatrix> gamma_a = blockops->gamma_a(aETkey, p);
       mat_block_multiply(false, false, phase, tmp_sector, *gamma_a, 1.0, *sigma_sector);
@@ -675,14 +672,13 @@ void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_s
   RASBlockVectors tmp_sector(sigma_sector->det(), tmpinfo);
 
   const int lnorb = jop->monomer_jop<1>()->nocc();
-  const int rnorb = jop->monomer_jop<0>()->nocc();
 
   shared_ptr<const Matrix> J = jop->coulomb_matrix<0,1,0,0>();
 
   const int phase = (1 - (((tmp_sector.det()->nelea()+tmp_sector.det()->neleb())%2) << 1));
 
-  auto sparseij = make_shared<Sparse_IJ>(cc_sector->det()->stringspaceb(), sigma_sector->det()->stringspaceb());
-  auto phik = make_shared<PhiKLists>(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea());
+  Sparse_IJ sparseij(cc_sector->det()->stringspaceb(), sigma_sector->det()->stringspaceb());
+  PhiKLists phik(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea());
   PhiIJKLists phiijk(cc_sector->det()->stringspacea(), sigma_sector->det()->stringspacea(), false);
 
   for (int p = 0; p < lnorb; ++p ) {
@@ -690,12 +686,10 @@ void FormSigmaProdRAS::compute_sigma_3aHT(shared_ptr<const RASBlockVectors> cc_s
     if (p % mpi__->size() == mpi__->rank()) {
 #endif
       tmp_sector.zero();
-      auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
-      copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
-      for (int ist = 0; ist < nccstates; ++ist) {
-        resolve_S_abb(cc_sector->civec(ist), tmp_sector.civec(ist), Jp->data(), phik, sparseij);
-      }
-      resolve_S_aaa(*cc_sector, tmp_sector, Jp->data(), phiijk);
+      const double* jdata = J->element_ptr(0, p);
+
+      resolve_S_aaa(*cc_sector, tmp_sector, jdata, phiijk);
+      resolve_S_abb(*cc_sector, tmp_sector, jdata, phik, sparseij);
 
       shared_ptr<const BlockSparseMatrix> gamma_a = blockops->gamma_a(cc_sector->left_state(), p);
       mat_block_multiply(false, true, phase, tmp_sector, *gamma_a, 1.0, *sigma_sector);
@@ -722,14 +716,13 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
   RASBlockVectors tmp_sector(sigma_trans.det(), tmpinfo);
 
   const int lnorb = jop->monomer_jop<1>()->nocc();
-  const int rnorb = jop->monomer_jop<0>()->nocc();
 
   shared_ptr<const Matrix> J = jop->coulomb_matrix<0,1,0,0>();
 
   const int phase = (1 - (((cc_sector->det()->nelea()+cc_sector->det()->neleb())%2) << 1));
 
-  auto sparseij = make_shared<Sparse_IJ>(cc_trans.det()->stringspaceb(), sigma_trans.det()->stringspaceb());
-  auto phik = make_shared<PhiKLists>(cc_trans.det()->stringspacea(), sigma_trans.det()->stringspacea());
+  Sparse_IJ sparseij(cc_trans.det()->stringspaceb(), sigma_trans.det()->stringspaceb());
+  PhiKLists phik(cc_trans.det()->stringspacea(), sigma_trans.det()->stringspacea());
   PhiIJKLists phiijk(cc_trans.det()->stringspacea(), sigma_trans.det()->stringspacea(), true);
 
   for (int p = 0; p < lnorb; ++p) {
@@ -737,12 +730,10 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
     if (p % mpi__->size() == mpi__->rank()) {
 #endif
       tmp_sector.zero();
-      auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
-      copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
-      for (int ist = 0; ist < nccstates; ++ist) {
-        resolve_S_abb(cc_trans.civec(ist), tmp_sector.civec(ist), Jp->data(), phik, sparseij);
-      }
-      resolve_S_aaa(cc_trans, tmp_sector, Jp->data(), phiijk);
+      const double* jdata = J->element_ptr(0, p);
+
+      resolve_S_aaa(cc_trans, tmp_sector, jdata, phiijk);
+      resolve_S_abb(cc_trans, tmp_sector, jdata, phik, sparseij);
 
       shared_ptr<const BlockSparseMatrix> gamma_b = blockops->gamma_b(bETkey, p);
       mat_block_multiply(false, false, phase, tmp_sector, *gamma_b, 1.0, sigma_trans);
@@ -773,14 +764,13 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
   RASBlockVectors tmp_sector(sigma_trans.det(), tmpinfo);
 
   const int lnorb = jop->monomer_jop<1>()->nocc();
-  const int rnorb = jop->monomer_jop<0>()->nocc();
 
   shared_ptr<const Matrix> J = jop->coulomb_matrix<0,1,0,0>();
 
   const int phase = (1 - (((tmp_sector.det()->nelea()+tmp_sector.det()->neleb())%2) << 1));
 
-  auto sparseij = make_shared<Sparse_IJ>(cc_trans.det()->stringspaceb(), sigma_trans.det()->stringspaceb());
-  auto phik = make_shared<PhiKLists>(cc_trans.det()->stringspacea(), sigma_trans.det()->stringspacea());
+  Sparse_IJ sparseij(cc_trans.det()->stringspaceb(), sigma_trans.det()->stringspaceb());
+  PhiKLists phik(cc_trans.det()->stringspacea(), sigma_trans.det()->stringspacea());
   PhiIJKLists phiijk(cc_trans.det()->stringspacea(), sigma_trans.det()->stringspacea(), false);
 
   for (int p = 0; p < lnorb; ++p ) {
@@ -788,12 +778,10 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
     if (p % mpi__->size() == mpi__->rank()) {
 #endif
       tmp_sector.zero();
-      auto Jp = make_shared<btas::Tensor3<double>>(rnorb, rnorb, rnorb);
-      copy_n(J->element_ptr(0, p), rnorb*rnorb*rnorb, Jp->data());
-      for (int ist = 0; ist < nccstates; ++ist) {
-        resolve_S_abb(cc_trans.civec(ist), tmp_sector.civec(ist), Jp->data(), phik, sparseij);
-      }
-      resolve_S_aaa(cc_trans, tmp_sector, Jp->data(), phiijk);
+      const double* jdata = J->element_ptr(0, p);
+
+      resolve_S_aaa(cc_trans, tmp_sector, jdata, phiijk);
+      resolve_S_abb(cc_trans, tmp_sector, jdata, phik, sparseij);
 
       shared_ptr<const BlockSparseMatrix> gamma_b = blockops->gamma_b(cc_sector->left_state(), p);
       mat_block_multiply(false, true, phase, tmp_sector, *gamma_b, 1.0, sigma_trans);
@@ -859,85 +847,94 @@ void FormSigmaProdRAS::resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors&
 
 // computes \sum_{ijk} (k)_alpha i^+_beta j_beta (pk|ij)
 // (k) can be creation or annihilation and is determined based on the electron count of sigma
-void FormSigmaProdRAS::resolve_S_abb(const RASCivecView cc, RASCivecView sigma, const double* Jp, shared_ptr<PhiKLists> phik, shared_ptr<Sparse_IJ> sparseij) const {
+void FormSigmaProdRAS::resolve_S_abb(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiKLists& phik, const Sparse_IJ& sparseij) const {
   shared_ptr<const RASDeterminants> sdet = cc.det();
   shared_ptr<const RASDeterminants> tdet = sigma.det();
 
   assert(abs(sdet->nelea()-tdet->nelea())==1);
   assert(sdet->neleb()==tdet->neleb());
 
+  const int M = cc.mdim();
+  assert(M == sigma.mdim());
+
   // first, figure out maximum size of all the blocks
-  const size_t max_ccblock_size = (*max_element(cc.blocks().begin(), cc.blocks().end(),
-          [] (shared_ptr<const RASBlock<double>> a, shared_ptr<const RASBlock<double>> b) {
+  const size_t max_ccblock_size = (*max_element(sdet->blockinfo().begin(), sdet->blockinfo().end(),
+          [] (const shared_ptr<const CIBlockInfo<RASString>>& a, const shared_ptr<const CIBlockInfo<RASString>>& b) {
             return ( a ? a->size() : 0) < ( b ? b->size() : 0);
           }))->size();
-  const size_t max_sgblock_size = (*max_element(sigma.blocks().begin(), sigma.blocks().end(),
-          [] (shared_ptr<const RASBlock<double>> a, shared_ptr<const RASBlock<double>> b) {
+  const size_t max_sgblock_size = (*max_element(tdet->blockinfo().begin(), tdet->blockinfo().end(),
+          [] (const shared_ptr<const CIBlockInfo<RASString>>& a, const shared_ptr<const CIBlockInfo<RASString>>& b) {
             return ( a ? a->size() : 0) < ( b ? b->size() : 0);
           }))->size();
 
   // allocate chunks of storage equal to the maximum possible size that may be needed. probably overkill, but also probably fine
-  unique_ptr<double[]> cprime(new double[max_ccblock_size]);
-  unique_ptr<double[]> V(new double[max_sgblock_size]);
+  unique_ptr<double[]> cprime(new double[max_ccblock_size*M]);
+  unique_ptr<double[]> V(new double[max_sgblock_size*M]);
 
   const int norb = sdet->norb();
   assert(norb == tdet->norb());
-
-  if (!sparseij) sparseij = make_shared<Sparse_IJ>(sdet->stringspaceb(), tdet->stringspaceb());
-  if (!phik) phik = make_shared<PhiKLists>(sdet->stringspacea(), tdet->stringspacea());
 
   // k^?_alpha i^+_beta j_beta portion. the harder part
   for (int k = 0; k < norb; ++k) {
     for (auto& target_bspace : *tdet->stringspaceb()) {
       const size_t tlb = target_bspace->size();
       for (auto& source_aspace : *sdet->stringspacea()) {
-        const vector<PhiKLists::PhiK>& full_phi = phik->data(k).at(source_aspace->tag());
+        const vector<PhiKLists::PhiK>& full_phi = phik.data(k).at(source_aspace->tag());
         vector<PhiKLists::PhiK> reduced_RI;
         reduced_RI.reserve(count_if(full_phi.begin(), full_phi.end(), [&tdet, &target_bspace] (const PhiKLists::PhiK& i) {
           const RASString* target_aspace = i.target_space;
           return tdet->allowed(target_aspace->nholes(), target_bspace->nholes(), target_aspace->nparticles(), target_bspace->nparticles());
         }));
 
+        // after this step, the "target" field of the PhiK objects gives the starting position within the civector
         for (auto& i : full_phi) {
           const RASString* target_aspace = i.target_space;
-          if (tdet->allowed(target_aspace->nholes(), target_bspace->nholes(), target_aspace->nparticles(), target_bspace->nparticles()))
-            reduced_RI.push_back(i);
+          if (tdet->allowed(target_aspace->nholes(), target_bspace->nholes(), target_aspace->nparticles(), target_bspace->nparticles())) {
+            const shared_ptr<const CIBlockInfo<RASString>>& bi = tdet->blockinfo(target_aspace->nholes(), target_bspace->nholes(),
+                                                                                 target_aspace->nparticles(), target_bspace->nparticles());
+            reduced_RI.emplace_back(i.source, bi->offset() + i.target*bi->lenb(), i.sign, target_aspace);
+          }
         }
 
         if (reduced_RI.empty()) continue;
 
-        for (auto& source_block : cc.allowed_blocks<0>(source_aspace)) {
-          auto source_bspace = source_block->stringsb();
+        for (auto& source_block : sdet->matching_blocks<0>(source_aspace)) {
+          auto& source_bspace = source_block->stringsb();
           const size_t slb = source_bspace->size();
+
+          // Now build an F matrix in sparse format
+          const shared_ptr<SparseMatrix>& sparseF = sparseij.sparse_matrix(target_bspace->tag(), source_bspace->tag());
 
           // if this assert fails, max_ccblock_size is not a good enough upperbound
           assert(max_ccblock_size >= slb * reduced_RI.size());
 
-          fill_n(cprime.get(), slb * reduced_RI.size(), 0.0);
-
-          int current = 0;
-          for (auto& i : reduced_RI)
-            blas::ax_plus_y_n(i.sign, source_block->data() + slb*i.source, slb, cprime.get() + current++*slb);
-
-          // Now build an F matrix in sparse format
-          shared_ptr<SparseMatrix> sparseF = sparseij->sparse_matrix(target_bspace->tag(), source_bspace->tag());
+          // if this assert fails, max_sgblock_size is not a good enough upperbound
+          assert(max_sgblock_size >= tlb * reduced_RI.size());
 
           if (sparseF) {
             sparseF->zero();
-            for (auto& iter : sparseij->sparse_data(target_bspace->tag(), source_bspace->tag()))
+            for (auto& iter : sparseij.sparse_data(target_bspace->tag(), source_bspace->tag()))
               *iter.ptr += static_cast<double>(iter.sign) * Jp[iter.j + norb*iter.i + norb*norb*k];
 
-            // if this assert fails, max_sgblock_size is not a good enough upperbound
-            assert(max_sgblock_size >= tlb * reduced_RI.size());
+            fill_n(cprime.get(), slb * reduced_RI.size() * M, 0.0);
 
-            dcsrmm_("N", tlb, reduced_RI.size(), slb, 1.0, sparseF->data(), sparseF->cols(), sparseF->rind(), cprime.get(), slb, 0.0, V.get(), tlb);
+            int current = 0;
+            for (int m = 0; m < M; ++m) {
+              const double* sourcedata = cc.element_ptr(source_block->offset(), m);
 
-            // scatter
-            current = 0;
-            for (auto& i : reduced_RI) {
-              const RASString* target_aspace = i.target_space;
-              shared_ptr<RASBlock<double>> target_block = sigma.block(target_aspace->nholes(), target_bspace->nholes(), target_aspace->nparticles(), target_bspace->nparticles());
-              blas::ax_plus_y_n(1.0, V.get() + tlb*current++, tlb, target_block->data() + target_block->lenb()*i.target);
+              for (auto& i : reduced_RI)
+                blas::ax_plus_y_n(i.sign, sourcedata + slb*i.source, slb, cprime.get() + current++*slb);
+            }
+
+            dcsrmm_("N", tlb, reduced_RI.size() * M, slb, 1.0, sparseF->data(), sparseF->cols(), sparseF->rind(), cprime.get(), slb, 0.0, V.get(), tlb);
+
+              // scatter
+              current = 0;
+            for (int m = 0; m < M; ++m) {
+              for (auto& i : reduced_RI) {
+                double* targetdata = sigma.element_ptr(i.target, m);
+                blas::ax_plus_y_n(1.0, V.get() + tlb*current++, tlb, targetdata);
+              }
             }
           }
         }

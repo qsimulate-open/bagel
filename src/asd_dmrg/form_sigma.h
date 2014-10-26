@@ -86,7 +86,7 @@ class FormSigmaProdRAS {
     void resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiIJKLists& phi_ijk) const;
 
     /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\beta j_\beta k_\alpha (ij|pk)f$ and \f$\hat S_p = \sum_{i,j,k}
-    void resolve_S_abb(const RASCivecView cc, RASCivecView sigma, const double* Jp, std::shared_ptr<PhiKLists> phik = nullptr, std::shared_ptr<Sparse_IJ> sparse = nullptr) const;
+    void resolve_S_abb(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiKLists& phik, const Sparse_IJ& sparse) const;
 };
 
 }
