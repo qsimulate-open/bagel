@@ -906,10 +906,10 @@ void FormSigmaProdRAS::resolve_S_abb(const RASBlockVectors& cc, RASBlockVectors&
           const shared_ptr<SparseMatrix>& sparseF = sparseij.sparse_matrix(target_bspace->tag(), source_bspace->tag());
 
           // if this assert fails, max_ccblock_size is not a good enough upperbound
-          assert(max_ccblock_size >= slb * reduced_RI.size());
+          assert(max_ccblock_size >= slb * reduced_RI.size() * M);
 
           // if this assert fails, max_sgblock_size is not a good enough upperbound
-          assert(max_sgblock_size >= tlb * reduced_RI.size());
+          assert(max_sgblock_size >= tlb * reduced_RI.size() * M);
 
           if (sparseF) {
             sparseF->zero();

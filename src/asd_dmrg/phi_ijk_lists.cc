@@ -34,7 +34,7 @@ PhiIJKLists::PhiIJKLists(shared_ptr<const CIStringSet<RASString>> source_strings
   data_.reserve(target_stringspace->size());
   const size_t tlen = target_stringspace->size();
   const int norb = source_stringspace->norb();
-  assert(norb = target_stringspace->norb());
+  assert(norb == target_stringspace->norb());
 
   if (conjugate) {
     for (size_t it = 0; it < tlen; ++it) {
