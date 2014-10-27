@@ -96,9 +96,50 @@ vector<shared_ptr<ProductRASCivec>> FormSigmaProdRAS::diagonal(const vector<shar
 
 void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, shared_ptr<ProductRASCivec> sigma, shared_ptr<const BlockOperators> blockops, shared_ptr<DimerJop> jop) const {
   Timer ptime(2);
+
+  const int norb = cc->space()->norb();
+
+  // first, prepare g and mo2e arrays
+  shared_ptr<const Matrix> mo2e = jop->monomer_jop<0>()->mo2e();
+  auto mo2e_hz = [&norb, &mo2e] (const int i, const int j, const int k, const int l) { return mo2e->element(i + norb*j, k + norb*l); };
+
+  Matrix g(*jop->monomer_jop<0>()->mo1e()->matrix());
+
+  for (int k = 0, kl = 0; k < norb; ++k) {
+    for (int l = 0; l < k; ++l, ++kl) {
+      { // g_kl
+        double val = -mo2e_hz(k, k, k, l);
+          for (int j = 0; j < k; ++j) val -= mo2e_hz(k,j,j,l);
+        g(l,k) += val;
+      }
+
+      { // g_lk
+        double val = 0.0;
+        for (int j = 0; j < l; ++j) val -= mo2e_hz(l,j,j,k);
+        g(k,l) += val;
+      }
+    }
+    // g_kk
+    double val = -0.5*mo2e_hz(k,k,k,k);
+    for (int j = 0; j < k; ++j) val -= mo2e_hz(k,j,j,k);
+    g(k,k) += val;
+    ++kl;
+  }
+
+  // now precompute Sparse_IJ objects
+  map</*bspace_tag*/size_t, shared_ptr<Sparse_IJ>> sparse_map;
+  for (auto& sec : cc->sectors()) {
+    const shared_ptr<const RASDeterminants>& secdet = sec.second->det();
+    const shared_ptr<const CIStringSet<RASString>> bspace = secdet->stringspaceb();
+    if (sparse_map.find(bspace->key())==sparse_map.end())
+      sparse_map.emplace(bspace->key(), make_shared<Sparse_IJ>(bspace, bspace));
+  }
+
+  // convenient access to space object
+  shared_ptr<RASSpace> space = sigma->space();
+
   for (auto& sector : sigma->sectors()) {
     // first prepare pure block part which will be a nsecstates x nsecstates matrix
-    const int nsecstates = sector.second->nstates();
     const Matrix pure_block = *blockops->ham(sector.first);
     assert(pure_block.ndim()==nsecstates && pure_block.mdim()==nsecstates);
 
@@ -112,15 +153,12 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
     ptime.tick_print("pure_block");
 
     // now do individual form_sigmas for the RAS parts
-    FormSigmaRAS form_pure_ras(batchsize_);
-    for(int ist = 0; ist < nsecstates; ++ist) {
-#ifdef HAVE_MPI_H
-      if (ist%mpi__->size() == mpi__->rank())
-        form_pure_ras(cc_sector->civec(ist), sigma_sector->civec(ist), jop->monomer_jop<0>());
-#else
-      form_pure_ras(cc_sector->civec(ist), sigma_sector->civec(ist), jop->monomer_jop<0>());
-#endif
-    }
+    shared_ptr<const MOFile> monomerjop = jop->monomer_jop<0>();
+    resolve_H_aa(*cc_sector, *sigma_sector, g.data(), mo2e->data());
+
+    shared_ptr<const RASDeterminants> trans_det = space->det(cc_sector->det()->neleb(), cc_sector->det()->nelea());
+    resolve_H_bb(*cc_sector, *sigma_sector, trans_det, g.data(), mo2e->data());
+    resolve_H_ab(*cc_sector, *sigma_sector, *sparse_map.at(cc_sector->det()->stringspaceb()->key()), mo2e->data());
     ptime.tick_print("pure_ras");
   }
 }
@@ -792,153 +830,4 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
 
   for (int isg = 0; isg < sigma_sector->mdim(); ++isg)
     sigma_sector->civec(isg).ax_plus_y(1.0, *sigma_trans.civec(isg).transpose(sigma_sector->det()));
-}
-
-
-void FormSigmaProdRAS::resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiIJKLists& phi_ijk) const {
-  shared_ptr<const RASDeterminants> sdet = cc.det();
-  shared_ptr<const RASDeterminants> tdet = sigma.det();
-
-  const int norb = sdet->norb();
-  assert(norb == tdet->norb());
-
-  const size_t batchsize = batchsize_;
-  const size_t sla = sdet->lena();
-
-  const RASCivecView ccview = cc.civec(0);
-  const RASCivecView sigmaview = sigma.civec(0);
-
-  const int M = cc.mdim();
-  assert(M == sigma.mdim());
-
-  Matrix F(sla, min(batchsize, tdet->lena()), true);
-  for (auto& targetspace : *tdet->stringspacea()) {
-    const int nbatches = (targetspace->size()-1)/batchsize + 1;
-    for (int batch = 0; batch < nbatches; ++batch) {
-      const size_t batchstart = batch * batchsize;
-      const size_t batchlength = min(batchsize, targetspace->size() - batchstart);
-
-      F.zero();
-      for (size_t ia = 0; ia < batchlength; ++ia) {
-        double* const fdata = F.element_ptr(0, ia);
-        for (auto& iter : phi_ijk.data(ia + batchstart + targetspace->offset()))
-          fdata[iter.source] += static_cast<double>(iter.sign) *
-                      (Jp[iter.j+norb*iter.i+norb*norb*iter.k] - Jp[iter.k+norb*iter.i+norb*norb*iter.j]);
-      }
-
-      for (auto& ccblock : ccview.blocks()) {
-        if (!ccblock) continue;
-        if (!tdet->allowed(targetspace, ccblock->stringsb())) continue;
-        shared_ptr<const RASBlock<double>> target_block = sigmaview.block(ccblock->stringsb(), targetspace);
-
-        assert(ccblock->lenb() == target_block->lenb());
-        const double* fdata = F.element_ptr(ccblock->stringsa()->offset(), 0);
-        for (int m = 0; m < M; ++m) {
-          const double* source_data = cc.element_ptr(ccblock->offset(), m);
-          double* target_data = sigma.element_ptr(target_block->offset() + batchstart * target_block->lenb(), m);
-          dgemm_("N", "N", target_block->lenb(), batchlength, ccblock->lena(), 1.0, source_data, ccblock->lenb(),
-                    fdata, F.ndim(), 1.0, target_data, target_block->lenb());
-        }
-      }
-    }
-  }
-}
-
-
-// computes \sum_{ijk} (k)_alpha i^+_beta j_beta (pk|ij)
-// (k) can be creation or annihilation and is determined based on the electron count of sigma
-void FormSigmaProdRAS::resolve_S_abb(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiKLists& phik, const Sparse_IJ& sparseij) const {
-  shared_ptr<const RASDeterminants> sdet = cc.det();
-  shared_ptr<const RASDeterminants> tdet = sigma.det();
-
-  assert(abs(sdet->nelea()-tdet->nelea())==1);
-  assert(sdet->neleb()==tdet->neleb());
-
-  const int M = cc.mdim();
-  assert(M == sigma.mdim());
-
-  // first, figure out maximum size of all the blocks
-  const size_t max_ccblock_size = (*max_element(sdet->blockinfo().begin(), sdet->blockinfo().end(),
-          [] (const shared_ptr<const CIBlockInfo<RASString>>& a, const shared_ptr<const CIBlockInfo<RASString>>& b) {
-            return ( a ? a->size() : 0) < ( b ? b->size() : 0);
-          }))->size();
-  const size_t max_sgblock_size = (*max_element(tdet->blockinfo().begin(), tdet->blockinfo().end(),
-          [] (const shared_ptr<const CIBlockInfo<RASString>>& a, const shared_ptr<const CIBlockInfo<RASString>>& b) {
-            return ( a ? a->size() : 0) < ( b ? b->size() : 0);
-          }))->size();
-
-  // allocate chunks of storage equal to the maximum possible size that may be needed. probably overkill, but also probably fine
-  unique_ptr<double[]> cprime(new double[max_ccblock_size*M]);
-  unique_ptr<double[]> V(new double[max_sgblock_size*M]);
-
-  const int norb = sdet->norb();
-  assert(norb == tdet->norb());
-
-  // k^?_alpha i^+_beta j_beta portion. the harder part
-  for (int k = 0; k < norb; ++k) {
-    for (auto& target_bspace : *tdet->stringspaceb()) {
-      const size_t tlb = target_bspace->size();
-      for (auto& source_aspace : *sdet->stringspacea()) {
-        const vector<PhiKLists::PhiK>& full_phi = phik.data(k).at(source_aspace->tag());
-        vector<PhiKLists::PhiK> reduced_RI;
-        reduced_RI.reserve(count_if(full_phi.begin(), full_phi.end(), [&tdet, &target_bspace] (const PhiKLists::PhiK& i) {
-          const RASString* target_aspace = i.target_space;
-          return tdet->allowed(target_aspace->nholes(), target_bspace->nholes(), target_aspace->nparticles(), target_bspace->nparticles());
-        }));
-
-        // after this step, the "target" field of the PhiK objects gives the starting position within the civector
-        for (auto& i : full_phi) {
-          const RASString* target_aspace = i.target_space;
-          if (tdet->allowed(target_aspace->nholes(), target_bspace->nholes(), target_aspace->nparticles(), target_bspace->nparticles())) {
-            const shared_ptr<const CIBlockInfo<RASString>>& bi = tdet->blockinfo(target_aspace->nholes(), target_bspace->nholes(),
-                                                                                 target_aspace->nparticles(), target_bspace->nparticles());
-            reduced_RI.emplace_back(i.source, bi->offset() + i.target*bi->lenb(), i.sign, target_aspace);
-          }
-        }
-
-        if (reduced_RI.empty()) continue;
-
-        for (auto& source_block : sdet->matching_blocks<0>(source_aspace)) {
-          auto& source_bspace = source_block->stringsb();
-          const size_t slb = source_bspace->size();
-
-          // Now build an F matrix in sparse format
-          const shared_ptr<SparseMatrix>& sparseF = sparseij.sparse_matrix(target_bspace->tag(), source_bspace->tag());
-
-          // if this assert fails, max_ccblock_size is not a good enough upperbound
-          assert(max_ccblock_size >= slb * reduced_RI.size() * M);
-
-          // if this assert fails, max_sgblock_size is not a good enough upperbound
-          assert(max_sgblock_size >= tlb * reduced_RI.size() * M);
-
-          if (sparseF) {
-            sparseF->zero();
-            for (auto& iter : sparseij.sparse_data(target_bspace->tag(), source_bspace->tag()))
-              *iter.ptr += static_cast<double>(iter.sign) * Jp[iter.j + norb*iter.i + norb*norb*k];
-
-            fill_n(cprime.get(), slb * reduced_RI.size() * M, 0.0);
-
-            int current = 0;
-            for (int m = 0; m < M; ++m) {
-              const double* sourcedata = cc.element_ptr(source_block->offset(), m);
-
-              for (auto& i : reduced_RI)
-                blas::ax_plus_y_n(i.sign, sourcedata + slb*i.source, slb, cprime.get() + current++*slb);
-            }
-
-            dcsrmm_("N", tlb, reduced_RI.size() * M, slb, 1.0, sparseF->data(), sparseF->cols(), sparseF->rind(), cprime.get(), slb, 0.0, V.get(), tlb);
-
-              // scatter
-              current = 0;
-            for (int m = 0; m < M; ++m) {
-              for (auto& i : reduced_RI) {
-                double* targetdata = sigma.element_ptr(i.target, m);
-                blas::ax_plus_y_n(1.0, V.get() + tlb*current++, tlb, targetdata);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
 }

@@ -81,6 +81,15 @@ class FormSigmaProdRAS {
     /// Computes 3-operator bHT terms
     void compute_sigma_3bHT(std::shared_ptr<const RASBlockVectors> cc, std::shared_ptr<ProductRASCivec> sigma_sector, std::shared_ptr<const BlockOperators> blockops,  std::shared_ptr<DimerJop> jop) const;
 
+    /// Computes \f$\hat H = \sum_{ij} i^\dagger_\alpha j_\alpha h_{ij} + \frac{1}{2} \sum_{ijkl} i^\dagger_\alpha j^\dagger_\alpha k_\alpha l_\alpha (jk|li)\f$
+    void resolve_H_aa(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* g, const double* mo2e) const;
+
+    /// Computes \f$\hat H = \sum_{ij} i^\dagger_\beta j_\beta h_{ij} + \frac{1}{2} \sum_{ijkl} i^\dagger_\beta j^\dagger_\beta k_\beta l_\beta (jk|li)\f$
+    void resolve_H_bb(const RASBlockVectors& cc, RASBlockVectors& sigma, std::shared_ptr<const RASDeterminants> trans_det, const double* g, const double* mo2e) const;
+
+    /// Computes \f$\hat H = \frac{1}{2} \sum_{ijkl} i^\dagger_\alpha j^\dagger_\beta k_\beta l_\alpha (il|jk)\f$
+    void resolve_H_ab(const RASBlockVectors& cc, RASBlockVectors& sigma, const Sparse_IJ& sparseij, const double* mo2e) const;
+
     /// Computes \f$\hat S_p = \sum_{ijk} i^\dagger_\alpha j^\dagger_\alpha k_\alpha (jk|pi)\f$ or \f$\hat S_p^\dagger\f$,
     /// depending on what type of PhiIJKLists is given to it.
     void resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiIJKLists& phi_ijk) const;
