@@ -1809,7 +1809,7 @@ ASD_base::compute_aET_RDM34(const array<MonomerKey,4>& keys) const {
   const int neleA = Ap.nelea() + Ap.neleb();
 
   //3RDM 
-  { //CASE 1
+  { //CASE 1: p26B
     auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'a'a'aa
     auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta}); // a'b'a'ab
     auto gamma_A3 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}); // a'b'b'bb
@@ -1838,5 +1838,50 @@ ASD_base::compute_aET_RDM34(const array<MonomerKey,4>& keys) const {
     cout << "copied" << endl; cout.flush();
   }
   
+  { //CASE 3', 3'': p27B, 28
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}); // a'a'a
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}); // a'b'b
+    auto gamma_B1= gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'aa
+    auto gamma_B2= gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta}); // b'ab
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1); 
+    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B2);
+    auto rdm3 = make_shared<Matrix>(gamma_A1 % gamma_B2);
+    auto rdm4 = make_shared<Matrix>(gamma_A2 % gamma_B1);
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    { // E_a'i,bj',ck' 
+      int fac = {neleA%2 == 0 ? -1 : 1};
+      SMITH::sort_indices<3,2,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
+      SMITH::sort_indices<3,2,1,5,0,4, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
+      SMITH::sort_indices<3,2,0,4,1,5, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
+      rdmt->scale(fac);
+      cout << "rearranged" << endl; cout.flush();
+      
+      auto low = {nactA,     0,     0, nactA,     0, nactA};
+      auto up  = {nactT, nactA, nactA, nactT, nactA, nactT};
+      auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
+      copy(rdmt->begin(), rdmt->end(), outv.begin());
+      cout << "copied" << endl; cout.flush();
+    }
+    { // E_a'i',bj',ck 
+      int fac = {neleA%2 == 0 ? -1 : 1};
+      SMITH::sort_indices<3,4,1,5,0,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); 
+      SMITH::sort_indices<3,5,0,4,1,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); 
+      SMITH::sort_indices<3,5,1,4,0,2, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
+      SMITH::sort_indices<3,4,0,5,1,2, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
+      rdmt->scale(fac);
+      cout << "rearranged" << endl; cout.flush();
+      
+      auto low = {nactA, nactA,     0, nactA,     0,     0};
+      auto up  = {nactT, nactT, nactA, nactT, nactA, nactA};
+      auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
+      copy(rdmt->begin(), rdmt->end(), outv.begin());
+      cout << "copied" << endl; cout.flush();
+    }
+  }
+
   return make_tuple(out3,out4);
 }
