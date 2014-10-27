@@ -268,6 +268,39 @@ class DimerCISpace_base {
       }
     }
 
+    void super_complete() {
+      for (auto& imap : cispaceA_) {
+        int qa, qb;
+        std::tie(qa, qb) = detkey<0>(imap.first);
+
+        for (int n = 1; n < 3; ++n) {
+          add_det<0>(qa+n, qb);
+          add_det<0>(qa, qb+n);
+          add_det<0>(qa+n, qb+n);
+        }
+        for (int n = 1; n < 3; ++n) {
+          add_det<0>(qa-n, qb);
+          add_det<0>(qa, qb-n);
+          add_det<0>(qa-n, qb-n);
+        }
+      }
+
+      for (auto& imap : cispaceB_) {
+        int qa, qb;
+        std::tie(qa, qb) = detkey<1>(imap.first);
+
+        for (int n = 1; n < 3; ++n) {
+          add_det<1>(qa+n, qb);
+          add_det<1>(qa, qb+n);
+          add_det<1>(qa+n, qb+n);
+        }
+        for (int n = 1; n < 3; ++n) {
+          add_det<1>(qa-n, qb);
+          add_det<1>(qa, qb-n);
+          add_det<1>(qa-n, qb-n);
+        }
+      }
+    }
   private:
     template<int unit> std::pair<int, int> detkey(const SpaceKey key) { return detkey<unit>(key.S, key.m_s, key.q); }
     template<int unit> std::pair<int, int> detkey(const int S, const int m_s, const int q) {
