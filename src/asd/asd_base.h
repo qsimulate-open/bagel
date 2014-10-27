@@ -125,6 +125,7 @@ class ASD_base {
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_diagonal_block_RDM(const DimerSubspace_base& subspace) const;
 
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aET_RDM34(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bET_RDM34(const std::array<MonomerKey,4>&) const;
 
     void generate_initial_guess(std::shared_ptr<Matrix> cc, const std::vector<DimerSubspace_base>& subspace, const int nstates);
     std::shared_ptr<Matrix> compute_intra(const DimerSubspace_base& subspace, std::shared_ptr<const DimerJop> jop, const double diag) const;
