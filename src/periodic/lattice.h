@@ -28,7 +28,7 @@
 #define __BAGEL_SRC_PERIODIC_LATTICE_H
 
 #include <src/wfn/geometry.h>
-#include <src/periodic/pdfdist_ints.h>
+#include <src/periodic/pdfdist.h>
 
 namespace bagel {
 
@@ -62,7 +62,7 @@ class Lattice {
 
     //  for density fitting calculations
     double overlap_thresh_;
-    std::vector<std::shared_ptr<DFDist>> df_;
+    std::shared_ptr<PDFDist> df_;
 
   private:
     // serialization
@@ -109,8 +109,7 @@ class Lattice {
     // density fitting
     double overlap_thresh() const { return overlap_thresh_; }
     void form_df(const double thresh);
-    std::vector<std::shared_ptr<DFDist>> df() const { return df_; }
-    std::shared_ptr<DFDist> df(const int i) const { return df_[i]; }
+    std::shared_ptr<PDFDist> df() const { return df_; }
 };
 
 }

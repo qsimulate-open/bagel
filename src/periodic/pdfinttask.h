@@ -64,7 +64,7 @@ class PDFIntTask_coeff {
     PDFDist_ints* pdf_;
 
   public:
-    // <r0|sL> <i|.> / q
+    // <r|sL>
     PDFIntTask_coeff(std::array<std::shared_ptr<const Shell>,2>&& sh, std::array<int,2>&& offset, PDFDist_ints* pdf)
      : shell_(sh), offset_(offset), pdf_(pdf) { }
 
@@ -78,13 +78,12 @@ class PDFIntTask_coeff {
       const double q = pdf_->data1_->rms() * naux;
 
       double* const coeff = pdf_->coeffC_->data();
-      for (int j0 = offset_[0]; j0 != offset_[0] + shell_[1]->nbasis(); ++j0) {
+      for (int j0 = offset_[0]; j0 != offset_[0] + shell_[1]->nbasis(); ++j0)
         for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++odata) {
           const double* data1 = pdf_->data1_->data();
           for (int a = 0; a != naux; ++a, ++data1)
             coeff[a + naux * (j1 + nbas * j0)] = *odata * *data1 / q;
         }
-      }
     }
 };
 
@@ -93,22 +92,22 @@ class PDFIntTask_2index {
   protected:
     std::array<std::shared_ptr<const Shell>,4> shell_;
     std::array<int,2> offset_;
-    DFDist* df_;
+    std::shared_ptr<Matrix> data2_;
 
   public:
     // (i.|jL.) sum over L
-    PDFIntTask_2index(std::array<std::shared_ptr<const Shell>,4>&& sh, std::array<int,2>&& offset, DFDist* df)
-     : shell_(sh), offset_(offset), df_(df) { }
+    PDFIntTask_2index(std::array<std::shared_ptr<const Shell>,4>&& sh, std::array<int,2>&& offset, std::shared_ptr<Matrix>& data2)
+     : shell_(sh), offset_(offset), data2_(data2) { }
 
     void compute() {
 
       auto eribatch = std::make_shared<ERIBatch>(shell_, 2.0);
       const double* eridata = eribatch->data();
 
-      const size_t naux = df_->naux();
+      const size_t naux = data2_->ndim();
 
       assert(offset_.size() == 2);
-      double* const data = df_->data2_->data();
+      double* const data = data2_->data();
       for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0)
         for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++eridata)
           data[j0+j1*naux] += *eridata;

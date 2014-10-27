@@ -40,6 +40,10 @@ PFock::PFock(shared_ptr<const Lattice> l, shared_ptr<const PData> h, shared_ptr<
 
 void PFock::form_pfock() {
 
+  /* 1e part */
   for (int i = 0; i != nblock_; ++i)
     *(pdata_[i]) += *((*previous_)(i));
+
+  /* 2e part G_{tu} = (tu|rs) - 1/2(ts|ru) */
+
 }

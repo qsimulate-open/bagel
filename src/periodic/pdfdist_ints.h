@@ -27,33 +27,22 @@
 #define __SRC_PERIODIC_PDFDIST_INTS_H
 
 #include <src/df/df.h>
-#include <src/integral/os/overlapbatch.h>
 
 namespace bagel {
 
 class PDFDist_ints : public DFDist {
-  friend class PDFIntTask_aux;
   friend class PDFIntTask_coeff;
   protected:
     /// lattice vectors in direct space
     std::vector<std::array<double, 3>> lattice_vectors_;
+
+    /// auxiliary charge ints <a|.>
+    std::shared_ptr<const VectorB> data1_;
+
     /// 3-index integrals (r sL'|iL) for each L' (sum over all lattice vectors L)
-    void pcompute_3index_00(const std::vector<std::shared_ptr<const Shell>>& ashell,   /*aux   */
-                            const std::vector<std::shared_ptr<const Shell>>& b0shell); /*cell 0*/
-
-    void pcompute_3index_0g(const std::vector<std::shared_ptr<const Shell>>& ashell,   /*aux   */
-                            const std::vector<std::shared_ptr<const Shell>>& b0shell,  /*cell 0*/
-                            const std::vector<std::shared_ptr<const Shell>>& bgshell); /*cell g*/
-
-
-    /// 2-index integrals (i|j_L)^{-1} (sum over L)
-    void pcompute_2index(const std::vector<std::shared_ptr<const Shell>>& ashell, const double throverlap, const bool compute_inverse);
-
-    /// normalised 1-index integrals (i|.)
-    std::shared_ptr<VectorB> data1_;
-    void compute_aux_charge(const std::vector<std::shared_ptr<const Shell>>& ashell);
-    /// P_{ij} = <i|.><.|j>
-    std::shared_ptr<const Matrix> projector_;
+    void pcompute_3index(const std::vector<std::shared_ptr<const Shell>>& ashell,   /*aux   */
+                         const std::vector<std::shared_ptr<const Shell>>& b0shell,  /*cell 0*/
+                         const std::vector<std::shared_ptr<const Shell>>& bgshell); /*cell g*/
 
     /// charged part of coeff
     std::shared_ptr<btas::Tensor3<double>> coeffC_;
@@ -61,21 +50,17 @@ class PDFDist_ints : public DFDist {
                                const std::vector<std::shared_ptr<const Shell>>& bgshell);
 
   public:
-    PDFDist_ints(std::vector<std::array<double, 3>> lattice_vectors,
-                 const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms_c0,
-                 std::vector<std::shared_ptr<const Atom>>& atoms_cg, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
-                 const double thr, const bool inverse, const std::shared_ptr<Matrix> data2 = nullptr);
+    PDFDist_ints(std::vector<std::array<double, 3>> lattice_vectors, const int nbas, const int naux,
+                 const std::vector<std::shared_ptr<const Atom>>& atoms_c0,
+                 const std::vector<std::shared_ptr<const Atom>>& atoms_cg,
+                 const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
+                 const double thr, std::shared_ptr<const VectorB> data1 = nullptr);
 
-    std::vector<std::array<double, 3>> lattice_vectors() { return lattice_vectors_; }
-    int ncell() { return lattice_vectors_.size(); }
+    std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
+    int ncell() const { return lattice_vectors_.size(); }
 
     std::shared_ptr<const VectorB> data1() const { return data1_; }
-    std::shared_ptr<const btas::Tensor3<double>> coeffC() const { return coeffC_; }
-
-    /// compute J_{rs} operator (r0 and sL'), given density matrices in AO basis
-    std::shared_ptr<Matrix> pcompute_Jop(const std::shared_ptr<const Matrix> den) const;
-    std::shared_ptr<Matrix> pcompute_Jop_from_coeff(std::shared_ptr<const VectorB> coeff) const;
-    std::shared_ptr<VectorB> pcompute_coeff(const std::shared_ptr<const Matrix> den) const;
+    std::shared_ptr<btas::Tensor3<double>> coeffC() const { return coeffC_; }
 };
 
 }
