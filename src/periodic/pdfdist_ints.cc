@@ -104,7 +104,7 @@ void PDFDist_ints::compute_charged_coeff(const vector<shared_ptr<const Shell>>& 
     throw logic_error("auxiliary charge has to be computed first");
 
   // first compute <t|uL>
-  TaskQueue<PDFIntTask_coeff> tasks(b0shell.size() * bgshell.size() * ncell());
+  TaskQueue<PDFIntTask_coeff> tasks(b0shell.size() * bgshell.size());
 
   int j1 = 0;
   for (auto& t : b0shell) {
