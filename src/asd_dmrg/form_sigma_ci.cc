@@ -87,8 +87,7 @@ void FormSigmaProdRAS::resolve_H_aa(const RASBlockVectors& cc, RASBlockVectors& 
         if (!det->allowed(target_aspace, source_block->stringsb())) continue;
         const shared_ptr<const CIBlockInfo<RASString>>& target_block = det->blockinfo(source_block->stringsb(), target_aspace);
 
-        assert(iblock->lenb() == target_block->lenb());
-        assert(ispace->size() == target_block->lena());
+        assert(source_block->lenb() == target_block->lenb());
         for (int m = mstart; m < mend; ++m) {
           const double* sourcedata = cc.element_ptr(source_block->offset(), m);
           double* targetdata = sigma.element_ptr(target_block->offset() + batchstart*target_block->lenb(), m);
@@ -271,15 +270,15 @@ void FormSigmaProdRAS::resolve_S_abb(const RASBlockVectors& cc, RASBlockVectors&
   const size_t max_ccblock_size = (*max_element(sdet->blockinfo().begin(), sdet->blockinfo().end(),
           [] (const shared_ptr<const CIBlockInfo<RASString>>& a, const shared_ptr<const CIBlockInfo<RASString>>& b) {
             return ( a ? a->size() : 0) < ( b ? b->size() : 0);
-          }))->size();
+          }))->size() * M;
   const size_t max_sgblock_size = (*max_element(tdet->blockinfo().begin(), tdet->blockinfo().end(),
           [] (const shared_ptr<const CIBlockInfo<RASString>>& a, const shared_ptr<const CIBlockInfo<RASString>>& b) {
             return ( a ? a->size() : 0) < ( b ? b->size() : 0);
-          }))->size();
+          }))->size() * M;
 
   // allocate chunks of storage equal to the maximum possible size that may be needed. probably overkill, but also probably fine
-  unique_ptr<double[]> cprime(new double[max_ccblock_size*M]);
-  unique_ptr<double[]> V(new double[max_sgblock_size*M]);
+  unique_ptr<double[]> cprime(new double[max_ccblock_size]);
+  unique_ptr<double[]> V(new double[max_sgblock_size]);
 
   const int norb = sdet->norb();
   assert(norb == tdet->norb());

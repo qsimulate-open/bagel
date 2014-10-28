@@ -141,7 +141,6 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
   for (auto& sector : sigma->sectors()) {
     // first prepare pure block part which will be a nsecstates x nsecstates matrix
     const Matrix pure_block = *blockops->ham(sector.first);
-    assert(pure_block.ndim()==nsecstates && pure_block.mdim()==nsecstates);
 
     shared_ptr<RASBlockVectors> sigma_sector = sector.second;
     shared_ptr<const RASBlockVectors> cc_sector = cc->sector(sector.first);
@@ -780,8 +779,7 @@ void FormSigmaProdRAS::compute_sigma_3bET(shared_ptr<const RASBlockVectors> cc_s
 #endif
   }
 
-  for (int isg = 0; isg < sigma_sector->mdim(); ++isg)
-    sigma_sector->civec(isg).ax_plus_y(1.0, *sigma_trans.civec(isg).transpose(sigma_sector->det()));
+  sigma_sector->ax_plus_y(1.0, sigma_trans.transpose_civecs(sigma_sector->det()));
 }
 
 
@@ -828,6 +826,5 @@ void FormSigmaProdRAS::compute_sigma_3bHT(shared_ptr<const RASBlockVectors> cc_s
 #endif
   }
 
-  for (int isg = 0; isg < sigma_sector->mdim(); ++isg)
-    sigma_sector->civec(isg).ax_plus_y(1.0, *sigma_trans.civec(isg).transpose(sigma_sector->det()));
+  sigma_sector->ax_plus_y(1.0, sigma_trans.transpose_civecs(sigma_sector->det()));
 }
