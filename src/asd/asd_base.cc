@@ -1732,7 +1732,7 @@ ASD_base::symmetrize_RDM() const {
 tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>>
 ASD_base::couple_blocks_RDM34(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
 //***************************************************************************************************************
-
+  cout << "couple_block_RDM34 enetered.." << endl;
   Coupling term_type = coupling_type_RDM34(AB, ApBp);
 
   const DimerSubspace_base* space1 = &AB;
@@ -1771,7 +1771,7 @@ ASD_base::couple_blocks_RDM34(const DimerSubspace_base& AB, const DimerSubspace_
     //out = compute_bbET_RDM(keys); break;
 //Below: RDM3 explicit
     case Coupling::aaaET :
-      out = make_tuple(nullptr,nullptr); break;
+      out = compute_aaaET_RDM34(keys); break;
     case Coupling::bbbET :
       out = make_tuple(nullptr,nullptr); break;
     case Coupling::aabET :
@@ -2034,5 +2034,116 @@ ASD_base::compute_bET_RDM34(const array<MonomerKey,4>& keys) const {
     cout << "copied" << endl; cout.flush();
   }
 
+  return make_tuple(out3,out4);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_aaaET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "aaaET_RDM34" << endl; cout.flush();
+  auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  const int nactT = nactA+nactB;
+  auto out3 = make_shared<RDM<3>>(nactA+nactB);
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+  const int neleA = Ap.nelea() + Ap.neleb();
+
+  //3RDM 
+  { //CASE 3: p26B
+    auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}); // a'a'a'
+    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // aaa
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); //a'a'a'|aaa
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    // E_ai',bj',ck' 
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
+    rdmt->scale(fac);
+    cout << "rearranged" << endl; cout.flush();
+
+    auto low = {    0, nactA,     0, nactA,     0, nactA};
+    auto up  = {nactA, nactT, nactA, nactT, nactA, nactT};
+    auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+    cout << "copied" << endl; cout.flush();
+  }
+  
+  return make_tuple(out3,out4);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_aaET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "aET_RDM34" << endl; cout.flush();
+//auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  const int nactT = nactA+nactB;
+  auto out3 = make_shared<RDM<3>>(nactA+nactB);
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+//const int neleA = Ap.nelea() + Ap.neleb();
+
+  //3RDM 
+  { //CASE 2: p27
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}); // a'a'a'a
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}); // a'a'b'b
+    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // aa
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B); // a'a'a'a|aa
+    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B); // a'a'b'b|aa
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    // E_ai,bj',ck' 
+    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'a|aa
+    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'b|aa
+    cout << "rearranged" << endl; cout.flush();
+
+    auto low = {    0,     0,     0, nactA,     0, nactA};
+    auto up  = {nactA, nactA, nactA, nactT, nactA, nactT};
+    auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+    cout << "copied" << endl; cout.flush();
+  }
+  
+  { //CASE 4: p40B
+    auto gamma_A  = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}); //a'a'
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'aaa
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // b'baa
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B1); // a'a'|a'aaa
+    auto rdm2 = make_shared<Matrix>(gamma_A % gamma_B2); // a'a'|b'baa 
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    // E_a'i',bj',ck' 
+    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // a'a'|a'aaa
+    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // a'a'|b'baa
+    cout << "rearranged" << endl; cout.flush();
+
+    auto low = {nactA, nactA,     0, nactA,     0, nactA};
+    auto up  = {nactT, nactT, nactA, nactT, nactA, nactT};
+    auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+    cout << "copied" << endl; cout.flush();
+  }
   return make_tuple(out3,out4);
 }
