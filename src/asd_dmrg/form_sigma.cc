@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <map>
+#include <unordered_map>
 
 #include <src/math/sparsematrix.h>
 #include <src/math/blocksparsematrix.h>
@@ -127,7 +127,7 @@ void FormSigmaProdRAS::pure_block_and_ras(shared_ptr<const ProductRASCivec> cc, 
   }
 
   // now precompute Sparse_IJ objects
-  map</*bspace_tag*/size_t, shared_ptr<Sparse_IJ>> sparse_map;
+  unordered_map</*bspace_tag*/size_t, shared_ptr<Sparse_IJ>> sparse_map;
   for (auto& sec : cc->sectors()) {
     const shared_ptr<const RASDeterminants>& secdet = sec.second->det();
     const shared_ptr<const CIStringSet<RASString>> bspace = secdet->stringspaceb();
