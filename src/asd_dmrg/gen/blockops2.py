@@ -490,7 +490,7 @@ def generate_operator(opname, contracted_operators, ninput):
             print("%sMatrix Rterms = *right_ops_->%s_as_matrix(spair.right.key(), %s);" % (indent(), opname, inp_string))
             print()
             phase = "left_phase" if (ninput%2==1) else "1.0"
-            print("%sout_block->ax_plus_y(%s, kronecker_product(false, Rterms, false, Lident));" % (indent(), phase))
+            print("%skronecker_product(%s, false, Rterms, false, Lident, *out_block);" % (indent(), phase))
 
         if (pure_left):
             nops += 1
@@ -499,7 +499,7 @@ def generate_operator(opname, contracted_operators, ninput):
             print("%sMatrix Lterms = *left_ops_->%s_as_matrix(spair.left.key(), %s);" % (indent(), opname, inp_string))
             print("%sMatrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();" % indent())
             print()
-            print("%sout_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));" % (indent()))
+            print("%skronecker_product(1.0, false, Rident, false, Lterms, *out_block);" % (indent()))
 
         # preprocess collection into terms that can be combined
         combined_collection = []
@@ -611,7 +611,7 @@ def generate_operator(opname, contracted_operators, ninput):
 
                 phase = "left_phase" if len(oprod.right)%2==1 else 1.0
 
-                print("%sout_block->ax_plus_y(%s, kronecker_product(%s, Rmat, %s, Lmat));" % (indent(), phase, rtrans, ltrans));
+                print("%skronecker_product(%s, %s, Rmat, %s, Lmat, *out_block);" % (indent(), phase, rtrans, ltrans))
 
                 for i in range(len(oprod.left)):
                     close_code_block()
@@ -643,7 +643,7 @@ def generate_operator(opname, contracted_operators, ninput):
 
                 phase = "left_phase" if len(oprod.right)%2==1 else 1.0
 
-                print("%sout_block->ax_plus_y(%s, kronecker_product(%s, Rmat, %s, Lmat));" % (indent(), phase, rtrans, ltrans));
+                print("%skronecker_product(%s, %s, Rmat, %s, Lmat, *out_block);" % (indent(), phase, rtrans, ltrans))
 
                 # close Right loops
                 for i in range(len(oprod.right)):

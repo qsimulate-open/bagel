@@ -43,6 +43,12 @@ Matrix bagel::kronecker_product(const bool atrans, const Matrix& A, const bool b
   return out;
 }
 
+void bagel::kronecker_product(const double fac, const bool atrans, const Matrix& A, const bool btrans, const Matrix& B, Matrix& C) {
+  assert((atrans ? A.mdim() : A.ndim())*(btrans ? B.mdim() : B.ndim()) == C.ndim() &&
+         (atrans ? A.ndim() : A.mdim())*(btrans ? B.ndim() : B.mdim()) == C.mdim());
+  kronecker_product(fac, atrans, A.ndim(), A.mdim(), A.data(), A.ndim(), btrans, B.ndim(), B.mdim(), B.data(), B.ndim(), C.data(), C.ndim());
+}
+
 void bagel::kronecker_product(const double fac, const bool atrans, const int ndimA, const int mdimA, const double* A, const int ldA,
                                          const bool btrans, const int ndimB, const int mdimB, const double* B, const int ldB,
                                                                                                     double* C, const int ldC)

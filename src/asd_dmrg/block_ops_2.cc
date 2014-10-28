@@ -509,7 +509,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
               blas::ax_plus_y_n(-1.0 * mo2e(i, p+roffset, b+loffset, a+loffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(false, Rmat, true, Lmat));
+          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -546,7 +546,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
               blas::ax_plus_y_n(1.0 * mo2e(i, p+roffset, q+roffset, a+loffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
-          out_block->ax_plus_y(1.0, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -583,7 +583,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
               blas::ax_plus_y_n(1.0 * mo2e(i, p+roffset, q+roffset, a+loffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
-          out_block->ax_plus_y(1.0, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -608,7 +608,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
         Matrix Lterms = *left_ops_->S_a_as_matrix(spair.left.key(), i);
         Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
-        out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
+        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
 
         { // ["1.0 <L'| A^t |L> (x) <R'| A^t A |R>", "1.0 <L'| A^t |L> (x) <R'| B^t B |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
@@ -629,7 +629,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
                 blas::ax_plus_y_n(1.0 * mo2e(i, p+roffset, a+loffset, q+roffset), &(*Rgamma2)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
               }
             }
-            out_block->ax_plus_y(1.0, kronecker_product(false, Rmat, false, Lmat));
+            kronecker_product(1.0, false, Rmat, false, Lmat, *out_block);
           }
         }
 
@@ -667,7 +667,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
               blas::ax_plus_y_n(1.0 * mo2e(i, a+loffset, b+loffset, p+roffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -692,7 +692,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
         Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->S_a_as_matrix(spair.right.key(), i);
 
-        out_block->ax_plus_y(left_phase, kronecker_product(false, Rterms, false, Lident));
+        kronecker_product(left_phase, false, Rterms, false, Lident, *out_block);
 
         { // ["-1.0 <L'| A^t A |L> (x) <R'| A^t |R>", "1.0 <L'| B^t B |L> (x) <R'| A^t |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma1 = blocks_->left_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
@@ -713,7 +713,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
                 blas::ax_plus_y_n(1.0 * mo2e(i, a+loffset, p+roffset, b+loffset), &(*Lgamma2)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
               }
             }
-            out_block->ax_plus_y(left_phase, kronecker_product(false, Rmat, false, Lmat));
+            kronecker_product(left_phase, false, Rmat, false, Lmat, *out_block);
           }
         }
 
@@ -751,7 +751,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
               blas::ax_plus_y_n(-1.0 * mo2e(i, a+loffset, q+roffset, p+roffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
-          out_block->ax_plus_y(1.0, kronecker_product(true, Rmat, false, Lmat));
+          kronecker_product(1.0, true, Rmat, false, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -788,7 +788,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
               blas::ax_plus_y_n(1.0 * mo2e(i, a+loffset, b+loffset, p+roffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -854,7 +854,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
               blas::ax_plus_y_n(-1.0 * mo2e(i, p+roffset, a+loffset, b+loffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(false, Rmat, false, Lmat));
+          kronecker_product(left_phase, false, Rmat, false, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -891,7 +891,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
               blas::ax_plus_y_n(1.0 * mo2e(i, p+roffset, q+roffset, a+loffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
-          out_block->ax_plus_y(1.0, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -928,7 +928,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
               blas::ax_plus_y_n(-1.0 * mo2e(i, b+loffset, a+loffset, p+roffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -953,7 +953,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
         Matrix Lterms = *left_ops_->S_b_as_matrix(spair.left.key(), i);
         Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
-        out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
+        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
 
         { // ["1.0 <L'| B^t |L> (x) <R'| B^t B |R>", "1.0 <L'| B^t |L> (x) <R'| A^t A |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
@@ -974,7 +974,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
                 blas::ax_plus_y_n(1.0 * mo2e(i, p+roffset, a+loffset, q+roffset), &(*Rgamma2)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
               }
             }
-            out_block->ax_plus_y(1.0, kronecker_product(false, Rmat, false, Lmat));
+            kronecker_product(1.0, false, Rmat, false, Lmat, *out_block);
           }
         }
 
@@ -1012,7 +1012,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
               blas::ax_plus_y_n(-1.0 * mo2e(i, a+loffset, p+roffset, q+roffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
-          out_block->ax_plus_y(1.0, kronecker_product(false, Rmat, false, Lmat));
+          kronecker_product(1.0, false, Rmat, false, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1049,7 +1049,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
               blas::ax_plus_y_n(-1.0 * mo2e(i, q+roffset, p+roffset, a+loffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
-          out_block->ax_plus_y(1.0, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1074,7 +1074,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
         Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->S_b_as_matrix(spair.right.key(), i);
 
-        out_block->ax_plus_y(left_phase, kronecker_product(false, Rterms, false, Lident));
+        kronecker_product(left_phase, false, Rterms, false, Lident, *out_block);
 
         { // ["-1.0 <L'| B^t B |L> (x) <R'| B^t |R>", "1.0 <L'| A^t A |L> (x) <R'| B^t |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma1 = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.left.key(),spair.left.key()}).data;
@@ -1095,7 +1095,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
                 blas::ax_plus_y_n(1.0 * mo2e(i, a+loffset, p+roffset, b+loffset), &(*Lgamma2)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
               }
             }
-            out_block->ax_plus_y(left_phase, kronecker_product(false, Rmat, false, Lmat));
+            kronecker_product(left_phase, false, Rmat, false, Lmat, *out_block);
           }
         }
 
@@ -1133,7 +1133,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
               blas::ax_plus_y_n(1.0 * mo2e(i, a+loffset, b+loffset, p+roffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1173,13 +1173,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
       Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
       Matrix Rterms = *right_ops_->Q_aa_as_matrix(spair.right.key(), i, j);
 
-      out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
+      kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
 
       // Q_aa (x) I
       Matrix Lterms = *left_ops_->Q_aa_as_matrix(spair.left.key(), i, j);
       Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
-      out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
+      kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
 
       // add to map if large enough
       if (out_block->rms() > thresh_)
@@ -1212,7 +1212,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(-1.0 * mo2e(p+roffset, i, a+loffset, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(false, Rmat, true, Lmat));
+          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1247,7 +1247,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(-1.0 * (mo2e(p+roffset, i, a+loffset, j) - mo2e(i, p+roffset, a+loffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(false, Rmat, true, Lmat));
+          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1282,7 +1282,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(1.0 * mo2e(a+loffset, i, p+roffset, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, false, Lmat));
+          kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1317,7 +1317,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(1.0 * (mo2e(a+loffset, i, p+roffset, j) - mo2e(i, a+loffset, p+roffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, false, Lmat));
+          kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1357,13 +1357,13 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
       Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
       Matrix Rterms = *right_ops_->Q_bb_as_matrix(spair.right.key(), i, j);
 
-      out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
+      kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
 
       // Q_bb (x) I
       Matrix Lterms = *left_ops_->Q_bb_as_matrix(spair.left.key(), i, j);
       Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
-      out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
+      kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
 
       // add to map if large enough
       if (out_block->rms() > thresh_)
@@ -1396,7 +1396,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(-1.0 * (mo2e(p+roffset, i, a+loffset, j) - mo2e(i, p+roffset, a+loffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(false, Rmat, true, Lmat));
+          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1431,7 +1431,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(-1.0 * mo2e(p+roffset, i, a+loffset, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(false, Rmat, true, Lmat));
+          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1466,7 +1466,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(1.0 * mo2e(a+loffset, i, p+roffset, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, false, Lmat));
+          kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1501,7 +1501,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(1.0 * (mo2e(a+loffset, i, p+roffset, j) - mo2e(i, a+loffset, p+roffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, false, Lmat));
+          kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1555,7 +1555,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
         Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->Q_ab_as_matrix(spair.right.key(), i, j);
 
-        out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
+        kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -1589,7 +1589,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(1.0 * mo2e(p+roffset, a+loffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(false, Rmat, true, Lmat));
+          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1614,7 +1614,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
         Matrix Lterms = *left_ops_->Q_ab_as_matrix(spair.left.key(), i, j);
         Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
-        out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
+        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -1648,7 +1648,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(-1.0 * mo2e(a+loffset, p+roffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, false, Lmat));
+          kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1712,7 +1712,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(0.5 * (mo2e(a+loffset, p+roffset, j, i) - mo2e(a+loffset, p+roffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1737,7 +1737,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
         Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->P_aa_as_matrix(spair.right.key(), i, j);
 
-        out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
+        kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -1761,7 +1761,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
         Matrix Lterms = *left_ops_->P_aa_as_matrix(spair.left.key(), i, j);
         Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
-        out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
+        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -1824,7 +1824,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(0.5 * (mo2e(a+loffset, p+roffset, j, i) - mo2e(a+loffset, p+roffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1849,7 +1849,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
         Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->P_bb_as_matrix(spair.right.key(), i, j);
 
-        out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
+        kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -1873,7 +1873,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
         Matrix Lterms = *left_ops_->P_bb_as_matrix(spair.left.key(), i, j);
         Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
-        out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
+        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -1926,7 +1926,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
         Matrix Lterms = *left_ops_->P_ab_as_matrix(spair.left.key(), i, j);
         Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
 
-        out_block->ax_plus_y(1.0, kronecker_product(false, Rident, false, Lterms));
+        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -1960,7 +1960,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(-1.0 * mo2e(p+roffset, a+loffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough
@@ -1985,7 +1985,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
         Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
         Matrix Rterms = *right_ops_->P_ab_as_matrix(spair.right.key(), i, j);
 
-        out_block->ax_plus_y(1.0, kronecker_product(false, Rterms, false, Lident));
+        kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -2019,7 +2019,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
           for (int a = 0; a < lnorb; ++a) {
             blas::ax_plus_y_n(1.0 * mo2e(a+loffset, p+roffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
-          out_block->ax_plus_y(left_phase, kronecker_product(true, Rmat, true, Lmat));
+          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
 
         // add to map if large enough

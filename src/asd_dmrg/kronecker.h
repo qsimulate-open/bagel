@@ -58,6 +58,8 @@ T kronecker_product(const bool atrans, const T& A, const bool btrans, const T& B
 template <>
 Matrix kronecker_product(const bool atrans, const Matrix& A, const bool btrans, const Matrix& B);
 
+void kronecker_product(const double fac, const bool atrans, const Matrix& A, const bool btrans, const Matrix& B, Matrix& C);
+
 void kronecker_product(const double fac, const bool atrans, const int ndimA, const int mdimA, const double* A, const int ldA,
                                          const bool btrans, const int ndimB, const int mdimB, const double* B, const int ldB,
                                                                                                     double* C, const int ldC);
