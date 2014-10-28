@@ -58,8 +58,10 @@ void CASBFGS::compute() {
 
     // first perform CASCI to obtain RDMs
     if (iter) fci_->update(coeff_);
+    Timer fci_time(0);
     fci_->compute();
     fci_->compute_rdm12();
+    fci_time.tick_print("FCI and RDMs");
     // get energy
     energy_ = fci_->energy();
     {
@@ -117,6 +119,7 @@ void CASBFGS::compute() {
     onebody.tick_print("One body operators");
 
     // extrapolation using BFGS
+    Timer extrap(0);
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
     *x *= *natorb_mat;
@@ -124,7 +127,9 @@ void CASBFGS::compute() {
     auto xlog  = make_shared<RotFile>(xcopy, nclosed_, nact_, nvirt_);
     bfgs->check_step(evals, sigma, xlog, /*tight*/false, limited_memory);
     shared_ptr<RotFile> a = bfgs->more_sorensen_extrapolate(sigma, xlog);
-    cout << " ---------------------------------------------------- " << endl << endl;
+    cout << " ---------------------------------------------------- " << endl;
+    extrap.tick_print("More-Sorensen/Hebden extrapolation");
+    cout << " " << endl;
 
     // restore the matrix from RotFile
     shared_ptr<const Matrix> amat = a->unpack<Matrix>();
