@@ -123,6 +123,15 @@ class BlockOperators1 : public BlockOperators {
     std::shared_ptr<Matrix> gamma_a_as_matrix(const BlockKey bk, int i) const;
     std::shared_ptr<Matrix> gamma_b_as_matrix(const BlockKey bk, int i) const;
 
+    void  S_a_copy_to(double* target, const BlockKey bk, int i) const { copy_to(target, S_a_.at(bk), i); }
+    void  S_b_copy_to(double* target, const BlockKey bk, int i) const { copy_to(target, S_b_.at(bk), i); }
+    void Q_aa_copy_to(double* target, const BlockKey bk, int i, int j) const { copy_to(target, Q_aa_.at(bk), i, j); }
+    void Q_bb_copy_to(double* target, const BlockKey bk, int i, int j) const { copy_to(target, Q_bb_.at(bk), i, j); }
+    void Q_ab_copy_to(double* target, const BlockKey bk, int i, int j) const { copy_to(target, Q_ab_.at(bk), i, j); }
+    void P_aa_copy_to(double* target, const BlockKey bk, int i, int j) const { copy_to(target, P_aa_.at(bk), i, j); }
+    void P_bb_copy_to(double* target, const BlockKey bk, int i, int j) const { copy_to(target, P_bb_.at(bk), i, j); }
+    void P_ab_copy_to(double* target, const BlockKey bk, int i, int j) const { copy_to(target, P_ab_.at(bk), i, j); }
+
     double  ham(const BlockKey bk, int brastate, int ketstate) const override { return ham_.at(bk)->element(brastate,ketstate); }
     double Q_aa(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return (*Q_aa_.at(bk))(brastate, ketstate, i, j); }
     double Q_bb(const BlockKey bk, int brastate, int ketstate, int i, int j) const override { return (*Q_bb_.at(bk))(brastate, ketstate, i, j); }
@@ -174,6 +183,15 @@ class BlockOperators1 : public BlockOperators {
       std::copy_n(&(*g)(0, 0, i, j, k), out->size(), out->data());
       return out;
     }
+
+    void copy_to(double* target, std::shared_ptr<const btas::Tensor3<double>> g, const int i) const {
+      std::copy_n(&(*g)(0, 0, i), g->extent(0)*g->extent(1), target);
+    }
+
+    void copy_to(double* target, std::shared_ptr<const btas::Tensor4<double>> g, const int i, const int j) const {
+      std::copy_n(&(*g)(0, 0, i, j), g->extent(0)*g->extent(1), target);
+    }
+
 };
 
 /// Operators for two blocks

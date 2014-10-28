@@ -507,20 +507,16 @@ def generate_operator(opname, contracted_operators, ninput):
             nops += 1
             print()
             print("%s// I (x) %s" % (indent(), opname))
-            print("%sMatrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();" % indent())
-            print("%sMatrix Rterms = *right_ops_->%s_as_matrix(spair.right.key(), %s);" % (indent(), opname, inp_string))
-            print()
+            print("%sright_ops_->%s_copy_to(scratch.get(), spair.right.key(), %s);" % (indent(), opname, inp_string))
             phase = "left_phase" if (ninput%2==1) else "1.0"
-            print("%skronecker_product(%s, false, Rterms, false, Lident, *out_block);" % (indent(), phase))
+            print("%skronecker_product_A_I(%s, false, %s.right.nstates, spair.right.nstates, scratch.get(), %s.right.nstates, spair.left.nstates, out_block->data(), out_block->ndim());" % (indent(), phase, tpair, tpair))
 
         if (pure_left):
             nops += 1
             print()
             print("%s// %s (x) I" % (indent(), opname))
-            print("%sMatrix Lterms = *left_ops_->%s_as_matrix(spair.left.key(), %s);" % (indent(), opname, inp_string))
-            print("%sMatrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();" % indent())
-            print()
-            print("%skronecker_product(1.0, false, Rident, false, Lterms, *out_block);" % (indent()))
+            print("%sleft_ops_->%s_copy_to(scratch.get(), spair.left.key(), %s);" % (indent(), opname, inp_string))
+            print("%skronecker_product_I_B(1.0, spair.right.nstates, false, %s.left.nstates, spair.left.nstates, scratch.get(), %s.left.nstates, out_block->data(), out_block->ndim());" % (indent(), tpair, tpair))
 
         # preprocess collection into terms that can be combined
         combined_collection = []

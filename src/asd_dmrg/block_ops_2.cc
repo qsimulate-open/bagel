@@ -654,10 +654,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // S_a (x) I
-        Matrix Lterms = *left_ops_->S_a_as_matrix(spair.left.key(), i);
-        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
-
-        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
+        left_ops_->S_a_copy_to(scratch.get(), spair.left.key(), i);
+        kronecker_product_I_B(1.0, spair.right.nstates, false, tpair.left.nstates, spair.left.nstates, scratch.get(), tpair.left.nstates, out_block->data(), out_block->ndim());
 
         { // ["1.0 <L'| A^t |L> (x) <R'| A^t A |R>", "1.0 <L'| A^t |L> (x) <R'| B^t B |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
@@ -766,10 +764,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) S_a
-        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
-        Matrix Rterms = *right_ops_->S_a_as_matrix(spair.right.key(), i);
-
-        kronecker_product(left_phase, false, Rterms, false, Lident, *out_block);
+        right_ops_->S_a_copy_to(scratch.get(), spair.right.key(), i);
+        kronecker_product_A_I(left_phase, false, tpair.right.nstates, spair.right.nstates, scratch.get(), tpair.right.nstates, spair.left.nstates, out_block->data(), out_block->ndim());
 
         { // ["-1.0 <L'| A^t A |L> (x) <R'| A^t |R>", "1.0 <L'| B^t B |L> (x) <R'| A^t |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma1 = blocks_->left_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
@@ -1108,10 +1104,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // S_b (x) I
-        Matrix Lterms = *left_ops_->S_b_as_matrix(spair.left.key(), i);
-        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
-
-        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
+        left_ops_->S_b_copy_to(scratch.get(), spair.left.key(), i);
+        kronecker_product_I_B(1.0, spair.right.nstates, false, tpair.left.nstates, spair.left.nstates, scratch.get(), tpair.left.nstates, out_block->data(), out_block->ndim());
 
         { // ["1.0 <L'| B^t |L> (x) <R'| B^t B |R>", "1.0 <L'| B^t |L> (x) <R'| A^t A |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
@@ -1267,10 +1261,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) S_b
-        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
-        Matrix Rterms = *right_ops_->S_b_as_matrix(spair.right.key(), i);
-
-        kronecker_product(left_phase, false, Rterms, false, Lident, *out_block);
+        right_ops_->S_b_copy_to(scratch.get(), spair.right.key(), i);
+        kronecker_product_A_I(left_phase, false, tpair.right.nstates, spair.right.nstates, scratch.get(), tpair.right.nstates, spair.left.nstates, out_block->data(), out_block->ndim());
 
         { // ["-1.0 <L'| B^t B |L> (x) <R'| B^t |R>", "1.0 <L'| A^t A |L> (x) <R'| B^t |R>"]
           shared_ptr<const btas::Tensor3<double>> Lgamma1 = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.left.key(),spair.left.key()}).data;
@@ -1407,16 +1399,12 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
       auto out_block = make_shared<Matrix>(spair.nstates(), spair.nstates(), true);
 
       // I (x) Q_aa
-      Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
-      Matrix Rterms = *right_ops_->Q_aa_as_matrix(spair.right.key(), i, j);
-
-      kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
+      right_ops_->Q_aa_copy_to(scratch.get(), spair.right.key(), i, j);
+      kronecker_product_A_I(1.0, false, spair.right.nstates, spair.right.nstates, scratch.get(), spair.right.nstates, spair.left.nstates, out_block->data(), out_block->ndim());
 
       // Q_aa (x) I
-      Matrix Lterms = *left_ops_->Q_aa_as_matrix(spair.left.key(), i, j);
-      Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
-
-      kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
+      left_ops_->Q_aa_copy_to(scratch.get(), spair.left.key(), i, j);
+      kronecker_product_I_B(1.0, spair.right.nstates, false, spair.left.nstates, spair.left.nstates, scratch.get(), spair.left.nstates, out_block->data(), out_block->ndim());
 
       // add to map if large enough
       if (out_block->rms() > thresh_)
@@ -1644,16 +1632,12 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
       auto out_block = make_shared<Matrix>(spair.nstates(), spair.nstates(), true);
 
       // I (x) Q_bb
-      Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
-      Matrix Rterms = *right_ops_->Q_bb_as_matrix(spair.right.key(), i, j);
-
-      kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
+      right_ops_->Q_bb_copy_to(scratch.get(), spair.right.key(), i, j);
+      kronecker_product_A_I(1.0, false, spair.right.nstates, spair.right.nstates, scratch.get(), spair.right.nstates, spair.left.nstates, out_block->data(), out_block->ndim());
 
       // Q_bb (x) I
-      Matrix Lterms = *left_ops_->Q_bb_as_matrix(spair.left.key(), i, j);
-      Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
-
-      kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
+      left_ops_->Q_bb_copy_to(scratch.get(), spair.left.key(), i, j);
+      kronecker_product_I_B(1.0, spair.right.nstates, false, spair.left.nstates, spair.left.nstates, scratch.get(), spair.left.nstates, out_block->data(), out_block->ndim());
 
       // add to map if large enough
       if (out_block->rms() > thresh_)
@@ -1895,10 +1879,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) Q_ab
-        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
-        Matrix Rterms = *right_ops_->Q_ab_as_matrix(spair.right.key(), i, j);
-
-        kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
+        right_ops_->Q_ab_copy_to(scratch.get(), spair.right.key(), i, j);
+        kronecker_product_A_I(1.0, false, tpair.right.nstates, spair.right.nstates, scratch.get(), tpair.right.nstates, spair.left.nstates, out_block->data(), out_block->ndim());
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -1964,10 +1946,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // Q_ab (x) I
-        Matrix Lterms = *left_ops_->Q_ab_as_matrix(spair.left.key(), i, j);
-        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
-
-        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
+        left_ops_->Q_ab_copy_to(scratch.get(), spair.left.key(), i, j);
+        kronecker_product_I_B(1.0, spair.right.nstates, false, tpair.left.nstates, spair.left.nstates, scratch.get(), tpair.left.nstates, out_block->data(), out_block->ndim());
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -2120,10 +2100,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) P_aa
-        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
-        Matrix Rterms = *right_ops_->P_aa_as_matrix(spair.right.key(), i, j);
-
-        kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
+        right_ops_->P_aa_copy_to(scratch.get(), spair.right.key(), i, j);
+        kronecker_product_A_I(1.0, false, tpair.right.nstates, spair.right.nstates, scratch.get(), tpair.right.nstates, spair.left.nstates, out_block->data(), out_block->ndim());
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -2144,10 +2122,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // P_aa (x) I
-        Matrix Lterms = *left_ops_->P_aa_as_matrix(spair.left.key(), i, j);
-        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
-
-        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
+        left_ops_->P_aa_copy_to(scratch.get(), spair.left.key(), i, j);
+        kronecker_product_I_B(1.0, spair.right.nstates, false, tpair.left.nstates, spair.left.nstates, scratch.get(), tpair.left.nstates, out_block->data(), out_block->ndim());
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -2255,10 +2231,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) P_bb
-        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
-        Matrix Rterms = *right_ops_->P_bb_as_matrix(spair.right.key(), i, j);
-
-        kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
+        right_ops_->P_bb_copy_to(scratch.get(), spair.right.key(), i, j);
+        kronecker_product_A_I(1.0, false, tpair.right.nstates, spair.right.nstates, scratch.get(), tpair.right.nstates, spair.left.nstates, out_block->data(), out_block->ndim());
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -2279,10 +2253,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // P_bb (x) I
-        Matrix Lterms = *left_ops_->P_bb_as_matrix(spair.left.key(), i, j);
-        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
-
-        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
+        left_ops_->P_bb_copy_to(scratch.get(), spair.left.key(), i, j);
+        kronecker_product_I_B(1.0, spair.right.nstates, false, tpair.left.nstates, spair.left.nstates, scratch.get(), tpair.left.nstates, out_block->data(), out_block->ndim());
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -2345,10 +2317,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // P_ab (x) I
-        Matrix Lterms = *left_ops_->P_ab_as_matrix(spair.left.key(), i, j);
-        Matrix Rident(spair.right.nstates, spair.right.nstates, true); Rident.unit();
-
-        kronecker_product(1.0, false, Rident, false, Lterms, *out_block);
+        left_ops_->P_ab_copy_to(scratch.get(), spair.left.key(), i, j);
+        kronecker_product_I_B(1.0, spair.right.nstates, false, tpair.left.nstates, spair.left.nstates, scratch.get(), tpair.left.nstates, out_block->data(), out_block->ndim());
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
@@ -2414,10 +2384,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
         auto out_block = make_shared<Matrix>(tpair.nstates(), spair.nstates(), true);
 
         // I (x) P_ab
-        Matrix Lident(spair.left.nstates, spair.left.nstates, true); Lident.unit();
-        Matrix Rterms = *right_ops_->P_ab_as_matrix(spair.right.key(), i, j);
-
-        kronecker_product(1.0, false, Rterms, false, Lident, *out_block);
+        right_ops_->P_ab_copy_to(scratch.get(), spair.right.key(), i, j);
+        kronecker_product_A_I(1.0, false, tpair.right.nstates, spair.right.nstates, scratch.get(), tpair.right.nstates, spair.left.nstates, out_block->data(), out_block->ndim());
 
         // add to map if large enough
         if (out_block->rms() > thresh_)
