@@ -43,7 +43,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Geometry)
 
-Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
+Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_periodic_df_(false) {
 
   // members of Molecule
   spherical_ = true;
@@ -67,6 +67,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
   shared_ptr<const PTree> vectors = geominfo->get_child_optional("primitive_vectors");
   if (vectors) {
     int dim = 0;
+    do_periodic_df_ = true;
     for (auto& ivec : *vectors) {
       string id = "a" + to_string(dim+1);
       array<double, 3> vec = ivec->get_array<double, 3>(id);
@@ -150,7 +151,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
   if (london_ || nonzero_magnetic_field()) init_magnetism();
 
-  if (!auxfile_.empty() && !nodf) {
+  if (!auxfile_.empty() && !nodf && !do_periodic_df()) {
     if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     const double scale = magnetism_ ? 2.0 : 1.0;
@@ -179,7 +180,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_), do_periodic_df_(o.do_periodic_df_) {
 
   // Members of Molecule
   spherical_ = o.spherical_;
@@ -277,7 +278,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_),
+    do_periodic_df_(o.do_periodic_df_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -307,7 +309,8 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 
 // used when a new Geometry block is provided in input
 Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_),
+    do_periodic_df_(o.do_periodic_df_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -473,7 +476,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
 
 
 // used in SCF initial guess.
-Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const PTree> geominfo) : magnetism_(false) {
+Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const PTree> geominfo) : magnetism_(false), do_periodic_df_(false) {
 
   spherical_ = true;
   lmax_ = 0;

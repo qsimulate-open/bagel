@@ -59,6 +59,7 @@ class Geometry : public Molecule {
 
     // Lattice parameters
     std::vector<std::array<double, 3>> primitive_vectors_;
+    bool do_periodic_df_;
 
   private:
     // serialization
@@ -143,6 +144,7 @@ class Geometry : public Molecule {
     // Lattice
     std::vector<std::array<double, 3>> primitive_vectors() const { return primitive_vectors_; }
     std::array<double, 3> primitive_vectors(const int i) const { return primitive_vectors_[i]; };
+    const bool do_periodic_df() const { return do_periodic_df_; }
 
 
 };

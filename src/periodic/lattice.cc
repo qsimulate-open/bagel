@@ -34,7 +34,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 Lattice::Lattice(const shared_ptr<const Geometry> g) : primitive_cell_(g) {
 
   overlap_thresh_ = primitive_cell_->overlap_thresh();
-  init();
+  init(g->do_periodic_df());
 
 #if 0
   cout << "Check orthogonalization of primitive lattice vectors and k-vectors +++" << endl;
@@ -42,6 +42,7 @@ Lattice::Lattice(const shared_ptr<const Geometry> g) : primitive_cell_(g) {
     cout << setprecision(9) << dot(primitive_cell_->primitive_vectors(i), primitive_kvectors_[i])/(2.0 * pi__) << endl;
 #endif
 }
+
 
 double Lattice::compute_nuclear_repulsion() const {
 
@@ -71,7 +72,8 @@ double Lattice::compute_nuclear_repulsion() const {
   return out;
 }
 
-void Lattice::init() {
+
+void Lattice::init(const bool dodf) {
 
   ndim_ = primitive_cell_->primitive_vectors().size();
   if (ndim_ > 3)
@@ -79,8 +81,8 @@ void Lattice::init() {
   primitive_kvectors_.resize(ndim_);
 
   /* TODO: temp parameters */
-  ncell_ = 5;
-  k_parameter_ = 10;
+  ncell_ = 10;
+  k_parameter_ = 20;
 
   num_lattice_vectors_ = pow(2*ncell_+1, ndim_);
   lattice_vectors_.resize(num_lattice_vectors_);
@@ -157,10 +159,12 @@ void Lattice::init() {
   generate_kpoints();
 
   /* Density fitting */
-  form_df(overlap_thresh_);
+  if (dodf) form_df(overlap_thresh_);
 }
 
+
 double Lattice::dot(array<double, 3> b, array<double, 3> c) { return b[0] * c[0] + b[1] * c[1] + b[2] * c[2]; }
+
 
 array<double, 3> Lattice::cross(array<double, 3> b, array<double, 3> c, double s) {
 
@@ -171,6 +175,7 @@ array<double, 3> Lattice::cross(array<double, 3> b, array<double, 3> c, double s
 
   return out;
 }
+
 
 void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
 
@@ -233,6 +238,7 @@ void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
 
 }
 
+
 void Lattice::print_primitive_vectors() const {
 
   const string indent = "  ";
@@ -244,6 +250,7 @@ void Lattice::print_primitive_vectors() const {
                                                       << setw(10) << primitive_cell_->primitive_vectors(i)[2] << ") " << endl;
   cout << endl;
 }
+
 
 void Lattice::print_primitive_kvectors() const {
 
@@ -257,6 +264,7 @@ void Lattice::print_primitive_kvectors() const {
   cout << endl;
 }
 
+
 void Lattice::print_lattice_vectors() const {
 
   const string indent = "  ";
@@ -269,6 +277,7 @@ void Lattice::print_lattice_vectors() const {
   cout << endl;
 }
 
+
 void Lattice::print_lattice_kvectors() const {
 
   const string indent = "  ";
@@ -280,6 +289,7 @@ void Lattice::print_lattice_kvectors() const {
                                                       << setw(10) << vec[2] << ") " << endl;
   cout << endl;
 }
+
 
 void Lattice::print_lattice_coordinates() const {
 

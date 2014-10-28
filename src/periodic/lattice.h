@@ -89,7 +89,7 @@ class Lattice {
     std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
     std::array<double, 3> lattice_vectors(const int i) const { return lattice_vectors_[i]; }
 
-    void init();
+    void init(const bool dodf = false);
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     double volume() const { return volume_; }
     const int nele();
