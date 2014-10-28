@@ -43,7 +43,10 @@ class ApplyOperator {
       return out;
     }
 
-    std::shared_ptr<const RASBlock<double>> get_block(const RASCivecView& source, std::array<int, 4>& dhp, std::shared_ptr<const RASBlock<double>> target) const;
+    std::shared_ptr<const RASBlock<double>> get_block(const RASCivecView& source, const std::array<int, 4>& dhp,
+                                                      const std::shared_ptr<const RASBlock<double>>& target) const;
+    std::shared_ptr<const CIBlockInfo<RASString>> get_blockinfo(const std::shared_ptr<const RASDeterminants>& sourcedet, const std::array<int, 4>& dhp,
+                                                          const std::shared_ptr<const CIBlockInfo<RASString>>& target) const;
 
   public:
     ApplyOperator() {}

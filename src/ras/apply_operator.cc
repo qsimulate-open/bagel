@@ -29,13 +29,25 @@
 using namespace std;
 using namespace bagel;
 
-shared_ptr<const RASBlock<double>> ApplyOperator::get_block(const RASCivecView& source, array<int, 4>& dhp, shared_ptr<const RASBlock<double>> tblock) const {
+shared_ptr<const RASBlock<double>> ApplyOperator::get_block(const RASCivecView& source, const array<int, 4>& dhp, const shared_ptr<const RASBlock<double>>& tblock) const {
   // get appropriate block in source
   array<int, 4> tag = {tblock->stringsa()->nholes()     - dhp[0], tblock->stringsb()->nholes()     - dhp[1],
                        tblock->stringsa()->nparticles() - dhp[2], tblock->stringsb()->nparticles() - dhp[3]};
   if (any_of(tag.begin(), tag.end(), [] (int i) { return i < 0; })) return nullptr;
 
   return source.block(tag[0], tag[1], tag[2], tag[3]);
+}
+
+shared_ptr<const CIBlockInfo<RASString>> ApplyOperator::get_blockinfo(const shared_ptr<const RASDeterminants>& sourcedet, const array<int, 4>& dhp, const shared_ptr<const CIBlockInfo<RASString>>& tblock) const {
+  // get appropriate block in source
+  array<int, 4> tag = {tblock->stringsa()->nholes()     - dhp[0], tblock->stringsb()->nholes()     - dhp[1],
+                       tblock->stringsa()->nparticles() - dhp[2], tblock->stringsb()->nparticles() - dhp[3]};
+
+  if (any_of(tag.begin(), tag.end(), [] (int i) { return i < 0; })) return nullptr;
+  if (!sourcedet->allowed(tag[0], tag[1], tag[2], tag[3])) return nullptr;
+
+  auto out = sourcedet->blockinfo(tag[0], tag[1], tag[2], tag[3]);
+  return out->empty() ? nullptr : out;
 }
 
 void ApplyOperator::operator()(const double fac, const RASCivecView source, RASCivecView target, const vector<GammaSQ>& operations, const vector<int>& orbitals) const {
@@ -247,9 +259,6 @@ void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, 
 
   assert(!(all_alpha && all_beta));
 
-  const RASCivecView tvec = target.civec(0);
-  const RASCivecView svec = source.civec(0);
-
   if (all_alpha || all_beta) {
     vector<tuple<size_t, int, size_t, int, size_t, int>> base_daxpy;
 
@@ -257,9 +266,9 @@ void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, 
       const int r = orbitals.front(); // operator
       const int base_phase = all_beta ? (1 - ((sdet->nelea()%2)<<1)) : 1;
 
-      for (auto& tblock : tvec.blocks()) {
-        if (!tblock) continue;
-        auto sblock = get_block(svec, dhp, tblock);
+      for (auto& tblock : tdet->blockinfo()) {
+        if (tblock->empty()) continue;
+        auto sblock = get_blockinfo(sdet, dhp, tblock);
         if (sblock) {
           shared_ptr<const RASString> source_strings = all_alpha ? sblock->stringsa() : sblock->stringsb();
           shared_ptr<const RASString> target_strings = all_alpha ? tblock->stringsa() : tblock->stringsb();
@@ -301,9 +310,9 @@ void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, 
       bitset<nbit__> maskrs; maskrs.set(r); maskrs.flip(s);
 
       // loop over blocks in the target
-      for (auto& tblock : tvec.blocks()) {
-        if (!tblock) continue;
-        auto sblock = get_block(svec, dhp, tblock);
+      for (auto& tblock : tdet->blockinfo()) {
+        if (tblock->empty()) continue;
+        auto sblock = get_blockinfo(sdet, dhp, tblock);
         if (!sblock) continue;
 
         const size_t slb = sblock->lenb();
@@ -333,9 +342,9 @@ void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, 
       bitset<nbit__> maskrs; maskrs.set(r); maskrs.flip(s);
 
       // loop over blocks in the target
-      for (auto& tblock : tvec.blocks()) {
-        if (!tblock) continue;
-        auto sblock = get_block(svec, dhp, tblock);
+      for (auto& tblock : tdet->blockinfo()) {
+        if (tblock->empty()) continue;
+        auto sblock = get_blockinfo(sdet, dhp, tblock);
         if (!sblock) continue;
 
         const size_t slb = sblock->lenb();
@@ -377,9 +386,9 @@ void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, 
       const int s = orbitals.back();  // alpha creation on target
 
       // loop over blocks in the target
-      for (auto& tblock : tvec.blocks()) {
-        if (!tblock) continue;
-        auto sblock = get_block(svec, dhp, tblock);
+      for (auto& tblock : tdet->blockinfo()) {
+        if (tblock->empty()) continue;
+        auto sblock = get_blockinfo(sdet, dhp, tblock);
         if (sblock) {
           const size_t slb = sblock->lenb();
           const size_t tla = tblock->lena();
@@ -424,9 +433,9 @@ void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, 
       const int s = orbitals.back();  // beta creation on target
 
       // loop over blocks in the target
-      for (auto& tblock : tvec.blocks()) {
-        if (!tblock) continue;
-        auto sblock = get_block(svec, dhp, tblock);
+      for (auto& tblock : tdet->blockinfo()) {
+        if (tblock->empty()) continue;
+        auto sblock = get_blockinfo(sdet, dhp, tblock);
         if (sblock) {
           const size_t slb = sblock->lenb();
           const size_t tla = tblock->lena();
