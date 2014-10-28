@@ -72,3 +72,47 @@ void bagel::kronecker_product(const double fac, const bool atrans, const int ndi
     }
   }
 }
+
+void bagel::kronecker_product_I_B(const double fac, const int Idim, const bool btrans, const int ndimB, const int mdimB, const double* B, const int ldB, double* C, const int ldC) {
+  const int p = btrans ? mdimB : ndimB;
+  const int q = btrans ? ndimB : mdimB;
+
+  assert(ldC >= p*Idim);
+
+  const int bstride = btrans ? ldB : 1;
+
+  for (int ja = 0; ja < Idim; ++ja) {
+    for (int jb = 0; jb < q; ++jb) {
+      const double* bdata = btrans ? B + jb : B + ldB * jb;
+      double* cdata = C + ja*p + (ja*q + jb)*ldC;
+      daxpy_(p, fac, bdata, bstride, cdata, 1);
+    }
+  }
+}
+
+void bagel::kronecker_product_I_B(const double fac, const int Idim, const bool btrans, const Matrix& B, Matrix& C) {
+  assert((btrans ? B.mdim() : B.ndim()) * Idim == C.ndim() && (btrans ? B.ndim() : B.mdim()) * Idim == C.mdim());
+  kronecker_product_I_B(fac, Idim, btrans, B.ndim(), B.mdim(), B.data(), B.ndim(), C.data(), C.ndim());
+}
+
+void bagel::kronecker_product_A_I(const double fac, const bool atrans, const int ndimA, const int mdimA, const double* A, const int ldA, const int Idim, double* C, const int ldC) {
+  const int n = atrans ? mdimA : ndimA;
+  const int m = atrans ? ndimA : mdimA;
+
+  assert(ldC >= n*Idim);
+
+  const int astride = atrans ? ldA : 1;
+
+  for (int ja = 0; ja < m; ++ja) {
+    const double* adata = atrans ? A + ja : A + ldA * ja;
+    for (int jb = 0; jb < Idim; ++jb) {
+      double* cdata = C + jb + (jb + Idim*ja)*ldC;
+      daxpy_(n, fac, adata, astride, cdata, Idim);
+    }
+  }
+}
+
+void bagel::kronecker_product_A_I(const double fac, const bool atrans, const Matrix& A, const int Idim,  Matrix& C) {
+  assert((atrans ? A.mdim() : A.ndim()) * Idim == C.ndim() && (atrans ? A.ndim() : A.mdim()) * Idim == C.mdim());
+  kronecker_product_A_I(fac, atrans, A.ndim(), A.mdim(), A.data(), A.ndim(), Idim, C.data(), C.ndim());
+}

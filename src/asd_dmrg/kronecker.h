@@ -55,6 +55,16 @@ T kronecker_product(const bool atrans, const T& A, const bool btrans, const T& B
   return out;
 }
 
+/// Kronecker product between the identity and Matrix B
+void kronecker_product_I_B(const double fac, const int Idim, const bool btrans, const int ndimB, const int mdimB, const double* B, const int ldB, double* C, const int ldC);
+/// Kronecker product between the identity and Matrix B
+void kronecker_product_I_B(const double fac, const int Idim, const bool btrans, const Matrix& B, Matrix& C);
+
+/// Kronecker product between Matrix A and the identity
+void kronecker_product_A_I(const double fac, const bool atrans, const int ndimA, const int mdimA, const double* A, const int ldA, const int Idim, double* C, const int ldC);
+/// Kronecker product between Matrix A and the identity
+void kronecker_product_A_I(const double fac, const bool atrans, const Matrix& A, const int Idim, Matrix& C);
+
 template <>
 Matrix kronecker_product(const bool atrans, const Matrix& A, const bool btrans, const Matrix& B);
 
