@@ -37,18 +37,32 @@ Matrix bagel::kronecker_product(const bool atrans, const Matrix& A, const bool b
   const int p = btrans ? B.mdim() : B.ndim();
   const int q = btrans ? B.ndim() : B.mdim();
 
-  std::shared_ptr<const Matrix> BB = btrans ? B.transpose() : nullptr;
-  const Matrix* Bptr = btrans ? BB.get() : &B;
-
   Matrix out(n*p, m*q);
-  const int astride = atrans ? A.ndim() : 1;
-
-  for (int jb = 0; jb < q; ++jb) {
-    for (int ja = 0; ja < m; ++ja) {
-      const double* Adata = atrans ? A.element_ptr(ja, 0) : A.element_ptr(0, ja);
-      dger_(p, n, 1.0, Bptr->element_ptr(0, jb), 1, Adata, astride, out.element_ptr(0, jb + ja*q), p);
-    }
-  }
+  kronecker_product(1.0, atrans, A.ndim(), A.mdim(), A.data(), A.ndim(), btrans, B.ndim(), B.mdim(), B.data(), B.ndim(), out.data(), out.ndim());
 
   return out;
+}
+
+void bagel::kronecker_product(const double fac, const bool atrans, const int ndimA, const int mdimA, const double* A, const int ldA,
+                                         const bool btrans, const int ndimB, const int mdimB, const double* B, const int ldB,
+                                                                                                    double* C, const int ldC)
+{
+  const int n = atrans ? mdimA : ndimA;
+  const int m = atrans ? ndimA : mdimA;
+  const int p = btrans ? mdimB : ndimB;
+  const int q = btrans ? ndimB : mdimB;
+
+  assert(ldC >= n * p);
+
+  const int astride = atrans ? ldA : 1;
+  const int bstride = btrans ? ldB : 1;
+
+  for (int ja = 0; ja < m; ++ja) {
+    const double* Adata = atrans ? A + ja : A + ldA * ja;
+    for (int jb = 0; jb < q; ++jb) {
+      const double* Bdata = btrans ? B + jb : B + ldB * jb;
+      double* Cdata = C + ldC * (jb + ja*q);
+      dger_(p, n, fac, Bdata, bstride, Adata, astride, Cdata, p);
+    }
+  }
 }
