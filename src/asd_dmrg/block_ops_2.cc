@@ -449,7 +449,13 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
     }
   }
 
-  out->symmetrize();
+  // because symmetrize is actually very slow right now
+  const size_t dim = out->ndim();
+  double* data = out->data();
+  for (size_t i = 0; i < dim; ++i)
+    for (size_t j = 0; j < i; ++j)
+      data[j + i*dim] = data[i + j*dim] = 0.5 * (data[j+i*dim] + data[i + j*dim]);
+
   return out;
 }
 
