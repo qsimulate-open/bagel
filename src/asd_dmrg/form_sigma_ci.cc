@@ -218,9 +218,6 @@ void FormSigmaProdRAS::resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors&
   const size_t batchsize = batchsize_;
   const size_t sla = sdet->lena();
 
-  const RASCivecView ccview = cc.civec(0);
-  const RASCivecView sigmaview = sigma.civec(0);
-
   const int M = cc.mdim();
   assert(M == sigma.mdim());
 
@@ -239,10 +236,10 @@ void FormSigmaProdRAS::resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors&
                       (Jp[iter.j+norb*iter.i+norb*norb*iter.k] - Jp[iter.k+norb*iter.i+norb*norb*iter.j]);
       }
 
-      for (auto& ccblock : ccview.blocks()) {
-        if (!ccblock) continue;
+      for (auto& ccblock : sdet->blockinfo()) {
+        if (ccblock->empty()) continue;
         if (!tdet->allowed(targetspace, ccblock->stringsb())) continue;
-        shared_ptr<const RASBlock<double>> target_block = sigmaview.block(ccblock->stringsb(), targetspace);
+        const shared_ptr<const CIBlockInfo<RASString>>& target_block = tdet->blockinfo(ccblock->stringsb(), targetspace);
 
         assert(ccblock->lenb() == target_block->lenb());
         const double* fdata = F.element_ptr(ccblock->stringsa()->offset(), 0);
