@@ -201,6 +201,12 @@ def close_code_block():
     level -= 1
     print("%s}" % indent())
 
+def pow(name, exponent):
+    exp = int(exponent)
+    if (exp < 1):
+        raise Exception("pow function not designed for zero exponents")
+    return name + ("*" + name) * (exp-1)
+
 input_indices = [ "i", "j", "k" ]
 left_indices = [ "a", "b", "c" ]
 right_indices = [ "p", "q", "r" ]
@@ -353,6 +359,7 @@ class OperatorProduct:
         return "%1.1f <L'|%s|L> (x) <R'|%s|R>" % (self.factor(), self.left, self.right)
 
 def generate_operator(opname, contracted_operators, ninput):
+    nsummed_indices = 4 - ninput
     def_inp_string = "const int %s" % input_indices[0]
     inp_string = input_indices[0]
     for i in range(1,ninput):
@@ -377,7 +384,7 @@ def generate_operator(opname, contracted_operators, ninput):
             split_factor = -1.0 if partitioning==2 or partitioning==5 else 1.0
             (left, right) = op.split(partitioning)
             (lterm, rterm) = (Term(left), Term(right))
-            op_prod = OperatorProduct(lterm, rterm, Integrals(partitioning, 4 - ninput, lterm.rev ^ lterm.conj, rterm.rev ^ rterm.conj, op.integrals), op.factor*split_factor)
+            op_prod = OperatorProduct(lterm, rterm, Integrals(partitioning, nsummed_indices, lterm.rev ^ lterm.conj, rterm.rev ^ rterm.conj, op.integrals), op.factor*split_factor)
             if op_prod.action() in opcollection:
                 opcollection[op_prod.action()].append(op_prod)
             else:
@@ -416,6 +423,20 @@ def generate_operator(opname, contracted_operators, ninput):
 
     print("%sconst double* %s = jop_->mo2e()->data();" % (indent(), mo2e))
     print()
+
+    print("%sconst int max_L_M = max_element(blocks_->left_block()->blocks().begin(), blocks_->left_block()->blocks().end()," % indent())
+    print("%s                                 [] (const BlockInfo& a, const BlockInfo& b)" % indent())
+    print("%s                                   { return a.nstates < b.nstates; })->nstates;" % indent())
+    print("%sconst int max_R_M = max_element(blocks_->right_block()->blocks().begin(), blocks_->right_block()->blocks().end()," % indent())
+    print("%s                                 [] (const BlockInfo& a, const BlockInfo& b)" % indent())
+    print("%s                                   { return a.nstates < b.nstates; })->nstates;" % indent())
+    print("%sconst size_t max_L_intermediate = max_L_M * max_L_M * %s;" % (indent(), rnorb))
+    print("%sconst size_t max_R_intermediate = max_R_M * max_R_M * %s;" % (indent(), lnorb))
+    print("%sconst size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);" % (indent()))
+    print("%sunique_ptr<double[]> scratch(new double[max_intermediate]);" % indent())
+    print()
+    print("%sconst size_t max_coulomb_size = lnorb < rnorb ? %s*%s : %s*%s;" % (indent(), rnorb + (nsummed_indices-2)*("*"+rnorb), lnorb, lnorb + (nsummed_indices-2)*("*"+lnorb), rnorb))
+    print("%sunique_ptr<double[]> coulomb(new double[max_coulomb_size]);" % indent())
 
     print("%smap<pair<size_t, size_t>, shared_ptr<Matrix>> out;" % (indent()))
     print()
@@ -568,8 +589,16 @@ def generate_operator(opname, contracted_operators, ninput):
 
             print()
 
-            print("%sMatrix Lmat(%s->extent(0), %s->extent(1), true);" % (indent(), lgammas[0][0], lgammas[0][0]))
-            print("%sMatrix Rmat(%s->extent(0), %s->extent(1), true);" % (indent(), rgammas[0][0], rgammas[0][0]))
+            #print("%sMatrix Lmat(%s->extent(0), %s->extent(1), true);" % (indent(), lgammas[0][0], lgammas[0][0]))
+            #print("%sMatrix Rmat(%s->extent(0), %s->extent(1), true);" % (indent(), rgammas[0][0], rgammas[0][0]))
+
+            print("%sconst int Lndim = %s->extent(0);" % (indent(), lgammas[0][0]))
+            print("%sconst int Lmdim = %s->extent(1);" % (indent(), lgammas[0][0]))
+            print("%sconst int Lsize = %s->extent(0) * %s->extent(1);" % (indent(), lgammas[0][0], lgammas[0][0]))
+            print()
+            print("%sconst int Rndim = %s->extent(0);" % (indent(), rgammas[0][0]))
+            print("%sconst int Rmdim = %s->extent(1);" % (indent(), rgammas[0][0]))
+            print("%sconst int Rsize = %s->extent(0) * %s->extent(1);" % (indent(), rgammas[0][0], rgammas[0][0]))
 
             print()
 
@@ -583,68 +612,101 @@ def generate_operator(opname, contracted_operators, ninput):
 
             integral_strings = [x.integrals(mo2e, input_indices[0:ninput], left_indices[0:len(x.left)], right_indices[0:len(x.right)]) for x in oprodvec]
 
+            collected_by_integral = {}
+            for i in range(len(integral_strings)):
+                if i in collected_by_integral:
+                    collected_by_integral[i].append(i)
+                else:
+                    collected_by_integral[i] = [i]
+
             if len(oprod.right) > len(oprod.left): # inner loop is over right terms
-                # start loops over left
-                for i in range(len(oprod.left)):
-                    print("%sfor (int %s = 0; %s < %s; ++%s) {" % (indent(), left_indices[i], left_indices[i], lnorb, left_indices[i]))
-                    open_code_block()
-                print("%sLmat.zero();" % indent())
-                print("%sblas::ax_plus_y_n(1.0, &(*Lgamma)(0, 0, %s), Lmat.size(), Lmat.data());" % (indent(), abc))
-                print()
+                print("%s// fill in coulomb part" % indent())
+                print("%sassert(max_coulomb_size >= %s*%s);" % (indent(), lnorb, pow(rnorb, len(oprod.right))))
+                print("%sfill_n(scratch.get(), Rsize * lnorb, 0.0);" % (indent()))
+                for operation_index in range(len(integral_strings)):
+                    coulomb_index = ""
+                    stride = ""
+                    for i in range(len(oprod.right)):
+                        if (i != 0):
+                            coulomb_index += " + "
+                        coulomb_index += right_indices[i] + stride
+                        stride += "*" + rnorb
+                    for i in range(len(oprod.left)):
+                        coulomb_index += " + "
+                        coulomb_index += left_indices[i] + stride
+                        stride += "*" + lnorb
 
-                print("%sRmat.zero();" % indent())
-
-                # start loops over right
-                for i in range(len(oprod.right)):
-                    print("%sfor (int %s = 0; %s < %s; ++%s) {" % (indent(), right_indices[i], right_indices[i], rnorb, right_indices[i]))
-                    open_code_block()
-
-                for i, RG in enumerate(rgammas):
-                    print("%sblas::ax_plus_y_n(%1.1f * %s, &(*%s)(0, 0, %s), Rmat.size(), Rmat.data());" % (indent(), oprodvec[i].factor(), integral_strings[i], RG[0], pqr))
-
-                # close right loops
-                for i in range(len(oprod.right)):
-                    close_code_block()
+                    for i in range(len(oprod.left)):
+                        print("%sfor (int %s = 0; %s < %s; ++%s) {" % (indent(), left_indices[i], left_indices[i], lnorb, left_indices[i]))
+                        open_code_block()
+                    for i in range(len(oprod.right)):
+                        print("%sfor (int %s = 0; %s < %s; ++%s) {" % (indent(), right_indices[i], right_indices[i], rnorb, right_indices[i]))
+                        open_code_block()
+                    print("%scoulomb[%s] = %s;" % (indent(), coulomb_index, integral_strings[operation_index]))
+                    for i in range(len(oprod.right) + len(oprod.left)):
+                        close_code_block()
+                    print()
+                    print("%sdgemm_(\"N\", \"N\", Rsize, lnorb, %s, %1.1f, %s->data(), Rsize, coulomb.get(), %s, 1.0, scratch.get(), Rsize);" \
+                                % (indent(), pow(rnorb, len(oprod.right)), oprodvec[operation_index].factor(), rgammas[operation_index][0], pow(rnorb, len(oprod.right))))
 
                 rtrans = "true" if oprod.right.conj else "false"
                 ltrans = "true" if oprod.left.conj else "false"
 
                 phase = "left_phase" if len(oprod.right)%2==1 else 1.0
 
-                print("%skronecker_product(%s, %s, Rmat, %s, Lmat, *out_block);" % (indent(), phase, rtrans, ltrans))
-
+                for i in range(len(oprod.left)):
+                    print("%sfor (int %s = 0; %s < %s; ++%s) {" % (indent(), left_indices[i], left_indices[i], lnorb, left_indices[i]))
+                    open_code_block()
+                print("%sconst double* ldata = Lgamma->data() + Lsize * %s;" % (indent(), left_indices[0]))
+                print("%sconst double* rdata = scratch.get() + Rsize * %s;" % (indent(), left_indices[0]))
+                print("%skronecker_product(%s, %s, Rndim, Rmdim, rdata, Rndim, %s, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());" \
+                                                % (indent(), phase, rtrans, ltrans))
                 for i in range(len(oprod.left)):
                     close_code_block()
 
             else: #inner loop is over left terms
-                # write loops over Right terms
-                for i in range(len(oprod.right)):
-                    print("%sfor (int %s = 0; %s < %s; ++%s) {" % (indent(), right_indices[i], right_indices[i], rnorb, right_indices[i]))
-                    open_code_block()
+                print("%s// fill in coulomb part" % indent())
+                print("%sassert(max_coulomb_size >= %s*%s);" % (indent(), rnorb, pow(lnorb, len(oprod.left))))
+                print("%sfill_n(scratch.get(), Lsize * rnorb, 0.0);" % (indent()))
 
-                print("%sRmat.zero();" % indent())
-                print("%sblas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, %s), Rmat.size(), Rmat.data());" % (indent(), pqr))
-                print()
-                print("%sLmat.zero();" % indent())
-                # loops over Left terms
-                for i in range(len(oprod.left)):
-                    print("%sfor (int %s = 0; %s < %s; ++%s) {" % (indent(), left_indices[i], left_indices[i], lnorb, left_indices[i]))
-                    open_code_block()
+                for operation_index in range(len(integral_strings)):
+                    coulomb_index = ""
+                    stride = ""
+                    for i in range(len(oprod.left)):
+                        if (i != 0):
+                            coulomb_index += " + "
+                        coulomb_index += left_indices[i] + stride
+                        stride += "*" + lnorb
+                    for i in range(len(oprod.right)):
+                        coulomb_index += " + "
+                        coulomb_index += right_indices[i] + stride
+                        stride += "*" + rnorb
 
-                for i, LG in enumerate(lgammas):
-                    print("%sblas::ax_plus_y_n(%1.1f * %s, &(*%s)(0, 0, %s), Lmat.size(), Lmat.data());" % (indent(), oprodvec[i].factor(), integral_strings[i], LG[0], abc))
-
-                # close Left loops
-                for i in range(len(oprod.left)):
-                    close_code_block()
+                    for i in range(len(oprod.right)):
+                        print("%sfor (int %s = 0; %s < %s; ++%s) {" % (indent(), right_indices[i], right_indices[i], rnorb, right_indices[i]))
+                        open_code_block()
+                    for i in range(len(oprod.left)):
+                        print("%sfor (int %s = 0; %s < %s; ++%s) {" % (indent(), left_indices[i], left_indices[i], lnorb, left_indices[i]))
+                        open_code_block()
+                    print("%scoulomb[%s] = %s;" % (indent(), coulomb_index, integral_strings[operation_index]))
+                    for i in range(len(oprod.right) + len(oprod.left)):
+                        close_code_block()
+                    print()
+                    print("%sdgemm_(\"N\", \"N\", Lsize, rnorb, %s, %1.1f, %s->data(), Lsize, coulomb.get(), %s, 1.0, scratch.get(), Lsize);" \
+                                % (indent(), pow(lnorb, len(oprod.left)), oprodvec[operation_index].factor(), lgammas[operation_index][0], pow(lnorb, len(oprod.left))))
 
                 rtrans = "true" if oprod.right.conj else "false"
                 ltrans = "true" if oprod.left.conj else "false"
 
                 phase = "left_phase" if len(oprod.right)%2==1 else 1.0
 
-                print("%skronecker_product(%s, %s, Rmat, %s, Lmat, *out_block);" % (indent(), phase, rtrans, ltrans))
-
+                for i in range(len(oprod.right)):
+                    print("%sfor (int %s = 0; %s < %s; ++%s) {" % (indent(), right_indices[i], right_indices[i], rnorb, right_indices[i]))
+                    open_code_block()
+                print("%sconst double* ldata = scratch.get() + Lsize * %s;" % (indent(), right_indices[0]))
+                print("%sconst double* rdata = Rgamma->data() + Rsize * %s;" % (indent(), right_indices[0]))
+                print("%skronecker_product(%s, %s, Rndim, Rmdim, rdata, Rndim, %s, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());" \
+                                                % (indent(), phase, rtrans, ltrans))
                 # close Right loops
                 for i in range(len(oprod.right)):
                     close_code_block()

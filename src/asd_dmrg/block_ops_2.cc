@@ -475,6 +475,19 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
 
   const double* mo2e = jop_->mo2e()->data();
 
+  const int max_L_M = max_element(blocks_->left_block()->blocks().begin(), blocks_->left_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const int max_R_M = max_element(blocks_->right_block()->blocks().begin(), blocks_->right_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const size_t max_L_intermediate = max_L_M * max_L_M * rnorb;
+  const size_t max_R_intermediate = max_R_M * max_R_M * lnorb;
+  const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
+  unique_ptr<double[]> scratch(new double[max_intermediate]);
+
+  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*rnorb*lnorb : lnorb*lnorb*rnorb;
+  unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
   for (auto& spair : source_pvec) {
@@ -496,20 +509,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(p+roffset)*norb+(b+loffset)*norb*norb+(a+loffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              coulomb[a + b*lnorb + p*lnorb*lnorb] = mo2e[(i)+(p+roffset)*norb+(b+loffset)*norb*norb+(a+loffset)*norb*norb*norb];
             }
           }
-          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb*lnorb, -1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb*lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, false, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -533,20 +556,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= lnorb*rnorb*rnorb);
+        fill_n(scratch.get(), Rsize * lnorb, 0.0);
         for (int a = 0; a < lnorb; ++a) {
-          Lmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
-
-          Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(1.0 * mo2e[(i)+(p+roffset)*norb+(q+roffset)*norb*norb+(a+loffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              coulomb[p + q*rnorb + a*rnorb*rnorb] = mo2e[(i)+(p+roffset)*norb+(q+roffset)*norb*norb+(a+loffset)*norb*norb*norb];
             }
           }
-          kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Rsize, lnorb, rnorb*rnorb, 1.0, Rgamma->data(), Rsize, coulomb.get(), rnorb*rnorb, 1.0, scratch.get(), Rsize);
+        for (int a = 0; a < lnorb; ++a) {
+          const double* ldata = Lgamma->data() + Lsize * a;
+          const double* rdata = scratch.get() + Rsize * a;
+          kronecker_product(1.0, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -570,20 +603,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= lnorb*rnorb*rnorb);
+        fill_n(scratch.get(), Rsize * lnorb, 0.0);
         for (int a = 0; a < lnorb; ++a) {
-          Lmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
-
-          Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(1.0 * mo2e[(i)+(p+roffset)*norb+(q+roffset)*norb*norb+(a+loffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              coulomb[p + q*rnorb + a*rnorb*rnorb] = mo2e[(i)+(p+roffset)*norb+(q+roffset)*norb*norb+(a+loffset)*norb*norb*norb];
             }
           }
-          kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Rsize, lnorb, rnorb*rnorb, 1.0, Rgamma->data(), Rsize, coulomb.get(), rnorb*rnorb, 1.0, scratch.get(), Rsize);
+        for (int a = 0; a < lnorb; ++a) {
+          const double* ldata = Lgamma->data() + Lsize * a;
+          const double* rdata = scratch.get() + Rsize * a;
+          kronecker_product(1.0, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -615,21 +658,39 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
           shared_ptr<const btas::Tensor3<double>> Rgamma1 = blocks_->right_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma2 = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-          Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-          Matrix Rmat(Rgamma1->extent(0), Rgamma1->extent(1), true);
+          const int Lndim = Lgamma->extent(0);
+          const int Lmdim = Lgamma->extent(1);
+          const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+          const int Rndim = Rgamma1->extent(0);
+          const int Rmdim = Rgamma1->extent(1);
+          const int Rsize = Rgamma1->extent(0) * Rgamma1->extent(1);
+
+          // fill in coulomb part
+          assert(max_coulomb_size >= lnorb*rnorb*rnorb);
+          fill_n(scratch.get(), Rsize * lnorb, 0.0);
           for (int a = 0; a < lnorb; ++a) {
-            Lmat.zero();
-            blas::ax_plus_y_n(1.0, &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
-
-            Rmat.zero();
             for (int p = 0; p < rnorb; ++p) {
               for (int q = 0; q < rnorb; ++q) {
-                blas::ax_plus_y_n(1.0 * (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(q+roffset)*norb*norb*norb]), &(*Rgamma1)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
-                blas::ax_plus_y_n(1.0 * mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb], &(*Rgamma2)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+                coulomb[p + q*rnorb + a*rnorb*rnorb] = (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(q+roffset)*norb*norb*norb]);
               }
             }
-            kronecker_product(1.0, false, Rmat, false, Lmat, *out_block);
+          }
+
+          dgemm_("N", "N", Rsize, lnorb, rnorb*rnorb, 1.0, Rgamma1->data(), Rsize, coulomb.get(), rnorb*rnorb, 1.0, scratch.get(), Rsize);
+          for (int a = 0; a < lnorb; ++a) {
+            for (int p = 0; p < rnorb; ++p) {
+              for (int q = 0; q < rnorb; ++q) {
+                coulomb[p + q*rnorb + a*rnorb*rnorb] = mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb];
+              }
+            }
+          }
+
+          dgemm_("N", "N", Rsize, lnorb, rnorb*rnorb, 1.0, Rgamma2->data(), Rsize, coulomb.get(), rnorb*rnorb, 1.0, scratch.get(), Rsize);
+          for (int a = 0; a < lnorb; ++a) {
+            const double* ldata = Lgamma->data() + Lsize * a;
+            const double* rdata = scratch.get() + Rsize * a;
+            kronecker_product(1.0, false, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
           }
         }
 
@@ -654,20 +715,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(1.0 * mo2e[(i)+(a+loffset)*norb+(b+loffset)*norb*norb+(p+roffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              coulomb[a + b*lnorb + p*lnorb*lnorb] = mo2e[(i)+(a+loffset)*norb+(b+loffset)*norb*norb+(p+roffset)*norb*norb*norb];
             }
           }
-          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb*lnorb, 1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb*lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -699,21 +770,39 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
           shared_ptr<const btas::Tensor3<double>> Lgamma2 = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.left.key(),spair.left.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-          Matrix Lmat(Lgamma1->extent(0), Lgamma1->extent(1), true);
-          Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+          const int Lndim = Lgamma1->extent(0);
+          const int Lmdim = Lgamma1->extent(1);
+          const int Lsize = Lgamma1->extent(0) * Lgamma1->extent(1);
 
+          const int Rndim = Rgamma->extent(0);
+          const int Rmdim = Rgamma->extent(1);
+          const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+          // fill in coulomb part
+          assert(max_coulomb_size >= rnorb*lnorb*lnorb);
+          fill_n(scratch.get(), Lsize * rnorb, 0.0);
           for (int p = 0; p < rnorb; ++p) {
-            Rmat.zero();
-            blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-            Lmat.zero();
             for (int a = 0; a < lnorb; ++a) {
               for (int b = 0; b < lnorb; ++b) {
-                blas::ax_plus_y_n(-1.0 * (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(b+loffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb]), &(*Lgamma1)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
-                blas::ax_plus_y_n(1.0 * mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb], &(*Lgamma2)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+                coulomb[a + b*lnorb + p*lnorb*lnorb] = (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(b+loffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb]);
               }
             }
-            kronecker_product(left_phase, false, Rmat, false, Lmat, *out_block);
+          }
+
+          dgemm_("N", "N", Lsize, rnorb, lnorb*lnorb, -1.0, Lgamma1->data(), Lsize, coulomb.get(), lnorb*lnorb, 1.0, scratch.get(), Lsize);
+          for (int p = 0; p < rnorb; ++p) {
+            for (int a = 0; a < lnorb; ++a) {
+              for (int b = 0; b < lnorb; ++b) {
+                coulomb[a + b*lnorb + p*lnorb*lnorb] = mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb];
+              }
+            }
+          }
+
+          dgemm_("N", "N", Lsize, rnorb, lnorb*lnorb, 1.0, Lgamma2->data(), Lsize, coulomb.get(), lnorb*lnorb, 1.0, scratch.get(), Lsize);
+          for (int p = 0; p < rnorb; ++p) {
+            const double* ldata = scratch.get() + Lsize * p;
+            const double* rdata = Rgamma->data() + Rsize * p;
+            kronecker_product(left_phase, false, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
           }
         }
 
@@ -738,20 +827,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= lnorb*rnorb*rnorb);
+        fill_n(scratch.get(), Rsize * lnorb, 0.0);
         for (int a = 0; a < lnorb; ++a) {
-          Lmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
-
-          Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(a+loffset)*norb+(q+roffset)*norb*norb+(p+roffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              coulomb[p + q*rnorb + a*rnorb*rnorb] = mo2e[(i)+(a+loffset)*norb+(q+roffset)*norb*norb+(p+roffset)*norb*norb*norb];
             }
           }
-          kronecker_product(1.0, true, Rmat, false, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Rsize, lnorb, rnorb*rnorb, -1.0, Rgamma->data(), Rsize, coulomb.get(), rnorb*rnorb, 1.0, scratch.get(), Rsize);
+        for (int a = 0; a < lnorb; ++a) {
+          const double* ldata = Lgamma->data() + Lsize * a;
+          const double* rdata = scratch.get() + Rsize * a;
+          kronecker_product(1.0, true, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -775,20 +874,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(1.0 * mo2e[(i)+(a+loffset)*norb+(b+loffset)*norb*norb+(p+roffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              coulomb[a + b*lnorb + p*lnorb*lnorb] = mo2e[(i)+(a+loffset)*norb+(b+loffset)*norb*norb+(p+roffset)*norb*norb*norb];
             }
           }
-          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb*lnorb, 1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb*lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -820,6 +929,19 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
 
   const double* mo2e = jop_->mo2e()->data();
 
+  const int max_L_M = max_element(blocks_->left_block()->blocks().begin(), blocks_->left_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const int max_R_M = max_element(blocks_->right_block()->blocks().begin(), blocks_->right_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const size_t max_L_intermediate = max_L_M * max_L_M * rnorb;
+  const size_t max_R_intermediate = max_R_M * max_R_M * lnorb;
+  const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
+  unique_ptr<double[]> scratch(new double[max_intermediate]);
+
+  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*rnorb*lnorb : lnorb*lnorb*rnorb;
+  unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
   for (auto& spair : source_pvec) {
@@ -841,20 +963,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(b+loffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              coulomb[a + b*lnorb + p*lnorb*lnorb] = mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(b+loffset)*norb*norb*norb];
             }
           }
-          kronecker_product(left_phase, false, Rmat, false, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb*lnorb, -1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb*lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, false, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -878,20 +1010,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= lnorb*rnorb*rnorb);
+        fill_n(scratch.get(), Rsize * lnorb, 0.0);
         for (int a = 0; a < lnorb; ++a) {
-          Lmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
-
-          Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(1.0 * mo2e[(i)+(p+roffset)*norb+(q+roffset)*norb*norb+(a+loffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              coulomb[p + q*rnorb + a*rnorb*rnorb] = mo2e[(i)+(p+roffset)*norb+(q+roffset)*norb*norb+(a+loffset)*norb*norb*norb];
             }
           }
-          kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Rsize, lnorb, rnorb*rnorb, 1.0, Rgamma->data(), Rsize, coulomb.get(), rnorb*rnorb, 1.0, scratch.get(), Rsize);
+        for (int a = 0; a < lnorb; ++a) {
+          const double* ldata = Lgamma->data() + Lsize * a;
+          const double* rdata = scratch.get() + Rsize * a;
+          kronecker_product(1.0, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -915,20 +1057,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(b+loffset)*norb+(a+loffset)*norb*norb+(p+roffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              coulomb[a + b*lnorb + p*lnorb*lnorb] = mo2e[(i)+(b+loffset)*norb+(a+loffset)*norb*norb+(p+roffset)*norb*norb*norb];
             }
           }
-          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb*lnorb, -1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb*lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -960,21 +1112,39 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
           shared_ptr<const btas::Tensor3<double>> Rgamma1 = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}).at({tpair.right.key(),spair.right.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma2 = blocks_->right_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-          Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-          Matrix Rmat(Rgamma1->extent(0), Rgamma1->extent(1), true);
+          const int Lndim = Lgamma->extent(0);
+          const int Lmdim = Lgamma->extent(1);
+          const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+          const int Rndim = Rgamma1->extent(0);
+          const int Rmdim = Rgamma1->extent(1);
+          const int Rsize = Rgamma1->extent(0) * Rgamma1->extent(1);
+
+          // fill in coulomb part
+          assert(max_coulomb_size >= lnorb*rnorb*rnorb);
+          fill_n(scratch.get(), Rsize * lnorb, 0.0);
           for (int a = 0; a < lnorb; ++a) {
-            Lmat.zero();
-            blas::ax_plus_y_n(1.0, &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
-
-            Rmat.zero();
             for (int p = 0; p < rnorb; ++p) {
               for (int q = 0; q < rnorb; ++q) {
-                blas::ax_plus_y_n(1.0 * (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(q+roffset)*norb*norb*norb]), &(*Rgamma1)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
-                blas::ax_plus_y_n(1.0 * mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb], &(*Rgamma2)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+                coulomb[p + q*rnorb + a*rnorb*rnorb] = (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(q+roffset)*norb*norb*norb]);
               }
             }
-            kronecker_product(1.0, false, Rmat, false, Lmat, *out_block);
+          }
+
+          dgemm_("N", "N", Rsize, lnorb, rnorb*rnorb, 1.0, Rgamma1->data(), Rsize, coulomb.get(), rnorb*rnorb, 1.0, scratch.get(), Rsize);
+          for (int a = 0; a < lnorb; ++a) {
+            for (int p = 0; p < rnorb; ++p) {
+              for (int q = 0; q < rnorb; ++q) {
+                coulomb[p + q*rnorb + a*rnorb*rnorb] = mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb];
+              }
+            }
+          }
+
+          dgemm_("N", "N", Rsize, lnorb, rnorb*rnorb, 1.0, Rgamma2->data(), Rsize, coulomb.get(), rnorb*rnorb, 1.0, scratch.get(), Rsize);
+          for (int a = 0; a < lnorb; ++a) {
+            const double* ldata = Lgamma->data() + Lsize * a;
+            const double* rdata = scratch.get() + Rsize * a;
+            kronecker_product(1.0, false, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
           }
         }
 
@@ -999,20 +1169,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= lnorb*rnorb*rnorb);
+        fill_n(scratch.get(), Rsize * lnorb, 0.0);
         for (int a = 0; a < lnorb; ++a) {
-          Lmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
-
-          Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(q+roffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              coulomb[p + q*rnorb + a*rnorb*rnorb] = mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(q+roffset)*norb*norb*norb];
             }
           }
-          kronecker_product(1.0, false, Rmat, false, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Rsize, lnorb, rnorb*rnorb, -1.0, Rgamma->data(), Rsize, coulomb.get(), rnorb*rnorb, 1.0, scratch.get(), Rsize);
+        for (int a = 0; a < lnorb; ++a) {
+          const double* ldata = Lgamma->data() + Lsize * a;
+          const double* rdata = scratch.get() + Rsize * a;
+          kronecker_product(1.0, false, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1036,20 +1216,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= lnorb*rnorb*rnorb);
+        fill_n(scratch.get(), Rsize * lnorb, 0.0);
         for (int a = 0; a < lnorb; ++a) {
-          Lmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
-
-          Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(q+roffset)*norb+(p+roffset)*norb*norb+(a+loffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              coulomb[p + q*rnorb + a*rnorb*rnorb] = mo2e[(i)+(q+roffset)*norb+(p+roffset)*norb*norb+(a+loffset)*norb*norb*norb];
             }
           }
-          kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Rsize, lnorb, rnorb*rnorb, -1.0, Rgamma->data(), Rsize, coulomb.get(), rnorb*rnorb, 1.0, scratch.get(), Rsize);
+        for (int a = 0; a < lnorb; ++a) {
+          const double* ldata = Lgamma->data() + Lsize * a;
+          const double* rdata = scratch.get() + Rsize * a;
+          kronecker_product(1.0, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1081,21 +1271,39 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
           shared_ptr<const btas::Tensor3<double>> Lgamma2 = blocks_->left_block()->coupling({GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
           shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-          Matrix Lmat(Lgamma1->extent(0), Lgamma1->extent(1), true);
-          Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+          const int Lndim = Lgamma1->extent(0);
+          const int Lmdim = Lgamma1->extent(1);
+          const int Lsize = Lgamma1->extent(0) * Lgamma1->extent(1);
 
+          const int Rndim = Rgamma->extent(0);
+          const int Rmdim = Rgamma->extent(1);
+          const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+          // fill in coulomb part
+          assert(max_coulomb_size >= rnorb*lnorb*lnorb);
+          fill_n(scratch.get(), Lsize * rnorb, 0.0);
           for (int p = 0; p < rnorb; ++p) {
-            Rmat.zero();
-            blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-            Lmat.zero();
             for (int a = 0; a < lnorb; ++a) {
               for (int b = 0; b < lnorb; ++b) {
-                blas::ax_plus_y_n(-1.0 * (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(b+loffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb]), &(*Lgamma1)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
-                blas::ax_plus_y_n(1.0 * mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb], &(*Lgamma2)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+                coulomb[a + b*lnorb + p*lnorb*lnorb] = (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(b+loffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb]);
               }
             }
-            kronecker_product(left_phase, false, Rmat, false, Lmat, *out_block);
+          }
+
+          dgemm_("N", "N", Lsize, rnorb, lnorb*lnorb, -1.0, Lgamma1->data(), Lsize, coulomb.get(), lnorb*lnorb, 1.0, scratch.get(), Lsize);
+          for (int p = 0; p < rnorb; ++p) {
+            for (int a = 0; a < lnorb; ++a) {
+              for (int b = 0; b < lnorb; ++b) {
+                coulomb[a + b*lnorb + p*lnorb*lnorb] = mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb];
+              }
+            }
+          }
+
+          dgemm_("N", "N", Lsize, rnorb, lnorb*lnorb, 1.0, Lgamma2->data(), Lsize, coulomb.get(), lnorb*lnorb, 1.0, scratch.get(), Lsize);
+          for (int p = 0; p < rnorb; ++p) {
+            const double* ldata = scratch.get() + Lsize * p;
+            const double* rdata = Rgamma->data() + Rsize * p;
+            kronecker_product(left_phase, false, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
           }
         }
 
@@ -1120,20 +1328,30 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(1.0 * mo2e[(i)+(a+loffset)*norb+(b+loffset)*norb*norb+(p+roffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              coulomb[a + b*lnorb + p*lnorb*lnorb] = mo2e[(i)+(a+loffset)*norb+(b+loffset)*norb*norb+(p+roffset)*norb*norb*norb];
             }
           }
-          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb*lnorb, 1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb*lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1160,6 +1378,19 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
 
   const double* mo2e = jop_->mo2e()->data();
 
+  const int max_L_M = max_element(blocks_->left_block()->blocks().begin(), blocks_->left_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const int max_R_M = max_element(blocks_->right_block()->blocks().begin(), blocks_->right_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const size_t max_L_intermediate = max_L_M * max_L_M * rnorb;
+  const size_t max_R_intermediate = max_R_M * max_R_M * lnorb;
+  const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
+  unique_ptr<double[]> scratch(new double[max_intermediate]);
+
+  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
   for (auto& spair : pvec) {
@@ -1201,18 +1432,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb];
           }
-          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, -1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, false, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1236,18 +1477,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * (mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = (mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb]);
           }
-          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, -1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, false, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1271,18 +1522,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb];
           }
-          kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, 1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1306,18 +1567,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * (mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = (mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb]);
           }
-          kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, 1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1344,6 +1615,19 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
 
   const double* mo2e = jop_->mo2e()->data();
 
+  const int max_L_M = max_element(blocks_->left_block()->blocks().begin(), blocks_->left_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const int max_R_M = max_element(blocks_->right_block()->blocks().begin(), blocks_->right_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const size_t max_L_intermediate = max_L_M * max_L_M * rnorb;
+  const size_t max_R_intermediate = max_R_M * max_R_M * lnorb;
+  const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
+  unique_ptr<double[]> scratch(new double[max_intermediate]);
+
+  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
   for (auto& spair : pvec) {
@@ -1385,18 +1669,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * (mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = (mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb]);
           }
-          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, -1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, false, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1420,18 +1714,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb];
           }
-          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, -1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, false, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1455,18 +1759,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb];
           }
-          kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, 1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1490,18 +1804,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * (mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = (mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb]);
           }
-          kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, 1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1533,6 +1857,19 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
 
   const double* mo2e = jop_->mo2e()->data();
 
+  const int max_L_M = max_element(blocks_->left_block()->blocks().begin(), blocks_->left_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const int max_R_M = max_element(blocks_->right_block()->blocks().begin(), blocks_->right_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const size_t max_L_intermediate = max_L_M * max_L_M * rnorb;
+  const size_t max_R_intermediate = max_R_M * max_R_M * lnorb;
+  const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
+  unique_ptr<double[]> scratch(new double[max_intermediate]);
+
+  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
   for (auto& spair : source_pvec) {
@@ -1578,18 +1915,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({tpair.right.key(),spair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * mo2e[(p+roffset)+(a+loffset)*norb+(j)*norb*norb+(i)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = mo2e[(p+roffset)+(a+loffset)*norb+(j)*norb*norb+(i)*norb*norb*norb];
           }
-          kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, 1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, false, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1637,18 +1984,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({tpair.left.key(),spair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb];
           }
-          kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, -1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, false, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1680,6 +2037,19 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
 
   const double* mo2e = jop_->mo2e()->data();
 
+  const int max_L_M = max_element(blocks_->left_block()->blocks().begin(), blocks_->left_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const int max_R_M = max_element(blocks_->right_block()->blocks().begin(), blocks_->right_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const size_t max_L_intermediate = max_L_M * max_L_M * rnorb;
+  const size_t max_R_intermediate = max_R_M * max_R_M * lnorb;
+  const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
+  unique_ptr<double[]> scratch(new double[max_intermediate]);
+
+  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
   for (auto& spair : source_pvec) {
@@ -1701,18 +2071,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(0.5 * (mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb] - mo2e[(a+loffset)+(p+roffset)*norb+(i)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = (mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb] - mo2e[(a+loffset)+(p+roffset)*norb+(i)*norb*norb+(j)*norb*norb*norb]);
           }
-          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, 0.5, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1792,6 +2172,19 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
 
   const double* mo2e = jop_->mo2e()->data();
 
+  const int max_L_M = max_element(blocks_->left_block()->blocks().begin(), blocks_->left_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const int max_R_M = max_element(blocks_->right_block()->blocks().begin(), blocks_->right_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const size_t max_L_intermediate = max_L_M * max_L_M * rnorb;
+  const size_t max_R_intermediate = max_R_M * max_R_M * lnorb;
+  const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
+  unique_ptr<double[]> scratch(new double[max_intermediate]);
+
+  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
   for (auto& spair : source_pvec) {
@@ -1813,18 +2206,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(0.5 * (mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb] - mo2e[(a+loffset)+(p+roffset)*norb+(i)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = (mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb] - mo2e[(a+loffset)+(p+roffset)*norb+(i)*norb*norb+(j)*norb*norb*norb]);
           }
-          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, 0.5, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -1904,6 +2307,19 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
 
   const double* mo2e = jop_->mo2e()->data();
 
+  const int max_L_M = max_element(blocks_->left_block()->blocks().begin(), blocks_->left_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const int max_R_M = max_element(blocks_->right_block()->blocks().begin(), blocks_->right_block()->blocks().end(),
+                                   [] (const BlockInfo& a, const BlockInfo& b)
+                                     { return a.nstates < b.nstates; })->nstates;
+  const size_t max_L_intermediate = max_L_M * max_L_M * rnorb;
+  const size_t max_R_intermediate = max_R_M * max_R_M * lnorb;
+  const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
+  unique_ptr<double[]> scratch(new double[max_intermediate]);
+
+  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
   for (auto& spair : source_pvec) {
@@ -1949,18 +2365,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateAlpha}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateBeta}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * mo2e[(p+roffset)+(a+loffset)*norb+(j)*norb*norb+(i)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = mo2e[(p+roffset)+(a+loffset)*norb+(j)*norb*norb+(i)*norb*norb*norb];
           }
-          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, -1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
@@ -2008,18 +2434,28 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
         shared_ptr<const btas::Tensor3<double>> Lgamma = blocks_->left_block()->coupling({GammaSQ::CreateBeta}).at({spair.left.key(),tpair.left.key()}).data;
         shared_ptr<const btas::Tensor3<double>> Rgamma = blocks_->right_block()->coupling({GammaSQ::CreateAlpha}).at({spair.right.key(),tpair.right.key()}).data;
 
-        Matrix Lmat(Lgamma->extent(0), Lgamma->extent(1), true);
-        Matrix Rmat(Rgamma->extent(0), Rgamma->extent(1), true);
+        const int Lndim = Lgamma->extent(0);
+        const int Lmdim = Lgamma->extent(1);
+        const int Lsize = Lgamma->extent(0) * Lgamma->extent(1);
 
+        const int Rndim = Rgamma->extent(0);
+        const int Rmdim = Rgamma->extent(1);
+        const int Rsize = Rgamma->extent(0) * Rgamma->extent(1);
+
+        // fill in coulomb part
+        assert(max_coulomb_size >= rnorb*lnorb);
+        fill_n(scratch.get(), Lsize * rnorb, 0.0);
         for (int p = 0; p < rnorb; ++p) {
-          Rmat.zero();
-          blas::ax_plus_y_n(1.0, &(*Rgamma)(0, 0, p), Rmat.size(), Rmat.data());
-
-          Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            coulomb[a + p*lnorb] = mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb];
           }
-          kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
+        }
+
+        dgemm_("N", "N", Lsize, rnorb, lnorb, 1.0, Lgamma->data(), Lsize, coulomb.get(), lnorb, 1.0, scratch.get(), Lsize);
+        for (int p = 0; p < rnorb; ++p) {
+          const double* ldata = scratch.get() + Lsize * p;
+          const double* rdata = Rgamma->data() + Rsize * p;
+          kronecker_product(left_phase, true, Rndim, Rmdim, rdata, Rndim, true, Lndim, Lmdim, ldata, Lndim, out_block->data(), out_block->ndim());
         }
 
         // add to map if large enough
