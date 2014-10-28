@@ -230,13 +230,13 @@ void ApplyOperator::operator()(const double fac, const RASCivecView source, RASC
 void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, RASBlockVectors& target, const vector<GammaSQ>& operations, const vector<int>& orbitals) const {
   assert(operations.size() == orbitals.size());
 
-  shared_ptr<const RASDeterminants> sdet = source.det();
-  shared_ptr<const RASDeterminants> tdet = target.det();
+  const shared_ptr<const RASDeterminants>& sdet = source.det();
+  const shared_ptr<const RASDeterminants>& tdet = target.det();
 
   const int M = source.mdim();
   if (M <= 0) return;
 
-  const array<int, 3> ras = sdet->ras();
+  const array<int, 3>& ras = sdet->ras();
   assert(ras == tdet->ras());
 
   const int nops = operations.size();
@@ -270,8 +270,8 @@ void ApplyOperator::operator()(const double fac, const RASBlockVectors& source, 
         if (tblock->empty()) continue;
         auto sblock = get_blockinfo(sdet, dhp, tblock);
         if (sblock) {
-          shared_ptr<const RASString> source_strings = all_alpha ? sblock->stringsa() : sblock->stringsb();
-          shared_ptr<const RASString> target_strings = all_alpha ? tblock->stringsa() : tblock->stringsb();
+          const shared_ptr<const RASString>& source_strings = all_alpha ? sblock->stringsa() : sblock->stringsb();
+          const shared_ptr<const RASString>& target_strings = all_alpha ? tblock->stringsa() : tblock->stringsb();
 
           const size_t tlen = target_strings->size();
 
