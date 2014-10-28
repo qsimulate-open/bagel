@@ -473,7 +473,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
   const int loffset = norb - (lnorb + rnorb); // convenience variable for offset of left orbitals from zero
   const int roffset = norb - rnorb; // convenience variable for offset of right orbitals from zero
 
-  const btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(norb,norb,norb,norb), jop_->mo2e()->storage());
+  const double* mo2e = jop_->mo2e()->data();
 
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -506,7 +506,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(-1.0 * mo2e(i, p+roffset, b+loffset, a+loffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(p+roffset)*norb+(b+loffset)*norb*norb+(a+loffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
           kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
@@ -543,7 +543,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
           Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(1.0 * mo2e(i, p+roffset, q+roffset, a+loffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              blas::ax_plus_y_n(1.0 * mo2e[(i)+(p+roffset)*norb+(q+roffset)*norb*norb+(a+loffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
           kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
@@ -580,7 +580,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
           Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(1.0 * mo2e(i, p+roffset, q+roffset, a+loffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              blas::ax_plus_y_n(1.0 * mo2e[(i)+(p+roffset)*norb+(q+roffset)*norb*norb+(a+loffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
           kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
@@ -625,8 +625,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
             Rmat.zero();
             for (int p = 0; p < rnorb; ++p) {
               for (int q = 0; q < rnorb; ++q) {
-                blas::ax_plus_y_n(1.0 * (mo2e(i, p+roffset, a+loffset, q+roffset) - mo2e(i, a+loffset, p+roffset, q+roffset)), &(*Rgamma1)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
-                blas::ax_plus_y_n(1.0 * mo2e(i, p+roffset, a+loffset, q+roffset), &(*Rgamma2)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+                blas::ax_plus_y_n(1.0 * (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(q+roffset)*norb*norb*norb]), &(*Rgamma1)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+                blas::ax_plus_y_n(1.0 * mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb], &(*Rgamma2)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
               }
             }
             kronecker_product(1.0, false, Rmat, false, Lmat, *out_block);
@@ -664,7 +664,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(1.0 * mo2e(i, a+loffset, b+loffset, p+roffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              blas::ax_plus_y_n(1.0 * mo2e[(i)+(a+loffset)*norb+(b+loffset)*norb*norb+(p+roffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
           kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
@@ -709,8 +709,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
             Lmat.zero();
             for (int a = 0; a < lnorb; ++a) {
               for (int b = 0; b < lnorb; ++b) {
-                blas::ax_plus_y_n(-1.0 * (mo2e(i, p+roffset, a+loffset, b+loffset) - mo2e(i, a+loffset, p+roffset, b+loffset)), &(*Lgamma1)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
-                blas::ax_plus_y_n(1.0 * mo2e(i, a+loffset, p+roffset, b+loffset), &(*Lgamma2)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+                blas::ax_plus_y_n(-1.0 * (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(b+loffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb]), &(*Lgamma1)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+                blas::ax_plus_y_n(1.0 * mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb], &(*Lgamma2)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
               }
             }
             kronecker_product(left_phase, false, Rmat, false, Lmat, *out_block);
@@ -748,7 +748,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
           Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(-1.0 * mo2e(i, a+loffset, q+roffset, p+roffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(a+loffset)*norb+(q+roffset)*norb*norb+(p+roffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
           kronecker_product(1.0, true, Rmat, false, Lmat, *out_block);
@@ -785,7 +785,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_a(BlockKey bk, const int i) con
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(1.0 * mo2e(i, a+loffset, b+loffset, p+roffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              blas::ax_plus_y_n(1.0 * mo2e[(i)+(a+loffset)*norb+(b+loffset)*norb*norb+(p+roffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
           kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
@@ -818,7 +818,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
   const int loffset = norb - (lnorb + rnorb); // convenience variable for offset of left orbitals from zero
   const int roffset = norb - rnorb; // convenience variable for offset of right orbitals from zero
 
-  const btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(norb,norb,norb,norb), jop_->mo2e()->storage());
+  const double* mo2e = jop_->mo2e()->data();
 
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -851,7 +851,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(-1.0 * mo2e(i, p+roffset, a+loffset, b+loffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(b+loffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
           kronecker_product(left_phase, false, Rmat, false, Lmat, *out_block);
@@ -888,7 +888,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
           Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(1.0 * mo2e(i, p+roffset, q+roffset, a+loffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              blas::ax_plus_y_n(1.0 * mo2e[(i)+(p+roffset)*norb+(q+roffset)*norb*norb+(a+loffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
           kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
@@ -925,7 +925,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(-1.0 * mo2e(i, b+loffset, a+loffset, p+roffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(b+loffset)*norb+(a+loffset)*norb*norb+(p+roffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
           kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
@@ -970,8 +970,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
             Rmat.zero();
             for (int p = 0; p < rnorb; ++p) {
               for (int q = 0; q < rnorb; ++q) {
-                blas::ax_plus_y_n(1.0 * (mo2e(i, p+roffset, a+loffset, q+roffset) - mo2e(i, a+loffset, p+roffset, q+roffset)), &(*Rgamma1)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
-                blas::ax_plus_y_n(1.0 * mo2e(i, p+roffset, a+loffset, q+roffset), &(*Rgamma2)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+                blas::ax_plus_y_n(1.0 * (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(q+roffset)*norb*norb*norb]), &(*Rgamma1)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+                blas::ax_plus_y_n(1.0 * mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(q+roffset)*norb*norb*norb], &(*Rgamma2)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
               }
             }
             kronecker_product(1.0, false, Rmat, false, Lmat, *out_block);
@@ -1009,7 +1009,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
           Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(-1.0 * mo2e(i, a+loffset, p+roffset, q+roffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(q+roffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
           kronecker_product(1.0, false, Rmat, false, Lmat, *out_block);
@@ -1046,7 +1046,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
           Rmat.zero();
           for (int p = 0; p < rnorb; ++p) {
             for (int q = 0; q < rnorb; ++q) {
-              blas::ax_plus_y_n(-1.0 * mo2e(i, q+roffset, p+roffset, a+loffset), &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
+              blas::ax_plus_y_n(-1.0 * mo2e[(i)+(q+roffset)*norb+(p+roffset)*norb*norb+(a+loffset)*norb*norb*norb], &(*Rgamma)(0, 0, p + q*rnorb), Rmat.size(), Rmat.data());
             }
           }
           kronecker_product(1.0, true, Rmat, true, Lmat, *out_block);
@@ -1091,8 +1091,8 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
             Lmat.zero();
             for (int a = 0; a < lnorb; ++a) {
               for (int b = 0; b < lnorb; ++b) {
-                blas::ax_plus_y_n(-1.0 * (mo2e(i, p+roffset, a+loffset, b+loffset) - mo2e(i, a+loffset, p+roffset, b+loffset)), &(*Lgamma1)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
-                blas::ax_plus_y_n(1.0 * mo2e(i, a+loffset, p+roffset, b+loffset), &(*Lgamma2)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+                blas::ax_plus_y_n(-1.0 * (mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(b+loffset)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb]), &(*Lgamma1)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+                blas::ax_plus_y_n(1.0 * mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(b+loffset)*norb*norb*norb], &(*Lgamma2)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
               }
             }
             kronecker_product(left_phase, false, Rmat, false, Lmat, *out_block);
@@ -1130,7 +1130,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::S_b(BlockKey bk, const int i) con
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
             for (int b = 0; b < lnorb; ++b) {
-              blas::ax_plus_y_n(1.0 * mo2e(i, a+loffset, b+loffset, p+roffset), &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
+              blas::ax_plus_y_n(1.0 * mo2e[(i)+(a+loffset)*norb+(b+loffset)*norb*norb+(p+roffset)*norb*norb*norb], &(*Lgamma)(0, 0, a + b*lnorb), Lmat.size(), Lmat.data());
             }
           }
           kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
@@ -1158,7 +1158,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
   const int loffset = norb - (lnorb + rnorb); // convenience variable for offset of left orbitals from zero
   const int roffset = norb - rnorb; // convenience variable for offset of right orbitals from zero
 
-  const btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(norb,norb,norb,norb), jop_->mo2e()->storage());
+  const double* mo2e = jop_->mo2e()->data();
 
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -1210,7 +1210,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * mo2e(p+roffset, i, a+loffset, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-1.0 * mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
@@ -1245,7 +1245,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * (mo2e(p+roffset, i, a+loffset, j) - mo2e(i, p+roffset, a+loffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-1.0 * (mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
@@ -1280,7 +1280,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * mo2e(a+loffset, i, p+roffset, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(1.0 * mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
         }
@@ -1315,7 +1315,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * (mo2e(a+loffset, i, p+roffset, j) - mo2e(i, a+loffset, p+roffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(1.0 * (mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
         }
@@ -1342,7 +1342,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
   const int loffset = norb - (lnorb + rnorb); // convenience variable for offset of left orbitals from zero
   const int roffset = norb - rnorb; // convenience variable for offset of right orbitals from zero
 
-  const btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(norb,norb,norb,norb), jop_->mo2e()->storage());
+  const double* mo2e = jop_->mo2e()->data();
 
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -1394,7 +1394,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * (mo2e(p+roffset, i, a+loffset, j) - mo2e(i, p+roffset, a+loffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-1.0 * (mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(p+roffset)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
@@ -1429,7 +1429,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * mo2e(p+roffset, i, a+loffset, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-1.0 * mo2e[(p+roffset)+(i)*norb+(a+loffset)*norb*norb+(j)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
@@ -1464,7 +1464,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * mo2e(a+loffset, i, p+roffset, j), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(1.0 * mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
         }
@@ -1499,7 +1499,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * (mo2e(a+loffset, i, p+roffset, j) - mo2e(i, a+loffset, p+roffset, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(1.0 * (mo2e[(a+loffset)+(i)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb] - mo2e[(i)+(a+loffset)*norb+(p+roffset)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
         }
@@ -1531,7 +1531,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
   const int loffset = norb - (lnorb + rnorb); // convenience variable for offset of left orbitals from zero
   const int roffset = norb - rnorb; // convenience variable for offset of right orbitals from zero
 
-  const btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(norb,norb,norb,norb), jop_->mo2e()->storage());
+  const double* mo2e = jop_->mo2e()->data();
 
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -1587,7 +1587,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * mo2e(p+roffset, a+loffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(1.0 * mo2e[(p+roffset)+(a+loffset)*norb+(j)*norb*norb+(i)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, false, Rmat, true, Lmat, *out_block);
         }
@@ -1646,7 +1646,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * mo2e(a+loffset, p+roffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-1.0 * mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, true, Rmat, false, Lmat, *out_block);
         }
@@ -1678,7 +1678,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
   const int loffset = norb - (lnorb + rnorb); // convenience variable for offset of left orbitals from zero
   const int roffset = norb - rnorb; // convenience variable for offset of right orbitals from zero
 
-  const btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(norb,norb,norb,norb), jop_->mo2e()->storage());
+  const double* mo2e = jop_->mo2e()->data();
 
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -1710,7 +1710,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(0.5 * (mo2e(a+loffset, p+roffset, j, i) - mo2e(a+loffset, p+roffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(0.5 * (mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb] - mo2e[(a+loffset)+(p+roffset)*norb+(i)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
@@ -1790,7 +1790,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
   const int loffset = norb - (lnorb + rnorb); // convenience variable for offset of left orbitals from zero
   const int roffset = norb - rnorb; // convenience variable for offset of right orbitals from zero
 
-  const btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(norb,norb,norb,norb), jop_->mo2e()->storage());
+  const double* mo2e = jop_->mo2e()->data();
 
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -1822,7 +1822,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(0.5 * (mo2e(a+loffset, p+roffset, j, i) - mo2e(a+loffset, p+roffset, i, j)), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(0.5 * (mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb] - mo2e[(a+loffset)+(p+roffset)*norb+(i)*norb*norb+(j)*norb*norb*norb]), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
@@ -1902,7 +1902,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
   const int loffset = norb - (lnorb + rnorb); // convenience variable for offset of left orbitals from zero
   const int roffset = norb - rnorb; // convenience variable for offset of right orbitals from zero
 
-  const btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(norb,norb,norb,norb), jop_->mo2e()->storage());
+  const double* mo2e = jop_->mo2e()->data();
 
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -1958,7 +1958,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(-1.0 * mo2e(p+roffset, a+loffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(-1.0 * mo2e[(p+roffset)+(a+loffset)*norb+(j)*norb*norb+(i)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }
@@ -2017,7 +2017,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
 
           Lmat.zero();
           for (int a = 0; a < lnorb; ++a) {
-            blas::ax_plus_y_n(1.0 * mo2e(a+loffset, p+roffset, j, i), &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
+            blas::ax_plus_y_n(1.0 * mo2e[(a+loffset)+(p+roffset)*norb+(j)*norb*norb+(i)*norb*norb*norb], &(*Lgamma)(0, 0, a), Lmat.size(), Lmat.data());
           }
           kronecker_product(left_phase, true, Rmat, true, Lmat, *out_block);
         }

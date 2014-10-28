@@ -231,7 +231,7 @@ class Integrals:
     def index(self, indices):
         out = ""
         for i, index in enumerate(indices):
-            out += "%s%s" % ("" if i==0 else ", ", index)
+            out += "%s(%s)%s" % ("" if i==0 else "+", index, i*("*"+norb))
         return out
 
     def __init__(self, partition, size, rL, rR, it):
@@ -262,27 +262,27 @@ class Integrals:
 
         if self.int_type == "QJ":
             assert size == 2
-            out = "%s(%s)" % (ptr_name, self.index( [total_indices[0], Cindices[0], total_indices[1], Cindices[1]] ))
+            out = "%s[%s]" % (ptr_name, self.index( [total_indices[0], Cindices[0], total_indices[1], Cindices[1]] ))
         elif self.int_type == "QK":
             assert size == 2
-            out = "%s(%s)" % (ptr_name, self.index( [total_indices[0], total_indices[1], Cindices[1], Cindices[0]] ))
+            out = "%s[%s]" % (ptr_name, self.index( [total_indices[0], total_indices[1], Cindices[1], Cindices[0]] ))
         elif self.int_type == "QJK":
             assert size == 2
-            out = "(%s(%s) - %s(%s))" % (ptr_name, self.index([total_indices[0], Cindices[0], total_indices[1], Cindices[1]]),
+            out = "(%s[%s] - %s[%s])" % (ptr_name, self.index([total_indices[0], Cindices[0], total_indices[1], Cindices[1]]),
                                          ptr_name, self.index([Cindices[0], total_indices[0], total_indices[1], Cindices[1]]))
         elif self.int_type == "P":
             assert size == 2
-            out = "%s(%s)" % (ptr_name, self.index([total_indices[0], total_indices[1], Cindices[1], Cindices[0]]))
+            out = "%s[%s]" % (ptr_name, self.index([total_indices[0], total_indices[1], Cindices[1], Cindices[0]]))
         elif self.int_type == "PJK":
             assert size == 2
-            out = "(%s(%s) - %s(%s))" % (ptr_name, self.index([total_indices[0], total_indices[1], Cindices[1], Cindices[0]]),
+            out = "(%s[%s] - %s[%s])" % (ptr_name, self.index([total_indices[0], total_indices[1], Cindices[1], Cindices[0]]),
                                          ptr_name, self.index([total_indices[0], total_indices[1], Cindices[0], Cindices[1]]))
         elif self.int_type == "S":
             assert size == 3
-            out = "%s(%s)" % (ptr_name, self.index([Cindices[0], total_indices[1], total_indices[0], total_indices[2]]))
+            out = "%s[%s]" % (ptr_name, self.index([Cindices[0], total_indices[1], total_indices[0], total_indices[2]]))
         elif self.int_type == "SJK":
             assert size == 3
-            out = "(%s(%s) - %s(%s))" % (ptr_name, self.index([Cindices[0], total_indices[1], total_indices[0], total_indices[2]]),
+            out = "(%s[%s] - %s[%s])" % (ptr_name, self.index([Cindices[0], total_indices[1], total_indices[0], total_indices[2]]),
                                          ptr_name, self.index([Cindices[0], total_indices[0], total_indices[1], total_indices[2]]))
         else:
             raise Exception("Undefined integral type!")
@@ -414,7 +414,7 @@ def generate_operator(opname, contracted_operators, ninput):
     print("%sconst int %s = %s - %s; // convenience variable for offset of right orbitals from zero" % (indent(), roffset, norb, rnorb))
     print()
 
-    print("%sconst btas::TensorView4<double> mo2e = btas::make_view(btas::CRange<4>(%s,%s,%s,%s), jop_->mo2e()->storage());" % (indent(), norb, norb, norb, norb))
+    print("%sconst double* %s = jop_->mo2e()->data();" % (indent(), mo2e))
     print()
 
     print("%smap<pair<size_t, size_t>, shared_ptr<Matrix>> out;" % (indent()))
