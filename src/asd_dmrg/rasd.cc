@@ -872,18 +872,15 @@ void RASD::apply_perturbation(const vector<shared_ptr<ProductRASCivec>>& ccvec, 
         if (cc->contains_block(target_key)) {
           shared_ptr<const RASBlockVectors> source_sector = cc->sector(target_key);
           assert(target_sector->mdim()==source_sector->mdim());
-          const int Msec = target_sector->mdim();
-          for (int ist = 0; ist < Msec; ++ist) {
-            if (oplist.size()==1) {
-              for (int p = 0; p < norb; ++p)
-                apply(1.0, source_sector->civec(ist), target_sector->civec(ist), oplist, {p});
-            } else if (oplist.size()==2) {
-              for (int p = 0; p < norb; ++p)
-                for (int q = 0; q < norb; ++q)
-                  apply(1.0, source_sector->civec(ist), target_sector->civec(ist), oplist, {p, q});
-            } else {
-              assert(false);
-            }
+          if (oplist.size()==1) {
+            for (int p = 0; p < norb; ++p)
+              apply(1.0, *source_sector, *target_sector, oplist, {p});
+          } else if (oplist.size()==2) {
+            for (int p = 0; p < norb; ++p)
+              for (int q = 0; q < norb; ++q)
+                apply(1.0, *source_sector, *target_sector, oplist, {p, q});
+          } else {
+            assert(false);
           }
         }
       }
