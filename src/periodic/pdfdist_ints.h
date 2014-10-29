@@ -45,7 +45,7 @@ class PDFDist_ints : public DFDist {
                          const std::vector<std::shared_ptr<const Shell>>& bgshell); /*cell g*/
 
     /// charged part of coeff
-    std::shared_ptr<btas::Tensor3<double>> coeffC_;
+    std::shared_ptr<DFBlock> coeffC_;
     void compute_charged_coeff(const std::vector<std::shared_ptr<const Shell>>& b0shell,
                                const std::vector<std::shared_ptr<const Shell>>& bgshell);
 
@@ -60,7 +60,7 @@ class PDFDist_ints : public DFDist {
     int ncell() const { return lattice_vectors_.size(); }
 
     std::shared_ptr<const VectorB> data1() const { return data1_; }
-    std::shared_ptr<btas::Tensor3<double>> coeffC() const { return coeffC_; }
+    std::shared_ptr<DFBlock> coeffC() const { return coeffC_; }
 };
 
 }

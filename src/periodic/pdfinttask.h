@@ -30,7 +30,6 @@
 #include <src/molecule/shell.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/os/overlapbatch.h>
-#include <src/periodic/pdfdist_ints.h>
 
 namespace bagel {
 
@@ -61,29 +60,30 @@ class PDFIntTask_coeff {
   protected:
     std::array<std::shared_ptr<const Shell>,2> shell_;
     std::array<int,2> offset_;
-    PDFDist_ints* pdf_;
+    std::shared_ptr<DFBlock> coeffC_;
+    std::shared_ptr<const VectorB> data1_;
 
   public:
     // <r|sL>
-    PDFIntTask_coeff(std::array<std::shared_ptr<const Shell>,2>&& sh, std::array<int,2>&& offset, PDFDist_ints* pdf)
-     : shell_(sh), offset_(offset), pdf_(pdf) { }
+    PDFIntTask_coeff(std::array<std::shared_ptr<const Shell>,2>&& sh, std::array<int,2>&& offset,
+                     std::shared_ptr<DFBlock>& coeffC, const std::shared_ptr<const VectorB>& data1)
+     : shell_(sh), offset_(offset), coeffC_(coeffC), data1_(data1) { }
 
     void compute() {
 
       auto overlap = std::make_shared<OverlapBatch>(shell_);
       const double* odata = overlap->data();
 
-      const size_t naux = pdf_->naux();
-      const size_t nbas = pdf_->nbasis0();
-      const double q = pdf_->data1_->rms() * naux;
+      const size_t naux = coeffC_->asize();
+      const size_t nbas = coeffC_->b1size();
+      const double q = data1_->rms() * naux;
 
-      double* const coeff = pdf_->coeffC_->data();
+      double* const coeff = coeffC_->data();
       for (int j0 = offset_[0]; j0 != offset_[0] + shell_[1]->nbasis(); ++j0)
-        for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++odata) {
-          const double* data1 = pdf_->data1_->data();
-          for (int a = 0; a != naux; ++a, ++data1)
-            coeff[a + naux * (j1 + nbas * j0)] = *odata * *data1 / q;
-        }
+        for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++odata)
+          for (int a = 0; a != naux; ++a) {
+            coeff[a + naux * (j1 + nbas * j0)] = *odata * (*data1_)(a) / q;
+          }
     }
 };
 

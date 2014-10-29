@@ -54,7 +54,7 @@ shared_ptr<VectorB> PDFDist::pcompute_coeff(const shared_ptr<const PData> densit
 
     // get charged coeff by contracting with density
     auto tmp1 = make_shared<VectorB>(naux_);
-    shared_ptr<btas::Tensor3<double>> coeffC = dfdist_[i]->coeffC();
+    shared_ptr<DFBlock> coeffC = dfdist_[i]->coeffC();
     contract(1.0, group(*coeffC, 1, 3), {0, 1}, group(*(density->pdata(i)->get_real_part()), 0, 2), {1}, 0.0, *tmp1, {0});
     *coeff1 += *tmp1;
 

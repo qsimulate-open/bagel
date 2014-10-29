@@ -53,11 +53,10 @@ PDFDist::PDFDist(vector<array<double, 3>> L, const int nbas, const int naux,
       (r0sL|aL') sum over L' and <r|sL> */
   dfdist_.resize(L.size());
   for (int i = 0; i != L.size(); ++i) {
-    vector<shared_ptr<const Atom>> atoms1;
-    atoms1.resize(atoms0.size());
+    vector<shared_ptr<const Atom>> atoms1(atoms0.size());
     int iat = 0;
     for (auto& atom : atoms0) {
-      atoms1[i] = make_shared<const Atom>(*atom, lattice_vectors_[i]);
+      atoms1[iat] = make_shared<const Atom>(*atom, lattice_vectors_[i]);
       ++iat;
     }
     dfdist_[i] = make_shared<PDFDist_ints>(L, nbas, naux, atoms0, atoms1, aux_atoms, thresh, data1_);
@@ -67,6 +66,7 @@ PDFDist::PDFDist(vector<array<double, 3>> L, const int nbas, const int naux,
 
 void PDFDist::compute_aux_charge(const vector<shared_ptr<const Shell>>& ashell) {
 
+  Timer time;
   TaskQueue<PDFIntTask_aux> tasks(ashell.size());
   data1_ = make_shared<VectorB>(naux_);
 
@@ -79,6 +79,7 @@ void PDFDist::compute_aux_charge(const vector<shared_ptr<const Shell>>& ashell) 
   }
 
   tasks.compute();
+  time.tick_print("aux charge integrals");
 
   const double q = data1_->rms() * naux_;
   for (auto& idata : *data1_) idata /= q;

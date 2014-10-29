@@ -56,6 +56,7 @@ PDFDist_ints::PDFDist_ints(vector<array<double, 3>> L, const int nbas, const int
   block_.push_back(make_shared<DFBlock>(adist_shell, adist_averaged, asize, b0size, bgsize, astart, 0, 0));
 
   // 3-index integrals (r sL'|iL) for each L' (sum over all lattice vectors L)
+  coeffC_ = make_shared<DFBlock>(adist_shell, adist_averaged, asize, b0size, bgsize, astart, 0, 0);
   pcompute_3index(myashell, b0shell, bgshell);
 
   // charged part of coeff
@@ -98,7 +99,6 @@ void PDFDist_ints::compute_charged_coeff(const vector<shared_ptr<const Shell>>& 
                                          const vector<shared_ptr<const Shell>>& bgshell) {
 
   Timer time;
-  auto coeffC_ = make_shared<btas::Tensor3<double>>(naux_, nindex1_, nindex2_);
 
   if (!data1_)
     throw logic_error("auxiliary charge has to be computed first");
@@ -110,7 +110,7 @@ void PDFDist_ints::compute_charged_coeff(const vector<shared_ptr<const Shell>>& 
   for (auto& t : b0shell) {
     int j0 = 0;
     for (auto& u : bgshell) {
-      tasks.emplace_back((array<shared_ptr<const Shell>, 2>{{u, t}}), (array<int, 2>{{j1, j0}}), this);
+      tasks.emplace_back((array<shared_ptr<const Shell>, 2>{{u, t}}), (array<int, 2>{{j1, j0}}), coeffC_, data1_);
       j0 += u->nbasis();
     }
     j1 += t->nbasis();
