@@ -212,25 +212,44 @@ void GammaForestProdASD::compute() {
       assert(dmrgblock == bra_states.front()->left());
       assert(dmrgblock == ket_states.front()->left());
 
-      for (auto& kbinfo : dmrgblock->blocks()) {
-        if (!ket_states.front()->contains_block(kbinfo)) continue;
-        // key for the RAS part of the wavefunction
-        BlockKey krkey(ket_info.nelea - kbinfo.nelea, ket_info.neleb - kbinfo.neleb);
+      // contains set of ijk's that will need to be transposed at the end of this loop
+      set<size_t> transpose_list;
 
-        // loop through all the ways to divide the operators between block and ras
-        const int npart = 1 << coupling.size();
-        for (int part = 0; part < npart; ++part) {
-          bitset<3> bit(part);
-          list<GammaSQ> blockops, ciops;
-          auto citer = coupling.begin();
-          // divide such that if bit is true --> ciops, bit false --> blockops
-          for (int i = 0; i < coupling.size(); ++i, ++citer)
-            (bit[i] ? ciops : blockops).push_back(*citer);
+      // loop through all the ways to divide the operators between block and ras
+      const int npart = 1 << coupling.size();
+      for (int part = 0; part < npart; ++part) {
+        bitset<3> bit(part);
+        list<GammaSQ> original_blockops, original_ciops;
+        auto citer = coupling.begin();
+        // divide such that if bit is true --> ciops, bit false --> blockops
+        for (int i = 0; i < coupling.size(); ++i, ++citer)
+          (bit[i] ? original_ciops : original_blockops).push_back(*citer);
 
+        // whether block operator is identity
+        const bool blockI = original_blockops.empty();
+
+        // figure out how the operations need to be reordered so they are in the set of possible_couplings_
+        bool block_conj, block_rev, ci_conj, ci_rev;
+        list<GammaSQ> rearranged_blockops, rearranged_ciops;
+        tie(block_conj, block_rev, rearranged_blockops) = try_permutations(original_blockops);
+        tie(ci_conj, ci_rev, rearranged_ciops) = try_permutations(original_ciops);
+
+        const size_t nijk_part = accumulate(original_blockops.begin(), original_blockops.end(), 1, [lnorb] (size_t x, GammaSQ a) { return x*lnorb; }) *
+                              accumulate(original_ciops.begin(), original_ciops.end(), 1, [rnorb] (size_t x, GammaSQ a) { return x*rnorb; });
+
+        vector<tuple<size_t, size_t, size_t>> index_data; index_data.reserve(nijk_part);
+        for (size_t ijk_part = 0; ijk_part < nijk_part; ++ijk_part) {
+          tuple<size_t, size_t, size_t> indices = get_indices(bit, coupling.size(), ijk_part, lnorb, block_conj^block_rev, rnorb, ci_conj^ci_rev);
+          if (ci_conj) transpose_list.insert(std::get<0>(indices));
+          index_data.push_back(indices);
+        }
+
+        for (const auto& kbinfo : dmrgblock->blocks()) {
+          if (!ket_states.front()->contains_block(kbinfo)) continue;
           // apply blockops to kbinfo
-          BlockKey bbkey = apply_key(kbinfo.key(), blockops);
+          BlockKey bbkey = apply_key(kbinfo.key(), original_blockops);
           if (bra_states.front()->contains_block(bbkey)) {
-            BlockInfo bbinfo = dmrgblock->blockinfo(bbkey);
+            const BlockInfo bbinfo = dmrgblock->blockinfo(bbkey);
 
             int Mbra = bbinfo.nstates;
             int Mket = kbinfo.nstates;
@@ -245,16 +264,11 @@ void GammaForestProdASD::compute() {
             ProductState ps_bra(block_bra, ci_bra, 0);
             ProductState ps_ket(block_ket, ci_ket, 0);
 
-            // figure out how the operations need to be reordered so they are in the set of possible_couplings_
-            bool block_conj, block_rev, ci_conj, ci_rev;
-            tie(block_conj, block_rev, blockops) = try_permutations(blockops);
-            tie(ci_conj, ci_rev, ciops) = try_permutations(ciops);
-
             // first part: phase from reversing order of operators (should only happen when both are creation or annihilation)
             // second part: the phase from rearranging the operators so that the block operators are on the right
             //   sign only changes if part = "010" or "101"
-            // third part: phase from moving block operators past ci ket TODO: double check
-            const int phase = (block_rev^ci_rev ? -1 : 1) * (part==2 || part==5 ? -1 : 1) * static_cast<int>(1 - (((blockops.size()*(ci_ket.nelea+ci_ket.neleb))%2) << 1));
+            // third part: phase from moving block operators past ci ket
+            const int phase = (block_rev^ci_rev ? -1 : 1) * (part==2 || part==5 ? -1 : 1) * static_cast<int>(1 - (((original_blockops.size()*(ci_ket.nelea+ci_ket.neleb))%2) << 1));
 
             // swap where appropriate
             if (block_conj) swap(block_bra, block_ket);
@@ -263,57 +277,60 @@ void GammaForestProdASD::compute() {
             if (ci_conj) swap(ci_bra, ci_ket);
             if (ci_conj) swap(ps_bra, ps_ket);
 
-            const size_t nijk_part = accumulate(blockops.begin(), blockops.end(), 1, [lnorb] (size_t x, GammaSQ a) { return x*lnorb; }) *
-                                  accumulate(ciops.begin(), ciops.end(), 1, [rnorb] (size_t x, GammaSQ a) { return x*rnorb; });
 
-            shared_ptr<const btas::Tensor3<double>> block_part = blockops.empty() ? nullptr : dmrgblock->coupling(blockops).at({block_bra, block_ket}).data;
+            shared_ptr<const btas::Tensor3<double>> block_part = blockI ? nullptr : dmrgblock->coupling(rearranged_blockops).at({block_bra, block_ket}).data;
+            const size_t block_stride = blockI ? 0 : block_part->extent(0) * block_part->extent(1);
 
-            for (size_t ijk_part = 0; ijk_part < nijk_part; ++ijk_part) {
-              size_t ijk, block_index, ci_index;
-              tie(ijk, block_index, ci_index) = get_indices(bit, coupling.size(), ijk_part, lnorb, block_conj^block_rev, rnorb, ci_conj^ci_rev);
+            // loop through all vectors in the sector
+            for (int bra_k = 0; bra_k < Mbra; ++bra_k) {
+              for (int ket_k = 0; ket_k < Mket; ++ket_k) {
+                if (blockI && ket_k!=bra_k) continue; // block states are orthonormal
 
-              // loop through all vectors in the sector
-              for (int bra_k = 0; bra_k < Mbra; ++bra_k) {
-                for (int ket_k = 0; ket_k < Mket; ++ket_k) {
-                  if (blockops.empty() && ket_k!=bra_k) continue; // block states are orthonormal
-
-                  if (block_conj ^ ci_conj) {
-                    ps_bra.state = ket_k;
-                    ps_ket.state = bra_k;
-                  }
-                  else {
-                    ps_bra.state = bra_k;
-                    ps_ket.state = ket_k;
-                  }
-
-                  assert(block_part ? (bra_k < block_part->extent(0) && ket_k < block_part->extent(1) && block_index < block_part->extent(2)) : true);
+                if (block_conj ^ ci_conj) {
+                  ps_bra.state = ket_k;
+                  ps_ket.state = bra_k;
+                }
+                else {
+                  ps_bra.state = bra_k;
+                  ps_ket.state = ket_k;
+                }
 
 #ifdef HAVE_MPI_H
-                  if (forest_->exist<0>(state_tag(ps_bra), state_tag(ps_ket), ciops)) {
+                if (forest_->exist<0>(state_tag(ps_bra), state_tag(ps_ket), rearranged_ciops)) {
 #endif
-                    shared_ptr<const Matrix> ras_part = forest_->get<0>(state_tag(ps_bra), state_tag(ps_ket), ciops);
-                    const double block_gamma_ss = blockops.empty() ? 1.0 : (*block_part)(bra_k, ket_k, block_index);
+                  const shared_ptr<const Matrix>& ras_part = forest_->get<0>(state_tag(ps_bra), state_tag(ps_ket), rearranged_ciops);
+                  const double* block_part_base = blockI ? nullptr : &(*block_part)(bra_k, ket_k, 0);
+
+                  for (auto& iter : index_data) {
+                    size_t ijk, block_index, ci_index;
+                    tie(ijk, block_index, ci_index) = iter;
+
+                    double* gamma_target = gamma_matrix->element_ptr(0, ijk);
+
+                    assert(block_part ? (bra_k < block_part->extent(0) && ket_k < block_part->extent(1) && block_index < block_part->extent(2)) : true);
+
+                    const double block_gamma_ss = blockI ? 1.0 : *(block_part_base + block_stride*block_index);
 
                     assert(ci_index < ras_part->mdim());
                     assert(ras_part->ndim()==gamma_matrix->ndim());
 
                     // fill in part of gamma
-                    double* target = gamma_matrix->element_ptr(0, ijk);
-                    if (ci_conj) {
-                      Matrix tmp(bra_info.nstates, ket_info.nstates);
-                      blas::transpose(ras_part->element_ptr(0, ci_index), ket_info.nstates, bra_info.nstates, tmp.data(), static_cast<double>(phase)*block_gamma_ss);
-                      blas::ax_plus_y_n(1.0, tmp.data(), tmp.size(), target);
-                    }
-                    else {
-                      blas::ax_plus_y_n(static_cast<double>(phase)*block_gamma_ss, ras_part->element_ptr(0, ci_index), ras_part->ndim(), target);
-                    }
-#ifdef HAVE_MPI_H
+                    blas::ax_plus_y_n(static_cast<double>(phase)*block_gamma_ss, ras_part->element_ptr(0, ci_index), ras_part->ndim(), gamma_target);
                   }
-#endif
+#ifdef HAVE_MPI_H
                 }
+#endif
               }
             }
           }
+        }
+      }
+      if (!transpose_list.empty()) {
+        unique_ptr<double[]> tmp(new double[ket_info.nstates * bra_info.nstates]);
+        for (auto& ijk : transpose_list) {
+          double* target = gamma_matrix->element_ptr(0, ijk);
+          blas::transpose(target, ket_info.nstates, bra_info.nstates, tmp.get(), 1.0);
+          copy_n(tmp.get(), ket_info.nstates*bra_info.nstates, target);
         }
       }
 #ifdef HAVE_MPI_H
