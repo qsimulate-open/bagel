@@ -128,6 +128,7 @@ class ASD_base {
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaET_RDM34(const std::array<MonomerKey,4>&) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bET_RDM34(const std::array<MonomerKey,4>&) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbET_RDM34(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abET_RDM34(const std::array<MonomerKey,4>&) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaaET_RDM34(const std::array<MonomerKey,4>&) const;
     //std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbbET_RDM34(const std::array<MonomerKey,4>&) const;
 
