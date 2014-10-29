@@ -1758,8 +1758,7 @@ ASD_base::couple_blocks_RDM34(const DimerSubspace_base& AB, const DimerSubspace_
     case Coupling::bET :
       out = compute_bET_RDM34(keys); break;
     case Coupling::abFlip :
-      out = make_tuple(nullptr,nullptr); break;
-    //out = compute_abFlip_RDM(keys); break;
+      out = compute_abFlip_RDM34(keys); break;
     case Coupling::abET :
       out = compute_abET_RDM34(keys); break;
     case Coupling::aaET :
@@ -1770,15 +1769,15 @@ ASD_base::couple_blocks_RDM34(const DimerSubspace_base& AB, const DimerSubspace_
     case Coupling::aaaET :
       out = compute_aaaET_RDM34(keys); break;
     case Coupling::bbbET :
-      out = make_tuple(nullptr,nullptr); break;
+      out = compute_bbbET_RDM34(keys); break;
     case Coupling::aabET :
-      out = make_tuple(nullptr,nullptr); break;
+      out = compute_aabET_RDM34(keys); break;
     case Coupling::abbET :
-      out = make_tuple(nullptr,nullptr); break;
+      out = compute_abbET_RDM34(keys); break;
     case Coupling::aETflp :
-      out = make_tuple(nullptr,nullptr); break;
+      out = compute_aETFlip_RDM34(keys); break;
     case Coupling::bETflp :
-      out = make_tuple(nullptr,nullptr); break;
+      out = compute_bETFlip_RDM34(keys); break;
     default :
       throw std::logic_error("Asking for a coupling type that has not been written.");
   }
@@ -2036,50 +2035,6 @@ ASD_base::compute_bET_RDM34(const array<MonomerKey,4>& keys) const {
 
 //***************************************************************************************************************
 tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
-ASD_base::compute_aaaET_RDM34(const array<MonomerKey,4>& keys) const {
-//***************************************************************************************************************
-  cout << "aaaET_RDM34" << endl; cout.flush();
-  auto& Ap = keys[2];
-
-  auto& B  = keys[1];
-  auto& Bp = keys[3];
-
-  const int nactA = dimer_->embedded_refs().first->nact();
-  const int nactB = dimer_->embedded_refs().second->nact();
-  const int nactT = nactA+nactB;
-  auto out3 = make_shared<RDM<3>>(nactA+nactB);
-  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
-
-  const int neleA = Ap.nelea() + Ap.neleb();
-
-  //3RDM 
-  { //CASE 3: p26B
-    auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}); // a'a'a'
-    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // aaa
-    cout << "partial gammas" << endl; cout.flush();
-
-    auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); //a'a'a'|aaa
-    auto rdmt = rdm1->clone();
-    cout << "full gammas" << endl; cout.flush();
-
-    // E_ai',bj',ck' 
-    int fac = {neleA%2 == 0 ? 1 : -1};
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
-    rdmt->scale(fac);
-    cout << "rearranged" << endl; cout.flush();
-
-    auto low = {    0, nactA,     0, nactA,     0, nactA};
-    auto up  = {nactA, nactT, nactA, nactT, nactA, nactT};
-    auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
-    copy(rdmt->begin(), rdmt->end(), outv.begin());
-    cout << "copied" << endl; cout.flush();
-  }
-  
-  return make_tuple(out3,out4);
-}
-
-//***************************************************************************************************************
-tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
 ASD_base::compute_aaET_RDM34(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   cout << "aaET_RDM34" << endl; cout.flush();
@@ -2282,3 +2237,97 @@ ASD_base::compute_abET_RDM34(const array<MonomerKey,4>& keys) const {
   }
   return make_tuple(out3,out4);
 }
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_abFlip_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "abFlip_RDM34" << endl; cout.flush();
+  return make_tuple(nullptr,nullptr);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_aaaET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "aaaET_RDM34" << endl; cout.flush();
+  auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  const int nactT = nactA+nactB;
+  auto out3 = make_shared<RDM<3>>(nactA+nactB);
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+  const int neleA = Ap.nelea() + Ap.neleb();
+
+  //3RDM 
+  { //CASE 3: p26B
+    auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}); // a'a'a'
+    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // aaa
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); //a'a'a'|aaa
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    // E_ai',bj',ck' 
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
+    rdmt->scale(fac);
+    cout << "rearranged" << endl; cout.flush();
+
+    auto low = {    0, nactA,     0, nactA,     0, nactA};
+    auto up  = {nactA, nactT, nactA, nactT, nactA, nactT};
+    auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
+    copy(rdmt->begin(), rdmt->end(), outv.begin());
+    cout << "copied" << endl; cout.flush();
+  }
+  
+  return make_tuple(out3,out4);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_bbbET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "bbbET_RDM34" << endl; cout.flush();
+  return make_tuple(nullptr,nullptr);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_aabET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "aabET_RDM34" << endl; cout.flush();
+  return make_tuple(nullptr,nullptr);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_abbET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "abbET_RDM34" << endl; cout.flush();
+  return make_tuple(nullptr,nullptr);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_aETFlip_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "aETFlip_RDM34" << endl; cout.flush();
+  return make_tuple(nullptr,nullptr);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_bETFlip_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "bETFlip_RDM34" << endl; cout.flush();
+  return make_tuple(nullptr,nullptr);
+}
+
+
