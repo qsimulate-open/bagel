@@ -52,6 +52,7 @@ PDFDist::PDFDist(vector<array<double, 3>> L, const int nbas, const int naux,
   /** form object PDFDist_ints for every cell, each cell L contains the 3-index integral
       (r0sL|aL') sum over L' and <r|sL> */
   dfdist_.resize(L.size());
+  Timer time;
   for (int i = 0; i != L.size(); ++i) {
     vector<shared_ptr<const Atom>> atoms1(atoms0.size());
     int iat = 0;
@@ -61,6 +62,7 @@ PDFDist::PDFDist(vector<array<double, 3>> L, const int nbas, const int naux,
     }
     dfdist_[i] = make_shared<PDFDist_ints>(L, nbas, naux, atoms0, atoms1, aux_atoms, thresh, data1_);
   }
+  time.tick_print("3-index and overlap integrals");
 }
 
 

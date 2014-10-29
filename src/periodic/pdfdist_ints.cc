@@ -91,7 +91,7 @@ void PDFDist_ints::pcompute_3index(const vector<shared_ptr<const Shell>>& ashell
 
   tasks.compute();
 
-  time.tick_print("3-index integrals");
+//time.tick_print("3-index integrals");
 }
 
 
@@ -117,5 +117,5 @@ void PDFDist_ints::compute_charged_coeff(const vector<shared_ptr<const Shell>>& 
   }
 
   tasks.compute();
-  time.tick_print("overlap integrals");
+//time.tick_print("overlap integrals");
 }

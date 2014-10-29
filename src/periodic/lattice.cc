@@ -33,8 +33,10 @@ BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 
 Lattice::Lattice(const shared_ptr<const Geometry> g) : primitive_cell_(g) {
 
-  overlap_thresh_ = primitive_cell_->overlap_thresh();
-  init(g->do_periodic_df());
+  init();
+
+  if (g->do_periodic_df())
+    init_df(primitive_cell_->overlap_thresh());
 
 #if 0
   cout << "Check orthogonalization of primitive lattice vectors and k-vectors +++" << endl;
@@ -73,7 +75,7 @@ double Lattice::compute_nuclear_repulsion() const {
 }
 
 
-void Lattice::init(const bool dodf) {
+void Lattice::init() {
 
   ndim_ = primitive_cell_->primitive_vectors().size();
   if (ndim_ > 3)
@@ -157,9 +159,20 @@ void Lattice::init(const bool dodf) {
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
   generate_kpoints();
+}
 
-  /* Density fitting */
-  if (dodf) form_df(overlap_thresh_);
+
+void Lattice::init_df(const double thresh) {
+
+  const int nbas = primitive_cell_->nbasis();
+  const int naux = primitive_cell_->naux();
+  cout << "  Number of auxiliary basis functions per cell: " << setw(8) << naux << endl << endl;
+  cout << "  Since a DF basis is specified, we compute overlap, 2-, and 3-index integrals:" << endl;
+  cout << "    o Storage requirement is "
+       << setprecision(3) << naux * nbas * nbas * num_lattice_vectors_* 8.e-9 << " GB" << endl;
+  Timer time;
+  form_df(thresh);
+  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
 }
 
 

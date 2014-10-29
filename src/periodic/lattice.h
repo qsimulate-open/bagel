@@ -61,7 +61,6 @@ class Lattice {
     int nele_;
 
     //  for density fitting calculations
-    double overlap_thresh_;
     std::shared_ptr<PDFDist> df_;
 
   private:
@@ -70,8 +69,7 @@ class Lattice {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & ndim_ & ncell_ & num_lattice_vectors_ & num_lattice_pts_ & primitive_cell_ & lattice_vectors_
-         & nuclear_repulsion_ & volume_ & primitive_kvectors_ & lattice_kvectors_ & k_parameter_ & num_lattice_kvectors_ & nele_
-         & overlap_thresh_;
+         & nuclear_repulsion_ & volume_ & primitive_kvectors_ & lattice_kvectors_ & k_parameter_ & num_lattice_kvectors_ & nele_;
     }
 
   public:
@@ -89,7 +87,8 @@ class Lattice {
     std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
     std::array<double, 3> lattice_vectors(const int i) const { return lattice_vectors_[i]; }
 
-    void init(const bool dodf = false);
+    void init();
+    void init_df(const double thresh);
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     double volume() const { return volume_; }
     const int nele();
@@ -107,7 +106,6 @@ class Lattice {
     void print_lattice_coordinates() const; // write .XYZ file
 
     // density fitting
-    double overlap_thresh() const { return overlap_thresh_; }
     void form_df(const double thresh);
     std::shared_ptr<PDFDist> df() const { return df_; }
 };
