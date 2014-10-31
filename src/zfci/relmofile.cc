@@ -249,11 +249,11 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
     fock_tilde->diagonalize(eig);
 
     if (!tsymm_) {
-      const int n = geom_->nbasis();
+      const int n = fock_tilde->ndim()/4;
+      assert(4*n == fock_tilde->ndim());  // could be triggered if L+, L-, S+, and S- bases had different sizes or linear dependencies
 
       // check that pos & neg energy eigenvalues are properly separated
       assert(*std::min_element(eig.begin()+2*n, eig.begin()+4*n) - *std::max_element(eig.begin(), eig.begin()+2*n) > 10000.0);
-      assert(4*n == fock_tilde->ndim());
 
       // need to reorder things so negative energy states don't all come at the beginning
       // TODO there should be a more efficient way...
