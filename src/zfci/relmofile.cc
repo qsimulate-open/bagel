@@ -201,14 +201,9 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
 array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, const int nfence, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
   assert((coeff->mdim() > 2 || !tsymm_) && coeff->mdim()%2 == 0); // zquatev has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
   assert(nstart < nfence);
-  const int ndim    = coeff->ndim();
-  const int nb      = ndim/4;
+  assert(coeff->ndim() == 4*geom_->nbasis());
   const int nclosed = nstart/2;
   const int nact    = (nfence - nstart)/2;
-  const int nvnr    = nb - nact - nclosed;
-  const int nvirt   = nvnr + nb;
-  if(ndim%2 != 0 || ndim % 4 != 0)
-    throw logic_error("illegal call of RelMOFile::kramers_zquat");
   // local function to transform from kramers to quaternion format
   auto quaternion = [](shared_ptr<ZMatrix> o) {
     shared_ptr<ZMatrix> scratch = o->clone();
@@ -287,6 +282,12 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
     ctmp->copy_block(n,   0, n, m, scratch->get_submatrix(n, 0, n, m));
     ctmp->copy_block(n*2, 0, n, m, scratch->get_submatrix(0, 0, n, m));
   }
+
+  assert(s12->mdim() % 4 == 0);
+  const int nb = s12->mdim()/4;
+  const int nvnr  = nb - nact - nclosed;
+  const int nvirt = nvnr + nb;
+
   // move_positronic_orbitals
   {
     auto move_one = [this, &ctmp](const int offset, const int block1, const int block2) {
