@@ -550,12 +550,12 @@ AtomMap::AtomMap () {
   nclosed.emplace("i",  make_tuple(10,18,20,0));
   nclosed.emplace("xe", make_tuple(10,24,20,0));
   nclosed.emplace("cs", make_tuple(10,24,20,0));
-  nclosed.emplace("ba", make_tuple(10,24,20,0));
-  nclosed.emplace("la", make_tuple(10,24,20,0));
-  nclosed.emplace("ce", make_tuple(10,24,20,0));
-  nclosed.emplace("pr", make_tuple(10,24,20,0));
-  nclosed.emplace("nd", make_tuple(10,24,20,0));
-  nclosed.emplace("pm", make_tuple(10,24,20,0));
+  nclosed.emplace("ba", make_tuple(12,24,20,0));
+  nclosed.emplace("la", make_tuple(12,24,20,0));
+  nclosed.emplace("ce", make_tuple(12,24,20,0));
+  nclosed.emplace("pr", make_tuple(12,24,20,0));
+  nclosed.emplace("nd", make_tuple(12,24,20,0));
+  nclosed.emplace("pm", make_tuple(12,24,20,0));
   nclosed.emplace("sm", make_tuple(12,24,20,0));
   nclosed.emplace("eu", make_tuple(12,24,20,0));
   nclosed.emplace("gd", make_tuple(12,24,20,0));
