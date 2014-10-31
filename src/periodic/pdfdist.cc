@@ -37,8 +37,8 @@ PDFDist::PDFDist(vector<array<double, 3>> L, const int nbas, const int naux,
 
   // prepare to compute 1- and 2-index ints
   vector<shared_ptr<const Shell>> ashell, b0shell;
-  for (auto& i : atoms0)   b0shell.insert(b0shell.end(), i->shells().begin(), i->shells().end());
-  for (auto& i : aux_atoms) ashell.insert(ashell.end(),  i->shells().begin(), i->shells().end());
+  for (auto& i : atoms0)    b0shell.insert(b0shell.end(), i->shells().begin(), i->shells().end());
+  for (auto& i : aux_atoms)  ashell.insert(ashell.end(),  i->shells().begin(), i->shells().end());
 
   // compute auxiliary charge data1_ then projection matrix
   compute_aux_charge(ashell);
@@ -49,8 +49,7 @@ PDFDist::PDFDist(vector<array<double, 3>> L, const int nbas, const int naux,
   else
     pcompute_2index(ashell, thresh);
 
-  /** form object PDFDist_ints for every cell, each cell L contains the 3-index integral
-      (r0sL|aL') sum over L' and <r|sL> */
+  // form PDFDist_ints for every cell
   dfdist_.resize(L.size());
   Timer time;
   for (int i = 0; i != L.size(); ++i) {
@@ -99,20 +98,25 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
 
   TaskQueue<PDFIntTask_2index> tasks(ashell.size() * ashell.size() * ncell());
 
-  data2_ = make_shared<Matrix>(naux_, naux_, serial_);
   auto b3 = make_shared<const Shell>(ashell.front()->spherical());
+  data2_ = make_shared<Matrix>(naux_, naux_, serial_);
+  vector<shared_ptr<Matrix>> data2_at(ncell());
+  for (auto& idat : data2_at) idat = make_shared<Matrix>(naux_, naux_, serial_);
 
   int u = 0;
   int o0 = 0;
   for (auto& b0 : ashell) {
-    int o1 = 0;
-    for (auto& b1 : ashell) {
-      for (auto& L : lattice_vectors_) {
+    int n = 0;
+    for (auto& L : lattice_vectors_) {
+      int o1 = 0;
+      for (auto& b1 : ashell) {
         auto b11 = make_shared<const Shell>(*(b1->move_atom(L)));
+
         if ((u++ % mpi__->size() == mpi__->rank()) || serial_)
-          tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b11, b3, b0, b3}}, array<int,2>{{o0, o1}}, data2_);
+          tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b11, b3, b0, b3}}, array<int,2>{{o0, o1}}, data2_at[n]);
+        o1 += b1->nbasis();
       }
-      o1 += b1->nbasis();
+      ++n;
     }
     o0 += b0->nbasis();
   }
@@ -120,19 +124,22 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
   time.tick_print("2-index integrals prep");
   tasks.compute();
 
-  if (!serial_)
-    data2_->allreduce();
-
-  time.tick_print("2-index integrals");
-
+  // now project and sum
   if (!projector_)
     throw logic_error("failed attempt to project data2_ before computing the projection matrix");
-  *data2_ = *projector_ * *data2_ * *projector_;
 
   // P_C = 1 - P
   auto projectorC = make_shared<Matrix>(*projector_);
   projectorC->unit();
   *projectorC = *projectorC - *projector_;
+
+  for (int i = 0; i != ncell(); ++i) {
+    if (!serial_)
+      data2_at[i]->allreduce();
+      *data2_ += *projector_ * *data2_at[i] * *projector_;
+  }
+
+  time.tick_print("2-index integrals");
 
   // make data2_ positive definite
   *data2_ += *projectorC;
