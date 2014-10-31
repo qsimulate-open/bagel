@@ -126,6 +126,7 @@ class DistCivector {
     size_t asize() const { return aend_ - astart_; }
 
     void zero() { std::fill_n(local_.get(), size(), DataType(0.0)); }
+    void synchronize() { /* do nothing */ }
 
     std::shared_ptr<Civector<DataType>> civec() const { return std::make_shared<Civector<DataType>>(*this); }
     std::shared_ptr<const Determinants> det() const { return det_; }

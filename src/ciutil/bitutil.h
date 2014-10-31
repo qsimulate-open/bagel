@@ -31,6 +31,7 @@
 #include <vector>
 #include <algorithm>
 #include <tuple>
+
 #include <src/util/constants.h>
 
 namespace bagel {

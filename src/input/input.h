@@ -35,7 +35,7 @@ namespace bagel {
 
 // rename as you like
 class PTree;
-class PTreeIterator {
+class PTreeIterator : public std::iterator<std::bidirectional_iterator_tag, const std::shared_ptr<const PTree>> {
   private:
     boost::property_tree::ptree::const_iterator current;
   public:

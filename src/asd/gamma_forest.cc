@@ -42,6 +42,14 @@ void GammaForest<DistDvec, 2>::compute() {
   for (auto& iforest : forests_) {
     for (auto& itreemap : iforest) {
       shared_ptr<DistTree> itree = itreemap.second;
+      const int nket = itree->ket()->ij();
+      for (auto& brapair : itree->base()->bras()) {
+        double* target = itree->base()->gammas().at(brapair.first)->data();
+        const int nbra = brapair.second->ij();
+        for (int k = 0; k < nket; ++k)
+          for (int b = 0; b < nbra; ++b, ++target)
+            *target = brapair.second->data(b)->dot_product(*itree->ket()->data(k));
+      }
 
       const int norb = itree->ket()->det()->norb();
       for (int i = 0; i < nops; ++i) {
@@ -77,8 +85,8 @@ class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
       constexpr int nops = 4;
       const int norb = tree_->ket()->det()->norb();
 
-      auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
-      auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); };
+      auto action = [] (const int op) { return is_creation(GammaSQ(op)); };
+      auto spin = [] (const int op) { return is_alpha(GammaSQ(op)); };
 
       const bool base_action = action(operation_);
       const bool base_spin = spin(operation_);

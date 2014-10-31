@@ -34,14 +34,10 @@ namespace bagel {
 
 class DimerJop : public Jop {
   protected:
-    // Array is big enough to store all possible coulomb matrices just for simplicity
-    std::array<std::shared_ptr<const Matrix>, 16> matrices_;
-
     std::pair<std::shared_ptr<MOFile>, std::shared_ptr<MOFile>> jops_;
 
-    std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> monomer_mo1es_;
-    std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> monomer_mo2es_;
-
+    // Array is big enough to store all possible coulomb matrices just for simplicity
+    std::array<std::shared_ptr<const Matrix>, 16> matrices_;
     std::shared_ptr<const Matrix> cross_mo1e_;
 
     std::pair<int, int> nact_;
@@ -49,22 +45,32 @@ class DimerJop : public Jop {
   public:
     DimerJop(const std::shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB,
       std::shared_ptr<const Coeff> coeff); // note that in DimerJop, I'm forcing a HZ Jop
-
-    // Functions to kind of make DimerJop behave like a pair of shared_ptr<Jop>
-    double* mo1e_first() const { return monomer_mo1es_.first->data(); };
-    double* mo1e_second() const { return monomer_mo1es_.second->data(); };
-
-    double* mo2e_first() const { return monomer_mo2es_.first->data(); };
-    double* mo2e_second() const { return monomer_mo2es_.second->data(); };
+    DimerJop(const int nactA, const int nactB, std::shared_ptr<CSymMatrix> mo1e, std::shared_ptr<Matrix> mo2e);
 
     std::shared_ptr<const Matrix> cross_mo1e() const { return cross_mo1e_; }
 
     template<int unit> std::shared_ptr<MOFile> monomer_jop() const { return ( unit == 0 ? jops_.first : jops_.second ); }
 
+    /**
+      \brief Generates a subset of the two-electron integrals \f$\langle ab|cd\rangle = (ac|bd)\f$
+              where each of \f$a,b,c,d\f$ can belong to either monomer \f$A\f$ or \f$B\f$.
+      \details Returns a Matrix(\f$N_A,N_B\f$) where \f$N_A=(\mbox{norb}_A)^d\f$,
+               \f$N_B=(\mbox{norb}_B)^{(4-d)}\f$ and \f$d\f$ is the number of \f$A\f$ operators.
+
+      \tparam A specifies whether the first index belongs to monomer \f$A\f$ (0) or \f$B\f$ (1)
+      \tparam B specifies whether the second index belongs to monomer \f$A\f$ (0) or \f$B\f$ (1)
+      \tparam C specifies whether the third index belongs to monomer \f$A\f$ (0) or \f$B\f$ (1)
+      \tparam D specifies whether the fourth index belongs to monomer \f$A\f$ (0) or \f$B\f$ (1)
+    */
     template<int A, int B, int C, int D>
     std::shared_ptr<const Matrix> coulomb_matrix();
+    /// Same as non-const version but will not create the matrix if it doesn't already exist
+    template<int A, int B, int C, int D>
+    std::shared_ptr<const Matrix> coulomb_matrix() const;
 
   private:
+    void common_init(const int norbA, const int norbB);
+
     template <int unit> const int nact() const { return ( unit == 0 ? nact_.first : nact_.second ); }
     template <int unit> const int active(const int a) const { return a + unit * nact_.first; }
 
@@ -110,6 +116,9 @@ std::shared_ptr<const Matrix> DimerJop::coulomb_matrix() {
     return out;
   }
 }
+
+template<int A, int B, int C, int D>
+std::shared_ptr<const Matrix> DimerJop::coulomb_matrix() const { return matrices_[A + 2*B + 4*C + 8*D]; }
 
 template <int A, int B, int C, int D> std::pair<int, int> DimerJop::index(int a, int b, int c, int d) const {
   int iA = 0, jB = 0;

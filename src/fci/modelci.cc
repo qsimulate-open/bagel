@@ -32,8 +32,9 @@
 using namespace std;
 using namespace bagel;
 
-// ColumnTask computes two columns for the sake of load balancing
-class CIHamTask : public CITask {
+namespace bagel {
+
+class CIHamTask : public CITask<CIHamTask> {
   protected:
     shared_ptr<const MOFile> jop_;
     shared_ptr<const CSymMatrix> mo1e_;
@@ -43,7 +44,8 @@ class CIHamTask : public CITask {
       return jop_->mo2e(i,j,k,l);
     }
 
-    double matrix_element(const SD& bra, const SD& ket) override {
+  public:
+    double matrix_element_impl(const SD& bra, const SD& ket) {
       const bitset<nbit__> abra = bra.first;
       const bitset<nbit__> bbra = bra.second;
       const bitset<nbit__> aket = ket.first;
@@ -62,8 +64,8 @@ class CIHamTask : public CITask {
 
       if (nexch == 0) {
         // diagonal contribution
-        vector<int> aoccs = to_vector(abra);
-        vector<int> boccs = to_vector(bbra);
+        vector<int> aoccs = bit_to_numbers(abra);
+        vector<int> boccs = bit_to_numbers(bbra);
 
         // one-body
         for_each(aoccs.begin(), aoccs.end(), [this, &out] (const int& j) { out += mo1e_->element(j,j); });
@@ -83,7 +85,7 @@ class CIHamTask : public CITask {
       }
       else if (nexch == 2) {
         // single exchange
-        vector<int> exch_ind = to_vector(naexch==2 ? aexch : bexch);
+        vector<int> exch_ind = bit_to_numbers(naexch==2 ? aexch : bexch);
         const int i = exch_ind.front();
         const int j = exch_ind.back();
         const double signij = static_cast<double>( sign((naexch==2?abra:bbra), i, j) );
@@ -99,14 +101,14 @@ class CIHamTask : public CITask {
           out += nj * signij * jop_->mo2e(i, j, k, k);
         }
 
-        for (int& k : to_vector((naexch==2?acomm:bcomm)))
+        for (int& k : bit_to_numbers((naexch==2?acomm:bcomm)))
           out -= signij * mo2e(i, k, j, k);
       }
       else if (nexch == 4) {
         // double exchange (two-body only)
         if (naexch == nbexch) {
-          vector<int> alphas = to_vector(aexch);
-          vector<int> betas  = to_vector(bexch);
+          vector<int> alphas = bit_to_numbers(aexch);
+          vector<int> betas  = bit_to_numbers(bexch);
           const int i = alphas.front();
           const int j = alphas.back();
           const int k = betas.front();
@@ -120,8 +122,8 @@ class CIHamTask : public CITask {
           bitset<nbit__> exch = (naexch==4 ? aexch : bexch);
           bitset<nbit__> eket = (naexch==4 ? aket : bket);
           bitset<nbit__> ebra = (naexch==4 ? abra : bbra);
-          vector<int> ann_list = to_vector(exch & eket);
-          vector<int> cre_list = to_vector(exch & ebra);
+          vector<int> ann_list = bit_to_numbers(exch & eket);
+          vector<int> cre_list = bit_to_numbers(exch & ebra);
           const int i = ann_list.front();
           const int j = ann_list.back();
           const int k = cre_list.front();
@@ -136,11 +138,12 @@ class CIHamTask : public CITask {
       return out;
     }
 
-  public:
     CIHamTask(vector<SD>* b, shared_ptr<const MOFile>& jop, shared_ptr<const CSymMatrix>& mo1e, const size_t c1, double* d1, const size_t c2, double* d2) :
       CITask(b, jop->nocc(), c1, d1, c2, d2), jop_(jop), mo1e_(mo1e) {}
 
 };
+
+}
 
 CIHamiltonian::CIHamiltonian(vector<SD> b, shared_ptr<const MOFile> jop) : Matrix(b.size(), b.size()), basis_(b), jop_(jop) {
   const size_t size = basis_.size();
@@ -177,8 +180,9 @@ CIHamiltonian::CIHamiltonian(vector<SD> b, shared_ptr<const MOFile> jop) : Matri
   this->fill_upper();
 }
 
-// ColumnTask computes two columns for the sake of load balancing
-class CISpinTask : public CITask {
+namespace bagel {
+
+class CISpinTask : public CITask<CISpinTask> {
   protected:
     int sign(const bitset<nbit__>& bit1, const bitset<nbit__>& bit2, const int& i) const {
       const bitset<nbit__> mask((1ull << i) - 1);
@@ -186,7 +190,8 @@ class CISpinTask : public CITask {
       return (1 - 2*(n%2));
     }
 
-    double matrix_element(const SD& bra, const SD& ket) override {
+  public:
+    double matrix_element_impl(const SD& bra, const SD& ket) {
       const bitset<nbit__> openbra = bra.first ^ bra.second;
       const bitset<nbit__> openket = ket.first ^ ket.second;
       const bitset<nbit__> closedbra = bra.first & bra.second;
@@ -206,8 +211,8 @@ class CISpinTask : public CITask {
           out += sz*sz + sz + static_cast<double>(bket.count());
         }
         else if (nexch == 4) {
-          vector<int> bra_indices = to_vector(bbra);
-          vector<int> ket_indices = to_vector(bket);
+          vector<int> bra_indices = bit_to_numbers(bbra);
+          vector<int> ket_indices = bit_to_numbers(bket);
           for (auto& ibra : bra_indices) {
             bitset<nbit__> abrap = abra; abrap.set(ibra);
             bitset<nbit__> bbrap = bbra; bbrap.reset(ibra);
@@ -225,11 +230,12 @@ class CISpinTask : public CITask {
       return out;
     }
 
-  public:
     CISpinTask(vector<SD>* b, const int norb, const size_t c1, double* d1, const size_t c2, double* d2) :
       CITask(b, norb, c1, d1, c2, d2) {}
 
 };
+
+}
 
 CISpin::CISpin(vector<SD>& b, const int norb) : Matrix(b.size(), b.size()), basis_(b) {
   const size_t size = basis_.size();

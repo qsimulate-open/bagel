@@ -67,7 +67,7 @@ SparseMatrix::SparseMatrix(const int n, const int m, const map<pair<int, int>, d
 
     data_[current_element] = value;
     cols_[current_element] = j + 1; // for 1-based indexing
-    
+
     if ( i >= current_row ) {
       while ( current_row < i )
         rind_[++current_row] = current_element + 1; // for 1-based indexing
@@ -79,6 +79,37 @@ SparseMatrix::SparseMatrix(const int n, const int m, const map<pair<int, int>, d
 
   fill(rind_.get() + current_row + 1, rind_.get() + ndim_ + 1, size_ + 1);
 }
+
+// assumes coords is given with 0-based indexing
+SparseMatrix::SparseMatrix(const int n, const int m, const vector<tuple<int, int, double>>& coords) : ndim_(n), mdim_(m), size_(coords.size())
+{
+  data_ = unique_ptr<double[]>(new double[size_]);
+  cols_ = unique_ptr<int[]>(new int[size_]);
+  rind_ = unique_ptr<int[]>(new int[ndim_ + 1]);
+
+  int current_element = 0;
+  int current_row = -1;
+
+  for (auto& element : coords) {
+    const int i = get<0>(element);
+    const int j = get<1>(element);
+    const double value = get<2>(element);
+
+    data_[current_element] = value;
+    cols_[current_element] = j + 1; // for 1-based indexing
+
+    if ( i >= current_row ) {
+      while ( current_row < i )
+        rind_[++current_row] = current_element + 1; // for 1-based indexing
+    }
+    else assert(false);
+
+    ++current_element;
+  }
+
+  fill(rind_.get() + current_row + 1, rind_.get() + ndim_ + 1, size_ + 1);
+}
+
 
 SparseMatrix::SparseMatrix(const SparseMatrix& o) : SparseMatrix(o.ndim_, o.mdim_, o.size_, o.data_.get(), o.cols_.get(), o.rind_.get()) {}
 
