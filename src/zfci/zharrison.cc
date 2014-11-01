@@ -63,7 +63,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (norb_  < 0)
-    norb_ = rr->relcoeff()->mdim()/2-ncore_;
+    norb_ = idata_->get<int>("norb", (rr->relcoeff()->mdim()/2-ncore_));
 
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) throw runtime_error("iactive is not used for relativistic methods - implement RAS?");
