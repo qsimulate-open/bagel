@@ -60,29 +60,40 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   // Invoke Kramer's symmetry for any case without magnetic field
   tsymm_ = !geom_->magnetism();
 
-  print_header();
-
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (norb_  < 0)
     norb_ = rr->relcoeff()->mdim()/2-ncore_;
 
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+  if (iactive) throw runtime_error("iactive is not used for relativistic methods - implement RAS?");
 
   // additional charge
   charge_ = idata_->get<int>("charge", 0);
 
   nele_ = geom_->nele() - charge_ - ncore_*2;
 
+  if (norb_ < 0 || norb_ + ncore_ > geom_->nbasis())
+    throw runtime_error("Invalid number of active orbitals");
+  if (nele_ < 0)
+    throw runtime_error("Number of active electrons is less than zero.");
+
   energy_.resize(nstate_);
+
+  print_header();
+  cout << "    * nstate   : " << setw(6) << nstate_ << endl;
+  cout << "    * nclosed  : " << setw(6) << ncore_ << endl;
+  cout << "    * nact     : " << setw(6) << norb_ << endl;
 
   space_ = make_shared<RelSpace>(norb_, nele_);
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
 
   if (coeff_zcas == nullptr) {
+    cout << "    * nvirt    : " << setw(6) << (rr->relcoeff()->mdim()/2-ncore_-norb_) << endl;
     // coeff from ref is always in striped format
     update(rr->relcoeff(), restricted);
   } else {
+    cout << "    * nvirt    : " << setw(6) << (coeff_zcas->mdim()/2-ncore_-norb_) << endl;
     // coeff from zcas presently in striped format
     update(coeff_zcas, restricted);
   }
@@ -92,10 +103,11 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
 void ZHarrison::print_header() const {
   cout << "  ----------------------------" << endl;
   cout << "  Relativistic FCI calculation" << endl;
-  cout << "  ----------------------------" << endl;
+  cout << "  ----------------------------" << endl << endl;
+  cout << "    * Correlation of " << nele_ << " active electrons in " << norb_ << " orbitals."  << endl;
+  cout << "    * Time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl;
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
-  cout << "    * Time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl << endl;
 }
 
 

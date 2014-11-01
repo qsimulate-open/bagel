@@ -285,8 +285,7 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
 
   assert(s12->mdim() % 4 == 0);
   const int nb = s12->mdim()/4;
-  const int nvnr  = nb - nact - nclosed;
-  const int nvirt = nvnr + nb;
+  const int nvirt = nb - nact - nclosed;
 
   // move_positronic_orbitals
   {
@@ -297,8 +296,8 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
       ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
     };
     const int nneg2 = ctmp->mdim()/4;
-    move_one(           0, nneg2, nocc+nvnr);
-    move_one(nocc + nvirt, nneg2, nocc+nvnr);
+    move_one(                0, nneg2, nocc + nvirt);
+    move_one(nocc + nvirt + nb, nneg2, nocc + nvirt);
 
     auto tmp = coeff->clone();
     tmp->copy_block(0, 0, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(nstart/2, nstart/2+coeff->mdim()/2));
