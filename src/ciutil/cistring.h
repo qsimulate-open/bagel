@@ -170,6 +170,8 @@ class CIString_base_impl : public CIString_base {
 
     bool contains(const std::bitset<nbit__>& bit) const { return static_cast<const Derived*>(this)->contains_impl(bit); }
     bool matches(const int i, const int j) const { return static_cast<const Derived*>(this)->matches_impl(i,j); }
+    template <typename U>
+    bool matches(std::shared_ptr<const U> o) const { return static_cast<const Derived*>(this)->matches_impl(o); }
 };
 
 
@@ -185,6 +187,9 @@ class RASString : public CIString_base_impl<3,RASString> {
 
     bool matches_impl(const int nh, const int np) const {
       return nh == nholes() && np == nparticles();
+    }
+    bool matches_impl(const std::shared_ptr<const RASString> o) const {
+      return matches_impl(o->nholes(), o->nparticles());
     }
 
     size_t lexical_offset_impl(const std::bitset<nbit__>& bit) const {
@@ -231,6 +236,8 @@ class RASString : public CIString_base_impl<3,RASString> {
     int nele2() const { return nele_ - subspace_[0].first - subspace_[2].first; }
     int nparticles() const { return subspace_[2].first; }
 
+    size_t tag() const { return nholes() + (nparticles() << 8); }
+
     template <int S> const std::pair<const int, const int> ras() const {
       static_assert(S == 0 || S == 1 || S == 2, "illegal call of RAString::ras");
       return std::get<S>(subspace_);
@@ -246,6 +253,7 @@ class FCIString : public CIString_base_impl<1,FCIString> {
 
     bool contains_impl(const std::bitset<nbit__>& bit) const { assert(bit.count() == nele_); return true; }
     bool matches_impl(const int n, const int m) const { return true; }
+    bool matches_impl(const std::shared_ptr<const FCIString> o) const { return true; }
 
     size_t lexical_offset_impl(const std::bitset<nbit__>& bit) const { return lexical(bit)+offset_; }
     size_t lexical_zero_impl(const std::bitset<nbit__>& bit) const { return lexical(bit); }

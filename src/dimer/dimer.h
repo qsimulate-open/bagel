@@ -53,9 +53,10 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
     std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_; ///< Reference objects for monomers with the other monomer included as an embedding
     std::pair<Ref<Reference>, Ref<Reference>> active_refs_;   ///< Reference objects of the isolated monomers AFTER the active spaces have been chosen
 
+    std::pair<int, int> nvirt_; ///< number of virtual orbitals in sref_ for each unit (needs to be updated when sref_ is
+
     std::shared_ptr<const Geometry>   sgeom_;                 ///< Supergeometry, i.e., Geometry of dimer
     /// Superreference, i.e., Reference of dimer
-    /// sref_->coeff() is organized such that the MOs run as (closedA, closedB, activeA, activeB, virtA, virtB)
     std::shared_ptr<const Reference>  sref_;
 
     double active_thresh_;                                    ///< overlap threshold for inclusion in the active space
@@ -92,6 +93,9 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
     template <class VecType>
     std::shared_ptr<DimerCISpace_base<VecType>> compute_rcispace(std::shared_ptr<const PTree> idata);
 
+    /// Creates a Reference object for a MEH or ASD calculation
+    std::shared_ptr<Reference> build_reference(const int site, const std::vector<bool> meanfield) const;
+
   private:
     void construct_geometry(); ///< Forms super geometry (sgeom_) and optionally projects isolated geometries and supergeometry to a specified basis
     void embed_refs();         ///< Forms two references to be used in CI calculations where the inactive monomer is included as "embedding"
@@ -124,7 +128,7 @@ std::shared_ptr<const VecType> Dimer::embedded_ci(std::shared_ptr<const PTree> i
 
   // Hiding cout
   std::stringstream outfilename;
-  outfilename << "meh_ci_" << label << "_c" << charge << "_s" << nspin;
+  outfilename << "asd_ci_" << label << "_c" << charge << "_s" << nspin;
   Muffle hide(outfilename.str());
 
   auto ci = std::make_shared<CIMethod>(input, ref->geom(), ref);

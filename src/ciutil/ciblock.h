@@ -43,6 +43,8 @@ class CIBlockInfo {
     std::shared_ptr<const StringType> astrings_;
     std::shared_ptr<const StringType> bstrings_;
 
+    size_t offset_;
+
   private:
     friend class boost::serialization::access;
     template<class Archive>
@@ -50,8 +52,8 @@ class CIBlockInfo {
 
   public:
     CIBlockInfo() { }
-    CIBlockInfo(std::shared_ptr<const StringType> ast, std::shared_ptr<const StringType> bst)
-      : astrings_(ast), bstrings_(bst) {
+    CIBlockInfo(std::shared_ptr<const StringType> ast, std::shared_ptr<const StringType> bst, const size_t o = 0)
+      : astrings_(ast), bstrings_(bst), offset_(o) {
       static_assert(std::is_base_of<CIString_base, StringType>::value, "illegal StringType specified");
       // norb should match or one of strings is dummy
       assert(astrings_->norb() == bstrings_->norb() || astrings_->norb()*bstrings_->norb() == 0);
@@ -65,6 +67,7 @@ class CIBlockInfo {
     int nspin() const { return nelea() - neleb(); }
     int nelea() const { return astrings_->nele(); }
     int neleb() const { return bstrings_->nele(); }
+    size_t offset() const { return offset_; }
 
     bool empty() const { return size() == 0; }
 
@@ -110,11 +113,10 @@ class CIBlock : public CIBlockInfo<StringType> {
 
   protected:
     DataType* data_ptr_;
-    size_t offset_;
 
   public:
     CIBlock(std::shared_ptr<const StringType> astrings, std::shared_ptr<const StringType> bstrings, DataType* const data_ptr, const size_t o) :
-      CIBlockInfo<StringType>(astrings, bstrings), data_ptr_(data_ptr), offset_(o) {
+      CIBlockInfo<StringType>(astrings, bstrings, o), data_ptr_(data_ptr) {
     }
     virtual ~CIBlock() { }
 

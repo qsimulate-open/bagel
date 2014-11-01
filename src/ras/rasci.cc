@@ -84,7 +84,7 @@ void RASCI::common_init() {
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 
   // TODO allow for zero electron (quick return)
-  if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in RASCI");
+  if (nelea_ < 0 || neleb_ < 0) throw runtime_error("#electrons cannot be negative in RASCI");
   //for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
 
 #ifndef NORDMS
@@ -153,6 +153,11 @@ void RASCI::model_guess(shared_ptr<RASDvec>& out) {
       for (int j = 0; j < nstate_; ++j)
         out->data(j)->element(ib, ia) = coeffs1->element(i, j);
     }
+  }
+  else if (nguess_ >= det_->size()) {
+    stringstream message;
+    message << "Asking for " << nstate_ << " states, but there seems to only be " << end-start << " states with the right spin.";
+    throw runtime_error(message.str());
   }
   else {
     nguess_ *= 2;

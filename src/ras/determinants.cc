@@ -62,45 +62,58 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
         const int nele2b = neleb - (nele1 + nele3);
 
         if (nele1 >= 0 && nele3 <= norb3) {
-          if (nele2a >= 0 && nele2a <= norb2)
-            alpha.push_back(make_shared<const RASString>(nele1, norb1, nele2a, norb2, nele3, norb3));
+          if (nele2a >= 0 && nele2a <= norb2) {
+            auto astring = make_shared<RASString>(nele1, norb1, nele2a, norb2, nele3, norb3);
+            if (astring->size() > 0)
+              alpha.push_back(astring);
+          }
 
-          if (nele2b >= 0 && nele2b <= norb2)
-            beta.push_back(make_shared<const RASString>(nele1, norb1, nele2b, norb2, nele3, norb3));
+          if (nele2b >= 0 && nele2b <= norb2) {
+            auto bstring = make_shared<RASString>(nele1, norb1, nele2b, norb2, nele3, norb3);
+            if (bstring->size() > 0)
+              beta.push_back(bstring);
+          }
         }
       }
     }
-    alphaspaces_ = make_shared<CIStringSet<RASString>>(alpha);
-    betaspaces_ = make_shared<CIStringSet<RASString>>(beta);
+    if (!alpha.empty())
+      alphaspaces_ = make_shared<CIStringSet<RASString>>(alpha);
+    if (!beta.empty())
+      betaspaces_ = make_shared<CIStringSet<RASString>>(beta);
   }
 
-  if (!mute) cout << "   - alpha strings: " << alphaspaces_->size() << endl;
-  if (!mute) cout << "   - beta strings: "  <<  betaspaces_->size() << endl << endl;
-
-  if (!mute) cout << " o Constructing alpha and beta displacement lists" << endl;
-  construct_phis_<0>(alphaspaces_, phia_, phia_ij_);
-  if (!mute) cout << "   - alpha lists: " << phia_->size() << endl;
-  construct_phis_<1>(betaspaces_, phib_, phib_ij_);
-  if (!mute) cout << "   - beta lists: "  << phib_->size() << endl;
-
-  if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
   size_ = 0;
 
-  for (int nholes = 0; nholes <= max_holes_; ++nholes) {
-    for (int nha = nholes; nha >= 0; --nha) {
-      const int nhb = nholes - nha;
-      for (int npart = 0; npart <= max_particles_; ++npart) {
-        for (int npa = npart; npa >= 0; --npa) {
-          const int npb = npart - npa;
+  if (alphaspaces_ && betaspaces_) {
+    if (alphaspaces_->size()*betaspaces_->size() > 0) {
+      if (!mute) cout << "   - alpha strings: " << alphaspaces_->size() << endl;
+      if (!mute) cout << "   - beta strings: "  <<  betaspaces_->size() << endl << endl;
 
-          auto block = make_shared<const CIBlockInfo<RASString>>(space<0>(nha, npa), space<1>(nhb, npb));
-          blockinfo_.push_back(block);
-          if (!block->empty()) size_ += block->size();
+      if (!mute) cout << " o Constructing alpha and beta displacement lists" << endl;
+      construct_phis_<0>(alphaspaces_, phia_, phia_ij_);
+      if (!mute) cout << "   - alpha lists: " << phia_->size() << endl;
+      construct_phis_<1>(betaspaces_, phib_, phib_ij_);
+      if (!mute) cout << "   - beta lists: "  << phib_->size() << endl;
+
+      if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
+
+      for (int nholes = 0; nholes <= max_holes_; ++nholes) {
+        for (int nha = nholes; nha >= 0; --nha) {
+          const int nhb = nholes - nha;
+          for (int npart = 0; npart <= max_particles_; ++npart) {
+            for (int npa = npart; npa >= 0; --npa) {
+              const int npb = npart - npa;
+
+              auto block = make_shared<const CIBlockInfo<RASString>>(space<0>(nha, npa), space<1>(nhb, npb), size_);
+              blockinfo_.push_back(block);
+              if (!block->empty()) size_ += block->size();
+            }
+          }
         }
       }
     }
+    if (!mute) cout << "   - size of restricted space: " << size_ << endl;
   }
-  if (!mute) cout << "   - size of restricted space: " << size_ << endl;
 }
 
 pair<vector<tuple<bitset<nbit__>, bitset<nbit__>, int>>, double> RASDeterminants::spin_adapt(const int spin, const bitset<nbit__> alpha, const bitset<nbit__> beta) const {

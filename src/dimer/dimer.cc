@@ -57,6 +57,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
   isolated_refs_ = {A, tmpref};
   shared_ptr<const Matrix> coeff = construct_coeff();
 
+  nvirt_ = {A->nvirt(), A->nvirt()};
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), 2*A->nclosed(), 2*A->nact(), 2*A->nvirt());
 }
 
@@ -67,6 +68,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, share
   isolated_refs_ = {A, B};
   shared_ptr<const Matrix> coeff = construct_coeff();
 
+  nvirt_ = {A->nvirt(), B->nvirt()};
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed()+B->nclosed(), A->nact()+B->nact(), A->nvirt()+B->nvirt());
 }
 
@@ -208,4 +210,37 @@ void Dimer::get_spaces(shared_ptr<const PTree> idata, vector<vector<int>>& space
     for (auto& s : *spaceb)
       spaces_B.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")});
   }
+}
+
+shared_ptr<Reference> Dimer::build_reference(const int site, const vector<bool> meanfield) const {
+  const int nsites = meanfield.size();
+  assert(nsites==2 && (site==0 || site==1));
+
+  vector<shared_ptr<const MatView>> closed_orbitals = {make_shared<MatView>(sref_->coeff()->slice(0, sref_->nclosed()))};
+  const MatView active_orbitals = sref_->coeff()->slice(sref_->nclosed() + (site==0 ? 0 : active_refs_.first->nact()),
+                                                        sref_->nclosed() + active_refs_.first->nact() + (site==0 ? 0 : active_refs_.second->nact()));
+
+  int current = sref_->nclosed();
+  for (int i = 0; i < nsites; ++i) {
+    const int cur_nact = (i==0 ? active_refs_.first->nact() : active_refs_.second->nact());
+    const int cur_nocc = (i==0 ? isolated_refs_.first->nclosed() - active_refs_.first->nclosed() : isolated_refs_.first->nclosed() - active_refs_.second->nclosed());
+
+    if (i!=site && meanfield[i])
+      closed_orbitals.push_back(make_shared<const MatView>(sref_->coeff()->slice(current, current+cur_nocc)));
+    current += cur_nact;
+  }
+
+  const int nclosed = accumulate(closed_orbitals.begin(), closed_orbitals.end(), 0, [] (const int a, shared_ptr<const MatView> m) { return a + m->mdim(); });
+  const int nact = active_orbitals.mdim();
+
+  auto out = make_shared<Matrix>(sref_->geom()->nbasis(), nclosed+nact);
+
+  current = 0;
+  closed_orbitals.push_back(make_shared<MatView>(active_orbitals));
+  for (auto& orbitals : closed_orbitals) {
+    copy_n(orbitals->data(), orbitals->mdim()*orbitals->ndim(), out->element_ptr(0, current));
+    current += orbitals->mdim();
+  }
+
+  return make_shared<Reference>(sgeom_, make_shared<Coeff>(move(*out)), nclosed, nact, 0);
 }

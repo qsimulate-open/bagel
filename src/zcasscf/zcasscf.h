@@ -131,6 +131,10 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double thresh_micro() const { return thresh_micro_; }
     double occup(const int i) const { return occup_[i]; }
     std::complex<double> rms_grad() const { return rms_grad_; };
+    // function to copy electronic rotations from a rotation file TODO: make lambda
+    std::shared_ptr<ZRotFile> copy_electronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
+    // function to copy positronic rotations from a rotation file TODO: make lambda
+    std::shared_ptr<ZRotFile> copy_positronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
 
 };
 

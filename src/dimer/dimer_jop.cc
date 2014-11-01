@@ -35,6 +35,14 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
 
   const int norbA = nfenceA - nstart;
   const int norbB = nfenceB - nfenceA;
+  common_init(norbA, norbB);
+}
+
+DimerJop::DimerJop(const int norbA, const int norbB, shared_ptr<CSymMatrix> mo1e, shared_ptr<Matrix> mo2e) : Jop(mo1e, mo2e) {
+  common_init(norbA, norbB);
+}
+
+void DimerJop::common_init(const int norbA, const int norbB) {
   nact_ = {norbA, norbB};
   const int norb = norbA + norbB;
 
@@ -63,8 +71,6 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
     }
   }
 
-  monomer_mo1es_ = {mo1eA, mo1eB};
-
   /************************************************************
   * Repackage mo2e integrals for monomers                     *
   ************************************************************/
@@ -74,7 +80,7 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
 
   {
     double* Adata = mo2eA->data();
-    double* modata = mo2e_ptr();
+    double* modata = mo2e_->data();
 
     for (int i = 0; i < norbA; ++i) {
       for (int j = 0; j < norbA; ++j) {
@@ -90,7 +96,7 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
 
   {
     double* Bdata = mo2eB->data();
-    double* modata = mo2e_ptr() + norb*norb*norb*norbA;
+    double* modata = mo2e_->data() + norb*norb*norb*norbA;
 
     for (int i = 0; i < norbB; ++i) {
       modata += norb*norb*norbA;
@@ -104,8 +110,6 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
       }
     }
   }
-
-  monomer_mo2es_ = {mo2eA, mo2eB};
 
   auto c1eA = make_shared<CSymMatrix>(mo1eA);
   auto c1eB = make_shared<CSymMatrix>(mo1eB);
@@ -129,3 +133,4 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
 
   cross_mo1e_ = cross_mo1e;
 }
+

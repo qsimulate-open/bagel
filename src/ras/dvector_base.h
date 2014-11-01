@@ -80,7 +80,7 @@ class Dvector_base {
     CiPtr data(const size_t i) const { return dvec_[i]; }
 
     std::vector<CiPtr>& dvec() { return dvec_; }
-    std::vector<CiPtr> dvec() const { return dvec_; }
+    const std::vector<CiPtr>& dvec() const { return dvec_; }
 
     size_t ij() const { return ij_; }
     size_t size() const { return ij_ * det_->size(); }

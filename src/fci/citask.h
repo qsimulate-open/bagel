@@ -28,7 +28,8 @@
 
 namespace bagel {
 
-// ColumnTask computes two columns for the sake of load balancing
+// CITask computes two columns for the sake of load balancing
+template <class Derived>
 class CITask {
   protected:
     using SD = std::pair<std::bitset<nbit__>, std::bitset<nbit__>>;
@@ -45,23 +46,7 @@ class CITask {
     CITask(std::vector<SD>* b, const int norb, const size_t c1, double* d1, const size_t c2, double* d2) :
       basis_(b), norb_(norb), col1_(c1), col2_(c2), dest1_(d1), dest2_(d2) { }
 
-    std::vector<int> to_vector(const std::bitset<nbit__> bit) const {
-      std::vector<int> out;
-      for(int i = 0; i < norb_; ++i)
-        if (bit[i]) out.push_back(i);
-      return out;
-    }
-
-    int sign(std::bitset<nbit__> bit, int i, int j) {
-      // masking irrelevant bits
-      int min, max;
-      std::tie(min,max) = std::minmax(i,j);
-      bit &= ~((1ull << (min+1)) - 1ull);
-      bit &= (1ull << max) - 1ull;
-      return 1 - ((bit.count() & 1) << 1);
-    }
-
-    virtual double matrix_element(const SD& bra, const SD& ket) = 0;
+    double matrix_element(const SD& bra, const SD& ket) { return static_cast<Derived*>(this)->matrix_element_impl(bra,ket); }
 
   public:
     void compute() {

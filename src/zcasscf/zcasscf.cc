@@ -66,8 +66,11 @@ void ZCASSCF::init() {
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_);
 
-  if (!geom_->dfs())
-    geom_ = geom_->relativistic(relref->gaunt());
+  gaunt_ = idata_->get<bool>("gaunt",relref->gaunt());
+  breit_ = idata_->get<bool>("breit",relref->breit());
+
+  if (!geom_->dfs() || (gaunt_ != relref->gaunt()))
+    geom_ = geom_->relativistic(gaunt_);
 
   // coefficient parameters
         bool mvo = idata_->get<bool>("generate_mvo", false);
@@ -164,8 +167,6 @@ void ZCASSCF::init() {
   cout << "    * nact     : " << setw(6) << nact_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
 
-  gaunt_ = relref->gaunt();
-  breit_ = relref->breit();
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
 
@@ -517,4 +518,69 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
   tmp_coeff->copy_block(0, nmobasis*2, naobasis, nmobasis*2, coeff_->slice(nmobasis*2, nmobasis*4));
 
   return make_shared<const ZMatrix>(*tmp_coeff);
+}
+
+
+shared_ptr<ZRotFile> ZCASSCF::copy_electronic_rotations(shared_ptr<const ZRotFile> rot) const {
+  int nr_nvirt = nvirt_ - nneg_/2;
+  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nr_nvirt*2);
+  if (nr_nvirt != 0) {
+    for (int i = 0; i != nclosed_; ++i) {
+      for (int j = 0; j != nr_nvirt;   ++j) {
+        out->ele_vc(j, i) = rot->ele_vc(j, i);
+        out->ele_vc(j + nr_nvirt, i) = rot->ele_vc(j + nvirt_, i);
+        out->ele_vc(j, i + nclosed_) = rot->ele_vc(j, i + nclosed_);
+        out->ele_vc(j + nr_nvirt, i + nclosed_) = rot->ele_vc(j + nvirt_, i + nclosed_);
+      }
+    }
+    if (nact_ != 0) {
+      for (int i = 0; i != nact_; ++i) {
+        for (int j = 0; j != nr_nvirt;   ++j) {
+          out->ele_va(j, i) = rot->ele_va(j, i);
+          out->ele_va(j + nr_nvirt, i) = rot->ele_va(j + nvirt_, i);
+          out->ele_va(j, i + nact_) = rot->ele_va(j, i + nact_);
+          out->ele_va(j + nr_nvirt, i + nact_) = rot->ele_va(j + nvirt_, i + nact_);
+        }
+      }
+    }
+  }
+  if (nclosed_ != 0) {
+    for (int i = 0; i != nact_;   ++i) {
+      for (int j = 0; j != nclosed_; ++j) {
+        out->ele_ca(j, i) = rot->ele_ca(j, i);
+        out->ele_ca(j + nclosed_, i) = rot->ele_ca(j + nclosed_, i);
+        out->ele_ca(j, i + nact_) = rot->ele_ca(j, i + nact_);
+        out->ele_ca(j + nclosed_, i + nact_) = rot->ele_ca(j + nclosed_, i + nact_);
+      }
+    }
+  }
+
+  return out;
+}
+
+
+shared_ptr<ZRotFile> ZCASSCF::copy_positronic_rotations(shared_ptr<const ZRotFile> rot) const {
+  int nvirtnr = nvirt_ - nneg_/2;
+  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nneg_);
+  if (nclosed_ != 0) {
+    for (int i = 0; i != nclosed_; ++i) {
+      for (int j = 0; j != nneg_/2;   ++j) {
+        out->ele_vc(j, i) = rot->ele_vc(j + nvirtnr, i);
+        out->ele_vc(j, i + nclosed_) = rot->ele_vc(j + nvirtnr, i + nclosed_);
+        out->ele_vc(j + nneg_/2, i)  = rot->ele_vc(j + nvirt_ + nvirtnr, i);
+        out->ele_vc(j + nneg_/2, i + nclosed_) = rot->ele_vc(j + nvirt_ + nvirtnr, i + nclosed_);
+      }
+    }
+  }
+  if (nact_ != 0) {
+    for (int i = 0; i != nact_; ++i) {
+      for (int j = 0; j != nneg_/2;   ++j) {
+        out->ele_va(j, i) = rot->ele_va(j + nvirtnr, i);
+        out->ele_va(j, i + nact_) = rot->ele_va(j + nvirtnr, i + nact_);
+        out->ele_va(j + nneg_/2, i) = rot->ele_va(j + nvirt_ + nvirtnr, i);
+        out->ele_va(j + nneg_/2, i + nact_) = rot->ele_va(j + nvirt_ + nvirtnr, i + nact_);
+      }
+    }
+  }
+  return out;
 }

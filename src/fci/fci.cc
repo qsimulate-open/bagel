@@ -305,7 +305,7 @@ void FCI::compute() {
         double* source_array = errvec[ist]->data();
         double* denom_array = denom_->data();
         const double en = energies[ist];
-        for (int i = 0; i != size; ++i) {
+        for (size_t i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
         cc_->data(ist)->normalize();
