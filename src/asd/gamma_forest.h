@@ -108,8 +108,10 @@ class GammaBranch {
       }
     }
 
+    void deactivate() { active_ = false; }
     void activate() { active_ = true; }
     bool active() const { return active_; }
+
 
     std::shared_ptr<GammaBranch<VecType>>& branch(const int i) { return branches_[i]; }
     const std::shared_ptr<GammaBranch<VecType>>& branch(const int i) const { return branches_[i]; }
@@ -177,6 +179,14 @@ class GammaTree {
               base_->branch(i)->branch(j)->branch(k)->branch(l) = std::make_shared<GammaBranch<VecType>>();
               for (int m = 0; m < nops; ++m) {
                 base_->branch(i)->branch(j)->branch(k)->branch(l)->branch(m) = std::make_shared<GammaBranch<VecType>>();
+//4RDM
+                for (int n = 0; n < nops; ++n) {
+                  base_->branch(i)->branch(j)->branch(k)->branch(l)->branch(m)->branch(n) = std::make_shared<GammaBranch<VecType>>();
+                  for (int o = 0; o < nops; ++o) {
+                    base_->branch(i)->branch(j)->branch(k)->branch(l)->branch(m)->branch(n)->branch(o) = std::make_shared<GammaBranch<VecType>>();
+                  } // n
+                } // o
+//END 4RDM
               }
             }
 //END ADDED
@@ -208,42 +218,56 @@ class GammaTask {
     GammaTask(const std::shared_ptr<GammaTree<VecType>> tree, const GammaSQ operation, const int a) : a_(a), operation_(operation), tree_(tree) {}
 
     void compute() {
+      std::cout << "GammaTask entered.." << std::endl; std::cout.flush();
       constexpr int nops = 4;
       const int norb = tree_->norb();
 
-      auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
-      auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); };
+      auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };    //True : create
+      auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); }; //True : alpha
 
       std::shared_ptr<GammaBranch<VecType>> first = tree_->base()->branch(operation_);
       assert(first->active()); // This should have been checked before sending it to the TaskQueue
 
+      std::cout << "**KET**" << std::endl;
+      tree_->ket()->print();
       std::shared_ptr<const VecType> avec = tree_->ket()->apply(a_, action(static_cast<int>(operation_)), spin(static_cast<int>(operation_)));
+      std::cout << "**AVEC**" << std::endl;
+      avec->print(); 
       for (auto& ibra : first->bras())
         dot_product(ibra.second, avec, first->gammas().find(ibra.first)->second->element_ptr(0,a_));
 
-      for (int j = 0; j < nops; ++j) {
+      for (int j = 0; j < nops; ++j) { // operation
         auto second = first->branch(j);
         if (!second->active()) continue;
+        std::cout << "GammaTask: j=" << j << static_cast<int>(operation_) << std::endl; std::cout.flush();
 
         for (int b = 0; b < norb; ++b) {
           if (b==a_ && j==static_cast<int>(operation_)) continue;
+          std::cout << "GammaTask: generate bvec: " << b << a_ << "|ket>, ops = " << j << static_cast<int>(operation_) << std::endl; std::cout.flush();
           std::shared_ptr<const VecType> bvec = avec->apply(b, action(j), spin(j));
-          for (auto& jbra : second->bras())
+          for (auto& jbra : second->bras()) {
             dot_product(jbra.second, bvec, second->gammas().find(jbra.first)->second->element_ptr(0, a_*norb + b));
-
-          for (int k = 0; k < nops; ++k) {
+          }
+          for (int k = 0; k < nops; ++k) { // operation
             std::shared_ptr<GammaBranch<VecType>> third = second->branch(k);
             if (!third->active()) continue;
+            std::cout << "GammaTask: k=" << k << j << static_cast<int>(operation_) <<  std::endl; std::cout.flush();
 
             for (int c = 0; c < norb; ++c) {
               if (b==c && k==j) continue;
               std::shared_ptr<const VecType> cvec = bvec->apply(c, action(k), spin(k));
+              if (!cvec) { //nullptr
+                std::cout <<  "cvec is nullptr.. deactivating this branch.." << std::endl; std::cout.flush();
+                third->deactivate();
+                continue;
+              }
               for (auto& kbra : third->bras())
                 dot_product(kbra.second, cvec, third->gammas().find(kbra.first)->second->element_ptr(0, a_*norb*norb + b*norb + c));
 //ADDED
-              for (int l = 0; l < nops; ++l) {
+              for (int l = 0; l < nops; ++l) { // operation
                 std::shared_ptr<GammaBranch<VecType>> fourth = third->branch(l);
                 if (!fourth->active()) continue;
+                std::cout << "GammaTask: l=" << l << k << j << static_cast<int>(operation_) << std::endl; std::cout.flush();
 
                 for (int d = 0; d < norb; ++d) {
                   if(c==d && l==k) continue;
@@ -251,16 +275,43 @@ class GammaTask {
                   for (auto& lbra : fourth->bras())
                     dot_product(lbra.second, dvec, fourth->gammas().find(lbra.first)->second->element_ptr(0, a_*norb*norb*norb + b*norb*norb + c*norb + d));
 
-                  for (int m = 0; m < nops; ++m) {
+                  for (int m = 0; m < nops; ++m) { // operation
                     std::shared_ptr<GammaBranch<VecType>> fifth = fourth->branch(m);
                     if (!fifth->active()) continue;
+                    std::cout << "GammaTask: m=" << m << l << k << j << static_cast<int>(operation_) << std::endl; std::cout.flush();
               
                     for (int e = 0; e < norb; ++e) {
                       if(d==e && m==l) continue;
                       std::shared_ptr<const VecType> evec = dvec->apply(e, action(m), spin(m));
                       for (auto& mbra : fifth->bras())
                         dot_product(mbra.second, evec, fifth->gammas().find(mbra.first)->second->element_ptr(0, a_*norb*norb*norb*norb + b*norb*norb*norb + c*norb*norb + d*norb + e));
-      
+//4RDM--------------------------------
+                      for (int n = 0; n < nops; ++n) { // operation
+                        std::shared_ptr<GammaBranch<VecType>> sixth = fifth->branch(n);
+                        if (!sixth->active()) continue;
+                        std::cout << "GammaTask: n=" << n << m << l << k << j << static_cast<int>(operation_) << std::endl; std::cout.flush();
+                      
+                        for (int f = 0; f < norb; ++f) {
+                          if(e==f && n==m) continue;
+                          std::shared_ptr<const VecType> fvec = evec->apply(f, action(n), spin(n));
+                          for (auto& nbra : sixth->bras())
+                            dot_product(nbra.second, fvec, sixth->gammas().find(nbra.first)->second->element_ptr(0, a_*norb*norb*norb*norb*norb + b*norb*norb*norb*norb + c*norb*norb*norb + d*norb*norb + e*norb + f));
+                      
+                          for (int o = 0; o < nops; ++o) { // operation
+                            std::shared_ptr<GammaBranch<VecType>> seventh = sixth->branch(o);
+                            if (!seventh->active()) continue;
+                            std::cout << "GammaTask: o=" << o << n << m << l << k << j << static_cast<int>(operation_) << std::endl; std::cout.flush();
+                      
+                            for (int g = 0; g < norb; ++g) {
+                              if(f==g && o==n) continue;
+                              std::shared_ptr<const VecType> gvec = fvec->apply(g, action(o), spin(o));
+                              for (auto& obra : seventh->bras())
+                                dot_product(obra.second, gvec, seventh->gammas().find(obra.first)->second->element_ptr(0, a_*norb*norb*norb*norb*norb*norb + b*norb*norb*norb*norb*norb + c*norb*norb*norb*norb + d*norb*norb*norb + e*norb*norb + f*norb + g));
+                            } //g
+                          } //o
+                        } //f
+                      } //n
+//END 4RDM-------------------------------
                     } //e
                   } //m
 
@@ -393,6 +444,7 @@ class GammaForest {
                 for (int l = 0; l < nops; ++l) {
                   std::shared_ptr<GammaBranch<VecType>> fourth = third->branch(l);
                   if (!fourth->active()) continue;
+                  std::cout << "active branch : " << i << j << k << l << std::endl;
                   for (auto& lbra : fourth->bras()) {
                     const int nAp = lbra.second->ij();
                     const int nstates = nA * nAp;
@@ -402,14 +454,37 @@ class GammaForest {
                   for (int m = 0; m < nops; ++m) {
                     std::shared_ptr<GammaBranch<VecType>> fifth = fourth->branch(m);
                     if (!fifth->active()) continue;
+                    std::cout << "active branch : " << i << j << k << l << m << std::endl;
                     for (auto &mbra : fifth->bras()) {
                       const int nAp = mbra.second->ij();
                       const int nstates = nA * nAp;
                       fifth->gammas().emplace(mbra.first, std::make_shared<Matrix>(nstates, norb * norb * norb * norb * norb));
                     }
+// 4RDM
+                    for (int n = 0; n < nops; ++n) {
+                      std::shared_ptr<GammaBranch<VecType>> sixth = fifth->branch(n);
+                      if (!sixth->active()) continue;
+                      std::cout << "active branch : " << i << j << k << l << m << n << std::endl;
+                      for (auto &nbra : sixth->bras()) {
+                        const int nAp = nbra.second->ij();
+                        const int nstates = nA * nAp;
+                        sixth->gammas().emplace(nbra.first, std::make_shared<Matrix>(nstates, norb * norb * norb * norb * norb * norb));
+                      }
 
-                  }
-                }
+                      for (int o = 0; o < nops; ++o) {
+                        std::shared_ptr<GammaBranch<VecType>> seventh = sixth->branch(o);
+                        if (!seventh->active()) continue;
+                        std::cout << "active branch : " << i << j << k << l << m << n << o << std::endl;
+                        for (auto &obra : seventh->bras()) {
+                          const int nAp = obra.second->ij();
+                          const int nstates = nA * nAp;
+                          seventh->gammas().emplace(obra.first, std::make_shared<Matrix>(nstates, norb * norb * norb * norb * norb * norb * norb));
+                        }
+                      } //o
+                    } //n
+// END 4RDM
+                  } //m
+                } // l
 //END ADDED
               }
             }
@@ -424,6 +499,7 @@ class GammaForest {
       constexpr int nops = 4;
 
       const int ntasks = allocate_and_count();
+      std::cout << "Number of GammaTask = " << ntasks << std::endl; std::cout.flush();
       TaskQueue<GammaTask<VecType>> tasks(ntasks);
 
       // Add tasks
@@ -440,7 +516,8 @@ class GammaForest {
         }
       }
 
-      tasks.compute();
+      std::cout << "NOTE: set thread = 1" << std::endl; std::cout.flush();
+      tasks.compute(1);
     }
 
     void couple_blocks(const DimerSubspace<VecType>& AB, const DimerSubspace<VecType>& ABp); // implemented in gamma_coupling.hpp
