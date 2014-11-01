@@ -96,6 +96,7 @@ void Matrix::diagonalize(VecView eig) {
     unique_ptr<double[]> work(new double[n*6]);
     dsyev_("V", "L", n, data(), n, eig.data(), work.get(), n*6, info);
     mpi__->broadcast(data(), n*n, 0);
+    mpi__->broadcast(eig.data(), n, 0);
 #ifdef HAVE_SCALAPACK
   } else {
     const int localrow = get<0>(localsize_);

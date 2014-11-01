@@ -37,7 +37,7 @@ template <class StringSetType,
          >
 class CIStringSpace {
   protected:
-    std::list<std::shared_ptr<const StringSetType>> strings_;
+    std::unordered_map<int, std::shared_ptr<const StringSetType>> strings_;
 
     // it is assumed that every StringSetType has the same norb_.
     size_t norb_;
@@ -113,12 +113,14 @@ class CIStringSpace {
       : CIStringSpace(std::list<std::shared_ptr<const StringSetType>>(s.begin(), s.end())) {
     }
 
-    CIStringSpace(std::list<std::shared_ptr<const StringSetType>> s) : strings_(s) {
-      assert(!strings_.empty());
-      norb_ = strings_.front()->norb();
-      for (auto& i : strings_)
+    CIStringSpace(std::list<std::shared_ptr<const StringSetType>> s) {
+      assert(!s.empty());
+      norb_ = s.front()->norb();
+      for (auto& i : s) {
         if (norb_ != i->norb())
           throw std::logic_error("All CIStrings in CIStringSpace should have the same norb.");
+        strings_.emplace(i->nele(), i);
+      }
     }
 
     void build_linkage(const int fac = 1) {
@@ -128,7 +130,7 @@ class CIStringSpace {
       for (auto it = strings_.begin(); it != strings_.end(); ++it) {
         auto jt = it; ++jt;
         for ( ; jt != strings_.end(); ++jt)
-          build_linkage(*it, *jt, fac);
+          build_linkage(it->second, jt->second, fac);
       }
     }
 

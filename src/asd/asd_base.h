@@ -45,7 +45,7 @@ struct ModelBlock {
     S_(S), charge_(q), M_(M), nstates_(nstates) {}
 };
 
-/// Base class for ASD (to be renamed ASD). Contains everything that doesn't need to be templated.
+/// Base class for ASD. Contains everything that doesn't need to be templated.
 class ASD_base {
   protected:
     std::shared_ptr<const Dimer> dimer_;

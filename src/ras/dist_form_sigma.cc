@@ -278,7 +278,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
 
       // gathering
       for ( auto& iphiblock : det->phib_ij(ij) ) {
-        vector<shared_ptr<const DistCIBlock<double>>> blks = cc->allowed_blocks<1>(iphiblock.space());
+        vector<shared_ptr<const DistCIBlock<double>>> blks = cc->allowed_blocks<1>(iphiblock.source_space());
         for (auto& iblock : blks) {
           auto tmp = make_shared<Matrix>(iblock->asize(), iphiblock.size());
           double* targetdata = tmp->data();
@@ -320,7 +320,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
         }
 
         for (auto& iphiblock : det->phib_ij(ij)) {
-          vector<shared_ptr<const RASString>> allowed_spaces = det->allowed_spaces<1>(iphiblock.space());
+          vector<shared_ptr<const RASString>> allowed_spaces = det->allowed_spaces<1>(iphiblock.source_space());
           for (auto& mult_space : allowed_spaces) {
             shared_ptr<Matrix> Cp_block = Cp_map.at({mult_space->offset(), iphiblock.offset()});
             shared_ptr<SparseMatrix> Ft_block = Fmap[mult_space->offset() + get<0>(bounds_map[mult_space->offset()])].second;

@@ -129,6 +129,9 @@ class DavidsonDiag {
         }
       }
 
+      mat_->synchronize();
+      overlap_->synchronize();
+
       // canonical orthogonalization
       std::shared_ptr<const MatType> ovlp_scr = overlap_->tildex();
 
@@ -136,6 +139,7 @@ class DavidsonDiag {
       eig_ = std::make_shared<MatType>(*ovlp_scr % *mat_ * *ovlp_scr);
       eig_->diagonalize(vec_);
       eig_ = std::make_shared<MatType>(*ovlp_scr * eig_->slice(0,nstate_));
+      eig_->synchronize();
 
       // first basis vector is always the current best guess
       std::vector<std::shared_ptr<T>> cv = civec();
@@ -190,6 +194,9 @@ class DavidsonDiag {
         overlap_ = overlap_->get_submatrix(0, 0, size_, size_);
       }
 
+      mat_->synchronize();
+      overlap_->synchronize();
+
       return std::vector<double>(vec_.begin(), vec_.begin()+nstate_);
     }
 
@@ -222,6 +229,7 @@ class DavidsonDiag {
         for (auto& iv : basis_) {
           tmp->ax_plus_y(eig_->element(k++,i), iv->cc);
         }
+        tmp->synchronize();
         out.push_back(tmp);
       }
       return out;
@@ -236,6 +244,7 @@ class DavidsonDiag {
         for (auto& iv : basis_) {
           tmp->ax_plus_y(eig_->element(k++,i), iv->sigma);
         }
+        tmp->synchronize();
         out.push_back(tmp);
       }
       return out;

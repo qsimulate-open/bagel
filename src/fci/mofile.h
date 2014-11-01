@@ -73,7 +73,7 @@ class MOFile {
     MOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
     MOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Matrix>, const std::string method = std::string("KH"));
     // Shortcut used in MEH
-    MOFile(const std::shared_ptr<CSymMatrix> mo1e, const std::shared_ptr<Matrix> mo2e) : nocc_(mo1e->nocc()), mo1e_(mo1e), mo2e_(mo2e) {}
+    MOFile(const std::shared_ptr<CSymMatrix> mo1e, const std::shared_ptr<Matrix> mo2e) : nocc_(mo1e->nocc()), hz_(true), mo1e_(mo1e), mo2e_(mo2e) {}
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; }
 

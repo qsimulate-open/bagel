@@ -186,6 +186,8 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
 
     void zero() { this->for_each_block( [] (std::shared_ptr<RBlock> i) { std::fill_n(i->local(), i->size(), 0.0 ); } ); }
 
+    void synchronize() { /* do nothing */ }
+
     std::shared_ptr<DistRASCivector<DataType>> clone() const { return std::make_shared<DistRASCivector<DataType>>(det_); }
     std::shared_ptr<DistRASCivector<DataType>> copy() const  { return std::make_shared<DistRASCivector<DataType>>(*this); }
     std::shared_ptr<DistRASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const {
@@ -384,9 +386,8 @@ using RASBlock = CIBlock<DataType, RASString>;
 template<typename DataType>
 using RASBlock_alloc = CIBlock_alloc<DataType, RASString>;
 
-
-template <typename DataType>
-class RASCivector : public RASCivector_base<RASBlock<DataType>> {
+template <typename DataType, typename Derived>
+class RASCivector_impl : public RASCivector_base<RASBlock<DataType>> {
   public: using DetType = RASDeterminants;
   public: using RBlock = RASBlock<DataType>;
   public: using LocalizedType = std::true_type;
@@ -395,57 +396,28 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
     using RASCivector_base<RASBlock<DataType>>::blocks_;
     using RASCivector_base<RASBlock<DataType>>::det_;
 
-    std::unique_ptr<DataType[]> data_;
-
-    const size_t size_;
+    template <class T>
+    std::shared_ptr<T> transpose_impl(std::shared_ptr<const RASDeterminants> det = nullptr) const {
+      if (!det) det = det_->transpose();
+      const int phase = 1 - (((det->nelea()*det->neleb())%2) << 1);
+      auto out = std::make_shared<T>(det);
+      this->for_each_block( [&out, &phase]
+        (std::shared_ptr<const RBlock> b) { blas::transpose(b->data(), b->lenb(), b->lena(), out->block(b->stringsa(), b->stringsb())->data(), static_cast<double>(phase)); }
+      );
+      return out;
+    }
 
   public:
-    RASCivector(std::shared_ptr<const RASDeterminants> det) : RASCivector_base<RASBlock<DataType>>(det), size_(det->size()) {
-      data_ = std::unique_ptr<DataType[]>(new DataType[size_]);
-      std::fill_n(data_.get(), size_, 0.0);
+    DataType* data() { return static_cast<Derived*>(this)->data_impl(); }
+    const DataType* data() const { return static_cast<const Derived*>(this)->data_impl(); }
 
-      size_t sz = 0;
-      for (auto& ipair : det->blockinfo()) {
-        if (!ipair->empty()) {
-          blocks_.push_back(std::make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), data_.get()+sz, sz));
-          sz += blocks_.back()->size();
-        }
-        else {
-          blocks_.push_back(nullptr);
-        }
-      }
-    }
-
-    RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det_) { std::copy_n(o.data(), size_, data_.get()); }
-    RASCivector(std::shared_ptr<const RASCivector<DataType>> o) : RASCivector(*o) {}
-
-    RASCivector(RASCivector<DataType>&& o) : RASCivector_base<RASBlock<DataType>>(o.det_), size_(o.size_)
-      { blocks_ = std::move(o.blocks_); }
-
-    RASCivector(const DistRASCivector<DataType>& o) : RASCivector(o.det()) {
-      this->for_each_block( [&o] (std::shared_ptr<RBlock> b) {
-        std::shared_ptr<const DistCIBlock<DataType>> distblock = o.block(b->stringsb(), b->stringsa());
-        std::copy_n(distblock->local(), distblock->size(), b->data() + distblock->astart()*distblock->lenb());
-      } );
-      mpi__->allreduce(data(), size());
-    }
-    RASCivector(std::shared_ptr<const DistRASCivector<DataType>> o) : RASCivector(*o) {}
-
-    DataType* data() { return data_.get(); }
-    const DataType* data() const { return data_.get(); }
+    RASCivector_impl<DataType, Derived>(std::shared_ptr<const RASDeterminants> det) : RASCivector_base<RBlock>(det) {}
 
     // Copy assignment
-    RASCivector<DataType>& operator=(const RASCivector<DataType>& o) {
+    template <class T>
+    RASCivector_impl<DataType, Derived>& operator=(const RASCivector_impl<DataType, T>& o) {
       assert(*o.det_ == *det_);
-      std::copy_n(o.data(), size_, data_.get());
-      return *this;
-    }
-
-    // Move assignment
-    RASCivector<DataType>& operator=(RASCivector<DataType>&& o) {
-      assert(*o.det_ == *det_);
-      data_ = std::move(o.data_);
-      blocks_ = std::move(o.blocks_);
+      std::copy_n(o.data(), size(), data());
       return *this;
     }
 
@@ -459,24 +431,13 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
 
     using RASCivector_base<RASBlock<DataType>>::block;
 
-    const size_t size() const { return size_; }
-    void zero() { std::fill_n(data_.get(), size_, 0.0); }
-
-    std::shared_ptr<RASCivector<DataType>> clone() const { return std::make_shared<RASCivector<DataType>>(det_); }
-    std::shared_ptr<RASCivector<DataType>> copy() const  { return std::make_shared<RASCivector<DataType>>(*this); }
-    std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const {
-      if (!det) det = det_->transpose();
-      auto out = std::make_shared<RASCivector<DataType>>(det);
-      this->for_each_block( [&out]
-        (std::shared_ptr<const RBlock> b) { blas::transpose(b->data(), b->lenb(), b->lena(), out->block(b->stringsa(), b->stringsb())->data(), 1.0); }
-      );
-      return out;
-    }
-
-    std::shared_ptr<DistRASCivector<DataType>> distcivec() const { return std::make_shared<DistRASCivector<DataType>>(*this); }
+    const size_t size() const { return det_->size(); }
+    void fill(const double a) { std::fill_n(data(), size(), a); }
+    void zero() { fill(0.0); }
 
     // Safe for any structure of blocks.
-    DataType dot_product(const RASCivector<DataType>& o) const {
+    template <typename T>
+    DataType dot_product_impl(const T& o) const {
       assert( det_->nelea() == o.det()->nelea() && det_->neleb() == o.det()->neleb() && det_->norb() == o.det()->norb() );
       DataType out(0.0);
       this->for_each_block( [&out, &o] (std::shared_ptr<const RBlock> b) {
@@ -486,20 +447,170 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
       return out;
     }
 
-    double norm() const { return std::sqrt(dot_product(*this)); }
-    double variance() const { return dot_product(*this) / size_; }
+    DataType spin_expectation() const { return static_cast<const Derived*>(this)->dot_product(*static_cast<const Derived*>(this)->spin()); }
+    void spin_decontaminate_impl(const double thresh) {
+      const int nspin = det_->nspin();
+      const int max_spin = det_->nelea() + det_->neleb();
+
+      const double pure_expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
+
+      auto S2 = static_cast<Derived*>(this)->spin();
+      double actual_expectation = static_cast<Derived*>(this)->dot_product(*S2);
+
+      int k = nspin + 2;
+      while( fabs(actual_expectation - pure_expectation) > thresh ) {
+        if ( k > max_spin ) { this->print(0.05); throw std::runtime_error("Spin decontamination failed."); }
+
+        const double factor = -4.0/(static_cast<double>(k*(k+2)));
+        static_cast<Derived*>(this)->ax_plus_y(factor, *S2);
+
+        const double norm = this->norm();
+        const double rescale = (norm*norm > 1.0e-60) ? 1.0/norm : 0.0;
+        scale(rescale);
+
+        S2 = static_cast<Derived*>(this)->spin();
+        actual_expectation = static_cast<Derived*>(this)->dot_product(*S2);
+
+        k += 2;
+      }
+    }
+
+    void ax_plus_y(const double a, const Derived& o) { blas::ax_plus_y_n(a, o.data(), size(), data()); }
+    void ax_plus_y(const double a, const std::shared_ptr<const Derived>& o) { blas::ax_plus_y_n(a, o->data(), size(), data()); }
+
+    void scale(const DataType a) { blas::scale_n(a, data(), size()); }
+
+    template <typename T>
+    void project_out(const std::shared_ptr<const Derived>& o) { ax_plus_y(-dot_product(*o), *o); }
+
+    double norm() const { return std::sqrt(blas::dot_product(data(), size(), data())); }
+    double variance() const { return blas::dot_product(data(), size(), data())/size(); }
     double rms() const { return std::sqrt(variance()); }
 
-    void scale(const DataType a) { std::for_each( data(), data() + size_, [&a] (DataType& p) { p *= a; } ); }
-    void ax_plus_y(const DataType a, const RASCivector<DataType>& o) { blas::ax_plus_y_n(a, o.data(), size_, data()); }
-    void ax_plus_y(const DataType a, std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(a, *o); }
+    double orthog(std::list<std::shared_ptr<const Derived>> c) {
+      for (auto& iter : c)
+        project_out(iter);
+      return normalize();
+    }
+
+    double orthog(const std::shared_ptr<const Derived>& o) {
+      return orthog(std::list<std::shared_ptr<const Derived>>{o});
+    }
+
+    double normalize() {
+      const double norm = this->norm();
+      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+      scale(DataType(scal));
+      return norm;
+    }
+
+    void print(const double thr = 0.05) const {
+      // multimap sorts elements so that they will be shown in the descending order in magnitude
+      std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
+      for (auto& iblock : blocks_) {
+        if (!iblock) continue;
+        double* i = iblock->data();
+        for (auto& ia : *iblock->stringsa()) {
+          for (auto& ib : *iblock->stringsb()) {
+            if (std::abs(*i) > thr)
+              tmp.emplace(-std::abs(*i), std::make_tuple(*i, ia, ib));
+            ++i;
+          }
+        }
+      }
+      for (auto& i : tmp)
+        std::cout << "       " << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0))
+                  << "-" << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0), det_->ras(0)+det_->ras(1))
+                  << "-" << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0)+det_->ras(1), det_->norb())
+                  << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
+    }
+
+    void synchronize(const int root = 0) {
+#ifdef HAVE_MPI_H
+      mpi__->broadcast(data(), size(), root);
+#endif /* HAVE_MPI_H */
+    }
+};
+
+/*********************************************************************************************************************************/
+
+template <typename DataType> class RASCivecView_;
+
+template <typename DataType>
+class RASCivector : public RASCivector_impl<DataType, RASCivector<DataType>> {
+  public: using DetType = RASDeterminants;
+  public: using RBlock = RASBlock<DataType>;
+  public: using LocalizedType = std::true_type;
+  public: using RASCivector_base<RBlock>::size;
+
+  protected:
+    using RASCivector_base<RASBlock<DataType>>::blocks_;
+
+    std::unique_ptr<DataType[]> data_;
+  public:
+    RASCivector(std::shared_ptr<const RASDeterminants> det) : RASCivector_impl<DataType, RASCivector<DataType>>(det) {
+      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      std::fill_n(data_.get(), size(), 0.0);
+
+      size_t sz = 0;
+      for (auto& ipair : det->blockinfo()) {
+        if (!ipair->empty()) {
+          blocks_.push_back(std::make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), data_.get()+sz, sz));
+          sz += blocks_.back()->size();
+        }
+        else {
+          blocks_.push_back(nullptr);
+        }
+      }
+    }
+
+    RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det()) { std::copy_n(o.data(), size(), data_.get()); }
+    RASCivector(const RASCivecView_<DataType>& o) : RASCivector(o.det()) { std::copy_n(o.data(), size(), data_.get()); }
+
+    RASCivector(std::shared_ptr<const RASCivector<DataType>> o) : RASCivector(o->det()) { std::copy_n(o->data(), size(), data_.get()); }
+    RASCivector(std::shared_ptr<const RASCivecView_<DataType>>& o) : RASCivector(o->det()) { std::copy_n(o->data(), size(), data_.get()); }
+
+    RASCivector(RASCivector<DataType>&& o) : RASCivector_impl<DataType, RASCivector<DataType>>(o.det())
+      { blocks_ = std::move(o.blocks_); }
+
+    RASCivector(const DistRASCivector<DataType>& o) : RASCivector(o.det()) {
+      this->for_each_block( [&o] (std::shared_ptr<RBlock> b) {
+        std::shared_ptr<const DistCIBlock<DataType>> distblock = o.block(b->stringsb(), b->stringsa());
+        std::copy_n(distblock->local(), distblock->size(), b->data() + distblock->astart()*distblock->lenb());
+      } );
+      mpi__->allreduce(data_.get(), size());
+    }
+    RASCivector(std::shared_ptr<const DistRASCivector<DataType>> o) : RASCivector(*o) {}
+
+    // Move assignment
+    RASCivector<DataType>& operator=(RASCivector<DataType>&& o) {
+      assert(*o.det() == *det());
+      data_ = std::move(o.data_);
+      blocks_ = std::move(o.blocks_);
+      return *this;
+    }
+
+    using RASCivector_base<RASBlock<DataType>>::det;
+
+    DataType* data_impl() { return data_.get(); }
+    const DataType* data_impl() const { return data_.get(); }
+
+    std::shared_ptr<RASCivector<DataType>> clone() const { return std::make_shared<RASCivector<DataType>>(det()); }
+    std::shared_ptr<RASCivector<DataType>> copy() const  { return std::make_shared<RASCivector<DataType>>(*this); }
+
+    std::shared_ptr<DistRASCivector<DataType>> distcivec() const { return std::make_shared<DistRASCivector<DataType>>(*this); }
+
+    DataType dot_product(const RASCivector<DataType>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(o); }
+    DataType dot_product(const std::shared_ptr<const RASCivector<DataType>>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(*o); }
+
+    std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const { return this->template transpose_impl<RASCivector<DataType>>(det); }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
-    double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
-    std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return nullptr;} // returns S^2 | civec >
-    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; } // S_-
-    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; } // S_+
-    void spin_decontaminate(const double thresh = 1.0e-8) { assert(false); }
+    std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return nullptr;}
+    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
+
+    void spin_decontaminate(const double thresh = 1.0e-8) { this->spin_decontaminate_impl(thresh); }
 
     std::shared_ptr<RASCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
       // action: true -> create; false -> annihilate
@@ -538,74 +649,103 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
       auto tdet = std::make_shared<const RASDeterminants>(ras1, ras2, ras3, telea, teleb, tholes, tparts, true);
       auto out = std::make_shared<RASCivector<DataType>>(tdet);
 
-      for (auto& soblock : this->blocks()) {
+      for (std::shared_ptr<const RASBlock<double>> soblock : this->blocks()) {
         if (!soblock) continue;
         std::array<int, 6> tar_array = op_on_array(to_array(soblock));
         if ( std::all_of(tar_array.begin(), tar_array.end(), [] (int i) { return i >= 0; }) ) {
           std::shared_ptr<RASBlock<double>> tarblock = out->block(tar_array[0], tar_array[1], tar_array[4], tar_array[5]);
-          if (tarblock) apply_block(soblock, tarblock);
+          if (tarblock) apply_block(soblock, tarblock, false);
         }
       }
 
       return out;
     }
-
-    void project_out(std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(-dot_product(*o), *o); }
-
-    double orthog(std::list<std::shared_ptr<const RASCivector<DataType>>> c) {
-      for (auto& iter : c)
-        project_out(iter);
-      return normalize();
-    }
-
-    double orthog(std::shared_ptr<const RASCivector<DataType>> o) {
-      return orthog(std::list<std::shared_ptr<const RASCivector<DataType>>>{o});
-    }
-
-    double normalize() {
-      const double norm = this->norm();
-      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-      scale(DataType(scal));
-      return norm;
-    }
-
-    void print(const double thr = 0.05) const {
-      // multimap sorts elements so that they will be shown in the descending order in magnitude
-      std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
-      for (auto& iblock : blocks_) {
-        if (!iblock) continue;
-        double* i = iblock->data();
-        for (auto& ia : *iblock->stringsa()) {
-          for (auto& ib : *iblock->stringsb()) {
-            if (std::abs(*i) > thr)
-              tmp.emplace(-std::abs(*i), std::make_tuple(*i, ia, ib));
-            ++i;
-          }
-        }
-      }
-      for (auto& i : tmp)
-        std::cout << "       " << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0))
-                  << "-" << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0), det_->ras(0)+det_->ras(1))
-                  << "-" << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0)+det_->ras(1), det_->norb())
-                  << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
-    }
-
-    void synchronize(const int root = 0) {
-#ifdef HAVE_MPI_H
-      mpi__->broadcast(data(), size(), root);
-#endif /* HAVE_MPI_H */
-    }
 };
 
-template<> double RASCivector<double>::spin_expectation() const; // returns < S^2 >
 template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin() const; // returns S^2 | civec >
 template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(std::shared_ptr<const RASDeterminants>) const; // S_-
 template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(std::shared_ptr<const RASDeterminants>) const; // S_+
-template<> void RASCivector<double>::spin_decontaminate(const double thresh);
 
 using RASCivec = RASCivector<double>;
 using RASDvec  = Dvector_base<RASCivec>;
 
+/*********************************************************************************************************************************/
+
+template <typename DataType>
+class RASCivecView_ : public RASCivector_impl<DataType, RASCivecView_<DataType>> {
+  public: using DetType = RASDeterminants;
+  public: using RBlock = RASBlock<DataType>;
+  public: using LocalizedType = std::true_type;
+  public: using RASCivector_base<RBlock>::size;
+
+  protected:
+    using RASCivector_base<RASBlock<DataType>>::blocks_;
+
+    double* const data_ptr_;
+    bool can_write_;
+
+  public:
+    RASCivecView_(std::shared_ptr<const RASDeterminants> det, double* const data) : RASCivector_impl<DataType, RASCivecView_<DataType>>(det),
+                                                                                    data_ptr_(data), can_write_(true) {
+      size_t sz = 0;
+      for (auto& ipair : det->blockinfo()) {
+        if (!ipair->empty()) {
+          blocks_.push_back(std::make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), data+sz, sz));
+          sz += blocks_.back()->size();
+        }
+        else {
+          blocks_.push_back(nullptr);
+        }
+      }
+    }
+    RASCivecView_(std::shared_ptr<const RASDeterminants> det, const double* const data) : RASCivector_impl<DataType, RASCivecView_<DataType>>(det),
+                                                                                          data_ptr_(const_cast<DataType*>(data)), can_write_(false) {
+      size_t sz = 0;
+      for (auto& ipair : det->blockinfo()) {
+        if (!ipair->empty()) {
+          blocks_.push_back(std::make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), data_ptr_+sz, sz));
+          sz += blocks_.back()->size();
+        }
+        else {
+          blocks_.push_back(nullptr);
+        }
+      }
+    }
+
+    RASCivecView_(RASCivector<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
+    RASCivecView_(RASCivecView_<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
+
+    RASCivecView_(const RASCivector<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
+    RASCivecView_(const RASCivecView_<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
+
+    using RASCivector_base<RASBlock<DataType>>::det;
+
+    // Spin functions are only implememted as specialized functions for double (see civec.cc)
+    std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return nullptr;}
+    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
+
+    void spin_decontaminate(const double thresh = 1.0e-8) { this->spin_decontaminate_impl(thresh); }
+
+    DataType* data_impl() { assert(can_write_); return data_ptr_; }
+    const DataType* data_impl() const { return data_ptr_; }
+
+    DataType dot_product(const RASCivector<DataType>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(o); }
+    DataType dot_product(const std::shared_ptr<const RASCivector<DataType>>& o) const { return this->template dot_product_impl<RASCivector<DataType>>(*o); }
+    DataType dot_product(const RASCivecView_<DataType>& o) const { return this->template dot_product_impl<RASCivecView_<DataType>>(o); }
+
+    std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const { return this->template transpose_impl<RASCivector<DataType>>(det); }
+};
+
+template<> std::shared_ptr<RASCivector<double>> RASCivecView_<double>::spin() const; // returns S^2 | civec >
+template<> std::shared_ptr<RASCivector<double>> RASCivecView_<double>::spin_lower(std::shared_ptr<const RASDeterminants>) const; // S_-
+template<> std::shared_ptr<RASCivector<double>> RASCivecView_<double>::spin_raise(std::shared_ptr<const RASDeterminants>) const; // S_+
+
+using RASCivecView = RASCivecView_<double>;
+
 }
+
+extern template class bagel::RASCivector<double>;
+extern template class bagel::RASCivecView_<double>;
 
 #endif
