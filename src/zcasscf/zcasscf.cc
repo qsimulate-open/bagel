@@ -484,7 +484,6 @@ void ZCASSCF::print_natocc() const {
 
 shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
   // assumes coefficient is in striped format
-  assert(geom_->nele()%2 == 0); // TODO : generalize to open shells
   if (active_indices.size() != nact_) throw logic_error("ZCASSCF::set_active - Number of active indices does not match number of active orbitals");
 
   const int naobasis = coeff_->ndim();
@@ -493,7 +492,7 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
   auto coeff = coeff_;
   auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
 
-  int nclosed_start = geom_->nele()/2 - charge_;
+  int nclosed_start = ref_->nclosed()/2;
   int nclosed       = nclosed_start;
   for (auto& iter : active_indices)
     if (iter < nclosed_start) --nclosed;
