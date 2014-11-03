@@ -172,7 +172,7 @@ ASD_base::compute_rdm () {
       shared_ptr<RDM<4>> r4;
       tie(r3,r4) = couple_blocks_RDM34(*jAB, *iAB); //Lower-triangular (i<->j)
       if (r3) *threerdm_ += *r3;
-      if (r4) *fourrdm_ += *r4;
+//    if (r4) *fourrdm_ += *r4;
     }
   }
   

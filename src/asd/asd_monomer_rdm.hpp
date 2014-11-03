@@ -38,6 +38,7 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
 //fourrdm_  = std::make_shared<RDM<4>>(nactA+nactB);
   threerdm_->zero();
 //fourrdm_->zero();
+  initialize_4RDM();
 
   // Diagonal Dimer subspaces
   int isub = 0;

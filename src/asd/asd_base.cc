@@ -2313,6 +2313,7 @@ tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>>
 ASD_base::compute_aaaET_RDM34(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   cout << "aaaET_RDM34" << endl; cout.flush();
+  assert(false);
   auto& Ap = keys[2];
 
   auto& B  = keys[1];
@@ -2357,6 +2358,7 @@ tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>>
 ASD_base::compute_bbbET_RDM34(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   cout << "bbbET_RDM34" << endl; cout.flush();
+  assert(false);
   return make_tuple(nullptr,nullptr);
 }
 
@@ -2365,6 +2367,7 @@ tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>>
 ASD_base::compute_aabET_RDM34(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   cout << "aabET_RDM34" << endl; cout.flush();
+  assert(false);
   return make_tuple(nullptr,nullptr);
 }
 
@@ -2373,6 +2376,7 @@ tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>>
 ASD_base::compute_abbET_RDM34(const array<MonomerKey,4>& keys) const {
 //***************************************************************************************************************
   cout << "abbET_RDM34" << endl; cout.flush();
+  assert(false);
   return make_tuple(nullptr,nullptr);
 }
 
@@ -2614,3 +2618,48 @@ ASD_base::compute_diag_RDM34(const array<MonomerKey,4>& keys, const bool subdia)
   }
   return make_tuple(out3,out4);
 }
+
+//***************************************************************************************************************
+void
+ASD_base::initialize_4RDM() {
+//***************************************************************************************************************
+  cout << "Initialize 4RDM" << endl;
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+
+  //E_ai,bj,ck,dl = sum d+c+b+a+ ijkl
+  //#of B indices = 0
+  fourrdm_.emplace(string("monomerA"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA*nactA*nactA, 1)); //monomer A
+  //# = 1
+  fourrdm_.emplace(string("l"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA*nactA, nactB )); // l
+  //# = 2
+  fourrdm_.emplace(string("kl"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA, nactB*nactB )); // kl
+  fourrdm_.emplace(string("al"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA, nactB*nactB )); // al
+  fourrdm_.emplace(string("ai"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA, nactB*nactB )); // ai
+  //# = 3
+  fourrdm_.emplace(string("jkl"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA, nactB*nactB*nactB )); // jkl
+  fourrdm_.emplace(string("akl"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA, nactB*nactB*nactB )); // akl
+  fourrdm_.emplace(string("aij"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA, nactB*nactB*nactB )); // aij
+  //# = 4
+  fourrdm_.emplace(string("ijkl"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // ijkl
+  fourrdm_.emplace(string("ajkl"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // ajkl
+  fourrdm_.emplace(string("aijk"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // aijk
+  fourrdm_.emplace(string("bakl"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // bakl
+  fourrdm_.emplace(string("baij"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // baij
+  //# = 5
+  fourrdm_.emplace(string("aijkl"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // aijkl
+  fourrdm_.emplace(string("bajkl"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // bajkl
+  fourrdm_.emplace(string("baijk"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // baijk
+  //# = 6
+  fourrdm_.emplace(string("baijkl"), make_shared<Matrix>(nactA*nactA, nactB*nactB*nactB*nactB*nactB*nactB )); // baijkl
+  fourrdm_.emplace(string("cbajkl"), make_shared<Matrix>(nactA*nactA, nactB*nactB*nactB*nactB*nactB*nactB )); // cbajkl
+  fourrdm_.emplace(string("cbaijk"), make_shared<Matrix>(nactA*nactA, nactB*nactB*nactB*nactB*nactB*nactB )); // cbaijk
+  //# = 7
+  fourrdm_.emplace(string("cbaijkl"), make_shared<Matrix>(nactA, nactB*nactB*nactB*nactB*nactB*nactB*nactB )); // cbaijkl
+  //# = 8
+  fourrdm_.emplace(string("monomerB"), make_shared<Matrix>(1, nactB*nactB*nactB*nactB*nactB*nactB*nactB*nactB )); // monomer B
+
+  cout << "# of nonredundnat Dimer 4RDM = " << fourrdm_.size() << endl;
+
+}
+

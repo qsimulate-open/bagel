@@ -67,8 +67,12 @@ class ASD_base {
     std::shared_ptr<RDM<1>> onerdm_; // First-order RDM
     std::shared_ptr<RDM<2>> twordm_; // Second-order RDM
     std::shared_ptr<RDM<2>> approx2rdm_; // Second-order RDM
+
     std::shared_ptr<RDM<3>> threerdm_; // Third-order RDM
-    std::shared_ptr<RDM<4>> fourrdm_; // Fourth-order RDM
+  //std::shared_ptr<RDM<4>> fourrdm_; // Fourth-order RDM
+    std::map<std::string,std::shared_ptr<Matrix>> fourrdm_;
+  //using DMap = std::map<std::pair<int,int>, std::shared_ptr<DetType>>;
+
 
     // Total system quantities
     int dimerstates_; ///< Total size of dimer Hamiltonian. Counted up during initialization
@@ -138,6 +142,8 @@ class ASD_base {
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbbET_RDM34(const std::array<MonomerKey,4>&) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aETFlip_RDM34(const std::array<MonomerKey,4>&) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bETFlip_RDM34(const std::array<MonomerKey,4>&) const;
+
+    void initialize_4RDM();
 
     void generate_initial_guess(std::shared_ptr<Matrix> cc, const std::vector<DimerSubspace_base>& subspace, const int nstates);
     std::shared_ptr<Matrix> compute_intra(const DimerSubspace_base& subspace, std::shared_ptr<const DimerJop> jop, const double diag) const;
