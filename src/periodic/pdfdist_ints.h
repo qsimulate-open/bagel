@@ -31,10 +31,11 @@
 namespace bagel {
 
 class PDFDist_ints : public DFDist {
-  friend class PDFIntTask_coeff;
   protected:
     /// lattice vectors in direct space
     std::vector<std::array<double, 3>> lattice_vectors_;
+
+    std::shared_ptr<const Matrix> projector_;
 
     /// auxiliary charge ints <a|.>
     std::shared_ptr<const VectorB> data1_;
@@ -54,7 +55,8 @@ class PDFDist_ints : public DFDist {
                  const std::vector<std::shared_ptr<const Atom>>& atoms_c0,
                  const std::vector<std::shared_ptr<const Atom>>& atoms_cg,
                  const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
-                 const double thr, std::shared_ptr<const VectorB> data1 = nullptr);
+                 const double thr, const std::shared_ptr<const Matrix> projector = nullptr,
+                 const std::shared_ptr<const VectorB> data1 = nullptr);
 
     std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
     int ncell() const { return lattice_vectors_.size(); }

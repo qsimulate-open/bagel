@@ -59,7 +59,7 @@ PDFDist::PDFDist(vector<array<double, 3>> L, const int nbas, const int naux,
       atoms1[iat] = make_shared<const Atom>(*atom, lattice_vectors_[i]);
       ++iat;
     }
-    dfdist_[i] = make_shared<PDFDist_ints>(L, nbas, naux, atoms0, atoms1, aux_atoms, thresh, data1_);
+    dfdist_[i] = make_shared<PDFDist_ints>(L, nbas, naux, atoms0, atoms1, aux_atoms, thresh, projector_, data1_);
   }
   time.tick_print("3-index and overlap integrals");
 }
@@ -139,9 +139,8 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
   projectorC->unit();
   *projectorC -= *projector_;
 
-  for (int i = 0; i != ncell(); ++i) {
+  for (int i = 0; i != ncell(); ++i)
     *data2_ += *projectorC * *data2_at[i] * *projectorC;
-  }
 
   data2_->print("***** data2 *****");
 

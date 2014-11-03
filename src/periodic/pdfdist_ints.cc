@@ -33,8 +33,8 @@ PDFDist_ints::PDFDist_ints(vector<array<double, 3>> L, const int nbas, const int
                            const vector<shared_ptr<const Atom>>& atoms_c0,
                            const vector<shared_ptr<const Atom>>& atoms_cg,
                            const vector<shared_ptr<const Atom>>& aux_atoms,
-                           const double thr, const shared_ptr<const VectorB> data1)
-  : DFDist(nbas, naux), lattice_vectors_(L), data1_(data1) {
+                           const double thr, const shared_ptr<const Matrix> p, const shared_ptr<const VectorB> data1)
+  : DFDist(nbas, naux), lattice_vectors_(L), projector_(p), data1_(data1) {
 
   // 3index integrals made in DFBlock.
   vector<shared_ptr<const Shell>> ashell, b0shell, bgshell;
@@ -72,17 +72,22 @@ void PDFDist_ints::pcompute_3index(const vector<shared_ptr<const Shell>>& ashell
   TaskQueue<PDFIntTask_3index> tasks(b0shell.size() * bgshell.size() * ashell.size() * ncell());
   auto i3 = make_shared<const Shell>(ashell.front()->spherical());
 
+  vector<shared_ptr<DFBlock>> data3_at(ncell());
+  for (auto& block : data3_at) block = make_shared<DFBlock>(*block_[0]);
+
   int j2 = 0;
   for (auto& i2 : bgshell) {
     int j1 = 0;
     for (auto& i1 : b0shell) {
-      int j0 = 0;
-      for (auto& i0 : ashell) {
-        for (auto& L : lattice_vectors_) {
+      int n = 0;
+      for (auto& L : lattice_vectors_) {
+        int j0 = 0;
+        for (auto& i0 : ashell) {
           auto i00 = make_shared<const Shell>(*(i0->move_atom(L)));
-          tasks.emplace_back((array<shared_ptr<const Shell>, 4>{{i3, i00, i1, i2}}), (array<int, 3>{{j2, j1, j0}}), block_[0]);
+          tasks.emplace_back((array<shared_ptr<const Shell>, 4>{{i3, i00, i1, i2}}), (array<int, 3>{{j2, j1, j0}}), data3_at[n]);
+          j0 += i0->nbasis();
         }
-        j0 += i0->nbasis();
+        ++n;
       }
       j1 += i1->nbasis();
     }
@@ -90,8 +95,23 @@ void PDFDist_ints::pcompute_3index(const vector<shared_ptr<const Shell>>& ashell
   }
 
   tasks.compute();
-
 //time.tick_print("3-index integrals");
+
+  // now project and sum
+  if (!projector_)
+    throw logic_error("failed attempt to project data3_ without the projection matrix");
+
+  // P_C = 1 - P
+  auto projectorC = make_shared<Matrix>(naux_, naux_, serial_);
+  projectorC->unit();
+  *projectorC -= *projector_;
+
+  auto tmp = make_shared<btas::Tensor3<double>>(naux_, nindex1_, nindex2_);
+  for (int i = 0; i != ncell(); ++i) {
+    contract(1.0, *data3_at[i], {3, 1, 2}, *projectorC, {0, 3}, 0.0, *tmp, {0, 1, 2});
+    blas::ax_plus_y_n(1.0, tmp->data(), block_[0]->size(), block_[0]->data());
+  }
+
 }
 
 
