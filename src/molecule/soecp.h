@@ -50,7 +50,10 @@ class SOECP {
   public:
     SOECP() : shells_so_(1, std::make_shared<const Shell_ECP>()), so_maxl_(0) {}
     SOECP(std::vector<std::shared_ptr<const Shell_ECP>> shells_so) : shells_so_(shells_so) {
-      for (auto& i : shells_so) assert(i->angular_number() > 0);
+#ifndef NDEBUG
+      for (auto& i : shells_so)
+        assert(i->angular_number() > 0);
+#endif
       so_maxl_ = shells_so.back()->angular_number();
     }
     ~SOECP() {}
