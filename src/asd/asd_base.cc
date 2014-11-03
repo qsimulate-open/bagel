@@ -1904,6 +1904,222 @@ ASD_base::compute_aET_RDM34(const array<MonomerKey,4>& keys) const {
     copy(rdmt->begin(), rdmt->end(), outv.begin());
     cout << "copied" << endl; cout.flush();
   }
+
+  //4RDM
+  { 
+    cout << "4RDM #1" << endl; cout.flush();
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'a'a'aaa
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta }); //a'b'a'a'aab
+    auto gamma_A3 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta }); //a'b'b'a'abb
+    auto gamma_A4 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta }); //a'b'b'b'bbb
+    auto gamma_B  = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha}); // a
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B); // a'a'a'a'aaa|a
+    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B); // a'b'a'a'aab|a
+    auto rdm3 = make_shared<Matrix>(gamma_A3 % gamma_B); // a'b'b'a'abb|a
+    auto rdm4 = make_shared<Matrix>(gamma_A4 % gamma_B); // a'b'b'b'bbb|a
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    // E_ai,bj,ck,dl'
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    SMITH::sort_indices<3,4,2,5,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); // a'a'a'a'aaa|a
+    SMITH::sort_indices<3,4,2,5,1,6,0,7, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); // a'b'a'a'aab|a
+    SMITH::sort_indices<3,4,1,6,2,5,0,7, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); // a'a'b'a'aba|a
+    SMITH::sort_indices<2,5,1,6,3,4,0,7, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); // a'a'a'b'baa|a
+    SMITH::sort_indices<3,4,2,5,1,6,0,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); // a'b'b'a'abb|a
+    SMITH::sort_indices<2,5,3,4,1,6,0,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); // a'b'a'b'bab|a
+    SMITH::sort_indices<1,6,3,4,2,5,0,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); // a'b'b'a'abb|a
+    SMITH::sort_indices<3,4,2,5,1,6,0,7, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); // a'b'b'b'bbb|a
+    rdmt->scale(fac);
+    cout << "rearranged" << endl; cout.flush();
+
+    *fourrdm_.at(string("l")) += *rdmt;
+  }
+
+  { 
+    cout << "4RDM #2" << endl; cout.flush();
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'a'aa 
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  //a'b'a'ab
+    auto gamma_A3 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //a'b'b'bb
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'aa
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  // b'ab
+
+
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1);  // a'a'a'aa|a'aa
+    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B1);  // a'b'a'ab|a'aa
+    auto rdm3 = make_shared<Matrix>(gamma_A3 % gamma_B1);  // a'b'b'bb|a'aa
+
+    auto rdm4 = make_shared<Matrix>(gamma_A1 % gamma_B2);  // a'a'a'aa|b'ab
+    auto rdm5 = make_shared<Matrix>(gamma_A2 % gamma_B2);  // a'b'a'ab|b'ab
+    auto rdm6 = make_shared<Matrix>(gamma_A3 % gamma_B2);  // a'b'b'bb|b'ab
+
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    // E_a'i',bj',ck,dl
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    SMITH::sort_indices<5,6,2,7,1,3,0,4, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a'aa|a'aa
+    SMITH::sort_indices<5,6,2,7,1,4,0,3, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'b'a'ba|a'aa
+    SMITH::sort_indices<5,6,2,7,0,3,1,4, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a'ab|a'aa
+    SMITH::sort_indices<5,6,0,7,2,3,1,4, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // b'b'a'aa|a'aa
+
+    SMITH::sort_indices<5,7,2,6,1,3,1,4, 0,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a'aa|b'ba
+    SMITH::sort_indices<5,7,2,6,1,4,0,3, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'b'a'ba|a'aa
+    SMITH::sort_indices<5,7,2,6,0,3,1,4, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a'ab|a'aa
+    SMITH::sort_indices<5,7,0,6,2,3,1,4, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // b'b'a'aa|a'aa
+
+    rdmt->scale(fac);
+    cout << "rearranged" << endl; cout.flush();
+
+    *fourrdm_.at(string("aij")) += *rdmt;
+  }
+  
+  { 
+    cout << "4RDM #3" << endl; cout.flush();
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'a'aa 
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  //a'b'a'ab
+    auto gamma_A3 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //a'b'b'bb
+
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'aa
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  // b'ab
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1);  // a'a'a'aa|a'aa
+    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B1);  // a'b'a'ab|a'aa
+    auto rdm3 = make_shared<Matrix>(gamma_A2 % gamma_B2);  // a'b'a'ab|b'ab
+    auto rdm4 = make_shared<Matrix>(gamma_A3 % gamma_B2);  // a'b'b'bb|b'ab
+
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    // E_a'i,bj,ck',dl'
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    //                  a i b j c k d l
+    SMITH::sort_indices<5,3,2,4,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a'aa|a'aa
+    SMITH::sort_indices<5,3,1,4,2,6,0,7, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'a'b'ab|a'aa (b<->c)
+    SMITH::sort_indices<5,4,2,3,1,7,0,6, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'b'a'ba|b'ba (i<->j, k<->l)
+    SMITH::sort_indices<5,3,2,4,1,7,0,6, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'b'b'bb|b'ba (k<->l)
+    SMITH::sort_indices<5,3,2,4,0,6,1,7, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a'ba|b'ab (c<->d)
+    SMITH::sort_indices<5,3,2,4,0,6,1,7, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b'bb|b'ab (c<->d)
+    rdmt->scale(fac);
+    cout << "rearranged" << endl; cout.flush();
+
+    *fourrdm_.at(string("akl")) += *rdmt;
+  }
+
+  { 
+    cout << "4RDM #4" << endl; cout.flush();
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'a
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta});  //a'b'b
+
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'a'aaa
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'b'baa
+    auto gamma_B3 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); // b'b'bba
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1); // a'a'a|a'a'aaa
+    auto rdm2 = make_shared<Matrix>(gamma_A1 % gamma_B2); // a'a'a|a'b'baa
+    auto rdm3 = make_shared<Matrix>(gamma_A1 % gamma_B3); // a'a'a|b'b'bba
+ 
+    auto rdm4 = make_shared<Matrix>(gamma_A2 % gamma_B1); // a'b'b|a'a'aaa
+    auto rdm5 = make_shared<Matrix>(gamma_A2 % gamma_B2); // a'b'b|a'b'baa
+    auto rdm6 = make_shared<Matrix>(gamma_A2 % gamma_B3); // a'b'b|b'b'bba
+
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    // E_a'i',b'j',ck',dl
+    int fac = {neleA%2 == 0 ? -1 : 1};
+    //                  a i b j c k d l
+    SMITH::sort_indices<4,5,3,6,1,7,0,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'a|a'a'aaa
+    SMITH::sort_indices<4,5,3,6,1,7,0,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'a|a'b'baa 
+    SMITH::sort_indices<3,6,4,5,1,7,0,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'a|b'a'aba (a<->b, i<->j)
+    SMITH::sort_indices<4,5,3,6,1,7,0,2, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'a|b'b'bba
+
+    SMITH::sort_indices<4,5,3,6,0,7,1,2, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|a'a'aaa (c<->d)
+    SMITH::sort_indices<4,5,3,6,0,7,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|a'b'baa (c<->d)
+    SMITH::sort_indices<3,6,4,5,0,7,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|b'a'aba (c<->d, a<->b, i<->j)
+    SMITH::sort_indices<4,5,3,6,0,7,1,2, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|b'b'bba (c<->d)
+    rdmt->scale(fac);
+    cout << "rearranged" << endl; cout.flush();
+
+    *fourrdm_.at(string("baijk")) += *rdmt;
+  }
+
+  { 
+    cout << "4RDM #5" << endl; cout.flush();
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'a
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta});  //a'b'b
+
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'a'aaa
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'b'baa
+    auto gamma_B3 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); // b'b'bba
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1); // a'a'a|a'a'aaa
+    auto rdm2 = make_shared<Matrix>(gamma_A1 % gamma_B2); // a'a'a|a'b'baa
+ 
+    auto rdm3 = make_shared<Matrix>(gamma_A2 % gamma_B2); // a'b'b|a'b'baa
+    auto rdm4 = make_shared<Matrix>(gamma_A2 % gamma_B3); // a'b'b|b'b'bba
+
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    // E_a'i,b'j',ck',dl'
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    //                  a i b j c k d l
+    SMITH::sort_indices<4,2,3,5,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'a|a'a'aaa
+    SMITH::sort_indices<3,2,4,5,1,6,0,7, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'a|b'a'baa (a<->b)
+
+    SMITH::sort_indices<4,2,3,6,1,5,0,7, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'b'b|a'b'aba (j<->k)
+    SMITH::sort_indices<4,2,3,5,1,6,0,7, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'b'b|b'b'bba
+
+    SMITH::sort_indices<4,2,3,6,0,7,1,5, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|a'b'aab (c<->d, l->j, k->l, j->k) (l moved left twice = +1)
+    SMITH::sort_indices<4,2,3,5,0,7,1,6, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|b'b'bab (c<->d, k<->l)
+
+    rdmt->scale(fac);
+    cout << "rearranged" << endl; cout.flush();
+
+    *fourrdm_.at(string("bajkl")) += *rdmt;
+  }
+
+  { 
+    cout << "4RDM #6" << endl; cout.flush();
+    auto gamma_A  = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha}); //a'
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});//a'a'a'aaaa
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});//a'a'b'baaa
+    auto gamma_B3 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});//a'b'b'bbaa
+    auto gamma_B4 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha});//b'b'b'bbba
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B1); // a'|a'a'a'aaaa
+    auto rdm2 = make_shared<Matrix>(gamma_A % gamma_B2); // a'|a'a'b'baaa
+    auto rdm3 = make_shared<Matrix>(gamma_A % gamma_B3); // a'|a'b'b'bbaa
+    auto rdm4 = make_shared<Matrix>(gamma_A % gamma_B4); // a'|b'b'b'bbba
+    auto rdmt = rdm1->clone();
+    cout << "full gammas" << endl; cout.flush();
+
+    // E_a'i',b'j',c'k',dl'
+    int fac = {neleA%2 == 0 ? 1 : -1};
+    //                  a i b j c k d l
+    SMITH::sort_indices<3,4,2,5,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB, nactB, nactB); // a'|a'a'a'aaaa
+    SMITH::sort_indices<3,4,2,5,1,6,0,7, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB, nactB, nactB); // a'|a'a'b'baaa
+    SMITH::sort_indices<2,5,3,4,1,6,0,7, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB, nactB, nactB); // a'|a'b'a'abaa (a<->b, i<->j)
+    SMITH::sort_indices<1,5,3,6,2,4,0,7, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB, nactB, nactB); // a'|b'a'a'aaba (a->c, b->a, c->b & i->j, j->k, k->i)
+    SMITH::sort_indices<3,4,2,5,1,6,0,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB, nactB, nactB); // a'|a'b'b'bbaa
+    SMITH::sort_indices<3,4,1,6,2,5,0,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB, nactB, nactB); // a'|b'a'b'baba (b<->c, j<->k)
+    SMITH::sort_indices<2,5,1,6,3,4,0,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB, nactB, nactB); // a'|b'b'a'abba (c->a, b->c, a->b &  k->i, i->j, j->k)
+    SMITH::sort_indices<3,4,2,5,1,6,0,7, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB, nactB, nactB); // a'|b'b'b'bbba
+    rdmt->scale(fac);
+    cout << "rearranged" << endl; cout.flush();
+
+    *fourrdm_.at(string("cbaijkl")) += *rdmt;
+  }
+
   return make_tuple(out3,out4);
 }
 

@@ -34,27 +34,27 @@ struct init {
     {GammaSQ::CreateBeta},
     {GammaSQ::AnnihilateAlpha},
     {GammaSQ::AnnihilateBeta},
-    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha},
-    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta},
-    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha},
-    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta},
-    {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha},
-    {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},
-    {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta},
-    {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha},
-    {GammaSQ::CreateBeta,  GammaSQ::CreateBeta},
-    {GammaSQ::CreateAlpha, GammaSQ::CreateBeta},
-    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}, //a' aa
-    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},  //b' bb
-    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}, //a' ba
-    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta},  //b' ab
-    {GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, // b'a' a
-    {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, // a'a' a
-    {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta},  // a'b' b
-    {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta},  // b'b' b
+    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, // a'a
+    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta},  // b'b
+    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha}, // b'a
+    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta},  // a'b
+    {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}, // aa
+    {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},  // bb
+    {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta},  //ab
+    {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}, // a'a'
+    {GammaSQ::CreateBeta,  GammaSQ::CreateBeta},  // b'b'
+    {GammaSQ::CreateAlpha, GammaSQ::CreateBeta},  // a'b'
+    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}, //a'aa
+    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},  //b'bb
+    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}, //a'ba
+    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta},  //b'ab
+    {GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, // b'a'a
+    {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, // a'a'a
+    {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta},  // a'b'b
+    {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta},  // b'b'b
 //ADDED
-    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},  //a' bb
-    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}, //b' aa
+    {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},  //a'bb
+    {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}, //b'aa
 
     {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta},  //a'a'b
     {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha}, //b'b'a
@@ -110,7 +110,12 @@ struct init {
     {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha},//a'a'a'a'aaa
     {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta},//a'b'a'a'aab
     {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},//a'b'b'a'abb
-    {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta} //a'b'b'a'abb
+    {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta},//a'b'b'a'abb
+
+    {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha},//a'a'a'aaaa
+    {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha},//a'a'b'baaa
+    {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha},//a'b'b'bbaa
+    {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha} //b'b'b'bbba
 //END ADDED
   }; }
 };

@@ -258,7 +258,7 @@ class GammaTask {
               std::shared_ptr<const VecType> cvec = bvec->apply(c, action(k), spin(k));
               if (!cvec) { //nullptr
                 std::cout <<  "cvec is nullptr.. deactivating this branch.." << std::endl; std::cout.flush();
-                third->deactivate();
+                third->deactivate(); // TODO this doesnt do anything?
                 continue;
               }
               for (auto& kbra : third->bras())
@@ -272,6 +272,7 @@ class GammaTask {
                 for (int d = 0; d < norb; ++d) {
                   if(c==d && l==k) continue;
                   std::shared_ptr<const VecType> dvec = cvec->apply(d, action(l), spin(l));
+                  if (!dvec) continue;
                   for (auto& lbra : fourth->bras())
                     dot_product(lbra.second, dvec, fourth->gammas().find(lbra.first)->second->element_ptr(0, a_*norb*norb*norb + b*norb*norb + c*norb + d));
 
@@ -283,6 +284,7 @@ class GammaTask {
                     for (int e = 0; e < norb; ++e) {
                       if(d==e && m==l) continue;
                       std::shared_ptr<const VecType> evec = dvec->apply(e, action(m), spin(m));
+                      if (!evec) continue;
                       for (auto& mbra : fifth->bras())
                         dot_product(mbra.second, evec, fifth->gammas().find(mbra.first)->second->element_ptr(0, a_*norb*norb*norb*norb + b*norb*norb*norb + c*norb*norb + d*norb + e));
 //4RDM--------------------------------
@@ -294,6 +296,7 @@ class GammaTask {
                         for (int f = 0; f < norb; ++f) {
                           if(e==f && n==m) continue;
                           std::shared_ptr<const VecType> fvec = evec->apply(f, action(n), spin(n));
+                          if (!fvec) continue;
                           for (auto& nbra : sixth->bras())
                             dot_product(nbra.second, fvec, sixth->gammas().find(nbra.first)->second->element_ptr(0, a_*norb*norb*norb*norb*norb + b*norb*norb*norb*norb + c*norb*norb*norb + d*norb*norb + e*norb + f));
                       
@@ -305,6 +308,7 @@ class GammaTask {
                             for (int g = 0; g < norb; ++g) {
                               if(f==g && o==n) continue;
                               std::shared_ptr<const VecType> gvec = fvec->apply(g, action(o), spin(o));
+                              if (!gvec) continue;
                               for (auto& obra : seventh->bras())
                                 dot_product(obra.second, gvec, seventh->gammas().find(obra.first)->second->element_ptr(0, a_*norb*norb*norb*norb*norb*norb + b*norb*norb*norb*norb*norb + c*norb*norb*norb*norb + d*norb*norb*norb + e*norb*norb + f*norb + g));
                             } //g
