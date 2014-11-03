@@ -94,6 +94,12 @@ class PDFIntTask_2index {
     std::array<int,2> offset_;
     std::shared_ptr<Matrix> data2_;
 
+    std::shared_ptr<ERIBatch> compute_batch(const std::array<std::shared_ptr<const Shell>,4>& input) const {
+      auto eribatch = std::make_shared<ERIBatch>(input, 2.0);
+      eribatch->compute();
+      return eribatch;
+    }
+
   public:
     // (i.|jL.) sum over L
     PDFIntTask_2index(std::array<std::shared_ptr<const Shell>,4>&& sh, std::array<int,2>&& offset, std::shared_ptr<Matrix>& data2)
@@ -101,7 +107,7 @@ class PDFIntTask_2index {
 
     void compute() {
 
-      auto eribatch = std::make_shared<ERIBatch>(shell_, 2.0);
+      std::shared_ptr<ERIBatch> eribatch = compute_batch(shell_);
       const double* eridata = eribatch->data();
 
       const size_t naux = data2_->ndim();
@@ -121,6 +127,12 @@ class PDFIntTask_3index {
     const std::array<int,3> offset_;
     std::shared_ptr<DFBlock> dfblock_;
 
+    std::shared_ptr<ERIBatch> compute_batch(const std::array<std::shared_ptr<const Shell>,4>& input) const {
+      auto eribatch = std::make_shared<ERIBatch>(input, 2.0);
+      eribatch->compute();
+      return eribatch;
+    }
+
   public:
     // (r sL'|iL .) sum over L
     PDFIntTask_3index(std::array<std::shared_ptr<const Shell>,4>&& shells, std::array<int,3>&& offset, std::shared_ptr<DFBlock>& df)
@@ -128,7 +140,7 @@ class PDFIntTask_3index {
 
     void compute() {
 
-      auto eribatch = std::make_shared<ERIBatch>(shell_, 2.0);
+      std::shared_ptr<ERIBatch> eribatch = compute_batch(shell_);
 
       assert(dfblock_->b1size() == dfblock_->b2size());
       assert(offset_.size() == 3);

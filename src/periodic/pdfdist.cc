@@ -80,6 +80,10 @@ void PDFDist::compute_aux_charge(const vector<shared_ptr<const Shell>>& ashell) 
   }
 
   tasks.compute();
+
+  if (!serial_)
+    data1_->allreduce();
+
   time.tick_print("aux charge integrals");
 
   const double q = data1_->rms() * naux_;
@@ -98,12 +102,12 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
 
   TaskQueue<PDFIntTask_2index> tasks(ashell.size() * ashell.size() * ncell());
 
+  // (a|bL)
   auto b3 = make_shared<const Shell>(ashell.front()->spherical());
   data2_ = make_shared<Matrix>(naux_, naux_, serial_);
   vector<shared_ptr<Matrix>> data2_at(ncell());
   for (auto& idat : data2_at) idat = make_shared<Matrix>(naux_, naux_, serial_);
 
-  int u = 0;
   int o0 = 0;
   for (auto& b0 : ashell) {
     int n = 0;
@@ -111,9 +115,7 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
       int o1 = 0;
       for (auto& b1 : ashell) {
         auto b11 = make_shared<const Shell>(*(b1->move_atom(L)));
-
-        if ((u++ % mpi__->size() == mpi__->rank()) || serial_)
-          tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b11, b3, b0, b3}}, array<int,2>{{o0, o1}}, data2_at[n]);
+        tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b11, b3, b0, b3}}, array<int,2>{{o0, o1}}, data2_at[n]);
         o1 += b1->nbasis();
       }
       ++n;
@@ -124,26 +126,30 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
   time.tick_print("2-index integrals prep");
   tasks.compute();
 
+  if (!serial_)
+    for (auto& dat : data2_at)
+      dat->allreduce();
+
   // now project and sum
   if (!projector_)
     throw logic_error("failed attempt to project data2_ before computing the projection matrix");
 
   // P_C = 1 - P
-  auto projectorC = make_shared<Matrix>(*projector_);
+  auto projectorC = make_shared<Matrix>(naux_, naux_, serial_);
   projectorC->unit();
-  *projectorC = *projectorC - *projector_;
+  *projectorC -= *projector_;
 
   for (int i = 0; i != ncell(); ++i) {
-    if (!serial_)
-      data2_at[i]->allreduce();
-      *data2_ += *projector_ * *data2_at[i] * *projector_;
+    *data2_ += *projectorC * *data2_at[i] * *projectorC;
   }
+
+  data2_->print("***** data2 *****");
 
   time.tick_print("2-index integrals");
 
   // make data2_ positive definite
-  *data2_ += *projectorC;
-//data2_->inverse_half(throverlap);
+  *data2_ += *projector_;
+
   data2_->inverse(); //TODO: linear dependency can be a problem!
   // use data2_ within node
   data2_->localize();
