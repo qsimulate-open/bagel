@@ -35,7 +35,6 @@ using namespace bagel;
 
 void ZCASBFGS::compute() {
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
-  shared_ptr<SRBFGS<ZRotFile>> srbfgs;
   shared_ptr<SRBFGS<ZRotFile>> ele_srbfgs;
   shared_ptr<SRBFGS<ZRotFile>> pos_srbfgs;
 
