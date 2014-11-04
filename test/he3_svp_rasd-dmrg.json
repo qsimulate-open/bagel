@@ -67,7 +67,7 @@
 {
   "title" : "asd_dmrg",
   "nstate" : 1,
-  "ntrunc" : 128,
+  "ntrunc" : 12,
   "method" : "ras",
   "thresh" : 1.0e-8,
   "perturb" : 0.0001,

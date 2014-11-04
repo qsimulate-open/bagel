@@ -79,7 +79,7 @@ double asd_dmrg_energy(std::string inp) {
 BOOST_AUTO_TEST_SUITE(TEST_ASD_DMRG)
 
 BOOST_AUTO_TEST_CASE(RAS) {
-    BOOST_CHECK(compare(asd_dmrg_energy("he3_svp_rasd-dmrg"), -8.53974994, 1.0e-8));
+    BOOST_CHECK(compare(asd_dmrg_energy("he3_svp_rasd-dmrg"), -8.53974980, 1.0e-8));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
