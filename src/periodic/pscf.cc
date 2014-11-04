@@ -95,7 +95,9 @@ void PSCF::compute() {
   DIIS<ZMatrix, ZMatrix> diis(diis_size_);
 
   for (int iter = 0; iter !=  max_iter_; ++iter) {
-    auto fock = make_shared<const PFock>(lattice_, hcore_, coeff);
+    auto c = make_shared<PCoeff>(*coeff);
+    shared_ptr<const PData> pdensity = c->form_density_rhf(nocc_);
+    auto fock = make_shared<const PFock>(lattice_, hcore_, pdensity);
     shared_ptr<const PData> kfock = fock->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
     vector<complex<double>> energy(nkblock);
     double error = 0.0;

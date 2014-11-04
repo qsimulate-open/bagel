@@ -31,19 +31,29 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(PFock)
 
-PFock::PFock(shared_ptr<const Lattice> l, shared_ptr<const PData> h, shared_ptr<const PData> c)
-  : PData(l->primitive_cell()->nbasis(), l->num_lattice_vectors()), lattice_(l), previous_(h), pcoeff_(c) {
+PFock::PFock(const shared_ptr<const Lattice> l, shared_ptr<const PData> h, const shared_ptr<const PData> density)
+  : PData(l->primitive_cell()->nbasis(), l->num_lattice_vectors()), lattice_(l), previous_(h), pdensity_(density) {
 
-  assert(h->blocksize() == blocksize_ && c->blocksize() == blocksize_);
-  assert(h->nblock() == nblock_ && c->nblock() == nblock_);
+  assert(h->blocksize() == blocksize_ && density->blocksize() == blocksize_);
+  assert(h->nblock() == nblock_ && density->nblock() == nblock_);
 }
 
 void PFock::form_pfock() {
 
-  /* 1e part */
+  // 1e part
   for (int i = 0; i != nblock_; ++i)
     *(pdata_[i]) += *((*previous_)(i));
 
-  /* 2e part G_{tu} = (tu|rs) - 1/2(ts|ru) */
+  // Coulomb term
+  Timer time;
+  shared_ptr<const PDFDist> df = lattice_->df();
+
+  shared_ptr<PData> jop = df->pcompute_Jop(pdensity_);
+  for (int i = 0; i != nblock_; ++i)
+    *(pdata_[i]) += *((*jop)(i));
+
+  time.tick_print("Coulomb build in PFock");
+
+
 
 }

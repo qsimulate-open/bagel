@@ -36,7 +36,7 @@ class PFock : public PData {
   protected:
     std::shared_ptr<const Lattice> lattice_;
     std::shared_ptr<const PData> previous_;
-    std::shared_ptr<const PData> pcoeff_;
+    std::shared_ptr<const PData> pdensity_;
 
   private:
     // serialization
@@ -44,12 +44,13 @@ class PFock : public PData {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<PData>(*this)
-         & lattice_ & previous_ & pcoeff_;
+         & lattice_ & previous_ & pdensity_;
     }
 
   public:
     PFock() { }
-    PFock(std::shared_ptr<const Lattice> lattice, std::shared_ptr<const PData> previous, std::shared_ptr<const PData> pcoeff);
+    PFock(const std::shared_ptr<const Lattice> lattice, std::shared_ptr<const PData> previous,
+          const std::shared_ptr<const PData> pdensity);
     ~PFock() { }
 
     void form_pfock();  /* add 2-electron part */
