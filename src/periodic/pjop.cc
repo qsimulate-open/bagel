@@ -50,25 +50,25 @@ shared_ptr<VectorB> PDFDist::pcompute_coeff(const shared_ptr<const PData> densit
 
   auto coeff1 = make_shared<VectorB>(naux_);
   auto coeff2 = make_shared<VectorB>(naux_);
-  for (int i = 0; i != ncell(); ++i) {
 
+  for (int i = 0; i != ncell(); ++i) {
     // get charged coeff by contracting with density
     auto tmp1 = make_shared<VectorB>(naux_);
     shared_ptr<DFBlock> coeffC = dfdist_[i]->coeffC();
     contract(1.0, group(*coeffC, 1, 3), {0, 1}, group(*(density->pdata(i)->get_real_part()), 0, 2), {1}, 0.0, *tmp1, {0});
     *coeff1 += *tmp1;
 
-    // get modified 3-index
-    auto eta = make_shared<btas::Tensor3<double>>(naux_, nbasis_, nbasis_);
+    // contract 3-index with density
     shared_ptr<DFBlock> data3 = dfdist_[i]->block(0);
-    contract(1.0, *data3, {3, 1, 2}, *projector_, {0, 3}, 0.0, *eta, {0, 1, 2});
-    blas::ax_plus_y_n(-1.0, eta->data(), data3->size(), data3->data());
-
-    // contract with density
     auto tmp2 = make_shared<VectorB>(naux_);
     contract(1.0, group(*data3, 1, 3), {0, 1}, group(*(density->pdata(i)->get_real_part()), 0, 2), {1}, 0.0, *tmp2, {0});
     *coeff2 += *tmp2;
   }
+
+  // contract coeff1 with 2-index
+  auto tmp = make_shared<VectorB>(naux_);
+  contract(1.0, *data2_, {0, 1}, *coeff1, {0}, 0.0, *tmp, {1});
+  *coeff2 -= *tmp;
 
   // get chargeless coeff
   *coeff2 = *data2_ * *coeff2;

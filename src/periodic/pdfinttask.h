@@ -63,6 +63,12 @@ class PDFIntTask_coeff {
     std::shared_ptr<DFBlock> coeffC_;
     std::shared_ptr<const VectorB> data1_;
 
+    std::shared_ptr<OverlapBatch> compute_batch(const std::array<std::shared_ptr<const Shell>,2>& input) const {
+      auto obatch = std::make_shared<OverlapBatch>(input);
+      obatch->compute();
+      return obatch;
+    }
+
   public:
     // <r|sL>
     PDFIntTask_coeff(std::array<std::shared_ptr<const Shell>,2>&& sh, std::array<int,2>&& offset,
@@ -71,7 +77,7 @@ class PDFIntTask_coeff {
 
     void compute() {
 
-      auto overlap = std::make_shared<OverlapBatch>(shell_);
+      std::shared_ptr<OverlapBatch> overlap = compute_batch(shell_);
       const double* odata = overlap->data();
 
       const size_t naux = coeffC_->asize();
