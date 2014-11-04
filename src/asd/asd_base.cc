@@ -1967,7 +1967,7 @@ ASD_base::compute_aET_RDM34(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<5,6,2,7,0,3,1,4, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a'ab|a'aa
     SMITH::sort_indices<5,6,0,7,2,3,1,4, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // b'b'a'aa|a'aa
 
-    SMITH::sort_indices<5,7,2,6,1,3,1,4, 0,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a'aa|b'ba
+    SMITH::sort_indices<5,7,2,6,1,3,1,4, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a'aa|b'ba
     SMITH::sort_indices<5,7,2,6,1,4,0,3, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // a'b'a'ba|a'aa
     SMITH::sort_indices<5,7,2,6,0,3,1,4, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a'ab|a'aa
     SMITH::sort_indices<5,7,0,6,2,3,1,4, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB, nactB, nactB); // b'b'a'aa|a'aa
@@ -2040,10 +2040,10 @@ ASD_base::compute_aET_RDM34(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<3,6,4,5,1,7,0,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'a|b'a'aba (a<->b, i<->j)
     SMITH::sort_indices<4,5,3,6,1,7,0,2, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'a|b'b'bba
 
-    SMITH::sort_indices<4,5,3,6,0,7,1,2, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|a'a'aaa (c<->d)
-    SMITH::sort_indices<4,5,3,6,0,7,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|a'b'baa (c<->d)
-    SMITH::sort_indices<3,6,4,5,0,7,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|b'a'aba (c<->d, a<->b, i<->j)
-    SMITH::sort_indices<4,5,3,6,0,7,1,2, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|b'b'bba (c<->d)
+    SMITH::sort_indices<4,5,3,6,0,7,1,2, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|a'a'aaa (c<->d)
+    SMITH::sort_indices<4,5,3,6,0,7,1,2, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|a'b'baa (c<->d)
+    SMITH::sort_indices<3,6,4,5,0,7,1,2, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|b'a'aba (c<->d, a<->b, i<->j)
+    SMITH::sort_indices<4,5,3,6,0,7,1,2, 1,1, -1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'b|b'b'bba (c<->d)
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
