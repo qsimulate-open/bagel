@@ -41,6 +41,7 @@ PData::PData(const int bsize, const int nblock, const bool serial) : blocksize_(
   }
 }
 
+
 PData::PData(const PData& o) : blocksize_(o.blocksize()), nblock_(o.nblock()) {
 
   pdata_.resize(nblock_);
@@ -48,16 +49,45 @@ PData::PData(const PData& o) : blocksize_(o.blocksize()), nblock_(o.nblock()) {
     pdata_[i] = o.pdata(i);
 }
 
+
+#if 1
+PData PData::operator+(const PData& o) const {
+
+  PData out(*this);
+  assert(nblock_ == o.nblock() && blocksize_ == o.blocksize());
+
+  for (int i = 0; i != nblock_; ++i)
+    *(out[i]) += *o.pdata(i);
+
+  return out;
+}
+
+
+PData& PData::operator+=(const PData& o) {
+
+  assert(nblock_ == o.nblock() && blocksize_ == o.blocksize());
+
+  for (int i = 0; i != nblock_; ++i)
+    *(pdata_[i]) += *o.pdata(i);
+
+  return *this;
+}
+#endif
+
 void PData::zero() { for (auto& block : pdata_) block->zero(); }
+
 
 void PData::allreduce() { for (auto& block : pdata_) block->allreduce(); }
 
+
 void PData::fill_upper_conjg() { for (auto&block : pdata_) block->fill_upper_conjg(); }
+
 
 void PData::print(const string tag, const int size) const {
   pdata_.front()->print(tag, size);
   for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) (*iblock)->print("", size);
 }
+
 
 void PData::print_real_part(const string tag, const int size) const {
   assert(pdata_.front()->get_imag_part()->rms() < 1e-10);
@@ -67,6 +97,7 @@ void PData::print_real_part(const string tag, const int size) const {
     (*iblock)->get_real_part()->print("", size);
   }
 }
+
 
 shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const vector<array<double, 3>> kvector) const {
 
@@ -92,6 +123,7 @@ shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const 
 
   return make_shared<const PData>(out);
 }
+
 
 shared_ptr<const PData> PData::ift(const vector<array<double, 3>> gvector, const vector<array<double, 3>> kvector) const {
 

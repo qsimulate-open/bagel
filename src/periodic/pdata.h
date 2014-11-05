@@ -63,6 +63,9 @@ class PData {
     std::vector<std::shared_ptr<ZMatrix>> pdata() const { return pdata_; }
     std::shared_ptr<ZMatrix> pdata(const int i) const { return pdata_[i]; }
 
+    PData operator+(const PData& data) const;
+    PData& operator+=(const PData& data);
+
     void zero();
     void allreduce();
     void fill_upper_conjg();
