@@ -29,6 +29,7 @@
 #include <src/df/dfblock.h>
 #include <src/molecule/shell.h>
 #include <src/integral/rys/eribatch.h>
+#include <src/integral/rys/naibatch.h>
 #include <src/integral/os/overlapbatch.h>
 
 namespace bagel {
@@ -107,7 +108,7 @@ class PDFIntTask_2index {
     }
 
   public:
-    // (i.|jL.) sum over L
+    // (i.|jL.)
     PDFIntTask_2index(std::array<std::shared_ptr<const Shell>,4>&& sh, std::array<int,2>&& offset, std::shared_ptr<Matrix>& data2)
      : shell_(sh), offset_(offset), data2_(data2) { }
 
@@ -129,8 +130,8 @@ class PDFIntTask_2index {
 
 class PDFIntTask_3index {
   protected:
-    const std::array<std::shared_ptr<const Shell>,4> shell_;
-    const std::array<int,3> offset_;
+    std::array<std::shared_ptr<const Shell>,4> shell_;
+    std::array<int,3> offset_;
     std::shared_ptr<DFBlock> dfblock_;
 
     std::shared_ptr<ERIBatch> compute_batch(const std::array<std::shared_ptr<const Shell>,4>& input) const {
@@ -140,7 +141,7 @@ class PDFIntTask_3index {
     }
 
   public:
-    // (r sL'|iL .) sum over L
+    // (r sL'|iL .)
     PDFIntTask_3index(std::array<std::shared_ptr<const Shell>,4>&& shells, std::array<int,3>&& offset, std::shared_ptr<DFBlock>& df)
      : shell_(shells), offset_(offset), dfblock_(df) { };
 
@@ -162,6 +163,41 @@ class PDFIntTask_3index {
     }
 };
 
+
+class PDFIntTask_NAI {
+
+  protected:
+    // (r sL'|\delta_L)
+    std::array<std::shared_ptr<const Shell>,2> shell_;
+    std::array<int,2> offset_;
+    std::shared_ptr<const Molecule> mol_;
+    std::shared_ptr<Matrix> data2_;
+
+    std::shared_ptr<NAIBatch> compute_batch(const std::array<std::shared_ptr<const Shell>,2>& input,
+                                            const std::shared_ptr<const Molecule> mol) const {
+      auto naibatch = std::make_shared<NAIBatch>(input, mol);
+      naibatch->compute();
+      return naibatch;
+    }
+
+  public:
+    PDFIntTask_NAI(std::array<std::shared_ptr<const Shell>,2>&& shells, std::array<int,2>&& offset,
+                   const std::shared_ptr<const Geometry> mol, std::shared_ptr<Matrix>& data2)
+     : shell_(shells), offset_(offset), mol_(mol), data2_(data2) { };
+
+    void compute() {
+
+      std::shared_ptr<NAIBatch> naibatch = compute_batch(shell_, mol_);
+      const double* naidata = naibatch->data();
+      const int nbas = data2_->ndim();
+
+      assert(offset_.size() == 2);
+      double* const data = data2_->data();
+      for (int j0 = offset_[0]; j0 != offset_[0] + shell_[1]->nbasis(); ++j0)
+        for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++naidata)
+          data[j0+j1*nbas] = *naidata;
+    }
+};
 
 }
 

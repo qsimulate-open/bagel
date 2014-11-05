@@ -29,9 +29,9 @@
 using namespace bagel;
 using namespace std;
 
-PDFDist::PDFDist(vector<array<double, 3>> L, const int nbas, const int naux,
+PDFDist::PDFDist(const vector<array<double, 3>>& L, const int nbas, const int naux,
                  const vector<shared_ptr<const Atom>>& atoms0,
-                 const vector<shared_ptr<const Atom>>& aux_atoms,
+                 const vector<shared_ptr<const Atom>>& aux_atoms, const shared_ptr<const Geometry> cell0,
                  const double thresh, const bool serial, const shared_ptr<Matrix> data2)
   : lattice_vectors_(L), nbasis_(nbas), naux_(naux), serial_(serial), data2_(data2) {
 
@@ -59,7 +59,7 @@ PDFDist::PDFDist(vector<array<double, 3>> L, const int nbas, const int naux,
       atoms1[iat] = make_shared<const Atom>(*atom, lattice_vectors_[i]);
       ++iat;
     }
-    dfdist_[i] = make_shared<PDFDist_ints>(L, nbas, naux, atoms0, atoms1, aux_atoms, thresh, projector_, data1_);
+    dfdist_[i] = make_shared<PDFDist_ints>(L, nbas, naux, atoms0, atoms1, aux_atoms, cell0, thresh, projector_, data1_);
   }
   time.tick_print("3-index and overlap integrals");
 }

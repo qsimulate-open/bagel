@@ -331,5 +331,5 @@ void Lattice::form_df(const double thresh) { /*form df object for all blocks in 
   vector<shared_ptr<const Atom>> atoms0 = primitive_cell_->atoms();
   vector<shared_ptr<const Atom>> aux_atoms = primitive_cell_->aux_atoms();
 
-  df_ = make_shared<PDFDist>(lattice_vectors_, nbasis, naux, atoms0, aux_atoms, thresh);
+  df_ = make_shared<PDFDist>(lattice_vectors_, nbasis, naux, atoms0, aux_atoms, primitive_cell_, thresh);
 }

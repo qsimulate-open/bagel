@@ -57,9 +57,9 @@ class PDFDist {
     std::shared_ptr<const Matrix> projector_;
 
   public:
-    PDFDist(std::vector<std::array<double, 3>> lattice_vectors, const int nbasis, const int nauxbasis,
+    PDFDist(const std::vector<std::array<double, 3>>& lattice_vectors, const int nbasis, const int nauxbasis,
             const std::vector<std::shared_ptr<const Atom>>& atoms_cell0,
-            const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
+            const std::vector<std::shared_ptr<const Atom>>& aux_atoms, const std::shared_ptr<const Geometry> cell0,
             const double thresh, const bool serial = false, const std::shared_ptr<Matrix> data2 = nullptr);
 
     std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
