@@ -35,7 +35,6 @@ using namespace bagel;
 
 void ZCASBFGS::compute() {
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
-  shared_ptr<SRBFGS<ZRotFile>> srbfgs;
   shared_ptr<SRBFGS<ZRotFile>> ele_srbfgs;
   shared_ptr<SRBFGS<ZRotFile>> pos_srbfgs;
 
@@ -54,7 +53,7 @@ void ZCASBFGS::compute() {
   bool ele_conv = false;
   bool pos_conv = false;
 
-  auto cold = coeff_->clone();
+  auto cold = coeff_->clone(); // TODO : needed if step rejection is implemented in the future
 
   bool optimize_electrons = idata_->get<bool>("optimize_electrons", true);
   const bool only_electrons = idata_->get<bool>("only_electrons", false);
@@ -81,6 +80,8 @@ void ZCASBFGS::compute() {
       fci_time.tick_print("RDMs");
     }
 
+    // TODO : compute one body operators only for the subspace being optimized; presently full coefficient is used to transform from AO to MO
+    // TODO : make one body operators function to simplify the driver ; could combine with super-CI, but will take some work
     Timer onebody(0);
     // calculate 1RDM in an original basis set
     shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
@@ -194,14 +195,15 @@ void ZCASBFGS::compute() {
     cout << " ---------------------------------------------------- " << endl << endl;
     more_sorensen_timer.tick_print("More-Sorensen/Hebden extrapolation");
 
+    const double gradient = grad->rms();
+
+    // Rotate orbitals
     shared_ptr<ZMatrix> amat;
     if (optimize_electrons) {
       amat = ele_rot->unpack<ZMatrix>();
     } else {
       amat = pos_rot->unpack<ZMatrix>();
     }
-
-    const double gradient = grad->rms();
 
     // multiply -1 from the formula taken care of in extrap. multiply -i to make amat hermite (will be compensated)
     *amat *= 1.0 * complex<double>(0.0, -1.0);
@@ -284,7 +286,7 @@ void ZCASBFGS::compute() {
       auto unit = coeff_->clone(); unit->unit();
       auto orthonorm2 = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
       if (orthonorm2 / orthonorm > 1.0e+01)
-        throw logic_error("should not happen");
+        throw logic_error("Coefficient has lost orthonormality during optimization");
     }
     mute_stdcout();
   }
