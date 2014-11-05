@@ -36,6 +36,7 @@ PFock::PFock(const shared_ptr<const Lattice> l, shared_ptr<const PData> h, const
 
   assert(h->blocksize() == blocksize_ && density->blocksize() == blocksize_);
   assert(h->nblock() == nblock_ && density->nblock() == nblock_);
+  form_pfock();
 }
 
 void PFock::form_pfock() {

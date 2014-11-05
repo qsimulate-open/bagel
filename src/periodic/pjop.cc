@@ -30,7 +30,7 @@ using namespace bagel;
 
 shared_ptr<PData> PDFDist::pcompute_Jop_from_coeff(shared_ptr<const VectorB> coeff) const {
 
-  auto out = make_shared<PData>(ncell(), nbasis_);
+  auto out = make_shared<PData>(nbasis_, ncell());
   for (int i = 0; i != ncell(); ++i) {
     shared_ptr<DFBlock> data3 = dfdist_[i]->block(0);
     shared_ptr<Matrix> jmat = data3->form_mat(coeff->slice(data3->astart(), data3->astart() + data3->asize()));
