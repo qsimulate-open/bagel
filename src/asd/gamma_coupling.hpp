@@ -258,16 +258,31 @@ void GammaForest<VecType,N>::couple_blocks(const DimerSubspace<VecType>& AB, con
 
       case Coupling::bETflp :
         std::cout << "B-ET + Flip" << std::endl;
+//3RDM
         this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha});
         this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
+//4RDM
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //b'b'a'aa
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  //b'b'b'ab
+
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}); //a'a'abb
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}); //b'a'bbb
+//END ADDED
         break;
 
       case Coupling::aETflp :
         std::cout << "A-ET + Flip" << std::endl;
+//3RDM
         this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta}); //a'a'b
         this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //b'aa
-        break;
+//4RDM
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}); //a'a'a'ba
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});  //a'a'b'bb
+
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'b'aaa
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateBeta,  GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //b'b'baa
 //END ADDED
+        break;
 
       default :
         assert(false); break; // Control should never reach here
