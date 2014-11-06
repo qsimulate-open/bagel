@@ -291,7 +291,7 @@ void ZHarrison::compute() {
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
-                              << setw(17) << fixed << setprecision(12) << energies[i]+nuc_core << "   "
+                              << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
                               << fcitime.tick() << endl;
       energy_[i] = energies[i]+nuc_core;
