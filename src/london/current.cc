@@ -139,7 +139,7 @@ void Current::compute() {
 
 
 void Current::computepoint(const size_t pos) {
-  array<double,3> out;
+  array<complex<double>,3> out;
   array<shared_ptr<ZMatrix>,3> ao_current;
   array<shared_ptr<ZMatrix>,3> pi;
 
@@ -211,9 +211,9 @@ void Current::computepoint(const size_t pos) {
     }
   }
 
-  // Now compute total current using AO contributions (discarding imag. part)
+  // Now compute total current using AO contributions
   for (int i=0; i!=3; ++i) {
-    out[i] = std::real(density_->dot_product(*ao_current[i]));
+    out[i] = density_->dot_product(*ao_current[i]);
   }
 
   currents_[3*pos+0] = out[0];
@@ -225,14 +225,17 @@ void Current::computepoint(const size_t pos) {
 
 void Current::print() const {
   cout << fixed << setprecision(10);
-  cout << "   x-coord        y-coord        z-coord        x-current      y-current      z-current" << endl;
+  cout << "   x-coord        y-coord        z-coord           Re(x-current)  Re(y-current)  Re(z-current)       Im(x-current)  Im(y-current)  Im(z-current)" << endl;
   for (int i=0; i!=ngrid_; ++i) {
     cout << ((coords_[3*i+0] < 0) ? "" : " ") << coords_[3*i+0] << "  "
          << ((coords_[3*i+1] < 0) ? "" : " ") << coords_[3*i+1] << "  "
-         << ((coords_[3*i+2] < 0) ? "" : " ") << coords_[3*i+2] << "  "
-         << ((currents_[3*i+0] < 0) ? "" : " ") << currents_[3*i+0] << "  "
-         << ((currents_[3*i+1] < 0) ? "" : " ") << currents_[3*i+1] << "  "
-         << ((currents_[3*i+2] < 0) ? "" : " ") << currents_[3*i+2] << "  "
+         << ((coords_[3*i+2] < 0) ? "" : " ") << coords_[3*i+2] << "       "
+         << ((real(currents_[3*i+0]) < 0) ? "" : " ") << real(currents_[3*i+0]) << "  "
+         << ((real(currents_[3*i+1]) < 0) ? "" : " ") << real(currents_[3*i+1]) << "  "
+         << ((real(currents_[3*i+2]) < 0) ? "" : " ") << real(currents_[3*i+2]) << "       "
+         << ((imag(currents_[3*i+0]) < 0) ? "" : " ") << imag(currents_[3*i+0]) << "  "
+         << ((imag(currents_[3*i+1]) < 0) ? "" : " ") << imag(currents_[3*i+1]) << "  "
+         << ((imag(currents_[3*i+2]) < 0) ? "" : " ") << imag(currents_[3*i+2])
          << endl;
   }
 

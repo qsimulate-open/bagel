@@ -46,7 +46,7 @@ class Current : public Method {
     std::vector<double> coords_;
 
     // size = 3*(ngrid_+1); last 3 entries give the total integrated current
-    std::vector<double> currents_;
+    std::vector<std::complex<double>> currents_;
 
     void computepoint(const size_t pos);
     void print() const;
