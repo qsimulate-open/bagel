@@ -54,7 +54,9 @@ void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
 
     pdata_[block]->copy_real_block(1.0, offsetb1, offsetb0, dimb1, dimb0, k);
   }
-  { /** (r0 sL'|\delta_L) */
+
+  if (!lattice->primitive_cell()->do_periodic_df()) {
+    /** (r0 sL'|\delta_L) */
     for (int i = 0; i != lattice->num_lattice_vectors(); ++i) {
       auto mol = make_shared<const Geometry>(*(lattice->primitive_cell()), lattice->lattice_vectors(i));
       NAIBatch nai(input, mol);

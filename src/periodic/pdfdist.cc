@@ -142,8 +142,6 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
   for (int i = 0; i != ncell(); ++i)
     *data2_ += *projectorC * *data2_at[i] * *projectorC;
 
-  data2_->print("***** data2 *****");
-
   time.tick_print("2-index integrals");
 
   // make data2_ positive definite

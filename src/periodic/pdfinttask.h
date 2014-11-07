@@ -61,7 +61,7 @@ class PDFIntTask_coeff {
   protected:
     std::array<std::shared_ptr<const Shell>,2> shell_;
     std::array<int,2> offset_;
-    std::shared_ptr<DFBlock> coeffC_;
+    std::shared_ptr<btas::Tensor3<double>> coeffC_;
     std::shared_ptr<const VectorB> data1_;
 
     std::shared_ptr<OverlapBatch> compute_batch(const std::array<std::shared_ptr<const Shell>,2>& input) const {
@@ -73,7 +73,7 @@ class PDFIntTask_coeff {
   public:
     // <r|sL>
     PDFIntTask_coeff(std::array<std::shared_ptr<const Shell>,2>&& sh, std::array<int,2>&& offset,
-                     std::shared_ptr<DFBlock>& coeffC, const std::shared_ptr<const VectorB>& data1)
+                     std::shared_ptr<btas::Tensor3<double>>& coeffC, const std::shared_ptr<const VectorB>& data1)
      : shell_(sh), offset_(offset), coeffC_(coeffC), data1_(data1) { }
 
     void compute() {
@@ -81,16 +81,15 @@ class PDFIntTask_coeff {
       std::shared_ptr<OverlapBatch> overlap = compute_batch(shell_);
       const double* odata = overlap->data();
 
-      const size_t naux = coeffC_->asize();
-      const size_t nbas = coeffC_->b1size();
+      const size_t naux = coeffC_->extent(0);
+      const size_t nbas = coeffC_->extent(1);
       const double q = data1_->rms() * naux;
 
       double* const coeff = coeffC_->data();
       for (int j0 = offset_[0]; j0 != offset_[0] + shell_[1]->nbasis(); ++j0)
         for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++odata)
-          for (int a = 0; a != naux; ++a) {
+          for (int a = 0; a != naux; ++a)
             coeff[a + naux * (j1 + nbas * j0)] = *odata * (*data1_)(a) / q;
-          }
     }
 };
 

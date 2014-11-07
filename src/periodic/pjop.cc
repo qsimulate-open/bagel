@@ -32,8 +32,16 @@ shared_ptr<PData> PDFDist::pcompute_Jop_from_coeff(shared_ptr<const VectorB> coe
 
   auto out = make_shared<PData>(nbasis_, ncell());
   for (int i = 0; i != ncell(); ++i) {
-    shared_ptr<DFBlock> data3 = dfdist_[i]->block(0);
-    shared_ptr<Matrix> jmat = data3->form_mat(coeff->slice(data3->astart(), data3->astart() + data3->asize()));
+    // lattice sum with NAI
+    auto jmat = make_shared<Matrix>(nbasis_, nbasis_);
+    for (int j = 0; j != ncell(); ++j) {
+      shared_ptr<DFBlock> data3 = dfdist_[i]->data3_in_cell(j);
+      // contract with coeff
+      shared_ptr<Matrix> tmp = data3->form_mat(coeff->slice(data3->astart(), data3->astart() + data3->asize()));
+      *jmat += *tmp;
+      // add NAI contribution
+      *jmat += *dfdist_[i]->nai_in_cell(j);
+    }
     (*out)[i] = make_shared<ZMatrix>(*jmat , complex<double>(1.0, 0.0));
   }
 
@@ -54,7 +62,7 @@ shared_ptr<VectorB> PDFDist::pcompute_coeff(const shared_ptr<const PData> densit
   for (int i = 0; i != ncell(); ++i) {
     // get charged coeff by contracting with density
     auto tmp1 = make_shared<VectorB>(naux_);
-    shared_ptr<DFBlock> coeffC = dfdist_[i]->coeffC();
+    shared_ptr<btas::Tensor3<double>> coeffC = dfdist_[i]->coeffC();
     contract(1.0, group(*coeffC, 1, 3), {0, 1}, group(*(density->pdata(i)->get_real_part()), 0, 2), {1}, 0.0, *tmp1, {0});
     *coeff1 += *tmp1;
 
