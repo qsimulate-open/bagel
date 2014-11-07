@@ -88,6 +88,9 @@ class ASD_DMRG {
     /// runs calculations for smaller values of M after the main calculation has finished
     void down_sweep();
 
+    const std::vector<double>& energies() const { return energies_; }
+    double energies(const int i) const { return energies_.at(i); }
+
   private:
     /// Prepare several input files used for growing the chain
     std::vector<std::shared_ptr<PTree>> prepare_growing_input(const int site) const;

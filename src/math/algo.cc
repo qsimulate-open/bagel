@@ -45,9 +45,11 @@ void dcsrmm_(const char *transa, const int m, const int n, const int k, const do
     double* target = c + j*ldc;
     const double* source = b + j*ldb;
 
+    blas::scale_n(beta, target, m);
+
     for (int i = 0; i < m; ++i) {
       for (int rowdata = arind[i] - 1; rowdata < arind[i+1] - 1; ++rowdata) {
-        target[i] += adata[rowdata] * source[acols[rowdata] - 1];
+        target[i] += alpha * adata[rowdata] * source[acols[rowdata] - 1];
       }
     }
   }
