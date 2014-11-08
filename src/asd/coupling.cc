@@ -100,16 +100,18 @@ Coupling bagel::coupling_type_RDM34(const array<MonomerKey,4>& keys) {
   pair<int,int> AT {neleaAB.first - neleaApBp.first, neleaAB.second - neleaApBp.second};
   pair<int,int> BT {nelebAB.first - nelebApBp.first, nelebAB.second - nelebApBp.second};
 
-  /************************************************************
-  *  BT\AT  | ( 0, 0) | (+1,-1) | (-1,+1) | (+2,-2) | (-2,+2) *
-  *-----------------------------------------------------------*
-  * ( 0, 0) |  diag   |  aET    |  -aET   |  aaET   | -aaET   *
-  * (+1,-1) |  bET    |  dABT   |  ABflp  |  aabET  | -aETflp *
-  * (-1,+1) | -bET    | BAflp   | -dABT   |  aETflp | -aabET  *
-  * (+2,-2) |  bbET   | bbaET   |  bETflp |         |         *
-  * (-2,+2) | -bbET   | -bETflp | -bbaET  |         |         *
-  * (+3,-3) |  bbbET  |
-  * (-3,+3) | -bbbET  |
+  /***************************************************************************************************
+  *  BT\AT  | ( 0, 0) | (+1,-1) | (-1,+1) | (+2,-2) | (-2,+2) | (+3,-3) | (-3,+3) | (+4,-4) | (-4,+4)
+  *---------------------------------------------------------------------------------------------------
+  * ( 0, 0) |  diag   |  aET    |  -aET   |  aaET   | -aaET   |  aaaET  | -aaaET  | aaaaET  | -aaaaET
+  * (+1,-1) |  bET    |  dABT   |  ABflp  |  aabET  | -aETflp | aaabET
+  * (-1,+1) | -bET    | BAflp   | -dABT   |  aETflp | -aabET  |
+  * (+2,-2) |  bbET   | bbaET   |  bETflp |  aabbET |         |
+  * (-2,+2) | -bbET   | -bETflp | -bbaET  |         |         |
+  * (+3,-3) |  bbbET  | abbbET  | 
+  * (-3,+3) | -bbbET  | 
+  * (+4,-4) |  bbbbET |
+  * (-4,+4) | -bbbbET |
   ************************************************************/
 
   const auto icouple = make_tuple(AT.first, AT.second, BT.first, BT.second);
@@ -145,6 +147,30 @@ Coupling bagel::coupling_type_RDM34(const array<MonomerKey,4>& keys) {
 
   else if (icouple == make_tuple(+2,-2,-1,+1)) return Coupling::aETflp;
   else if (icouple == make_tuple(-2,+2,+1,-1)) return Coupling::inv_aETflp;
+  //4RDM
+  else if (icouple == make_tuple(+4,-4, 0, 0)) return Coupling::a4ET;
+  else if (icouple == make_tuple(-4,+4, 0, 0)) return Coupling::inv_a4ET;
+  else if (icouple == make_tuple( 0, 0,+4,-4)) return Coupling::b4ET;
+  else if (icouple == make_tuple( 0, 0,-4,+4)) return Coupling::inv_b4ET;
+
+  else if (icouple == make_tuple(+3,-3,+1,-1)) return Coupling::a3bET;
+  else if (icouple == make_tuple(-3,+3,-1,+1)) return Coupling::inv_a3bET;
+
+  else if (icouple == make_tuple(+1,-1,+3,-3)) return Coupling::ab3ET;
+  else if (icouple == make_tuple(-1,+1,-3,+3)) return Coupling::inv_ab3ET;
+
+  else if (icouple == make_tuple(+2,-2,+2,-2)) return Coupling::a2b2ET;
+  else if (icouple == make_tuple(-2,+2,-2,+2)) return Coupling::inv_a2b2ET;
+
+  else if (icouple == make_tuple(-2,+2,+2,-2)) return Coupling::doubleFlip;
+  else if (icouple == make_tuple(+2,-2,-2,+2)) return Coupling::inv_doubleFlip;
+
+  else if (icouple == make_tuple(+3,-3,-1,+1)) return Coupling::a2ETflp;
+  else if (icouple == make_tuple(-3,+3,+1,-1)) return Coupling::inv_a2ETflp;
+
+  else if (icouple == make_tuple(-1,+1,+3,-3)) return Coupling::b2ETflp;
+  else if (icouple == make_tuple(+1,-1,-3,+3)) return Coupling::inv_b2ETflp;
+
   //END ADDED
   else                                         return Coupling::none;
 }

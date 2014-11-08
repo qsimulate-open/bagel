@@ -143,6 +143,12 @@ class ASD_base {
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aETFlip_RDM34(const std::array<MonomerKey,4>&) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bETFlip_RDM34(const std::array<MonomerKey,4>&) const;
 
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaaaET_RDM34(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaabET_RDM34(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aabbET_RDM34(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abbbET_RDM34(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbbbET_RDM34(const std::array<MonomerKey,4>&) const;
+
     void initialize_4RDM();
 
     void generate_initial_guess(std::shared_ptr<Matrix> cc, const std::vector<DimerSubspace_base>& subspace, const int nstates);

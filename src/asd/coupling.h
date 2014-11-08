@@ -58,7 +58,24 @@ enum class Coupling {
   aETflp    =  12,
   inv_aETflp = -12,
   bETflp     =  13,
-  inv_bETflp = -13
+  inv_bETflp = -13,
+  //4RDM
+  a4ET      =  14,
+  inv_a4ET  = -14,
+  b4ET      =  15,
+  inv_b4ET  = -15,
+  a3bET     =  16,
+  inv_a3bET = -16,
+  ab3ET     =  17,
+  inv_ab3ET = -17,
+  a2b2ET    =  18,
+  inv_a2b2ET= -18,
+  doubleFlip     =  19,
+  inv_doubleFlip = -19,
+  a2ETflp     =  20,
+  inv_a2ETflp = -20,
+  b2ETflp     =  21,
+  inv_b2ETflp = -21
   //END ADDED
 };
 
