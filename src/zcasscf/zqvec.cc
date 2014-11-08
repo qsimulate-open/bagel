@@ -188,7 +188,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
     ircoeff[i] = rc->get_imag_part();
   }
   shared_ptr<ZMatrix> out;
-  auto compute = [&racoeff, &iacoeff, &rrcoeff, &ircoeff, &geom, &fci, &nact] (shared_ptr<ZMatrix>& out, const bool gaunt) {
+  auto compute = [&racoeff, &iacoeff, &rrcoeff, &ircoeff, &geom, &fci, &nact] (shared_ptr<ZMatrix>& out, const bool gaunt, const bool breit = false) {
    // purpose : compute (ps|tu) Gamma_{tu,ws} for coulomb and gaunt case ; a factor -1.0 and different df objects are needed for gaunt
    // (1.5) dfdists
    vector<shared_ptr<const DFDist>> dfs;
@@ -206,13 +206,35 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
      i = i->apply_J();
 
    // (3) split and factorize
-   list<shared_ptr<RelDFHalf>> half_complex_facta;
+   list<shared_ptr<RelDFHalf>> half_complex_facta, half_complex_facta2;
    for (auto& i : half_complexa) {
      list<shared_ptr<RelDFHalf>> tmp = i->split(false);
      half_complex_facta.insert(half_complex_facta.end(), tmp.begin(), tmp.end());
    }
    half_complexa.clear();
    DFock::factorize(half_complex_facta);
+
+#if 1
+   if (breit) {
+     // TODO Not the best implementation -- one could avoid apply_J to half-transformed objects
+     auto breitint = make_shared<BreitInt>(geom);
+     list<shared_ptr<Breit2Index>> breit_2index;
+     for (int i = 0; i != breitint->Nblocks(); ++i) {
+       breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), geom->df()->data2()));
+       if (breitint->not_diagonal(i))
+         breit_2index.push_back(breit_2index.back()->cross());
+     }
+     for (auto& i : half_complex_facta)
+       half_complex_facta2.push_back(i->apply_J());
+
+     for (auto& i : half_complex_facta)
+       for (auto& j : breit_2index)
+         if (i->alpha_matches(j)) {
+           half_complex_facta2.push_back(i->apply_J()->multiply_breit2index(j));
+           DFock::factorize(half_complex_facta2);
+         }
+   }
+#endif
 
    // (4) compute (gamma|tu)
    list<shared_ptr<RelDFFull>> dffulla;
