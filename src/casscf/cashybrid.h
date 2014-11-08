@@ -24,21 +24,24 @@
 //
 
 
-#ifndef __BAGEL_CASSCF_CASHYBRID_H
-#define __BAGEL_CASSCF_CASHYBRID_H
+#ifndef __BAGEL_CASSCF_CASHybrid_H
+#define __BAGEL_CASSCF_CASHybrid_H
 
 #include <iomanip>
 #include <src/wfn/method.h>
 
 namespace bagel {
 
-class CASHYBRID : public Method {
+class CASHybrid : public Method {
 
   protected:
     int maxiter_switch_;
     double thresh_switch_;
 
+    std::vector<double> energy_;
+
     std::shared_ptr<const Reference> refout_;
+    std::shared_ptr<FCI> fci_;
 
     void common_init() {
       std::cout << "    * Using a hybrid approach to CASSCF *    " << std::endl;
@@ -57,12 +60,17 @@ class CASHYBRID : public Method {
 
 
   public:
-    CASHYBRID(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
+    CASHybrid(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
       : Method(idat, geom, ref) { common_init(); }
 
     void compute() override;
 
     std::shared_ptr<const Reference> conv_to_ref() const;
+
+    double energy(const int i) const { return energy_[i]; }
+    const std::vector<double>& energy() const { return energy_; }
+
+    std::shared_ptr<FCI> fci() { return fci_; }
 };
 
 }

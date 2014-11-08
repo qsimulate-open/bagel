@@ -53,7 +53,7 @@ double cas_energy(std::string filename) {
         std::cout.rdbuf(backup_stream);
         return ref->energy();
       } else if (algorithm == "hybrid") {
-        auto cas = std::make_shared<CASHYBRID>(itree, geom);
+        auto cas = std::make_shared<CASHybrid>(itree, geom);
         cas->compute();
         std::shared_ptr<const Reference> ref = cas->conv_to_ref();
 

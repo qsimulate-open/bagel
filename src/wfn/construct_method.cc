@@ -100,7 +100,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       if (algorithm == "superci" || algorithm == "")
         out = make_shared<SuperCI>(itree, geom, ref);
       else if (algorithm == "hybrid")
-        out = make_shared<CASHYBRID>(itree, geom, ref);
+        out = make_shared<CASHybrid>(itree, geom, ref);
       else if (algorithm == "bfgs")
         out = make_shared<CASBFGS>(itree, geom, ref);
       else
@@ -116,7 +116,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       if (algorithm == "superci" || algorithm == "")
         out = make_shared<ZSuperCI>(itree, geom, ref);
       else if (algorithm == "hybrid")
-        out = make_shared<ZCASHYBRID>(itree, geom, ref);
+        out = make_shared<ZCASHybrid>(itree, geom, ref);
       else if (algorithm == "bfgs")
         out = make_shared<ZCASBFGS>(itree, geom, ref);
       else

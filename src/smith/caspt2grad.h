@@ -49,6 +49,8 @@ class CASPT2Grad : public Method {
     double energy_;
     double thresh_;
 
+    std::vector<double> ref_energy_;
+
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
