@@ -245,6 +245,18 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
    assert(dffulla.size() == 1);
    shared_ptr<const RelDFFull> fulltu = dffulla.front();
 
+   // (4.25) compute (gamma|tu) with breit
+   list<shared_ptr<RelDFFull>> dffulla_breit;
+   shared_ptr<const RelDFFull> fulltu_breit;
+   if (breit) {
+     for (auto& i : half_complex_facta2)
+       dffulla_breit.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff));
+     DFock::factorize(dffulla_breit);
+     dffulla_breit.front()->scale(dffulla_breit.front()->fac()); // take care of the factor
+     assert(dffulla_breit.size() == 1);
+     fulltu_breit = dffulla_breit.front();
+   }
+
    // (4.5) compute (gamma|rs)
    list<shared_ptr<RelDFFull>> dffullr;
    for (auto& i : half_complex_facta)
@@ -259,10 +271,11 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
    copy_n(fci->rdm2_av()->data(), nact*nact*nact*nact*16, rdm2_av->data());
 
    shared_ptr<const RelDFFull> fulltu_d = fulltu->apply_2rdm(rdm2_av);
+   const double gscale = breit ? -0.5 : -1.0;
    if (!gaunt)
      out = fullrs->form_2index(fulltu_d, 1.0, false);
    else
-     *out += *fullrs->form_2index(fulltu_d, -1.0, false);
+     *out += *fullrs->form_2index(fulltu_d, gscale, false);
   };
   compute(out, false);
   if (gaunt)
