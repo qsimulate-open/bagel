@@ -76,8 +76,6 @@ void CASSCF::common_init() {
   max_micro_iter_ = idata_->get<int>("maxiter_micro", 100);
   // get nstate from the input
   nstate_ = idata_->get<int>("nstate", 1);
-  // get istate from the input (for geometry optimization)
-  istate_ = idata_->get<int>("istate", 0);
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
@@ -324,7 +322,7 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
 
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
-  auto out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy(),
+  auto out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_av(),
                                     fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
 
   // TODO

@@ -33,10 +33,9 @@
  using namespace std;
  using namespace bagel;
 
-void CASHYBRID::compute() {
+void CASHybrid::compute() {
 
-  double global_thresh = idata_->get<double>("thresh", 1.0e-8);
-  shared_ptr<Method> active_method;
+  const double global_thresh = idata_->get<double>("thresh", 1.0e-8);
   // construct and compute SuperCI
   {
     auto idata = make_shared<PTree>(*idata_);
@@ -48,12 +47,15 @@ void CASHYBRID::compute() {
       idata->erase("thresh");
       idata->put("thresh",  thresh_switch_);
     }
-    active_method = make_shared<SuperCI>(idata, geom_, ref_);
+    auto active_method = make_shared<SuperCI>(idata, geom_, ref_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
-    double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
+
+    const double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
     if (grad < global_thresh) {
       cout << "      * CASSCF converged *    " << endl;
+      fci_ = active_method->fci();
+      energy_ = active_method->energy();
       return;
     }
   }
@@ -62,20 +64,23 @@ void CASHYBRID::compute() {
   {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
-    active_method = make_shared<CASBFGS>(idata, geom_, refout_);
+    auto active_method = make_shared<CASBFGS>(idata, geom_, refout_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
-    double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
+
+    const double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
     if (grad < global_thresh) {
       cout << " " << endl;
       cout << "      * CASSCF converged *    " << endl;
     }
+    fci_ = active_method->fci();
+    energy_ = active_method->energy();
   }
 
 }
 
 
-shared_ptr<const Reference> CASHYBRID::conv_to_ref() const {
+shared_ptr<const Reference> CASHybrid::conv_to_ref() const {
   assert(refout_);
   return refout_;
 }
