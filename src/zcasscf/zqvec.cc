@@ -270,16 +270,21 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
    auto rdm2_av = make_shared<ZRDM<2>>(nact*2);
    copy_n(fci->rdm2_av()->data(), nact*nact*nact*nact*16, rdm2_av->data());
 
-   shared_ptr<const RelDFFull> fulltu_d = fulltu->apply_2rdm(rdm2_av);
+   shared_ptr<const RelDFFull> fulltu_d = !breit ? fulltu->apply_2rdm(rdm2_av) : fulltu_breit->apply_2rdm(rdm2_av);
    const double gscale = breit ? -0.5 : -1.0;
    if (!gaunt)
      out = fullrs->form_2index(fulltu_d, 1.0, false);
-   else
+   else if (!breit)
      *out += *fullrs->form_2index(fulltu_d, gscale, false);
+   else {
+     // explicitly symmetrize when using breit as is done for compute_mo2e
+     *out += *fullrs->form_2index(fulltu_d, gscale*0.5, false);
+     *out += *fulltu_d->form_2index(fullrs, gscale*0.5, false);
+   }
   };
   compute(out, false);
   if (gaunt)
-    compute(out, gaunt);
+    compute(out, gaunt, breit);
 
   *this = *out;
 
