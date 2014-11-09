@@ -64,23 +64,23 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
   // Determine coordinates where current will be computed
   const bool angstrom = idata->get<bool>("angstrom", false);
   array<double,3> start_pos = idata->get_array<double,3>("start_pos", {{0.0, 0.0, 0.0}});
-  array<double,3> inc_size = idata->get_array<double,3>("inc_size", {{0.5, 0.5, 0.5}});
-  const array<int,3> ngrid = idata->get_array<int,3>("ngrid", {{1, 1, 1}});
-  ngrid_ = ngrid[0]*ngrid[1]*ngrid[2];
+  inc_size_ = idata->get_array<double,3>("inc_size", {{0.5, 0.5, 0.5}});
+  ngrid_dim_ = idata->get_array<size_t,3>("ngrid", {{1, 1, 1}});
+  ngrid_ = ngrid_dim_[0]*ngrid_dim_[1]*ngrid_dim_[2];
 
   if (angstrom) {
     for (int i=0; i!=3; ++i) {
       start_pos[i] /= au2angstrom__;
-      inc_size[i] /= au2angstrom__;
+      inc_size_[i] /= au2angstrom__;
     }
   }
 
-  for (int i=0; i!=ngrid[0]; ++i) {
-    for (int j=0; j!=ngrid[1]; ++j) {
-      for (int k=0; k!=ngrid[2]; ++k) {
-        coords_.push_back(start_pos[0]+i*inc_size[0]);
-        coords_.push_back(start_pos[1]+j*inc_size[1]);
-        coords_.push_back(start_pos[2]+k*inc_size[2]);
+  for (int i=0; i!=ngrid_dim_[0]; ++i) {
+    for (int j=0; j!=ngrid_dim_[1]; ++j) {
+      for (int k=0; k!=ngrid_dim_[2]; ++k) {
+        coords_.push_back(start_pos[0]+i*inc_size_[0]);
+        coords_.push_back(start_pos[1]+j*inc_size_[1]);
+        coords_.push_back(start_pos[2]+k*inc_size_[2]);
       }
     }
   }
@@ -224,6 +224,7 @@ void Current::computepoint(const size_t pos) {
 
 
 void Current::print() const {
+  array<complex<double>,3> current_sum = {{ 0.0, 0.0, 0.0 }};
   cout << fixed << setprecision(10);
   cout << "   x-coord        y-coord        z-coord           Re(x-current)  Re(y-current)  Re(z-current)       Im(x-current)  Im(y-current)  Im(z-current)" << endl;
   for (int i=0; i!=ngrid_; ++i) {
@@ -237,9 +238,34 @@ void Current::print() const {
          << ((imag(currents_[3*i+1]) < 0) ? "" : " ") << imag(currents_[3*i+1]) << "  "
          << ((imag(currents_[3*i+2]) < 0) ? "" : " ") << imag(currents_[3*i+2])
          << endl;
+     current_sum[0] += currents_[3*i+0];
+     current_sum[1] += currents_[3*i+1];
+     current_sum[2] += currents_[3*i+2];
   }
 
-  cout << endl << "Total integrated current = ( " << currents_[3*ngrid_+0] << ", " << currents_[3*ngrid_+1] << ", " << currents_[3*ngrid_+2] << " ). " << endl << endl;;
+  cout << endl << "Sum of all gridpoints = ( " << current_sum[0] << ", " << current_sum[1] << ", " << current_sum[2] << " ). " << endl << endl;;
+
+  // TODO some of this should be moved out of the ``print'' function
+  // determine if the gridpoints form a flat plane
+  array<bool,3> single;
+  for (int i=0; i!=3; ++i) single[i] = (ngrid_dim_[i] == 1);
+  int direction = -1;
+  if (single[0] && !single[1] && !single[2]) direction = 0;
+  if (!single[0] && single[1] && !single[2]) direction = 1;
+  if (!single[0] && !single[1] && single[2]) direction = 2;
+
+  // report integrated current through that plane
+  if (direction != -1) {
+    double area = 1.0;
+    for (int i=0; i!=3; ++i)
+      if (i != direction)
+        area *= inc_size_[i];
+    const array<string,3> plane = {{ "yz", "xz", "xy" }};
+    const complex<double> int_current = current_sum[direction]*area*au2coulomb__/au2second__*1.0e9;
+    cout << endl << "Integrated current through the selected slice of the " << plane[direction] << " plane = " << int_current << " nA." << endl << endl;
+  }
+
+  cout << endl << "Current integrated over all space = ( " << currents_[3*ngrid_+0] << ", " << currents_[3*ngrid_+1] << ", " << currents_[3*ngrid_+2] << " ). " << endl << endl;;
 
 }
 

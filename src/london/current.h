@@ -41,6 +41,9 @@ class Current : public Method {
     bool diamagnetic_;
     size_t ngrid_;
 
+    std::array<double,3> inc_size_;
+    std::array<size_t,3> ngrid_dim_;
+
     std::shared_ptr<const ZMatrix> density_;
 
     std::vector<double> coords_;
