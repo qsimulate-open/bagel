@@ -315,6 +315,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   // TODO D1 must be parallelised as it is very big.
   // construct D1 to be used in Y4 and Y5
   auto D1 = make_shared<btas::Tensor4<double>>(nocc,nall,nocc,nall);
+  fill(D1->begin(), D1->end(), 0.0);
   {
     // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
     for (int s = 0; s != nall; ++s) // extend
