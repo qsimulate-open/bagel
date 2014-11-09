@@ -312,14 +312,14 @@ class Task5 : public Task<T> {
           {
             // tensor label: t2
             std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a4, c3, a2);
-            dscal_(c1.size()*a4.size()*c3.size()*a2.size(), -e0_, i0data.get(), 1);
-            sort_indices<0,1,2,3,1,1,-4,1>(i0data, odata, c1.size(), a4.size(), c3.size(), a2.size());
+            dscal_(c1.size()*a4.size()*c3.size()*a2.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,2,3,1,1,4,1>(i0data, odata, c1.size(), a4.size(), c3.size(), a2.size());
           }
           {
             // tensor label: t2
             std::unique_ptr<double[]> i1data = in(0)->get_block(c1, a2, c3, a4);
-            dscal_(c1.size()*a2.size()*c3.size()*a4.size(), -e0_, i1data.get(), 1);
-            sort_indices<0,3,2,1,1,1,8,1>(i1data, odata, c1.size(), a2.size(), c3.size(), a4.size());
+            dscal_(c1.size()*a2.size()*c3.size()*a4.size(), e0_, i1data.get(), 1);
+            sort_indices<0,3,2,1,1,1,-8,1>(i1data, odata, c1.size(), a2.size(), c3.size(), a4.size());
           }
           {
             // tensor label: v2
@@ -2282,12 +2282,12 @@ class Task39 : public DedciTask<T> {
           {
             // tensor label: Gamma4
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
-            sort_indices<0,1,1,-1,2>(i0data, odata, ci0.size());
+            sort_indices<0,1,1,-1,1>(i0data, odata, ci0.size());
           }
           {
             // tensor label: Gamma4
             std::unique_ptr<double[]> i1data = in(0)->get_block(ci0);
-            sort_indices<0,1,1,-1,2>(i1data, odata, ci0.size());
+            sort_indices<0,1,1,-1,1>(i1data, odata, ci0.size());
           }
           out()->put_block(odata, ci0);
         }
@@ -2408,12 +2408,12 @@ class Task41 : public DedciTask<T> {
           {
             // tensor label: Gamma4
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
-            sort_indices<0,1,1,1,1>(i0data, odata, ci0.size());
+            sort_indices<0,1,1,2,1>(i0data, odata, ci0.size());
           }
           {
             // tensor label: Gamma4
             std::unique_ptr<double[]> i1data = in(0)->get_block(ci0);
-            sort_indices<0,1,1,1,1>(i1data, odata, ci0.size());
+            sort_indices<0,1,1,2,1>(i1data, odata, ci0.size());
           }
           out()->put_block(odata, ci0);
         }

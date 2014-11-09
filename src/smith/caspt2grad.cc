@@ -25,7 +25,7 @@
 
 
 #include <src/smith/caspt2grad.h>
-#include <src/casscf/cashybrid.h>
+#include <src/casscf/casbfgs.h>
 #include <src/casscf/qvec.h>
 #include <src/smith/smith.h>
 #include <src/grad/gradeval.h>
@@ -39,7 +39,7 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   : Method(inp, geom, ref) {
 
   // compute CASSCF first
-  auto cas = make_shared<CASHybrid>(inp, geom, ref);
+  auto cas = make_shared<CASBFGS>(inp, geom, ref);
   cas->compute();
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
@@ -67,18 +67,21 @@ void CASPT2Grad::compute() {
     // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
     coeff_ = smith->coeff();
 
-    cideriv_ = smith->cideriv();
+    if (nact)
+      cideriv_ = smith->cideriv();
     target_ = smith->algo()->ref()->target();
     ncore_  = smith->algo()->ref()->ncore();
 
     // save correlated density matrices d(1), d(2), and ci derivatives
     shared_ptr<Matrix> d1tmp = make_shared<Matrix>(*smith->dm1());
-    const double correction = smith->correction();
     // add correction to active part of the correlated one-body density
-    shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
-    for (int i = nclosed; i != nclosed+nact; ++i)
-      for (int j = nclosed; j != nclosed+nact; ++j)
-        d1tmp->element(j-ncore_, i-ncore_) -=  correction * d0->element(j, i);
+    if (nact) {
+      const double correction = smith->correction();
+      shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
+      for (int i = nclosed; i != nclosed+nact; ++i)
+        for (int j = nclosed; j != nclosed+nact; ++j)
+          d1tmp->element(j-ncore_, i-ncore_) -=  correction * d0->element(j, i);
+    }
     if (!ncore_) {
       d1_ = d1tmp;
     } else {
@@ -115,7 +118,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   const int nmobasis = coeff->mdim();
 
   // d0 including core
-  shared_ptr<const Matrix> d0 = ref->rdm1_mat(task_->target())->resize(nmobasis,nmobasis);
+  shared_ptr<const Matrix> d0 = nact ? ref->rdm1_mat(task_->target())->resize(nmobasis,nmobasis) : make_shared<Matrix>(nmobasis,nmobasis);
   const MatView ocoeff = coeff->slice(0, nocc);
 
   {
@@ -259,16 +262,26 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     // 2 Y1 = h(d0 + d1 + d2) * 2
     // one-electron contributions
     auto hmo = make_shared<const Matrix>(*coeff_ % *ref_->hcore() * *coeff_);
-    auto d0 = make_shared<Matrix>(*ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis));
+    shared_ptr<Matrix> d0;
+    if (nact) {
+      d0 = ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis);
+    } else {
+      d0 = make_shared<Matrix>(nmobasis,nmobasis);
+      for (int i = 0; i != nclosed; ++i)
+        d0->element(i,i) = 2.0;
+    }
     *out += *hmo * (*dmr + *d0) * 2.0;
   }
 
   {
     // Y2 = Y2_rs = Y2_ri + Y2_ra, so making both at once
-    shared_ptr<Matrix> dkl = ref_->rdm1_mat(target_);
-    dkl->sqrt();
-    dkl->scale(1.0/sqrt(2.0));
-    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, ocoeff * *dkl, /*grad*/false, /*rhf*/true);
+    shared_ptr<Matrix> dkl;
+    if (nact) {
+      dkl = ref_->rdm1_mat(target_);
+      dkl->sqrt();
+      dkl->scale(1.0/sqrt(2.0));
+    }
+    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, dkl ? ocoeff * *dkl : Matrix(ocoeff), /*grad*/false, /*rhf*/true);
     *out += *coeff_ % fock * *coeff_ * *dmr * 2.0;
   }
 
@@ -280,7 +293,13 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     // exchange
     auto kopi = halfjj->compute_Kop_1occ(dmrao, -0.5)->transpose();
 
-    out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % (*jop * ocoeff + *kopi) * *ref_->rdm1_mat(target_));
+    auto tmp = make_shared<Matrix>(*coeff_ % (*jop * ocoeff + *kopi));
+    if (nact) {
+      *tmp *= *ref_->rdm1_mat(target_);
+    } else {
+      *tmp *= 2.0;
+    }
+    out->add_block(2.0, 0, 0, nmobasis, nocc, tmp);
   }
 
   // TODO D1 must be parallelised as it is very big.

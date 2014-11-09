@@ -839,7 +839,8 @@ class SpinFreeMethod {
 
       // set e0
       e0_ = compute_e0();
-      sigma_ = compute_sigma();
+      if (ref_->nact())
+        sigma_ = compute_sigma();
     }
 
     IndexRange& virt() { return virt_; }

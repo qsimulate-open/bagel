@@ -64,16 +64,12 @@ void Smith::compute() {
     // calculate unrelaxed dipole moment from correlated dm
     correction_ = algop->rdm1_correction();
 
+#if 0
     // convert ci derivative tensor to civec
     cider_ = algop->ci_deriv();
+#endif
 
     // todo check
     coeff_ = algop->coeff();
-
-#if 0
-    cout << "  * Printing ci derivative civec:" << endl;
-    cider_->print(0.1e-15);
-    cout << "  * Printing civec ci derivative * cI =     " <<  setprecision(10) << cider_->dot_product(*(algo_->rdm0deriv())) << endl;
-#endif
   }
 }

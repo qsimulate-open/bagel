@@ -64,6 +64,7 @@ class CAS_test : public SpinFreeMethod<T>{
       std::shared_ptr<Task0<T>> task0(new Task0<T>(tensor0));
       queue_->add_task(task0);
 
+#if 0
       std::vector<IndexRange> Gamma0_index;
       std::shared_ptr<Tensor<T>> Gamma0(new Tensor<T>(Gamma0_index, false));
       std::vector<std::shared_ptr<Tensor<T>>> tensor1 = {Gamma0, this->rdm1_, this->f1_};
@@ -84,6 +85,7 @@ class CAS_test : public SpinFreeMethod<T>{
       std::shared_ptr<Task3<T>> task3(new Task3<T>(tensor3, cindex));
       task3->add_dep(task0);
       queue_->add_task(task3);
+#endif
 
       std::vector<IndexRange> I0_index = {this->closed_, this->virt_, this->closed_, this->virt_};
       std::shared_ptr<Tensor<T>> I0(new Tensor<T>(I0_index, false));
@@ -100,6 +102,7 @@ class CAS_test : public SpinFreeMethod<T>{
       queue_->add_task(task5);
 
 
+#if 0
       std::vector<IndexRange> I1_index;
       std::shared_ptr<Tensor<T>> I1(new Tensor<T>(I1_index, false));
       std::vector<std::shared_ptr<Tensor<T>>> tensor6 = {I0, t2, I1};
@@ -116,7 +119,9 @@ class CAS_test : public SpinFreeMethod<T>{
       queue_->add_task(task7);
 
       task7->add_dep(task1);
+#endif
 
+#if 0
       std::vector<IndexRange> I3_index;
       std::shared_ptr<Tensor<T>> I3(new Tensor<T>(I3_index, false));
       std::vector<std::shared_ptr<Tensor<T>>> tensor8 = {I0, t2, I3};
@@ -133,6 +138,7 @@ class CAS_test : public SpinFreeMethod<T>{
       queue_->add_task(task9);
 
       task9->add_dep(task1);
+#endif
 
       std::vector<IndexRange> I4_index = {this->closed_, this->virt_, this->virt_, this->closed_};
       std::shared_ptr<Tensor<T>> I4(new Tensor<T>(I4_index, false));
@@ -211,6 +217,7 @@ class CAS_test : public SpinFreeMethod<T>{
       std::shared_ptr<Task19<T>> task19(new Task19<T>(tensor19));
       density_->add_task(task19);
 
+#if 0
       std::vector<IndexRange> I24_index = {this->active_, this->active_};
       std::shared_ptr<Tensor<T>> I24(new Tensor<T>(I24_index, false));
       std::vector<std::shared_ptr<Tensor<T>>> tensor20 = {den1, I24};
@@ -261,6 +268,7 @@ class CAS_test : public SpinFreeMethod<T>{
       density_->add_task(task25);
 
       task25->add_dep(task2);
+#endif
 
       std::vector<IndexRange> I30_index = {this->closed_, this->closed_};
       std::shared_ptr<Tensor<T>> I30(new Tensor<T>(I30_index, false));
@@ -331,6 +339,7 @@ class CAS_test : public SpinFreeMethod<T>{
 
 
       std::shared_ptr<Queue<T>> dedci_(new Queue<T>());
+#if 0
       std::vector<std::shared_ptr<Tensor<T>>> tensor35 = {deci};
       std::shared_ptr<Task35<T>> task35(new Task35<T>(tensor35));
       dedci_->add_task(task35);
@@ -387,6 +396,7 @@ class CAS_test : public SpinFreeMethod<T>{
 
       task41->add_dep(task3);
       task41->add_dep(task3);
+#endif
 
       return make_tuple(queue_, energy_, correction_, density_, density2_, dedci_);
     };
@@ -402,7 +412,9 @@ class CAS_test : public SpinFreeMethod<T>{
       r = t2->clone();
       den1 = this->h1_->clone();
       den2 = this->v2_->clone();
+#if 0
       deci = this->rdm0deriv_->clone();
+#endif
     };
     ~CAS_test() {};
 
@@ -423,20 +435,32 @@ class CAS_test : public SpinFreeMethod<T>{
       }
       this->print_iteration(iter == ref_->maxiter());
 
+      std::cout << " === Computing correlated overlap, <1|1> ===" << std::endl;
       correlated_norm = correction(correct);
-      std::cout << "Norm, correlated overlap: <1|1> = " << std::setprecision(10) << correlated_norm << std::endl;
+      std::cout << std::endl;
+      std::cout << "      Norm  = " << std::setprecision(10) << correlated_norm << std::endl;
+      std::cout << std::endl;
 
       std::cout << " === Computing unrelaxed density matrix, dm1, <1|E_pq|1> + 2<0|E_pq|1> ===" << std::endl;
       while (!dens->done())
         dens->next_compute();
+      std::cout << std::endl;
       std::cout << " === Computing unrelaxed density matrix, dm2, <0|E_pqrs|1>  ===" << std::endl;
       while (!dens2->done())
         dens2->next_compute();
-      std::cout << " === Calculating cI derivative dE/dcI ===" << std::endl;
+      std::cout << std::endl;
+
+#if 0
+      std::cout << " === Computing cI derivative dE/dcI ===" << std::endl;
       while (!dec->done())
         dec->next_compute();
-      deci->ax_plus_y(-correlated_norm, sigma_);
+      deci->ax_plus_y(-2.0*correlated_norm, sigma_);
+      deci->print1("cI derivative tensor: ", 1.0e-15);
       std::cout << std::endl;
+      std::cout << "      cI derivative * cI    = " << std::setprecision(10) <<  deci->dot_product(this->rdm0deriv_) << std::endl;
+      std::cout << "      Expecting 2E - 2N*E0  = " << std::setprecision(10) <<  2.0*this->energy_-2.0*correlated_norm*e0_ << std::endl;
+      std::cout << std::endl;
+#endif
 
     };
 
