@@ -57,28 +57,22 @@ void CASBFGS::compute() {
     const shared_ptr<const Matrix> xold = x->copy();
 
     // first perform CASCI to obtain RDMs
-    if (iter) fci_->update(coeff_);
-    Timer fci_time(0);
-    fci_->compute();
-    fci_->compute_rdm12();
-    fci_time.tick_print("FCI and RDMs");
-    // get energy
-    energy_ = fci_->energy();
-    {
-      // use state averaged energy to update trust radius
-      double sa_en = 0.0;
-      for (auto& i : fci_->energy())
-        sa_en += i;
-      sa_en /= double((fci_->energy()).size());
-      evals.push_back(sa_en);
+    if (nact_) {
+      if (iter) fci_->update(coeff_);
+      Timer fci_time(0);
+      fci_->compute();
+      fci_->compute_rdm12();
+      fci_time.tick_print("FCI and RDMs");
     }
 
     shared_ptr<Matrix> natorb_mat = x->clone();
-    {
+    if (nact_) {
       // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
       shared_ptr<const Matrix> natorb = form_natural_orbs();
       natorb_mat->unit();
       natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
+    } else {
+      natorb_mat->unit();
     }
 
     auto sigma = make_shared<RotFile>(nclosed_, nact_, nvirt_);
@@ -93,22 +87,34 @@ void CASBFGS::compute() {
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
     // * active Fock operator
     // first make a weighted coefficient
-    shared_ptr<Matrix> acoeff = coeff_->slice_copy(nclosed_, nocc_);
-    for (int i = 0; i != nact_; ++i)
-      blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
+    shared_ptr<Matrix> acoeff;
+    if (nact_) {
+      acoeff = coeff_->slice_copy(nclosed_, nocc_);
+      for (int i = 0; i != nact_; ++i)
+        blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
+    }
     // then make a AO density matrix
-    shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore_, nullptr, acoeff, /*store*/false, /*rhf*/true);
-    shared_ptr<const Matrix> afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);
-
+    shared_ptr<const Matrix> afock;
+    if (nact_) {
+      auto afockao = make_shared<Fock<1>>(geom_, hcore_, nullptr, acoeff, /*store*/false, /*rhf*/true);
+      afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);
+    } else {
+      afock = cfock->clone();
+    }
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
-    auto qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
+    shared_ptr<const Qvec> qxr;
+    if (nact_) {
+      qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
+    }
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);
-    // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
-    grad_va(cfock, qxr, sigma);
-    // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
-    grad_ca(cfock, afock, qxr, sigma);
+    if (nact_) {
+      // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
+      grad_va(cfock, qxr, sigma);
+      // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
+      grad_ca(cfock, afock, qxr, sigma);
+    }
 
     // if this is the first time, set up the BFGS solver
     if (iter == 0) {
@@ -117,6 +123,18 @@ void CASBFGS::compute() {
       bfgs = make_shared<SRBFGS<RotFile>>(denom);
     }
     onebody.tick_print("One body operators");
+
+    // get energy
+    if (nact_) {
+      energy_ = fci_->energy();
+      // use state averaged energy to update trust radius
+      const double sa_en = accumulate(energy_.begin(), energy_.end(), 0.0) / static_cast<double>(fci_->energy().size());
+      evals.push_back(sa_en);
+    } else {
+      const double en = (ccoeff % (*cfockao + *hcore_) * ccoeff).trace() + geom_->nuclear_repulsion();
+      energy_ = {en};
+      evals.push_back(en);
+    }
 
     // extrapolation using BFGS
     Timer extrap(0);
@@ -173,9 +191,11 @@ void CASBFGS::compute() {
 
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
-  fci_->update(coeff_);
-  fci_->compute();
-  fci_->compute_rdm12();
+  if (nact_) {
+    fci_->update(coeff_);
+    fci_->compute();
+    fci_->compute_rdm12();
+  }
 }
 
 
