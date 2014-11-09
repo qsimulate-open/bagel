@@ -104,12 +104,13 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   const int nact = ref->nact();
 
   // state-averaged density matrices
-  shared_ptr<const RDM<1>> rdm1_av = ref->rdm1_av();
-  shared_ptr<const RDM<2>> rdm2_av = ref->rdm2_av();
+  shared_ptr<const RDM<1>> rdm1_av = nact ? ref->rdm1_av() : nullptr;
+  shared_ptr<const RDM<2>> rdm2_av = nact ? ref->rdm2_av() : nullptr;
+cout << "bbb" << endl;
 
   shared_ptr<const Matrix> d1 = task_->d1();
   shared_ptr<const Matrix> d2 = task_->d2();
-  shared_ptr<const Civec> cider = task_->cideriv();
+  shared_ptr<const Civec> cider = nact ? task_->cideriv() : nullptr;
 
   shared_ptr<const Matrix> coeff = task_->coeff();
 
@@ -132,7 +133,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const DFHalfDist> halfjj = halfj->apply_J();
   shared_ptr<Matrix> yrs;
   shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
-  tie(yrs, fulld1) = task_->compute_y(d1, d2, cider, half, halfj, halfjj);
+  tie(yrs, fulld1) = task_->compute_Y(d1, d2, half, halfj, halfjj);
 
   // solve CPCASSCF
   auto g0 = yrs;
@@ -237,7 +238,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 
 
 tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
-  CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, shared_ptr<const Matrix> dm2, shared_ptr<const Civec> cider,
+  CASPT2Grad::compute_Y(shared_ptr<const Matrix> dm1, shared_ptr<const Matrix> dm2,
                         shared_ptr<const DFHalfDist> half, shared_ptr<const DFHalfDist> halfj, shared_ptr<const DFHalfDist> halfjj) {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
@@ -325,7 +326,8 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     fullks = full->apply_2rdm(*D1);
     *out += *full->form_2index(fullks, 2.0);
     // D0 part
-    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(*ref_->rdm2(target_), *ref_->rdm1(target_), nclosed, nact);
+    shared_ptr<const DFFullDist> fulld = nact ? fullo->apply_2rdm(*ref_->rdm2(target_), *ref_->rdm1(target_), nclosed, nact)
+                                              : fullo->apply_closed_2RDM();
     out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulld, 1.0));
   }
 
