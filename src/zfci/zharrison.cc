@@ -65,9 +65,6 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   if (norb_  < 0)
     norb_ = idata_->get<int>("norb", (rr->relcoeff()->mdim()/2-ncore_));
 
-  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
-  if (iactive) throw runtime_error("iactive is not used for relativistic methods - implement RAS?");
-
   // additional charge
   charge_ = idata_->get<int>("charge", 0);
 
@@ -88,15 +85,37 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   space_ = make_shared<RelSpace>(norb_, nele_);
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
 
+  // obtain the coefficient matrix in striped format
+  shared_ptr<const ZMatrix> coeff;
   if (coeff_zcas == nullptr) {
-    cout << "    * nvirt    : " << setw(6) << (rr->relcoeff()->mdim()/2-ncore_-norb_) << endl;
-    // coeff from ref is always in striped format
-    update(rr->relcoeff(), restricted);
+    if (restricted) throw runtime_error("Currently we should only have Kramers-adapted starting orbitals when coming from ZCASSCF");
+    // For FCI and CAS-CI, use a RelReference object
+    // Reorder as specified in the input so frontier orbitals contain the desired active space
+    const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+    if (iactive) {
+      assert(iactive->size() == norb_);
+      set<int> active_indices;
+
+      // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+      for (auto& i : *iactive)
+        active_indices.insert(lexical_cast<int>(i->data()) - 1);
+      cout << " " << endl;
+      cout << "    ==== Active orbitals : ===== " << endl;
+      for (auto& i : active_indices)
+        cout << "         Orbital " << i+1 << endl;
+      cout << "    ============================ " << endl << endl;
+      coeff = set_active(active_indices, swap_pos_neg(rr->relcoeff_full()));
+    } else {
+      coeff = swap_pos_neg(rr->relcoeff_full());
+    }
   } else {
-    cout << "    * nvirt    : " << setw(6) << (coeff_zcas->mdim()/2-ncore_-norb_) << endl;
-    // coeff from zcas presently in striped format
-    update(coeff_zcas, restricted);
+    // For ZCASSCF, just accept the coefficients given
+    coeff = coeff_zcas;
   }
+
+  cout << "    * nvirt    : " << setw(6) << (coeff->mdim()/2-ncore_-norb_) << endl;
+  update(coeff, restricted);
+
 }
 
 
