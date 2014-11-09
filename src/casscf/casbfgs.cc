@@ -109,12 +109,10 @@ void CASBFGS::compute() {
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);
-    if (nact_) {
-      // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
-      grad_va(cfock, qxr, sigma);
-      // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
-      grad_ca(cfock, afock, qxr, sigma);
-    }
+    // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
+    grad_va(cfock, qxr, sigma);
+    // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
+    grad_ca(cfock, afock, qxr, sigma);
 
     // if this is the first time, set up the BFGS solver
     if (iter == 0) {
