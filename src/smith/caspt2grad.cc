@@ -106,7 +106,6 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   // state-averaged density matrices
   shared_ptr<const RDM<1>> rdm1_av = nact ? ref->rdm1_av() : nullptr;
   shared_ptr<const RDM<2>> rdm2_av = nact ? ref->rdm2_av() : nullptr;
-cout << "bbb" << endl;
 
   shared_ptr<const Matrix> d1 = task_->d1();
   shared_ptr<const Matrix> d2 = task_->d2();
@@ -137,9 +136,19 @@ cout << "bbb" << endl;
 
   // solve CPCASSCF
   auto g0 = yrs;
-  auto g1 = make_shared<Dvec>(cider, ref->nstate()); // FIXME this is wrong for nstate > 1 in CASSCF
+  auto g1 = nact ? make_shared<Dvec>(cider, ref->nstate())
+                 : make_shared<Dvec>(make_shared<Determinants>(), 1); // FIXME this is wrong for nstate > 1 in CASSCF
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
-  auto cp = make_shared<CPCASSCF>(grad, ref->ciwfn()->civectors(), half, halfjj, ref, fci, ncore, coeff);
+
+  shared_ptr<const Dvec> civector;
+  if (nact) {
+    civector = ref->ciwfn()->civectors();
+  } else {
+    auto civec = make_shared<Dvec>(make_shared<Determinants>(), 1);
+    civec->data(0)->element(0,0) = 1.0;
+    civector = civec;
+  }
+  auto cp = make_shared<CPCASSCF>(grad, civector, half, halfjj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
   tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
