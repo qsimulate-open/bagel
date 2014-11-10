@@ -202,17 +202,28 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
 
    // (2) half transform
    list<shared_ptr<RelDFHalf>> half_complexa = DFock::make_half_complex(dfdists, racoeff, iacoeff);
+   list<shared_ptr<RelDFHalf>> half_complexa_breit;
+   if (breit) half_complexa_breit = DFock::make_half_complex(dfdists, racoeff, iacoeff);
    for (auto& i : half_complexa)
      i = i->apply_J();
 
    // (3) split and factorize
-   list<shared_ptr<RelDFHalf>> half_complex_facta, half_complex_facta2;
+   list<shared_ptr<RelDFHalf>> half_complex_facta, half_complex_facta2, half_complex_facta_breit;
    for (auto& i : half_complexa) {
      list<shared_ptr<RelDFHalf>> tmp = i->split(false);
      half_complex_facta.insert(half_complex_facta.end(), tmp.begin(), tmp.end());
    }
    half_complexa.clear();
    DFock::factorize(half_complex_facta);
+
+   if (breit) {
+     for (auto& i : half_complexa_breit) {
+       list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+       half_complex_facta_breit.insert(half_complex_facta_breit.end(), tmp.begin(), tmp.end());
+     }
+     half_complexa_breit.clear();
+     DFock::factorize(half_complex_facta_breit);
+   }
 
 #if 1
    if (breit) {
@@ -224,10 +235,10 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
        if (breitint->not_diagonal(i))
          breit_2index.push_back(breit_2index.back()->cross());
      }
-     for (auto& i : half_complex_facta)
+     for (auto& i : half_complex_facta_breit)
        half_complex_facta2.push_back(i->apply_J());
 
-     for (auto& i : half_complex_facta)
+     for (auto& i : half_complex_facta_breit)
        for (auto& j : breit_2index)
          if (i->alpha_matches(j)) {
            half_complex_facta2.push_back(i->apply_J()->multiply_breit2index(j));
