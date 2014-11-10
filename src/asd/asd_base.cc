@@ -4197,3 +4197,308 @@ ASD_base::initialize_4RDM() {
 
 }
 
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_aaaaET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "aaaaET_RDM34" << endl; cout.flush();
+//auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out3 = nullptr;
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+//const int neleA = Ap.nelea() + Ap.neleb();
+
+  //4RDM p32B
+  cout << "4RDM #1" << endl;
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}); // a'a'a'a'
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //aaaa
+  cout << "partial gammas" << endl; cout.flush();
+
+  auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); // a'a'a'a'|aaaa
+  auto rdmt = rdm1->clone();
+  cout << "full gammas" << endl; cout.flush();
+
+  // E_ai',bj',ck',dl' : sign(+1)
+  //                  a i b j c k d l                                                                                                     original order  (dcba|ijkl)
+  SMITH::sort_indices<3,4,2,5,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'a'a'|aaaa   (dcba|ijkl)
+  cout << "rearranged" << endl; cout.flush();
+
+  *fourrdm_.at(string("ijkl")) += *rdmt;
+  
+  return make_tuple(out3,out4);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_bbbbET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "bbbbET_RDM34" << endl; cout.flush();
+//auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out3 = nullptr;
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+//const int neleA = Ap.nelea() + Ap.neleb();
+
+  //4RDM p32B
+  cout << "4RDM #1" << endl;
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta}); // b'b'b'b'
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}); //bbbb
+  cout << "partial gammas" << endl; cout.flush();
+
+  auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); // b'b'b'b'|bbbb
+  auto rdmt = rdm1->clone();
+  cout << "full gammas" << endl; cout.flush();
+
+  // E_ai',bj',ck',dl' : sign(+1)
+  //                  a i b j c k d l                                                                                                     original order  (dcba|ijkl)
+  SMITH::sort_indices<3,4,2,5,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'b'b'|bbbb   (dcba|ijkl)
+  cout << "rearranged" << endl; cout.flush();
+
+  *fourrdm_.at(string("ijkl")) += *rdmt;
+  
+  return make_tuple(out3,out4);
+} 
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_aabbET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "aabbET_RDM34" << endl; cout.flush();
+//auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out3 = nullptr;
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+//const int neleA = Ap.nelea() + Ap.neleb();
+
+  //4RDM p32B
+  cout << "4RDM #1" << endl;
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha}); // a'b'b'a'
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}); //abba
+  cout << "partial gammas" << endl; cout.flush();
+
+  auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); // a'b'b'a'|abba
+  auto rdmt = rdm1->clone();
+  cout << "full gammas" << endl; cout.flush();
+
+  // E_ai',bj',ck',dl' : sign(+1)
+  //                  a i b j c k d l                                                                                                     original order  (dcba|ijkl)
+  SMITH::sort_indices<3,4,2,5,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'b'a'|abba   (dcba|ijkl)
+  SMITH::sort_indices<2,5,3,4,1,6,0,7, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'a'b'|baba   (dcab|jikl) : b-a, j-i
+  SMITH::sort_indices<3,4,2,5,0,7,1,6, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'b'a'|abab   (cdba|ijlk) : d-c, k-l
+  SMITH::sort_indices<2,5,3,4,0,7,1,6, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'a'b'|baab   (cdab|jilk) : d-c, b-a, i-j, k-l
+  SMITH::sort_indices<2,5,1,6,3,4,0,7, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'b'b'|bbaa   (dbac|kijl) : c-b-a, k-j-i
+  SMITH::sort_indices<3,4,0,7,2,5,1,6, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'a'a'|aabb   (bdca|iklj) : b-c-d, j-k-l
+  cout << "rearranged" << endl; cout.flush();
+
+  *fourrdm_.at(string("ijkl")) += *rdmt;
+  
+  return make_tuple(out3,out4);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_aaabET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "aaabET_RDM34" << endl; cout.flush();
+//auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out3 = nullptr;
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+//const int neleA = Ap.nelea() + Ap.neleb();
+
+  //4RDM p34
+  cout << "4RDM #1" << endl;
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}); //a'b'a'a'
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}); //aaba
+  cout << "partial gammas" << endl; cout.flush();
+
+  auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); // a'b'a'a'|aaba
+  auto rdmt = rdm1->clone();
+  cout << "full gammas" << endl; cout.flush();
+
+  // E_ai',bj',ck',dl' : sign(+1)
+  //                  a i b j c k d l                                                                                                     original order  (dcba|ijkl)
+  SMITH::sort_indices<3,4,2,5,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'a'a'|aaba   (dcba|ijkl)
+  SMITH::sort_indices<3,4,2,5,0,7,1,6, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'a'a'|aaab   (cdba|ijlk) : c-d, k-l
+  SMITH::sort_indices<3,4,1,6,2,5,0,7, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'b'a'|abaa   (dbca|ikjl) : c-b, j-k
+  SMITH::sort_indices<1,6,3,4,2,5,0,7, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'a'b'|baaa   (dacb|jkil) : a-b-c, i-j-k
+  cout << "rearranged" << endl; cout.flush();
+
+  *fourrdm_.at(string("ijkl")) += *rdmt;
+  
+  return make_tuple(out3,out4);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_abbbET_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "abbbET_RDM34" << endl; cout.flush();
+//auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out3 = nullptr;
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+//const int neleA = Ap.nelea() + Ap.neleb();
+
+  //4RDM p34
+  cout << "4RDM #1" << endl;
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::CreateBeta}); //b'a'b'b'
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta}); //bbab
+  cout << "partial gammas" << endl; cout.flush();
+
+  auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); // b'a'b'b'|bbab
+  auto rdmt = rdm1->clone();
+  cout << "full gammas" << endl; cout.flush();
+
+  // E_ai',bj',ck',dl' : sign(+1)
+  //                  a i b j c k d l                                                                                                     original order  (dcba|ijkl)
+  SMITH::sort_indices<3,4,2,5,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'b'b'|bbab   (dcba|ijkl)
+  SMITH::sort_indices<3,4,2,5,0,7,1,6, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'b'b'|bbba   (cdba|ijlk) : c-d, k-l
+  SMITH::sort_indices<3,4,1,6,2,5,0,7, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'a'b'|babb   (dbca|ikjl) : c-b, j-k
+  SMITH::sort_indices<1,6,3,4,2,5,0,7, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'b'a'|abbb   (dacb|jkil) : a-b-c, i-j-k
+  cout << "rearranged" << endl; cout.flush();
+
+  *fourrdm_.at(string("ijkl")) += *rdmt;
+  
+  return make_tuple(out3,out4);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_aaETFlip_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "aaETFlip_RDM34" << endl; cout.flush();
+//auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out3 = nullptr;
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+//const int neleA = Ap.nelea() + Ap.neleb();
+  //4RDM p34B
+  cout << "4RDM #1" << endl;
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta}); //a'a'a'b
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //b'aaa
+  cout << "partial gammas" << endl; cout.flush();
+
+  auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); // a'a'a'b|b'aaa
+  auto rdmt = rdm1->clone();
+  cout << "full gammas" << endl; cout.flush();
+
+  // E_a'i,bj',ck',dl' : sign(-1)
+  //                  a i b j c k d l                                                                                                     original order  (dcbi|ajkl)
+  SMITH::sort_indices<4,3,2,5,1,6,0,7, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'a'b'|baaa   (dcbi|ajkl)
+  cout << "rearranged" << endl; cout.flush();
+
+  *fourrdm_.at(string("ajkl")) += *rdmt;
+  
+  return make_tuple(out3,out4);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_bbETFlip_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "bbETFlip_RDM34" << endl; cout.flush();
+//auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out3 = nullptr;
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+//const int neleA = Ap.nelea() + Ap.neleb();
+  //4RDM p34B
+  cout << "4RDM #1" << endl;
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}); //b'b'b'a
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}); //b'aaa
+  cout << "partial gammas" << endl; cout.flush();
+
+  auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); // b'b'b'a|a'bbb
+  auto rdmt = rdm1->clone();
+  cout << "full gammas" << endl; cout.flush();
+
+  // E_a'i,bj',ck',dl' : sign(-1)
+  //                  a i b j c k d l                                                                                                     original order  (dcbi|ajkl)
+  SMITH::sort_indices<4,3,2,5,1,6,0,7, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'b'a'|abbb   (dcbi|ajkl)
+  cout << "rearranged" << endl; cout.flush();
+
+  *fourrdm_.at(string("ajkl")) += *rdmt;
+  
+  return make_tuple(out3,out4);
+}
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_doubleFlip_RDM34(const array<MonomerKey,4>& keys) const {
+//***************************************************************************************************************
+  cout << "doubleFlip_RDM34" << endl; cout.flush();
+//auto& Ap = keys[2];
+
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+  auto out3 = nullptr;
+  auto out4 = nullptr; //make_shared<RDM<2>>(nactA+nactB);
+
+//const int neleA = Ap.nelea() + Ap.neleb();
+  //4RDM p34B
+  cout << "4RDM #1" << endl;
+  auto gamma_A = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //b'b'aa
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //a'a'bb
+  cout << "partial gammas" << endl; cout.flush();
+
+  auto rdm1 = make_shared<Matrix>(gamma_A % gamma_B); // b'b'aa|a'a'bb
+  auto rdmt = rdm1->clone();
+  cout << "full gammas" << endl; cout.flush();
+
+  // E_a'i,b'j,ck',dl' : sign(+1)
+  //                  a i b j c k d l                                                                                                     original order  (dcij|bakl)
+  SMITH::sort_indices<5,2,4,3,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'aa|a'a'bb   (dcij|bakl)
+  //                  a i b j c k d l                                                                                                     original order  (jicd|lkab) (N,M) contribution
+  SMITH::sort_indices<6,1,7,0,2,5,3,4, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'aa|a'a'bb   (jicd|lkab)
+  cout << "rearranged" << endl; cout.flush();
+
+  *fourrdm_.at(string("bakl")) += *rdmt;
+  
+  return make_tuple(out3,out4);
+}
