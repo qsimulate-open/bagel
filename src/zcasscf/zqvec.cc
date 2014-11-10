@@ -189,7 +189,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   }
   shared_ptr<ZMatrix> out;
   auto compute = [&racoeff, &iacoeff, &rrcoeff, &ircoeff, &geom, &fci, &nact] (shared_ptr<ZMatrix>& out, const bool gaunt, const bool breit = false) {
-   // purpose : compute (ps|tu) Gamma_{tu,ws} for coulomb and gaunt case ; a factor -1.0 and different df objects are needed for gaunt
+   // purpose : compute (ps|tu) Gamma_{tu,ws} for coulomb, gaunt and breit ; a factor -1.0 (-0.5) and different df objects are needed for gaunt (breit)
    // (1.5) dfdists
    vector<shared_ptr<const DFDist>> dfs;
    if (!gaunt) {
@@ -200,14 +200,14 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
    }
    list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, gaunt);
 
-   // (2) half transform
+   // (2) half transform ; half_complexa = J^{-1/2}_{gamma,delta}(delta|i mu) ; half_complexa_breit = (delta|i mu)
    list<shared_ptr<RelDFHalf>> half_complexa = DFock::make_half_complex(dfdists, racoeff, iacoeff);
    list<shared_ptr<RelDFHalf>> half_complexa_breit;
    if (breit) half_complexa_breit = DFock::make_half_complex(dfdists, racoeff, iacoeff);
    for (auto& i : half_complexa)
      i = i->apply_J();
 
-   // (3) split and factorize
+   // (3) split and factorize ; half_complex_facta = J^{-1/2}_{gamma,delta}(delta|i mu) ; half_complex_facta_breit = (delta|i mu)
    list<shared_ptr<RelDFHalf>> half_complex_facta, half_complex_facta2, half_complex_facta_breit;
    for (auto& i : half_complexa) {
      list<shared_ptr<RelDFHalf>> tmp = i->split(false);
@@ -215,7 +215,6 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
    }
    half_complexa.clear();
    DFock::factorize(half_complex_facta);
-
    if (breit) {
      for (auto& i : half_complexa_breit) {
        list<shared_ptr<RelDFHalf>> tmp = i->split(false);
@@ -225,7 +224,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
      DFock::factorize(half_complex_facta_breit);
    }
 
-#if 1
+   // (3.5) multiply breit 2index metric ; half_complex_facta2 = ( B^{nu nu'} J^{-1/2} )_{gamma,delta} (delta|i mu)
    if (breit) {
      // TODO Not the best implementation -- one could avoid apply_J to half-transformed objects
      auto breitint = make_shared<BreitInt>(geom);
@@ -245,9 +244,8 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
            DFock::factorize(half_complex_facta2);
          }
    }
-#endif
 
-   // (4) compute (gamma|tu)
+   // (4) compute J^{-1/2}_{delta,gamma} (gamma|tu)
    list<shared_ptr<RelDFFull>> dffulla;
    for (auto& i : half_complex_facta)
      dffulla.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff));
@@ -256,7 +254,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
    assert(dffulla.size() == 1);
    shared_ptr<const RelDFFull> fulltu = dffulla.front();
 
-   // (4.25) compute (gamma|tu) with breit
+   // (4.25) compute ( B^{nu nu'} J^{-1/2} )_{delta,gamma}(gamma|tu)
    list<shared_ptr<RelDFFull>> dffulla_breit;
    shared_ptr<const RelDFFull> fulltu_breit;
    if (breit) {
@@ -268,7 +266,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
      fulltu_breit = dffulla_breit.front();
    }
 
-   // (4.5) compute (gamma|rs)
+   // (4.5) compute J^{-1/2}_{delta,gamma} (gamma|rs)
    list<shared_ptr<RelDFFull>> dffullr;
    for (auto& i : half_complex_facta)
      dffullr.push_back(make_shared<RelDFFull>(i, rrcoeff, ircoeff)); // <- only difference from the Coulomb version
