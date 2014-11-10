@@ -29,6 +29,7 @@
 #include <src/util/timer.h>
 #include <src/math/diis.h>
 #include <src/periodic/pscf.h>
+#include <src/periodic/poverlap.h>
 
 using namespace std;
 using namespace bagel;
@@ -52,6 +53,25 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   lattice_->print_primitive_kvectors();
 
   eig_ = VectorB(geom_->nbasis());
+//lattice_->print_lattice_vectors();
+
+/********************** TEST FOURIER TRANSFORM ************************/
+#if 0
+  POverlap overlap(lattice_);
+//overlap.print("Overlap", 100);
+
+  shared_ptr<const PData> ft_overlap
+  = overlap.ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+  ft_overlap->print("FT-Overlap", 100);
+
+  shared_ptr<const PData> ift_overlap = ft_overlap->ift(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+//ift_overlap->print("IFT-Overlap", 100);
+
+  shared_ptr<const PData> ft2_overlap = ift_overlap->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+  ft2_overlap->print("I(IFT)-Overlap", 100);
+#endif
+/**********************************************************************/
+
 }
 
 void PSCF::compute() {
