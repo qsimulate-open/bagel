@@ -118,12 +118,20 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   const int nmobasis = coeff->mdim();
 
   // d0 including core
-  shared_ptr<const Matrix> d0 = nact ? ref->rdm1_mat(task_->target())->resize(nmobasis,nmobasis) : make_shared<Matrix>(nmobasis,nmobasis);
+  shared_ptr<const Matrix> d0;
+  if (nact) {
+    d0 = ref->rdm1_mat(task_->target())->resize(nmobasis,nmobasis);
+  } else {
+    auto tmp = make_shared<Matrix>(nmobasis,nmobasis);
+    for (int i = 0; i != nclosed; ++i) tmp->element(i,i) = 2.0;
+    d0 = tmp;
+  }
   const MatView ocoeff = coeff->slice(0, nocc);
 
   {
     auto dtotao = make_shared<Matrix>(*coeff * (*d0 + *d1) ^ *coeff);
     Dipole dipole(geom_, dtotao, "CASPT2 unrelaxed");
+    dipole.compute();
   }
 
   // compute Yrs
