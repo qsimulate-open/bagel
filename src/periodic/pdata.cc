@@ -92,9 +92,11 @@ void PData::print(const string tag, const int size) const {
 void PData::print_real_part(const string tag, const int size) const {
   assert(pdata_.front()->get_imag_part()->rms() < 1e-10);
   pdata_.front()->get_real_part()->print(tag, size);
+  cout << endl;
   for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) {
     assert((*iblock)->get_imag_part()->rms() < 1e-10);
     (*iblock)->get_real_part()->print("", size);
+    cout << endl;
   }
 }
 
@@ -110,10 +112,12 @@ shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const 
     int g = 0;
     for (auto& gvec : gvector) {
       shared_ptr<const ZMatrix> gblock = pdata(g);
-      complex<double> factor(0.0, -gvec[0]* kvec[0] - gvec[1] * kvec[1] - gvec[2] * kvec[2]);
-      factor = exp(factor);
-      auto tmp1 = make_shared<const ZMatrix>(*(gblock->get_real_part()), factor); // gblock should be real
-      auto tmp2 = make_shared<const ZMatrix>(*(gblock->get_imag_part()), factor);
+      assert (gblock->get_imag_part()->rms() < 1e-10); // gblock should be real
+      const double exponent = gvec[0]* kvec[0] + gvec[1] * kvec[1] + gvec[2] * kvec[2];
+      const double real = cos(exponent);
+      const double imag = sin(exponent);
+      auto tmp1 = make_shared<const ZMatrix>(*(gblock->get_real_part()), complex<double>(real, 0.0));
+      auto tmp2 = make_shared<const ZMatrix>(*(gblock->get_imag_part()), complex<double>(0.0, imag));
       *kblock += *tmp1 + *tmp2;
       ++g;
     }
@@ -136,10 +140,11 @@ shared_ptr<const PData> PData::ift(const vector<array<double, 3>> gvector, const
     int k = 0;
     for (auto& kvec : kvector) {
       shared_ptr<const ZMatrix> kblock = pdata(k);
-      complex<double> factor(0.0, gvec[0]* kvec[0] + gvec[1] * kvec[1] + gvec[2] * kvec[2]);
-      factor = exp(factor);
-      auto tmp1 = make_shared<const ZMatrix>(*(kblock->get_real_part()), factor);
-      auto tmp2 = make_shared<const ZMatrix>(*(kblock->get_imag_part()), factor);
+      const double exponent = -gvec[0]* kvec[0] - gvec[1] * kvec[1] - gvec[2] * kvec[2];
+      const double real = cos(exponent);
+      const double imag = sin(exponent);
+      auto tmp1 = make_shared<const ZMatrix>(*(kblock->get_real_part()), complex<double>(real, 0.0));
+      auto tmp2 = make_shared<const ZMatrix>(*(kblock->get_imag_part()), complex<double>(0.0, imag));
       *gblock += *tmp1 + *tmp2;
       ++k;
     }
