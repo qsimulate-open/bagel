@@ -170,7 +170,6 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
  : ZMatrix(nbasis, nact*2) {
 
   assert(gaunt || !breit);
-  if (breit) throw logic_error("Breit not implemented yet in ZQvec");
   assert((*acoeff - *fci->jop()->coeff()).rms() < 1.0e-15);
   assert(nbasis == rcoeff->mdim());
 
@@ -286,9 +285,9 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
    else if (!breit)
      *out += *fullrs->form_2index(fulltu_d, gscale, false);
    else {
-     // explicitly symmetrize when using breit as is done for compute_mo2e
-     *out += *fullrs->form_2index(fulltu_d, gscale*0.5, false);
-     *out += *fulltu_d->form_2index(fullrs, gscale*0.5, false);
+     // symmetrization was used in ZFCI compute_mo2e, but following that procedure leads to large errors here
+     // TODO : ensure that symmetrization is not needed
+     *out += *fullrs->form_2index(fulltu_d, gscale, false);
    }
   };
   compute(out, false);
