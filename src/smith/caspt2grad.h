@@ -75,7 +75,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
-      compute_Y(std::shared_ptr<const Matrix> dm1, std::shared_ptr<const Matrix> dm2,
+      compute_Y(std::shared_ptr<const Matrix> dm1, std::shared_ptr<const Matrix> dm11, std::shared_ptr<const Matrix> dm2,
                 std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 };
 

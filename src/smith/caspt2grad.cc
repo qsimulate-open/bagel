@@ -107,7 +107,10 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const RDM<1>> rdm1_av = nact ? ref->rdm1_av() : nullptr;
   shared_ptr<const RDM<2>> rdm2_av = nact ? ref->rdm2_av() : nullptr;
 
+  // second order density matrix
   shared_ptr<const Matrix> d1 = task_->d1();
+  // first order density matrices
+  shared_ptr<const Matrix> d11 = task_->d11();
   shared_ptr<const Matrix> d2 = task_->d2();
   shared_ptr<const Civec> cider = nact ? task_->cideriv() : nullptr;
 
@@ -129,7 +132,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   const MatView ocoeff = coeff->slice(0, nocc);
 
   {
-    auto dtotao = make_shared<Matrix>(*coeff * (*d0 + *d1) ^ *coeff);
+    auto dtotao = make_shared<Matrix>(*coeff * (*d0 + *d11 + *d1) ^ *coeff);
     Dipole dipole(geom_, dtotao, "CASPT2 unrelaxed");
     dipole.compute();
   }
@@ -140,7 +143,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const DFHalfDist> halfjj = halfj->apply_J();
   shared_ptr<Matrix> yrs;
   shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
-  tie(yrs, fulld1) = task_->compute_Y(d1, d2, half, halfj, halfjj);
+  tie(yrs, fulld1) = task_->compute_Y(d1, d11, d2, half, halfj, halfjj);
 
   // solve CPCASSCF
   auto g0 = yrs;
@@ -169,6 +172,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<Matrix> dtot = d0->copy();
   dtot->ax_plus_y(1.0, dm);
   dtot->ax_plus_y(1.0, d1);
+  dtot->ax_plus_y(1.0, d11);
   if (smallz)
     dtot->add_block(1.0, 0, 0, nocc, nocc, smallz);
 
@@ -264,7 +268,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 
 
 tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
-  CASPT2Grad::compute_Y(shared_ptr<const Matrix> dm1, shared_ptr<const Matrix> dm2,
+  CASPT2Grad::compute_Y(shared_ptr<const Matrix> dm1, shared_ptr<const Matrix> dm11, shared_ptr<const Matrix> dm2,
                         shared_ptr<const DFHalfDist> half, shared_ptr<const DFHalfDist> halfj, shared_ptr<const DFHalfDist> halfjj) {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
@@ -295,7 +299,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
       for (int i = 0; i != nclosed; ++i)
         d0->element(i,i) = 2.0;
     }
-    *out += *hmo * (*dm1 + *d0) * 2.0;
+    *out += *hmo * (*dm1 + *dm11 + *d0) * 2.0;
   }
 
   {
