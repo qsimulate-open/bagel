@@ -44,7 +44,10 @@ class Smith : public Method {
     std::shared_ptr<SMITH::SpinFreeMethod<SMITH::Storage_Incore>> algo_;
 
     // correlated density matrices
+    // second order density matrix
     std::shared_ptr<const Matrix> dm1_;
+    // first order density matrices
+    std::shared_ptr<const Matrix> dm11_;
     std::shared_ptr<const Matrix> dm2_;
     // correction e0<1|1>
     double correction_;

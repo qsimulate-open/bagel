@@ -58,8 +58,9 @@ void Smith::compute() {
   // TODO toggle by something better than this.
   auto algop = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_);
   if (algop) {
-    dm1_ = algop->rdm1();
-    dm2_ = algop->rdm2();
+    dm1_ = algop->rdm12();
+    dm11_ = algop->rdm11();
+    dm2_ = algop->rdm21();
 
     // calculate unrelaxed dipole moment from correlated dm
     correction_ = algop->rdm1_correction();
