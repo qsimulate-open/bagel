@@ -54,7 +54,4 @@ void PFock::form_pfock() {
     *(pdata_[i]) += *((*jop)(i));
 
   time.tick_print("Coulomb build in PFock");
-
-
-
 }

@@ -38,9 +38,12 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(PSCF_base)
 
 PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
- : Method(idata, geom, re), lattice_(make_shared<const Lattice>(geom)), eig_(geom->nbasis()) {
+ : Method(idata, geom, re), lattice_(make_shared<const Lattice>(geom)) {
 
   Timer pscf;
+
+  eig_.resize(lattice_->num_lattice_kvectors());
+  for (auto& eigblock : eig_) eigblock = make_shared<VectorB>(geom->nbasis());
 
   restart_ = idata_->get<bool>("restart", false);
   auto overlap = make_shared<const POverlap>(lattice_);

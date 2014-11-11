@@ -50,7 +50,7 @@ class PSCF_base : public Method {
     double thresh_overlap_;
     double thresh_scf_;
 
-    VectorB eig_;
+    std::vector<std::shared_ptr<VectorB>> eig_;
     double energy_;
 
     // in a unit cell
@@ -95,7 +95,8 @@ class PSCF_base : public Method {
 
     virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 
-    VectorB& eig() { return eig_; }
+    std::vector<std::shared_ptr<VectorB>> eig() const { return eig_; }
+    std::shared_ptr<VectorB> eig(const int i) const { return eig_[i]; }
 };
 
 }

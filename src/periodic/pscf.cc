@@ -52,7 +52,6 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   lattice_->print_lattice_coordinates();
   lattice_->print_primitive_kvectors();
 
-  eig_ = VectorB(geom_->nbasis());
 //lattice_->print_lattice_vectors();
 
 /********************** TEST FOURIER TRANSFORM ************************/
@@ -123,6 +122,7 @@ void PSCF::compute() {
     double error = 0.0;
     double max_imag = 0.0;
     auto error_vector = make_shared<PData>(blocksize, nkblock);
+    cout << indent << setw(5) << iter;
     for (int i = 0; i != nkblock; ++i) {
       energy[i] = 0.5 * ((*((*khcore)(i)) + *((*kfock)(i)) * *((*aodensity)(i))).trace()) + lattice_->nuclear_repulsion();
       assert(energy[i].imag() < 1e-8);
@@ -131,9 +131,8 @@ void PSCF::compute() {
                                               - *((*koverlap_)(i)) * *((*aodensity)(i)) * *((*kfock)(i)));
       const double block_error = (*error_vector)(i)->rms();
       if (abs(block_error) > error) error = abs(block_error);
-      cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy[i].real() << "   ";
     }
-    cout << setw(17) << error << setw(15) << setprecision(2) << pscftime.tick();
+    cout << setw(17) << setprecision(8) << error << setw(15) << setprecision(2) << pscftime.tick();
     if (abs(max_imag) > 1e-12) {
       cout << "  *** Warning *** Im(E) = " << setw(15) << fixed << setprecision(12) << max_imag << endl;
     } else {
@@ -142,23 +141,32 @@ void PSCF::compute() {
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * PSCF iteration converged." << endl << endl;
+      cout << indent << endl << indent << "    Eigenvalues with nbasis = " << blocksize << endl << endl;
+      for (int i = 0; i != nkblock; ++i) {
+        for (int n = 0; n != blocksize; ++n) cout << setprecision(9) << (*eig_[i])(n) << "    ";
+        cout << endl;
+      }
       break;
     } else if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in SOSCF." << endl << endl;
       break;
     }
 
+#if 0
     auto newfock = make_shared<PData>(blocksize, nkblock);
     if (iter >= diis_start_) {
       for (int i = 0; i != nkblock; ++i)
         (*newfock)[i] = diis.extrapolate({(*kfock)(i), (*error_vector)(i)});
     }
+#endif
+
 
     auto intermediate = make_shared<PData>(blocksize, nkblock);
     for (int i = 0; i != nkblock; ++i) {
-      const ZMatrix kblock = *((*ktildex_)(i)) % *((*newfock)(i)) * *((*ktildex_)(i));
+//      const ZMatrix kblock = *((*ktildex_)(i)) % *((*newfock)(i)) * *((*ktildex_)(i));
+      const ZMatrix kblock = *((*ktildex_)(i)) % *((*kfock)(i)) * *((*ktildex_)(i));
       (*intermediate)[i] = make_shared<ZMatrix>(kblock);
-      (*intermediate)[i]->diagonalize(eig());
+      (*intermediate)[i]->diagonalize(*eig_[i]);
       (*kcoeff)[i] = make_shared<ZMatrix>(*((*ktildex_)(i)) * *((*intermediate)(i)));
     }
 

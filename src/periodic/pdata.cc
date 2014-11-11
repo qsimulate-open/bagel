@@ -84,8 +84,11 @@ void PData::fill_upper_conjg() { for (auto&block : pdata_) block->fill_upper_con
 
 
 void PData::print(const string tag, const int size) const {
-  pdata_.front()->print(tag, size);
-  for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) (*iblock)->print("", size);
+  pdata_.front()->print(tag, size); cout << endl;
+  for (auto iblock = pdata_.begin() + 1; iblock != pdata_.end(); ++iblock) {
+    (*iblock)->print("", size);
+    cout << endl;
+  }
 }
 
 
