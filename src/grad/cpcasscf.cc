@@ -465,6 +465,9 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
     auto fockinact_ao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, ccoeff, /*grad*/false, /*rhf*/true);
     fockinact = make_shared<Matrix>(*coeff_ % *fockinact_ao * *coeff_);
     fockact = fockinact->clone();
+
+    assert(nclosed);
+    sigmaorb->add_block(4.0, 0, 0, nmobasis, nclosed, *fockinact * cz0);
   }
 
   Matrix qone(nocca, nocca);
