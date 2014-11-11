@@ -89,6 +89,7 @@ void CASPT2Grad::compute() {
       d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1tmp);
       d1_ = d1tmp2;
     }
+    d11_ = smith->dm11();
     d2_ = smith->dm2();
     energy_ = smith->algo()->energy() + ref_energy_[target_];
   }

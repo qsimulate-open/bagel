@@ -66,6 +66,7 @@ class Smith : public Method {
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 
     std::shared_ptr<const Matrix> dm1() { return dm1_; }
+    std::shared_ptr<const Matrix> dm11() { return dm11_; }
     std::shared_ptr<const Matrix> dm2() { return dm2_; }
     double correction() { return correction_; }
     std::shared_ptr<const Civec> cideriv() { return cider_; }
