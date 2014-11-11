@@ -339,6 +339,9 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
           for (int l = ncore_; l != nocc; ++l) {
             if (t >= nclosed && s >= nclosed) {
               (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              if ((k >= nclosed) ^ (l >= nclosed)) {
+                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+              }
             }
           }
   }
