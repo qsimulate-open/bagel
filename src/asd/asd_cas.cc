@@ -300,25 +300,25 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
   }
   cout << "rdm3 copy complete" << endl; cout.flush();
 
-  auto out4 = std::make_shared<RDM<4>>(nactA+nactB);
-  out4->zero();
-  {
-    //Monomer A
-    auto low = {    0,    0,    0,    0,    0,    0,    0,    0};
-    auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactA};
-    auto outv = make_rwview(out4->range().slice(low,up), out4->storage());
-    copy(rdm4A->begin(), rdm4A->end(), outv.begin());
-  }
-  {
-    //Monomer B
-    auto low = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactA};
-    auto up  = {nactT,nactT,nactT,nactT,nactT,nactT,nactT,nactT};
-    auto outv = make_rwview(out4->range().slice(low,up), out4->storage());
-    copy(rdm4B->begin(), rdm4B->end(), outv.begin());
-  }
-  cout << "rdm4 copy complete" << endl; cout.flush();
+//auto out4 = std::make_shared<RDM<4>>(nactA+nactB);
+//out4->zero();
+//{
+//  //Monomer A
+//  auto low = {    0,    0,    0,    0,    0,    0,    0,    0};
+//  auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactA};
+//  auto outv = make_rwview(out4->range().slice(low,up), out4->storage());
+//  copy(rdm4A->begin(), rdm4A->end(), outv.begin());
+//}
+//{
+//  //Monomer B
+//  auto low = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactA};
+//  auto up  = {nactT,nactT,nactT,nactT,nactT,nactT,nactT,nactT};
+//  auto outv = make_rwview(out4->range().slice(low,up), out4->storage());
+//  copy(rdm4B->begin(), rdm4B->end(), outv.begin());
+//}
+//cout << "rdm4 copy complete" << endl; cout.flush();
 
-  return make_tuple(out3, out4);
+  return make_tuple(out3, nullptr);
 
 }
 
@@ -430,6 +430,7 @@ ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<cons
   cout << "rdm3" << endl; cout.flush();
 
   // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
+/*
   {
     {
       auto tmp4 = make_shared<RDM<4>>(norb);
@@ -455,6 +456,7 @@ ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<cons
     }
   }
   cout << "rdm4" << endl; cout.flush();
+*/
 /*
   // Checking 4RDM by comparing with 3RDM
   const int nelea = cbra->det()->nelea();
@@ -747,3 +749,4 @@ void ASD_CAS::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
     }
   }
 }
+

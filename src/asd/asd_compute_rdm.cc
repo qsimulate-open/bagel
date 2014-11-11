@@ -156,14 +156,15 @@ ASD_base::compute_rdm () {
   }
   
 
+//3RDM
+
   // diagonal subspaces
-//for (auto& subspace : subspaces) {
-//  shared_ptr<RDM<1>> r1;
-//  shared_ptr<RDM<2>> r2;
-//  tie(r1,r2) = compute_diagonal_block_RDM(subspace);
-//  if (r1) assert(false); //*onerdm_ += *r1;
-//  if (r2) *twordm_ += *r2;
-//}
+  for (auto& subspace : subspaces) {
+    shared_ptr<RDM<3>> r3;
+    shared_ptr<RDM<4>> r4;
+    tie(r3,r4) = compute_diagonal_block_RDM34(subspace);
+    if (r3) *threerdm_ += *r3;
+  }
   
   // off diagonal subspaces
   for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
@@ -176,7 +177,6 @@ ASD_base::compute_rdm () {
     }
   }
   
-
   symmetrize_RDM();
 
   debug_RDM(); 

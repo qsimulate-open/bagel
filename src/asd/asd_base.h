@@ -69,6 +69,7 @@ class ASD_base {
     std::shared_ptr<RDM<2>> approx2rdm_; // Second-order RDM
 
     std::shared_ptr<RDM<3>> threerdm_; // Third-order RDM
+    std::map<std::string,std::shared_ptr<Matrix>> rdm3_;
   //std::shared_ptr<RDM<4>> fourrdm_; // Fourth-order RDM
     std::map<std::string,std::shared_ptr<Matrix>> fourrdm_;
   //using DMap = std::map<std::pair<int,int>, std::shared_ptr<DetType>>;
@@ -117,7 +118,6 @@ class ASD_base {
     std::shared_ptr<Matrix> compute_diagonal_block_H(const DimerSubspace_base& subspace) const;
 
     //RDM
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> couple_blocks_RDM34(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> couple_blocks_RDM(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_inter_2e_RDM(const std::array<MonomerKey,4>&, const bool) const;
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_aET_RDM(const std::array<MonomerKey,4>&) const;
@@ -128,6 +128,8 @@ class ASD_base {
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_bbET_RDM(const std::array<MonomerKey,4>&) const;
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_diagonal_block_RDM(const DimerSubspace_base& subspace) const;
 
+    //3RDM
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> couple_blocks_RDM34(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_diag_RDM34(const std::array<MonomerKey,4>&, const bool) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aET_RDM34(const std::array<MonomerKey,4>&) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bET_RDM34(const std::array<MonomerKey,4>&) const;
@@ -143,17 +145,34 @@ class ASD_base {
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aETFlip_RDM34(const std::array<MonomerKey,4>&) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bETFlip_RDM34(const std::array<MonomerKey,4>&) const;
 
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaaaET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaabET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aabbET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abbbET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbbbET_RDM34(const std::array<MonomerKey,4>&) const;
-
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaETFlip_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbETFlip_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_doubleFlip_RDM34(const std::array<MonomerKey,4>&) const;
-
+    void initialize_3RDM();
     void initialize_4RDM();
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_diagonal_block_RDM34(const DimerSubspace_base& AB) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> couple_blocks_4RDM(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_diag_4RDM(const std::array<MonomerKey,4>&, const bool) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abFlip_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbET_4RDM(const std::array<MonomerKey,4>&) const;
+
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aabET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abbET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaaET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbbET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aETFlip_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bETFlip_4RDM(const std::array<MonomerKey,4>&) const;
+
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaaaET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaabET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aabbET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abbbET_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbbbET_4RDM(const std::array<MonomerKey,4>&) const;
+
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaETFlip_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbETFlip_4RDM(const std::array<MonomerKey,4>&) const;
+    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_doubleFlip_4RDM(const std::array<MonomerKey,4>&) const;
 
     void generate_initial_guess(std::shared_ptr<Matrix> cc, const std::vector<DimerSubspace_base>& subspace, const int nstates);
     std::shared_ptr<Matrix> compute_intra(const DimerSubspace_base& subspace, std::shared_ptr<const DimerJop> jop, const double diag) const;
@@ -177,6 +196,7 @@ class ASD_base {
     double energy(const int i) const { return energies_.at(i); }
 
     void symmetrize_RDM() const;
+    void symmetrize_RDM34() const;
     void debug_RDM() const;
     void debug_energy() const;
 
