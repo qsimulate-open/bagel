@@ -253,10 +253,10 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore) {
+shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore, const bool bfgs) {
    // natural orbitals required
    shared_ptr<ZMatrix> natorb;
-   if (occup_.size() > 0) {
+   if (!bfgs) {
      natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2));
    } else {
      auto natorb_transform = make_natural_orbitals(rdm1)->get_conjg();
