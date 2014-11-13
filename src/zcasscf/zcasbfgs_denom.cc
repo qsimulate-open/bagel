@@ -31,9 +31,9 @@ using namespace bagel;
 shared_ptr<ZRotFile> ZCASBFGS::compute_denom(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1) const {
   auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
 
-  ZMatrix cfockd;
+  shared_ptr<ZMatrix> cfockd;
   if (nact_)
-    cfockd = *cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1;
+    cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
 
   // ia part (4.7a)
   if (nvirt_ && nclosed_) {
@@ -50,7 +50,7 @@ shared_ptr<ZRotFile> ZCASBFGS::compute_denom(shared_ptr<const ZMatrix> cfock, sh
     for (int i = 0; i != nact_*2; ++i) {
       for (int j = 0; j != nvirt_*2; ++j) {
         *target++ = rdm1->element(i, i)*(cfock->element(j+nocc_*2, j+nocc_*2)+afock->element(j+nocc_*2, j+nocc_*2))
-                  - cfockd.element(i, i) - qxr->element(i+nclosed_*2, i);
+                  - cfockd->element(i, i) - qxr->element(i+nclosed_*2, i);
       }
     }
   }
@@ -60,7 +60,7 @@ shared_ptr<ZRotFile> ZCASBFGS::compute_denom(shared_ptr<const ZMatrix> cfock, sh
     for (int i = 0; i != nact_*2; ++i) {
       for (int j = 0; j != nclosed_*2; ++j) {
         *target++ = (cfock->element(i+nclosed_*2, i+nclosed_*2)+afock->element(i+nclosed_*2, i+nclosed_*2) - cfock->element(j,j) - afock->element(j,j))
-                  + rdm1->element(i,i)*(cfock->element(j,j)+afock->element(j,j)) - cfockd.element(i,i) - qxr->element(i+nclosed_*2, i);
+                  + rdm1->element(i,i)*(cfock->element(j,j)+afock->element(j,j)) - cfockd->element(i,i) - qxr->element(i+nclosed_*2, i);
       }
     }
   }
@@ -100,14 +100,14 @@ void ZCASBFGS::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix
 // grad(r/i) (eq.4.3c): (cfock_ri+afock_ri)^* - (cfock_iu gamma_ur)^* - qxr_ir
 void ZCASBFGS::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
   if (!nclosed_ || !nact_) return;
-  ZMatrix qxrc = *qxr->get_conjg();
-  ZMatrix afockc = *afock->get_conjg();
-  ZMatrix cfockc = *cfock->get_conjg();
+  auto qxrc = qxr->get_conjg();
+  auto afockc = afock->get_conjg();
+  auto cfockc = cfock->get_conjg();
   complex<double>* target = sigma->ptr_ca();
   for (int i = 0; i != nact_*2; ++i, target += nclosed_*2) {
-    zaxpy_(nclosed_*2, 1.0, afockc.element_ptr(0,nclosed_*2+i), 1, target, 1);
-    zaxpy_(nclosed_*2, 1.0, cfockc.element_ptr(0,nclosed_*2+i), 1, target, 1);
-    zaxpy_(nclosed_*2, -1.0, qxrc.element_ptr(0, i), 1, target, 1);
+    zaxpy_(nclosed_*2, 1.0, afockc->element_ptr(0,nclosed_*2+i), 1, target, 1);
+    zaxpy_(nclosed_*2, 1.0, cfockc->element_ptr(0,nclosed_*2+i), 1, target, 1);
+    zaxpy_(nclosed_*2, -1.0, qxrc->element_ptr(0, i), 1, target, 1);
   }
   // "T" effectively makes complex conjugate of cfock
   zgemm3m_("T", "N", nclosed_*2, nact_*2, nact_*2, -1.0, cfock->element_ptr(nclosed_*2, 0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_*2);

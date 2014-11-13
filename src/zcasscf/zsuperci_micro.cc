@@ -129,7 +129,7 @@ void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
   const int nocc = casscf_->nocc();
   if (!nact || !nvirt) return;
 
-  ZMatrix gtup = *gaa_->copy();
+  shared_ptr<ZMatrix> gtup = gaa_->copy();
   for (int i = 0; i != nact*2; ++i) {
     for (int j = 0; j != nact*2; ++j) {
 #if 0
@@ -137,10 +137,10 @@ void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 #else
       const double fac = 2.0;
 #endif
-      gtup.element(j,i) *= fac;
+      gtup->element(j,i) *= fac;
     }
   }
-  zgemm3m_("N", "N", nvirt*2, nact*2, nact*2, 1.0, cc->ptr_va(), nvirt*2, gtup.data(), nact*2, 1.0, sigma->ptr_va(), nvirt*2);
+  zgemm3m_("N", "N", nvirt*2, nact*2, nact*2, 1.0, cc->ptr_va(), nvirt*2, gtup->data(), nact*2, 1.0, sigma->ptr_va(), nvirt*2);
   zgemm3m_("N", "N", nvirt*2, nact*2, nvirt*2, 1.0, fock_->element_ptr(nocc*2, nocc*2), nbasis*2, cc->ptr_va(), nvirt*2, 1.0, sigma->ptr_va(), nvirt*2);
 }
 

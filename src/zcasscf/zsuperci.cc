@@ -236,23 +236,23 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   shared_ptr<const ZMatrix> cfock;
   { // Fock operators
     // extract electronic orbitals from coeff
-    ZMatrix coefftmp(coeff_->ndim(), nbasis_);
-    coefftmp.copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
-    coefftmp.copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2, nocc_*2+nvirtnr_));
-    coefftmp.copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
+    auto coefftmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
+    coefftmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
+    coefftmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2, nocc_*2+nvirtnr_));
+    coefftmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
 
     // closed Fock - same as inactive fock
     if (!nact_) {
       shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice_copy(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
-      cfock = make_shared<ZMatrix>(coefftmp % *cfockao * coefftmp);
+      cfock = make_shared<ZMatrix>(*coefftmp % *cfockao * *coefftmp);
     } else {
-      cfock = make_shared<const ZMatrix>(coefftmp % *fci_->jop()->core_fock() * coefftmp);
+      cfock = make_shared<const ZMatrix>(*coefftmp % *fci_->jop()->core_fock() * *coefftmp);
     }
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
     if (nact_) {
       shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
-      afock = make_shared<ZMatrix>(coefftmp % *afockao * coefftmp);
+      afock = make_shared<ZMatrix>(*coefftmp % *afockao * *coefftmp);
     } else {
       afock = cfock->clone();
     }
