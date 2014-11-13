@@ -1164,121 +1164,560 @@ void ASD_base::symmetrize_RDM34() const {
   const int nactB = dimer_->active_refs().second->nact();
   const int nactT = nactA + nactB;  
 
-  //Symmetrize: d(ABAA) note p18B, 19B
-  {
-    auto low = {0,nactA,0,0};
-    auto up  = {nactA,nactT,nactA,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABAA sector of d
-    auto inmat = make_shared<Matrix>(nactA*nactB,nactA*nactA); //empty d_ABAA
-    copy(view.begin(), view.end(), inmat->begin()); //d_ABAA filled
-    { //d(AAAB)
-      auto outmat = make_shared<Matrix>(nactA*nactA,nactA*nactB); //empty d_AAAB
-      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactA); //reorder and fill d_AAAB
-      auto low = {0,0,0,nactA};
-      auto up  = {nactA,nactA,nactA,nactT};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_AAAB sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_AAAB into d_AAAB sector of d
+  //#B=1            _            _
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk
+    auto low = {    0,    0,    0,    0,    0,nactA};
+    auto up  = {nactA,nactA,nactA,nactA,nactA,nactT};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(pow(nactA,5),nactB); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //2.E(a,a,a,B,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,5),nactB);
+      //                  a i c k b j                                           unsorted dimensions
+      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,    0,    0,nactA,    0,    0};
+      auto up  = {nactA,nactA,nactA,nactT,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
     } 
-    { //d(BAAA)
-      auto outmat = make_shared<Matrix>(nactB*nactA,nactA*nactA); //empty d_BAAA
-      SMITH::sort_indices<1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactA); //reorder and fill d_BAAA
-      auto low = {nactA,0,0,0};
-      auto up  = {nactT,nactA,nactA,nactA};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BAAA sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BAAA into d_BAAA sector of d
+    { //3.E(a,B,a,a,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,5),nactB);
+      //                  c k a i b j                                           unsorted dimensions
+      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,nactA,    0,    0,    0,    0};
+      auto up  = {nactA,nactT,nactA,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
     } 
-    { //d(AABA)
-      auto outmat = make_shared<Matrix>(nactA*nactA,nactB*nactA); //empty d_AABA
-      SMITH::sort_indices<3,2,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactA); //reorder and fill d_AABA
-      auto low = {0,0,nactA,0};
-      auto up  = {nactA,nactA,nactT,nactA};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_AABA sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_AABA into d_AABA sector of d
+    { //4.E(a,a,a,a,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,5),nactB);
+      //                  i a j b k c                                           unsorted dimensions
+      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,    0,    0,    0,nactA,    0};
+      auto up  = {nactA,nactA,nactA,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
     } 
-  }
- 
-  //Symmetrize: d(ABBB) note p18B, 19B
-  {
-    auto low = {0,nactA,nactA,nactA};
-    auto up  = {nactA,nactT,nactT,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABBB sector of d
-    auto inmat = make_shared<Matrix>(nactA*nactB,nactB*nactB); //empty d_ABBB
-    copy(view.begin(), view.end(), inmat->begin()); //d_ABBB filled
-    { //d(BBAB)
-      auto outmat = make_shared<Matrix>(nactB*nactB,nactA*nactB); //empty d_BBAB
-      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactB); //reorder and fill d_BBAB
-      auto low = {nactA,nactA,0,nactA};
-      auto up  = {nactT,nactT,nactA,nactT};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAB sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBAB into d_BBAB sector of d
+    { //5.E(a,a,B,a,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,5),nactB);
+      //                  i a k c j b                                           unsorted dimensions
+      SMITH::sort_indices<1,0,5,4,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,    0,nactA,    0,    0,    0};
+      auto up  = {nactA,nactA,nactT,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
     } 
-    { //d(BABB)
-      auto outmat = make_shared<Matrix>(nactB*nactA,nactB*nactB); //empty d_BABB
-      SMITH::sort_indices<1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactB); //reorder and fill d_BABB
-      auto low = {nactA,0,nactA,nactA};
-      auto up  = {nactT,nactA,nactT,nactT};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BABB sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BABB into d_BABB sector of d
-    } 
-    { //d(BBBA)
-      auto outmat = make_shared<Matrix>(nactB*nactB,nactB*nactA); //empty d_BBBA
-      SMITH::sort_indices<3,2,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactB); //reorder and fill d_BBBA
-      auto low = {nactA,nactA,nactA,0};
-      auto up  = {nactT,nactT,nactT,nactA};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BBBA sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBBA into d_BBBA sector of d
+    { //6.E(B,a,a,a,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,5),nactB);
+      //                  k c i a j b                                           unsorted dimensions
+      SMITH::sort_indices<5,4,1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {nactA,    0,    0,    0,    0,    0};
+      auto up  = {nactT,nactA,nactA,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
     } 
   }
 
-
-  //Symmetrize: d(ABBA) note p19
-  {
-    auto low = {0,nactA,nactA,0};
-    auto up  = {nactA,nactT,nactT,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABBA sector of d
-    auto inmat = make_shared<Matrix>(nactA*nactB,nactB*nactA); //empty d_ABBA
-    copy(view.begin(), view.end(), inmat->begin()); //d_ABBA filled
-    { //d(BAAB)
-      auto outmat = make_shared<Matrix>(nactB*nactA,nactA*nactB); //empty d_BAAB
-      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactA); //reorder and fill d_BAAB
-      auto low = {nactA,0,0,nactA};
-      auto up  = {nactT,nactA,nactA,nactT};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BAAB sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BAAB into d_BAAB sector of d
+  //#B=2        _   _           __
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk
+    auto low = {    0,    0,    0,nactA,    0,nactA};
+    auto up  = {nactA,nactA,nactA,nactT,nactA,nactT};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //2.E(a,B,a,a,a,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  b j a i c k                                           unsorted dimensions
+      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
+      auto low = {    0,nactA,    0,    0,    0,nactA};
+      auto up  = {nactA,nactT,nactA,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //3.E(a,B,a,B,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  b j c k a i                                           unsorted dimensions
+      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
+      auto low = {    0,nactA,    0,nactA,    0,    0};
+      auto up  = {nactA,nactT,nactA,nactT,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //4.E(a,a,B,a,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  i a j b k c                                           unsorted dimensions
+      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
+      auto low = {    0,    0,nactA,    0,nactA,    0};
+      auto up  = {nactA,nactA,nactT,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //5.E(B,a,a,a,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  j b i a k c                                           unsorted dimensions
+      SMITH::sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
+      auto low = {nactA,    0,    0,    0,nactA,    0};
+      auto up  = {nactT,nactA,nactA,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //6.E(B,a,B,a,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  j b k c i a                                           unsorted dimensions
+      SMITH::sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
+      auto low = {nactA,    0,nactA,    0,    0,    0};
+      auto up  = {nactT,nactA,nactT,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
     } 
   }
 
-  //Symmetrize: d(AABB) note 19
-  { //d(AABB)
-    auto low = {0,0,nactA,nactA};
-    auto up  = {nactA,nactA,nactT,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AABB sector of d
-    auto inmat = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_AABB
-    copy(view.begin(), view.end(), inmat->begin()); //d_AABB filled
-    { //d(BBAA)
-      auto outmat = make_shared<Matrix>(nactB*nactB*nactA*nactA,1); //empty d_BBAA
-      SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactB, nactB); //reorder and fill d_BBAA
-      auto low = {nactA,nactA,0,0};
-      auto up  = {nactT,nactT,nactA,nactA};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAA sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBAA into d_BBAA sector of d
+  //#B=2  _     _            _  _  (p43B)
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk
+    auto low = {nactA,    0,    0,nactA,    0,    0};
+    auto up  = {nactT,nactA,nactA,nactT,nactA,nactA};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //2.E(B,a,a,a,a,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  a i c k b j                                           unsorted dimensions
+      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
+      auto low = {nactA,    0,    0,    0,    0,nactA};
+      auto up  = {nactT,nactA,nactA,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //3.E(a,B,B,a,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  b j a i c k                                           unsorted dimensions
+      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
+      auto low = {    0,nactA,nactA,    0,    0,    0};
+      auto up  = {nactA,nactT,nactT,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //4.E(a,B,a,a,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  b j c k a i                                           unsorted dimensions
+      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
+      auto low = {    0,nactA,    0,    0,nactA,    0};
+      auto up  = {nactA,nactT,nactA,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //5.E(a,a,a,B,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  c k b j a i                                           unsorted dimensions
+      SMITH::sort_indices<4,5,2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
+      auto low = {    0,    0,    0,nactA,nactA,    0};
+      auto up  = {nactA,nactA,nactA,nactT,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //6.E(a,a,B,a,a,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  c k a i b j                                           unsorted dimensions
+      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
+      auto low = {    0,    0,nactA,    0,    0,nactA};
+      auto up  = {nactA,nactA,nactT,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
     } 
   }
 
-  //Symmetrize: d(ABAB) note p19
-  {
-    auto low = {0,nactA,0,nactA};
-    auto up  = {nactA,nactT,nactA,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABAB sector of d
-    auto inmat = make_shared<Matrix>(nactA*nactB,nactA*nactB); //empty d_ABAB
-    copy(view.begin(), view.end(), inmat->begin()); //d_ABAB filled
-    { //d(BABA)
-      auto outmat = make_shared<Matrix>(nactB*nactA,nactB*nactA); //empty d_BABA
-      SMITH::sort_indices<1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactB); //reorder and fill d_BABA
-      auto low = {nactA,0,nactA,0};
-      auto up  = {nactT,nactA,nactT,nactA};
-      auto outv = btas::make_rwview(twordm_->range().slice(low,up), twordm_->storage()); //d_BABA sector of d
-      copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBBA into d_BABA sector of d
+  //#=2   _ _                _ _
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk
+    auto low = {nactA,nactA,    0,    0,    0,    0};
+    auto up  = {nactT,nactT,nactA,nactA,nactA,nactA};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //1.E(a,a,B,B,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  b j a i c k                                           unsorted dimensions
+      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactA, nactA, nactA); 
+      auto low = {    0,    0,nactA,nactA,    0,    0};
+      auto up  = {nactA,nactA,nactT,nactT,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //2.E(a,a,a,a,B,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  b j c k a i                                           unsorted dimensions
+      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactA, nactA, nactA); 
+      auto low = {    0,    0,    0,    0,nactA,nactA};
+      auto up  = {nactA,nactA,nactA,nactA,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+  }
+
+  //#B=3    _   _   _          ___
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk
+    auto low = {    0,nactA,    0,nactA,    0,nactA};
+    auto up  = {nactA,nactT,nactA,nactT,nactA,nactT};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3)); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //2.E(B,a,B,a,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  i a j b k c                                           unsorted dimensions
+      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactB, nactA, nactB); 
+      auto low = {nactA,    0,nactA,    0,nactA,    0};
+      auto up  = {nactT,nactA,nactT,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+  }
+
+  //#B=3  _ _   _            _ __
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk
+    auto low = {nactA,nactA,    0,nactA,    0,    0};
+    auto up  = {nactT,nactT,nactA,nactT,nactA,nactA};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3)); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //2.E(B,B,a,a,a,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  a i c k b j                                           unsorted dimensions
+      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {nactA,nactA,    0,    0,    0,nactA};
+      auto up  = {nactT,nactT,nactA,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //3.E(a,B,B,B,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  b j a i c k                                           unsorted dimensions
+      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {    0,nactA,nactA,nactA,    0,    0};
+      auto up  = {nactA,nactT,nactT,nactT,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    }
+    { //4.E(a,B,a,a,B,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  b j c k a i                                           unsorted dimensions
+      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {    0,nactA,    0,    0,nactA,nactA};
+      auto up  = {nactA,nactT,nactA,nactA,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //5.E(a,a,a,B,B,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  c k b j a i                                           unsorted dimensions
+      SMITH::sort_indices<4,5,2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {    0,    0,    0,nactA,nactA,nactA};
+      auto up  = {nactA,nactA,nactA,nactT,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //6.E(a,a,B,B,a,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  c k a i b j                                           unsorted dimensions
+      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {    0,    0,nactA,nactA,    0,nactA};
+      auto up  = {nactA,nactA,nactT,nactT,nactA,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //7.E(B,B,B,a,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  i a j b k c                                           unsorted dimensions
+      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {nactA,nactA,nactA,    0,    0,    0};
+      auto up  = {nactT,nactT,nactT,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //8.E(B,B,a,a,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  i a k c j b                                           unsorted dimensions
+      SMITH::sort_indices<1,0,5,4,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {nactA,nactA,    0,    0,nactA,    0};
+      auto up  = {nactT,nactT,nactA,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //9.E(B,a,B,B,a,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  j b i a k c                                           unsorted dimensions
+      SMITH::sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {nactA,    0,nactA,nactA,    0,    0};
+      auto up  = {nactT,nactA,nactT,nactT,nactA,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //10.E(B,a,a,a,B,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  j b k c i a                                           unsorted dimensions
+      SMITH::sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {nactA,    0,    0,    0,nactA,nactA};
+      auto up  = {nactT,nactA,nactA,nactA,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //11.E(a,a,B,B,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  k c i a j b                                           unsorted dimensions
+      SMITH::sort_indices<5,4,1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {    0,    0,nactA,nactA,nactA,    0};
+      auto up  = {nactA,nactA,nactT,nactT,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //12.E(a,a,B,a,B,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  k c j b i a                                           unsorted dimensions
+      SMITH::sort_indices<5,4,3,2,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      auto low = {    0,    0,nactA,    0,nactA,nactA};
+      auto up  = {nactA,nactA,nactT,nactA,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+  }
+
+  //#B=3  _     _   _        _  __ 
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk (p44)
+    auto low = {nactA,    0,    0,nactA,    0,nactA};
+    auto up  = {nactT,nactA,nactA,nactT,nactA,nactT};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3)); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //2.E(a,B,B,a,a,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  b j a i c k                                           unsorted dimensions
+      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
+      auto low = {    0,nactA,nactA,    0,    0,nactA};
+      auto up  = {nactA,nactT,nactT,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //3.E(a,B,a,B,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  b j c k a i                                           unsorted dimensions
+      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
+      auto low = {    0,nactA,    0,nactA,nactA,    0};
+      auto up  = {nactA,nactT,nactA,nactT,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //4.E(a,B,B,a,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  i a j b k c                                           unsorted dimensions
+      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
+      auto low = {    0,nactA,nactA,    0,nactA,    0};
+      auto up  = {nactA,nactT,nactT,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //5.E(B,a,a,B,B,a)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  j b i a k c                                           unsorted dimensions
+      SMITH::sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
+      auto low = {nactA,    0,    0,nactA,nactA,    0};
+      auto up  = {nactT,nactA,nactA,nactT,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //6.E(B,a,B,a,a,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
+      //                  j b k c i a                                           unsorted dimensions
+      SMITH::sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
+      auto low = {nactA,    0,nactA,    0,    0,nactA};
+      auto up  = {nactT,nactA,nactT,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+  }
+
+  //#B=4  _ _   _   _        _ ___
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk
+    auto low = {nactA,nactA,    0,nactA,    0,nactA};
+    auto up  = {nactT,nactT,nactA,nactT,nactA,nactT};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4)); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //2.E(a,B,B,B,a,B)
+      auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
+      //                  b j a i c k                                           unsorted dimensions
+      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
+      auto low = {    0,nactA,nactA,nactA,    0,nactA};
+      auto up  = {nactA,nactT,nactT,nactT,nactA,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //3.E(a,B,a,B,B,B)
+      auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
+      //                  b j c k a i                                           unsorted dimensions
+      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
+      auto low = {    0,nactA,    0,nactA,nactA,nactA};
+      auto up  = {nactA,nactT,nactA,nactT,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //4.E(B,B,B,a,B,a)
+      auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
+      //                  i a j b k c                                           unsorted dimensions
+      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
+      auto low = {nactA,nactA,nactA,    0,nactA,    0};
+      auto up  = {nactT,nactT,nactT,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //5.E(B,a,B,B,B,a)
+      auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
+      //                  j b i a k c                                           unsorted dimensions
+      SMITH::sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
+      auto low = {nactA,    0,nactA,nactA,nactA,    0};
+      auto up  = {nactT,nactA,nactT,nactT,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //6.E(B,a,B,a,B,B)
+      auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
+      //                  j b k c i a                                           unsorted dimensions
+      SMITH::sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
+      auto low = {nactA,    0,nactA,    0,nactA,nactA};
+      auto up  = {nactT,nactA,nactT,nactA,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+  }
+
+  //#B=4  _   _ _   _      _ _  __
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk
+    auto low = {nactA,    0,nactA,nactA,    0,nactA};
+    auto up  = {nactT,nactA,nactT,nactT,nactA,nactT};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4)); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //2.E(B,a,a,B,B,B)
+      auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
+      //                  a i c k b j                                           unsorted dimensions
+      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
+      auto low = {nactA,    0,    0,nactA,nactA,nactA};
+      auto up  = {nactT,nactA,nactA,nactT,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //3.E(B,B,B,a,a,B)
+      auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
+      //                  b j a i c k                                           unsorted dimensions
+      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
+      auto low = {nactA,nactA,nactA,    0,    0,nactA};
+      auto up  = {nactT,nactT,nactT,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //4.E(B,B,a,B,B,a)
+      auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
+      //                  b j c k a i                                           unsorted dimensions
+      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
+      auto low = {nactA,nactA,    0,nactA,nactA,    0};
+      auto up  = {nactT,nactT,nactA,nactT,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //5.E(a,B,B,B,B,a)
+      auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
+      //                  c k b j a i                                           unsorted dimensions
+      SMITH::sort_indices<4,5,2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
+      auto low = {    0,nactA,nactA,nactA,nactA,    0};
+      auto up  = {nactA,nactT,nactT,nactT,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //6.E(a,B,B,a,B,B)
+      auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
+      //                  c k a i b j                                           unsorted dimensions
+      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
+      auto low = {    0,nactA,nactA,    0,nactA,nactA};
+      auto up  = {nactA,nactT,nactT,nactA,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+  }
+  //#=4   _ _ _ _          _ _ __
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk
+    auto low = {nactA,nactA,nactA,nactA,    0,    0};
+    auto up  = {nactT,nactT,nactT,nactT,nactA,nactA};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4)); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //1.E(B,B,a,a,B,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  a i c k b j                                           unsorted dimensions
+      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactA); 
+      auto low = {nactA,nactA,    0,    0,nactA,nactA};
+      auto up  = {nactT,nactT,nactA,nactA,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //2.E(a,a,B,B,B,B)
+      auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
+      //                  c k a i b j                                           unsorted dimensions
+      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactA); 
+      auto low = {    0,    0,nactA,nactA,nactA,nactA};
+      auto up  = {nactA,nactA,nactT,nactT,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+  }
+
+  //#B=5  _ _ _ _   _      _ _ ___
+  { //1.E(a,i,b,j,c,k) = c'b'a'ijk
+    auto low = {nactA,nactA,nactA,nactA,    0,nactA};
+    auto up  = {nactT,nactT,nactT,nactT,nactA,nactT};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    auto inmat = make_shared<Matrix>(nactA,pow(nactB,5)); //empty
+    copy(view.begin(), view.end(), inmat->begin()); //filled
+    { //2.E(B,B,a,B,B,B)
+      auto outmat = make_shared<Matrix>(nactA,pow(nactB,5));
+      //                  a i c k b j                                           unsorted dimensions
+      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
+      auto low = {nactA,nactA,    0,nactA,nactA,nactA};
+      auto up  = {nactT,nactT,nactA,nactT,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //3.E(a,B,B,B,B,B)
+      auto outmat = make_shared<Matrix>(nactA,pow(nactB,5));
+      //                  c k a i b j                                           unsorted dimensions
+      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
+      auto low = {    0,nactA,nactA,nactA,nactA,nactA};
+      auto up  = {nactA,nactT,nactT,nactT,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //4.E(B,B,B,B,B,a)
+      auto outmat = make_shared<Matrix>(nactA,pow(nactB,5));
+      //                  i a j b k c                                           unsorted dimensions
+      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
+      auto low = {nactA,nactA,nactA,nactA,nactA,    0};
+      auto up  = {nactT,nactT,nactT,nactT,nactT,nactA};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //5.E(B,B,B,a,B,B)
+      auto outmat = make_shared<Matrix>(nactA,pow(nactB,5));
+      //                  i a k c j b                                           unsorted dimensions
+      SMITH::sort_indices<1,0,5,4,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
+      auto low = {nactA,nactA,nactA,    0,nactA,nactA};
+      auto up  = {nactT,nactT,nactT,nactA,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
+    } 
+    { //6.E(B,a,B,B,B,B)
+      auto outmat = make_shared<Matrix>(nactA,pow(nactB,5));
+      //                  k c i a j b                                           unsorted dimensions
+      SMITH::sort_indices<5,4,1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
+      auto low = {nactA,    0,nactA,nactA,nactA,nactA};
+      auto up  = {nactT,nactA,nactT,nactT,nactT,nactT};
+      auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
+      copy(outmat->begin(), outmat->end(), outv.begin()); //copy to threerdm_
     } 
   }
 

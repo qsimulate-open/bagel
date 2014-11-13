@@ -179,6 +179,8 @@ ASD_base::compute_rdm () {
   
   symmetrize_RDM();
 
+  symmetrize_RDM34();
+
   debug_RDM(); 
 
 }
