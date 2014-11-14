@@ -162,20 +162,34 @@ ASD_base::compute_rdm () {
   for (auto& subspace : subspaces) {
     shared_ptr<RDM<3>> r3;
     shared_ptr<RDM<4>> r4;
+    cout << "3RDM: diagonal subspaces.." << endl;
     tie(r3,r4) = compute_diagonal_block_RDM34(subspace);
     if (r3) *threerdm_ += *r3;
+
+    double sum = 0.0;
+    for (int i = 0; i != 12; ++i)
+    for (int j = 0; j != 12; ++j)
+    for (int k = 0; k != 12; ++k) {
+      double elem = r3->element(i,i,j,j,k,k);
+      sum += elem;
+    //if (elem > 1.0e-8) {
+    //  cout << "3RDM(" << i << j << k << ") = " << elem << endl;
+    //}
+    }
+    cout << "3RDM subspace trace = " << sum << endl;
+
   }
   
   // off diagonal subspaces
-  for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
-    for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
-      shared_ptr<RDM<3>> r3;
-      shared_ptr<RDM<4>> r4;
-      tie(r3,r4) = couple_blocks_RDM34(*jAB, *iAB); //Lower-triangular (i<->j)
-      if (r3) *threerdm_ += *r3;
-//    if (r4) *fourrdm_ += *r4;
-    }
-  }
+//for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
+//  for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
+//    shared_ptr<RDM<3>> r3;
+//    shared_ptr<RDM<4>> r4;
+//    tie(r3,r4) = couple_blocks_RDM34(*jAB, *iAB); //Lower-triangular (i<->j)
+//    if (r3) *threerdm_ += *r3;
+//  //if (r4) *fourrdm_ += *r4;
+//  }
+//}
   
   symmetrize_RDM();
 

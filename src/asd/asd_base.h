@@ -147,6 +147,7 @@ class ASD_base {
 
     void initialize_3RDM();
     void initialize_4RDM();
+    double element_3RDM(const int a, const int i, const int b, const int j,const int c, const int k) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_diagonal_block_RDM34(const DimerSubspace_base& AB) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> couple_blocks_4RDM(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
     std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_diag_4RDM(const std::array<MonomerKey,4>&, const bool) const;
