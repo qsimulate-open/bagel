@@ -237,7 +237,6 @@ ASD_base::debug_RDM() const {
     std::cout << "3RDM Trace (AB) = " << sum << std::endl;
   }
 
-  assert(false);
 
   { //Gamma_ij,kl,mm : p21
     std::cout << "3RDM Partial Trace Sum_m (i,j,k,l,m,m)" << std::endl;
@@ -249,7 +248,7 @@ ASD_base::debug_RDM() const {
     for (int m = 0; m != nactT; ++m) {
       debug->element(i,j,k,l) -= 1.0/(nelec-2) * threerdm_->element(i,j,k,l,m,m);
     }
-    debug->print(1.0e-8);
+    debug->print(1.0e-3);
   }
   { //Gamma_ij,kk,mm : p21
     std::cout << "3RDM Partial Trace Sum_m (i,j,k,k,m,m)" << std::endl;
@@ -263,6 +262,7 @@ ASD_base::debug_RDM() const {
     debug->print(1.0e-8);
   }
 
+  assert(false);
 //{ //Gamma_ij,kl,mm : p21
 //  std::cout << "3RDM(B) Partial Trace Sum_m (i,j,k,l,m,m)" << std::endl;
 //  auto debug = std::make_shared<RDM<2>>(*rdm2B);
