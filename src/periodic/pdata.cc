@@ -120,8 +120,10 @@ shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const 
       const double real = cos(exponent);
       const double imag = sin(exponent);
       auto tmp1 = make_shared<const ZMatrix>(*(gblock->get_real_part()), complex<double>(real, 0.0));
-      auto tmp2 = make_shared<const ZMatrix>(*(gblock->get_imag_part()), complex<double>(0.0, imag));
-      *kblock += *tmp1 + *tmp2;
+      auto tmp2 = make_shared<const ZMatrix>(*(gblock->get_real_part()), complex<double>(0.0, imag));
+      auto tmp3 = make_shared<const ZMatrix>(*(gblock->get_imag_part()), complex<double>(-imag, 0.0));
+      auto tmp4 = make_shared<const ZMatrix>(*(gblock->get_imag_part()), complex<double>(0.0, real));
+      *kblock += *tmp1 + *tmp2 + *tmp3 + *tmp4;
       ++g;
     }
     out[k] = kblock;
@@ -143,12 +145,14 @@ shared_ptr<const PData> PData::ift(const vector<array<double, 3>> gvector, const
     int k = 0;
     for (auto& kvec : kvector) {
       shared_ptr<const ZMatrix> kblock = pdata(k);
-      const double exponent = -gvec[0]* kvec[0] - gvec[1] * kvec[1] - gvec[2] * kvec[2];
+      const double exponent = -gvec[0] * kvec[0] - gvec[1] * kvec[1] - gvec[2] * kvec[2];
       const double real = cos(exponent);
       const double imag = sin(exponent);
       auto tmp1 = make_shared<const ZMatrix>(*(kblock->get_real_part()), complex<double>(real, 0.0));
-      auto tmp2 = make_shared<const ZMatrix>(*(kblock->get_imag_part()), complex<double>(0.0, imag));
-      *gblock += *tmp1 + *tmp2;
+      auto tmp2 = make_shared<const ZMatrix>(*(kblock->get_real_part()), complex<double>(0.0, imag));
+      auto tmp3 = make_shared<const ZMatrix>(*(kblock->get_imag_part()), complex<double>(-imag, 0.0));
+      auto tmp4 = make_shared<const ZMatrix>(*(kblock->get_imag_part()), complex<double>(0.0, real));
+      *gblock += *tmp1 + *tmp2 + *tmp3 + *tmp4;
       ++k;
     }
     out[g] = gblock;
