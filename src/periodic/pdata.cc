@@ -126,6 +126,7 @@ shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const 
       *kblock += *tmp1 + *tmp2 + *tmp3 + *tmp4;
       ++g;
     }
+    kblock->fill_upper_conjg();
     out[k] = kblock;
     ++k;
   }
