@@ -960,18 +960,18 @@ ASD_base::compute_aaaET_RDM34(const array<MonomerKey,4>& keys) const {
     auto rdmt = rdm1->clone();
     cout << "full gammas" << endl; cout.flush();
 
-    // E_ai',bj',ck' 
+    // E_ai',bj',ck'        even  odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
-
-    auto low = {    0, nactA,     0, nactA,     0, nactA};
-    auto up  = {nactA, nactT, nactA, nactT, nactA, nactT};
+    //          a      i      b      j     c     k
+    auto low = {    0,nactA,    0,nactA,    0,nactA};
+    auto up  = {nactA,nactT,nactA,nactT,nactA,nactT};
     auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
     copy(rdmt->begin(), rdmt->end(), outv.begin());
     cout << "copied" << endl; cout.flush();
-  }
+  } //Verified
   
   return make_tuple(out3,out4);
 }
@@ -1004,19 +1004,19 @@ ASD_base::compute_bbbET_RDM34(const array<MonomerKey,4>& keys) const {
     auto rdmt = rdm1->clone();
     cout << "full gammas" << endl; cout.flush();
 
-    // E_ai',bj',ck' 
+    // E_ai',bj',ck'         even odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     //                  a i b j c k 
     SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
-
-    auto low = {    0, nactA,     0, nactA,     0, nactA};
-    auto up  = {nactA, nactT, nactA, nactT, nactA, nactT};
+    //          a     i     b     j     c     k
+    auto low = {    0,nactA,    0,nactA,    0,nactA};
+    auto up  = {nactA,nactT,nactA,nactT,nactA,nactT};
     auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
     copy(rdmt->begin(), rdmt->end(), outv.begin());
     cout << "copied" << endl; cout.flush();
-  }
+  } //Verified
   
   return make_tuple(out3,out4);
 }
@@ -1049,20 +1049,21 @@ ASD_base::compute_aabET_RDM34(const array<MonomerKey,4>& keys) const {
     auto rdmt = rdm1->clone();
     cout << "full gammas" << endl; cout.flush();
 
-    // E_ai',bj',ck' 
+    // E_ai',bj',ck'        even  odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     //                  a i b j c k                                                                                    original order  (cba|ijk)
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'a'|aba:  (cba|ijk)  
-    SMITH::sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a'|aab:  (bca|ikj) : c->b, k->j
+    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'a'|aba
+    SMITH::sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a'|aab    bc   kj  
+    SMITH::sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'b'|baa     ab|ji 
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
-
-    auto low = {    0, nactA,     0, nactA,     0, nactA};
-    auto up  = {nactA, nactT, nactA, nactT, nactA, nactT};
+    //          a     i     b     j     c     k
+    auto low = {    0,nactA,    0,nactA,    0,nactA};
+    auto up  = {nactA,nactT,nactA,nactT,nactA,nactT};
     auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
     copy(rdmt->begin(), rdmt->end(), outv.begin());
     cout << "copied" << endl; cout.flush();
-  }
+  } //Verified
 
   return make_tuple(out3,out4);
 }
@@ -1095,20 +1096,21 @@ ASD_base::compute_abbET_RDM34(const array<MonomerKey,4>& keys) const {
     auto rdmt = rdm1->clone();
     cout << "full gammas" << endl; cout.flush();
 
-    // E_ai',bj',ck' 
+    // E_ai',bj',ck'        even  odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     //                  a i b j c k                                                                                    original order  (cba|ijk)
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b'|bab:  (cba|ijk) 
-    SMITH::sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'b'|bba:  (bca|ikj) : c->b, k->j
+    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b'|bab  
+    SMITH::sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'b'|bba    bc   kj
+    SMITH::sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'b'a'|abb     ab|ji
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
-
-    auto low = {    0, nactA,     0, nactA,     0, nactA};
-    auto up  = {nactA, nactT, nactA, nactT, nactA, nactT};
+    //          a     i     b     j     c     k
+    auto low = {    0,nactA,    0,nactA,    0,nactA};
+    auto up  = {nactA,nactT,nactA,nactT,nactA,nactT};
     auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
     copy(rdmt->begin(), rdmt->end(), outv.begin());
     cout << "copied" << endl; cout.flush();
-  }
+  } //Verified
   
   return make_tuple(out3,out4);
 }

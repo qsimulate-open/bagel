@@ -248,7 +248,31 @@ ASD_base::debug_RDM() const {
     for (int m = 0; m != nactT; ++m) {
       debug->element(i,j,k,l) -= 1.0/(nelec-2) * threerdm_->element(i,j,k,l,m,m);
     }
-    debug->print(1.0e-3);
+    debug->print(1.0e-12);
+  }
+  { //Gamma_ij,mm,kl : p21
+    std::cout << "3RDM Partial Trace Sum_m (i,j,m,m,k,l)" << std::endl;
+    auto debug = std::make_shared<RDM<2>>(*twordm_);
+    for (int i = 0; i != nactT; ++i)
+    for (int j = 0; j != nactT; ++j)
+    for (int k = 0; k != nactT; ++k) 
+    for (int l = 0; l != nactT; ++l) 
+    for (int m = 0; m != nactT; ++m) {
+      debug->element(i,j,k,l) -= 1.0/(nelec-2) * threerdm_->element(i,j,m,m,k,l);
+    }
+    debug->print(1.0e-12);
+  }
+  { //Gamma_ij,kl,mm : p21
+    std::cout << "3RDM Partial Trace Sum_m (m,m,i,j,k,l)" << std::endl;
+    auto debug = std::make_shared<RDM<2>>(*twordm_);
+    for (int i = 0; i != nactT; ++i)
+    for (int j = 0; j != nactT; ++j)
+    for (int k = 0; k != nactT; ++k) 
+    for (int l = 0; l != nactT; ++l) 
+    for (int m = 0; m != nactT; ++m) {
+      debug->element(i,j,k,l) -= 1.0/(nelec-2) * threerdm_->element(m,m,i,j,k,l);
+    }
+    debug->print(1.0e-12);
   }
   { //Gamma_ij,kk,mm : p21
     std::cout << "3RDM Partial Trace Sum_m (i,j,k,k,m,m)" << std::endl;
@@ -259,7 +283,7 @@ ASD_base::debug_RDM() const {
     for (int m = 0; m != nactT; ++m) {
       debug->element(i,j) -= 1.0/((nelec-2)*(nelec-1)) * threerdm_->element(i,j,k,k,m,m);
     }
-    debug->print(1.0e-8);
+    debug->print(1.0e-12);
   }
 
   assert(false);
