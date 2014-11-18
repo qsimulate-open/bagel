@@ -286,6 +286,42 @@ ASD_base::debug_RDM() const {
     debug->print(1.0e-12);
   }
 
+  std::cout << "-------------- 4RDM --------------" << std::endl;
+
+  { //Trace A
+    double sum = 0.0;
+    for (int i = 0; i != nactA; ++i)
+    for (int j = 0; j != nactA; ++j)
+    for (int k = 0; k != nactA; ++k)
+    for (int l = 0; l != nactA; ++l) {
+      sum += fourrdm_->element(i,i,j,j,k,k,l,l);
+    }
+    std::cout << "4RDM Trace (A)  = " << sum << std::endl;
+  }
+
+  { //Trace B
+    double sum = 0.0;
+    for (int i = nactA; i != nactT; ++i)
+    for (int j = nactA; j != nactT; ++j)
+    for (int k = nactA; k != nactT; ++k)
+    for (int l = nactA; l != nactT; ++l) {
+      sum += fourrdm_->element(i,i,j,j,k,k,l,l);
+    }
+    std::cout << "4RDM Trace (B)  = " << sum << std::endl;
+  }
+
+  { //Trace AB
+    double sum = 0.0;
+    for (int i = 0; i != nactT; ++i)
+    for (int j = 0; j != nactT; ++j)
+    for (int k = 0; k != nactT; ++k)
+    for (int l = 0; l != nactT; ++l) {
+      sum += fourrdm_->element(i,i,j,j,k,k,l,l);
+    }
+    std::cout << "4RDM Trace (AB)  = " << sum << std::endl;
+  }
+
+
   assert(false);
 //{ //Gamma_ij,kl,mm : p21
 //  std::cout << "3RDM(B) Partial Trace Sum_m (i,j,k,l,m,m)" << std::endl;

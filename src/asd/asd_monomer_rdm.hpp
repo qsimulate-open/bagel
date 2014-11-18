@@ -58,12 +58,9 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
   twordm_->zero();
   
   //3&4RDM
-  initialize_3RDM();
   threerdm_ = std::make_shared<RDM<3>>(nactA+nactB);
-//fourrdm_  = std::make_shared<RDM<4>>(nactA+nactB);
   threerdm_->zero();
-//fourrdm_->zero();
-//initialize_4RDM();
+  initialize_4RDM();
 
   // Diagonal Dimer subspaces
   int isub = 0;
@@ -98,11 +95,22 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
 
     //3&4RDM
     std::shared_ptr<RDM<3>> r3;
-    std::shared_ptr<RDM<4>> r4;
-    tie(r3,r4) = compute_rdm34_monomer(offset, fourvecs);
+    std::shared_ptr<RDM<4>> r4A;
+    std::shared_ptr<RDM<4>> r4B;
+    tie(r3,r4A,r4B) = compute_rdm34_monomer(offset, fourvecs);
     if(r3) *threerdm_ += *r3;
-  //if(r4) *fourrdm_  += *r4;
-
+    if(r4A) {
+      btas::CRange<2> range(nactA*nactA*nactA*nactA*nactA*nactA*nactA*nactA,1);
+      const MatView matv(btas::make_view(range, r4A->storage()), /*localized*/true);
+      auto mat = std::make_shared<Matrix>( matv );
+      *fourrdmparts_.at("monomerA") += *mat;
+    }
+    if(r4B) {
+      btas::CRange<2> range(nactB*nactB*nactB*nactB*nactB*nactB*nactB*nactB,1);
+      const MatView matv(btas::make_view(range, r4B->storage()), /*localized*/true);
+      auto mat = std::make_shared<Matrix>( matv );
+      *fourrdmparts_.at("monomerB") += *mat;
+    }
   }
  
 /*

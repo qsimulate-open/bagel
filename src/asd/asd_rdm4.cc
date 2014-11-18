@@ -109,37 +109,37 @@ void ASD_base::initialize_4RDM() {
 
   //E_ai,bj,ck,dl = sum d+c+b+a+ ijkl
   //#of B indices = 0
-  fourrdm_.emplace(string("monomerA"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA*nactA*nactA, 1)); //monomer A
+  fourrdmparts_.emplace(string("monomerA"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA*nactA*nactA, 1)); //monomer A
   //# = 1
-  fourrdm_.emplace(string("l"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA*nactA, nactB )); // l
+  fourrdmparts_.emplace(string("l"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA*nactA, nactB )); // l
   //# = 2
-  fourrdm_.emplace(string("kl"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA, nactB*nactB )); // kl
-  fourrdm_.emplace(string("al"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA, nactB*nactB )); // al
-  fourrdm_.emplace(string("ai"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA, nactB*nactB )); // ai
+  fourrdmparts_.emplace(string("kl"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA, nactB*nactB )); // kl
+  fourrdmparts_.emplace(string("al"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA, nactB*nactB )); // al
+  fourrdmparts_.emplace(string("ai"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA*nactA, nactB*nactB )); // ai
   //# = 3
-  fourrdm_.emplace(string("jkl"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA, nactB*nactB*nactB )); // jkl
-  fourrdm_.emplace(string("akl"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA, nactB*nactB*nactB )); // akl
-  fourrdm_.emplace(string("aij"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA, nactB*nactB*nactB )); // aij
+  fourrdmparts_.emplace(string("jkl"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA, nactB*nactB*nactB )); // jkl
+  fourrdmparts_.emplace(string("akl"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA, nactB*nactB*nactB )); // akl
+  fourrdmparts_.emplace(string("aij"), make_shared<Matrix>(nactA*nactA*nactA*nactA*nactA, nactB*nactB*nactB )); // aij
   //# = 4
-  fourrdm_.emplace(string("ijkl"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // ijkl
-  fourrdm_.emplace(string("ajkl"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // ajkl
-  fourrdm_.emplace(string("aijk"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // aijk
-  fourrdm_.emplace(string("bakl"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // bakl
-  fourrdm_.emplace(string("baij"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // baij
+  fourrdmparts_.emplace(string("ijkl"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // ijkl
+  fourrdmparts_.emplace(string("ajkl"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // ajkl
+  fourrdmparts_.emplace(string("aijk"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // aijk
+  fourrdmparts_.emplace(string("bakl"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // bakl
+  fourrdmparts_.emplace(string("baij"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // baij
   //# = 5
-  fourrdm_.emplace(string("aijkl"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // aijkl
-  fourrdm_.emplace(string("bajkl"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // bajkl
-  fourrdm_.emplace(string("baijk"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // baijk
+  fourrdmparts_.emplace(string("aijkl"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // aijkl
+  fourrdmparts_.emplace(string("bajkl"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // bajkl
+  fourrdmparts_.emplace(string("baijk"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // baijk
   //# = 6
-  fourrdm_.emplace(string("baijkl"), make_shared<Matrix>(nactA*nactA, nactB*nactB*nactB*nactB*nactB*nactB )); // baijkl
-  fourrdm_.emplace(string("cbajkl"), make_shared<Matrix>(nactA*nactA, nactB*nactB*nactB*nactB*nactB*nactB )); // cbajkl
-  fourrdm_.emplace(string("cbaijk"), make_shared<Matrix>(nactA*nactA, nactB*nactB*nactB*nactB*nactB*nactB )); // cbaijk
+  fourrdmparts_.emplace(string("baijkl"), make_shared<Matrix>(nactA*nactA, nactB*nactB*nactB*nactB*nactB*nactB )); // baijkl
+  fourrdmparts_.emplace(string("cbajkl"), make_shared<Matrix>(nactA*nactA, nactB*nactB*nactB*nactB*nactB*nactB )); // cbajkl
+  fourrdmparts_.emplace(string("cbaijk"), make_shared<Matrix>(nactA*nactA, nactB*nactB*nactB*nactB*nactB*nactB )); // cbaijk
   //# = 7
-  fourrdm_.emplace(string("cbaijkl"), make_shared<Matrix>(nactA, nactB*nactB*nactB*nactB*nactB*nactB*nactB )); // cbaijkl
+  fourrdmparts_.emplace(string("cbaijkl"), make_shared<Matrix>(nactA, nactB*nactB*nactB*nactB*nactB*nactB*nactB )); // cbaijkl
   //# = 8
-  fourrdm_.emplace(string("monomerB"), make_shared<Matrix>(nactB*nactB*nactB*nactB*nactB*nactB*nactB*nactB, 1)); // monomer B
+  fourrdmparts_.emplace(string("monomerB"), make_shared<Matrix>(nactB*nactB*nactB*nactB*nactB*nactB*nactB*nactB, 1)); // monomer B
 
-  cout << "# of nonredundnat Dimer 4RDM = " << fourrdm_.size() << endl;
+  cout << "# of nonredundnat Dimer 4RDM = " << fourrdmparts_.size() << endl;
 
 }
 
@@ -295,7 +295,7 @@ ASD_base::compute_aET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("l")) += *rdmt;
+    *fourrdmparts_.at(string("l")) += *rdmt;
   }
 
   { 
@@ -335,7 +335,7 @@ ASD_base::compute_aET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("aij")) += *rdmt;
+    *fourrdmparts_.at(string("aij")) += *rdmt;
   }
   
   { 
@@ -368,7 +368,7 @@ ASD_base::compute_aET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("akl")) += *rdmt;
+    *fourrdmparts_.at(string("akl")) += *rdmt;
   }
 
   { 
@@ -407,7 +407,7 @@ ASD_base::compute_aET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("baijk")) += *rdmt;
+    *fourrdmparts_.at(string("baijk")) += *rdmt;
   }
 
   { 
@@ -444,7 +444,7 @@ ASD_base::compute_aET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("bajkl")) += *rdmt;
+    *fourrdmparts_.at(string("bajkl")) += *rdmt;
   }
 
   { 
@@ -477,7 +477,7 @@ ASD_base::compute_aET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("cbaijkl")) += *rdmt;
+    *fourrdmparts_.at(string("cbaijkl")) += *rdmt;
   }
 
   return make_tuple(out3,out4);
@@ -634,7 +634,7 @@ ASD_base::compute_bET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("l")) += *rdmt;
+    *fourrdmparts_.at(string("l")) += *rdmt;
   }
 
   { //cf aET "aij"
@@ -675,7 +675,7 @@ ASD_base::compute_bET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("aij")) += *rdmt;
+    *fourrdmparts_.at(string("aij")) += *rdmt;
   }
 
   { 
@@ -709,7 +709,7 @@ ASD_base::compute_bET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("akl")) += *rdmt;
+    *fourrdmparts_.at(string("akl")) += *rdmt;
   }
 
   { 
@@ -748,7 +748,7 @@ ASD_base::compute_bET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("baijk")) += *rdmt;
+    *fourrdmparts_.at(string("baijk")) += *rdmt;
   }
 
   { 
@@ -783,7 +783,7 @@ ASD_base::compute_bET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("bajkl")) += *rdmt;
+    *fourrdmparts_.at(string("bajkl")) += *rdmt;
   }
 
   { 
@@ -816,7 +816,7 @@ ASD_base::compute_bET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("cbaijkl")) += *rdmt;
+    *fourrdmparts_.at(string("cbaijkl")) += *rdmt;
   }
  
   return make_tuple(out3,out4);
@@ -910,7 +910,7 @@ ASD_base::compute_aaET_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<3,4,2,5,1,6,0,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'b'bb|aa:  (dcbaij|kl)
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("kl")) += *rdmt;
+    *fourrdmparts_.at(string("kl")) += *rdmt;
   }
 
   { //p34B
@@ -934,7 +934,7 @@ ASD_base::compute_aaET_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<4,3,0,7,2,5,1,6, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'a'b|b'aab:  (bdci|aklj) : b->c->d, j->k->l
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("ajkl")) += *rdmt;
+    *fourrdmparts_.at(string("ajkl")) += *rdmt;
   }
 
   { //p35
@@ -960,7 +960,7 @@ ASD_base::compute_aaET_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<4,5,1,6,0,7,2,3, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'a'b|b'baa:  (cbdl|aijk) : d->c->b
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("aijk")) += *rdmt;
+    *fourrdmparts_.at(string("aijk")) += *rdmt;
   }
     
   { //p39
@@ -985,7 +985,7 @@ ASD_base::compute_aaET_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<3,4,2,5,1,6,0,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a'|b'b'bbaa:  (dc|baijkl)
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("baijkl")) += *rdmt;
+    *fourrdmparts_.at(string("baijkl")) += *rdmt;
   }
   return make_tuple(out3,out4);
 }
@@ -1077,7 +1077,7 @@ ASD_base::compute_bbET_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<3,4,2,5,1,6,0,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'b'bb|bb:  (dcbaij|kl)
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("kl")) += *rdmt;
+    *fourrdmparts_.at(string("kl")) += *rdmt;
   }
 
   { //p34B
@@ -1101,7 +1101,7 @@ ASD_base::compute_bbET_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<4,3,1,6,0,7,2,5, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'b'a|a'bba:  (cbdi|aljk) : d->b->c, l->j->k
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("ajkl")) += *rdmt;
+    *fourrdmparts_.at(string("ajkl")) += *rdmt;
   }
 
   { //p35
@@ -1127,7 +1127,7 @@ ASD_base::compute_bbET_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<4,5,2,6,1,7,0,3, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'b'b|b'bbb:  (dcbl|aijk)
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("aijk")) += *rdmt;
+    *fourrdmparts_.at(string("aijk")) += *rdmt;
   }
 
   { //p39
@@ -1152,7 +1152,7 @@ ASD_base::compute_bbET_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<3,4,2,5,1,6,0,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b'|b'b'bbbb:  (dc|baijkl)
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("baijkl")) += *rdmt;
+    *fourrdmparts_.at(string("baijkl")) += *rdmt;
   }
 
   return make_tuple(out3,out4);
@@ -1254,7 +1254,7 @@ ASD_base::compute_abET_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<3,4,2,5,0,6,1,7, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'b'bb|ba:  (cdbaij|kl) : c->d
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("kl")) += *rdmt;
+    *fourrdmparts_.at(string("kl")) += *rdmt;
   }
 
   { //p34B, 35
@@ -1282,7 +1282,7 @@ ASD_base::compute_abET_4RDM(const array<MonomerKey,4>& keys) const {
       SMITH::sort_indices<4,3,1,7,2,5,0,6, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'a'b|b'abb  -(dbci|aklj) : b->c, j->k->l
       cout << "rearranged" << endl; cout.flush();
       
-      *fourrdm_.at(string("ajkl")) += *rdmt;
+      *fourrdmparts_.at(string("ajkl")) += *rdmt;
     }
     {
       auto rdmt = rdm1->clone();
@@ -1297,7 +1297,7 @@ ASD_base::compute_abET_4RDM(const array<MonomerKey,4>& keys) const {
       SMITH::sort_indices<4,5,1,7,2,6,0,3, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'a'b|b'bab   (dbcl|aikj) : c->b, j->k
       cout << "rearranged" << endl; cout.flush();
       
-      *fourrdm_.at(string("aijk")) += *rdmt;
+      *fourrdmparts_.at(string("aijk")) += *rdmt;
     }
 
   }
@@ -1328,7 +1328,7 @@ ASD_base::compute_abET_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<3,4,2,5,0,7,1,6, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'a'|b'b'bbab   (cd|baijlk) : d->c, k->l
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("kl")) += *rdmt;
+    *fourrdmparts_.at(string("kl")) += *rdmt;
   }
 
 
@@ -1435,7 +1435,7 @@ ASD_base::compute_abFlip_4RDM(const array<MonomerKey,4>& keys) const {
 
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("al")) += *rdmt;
+    *fourrdmparts_.at(string("al")) += *rdmt;
   }
 
   { //p41B
@@ -1465,7 +1465,7 @@ ASD_base::compute_abFlip_4RDM(const array<MonomerKey,4>& keys) const {
     SMITH::sort_indices<6,1,7,0,3,4,2,5, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ba|a'b'bb   (jidc|klab) : c->d, l->k
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("bakl")) += *rdmt;
+    *fourrdmparts_.at(string("bakl")) += *rdmt;
   }
 
   { //p39B
@@ -1497,7 +1497,7 @@ ASD_base::compute_abFlip_4RDM(const array<MonomerKey,4>& keys) const {
 
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("cbajkl")) += *rdmt;
+    *fourrdmparts_.at(string("cbajkl")) += *rdmt;
   }
   return make_tuple(out3,out4);
 }
@@ -1563,7 +1563,7 @@ ASD_base::compute_aaaET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("jkl")) += *rdmt;
+    *fourrdmparts_.at(string("jkl")) += *rdmt;
   }
   
   { //4RDM p37
@@ -1586,7 +1586,7 @@ ASD_base::compute_aaaET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("aijkl")) += *rdmt;
+    *fourrdmparts_.at(string("aijkl")) += *rdmt;
   }
   return make_tuple(out3,out4);
 }
@@ -1653,7 +1653,7 @@ ASD_base::compute_bbbET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("jkl")) += *rdmt;
+    *fourrdmparts_.at(string("jkl")) += *rdmt;
   }
   
   { //4RDM p37
@@ -1676,7 +1676,7 @@ ASD_base::compute_bbbET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("aijkl")) += *rdmt;
+    *fourrdmparts_.at(string("aijkl")) += *rdmt;
   }
   return make_tuple(out3,out4);
 }
@@ -1750,7 +1750,7 @@ ASD_base::compute_aabET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("jkl")) += *rdmt;
+    *fourrdmparts_.at(string("jkl")) += *rdmt;
   }
   
   { //4RDM p37
@@ -1779,7 +1779,7 @@ ASD_base::compute_aabET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("aijkl")) += *rdmt;
+    *fourrdmparts_.at(string("aijkl")) += *rdmt;
   }
   return make_tuple(out3,out4);
 }
@@ -1853,7 +1853,7 @@ ASD_base::compute_abbET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("jkl")) += *rdmt;
+    *fourrdmparts_.at(string("jkl")) += *rdmt;
   }
   
   { //4RDM p37
@@ -1881,7 +1881,7 @@ ASD_base::compute_abbET_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("aijkl")) += *rdmt;
+    *fourrdmparts_.at(string("aijkl")) += *rdmt;
   }
   return make_tuple(out3,out4);
 }
@@ -1948,7 +1948,7 @@ ASD_base::compute_aETFlip_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("akl")) += *rdmt;
+    *fourrdmparts_.at(string("akl")) += *rdmt;
   }
 
   { //p33B
@@ -1971,7 +1971,7 @@ ASD_base::compute_aETFlip_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("bajkl")) += *rdmt;
+    *fourrdmparts_.at(string("bajkl")) += *rdmt;
   }
 
   return make_tuple(out3,out4);
@@ -2039,7 +2039,7 @@ ASD_base::compute_bETFlip_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("akl")) += *rdmt;
+    *fourrdmparts_.at(string("akl")) += *rdmt;
   }
 
   { //p33B
@@ -2062,7 +2062,7 @@ ASD_base::compute_bETFlip_4RDM(const array<MonomerKey,4>& keys) const {
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
-    *fourrdm_.at(string("bajkl")) += *rdmt;
+    *fourrdmparts_.at(string("bajkl")) += *rdmt;
   }
   
   return make_tuple(out3,out4);
@@ -2282,7 +2282,7 @@ ASD_base::compute_diag_4RDM(const array<MonomerKey,4>& keys, const bool subdia) 
       }
       cout << "rearranged" << endl; cout.flush();
       
-      *fourrdm_.at(string("ai")) += *rdmt;
+      *fourrdmparts_.at(string("ai")) += *rdmt;
     }
 
     {
@@ -2312,7 +2312,7 @@ ASD_base::compute_diag_4RDM(const array<MonomerKey,4>& keys, const bool subdia) 
       }
       cout << "rearranged" << endl; cout.flush();
       
-      *fourrdm_.at(string("al")) += *rdmt;
+      *fourrdmparts_.at(string("al")) += *rdmt;
     }
   }
 
@@ -2386,7 +2386,7 @@ ASD_base::compute_diag_4RDM(const array<MonomerKey,4>& keys, const bool subdia) 
       }
       cout << "rearranged" << endl; cout.flush();
       
-      *fourrdm_.at(string("baij")) += *rdmt;
+      *fourrdmparts_.at(string("baij")) += *rdmt;
     }
 
     { //p36B, 41B
@@ -2410,7 +2410,7 @@ ASD_base::compute_diag_4RDM(const array<MonomerKey,4>& keys, const bool subdia) 
       }
       cout << "rearranged" << endl; cout.flush();
       
-      *fourrdm_.at(string("bakl")) += *rdmt;
+      *fourrdmparts_.at(string("bakl")) += *rdmt;
     }
   }
 
@@ -2478,7 +2478,7 @@ ASD_base::compute_diag_4RDM(const array<MonomerKey,4>& keys, const bool subdia) 
       }
       cout << "rearranged" << endl; cout.flush();
       
-      *fourrdm_.at(string("cbaijk")) += *rdmt;
+      *fourrdmparts_.at(string("cbaijk")) += *rdmt;
     }
 
     {
@@ -2507,7 +2507,7 @@ ASD_base::compute_diag_4RDM(const array<MonomerKey,4>& keys, const bool subdia) 
       }
       cout << "rearranged" << endl; cout.flush();
       
-      *fourrdm_.at(string("cbajkl")) += *rdmt;
+      *fourrdmparts_.at(string("cbajkl")) += *rdmt;
     }
   }
   return make_tuple(out3,out4);
@@ -2581,7 +2581,7 @@ ASD_base::compute_aaaaET_4RDM(const array<MonomerKey,4>& keys) const {
   SMITH::sort_indices<3,4,2,5,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'a'a'|aaaa   (dcba|ijkl)
   cout << "rearranged" << endl; cout.flush();
 
-  *fourrdm_.at(string("ijkl")) += *rdmt;
+  *fourrdmparts_.at(string("ijkl")) += *rdmt;
   
   return make_tuple(out3,out4);
 }
@@ -2618,7 +2618,7 @@ ASD_base::compute_bbbbET_4RDM(const array<MonomerKey,4>& keys) const {
   SMITH::sort_indices<3,4,2,5,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'b'b'|bbbb   (dcba|ijkl)
   cout << "rearranged" << endl; cout.flush();
 
-  *fourrdm_.at(string("ijkl")) += *rdmt;
+  *fourrdmparts_.at(string("ijkl")) += *rdmt;
   
   return make_tuple(out3,out4);
 } 
@@ -2660,7 +2660,7 @@ ASD_base::compute_aabbET_4RDM(const array<MonomerKey,4>& keys) const {
   SMITH::sort_indices<3,4,0,7,2,5,1,6, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'a'a'|aabb   (bdca|iklj) : b-c-d, j-k-l
   cout << "rearranged" << endl; cout.flush();
 
-  *fourrdm_.at(string("ijkl")) += *rdmt;
+  *fourrdmparts_.at(string("ijkl")) += *rdmt;
   
   return make_tuple(out3,out4);
 }
@@ -2700,7 +2700,7 @@ ASD_base::compute_aaabET_4RDM(const array<MonomerKey,4>& keys) const {
   SMITH::sort_indices<1,6,3,4,2,5,0,7, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'a'b'|baaa   (dacb|jkil) : a-b-c, i-j-k
   cout << "rearranged" << endl; cout.flush();
 
-  *fourrdm_.at(string("ijkl")) += *rdmt;
+  *fourrdmparts_.at(string("ijkl")) += *rdmt;
   
   return make_tuple(out3,out4);
 }
@@ -2740,7 +2740,7 @@ ASD_base::compute_abbbET_4RDM(const array<MonomerKey,4>& keys) const {
   SMITH::sort_indices<1,6,3,4,2,5,0,7, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'b'a'|abbb   (dacb|jkil) : a-b-c, i-j-k
   cout << "rearranged" << endl; cout.flush();
 
-  *fourrdm_.at(string("ijkl")) += *rdmt;
+  *fourrdmparts_.at(string("ijkl")) += *rdmt;
   
   return make_tuple(out3,out4);
 }
@@ -2776,7 +2776,7 @@ ASD_base::compute_aaETFlip_4RDM(const array<MonomerKey,4>& keys) const {
   SMITH::sort_indices<4,3,2,5,1,6,0,7, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'a'b'|baaa   (dcbi|ajkl)
   cout << "rearranged" << endl; cout.flush();
 
-  *fourrdm_.at(string("ajkl")) += *rdmt;
+  *fourrdmparts_.at(string("ajkl")) += *rdmt;
   
   return make_tuple(out3,out4);
 }
@@ -2812,7 +2812,7 @@ ASD_base::compute_bbETFlip_4RDM(const array<MonomerKey,4>& keys) const {
   SMITH::sort_indices<4,3,2,5,1,6,0,7, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'b'a'|abbb   (dcbi|ajkl)
   cout << "rearranged" << endl; cout.flush();
 
-  *fourrdm_.at(string("ajkl")) += *rdmt;
+  *fourrdmparts_.at(string("ajkl")) += *rdmt;
   
   return make_tuple(out3,out4);
 }
@@ -2850,7 +2850,130 @@ ASD_base::compute_doubleFlip_4RDM(const array<MonomerKey,4>& keys) const {
   SMITH::sort_indices<6,1,7,0,2,5,3,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'aa|a'a'bb   (jicd|lkab)
   cout << "rearranged" << endl; cout.flush();
 
-  *fourrdm_.at(string("bakl")) += *rdmt;
+  *fourrdmparts_.at(string("bakl")) += *rdmt;
   
   return make_tuple(out3,out4);
 }
+
+void ASD_base::symmetrize_RDM4() {
+
+  const int nactA = dimer_->active_refs().first->nact();
+  const int nactB = dimer_->active_refs().second->nact();
+//const int nactT = nactA + nactB;  
+
+  //full 4RDM
+  fourrdm_ = std::make_shared<RDM<4>>(nactA+nactB);
+
+  cout << "Symmetrize RDM4.." << endl;
+  //#B=0
+  fill_RDM<0,1,2,3,4,5,6,7, 
+           0,0,0,0,0,0,0,0>(fourrdmparts_.at("monomerA"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactA);
+  cout << "monomer A done.." << endl;
+
+  //#B=8
+  fill_RDM<0,1,2,3,4,5,6,7, 
+           1,1,1,1,1,1,1,1>(fourrdmparts_.at("monomerB"), nactB, nactB, nactB, nactB, nactB, nactB, nactB, nactB);
+  cout << "monomer B done.." << endl;
+  
+  //#B=2 (ai)
+  fill_RDM<0,1,2,3,4,5,6,7, 
+           1,1,0,0,0,0,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,0,1,4,5,6,7, 
+           0,0,1,1,0,0,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,4,5,0,1,6,7, 
+           0,0,0,0,1,1,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,4,5,6,7,0,1, 
+           0,0,0,0,0,0,1,1>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  cout << "ai done.." << endl;
+
+/*
+  { 
+    auto rdmt = fourrdmparts_.at("monomerA");
+    auto mat = make_shared<Matrix>(pow(nactA,8),1); //empty
+                      //a i b j c k d l
+    SMITH::sort_indices<0,1,2,3,4,5,6,7, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactA); 
+    auto low = {    0,    0,    0,    0,    0,    0,    0,    0};
+    auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactA};
+    auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
+    copy(mat->begin(), mat->end(), outv.begin()); 
+  }
+
+  //#B=1
+  { 
+    auto rdmt = fourrdmparts_.at("l");
+    auto mat = make_shared<Matrix>(pow(nactA,7),nactB); //empty
+    {                   //a i b j c k d l'
+      SMITH::sort_indices<0,1,2,3,4,5,6,7, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,    0,    0,    0,    0,    0,    0,nactA};
+      auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
+      copy(mat->begin(), mat->end(), outv.begin()); 
+    }
+    {                   //a i b j d l c k
+      SMITH::sort_indices<0,1,2,3,6,7,4,5, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,    0,    0,    0,    0,nactA,    0,    0};
+      auto up  = {nactA,nactA,nactA,nactA,nactA,nactT,nactA,nactA};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
+      copy(mat->begin(), mat->end(), outv.begin()); 
+    }
+    {                   //a i d l b j c k
+      SMITH::sort_indices<0,1,6,7,2,3,4,5, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,    0,    0,nactA,    0,    0,    0,    0};
+      auto up  = {nactA,nactA,nactA,nactT,nactA,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
+      copy(mat->begin(), mat->end(), outv.begin()); 
+    }
+    {                   //d l a i b j c k
+      SMITH::sort_indices<6,7,0,1,2,3,4,5, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,nactA,    0,    0,    0,    0,    0,    0};
+      auto up  = {nactA,nactT,nactA,nactA,nactA,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
+      copy(mat->begin(), mat->end(), outv.begin()); 
+    }
+    {                   //a i b j c k d l' transpose
+      SMITH::sort_indices<1,0,3,2,5,4,7,6, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,    0,    0,    0,    0,    0,nactA,    0};
+      auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactT,nactA};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
+      copy(mat->begin(), mat->end(), outv.begin()); 
+    }
+    {                   //a i b j d l c k  transpose
+      SMITH::sort_indices<1,0,3,2,7,6,5,4, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,    0,    0,    0,nactA,    0,    0,    0};
+      auto up  = {nactA,nactA,nactA,nactA,nactT,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
+      copy(mat->begin(), mat->end(), outv.begin()); 
+    }
+    {                   //a i d l b j c k  transpose
+      SMITH::sort_indices<1,0,7,6,3,2,5,4, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {    0,    0,nactA,    0,    0,    0,    0,    0};
+      auto up  = {nactA,nactA,nactT,nactA,nactA,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
+      copy(mat->begin(), mat->end(), outv.begin()); 
+    }
+    {                   //d l a i b j c k  transpose
+      SMITH::sort_indices<7,6,1,0,3,2,5,4, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
+      auto low = {nactA,    0,    0,    0,    0,    0,    0,    0};
+      auto up  = {nactT,nactA,nactA,nactA,nactA,nactA,nactA,nactA};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
+      copy(mat->begin(), mat->end(), outv.begin()); 
+    }
+  }
+
+  //#B=2
+  { 
+    auto rdmt = fourrdmparts_.at("kl");
+    auto mat = make_shared<Matrix>(pow(nactA,6),nactB*nactB); //empty
+    {                   //a i b j c k d l'
+      SMITH::sort_indices<0,1,2,3,4,5,6,7, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); 
+      auto low = {    0,    0,    0,    0,    0,    0,    0,nactA};
+      auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactT};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
+      copy(mat->begin(), mat->end(), outv.begin()); 
+    }
+  }
+*/
+
+}
+
+

@@ -32,6 +32,9 @@
 #include <src/asd/gamma_tensor.h>
 #include <src/asd/coupling.h>
 
+#include <src/smith/prim_op.h>
+
+
 namespace bagel {
 
 /// Specifies a single block of a model Hamiltonian
@@ -70,8 +73,8 @@ class ASD_base {
 
     std::shared_ptr<RDM<3>> threerdm_; // Third-order RDM
     std::map<std::string,std::shared_ptr<Matrix>> rdm3_;
-  //std::shared_ptr<RDM<4>> fourrdm_; // Fourth-order RDM
-    std::map<std::string,std::shared_ptr<Matrix>> fourrdm_;
+    std::shared_ptr<RDM<4>> fourrdm_; // Fourth-order RDM
+    std::map<std::string,std::shared_ptr<Matrix>> fourrdmparts_;
   //using DMap = std::map<std::pair<int,int>, std::shared_ptr<DetType>>;
 
 
@@ -198,8 +201,47 @@ class ASD_base {
 
     void symmetrize_RDM() const;
     void symmetrize_RDM34() const;
+    void symmetrize_RDM4();
     void debug_RDM() const;
     void debug_energy() const;
+
+
+  template<int a,  int i,  int b,  int j,  int c,  int k,  int d,  int l, // according to the sorted
+           int Xa, int Xi, int Xb, int Xj, int Xc, int Xk, int Xd, int Xl> // 0 for A, 1 for B
+  void fill_RDM(std::shared_ptr<Matrix> rdmt,
+                const int n0, const int n1, const int n2, const int n3, const int n4, const int n5, const int n6, const int n7) { // according to the unsorted
+
+    const int nactA = dimer_->embedded_refs().first->nact();
+    const int nactB = dimer_->embedded_refs().second->nact();
+    const int nactT = nactA + nactB;
+
+    //                  A       B
+    int la = {Xa == 0 ? 0     : nactA};
+    int li = {Xi == 0 ? 0     : nactA};
+    int lb = {Xb == 0 ? 0     : nactA};
+    int lj = {Xj == 0 ? 0     : nactA};
+    int lc = {Xc == 0 ? 0     : nactA};
+    int lk = {Xk == 0 ? 0     : nactA};
+    int ld = {Xd == 0 ? 0     : nactA};
+    int ll = {Xl == 0 ? 0     : nactA};
+
+    int ha = {Xa == 0 ? nactA : nactT};
+    int hi = {Xi == 0 ? nactA : nactT};
+    int hb = {Xb == 0 ? nactA : nactT};
+    int hj = {Xj == 0 ? nactA : nactT};
+    int hc = {Xc == 0 ? nactA : nactT};
+    int hk = {Xk == 0 ? nactA : nactT};
+    int hd = {Xd == 0 ? nactA : nactT};
+    int hl = {Xl == 0 ? nactA : nactT};
+
+    auto mat = std::make_shared<Matrix>(n0*n1*n2*n3*n4*n5*n6*n7,1); //empty
+                      //sorted                                                unsorted dim/s
+    SMITH::sort_indices<a,i,b,j,c,k,d,l, 0,1, 1,1>(rdmt->data(), mat->data(), n0, n1, n2, n3, n4, n5, n6, n7);
+    auto low = {la,li,lb,lj,lc,lk,ld,ll};
+    auto up  = {ha,hi,hb,hj,hc,hk,hd,hl};
+    auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage());
+    copy(mat->begin(), mat->end(), outv.begin());
+  }
 
 }; //ASD_base
 

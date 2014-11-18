@@ -193,7 +193,7 @@ void ASD_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
 }
 
 //***************************************************************************************************************
-tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>>
+tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>, shared_ptr<RDM<4>>>
 ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) const {
 // taken from fci/fci_rdm.cc
 //***************************************************************************************************************
@@ -318,7 +318,7 @@ ASD_CAS::compute_rdm34_monomer (pair<int,int> offset, array<Dvec,4>& fourvecs) c
 //}
 //cout << "rdm4 copy complete" << endl; cout.flush();
 
-  return make_tuple(out3, nullptr);
+  return make_tuple(out3, rdm4A, rdm4B);
 
 }
 
@@ -430,54 +430,31 @@ ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<cons
   cout << "rdm3" << endl; cout.flush();
 
   // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
-/*
+  
   {
-    {
-      auto tmp4 = make_shared<RDM<4>>(norb);
-      dgemm_("T", "N", ebra->ij(), eket->ij(), nri, 1.0, ebra->data(), nri, eket->data(), nri, 0.0, tmp4->data(), ebra->ij());
-      //reorder, cf. 3RDM
-      SMITH::sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(tmp4->data(), rdm4->data(), norb, norb, norb, norb, norb, norb, norb, norb);
+    auto tmp4 = make_shared<RDM<4>>(norb);
+    dgemm_("T", "N", ebra->ij(), eket->ij(), nri, 1.0, ebra->data(), nri, eket->data(), nri, 0.0, tmp4->data(), ebra->ij());
+    //reorder, cf. 3RDM
+    SMITH::sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(tmp4->data(), rdm4->data(), norb, norb, norb, norb, norb, norb, norb, norb);
 
-      for (int l = 0; l != norb; ++l)
-        for (int d = 0; d != norb; ++d)
-          for (int k = 0; k != norb; ++k)
-            for (int c = 0; c != norb; ++c)
-              for (int j = 0; j != norb; ++j)
-                for (int b = 0; b != norb; ++b)
-                  for (int i = 0; i != norb; ++i)
-                    for (int a = 0; a != norb; ++a) {
-                      if (c == i && d == j) rdm4->element(a,i,b,j,c,k,d,l) -= rdm2->element(a,k,b,l); //TODO need check
-                      if (c == j && d == i) rdm4->element(a,i,b,j,c,k,d,l) -= rdm2->element(a,l,b,k); // same
-                      if (c == i)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,k,b,j,d,l);
-                      if (c == j)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,i,b,k,d,l);
-                      if (d == i)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,l,b,j,c,k);
-                      if (d == j)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,i,b,l,c,k);
-                    }
-    }
+    for (int l = 0; l != norb; ++l)
+      for (int d = 0; d != norb; ++d)
+        for (int k = 0; k != norb; ++k)
+          for (int c = 0; c != norb; ++c)
+            for (int j = 0; j != norb; ++j)
+              for (int b = 0; b != norb; ++b)
+                for (int i = 0; i != norb; ++i)
+                  for (int a = 0; a != norb; ++a) {
+                    if (c == i && d == j) rdm4->element(a,i,b,j,c,k,d,l) -= rdm2->element(a,k,b,l); 
+                    if (c == j && d == i) rdm4->element(a,i,b,j,c,k,d,l) -= rdm2->element(a,l,b,k); 
+                    if (c == i)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,k,b,j,d,l);
+                    if (c == j)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,i,b,k,d,l);
+                    if (d == i)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,l,b,j,c,k);
+                    if (d == j)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,i,b,l,c,k);
+                  }
   }
+  
   cout << "rdm4" << endl; cout.flush();
-*/
-/*
-  // Checking 4RDM by comparing with 3RDM
-  const int nelea = cbra->det()->nelea();
-  const int neleb = cbra->det()->neleb();
-  auto debug = make_shared<RDM<3>>(*rdm3);
-  cout << "printing out rdm" << endl;
-  for (int l = 0; l != norb; ++l)
-    for (int d = 0; d != norb; ++d)
-      for (int k = 0; k != norb; ++k)
-        for (int c = 0; c != norb; ++c)
-          for (int j = 0; j != norb; ++j)
-            for (int b = 0; b != norb; ++b)
-    for (int i = 0; i != norb; ++i) {
-      debug->element(b,j,c,k,d,l) -= 1.0/(nelea+neleb-3) * rdm4->element(i,i,b,j,c,k,d,l);
-//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,i,i,c,k,d,l);
-//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,c,k,i,i,d,l);
-//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,c,k,d,l,i,i);
-    }
-  debug->print(1.0e-8);
-  cout << "printing out rdm - end" << endl;
-*/
 
   return tie(rdm3, rdm4);
 }
