@@ -177,7 +177,18 @@ ASD_base::compute_rdm () {
     //if (r4) *fourrdm_ += *r4;
     }
   }
-  
+ 
+  //4RDM
+  // diagonal subspaces
+  for (auto& subspace : subspaces) {
+    cout << "4RDM: diagonal subspaces.." << endl;
+    shared_ptr<RDM<3>> r3; //TODO remove
+    shared_ptr<RDM<4>> r4;
+    tie(r3,r4) = compute_diagonal_block_RDM4(subspace);
+  }
+
+
+ 
   symmetrize_RDM();
 
   symmetrize_RDM34();

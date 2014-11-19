@@ -29,6 +29,13 @@
 using namespace std;
 using namespace bagel;
 
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_diagonal_block_RDM4(const DimerSubspace_base& subspace) const {
+  array<MonomerKey,4> keys {{ subspace.monomerkey<0>(), subspace.monomerkey<1>(), subspace.monomerkey<0>(), subspace.monomerkey<1>() }};
+  auto out = compute_diag_4RDM(keys, /*subspace diagonal*/true);
+  return out;
+}
+
 //***************************************************************************************************************
 tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>>
 ASD_base::couple_blocks_4RDM(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
@@ -126,6 +133,7 @@ void ASD_base::initialize_4RDM() {
   fourrdmparts_.emplace(string("aijk"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // aijk
   fourrdmparts_.emplace(string("bakl"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // bakl
   fourrdmparts_.emplace(string("baij"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // baij
+  fourrdmparts_.emplace(string("bajk"), make_shared<Matrix>(nactA*nactA*nactA*nactA, nactB*nactB*nactB*nactB )); // bajk
   //# = 5
   fourrdmparts_.emplace(string("aijkl"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // aijkl
   fourrdmparts_.emplace(string("bajkl"), make_shared<Matrix>(nactA*nactA*nactA, nactB*nactB*nactB*nactB*nactB )); // bajkl
@@ -142,6 +150,349 @@ void ASD_base::initialize_4RDM() {
   cout << "# of nonredundnat Dimer 4RDM = " << fourrdmparts_.size() << endl;
 
 }
+
+//***************************************************************************************************************
+tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
+ASD_base::compute_diag_4RDM(const array<MonomerKey,4>& keys, const bool subdia) const {
+//***************************************************************************************************************
+  cout << "DIAG_4RDM" << endl; cout.flush();
+  auto& B  = keys[1]; 
+  auto& Bp = keys[3];
+
+  const int nactA = dimer_->embedded_refs().first->nact();
+  const int nactB = dimer_->embedded_refs().second->nact();
+//const int nactT = nactA+nactB;
+  auto out3 = make_shared<RDM<3>>(nactA+nactB);
+  auto out4 = nullptr;
+
+  //4RDM
+  { //p31B
+    cout << "4RDM #1" << endl;
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'a'aaa
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); //a'b'a'aba
+    auto gamma_A3 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  //b'a'b'bab
+    auto gamma_A4 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //b'b'b'bbb
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});//a'a
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta}); //b'b
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1); // a'a'a'aaa|a'a
+    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B1); // a'b'a'aba|a'a
+    auto rdm3 = make_shared<Matrix>(gamma_A3 % gamma_B1); // b'a'b'bab|a'a
+    auto rdm4 = make_shared<Matrix>(gamma_A4 % gamma_B1); // b'b'b'bbb|a'a
+
+    auto rdm5 = make_shared<Matrix>(gamma_A1 % gamma_B2); // a'a'a'aaa|b'b
+    auto rdm6 = make_shared<Matrix>(gamma_A2 % gamma_B2); // a'b'a'aba|b'b
+    auto rdm7 = make_shared<Matrix>(gamma_A3 % gamma_B2); // b'a'b'bab|b'b
+    auto rdm8 = make_shared<Matrix>(gamma_A4 % gamma_B2); // b'b'b'bbb|b'b
+    cout << "full gammas" << endl; cout.flush();
+
+    {
+      auto rdmt = rdm1->clone();
+      // E_a'i',bj,ck,dl sign(+1)
+      //                  a i b j c k d l                                                                                                     original order  (dcbjkl|ai)
+      SMITH::sort_indices<6,7,2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|a'a   (dcbjkl|ai)
+      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'aba|a'a   (dcbjkl|ai)
+      SMITH::sort_indices<6,7,1,4,2,3,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'baa|a'a   (dbckjl|ai) : c->b, j->k
+      SMITH::sort_indices<6,7,2,3,0,5,1,4, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'aab|a'a   (cdbjlk|ai) : d->c, k->l
+      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'bab|a'a   (dcbjkl|ai)
+      SMITH::sort_indices<6,7,1,4,2,3,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'abb|a'a   (dbckjl|ai) : c->b, j->k
+      SMITH::sort_indices<6,7,2,3,0,5,1,4, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'bba|a'a   (cdbjlk|ai) : d->c, k->l
+      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|a'a   (dcbjkl|ai)
+      
+      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|b'b   (dcbjkl|ai)
+      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'aba|b'b   (dcbjkl|ai)
+      SMITH::sort_indices<6,7,1,4,2,3,0,5, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'baa|b'b   (dbckjl|ai) : c->b, j->k
+      SMITH::sort_indices<6,7,2,3,0,5,1,4, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'aab|b'b   (cdbjlk|ai) : d->c, k->l
+      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'bab|b'b   (dcbjkl|ai)
+      SMITH::sort_indices<6,7,1,4,2,3,0,5, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'abb|b'b   (dbckjl|ai) : c->b, j->k
+      SMITH::sort_indices<6,7,2,3,0,5,1,4, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'bba|b'b   (cdbjlk|ai) : d->c, k->l
+      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|b'b   (dcbjkl|ai)
+      if (!subdia) { 
+        //                  a i b j c k d l                                                                                                     original order  (lkjbcd|ia)
+        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|a'a   (lkjbcd|ia)
+        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'aba|a'a   (lkjbcd|ia)
+        SMITH::sort_indices<7,6,4,1,3,2,5,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'baa|a'a   (ljkcbd|ia) : k->j, b->c
+        SMITH::sort_indices<7,6,3,2,5,0,4,1, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'aab|a'a   (kljbdc|ia) : l->k, c->d
+        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'bab|a'a   (lkjbcd|ia)
+        SMITH::sort_indices<7,6,4,1,3,2,5,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'abb|a'a   (ljkcbd|ia) : k->j, b->c
+        SMITH::sort_indices<7,6,3,2,5,0,4,1, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'bba|a'a   (lkjbcd|ia) : l->k, c->d
+        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|a'a   (lkjbcd|ia)
+
+        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|b'b   (lkjbcd|ia)
+        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'aba|b'b   (lkjbcd|ia)
+        SMITH::sort_indices<7,6,4,1,3,2,5,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'baa|b'b   (ljkcbd|ia) : k->j, b->c
+        SMITH::sort_indices<7,6,3,2,5,0,4,1, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'aab|b'b   (kljbdc|ia) : l->k, c->d
+        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'bab|b'b   (lkjbcd|ia)
+        SMITH::sort_indices<7,6,4,1,3,2,5,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'abb|b'b   (ljkcbd|ia) : k->j, b->c
+        SMITH::sort_indices<7,6,3,2,5,0,4,1, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'bba|b'b   (lkjbcd|ia) : l->k, c->d
+        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|b'b   (lkjbcd|ia)
+      }
+      cout << "rearranged" << endl; cout.flush();
+      
+      *fourrdmparts_.at(string("ai")) += *rdmt;
+    }
+
+    {
+      auto rdmt = rdm1->clone();
+      // E_a'i,bj,ck,dl' sign(+1)
+      //                  a i b j c k d l                                                                                                     original order  (dcbijk|al)
+      SMITH::sort_indices<6,3,2,4,1,5,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|a'a   (dcbijk|al)
+      SMITH::sort_indices<6,3,2,5,1,4,0,7, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'aab|a'a  -(dcbikj|al) : j->k
+      SMITH::sort_indices<6,3,1,4,2,5,0,7, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'aba|a'a  -(dbcijk|al) : c->b
+      SMITH::sort_indices<6,4,2,3,0,5,1,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'abb|a'a   (cdbjik|al) : c->d, j->i
+
+      SMITH::sort_indices<6,4,2,3,0,5,1,7, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'baa|b'b   (dcbijk|al) : c->d, j->i
+      SMITH::sort_indices<6,3,1,4,2,5,0,7, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'bab|b'b  -(dbcijk|al) : c->b
+      SMITH::sort_indices<6,3,2,5,1,4,0,7, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'bba|b'b   (dcbikj|al) : j->k
+      SMITH::sort_indices<6,3,2,4,1,5,0,7, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|b'b   (dcbijk|al)
+      if (!subdia) { 
+        //                  a i b j c k d l                                                                                                     original order  (kjibcd|la)
+        SMITH::sort_indices<7,2,3,1,4,0,5,6, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|a'a   (kjibcd|la)
+        SMITH::sort_indices<7,2,4,1,3,0,5,6, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'baa|a'a   (kjicbd|la) : c->b
+        SMITH::sort_indices<7,2,3,0,4,1,5,6, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'aba|a'a   (jkibcd|la) : j->k
+        SMITH::sort_indices<7,1,3,2,5,0,4,6, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'bba|a'a   (kijbdc|la) : j->i, c->d
+
+        SMITH::sort_indices<7,1,3,2,5,0,4,6, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'aab|b'b   (kijbdc|la) : j->i, c->d
+        SMITH::sort_indices<7,2,3,0,4,1,5,6, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'bab|b'b   (jkibcd|la) : j->k
+        SMITH::sort_indices<7,2,4,1,3,0,5,6, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'abb|b'b   (kjicbd|la) : c->b
+        SMITH::sort_indices<7,2,3,1,4,0,5,6, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|b'b   (kjibcd|la)
+      }
+      cout << "rearranged" << endl; cout.flush();
+      
+      *fourrdmparts_.at(string("al")) += *rdmt;
+    }
+  }
+
+  { //p36, 41
+    cout << "4RDM #2" << endl;
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'aa
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); //a'b'ba
+    auto gamma_A3 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //b'b'bb
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'aa
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); //a'b'ba
+    auto gamma_B3 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //b'b'bb
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1); // a'a'aa|a'a'aa
+    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B1); // a'b'ba|a'a'aa
+    auto rdm3 = make_shared<Matrix>(gamma_A3 % gamma_B1); // b'b'bb|a'a'aa
+
+    auto rdm4 = make_shared<Matrix>(gamma_A1 % gamma_B2); // a'a'aa|a'b'ba
+    auto rdm5 = make_shared<Matrix>(gamma_A2 % gamma_B2); // a'b'ba|a'b'ba
+    auto rdm6 = make_shared<Matrix>(gamma_A3 % gamma_B2); // b'b'bb|a'b'ba
+
+    auto rdm7 = make_shared<Matrix>(gamma_A1 % gamma_B3); // a'a'aa|b'b'bb
+    auto rdm8 = make_shared<Matrix>(gamma_A2 % gamma_B3); // a'b'ba|b'b'bb
+    auto rdm9 = make_shared<Matrix>(gamma_A3 % gamma_B3); // b'b'bb|b'b'bb
+    cout << "full gammas" << endl; cout.flush();
+
+    {
+      auto rdmt = rdm1->clone();
+      // E_a'i',b'j',ck,dl sign(+1)
+      //                  a i b j c k d l                                                                                                     original order  (dckl|baij)
+      SMITH::sort_indices<5,6,4,7,1,2,0,3, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'a'aa   (dckl|baij)
+      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'a'aa   (dckl|baij)
+      SMITH::sort_indices<5,6,4,7,0,3,1,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'a'aa   (cdlk|baij) : c->d, k->l
+      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'a'aa   (dckl|baij)
+
+      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'b'ba   (dckl|baij)
+      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'b'ba   (dckl|baij)
+      SMITH::sort_indices<5,6,4,7,0,3,1,2, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'b'ba   (cdlk|baij) : c->d, k->l
+      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'b'ba   (dckl|baij)
+
+      SMITH::sort_indices<4,7,5,6,1,2,0,3, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|b'a'ab   (dckl|baij) : a->b, i->j
+      SMITH::sort_indices<4,7,5,6,1,2,0,3, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|b'a'ab   (dckl|baij) : a->b ,i->j
+      SMITH::sort_indices<4,7,5,6,0,3,1,2, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|b'a'ab   (cdlk|baij) : c->d, k->l, a->b, i->j
+      SMITH::sort_indices<4,7,5,6,1,2,0,3, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|b'a'ab   (dckl|baij) : a->b, i->j
+
+      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'a'aa   (dckl|baij)
+      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'a'aa   (dckl|baij)
+      SMITH::sort_indices<5,6,4,7,0,3,1,2, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'a'aa   (cdlk|baij) : c->d, k->l
+      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'a'aa   (dckl|baij)
+      if (!subdia) { 
+        //                  a i b j c k d l                                                                                                     original order  (lkcd|jiab)
+        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'a'aa   (lkcd|jiab)
+        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'a'aa   (lkcd|jiab) 
+        SMITH::sort_indices<6,5,7,4,3,0,2,1, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'a'aa   (kldc|jiab) : k->l, c->d
+        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'a'aa   (lkcd|jiab)
+
+        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'b'ba   (lkcd|jiab)
+        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'b'ba   (lkcd|jiab) 
+        SMITH::sort_indices<6,5,7,4,3,0,2,1, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'b'ba   (kldc|jiab) : k->l, c->d
+        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'b'ba   (lkcd|jiab)
+
+        SMITH::sort_indices<7,4,6,5,2,1,3,0, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|b'a'ab   (lkcd|ijba) : i->j, a->b
+        SMITH::sort_indices<7,4,6,5,2,1,3,0, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|b'a'ab   (lkcd|ijba) : i->j, a->b
+        SMITH::sort_indices<7,4,6,5,3,0,2,1, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|b'a'ab   (kldc|ijba) : k->l, c->d, i->j, a->b
+        SMITH::sort_indices<7,4,6,5,2,1,3,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|b'a'ab   (lkcd|ijba) : i->j, a->b
+
+        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|b'b'bb   (lkcd|jiab)
+        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|b'b'bb   (lkcd|jiab) 
+        SMITH::sort_indices<6,5,7,4,3,0,2,1, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|b'b'bb   (kldc|jiab) : k->l, c->d
+        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|b'b'bb   (lkcd|jiab)
+      }
+      cout << "rearranged" << endl; cout.flush();
+      
+      *fourrdmparts_.at(string("baij")) += *rdmt;
+    }
+
+    { //p48B
+      auto rdmt = rdm1->clone();
+      // E_a'i,b'j',ck',dl sign(+1)
+      //                  a i b j c k d l                                                                                                     original order  dcil|bajk
+      SMITH::sort_indices<5,2,4,6,1,7,0,3, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'a'aa   
+      SMITH::sort_indices<5,3,4,6,0,7,1,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'a'aa   cdli
+
+      SMITH::sort_indices<4,2,5,6,1,7,0,3, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|b'a'ba  -     ab
+      SMITH::sort_indices<5,2,4,7,1,6,0,3, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'b'ab  -       kj
+      SMITH::sort_indices<4,3,5,6,0,7,1,2, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|b'a'ba  -cdli|ab
+      SMITH::sort_indices<5,2,4,7,1,6,0,3, 1,1, -1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'b'ab  -       kj
+
+      SMITH::sort_indices<5,2,4,6,1,7,0,3, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|b'b'bb  
+      SMITH::sort_indices<5,2,4,6,1,7,0,3, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|b'b'bb   
+
+      if (!subdia) { 
+        //                  a i b j c k d l                                                                                                     original order   licd|kjab
+        SMITH::sort_indices<6,1,7,5,2,4,3,0, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'aa|a'a'aa 
+        SMITH::sort_indices<6,0,7,5,3,4,2,1, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'ab|a'a'aa    ildc
+
+        SMITH::sort_indices<7,1,6,5,2,4,3,0, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'aa|a'b'ab   -       ba
+        SMITH::sort_indices<6,1,7,4,2,5,3,0, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'b'ba|b'a'ba   -     jk
+        SMITH::sort_indices<7,0,6,5,3,4,2,1, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'ab|a'b'ab   -ildc|  ba
+        SMITH::sort_indices<6,1,7,4,2,5,3,0, 1,1, -1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'b'bb|b'a'ba   -     jk
+
+        SMITH::sort_indices<6,1,7,5,2,4,3,0, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'b'ba|b'b'bb 
+        SMITH::sort_indices<6,1,7,5,2,4,3,0, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'b'bb|b'b'bb 
+      }
+    
+      *fourrdmparts_.at(string("bajk")) += *rdmt;
+    }
+
+    { //p36B, 41B
+      auto rdmt = rdm1->clone();
+      // E_a'i,b'j,ck',dl' sign(+1)
+      //                  a i b j c k d l                                                                                                     original order  (dcij|bakl)
+      SMITH::sort_indices<5,2,4,3,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'aa|a'a'aa   (dcij|bakl)
+      SMITH::sort_indices<5,2,4,3,1,6,0,7, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'ba|a'b'ba   (dcij|bakl)
+      SMITH::sort_indices<4,3,5,2,0,7,1,6, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'ab|b'a'ab   (cdji|ablk) : c->d, i->j, a->b, k->l
+      SMITH::sort_indices<4,3,5,2,1,6,0,7, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'ab|b'a'ba   (dcji|abkl) : i->j, b->a
+      SMITH::sort_indices<5,2,4,3,0,7,1,6, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'ba|a'b'ab   (cdij|balk) : d->c, k->l
+      SMITH::sort_indices<5,2,4,3,1,6,0,7, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'bb|b'b'bb   (dcij|bakl)
+      if (!subdia) { 
+        //                  a i b j c k d l                                                                                                     original order  (jicd|lkab)
+        SMITH::sort_indices<6,1,7,0,2,5,3,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'aa|a'a'aa   (jicd|lkab)
+        SMITH::sort_indices<6,1,7,0,2,5,3,4, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'ba|a'b'ba   (jicd|lkab)
+        SMITH::sort_indices<7,0,6,1,3,4,2,5, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'ab|b'a'ab   (ijdc|klba) : i->j, c->d, k->l, a->b
+        SMITH::sort_indices<6,1,7,0,3,4,2,5, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'ab|b'a'ba   (jidc|klab) : c->d, k->l
+        SMITH::sort_indices<7,0,6,1,2,5,3,4, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'ba|a'b'ab   (ijcd|lkba) : i->j, a->b
+        SMITH::sort_indices<6,1,7,0,2,5,3,4, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'bb|b'b'bb   (jicd|lkab)
+      }
+      cout << "rearranged" << endl; cout.flush();
+      
+      *fourrdmparts_.at(string("bakl")) += *rdmt;
+    }
+  }
+
+  { //p39
+    cout << "4RDM #3" << endl;
+    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});//a'a
+    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta}); //b'b
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'a'aaa
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); //a'b'a'aba
+    auto gamma_B3 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  //b'a'b'bab
+    auto gamma_B4 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //b'b'b'bbb
+    cout << "partial gammas" << endl; cout.flush();
+
+    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1); // a'a|a'a'a'aaa
+    auto rdm2 = make_shared<Matrix>(gamma_A1 % gamma_B2); // a'a|a'b'a'aba
+    auto rdm3 = make_shared<Matrix>(gamma_A1 % gamma_B3); // a'a|b'a'b'bab
+    auto rdm4 = make_shared<Matrix>(gamma_A1 % gamma_B4); // a'a|b'b'b'bbb
+                                                                 
+    auto rdm5 = make_shared<Matrix>(gamma_A2 % gamma_B1); // b'b|a'a'a'aaa
+    auto rdm6 = make_shared<Matrix>(gamma_A2 % gamma_B2); // b'b|a'b'a'aba
+    auto rdm7 = make_shared<Matrix>(gamma_A2 % gamma_B3); // b'b|b'a'b'bab
+    auto rdm8 = make_shared<Matrix>(gamma_A2 % gamma_B4); // b'b|b'b'b'bbb
+    cout << "full gammas" << endl; cout.flush();
+
+    {
+      auto rdmt = rdm1->clone();
+      // E_a'i',bj,ck,dl sign(-1)
+      //                  a i b j c k d l                                                                                                     original order  (dl|cbaijk)
+      SMITH::sort_indices<4,5,3,6,2,7,0,1, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'a'aaa   (dl|cbaijk)
+      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'a'aba   (dl|cbaijk)
+      SMITH::sort_indices<3,6,4,5,2,7,0,1, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'b'baa   (dl|cabjik) : b->a, j->i
+      SMITH::sort_indices<4,5,2,7,3,6,0,1, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'a'a'aab   (dl|bcaikj) : b->c, j->k
+      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'a'b'bab   (dl|cbaijk)
+      SMITH::sort_indices<3,6,4,5,2,7,0,1, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'b'a'abb   (dl|cabjik) : b->a, j->i
+      SMITH::sort_indices<4,5,2,7,3,6,0,1, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'b'bba   (dl|bcaikj) : b->c, j->k
+      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'b'b'bbb   (dl|cbaijk)
+
+      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'a'a'aaa   (dl|cbaijk)
+      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'b'a'aba   (dl|cbaijk)
+      SMITH::sort_indices<3,6,4,5,2,7,0,1, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'a'b'baa   (dl|cabjik) : b->a, j->i
+      SMITH::sort_indices<4,5,2,7,3,6,0,1, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'a'aab   (dl|bcaikj) : b->c, j->k
+      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'b'bab   (dl|cbaijk)
+      SMITH::sort_indices<3,6,4,5,2,7,0,1, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'a'abb   (dl|cabjik) : b->a, j->i
+      SMITH::sort_indices<4,5,2,7,3,6,0,1, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'b'b'bba   (dl|bcaikj) : b->c, j->k
+      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'b'bbb   (dl|cbaijk)
+      if (!subdia) { 
+        //                  a i b j c k d l                                                                                                     original order  (ld|kjiabc)
+        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'a'aaa   (ld|kjiabc)
+        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'a'aba   (ld|kjiabc)
+        SMITH::sort_indices<6,3,5,4,7,2,1,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'b'baa   (ld|kijbac) : j->i, b->a
+        SMITH::sort_indices<5,4,7,2,6,3,1,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'a'a'aab   (ld|jkiacb) : j->k, b->c
+        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'a'b'bab   (ld|kjiabc)
+        SMITH::sort_indices<6,3,5,4,7,2,1,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'b'a'abb   (ld|kijbac) : j->i, b->a
+        SMITH::sort_indices<5,4,7,2,6,3,1,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'b'bba   (ld|jkiacb) : j->k, b->c
+        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'b'b'bbb   (ld|kjiabc)
+
+        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'a'a'aaa   (ld|kjiabc)
+        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'b'a'aba   (ld|kjiabc)
+        SMITH::sort_indices<6,3,5,4,7,2,1,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'a'b'baa   (ld|kijbac) : j->i, b->a
+        SMITH::sort_indices<5,4,7,2,6,3,1,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'a'aab   (ld|jkiacb) : j->k, b->c
+        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'b'bab   (ld|kjiabc)
+        SMITH::sort_indices<6,3,5,4,7,2,1,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'a'abb   (ld|kijbac) : j->i, b->a
+        SMITH::sort_indices<5,4,7,2,6,3,1,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'b'b'bba   (ld|jkiacb) : j->k, b->c
+        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'b'bbb   (ld|kjiabc)
+      }
+      cout << "rearranged" << endl; cout.flush();
+      
+      *fourrdmparts_.at(string("cbaijk")) += *rdmt;
+    }
+
+    {
+      auto rdmt = rdm1->clone();
+      // E_a'i,bj,ck,dl' sign(-1)
+      //                  a i b j c k d l                                                                                                     original order  (di|cbajkl)
+      SMITH::sort_indices<4,1,3,5,2,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'a'aaa   (di|cbajkl)
+      SMITH::sort_indices<4,1,3,6,2,5,0,7, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'a'baa  -(di|cbakjl) : k->j
+      SMITH::sort_indices<4,1,2,5,3,6,0,7, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'a'a'aba  -(di|bcajkl) : c->b
+      SMITH::sort_indices<3,1,4,5,2,7,0,6, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'b'a'bba   (di|cabjlk) : a->b, l->k
+      SMITH::sort_indices<3,1,4,5,2,7,0,6, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'a|a'a'b'aab   (di|cabjlk) : a->b, l->k
+      SMITH::sort_indices<4,1,3,6,2,5,0,7, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'b'abb  -(di|cbakjl) : k->j
+      SMITH::sort_indices<4,1,2,5,3,6,0,7, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'b'b'bab  -(di|bcajkl) : c->b
+      SMITH::sort_indices<4,1,3,5,2,6,0,7, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'b'bbb   (di|cbajkl)
+      if (!subdia) { 
+        //                  a i b j c k d l                                                                                                     original order  (id|lkjabc)
+        SMITH::sort_indices<5,0,6,4,7,3,1,2, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'a'aaa:  (id|lkjabc)
+        SMITH::sort_indices<5,0,6,3,7,4,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'b'aba: -(id|ljkabc) : j->k
+        SMITH::sort_indices<5,0,7,4,6,3,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'a'aab: -(id|lkjacb) : c->b
+        SMITH::sort_indices<6,0,5,4,7,2,1,3, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'b'abb:  (id|kljbac) : l->k, a->b
+
+        SMITH::sort_indices<6,0,5,4,7,2,1,3, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'a'baa:  (id|kljbac) : l->k, a->b
+        SMITH::sort_indices<5,0,7,4,6,3,1,2, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'b'bba: -(id|lkjacb) : c->b
+        SMITH::sort_indices<5,0,6,3,7,4,1,2, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'a'bab: -(id|ljkabc) : j->k
+        SMITH::sort_indices<5,0,6,4,7,3,1,2, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'b'bbb:  (id|lkjabc)
+      }
+      cout << "rearranged" << endl; cout.flush();
+      
+      *fourrdmparts_.at(string("cbajkl")) += *rdmt;
+    }
+  }
+  return make_tuple(out3,out4);
+}
+
 
 //***************************************************************************************************************
 tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
@@ -305,37 +656,6 @@ ASD_base::compute_aET_4RDM(const array<MonomerKey,4>& keys) const {
     auto gamma_A3 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //a'b'b'bb
     auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'aa
     auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  // b'ab
-    { //p48B
-      auto rdmt = rdm1->clone();
-      // E_a'i,b'j',ck',dl sign(+1)
-      //                  a i b j c k d l                                                                                                     original order  dcil|bajk
-      SMITH::sort_indices<5,2,4,6,1,7,0,3, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'a'aa   
-      SMITH::sort_indices<5,3,4,6,0,7,1,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'a'aa   cdli
-
-      SMITH::sort_indices<4,2,5,6,1,7,0,3, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|b'a'ba  -     ab
-      SMITH::sort_indices<5,2,4,7,1,6,0,3, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'b'ab  -       kj
-      SMITH::sort_indices<4,3,5,6,0,7,1,2, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|b'a'ba  -cdli|ab
-      SMITH::sort_indices<5,2,4,7,1,6,0,3, 1,1, -1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'b'ab  -       kj
-
-      SMITH::sort_indices<5,2,4,6,1,7,0,3, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|b'b'bb  
-      SMITH::sort_indices<5,2,4,6,1,7,0,3, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|b'b'bb   
-
-      if (!subdia) { 
-        //                  a i b j c k d l                                                                                                     original order   licd|kjab
-        SMITH::sort_indices<6,1,7,5,2,4,3,0, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'aa|a'a'aa 
-        SMITH::sort_indices<6,0,7,5,3,4,2,1, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'ab|a'a'aa    ildc
-
-        SMITH::sort_indices<7,1,6,5,2,4,3,0, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'a'aa|a'b'ab   -       ba
-        SMITH::sort_indices<6,1,7,4,2,5,3,0, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'b'ba|b'a'ba   -     jk
-        SMITH::sort_indices<7,0,6,5,3,4,2,1, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'a'ab|a'b'ab   -ildc|  ba
-        SMITH::sort_indices<6,1,7,4,2,5,3,0, 1,1, -1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'b'bb|b'a'ba   -     jk
-
-        SMITH::sort_indices<6,1,7,5,2,4,3,0, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // a'b'ba|b'b'bb 
-        SMITH::sort_indices<6,1,7,5,2,4,3,0, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB, nactB, nactB); // b'b'bb|b'b'bb 
-      }
-    
-      *fourrdmparts_.at(string("bajk")) += *rdmt;
-    }
 
 
     cout << "partial gammas" << endl; cout.flush();
@@ -1479,24 +1799,48 @@ ASD_base::compute_abFlip_4RDM(const array<MonomerKey,4>& keys) const {
 
     auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1); // a'b'aa|a'a'ab
     auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B2); // b'b'ab|b'a'bb
-    auto rdmt = rdm1->clone();
-    cout << "full gammas" << endl; cout.flush();
-
-    // E_a'i,bj,ck,dl' : sign(+1)
-    //                  a i b j c k d l                                                                                                     original order  (dcij|bakl)
-    SMITH::sort_indices<5,2,4,3,1,7,0,6, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'aa|a'a'ba  -(dcij|balk) : k->l
-    SMITH::sort_indices<5,2,4,3,0,6,1,7, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'aa|a'a'ab  -(cdij|bakl) : d->c
-    SMITH::sort_indices<5,2,4,3,1,6,0,7, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ab|b'a'bb   (dcij|bakl)
-    SMITH::sort_indices<4,3,5,2,1,6,0,7, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ba|a'b'bb   (dcji|abkl) : i->j, b->a
-
-    //                  a i b j c k d l                                                                                                     original order  (jicd|lkab) : (N,M) conbribution
-    SMITH::sort_indices<7,1,6,0,2,5,3,4, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'aa|a'a'ba  -(jicd|lkba) : a->b
-    SMITH::sort_indices<6,0,7,1,2,5,3,4, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'aa|a'a'ab  -(ijcd|lkab) : i->j
-    SMITH::sort_indices<6,1,7,0,2,5,3,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ab|b'a'bb   (jicd|lkab)
-    SMITH::sort_indices<6,1,7,0,3,4,2,5, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ba|a'b'bb   (jidc|klab) : c->d, l->k
-    cout << "rearranged" << endl; cout.flush();
-
-    *fourrdmparts_.at(string("bakl")) += *rdmt;
+  
+    auto rdm3 = make_shared<Matrix>(gamma_A1 % gamma_B2); // a'b'aa|b'a'bb
+    auto rdm4 = make_shared<Matrix>(gamma_A2 % gamma_B1); // b'b'ab|a'a'ab
+    {
+      auto rdmt = rdm1->clone();
+      cout << "full gammas" << endl; cout.flush();
+      
+      // E_a'i,bj,ck,dl' : sign(+1)
+      //                  a i b j c k d l                                                                                                     original order  (dcij|bakl)
+      SMITH::sort_indices<5,2,4,3,1,7,0,6, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'aa|a'a'ba  -(dcij|balk) : k->l
+      SMITH::sort_indices<5,2,4,3,0,6,1,7, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'aa|a'a'ab  -(cdij|bakl) : d->c
+      SMITH::sort_indices<5,2,4,3,1,6,0,7, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ab|b'a'bb   (dcij|bakl)
+      SMITH::sort_indices<4,3,5,2,1,6,0,7, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ba|a'b'bb   (dcji|abkl) : i->j, b->a
+      
+      //                  a i b j c k d l                                                                                                     original order  (jicd|lkab) : (N,M) conbribution
+      SMITH::sort_indices<7,1,6,0,2,5,3,4, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'aa|a'a'ba  -(jicd|lkba) : a->b
+      SMITH::sort_indices<6,0,7,1,2,5,3,4, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'aa|a'a'ab  -(ijcd|lkab) : i->j
+      SMITH::sort_indices<6,1,7,0,2,5,3,4, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ab|b'a'bb   (jicd|lkab)
+      SMITH::sort_indices<6,1,7,0,3,4,2,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ba|a'b'bb   (jidc|klab) : c->d, l->k
+      cout << "rearranged" << endl; cout.flush();
+      
+      *fourrdmparts_.at(string("bakl")) += *rdmt;
+    }
+    {
+      auto rdmt = rdm1->clone();
+      cout << "full gammas" << endl; cout.flush();
+      
+      // E_a'i,b'j',ck',dl : sign(+1)
+      //                  a i b j c k d l                                                                                                     original order  dcil|bajk
+      SMITH::sort_indices<5,2,4,6,1,7,0,3, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'aa|a'a'ab 
+      SMITH::sort_indices<5,2,4,6,1,7,0,3, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ab|b'a'bb
+      SMITH::sort_indices<5,2,4,6,1,7,0,3, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'aa|b'a'bb
+      SMITH::sort_indices<5,2,4,6,1,7,0,3, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ab|a'a'ab
+      //(N,M)contribution a i b j c k d l                                                                                                     original order  licd|kjab
+      SMITH::sort_indices<7,1,6,5,2,4,3,0, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'aa|a'a'ba  -       ba
+      SMITH::sort_indices<6,1,7,4,2,5,3,0, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ab|a'b'bb  -     jk
+      SMITH::sort_indices<6,1,7,4,2,5,3,0, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'aa|a'b'bb  -     jk
+      SMITH::sort_indices<7,1,6,5,2,4,3,0, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'ab|a'a'ba  -       ab
+      cout << "rearranged" << endl; cout.flush();
+      
+      *fourrdmparts_.at(string("bajk")) += *rdmt;
+    }
   }
 
   { //p39B
@@ -2100,449 +2444,6 @@ ASD_base::compute_bETFlip_4RDM(const array<MonomerKey,4>& keys) const {
 }
 
 
-//***************************************************************************************************************
-tuple<shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> 
-ASD_base::compute_diag_4RDM(const array<MonomerKey,4>& keys, const bool subdia) const {
-//***************************************************************************************************************
-  cout << "DIAG_4RDM" << endl; cout.flush();
-  auto& B  = keys[1]; 
-  auto& Bp = keys[3];
-
-  const int nactA = dimer_->embedded_refs().first->nact();
-  const int nactB = dimer_->embedded_refs().second->nact();
-  const int nactT = nactA+nactB;
-  auto out3 = make_shared<RDM<3>>(nactA+nactB);
-  auto out4 = nullptr;
-
-  { //CASE 2'' & 2': p27
-    auto gamma_A_aaaa = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'aa
-    auto gamma_A_abba = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); //a'b'ba
-    auto gamma_A_bbbb = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //b'b'bb
-    auto gamma_B_aa = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}); // a'a
-    auto gamma_B_bb = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta});  // b'b
-
-    auto rdmA_a  = make_shared<Matrix>(gamma_A_aaaa % gamma_B_aa); //a'a'aa|a'a
-    auto rdmA_ab = make_shared<Matrix>(gamma_A_abba % gamma_B_aa); //a'b'ba|a'a
-    auto rdmA_b  = make_shared<Matrix>(gamma_A_bbbb % gamma_B_aa); //b'b'bb|a'a
-    auto rdmB_a  = make_shared<Matrix>(gamma_A_aaaa % gamma_B_bb); //a'a'aa|b'b
-    auto rdmB_ab = make_shared<Matrix>(gamma_A_abba % gamma_B_bb); //a'b'ba|b'b
-    auto rdmB_b  = make_shared<Matrix>(gamma_A_bbbb % gamma_B_bb); //b'b'bb|b'b
-    
-    {
-      auto rdmt = rdmA_a->clone();
-      // E_a'i',bj,ck
-      SMITH::sort_indices<4,5,1,2,0,3, 0,1,  1,1>(rdmA_a->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //a'a'aa|a'a
-      SMITH::sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|a'a
-      SMITH::sort_indices<4,5,0,3,1,2, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a
-      SMITH::sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmA_b->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //b'b'bb|a'a
-      
-      SMITH::sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmB_a->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //a'a'aa|b'b
-      SMITH::sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
-      SMITH::sort_indices<4,5,0,3,1,2, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|b'b
-      SMITH::sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmB_b->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //b'b'bb|b'b
-      
-      if (!subdia) { // <M|op|N> contribution k'j'bc|i'a
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'a'aa|a'a
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|a'a
-        SMITH::sort_indices<5,4,3,0,2,1, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'b'bb|a'a
-
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmB_a->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'a'aa|b'b
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
-        SMITH::sort_indices<5,4,3,0,2,1, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|b'b
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'b'bb|b'b
-      }
-      
-      auto low = {nactA, nactA,     0,     0,     0,     0};
-      auto up  = {nactT, nactT, nactA, nactA, nactA, nactA};
-      auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
-      copy(rdmt->begin(), rdmt->end(), outv.begin());
-    }
-    {
-      auto rdmt = rdmA_a->clone();
-      // E_a'i,bj',ck
-      SMITH::sort_indices<4,2,1,5,0,3, 0,1, -1,1>(rdmA_a->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //a'a'aa|a'a
-      SMITH::sort_indices<4,3,0,5,1,2, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a
-      
-      SMITH::sort_indices<4,2,1,5,0,3, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
-      SMITH::sort_indices<4,2,1,5,0,3, 1,1, -1,1>(rdmB_b->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //b'b'bb|b'b
-      
-      if (!subdia) { // <M|op|N> contribution k'i'bc|j'a
-        SMITH::sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdmA_a->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //a'a'aa|a'a
-        SMITH::sort_indices<5,0,3,4,2,1, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a
-        
-        SMITH::sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
-        SMITH::sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdmB_b->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //b'b'bb|b'b
-      }
-      
-      auto low = {nactA,     0,     0, nactA,     0,     0};
-      auto up  = {nactT, nactA, nactA, nactT, nactA, nactA};
-      auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
-    }
-  }
-
-  { //CASE 4'' & 4': p27
-    auto gamma_A_aa = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}); //a'a
-    auto gamma_A_bb = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta});  //b'b
-    auto gamma_B_aaaa = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'a'aa
-    auto gamma_B_abba = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); // a'b'ba
-    auto gamma_B_bbbb = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  // b'b'bb
-
-    auto rdmA_a  = make_shared<Matrix>(gamma_A_aa % gamma_B_aaaa); //a'a|a'a'aa
-    auto rdmA_ab = make_shared<Matrix>(gamma_A_aa % gamma_B_abba); //a'a|a'b'ba
-    auto rdmA_b  = make_shared<Matrix>(gamma_A_aa % gamma_B_bbbb); //a'a|b'b'bb
-    auto rdmB_a  = make_shared<Matrix>(gamma_A_bb % gamma_B_aaaa); //b'b|a'a'aa
-    auto rdmB_ab = make_shared<Matrix>(gamma_A_bb % gamma_B_abba); //b'b|a'b'ba
-    auto rdmB_b  = make_shared<Matrix>(gamma_A_bb % gamma_B_bbbb); //b'b|b'b'bb
-    
-    {
-      auto rdmt = rdmA_a->clone();
-      // E_a'i',b'j',ck
-      SMITH::sort_indices<3,4,2,5,0,1, 0,1, -1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
-      SMITH::sort_indices<3,4,2,5,0,1, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'b'ba
-      SMITH::sort_indices<2,5,3,4,0,1, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'a'ab
-      SMITH::sort_indices<3,4,2,5,0,1, 1,1, -1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'b'bb
-
-      SMITH::sort_indices<3,4,2,5,0,1, 1,1, -1,1>(rdmB_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'a'aa
-      SMITH::sort_indices<3,4,2,5,0,1, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'b'ba
-      SMITH::sort_indices<2,5,3,4,0,1, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'a'ab
-      SMITH::sort_indices<3,4,2,5,0,1, 1,1, -1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
-      
-      if (!subdia) {
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1, -1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'b'ba
-        SMITH::sort_indices<5,2,4,3,1,0, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'a'ab
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1, -1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'b'bb
-        
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1, -1,1>(rdmB_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'a'aa
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'b'ba
-        SMITH::sort_indices<5,2,4,3,1,0, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'a'ab
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1, -1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
-      }
-      
-      auto low = {nactA, nactA, nactA, nactA,     0,     0};
-      auto up  = {nactT, nactT, nactT, nactT, nactA, nactA};
-      auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
-      copy(rdmt->begin(), rdmt->end(), outv.begin());
-    }
-    {
-      auto rdmt = rdmA_a->clone();
-      // E_a'i,b'j',ck'
-      SMITH::sort_indices<3,1,2,4,0,5, 0,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
-      SMITH::sort_indices<2,1,3,4,0,5, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'a'ba
-                                                                                                                                   
-      SMITH::sort_indices<3,1,2,5,0,4, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'b'ab
-      SMITH::sort_indices<3,1,2,4,0,5, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
-      
-      if (!subdia) {
-        SMITH::sort_indices<4,0,5,3,1,2, 1,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
-        SMITH::sort_indices<5,0,4,3,1,2, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'b'ab
-                                                                                                                                     
-        SMITH::sort_indices<4,0,5,2,0,3, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'a'ba
-        SMITH::sort_indices<4,0,5,3,1,2, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
-      }
-      
-      auto low = {nactA, nactA,     0, nactA,     0, nactA};
-      auto up  = {nactT, nactT, nactA, nactT, nactA, nactT};
-      auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
-    }
-  }
-
-  //4RDM
-  { //p31B
-    cout << "4RDM #1" << endl;
-    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'a'aaa
-    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); //a'b'a'aba
-    auto gamma_A3 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  //b'a'b'bab
-    auto gamma_A4 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //b'b'b'bbb
-    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});//a'a
-    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta}); //b'b
-    cout << "partial gammas" << endl; cout.flush();
-
-    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1); // a'a'a'aaa|a'a
-    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B1); // a'b'a'aba|a'a
-    auto rdm3 = make_shared<Matrix>(gamma_A3 % gamma_B1); // b'a'b'bab|a'a
-    auto rdm4 = make_shared<Matrix>(gamma_A4 % gamma_B1); // b'b'b'bbb|a'a
-
-    auto rdm5 = make_shared<Matrix>(gamma_A1 % gamma_B2); // a'a'a'aaa|b'b
-    auto rdm6 = make_shared<Matrix>(gamma_A2 % gamma_B2); // a'b'a'aba|b'b
-    auto rdm7 = make_shared<Matrix>(gamma_A3 % gamma_B2); // b'a'b'bab|b'b
-    auto rdm8 = make_shared<Matrix>(gamma_A4 % gamma_B2); // b'b'b'bbb|b'b
-    cout << "full gammas" << endl; cout.flush();
-
-    {
-      auto rdmt = rdm1->clone();
-      // E_a'i',bj,ck,dl sign(+1)
-      //                  a i b j c k d l                                                                                                     original order  (dcbjkl|ai)
-      SMITH::sort_indices<6,7,2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|a'a   (dcbjkl|ai)
-      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'aba|a'a   (dcbjkl|ai)
-      SMITH::sort_indices<6,7,1,4,2,3,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'baa|a'a   (dbckjl|ai) : c->b, j->k
-      SMITH::sort_indices<6,7,2,3,0,5,1,4, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'aab|a'a   (cdbjlk|ai) : d->c, k->l
-      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'bab|a'a   (dcbjkl|ai)
-      SMITH::sort_indices<6,7,1,4,2,3,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'abb|a'a   (dbckjl|ai) : c->b, j->k
-      SMITH::sort_indices<6,7,2,3,0,5,1,4, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'bba|a'a   (cdbjlk|ai) : d->c, k->l
-      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|a'a   (dcbjkl|ai)
-      
-      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|b'b   (dcbjkl|ai)
-      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'aba|b'b   (dcbjkl|ai)
-      SMITH::sort_indices<6,7,1,4,2,3,0,5, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'baa|b'b   (dbckjl|ai) : c->b, j->k
-      SMITH::sort_indices<6,7,2,3,0,5,1,4, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'aab|b'b   (cdbjlk|ai) : d->c, k->l
-      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'bab|b'b   (dcbjkl|ai)
-      SMITH::sort_indices<6,7,1,4,2,3,0,5, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'abb|b'b   (dbckjl|ai) : c->b, j->k
-      SMITH::sort_indices<6,7,2,3,0,5,1,4, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'bba|b'b   (cdbjlk|ai) : d->c, k->l
-      SMITH::sort_indices<6,7,2,3,1,4,0,5, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|b'b   (dcbjkl|ai)
-      if (!subdia) { 
-        //                  a i b j c k d l                                                                                                     original order  (lkjbcd|ia)
-        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|a'a   (lkjbcd|ia)
-        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'aba|a'a   (lkjbcd|ia)
-        SMITH::sort_indices<7,6,4,1,3,2,5,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'baa|a'a   (ljkcbd|ia) : k->j, b->c
-        SMITH::sort_indices<7,6,3,2,5,0,4,1, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'aab|a'a   (kljbdc|ia) : l->k, c->d
-        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'bab|a'a   (lkjbcd|ia)
-        SMITH::sort_indices<7,6,4,1,3,2,5,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'abb|a'a   (ljkcbd|ia) : k->j, b->c
-        SMITH::sort_indices<7,6,3,2,5,0,4,1, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'bba|a'a   (lkjbcd|ia) : l->k, c->d
-        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|a'a   (lkjbcd|ia)
-
-        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|b'b   (lkjbcd|ia)
-        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'aba|b'b   (lkjbcd|ia)
-        SMITH::sort_indices<7,6,4,1,3,2,5,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'baa|b'b   (ljkcbd|ia) : k->j, b->c
-        SMITH::sort_indices<7,6,3,2,5,0,4,1, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'aab|b'b   (kljbdc|ia) : l->k, c->d
-        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'bab|b'b   (lkjbcd|ia)
-        SMITH::sort_indices<7,6,4,1,3,2,5,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'abb|b'b   (ljkcbd|ia) : k->j, b->c
-        SMITH::sort_indices<7,6,3,2,5,0,4,1, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'bba|b'b   (lkjbcd|ia) : l->k, c->d
-        SMITH::sort_indices<7,6,3,2,4,1,5,0, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|b'b   (lkjbcd|ia)
-      }
-      cout << "rearranged" << endl; cout.flush();
-      
-      *fourrdmparts_.at(string("ai")) += *rdmt;
-    }
-
-    {
-      auto rdmt = rdm1->clone();
-      // E_a'i,bj,ck,dl' sign(+1)
-      //                  a i b j c k d l                                                                                                     original order  (dcbijk|al)
-      SMITH::sort_indices<6,3,2,4,1,5,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|a'a   (dcbijk|al)
-      SMITH::sort_indices<6,3,2,5,1,4,0,7, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'aab|a'a  -(dcbikj|al) : j->k
-      SMITH::sort_indices<6,3,1,4,2,5,0,7, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'aba|a'a  -(dbcijk|al) : c->b
-      SMITH::sort_indices<6,4,2,3,0,5,1,7, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'abb|a'a   (cdbjik|al) : c->d, j->i
-
-      SMITH::sort_indices<6,4,2,3,0,5,1,7, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'baa|b'b   (dcbijk|al) : c->d, j->i
-      SMITH::sort_indices<6,3,1,4,2,5,0,7, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'bab|b'b  -(dbcijk|al) : c->b
-      SMITH::sort_indices<6,3,2,5,1,4,0,7, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'bba|b'b   (dcbikj|al) : j->k
-      SMITH::sort_indices<6,3,2,4,1,5,0,7, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|b'b   (dcbijk|al)
-      if (!subdia) { 
-        //                  a i b j c k d l                                                                                                     original order  (kjibcd|la)
-        SMITH::sort_indices<7,2,3,1,4,0,5,6, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'aaa|a'a   (kjibcd|la)
-        SMITH::sort_indices<7,2,4,1,3,0,5,6, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'baa|a'a   (kjicbd|la) : c->b
-        SMITH::sort_indices<7,2,3,0,4,1,5,6, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'aba|a'a   (jkibcd|la) : j->k
-        SMITH::sort_indices<7,1,3,2,5,0,4,6, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'bba|a'a   (kijbdc|la) : j->i, c->d
-
-        SMITH::sort_indices<7,1,3,2,5,0,4,6, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'aab|b'b   (kijbdc|la) : j->i, c->d
-        SMITH::sort_indices<7,2,3,0,4,1,5,6, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'bab|b'b   (jkibcd|la) : j->k
-        SMITH::sort_indices<7,2,4,1,3,0,5,6, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'abb|b'b   (kjicbd|la) : c->b
-        SMITH::sort_indices<7,2,3,1,4,0,5,6, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'bbb|b'b   (kjibcd|la)
-      }
-      cout << "rearranged" << endl; cout.flush();
-      
-      *fourrdmparts_.at(string("al")) += *rdmt;
-    }
-  }
-
-  { //p36, 41
-    cout << "4RDM #2" << endl;
-    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'aa
-    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); //a'b'ba
-    auto gamma_A3 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //b'b'bb
-    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'aa
-    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); //a'b'ba
-    auto gamma_B3 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //b'b'bb
-    cout << "partial gammas" << endl; cout.flush();
-
-    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1); // a'a'aa|a'a'aa
-    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B1); // a'b'ba|a'a'aa
-    auto rdm3 = make_shared<Matrix>(gamma_A3 % gamma_B1); // b'b'bb|a'a'aa
-
-    auto rdm4 = make_shared<Matrix>(gamma_A1 % gamma_B2); // a'a'aa|a'b'ba
-    auto rdm5 = make_shared<Matrix>(gamma_A2 % gamma_B2); // a'b'ba|a'b'ba
-    auto rdm6 = make_shared<Matrix>(gamma_A3 % gamma_B2); // b'b'bb|a'b'ba
-
-    auto rdm7 = make_shared<Matrix>(gamma_A1 % gamma_B3); // a'a'aa|b'b'bb
-    auto rdm8 = make_shared<Matrix>(gamma_A2 % gamma_B3); // a'b'ba|b'b'bb
-    auto rdm9 = make_shared<Matrix>(gamma_A3 % gamma_B3); // b'b'bb|b'b'bb
-    cout << "full gammas" << endl; cout.flush();
-
-    {
-      auto rdmt = rdm1->clone();
-      // E_a'i',b'j',ck,dl sign(+1)
-      //                  a i b j c k d l                                                                                                     original order  (dckl|baij)
-      SMITH::sort_indices<5,6,4,7,1,2,0,3, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'a'aa   (dckl|baij)
-      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'a'aa   (dckl|baij)
-      SMITH::sort_indices<5,6,4,7,0,3,1,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'a'aa   (cdlk|baij) : c->d, k->l
-      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'a'aa   (dckl|baij)
-
-      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'b'ba   (dckl|baij)
-      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'b'ba   (dckl|baij)
-      SMITH::sort_indices<5,6,4,7,0,3,1,2, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'b'ba   (cdlk|baij) : c->d, k->l
-      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'b'ba   (dckl|baij)
-
-      SMITH::sort_indices<4,7,5,6,1,2,0,3, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|b'a'ab   (dckl|baij) : a->b, i->j
-      SMITH::sort_indices<4,7,5,6,1,2,0,3, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|b'a'ab   (dckl|baij) : a->b ,i->j
-      SMITH::sort_indices<4,7,5,6,0,3,1,2, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|b'a'ab   (cdlk|baij) : c->d, k->l, a->b, i->j
-      SMITH::sort_indices<4,7,5,6,1,2,0,3, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|b'a'ab   (dckl|baij) : a->b, i->j
-
-      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'a'aa   (dckl|baij)
-      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'a'aa   (dckl|baij)
-      SMITH::sort_indices<5,6,4,7,0,3,1,2, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'a'aa   (cdlk|baij) : c->d, k->l
-      SMITH::sort_indices<5,6,4,7,1,2,0,3, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'a'aa   (dckl|baij)
-      if (!subdia) { 
-        //                  a i b j c k d l                                                                                                     original order  (lkcd|jiab)
-        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'a'aa   (lkcd|jiab)
-        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'a'aa   (lkcd|jiab) 
-        SMITH::sort_indices<6,5,7,4,3,0,2,1, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'a'aa   (kldc|jiab) : k->l, c->d
-        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'a'aa   (lkcd|jiab)
-
-        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|a'b'ba   (lkcd|jiab)
-        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|a'b'ba   (lkcd|jiab) 
-        SMITH::sort_indices<6,5,7,4,3,0,2,1, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|a'b'ba   (kldc|jiab) : k->l, c->d
-        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|a'b'ba   (lkcd|jiab)
-
-        SMITH::sort_indices<7,4,6,5,2,1,3,0, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|b'a'ab   (lkcd|ijba) : i->j, a->b
-        SMITH::sort_indices<7,4,6,5,2,1,3,0, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|b'a'ab   (lkcd|ijba) : i->j, a->b
-        SMITH::sort_indices<7,4,6,5,3,0,2,1, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|b'a'ab   (kldc|ijba) : k->l, c->d, i->j, a->b
-        SMITH::sort_indices<7,4,6,5,2,1,3,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|b'a'ab   (lkcd|ijba) : i->j, a->b
-
-        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'a'aa|b'b'bb   (lkcd|jiab)
-        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // a'b'ba|b'b'bb   (lkcd|jiab) 
-        SMITH::sort_indices<6,5,7,4,3,0,2,1, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'a'ab|b'b'bb   (kldc|jiab) : k->l, c->d
-        SMITH::sort_indices<6,5,7,4,2,1,3,0, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB, nactB, nactB); // b'b'bb|b'b'bb   (lkcd|jiab)
-      }
-      cout << "rearranged" << endl; cout.flush();
-      
-      *fourrdmparts_.at(string("baij")) += *rdmt;
-    }
-
-    { //p36B, 41B
-      auto rdmt = rdm1->clone();
-      // E_a'i,b'j,ck',dl' sign(+1)
-      //                  a i b j c k d l                                                                                                     original order  (dcij|bakl)
-      SMITH::sort_indices<5,2,4,3,1,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'aa|a'a'aa   (dcij|bakl)
-      SMITH::sort_indices<5,2,4,3,1,6,0,7, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'ba|a'b'ba   (dcij|bakl)
-      SMITH::sort_indices<4,3,5,2,0,7,1,6, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'ab|b'a'ab   (cdji|ablk) : c->d, i->j, a->b, k->l
-      SMITH::sort_indices<4,3,5,2,1,6,0,7, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'ab|b'a'ba   (dcji|abkl) : i->j, b->a
-      SMITH::sort_indices<5,2,4,3,0,7,1,6, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'ba|a'b'ab   (cdij|balk) : d->c, k->l
-      SMITH::sort_indices<5,2,4,3,1,6,0,7, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'bb|b'b'bb   (dcij|bakl)
-      if (!subdia) { 
-        //                  a i b j c k d l                                                                                                     original order  (jicd|lkab)
-        SMITH::sort_indices<6,1,7,0,2,5,3,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'a'aa|a'a'aa   (jicd|lkab)
-        SMITH::sort_indices<6,1,7,0,2,5,3,4, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'ba|a'b'ba   (jicd|lkab)
-        SMITH::sort_indices<7,0,6,1,3,4,2,5, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'ab|b'a'ab   (ijdc|klba) : i->j, c->d, k->l, a->b
-        SMITH::sort_indices<6,1,7,0,3,4,2,5, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // a'b'ab|b'a'ba   (jidc|klab) : c->d, k->l
-        SMITH::sort_indices<7,0,6,1,2,5,3,4, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'a'ba|a'b'ab   (ijcd|lkba) : i->j, a->b
-        SMITH::sort_indices<6,1,7,0,2,5,3,4, 1,1,  1,1>(rdm9->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); // b'b'bb|b'b'bb   (jicd|lkab)
-      }
-      cout << "rearranged" << endl; cout.flush();
-      
-      *fourrdmparts_.at(string("bakl")) += *rdmt;
-    }
-  }
-
-  { //p39
-    cout << "4RDM #1" << endl;
-    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});//a'a
-    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta}); //b'b
-    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); //a'a'a'aaa
-    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha}); //a'b'a'aba
-    auto gamma_B3 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  //b'a'b'bab
-    auto gamma_B4 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta});  //b'b'b'bbb
-    cout << "partial gammas" << endl; cout.flush();
-
-    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B1); // a'a|a'a'a'aaa
-    auto rdm2 = make_shared<Matrix>(gamma_A1 % gamma_B2); // a'a|a'b'a'aba
-    auto rdm3 = make_shared<Matrix>(gamma_A1 % gamma_B3); // a'a|b'a'b'bab
-    auto rdm4 = make_shared<Matrix>(gamma_A1 % gamma_B4); // a'a|b'b'b'bbb
-                                                                 
-    auto rdm5 = make_shared<Matrix>(gamma_A2 % gamma_B1); // b'b|a'a'a'aaa
-    auto rdm6 = make_shared<Matrix>(gamma_A2 % gamma_B2); // b'b|a'b'a'aba
-    auto rdm7 = make_shared<Matrix>(gamma_A2 % gamma_B3); // b'b|b'a'b'bab
-    auto rdm8 = make_shared<Matrix>(gamma_A2 % gamma_B4); // b'b|b'b'b'bbb
-    cout << "full gammas" << endl; cout.flush();
-
-    {
-      auto rdmt = rdm1->clone();
-      // E_a'i',bj,ck,dl sign(-1)
-      //                  a i b j c k d l                                                                                                     original order  (dl|cbaijk)
-      SMITH::sort_indices<4,5,3,6,2,7,0,1, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'a'aaa   (dl|cbaijk)
-      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'a'aba   (dl|cbaijk)
-      SMITH::sort_indices<3,6,4,5,2,7,0,1, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'b'baa   (dl|cabjik) : b->a, j->i
-      SMITH::sort_indices<4,5,2,7,3,6,0,1, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'a'a'aab   (dl|bcaikj) : b->c, j->k
-      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'a'b'bab   (dl|cbaijk)
-      SMITH::sort_indices<3,6,4,5,2,7,0,1, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'b'a'abb   (dl|cabjik) : b->a, j->i
-      SMITH::sort_indices<4,5,2,7,3,6,0,1, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'b'bba   (dl|bcaikj) : b->c, j->k
-      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'b'b'bbb   (dl|cbaijk)
-
-      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1, -1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'a'a'aaa   (dl|cbaijk)
-      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1, -1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'b'a'aba   (dl|cbaijk)
-      SMITH::sort_indices<3,6,4,5,2,7,0,1, 1,1, -1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'a'b'baa   (dl|cabjik) : b->a, j->i
-      SMITH::sort_indices<4,5,2,7,3,6,0,1, 1,1, -1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'a'aab   (dl|bcaikj) : b->c, j->k
-      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'b'bab   (dl|cbaijk)
-      SMITH::sort_indices<3,6,4,5,2,7,0,1, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'a'abb   (dl|cabjik) : b->a, j->i
-      SMITH::sort_indices<4,5,2,7,3,6,0,1, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'b'b'bba   (dl|bcaikj) : b->c, j->k
-      SMITH::sort_indices<4,5,3,6,2,7,0,1, 1,1, -1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'b'bbb   (dl|cbaijk)
-      if (!subdia) { 
-        //                  a i b j c k d l                                                                                                     original order  (ld|kjiabc)
-        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'a'aaa   (ld|kjiabc)
-        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'a'aba   (ld|kjiabc)
-        SMITH::sort_indices<6,3,5,4,7,2,1,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'b'baa   (ld|kijbac) : j->i, b->a
-        SMITH::sort_indices<5,4,7,2,6,3,1,0, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'a'a'aab   (ld|jkiacb) : j->k, b->c
-        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'a'b'bab   (ld|kjiabc)
-        SMITH::sort_indices<6,3,5,4,7,2,1,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'b'a'abb   (ld|kijbac) : j->i, b->a
-        SMITH::sort_indices<5,4,7,2,6,3,1,0, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'b'bba   (ld|jkiacb) : j->k, b->c
-        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'b'b'bbb   (ld|kjiabc)
-
-        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm5->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'a'a'aaa   (ld|kjiabc)
-        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'b'a'aba   (ld|kjiabc)
-        SMITH::sort_indices<6,3,5,4,7,2,1,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'a'b'baa   (ld|kijbac) : j->i, b->a
-        SMITH::sort_indices<5,4,7,2,6,3,1,0, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'a'aab   (ld|jkiacb) : j->k, b->c
-        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'b'bab   (ld|kjiabc)
-        SMITH::sort_indices<6,3,5,4,7,2,1,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'a'abb   (ld|kijbac) : j->i, b->a
-        SMITH::sort_indices<5,4,7,2,6,3,1,0, 1,1,  1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'b'b'bba   (ld|jkiacb) : j->k, b->c
-        SMITH::sort_indices<5,4,6,3,7,2,1,0, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'b'bbb   (ld|kjiabc)
-      }
-      cout << "rearranged" << endl; cout.flush();
-      
-      *fourrdmparts_.at(string("cbaijk")) += *rdmt;
-    }
-
-    {
-      auto rdmt = rdm1->clone();
-      // E_a'i,bj,ck,dl' sign(-1)
-      //                  a i b j c k d l                                                                                                     original order  (di|cbajkl)
-      SMITH::sort_indices<4,1,3,5,2,6,0,7, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'a'aaa   (di|cbajkl)
-      SMITH::sort_indices<4,1,3,6,2,5,0,7, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'a'baa  -(di|cbakjl) : k->j
-      SMITH::sort_indices<4,1,2,5,3,6,0,7, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'a'a'aba  -(di|bcajkl) : c->b
-      SMITH::sort_indices<3,1,4,5,2,7,0,6, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|b'b'a'bba   (di|cabjlk) : a->b, l->k
-      SMITH::sort_indices<3,1,4,5,2,7,0,6, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'a|a'a'b'aab   (di|cabjlk) : a->b, l->k
-      SMITH::sort_indices<4,1,3,6,2,5,0,7, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'b'abb  -(di|cbakjl) : k->j
-      SMITH::sort_indices<4,1,2,5,3,6,0,7, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|a'b'b'bab  -(di|bcajkl) : c->b
-      SMITH::sort_indices<4,1,3,5,2,6,0,7, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'b'bbb   (di|cbajkl)
-      if (!subdia) { 
-        //                  a i b j c k d l                                                                                                     original order  (id|lkjabc)
-        SMITH::sort_indices<5,0,6,4,7,3,1,2, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'a'aaa:  (id|lkjabc)
-        SMITH::sort_indices<5,0,6,3,7,4,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'a'b'aba: -(id|ljkabc) : j->k
-        SMITH::sort_indices<5,0,7,4,6,3,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'a'aab: -(id|lkjacb) : c->b
-        SMITH::sort_indices<6,0,5,4,7,2,1,3, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // a'a|a'b'b'abb:  (id|kljbac) : l->k, a->b
-
-        SMITH::sort_indices<6,0,5,4,7,2,1,3, 1,1,  1,1>(rdm6->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'a'baa:  (id|kljbac) : l->k, a->b
-        SMITH::sort_indices<5,0,7,4,6,3,1,2, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'a'b'bba: -(id|lkjacb) : c->b
-        SMITH::sort_indices<5,0,6,3,7,4,1,2, 1,1, -1,1>(rdm7->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'a'bab: -(id|ljkabc) : j->k
-        SMITH::sort_indices<5,0,6,4,7,3,1,2, 1,1,  1,1>(rdm8->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB, nactB, nactB); // b'b|b'b'b'bbb:  (id|lkjabc)
-      }
-      cout << "rearranged" << endl; cout.flush();
-      
-      *fourrdmparts_.at(string("cbajkl")) += *rdmt;
-    }
-  }
-  return make_tuple(out3,out4);
-}
 
 
 
@@ -2897,113 +2798,81 @@ void ASD_base::symmetrize_RDM4() {
 
   cout << "Symmetrize RDM4.." << endl;
   //#B=0
-  fill_RDM<0,1,2,3,4,5,6,7, 
-           0,0,0,0,0,0,0,0>(fourrdmparts_.at("monomerA"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactA);
+  fill_RDM<0,1,2,3,4,5,6,7, 0,0,0,0,0,0,0,0>(fourrdmparts_.at("monomerA"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactA);
   cout << "monomer A done.." << endl;
 
   //#B=8
-  fill_RDM<0,1,2,3,4,5,6,7, 
-           1,1,1,1,1,1,1,1>(fourrdmparts_.at("monomerB"), nactB, nactB, nactB, nactB, nactB, nactB, nactB, nactB);
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1,1,1,1,1,1,1>(fourrdmparts_.at("monomerB"), nactB, nactB, nactB, nactB, nactB, nactB, nactB, nactB);
   cout << "monomer B done.." << endl;
-  
-  //#B=2 (ai)
-  fill_RDM<0,1,2,3,4,5,6,7, 
-           1,1,0,0,0,0,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
-  fill_RDM<2,3,0,1,4,5,6,7, 
-           0,0,1,1,0,0,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
-  fill_RDM<2,3,4,5,0,1,6,7, 
-           0,0,0,0,1,1,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
-  fill_RDM<2,3,4,5,6,7,0,1, 
-           0,0,0,0,0,0,1,1>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+
+  //#B=2 (ai)               a i b j c k d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1,0,0,0,0,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,0,1,1,0,0,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,0,0,0,1,1,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,0,0,0,0,0,1,1>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
   cout << "ai done.." << endl;
 
 /*
-  { 
-    auto rdmt = fourrdmparts_.at("monomerA");
-    auto mat = make_shared<Matrix>(pow(nactA,8),1); //empty
-                      //a i b j c k d l
-    SMITH::sort_indices<0,1,2,3,4,5,6,7, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactA); 
-    auto low = {    0,    0,    0,    0,    0,    0,    0,    0};
-    auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactA};
-    auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
-    copy(mat->begin(), mat->end(), outv.begin()); 
-  }
-
-  //#B=1
-  { 
-    auto rdmt = fourrdmparts_.at("l");
-    auto mat = make_shared<Matrix>(pow(nactA,7),nactB); //empty
-    {                   //a i b j c k d l'
-      SMITH::sort_indices<0,1,2,3,4,5,6,7, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
-      auto low = {    0,    0,    0,    0,    0,    0,    0,nactA};
-      auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactT};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
-      copy(mat->begin(), mat->end(), outv.begin()); 
-    }
-    {                   //a i b j d l c k
-      SMITH::sort_indices<0,1,2,3,6,7,4,5, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
-      auto low = {    0,    0,    0,    0,    0,nactA,    0,    0};
-      auto up  = {nactA,nactA,nactA,nactA,nactA,nactT,nactA,nactA};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
-      copy(mat->begin(), mat->end(), outv.begin()); 
-    }
-    {                   //a i d l b j c k
-      SMITH::sort_indices<0,1,6,7,2,3,4,5, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
-      auto low = {    0,    0,    0,nactA,    0,    0,    0,    0};
-      auto up  = {nactA,nactA,nactA,nactT,nactA,nactA,nactA,nactA};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
-      copy(mat->begin(), mat->end(), outv.begin()); 
-    }
-    {                   //d l a i b j c k
-      SMITH::sort_indices<6,7,0,1,2,3,4,5, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
-      auto low = {    0,nactA,    0,    0,    0,    0,    0,    0};
-      auto up  = {nactA,nactT,nactA,nactA,nactA,nactA,nactA,nactA};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
-      copy(mat->begin(), mat->end(), outv.begin()); 
-    }
-    {                   //a i b j c k d l' transpose
-      SMITH::sort_indices<1,0,3,2,5,4,7,6, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
-      auto low = {    0,    0,    0,    0,    0,    0,nactA,    0};
-      auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactT,nactA};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
-      copy(mat->begin(), mat->end(), outv.begin()); 
-    }
-    {                   //a i b j d l c k  transpose
-      SMITH::sort_indices<1,0,3,2,7,6,5,4, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
-      auto low = {    0,    0,    0,    0,nactA,    0,    0,    0};
-      auto up  = {nactA,nactA,nactA,nactA,nactT,nactA,nactA,nactA};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
-      copy(mat->begin(), mat->end(), outv.begin()); 
-    }
-    {                   //a i d l b j c k  transpose
-      SMITH::sort_indices<1,0,7,6,3,2,5,4, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
-      auto low = {    0,    0,nactA,    0,    0,    0,    0,    0};
-      auto up  = {nactA,nactA,nactT,nactA,nactA,nactA,nactA,nactA};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
-      copy(mat->begin(), mat->end(), outv.begin()); 
-    }
-    {                   //d l a i b j c k  transpose
-      SMITH::sort_indices<7,6,1,0,3,2,5,4, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB); 
-      auto low = {nactA,    0,    0,    0,    0,    0,    0,    0};
-      auto up  = {nactT,nactA,nactA,nactA,nactA,nactA,nactA,nactA};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
-      copy(mat->begin(), mat->end(), outv.begin()); 
-    }
-  }
-
-  //#B=2
-  { 
-    auto rdmt = fourrdmparts_.at("kl");
-    auto mat = make_shared<Matrix>(pow(nactA,6),nactB*nactB); //empty
-    {                   //a i b j c k d l'
-      SMITH::sort_indices<0,1,2,3,4,5,6,7, 0,1, 1,1>(rdmt->data(), mat->data(), nactA, nactA, nactA, nactA, nactA, nactA, nactB, nactB); 
-      auto low = {    0,    0,    0,    0,    0,    0,    0,nactA};
-      auto up  = {nactA,nactA,nactA,nactA,nactA,nactA,nactA,nactT};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage()); 
-      copy(mat->begin(), mat->end(), outv.begin()); 
-    }
-  }
+  //#B=2 (al)               a i b j c k d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0,0,0,0,0,0,1>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,0,0,0,0,1,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,0,0,1,0,0,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,0,1,0,0,0,0,1>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,0,1,6,7,4,5, 0,0,1,0,0,1,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,1,1,0,0,0,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,0,0,0,1,0,0,1>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,6,7,0,1,4,5, 0,0,0,1,1,0,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<6,7,2,3,0,1,4,5, 0,1,0,0,1,0,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,0,0,0,0,1,1,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,6,7,4,5,0,1, 0,0,0,1,0,0,1,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<6,7,2,3,4,5,0,1, 0,1,0,0,0,0,1,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
 */
+
+  //#B=4 (baij)             a i b j c k d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1,1,1,0,0,0,0>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,1,0,0,1,1,0,0>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,1,0,0,0,0,1,1>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,0,1,1,1,1,0,0>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,0,1,1,0,0,1,1>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,0,0,0,1,1,1,1>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  cout << "baij done.." << endl; 
+
+/*
+  //#B=4 (bakl) p41B        a i b j c k d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0,1,0,0,1,0,1>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,0,0,1,1,0,0,1>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1,1,0,1,0,0,1>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,0,0,1,0,1,1,0>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1,1,0,0,1,1,0>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1,0,1,1,0,1,0>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  cout << "baij done.." << endl; 
+*/
+
+  //#=6 (cbaijk)            a i b j c k d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1,1,1,1,1,0,0>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,1,1,1,0,0,1,1>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,1,0,0,1,1,1,1>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,0,1,1,1,1,1,1>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
+  cout << "cbaijk done.." << endl; 
+
+/*
+  //#=6 (cbajkl)            a i b j c k d l             
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0,1,1,1,1,0,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,0,1,1,0,1,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,0,0,1,1,1,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 1,1,1,0,1,1,0,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,6,7,4,5, 1,1,1,0,0,1,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,1,1,0,1,1,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 1,1,1,1,1,0,0,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,6,7,0,1,4,5, 1,1,0,1,1,0,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<6,7,2,3,0,1,4,5, 0,1,1,1,1,0,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 1,1,1,1,0,1,1,0>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,6,7,4,5,0,1, 1,1,0,1,1,1,1,0>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<6,7,2,3,4,5,0,1, 0,1,1,1,1,1,1,0>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  cout << "cbajkl done.." << endl; 
+*/
+
+
 
 }
 
