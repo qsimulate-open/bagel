@@ -1704,32 +1704,6 @@ ASD_base::compute_abFlip_4RDM(const array<MonomerKey,4>& keys) const {
 
 //const int neleA = Ap.nelea() + Ap.neleb();
 
-  //3RDM 
-  { //CASE 2': p27
-    auto gamma_A1 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}); // a'b'aa
-    auto gamma_A2 = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});  // b'b'ab 
-    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta}); // a'b
-    cout << "partial gammas" << endl; cout.flush();
-
-    auto rdm1 = make_shared<Matrix>(gamma_A1 % gamma_B); // a'b'aa|a'b
-    auto rdm2 = make_shared<Matrix>(gamma_A2 % gamma_B); // b'b'ab|a'b
-    auto rdmt = rdm1->clone();
-    cout << "full gammas" << endl; cout.flush();
-
-    // E_a'i,bj',ck 
-    SMITH::sort_indices<4,2,1,5,0,3, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'b'aa|a'b
-    SMITH::sort_indices<4,2,1,5,0,3, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'b'ab|a'b
-    SMITH::sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'a'bb|a'b (N,M) contribution p41
-    SMITH::sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'b'ab|a'b (N,M) contribution p41
-    cout << "rearranged" << endl; cout.flush();
-
-    auto low = {nactA,     0,     0, nactA,     0,     0};
-    auto up  = {nactT, nactA, nactA, nactT, nactA, nactA};
-    auto outv = make_rwview(out3->range().slice(low, up), out3->storage());
-    copy(rdmt->begin(), rdmt->end(), outv.begin());
-    cout << "copied" << endl; cout.flush();
-  }
-  
   { //CASE 4': p27
     auto gamma_A  = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}); // b'a
     auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta}); // a'a'ab
@@ -2798,80 +2772,372 @@ void ASD_base::symmetrize_RDM4() {
 
   cout << "Symmetrize RDM4.." << endl;
   //#B=0
-  fill_RDM<0,1,2,3,4,5,6,7, 0,0,0,0,0,0,0,0>(fourrdmparts_.at("monomerA"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactA);
-  cout << "monomer A done.." << endl;
+  fill_RDM<0,1,2,3,4,5,6,7, 0,0, 0,0, 0,0, 0,0, false>(fourrdmparts_.at("monomerA"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactA);
+  cout << "(1/1:0) monomer A done.." << endl;
+
+
+
 
   //#B=8
-  fill_RDM<0,1,2,3,4,5,6,7, 1,1,1,1,1,1,1,1>(fourrdmparts_.at("monomerB"), nactB, nactB, nactB, nactB, nactB, nactB, nactB, nactB);
-  cout << "monomer B done.." << endl;
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 1,1, 1,1, 1,1, false>(fourrdmparts_.at("monomerB"), nactB, nactB, nactB, nactB, nactB, nactB, nactB, nactB);
+  cout << "(1/1:8)monomer B done.." << endl;
+
+
+
+  //#B=1 (l)                a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 0,0, 0,0, 0,0, 0,1, false>(fourrdmparts_.at("l"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<0,1,2,3,6,7,4,5, 0,0, 0,0, 0,1, 0,0, false>(fourrdmparts_.at("l"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<0,1,6,7,2,3,4,5, 0,0, 0,1, 0,0, 0,0, false>(fourrdmparts_.at("l"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,1, 0,0, 0,0, 0,0, false>(fourrdmparts_.at("l"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 0,0, 0,0, 0,0, 0,1, true>(fourrdmparts_.at("l"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<0,1,2,3,6,7,4,5, 0,0, 0,0, 0,1, 0,0, true>(fourrdmparts_.at("l"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<0,1,6,7,2,3,4,5, 0,0, 0,1, 0,0, 0,0, true>(fourrdmparts_.at("l"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,1, 0,0, 0,0, 0,0, true>(fourrdmparts_.at("l"), nactA, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  cout << "(1/1:1)monomer B done.." << endl;
+
+
 
   //#B=2 (ai)               a i b j c k d l
-  fill_RDM<0,1,2,3,4,5,6,7, 1,1,0,0,0,0,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
-  fill_RDM<2,3,0,1,4,5,6,7, 0,0,1,1,0,0,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
-  fill_RDM<2,3,4,5,0,1,6,7, 0,0,0,0,1,1,0,0>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
-  fill_RDM<2,3,4,5,6,7,0,1, 0,0,0,0,0,0,1,1>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
-  cout << "ai done.." << endl;
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1,0,0,0,0,0,0, false>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,0,1,1,0,0,0,0, false>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,0,0,0,1,1,0,0, false>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,0,0,0,0,0,1,1, false>(fourrdmparts_.at("ai"), nactB, nactB, nactA, nactA, nactA, nactA, nactA, nactA);
+  cout << "(1/3:2)ai done.." << endl;
 
-/*
-  //#B=2 (al)               a i b j c k d l
-  fill_RDM<0,1,2,3,4,5,6,7, 1,0,0,0,0,0,0,1>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<0,1,2,3,6,7,4,5, 1,0,0,0,0,1,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<0,1,6,7,2,3,4,5, 1,0,0,1,0,0,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<2,3,0,1,4,5,6,7, 0,0,1,0,0,0,0,1>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<2,3,0,1,6,7,4,5, 0,0,1,0,0,1,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<6,7,0,1,2,3,4,5, 0,1,1,0,0,0,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<2,3,4,5,0,1,6,7, 0,0,0,0,1,0,0,1>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<2,3,6,7,0,1,4,5, 0,0,0,1,1,0,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<6,7,2,3,0,1,4,5, 0,1,0,0,1,0,0,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<2,3,4,5,6,7,0,1, 0,0,0,0,0,1,1,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<2,3,6,7,4,5,0,1, 0,0,0,1,0,0,1,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-  fill_RDM<6,7,2,3,4,5,0,1, 0,1,0,0,0,0,1,0>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
-*/
+  //#B=2 (al)               a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 0,0, 0,0, 0,1, false>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,0, 0,0, 0,1, 0,0, false>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,0, 0,1, 0,0, 0,0, false>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,0, 1,0, 0,0, 0,1, false>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,0,1,6,7,4,5, 0,0, 1,0, 0,1, 0,0, false>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,0, 0,0, 1,0, 0,1, false>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 0,0, 0,0, 0,1, true>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,0, 0,0, 0,1, 0,0, true>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,0, 0,1, 0,0, 0,0, true>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,0, 1,0, 0,0, 0,1, true>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,0,1,6,7,4,5, 0,0, 1,0, 0,1, 0,0, true>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,0, 0,0, 1,0, 0,1, true>(fourrdmparts_.at("al"), nactB, nactA, nactA, nactA, nactA, nactA, nactA, nactB);
+  cout << "(2/3:2)al done.." << endl;
+
+  //#B=2 (kl)               a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 0,0, 0,0, 0,1, 0,1, false>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,2,3,6,7, 0,0, 0,1, 0,0, 0,1, false>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1, 0,0, 0,0, 0,1, false>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1, 0,0, 0,1, 0,0, false>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,6,7,2,3, 0,0, 0,1, 0,1, 0,0, false>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1, 0,1, 0,0, 0,0, false>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 0,0, 0,0, 0,1, 0,1, true>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,2,3,6,7, 0,0, 0,1, 0,0, 0,1, true>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1, 0,0, 0,0, 0,1, true>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1, 0,0, 0,1, 0,0, true>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,6,7,2,3, 0,0, 0,1, 0,1, 0,0, true>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1, 0,1, 0,0, 0,0, true>(fourrdmparts_.at("kl"), nactA, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  cout << "(3/3:2)kl done.." << endl; 
+
+
+
+
+
+  //#B=3 (jkl)              a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 0,0, 0,1, 0,1, 0,1, false>(fourrdmparts_.at("jkl"), nactA, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,1, 0,0, 0,1, 0,1, false>(fourrdmparts_.at("jkl"), nactA, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,1, 0,1, 0,0, 0,1, false>(fourrdmparts_.at("jkl"), nactA, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,1, 0,1, 0,1, 0,0, false>(fourrdmparts_.at("jkl"), nactA, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 0,0, 0,1, 0,1, 0,1, true>(fourrdmparts_.at("jkl"), nactA, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,1, 0,0, 0,1, 0,1, true>(fourrdmparts_.at("jkl"), nactA, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,1, 0,1, 0,0, 0,1, true>(fourrdmparts_.at("jkl"), nactA, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,1, 0,1, 0,1, 0,0, true>(fourrdmparts_.at("jkl"), nactA, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  cout << "(1/3:3)jkl done.." << endl; 
+
+  //#B=3 (aij)              a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 0,1, 0,0, 0,0, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,1, 0,0, 0,1, 0,0, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,1, 0,0, 0,0, 0,1, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,1, 1,1, 0,0, 0,0, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,0, 1,1, 0,1, 0,0, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,0, 1,1, 0,0, 0,1, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,1, 0,0, 1,1, 0,0, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,2,3,0,1,6,7, 0,0, 0,1, 1,1, 0,0, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,0, 0,0, 1,1, 0,1, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,1, 0,0, 0,0, 1,1, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,2,3,6,7,0,1, 0,0, 0,1, 0,0, 1,1, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,6,7,2,3,0,1, 0,0, 0,0, 0,1, 1,1, false>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 0,1, 0,0, 0,0, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,1, 0,0, 0,1, 0,0, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,1, 0,0, 0,0, 0,1, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,1, 1,1, 0,0, 0,0, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,0, 1,1, 0,1, 0,0, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,0, 1,1, 0,0, 0,1, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,1, 0,0, 1,1, 0,0, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,2,3,0,1,6,7, 0,0, 0,1, 1,1, 0,0, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,0, 0,0, 1,1, 0,1, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,1, 0,0, 0,0, 1,1, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,2,3,6,7,0,1, 0,0, 0,1, 0,0, 1,1, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,6,7,2,3,0,1, 0,0, 0,0, 0,1, 1,1, true>(fourrdmparts_.at("aij"), nactB, nactB, nactA, nactB, nactA, nactA, nactA, nactA);
+  cout << "(2/3:3)aij done.." << endl; 
+
+  //#B=3 (akl)              a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 0,0, 0,1, 0,1, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,0, 0,1, 0,0, 0,1, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,0, 0,1, 0,1, 0,0, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,0, 1,0, 0,1, 0,1, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1, 1,0, 0,0, 0,1, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1, 1,0, 0,1, 0,0, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,0, 0,1, 1,0, 0,1, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,2,3,0,1,6,7, 0,1, 0,0, 1,0, 0,1, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1, 0,1, 1,0, 0,0, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,0, 0,1, 0,1, 1,0, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,2,3,6,7,0,1, 0,1, 0,0, 0,1, 1,0, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,2,3,0,1, 0,1, 0,1, 0,0, 1,0, false>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 0,0, 0,1, 0,1, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,0, 0,1, 0,0, 0,1, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,0, 0,1, 0,1, 0,0, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,0, 1,0, 0,1, 0,1, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1, 1,0, 0,0, 0,1, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1, 1,0, 0,1, 0,0, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,0, 0,1, 1,0, 0,1, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,2,3,0,1,6,7, 0,1, 0,0, 1,0, 0,1, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1, 0,1, 1,0, 0,0, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,0, 0,1, 0,1, 1,0, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,2,3,6,7,0,1, 0,1, 0,0, 0,1, 1,0, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,2,3,0,1, 0,1, 0,1, 0,0, 1,0, true>(fourrdmparts_.at("akl"), nactB, nactA, nactA, nactA, nactA, nactB, nactA, nactB);
+  cout << "(3/3:3)akl done.." << endl; 
+
+
+
+
 
   //#B=4 (baij)             a i b j c k d l
-  fill_RDM<0,1,2,3,4,5,6,7, 1,1,1,1,0,0,0,0>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
-  fill_RDM<0,1,4,5,2,3,6,7, 1,1,0,0,1,1,0,0>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
-  fill_RDM<0,1,4,5,6,7,2,3, 1,1,0,0,0,0,1,1>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
-  fill_RDM<4,5,0,1,2,3,6,7, 0,0,1,1,1,1,0,0>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
-  fill_RDM<4,5,0,1,6,7,2,3, 0,0,1,1,0,0,1,1>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
-  fill_RDM<4,5,6,7,0,1,2,3, 0,0,0,0,1,1,1,1>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
-  cout << "baij done.." << endl; 
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1,1,1,0,0,0,0, false>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,1,0,0,1,1,0,0, false>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,1,0,0,0,0,1,1, false>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,0,1,1,1,1,0,0, false>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,0,1,1,0,0,1,1, false>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,0,0,0,1,1,1,1, false>(fourrdmparts_.at("baij"), nactB, nactB, nactB, nactB, nactA, nactA, nactA, nactA);
+  cout << "(1/6:4)baij done.." << endl; 
 
-/*
   //#B=4 (bakl) p41B        a i b j c k d l
-  fill_RDM<0,1,2,3,4,5,6,7, 1,0,1,0,0,1,0,1>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
-  fill_RDM<0,1,4,5,2,3,6,7, 1,0,0,1,1,0,0,1>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
-  fill_RDM<4,5,0,1,2,3,6,7, 0,1,1,0,1,0,0,1>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
-  fill_RDM<0,1,4,5,6,7,2,3, 1,0,0,1,0,1,1,0>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
-  fill_RDM<4,5,0,1,6,7,2,3, 0,1,1,0,0,1,1,0>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
-  fill_RDM<4,5,6,7,0,1,2,3, 0,1,0,1,1,0,1,0>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
-  cout << "baij done.." << endl; 
-*/
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0,1,0,0,1,0,1, false>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,0,0,1,1,0,0,1, false>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1,1,0,1,0,0,1, false>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,0,0,1,0,1,1,0, false>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1,1,0,0,1,1,0, false>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1,0,1,1,0,1,0, false>(fourrdmparts_.at("bakl"), nactB, nactA, nactB, nactA, nactA, nactB, nactA, nactB);
+  cout << "(2/6:4)bakl done.." << endl; 
 
-  //#=6 (cbaijk)            a i b j c k d l
-  fill_RDM<0,1,2,3,4,5,6,7, 1,1,1,1,1,1,0,0>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
-  fill_RDM<0,1,2,3,6,7,4,5, 1,1,1,1,0,0,1,1>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
-  fill_RDM<0,1,6,7,2,3,4,5, 1,1,0,0,1,1,1,1>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
-  fill_RDM<6,7,0,1,2,3,4,5, 0,0,1,1,1,1,1,1>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
-  cout << "cbaijk done.." << endl; 
 
-/*
-  //#=6 (cbajkl)            a i b j c k d l             
-  fill_RDM<0,1,2,3,4,5,6,7, 1,0,1,1,1,1,0,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<0,1,2,3,6,7,4,5, 1,0,1,1,0,1,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<0,1,6,7,2,3,4,5, 1,0,0,1,1,1,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<2,3,0,1,4,5,6,7, 1,1,1,0,1,1,0,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<2,3,0,1,6,7,4,5, 1,1,1,0,0,1,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<6,7,0,1,2,3,4,5, 0,1,1,0,1,1,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<2,3,4,5,0,1,6,7, 1,1,1,1,1,0,0,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<2,3,6,7,0,1,4,5, 1,1,0,1,1,0,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<6,7,2,3,0,1,4,5, 0,1,1,1,1,0,1,1>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<2,3,4,5,6,7,0,1, 1,1,1,1,0,1,1,0>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<2,3,6,7,4,5,0,1, 1,1,0,1,1,1,1,0>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  fill_RDM<6,7,2,3,4,5,0,1, 0,1,1,1,1,1,1,0>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
-  cout << "cbajkl done.." << endl; 
-*/
+  //#B=4 (ijkl)             a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 0,1, 0,1, 0,1, 0,1, false>(fourrdmparts_.at("ijkl"), nactA, nactB, nactA, nactB, nactA, nactB, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 0,1, 0,1, 0,1, 0,1, true>(fourrdmparts_.at("ijkl"), nactA, nactB, nactA, nactB, nactA, nactB, nactA, nactB);
+  cout << "(3/6:4)ijkl done.." << endl; 
 
+  //#B=4 (ajkl)             a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 0,1, 0,1, 0,1, false>(fourrdmparts_.at("ajkl"), nactB, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,1, 1,0, 0,1, 0,1, false>(fourrdmparts_.at("ajkl"), nactB, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,1, 0,1, 1,0, 0,1, false>(fourrdmparts_.at("ajkl"), nactB, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,1, 0,1, 0,1, 1,0, false>(fourrdmparts_.at("ajkl"), nactB, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 0,1, 0,1, 0,1, true>(fourrdmparts_.at("ajkl"), nactB, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,1, 1,0, 0,1, 0,1, true>(fourrdmparts_.at("ajkl"), nactB, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,1, 0,1, 1,0, 0,1, true>(fourrdmparts_.at("ajkl"), nactB, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,1, 0,1, 0,1, 1,0, true>(fourrdmparts_.at("ajkl"), nactB, nactA, nactA, nactB, nactA, nactB, nactA, nactB);
+  cout << "(4/6:4)ajkl done.." << endl; 
+
+  //#B=4 (aijk)             a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 0,1, 0,1, 0,0, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,1, 0,1, 0,0, 0,1, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,1, 0,0, 0,1, 0,1, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,1, 1,1, 0,1, 0,0, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,0,1,6,7,4,5, 0,1, 1,1, 0,0, 0,1, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,0, 1,1, 0,1, 0,1, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,1, 0,1, 1,1, 0,0, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,6,7,0,1,4,5, 0,1, 0,0, 1,1, 0,1, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,2,3,0,1,4,5, 0,0, 0,1, 1,1, 0,1, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,1, 0,1, 0,0, 1,1, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,6,7,4,5,0,1, 0,1, 0,0, 0,1, 1,1, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,2,3,4,5,0,1, 0,0, 0,1, 0,1, 1,1, false>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 0,1, 0,1, 0,0, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,1, 0,1, 0,0, 0,1, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,1, 0,0, 0,1, 0,1, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,1, 1,1, 0,1, 0,0, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,0,1,6,7,4,5, 0,1, 1,1, 0,0, 0,1, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,0, 1,1, 0,1, 0,1, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,1, 0,1, 1,1, 0,0, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,6,7,0,1,4,5, 0,1, 0,0, 1,1, 0,1, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,2,3,0,1,4,5, 0,0, 0,1, 1,1, 0,1, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,1, 0,1, 0,0, 1,1, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,6,7,4,5,0,1, 0,1, 0,0, 0,1, 1,1, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,2,3,4,5,0,1, 0,0, 0,1, 0,1, 1,1, true>(fourrdmparts_.at("aijk"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactA);
+  cout << "(5/6:4)aijk done.." << endl; 
+
+  //#B=4 (bajk)             a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 1,1, 0,1, 0,0, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,0, 1,1, 0,0, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,2,3,0,1,4,5, 0,0, 1,1, 1,0, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,0,1,4,5,6,7, 1,1, 1,0, 0,1, 0,0, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,0,1,6,7,4,5, 1,1, 1,0, 0,0, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,6,7,0,1,4,5, 1,1, 0,0, 1,0, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,0, 0,1, 1,1, 0,0, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,0, 0,0, 1,1, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,0, 1,0, 1,1, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,0, 0,1, 0,0, 1,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,4,5,2,3, 1,0, 0,0, 0,1, 1,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,4,5,2,3, 0,0, 1,0, 0,1, 1,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 1,1, 0,1, 0,0, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,0, 1,1, 0,0, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,2,3,0,1,4,5, 0,0, 1,1, 1,0, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,0,1,4,5,6,7, 1,1, 1,0, 0,1, 0,0, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,0,1,6,7,4,5, 1,1, 1,0, 0,0, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<2,3,6,7,0,1,4,5, 1,1, 0,0, 1,0, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,0, 0,1, 1,1, 0,0, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,0, 0,0, 1,1, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,0, 1,0, 1,1, 0,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,0, 0,1, 0,0, 1,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,4,5,2,3, 1,0, 0,0, 0,1, 1,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,4,5,2,3, 0,0, 1,0, 0,1, 1,1, false>(fourrdmparts_.at("bajk"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactA);
+  cout << "(6/6:4)bajk done.." << endl; 
+
+
+
+
+
+  //#B=5 (aijkl)            a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 0,1, 0,1, 0,1, false>(fourrdmparts_.at("aijkl"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,1, 1,1, 0,1, 0,1, false>(fourrdmparts_.at("aijkl"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,1, 0,1, 1,1, 0,1, false>(fourrdmparts_.at("aijkl"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,1, 0,1, 0,1, 1,1, false>(fourrdmparts_.at("aijkl"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 0,1, 0,1, 0,1, true>(fourrdmparts_.at("aijkl"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 0,1, 1,1, 0,1, 0,1, true>(fourrdmparts_.at("aijkl"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 0,1, 0,1, 1,1, 0,1, true>(fourrdmparts_.at("aijkl"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 0,1, 0,1, 0,1, 1,1, true>(fourrdmparts_.at("aijkl"), nactB, nactB, nactA, nactB, nactA, nactB, nactA, nactB);
+  cout << "(1/3:5)cbajkl done.." << endl; 
+
+  //#B=5 (baijk)            a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 1,1, 0,1, 0,0, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,1, 0,1, 1,1, 0,0, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1, 1,1, 1,1, 0,0, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,1, 1,1, 0,0, 0,1, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,1, 0,1, 0,0, 1,1, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1, 1,1, 0,0, 1,1, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,1, 0,0, 1,1, 0,1, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,4,5,2,3, 1,1, 0,0, 0,1, 1,1, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1, 0,0, 1,1, 1,1, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,0, 1,1, 1,1, 0,1, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,4,5,2,3, 0,0, 1,1, 0,1, 1,1, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,4,5,0,1,2,3, 0,0, 0,1, 1,1, 1,1, false>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 1,1, 0,1, 0,0, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,1, 0,1, 1,1, 0,0, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1, 1,1, 1,1, 0,0, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,1, 1,1, 0,0, 0,1, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,1, 0,1, 0,0, 1,1, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1, 1,1, 0,0, 1,1, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,1, 0,0, 1,1, 0,1, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,4,5,2,3, 1,1, 0,0, 0,1, 1,1, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1, 0,0, 1,1, 1,1, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,0, 1,1, 1,1, 0,1, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,4,5,2,3, 0,0, 1,1, 0,1, 1,1, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  fill_RDM<6,7,4,5,0,1,2,3, 0,0, 0,1, 1,1, 1,1, true>(fourrdmparts_.at("baijk"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactA);
+  cout << "(2/3:5)baijk done.." << endl; 
+
+  //#B=5 (bajkl)            a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 1,1, 0,1, 0,1, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,2,3,0,1,6,7, 0,1, 1,1, 1,0, 0,1, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,2,3,6,7,0,1, 0,1, 1,1, 0,1, 1,0, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 1,1, 1,0, 0,1, 0,1, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 1,1, 0,1, 1,0, 0,1, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 1,1, 0,1, 0,1, 1,0, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,0, 0,1, 1,1, 0,1, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1, 1,0, 1,1, 0,1, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,2,3,0,1, 0,1, 0,1, 1,1, 1,0, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,0, 0,1, 0,1, 1,1, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1, 1,0, 0,1, 1,1, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1, 0,1, 1,0, 1,1, false>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 1,1, 0,1, 0,1, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,2,3,0,1,6,7, 0,1, 1,1, 1,0, 0,1, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,2,3,6,7,0,1, 0,1, 1,1, 0,1, 1,0, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 1,1, 1,0, 0,1, 0,1, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 1,1, 0,1, 1,0, 0,1, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,6,7,0,1, 1,1, 0,1, 0,1, 1,0, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,0, 0,1, 1,1, 0,1, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1, 1,0, 1,1, 0,1, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,2,3,0,1, 0,1, 0,1, 1,1, 1,0, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,0, 0,1, 0,1, 1,1, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1, 1,0, 0,1, 1,1, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1, 0,1, 1,0, 1,1, true>(fourrdmparts_.at("bajkl"), nactB, nactA, nactB, nactB, nactA, nactB, nactA, nactB);
+  cout << "(3/3:5)bajkl done.." << endl; 
+
+
+
+
+
+  //#=6 (cbaijk)            a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 1,1, 1,1, 0,0, false>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,1, 1,1, 0,0, 1,1, false>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,1, 0,0, 1,1, 1,1, false>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,0, 1,1, 1,1, 1,1, false>(fourrdmparts_.at("cbaijk"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactA);
+  cout << "(1/3:6)cbaijk done.." << endl; 
+
+  //#=6 (cbajkl)            a i  b j  c k  d l             
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 1,1, 1,1, 0,1, false>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,0, 1,1, 0,1, 1,1, false>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,0, 0,1, 1,1, 1,1, false>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 1,1, 1,0, 1,1, 0,1, false>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,6,7,4,5, 1,1, 1,0, 0,1, 1,1, false>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 1,1, 1,1, 1,0, 0,1, false>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,0, 1,1, 1,1, 0,1, true>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,0, 1,1, 0,1, 1,1, true>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,0, 0,1, 1,1, 1,1, true>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,4,5,6,7, 1,1, 1,0, 1,1, 0,1, true>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,0,1,6,7,4,5, 1,1, 1,0, 0,1, 1,1, true>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<2,3,4,5,0,1,6,7, 1,1, 1,1, 1,0, 0,1, true>(fourrdmparts_.at("cbajkl"), nactB, nactA, nactB, nactB, nactB, nactB, nactA, nactB);
+  cout << "(2/3:6)cbajkl done.." << endl; 
+
+  //#=6 (baijkl)            a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 1,1, 0,1, 0,1, false>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,1, 0,1, 1,1, 0,1, false>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1, 1,1, 1,1, 0,1, false>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1, 0,1, 1,1, 1,1, false>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1, 1,1, 0,1, 1,1, false>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,1, 0,1, 0,1, 1,1, false>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 1,1, 0,1, 0,1, true>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,2,3,6,7, 1,1, 0,1, 1,1, 0,1, true>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,2,3,6,7, 0,1, 1,1, 1,1, 0,1, true>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,6,7,0,1,2,3, 0,1, 0,1, 1,1, 1,1, true>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<4,5,0,1,6,7,2,3, 0,1, 1,1, 0,1, 1,1, true>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  fill_RDM<0,1,4,5,6,7,2,3, 1,1, 0,1, 0,1, 1,1, true>(fourrdmparts_.at("baijkl"), nactB, nactB, nactB, nactB, nactA, nactB, nactA, nactB);
+  cout << "(3/3:6)baijkl done.." << endl; 
+
+
+
+
+
+
+
+  //#=7 (cbaijkl)           a i  b j  c k  d l
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 1,1, 1,1, 0,1, false>(fourrdmparts_.at("cbaijkl"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,1, 1,1, 0,1, 1,1, false>(fourrdmparts_.at("cbaijkl"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,1, 0,1, 1,1, 1,1, false>(fourrdmparts_.at("cbaijkl"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,1, 1,1, 1,1, 1,1, false>(fourrdmparts_.at("cbaijkl"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactB);
+  //transpose
+  fill_RDM<0,1,2,3,4,5,6,7, 1,1, 1,1, 1,1, 0,1, true>(fourrdmparts_.at("cbaijkl"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<0,1,2,3,6,7,4,5, 1,1, 1,1, 0,1, 1,1, true>(fourrdmparts_.at("cbaijkl"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<0,1,6,7,2,3,4,5, 1,1, 0,1, 1,1, 1,1, true>(fourrdmparts_.at("cbaijkl"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactB);
+  fill_RDM<6,7,0,1,2,3,4,5, 0,1, 1,1, 1,1, 1,1, true>(fourrdmparts_.at("cbaijkl"), nactB, nactB, nactB, nactB, nactB, nactB, nactA, nactB);
+  cout << "(1/1:7)cbaijkl done.." << endl; 
 
 
 }

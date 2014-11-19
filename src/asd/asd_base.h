@@ -208,7 +208,8 @@ class ASD_base {
 
 
   template<int a,  int i,  int b,  int j,  int c,  int k,  int d,  int l, // according to the sorted
-           int Xa, int Xi, int Xb, int Xj, int Xc, int Xk, int Xd, int Xl> // 0 for A, 1 for B
+           int Xa, int Xi, int Xb, int Xj, int Xc, int Xk, int Xd, int Xl, // 0 for A, 1 for B
+           bool /*transpose*/trans >
   void fill_RDM(std::shared_ptr<Matrix> rdmt,
                 const int n0, const int n1, const int n2, const int n3, const int n4, const int n5, const int n6, const int n7) { // according to the unsorted
 
@@ -236,12 +237,22 @@ class ASD_base {
     int hl = {Xl == 0 ? nactA : nactT};
 
     auto mat = std::make_shared<Matrix>(n0*n1*n2*n3*n4*n5*n6*n7,1); //empty
-                      //sorted                                                unsorted dim/s
-    SMITH::sort_indices<a,i,b,j,c,k,d,l, 0,1, 1,1>(rdmt->data(), mat->data(), n0, n1, n2, n3, n4, n5, n6, n7);
-    auto low = {la,li,lb,lj,lc,lk,ld,ll};
-    auto up  = {ha,hi,hb,hj,hc,hk,hd,hl};
-    auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage());
-    copy(mat->begin(), mat->end(), outv.begin());
+
+    if (trans) { //transposed
+                        //sorted                                                unsorted dim/s
+      SMITH::sort_indices<i,a,j,b,k,c,l,d, 0,1, 1,1>(rdmt->data(), mat->data(), n0, n1, n2, n3, n4, n5, n6, n7);
+      auto low = {li,la,lj,lb,lk,lc,ll,ld};
+      auto up  = {hi,ha,hj,hb,hk,hc,hl,hd};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage());
+      copy(mat->begin(), mat->end(), outv.begin());
+    } else { //normal
+                        //sorted                                                unsorted dim/s
+      SMITH::sort_indices<a,i,b,j,c,k,d,l, 0,1, 1,1>(rdmt->data(), mat->data(), n0, n1, n2, n3, n4, n5, n6, n7);
+      auto low = {la,li,lb,lj,lc,lk,ld,ll};
+      auto up  = {ha,hi,hb,hj,hc,hk,hd,hl};
+      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage());
+      copy(mat->begin(), mat->end(), outv.begin());
+    }
   }
 
 }; //ASD_base
