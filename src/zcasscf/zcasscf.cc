@@ -267,7 +267,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
    // scale using occupation numbers
    for (int i = 0; i != nact_*2; ++i) {
      assert(occup_[i] >= -1.0e-14);
-     const double fac = occup_[i] > 0 ? sqrt(occup_[i]) : 0.0;
+     const double fac = occup_[i] > 0.0 ? sqrt(occup_[i]) : 0.0;
      for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
    }
 
