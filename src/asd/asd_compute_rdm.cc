@@ -187,6 +187,13 @@ ASD_base::compute_rdm () {
     tie(r3,r4) = compute_diagonal_block_RDM4(subspace);
   }
 
+  for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
+    for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
+      shared_ptr<RDM<3>> r3;
+      shared_ptr<RDM<4>> r4;
+      tie(r3,r4) = couple_blocks_4RDM(*jAB, *iAB); //Lower-triangular (i<->j)
+    }
+  }
 
  
   symmetrize_RDM();

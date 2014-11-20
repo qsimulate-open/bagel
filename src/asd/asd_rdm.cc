@@ -75,20 +75,20 @@ ASD_base::debug_RDM() const {
     copy(view.begin(), view.end(), rdm2B->begin());
   }
 
-//auto rdm3A = std::make_shared<RDM<3>>(nactA);
-//{
-//  auto low = {0,0,0,0,0,0};
-//  auto up  = {nactA,nactA,nactA,nactA,nactA,nactA};
-//  auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
-//  copy(view.begin(), view.end(), rdm3A->begin());
-//}
-//auto rdm3B = std::make_shared<RDM<3>>(nactB);
-//{
-//  auto low = {nactA,nactA,nactA,nactA,nactA,nactA};
-//  auto up  = {nactT,nactT,nactT,nactT,nactT,nactT};
-//  auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
-//  copy(view.begin(), view.end(), rdm3B->begin());
-//}
+  auto rdm3A = std::make_shared<RDM<3>>(nactA);
+  {
+    auto low = {0,0,0,0,0,0};
+    auto up  = {nactA,nactA,nactA,nactA,nactA,nactA};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    copy(view.begin(), view.end(), rdm3A->begin());
+  }
+  auto rdm3B = std::make_shared<RDM<3>>(nactB);
+  {
+    auto low = {nactA,nactA,nactA,nactA,nactA,nactA};
+    auto up  = {nactT,nactT,nactT,nactT,nactT,nactT};
+    auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
+    copy(view.begin(), view.end(), rdm3B->begin());
+  }
 
   //1RDM
   { //Monomer A
@@ -321,57 +321,9 @@ ASD_base::debug_RDM() const {
     std::cout << "4RDM Trace (AB)  = " << sum << std::endl;
   }
 
-
-  assert(false);
-//{ //Gamma_ij,kl,mm : p21
-//  std::cout << "3RDM(B) Partial Trace Sum_m (i,j,k,l,m,m)" << std::endl;
-//  auto debug = std::make_shared<RDM<2>>(*rdm2B);
-//  for (int i = nactA; i != nactT; ++i)
-//  for (int j = nactA; j != nactT; ++j)
-//  for (int k = nactA; k != nactT; ++k) 
-//  for (int l = nactA; l != nactT; ++l) 
-//  for (int m = nactA; m != nactT; ++m) {
-//    debug->element(i-nactA,j-nactA,k-nactA,l-nactA) -= 1.0/(neleA-2) * threerdm_->element(i,j,k,l,m,m);
-//  }
-//  debug->print(1.0e-8);
-//}
-//{ //Gamma_ij,kk,mm : p21
-//  std::cout << "3RDM(B) Partial Trace Sum_m (i,j,k,k,m,m)" << std::endl;
-//  auto debug = std::make_shared<RDM<1>>(*rdm1B);
-//  for (int i = nactA; i != nactT; ++i)
-//  for (int j = nactA; j != nactT; ++j)
-//  for (int k = nactA; k != nactT; ++k) 
-//  for (int m = nactA; m != nactT; ++m) {
-//    debug->element(i-nactA,j-nactA) -= 1.0/((neleA-2)*(neleA-1)) * threerdm_->element(i,j,k,k,m,m);
-//  }
-//  debug->print(1.0e-8);
-//}
-
-
-
-  assert(false);
-}
-
-#if 0
-
-  //4RDM check (A) Gamma_ij,kl,mn,op
-  {
-    double sum = 0.0;
-    for (int i = 0; i != nactA; ++i)
-    for (int j = 0; j != nactA; ++j)
-    for (int k = 0; k != nactA; ++k)
-    for (int l = 0; l != nactA; ++l) {
-      sum += fourrdm_->element(i,i,j,j,k,k,l,l);
-    }
-    std::cout << "4RDM Trace = " << sum << std::endl;
-  }
-
-
-
-  // Checking 4RDM by comparing with 3RDM
   { 
-    auto debug = std::make_shared<RDM<3>>(*threerdm_);
-    std::cout << "4RDM debug test 1" << std::endl;
+    auto debug = std::make_shared<RDM<3>>(*rdm3A);
+    std::cout << "4RDM(A) debug test" << std::endl;
     for (int l = 0; l != nactA; ++l)
       for (int d = 0; d != nactA; ++d)
         for (int k = 0; k != nactA; ++k)
@@ -379,13 +331,103 @@ ASD_base::debug_RDM() const {
             for (int j = 0; j != nactA; ++j)
               for (int b = 0; b != nactA; ++b)
       for (int i = 0; i != nactA; ++i) {
-        debug->element(b,j,c,k,d,l) -= 1.0/(nelea+neleb-3) * fourrdm_->element(i,i,b,j,c,k,d,l);
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelea+neleb-3) * fourrdm_->element(b,j,i,i,c,k,d,l);
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelea+neleb-3) * fourrdm_->element(b,j,c,k,i,i,d,l);
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelea+neleb-3) * fourrdm_->element(b,j,c,k,d,l,i,i);
+        debug->element(b,j,c,k,d,l) -= 1.0/(neleA-3) * fourrdm_->element(i,i,b,j,c,k,d,l);
       }
     debug->print(1.0e-8);
   }
+  { 
+    auto debug = std::make_shared<RDM<3>>(*rdm3B);
+    std::cout << "4RDM(B) debug test" << std::endl;
+    for (int l = 0; l != nactB; ++l)
+      for (int d = 0; d != nactB; ++d)
+        for (int k = 0; k != nactB; ++k)
+          for (int c = 0; c != nactB; ++c)
+            for (int j = 0; j != nactB; ++j)
+              for (int b = 0; b != nactB; ++b)
+      for (int i = 0; i != nactB; ++i) {
+        debug->element(b,j,c,k,d,l) -= 1.0/(neleB-3) * fourrdm_->element(i+nactA,i+nactA,b+nactA,j+nactA,c+nactA,k+nactA,d+nactA,l+nactA);
+      }
+    debug->print(1.0e-8);
+  }
+
+  { 
+    auto debug = std::make_shared<RDM<3>>(*threerdm_);
+    std::cout << "4RDM debug test 1" << std::endl;
+    for (int l = 0; l != nactT; ++l)
+      for (int d = 0; d != nactT; ++d)
+        for (int k = 0; k != nactT; ++k)
+          for (int c = 0; c != nactT; ++c)
+            for (int j = 0; j != nactT; ++j)
+              for (int b = 0; b != nactT; ++b)
+      for (int i = 0; i != nactT; ++i) {
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(i,i,b,j,c,k,d,l);
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,i,i,c,k,d,l);
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,i,i,d,l);
+        debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,d,l,i,i);
+      }
+    debug->print(1.0e-8);
+  }
+
+  assert(false);
+
+  { 
+    auto debug = std::make_shared<RDM<3>>(*threerdm_);
+    std::cout << "4RDM debug test 2" << std::endl;
+    for (int l = 0; l != nactA; ++l)
+      for (int d = 0; d != nactA; ++d)
+        for (int k = 0; k != nactA; ++k)
+          for (int c = 0; c != nactA; ++c)
+            for (int j = 0; j != nactA; ++j)
+              for (int b = 0; b != nactA; ++b)
+      for (int i = 0; i != nactA; ++i) {
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(i,i,b,j,c,k,d,l);
+        debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,i,i,c,k,d,l);
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,i,i,d,l);
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,d,l,i,i);
+      }
+    debug->print(1.0e-8);
+  }
+  { 
+    auto debug = std::make_shared<RDM<3>>(*threerdm_);
+    std::cout << "4RDM debug test 3" << std::endl;
+    for (int l = 0; l != nactA; ++l)
+      for (int d = 0; d != nactA; ++d)
+        for (int k = 0; k != nactA; ++k)
+          for (int c = 0; c != nactA; ++c)
+            for (int j = 0; j != nactA; ++j)
+              for (int b = 0; b != nactA; ++b)
+      for (int i = 0; i != nactA; ++i) {
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(i,i,b,j,c,k,d,l);
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,i,i,c,k,d,l);
+        debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,i,i,d,l);
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,d,l,i,i);
+      }
+    debug->print(1.0e-8);
+  }
+  { 
+    auto debug = std::make_shared<RDM<3>>(*threerdm_);
+    std::cout << "4RDM debug test 4" << std::endl;
+    for (int l = 0; l != nactA; ++l)
+      for (int d = 0; d != nactA; ++d)
+        for (int k = 0; k != nactA; ++k)
+          for (int c = 0; c != nactA; ++c)
+            for (int j = 0; j != nactA; ++j)
+              for (int b = 0; b != nactA; ++b)
+      for (int i = 0; i != nactA; ++i) {
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(i,i,b,j,c,k,d,l);
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,i,i,c,k,d,l);
+  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,i,i,d,l);
+        debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,d,l,i,i);
+      }
+    debug->print(1.0e-8);
+  }
+
+}
+
+#if 0
+
+
+  // Checking 4RDM by comparing with 3RDM
   { 
     auto debug = std::make_shared<RDM<3>>(*threerdm_);
     std::cout << "4RDM debug test 2" << std::endl;
