@@ -49,8 +49,8 @@ class Smith : public Method {
     // first order density matrices
     std::shared_ptr<const Matrix> dm11_;
     std::shared_ptr<const Matrix> dm2_;
-    // correction e0<1|1>
-    double correction_;
+    // correction <1|1>
+    double wf1norm_;
     // ci derivative
     std::shared_ptr<const Civec> cider_;
 
@@ -65,12 +65,12 @@ class Smith : public Method {
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 
-    std::shared_ptr<const Matrix> dm1() { return dm1_; }
-    std::shared_ptr<const Matrix> dm11() { return dm11_; }
-    std::shared_ptr<const Matrix> dm2() { return dm2_; }
-    double correction() { return correction_; }
-    std::shared_ptr<const Civec> cideriv() { return cider_; }
-    std::shared_ptr<const Coeff> coeff() { return coeff_; }
+    std::shared_ptr<const Matrix> dm1() const { return dm1_; }
+    std::shared_ptr<const Matrix> dm11() const { return dm11_; }
+    std::shared_ptr<const Matrix> dm2() const { return dm2_; }
+    double wf1norm() const { return wf1norm_; }
+    std::shared_ptr<const Civec> cideriv() const { return cider_; }
+    std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     std::shared_ptr<const SMITH::SpinFreeMethod<SMITH::Storage_Incore>> algo() const { return algo_; }
 

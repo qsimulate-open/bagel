@@ -43,7 +43,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> d11_;
     std::shared_ptr<const Matrix> d2_;
 
-    std::shared_ptr<const Civec> cideriv_;
+    std::shared_ptr<Civec> cideriv_;
 
     std::shared_ptr<FCI> fci_;
 

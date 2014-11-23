@@ -67,29 +67,56 @@ void CASPT2Grad::compute() {
     // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
     coeff_ = smith->coeff();
 
-    if (nact)
-      cideriv_ = smith->cideriv();
+    if (nact) {
+      cideriv_ = smith->cideriv()->copy();
+    }
     target_ = smith->algo()->ref()->target();
     ncore_  = smith->algo()->ref()->ncore();
 
     // save correlated density matrices d(1), d(2), and ci derivatives
-    shared_ptr<Matrix> d1tmp = make_shared<Matrix>(*smith->dm1());
-    // add correction to active part of the correlated one-body density
+    auto d1tmp = make_shared<Matrix>(*smith->dm1());
+    auto d11tmp = make_shared<Matrix>(*smith->dm11());
+    // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     if (nact) {
-      const double correction = smith->correction();
+      const double wf1norm = smith->wf1norm();
       shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
       for (int i = nclosed; i != nclosed+nact; ++i)
         for (int j = nclosed; j != nclosed+nact; ++j)
-          d1tmp->element(j-ncore_, i-ncore_) -=  correction * d0->element(j, i);
+          d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm * d0->element(j, i);
     }
     if (!ncore_) {
       d1_ = d1tmp;
+      d11_ = d11tmp;
     } else {
       auto d1tmp2 = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
       d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1tmp);
-      d1_ = d1tmp2;
+      d1_ = d1tmp2->copy();
+      d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d11tmp);
+      d11_ = d1tmp2;
     }
-    d11_ = smith->dm11();
+
+    // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]
+    // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
+    // -> y_I += [(h+g[d^(0)+d^(2)]) - (1+N)F] <I|E_ij|0>
+    if (nact) {
+      const int nmobasis = coeff_->mdim();
+      auto d0 = ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis);
+      // TODO we should be able to avoid this Fock build
+      auto d0ao = make_shared<Matrix>(*coeff_* *d0  ^ *coeff_);
+      auto d1ao = make_shared<Matrix>((*coeff_* *d1_ ^ *coeff_) + *d0ao); // sum of d0 + d1 (to make it positive definite)
+      auto fock  = make_shared<Fock<1>>(geom_, ref_->hcore(), d0ao);
+      auto fock1 = make_shared<Fock<1>>(geom_, ref_->hcore(), d1ao);
+      *fock1 -= *fock * (1.0+smith->wf1norm()); // g[d^(2)]
+
+      auto acoeff = coeff_->slice(nclosed, nclosed+nact);
+      auto fock1mo = make_shared<Matrix>(acoeff % *fock1 * acoeff);
+      shared_ptr<const Dvec> deriv = ref_->rdm1deriv(target_);
+
+      for (int i = 0; i != nact; ++i)
+        for (int j = 0; j != nact; ++j)
+          cideriv_->ax_plus_y(fock1mo->element(j,i), deriv->data(j+i*nact));
+    }
+
     d2_ = smith->dm2();
     energy_ = smith->algo()->energy() + ref_energy_[target_];
   }
