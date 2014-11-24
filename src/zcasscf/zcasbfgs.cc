@@ -74,6 +74,7 @@ tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRo
 
   const bool tight = idata_->get<bool>("tight", false);
   const int limmem = idata_->get<int>("limited_memory", 0);
+  const int hebden = idata_->get<bool>("hebden", false);
   auto reset = srbfgs->check_step(energy, newgrad, newrot, tight, limmem);
   if (reset) {
     cout << " STEP DOES NOT MEET PROPER CRITERIA " << endl;
@@ -82,7 +83,10 @@ tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRo
 
   shared_ptr<ZRotFile> a;
   if (optimize_electrons) {
-    a = srbfgs->more_sorensen_extrapolate(newgrad, newrot);
+    if (!hebden)
+      a = srbfgs->more_sorensen_extrapolate(newgrad, newrot);
+    else
+      a = srbfgs->extrapolate(newgrad, newrot);
   } else {
     // positronic optimization results in a negative level shift so use Hebden method
     a = srbfgs->extrapolate(newgrad, newrot);

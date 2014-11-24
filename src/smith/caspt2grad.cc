@@ -25,7 +25,7 @@
 
 
 #include <src/smith/caspt2grad.h>
-#include <src/casscf/superci.h>
+#include <src/casscf/cashybrid.h>
 #include <src/casscf/qvec.h>
 #include <src/smith/smith.h>
 #include <src/grad/gradeval.h>
@@ -39,7 +39,7 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   : Method(inp, geom, ref) {
 
   // compute CASSCF first
-  auto cas = make_shared<SuperCI>(inp, geom, ref);
+  auto cas = make_shared<CASHybrid>(inp, geom, ref);
   cas->compute();
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
@@ -48,7 +48,9 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   // update reference
   ref_ = cas->conv_to_ref();
   fci_ = cas->fci();
-  thresh_ = cas->thresh();
+  // TODO
+  thresh_ = 1.0e-8; //cas->thresh();
+  ref_energy_ = cas->energy();
 }
 
 
@@ -85,7 +87,7 @@ void CASPT2Grad::compute() {
       d1_ = d1tmp2;
     }
     d2_ = smith->dm2();
-    energy_ = smith->algo()->energy() + fci_->energy(target_);
+    energy_ = smith->algo()->energy() + ref_energy_[target_];
   }
 }
 
@@ -93,13 +95,14 @@ void CASPT2Grad::compute() {
 template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const Reference> ref = task_->ref();
+  shared_ptr<FCI> fci = task_->fci();
+
   const int nclosed = ref->nclosed();
   const int nact = ref->nact();
 
   // state-averaged density matrices
-  shared_ptr<FCI> fci = task_->fci();
-  shared_ptr<const RDM<1>> rdm1_av = fci->rdm1_av();
-  shared_ptr<const RDM<2>> rdm2_av = fci->rdm2_av();
+  shared_ptr<const RDM<1>> rdm1_av = ref->rdm1_av();
+  shared_ptr<const RDM<2>> rdm2_av = ref->rdm2_av();
 
   shared_ptr<const Matrix> d1 = task_->d1();
   shared_ptr<const Matrix> d2 = task_->d2();
@@ -132,7 +135,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto g0 = yrs;
   auto g1 = make_shared<Dvec>(cider, ref->nstate()); // FIXME this is wrong for nstate > 1 in CASSCF
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
-  auto cp = make_shared<CPCASSCF>(grad, fci->civectors(), half, halfjj, ref, fci, ncore, coeff);
+  auto cp = make_shared<CPCASSCF>(grad, ref->ciwfn()->civectors(), half, halfjj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
   tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
@@ -149,10 +152,10 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
     dtot->add_block(1.0, 0, 0, nocc, nocc, smallz);
 
   // form zdensity
-  auto detex = make_shared<Determinants>(fci->norb(), fci->nelea(), fci->neleb(), false, /*mute=*/true);
+  auto detex = make_shared<Determinants>(nact, fci->nelea(), fci->neleb(), false, /*mute=*/true);
   shared_ptr<const RDM<1>> zrdm1;
   shared_ptr<const RDM<2>> zrdm2;
-  tie(zrdm1, zrdm2) = fci->compute_rdm12_av_from_dvec(fci->civectors(), zvec, detex);
+  tie(zrdm1, zrdm2) = fci->compute_rdm12_av_from_dvec(ref->ciwfn()->civectors(), zvec, detex);
 
   shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
   zrdm1_mat->symmetrize();

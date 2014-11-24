@@ -1,0 +1,35 @@
+{ "bagel" : [
+  { "title" : "molecule",
+    "angstrom" : true,
+    "basis" : "svp",
+    "df_basis" : "svp-jkfit",
+    "geometry" : [
+      { "atom" : "O", "xyz" : [       0.000000000000,       0.000000000000,       1.207000000000 ] },
+      { "atom" : "O", "xyz" : [       0.000000000000,       0.000000000000,       0.000000000000 ] }
+    ]
+  },
+{
+ "title" : "hf",
+ "thresh" : 1.0e-6
+},
+{
+ "title" : "dhf",
+ "thresh" : 1.0e-6
+},
+{
+  "title" : "zcasscf",
+  "algorithm" : "superci",
+  "breit" : true,
+  "gaunt" : true,
+  "state" : [0,0,1],
+  "nact_cas" : 2,
+  "nclosed" : 7,
+  "thresh" : 5.0e-6,
+  "thresh_micro" : 1.0e-6,
+  "thresh_fci" : 1.0e-7,
+  "maxiter" : 20,
+  "maxiter_micro" : 50,
+  "maxiter_fci" : 50,
+  "diis_start" : 5
+}
+] }

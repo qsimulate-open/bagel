@@ -24,15 +24,15 @@
 //
 
 
-#ifndef __BAGEL_ZCASSCF_ZCASHYBRID_H
-#define __BAGEL_ZCASSCF_ZCASHYBRID_H
+#ifndef __BAGEL_ZCASSCF_ZCASHybrid_H
+#define __BAGEL_ZCASSCF_ZCASHybrid_H
 
 #include <iomanip>
 #include <src/wfn/method.h>
 
 namespace bagel {
 
-class ZCASHYBRID : public Method {
+class ZCASHybrid : public Method {
 
   protected:
     int maxiter_switch_;
@@ -57,7 +57,7 @@ class ZCASHYBRID : public Method {
 
 
   public:
-    ZCASHYBRID(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
+    ZCASHybrid(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
       : Method(idat, geom, ref) { common_init(); }
 
     void compute() override;

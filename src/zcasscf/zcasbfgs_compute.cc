@@ -100,7 +100,7 @@ void ZCASBFGS::compute() {
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
     if (nact_) {
-      shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
+      shared_ptr<const ZMatrix> afockao = active_fock(rdm1, /*with_hcore*/false, /*bfgs*/true);
       afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
     } else {
       afock = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
