@@ -166,7 +166,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   }
 
   // BFGS update of the denominator above
-  auto bfgs = make_shared<BFGS<PairFile<Matrix, Dvec>>>(denom, true);
+  auto bfgs = make_shared<BFGS<PairFile<Matrix, Dvec>>>(denom, /*debug*/true);
 
   // gradient Y and y
   auto source = make_shared<PairFile<Matrix, Dvec>>(*grad_);
@@ -214,6 +214,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, half, fullb, detex, cinv);
     sigma->first()->antisymmetrize();
     sigma->first()->purify_redrotation(ref_->nclosed(), ref_->nact(), ref_->nvirt());
+    sigma->second()->project_out(civector_);
 
     z = solver->compute_residual(z, sigma);
 
@@ -376,7 +377,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
     for (int j = 0; j != nact; ++j)
       for (int k = 0; k != nact; ++k)
         for (int l = 0; l != nact; ++l)
-          rdm2->element(l,k,j,i) = 0.5*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i));
+          rdm2->element(l,k,j,i) = 0.5*(rdm2t->element(l,k,j,i)+rdm2t->element(l,k,i,j));
   auto rdm1mat = make_shared<Matrix>(nact, nact);
   copy_n(rdm1->data(), rdm1->size(), rdm1mat->data());
 

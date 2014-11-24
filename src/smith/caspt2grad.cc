@@ -111,6 +111,7 @@ void CASPT2Grad::compute() {
       auto acoeff = coeff_->slice(nclosed, nclosed+nact);
       auto fock1mo = make_shared<Matrix>(acoeff % *fock1 * acoeff);
       shared_ptr<const Dvec> deriv = ref_->rdm1deriv(target_);
+      assert(deriv->ij() == nact*nact);
 
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
