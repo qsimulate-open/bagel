@@ -389,10 +389,10 @@ class Task6 : public Task<T> {  // associated with gamma
           const Index x4 = b(3);
           const Index x0 = b(4);
           const Index x5 = b(5);
-          // std::shared_ptr<Tensor<T> > Gamma46;
+          // std::shared_ptr<Tensor<T> > Gamma67;
           // std::shared_ptr<Tensor<T> > rdm3;
 
-          // tensor label: Gamma46
+          // tensor label: Gamma67
           std::unique_ptr<double[]> odata = out()->move_block(x5, x0, x4, x1, x3, x2);
           {
             std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x0, x4, x1, x3, x2);
@@ -427,6 +427,69 @@ class Task6 : public Task<T> {  // associated with gamma
 template <typename T>
 class Task7 : public Task<T> {  // associated with gamma
   protected:
+    class Task_local : public SubTask<3,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+          // std::shared_ptr<Tensor<T> > Gamma72;
+          // std::shared_ptr<Tensor<T> > rdm1I0;
+          // std::shared_ptr<Tensor<T> > f1;
+
+          // tensor label: Gamma72
+          std::unique_ptr<double[]> odata = out()->move_block(ci0);
+          // associated with merged
+          std::unique_ptr<double[]> fdata = in(1)->get_block(x1, x0);
+          {
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
+              for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
+                for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
+                  odata[ici0]
+                    += (1.0) * i0data[ici0+ci0.size()*(ix1+x1.size()*(ix0))] * fdata[ix1+x1.size()*(ix0)];
+                }
+              }
+            }
+          }
+          out()->put_block(odata, ci0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) i->compute();
+    }
+
+  public:
+    Task7(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,4> range) : Task<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock());
+          for (auto& ci0 : *range[3])
+            for (auto& x0 : *range[1])
+              for (auto& x1 : *range[1])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task7() {};
+};
+
+template <typename T>
+class Task8 : public Task<T> {  // associated with gamma
+  protected:
     class Task_local : public SubTask<3,1,T> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -445,10 +508,10 @@ class Task7 : public Task<T> {  // associated with gamma
           const Index ci0 = b(0);
           const Index x1 = b(1);
           const Index x0 = b(2);
-          // std::shared_ptr<Tensor<T> > Gamma51;
+          // std::shared_ptr<Tensor<T> > Gamma74;
           // std::shared_ptr<Tensor<T> > rdm1I0;
 
-          // tensor label: Gamma51
+          // tensor label: Gamma74
           std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
           {
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
@@ -465,7 +528,7 @@ class Task7 : public Task<T> {  // associated with gamma
     }
 
   public:
-    Task7(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,4> range) : Task<T>() {
+    Task8(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,4> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -474,11 +537,82 @@ class Task7 : public Task<T> {  // associated with gamma
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
     };
-    ~Task7() {};
+    ~Task8() {};
 };
 
 template <typename T>
-class Task8 : public Task<T> {  // associated with gamma
+class Task9 : public Task<T> {  // associated with gamma
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+          const Index x2 = b(3);
+          const Index x1 = b(4);
+          // std::shared_ptr<Tensor<T> > Gamma78;
+          // std::shared_ptr<Tensor<T> > rdm2I0;
+          // std::shared_ptr<Tensor<T> > f1;
+
+          // tensor label: Gamma78
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0);
+          // associated with merged
+          std::unique_ptr<double[]> fdata = in(1)->get_block(x2, x1);
+          {
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
+            for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
+              for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+                for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
+                  for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
+                    for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
+                      odata[ici0+ci0.size()*(ix3+x3.size()*(ix0))]
+                        += (1.0) * i0data[ici0+ci0.size()*(ix3+x3.size()*(ix0+x0.size()*(ix2+x2.size()*(ix1))))] * fdata[ix2+x2.size()*(ix1)];
+                    }
+                  }
+                }
+              }
+            }
+          }
+          out()->put_block(odata, ci0, x3, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) i->compute();
+    }
+
+  public:
+    Task9(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,4> range) : Task<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock()*range[1]->nblock()*range[1]->nblock());
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                for (auto& x1 : *range[1])
+                  for (auto& x2 : *range[1])
+                    subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
+    };
+    ~Task9() {};
+};
+
+template <typename T>
+class Task10 : public Task<T> {  // associated with gamma
   protected:
     class Task_local : public SubTask<5,1,T> {
       protected:
@@ -500,10 +634,10 @@ class Task8 : public Task<T> {  // associated with gamma
           const Index x0 = b(2);
           const Index x2 = b(3);
           const Index x1 = b(4);
-          // std::shared_ptr<Tensor<T> > Gamma53;
+          // std::shared_ptr<Tensor<T> > Gamma86;
           // std::shared_ptr<Tensor<T> > rdm2I0;
 
-          // tensor label: Gamma53
+          // tensor label: Gamma86
           std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
           {
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
@@ -520,7 +654,7 @@ class Task8 : public Task<T> {  // associated with gamma
     }
 
   public:
-    Task8(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,4> range) : Task<T>() {
+    Task10(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,4> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -531,11 +665,90 @@ class Task8 : public Task<T> {  // associated with gamma
                   for (auto& ci0 : *range[3])
                     subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task8() {};
+    ~Task10() {};
 };
 
 template <typename T>
-class Task9 : public Task<T> {
+class Task11 : public Task<T> {  // associated with gamma
+  protected:
+    class Task_local : public SubTask<7,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,7>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<7,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x5 = b(1);
+          const Index x0 = b(2);
+          const Index x4 = b(3);
+          const Index x1 = b(4);
+          const Index x3 = b(5);
+          const Index x2 = b(6);
+          // std::shared_ptr<Tensor<T> > Gamma88;
+          // std::shared_ptr<Tensor<T> > rdm3I0;
+          // std::shared_ptr<Tensor<T> > f1;
+
+          // tensor label: Gamma88
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x0, x4, x1);
+          // associated with merged
+          std::unique_ptr<double[]> fdata = in(1)->get_block(x3, x2);
+          {
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x5, x0, x4, x1, x3, x2);
+            for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+              for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
+                for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
+                  for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+                    for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
+                      for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
+                        for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
+                          odata[ici0+ci0.size()*(ix5+x5.size()*(ix0+x0.size()*(ix4+x4.size()*(ix1))))]
+                            += (1.0) * i0data[ici0+ci0.size()*(ix5+x5.size()*(ix0+x0.size()*(ix4+x4.size()*(ix1+x1.size()*(ix3+x3.size()*(ix2))))))] * fdata[ix3+x3.size()*(ix2)];
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          out()->put_block(odata, ci0, x5, x0, x4, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) i->compute();
+    }
+
+  public:
+    Task11(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,4> range) : Task<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock()*range[1]->nblock()*range[1]->nblock());
+          for (auto& x1 : *range[1])
+            for (auto& x4 : *range[1])
+              for (auto& x0 : *range[1])
+                for (auto& x5 : *range[1])
+                  for (auto& ci0 : *range[3])
+                    for (auto& x2 : *range[1])
+                      for (auto& x3 : *range[1])
+                        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,7>{{ci0, x5, x0, x4, x1, x3, x2}}, in, t[0], range)));
+    };
+    ~Task11() {};
+};
+
+template <typename T>
+class Task12 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -574,7 +787,7 @@ class Task9 : public Task<T> {
     }
 
   public:
-    Task9(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task12(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -584,11 +797,11 @@ class Task9 : public Task<T> {
             for (auto& c3 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c3, a4, c1, a2}}, in, t[0], range)));
     };
-    ~Task9() {};
+    ~Task12() {};
 };
 
 template <typename T>
-class Task10 : public Task<T> {
+class Task13 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -645,7 +858,7 @@ class Task10 : public Task<T> {
     }
 
   public:
-    Task10(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : Task<T>() {
+    Task13(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -655,11 +868,11 @@ class Task10 : public Task<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range, e)));
     };
-    ~Task10() {};
+    ~Task13() {};
 };
 
 template <typename T>
-class Task11 : public Task<T> {
+class Task14 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -711,7 +924,7 @@ class Task11 : public Task<T> {
     }
 
   public:
-    Task11(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task14(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -721,11 +934,11 @@ class Task11 : public Task<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range)));
     };
-    ~Task11() {};
+    ~Task14() {};
 };
 
 template <typename T>
-class Task12 : public Task<T> {
+class Task15 : public Task<T> {
   protected:
     class Task_local : public SubTask<1,1,T> {
       protected:
@@ -761,16 +974,16 @@ class Task12 : public Task<T> {
     }
 
   public:
-    Task12(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task15(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(in, t[0], range)));
     };
-    ~Task12() {};
+    ~Task15() {};
 };
 
 template <typename T>
-class Task13 : public Task<T> {
+class Task16 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -822,7 +1035,7 @@ class Task13 : public Task<T> {
     }
 
   public:
-    Task13(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task16(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -832,11 +1045,11 @@ class Task13 : public Task<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range)));
     };
-    ~Task13() {};
+    ~Task16() {};
 };
 
 template <typename T>
-class Task14 : public Task<T> {
+class Task17 : public Task<T> {
   protected:
     class Task_local : public SubTask<1,1,T> {
       protected:
@@ -872,16 +1085,16 @@ class Task14 : public Task<T> {
     }
 
   public:
-    Task14(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task17(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(in, t[0], range)));
     };
-    ~Task14() {};
+    ~Task17() {};
 };
 
 template <typename T>
-class Task15 : public Task<T> {
+class Task18 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -925,7 +1138,7 @@ class Task15 : public Task<T> {
     }
 
   public:
-    Task15(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task18(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -935,11 +1148,11 @@ class Task15 : public Task<T> {
             for (auto& c3 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c3, a4, c1, a2}}, in, t[0], range)));
     };
-    ~Task15() {};
+    ~Task18() {};
 };
 
 template <typename T>
-class Task16 : public Task<T> {
+class Task19 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -993,7 +1206,7 @@ class Task16 : public Task<T> {
     }
 
   public:
-    Task16(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task19(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[0]->nblock()*range[2]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -1003,11 +1216,11 @@ class Task16 : public Task<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, a2, c3}}, in, t[0], range)));
     };
-    ~Task16() {};
+    ~Task19() {};
 };
 
 template <typename T>
-class Task17 : public Task<T> {
+class Task20 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -1051,7 +1264,7 @@ class Task17 : public Task<T> {
     }
 
   public:
-    Task17(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task20(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -1061,11 +1274,11 @@ class Task17 : public Task<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c5, a2}}, in, t[0], range)));
     };
-    ~Task17() {};
+    ~Task20() {};
 };
 
 template <typename T>
-class Task18 : public Task<T> {
+class Task21 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -1119,7 +1332,7 @@ class Task18 : public Task<T> {
     }
 
   public:
-    Task18(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task21(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[0]->nblock()*range[2]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -1129,11 +1342,11 @@ class Task18 : public Task<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, a2, c3}}, in, t[0], range)));
     };
-    ~Task18() {};
+    ~Task21() {};
 };
 
 template <typename T>
-class Task19 : public Task<T> {
+class Task22 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -1177,7 +1390,7 @@ class Task19 : public Task<T> {
     }
 
   public:
-    Task19(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task22(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -1187,11 +1400,11 @@ class Task19 : public Task<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a5, c3, a2}}, in, t[0], range)));
     };
-    ~Task19() {};
+    ~Task22() {};
 };
 
 template <typename T>
-class Task20 : public Task<T> {
+class Task23 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -1245,7 +1458,7 @@ class Task20 : public Task<T> {
     }
 
   public:
-    Task20(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task23(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[0]->nblock()*range[2]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -1255,11 +1468,11 @@ class Task20 : public Task<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, a2, c3}}, in, t[0], range)));
     };
-    ~Task20() {};
+    ~Task23() {};
 };
 
 template <typename T>
-class Task21 : public Task<T> {
+class Task24 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -1313,7 +1526,7 @@ class Task21 : public Task<T> {
     }
 
   public:
-    Task21(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task24(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -1323,11 +1536,11 @@ class Task21 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c1, a2}}, in, t[0], range)));
     };
-    ~Task21() {};
+    ~Task24() {};
 };
 
 template <typename T>
-class Task22 : public Task<T> {
+class Task25 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -1364,7 +1577,7 @@ class Task22 : public Task<T> {
     }
 
   public:
-    Task22(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task25(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -1372,11 +1585,11 @@ class Task22 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task22() {};
+    ~Task25() {};
 };
 
 template <typename T>
-class Task23 : public Task<T> {
+class Task26 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -1430,7 +1643,7 @@ class Task23 : public Task<T> {
     }
 
   public:
-    Task23(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task26(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -1440,11 +1653,11 @@ class Task23 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c1, a2}}, in, t[0], range)));
     };
-    ~Task23() {};
+    ~Task26() {};
 };
 
 template <typename T>
-class Task24 : public Task<T> {
+class Task27 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -1481,7 +1694,7 @@ class Task24 : public Task<T> {
     }
 
   public:
-    Task24(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task27(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -1489,11 +1702,11 @@ class Task24 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task24() {};
+    ~Task27() {};
 };
 
 template <typename T>
-class Task25 : public Task<T> {
+class Task28 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -1532,7 +1745,7 @@ class Task25 : public Task<T> {
     }
 
   public:
-    Task25(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task28(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -1542,11 +1755,11 @@ class Task25 : public Task<T> {
             for (auto& c2 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c2, a3, x0, a1}}, in, t[0], range)));
     };
-    ~Task25() {};
+    ~Task28() {};
 };
 
 template <typename T>
-class Task26 : public Task<T> {
+class Task29 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -1602,7 +1815,7 @@ class Task26 : public Task<T> {
     }
 
   public:
-    Task26(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task29(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -1612,11 +1825,11 @@ class Task26 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task26() {};
+    ~Task29() {};
 };
 
 template <typename T>
-class Task27 : public Task<T> {
+class Task30 : public Task<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -1670,7 +1883,7 @@ class Task27 : public Task<T> {
     }
 
   public:
-    Task27(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task30(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -1682,11 +1895,11 @@ class Task27 : public Task<T> {
                 for (auto& x1 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x1, x0, c2, a3, c4, a1}}, in, t[0], range)));
     };
-    ~Task27() {};
+    ~Task30() {};
 };
 
 template <typename T>
-class Task28 : public Task<T> {
+class Task31 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -1723,7 +1936,7 @@ class Task28 : public Task<T> {
     }
 
   public:
-    Task28(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task31(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -1731,11 +1944,11 @@ class Task28 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task28() {};
+    ~Task31() {};
 };
 
 template <typename T>
-class Task29 : public Task<T> {
+class Task32 : public Task<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -1789,7 +2002,7 @@ class Task29 : public Task<T> {
     }
 
   public:
-    Task29(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task32(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -1801,11 +2014,11 @@ class Task29 : public Task<T> {
                 for (auto& x1 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x1, x0, c2, a3, c4, a1}}, in, t[0], range)));
     };
-    ~Task29() {};
+    ~Task32() {};
 };
 
 template <typename T>
-class Task30 : public Task<T> {
+class Task33 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -1842,7 +2055,7 @@ class Task30 : public Task<T> {
     }
 
   public:
-    Task30(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task33(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -1850,11 +2063,11 @@ class Task30 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task30() {};
+    ~Task33() {};
 };
 
 template <typename T>
-class Task31 : public Task<T> {
+class Task34 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -1908,7 +2121,7 @@ class Task31 : public Task<T> {
     }
 
   public:
-    Task31(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task34(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -1918,11 +2131,11 @@ class Task31 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task31() {};
+    ~Task34() {};
 };
 
 template <typename T>
-class Task32 : public Task<T> {
+class Task35 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -1959,7 +2172,7 @@ class Task32 : public Task<T> {
     }
 
   public:
-    Task32(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task35(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -1967,11 +2180,11 @@ class Task32 : public Task<T> {
         for (auto& x3 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x3, x0}}, in, t[0], range)));
     };
-    ~Task32() {};
+    ~Task35() {};
 };
 
 template <typename T>
-class Task33 : public Task<T> {
+class Task36 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -2025,7 +2238,7 @@ class Task33 : public Task<T> {
     }
 
   public:
-    Task33(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task36(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -2035,11 +2248,11 @@ class Task33 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task33() {};
+    ~Task36() {};
 };
 
 template <typename T>
-class Task34 : public Task<T> {
+class Task37 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -2076,7 +2289,7 @@ class Task34 : public Task<T> {
     }
 
   public:
-    Task34(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task37(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -2084,11 +2297,11 @@ class Task34 : public Task<T> {
         for (auto& x3 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x3, x0}}, in, t[0], range)));
     };
-    ~Task34() {};
+    ~Task37() {};
 };
 
 template <typename T>
-class Task35 : public Task<T> {
+class Task38 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -2142,7 +2355,7 @@ class Task35 : public Task<T> {
     }
 
   public:
-    Task35(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task38(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -2152,11 +2365,11 @@ class Task35 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task35() {};
+    ~Task38() {};
 };
 
 template <typename T>
-class Task36 : public Task<T> {
+class Task39 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -2210,7 +2423,7 @@ class Task36 : public Task<T> {
     }
 
   public:
-    Task36(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task39(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -2220,11 +2433,11 @@ class Task36 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c4, a1}}, in, t[0], range)));
     };
-    ~Task36() {};
+    ~Task39() {};
 };
 
 template <typename T>
-class Task37 : public Task<T> {
+class Task40 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -2261,7 +2474,7 @@ class Task37 : public Task<T> {
     }
 
   public:
-    Task37(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task40(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -2269,11 +2482,11 @@ class Task37 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task37() {};
+    ~Task40() {};
 };
 
 template <typename T>
-class Task38 : public Task<T> {
+class Task41 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -2327,7 +2540,7 @@ class Task38 : public Task<T> {
     }
 
   public:
-    Task38(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task41(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -2337,11 +2550,11 @@ class Task38 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c4, a1}}, in, t[0], range)));
     };
-    ~Task38() {};
+    ~Task41() {};
 };
 
 template <typename T>
-class Task39 : public Task<T> {
+class Task42 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -2378,7 +2591,7 @@ class Task39 : public Task<T> {
     }
 
   public:
-    Task39(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task42(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -2386,11 +2599,11 @@ class Task39 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task39() {};
+    ~Task42() {};
 };
 
 template <typename T>
-class Task40 : public Task<T> {
+class Task43 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -2444,7 +2657,7 @@ class Task40 : public Task<T> {
     }
 
   public:
-    Task40(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task43(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -2454,11 +2667,11 @@ class Task40 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task40() {};
+    ~Task43() {};
 };
 
 template <typename T>
-class Task41 : public Task<T> {
+class Task44 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -2512,7 +2725,7 @@ class Task41 : public Task<T> {
     }
 
   public:
-    Task41(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task44(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -2522,11 +2735,11 @@ class Task41 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a3}}, in, t[0], range)));
     };
-    ~Task41() {};
+    ~Task44() {};
 };
 
 template <typename T>
-class Task42 : public Task<T> {
+class Task45 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -2563,7 +2776,7 @@ class Task42 : public Task<T> {
     }
 
   public:
-    Task42(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task45(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -2571,11 +2784,11 @@ class Task42 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task42() {};
+    ~Task45() {};
 };
 
 template <typename T>
-class Task43 : public Task<T> {
+class Task46 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -2629,7 +2842,7 @@ class Task43 : public Task<T> {
     }
 
   public:
-    Task43(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task46(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -2639,11 +2852,11 @@ class Task43 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a3}}, in, t[0], range)));
     };
-    ~Task43() {};
+    ~Task46() {};
 };
 
 template <typename T>
-class Task44 : public Task<T> {
+class Task47 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -2680,7 +2893,7 @@ class Task44 : public Task<T> {
     }
 
   public:
-    Task44(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task47(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -2688,11 +2901,11 @@ class Task44 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task44() {};
+    ~Task47() {};
 };
 
 template <typename T>
-class Task45 : public Task<T> {
+class Task48 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -2746,7 +2959,7 @@ class Task45 : public Task<T> {
     }
 
   public:
-    Task45(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task48(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -2756,11 +2969,11 @@ class Task45 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task45() {};
+    ~Task48() {};
 };
 
 template <typename T>
-class Task46 : public Task<T> {
+class Task49 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -2814,7 +3027,7 @@ class Task46 : public Task<T> {
     }
 
   public:
-    Task46(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task49(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -2824,11 +3037,11 @@ class Task46 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a1}}, in, t[0], range)));
     };
-    ~Task46() {};
+    ~Task49() {};
 };
 
 template <typename T>
-class Task47 : public Task<T> {
+class Task50 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -2865,7 +3078,7 @@ class Task47 : public Task<T> {
     }
 
   public:
-    Task47(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task50(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -2873,11 +3086,11 @@ class Task47 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task47() {};
+    ~Task50() {};
 };
 
 template <typename T>
-class Task48 : public Task<T> {
+class Task51 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -2931,7 +3144,7 @@ class Task48 : public Task<T> {
     }
 
   public:
-    Task48(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task51(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -2941,11 +3154,11 @@ class Task48 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a1}}, in, t[0], range)));
     };
-    ~Task48() {};
+    ~Task51() {};
 };
 
 template <typename T>
-class Task49 : public Task<T> {
+class Task52 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -2982,7 +3195,7 @@ class Task49 : public Task<T> {
     }
 
   public:
-    Task49(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task52(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -2990,11 +3203,11 @@ class Task49 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task49() {};
+    ~Task52() {};
 };
 
 template <typename T>
-class Task50 : public Task<T> {
+class Task53 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -3048,7 +3261,7 @@ class Task50 : public Task<T> {
     }
 
   public:
-    Task50(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task53(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -3058,11 +3271,11 @@ class Task50 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task50() {};
+    ~Task53() {};
 };
 
 template <typename T>
-class Task51 : public Task<T> {
+class Task54 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -3118,7 +3331,7 @@ class Task51 : public Task<T> {
     }
 
   public:
-    Task51(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task54(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -3128,11 +3341,11 @@ class Task51 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a3}}, in, t[0], range)));
     };
-    ~Task51() {};
+    ~Task54() {};
 };
 
 template <typename T>
-class Task52 : public Task<T> {
+class Task55 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -3171,7 +3384,7 @@ class Task52 : public Task<T> {
     }
 
   public:
-    Task52(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task55(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -3181,11 +3394,11 @@ class Task52 : public Task<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task52() {};
+    ~Task55() {};
 };
 
 template <typename T>
-class Task53 : public Task<T> {
+class Task56 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -3239,7 +3452,7 @@ class Task53 : public Task<T> {
     }
 
   public:
-    Task53(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task56(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -3249,11 +3462,11 @@ class Task53 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task53() {};
+    ~Task56() {};
 };
 
 template <typename T>
-class Task54 : public Task<T> {
+class Task57 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -3292,7 +3505,7 @@ class Task54 : public Task<T> {
     }
 
   public:
-    Task54(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : Task<T>() {
+    Task57(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -3300,11 +3513,11 @@ class Task54 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range, e)));
     };
-    ~Task54() {};
+    ~Task57() {};
 };
 
 template <typename T>
-class Task55 : public Task<T> {
+class Task58 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -3358,7 +3571,7 @@ class Task55 : public Task<T> {
     }
 
   public:
-    Task55(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task58(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -3368,11 +3581,11 @@ class Task55 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task55() {};
+    ~Task58() {};
 };
 
 template <typename T>
-class Task56 : public Task<T> {
+class Task59 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -3411,7 +3624,7 @@ class Task56 : public Task<T> {
     }
 
   public:
-    Task56(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : Task<T>() {
+    Task59(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -3419,11 +3632,11 @@ class Task56 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range, e)));
     };
-    ~Task56() {};
+    ~Task59() {};
 };
 
 template <typename T>
-class Task57 : public Task<T> {
+class Task60 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -3477,7 +3690,7 @@ class Task57 : public Task<T> {
     }
 
   public:
-    Task57(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task60(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -3487,11 +3700,11 @@ class Task57 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task57() {};
+    ~Task60() {};
 };
 
 template <typename T>
-class Task58 : public Task<T> {
+class Task61 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -3528,7 +3741,7 @@ class Task58 : public Task<T> {
     }
 
   public:
-    Task58(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task61(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -3536,11 +3749,11 @@ class Task58 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task58() {};
+    ~Task61() {};
 };
 
 template <typename T>
-class Task59 : public Task<T> {
+class Task62 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -3594,7 +3807,7 @@ class Task59 : public Task<T> {
     }
 
   public:
-    Task59(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task62(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
@@ -3604,11 +3817,11 @@ class Task59 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task59() {};
+    ~Task62() {};
 };
 
 template <typename T>
-class Task60 : public Task<T> {
+class Task63 : public Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -3645,7 +3858,7 @@ class Task60 : public Task<T> {
     }
 
   public:
-    Task60(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task63(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -3653,11 +3866,11 @@ class Task60 : public Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task60() {};
+    ~Task63() {};
 };
 
 template <typename T>
-class Task61 : public Task<T> {
+class Task64 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -3701,7 +3914,7 @@ class Task61 : public Task<T> {
     }
 
   public:
-    Task61(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task64(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -3711,11 +3924,11 @@ class Task61 : public Task<T> {
             for (auto& x1 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x1, a2, x0, a1}}, in, t[0], range)));
     };
-    ~Task61() {};
+    ~Task64() {};
 };
 
 template <typename T>
-class Task62 : public Task<T> {
+class Task65 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -3771,7 +3984,7 @@ class Task62 : public Task<T> {
     }
 
   public:
-    Task62(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task65(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -3781,11 +3994,11 @@ class Task62 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task62() {};
+    ~Task65() {};
 };
 
 template <typename T>
-class Task63 : public Task<T> {
+class Task66 : public Task<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -3841,7 +4054,7 @@ class Task63 : public Task<T> {
     }
 
   public:
-    Task63(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task66(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -3853,11 +4066,11 @@ class Task63 : public Task<T> {
                 for (auto& x0 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x0, x2, x1, a1, c3, a2}}, in, t[0], range)));
     };
-    ~Task63() {};
+    ~Task66() {};
 };
 
 template <typename T>
-class Task64 : public Task<T> {
+class Task67 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -3896,7 +4109,7 @@ class Task64 : public Task<T> {
     }
 
   public:
-    Task64(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task67(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -3906,11 +4119,11 @@ class Task64 : public Task<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task64() {};
+    ~Task67() {};
 };
 
 template <typename T>
-class Task65 : public Task<T> {
+class Task68 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -3964,7 +4177,7 @@ class Task65 : public Task<T> {
     }
 
   public:
-    Task65(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task68(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -3974,11 +4187,11 @@ class Task65 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task65() {};
+    ~Task68() {};
 };
 
 template <typename T>
-class Task66 : public Task<T> {
+class Task69 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -4034,7 +4247,7 @@ class Task66 : public Task<T> {
     }
 
   public:
-    Task66(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task69(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -4044,11 +4257,11 @@ class Task66 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a3}}, in, t[0], range)));
     };
-    ~Task66() {};
+    ~Task69() {};
 };
 
 template <typename T>
-class Task67 : public Task<T> {
+class Task70 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -4087,7 +4300,7 @@ class Task67 : public Task<T> {
     }
 
   public:
-    Task67(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task70(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -4097,11 +4310,11 @@ class Task67 : public Task<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task67() {};
+    ~Task70() {};
 };
 
 template <typename T>
-class Task68 : public Task<T> {
+class Task71 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -4140,7 +4353,7 @@ class Task68 : public Task<T> {
     }
 
   public:
-    Task68(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task71(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -4150,11 +4363,11 @@ class Task68 : public Task<T> {
             for (auto& x1 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x1, a2, x0, a1}}, in, t[0], range)));
     };
-    ~Task68() {};
+    ~Task71() {};
 };
 
 template <typename T>
-class Task69 : public Task<T> {
+class Task72 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -4210,7 +4423,7 @@ class Task69 : public Task<T> {
     }
 
   public:
-    Task69(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task72(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -4220,11 +4433,11 @@ class Task69 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task69() {};
+    ~Task72() {};
 };
 
 template <typename T>
-class Task70 : public Task<T> {
+class Task73 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -4263,7 +4476,7 @@ class Task70 : public Task<T> {
     }
 
   public:
-    Task70(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task73(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -4273,11 +4486,11 @@ class Task70 : public Task<T> {
             for (auto& x5 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x5, x0, x4, x1}}, in, t[0], range)));
     };
-    ~Task70() {};
+    ~Task73() {};
 };
 
 template <typename T>
-class Task71 : public Task<T> {
+class Task74 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -4333,7 +4546,7 @@ class Task71 : public Task<T> {
     }
 
   public:
-    Task71(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task74(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -4343,11 +4556,11 @@ class Task71 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task71() {};
+    ~Task74() {};
 };
 
 template <typename T>
-class Task72 : public Task<T> {
+class Task75 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -4388,7 +4601,7 @@ class Task72 : public Task<T> {
     }
 
   public:
-    Task72(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : Task<T>() {
+    Task75(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -4398,11 +4611,11 @@ class Task72 : public Task<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range, e)));
     };
-    ~Task72() {};
+    ~Task75() {};
 };
 
 template <typename T>
-class Task73 : public Task<T> {
+class Task76 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -4458,7 +4671,7 @@ class Task73 : public Task<T> {
     }
 
   public:
-    Task73(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task76(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -4468,11 +4681,11 @@ class Task73 : public Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task73() {};
+    ~Task76() {};
 };
 
 template <typename T>
-class Task74 : public Task<T> {
+class Task77 : public Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -4511,7 +4724,7 @@ class Task74 : public Task<T> {
     }
 
   public:
-    Task74(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
+    Task77(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -4521,11 +4734,11 @@ class Task74 : public Task<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task74() {};
+    ~Task77() {};
 };
 
 template <typename T>
-class Task75 : public EnergyTask<T> {
+class Task78 : public EnergyTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -4575,7 +4788,7 @@ class Task75 : public EnergyTask<T> {
     }
 
   public:
-    Task75(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+    Task78(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -4585,11 +4798,420 @@ class Task75 : public EnergyTask<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a2, c3, a4}}, in, t[0], range)));
     };
-    ~Task75() {};
+    ~Task78() {};
 };
 
 template <typename T>
-class Task76 : public EnergyTask<T> {
+class Task79 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+        double e0_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran, const double e)
+          : SubTask<4,2,T>(block, in, out), range_(ran), e0_(e) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index c1 = b(0);
+          const Index a4 = b(1);
+          const Index c3 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I74
+          std::unique_ptr<double[]> odata = out()->move_block(c1, a4, c3, a2);
+          {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a4, c3, a2);
+            dscal_(c1.size()*a4.size()*c3.size()*a2.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,2,3,1,1,1,1>(i0data, odata, c1.size(), a4.size(), c3.size(), a2.size());
+          }
+          {
+            // tensor label: t2
+            std::unique_ptr<double[]> i1data = in(0)->get_block(c1, a2, c3, a4);
+            dscal_(c1.size()*a2.size()*c3.size()*a4.size(), e0_, i1data.get(), 1);
+            sort_indices<0,3,2,1,1,1,-2,1>(i1data, odata, c1.size(), a2.size(), c3.size(), a4.size());
+          }
+          {
+            // tensor label: v2
+            std::unique_ptr<double[]> i2data = in(1)->get_block(c1, a4, c3, a2);
+            sort_indices<0,1,2,3,1,1,-2,1>(i2data, odata, c1.size(), a4.size(), c3.size(), a2.size());
+          }
+          {
+            // tensor label: v2
+            std::unique_ptr<double[]> i3data = in(1)->get_block(c1, a2, c3, a4);
+            sort_indices<0,3,2,1,1,1,4,1>(i3data, odata, c1.size(), a2.size(), c3.size(), a4.size());
+          }
+          out()->put_block(odata, c1, a4, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task79(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& c1 : *range[0])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range, e)));
+    };
+    ~Task79() {};
+};
+
+template <typename T>
+class Task80 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index c1 = b(0);
+          const Index a4 = b(1);
+          const Index c3 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I74
+          std::unique_ptr<double[]> odata = out()->move_block(c1, a4, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, a4, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(c1, a4, c3, a2), 0.0);
+
+          // tensor label: t2
+          std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a4, c3, a2);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a4, c3, a2)]);
+          sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1.size(), a4.size(), c3.size(), a2.size());
+
+          // tensor label: I75
+          std::unique_ptr<double[]> i1data = in(1)->get_block();
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size()]);
+          sort_indices<0,1,1,1>(i1data, i1data_sorted);
+
+          dgemm_("T", "N", c1.size()*a4.size()*c3.size()*a2.size(), 1, 1,
+                 1.0, i0data_sorted, 1, i1data_sorted, 1,
+                 1.0, odata_sorted, c1.size()*a4.size()*c3.size()*a2.size());
+
+          sort_indices<0,1,2,3,1,1,1,1>(odata_sorted, odata, c1.size(), a4.size(), c3.size(), a2.size());
+          out()->put_block(odata, c1, a4, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task80(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& c1 : *range[0])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range)));
+    };
+    ~Task80() {};
+};
+
+template <typename T>
+class Task81 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<1,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<1,1,T>(std::array<const Index, 1>(), in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+
+          // tensor label: I75
+          std::unique_ptr<double[]> odata = out()->move_block();
+          {
+            // scalar
+            // tensor label: Gamma0
+            std::unique_ptr<double[]> i0data = in(0)->get_block();
+            sort_indices<1,1,-1,1>(i0data, odata);
+          }
+          out()->put_block(odata);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task81(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(in, t[0], range)));
+    };
+    ~Task81() {};
+};
+
+template <typename T>
+class Task82 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index c1 = b(0);
+          const Index a4 = b(1);
+          const Index c3 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I74
+          std::unique_ptr<double[]> odata = out()->move_block(c1, a4, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, a4, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(c1, a4, c3, a2), 0.0);
+
+          // tensor label: t2
+          std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a2, c3, a4);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a2, c3, a4)]);
+          sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1.size(), a2.size(), c3.size(), a4.size());
+
+          // tensor label: I78
+          std::unique_ptr<double[]> i1data = in(1)->get_block();
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size()]);
+          sort_indices<0,1,1,1>(i1data, i1data_sorted);
+
+          dgemm_("T", "N", c1.size()*a2.size()*c3.size()*a4.size(), 1, 1,
+                 1.0, i0data_sorted, 1, i1data_sorted, 1,
+                 1.0, odata_sorted, c1.size()*a2.size()*c3.size()*a4.size());
+
+          sort_indices<0,3,2,1,1,1,1,1>(odata_sorted, odata, c1.size(), a2.size(), c3.size(), a4.size());
+          out()->put_block(odata, c1, a4, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task82(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& c1 : *range[0])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range)));
+    };
+    ~Task82() {};
+};
+
+template <typename T>
+class Task83 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<1,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<1,1,T>(std::array<const Index, 1>(), in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+
+          // tensor label: I78
+          std::unique_ptr<double[]> odata = out()->move_block();
+          {
+            // scalar
+            // tensor label: Gamma0
+            std::unique_ptr<double[]> i0data = in(0)->get_block();
+            sort_indices<1,1,2,1>(i0data, odata);
+          }
+          out()->put_block(odata);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task83(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(in, t[0], range)));
+    };
+    ~Task83() {};
+};
+
+template <typename T>
+class Task84 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index c1 = b(0);
+          const Index a4 = b(1);
+          const Index c3 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I74
+          std::unique_ptr<double[]> odata = out()->move_block(c1, a4, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, a4, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(c1, a4, c3, a2), 0.0);
+
+          for (auto& c5 : *range_[0]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c3, c5);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c3, c5)]);
+            sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c3.size(), c5.size());
+
+            // tensor label: I81
+            std::unique_ptr<double[]> i1data = in(1)->get_block(c1, a4, c5, a2);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(c1, a4, c5, a2)]);
+            sort_indices<2,0,1,3,0,1,1,1>(i1data, i1data_sorted, c1.size(), a4.size(), c5.size(), a2.size());
+
+            dgemm_("T", "N", c3.size(), c1.size()*a4.size()*a2.size(), c5.size(),
+                   1.0, i0data_sorted, c5.size(), i1data_sorted, c5.size(),
+                   1.0, odata_sorted, c3.size());
+          }
+
+          sort_indices<1,2,0,3,1,1,1,1>(odata_sorted, odata, c3.size(), c1.size(), a4.size(), a2.size());
+          out()->put_block(odata, c1, a4, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task84(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& c1 : *range[0])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range)));
+    };
+    ~Task84() {};
+};
+
+template <typename T>
+class Task85 : public EnergyTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -4611,21 +5233,97 @@ class Task76 : public EnergyTask<T> {
           energy_ = 0.0;
           const Index c1 = b(0);
           const Index a4 = b(1);
+          const Index c5 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I81
+          std::unique_ptr<double[]> odata = out()->move_block(c1, a4, c5, a2);
+          {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a4, c5, a2);
+            sort_indices<0,1,2,3,1,1,2,1>(i0data, odata, c1.size(), a4.size(), c5.size(), a2.size());
+          }
+          {
+            // tensor label: t2
+            std::unique_ptr<double[]> i1data = in(0)->get_block(c1, a2, c5, a4);
+            sort_indices<0,3,2,1,1,1,-4,1>(i1data, odata, c1.size(), a2.size(), c5.size(), a4.size());
+          }
+          out()->put_block(odata, c1, a4, c5, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task85(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c5 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& c1 : *range[0])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c5, a2}}, in, t[0], range)));
+    };
+    ~Task85() {};
+};
+
+template <typename T>
+class Task86 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index c1 = b(0);
+          const Index a4 = b(1);
           const Index c3 = b(2);
           const Index a2 = b(3);
 
           // tensor label: I74
           std::unique_ptr<double[]> odata = out()->move_block(c1, a4, c3, a2);
-          {
-            // tensor label: v2
-            std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a4, c3, a2);
-            sort_indices<0,1,2,3,1,1,-1,1>(i0data, odata, c1.size(), a4.size(), c3.size(), a2.size());
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, a4, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(c1, a4, c3, a2), 0.0);
+
+          for (auto& a5 : *range_[2]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(a5, a4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(a5, a4)]);
+            sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a5.size(), a4.size());
+
+            // tensor label: I87
+            std::unique_ptr<double[]> i1data = in(1)->get_block(c1, a5, c3, a2);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(c1, a5, c3, a2)]);
+            sort_indices<1,0,2,3,0,1,1,1>(i1data, i1data_sorted, c1.size(), a5.size(), c3.size(), a2.size());
+
+            dgemm_("T", "N", a4.size(), c1.size()*c3.size()*a2.size(), a5.size(),
+                   1.0, i0data_sorted, a5.size(), i1data_sorted, a5.size(),
+                   1.0, odata_sorted, a4.size());
           }
-          {
-            // tensor label: v2
-            std::unique_ptr<double[]> i1data = in(0)->get_block(c1, a2, c3, a4);
-            sort_indices<0,3,2,1,1,1,2,1>(i1data, odata, c1.size(), a2.size(), c3.size(), a4.size());
-          }
+
+          sort_indices<1,0,2,3,1,1,1,1>(odata_sorted, odata, a4.size(), c1.size(), c3.size(), a2.size());
           out()->put_block(odata, c1, a4, c3, a2);
         }
     };
@@ -4641,8 +5339,8 @@ class Task76 : public EnergyTask<T> {
     }
 
   public:
-    Task76(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
-      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+    Task86(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
       for (auto& a2 : *range[2])
@@ -4651,11 +5349,419 @@ class Task76 : public EnergyTask<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range)));
     };
-    ~Task76() {};
+    ~Task86() {};
 };
 
 template <typename T>
-class Task77 : public EnergyTask<T> {
+class Task87 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index c1 = b(0);
+          const Index a5 = b(1);
+          const Index c3 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I87
+          std::unique_ptr<double[]> odata = out()->move_block(c1, a5, c3, a2);
+          {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a5, c3, a2);
+            sort_indices<0,1,2,3,1,1,-2,1>(i0data, odata, c1.size(), a5.size(), c3.size(), a2.size());
+          }
+          {
+            // tensor label: t2
+            std::unique_ptr<double[]> i1data = in(0)->get_block(c1, a2, c3, a5);
+            sort_indices<0,3,2,1,1,1,4,1>(i1data, odata, c1.size(), a2.size(), c3.size(), a5.size());
+          }
+          out()->put_block(odata, c1, a5, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task87(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a5 : *range[2])
+            for (auto& c1 : *range[0])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a5, c3, a2}}, in, t[0], range)));
+    };
+    ~Task87() {};
+};
+
+template <typename T>
+class Task88 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index c1 = b(0);
+          const Index a4 = b(1);
+          const Index c3 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I74
+          std::unique_ptr<double[]> odata = out()->move_block(c1, a4, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, a4, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(c1, a4, c3, a2), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c3, x0);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c3, x0)]);
+            sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c3.size(), x0.size());
+
+            // tensor label: I93
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x0, a4, c1, a2);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, a4, c1, a2)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i1data, i1data_sorted, x0.size(), a4.size(), c1.size(), a2.size());
+
+            dgemm_("T", "N", c3.size(), a4.size()*c1.size()*a2.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, c3.size());
+          }
+
+          sort_indices<2,1,0,3,1,1,1,1>(odata_sorted, odata, c3.size(), a4.size(), c1.size(), a2.size());
+          out()->put_block(odata, c1, a4, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task88(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& c1 : *range[0])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range)));
+    };
+    ~Task88() {};
+};
+
+template <typename T>
+class Task89 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index a4 = b(1);
+          const Index c1 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I93
+          std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c1, a2), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a4, c1, a2);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a4, c1, a2)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a4.size(), c1.size(), a2.size());
+
+            // tensor label: I94
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a4.size()*c1.size()*a2.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a4.size()*c1.size()*a2.size());
+          }
+
+          sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, a4.size(), c1.size(), a2.size(), x0.size());
+          out()->put_block(odata, x0, a4, c1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task89(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c1 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c1, a2}}, in, t[0], range)));
+    };
+    ~Task89() {};
+};
+
+template <typename T>
+class Task90 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I94
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            sort_indices<0,1,1,1,-1,1>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task90(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
+    };
+    ~Task90() {};
+};
+
+template <typename T>
+class Task91 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index a4 = b(1);
+          const Index c1 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I93
+          std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c1, a2), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a2, c1, a4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a2, c1, a4)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a2.size(), c1.size(), a4.size());
+
+            // tensor label: I98
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a2.size()*c1.size()*a4.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a2.size()*c1.size()*a4.size());
+          }
+
+          sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, a2.size(), c1.size(), a4.size(), x0.size());
+          out()->put_block(odata, x0, a4, c1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task91(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c1 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c1, a2}}, in, t[0], range)));
+    };
+    ~Task91() {};
+};
+
+template <typename T>
+class Task92 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I98
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            sort_indices<0,1,1,1,1,2>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task92(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
+    };
+    ~Task92() {};
+};
+
+template <typename T>
+class Task93 : public EnergyTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -4685,12 +5791,12 @@ class Task77 : public EnergyTask<T> {
           std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
           sort_indices<3,2,1,0,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
 
-          // tensor label: I78
-          std::unique_ptr<double[]> i1data = in(1)->get_block(x0, a3, c2, a1);
-          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, a3, c2, a1)]);
-          sort_indices<1,2,3,0,0,1,1,1>(i1data, i1data_sorted, x0.size(), a3.size(), c2.size(), a1.size());
+          // tensor label: I100
+          std::unique_ptr<double[]> i1data = in(1)->get_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, c2, a3, a1)]);
+          sort_indices<2,1,3,0,0,1,1,1>(i1data, i1data_sorted, x0.size(), c2.size(), a3.size(), a1.size());
 
-          energy_ += ddot_(x0.size()*a3.size()*c2.size()*a1.size(), i0data_sorted, 1, i1data_sorted, 1);
+          energy_ += ddot_(x0.size()*c2.size()*a3.size()*a1.size(), i0data_sorted, 1, i1data_sorted, 1);
         }
     };
 
@@ -4705,7 +5811,7 @@ class Task77 : public EnergyTask<T> {
     }
 
   public:
-    Task77(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+    Task93(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -4715,11 +5821,11 @@ class Task77 : public EnergyTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a1, c2, a3}}, in, t[0], range)));
     };
-    ~Task77() {};
+    ~Task93() {};
 };
 
 template <typename T>
-class Task78 : public EnergyTask<T> {
+class Task94 : public EnergyTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -4740,33 +5846,35 @@ class Task78 : public EnergyTask<T> {
         void compute() override {
           energy_ = 0.0;
           const Index x0 = b(0);
-          const Index a3 = b(1);
-          const Index c2 = b(2);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
           const Index a1 = b(3);
 
-          // tensor label: I78
-          std::unique_ptr<double[]> odata = out()->move_block(x0, a3, c2, a1);
-          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a3, c2, a1)]);
-          std::fill_n(odata_sorted.get(), out()->get_size(x0, a3, c2, a1), 0.0);
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
 
           for (auto& x1 : *range_[1]) {
-            // tensor label: v2
-            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a3, c2, a1);
-            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a1)]);
-            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a1.size());
+            for (auto& c4 : *range_[0]) {
+              // tensor label: f1
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x1, c4);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, c4)]);
+              sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, x1.size(), c4.size());
 
-            // tensor label: I79
-            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
-            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
-            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+              // tensor label: I101
+              std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0, c2, a3, c4, a1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0, c2, a3, c4, a1)]);
+              sort_indices<0,4,1,2,3,5,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size(), c2.size(), a3.size(), c4.size(), a1.size());
 
-            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), x0.size(), x1.size(),
-                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
-                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+              dgemm_("T", "N", 1, x0.size()*c2.size()*a3.size()*a1.size(), x1.size()*c4.size(),
+                     1.0, i0data_sorted, x1.size()*c4.size(), i1data_sorted, x1.size()*c4.size(),
+                     1.0, odata_sorted, 1);
+            }
           }
 
-          sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), x0.size());
-          out()->put_block(odata, x0, a3, c2, a1);
+          sort_indices<0,1,2,3,1,1,1,1>(odata_sorted, odata, x0.size(), c2.size(), a3.size(), a1.size());
+          out()->put_block(odata, x0, c2, a3, a1);
         }
     };
 
@@ -4781,21 +5889,99 @@ class Task78 : public EnergyTask<T> {
     }
 
   public:
-    Task78(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+    Task94(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
-      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
       for (auto& a1 : *range[2])
-        for (auto& c2 : *range[0])
-          for (auto& a3 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
             for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c2, a1}}, in, t[0], range)));
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task78() {};
+    ~Task94() {};
 };
 
 template <typename T>
-class Task79 : public EnergyTask<T> {
+class Task95 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<6,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,6>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<6,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index c4 = b(4);
+          const Index a1 = b(5);
+
+          // tensor label: I101
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0, c2, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x1, x0, c2, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x1, x0, c2, a3, c4, a1), 0.0);
+
+          // tensor label: t2
+          std::unique_ptr<double[]> i0data = in(0)->get_block(c2, a3, c4, a1);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, a3, c4, a1)]);
+          sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c2.size(), a3.size(), c4.size(), a1.size());
+
+          // tensor label: I102
+          std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+          sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+          dgemm_("T", "N", c2.size()*a3.size()*c4.size()*a1.size(), x1.size()*x0.size(), 1,
+                 1.0, i0data_sorted, 1, i1data_sorted, 1,
+                 1.0, odata_sorted, c2.size()*a3.size()*c4.size()*a1.size());
+
+          sort_indices<4,5,0,1,2,3,1,1,1,1>(odata_sorted, odata, c2.size(), a3.size(), c4.size(), a1.size(), x1.size(), x0.size());
+          out()->put_block(odata, x1, x0, c2, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task95(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& c2 : *range[0])
+              for (auto& x0 : *range[1])
+                for (auto& x1 : *range[1])
+                  subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x1, x0, c2, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task95() {};
+};
+
+template <typename T>
+class Task96 : public EnergyTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -4818,7 +6004,750 @@ class Task79 : public EnergyTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I79
+          // tensor label: I102
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            sort_indices<0,1,1,1,-1,1>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task96(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
+    };
+    ~Task96() {};
+};
+
+template <typename T>
+class Task97 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<6,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,6>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<6,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index c4 = b(4);
+          const Index a1 = b(5);
+
+          // tensor label: I101
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0, c2, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x1, x0, c2, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x1, x0, c2, a3, c4, a1), 0.0);
+
+          // tensor label: t2
+          std::unique_ptr<double[]> i0data = in(0)->get_block(c2, a1, c4, a3);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, a1, c4, a3)]);
+          sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c2.size(), a1.size(), c4.size(), a3.size());
+
+          // tensor label: I106
+          std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+          sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+          dgemm_("T", "N", c2.size()*a1.size()*c4.size()*a3.size(), x1.size()*x0.size(), 1,
+                 1.0, i0data_sorted, 1, i1data_sorted, 1,
+                 1.0, odata_sorted, c2.size()*a1.size()*c4.size()*a3.size());
+
+          sort_indices<4,5,0,3,2,1,1,1,1,1>(odata_sorted, odata, c2.size(), a1.size(), c4.size(), a3.size(), x1.size(), x0.size());
+          out()->put_block(odata, x1, x0, c2, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task97(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& c2 : *range[0])
+              for (auto& x0 : *range[1])
+                for (auto& x1 : *range[1])
+                  subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x1, x0, c2, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task97() {};
+};
+
+template <typename T>
+class Task98 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I106
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            sort_indices<0,1,1,1,1,2>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task98(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
+    };
+    ~Task98() {};
+};
+
+template <typename T>
+class Task99 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
+
+          for (auto& x3 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a3, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a3, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a3.size(), c2.size(), a1.size());
+
+            // tensor label: I109
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), x0.size(), x3.size(),
+                   1.0, i0data_sorted, x3.size(), i1data_sorted, x3.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,1,0,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), x0.size());
+          out()->put_block(odata, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task99(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task99() {};
+};
+
+template <typename T>
+class Task100 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x3 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I109
+          std::unique_ptr<double[]> odata = out()->move_block(x3, x0);
+          {
+            // tensor label: Gamma6
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0);
+            sort_indices<0,1,1,1,-1,4>(i0data, odata, x3.size(), x0.size());
+          }
+          out()->put_block(odata, x3, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task100(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x3 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x3, x0}}, in, t[0], range)));
+    };
+    ~Task100() {};
+};
+
+template <typename T>
+class Task101 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
+
+          for (auto& x3 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), c2.size(), a3.size());
+
+            // tensor label: I112
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), x0.size(), x3.size(),
+                   1.0, i0data_sorted, x3.size(), i1data_sorted, x3.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,1,2,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), x0.size());
+          out()->put_block(odata, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task101(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task101() {};
+};
+
+template <typename T>
+class Task102 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x3 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I112
+          std::unique_ptr<double[]> odata = out()->move_block(x3, x0);
+          {
+            // tensor label: Gamma6
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0);
+            sort_indices<0,1,1,1,1,2>(i0data, odata, x3.size(), x0.size());
+          }
+          out()->put_block(odata, x3, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task102(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x3 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x3, x0}}, in, t[0], range)));
+    };
+    ~Task102() {};
+};
+
+template <typename T>
+class Task103 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
+
+          for (auto& c4 : *range_[0]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c2, c4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, c4)]);
+            sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c2.size(), c4.size());
+
+            // tensor label: I115
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x0, a3, c4, a1);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, a3, c4, a1)]);
+            sort_indices<2,0,1,3,0,1,1,1>(i1data, i1data_sorted, x0.size(), a3.size(), c4.size(), a1.size());
+
+            dgemm_("T", "N", c2.size(), x0.size()*a3.size()*a1.size(), c4.size(),
+                   1.0, i0data_sorted, c4.size(), i1data_sorted, c4.size(),
+                   1.0, odata_sorted, c2.size());
+          }
+
+          sort_indices<1,0,2,3,1,1,1,1>(odata_sorted, odata, c2.size(), x0.size(), a3.size(), a1.size());
+          out()->put_block(odata, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task103(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task103() {};
+};
+
+template <typename T>
+class Task104 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index a3 = b(1);
+          const Index c4 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I115
+          std::unique_ptr<double[]> odata = out()->move_block(x0, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, a3, c4, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a3, c4, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c4, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c4.size(), a1.size());
+
+            // tensor label: I116
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c4.size()*a1.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a3.size()*c4.size()*a1.size());
+          }
+
+          sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, a3.size(), c4.size(), a1.size(), x0.size());
+          out()->put_block(odata, x0, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task104(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task104() {};
+};
+
+template <typename T>
+class Task105 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I116
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            sort_indices<0,1,1,1,1,4>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task105(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
+    };
+    ~Task105() {};
+};
+
+template <typename T>
+class Task106 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index a3 = b(1);
+          const Index c4 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I115
+          std::unique_ptr<double[]> odata = out()->move_block(x0, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, a3, c4, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a1, c4, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c4, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c4.size(), a3.size());
+
+            // tensor label: I120
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c4.size()*a3.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a1.size()*c4.size()*a3.size());
+          }
+
+          sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c4.size(), a3.size(), x0.size());
+          out()->put_block(odata, x0, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task106(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task106() {};
+};
+
+template <typename T>
+class Task107 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I120
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -4840,7 +6769,7 @@ class Task79 : public EnergyTask<T> {
     }
 
   public:
-    Task79(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+    Task107(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -4848,11 +6777,11 @@ class Task79 : public EnergyTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task79() {};
+    ~Task107() {};
 };
 
 template <typename T>
-class Task80 : public EnergyTask<T> {
+class Task108 : public EnergyTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -4873,33 +6802,33 @@ class Task80 : public EnergyTask<T> {
         void compute() override {
           energy_ = 0.0;
           const Index x0 = b(0);
-          const Index a3 = b(1);
-          const Index c2 = b(2);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
           const Index a1 = b(3);
 
-          // tensor label: I78
-          std::unique_ptr<double[]> odata = out()->move_block(x0, a3, c2, a1);
-          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a3, c2, a1)]);
-          std::fill_n(odata_sorted.get(), out()->get_size(x0, a3, c2, a1), 0.0);
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
 
-          for (auto& x1 : *range_[1]) {
-            // tensor label: v2
-            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a1, c2, a3);
-            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a3)]);
-            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a3.size());
+          for (auto& a4 : *range_[2]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(a4, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(a4, a1)]);
+            sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a4.size(), a1.size());
 
-            // tensor label: I82
-            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
-            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
-            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+            // tensor label: I123
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x0, a4, c2, a3);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, a4, c2, a3)]);
+            sort_indices<1,0,2,3,0,1,1,1>(i1data, i1data_sorted, x0.size(), a4.size(), c2.size(), a3.size());
 
-            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), x0.size(), x1.size(),
-                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
-                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+            dgemm_("T", "N", a1.size(), x0.size()*c2.size()*a3.size(), a4.size(),
+                   1.0, i0data_sorted, a4.size(), i1data_sorted, a4.size(),
+                   1.0, odata_sorted, a1.size());
           }
 
-          sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), x0.size());
-          out()->put_block(odata, x0, a3, c2, a1);
+          sort_indices<1,2,3,0,1,1,1,1>(odata_sorted, odata, a1.size(), x0.size(), c2.size(), a3.size());
+          out()->put_block(odata, x0, c2, a3, a1);
         }
     };
 
@@ -4914,21 +6843,97 @@ class Task80 : public EnergyTask<T> {
     }
 
   public:
-    Task80(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+    Task108(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
-      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
       for (auto& a1 : *range[2])
-        for (auto& c2 : *range[0])
-          for (auto& a3 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
             for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c2, a1}}, in, t[0], range)));
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task80() {};
+    ~Task108() {};
 };
 
 template <typename T>
-class Task81 : public EnergyTask<T> {
+class Task109 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index a4 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+
+          // tensor label: I123
+          std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c2, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c2, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c2, a3), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a4, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a4, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a4.size(), c2.size(), a3.size());
+
+            // tensor label: I124
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a4.size()*c2.size()*a3.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a4.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, a4.size(), c2.size(), a3.size(), x0.size());
+          out()->put_block(odata, x0, a4, c2, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task109(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a3}}, in, t[0], range)));
+    };
+    ~Task109() {};
+};
+
+template <typename T>
+class Task110 : public EnergyTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -4951,12 +6956,12 @@ class Task81 : public EnergyTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I82
+          // tensor label: I124
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
             std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
-            sort_indices<0,1,1,1,1,1>(i0data, odata, x1.size(), x0.size());
+            sort_indices<0,1,1,1,1,2>(i0data, odata, x1.size(), x0.size());
           }
           out()->put_block(odata, x1, x0);
         }
@@ -4973,7 +6978,7 @@ class Task81 : public EnergyTask<T> {
     }
 
   public:
-    Task81(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+    Task110(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -4981,11 +6986,1237 @@ class Task81 : public EnergyTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task81() {};
+    ~Task110() {};
 };
 
 template <typename T>
-class Task82 : public EnergyTask<T> {
+class Task111 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index a4 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+
+          // tensor label: I123
+          std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c2, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c2, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c2, a3), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a3, c2, a4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a4)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a4.size());
+
+            // tensor label: I128
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a4.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a4.size());
+          }
+
+          sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a4.size(), x0.size());
+          out()->put_block(odata, x0, a4, c2, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task111(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a3}}, in, t[0], range)));
+    };
+    ~Task111() {};
+};
+
+template <typename T>
+class Task112 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I128
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            sort_indices<0,1,1,1,-1,4>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task112(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
+    };
+    ~Task112() {};
+};
+
+template <typename T>
+class Task113 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
+
+          for (auto& a4 : *range_[2]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(a4, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(a4, a3)]);
+            sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a4.size(), a3.size());
+
+            // tensor label: I131
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x0, a4, c2, a1);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, a4, c2, a1)]);
+            sort_indices<1,0,2,3,0,1,1,1>(i1data, i1data_sorted, x0.size(), a4.size(), c2.size(), a1.size());
+
+            dgemm_("T", "N", a3.size(), x0.size()*c2.size()*a1.size(), a4.size(),
+                   1.0, i0data_sorted, a4.size(), i1data_sorted, a4.size(),
+                   1.0, odata_sorted, a3.size());
+          }
+
+          sort_indices<1,2,0,3,1,1,1,1>(odata_sorted, odata, a3.size(), x0.size(), c2.size(), a1.size());
+          out()->put_block(odata, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task113(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task113() {};
+};
+
+template <typename T>
+class Task114 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index a4 = b(1);
+          const Index c2 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I131
+          std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c2, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c2, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c2, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a4, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a4, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a4.size(), c2.size(), a1.size());
+
+            // tensor label: I132
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a4.size()*c2.size()*a1.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a4.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, a4.size(), c2.size(), a1.size(), x0.size());
+          out()->put_block(odata, x0, a4, c2, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task114(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a1}}, in, t[0], range)));
+    };
+    ~Task114() {};
+};
+
+template <typename T>
+class Task115 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I132
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            sort_indices<0,1,1,1,-1,4>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task115(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
+    };
+    ~Task115() {};
+};
+
+template <typename T>
+class Task116 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index a4 = b(1);
+          const Index c2 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I131
+          std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c2, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c2, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c2, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a1, c2, a4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a4)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a4.size());
+
+            // tensor label: I136
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a4.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a4.size());
+          }
+
+          sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a4.size(), x0.size());
+          out()->put_block(odata, x0, a4, c2, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task116(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a1}}, in, t[0], range)));
+    };
+    ~Task116() {};
+};
+
+template <typename T>
+class Task117 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I136
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            sort_indices<0,1,1,1,1,2>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task117(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
+    };
+    ~Task117() {};
+};
+
+template <typename T>
+class Task118 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c2, x1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, x1)]);
+            sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c2.size(), x1.size());
+
+            // tensor label: I139
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x1, a1, a3);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x1, a1, a3)]);
+            sort_indices<1,0,2,3,0,1,1,1>(i1data, i1data_sorted, x0.size(), x1.size(), a1.size(), a3.size());
+
+            dgemm_("T", "N", c2.size(), x0.size()*a1.size()*a3.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, c2.size());
+          }
+
+          sort_indices<1,0,3,2,1,1,1,1>(odata_sorted, odata, c2.size(), x0.size(), a1.size(), a3.size());
+          out()->put_block(odata, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task118(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task118() {};
+};
+
+template <typename T>
+class Task119 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index x1 = b(1);
+          const Index a1 = b(2);
+          const Index a3 = b(3);
+
+          // tensor label: I139
+          std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a3), 0.0);
+
+          for (auto& x3 : *range_[1]) {
+            for (auto& x2 : *range_[1]) {
+              // tensor label: t2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, x2, a3);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a3)]);
+              sort_indices<0,2,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a3.size());
+
+              // tensor label: I140
+              std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
+              sort_indices<0,2,1,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a3.size(), x0.size()*x1.size(), x3.size()*x2.size(),
+                     1.0, i0data_sorted, x3.size()*x2.size(), i1data_sorted, x3.size()*x2.size(),
+                     1.0, odata_sorted, a1.size()*a3.size());
+            }
+          }
+
+          sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a3.size(), x0.size(), x1.size());
+          out()->put_block(odata, x0, x1, a1, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task119(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a3}}, in, t[0], range)));
+    };
+    ~Task119() {};
+};
+
+template <typename T>
+class Task120 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x3 = b(0);
+          const Index x0 = b(1);
+          const Index x2 = b(2);
+          const Index x1 = b(3);
+
+          // tensor label: I140
+          std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
+          {
+            // tensor label: Gamma14
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0, x2, x1);
+            sort_indices<0,1,2,3,1,1,-1,2>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task120(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
+    };
+    ~Task120() {};
+};
+
+template <typename T>
+class Task121 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a3, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a1.size());
+
+            // tensor label: I158
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,1,0,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), x0.size());
+          out()->put_block(odata, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task121(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task121() {};
+};
+
+template <typename T>
+class Task122 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+        double e0_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran, const double e)
+          : SubTask<2,1,T>(block, in, out), range_(ran), e0_(e) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I158
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            dscal_(x1.size()*x0.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,1,1,1,4>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task122(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range, e)));
+    };
+    ~Task122() {};
+};
+
+template <typename T>
+class Task123 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a1, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a3.size());
+
+            // tensor label: I161
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,1,2,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), x0.size());
+          out()->put_block(odata, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task123(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task123() {};
+};
+
+template <typename T>
+class Task124 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+        double e0_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran, const double e)
+          : SubTask<2,1,T>(block, in, out), range_(ran), e0_(e) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I161
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            dscal_(x1.size()*x0.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,1,1,-1,2>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task124(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range, e)));
+    };
+    ~Task124() {};
+};
+
+template <typename T>
+class Task125 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: v2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a3, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a1.size());
+
+            // tensor label: I171
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,1,0,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), x0.size());
+          out()->put_block(odata, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task125(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task125() {};
+};
+
+template <typename T>
+class Task126 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I171
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            sort_indices<0,1,1,1,-1,1>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task126(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
+    };
+    ~Task126() {};
+};
+
+template <typename T>
+class Task127 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index c2 = b(1);
+          const Index a3 = b(2);
+          const Index a1 = b(3);
+
+          // tensor label: I100
+          std::unique_ptr<double[]> odata = out()->move_block(x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, c2, a3, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: v2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a1, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a3.size());
+
+            // tensor label: I174
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
+            sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,1,2,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), x0.size());
+          out()->put_block(odata, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task127(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task127() {};
+};
+
+template <typename T>
+class Task128 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<2,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x1 = b(0);
+          const Index x0 = b(1);
+
+          // tensor label: I174
+          std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
+          {
+            // tensor label: Gamma2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+            sort_indices<0,1,1,1,2,1>(i0data, odata, x1.size(), x0.size());
+          }
+          out()->put_block(odata, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task128(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
+    };
+    ~Task128() {};
+};
+
+template <typename T>
+class Task129 : public EnergyTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -5015,7 +8246,7 @@ class Task82 : public EnergyTask<T> {
           std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a2)]);
           sort_indices<3,2,1,0,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a2.size());
 
-          // tensor label: I84
+          // tensor label: I142
           std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x1, a1, a2);
           std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x1, a1, a2)]);
           sort_indices<3,1,2,0,0,1,1,1>(i1data, i1data_sorted, x0.size(), x1.size(), a1.size(), a2.size());
@@ -5035,7 +8266,7 @@ class Task82 : public EnergyTask<T> {
     }
 
   public:
-    Task82(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+    Task129(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -5045,11 +8276,11 @@ class Task82 : public EnergyTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a1, x1, a2}}, in, t[0], range)));
     };
-    ~Task82() {};
+    ~Task129() {};
 };
 
 template <typename T>
-class Task83 : public EnergyTask<T> {
+class Task130 : public EnergyTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -5074,19 +8305,592 @@ class Task83 : public EnergyTask<T> {
           const Index a1 = b(2);
           const Index a2 = b(3);
 
-          // tensor label: I84
+          // tensor label: I142
+          std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a2), 0.0);
+
+          for (auto& x2 : *range_[1]) {
+            for (auto& c3 : *range_[0]) {
+              // tensor label: f1
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x2, c3);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x2, c3)]);
+              sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, x2.size(), c3.size());
+
+              // tensor label: I143
+              std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x2, x1, a1, c3, a2);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x2, x1, a1, c3, a2)]);
+              sort_indices<1,4,0,2,3,5,0,1,1,1>(i1data, i1data_sorted, x0.size(), x2.size(), x1.size(), a1.size(), c3.size(), a2.size());
+
+              dgemm_("T", "N", 1, x0.size()*x1.size()*a1.size()*a2.size(), x2.size()*c3.size(),
+                     1.0, i0data_sorted, x2.size()*c3.size(), i1data_sorted, x2.size()*c3.size(),
+                     1.0, odata_sorted, 1);
+            }
+          }
+
+          sort_indices<0,1,2,3,1,1,1,1>(odata_sorted, odata, x0.size(), x1.size(), a1.size(), a2.size());
+          out()->put_block(odata, x0, x1, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task130(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
+    };
+    ~Task130() {};
+};
+
+template <typename T>
+class Task131 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<6,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,6>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<6,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index x2 = b(1);
+          const Index x1 = b(2);
+          const Index a1 = b(3);
+          const Index c3 = b(4);
+          const Index a2 = b(5);
+
+          // tensor label: I143
+          std::unique_ptr<double[]> odata = out()->move_block(x0, x2, x1, a1, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x2, x1, a1, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, x2, x1, a1, c3, a2), 0.0);
+
+          for (auto& x3 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, c3, a2);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, c3, a2)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), c3.size(), a2.size());
+
+            // tensor label: I144
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
+
+            dgemm_("T", "N", a1.size()*c3.size()*a2.size(), x0.size()*x2.size()*x1.size(), x3.size(),
+                   1.0, i0data_sorted, x3.size(), i1data_sorted, x3.size(),
+                   1.0, odata_sorted, a1.size()*c3.size()*a2.size());
+          }
+
+          sort_indices<3,4,5,0,1,2,1,1,1,1>(odata_sorted, odata, a1.size(), c3.size(), a2.size(), x0.size(), x2.size(), x1.size());
+          out()->put_block(odata, x0, x2, x1, a1, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task131(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a1 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& x2 : *range[1])
+                for (auto& x0 : *range[1])
+                  subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x0, x2, x1, a1, c3, a2}}, in, t[0], range)));
+    };
+    ~Task131() {};
+};
+
+template <typename T>
+class Task132 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x3 = b(0);
+          const Index x0 = b(1);
+          const Index x2 = b(2);
+          const Index x1 = b(3);
+
+          // tensor label: I144
+          std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
+          {
+            // tensor label: Gamma14
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0, x2, x1);
+            sort_indices<0,1,2,3,1,1,-1,2>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task132(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
+    };
+    ~Task132() {};
+};
+
+template <typename T>
+class Task133 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index x1 = b(1);
+          const Index a1 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I142
+          std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a2), 0.0);
+
+          for (auto& x5 : *range_[1]) {
+            for (auto& x4 : *range_[1]) {
+              // tensor label: t2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x5, a1, x4, a2);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x5, a1, x4, a2)]);
+              sort_indices<0,2,1,3,0,1,1,1>(i0data, i0data_sorted, x5.size(), a1.size(), x4.size(), a2.size());
+
+              // tensor label: I147
+              std::unique_ptr<double[]> i1data = in(1)->get_block(x5, x0, x4, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x5, x0, x4, x1)]);
+              sort_indices<0,2,1,3,0,1,1,1>(i1data, i1data_sorted, x5.size(), x0.size(), x4.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a2.size(), x0.size()*x1.size(), x5.size()*x4.size(),
+                     1.0, i0data_sorted, x5.size()*x4.size(), i1data_sorted, x5.size()*x4.size(),
+                     1.0, odata_sorted, a1.size()*a2.size());
+            }
+          }
+
+          sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a2.size(), x0.size(), x1.size());
+          out()->put_block(odata, x0, x1, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task133(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
+    };
+    ~Task133() {};
+};
+
+template <typename T>
+class Task134 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x5 = b(0);
+          const Index x0 = b(1);
+          const Index x4 = b(2);
+          const Index x1 = b(3);
+
+          // tensor label: I147
+          std::unique_ptr<double[]> odata = out()->move_block(x5, x0, x4, x1);
+          {
+            // tensor label: Gamma16
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x0, x4, x1);
+            sort_indices<0,1,2,3,1,1,1,2>(i0data, odata, x5.size(), x0.size(), x4.size(), x1.size());
+          }
+          out()->put_block(odata, x5, x0, x4, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task134(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x4 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x5 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x5, x0, x4, x1}}, in, t[0], range)));
+    };
+    ~Task134() {};
+};
+
+template <typename T>
+class Task135 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index x1 = b(1);
+          const Index a1 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I142
+          std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a2), 0.0);
+
+          for (auto& a3 : *range_[2]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(a3, a2);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(a3, a2)]);
+            sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a3.size(), a2.size());
+
+            // tensor label: I150
+            std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x1, a1, a3);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x1, a1, a3)]);
+            sort_indices<3,0,1,2,0,1,1,1>(i1data, i1data_sorted, x0.size(), x1.size(), a1.size(), a3.size());
+
+            dgemm_("T", "N", a2.size(), x0.size()*x1.size()*a1.size(), a3.size(),
+                   1.0, i0data_sorted, a3.size(), i1data_sorted, a3.size(),
+                   1.0, odata_sorted, a2.size());
+          }
+
+          sort_indices<1,2,3,0,1,1,1,1>(odata_sorted, odata, a2.size(), x0.size(), x1.size(), a1.size());
+          out()->put_block(odata, x0, x1, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task135(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
+    };
+    ~Task135() {};
+};
+
+template <typename T>
+class Task136 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index x1 = b(1);
+          const Index a1 = b(2);
+          const Index a3 = b(3);
+
+          // tensor label: I150
+          std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a3), 0.0);
+
+          for (auto& x3 : *range_[1]) {
+            for (auto& x2 : *range_[1]) {
+              // tensor label: t2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, x2, a3);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a3)]);
+              sort_indices<0,2,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a3.size());
+
+              // tensor label: I151
+              std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
+              sort_indices<0,2,1,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a3.size(), x0.size()*x1.size(), x3.size()*x2.size(),
+                     1.0, i0data_sorted, x3.size()*x2.size(), i1data_sorted, x3.size()*x2.size(),
+                     1.0, odata_sorted, a1.size()*a3.size());
+            }
+          }
+
+          sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a3.size(), x0.size(), x1.size());
+          out()->put_block(odata, x0, x1, a1, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task136(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a3}}, in, t[0], range)));
+    };
+    ~Task136() {};
+};
+
+template <typename T>
+class Task137 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,1,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x3 = b(0);
+          const Index x0 = b(1);
+          const Index x2 = b(2);
+          const Index x1 = b(3);
+
+          // tensor label: I151
+          std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
+          {
+            // tensor label: Gamma14
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0, x2, x1);
+            sort_indices<0,1,2,3,1,1,1,1>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task137(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
+    };
+    ~Task137() {};
+};
+
+template <typename T>
+class Task138 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index x1 = b(1);
+          const Index a1 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I142
           std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a2), 0.0);
 
           for (auto& x3 : *range_[1]) {
             for (auto& x2 : *range_[1]) {
-              // tensor label: v2
+              // tensor label: t2
               std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, x2, a2);
               std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a2)]);
               sort_indices<0,2,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a2.size());
 
-              // tensor label: I85
+              // tensor label: I164
               std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
               std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
               sort_indices<0,2,1,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
@@ -5113,7 +8917,7 @@ class Task83 : public EnergyTask<T> {
     }
 
   public:
-    Task83(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+    Task138(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -5123,11 +8927,152 @@ class Task83 : public EnergyTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task83() {};
+    ~Task138() {};
 };
 
 template <typename T>
-class Task84 : public EnergyTask<T> {
+class Task139 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+        double e0_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran, const double e)
+          : SubTask<4,1,T>(block, in, out), range_(ran), e0_(e) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x3 = b(0);
+          const Index x0 = b(1);
+          const Index x2 = b(2);
+          const Index x1 = b(3);
+
+          // tensor label: I164
+          std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
+          {
+            // tensor label: Gamma14
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0, x2, x1);
+            dscal_(x3.size()*x0.size()*x2.size()*x1.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,2,3,1,1,-1,2>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task139(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range, e)));
+    };
+    ~Task139() {};
+};
+
+template <typename T>
+class Task140 : public EnergyTask<T> {
+  protected:
+    class Task_local : public SubTask<4,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+        double energy_;
+
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2,T>(block, in, out), range_(ran) { }
+
+        double energy() const { return energy_; }
+
+        void compute() override {
+          energy_ = 0.0;
+          const Index x0 = b(0);
+          const Index x1 = b(1);
+          const Index a1 = b(2);
+          const Index a2 = b(3);
+
+          // tensor label: I142
+          std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a2), 0.0);
+
+          for (auto& x3 : *range_[1]) {
+            for (auto& x2 : *range_[1]) {
+              // tensor label: v2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, x2, a2);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a2)]);
+              sort_indices<0,2,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a2.size());
+
+              // tensor label: I177
+              std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
+              sort_indices<0,2,1,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a2.size(), x0.size()*x1.size(), x3.size()*x2.size(),
+                     1.0, i0data_sorted, x3.size()*x2.size(), i1data_sorted, x3.size()*x2.size(),
+                     1.0, odata_sorted, a1.size()*a2.size());
+            }
+          }
+
+          sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a2.size(), x0.size(), x1.size());
+          out()->put_block(odata, x0, x1, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      this->energy_ = 0.0;
+      for (auto& i : subtasks_) {
+        i->compute();
+        this->energy_ += i->energy();
+      }
+    }
+
+  public:
+    Task140(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
+    };
+    ~Task140() {};
+};
+
+template <typename T>
+class Task141 : public EnergyTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -5152,12 +9097,12 @@ class Task84 : public EnergyTask<T> {
           const Index x2 = b(2);
           const Index x1 = b(3);
 
-          // tensor label: I85
+          // tensor label: I177
           std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
           {
             // tensor label: Gamma14
             std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0, x2, x1);
-            sort_indices<0,1,2,3,1,1,1,2>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
+            sort_indices<0,1,2,3,1,1,1,1>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
           }
           out()->put_block(odata, x3, x0, x2, x1);
         }
@@ -5174,7 +9119,7 @@ class Task84 : public EnergyTask<T> {
     }
 
   public:
-    Task84(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
+    Task141(std::vector<std::shared_ptr<Tensor<T>>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -5184,11 +9129,11 @@ class Task84 : public EnergyTask<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task84() {};
+    ~Task141() {};
 };
 
 template <typename T>
-class Task85 : public CorrectionTask<T> {
+class Task142 : public CorrectionTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -5218,7 +9163,7 @@ class Task85 : public CorrectionTask<T> {
           std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a2, c3, a4)]);
           sort_indices<3,2,1,0,0,1,1,1>(i0data, i0data_sorted, c1.size(), a2.size(), c3.size(), a4.size());
 
-          // tensor label: I87
+          // tensor label: I179
           std::unique_ptr<double[]> i1data = in(1)->get_block(c1, a4, c3, a2);
           std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(c1, a4, c3, a2)]);
           sort_indices<1,2,3,0,0,1,1,1>(i1data, i1data_sorted, c1.size(), a4.size(), c3.size(), a2.size());
@@ -5238,7 +9183,7 @@ class Task85 : public CorrectionTask<T> {
     }
 
   public:
-    Task85(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
+    Task142(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -5248,11 +9193,11 @@ class Task85 : public CorrectionTask<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a2, c3, a4}}, in, t[0], range)));
     };
-    ~Task85() {};
+    ~Task142() {};
 };
 
 template <typename T>
-class Task86 : public CorrectionTask<T> {
+class Task143 : public CorrectionTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -5277,7 +9222,7 @@ class Task86 : public CorrectionTask<T> {
           const Index c3 = b(2);
           const Index a2 = b(3);
 
-          // tensor label: I87
+          // tensor label: I179
           std::unique_ptr<double[]> odata = out()->move_block(c1, a4, c3, a2);
           {
             // tensor label: t2
@@ -5304,7 +9249,7 @@ class Task86 : public CorrectionTask<T> {
     }
 
   public:
-    Task86(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
+    Task143(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -5314,11 +9259,11 @@ class Task86 : public CorrectionTask<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range)));
     };
-    ~Task86() {};
+    ~Task143() {};
 };
 
 template <typename T>
-class Task87 : public CorrectionTask<T> {
+class Task144 : public CorrectionTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -5348,7 +9293,7 @@ class Task87 : public CorrectionTask<T> {
           std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
           sort_indices<3,2,1,0,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
 
-          // tensor label: I91
+          // tensor label: I183
           std::unique_ptr<double[]> i1data = in(1)->get_block(x0, a3, c2, a1);
           std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, a3, c2, a1)]);
           sort_indices<1,2,3,0,0,1,1,1>(i1data, i1data_sorted, x0.size(), a3.size(), c2.size(), a1.size());
@@ -5368,7 +9313,7 @@ class Task87 : public CorrectionTask<T> {
     }
 
   public:
-    Task87(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
+    Task144(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -5378,11 +9323,11 @@ class Task87 : public CorrectionTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a1, c2, a3}}, in, t[0], range)));
     };
-    ~Task87() {};
+    ~Task144() {};
 };
 
 template <typename T>
-class Task88 : public CorrectionTask<T> {
+class Task145 : public CorrectionTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -5407,7 +9352,7 @@ class Task88 : public CorrectionTask<T> {
           const Index c2 = b(2);
           const Index a1 = b(3);
 
-          // tensor label: I91
+          // tensor label: I183
           std::unique_ptr<double[]> odata = out()->move_block(x0, a3, c2, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a3, c2, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a3, c2, a1), 0.0);
@@ -5418,7 +9363,7 @@ class Task88 : public CorrectionTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a1)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a1.size());
 
-            // tensor label: I92
+            // tensor label: I184
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -5444,7 +9389,7 @@ class Task88 : public CorrectionTask<T> {
     }
 
   public:
-    Task88(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
+    Task145(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -5454,11 +9399,11 @@ class Task88 : public CorrectionTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c2, a1}}, in, t[0], range)));
     };
-    ~Task88() {};
+    ~Task145() {};
 };
 
 template <typename T>
-class Task89 : public CorrectionTask<T> {
+class Task146 : public CorrectionTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -5481,7 +9426,7 @@ class Task89 : public CorrectionTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I92
+          // tensor label: I184
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -5503,7 +9448,7 @@ class Task89 : public CorrectionTask<T> {
     }
 
   public:
-    Task89(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
+    Task146(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -5511,11 +9456,11 @@ class Task89 : public CorrectionTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task89() {};
+    ~Task146() {};
 };
 
 template <typename T>
-class Task90 : public CorrectionTask<T> {
+class Task147 : public CorrectionTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -5540,7 +9485,7 @@ class Task90 : public CorrectionTask<T> {
           const Index c2 = b(2);
           const Index a1 = b(3);
 
-          // tensor label: I91
+          // tensor label: I183
           std::unique_ptr<double[]> odata = out()->move_block(x0, a3, c2, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a3, c2, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a3, c2, a1), 0.0);
@@ -5551,7 +9496,7 @@ class Task90 : public CorrectionTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a3)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a3.size());
 
-            // tensor label: I95
+            // tensor label: I187
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -5577,7 +9522,7 @@ class Task90 : public CorrectionTask<T> {
     }
 
   public:
-    Task90(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
+    Task147(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -5587,11 +9532,11 @@ class Task90 : public CorrectionTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c2, a1}}, in, t[0], range)));
     };
-    ~Task90() {};
+    ~Task147() {};
 };
 
 template <typename T>
-class Task91 : public CorrectionTask<T> {
+class Task148 : public CorrectionTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -5614,7 +9559,7 @@ class Task91 : public CorrectionTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I95
+          // tensor label: I187
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -5636,7 +9581,7 @@ class Task91 : public CorrectionTask<T> {
     }
 
   public:
-    Task91(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
+    Task148(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -5644,11 +9589,11 @@ class Task91 : public CorrectionTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task91() {};
+    ~Task148() {};
 };
 
 template <typename T>
-class Task92 : public CorrectionTask<T> {
+class Task149 : public CorrectionTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -5678,7 +9623,7 @@ class Task92 : public CorrectionTask<T> {
           std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a2)]);
           sort_indices<3,2,1,0,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a2.size());
 
-          // tensor label: I97
+          // tensor label: I189
           std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x1, a1, a2);
           std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x1, a1, a2)]);
           sort_indices<3,1,2,0,0,1,1,1>(i1data, i1data_sorted, x0.size(), x1.size(), a1.size(), a2.size());
@@ -5698,7 +9643,7 @@ class Task92 : public CorrectionTask<T> {
     }
 
   public:
-    Task92(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
+    Task149(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -5708,11 +9653,11 @@ class Task92 : public CorrectionTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a1, x1, a2}}, in, t[0], range)));
     };
-    ~Task92() {};
+    ~Task149() {};
 };
 
 template <typename T>
-class Task93 : public CorrectionTask<T> {
+class Task150 : public CorrectionTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -5737,7 +9682,7 @@ class Task93 : public CorrectionTask<T> {
           const Index a1 = b(2);
           const Index a2 = b(3);
 
-          // tensor label: I97
+          // tensor label: I189
           std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a2), 0.0);
@@ -5749,7 +9694,7 @@ class Task93 : public CorrectionTask<T> {
               std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a2)]);
               sort_indices<0,2,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a2.size());
 
-              // tensor label: I98
+              // tensor label: I190
               std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
               std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
               sort_indices<0,2,1,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
@@ -5776,7 +9721,7 @@ class Task93 : public CorrectionTask<T> {
     }
 
   public:
-    Task93(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
+    Task150(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -5786,11 +9731,11 @@ class Task93 : public CorrectionTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task93() {};
+    ~Task150() {};
 };
 
 template <typename T>
-class Task94 : public CorrectionTask<T> {
+class Task151 : public CorrectionTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -5815,7 +9760,7 @@ class Task94 : public CorrectionTask<T> {
           const Index x2 = b(2);
           const Index x1 = b(3);
 
-          // tensor label: I98
+          // tensor label: I190
           std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
           {
             // tensor label: Gamma14
@@ -5837,7 +9782,7 @@ class Task94 : public CorrectionTask<T> {
     }
 
   public:
-    Task94(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
+    Task151(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -5847,11 +9792,11 @@ class Task94 : public CorrectionTask<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task94() {};
+    ~Task151() {};
 };
 
 template <typename T>
-class Task95 : public DensityTask<T> {
+class Task152 : public DensityTask<T> {
   protected:
     std::shared_ptr<Tensor<T>> d_;
     IndexRange closed_;
@@ -5863,14 +9808,14 @@ class Task95 : public DensityTask<T> {
     };
 
   public:
-    Task95(std::vector<std::shared_ptr<Tensor<T>>> t) : DensityTask<T>() {
+    Task152(std::vector<std::shared_ptr<Tensor<T>>> t) : DensityTask<T>() {
       d_ =  t[0];
     };
-    ~Task95() {};
+    ~Task152() {};
 };
 
 template <typename T>
-class Task96 : public DensityTask<T> {
+class Task153 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -5893,7 +9838,7 @@ class Task96 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(x0, x1);
           {
-            // tensor label: I99
+            // tensor label: I191
             std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
             sort_indices<1,0,1,1,1,1>(i0data, odata, x1.size(), x0.size());
           }
@@ -5910,7 +9855,7 @@ class Task96 : public DensityTask<T> {
     }
 
   public:
-    Task96(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task153(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -5918,11 +9863,11 @@ class Task96 : public DensityTask<T> {
         for (auto& x0 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x0, x1}}, in, t[0], range)));
     };
-    ~Task96() {};
+    ~Task153() {};
 };
 
 template <typename T>
-class Task97 : public DensityTask<T> {
+class Task154 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -5942,7 +9887,7 @@ class Task97 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I99
+          // tensor label: I191
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x1, x0)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x1, x0), 0.0);
@@ -5956,7 +9901,7 @@ class Task97 : public DensityTask<T> {
                   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a2, c3, a4)]);
                   sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1.size(), a2.size(), c3.size(), a4.size());
 
-                  // tensor label: I100
+                  // tensor label: I192
                   std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0, c1, a4, c3, a2);
                   std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0, c1, a4, c3, a2)]);
                   sort_indices<2,5,4,3,0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size(), c1.size(), a4.size(), c3.size(), a2.size());
@@ -5983,7 +9928,7 @@ class Task97 : public DensityTask<T> {
     }
 
   public:
-    Task97(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task154(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -5991,11 +9936,11 @@ class Task97 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task97() {};
+    ~Task154() {};
 };
 
 template <typename T>
-class Task98 : public DensityTask<T> {
+class Task155 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -6019,7 +9964,7 @@ class Task98 : public DensityTask<T> {
           const Index c3 = b(4);
           const Index a2 = b(5);
 
-          // tensor label: I100
+          // tensor label: I192
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0, c1, a4, c3, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x1, x0, c1, a4, c3, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x1, x0, c1, a4, c3, a2), 0.0);
@@ -6029,7 +9974,7 @@ class Task98 : public DensityTask<T> {
           std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a4, c3, a2)]);
           sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1.size(), a4.size(), c3.size(), a2.size());
 
-          // tensor label: I101
+          // tensor label: I193
           std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
           std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
           sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -6052,7 +9997,7 @@ class Task98 : public DensityTask<T> {
     }
 
   public:
-    Task98(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task155(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -6064,11 +10009,11 @@ class Task98 : public DensityTask<T> {
                 for (auto& x1 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x1, x0, c1, a4, c3, a2}}, in, t[0], range)));
     };
-    ~Task98() {};
+    ~Task155() {};
 };
 
 template <typename T>
-class Task99 : public DensityTask<T> {
+class Task156 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -6088,7 +10033,7 @@ class Task99 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I101
+          // tensor label: I193
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -6108,7 +10053,7 @@ class Task99 : public DensityTask<T> {
     }
 
   public:
-    Task99(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task156(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -6116,11 +10061,11 @@ class Task99 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task99() {};
+    ~Task156() {};
 };
 
 template <typename T>
-class Task100 : public DensityTask<T> {
+class Task157 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -6144,7 +10089,7 @@ class Task100 : public DensityTask<T> {
           const Index c3 = b(4);
           const Index a2 = b(5);
 
-          // tensor label: I100
+          // tensor label: I192
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0, c1, a4, c3, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x1, x0, c1, a4, c3, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x1, x0, c1, a4, c3, a2), 0.0);
@@ -6154,7 +10099,7 @@ class Task100 : public DensityTask<T> {
           std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a2, c3, a4)]);
           sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1.size(), a2.size(), c3.size(), a4.size());
 
-          // tensor label: I104
+          // tensor label: I196
           std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
           std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
           sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -6177,7 +10122,7 @@ class Task100 : public DensityTask<T> {
     }
 
   public:
-    Task100(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task157(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -6189,11 +10134,11 @@ class Task100 : public DensityTask<T> {
                 for (auto& x1 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x1, x0, c1, a4, c3, a2}}, in, t[0], range)));
     };
-    ~Task100() {};
+    ~Task157() {};
 };
 
 template <typename T>
-class Task101 : public DensityTask<T> {
+class Task158 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -6213,7 +10158,7 @@ class Task101 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I104
+          // tensor label: I196
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -6233,7 +10178,7 @@ class Task101 : public DensityTask<T> {
     }
 
   public:
-    Task101(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task158(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -6241,11 +10186,11 @@ class Task101 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task101() {};
+    ~Task158() {};
 };
 
 template <typename T>
-class Task102 : public DensityTask<T> {
+class Task159 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -6268,7 +10213,7 @@ class Task102 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(c5, c3);
           {
-            // tensor label: I105
+            // tensor label: I197
             std::unique_ptr<double[]> i0data = in(0)->get_block(c5, c3);
             sort_indices<0,1,1,1,1,1>(i0data, odata, c5.size(), c3.size());
           }
@@ -6285,7 +10230,7 @@ class Task102 : public DensityTask<T> {
     }
 
   public:
-    Task102(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task159(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[0]->nblock()*range[0]->nblock());
@@ -6293,11 +10238,11 @@ class Task102 : public DensityTask<T> {
         for (auto& c5 : *range[0])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{c5, c3}}, in, t[0], range)));
     };
-    ~Task102() {};
+    ~Task159() {};
 };
 
 template <typename T>
-class Task103 : public DensityTask<T> {
+class Task160 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -6317,7 +10262,7 @@ class Task103 : public DensityTask<T> {
           const Index c5 = b(0);
           const Index c3 = b(1);
 
-          // tensor label: I105
+          // tensor label: I197
           std::unique_ptr<double[]> odata = out()->move_block(c5, c3);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c5, c3)]);
           std::fill_n(odata_sorted.get(), out()->get_size(c5, c3), 0.0);
@@ -6330,7 +10275,7 @@ class Task103 : public DensityTask<T> {
                 std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a2, c3, a4)]);
                 sort_indices<0,1,3,2,0,1,1,1>(i0data, i0data_sorted, c1.size(), a2.size(), c3.size(), a4.size());
 
-                // tensor label: I106
+                // tensor label: I198
                 std::unique_ptr<double[]> i1data = in(1)->get_block(c1, a4, c5, a2);
                 std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(c1, a4, c5, a2)]);
                 sort_indices<0,3,1,2,0,1,1,1>(i1data, i1data_sorted, c1.size(), a4.size(), c5.size(), a2.size());
@@ -6356,7 +10301,7 @@ class Task103 : public DensityTask<T> {
     }
 
   public:
-    Task103(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task160(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[0]->nblock()*range[0]->nblock());
@@ -6364,11 +10309,11 @@ class Task103 : public DensityTask<T> {
         for (auto& c5 : *range[0])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{c5, c3}}, in, t[0], range)));
     };
-    ~Task103() {};
+    ~Task160() {};
 };
 
 template <typename T>
-class Task104 : public DensityTask<T> {
+class Task161 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -6390,7 +10335,7 @@ class Task104 : public DensityTask<T> {
           const Index c5 = b(2);
           const Index a2 = b(3);
 
-          // tensor label: I106
+          // tensor label: I198
           std::unique_ptr<double[]> odata = out()->move_block(c1, a4, c5, a2);
           {
             // tensor label: t2
@@ -6415,7 +10360,7 @@ class Task104 : public DensityTask<T> {
     }
 
   public:
-    Task104(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task161(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -6425,11 +10370,11 @@ class Task104 : public DensityTask<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c5, a2}}, in, t[0], range)));
     };
-    ~Task104() {};
+    ~Task161() {};
 };
 
 template <typename T>
-class Task105 : public DensityTask<T> {
+class Task162 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -6452,7 +10397,7 @@ class Task105 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(a4, a5);
           {
-            // tensor label: I109
+            // tensor label: I201
             std::unique_ptr<double[]> i0data = in(0)->get_block(a5, a4);
             sort_indices<1,0,1,1,1,1>(i0data, odata, a5.size(), a4.size());
           }
@@ -6469,7 +10414,7 @@ class Task105 : public DensityTask<T> {
     }
 
   public:
-    Task105(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task162(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock());
@@ -6477,11 +10422,11 @@ class Task105 : public DensityTask<T> {
         for (auto& a4 : *range[2])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{a4, a5}}, in, t[0], range)));
     };
-    ~Task105() {};
+    ~Task162() {};
 };
 
 template <typename T>
-class Task106 : public DensityTask<T> {
+class Task163 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -6501,7 +10446,7 @@ class Task106 : public DensityTask<T> {
           const Index a5 = b(0);
           const Index a4 = b(1);
 
-          // tensor label: I109
+          // tensor label: I201
           std::unique_ptr<double[]> odata = out()->move_block(a5, a4);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(a5, a4)]);
           std::fill_n(odata_sorted.get(), out()->get_size(a5, a4), 0.0);
@@ -6514,7 +10459,7 @@ class Task106 : public DensityTask<T> {
                 std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a2, c3, a4)]);
                 sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1.size(), a2.size(), c3.size(), a4.size());
 
-                // tensor label: I110
+                // tensor label: I202
                 std::unique_ptr<double[]> i1data = in(1)->get_block(c1, a5, c3, a2);
                 std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(c1, a5, c3, a2)]);
                 sort_indices<0,3,2,1,0,1,1,1>(i1data, i1data_sorted, c1.size(), a5.size(), c3.size(), a2.size());
@@ -6540,7 +10485,7 @@ class Task106 : public DensityTask<T> {
     }
 
   public:
-    Task106(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task163(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock());
@@ -6548,11 +10493,11 @@ class Task106 : public DensityTask<T> {
         for (auto& a5 : *range[2])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{a5, a4}}, in, t[0], range)));
     };
-    ~Task106() {};
+    ~Task163() {};
 };
 
 template <typename T>
-class Task107 : public DensityTask<T> {
+class Task164 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -6574,7 +10519,7 @@ class Task107 : public DensityTask<T> {
           const Index c3 = b(2);
           const Index a2 = b(3);
 
-          // tensor label: I110
+          // tensor label: I202
           std::unique_ptr<double[]> odata = out()->move_block(c1, a5, c3, a2);
           {
             // tensor label: t2
@@ -6599,7 +10544,7 @@ class Task107 : public DensityTask<T> {
     }
 
   public:
-    Task107(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task164(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -6609,11 +10554,11 @@ class Task107 : public DensityTask<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a5, c3, a2}}, in, t[0], range)));
     };
-    ~Task107() {};
+    ~Task164() {};
 };
 
 template <typename T>
-class Task108 : public DensityTask<T> {
+class Task165 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -6636,7 +10581,7 @@ class Task108 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(x0, c3);
           {
-            // tensor label: I113
+            // tensor label: I205
             std::unique_ptr<double[]> i0data = in(0)->get_block(x0, c3);
             sort_indices<0,1,1,1,1,1>(i0data, odata, x0.size(), c3.size());
           }
@@ -6653,7 +10598,7 @@ class Task108 : public DensityTask<T> {
     }
 
   public:
-    Task108(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task165(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[0]->nblock()*range[1]->nblock());
@@ -6661,11 +10606,11 @@ class Task108 : public DensityTask<T> {
         for (auto& x0 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x0, c3}}, in, t[0], range)));
     };
-    ~Task108() {};
+    ~Task165() {};
 };
 
 template <typename T>
-class Task109 : public DensityTask<T> {
+class Task166 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -6685,7 +10630,7 @@ class Task109 : public DensityTask<T> {
           const Index x0 = b(0);
           const Index c3 = b(1);
 
-          // tensor label: I113
+          // tensor label: I205
           std::unique_ptr<double[]> odata = out()->move_block(x0, c3);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, c3)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, c3), 0.0);
@@ -6698,7 +10643,7 @@ class Task109 : public DensityTask<T> {
                 std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a2, c3, a4)]);
                 sort_indices<0,1,3,2,0,1,1,1>(i0data, i0data_sorted, c1.size(), a2.size(), c3.size(), a4.size());
 
-                // tensor label: I114
+                // tensor label: I206
                 std::unique_ptr<double[]> i1data = in(1)->get_block(x0, a4, c1, a2);
                 std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, a4, c1, a2)]);
                 sort_indices<2,3,1,0,0,1,1,1>(i1data, i1data_sorted, x0.size(), a4.size(), c1.size(), a2.size());
@@ -6724,7 +10669,7 @@ class Task109 : public DensityTask<T> {
     }
 
   public:
-    Task109(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task166(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[0]->nblock()*range[1]->nblock());
@@ -6732,11 +10677,11 @@ class Task109 : public DensityTask<T> {
         for (auto& x0 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x0, c3}}, in, t[0], range)));
     };
-    ~Task109() {};
+    ~Task166() {};
 };
 
 template <typename T>
-class Task110 : public DensityTask<T> {
+class Task167 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -6758,7 +10703,7 @@ class Task110 : public DensityTask<T> {
           const Index c1 = b(2);
           const Index a2 = b(3);
 
-          // tensor label: I114
+          // tensor label: I206
           std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c1, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c1, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c1, a2), 0.0);
@@ -6769,7 +10714,7 @@ class Task110 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a4, c1, a2)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a4.size(), c1.size(), a2.size());
 
-            // tensor label: I115
+            // tensor label: I207
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -6793,7 +10738,7 @@ class Task110 : public DensityTask<T> {
     }
 
   public:
-    Task110(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task167(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -6803,11 +10748,11 @@ class Task110 : public DensityTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c1, a2}}, in, t[0], range)));
     };
-    ~Task110() {};
+    ~Task167() {};
 };
 
 template <typename T>
-class Task111 : public DensityTask<T> {
+class Task168 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -6827,7 +10772,7 @@ class Task111 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I115
+          // tensor label: I207
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -6847,7 +10792,7 @@ class Task111 : public DensityTask<T> {
     }
 
   public:
-    Task111(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task168(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -6855,11 +10800,11 @@ class Task111 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task111() {};
+    ~Task168() {};
 };
 
 template <typename T>
-class Task112 : public DensityTask<T> {
+class Task169 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -6881,7 +10826,7 @@ class Task112 : public DensityTask<T> {
           const Index c1 = b(2);
           const Index a2 = b(3);
 
-          // tensor label: I114
+          // tensor label: I206
           std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c1, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c1, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c1, a2), 0.0);
@@ -6892,7 +10837,7 @@ class Task112 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a2, c1, a4)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a2.size(), c1.size(), a4.size());
 
-            // tensor label: I118
+            // tensor label: I210
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -6916,7 +10861,7 @@ class Task112 : public DensityTask<T> {
     }
 
   public:
-    Task112(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task169(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -6926,11 +10871,11 @@ class Task112 : public DensityTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c1, a2}}, in, t[0], range)));
     };
-    ~Task112() {};
+    ~Task169() {};
 };
 
 template <typename T>
-class Task113 : public DensityTask<T> {
+class Task170 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -6950,7 +10895,7 @@ class Task113 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I118
+          // tensor label: I210
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -6970,7 +10915,7 @@ class Task113 : public DensityTask<T> {
     }
 
   public:
-    Task113(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task170(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -6978,11 +10923,11 @@ class Task113 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task113() {};
+    ~Task170() {};
 };
 
 template <typename T>
-class Task114 : public DensityTask<T> {
+class Task171 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -7005,7 +10950,7 @@ class Task114 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(c4, x1);
           {
-            // tensor label: I119
+            // tensor label: I211
             std::unique_ptr<double[]> i0data = in(0)->get_block(x1, c4);
             sort_indices<1,0,1,1,1,1>(i0data, odata, x1.size(), c4.size());
           }
@@ -7022,7 +10967,7 @@ class Task114 : public DensityTask<T> {
     }
 
   public:
-    Task114(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task171(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[0]->nblock());
@@ -7030,11 +10975,11 @@ class Task114 : public DensityTask<T> {
         for (auto& c4 : *range[0])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{c4, x1}}, in, t[0], range)));
     };
-    ~Task114() {};
+    ~Task171() {};
 };
 
 template <typename T>
-class Task115 : public DensityTask<T> {
+class Task172 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -7054,7 +10999,7 @@ class Task115 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index c4 = b(1);
 
-          // tensor label: I119
+          // tensor label: I211
           std::unique_ptr<double[]> odata = out()->move_block(x1, c4);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x1, c4)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x1, c4), 0.0);
@@ -7068,7 +11013,7 @@ class Task115 : public DensityTask<T> {
                   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
                   sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
 
-                  // tensor label: I120
+                  // tensor label: I212
                   std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0, c2, a3, c4, a1);
                   std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0, c2, a3, c4, a1)]);
                   sort_indices<1,5,2,3,0,4,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size(), c2.size(), a3.size(), c4.size(), a1.size());
@@ -7095,7 +11040,7 @@ class Task115 : public DensityTask<T> {
     }
 
   public:
-    Task115(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task172(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[0]->nblock()*range[1]->nblock());
@@ -7103,11 +11048,11 @@ class Task115 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, c4}}, in, t[0], range)));
     };
-    ~Task115() {};
+    ~Task172() {};
 };
 
 template <typename T>
-class Task116 : public DensityTask<T> {
+class Task173 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -7131,7 +11076,7 @@ class Task116 : public DensityTask<T> {
           const Index c4 = b(4);
           const Index a1 = b(5);
 
-          // tensor label: I120
+          // tensor label: I212
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0, c2, a3, c4, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x1, x0, c2, a3, c4, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x1, x0, c2, a3, c4, a1), 0.0);
@@ -7141,7 +11086,7 @@ class Task116 : public DensityTask<T> {
           std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, a3, c4, a1)]);
           sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c2.size(), a3.size(), c4.size(), a1.size());
 
-          // tensor label: I121
+          // tensor label: I213
           std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
           std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
           sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -7164,7 +11109,7 @@ class Task116 : public DensityTask<T> {
     }
 
   public:
-    Task116(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task173(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -7176,11 +11121,11 @@ class Task116 : public DensityTask<T> {
                 for (auto& x1 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x1, x0, c2, a3, c4, a1}}, in, t[0], range)));
     };
-    ~Task116() {};
+    ~Task173() {};
 };
 
 template <typename T>
-class Task117 : public DensityTask<T> {
+class Task174 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -7200,7 +11145,7 @@ class Task117 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I121
+          // tensor label: I213
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -7220,7 +11165,7 @@ class Task117 : public DensityTask<T> {
     }
 
   public:
-    Task117(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task174(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -7228,11 +11173,11 @@ class Task117 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task117() {};
+    ~Task174() {};
 };
 
 template <typename T>
-class Task118 : public DensityTask<T> {
+class Task175 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -7256,7 +11201,7 @@ class Task118 : public DensityTask<T> {
           const Index c4 = b(4);
           const Index a1 = b(5);
 
-          // tensor label: I120
+          // tensor label: I212
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0, c2, a3, c4, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x1, x0, c2, a3, c4, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x1, x0, c2, a3, c4, a1), 0.0);
@@ -7266,7 +11211,7 @@ class Task118 : public DensityTask<T> {
           std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, a1, c4, a3)]);
           sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c2.size(), a1.size(), c4.size(), a3.size());
 
-          // tensor label: I124
+          // tensor label: I216
           std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
           std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
           sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -7289,7 +11234,7 @@ class Task118 : public DensityTask<T> {
     }
 
   public:
-    Task118(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task175(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -7301,11 +11246,11 @@ class Task118 : public DensityTask<T> {
                 for (auto& x1 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x1, x0, c2, a3, c4, a1}}, in, t[0], range)));
     };
-    ~Task118() {};
+    ~Task175() {};
 };
 
 template <typename T>
-class Task119 : public DensityTask<T> {
+class Task176 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -7325,7 +11270,7 @@ class Task119 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I124
+          // tensor label: I216
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -7345,7 +11290,7 @@ class Task119 : public DensityTask<T> {
     }
 
   public:
-    Task119(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task176(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -7353,11 +11298,11 @@ class Task119 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task119() {};
+    ~Task176() {};
 };
 
 template <typename T>
-class Task120 : public DensityTask<T> {
+class Task177 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -7380,7 +11325,7 @@ class Task120 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(x1, x2);
           {
-            // tensor label: I125
+            // tensor label: I217
             std::unique_ptr<double[]> i0data = in(0)->get_block(x2, x1);
             sort_indices<1,0,1,1,1,1>(i0data, odata, x2.size(), x1.size());
           }
@@ -7397,7 +11342,7 @@ class Task120 : public DensityTask<T> {
     }
 
   public:
-    Task120(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task177(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -7405,11 +11350,11 @@ class Task120 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x2}}, in, t[0], range)));
     };
-    ~Task120() {};
+    ~Task177() {};
 };
 
 template <typename T>
-class Task121 : public DensityTask<T> {
+class Task178 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -7429,7 +11374,7 @@ class Task121 : public DensityTask<T> {
           const Index x2 = b(0);
           const Index x1 = b(1);
 
-          // tensor label: I125
+          // tensor label: I217
           std::unique_ptr<double[]> odata = out()->move_block(x2, x1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x2, x1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x2, x1), 0.0);
@@ -7443,7 +11388,7 @@ class Task121 : public DensityTask<T> {
                   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
                   sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
 
-                  // tensor label: I126
+                  // tensor label: I218
                   std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x2, x1, a3, c2, a1);
                   std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x2, x1, a3, c2, a1)]);
                   sort_indices<0,5,4,3,1,2,0,1,1,1>(i1data, i1data_sorted, x0.size(), x2.size(), x1.size(), a3.size(), c2.size(), a1.size());
@@ -7470,7 +11415,7 @@ class Task121 : public DensityTask<T> {
     }
 
   public:
-    Task121(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task178(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -7478,11 +11423,11 @@ class Task121 : public DensityTask<T> {
         for (auto& x2 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x2, x1}}, in, t[0], range)));
     };
-    ~Task121() {};
+    ~Task178() {};
 };
 
 template <typename T>
-class Task122 : public DensityTask<T> {
+class Task179 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -7506,7 +11451,7 @@ class Task122 : public DensityTask<T> {
           const Index c2 = b(4);
           const Index a1 = b(5);
 
-          // tensor label: I126
+          // tensor label: I218
           std::unique_ptr<double[]> odata = out()->move_block(x0, x2, x1, a3, c2, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x2, x1, a3, c2, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, x2, x1, a3, c2, a1), 0.0);
@@ -7517,7 +11462,7 @@ class Task122 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a3, c2, a1)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a3.size(), c2.size(), a1.size());
 
-            // tensor label: I127
+            // tensor label: I219
             std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
             sort_indices<0,1,2,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
@@ -7541,7 +11486,7 @@ class Task122 : public DensityTask<T> {
     }
 
   public:
-    Task122(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task179(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -7553,11 +11498,11 @@ class Task122 : public DensityTask<T> {
                 for (auto& x0 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x0, x2, x1, a3, c2, a1}}, in, t[0], range)));
     };
-    ~Task122() {};
+    ~Task179() {};
 };
 
 template <typename T>
-class Task123 : public DensityTask<T> {
+class Task180 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -7579,7 +11524,7 @@ class Task123 : public DensityTask<T> {
           const Index x2 = b(2);
           const Index x1 = b(3);
 
-          // tensor label: I127
+          // tensor label: I219
           std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
           {
             // tensor label: Gamma14
@@ -7599,7 +11544,7 @@ class Task123 : public DensityTask<T> {
     }
 
   public:
-    Task123(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task180(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -7609,11 +11554,11 @@ class Task123 : public DensityTask<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task123() {};
+    ~Task180() {};
 };
 
 template <typename T>
-class Task124 : public DensityTask<T> {
+class Task181 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -7637,7 +11582,7 @@ class Task124 : public DensityTask<T> {
           const Index c2 = b(4);
           const Index a1 = b(5);
 
-          // tensor label: I126
+          // tensor label: I218
           std::unique_ptr<double[]> odata = out()->move_block(x0, x2, x1, a3, c2, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x2, x1, a3, c2, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, x2, x1, a3, c2, a1), 0.0);
@@ -7648,7 +11593,7 @@ class Task124 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, c2, a3)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), c2.size(), a3.size());
 
-            // tensor label: I130
+            // tensor label: I222
             std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
             sort_indices<0,1,2,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
@@ -7672,7 +11617,7 @@ class Task124 : public DensityTask<T> {
     }
 
   public:
-    Task124(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task181(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -7684,11 +11629,11 @@ class Task124 : public DensityTask<T> {
                 for (auto& x0 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x0, x2, x1, a3, c2, a1}}, in, t[0], range)));
     };
-    ~Task124() {};
+    ~Task181() {};
 };
 
 template <typename T>
-class Task125 : public DensityTask<T> {
+class Task182 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -7710,7 +11655,7 @@ class Task125 : public DensityTask<T> {
           const Index x2 = b(2);
           const Index x1 = b(3);
 
-          // tensor label: I130
+          // tensor label: I222
           std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
           {
             // tensor label: Gamma14
@@ -7730,7 +11675,7 @@ class Task125 : public DensityTask<T> {
     }
 
   public:
-    Task125(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task182(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -7740,11 +11685,11 @@ class Task125 : public DensityTask<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task125() {};
+    ~Task182() {};
 };
 
 template <typename T>
-class Task126 : public DensityTask<T> {
+class Task183 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -7767,7 +11712,7 @@ class Task126 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(c4, c2);
           {
-            // tensor label: I131
+            // tensor label: I223
             std::unique_ptr<double[]> i0data = in(0)->get_block(c4, c2);
             sort_indices<0,1,1,1,1,1>(i0data, odata, c4.size(), c2.size());
           }
@@ -7784,7 +11729,7 @@ class Task126 : public DensityTask<T> {
     }
 
   public:
-    Task126(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task183(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[0]->nblock()*range[0]->nblock());
@@ -7792,11 +11737,11 @@ class Task126 : public DensityTask<T> {
         for (auto& c4 : *range[0])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{c4, c2}}, in, t[0], range)));
     };
-    ~Task126() {};
+    ~Task183() {};
 };
 
 template <typename T>
-class Task127 : public DensityTask<T> {
+class Task184 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -7816,7 +11761,7 @@ class Task127 : public DensityTask<T> {
           const Index c4 = b(0);
           const Index c2 = b(1);
 
-          // tensor label: I131
+          // tensor label: I223
           std::unique_ptr<double[]> odata = out()->move_block(c4, c2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c4, c2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(c4, c2), 0.0);
@@ -7829,7 +11774,7 @@ class Task127 : public DensityTask<T> {
                 std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
                 sort_indices<0,1,3,2,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
 
-                // tensor label: I132
+                // tensor label: I224
                 std::unique_ptr<double[]> i1data = in(1)->get_block(x0, a3, c4, a1);
                 std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, a3, c4, a1)]);
                 sort_indices<0,3,1,2,0,1,1,1>(i1data, i1data_sorted, x0.size(), a3.size(), c4.size(), a1.size());
@@ -7855,7 +11800,7 @@ class Task127 : public DensityTask<T> {
     }
 
   public:
-    Task127(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task184(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[0]->nblock()*range[0]->nblock());
@@ -7863,11 +11808,11 @@ class Task127 : public DensityTask<T> {
         for (auto& c4 : *range[0])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{c4, c2}}, in, t[0], range)));
     };
-    ~Task127() {};
+    ~Task184() {};
 };
 
 template <typename T>
-class Task128 : public DensityTask<T> {
+class Task185 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -7889,7 +11834,7 @@ class Task128 : public DensityTask<T> {
           const Index c4 = b(2);
           const Index a1 = b(3);
 
-          // tensor label: I132
+          // tensor label: I224
           std::unique_ptr<double[]> odata = out()->move_block(x0, a3, c4, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a3, c4, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a3, c4, a1), 0.0);
@@ -7900,7 +11845,7 @@ class Task128 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c4, a1)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c4.size(), a1.size());
 
-            // tensor label: I133
+            // tensor label: I225
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -7924,7 +11869,7 @@ class Task128 : public DensityTask<T> {
     }
 
   public:
-    Task128(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task185(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -7934,11 +11879,11 @@ class Task128 : public DensityTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c4, a1}}, in, t[0], range)));
     };
-    ~Task128() {};
+    ~Task185() {};
 };
 
 template <typename T>
-class Task129 : public DensityTask<T> {
+class Task186 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -7958,7 +11903,7 @@ class Task129 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I133
+          // tensor label: I225
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -7978,7 +11923,7 @@ class Task129 : public DensityTask<T> {
     }
 
   public:
-    Task129(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task186(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -7986,11 +11931,11 @@ class Task129 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task129() {};
+    ~Task186() {};
 };
 
 template <typename T>
-class Task130 : public DensityTask<T> {
+class Task187 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -8012,7 +11957,7 @@ class Task130 : public DensityTask<T> {
           const Index c4 = b(2);
           const Index a1 = b(3);
 
-          // tensor label: I132
+          // tensor label: I224
           std::unique_ptr<double[]> odata = out()->move_block(x0, a3, c4, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a3, c4, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a3, c4, a1), 0.0);
@@ -8023,7 +11968,7 @@ class Task130 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c4, a3)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c4.size(), a3.size());
 
-            // tensor label: I136
+            // tensor label: I228
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -8047,7 +11992,7 @@ class Task130 : public DensityTask<T> {
     }
 
   public:
-    Task130(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task187(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -8057,11 +12002,11 @@ class Task130 : public DensityTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c4, a1}}, in, t[0], range)));
     };
-    ~Task130() {};
+    ~Task187() {};
 };
 
 template <typename T>
-class Task131 : public DensityTask<T> {
+class Task188 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -8081,7 +12026,7 @@ class Task131 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I136
+          // tensor label: I228
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -8101,7 +12046,7 @@ class Task131 : public DensityTask<T> {
     }
 
   public:
-    Task131(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task188(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -8109,11 +12054,11 @@ class Task131 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task131() {};
+    ~Task188() {};
 };
 
 template <typename T>
-class Task132 : public DensityTask<T> {
+class Task189 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -8136,7 +12081,7 @@ class Task132 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(a1, a4);
           {
-            // tensor label: I137
+            // tensor label: I229
             std::unique_ptr<double[]> i0data = in(0)->get_block(a4, a1);
             sort_indices<1,0,1,1,1,1>(i0data, odata, a4.size(), a1.size());
           }
@@ -8153,7 +12098,7 @@ class Task132 : public DensityTask<T> {
     }
 
   public:
-    Task132(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task189(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock());
@@ -8161,11 +12106,11 @@ class Task132 : public DensityTask<T> {
         for (auto& a1 : *range[2])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{a1, a4}}, in, t[0], range)));
     };
-    ~Task132() {};
+    ~Task189() {};
 };
 
 template <typename T>
-class Task133 : public DensityTask<T> {
+class Task190 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -8185,7 +12130,7 @@ class Task133 : public DensityTask<T> {
           const Index a4 = b(0);
           const Index a1 = b(1);
 
-          // tensor label: I137
+          // tensor label: I229
           std::unique_ptr<double[]> odata = out()->move_block(a4, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(a4, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(a4, a1), 0.0);
@@ -8198,7 +12143,7 @@ class Task133 : public DensityTask<T> {
                 std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
                 sort_indices<0,2,3,1,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
 
-                // tensor label: I138
+                // tensor label: I230
                 std::unique_ptr<double[]> i1data = in(1)->get_block(x0, a4, c2, a3);
                 std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, a4, c2, a3)]);
                 sort_indices<0,2,3,1,0,1,1,1>(i1data, i1data_sorted, x0.size(), a4.size(), c2.size(), a3.size());
@@ -8224,7 +12169,7 @@ class Task133 : public DensityTask<T> {
     }
 
   public:
-    Task133(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task190(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock());
@@ -8232,11 +12177,11 @@ class Task133 : public DensityTask<T> {
         for (auto& a4 : *range[2])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{a4, a1}}, in, t[0], range)));
     };
-    ~Task133() {};
+    ~Task190() {};
 };
 
 template <typename T>
-class Task134 : public DensityTask<T> {
+class Task191 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -8258,7 +12203,7 @@ class Task134 : public DensityTask<T> {
           const Index c2 = b(2);
           const Index a3 = b(3);
 
-          // tensor label: I138
+          // tensor label: I230
           std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c2, a3);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c2, a3)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c2, a3), 0.0);
@@ -8269,7 +12214,7 @@ class Task134 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a4, c2, a3)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a4.size(), c2.size(), a3.size());
 
-            // tensor label: I139
+            // tensor label: I231
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -8293,7 +12238,7 @@ class Task134 : public DensityTask<T> {
     }
 
   public:
-    Task134(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task191(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -8303,11 +12248,11 @@ class Task134 : public DensityTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a3}}, in, t[0], range)));
     };
-    ~Task134() {};
+    ~Task191() {};
 };
 
 template <typename T>
-class Task135 : public DensityTask<T> {
+class Task192 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -8327,7 +12272,7 @@ class Task135 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I139
+          // tensor label: I231
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -8347,7 +12292,7 @@ class Task135 : public DensityTask<T> {
     }
 
   public:
-    Task135(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task192(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -8355,11 +12300,11 @@ class Task135 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task135() {};
+    ~Task192() {};
 };
 
 template <typename T>
-class Task136 : public DensityTask<T> {
+class Task193 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -8381,7 +12326,7 @@ class Task136 : public DensityTask<T> {
           const Index c2 = b(2);
           const Index a3 = b(3);
 
-          // tensor label: I138
+          // tensor label: I230
           std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c2, a3);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c2, a3)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c2, a3), 0.0);
@@ -8392,7 +12337,7 @@ class Task136 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a4)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a4.size());
 
-            // tensor label: I142
+            // tensor label: I234
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -8416,7 +12361,7 @@ class Task136 : public DensityTask<T> {
     }
 
   public:
-    Task136(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task193(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -8426,11 +12371,11 @@ class Task136 : public DensityTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a3}}, in, t[0], range)));
     };
-    ~Task136() {};
+    ~Task193() {};
 };
 
 template <typename T>
-class Task137 : public DensityTask<T> {
+class Task194 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -8450,7 +12395,7 @@ class Task137 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I142
+          // tensor label: I234
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -8470,7 +12415,7 @@ class Task137 : public DensityTask<T> {
     }
 
   public:
-    Task137(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task194(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -8478,11 +12423,11 @@ class Task137 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task137() {};
+    ~Task194() {};
 };
 
 template <typename T>
-class Task138 : public DensityTask<T> {
+class Task195 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -8505,7 +12450,7 @@ class Task138 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(a3, a4);
           {
-            // tensor label: I143
+            // tensor label: I235
             std::unique_ptr<double[]> i0data = in(0)->get_block(a4, a3);
             sort_indices<1,0,1,1,1,1>(i0data, odata, a4.size(), a3.size());
           }
@@ -8522,7 +12467,7 @@ class Task138 : public DensityTask<T> {
     }
 
   public:
-    Task138(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task195(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock());
@@ -8530,11 +12475,11 @@ class Task138 : public DensityTask<T> {
         for (auto& a3 : *range[2])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{a3, a4}}, in, t[0], range)));
     };
-    ~Task138() {};
+    ~Task195() {};
 };
 
 template <typename T>
-class Task139 : public DensityTask<T> {
+class Task196 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -8554,7 +12499,7 @@ class Task139 : public DensityTask<T> {
           const Index a4 = b(0);
           const Index a3 = b(1);
 
-          // tensor label: I143
+          // tensor label: I235
           std::unique_ptr<double[]> odata = out()->move_block(a4, a3);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(a4, a3)]);
           std::fill_n(odata_sorted.get(), out()->get_size(a4, a3), 0.0);
@@ -8567,7 +12512,7 @@ class Task139 : public DensityTask<T> {
                 std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
                 sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
 
-                // tensor label: I144
+                // tensor label: I236
                 std::unique_ptr<double[]> i1data = in(1)->get_block(x0, a4, c2, a1);
                 std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, a4, c2, a1)]);
                 sort_indices<0,3,2,1,0,1,1,1>(i1data, i1data_sorted, x0.size(), a4.size(), c2.size(), a1.size());
@@ -8593,7 +12538,7 @@ class Task139 : public DensityTask<T> {
     }
 
   public:
-    Task139(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task196(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock());
@@ -8601,11 +12546,11 @@ class Task139 : public DensityTask<T> {
         for (auto& a4 : *range[2])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{a4, a3}}, in, t[0], range)));
     };
-    ~Task139() {};
+    ~Task196() {};
 };
 
 template <typename T>
-class Task140 : public DensityTask<T> {
+class Task197 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -8627,7 +12572,7 @@ class Task140 : public DensityTask<T> {
           const Index c2 = b(2);
           const Index a1 = b(3);
 
-          // tensor label: I144
+          // tensor label: I236
           std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c2, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c2, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c2, a1), 0.0);
@@ -8638,7 +12583,7 @@ class Task140 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a4, c2, a1)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a4.size(), c2.size(), a1.size());
 
-            // tensor label: I145
+            // tensor label: I237
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -8662,7 +12607,7 @@ class Task140 : public DensityTask<T> {
     }
 
   public:
-    Task140(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task197(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -8672,11 +12617,11 @@ class Task140 : public DensityTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a1}}, in, t[0], range)));
     };
-    ~Task140() {};
+    ~Task197() {};
 };
 
 template <typename T>
-class Task141 : public DensityTask<T> {
+class Task198 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -8696,7 +12641,7 @@ class Task141 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I145
+          // tensor label: I237
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -8716,7 +12661,7 @@ class Task141 : public DensityTask<T> {
     }
 
   public:
-    Task141(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task198(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -8724,11 +12669,11 @@ class Task141 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task141() {};
+    ~Task198() {};
 };
 
 template <typename T>
-class Task142 : public DensityTask<T> {
+class Task199 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -8750,7 +12695,7 @@ class Task142 : public DensityTask<T> {
           const Index c2 = b(2);
           const Index a1 = b(3);
 
-          // tensor label: I144
+          // tensor label: I236
           std::unique_ptr<double[]> odata = out()->move_block(x0, a4, c2, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a4, c2, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a4, c2, a1), 0.0);
@@ -8761,7 +12706,7 @@ class Task142 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a4)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a4.size());
 
-            // tensor label: I148
+            // tensor label: I240
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -8785,7 +12730,7 @@ class Task142 : public DensityTask<T> {
     }
 
   public:
-    Task142(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task199(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -8795,11 +12740,11 @@ class Task142 : public DensityTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a4, c2, a1}}, in, t[0], range)));
     };
-    ~Task142() {};
+    ~Task199() {};
 };
 
 template <typename T>
-class Task143 : public DensityTask<T> {
+class Task200 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -8819,7 +12764,7 @@ class Task143 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I148
+          // tensor label: I240
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -8839,7 +12784,7 @@ class Task143 : public DensityTask<T> {
     }
 
   public:
-    Task143(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task200(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -8847,11 +12792,11 @@ class Task143 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task143() {};
+    ~Task200() {};
 };
 
 template <typename T>
-class Task144 : public DensityTask<T> {
+class Task201 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -8874,7 +12819,7 @@ class Task144 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(x1, c2);
           {
-            // tensor label: I149
+            // tensor label: I241
             std::unique_ptr<double[]> i0data = in(0)->get_block(x1, c2);
             sort_indices<0,1,1,1,1,1>(i0data, odata, x1.size(), c2.size());
           }
@@ -8891,7 +12836,7 @@ class Task144 : public DensityTask<T> {
     }
 
   public:
-    Task144(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task201(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[0]->nblock()*range[1]->nblock());
@@ -8899,11 +12844,11 @@ class Task144 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, c2}}, in, t[0], range)));
     };
-    ~Task144() {};
+    ~Task201() {};
 };
 
 template <typename T>
-class Task145 : public DensityTask<T> {
+class Task202 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -8923,7 +12868,7 @@ class Task145 : public DensityTask<T> {
           const Index x1 = b(0);
           const Index c2 = b(1);
 
-          // tensor label: I149
+          // tensor label: I241
           std::unique_ptr<double[]> odata = out()->move_block(x1, c2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x1, c2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x1, c2), 0.0);
@@ -8936,7 +12881,7 @@ class Task145 : public DensityTask<T> {
                 std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
                 sort_indices<0,1,3,2,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
 
-                // tensor label: I150
+                // tensor label: I242
                 std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x1, a1, a3);
                 std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x1, a1, a3)]);
                 sort_indices<0,2,3,1,0,1,1,1>(i1data, i1data_sorted, x0.size(), x1.size(), a1.size(), a3.size());
@@ -8962,7 +12907,7 @@ class Task145 : public DensityTask<T> {
     }
 
   public:
-    Task145(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task202(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[0]->nblock()*range[1]->nblock());
@@ -8970,11 +12915,11 @@ class Task145 : public DensityTask<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, c2}}, in, t[0], range)));
     };
-    ~Task145() {};
+    ~Task202() {};
 };
 
 template <typename T>
-class Task146 : public DensityTask<T> {
+class Task203 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -8996,7 +12941,7 @@ class Task146 : public DensityTask<T> {
           const Index a1 = b(2);
           const Index a3 = b(3);
 
-          // tensor label: I150
+          // tensor label: I242
           std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a3);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a3)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a3), 0.0);
@@ -9008,7 +12953,7 @@ class Task146 : public DensityTask<T> {
               std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a3)]);
               sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a3.size());
 
-              // tensor label: I151
+              // tensor label: I243
               std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
               std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
               sort_indices<2,0,1,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
@@ -9033,7 +12978,7 @@ class Task146 : public DensityTask<T> {
     }
 
   public:
-    Task146(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task203(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -9043,11 +12988,11 @@ class Task146 : public DensityTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a3}}, in, t[0], range)));
     };
-    ~Task146() {};
+    ~Task203() {};
 };
 
 template <typename T>
-class Task147 : public DensityTask<T> {
+class Task204 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -9069,7 +13014,7 @@ class Task147 : public DensityTask<T> {
           const Index x2 = b(2);
           const Index x1 = b(3);
 
-          // tensor label: I151
+          // tensor label: I243
           std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
           {
             // tensor label: Gamma14
@@ -9089,7 +13034,7 @@ class Task147 : public DensityTask<T> {
     }
 
   public:
-    Task147(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task204(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -9099,11 +13044,11 @@ class Task147 : public DensityTask<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task147() {};
+    ~Task204() {};
 };
 
 template <typename T>
-class Task148 : public DensityTask<T> {
+class Task205 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -9126,7 +13071,7 @@ class Task148 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(c3, x2);
           {
-            // tensor label: I152
+            // tensor label: I244
             std::unique_ptr<double[]> i0data = in(0)->get_block(x2, c3);
             sort_indices<1,0,1,1,1,1>(i0data, odata, x2.size(), c3.size());
           }
@@ -9143,7 +13088,7 @@ class Task148 : public DensityTask<T> {
     }
 
   public:
-    Task148(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task205(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[0]->nblock());
@@ -9151,11 +13096,11 @@ class Task148 : public DensityTask<T> {
         for (auto& c3 : *range[0])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{c3, x2}}, in, t[0], range)));
     };
-    ~Task148() {};
+    ~Task205() {};
 };
 
 template <typename T>
-class Task149 : public DensityTask<T> {
+class Task206 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -9175,7 +13120,7 @@ class Task149 : public DensityTask<T> {
           const Index x2 = b(0);
           const Index c3 = b(1);
 
-          // tensor label: I152
+          // tensor label: I244
           std::unique_ptr<double[]> odata = out()->move_block(x2, c3);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x2, c3)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x2, c3), 0.0);
@@ -9189,7 +13134,7 @@ class Task149 : public DensityTask<T> {
                   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a2)]);
                   sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a2.size());
 
-                  // tensor label: I153
+                  // tensor label: I245
                   std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x2, x1, a1, c3, a2);
                   std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x2, x1, a1, c3, a2)]);
                   sort_indices<0,3,2,5,1,4,0,1,1,1>(i1data, i1data_sorted, x0.size(), x2.size(), x1.size(), a1.size(), c3.size(), a2.size());
@@ -9216,7 +13161,7 @@ class Task149 : public DensityTask<T> {
     }
 
   public:
-    Task149(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task206(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[0]->nblock()*range[1]->nblock());
@@ -9224,11 +13169,11 @@ class Task149 : public DensityTask<T> {
         for (auto& x2 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x2, c3}}, in, t[0], range)));
     };
-    ~Task149() {};
+    ~Task206() {};
 };
 
 template <typename T>
-class Task150 : public DensityTask<T> {
+class Task207 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -9252,7 +13197,7 @@ class Task150 : public DensityTask<T> {
           const Index c3 = b(4);
           const Index a2 = b(5);
 
-          // tensor label: I153
+          // tensor label: I245
           std::unique_ptr<double[]> odata = out()->move_block(x0, x2, x1, a1, c3, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x2, x1, a1, c3, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, x2, x1, a1, c3, a2), 0.0);
@@ -9263,7 +13208,7 @@ class Task150 : public DensityTask<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, c3, a2)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), c3.size(), a2.size());
 
-            // tensor label: I154
+            // tensor label: I246
             std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
             sort_indices<0,1,2,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
@@ -9287,7 +13232,7 @@ class Task150 : public DensityTask<T> {
     }
 
   public:
-    Task150(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task207(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -9299,11 +13244,11 @@ class Task150 : public DensityTask<T> {
                 for (auto& x0 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x0, x2, x1, a1, c3, a2}}, in, t[0], range)));
     };
-    ~Task150() {};
+    ~Task207() {};
 };
 
 template <typename T>
-class Task151 : public DensityTask<T> {
+class Task208 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -9325,7 +13270,7 @@ class Task151 : public DensityTask<T> {
           const Index x2 = b(2);
           const Index x1 = b(3);
 
-          // tensor label: I154
+          // tensor label: I246
           std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
           {
             // tensor label: Gamma14
@@ -9345,7 +13290,7 @@ class Task151 : public DensityTask<T> {
     }
 
   public:
-    Task151(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task208(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -9355,11 +13300,11 @@ class Task151 : public DensityTask<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task151() {};
+    ~Task208() {};
 };
 
 template <typename T>
-class Task152 : public DensityTask<T> {
+class Task209 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -9382,7 +13327,7 @@ class Task152 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(x2, x3);
           {
-            // tensor label: I155
+            // tensor label: I247
             std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x2);
             sort_indices<1,0,1,1,1,1>(i0data, odata, x3.size(), x2.size());
           }
@@ -9399,7 +13344,7 @@ class Task152 : public DensityTask<T> {
     }
 
   public:
-    Task152(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task209(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -9407,11 +13352,11 @@ class Task152 : public DensityTask<T> {
         for (auto& x2 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x2, x3}}, in, t[0], range)));
     };
-    ~Task152() {};
+    ~Task209() {};
 };
 
 template <typename T>
-class Task153 : public DensityTask<T> {
+class Task210 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -9431,7 +13376,7 @@ class Task153 : public DensityTask<T> {
           const Index x3 = b(0);
           const Index x2 = b(1);
 
-          // tensor label: I155
+          // tensor label: I247
           std::unique_ptr<double[]> odata = out()->move_block(x3, x2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x3, x2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x3, x2), 0.0);
@@ -9445,7 +13390,7 @@ class Task153 : public DensityTask<T> {
                   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a2)]);
                   sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a2.size());
 
-                  // tensor label: I156
+                  // tensor label: I248
                   std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x1, x3, x2, a1, a2);
                   std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x1, x3, x2, a1, a2)]);
                   sort_indices<0,4,1,5,2,3,0,1,1,1>(i1data, i1data_sorted, x0.size(), x1.size(), x3.size(), x2.size(), a1.size(), a2.size());
@@ -9472,7 +13417,7 @@ class Task153 : public DensityTask<T> {
     }
 
   public:
-    Task153(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task210(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -9480,11 +13425,11 @@ class Task153 : public DensityTask<T> {
         for (auto& x3 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x3, x2}}, in, t[0], range)));
     };
-    ~Task153() {};
+    ~Task210() {};
 };
 
 template <typename T>
-class Task154 : public DensityTask<T> {
+class Task211 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<6,2,T> {
       protected:
@@ -9508,7 +13453,7 @@ class Task154 : public DensityTask<T> {
           const Index a1 = b(4);
           const Index a2 = b(5);
 
-          // tensor label: I156
+          // tensor label: I248
           std::unique_ptr<double[]> odata = out()->move_block(x0, x1, x3, x2, a1, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, x3, x2, a1, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, x3, x2, a1, a2), 0.0);
@@ -9520,7 +13465,7 @@ class Task154 : public DensityTask<T> {
               std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x5, a1, x4, a2)]);
               sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x5.size(), a1.size(), x4.size(), a2.size());
 
-              // tensor label: I157
+              // tensor label: I249
               std::unique_ptr<double[]> i1data = in(1)->get_block(x5, x0, x4, x1, x3, x2);
               std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x5, x0, x4, x1, x3, x2)]);
               sort_indices<2,0,1,3,4,5,0,1,1,1>(i1data, i1data_sorted, x5.size(), x0.size(), x4.size(), x1.size(), x3.size(), x2.size());
@@ -9545,7 +13490,7 @@ class Task154 : public DensityTask<T> {
     }
 
   public:
-    Task154(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task211(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -9557,11 +13502,11 @@ class Task154 : public DensityTask<T> {
                 for (auto& x0 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x0, x1, x3, x2, a1, a2}}, in, t[0], range)));
     };
-    ~Task154() {};
+    ~Task211() {};
 };
 
 template <typename T>
-class Task155 : public DensityTask<T> {
+class Task212 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<6,1,T> {
       protected:
@@ -9585,10 +13530,10 @@ class Task155 : public DensityTask<T> {
           const Index x3 = b(4);
           const Index x2 = b(5);
 
-          // tensor label: I157
+          // tensor label: I249
           std::unique_ptr<double[]> odata = out()->move_block(x5, x0, x4, x1, x3, x2);
           {
-            // tensor label: Gamma46
+            // tensor label: Gamma67
             std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x0, x4, x1, x3, x2);
             sort_indices<0,1,2,3,4,5,1,1,1,2>(i0data, odata, x5.size(), x0.size(), x4.size(), x1.size(), x3.size(), x2.size());
           }
@@ -9605,7 +13550,7 @@ class Task155 : public DensityTask<T> {
     }
 
   public:
-    Task155(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task212(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -9617,11 +13562,11 @@ class Task155 : public DensityTask<T> {
                 for (auto& x5 : *range[1])
                   subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x5, x0, x4, x1, x3, x2}}, in, t[0], range)));
     };
-    ~Task155() {};
+    ~Task212() {};
 };
 
 template <typename T>
-class Task156 : public DensityTask<T> {
+class Task213 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -9644,7 +13589,7 @@ class Task156 : public DensityTask<T> {
           // tensor label: den2
           std::unique_ptr<double[]> odata = out()->move_block(a2, a3);
           {
-            // tensor label: I158
+            // tensor label: I250
             std::unique_ptr<double[]> i0data = in(0)->get_block(a3, a2);
             sort_indices<1,0,1,1,1,1>(i0data, odata, a3.size(), a2.size());
           }
@@ -9661,7 +13606,7 @@ class Task156 : public DensityTask<T> {
     }
 
   public:
-    Task156(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task213(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock());
@@ -9669,11 +13614,11 @@ class Task156 : public DensityTask<T> {
         for (auto& a2 : *range[2])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{a2, a3}}, in, t[0], range)));
     };
-    ~Task156() {};
+    ~Task213() {};
 };
 
 template <typename T>
-class Task157 : public DensityTask<T> {
+class Task214 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<2,2,T> {
       protected:
@@ -9693,7 +13638,7 @@ class Task157 : public DensityTask<T> {
           const Index a3 = b(0);
           const Index a2 = b(1);
 
-          // tensor label: I158
+          // tensor label: I250
           std::unique_ptr<double[]> odata = out()->move_block(a3, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(a3, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(a3, a2), 0.0);
@@ -9706,7 +13651,7 @@ class Task157 : public DensityTask<T> {
                 std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a2)]);
                 sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a2.size());
 
-                // tensor label: I159
+                // tensor label: I251
                 std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x1, a1, a3);
                 std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x1, a1, a3)]);
                 sort_indices<0,2,1,3,0,1,1,1>(i1data, i1data_sorted, x0.size(), x1.size(), a1.size(), a3.size());
@@ -9732,7 +13677,7 @@ class Task157 : public DensityTask<T> {
     }
 
   public:
-    Task157(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task214(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock());
@@ -9740,11 +13685,11 @@ class Task157 : public DensityTask<T> {
         for (auto& a3 : *range[2])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{a3, a2}}, in, t[0], range)));
     };
-    ~Task157() {};
+    ~Task214() {};
 };
 
 template <typename T>
-class Task158 : public DensityTask<T> {
+class Task215 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -9766,7 +13711,7 @@ class Task158 : public DensityTask<T> {
           const Index a1 = b(2);
           const Index a3 = b(3);
 
-          // tensor label: I159
+          // tensor label: I251
           std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a3);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a3)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a3), 0.0);
@@ -9778,7 +13723,7 @@ class Task158 : public DensityTask<T> {
               std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a3)]);
               sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a3.size());
 
-              // tensor label: I160
+              // tensor label: I252
               std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
               std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
               sort_indices<2,0,1,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
@@ -9803,7 +13748,7 @@ class Task158 : public DensityTask<T> {
     }
 
   public:
-    Task158(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task215(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -9813,11 +13758,11 @@ class Task158 : public DensityTask<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a3}}, in, t[0], range)));
     };
-    ~Task158() {};
+    ~Task215() {};
 };
 
 template <typename T>
-class Task159 : public DensityTask<T> {
+class Task216 : public DensityTask<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -9839,7 +13784,7 @@ class Task159 : public DensityTask<T> {
           const Index x2 = b(2);
           const Index x1 = b(3);
 
-          // tensor label: I160
+          // tensor label: I252
           std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
           {
             // tensor label: Gamma14
@@ -9859,7 +13804,7 @@ class Task159 : public DensityTask<T> {
     }
 
   public:
-    Task159(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
+    Task216(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -9869,11 +13814,11 @@ class Task159 : public DensityTask<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task159() {};
+    ~Task216() {};
 };
 
 template <typename T>
-class Task160 : public Density2Task<T> {
+class Task217 : public Density2Task<T> {
   protected:
     std::shared_ptr<Tensor<T>> d2_;
     IndexRange closed_;
@@ -9885,14 +13830,14 @@ class Task160 : public Density2Task<T> {
     };
 
   public:
-    Task160(std::vector<std::shared_ptr<Tensor<T>>> t) : Density2Task<T>() {
+    Task217(std::vector<std::shared_ptr<Tensor<T>>> t) : Density2Task<T>() {
       d2_ =  t[0];
     };
-    ~Task160() {};
+    ~Task217() {};
 };
 
 template <typename T>
-class Task161 : public Density2Task<T> {
+class Task218 : public Density2Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -9917,7 +13862,7 @@ class Task161 : public Density2Task<T> {
           // tensor label: Den1
           std::unique_ptr<double[]> odata = out()->move_block(c3, a4, c1, a2);
           {
-            // tensor label: I161
+            // tensor label: I253
             std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a4, c3, a2);
             sort_indices<2,1,0,3,1,1,1,1>(i0data, odata, c1.size(), a4.size(), c3.size(), a2.size());
           }
@@ -9934,7 +13879,7 @@ class Task161 : public Density2Task<T> {
     }
 
   public:
-    Task161(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
+    Task218(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -9944,11 +13889,11 @@ class Task161 : public Density2Task<T> {
             for (auto& c3 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c3, a4, c1, a2}}, in, t[0], range)));
     };
-    ~Task161() {};
+    ~Task218() {};
 };
 
 template <typename T>
-class Task162 : public Density2Task<T> {
+class Task219 : public Density2Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -9970,7 +13915,7 @@ class Task162 : public Density2Task<T> {
           const Index c3 = b(2);
           const Index a2 = b(3);
 
-          // tensor label: I161
+          // tensor label: I253
           std::unique_ptr<double[]> odata = out()->move_block(c1, a4, c3, a2);
           {
             // tensor label: t2
@@ -9995,7 +13940,7 @@ class Task162 : public Density2Task<T> {
     }
 
   public:
-    Task162(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
+    Task219(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -10005,11 +13950,11 @@ class Task162 : public Density2Task<T> {
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range)));
     };
-    ~Task162() {};
+    ~Task219() {};
 };
 
 template <typename T>
-class Task163 : public Density2Task<T> {
+class Task220 : public Density2Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -10034,7 +13979,7 @@ class Task163 : public Density2Task<T> {
           // tensor label: Den1
           std::unique_ptr<double[]> odata = out()->move_block(c2, a3, x0, a1);
           {
-            // tensor label: I163
+            // tensor label: I255
             std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a3, c2, a1);
             sort_indices<2,1,0,3,1,1,1,1>(i0data, odata, x0.size(), a3.size(), c2.size(), a1.size());
           }
@@ -10051,7 +13996,7 @@ class Task163 : public Density2Task<T> {
     }
 
   public:
-    Task163(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
+    Task220(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[0]->nblock());
@@ -10061,11 +14006,11 @@ class Task163 : public Density2Task<T> {
             for (auto& c2 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c2, a3, x0, a1}}, in, t[0], range)));
     };
-    ~Task163() {};
+    ~Task220() {};
 };
 
 template <typename T>
-class Task164 : public Density2Task<T> {
+class Task221 : public Density2Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -10087,7 +14032,7 @@ class Task164 : public Density2Task<T> {
           const Index c2 = b(2);
           const Index a1 = b(3);
 
-          // tensor label: I163
+          // tensor label: I255
           std::unique_ptr<double[]> odata = out()->move_block(x0, a3, c2, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a3, c2, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a3, c2, a1), 0.0);
@@ -10098,7 +14043,7 @@ class Task164 : public Density2Task<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a1)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a1.size());
 
-            // tensor label: I164
+            // tensor label: I256
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -10122,7 +14067,7 @@ class Task164 : public Density2Task<T> {
     }
 
   public:
-    Task164(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
+    Task221(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -10132,11 +14077,11 @@ class Task164 : public Density2Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c2, a1}}, in, t[0], range)));
     };
-    ~Task164() {};
+    ~Task221() {};
 };
 
 template <typename T>
-class Task165 : public Density2Task<T> {
+class Task222 : public Density2Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -10156,7 +14101,7 @@ class Task165 : public Density2Task<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I164
+          // tensor label: I256
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -10176,7 +14121,7 @@ class Task165 : public Density2Task<T> {
     }
 
   public:
-    Task165(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
+    Task222(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -10184,11 +14129,11 @@ class Task165 : public Density2Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task165() {};
+    ~Task222() {};
 };
 
 template <typename T>
-class Task166 : public Density2Task<T> {
+class Task223 : public Density2Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -10210,7 +14155,7 @@ class Task166 : public Density2Task<T> {
           const Index c2 = b(2);
           const Index a1 = b(3);
 
-          // tensor label: I163
+          // tensor label: I255
           std::unique_ptr<double[]> odata = out()->move_block(x0, a3, c2, a1);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, a3, c2, a1)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, a3, c2, a1), 0.0);
@@ -10221,7 +14166,7 @@ class Task166 : public Density2Task<T> {
             std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a3)]);
             sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a3.size());
 
-            // tensor label: I166
+            // tensor label: I258
             std::unique_ptr<double[]> i1data = in(1)->get_block(x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x1, x0)]);
             sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x1.size(), x0.size());
@@ -10245,7 +14190,7 @@ class Task166 : public Density2Task<T> {
     }
 
   public:
-    Task166(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
+    Task223(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -10255,11 +14200,11 @@ class Task166 : public Density2Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c2, a1}}, in, t[0], range)));
     };
-    ~Task166() {};
+    ~Task223() {};
 };
 
 template <typename T>
-class Task167 : public Density2Task<T> {
+class Task224 : public Density2Task<T> {
   protected:
     class Task_local : public SubTask<2,1,T> {
       protected:
@@ -10279,7 +14224,7 @@ class Task167 : public Density2Task<T> {
           const Index x1 = b(0);
           const Index x0 = b(1);
 
-          // tensor label: I166
+          // tensor label: I258
           std::unique_ptr<double[]> odata = out()->move_block(x1, x0);
           {
             // tensor label: Gamma2
@@ -10299,7 +14244,7 @@ class Task167 : public Density2Task<T> {
     }
 
   public:
-    Task167(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
+    Task224(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
@@ -10307,11 +14252,11 @@ class Task167 : public Density2Task<T> {
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
     };
-    ~Task167() {};
+    ~Task224() {};
 };
 
 template <typename T>
-class Task168 : public Density2Task<T> {
+class Task225 : public Density2Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -10336,7 +14281,7 @@ class Task168 : public Density2Task<T> {
           // tensor label: Den1
           std::unique_ptr<double[]> odata = out()->move_block(x1, a2, x0, a1);
           {
-            // tensor label: I167
+            // tensor label: I259
             std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x1, a1, a2);
             sort_indices<1,3,0,2,1,1,1,1>(i0data, odata, x0.size(), x1.size(), a1.size(), a2.size());
           }
@@ -10353,7 +14298,7 @@ class Task168 : public Density2Task<T> {
     }
 
   public:
-    Task168(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
+    Task225(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
@@ -10363,11 +14308,11 @@ class Task168 : public Density2Task<T> {
             for (auto& x1 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x1, a2, x0, a1}}, in, t[0], range)));
     };
-    ~Task168() {};
+    ~Task225() {};
 };
 
 template <typename T>
-class Task169 : public Density2Task<T> {
+class Task226 : public Density2Task<T> {
   protected:
     class Task_local : public SubTask<4,2,T> {
       protected:
@@ -10389,7 +14334,7 @@ class Task169 : public Density2Task<T> {
           const Index a1 = b(2);
           const Index a2 = b(3);
 
-          // tensor label: I167
+          // tensor label: I259
           std::unique_ptr<double[]> odata = out()->move_block(x0, x1, a1, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x0, x1, a1, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(x0, x1, a1, a2), 0.0);
@@ -10401,7 +14346,7 @@ class Task169 : public Density2Task<T> {
               std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a2)]);
               sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a2.size());
 
-              // tensor label: I168
+              // tensor label: I260
               std::unique_ptr<double[]> i1data = in(1)->get_block(x3, x0, x2, x1);
               std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x3, x0, x2, x1)]);
               sort_indices<2,0,1,3,0,1,1,1>(i1data, i1data_sorted, x3.size(), x0.size(), x2.size(), x1.size());
@@ -10426,7 +14371,7 @@ class Task169 : public Density2Task<T> {
     }
 
   public:
-    Task169(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
+    Task226(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -10436,11 +14381,11 @@ class Task169 : public Density2Task<T> {
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task169() {};
+    ~Task226() {};
 };
 
 template <typename T>
-class Task170 : public Density2Task<T> {
+class Task227 : public Density2Task<T> {
   protected:
     class Task_local : public SubTask<4,1,T> {
       protected:
@@ -10462,7 +14407,7 @@ class Task170 : public Density2Task<T> {
           const Index x2 = b(2);
           const Index x1 = b(3);
 
-          // tensor label: I168
+          // tensor label: I260
           std::unique_ptr<double[]> odata = out()->move_block(x3, x0, x2, x1);
           {
             // tensor label: Gamma14
@@ -10482,7 +14427,7 @@ class Task170 : public Density2Task<T> {
     }
 
   public:
-    Task170(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
+    Task227(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
@@ -10492,11 +14437,11 @@ class Task170 : public Density2Task<T> {
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task170() {};
+    ~Task227() {};
 };
 
 template <typename T>
-class Task171 : public DedciTask<T> {
+class Task228 : public DedciTask<T> {
   protected:
     std::shared_ptr<Tensor<T>> dec_;
     IndexRange closed_;
@@ -10509,14 +14454,14 @@ class Task171 : public DedciTask<T> {
     };
 
   public:
-    Task171(std::vector<std::shared_ptr<Tensor<T>>> t) : DedciTask<T>() {
+    Task228(std::vector<std::shared_ptr<Tensor<T>>> t) : DedciTask<T>() {
       dec_ =  t[0];
     };
-    ~Task171() {};
+    ~Task228() {};
 };
 
 template <typename T>
-class Task172 : public DedciTask<T> {
+class Task229 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<1,1,T> {
       protected:
@@ -10538,7 +14483,7 @@ class Task172 : public DedciTask<T> {
           // tensor label: deci
           std::unique_ptr<double[]> odata = out()->move_block(ci0);
           {
-            // tensor label: I169
+            // tensor label: I261
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
             sort_indices<0,1,1,1,1>(i0data, odata, ci0.size());
           }
@@ -10555,18 +14500,18 @@ class Task172 : public DedciTask<T> {
     }
 
   public:
-    Task172(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task229(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[3]->nblock());
       for (auto& ci0 : *range[3])
         subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
     };
-    ~Task172() {};
+    ~Task229() {};
 };
 
 template <typename T>
-class Task173 : public DedciTask<T> {
+class Task230 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<1,2,T> {
       protected:
@@ -10585,27 +14530,27 @@ class Task173 : public DedciTask<T> {
         void compute() override {
           const Index ci0 = b(0);
 
-          // tensor label: I169
+          // tensor label: I261
           std::unique_ptr<double[]> odata = out()->move_block(ci0);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
           std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
 
-          for (auto& x0 : *range_[1]) {
-            for (auto& a1 : *range_[2]) {
-              for (auto& c2 : *range_[0]) {
-                for (auto& a3 : *range_[2]) {
+          for (auto& c1 : *range_[0]) {
+            for (auto& a2 : *range_[2]) {
+              for (auto& c3 : *range_[0]) {
+                for (auto& a4 : *range_[2]) {
                   // tensor label: t2
-                  std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, c2, a3);
-                  std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
-                  sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
+                  std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a2, c3, a4);
+                  std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a2, c3, a4)]);
+                  sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1.size(), a2.size(), c3.size(), a4.size());
 
-                  // tensor label: I170
-                  std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, a3, c2, a1);
-                  std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x0, a3, c2, a1)]);
-                  sort_indices<1,4,3,2,0,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x0.size(), a3.size(), c2.size(), a1.size());
+                  // tensor label: I262
+                  std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, c1, a4, c3, a2);
+                  std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, c1, a4, c3, a2)]);
+                  sort_indices<1,4,3,2,0,0,1,1,1>(i1data, i1data_sorted, ci0.size(), c1.size(), a4.size(), c3.size(), a2.size());
 
-                  dgemm_("T", "N", 1, ci0.size(), x0.size()*a3.size()*c2.size()*a1.size(),
-                         1.0, i0data_sorted, x0.size()*a3.size()*c2.size()*a1.size(), i1data_sorted, x0.size()*a3.size()*c2.size()*a1.size(),
+                  dgemm_("T", "N", 1, ci0.size(), c1.size()*a4.size()*c3.size()*a2.size(),
+                         1.0, i0data_sorted, c1.size()*a4.size()*c3.size()*a2.size(), i1data_sorted, c1.size()*a4.size()*c3.size()*a2.size(),
                          1.0, odata_sorted, 1);
                 }
               }
@@ -10626,18 +14571,343 @@ class Task173 : public DedciTask<T> {
     }
 
   public:
-    Task173(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task230(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[3]->nblock());
       for (auto& ci0 : *range[3])
         subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
     };
-    ~Task173() {};
+    ~Task230() {};
 };
 
 template <typename T>
-class Task174 : public DedciTask<T> {
+class Task231 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index c1 = b(1);
+          const Index a4 = b(2);
+          const Index c3 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I262
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, c1, a4, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, c1, a4, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, c1, a4, c3, a2), 0.0);
+
+          // tensor label: t2
+          std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a4, c3, a2);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a4, c3, a2)]);
+          sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1.size(), a4.size(), c3.size(), a2.size());
+
+          // tensor label: I263
+          std::unique_ptr<double[]> i1data = in(1)->get_block(ci0);
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0)]);
+          sort_indices<0,0,1,1,1>(i1data, i1data_sorted, ci0.size());
+
+          dgemm_("T", "N", c1.size()*a4.size()*c3.size()*a2.size(), ci0.size(), 1,
+                 1.0, i0data_sorted, 1, i1data_sorted, 1,
+                 1.0, odata_sorted, c1.size()*a4.size()*c3.size()*a2.size());
+
+          sort_indices<4,0,1,2,3,1,1,1,1>(odata_sorted, odata, c1.size(), a4.size(), c3.size(), a2.size(), ci0.size());
+          out()->put_block(odata, ci0, c1, a4, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task231(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& c1 : *range[0])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, c1, a4, c3, a2}}, in, t[0], range)));
+    };
+    ~Task231() {};
+};
+
+template <typename T>
+class Task232 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<1,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,1>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<1,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+
+          // tensor label: I263
+          std::unique_ptr<double[]> odata = out()->move_block(ci0);
+          {
+            // tensor label: Gamma72
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
+            sort_indices<0,1,1,-1,1>(i0data, odata, ci0.size());
+          }
+          {
+            // tensor label: Gamma72
+            std::unique_ptr<double[]> i1data = in(0)->get_block(ci0);
+            sort_indices<0,1,1,-1,1>(i1data, odata, ci0.size());
+          }
+          out()->put_block(odata, ci0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task232(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[3]->nblock());
+      for (auto& ci0 : *range[3])
+        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
+    };
+    ~Task232() {};
+};
+
+template <typename T>
+class Task233 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index c1 = b(1);
+          const Index a4 = b(2);
+          const Index c3 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I262
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, c1, a4, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, c1, a4, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, c1, a4, c3, a2), 0.0);
+
+          // tensor label: t2
+          std::unique_ptr<double[]> i0data = in(0)->get_block(c1, a2, c3, a4);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c1, a2, c3, a4)]);
+          sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c1.size(), a2.size(), c3.size(), a4.size());
+
+          // tensor label: I266
+          std::unique_ptr<double[]> i1data = in(1)->get_block(ci0);
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0)]);
+          sort_indices<0,0,1,1,1>(i1data, i1data_sorted, ci0.size());
+
+          dgemm_("T", "N", c1.size()*a2.size()*c3.size()*a4.size(), ci0.size(), 1,
+                 1.0, i0data_sorted, 1, i1data_sorted, 1,
+                 1.0, odata_sorted, c1.size()*a2.size()*c3.size()*a4.size());
+
+          sort_indices<4,0,3,2,1,1,1,1,1>(odata_sorted, odata, c1.size(), a2.size(), c3.size(), a4.size(), ci0.size());
+          out()->put_block(odata, ci0, c1, a4, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task233(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& c1 : *range[0])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, c1, a4, c3, a2}}, in, t[0], range)));
+    };
+    ~Task233() {};
+};
+
+template <typename T>
+class Task234 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<1,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,1>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<1,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+
+          // tensor label: I266
+          std::unique_ptr<double[]> odata = out()->move_block(ci0);
+          {
+            // tensor label: Gamma72
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
+            sort_indices<0,1,1,2,1>(i0data, odata, ci0.size());
+          }
+          {
+            // tensor label: Gamma72
+            std::unique_ptr<double[]> i1data = in(0)->get_block(ci0);
+            sort_indices<0,1,1,2,1>(i1data, odata, ci0.size());
+          }
+          out()->put_block(odata, ci0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task234(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[3]->nblock());
+      for (auto& ci0 : *range[3])
+        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
+    };
+    ~Task234() {};
+};
+
+template <typename T>
+class Task235 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index c1 = b(1);
+          const Index a4 = b(2);
+          const Index c3 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I262
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, c1, a4, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, c1, a4, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, c1, a4, c3, a2), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c3, x0);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c3, x0)]);
+            sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c3.size(), x0.size());
+
+            // tensor label: I269
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, a4, c1, a2);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x0, a4, c1, a2)]);
+            sort_indices<1,0,2,3,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x0.size(), a4.size(), c1.size(), a2.size());
+
+            dgemm_("T", "N", c3.size(), ci0.size()*a4.size()*c1.size()*a2.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, c3.size());
+          }
+
+          sort_indices<1,3,2,0,4,1,1,1,1>(odata_sorted, odata, c3.size(), ci0.size(), a4.size(), c1.size(), a2.size());
+          out()->put_block(odata, ci0, c1, a4, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task235(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& c1 : *range[0])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, c1, a4, c3, a2}}, in, t[0], range)));
+    };
+    ~Task235() {};
+};
+
+template <typename T>
+class Task236 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -10656,33 +14926,33 @@ class Task174 : public DedciTask<T> {
         void compute() override {
           const Index ci0 = b(0);
           const Index x0 = b(1);
-          const Index a3 = b(2);
-          const Index c2 = b(3);
-          const Index a1 = b(4);
+          const Index a4 = b(2);
+          const Index c1 = b(3);
+          const Index a2 = b(4);
 
-          // tensor label: I170
-          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, a3, c2, a1);
-          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, a3, c2, a1)]);
-          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, a3, c2, a1), 0.0);
+          // tensor label: I269
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, a4, c1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, a4, c1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, a4, c1, a2), 0.0);
 
           for (auto& x1 : *range_[1]) {
-            // tensor label: v2
-            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a3, c2, a1);
-            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a1)]);
-            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a1.size());
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a4, c1, a2);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a4, c1, a2)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a4.size(), c1.size(), a2.size());
 
-            // tensor label: I171
+            // tensor label: I270
             std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
             sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
 
-            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), ci0.size()*x0.size(), x1.size(),
+            dgemm_("T", "N", a4.size()*c1.size()*a2.size(), ci0.size()*x0.size(), x1.size(),
                    1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
-                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+                   1.0, odata_sorted, a4.size()*c1.size()*a2.size());
           }
 
-          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), ci0.size(), x0.size());
-          out()->put_block(odata, ci0, x0, a3, c2, a1);
+          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a4.size(), c1.size(), a2.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, a4, c1, a2);
         }
     };
 
@@ -10695,22 +14965,22 @@ class Task174 : public DedciTask<T> {
     }
 
   public:
-    Task174(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task236(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a1 : *range[2])
-        for (auto& c2 : *range[0])
-          for (auto& a3 : *range[2])
+      for (auto& a2 : *range[2])
+        for (auto& c1 : *range[0])
+          for (auto& a4 : *range[2])
             for (auto& x0 : *range[1])
               for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, a3, c2, a1}}, in, t[0], range)));
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, a4, c1, a2}}, in, t[0], range)));
     };
-    ~Task174() {};
+    ~Task236() {};
 };
 
 template <typename T>
-class Task175 : public DedciTask<T> {
+class Task237 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<3,1,T> {
       protected:
@@ -10731,10 +15001,10 @@ class Task175 : public DedciTask<T> {
           const Index x1 = b(1);
           const Index x0 = b(2);
 
-          // tensor label: I171
+          // tensor label: I270
           std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
           {
-            // tensor label: Gamma51
+            // tensor label: Gamma74
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
             sort_indices<0,1,2,1,1,-1,1>(i0data, odata, ci0.size(), x1.size(), x0.size());
           }
@@ -10751,7 +15021,7 @@ class Task175 : public DedciTask<T> {
     }
 
   public:
-    Task175(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task237(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -10760,11 +15030,11 @@ class Task175 : public DedciTask<T> {
           for (auto& ci0 : *range[3])
             subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
     };
-    ~Task175() {};
+    ~Task237() {};
 };
 
 template <typename T>
-class Task176 : public DedciTask<T> {
+class Task238 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -10783,33 +15053,33 @@ class Task176 : public DedciTask<T> {
         void compute() override {
           const Index ci0 = b(0);
           const Index x0 = b(1);
-          const Index a3 = b(2);
-          const Index c2 = b(3);
-          const Index a1 = b(4);
+          const Index a4 = b(2);
+          const Index c1 = b(3);
+          const Index a2 = b(4);
 
-          // tensor label: I170
-          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, a3, c2, a1);
-          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, a3, c2, a1)]);
-          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, a3, c2, a1), 0.0);
+          // tensor label: I269
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, a4, c1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, a4, c1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, a4, c1, a2), 0.0);
 
           for (auto& x1 : *range_[1]) {
-            // tensor label: v2
-            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a1, c2, a3);
-            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a3)]);
-            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a3.size());
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a2, c1, a4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a2, c1, a4)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a2.size(), c1.size(), a4.size());
 
-            // tensor label: I174
+            // tensor label: I274
             std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
             std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
             sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
 
-            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), ci0.size()*x0.size(), x1.size(),
+            dgemm_("T", "N", a2.size()*c1.size()*a4.size(), ci0.size()*x0.size(), x1.size(),
                    1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
-                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+                   1.0, odata_sorted, a2.size()*c1.size()*a4.size());
           }
 
-          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), ci0.size(), x0.size());
-          out()->put_block(odata, ci0, x0, a3, c2, a1);
+          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a2.size(), c1.size(), a4.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, a4, c1, a2);
         }
     };
 
@@ -10822,22 +15092,22 @@ class Task176 : public DedciTask<T> {
     }
 
   public:
-    Task176(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task238(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a1 : *range[2])
-        for (auto& c2 : *range[0])
-          for (auto& a3 : *range[2])
+      for (auto& a2 : *range[2])
+        for (auto& c1 : *range[0])
+          for (auto& a4 : *range[2])
             for (auto& x0 : *range[1])
               for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, a3, c2, a1}}, in, t[0], range)));
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, a4, c1, a2}}, in, t[0], range)));
     };
-    ~Task176() {};
+    ~Task238() {};
 };
 
 template <typename T>
-class Task177 : public DedciTask<T> {
+class Task239 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<3,1,T> {
       protected:
@@ -10858,12 +15128,12 @@ class Task177 : public DedciTask<T> {
           const Index x1 = b(1);
           const Index x0 = b(2);
 
-          // tensor label: I174
+          // tensor label: I274
           std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
           {
-            // tensor label: Gamma51
+            // tensor label: Gamma74
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
-            sort_indices<0,1,2,1,1,2,1>(i0data, odata, ci0.size(), x1.size(), x0.size());
+            sort_indices<0,1,2,1,1,1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
           }
           out()->put_block(odata, ci0, x1, x0);
         }
@@ -10878,7 +15148,7 @@ class Task177 : public DedciTask<T> {
     }
 
   public:
-    Task177(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task239(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -10887,11 +15157,338 @@ class Task177 : public DedciTask<T> {
           for (auto& ci0 : *range[3])
             subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
     };
-    ~Task177() {};
+    ~Task239() {};
 };
 
 template <typename T>
-class Task178 : public DedciTask<T> {
+class Task240 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index c1 = b(1);
+          const Index a4 = b(2);
+          const Index c3 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I262
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, c1, a4, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, c1, a4, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, c1, a4, c3, a2), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c3, x1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c3, x1)]);
+            sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c3.size(), x1.size());
+
+            // tensor label: I336
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, a4, c1, a2);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, a4, c1, a2)]);
+            sort_indices<1,0,2,3,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), a4.size(), c1.size(), a2.size());
+
+            dgemm_("T", "N", c3.size(), ci0.size()*a4.size()*c1.size()*a2.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, c3.size());
+          }
+
+          sort_indices<1,3,2,0,4,1,1,1,1>(odata_sorted, odata, c3.size(), ci0.size(), a4.size(), c1.size(), a2.size());
+          out()->put_block(odata, ci0, c1, a4, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task240(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& c1 : *range[0])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, c1, a4, c3, a2}}, in, t[0], range)));
+    };
+    ~Task240() {};
+};
+
+template <typename T>
+class Task241 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index a4 = b(2);
+          const Index c1 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I336
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, a4, c1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, a4, c1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, a4, c1, a2), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a4, c1, a2);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a4, c1, a2)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a4.size(), c1.size(), a2.size());
+
+            // tensor label: I337
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a4.size()*c1.size()*a2.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a4.size()*c1.size()*a2.size());
+          }
+
+          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a4.size(), c1.size(), a2.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, a4, c1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task241(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c1 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, a4, c1, a2}}, in, t[0], range)));
+    };
+    ~Task241() {};
+};
+
+template <typename T>
+class Task242 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I337
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,-1,1>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task242(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task242() {};
+};
+
+template <typename T>
+class Task243 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index a4 = b(2);
+          const Index c1 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I336
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, a4, c1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, a4, c1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, a4, c1, a2), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a2, c1, a4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a2, c1, a4)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a2.size(), c1.size(), a4.size());
+
+            // tensor label: I341
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a2.size()*c1.size()*a4.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a2.size()*c1.size()*a4.size());
+          }
+
+          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a2.size(), c1.size(), a4.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, a4, c1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task243(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c1 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, a4, c1, a2}}, in, t[0], range)));
+    };
+    ~Task243() {};
+};
+
+template <typename T>
+class Task244 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I341
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task244(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task244() {};
+};
+
+template <typename T>
+class Task245 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<1,2,T> {
       protected:
@@ -10910,7 +15507,2366 @@ class Task178 : public DedciTask<T> {
         void compute() override {
           const Index ci0 = b(0);
 
-          // tensor label: I169
+          // tensor label: I261
+          std::unique_ptr<double[]> odata = out()->move_block(ci0);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            for (auto& a1 : *range_[2]) {
+              for (auto& c2 : *range_[0]) {
+                for (auto& a3 : *range_[2]) {
+                  // tensor label: t2
+                  std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, c2, a3);
+                  std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
+                  sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
+
+                  // tensor label: I276
+                  std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, c2, a3, a1);
+                  std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x0, c2, a3, a1)]);
+                  sort_indices<1,4,2,3,0,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x0.size(), c2.size(), a3.size(), a1.size());
+
+                  dgemm_("T", "N", 1, ci0.size(), x0.size()*c2.size()*a3.size()*a1.size(),
+                         1.0, i0data_sorted, x0.size()*c2.size()*a3.size()*a1.size(), i1data_sorted, x0.size()*c2.size()*a3.size()*a1.size(),
+                         1.0, odata_sorted, 1);
+                }
+              }
+            }
+          }
+
+          sort_indices<0,1,1,1,1>(odata_sorted, odata, ci0.size());
+          out()->put_block(odata, ci0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task245(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[3]->nblock());
+      for (auto& ci0 : *range[3])
+        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
+    };
+    ~Task245() {};
+};
+
+template <typename T>
+class Task246 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& c4 : *range_[0]) {
+            for (auto& x1 : *range_[1]) {
+              // tensor label: f1
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x1, c4);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, c4)]);
+              sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, x1.size(), c4.size());
+
+              // tensor label: I277
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0, c2, a3, c4, a1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0, c2, a3, c4, a1)]);
+              sort_indices<5,1,0,2,3,4,6,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size(), c2.size(), a3.size(), c4.size(), a1.size());
+
+              dgemm_("T", "N", 1, ci0.size()*x0.size()*c2.size()*a3.size()*a1.size(), x1.size()*c4.size(),
+                     1.0, i0data_sorted, x1.size()*c4.size(), i1data_sorted, x1.size()*c4.size(),
+                     1.0, odata_sorted, 1);
+            }
+          }
+
+          sort_indices<0,1,2,3,4,1,1,1,1>(odata_sorted, odata, ci0.size(), x0.size(), c2.size(), a3.size(), a1.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task246(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task246() {};
+};
+
+template <typename T>
+class Task247 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<7,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,7>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<7,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+          const Index c2 = b(3);
+          const Index a3 = b(4);
+          const Index c4 = b(5);
+          const Index a1 = b(6);
+
+          // tensor label: I277
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0, c2, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, x0, c2, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, x0, c2, a3, c4, a1), 0.0);
+
+          // tensor label: t2
+          std::unique_ptr<double[]> i0data = in(0)->get_block(c2, a3, c4, a1);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, a3, c4, a1)]);
+          sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c2.size(), a3.size(), c4.size(), a1.size());
+
+          // tensor label: I278
+          std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+          sort_indices<0,1,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+          dgemm_("T", "N", c2.size()*a3.size()*c4.size()*a1.size(), ci0.size()*x1.size()*x0.size(), 1,
+                 1.0, i0data_sorted, 1, i1data_sorted, 1,
+                 1.0, odata_sorted, c2.size()*a3.size()*c4.size()*a1.size());
+
+          sort_indices<4,5,6,0,1,2,3,1,1,1,1>(odata_sorted, odata, c2.size(), a3.size(), c4.size(), a1.size(), ci0.size(), x1.size(), x0.size());
+          out()->put_block(odata, ci0, x1, x0, c2, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task247(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& c2 : *range[0])
+              for (auto& x0 : *range[1])
+                for (auto& x1 : *range[1])
+                  for (auto& ci0 : *range[3])
+                    subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,7>{{ci0, x1, x0, c2, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task247() {};
+};
+
+template <typename T>
+class Task248 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I278
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,-1,1>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task248(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task248() {};
+};
+
+template <typename T>
+class Task249 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<7,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,7>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<7,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+          const Index c2 = b(3);
+          const Index a3 = b(4);
+          const Index c4 = b(5);
+          const Index a1 = b(6);
+
+          // tensor label: I277
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0, c2, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, x0, c2, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, x0, c2, a3, c4, a1), 0.0);
+
+          // tensor label: t2
+          std::unique_ptr<double[]> i0data = in(0)->get_block(c2, a1, c4, a3);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, a1, c4, a3)]);
+          sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c2.size(), a1.size(), c4.size(), a3.size());
+
+          // tensor label: I282
+          std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+          sort_indices<0,1,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+          dgemm_("T", "N", c2.size()*a1.size()*c4.size()*a3.size(), ci0.size()*x1.size()*x0.size(), 1,
+                 1.0, i0data_sorted, 1, i1data_sorted, 1,
+                 1.0, odata_sorted, c2.size()*a1.size()*c4.size()*a3.size());
+
+          sort_indices<4,5,6,0,3,2,1,1,1,1,1>(odata_sorted, odata, c2.size(), a1.size(), c4.size(), a3.size(), ci0.size(), x1.size(), x0.size());
+          out()->put_block(odata, ci0, x1, x0, c2, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task249(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& c2 : *range[0])
+              for (auto& x0 : *range[1])
+                for (auto& x1 : *range[1])
+                  for (auto& ci0 : *range[3])
+                    subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,7>{{ci0, x1, x0, c2, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task249() {};
+};
+
+template <typename T>
+class Task250 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I282
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task250(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task250() {};
+};
+
+template <typename T>
+class Task251 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& x3 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a3, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a3, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a3.size(), c2.size(), a1.size());
+
+            // tensor label: I285
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), ci0.size()*x0.size(), x3.size(),
+                   1.0, i0data_sorted, x3.size(), i1data_sorted, x3.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,4,1,0,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task251(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task251() {};
+};
+
+template <typename T>
+class Task252 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I285
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0);
+          {
+            // tensor label: Gamma78
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0);
+            sort_indices<0,1,2,1,1,-1,4>(i0data, odata, ci0.size(), x3.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x3, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task252(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x3 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x3, x0}}, in, t[0], range)));
+    };
+    ~Task252() {};
+};
+
+template <typename T>
+class Task253 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& x3 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), c2.size(), a3.size());
+
+            // tensor label: I288
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), ci0.size()*x0.size(), x3.size(),
+                   1.0, i0data_sorted, x3.size(), i1data_sorted, x3.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,4,1,2,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task253(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task253() {};
+};
+
+template <typename T>
+class Task254 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I288
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0);
+          {
+            // tensor label: Gamma78
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0);
+            sort_indices<0,1,2,1,1,1,2>(i0data, odata, ci0.size(), x3.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x3, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task254(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x3 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x3, x0}}, in, t[0], range)));
+    };
+    ~Task254() {};
+};
+
+template <typename T>
+class Task255 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& c4 : *range_[0]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c2, c4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, c4)]);
+            sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c2.size(), c4.size());
+
+            // tensor label: I291
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, a3, c4, a1);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x0, a3, c4, a1)]);
+            sort_indices<3,0,1,2,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x0.size(), a3.size(), c4.size(), a1.size());
+
+            dgemm_("T", "N", c2.size(), ci0.size()*x0.size()*a3.size()*a1.size(), c4.size(),
+                   1.0, i0data_sorted, c4.size(), i1data_sorted, c4.size(),
+                   1.0, odata_sorted, c2.size());
+          }
+
+          sort_indices<1,2,0,3,4,1,1,1,1>(odata_sorted, odata, c2.size(), ci0.size(), x0.size(), a3.size(), a1.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task255(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task255() {};
+};
+
+template <typename T>
+class Task256 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index a3 = b(2);
+          const Index c4 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I291
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, a3, c4, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a3, c4, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c4, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c4.size(), a1.size());
+
+            // tensor label: I292
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c4.size()*a1.size(), ci0.size()*x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a3.size()*c4.size()*a1.size());
+          }
+
+          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a3.size(), c4.size(), a1.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task256(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task256() {};
+};
+
+template <typename T>
+class Task257 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I292
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,1,4>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task257(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task257() {};
+};
+
+template <typename T>
+class Task258 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index a3 = b(2);
+          const Index c4 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I291
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, a3, c4, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a1, c4, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c4, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c4.size(), a3.size());
+
+            // tensor label: I296
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c4.size()*a3.size(), ci0.size()*x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a1.size()*c4.size()*a3.size());
+          }
+
+          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c4.size(), a3.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task258(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task258() {};
+};
+
+template <typename T>
+class Task259 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I296
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,-1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task259(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task259() {};
+};
+
+template <typename T>
+class Task260 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& a4 : *range_[2]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(a4, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(a4, a1)]);
+            sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a4.size(), a1.size());
+
+            // tensor label: I299
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, a4, c2, a3);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x0, a4, c2, a3)]);
+            sort_indices<2,0,1,3,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x0.size(), a4.size(), c2.size(), a3.size());
+
+            dgemm_("T", "N", a1.size(), ci0.size()*x0.size()*c2.size()*a3.size(), a4.size(),
+                   1.0, i0data_sorted, a4.size(), i1data_sorted, a4.size(),
+                   1.0, odata_sorted, a1.size());
+          }
+
+          sort_indices<1,2,3,4,0,1,1,1,1>(odata_sorted, odata, a1.size(), ci0.size(), x0.size(), c2.size(), a3.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task260(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task260() {};
+};
+
+template <typename T>
+class Task261 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index a4 = b(2);
+          const Index c2 = b(3);
+          const Index a3 = b(4);
+
+          // tensor label: I299
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, a4, c2, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, a4, c2, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, a4, c2, a3), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a4, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a4, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a4.size(), c2.size(), a3.size());
+
+            // tensor label: I300
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a4.size()*c2.size()*a3.size(), ci0.size()*x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a4.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a4.size(), c2.size(), a3.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, a4, c2, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task261(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, a4, c2, a3}}, in, t[0], range)));
+    };
+    ~Task261() {};
+};
+
+template <typename T>
+class Task262 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I300
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task262(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task262() {};
+};
+
+template <typename T>
+class Task263 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index a4 = b(2);
+          const Index c2 = b(3);
+          const Index a3 = b(4);
+
+          // tensor label: I299
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, a4, c2, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, a4, c2, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, a4, c2, a3), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a3, c2, a4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a4)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a4.size());
+
+            // tensor label: I304
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a4.size(), ci0.size()*x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a4.size());
+          }
+
+          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a4.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, a4, c2, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task263(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, a4, c2, a3}}, in, t[0], range)));
+    };
+    ~Task263() {};
+};
+
+template <typename T>
+class Task264 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I304
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,-1,4>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task264(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task264() {};
+};
+
+template <typename T>
+class Task265 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& a4 : *range_[2]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(a4, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(a4, a3)]);
+            sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a4.size(), a3.size());
+
+            // tensor label: I307
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, a4, c2, a1);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x0, a4, c2, a1)]);
+            sort_indices<2,0,1,3,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x0.size(), a4.size(), c2.size(), a1.size());
+
+            dgemm_("T", "N", a3.size(), ci0.size()*x0.size()*c2.size()*a1.size(), a4.size(),
+                   1.0, i0data_sorted, a4.size(), i1data_sorted, a4.size(),
+                   1.0, odata_sorted, a3.size());
+          }
+
+          sort_indices<1,2,3,0,4,1,1,1,1>(odata_sorted, odata, a3.size(), ci0.size(), x0.size(), c2.size(), a1.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task265(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task265() {};
+};
+
+template <typename T>
+class Task266 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index a4 = b(2);
+          const Index c2 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I307
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, a4, c2, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, a4, c2, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, a4, c2, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a4, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a4, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a4.size(), c2.size(), a1.size());
+
+            // tensor label: I308
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a4.size()*c2.size()*a1.size(), ci0.size()*x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a4.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a4.size(), c2.size(), a1.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, a4, c2, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task266(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, a4, c2, a1}}, in, t[0], range)));
+    };
+    ~Task266() {};
+};
+
+template <typename T>
+class Task267 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I308
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,-1,4>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task267(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task267() {};
+};
+
+template <typename T>
+class Task268 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index a4 = b(2);
+          const Index c2 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I307
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, a4, c2, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, a4, c2, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, a4, c2, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a1, c2, a4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a4)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a4.size());
+
+            // tensor label: I312
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a4.size(), ci0.size()*x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a4.size());
+          }
+
+          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a4.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, a4, c2, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task268(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, a4, c2, a1}}, in, t[0], range)));
+    };
+    ~Task268() {};
+};
+
+template <typename T>
+class Task269 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I312
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task269(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task269() {};
+};
+
+template <typename T>
+class Task270 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c2, x1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, x1)]);
+            sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c2.size(), x1.size());
+
+            // tensor label: I315
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, x1, a1, a3);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x0, x1, a1, a3)]);
+            sort_indices<2,0,1,3,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x0.size(), x1.size(), a1.size(), a3.size());
+
+            dgemm_("T", "N", c2.size(), ci0.size()*x0.size()*a1.size()*a3.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, c2.size());
+          }
+
+          sort_indices<1,2,0,4,3,1,1,1,1>(odata_sorted, odata, c2.size(), ci0.size(), x0.size(), a1.size(), a3.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task270(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task270() {};
+};
+
+template <typename T>
+class Task271 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index x1 = b(2);
+          const Index a1 = b(3);
+          const Index a3 = b(4);
+
+          // tensor label: I315
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x1, a1, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, x1, a1, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, x1, a1, a3), 0.0);
+
+          for (auto& x2 : *range_[1]) {
+            for (auto& x3 : *range_[1]) {
+              // tensor label: t2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, x2, a3);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a3)]);
+              sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a3.size());
+
+              // tensor label: I316
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0, x2, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0, x2, x1)]);
+              sort_indices<3,1,0,2,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a3.size(), ci0.size()*x0.size()*x1.size(), x3.size()*x2.size(),
+                     1.0, i0data_sorted, x3.size()*x2.size(), i1data_sorted, x3.size()*x2.size(),
+                     1.0, odata_sorted, a1.size()*a3.size());
+            }
+          }
+
+          sort_indices<2,3,4,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a3.size(), ci0.size(), x0.size(), x1.size());
+          out()->put_block(odata, ci0, x0, x1, a1, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task271(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a3}}, in, t[0], range)));
+    };
+    ~Task271() {};
+};
+
+template <typename T>
+class Task272 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+          const Index x2 = b(3);
+          const Index x1 = b(4);
+
+          // tensor label: I316
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
+          {
+            // tensor label: Gamma86
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
+            sort_indices<0,1,2,3,4,1,1,-1,2>(i0data, odata, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, ci0, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task272(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
+    };
+    ~Task272() {};
+};
+
+template <typename T>
+class Task273 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a3, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a1.size());
+
+            // tensor label: I397
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), ci0.size()*x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,4,1,0,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task273(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task273() {};
+};
+
+template <typename T>
+class Task274 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+        double e0_;
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran, const double e)
+          : SubTask<3,1,T>(block, in, out), range_(ran), e0_(e) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I397
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            dscal_(ci0.size()*x1.size()*x0.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,2,1,1,1,4>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task274(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range, double e) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range, e)));
+    };
+    ~Task274() {};
+};
+
+template <typename T>
+class Task275 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a1, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a3.size());
+
+            // tensor label: I400
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), ci0.size()*x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,4,1,2,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task275(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task275() {};
+};
+
+template <typename T>
+class Task276 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+        double e0_;
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran, const double e)
+          : SubTask<3,1,T>(block, in, out), range_(ran), e0_(e) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I400
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            dscal_(ci0.size()*x1.size()*x0.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,2,1,1,-1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task276(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range, double e) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range, e)));
+    };
+    ~Task276() {};
+};
+
+template <typename T>
+class Task277 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: v2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a3, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a3, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a3.size(), c2.size(), a1.size());
+
+            // tensor label: I415
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), ci0.size()*x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,4,1,0,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task277(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task277() {};
+};
+
+template <typename T>
+class Task278 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I415
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,-1,1>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task278(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task278() {};
+};
+
+template <typename T>
+class Task279 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I276
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, c2, a3, a1), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            // tensor label: v2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a1, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a3.size());
+
+            // tensor label: I418
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<1,0,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), ci0.size()*x0.size(), x1.size(),
+                   1.0, i0data_sorted, x1.size(), i1data_sorted, x1.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,4,1,2,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), ci0.size(), x0.size());
+          out()->put_block(odata, ci0, x0, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task279(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task279() {};
+};
+
+template <typename T>
+class Task280 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I418
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,2,1>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task280(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task280() {};
+};
+
+template <typename T>
+class Task281 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<1,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,1>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<1,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+
+          // tensor label: I261
           std::unique_ptr<double[]> odata = out()->move_block(ci0);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
           std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
@@ -10924,7 +17880,7 @@ class Task178 : public DedciTask<T> {
                   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a2)]);
                   sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a2.size());
 
-                  // tensor label: I176
+                  // tensor label: I318
                   std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, x1, a1, a2);
                   std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x0, x1, a1, a2)]);
                   sort_indices<1,3,2,4,0,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x0.size(), x1.size(), a1.size(), a2.size());
@@ -10951,18 +17907,18 @@ class Task178 : public DedciTask<T> {
     }
 
   public:
-    Task178(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task281(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[3]->nblock());
       for (auto& ci0 : *range[3])
         subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
     };
-    ~Task178() {};
+    ~Task281() {};
 };
 
 template <typename T>
-class Task179 : public DedciTask<T> {
+class Task282 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -10985,19 +17941,568 @@ class Task179 : public DedciTask<T> {
           const Index a1 = b(3);
           const Index a2 = b(4);
 
-          // tensor label: I176
+          // tensor label: I318
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x1, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, x1, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, x1, a1, a2), 0.0);
+
+          for (auto& c3 : *range_[0]) {
+            for (auto& x2 : *range_[1]) {
+              // tensor label: f1
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x2, c3);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x2, c3)]);
+              sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, x2.size(), c3.size());
+
+              // tensor label: I319
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, x2, x1, a1, c3, a2);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x0, x2, x1, a1, c3, a2)]);
+              sort_indices<5,2,0,1,3,4,6,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x0.size(), x2.size(), x1.size(), a1.size(), c3.size(), a2.size());
+
+              dgemm_("T", "N", 1, ci0.size()*x0.size()*x1.size()*a1.size()*a2.size(), x2.size()*c3.size(),
+                     1.0, i0data_sorted, x2.size()*c3.size(), i1data_sorted, x2.size()*c3.size(),
+                     1.0, odata_sorted, 1);
+            }
+          }
+
+          sort_indices<0,1,2,3,4,1,1,1,1>(odata_sorted, odata, ci0.size(), x0.size(), x1.size(), a1.size(), a2.size());
+          out()->put_block(odata, ci0, x0, x1, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task282(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
+    };
+    ~Task282() {};
+};
+
+template <typename T>
+class Task283 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<7,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,7>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<7,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index x2 = b(2);
+          const Index x1 = b(3);
+          const Index a1 = b(4);
+          const Index c3 = b(5);
+          const Index a2 = b(6);
+
+          // tensor label: I319
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x2, x1, a1, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, x2, x1, a1, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, x2, x1, a1, c3, a2), 0.0);
+
+          for (auto& x3 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, c3, a2);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, c3, a2)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), c3.size(), a2.size());
+
+            // tensor label: I320
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0, x2, x1);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0, x2, x1)]);
+            sort_indices<1,0,2,3,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+
+            dgemm_("T", "N", a1.size()*c3.size()*a2.size(), ci0.size()*x0.size()*x2.size()*x1.size(), x3.size(),
+                   1.0, i0data_sorted, x3.size(), i1data_sorted, x3.size(),
+                   1.0, odata_sorted, a1.size()*c3.size()*a2.size());
+          }
+
+          sort_indices<3,4,5,6,0,1,2,1,1,1,1>(odata_sorted, odata, a1.size(), c3.size(), a2.size(), ci0.size(), x0.size(), x2.size(), x1.size());
+          out()->put_block(odata, ci0, x0, x2, x1, a1, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task283(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a1 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& x2 : *range[1])
+                for (auto& x0 : *range[1])
+                  for (auto& ci0 : *range[3])
+                    subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,7>{{ci0, x0, x2, x1, a1, c3, a2}}, in, t[0], range)));
+    };
+    ~Task283() {};
+};
+
+template <typename T>
+class Task284 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+          const Index x2 = b(3);
+          const Index x1 = b(4);
+
+          // tensor label: I320
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
+          {
+            // tensor label: Gamma86
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
+            sort_indices<0,1,2,3,4,1,1,-1,2>(i0data, odata, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, ci0, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task284(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
+    };
+    ~Task284() {};
+};
+
+template <typename T>
+class Task285 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index x1 = b(2);
+          const Index a1 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I318
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x1, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, x1, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, x1, a1, a2), 0.0);
+
+          for (auto& x4 : *range_[1]) {
+            for (auto& x5 : *range_[1]) {
+              // tensor label: t2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x5, a1, x4, a2);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x5, a1, x4, a2)]);
+              sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x5.size(), a1.size(), x4.size(), a2.size());
+
+              // tensor label: I323
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x5, x0, x4, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x5, x0, x4, x1)]);
+              sort_indices<3,1,0,2,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x5.size(), x0.size(), x4.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a2.size(), ci0.size()*x0.size()*x1.size(), x5.size()*x4.size(),
+                     1.0, i0data_sorted, x5.size()*x4.size(), i1data_sorted, x5.size()*x4.size(),
+                     1.0, odata_sorted, a1.size()*a2.size());
+            }
+          }
+
+          sort_indices<2,3,4,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a2.size(), ci0.size(), x0.size(), x1.size());
+          out()->put_block(odata, ci0, x0, x1, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task285(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
+    };
+    ~Task285() {};
+};
+
+template <typename T>
+class Task286 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x5 = b(1);
+          const Index x0 = b(2);
+          const Index x4 = b(3);
+          const Index x1 = b(4);
+
+          // tensor label: I323
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x0, x4, x1);
+          {
+            // tensor label: Gamma88
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x5, x0, x4, x1);
+            sort_indices<0,1,2,3,4,1,1,1,2>(i0data, odata, ci0.size(), x5.size(), x0.size(), x4.size(), x1.size());
+          }
+          out()->put_block(odata, ci0, x5, x0, x4, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task286(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x4 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x5 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x5, x0, x4, x1}}, in, t[0], range)));
+    };
+    ~Task286() {};
+};
+
+template <typename T>
+class Task287 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index x1 = b(2);
+          const Index a1 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I318
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x1, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, x1, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, x1, a1, a2), 0.0);
+
+          for (auto& a3 : *range_[2]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(a3, a2);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(a3, a2)]);
+            sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a3.size(), a2.size());
+
+            // tensor label: I326
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, x1, a1, a3);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x0, x1, a1, a3)]);
+            sort_indices<4,0,1,2,3,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x0.size(), x1.size(), a1.size(), a3.size());
+
+            dgemm_("T", "N", a2.size(), ci0.size()*x0.size()*x1.size()*a1.size(), a3.size(),
+                   1.0, i0data_sorted, a3.size(), i1data_sorted, a3.size(),
+                   1.0, odata_sorted, a2.size());
+          }
+
+          sort_indices<1,2,3,4,0,1,1,1,1>(odata_sorted, odata, a2.size(), ci0.size(), x0.size(), x1.size(), a1.size());
+          out()->put_block(odata, ci0, x0, x1, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task287(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
+    };
+    ~Task287() {};
+};
+
+template <typename T>
+class Task288 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index x1 = b(2);
+          const Index a1 = b(3);
+          const Index a3 = b(4);
+
+          // tensor label: I326
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x1, a1, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, x1, a1, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, x1, a1, a3), 0.0);
+
+          for (auto& x2 : *range_[1]) {
+            for (auto& x3 : *range_[1]) {
+              // tensor label: t2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, x2, a3);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a3)]);
+              sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a3.size());
+
+              // tensor label: I327
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0, x2, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0, x2, x1)]);
+              sort_indices<3,1,0,2,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a3.size(), ci0.size()*x0.size()*x1.size(), x3.size()*x2.size(),
+                     1.0, i0data_sorted, x3.size()*x2.size(), i1data_sorted, x3.size()*x2.size(),
+                     1.0, odata_sorted, a1.size()*a3.size());
+            }
+          }
+
+          sort_indices<2,3,4,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a3.size(), ci0.size(), x0.size(), x1.size());
+          out()->put_block(odata, ci0, x0, x1, a1, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task288(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a3}}, in, t[0], range)));
+    };
+    ~Task288() {};
+};
+
+template <typename T>
+class Task289 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+          const Index x2 = b(3);
+          const Index x1 = b(4);
+
+          // tensor label: I327
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
+          {
+            // tensor label: Gamma86
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
+            sort_indices<0,1,2,3,4,1,1,1,1>(i0data, odata, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, ci0, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task289(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
+    };
+    ~Task289() {};
+};
+
+template <typename T>
+class Task290 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index x1 = b(2);
+          const Index a1 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I318
           std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x1, a1, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, x1, a1, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, x1, a1, a2), 0.0);
 
           for (auto& x2 : *range_[1]) {
             for (auto& x3 : *range_[1]) {
-              // tensor label: v2
+              // tensor label: t2
               std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, x2, a2);
               std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a2)]);
               sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a2.size());
 
-              // tensor label: I177
+              // tensor label: I403
               std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0, x2, x1);
               std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0, x2, x1)]);
               sort_indices<3,1,0,2,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
@@ -11022,7 +18527,7 @@ class Task179 : public DedciTask<T> {
     }
 
   public:
-    Task179(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task290(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -11033,11 +18538,147 @@ class Task179 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task179() {};
+    ~Task290() {};
 };
 
 template <typename T>
-class Task180 : public DedciTask<T> {
+class Task291 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+        double e0_;
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran, const double e)
+          : SubTask<5,1,T>(block, in, out), range_(ran), e0_(e) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+          const Index x2 = b(3);
+          const Index x1 = b(4);
+
+          // tensor label: I403
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
+          {
+            // tensor label: Gamma86
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
+            dscal_(ci0.size()*x3.size()*x0.size()*x2.size()*x1.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,2,3,4,1,1,-1,2>(i0data, odata, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, ci0, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task291(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range, double e) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range, e)));
+    };
+    ~Task291() {};
+};
+
+template <typename T>
+class Task292 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x0 = b(1);
+          const Index x1 = b(2);
+          const Index a1 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I318
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x1, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, x1, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, x1, a1, a2), 0.0);
+
+          for (auto& x2 : *range_[1]) {
+            for (auto& x3 : *range_[1]) {
+              // tensor label: v2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, x2, a2);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a2)]);
+              sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a2.size());
+
+              // tensor label: I421
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0, x2, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0, x2, x1)]);
+              sort_indices<3,1,0,2,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a2.size(), ci0.size()*x0.size()*x1.size(), x3.size()*x2.size(),
+                     1.0, i0data_sorted, x3.size()*x2.size(), i1data_sorted, x3.size()*x2.size(),
+                     1.0, odata_sorted, a1.size()*a2.size());
+            }
+          }
+
+          sort_indices<2,3,4,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a2.size(), ci0.size(), x0.size(), x1.size());
+          out()->put_block(odata, ci0, x0, x1, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task292(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x1 : *range[1])
+            for (auto& x0 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
+    };
+    ~Task292() {};
+};
+
+template <typename T>
+class Task293 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,1,T> {
       protected:
@@ -11060,10 +18701,10 @@ class Task180 : public DedciTask<T> {
           const Index x2 = b(3);
           const Index x1 = b(4);
 
-          // tensor label: I177
+          // tensor label: I421
           std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
           {
-            // tensor label: Gamma53
+            // tensor label: Gamma86
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
             sort_indices<0,1,2,3,4,1,1,1,1>(i0data, odata, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
           }
@@ -11080,7 +18721,7 @@ class Task180 : public DedciTask<T> {
     }
 
   public:
-    Task180(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task293(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -11091,11 +18732,11 @@ class Task180 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task180() {};
+    ~Task293() {};
 };
 
 template <typename T>
-class Task181 : public DedciTask<T> {
+class Task294 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<1,2,T> {
       protected:
@@ -11114,7 +18755,7 @@ class Task181 : public DedciTask<T> {
         void compute() override {
           const Index ci0 = b(0);
 
-          // tensor label: I169
+          // tensor label: I261
           std::unique_ptr<double[]> odata = out()->move_block(ci0);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
           std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
@@ -11128,13 +18769,13 @@ class Task181 : public DedciTask<T> {
                   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, a1, c2, a3)]);
                   sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x1.size(), a1.size(), c2.size(), a3.size());
 
-                  // tensor label: I179
-                  std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, a3, c2, a1);
-                  std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, a3, c2, a1)]);
-                  sort_indices<1,4,3,2,0,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), a3.size(), c2.size(), a1.size());
+                  // tensor label: I343
+                  std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, c2, a3, a1);
+                  std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, c2, a3, a1)]);
+                  sort_indices<1,4,2,3,0,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), c2.size(), a3.size(), a1.size());
 
-                  dgemm_("T", "N", 1, ci0.size(), x1.size()*a3.size()*c2.size()*a1.size(),
-                         1.0, i0data_sorted, x1.size()*a3.size()*c2.size()*a1.size(), i1data_sorted, x1.size()*a3.size()*c2.size()*a1.size(),
+                  dgemm_("T", "N", 1, ci0.size(), x1.size()*c2.size()*a3.size()*a1.size(),
+                         1.0, i0data_sorted, x1.size()*c2.size()*a3.size()*a1.size(), i1data_sorted, x1.size()*c2.size()*a3.size()*a1.size(),
                          1.0, odata_sorted, 1);
                 }
               }
@@ -11155,18 +18796,18 @@ class Task181 : public DedciTask<T> {
     }
 
   public:
-    Task181(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task294(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[3]->nblock());
       for (auto& ci0 : *range[3])
         subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
     };
-    ~Task181() {};
+    ~Task294() {};
 };
 
 template <typename T>
-class Task182 : public DedciTask<T> {
+class Task295 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -11185,33 +18826,35 @@ class Task182 : public DedciTask<T> {
         void compute() override {
           const Index ci0 = b(0);
           const Index x1 = b(1);
-          const Index a3 = b(2);
-          const Index c2 = b(3);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
           const Index a1 = b(4);
 
-          // tensor label: I179
-          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, a3, c2, a1);
-          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, a3, c2, a1)]);
-          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, a3, c2, a1), 0.0);
+          // tensor label: I343
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, c2, a3, a1), 0.0);
 
-          for (auto& x0 : *range_[1]) {
-            // tensor label: v2
-            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a3, c2, a1);
-            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a3, c2, a1)]);
-            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a3.size(), c2.size(), a1.size());
+          for (auto& c4 : *range_[0]) {
+            for (auto& x0 : *range_[1]) {
+              // tensor label: f1
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x0, c4);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, c4)]);
+              sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, x0.size(), c4.size());
 
-            // tensor label: I180
-            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
-            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
-            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+              // tensor label: I344
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0, c2, a3, c4, a1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0, c2, a3, c4, a1)]);
+              sort_indices<5,2,0,1,3,4,6,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size(), c2.size(), a3.size(), c4.size(), a1.size());
 
-            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), ci0.size()*x1.size(), x0.size(),
-                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
-                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+              dgemm_("T", "N", 1, ci0.size()*x1.size()*c2.size()*a3.size()*a1.size(), x0.size()*c4.size(),
+                     1.0, i0data_sorted, x0.size()*c4.size(), i1data_sorted, x0.size()*c4.size(),
+                     1.0, odata_sorted, 1);
+            }
           }
 
-          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), ci0.size(), x1.size());
-          out()->put_block(odata, ci0, x1, a3, c2, a1);
+          sort_indices<0,1,2,3,4,1,1,1,1>(odata_sorted, odata, ci0.size(), x1.size(), c2.size(), a3.size(), a1.size());
+          out()->put_block(odata, ci0, x1, c2, a3, a1);
         }
     };
 
@@ -11224,22 +18867,97 @@ class Task182 : public DedciTask<T> {
     }
 
   public:
-    Task182(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task295(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
-      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
       for (auto& a1 : *range[2])
-        for (auto& c2 : *range[0])
-          for (auto& a3 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
             for (auto& x1 : *range[1])
               for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, a3, c2, a1}}, in, t[0], range)));
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, c2, a3, a1}}, in, t[0], range)));
     };
-    ~Task182() {};
+    ~Task295() {};
 };
 
 template <typename T>
-class Task183 : public DedciTask<T> {
+class Task296 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<7,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,7>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<7,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+          const Index c2 = b(3);
+          const Index a3 = b(4);
+          const Index c4 = b(5);
+          const Index a1 = b(6);
+
+          // tensor label: I344
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0, c2, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, x0, c2, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, x0, c2, a3, c4, a1), 0.0);
+
+          // tensor label: t2
+          std::unique_ptr<double[]> i0data = in(0)->get_block(c2, a3, c4, a1);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, a3, c4, a1)]);
+          sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c2.size(), a3.size(), c4.size(), a1.size());
+
+          // tensor label: I345
+          std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+          sort_indices<0,1,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+          dgemm_("T", "N", c2.size()*a3.size()*c4.size()*a1.size(), ci0.size()*x1.size()*x0.size(), 1,
+                 1.0, i0data_sorted, 1, i1data_sorted, 1,
+                 1.0, odata_sorted, c2.size()*a3.size()*c4.size()*a1.size());
+
+          sort_indices<4,5,6,0,1,2,3,1,1,1,1>(odata_sorted, odata, c2.size(), a3.size(), c4.size(), a1.size(), ci0.size(), x1.size(), x0.size());
+          out()->put_block(odata, ci0, x1, x0, c2, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task296(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& c2 : *range[0])
+              for (auto& x0 : *range[1])
+                for (auto& x1 : *range[1])
+                  for (auto& ci0 : *range[3])
+                    subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,7>{{ci0, x1, x0, c2, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task296() {};
+};
+
+template <typename T>
+class Task297 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<3,1,T> {
       protected:
@@ -11260,10 +18978,10 @@ class Task183 : public DedciTask<T> {
           const Index x1 = b(1);
           const Index x0 = b(2);
 
-          // tensor label: I180
+          // tensor label: I345
           std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
           {
-            // tensor label: Gamma51
+            // tensor label: Gamma74
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
             sort_indices<0,1,2,1,1,-1,1>(i0data, odata, ci0.size(), x1.size(), x0.size());
           }
@@ -11280,7 +18998,7 @@ class Task183 : public DedciTask<T> {
     }
 
   public:
-    Task183(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task297(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -11289,13 +19007,13 @@ class Task183 : public DedciTask<T> {
           for (auto& ci0 : *range[3])
             subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
     };
-    ~Task183() {};
+    ~Task297() {};
 };
 
 template <typename T>
-class Task184 : public DedciTask<T> {
+class Task298 : public DedciTask<T> {
   protected:
-    class Task_local : public SubTask<5,2,T> {
+    class Task_local : public SubTask<7,2,T> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
 
@@ -11304,41 +19022,41 @@ class Task184 : public DedciTask<T> {
         const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
 
       public:
-        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+        Task_local(const std::array<const Index,7>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
                    std::array<std::shared_ptr<const IndexRange>,4>& ran)
-          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+          : SubTask<7,2,T>(block, in, out), range_(ran) { }
 
 
         void compute() override {
           const Index ci0 = b(0);
           const Index x1 = b(1);
-          const Index a3 = b(2);
+          const Index x0 = b(2);
           const Index c2 = b(3);
-          const Index a1 = b(4);
+          const Index a3 = b(4);
+          const Index c4 = b(5);
+          const Index a1 = b(6);
 
-          // tensor label: I179
-          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, a3, c2, a1);
-          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, a3, c2, a1)]);
-          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, a3, c2, a1), 0.0);
+          // tensor label: I344
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0, c2, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, x0, c2, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, x0, c2, a3, c4, a1), 0.0);
 
-          for (auto& x0 : *range_[1]) {
-            // tensor label: v2
-            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, c2, a3);
-            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
-            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
+          // tensor label: t2
+          std::unique_ptr<double[]> i0data = in(0)->get_block(c2, a1, c4, a3);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, a1, c4, a3)]);
+          sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, c2.size(), a1.size(), c4.size(), a3.size());
 
-            // tensor label: I183
-            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
-            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
-            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+          // tensor label: I349
+          std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+          sort_indices<0,1,2,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
 
-            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), ci0.size()*x1.size(), x0.size(),
-                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
-                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
-          }
+          dgemm_("T", "N", c2.size()*a1.size()*c4.size()*a3.size(), ci0.size()*x1.size()*x0.size(), 1,
+                 1.0, i0data_sorted, 1, i1data_sorted, 1,
+                 1.0, odata_sorted, c2.size()*a1.size()*c4.size()*a3.size());
 
-          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), ci0.size(), x1.size());
-          out()->put_block(odata, ci0, x1, a3, c2, a1);
+          sort_indices<4,5,6,0,3,2,1,1,1,1,1>(odata_sorted, odata, c2.size(), a1.size(), c4.size(), a3.size(), ci0.size(), x1.size(), x0.size());
+          out()->put_block(odata, ci0, x1, x0, c2, a3, c4, a1);
         }
     };
 
@@ -11351,22 +19069,24 @@ class Task184 : public DedciTask<T> {
     }
 
   public:
-    Task184(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task298(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
-      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
       for (auto& a1 : *range[2])
-        for (auto& c2 : *range[0])
+        for (auto& c4 : *range[0])
           for (auto& a3 : *range[2])
-            for (auto& x1 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, a3, c2, a1}}, in, t[0], range)));
+            for (auto& c2 : *range[0])
+              for (auto& x0 : *range[1])
+                for (auto& x1 : *range[1])
+                  for (auto& ci0 : *range[3])
+                    subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,7>{{ci0, x1, x0, c2, a3, c4, a1}}, in, t[0], range)));
     };
-    ~Task184() {};
+    ~Task298() {};
 };
 
 template <typename T>
-class Task185 : public DedciTask<T> {
+class Task299 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<3,1,T> {
       protected:
@@ -11387,10 +19107,1505 @@ class Task185 : public DedciTask<T> {
           const Index x1 = b(1);
           const Index x0 = b(2);
 
-          // tensor label: I183
+          // tensor label: I349
           std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
           {
-            // tensor label: Gamma51
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task299(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task299() {};
+};
+
+template <typename T>
+class Task300 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I343
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, c2, a3, a1), 0.0);
+
+          for (auto& c4 : *range_[0]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c2, c4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, c4)]);
+            sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c2.size(), c4.size());
+
+            // tensor label: I358
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, a3, c4, a1);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, a3, c4, a1)]);
+            sort_indices<3,0,1,2,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), a3.size(), c4.size(), a1.size());
+
+            dgemm_("T", "N", c2.size(), ci0.size()*x1.size()*a3.size()*a1.size(), c4.size(),
+                   1.0, i0data_sorted, c4.size(), i1data_sorted, c4.size(),
+                   1.0, odata_sorted, c2.size());
+          }
+
+          sort_indices<1,2,0,3,4,1,1,1,1>(odata_sorted, odata, c2.size(), ci0.size(), x1.size(), a3.size(), a1.size());
+          out()->put_block(odata, ci0, x1, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task300(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task300() {};
+};
+
+template <typename T>
+class Task301 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index a3 = b(2);
+          const Index c4 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I358
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, a3, c4, a1), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a3, c4, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a3, c4, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a3.size(), c4.size(), a1.size());
+
+            // tensor label: I359
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c4.size()*a1.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a3.size()*c4.size()*a1.size());
+          }
+
+          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a3.size(), c4.size(), a1.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task301(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task301() {};
+};
+
+template <typename T>
+class Task302 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I359
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,1,4>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task302(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task302() {};
+};
+
+template <typename T>
+class Task303 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index a3 = b(2);
+          const Index c4 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I358
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, a3, c4, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, a3, c4, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, a3, c4, a1), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, c4, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c4, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c4.size(), a3.size());
+
+            // tensor label: I363
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c4.size()*a3.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a1.size()*c4.size()*a3.size());
+          }
+
+          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c4.size(), a3.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, a3, c4, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task303(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c4 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, a3, c4, a1}}, in, t[0], range)));
+    };
+    ~Task303() {};
+};
+
+template <typename T>
+class Task304 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I363
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,-1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task304(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task304() {};
+};
+
+template <typename T>
+class Task305 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I343
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, c2, a3, a1), 0.0);
+
+          for (auto& a4 : *range_[2]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(a4, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(a4, a1)]);
+            sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a4.size(), a1.size());
+
+            // tensor label: I366
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, a4, c2, a3);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, a4, c2, a3)]);
+            sort_indices<2,0,1,3,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), a4.size(), c2.size(), a3.size());
+
+            dgemm_("T", "N", a1.size(), ci0.size()*x1.size()*c2.size()*a3.size(), a4.size(),
+                   1.0, i0data_sorted, a4.size(), i1data_sorted, a4.size(),
+                   1.0, odata_sorted, a1.size());
+          }
+
+          sort_indices<1,2,3,4,0,1,1,1,1>(odata_sorted, odata, a1.size(), ci0.size(), x1.size(), c2.size(), a3.size());
+          out()->put_block(odata, ci0, x1, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task305(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task305() {};
+};
+
+template <typename T>
+class Task306 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index a4 = b(2);
+          const Index c2 = b(3);
+          const Index a3 = b(4);
+
+          // tensor label: I366
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, a4, c2, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, a4, c2, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, a4, c2, a3), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a4, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a4, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a4.size(), c2.size(), a3.size());
+
+            // tensor label: I367
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a4.size()*c2.size()*a3.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a4.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a4.size(), c2.size(), a3.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, a4, c2, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task306(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, a4, c2, a3}}, in, t[0], range)));
+    };
+    ~Task306() {};
+};
+
+template <typename T>
+class Task307 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I367
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task307(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task307() {};
+};
+
+template <typename T>
+class Task308 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index a4 = b(2);
+          const Index c2 = b(3);
+          const Index a3 = b(4);
+
+          // tensor label: I366
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, a4, c2, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, a4, c2, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, a4, c2, a3), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a3, c2, a4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a3, c2, a4)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a3.size(), c2.size(), a4.size());
+
+            // tensor label: I371
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a4.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a4.size());
+          }
+
+          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a4.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, a4, c2, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task308(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, a4, c2, a3}}, in, t[0], range)));
+    };
+    ~Task308() {};
+};
+
+template <typename T>
+class Task309 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I371
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,-1,4>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task309(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task309() {};
+};
+
+template <typename T>
+class Task310 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I343
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, c2, a3, a1), 0.0);
+
+          for (auto& a4 : *range_[2]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(a4, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(a4, a3)]);
+            sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a4.size(), a3.size());
+
+            // tensor label: I374
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, a4, c2, a1);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, a4, c2, a1)]);
+            sort_indices<2,0,1,3,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), a4.size(), c2.size(), a1.size());
+
+            dgemm_("T", "N", a3.size(), ci0.size()*x1.size()*c2.size()*a1.size(), a4.size(),
+                   1.0, i0data_sorted, a4.size(), i1data_sorted, a4.size(),
+                   1.0, odata_sorted, a3.size());
+          }
+
+          sort_indices<1,2,3,0,4,1,1,1,1>(odata_sorted, odata, a3.size(), ci0.size(), x1.size(), c2.size(), a1.size());
+          out()->put_block(odata, ci0, x1, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task310(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task310() {};
+};
+
+template <typename T>
+class Task311 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index a4 = b(2);
+          const Index c2 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I374
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, a4, c2, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, a4, c2, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, a4, c2, a1), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a4, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a4, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a4.size(), c2.size(), a1.size());
+
+            // tensor label: I375
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a4.size()*c2.size()*a1.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a4.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a4.size(), c2.size(), a1.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, a4, c2, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task311(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, a4, c2, a1}}, in, t[0], range)));
+    };
+    ~Task311() {};
+};
+
+template <typename T>
+class Task312 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I375
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,-1,4>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task312(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task312() {};
+};
+
+template <typename T>
+class Task313 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index a4 = b(2);
+          const Index c2 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I374
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, a4, c2, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, a4, c2, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, a4, c2, a1), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, c2, a4);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a4)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a4.size());
+
+            // tensor label: I379
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a4.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a4.size());
+          }
+
+          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a4.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, a4, c2, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task313(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a4 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, a4, c2, a1}}, in, t[0], range)));
+    };
+    ~Task313() {};
+};
+
+template <typename T>
+class Task314 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I379
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task314(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task314() {};
+};
+
+template <typename T>
+class Task315 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I343
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, c2, a3, a1), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a3, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a3, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a3.size(), c2.size(), a1.size());
+
+            // tensor label: I406
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,4,1,0,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task315(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task315() {};
+};
+
+template <typename T>
+class Task316 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+        double e0_;
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran, const double e)
+          : SubTask<3,1,T>(block, in, out), range_(ran), e0_(e) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I406
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            dscal_(ci0.size()*x1.size()*x0.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,2,1,1,1,4>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task316(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range, double e) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range, e)));
+    };
+    ~Task316() {};
+};
+
+template <typename T>
+class Task317 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I343
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, c2, a3, a1), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
+
+            // tensor label: I409
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,4,1,2,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task317(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task317() {};
+};
+
+template <typename T>
+class Task318 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+        double e0_;
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran, const double e)
+          : SubTask<3,1,T>(block, in, out), range_(ran), e0_(e) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I409
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            dscal_(ci0.size()*x1.size()*x0.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,2,1,1,-1,2>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task318(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range, double e) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range, e)));
+    };
+    ~Task318() {};
+};
+
+template <typename T>
+class Task319 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I343
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, c2, a3, a1), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: v2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a3, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a3, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a3.size(), c2.size(), a1.size());
+
+            // tensor label: I424
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,4,1,0,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task319(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task319() {};
+};
+
+template <typename T>
+class Task320 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I424
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
+            sort_indices<0,1,2,1,1,-1,1>(i0data, odata, ci0.size(), x1.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x1, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task320(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
+    };
+    ~Task320() {};
+};
+
+template <typename T>
+class Task321 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index c2 = b(2);
+          const Index a3 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I343
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, c2, a3, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x1, c2, a3, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x1, c2, a3, a1), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: v2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
+
+            // tensor label: I427
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x1, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x1, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x1.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), ci0.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,4,1,2,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), ci0.size(), x1.size());
+          out()->put_block(odata, ci0, x1, c2, a3, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task321(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& a3 : *range[2])
+          for (auto& c2 : *range[0])
+            for (auto& x1 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x1, c2, a3, a1}}, in, t[0], range)));
+    };
+    ~Task321() {};
+};
+
+template <typename T>
+class Task322 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x1 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I427
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
+          {
+            // tensor label: Gamma74
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
             sort_indices<0,1,2,1,1,2,1>(i0data, odata, ci0.size(), x1.size(), x0.size());
           }
@@ -11407,7 +20622,7 @@ class Task185 : public DedciTask<T> {
     }
 
   public:
-    Task185(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task322(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -11416,11 +20631,11 @@ class Task185 : public DedciTask<T> {
           for (auto& ci0 : *range[3])
             subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x1, x0}}, in, t[0], range)));
     };
-    ~Task185() {};
+    ~Task322() {};
 };
 
 template <typename T>
-class Task186 : public DedciTask<T> {
+class Task323 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<1,2,T> {
       protected:
@@ -11439,7 +20654,538 @@ class Task186 : public DedciTask<T> {
         void compute() override {
           const Index ci0 = b(0);
 
-          // tensor label: I169
+          // tensor label: I261
+          std::unique_ptr<double[]> odata = out()->move_block(ci0);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
+
+          for (auto& x3 : *range_[1]) {
+            for (auto& a1 : *range_[2]) {
+              for (auto& c2 : *range_[0]) {
+                for (auto& a3 : *range_[2]) {
+                  // tensor label: t2
+                  std::unique_ptr<double[]> i0data = in(0)->get_block(x3, a1, c2, a3);
+                  std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, c2, a3)]);
+                  sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), c2.size(), a3.size());
+
+                  // tensor label: I351
+                  std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, a3, c2, a1);
+                  std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, a3, c2, a1)]);
+                  sort_indices<1,4,3,2,0,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), a3.size(), c2.size(), a1.size());
+
+                  dgemm_("T", "N", 1, ci0.size(), x3.size()*a3.size()*c2.size()*a1.size(),
+                         1.0, i0data_sorted, x3.size()*a3.size()*c2.size()*a1.size(), i1data_sorted, x3.size()*a3.size()*c2.size()*a1.size(),
+                         1.0, odata_sorted, 1);
+                }
+              }
+            }
+          }
+
+          sort_indices<0,1,1,1,1>(odata_sorted, odata, ci0.size());
+          out()->put_block(odata, ci0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task323(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[3]->nblock());
+      for (auto& ci0 : *range[3])
+        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
+    };
+    ~Task323() {};
+};
+
+template <typename T>
+class Task324 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index a3 = b(2);
+          const Index c2 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I351
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, a3, c2, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x3, a3, c2, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x3, a3, c2, a1), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a3, c2, a1);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a3, c2, a1)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a3.size(), c2.size(), a1.size());
+
+            // tensor label: I352
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size());
+
+            dgemm_("T", "N", a3.size()*c2.size()*a1.size(), ci0.size()*x3.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a3.size()*c2.size()*a1.size());
+          }
+
+          sort_indices<3,4,0,1,2,1,1,1,1>(odata_sorted, odata, a3.size(), c2.size(), a1.size(), ci0.size(), x3.size());
+          out()->put_block(odata, ci0, x3, a3, c2, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task324(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, a3, c2, a1}}, in, t[0], range)));
+    };
+    ~Task324() {};
+};
+
+template <typename T>
+class Task325 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I352
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0);
+          {
+            // tensor label: Gamma78
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0);
+            sort_indices<0,1,2,1,1,-1,4>(i0data, odata, ci0.size(), x3.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x3, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task325(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x3 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x3, x0}}, in, t[0], range)));
+    };
+    ~Task325() {};
+};
+
+template <typename T>
+class Task326 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index a3 = b(2);
+          const Index c2 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I351
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, a3, c2, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x3, a3, c2, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x3, a3, c2, a1), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, c2, a3);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c2, a3)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c2.size(), a3.size());
+
+            // tensor label: I355
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0)]);
+            sort_indices<2,0,1,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size());
+
+            dgemm_("T", "N", a1.size()*c2.size()*a3.size(), ci0.size()*x3.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a1.size()*c2.size()*a3.size());
+          }
+
+          sort_indices<3,4,2,1,0,1,1,1,1>(odata_sorted, odata, a1.size(), c2.size(), a3.size(), ci0.size(), x3.size());
+          out()->put_block(odata, ci0, x3, a3, c2, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task326(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, a3, c2, a1}}, in, t[0], range)));
+    };
+    ~Task326() {};
+};
+
+template <typename T>
+class Task327 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<3,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,3>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<3,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+
+          // tensor label: I355
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0);
+          {
+            // tensor label: Gamma78
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0);
+            sort_indices<0,1,2,1,1,1,2>(i0data, odata, ci0.size(), x3.size(), x0.size());
+          }
+          out()->put_block(odata, ci0, x3, x0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task327(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x0 : *range[1])
+        for (auto& x3 : *range[1])
+          for (auto& ci0 : *range[3])
+            subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,3>{{ci0, x3, x0}}, in, t[0], range)));
+    };
+    ~Task327() {};
+};
+
+template <typename T>
+class Task328 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index a3 = b(2);
+          const Index c2 = b(3);
+          const Index a1 = b(4);
+
+          // tensor label: I351
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, a3, c2, a1);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x3, a3, c2, a1)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x3, a3, c2, a1), 0.0);
+
+          for (auto& x2 : *range_[1]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(c2, x2);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c2, x2)]);
+            sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, c2.size(), x2.size());
+
+            // tensor label: I382
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x2, a1, a3);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x2, a1, a3)]);
+            sort_indices<2,0,1,3,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x2.size(), a1.size(), a3.size());
+
+            dgemm_("T", "N", c2.size(), ci0.size()*x3.size()*a1.size()*a3.size(), x2.size(),
+                   1.0, i0data_sorted, x2.size(), i1data_sorted, x2.size(),
+                   1.0, odata_sorted, c2.size());
+          }
+
+          sort_indices<1,2,4,0,3,1,1,1,1>(odata_sorted, odata, c2.size(), ci0.size(), x3.size(), a1.size(), a3.size());
+          out()->put_block(odata, ci0, x3, a3, c2, a1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task328(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a1 : *range[2])
+        for (auto& c2 : *range[0])
+          for (auto& a3 : *range[2])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, a3, c2, a1}}, in, t[0], range)));
+    };
+    ~Task328() {};
+};
+
+template <typename T>
+class Task329 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x2 = b(2);
+          const Index a1 = b(3);
+          const Index a3 = b(4);
+
+          // tensor label: I382
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x2, a1, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x3, x2, a1, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x3, x2, a1, a3), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            for (auto& x0 : *range_[1]) {
+              // tensor label: t2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, x1, a3);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a3)]);
+              sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a3.size());
+
+              // tensor label: I383
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0, x2, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0, x2, x1)]);
+              sort_indices<4,2,0,1,3,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a3.size(), ci0.size()*x3.size()*x2.size(), x0.size()*x1.size(),
+                     1.0, i0data_sorted, x0.size()*x1.size(), i1data_sorted, x0.size()*x1.size(),
+                     1.0, odata_sorted, a1.size()*a3.size());
+            }
+          }
+
+          sort_indices<2,3,4,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a3.size(), ci0.size(), x3.size(), x2.size());
+          out()->put_block(odata, ci0, x3, x2, a1, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task329(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x2 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a3}}, in, t[0], range)));
+    };
+    ~Task329() {};
+};
+
+template <typename T>
+class Task330 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+          const Index x2 = b(3);
+          const Index x1 = b(4);
+
+          // tensor label: I383
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
+          {
+            // tensor label: Gamma86
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
+            sort_indices<0,1,2,3,4,1,1,-1,2>(i0data, odata, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, ci0, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task330(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
+    };
+    ~Task330() {};
+};
+
+template <typename T>
+class Task331 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<1,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,1>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<1,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+
+          // tensor label: I261
           std::unique_ptr<double[]> odata = out()->move_block(ci0);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
           std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
@@ -11453,7 +21199,7 @@ class Task186 : public DedciTask<T> {
                   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x3, a1, x2, a2)]);
                   sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x3.size(), a1.size(), x2.size(), a2.size());
 
-                  // tensor label: I185
+                  // tensor label: I385
                   std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x2, a1, a2);
                   std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x2, a1, a2)]);
                   sort_indices<1,3,2,4,0,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x2.size(), a1.size(), a2.size());
@@ -11480,18 +21226,18 @@ class Task186 : public DedciTask<T> {
     }
 
   public:
-    Task186(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task331(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[3]->nblock());
       for (auto& ci0 : *range[3])
         subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
     };
-    ~Task186() {};
+    ~Task331() {};
 };
 
 template <typename T>
-class Task187 : public DedciTask<T> {
+class Task332 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -11514,19 +21260,435 @@ class Task187 : public DedciTask<T> {
           const Index a1 = b(3);
           const Index a2 = b(4);
 
-          // tensor label: I185
+          // tensor label: I385
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x2, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x3, x2, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x3, x2, a1, a2), 0.0);
+
+          for (auto& c3 : *range_[0]) {
+            for (auto& x1 : *range_[1]) {
+              // tensor label: f1
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x1, c3);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x1, c3)]);
+              sort_indices<1,0,0,1,1,1>(i0data, i0data_sorted, x1.size(), c3.size());
+
+              // tensor label: I386
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x2, x1, a1, c3, a2);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x2, x1, a1, c3, a2)]);
+              sort_indices<5,3,0,1,2,4,6,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x2.size(), x1.size(), a1.size(), c3.size(), a2.size());
+
+              dgemm_("T", "N", 1, ci0.size()*x3.size()*x2.size()*a1.size()*a2.size(), x1.size()*c3.size(),
+                     1.0, i0data_sorted, x1.size()*c3.size(), i1data_sorted, x1.size()*c3.size(),
+                     1.0, odata_sorted, 1);
+            }
+          }
+
+          sort_indices<0,1,2,3,4,1,1,1,1>(odata_sorted, odata, ci0.size(), x3.size(), x2.size(), a1.size(), a2.size());
+          out()->put_block(odata, ci0, x3, x2, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task332(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x2 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a2}}, in, t[0], range)));
+    };
+    ~Task332() {};
+};
+
+template <typename T>
+class Task333 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<7,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,7>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<7,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x2 = b(2);
+          const Index x1 = b(3);
+          const Index a1 = b(4);
+          const Index c3 = b(5);
+          const Index a2 = b(6);
+
+          // tensor label: I386
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x2, x1, a1, c3, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x3, x2, x1, a1, c3, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x3, x2, x1, a1, c3, a2), 0.0);
+
+          for (auto& x0 : *range_[1]) {
+            // tensor label: t2
+            std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, c3, a2);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, c3, a2)]);
+            sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), c3.size(), a2.size());
+
+            // tensor label: I387
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0, x2, x1);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0, x2, x1)]);
+            sort_indices<2,0,1,3,4,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+
+            dgemm_("T", "N", a1.size()*c3.size()*a2.size(), ci0.size()*x3.size()*x2.size()*x1.size(), x0.size(),
+                   1.0, i0data_sorted, x0.size(), i1data_sorted, x0.size(),
+                   1.0, odata_sorted, a1.size()*c3.size()*a2.size());
+          }
+
+          sort_indices<3,4,5,6,0,1,2,1,1,1,1>(odata_sorted, odata, a1.size(), c3.size(), a2.size(), ci0.size(), x3.size(), x2.size(), x1.size());
+          out()->put_block(odata, ci0, x3, x2, x1, a1, c3, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task333(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& c3 : *range[0])
+          for (auto& a1 : *range[2])
+            for (auto& x1 : *range[1])
+              for (auto& x2 : *range[1])
+                for (auto& x3 : *range[1])
+                  for (auto& ci0 : *range[3])
+                    subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,7>{{ci0, x3, x2, x1, a1, c3, a2}}, in, t[0], range)));
+    };
+    ~Task333() {};
+};
+
+template <typename T>
+class Task334 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+          const Index x2 = b(3);
+          const Index x1 = b(4);
+
+          // tensor label: I387
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
+          {
+            // tensor label: Gamma86
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
+            sort_indices<0,1,2,3,4,1,1,-1,2>(i0data, odata, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, ci0, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task334(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
+    };
+    ~Task334() {};
+};
+
+template <typename T>
+class Task335 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x2 = b(2);
+          const Index a1 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I385
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x2, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x3, x2, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x3, x2, a1, a2), 0.0);
+
+          for (auto& a3 : *range_[2]) {
+            // tensor label: f1
+            std::unique_ptr<double[]> i0data = in(0)->get_block(a3, a2);
+            std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(a3, a2)]);
+            sort_indices<0,1,0,1,1,1>(i0data, i0data_sorted, a3.size(), a2.size());
+
+            // tensor label: I393
+            std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x2, a1, a3);
+            std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x2, a1, a3)]);
+            sort_indices<4,0,1,2,3,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x2.size(), a1.size(), a3.size());
+
+            dgemm_("T", "N", a2.size(), ci0.size()*x3.size()*x2.size()*a1.size(), a3.size(),
+                   1.0, i0data_sorted, a3.size(), i1data_sorted, a3.size(),
+                   1.0, odata_sorted, a2.size());
+          }
+
+          sort_indices<1,2,3,4,0,1,1,1,1>(odata_sorted, odata, a2.size(), ci0.size(), x3.size(), x2.size(), a1.size());
+          out()->put_block(odata, ci0, x3, x2, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task335(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x2 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a2}}, in, t[0], range)));
+    };
+    ~Task335() {};
+};
+
+template <typename T>
+class Task336 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x2 = b(2);
+          const Index a1 = b(3);
+          const Index a3 = b(4);
+
+          // tensor label: I393
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x2, a1, a3);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x3, x2, a1, a3)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x3, x2, a1, a3), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            for (auto& x0 : *range_[1]) {
+              // tensor label: t2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, x1, a3);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a3)]);
+              sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a3.size());
+
+              // tensor label: I394
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0, x2, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0, x2, x1)]);
+              sort_indices<4,2,0,1,3,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a3.size(), ci0.size()*x3.size()*x2.size(), x0.size()*x1.size(),
+                     1.0, i0data_sorted, x0.size()*x1.size(), i1data_sorted, x0.size()*x1.size(),
+                     1.0, odata_sorted, a1.size()*a3.size());
+            }
+          }
+
+          sort_indices<2,3,4,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a3.size(), ci0.size(), x3.size(), x2.size());
+          out()->put_block(odata, ci0, x3, x2, a1, a3);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task336(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a3 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x2 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a3}}, in, t[0], range)));
+    };
+    ~Task336() {};
+};
+
+template <typename T>
+class Task337 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+          const Index x2 = b(3);
+          const Index x1 = b(4);
+
+          // tensor label: I394
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
+          {
+            // tensor label: Gamma86
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
+            sort_indices<0,1,2,3,4,1,1,1,1>(i0data, odata, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, ci0, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task337(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
+    };
+    ~Task337() {};
+};
+
+template <typename T>
+class Task338 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x2 = b(2);
+          const Index a1 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I385
           std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x2, a1, a2);
           std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x3, x2, a1, a2)]);
           std::fill_n(odata_sorted.get(), out()->get_size(ci0, x3, x2, a1, a2), 0.0);
 
           for (auto& x1 : *range_[1]) {
             for (auto& x0 : *range_[1]) {
-              // tensor label: v2
+              // tensor label: t2
               std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, x1, a2);
               std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a2)]);
               sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a2.size());
 
-              // tensor label: I186
+              // tensor label: I412
               std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0, x2, x1);
               std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0, x2, x1)]);
               sort_indices<4,2,0,1,3,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
@@ -11551,7 +21713,7 @@ class Task187 : public DedciTask<T> {
     }
 
   public:
-    Task187(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task338(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -11562,11 +21724,147 @@ class Task187 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a2}}, in, t[0], range)));
     };
-    ~Task187() {};
+    ~Task338() {};
 };
 
 template <typename T>
-class Task188 : public DedciTask<T> {
+class Task339 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+        double e0_;
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran, const double e)
+          : SubTask<5,1,T>(block, in, out), range_(ran), e0_(e) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x0 = b(2);
+          const Index x2 = b(3);
+          const Index x1 = b(4);
+
+          // tensor label: I412
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
+          {
+            // tensor label: Gamma86
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
+            dscal_(ci0.size()*x3.size()*x0.size()*x2.size()*x1.size(), e0_, i0data.get(), 1);
+            sort_indices<0,1,2,3,4,1,1,-1,2>(i0data, odata, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+          }
+          out()->put_block(odata, ci0, x3, x0, x2, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task339(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range, double e) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range, e)));
+    };
+    ~Task339() {};
+};
+
+template <typename T>
+class Task340 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x3 = b(1);
+          const Index x2 = b(2);
+          const Index a1 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I385
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x2, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x3, x2, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x3, x2, a1, a2), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            for (auto& x0 : *range_[1]) {
+              // tensor label: v2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, x1, a2);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a2)]);
+              sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a2.size());
+
+              // tensor label: I430
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x3, x0, x2, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x3, x0, x2, x1)]);
+              sort_indices<4,2,0,1,3,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a2.size(), ci0.size()*x3.size()*x2.size(), x0.size()*x1.size(),
+                     1.0, i0data_sorted, x0.size()*x1.size(), i1data_sorted, x0.size()*x1.size(),
+                     1.0, odata_sorted, a1.size()*a2.size());
+            }
+          }
+
+          sort_indices<2,3,4,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a2.size(), ci0.size(), x3.size(), x2.size());
+          out()->put_block(odata, ci0, x3, x2, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task340(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x2 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a2}}, in, t[0], range)));
+    };
+    ~Task340() {};
+};
+
+template <typename T>
+class Task341 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,1,T> {
       protected:
@@ -11589,10 +21887,10 @@ class Task188 : public DedciTask<T> {
           const Index x2 = b(3);
           const Index x1 = b(4);
 
-          // tensor label: I186
+          // tensor label: I430
           std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
           {
-            // tensor label: Gamma53
+            // tensor label: Gamma86
             std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
             sort_indices<0,1,2,3,4,1,1,1,1>(i0data, odata, ci0.size(), x3.size(), x0.size(), x2.size(), x1.size());
           }
@@ -11609,7 +21907,7 @@ class Task188 : public DedciTask<T> {
     }
 
   public:
-    Task188(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task341(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -11620,7 +21918,211 @@ class Task188 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task188() {};
+    ~Task341() {};
+};
+
+template <typename T>
+class Task342 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<1,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,1>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<1,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+
+          // tensor label: I261
+          std::unique_ptr<double[]> odata = out()->move_block(ci0);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
+
+          for (auto& x5 : *range_[1]) {
+            for (auto& a1 : *range_[2]) {
+              for (auto& x4 : *range_[1]) {
+                for (auto& a2 : *range_[2]) {
+                  // tensor label: t2
+                  std::unique_ptr<double[]> i0data = in(0)->get_block(x5, a1, x4, a2);
+                  std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x5, a1, x4, a2)]);
+                  sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x5.size(), a1.size(), x4.size(), a2.size());
+
+                  // tensor label: I389
+                  std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x5, x4, a1, a2);
+                  std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x5, x4, a1, a2)]);
+                  sort_indices<1,3,2,4,0,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x5.size(), x4.size(), a1.size(), a2.size());
+
+                  dgemm_("T", "N", 1, ci0.size(), x5.size()*x4.size()*a1.size()*a2.size(),
+                         1.0, i0data_sorted, x5.size()*x4.size()*a1.size()*a2.size(), i1data_sorted, x5.size()*x4.size()*a1.size()*a2.size(),
+                         1.0, odata_sorted, 1);
+                }
+              }
+            }
+          }
+
+          sort_indices<0,1,1,1,1>(odata_sorted, odata, ci0.size());
+          out()->put_block(odata, ci0);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task342(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[3]->nblock());
+      for (auto& ci0 : *range[3])
+        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
+    };
+    ~Task342() {};
+};
+
+template <typename T>
+class Task343 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,2,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,2>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,2,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x5 = b(1);
+          const Index x4 = b(2);
+          const Index a1 = b(3);
+          const Index a2 = b(4);
+
+          // tensor label: I389
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x4, a1, a2);
+          std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x5, x4, a1, a2)]);
+          std::fill_n(odata_sorted.get(), out()->get_size(ci0, x5, x4, a1, a2), 0.0);
+
+          for (auto& x1 : *range_[1]) {
+            for (auto& x0 : *range_[1]) {
+              // tensor label: t2
+              std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, x1, a2);
+              std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a2)]);
+              sort_indices<2,0,1,3,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a2.size());
+
+              // tensor label: I390
+              std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x5, x0, x4, x1);
+              std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(ci0, x5, x0, x4, x1)]);
+              sort_indices<4,2,0,1,3,0,1,1,1>(i1data, i1data_sorted, ci0.size(), x5.size(), x0.size(), x4.size(), x1.size());
+
+              dgemm_("T", "N", a1.size()*a2.size(), ci0.size()*x5.size()*x4.size(), x0.size()*x1.size(),
+                     1.0, i0data_sorted, x0.size()*x1.size(), i1data_sorted, x0.size()*x1.size(),
+                     1.0, odata_sorted, a1.size()*a2.size());
+            }
+          }
+
+          sort_indices<2,3,4,0,1,1,1,1,1>(odata_sorted, odata, a1.size(), a2.size(), ci0.size(), x5.size(), x4.size());
+          out()->put_block(odata, ci0, x5, x4, a1, a2);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task343(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
+
+      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& a2 : *range[2])
+        for (auto& a1 : *range[2])
+          for (auto& x4 : *range[1])
+            for (auto& x5 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x5, x4, a1, a2}}, in, t[0], range)));
+    };
+    ~Task343() {};
+};
+
+template <typename T>
+class Task344 : public DedciTask<T> {
+  protected:
+    class Task_local : public SubTask<5,1,T> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
+
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor<T>>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor<T>>& out() const { return this->out_tensor(); }
+
+      public:
+        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor<T>>,1>& in, std::shared_ptr<Tensor<T>>& out,
+                   std::array<std::shared_ptr<const IndexRange>,4>& ran)
+          : SubTask<5,1,T>(block, in, out), range_(ran) { }
+
+
+        void compute() override {
+          const Index ci0 = b(0);
+          const Index x5 = b(1);
+          const Index x0 = b(2);
+          const Index x4 = b(3);
+          const Index x1 = b(4);
+
+          // tensor label: I390
+          std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x0, x4, x1);
+          {
+            // tensor label: Gamma88
+            std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x5, x0, x4, x1);
+            sort_indices<0,1,2,3,4,1,1,1,2>(i0data, odata, ci0.size(), x5.size(), x0.size(), x4.size(), x1.size());
+          }
+          out()->put_block(odata, ci0, x5, x0, x4, x1);
+        }
+    };
+
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+
+    void compute_() override {
+      for (auto& i : subtasks_) {
+        i->compute();
+      }
+    }
+
+  public:
+    Task344(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+      std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
+
+      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
+      for (auto& x1 : *range[1])
+        for (auto& x4 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x5 : *range[1])
+              for (auto& ci0 : *range[3])
+                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x5, x0, x4, x1}}, in, t[0], range)));
+    };
+    ~Task344() {};
 };
 
 
