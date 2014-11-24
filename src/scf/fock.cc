@@ -209,7 +209,7 @@ void Fock<DF>::fock_two_electron_part(shared_ptr<const Matrix> den_ex) {
     VectorB vec(ndim());
     coeff->diagonalize(vec);
     for (int i = 0; i != ndim(); ++i) {
-      if (vec[i] < -1.0e-8) {
+      if (vec[i] < -1.0e-12) {
         ++nocc;
         const double fac = std::sqrt(-vec(i));
         for_each(coeff->element_ptr(0,i), coeff->element_ptr(0,i+1), [&fac](double& i) { i *= fac; });
