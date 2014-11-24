@@ -114,7 +114,7 @@ void CASPT2Grad::compute() {
 
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
-          cideriv_->ax_plus_y(fock1mo->element(j,i), deriv->data(j+i*nact));
+          cideriv_->ax_plus_y(2.0*fock1mo->element(j,i), deriv->data(j+i*nact));
     }
 
     d2_ = smith->dm2();
