@@ -329,3 +329,61 @@ void ZHarrison::compute() {
   }
 #endif
 }
+
+
+shared_ptr<const ZMatrix> ZHarrison::set_active(set<int> active_indices, shared_ptr<const ZMatrix> coeffin) const {
+  // assumes coefficient is in striped format
+  if (active_indices.size() != norb_) throw logic_error("ZHarrison::set_active - Number of active indices does not match number of active orbitals");
+
+  const int naobasis = coeffin->ndim();
+  const int nmobasis = coeffin->mdim()/4;
+
+  auto coeff = coeffin;
+  auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
+
+  int nclosed_start = ref_->nclosed()/2;
+  int nclosed       = nclosed_start;
+  for (auto& iter : active_indices)
+    if (iter < nclosed_start) --nclosed;
+  assert(nclosed == ncore_);
+
+  int iclosed = 0;
+  int iactive = nclosed;
+  int ivirt   = nclosed + norb_;
+
+  if (!tsymm_)  // TODO figure out a good way to sort spin orbitals
+    cout << "******** Assuming Kramers-paired orbitals are coming out from the reference coeff in order, but not making sure of it.  ********" << endl;
+
+  auto cp   = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) {
+    copy_n(coeff->element_ptr(0,i*2), naobasis, tmp_coeff->element_ptr(0, pos*2));
+    copy_n(coeff->element_ptr(0,i*2+1), naobasis, tmp_coeff->element_ptr(0, pos*2+1));
+    ++pos;
+  };
+
+  for (int i = 0; i < nmobasis; ++i) {
+    if (active_indices.find(i) != active_indices.end()) {
+      cp(i, iactive);
+    } else if (i < nclosed_start) {
+      cp(i, iclosed);
+    } else {
+      cp(i, ivirt);
+    }
+  }
+
+  // copy positrons
+  tmp_coeff->copy_block(0, nmobasis*2, naobasis, nmobasis*2, coeffin->slice(nmobasis*2, nmobasis*4));
+
+  return make_shared<const ZMatrix>(*tmp_coeff);
+}
+
+
+shared_ptr<const ZMatrix> ZHarrison::swap_pos_neg(shared_ptr<const ZMatrix> coeffin) const {
+  auto out = coeffin->clone();
+  const int n = coeffin->ndim();
+  const int m = coeffin->mdim()/2;
+  assert(n % 4 == 0 && m % 2 == 0 && m * 2 == coeffin->mdim());
+  out->copy_block(0, 0, n, m, coeffin->get_submatrix(0, m, n, m));
+  out->copy_block(0, m, n, m, coeffin->get_submatrix(0, 0, n, m));
+  return out;
+}
+
