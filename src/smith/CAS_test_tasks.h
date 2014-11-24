@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: CAS_test_tasks.h
-// Copyright (C) 2012 Shiozaki group
+// Copyright (C) 2014 Shiozaki group
 //
 // Author: Shiozaki group <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -33,6 +33,7 @@
 #include <src/smith/tensor.h>
 #include <src/smith/task.h>
 #include <src/smith/subtask.h>
+#include <src/smith/storage.h>
 #include <vector>
 
 namespace bagel {
@@ -800,6 +801,8 @@ class Task12 : public Task<T> {
     ~Task12() {};
 };
 
+extern template class Task12<Storage_Incore>;
+
 template <typename T>
 class Task13 : public Task<T> {
   protected:
@@ -871,6 +874,8 @@ class Task13 : public Task<T> {
     ~Task13() {};
 };
 
+extern template class Task13<Storage_Incore>;
+
 template <typename T>
 class Task14 : public Task<T> {
   protected:
@@ -937,6 +942,8 @@ class Task14 : public Task<T> {
     ~Task14() {};
 };
 
+extern template class Task14<Storage_Incore>;
+
 template <typename T>
 class Task15 : public Task<T> {
   protected:
@@ -981,6 +988,8 @@ class Task15 : public Task<T> {
     };
     ~Task15() {};
 };
+
+extern template class Task15<Storage_Incore>;
 
 template <typename T>
 class Task16 : public Task<T> {
@@ -1048,6 +1057,8 @@ class Task16 : public Task<T> {
     ~Task16() {};
 };
 
+extern template class Task16<Storage_Incore>;
+
 template <typename T>
 class Task17 : public Task<T> {
   protected:
@@ -1092,6 +1103,8 @@ class Task17 : public Task<T> {
     };
     ~Task17() {};
 };
+
+extern template class Task17<Storage_Incore>;
 
 template <typename T>
 class Task18 : public Task<T> {
@@ -1150,6 +1163,8 @@ class Task18 : public Task<T> {
     };
     ~Task18() {};
 };
+
+extern template class Task18<Storage_Incore>;
 
 template <typename T>
 class Task19 : public Task<T> {
@@ -1219,6 +1234,8 @@ class Task19 : public Task<T> {
     ~Task19() {};
 };
 
+extern template class Task19<Storage_Incore>;
+
 template <typename T>
 class Task20 : public Task<T> {
   protected:
@@ -1276,6 +1293,8 @@ class Task20 : public Task<T> {
     };
     ~Task20() {};
 };
+
+extern template class Task20<Storage_Incore>;
 
 template <typename T>
 class Task21 : public Task<T> {
@@ -1345,6 +1364,8 @@ class Task21 : public Task<T> {
     ~Task21() {};
 };
 
+extern template class Task21<Storage_Incore>;
+
 template <typename T>
 class Task22 : public Task<T> {
   protected:
@@ -1402,6 +1423,8 @@ class Task22 : public Task<T> {
     };
     ~Task22() {};
 };
+
+extern template class Task22<Storage_Incore>;
 
 template <typename T>
 class Task23 : public Task<T> {
@@ -1471,6 +1494,8 @@ class Task23 : public Task<T> {
     ~Task23() {};
 };
 
+extern template class Task23<Storage_Incore>;
+
 template <typename T>
 class Task24 : public Task<T> {
   protected:
@@ -1539,6 +1564,8 @@ class Task24 : public Task<T> {
     ~Task24() {};
 };
 
+extern template class Task24<Storage_Incore>;
+
 template <typename T>
 class Task25 : public Task<T> {
   protected:
@@ -1587,6 +1614,8 @@ class Task25 : public Task<T> {
     };
     ~Task25() {};
 };
+
+extern template class Task25<Storage_Incore>;
 
 template <typename T>
 class Task26 : public Task<T> {
@@ -1656,6 +1685,8 @@ class Task26 : public Task<T> {
     ~Task26() {};
 };
 
+extern template class Task26<Storage_Incore>;
+
 template <typename T>
 class Task27 : public Task<T> {
   protected:
@@ -1704,6 +1735,8 @@ class Task27 : public Task<T> {
     };
     ~Task27() {};
 };
+
+extern template class Task27<Storage_Incore>;
 
 template <typename T>
 class Task28 : public Task<T> {
@@ -1757,6 +1790,8 @@ class Task28 : public Task<T> {
     };
     ~Task28() {};
 };
+
+extern template class Task28<Storage_Incore>;
 
 template <typename T>
 class Task29 : public Task<T> {
@@ -1828,6 +1863,8 @@ class Task29 : public Task<T> {
     ~Task29() {};
 };
 
+extern template class Task29<Storage_Incore>;
+
 template <typename T>
 class Task30 : public Task<T> {
   protected:
@@ -1898,6 +1935,8 @@ class Task30 : public Task<T> {
     ~Task30() {};
 };
 
+extern template class Task30<Storage_Incore>;
+
 template <typename T>
 class Task31 : public Task<T> {
   protected:
@@ -1946,6 +1985,8 @@ class Task31 : public Task<T> {
     };
     ~Task31() {};
 };
+
+extern template class Task31<Storage_Incore>;
 
 template <typename T>
 class Task32 : public Task<T> {
@@ -2017,6 +2058,8 @@ class Task32 : public Task<T> {
     ~Task32() {};
 };
 
+extern template class Task32<Storage_Incore>;
+
 template <typename T>
 class Task33 : public Task<T> {
   protected:
@@ -2065,6 +2108,8 @@ class Task33 : public Task<T> {
     };
     ~Task33() {};
 };
+
+extern template class Task33<Storage_Incore>;
 
 template <typename T>
 class Task34 : public Task<T> {
@@ -2134,6 +2179,8 @@ class Task34 : public Task<T> {
     ~Task34() {};
 };
 
+extern template class Task34<Storage_Incore>;
+
 template <typename T>
 class Task35 : public Task<T> {
   protected:
@@ -2182,6 +2229,8 @@ class Task35 : public Task<T> {
     };
     ~Task35() {};
 };
+
+extern template class Task35<Storage_Incore>;
 
 template <typename T>
 class Task36 : public Task<T> {
@@ -2251,6 +2300,8 @@ class Task36 : public Task<T> {
     ~Task36() {};
 };
 
+extern template class Task36<Storage_Incore>;
+
 template <typename T>
 class Task37 : public Task<T> {
   protected:
@@ -2299,6 +2350,8 @@ class Task37 : public Task<T> {
     };
     ~Task37() {};
 };
+
+extern template class Task37<Storage_Incore>;
 
 template <typename T>
 class Task38 : public Task<T> {
@@ -2368,6 +2421,8 @@ class Task38 : public Task<T> {
     ~Task38() {};
 };
 
+extern template class Task38<Storage_Incore>;
+
 template <typename T>
 class Task39 : public Task<T> {
   protected:
@@ -2436,6 +2491,8 @@ class Task39 : public Task<T> {
     ~Task39() {};
 };
 
+extern template class Task39<Storage_Incore>;
+
 template <typename T>
 class Task40 : public Task<T> {
   protected:
@@ -2484,6 +2541,8 @@ class Task40 : public Task<T> {
     };
     ~Task40() {};
 };
+
+extern template class Task40<Storage_Incore>;
 
 template <typename T>
 class Task41 : public Task<T> {
@@ -2553,6 +2612,8 @@ class Task41 : public Task<T> {
     ~Task41() {};
 };
 
+extern template class Task41<Storage_Incore>;
+
 template <typename T>
 class Task42 : public Task<T> {
   protected:
@@ -2601,6 +2662,8 @@ class Task42 : public Task<T> {
     };
     ~Task42() {};
 };
+
+extern template class Task42<Storage_Incore>;
 
 template <typename T>
 class Task43 : public Task<T> {
@@ -2670,6 +2733,8 @@ class Task43 : public Task<T> {
     ~Task43() {};
 };
 
+extern template class Task43<Storage_Incore>;
+
 template <typename T>
 class Task44 : public Task<T> {
   protected:
@@ -2738,6 +2803,8 @@ class Task44 : public Task<T> {
     ~Task44() {};
 };
 
+extern template class Task44<Storage_Incore>;
+
 template <typename T>
 class Task45 : public Task<T> {
   protected:
@@ -2786,6 +2853,8 @@ class Task45 : public Task<T> {
     };
     ~Task45() {};
 };
+
+extern template class Task45<Storage_Incore>;
 
 template <typename T>
 class Task46 : public Task<T> {
@@ -2855,6 +2924,8 @@ class Task46 : public Task<T> {
     ~Task46() {};
 };
 
+extern template class Task46<Storage_Incore>;
+
 template <typename T>
 class Task47 : public Task<T> {
   protected:
@@ -2903,6 +2974,8 @@ class Task47 : public Task<T> {
     };
     ~Task47() {};
 };
+
+extern template class Task47<Storage_Incore>;
 
 template <typename T>
 class Task48 : public Task<T> {
@@ -2972,6 +3045,8 @@ class Task48 : public Task<T> {
     ~Task48() {};
 };
 
+extern template class Task48<Storage_Incore>;
+
 template <typename T>
 class Task49 : public Task<T> {
   protected:
@@ -3040,6 +3115,8 @@ class Task49 : public Task<T> {
     ~Task49() {};
 };
 
+extern template class Task49<Storage_Incore>;
+
 template <typename T>
 class Task50 : public Task<T> {
   protected:
@@ -3088,6 +3165,8 @@ class Task50 : public Task<T> {
     };
     ~Task50() {};
 };
+
+extern template class Task50<Storage_Incore>;
 
 template <typename T>
 class Task51 : public Task<T> {
@@ -3157,6 +3236,8 @@ class Task51 : public Task<T> {
     ~Task51() {};
 };
 
+extern template class Task51<Storage_Incore>;
+
 template <typename T>
 class Task52 : public Task<T> {
   protected:
@@ -3205,6 +3286,8 @@ class Task52 : public Task<T> {
     };
     ~Task52() {};
 };
+
+extern template class Task52<Storage_Incore>;
 
 template <typename T>
 class Task53 : public Task<T> {
@@ -3273,6 +3356,8 @@ class Task53 : public Task<T> {
     };
     ~Task53() {};
 };
+
+extern template class Task53<Storage_Incore>;
 
 template <typename T>
 class Task54 : public Task<T> {
@@ -3344,6 +3429,8 @@ class Task54 : public Task<T> {
     ~Task54() {};
 };
 
+extern template class Task54<Storage_Incore>;
+
 template <typename T>
 class Task55 : public Task<T> {
   protected:
@@ -3396,6 +3483,8 @@ class Task55 : public Task<T> {
     };
     ~Task55() {};
 };
+
+extern template class Task55<Storage_Incore>;
 
 template <typename T>
 class Task56 : public Task<T> {
@@ -3465,6 +3554,8 @@ class Task56 : public Task<T> {
     ~Task56() {};
 };
 
+extern template class Task56<Storage_Incore>;
+
 template <typename T>
 class Task57 : public Task<T> {
   protected:
@@ -3515,6 +3606,8 @@ class Task57 : public Task<T> {
     };
     ~Task57() {};
 };
+
+extern template class Task57<Storage_Incore>;
 
 template <typename T>
 class Task58 : public Task<T> {
@@ -3584,6 +3677,8 @@ class Task58 : public Task<T> {
     ~Task58() {};
 };
 
+extern template class Task58<Storage_Incore>;
+
 template <typename T>
 class Task59 : public Task<T> {
   protected:
@@ -3634,6 +3729,8 @@ class Task59 : public Task<T> {
     };
     ~Task59() {};
 };
+
+extern template class Task59<Storage_Incore>;
 
 template <typename T>
 class Task60 : public Task<T> {
@@ -3703,6 +3800,8 @@ class Task60 : public Task<T> {
     ~Task60() {};
 };
 
+extern template class Task60<Storage_Incore>;
+
 template <typename T>
 class Task61 : public Task<T> {
   protected:
@@ -3751,6 +3850,8 @@ class Task61 : public Task<T> {
     };
     ~Task61() {};
 };
+
+extern template class Task61<Storage_Incore>;
 
 template <typename T>
 class Task62 : public Task<T> {
@@ -3820,6 +3921,8 @@ class Task62 : public Task<T> {
     ~Task62() {};
 };
 
+extern template class Task62<Storage_Incore>;
+
 template <typename T>
 class Task63 : public Task<T> {
   protected:
@@ -3868,6 +3971,8 @@ class Task63 : public Task<T> {
     };
     ~Task63() {};
 };
+
+extern template class Task63<Storage_Incore>;
 
 template <typename T>
 class Task64 : public Task<T> {
@@ -3926,6 +4031,8 @@ class Task64 : public Task<T> {
     };
     ~Task64() {};
 };
+
+extern template class Task64<Storage_Incore>;
 
 template <typename T>
 class Task65 : public Task<T> {
@@ -3996,6 +4103,8 @@ class Task65 : public Task<T> {
     };
     ~Task65() {};
 };
+
+extern template class Task65<Storage_Incore>;
 
 template <typename T>
 class Task66 : public Task<T> {
@@ -4069,6 +4178,8 @@ class Task66 : public Task<T> {
     ~Task66() {};
 };
 
+extern template class Task66<Storage_Incore>;
+
 template <typename T>
 class Task67 : public Task<T> {
   protected:
@@ -4121,6 +4232,8 @@ class Task67 : public Task<T> {
     };
     ~Task67() {};
 };
+
+extern template class Task67<Storage_Incore>;
 
 template <typename T>
 class Task68 : public Task<T> {
@@ -4189,6 +4302,8 @@ class Task68 : public Task<T> {
     };
     ~Task68() {};
 };
+
+extern template class Task68<Storage_Incore>;
 
 template <typename T>
 class Task69 : public Task<T> {
@@ -4260,6 +4375,8 @@ class Task69 : public Task<T> {
     ~Task69() {};
 };
 
+extern template class Task69<Storage_Incore>;
+
 template <typename T>
 class Task70 : public Task<T> {
   protected:
@@ -4313,6 +4430,8 @@ class Task70 : public Task<T> {
     ~Task70() {};
 };
 
+extern template class Task70<Storage_Incore>;
+
 template <typename T>
 class Task71 : public Task<T> {
   protected:
@@ -4365,6 +4484,8 @@ class Task71 : public Task<T> {
     };
     ~Task71() {};
 };
+
+extern template class Task71<Storage_Incore>;
 
 template <typename T>
 class Task72 : public Task<T> {
@@ -4436,6 +4557,8 @@ class Task72 : public Task<T> {
     ~Task72() {};
 };
 
+extern template class Task72<Storage_Incore>;
+
 template <typename T>
 class Task73 : public Task<T> {
   protected:
@@ -4488,6 +4611,8 @@ class Task73 : public Task<T> {
     };
     ~Task73() {};
 };
+
+extern template class Task73<Storage_Incore>;
 
 template <typename T>
 class Task74 : public Task<T> {
@@ -4559,6 +4684,8 @@ class Task74 : public Task<T> {
     ~Task74() {};
 };
 
+extern template class Task74<Storage_Incore>;
+
 template <typename T>
 class Task75 : public Task<T> {
   protected:
@@ -4613,6 +4740,8 @@ class Task75 : public Task<T> {
     };
     ~Task75() {};
 };
+
+extern template class Task75<Storage_Incore>;
 
 template <typename T>
 class Task76 : public Task<T> {
@@ -4684,6 +4813,8 @@ class Task76 : public Task<T> {
     ~Task76() {};
 };
 
+extern template class Task76<Storage_Incore>;
+
 template <typename T>
 class Task77 : public Task<T> {
   protected:
@@ -4736,6 +4867,8 @@ class Task77 : public Task<T> {
     };
     ~Task77() {};
 };
+
+extern template class Task77<Storage_Incore>;
 
 template <typename T>
 class Task78 : public EnergyTask<T> {
@@ -4800,6 +4933,8 @@ class Task78 : public EnergyTask<T> {
     };
     ~Task78() {};
 };
+
+extern template class Task78<Storage_Incore>;
 
 template <typename T>
 class Task79 : public EnergyTask<T> {
@@ -4880,6 +5015,8 @@ class Task79 : public EnergyTask<T> {
     ~Task79() {};
 };
 
+extern template class Task79<Storage_Incore>;
+
 template <typename T>
 class Task80 : public EnergyTask<T> {
   protected:
@@ -4954,6 +5091,8 @@ class Task80 : public EnergyTask<T> {
     ~Task80() {};
 };
 
+extern template class Task80<Storage_Incore>;
+
 template <typename T>
 class Task81 : public EnergyTask<T> {
   protected:
@@ -5006,6 +5145,8 @@ class Task81 : public EnergyTask<T> {
     };
     ~Task81() {};
 };
+
+extern template class Task81<Storage_Incore>;
 
 template <typename T>
 class Task82 : public EnergyTask<T> {
@@ -5081,6 +5222,8 @@ class Task82 : public EnergyTask<T> {
     ~Task82() {};
 };
 
+extern template class Task82<Storage_Incore>;
+
 template <typename T>
 class Task83 : public EnergyTask<T> {
   protected:
@@ -5133,6 +5276,8 @@ class Task83 : public EnergyTask<T> {
     };
     ~Task83() {};
 };
+
+extern template class Task83<Storage_Incore>;
 
 template <typename T>
 class Task84 : public EnergyTask<T> {
@@ -5210,6 +5355,8 @@ class Task84 : public EnergyTask<T> {
     ~Task84() {};
 };
 
+extern template class Task84<Storage_Incore>;
+
 template <typename T>
 class Task85 : public EnergyTask<T> {
   protected:
@@ -5275,6 +5422,8 @@ class Task85 : public EnergyTask<T> {
     };
     ~Task85() {};
 };
+
+extern template class Task85<Storage_Incore>;
 
 template <typename T>
 class Task86 : public EnergyTask<T> {
@@ -5352,6 +5501,8 @@ class Task86 : public EnergyTask<T> {
     ~Task86() {};
 };
 
+extern template class Task86<Storage_Incore>;
+
 template <typename T>
 class Task87 : public EnergyTask<T> {
   protected:
@@ -5417,6 +5568,8 @@ class Task87 : public EnergyTask<T> {
     };
     ~Task87() {};
 };
+
+extern template class Task87<Storage_Incore>;
 
 template <typename T>
 class Task88 : public EnergyTask<T> {
@@ -5494,6 +5647,8 @@ class Task88 : public EnergyTask<T> {
     ~Task88() {};
 };
 
+extern template class Task88<Storage_Incore>;
+
 template <typename T>
 class Task89 : public EnergyTask<T> {
   protected:
@@ -5570,6 +5725,8 @@ class Task89 : public EnergyTask<T> {
     ~Task89() {};
 };
 
+extern template class Task89<Storage_Incore>;
+
 template <typename T>
 class Task90 : public EnergyTask<T> {
   protected:
@@ -5626,6 +5783,8 @@ class Task90 : public EnergyTask<T> {
     };
     ~Task90() {};
 };
+
+extern template class Task90<Storage_Incore>;
 
 template <typename T>
 class Task91 : public EnergyTask<T> {
@@ -5703,6 +5862,8 @@ class Task91 : public EnergyTask<T> {
     ~Task91() {};
 };
 
+extern template class Task91<Storage_Incore>;
+
 template <typename T>
 class Task92 : public EnergyTask<T> {
   protected:
@@ -5759,6 +5920,8 @@ class Task92 : public EnergyTask<T> {
     };
     ~Task92() {};
 };
+
+extern template class Task92<Storage_Incore>;
 
 template <typename T>
 class Task93 : public EnergyTask<T> {
@@ -5823,6 +5986,8 @@ class Task93 : public EnergyTask<T> {
     };
     ~Task93() {};
 };
+
+extern template class Task93<Storage_Incore>;
 
 template <typename T>
 class Task94 : public EnergyTask<T> {
@@ -5902,6 +6067,8 @@ class Task94 : public EnergyTask<T> {
     ~Task94() {};
 };
 
+extern template class Task94<Storage_Incore>;
+
 template <typename T>
 class Task95 : public EnergyTask<T> {
   protected:
@@ -5980,6 +6147,8 @@ class Task95 : public EnergyTask<T> {
     ~Task95() {};
 };
 
+extern template class Task95<Storage_Incore>;
+
 template <typename T>
 class Task96 : public EnergyTask<T> {
   protected:
@@ -6036,6 +6205,8 @@ class Task96 : public EnergyTask<T> {
     };
     ~Task96() {};
 };
+
+extern template class Task96<Storage_Incore>;
 
 template <typename T>
 class Task97 : public EnergyTask<T> {
@@ -6115,6 +6286,8 @@ class Task97 : public EnergyTask<T> {
     ~Task97() {};
 };
 
+extern template class Task97<Storage_Incore>;
+
 template <typename T>
 class Task98 : public EnergyTask<T> {
   protected:
@@ -6171,6 +6344,8 @@ class Task98 : public EnergyTask<T> {
     };
     ~Task98() {};
 };
+
+extern template class Task98<Storage_Incore>;
 
 template <typename T>
 class Task99 : public EnergyTask<T> {
@@ -6248,6 +6423,8 @@ class Task99 : public EnergyTask<T> {
     ~Task99() {};
 };
 
+extern template class Task99<Storage_Incore>;
+
 template <typename T>
 class Task100 : public EnergyTask<T> {
   protected:
@@ -6304,6 +6481,8 @@ class Task100 : public EnergyTask<T> {
     };
     ~Task100() {};
 };
+
+extern template class Task100<Storage_Incore>;
 
 template <typename T>
 class Task101 : public EnergyTask<T> {
@@ -6381,6 +6560,8 @@ class Task101 : public EnergyTask<T> {
     ~Task101() {};
 };
 
+extern template class Task101<Storage_Incore>;
+
 template <typename T>
 class Task102 : public EnergyTask<T> {
   protected:
@@ -6437,6 +6618,8 @@ class Task102 : public EnergyTask<T> {
     };
     ~Task102() {};
 };
+
+extern template class Task102<Storage_Incore>;
 
 template <typename T>
 class Task103 : public EnergyTask<T> {
@@ -6514,6 +6697,8 @@ class Task103 : public EnergyTask<T> {
     ~Task103() {};
 };
 
+extern template class Task103<Storage_Incore>;
+
 template <typename T>
 class Task104 : public EnergyTask<T> {
   protected:
@@ -6590,6 +6775,8 @@ class Task104 : public EnergyTask<T> {
     ~Task104() {};
 };
 
+extern template class Task104<Storage_Incore>;
+
 template <typename T>
 class Task105 : public EnergyTask<T> {
   protected:
@@ -6646,6 +6833,8 @@ class Task105 : public EnergyTask<T> {
     };
     ~Task105() {};
 };
+
+extern template class Task105<Storage_Incore>;
 
 template <typename T>
 class Task106 : public EnergyTask<T> {
@@ -6723,6 +6912,8 @@ class Task106 : public EnergyTask<T> {
     ~Task106() {};
 };
 
+extern template class Task106<Storage_Incore>;
+
 template <typename T>
 class Task107 : public EnergyTask<T> {
   protected:
@@ -6779,6 +6970,8 @@ class Task107 : public EnergyTask<T> {
     };
     ~Task107() {};
 };
+
+extern template class Task107<Storage_Incore>;
 
 template <typename T>
 class Task108 : public EnergyTask<T> {
@@ -6856,6 +7049,8 @@ class Task108 : public EnergyTask<T> {
     ~Task108() {};
 };
 
+extern template class Task108<Storage_Incore>;
+
 template <typename T>
 class Task109 : public EnergyTask<T> {
   protected:
@@ -6932,6 +7127,8 @@ class Task109 : public EnergyTask<T> {
     ~Task109() {};
 };
 
+extern template class Task109<Storage_Incore>;
+
 template <typename T>
 class Task110 : public EnergyTask<T> {
   protected:
@@ -6988,6 +7185,8 @@ class Task110 : public EnergyTask<T> {
     };
     ~Task110() {};
 };
+
+extern template class Task110<Storage_Incore>;
 
 template <typename T>
 class Task111 : public EnergyTask<T> {
@@ -7065,6 +7264,8 @@ class Task111 : public EnergyTask<T> {
     ~Task111() {};
 };
 
+extern template class Task111<Storage_Incore>;
+
 template <typename T>
 class Task112 : public EnergyTask<T> {
   protected:
@@ -7121,6 +7322,8 @@ class Task112 : public EnergyTask<T> {
     };
     ~Task112() {};
 };
+
+extern template class Task112<Storage_Incore>;
 
 template <typename T>
 class Task113 : public EnergyTask<T> {
@@ -7198,6 +7401,8 @@ class Task113 : public EnergyTask<T> {
     ~Task113() {};
 };
 
+extern template class Task113<Storage_Incore>;
+
 template <typename T>
 class Task114 : public EnergyTask<T> {
   protected:
@@ -7274,6 +7479,8 @@ class Task114 : public EnergyTask<T> {
     ~Task114() {};
 };
 
+extern template class Task114<Storage_Incore>;
+
 template <typename T>
 class Task115 : public EnergyTask<T> {
   protected:
@@ -7330,6 +7537,8 @@ class Task115 : public EnergyTask<T> {
     };
     ~Task115() {};
 };
+
+extern template class Task115<Storage_Incore>;
 
 template <typename T>
 class Task116 : public EnergyTask<T> {
@@ -7407,6 +7616,8 @@ class Task116 : public EnergyTask<T> {
     ~Task116() {};
 };
 
+extern template class Task116<Storage_Incore>;
+
 template <typename T>
 class Task117 : public EnergyTask<T> {
   protected:
@@ -7463,6 +7674,8 @@ class Task117 : public EnergyTask<T> {
     };
     ~Task117() {};
 };
+
+extern template class Task117<Storage_Incore>;
 
 template <typename T>
 class Task118 : public EnergyTask<T> {
@@ -7539,6 +7752,8 @@ class Task118 : public EnergyTask<T> {
     };
     ~Task118() {};
 };
+
+extern template class Task118<Storage_Incore>;
 
 template <typename T>
 class Task119 : public EnergyTask<T> {
@@ -7618,6 +7833,8 @@ class Task119 : public EnergyTask<T> {
     ~Task119() {};
 };
 
+extern template class Task119<Storage_Incore>;
+
 template <typename T>
 class Task120 : public EnergyTask<T> {
   protected:
@@ -7678,6 +7895,8 @@ class Task120 : public EnergyTask<T> {
     };
     ~Task120() {};
 };
+
+extern template class Task120<Storage_Incore>;
 
 template <typename T>
 class Task121 : public EnergyTask<T> {
@@ -7755,6 +7974,8 @@ class Task121 : public EnergyTask<T> {
     ~Task121() {};
 };
 
+extern template class Task121<Storage_Incore>;
+
 template <typename T>
 class Task122 : public EnergyTask<T> {
   protected:
@@ -7813,6 +8034,8 @@ class Task122 : public EnergyTask<T> {
     };
     ~Task122() {};
 };
+
+extern template class Task122<Storage_Incore>;
 
 template <typename T>
 class Task123 : public EnergyTask<T> {
@@ -7890,6 +8113,8 @@ class Task123 : public EnergyTask<T> {
     ~Task123() {};
 };
 
+extern template class Task123<Storage_Incore>;
+
 template <typename T>
 class Task124 : public EnergyTask<T> {
   protected:
@@ -7948,6 +8173,8 @@ class Task124 : public EnergyTask<T> {
     };
     ~Task124() {};
 };
+
+extern template class Task124<Storage_Incore>;
 
 template <typename T>
 class Task125 : public EnergyTask<T> {
@@ -8025,6 +8252,8 @@ class Task125 : public EnergyTask<T> {
     ~Task125() {};
 };
 
+extern template class Task125<Storage_Incore>;
+
 template <typename T>
 class Task126 : public EnergyTask<T> {
   protected:
@@ -8081,6 +8310,8 @@ class Task126 : public EnergyTask<T> {
     };
     ~Task126() {};
 };
+
+extern template class Task126<Storage_Incore>;
 
 template <typename T>
 class Task127 : public EnergyTask<T> {
@@ -8158,6 +8389,8 @@ class Task127 : public EnergyTask<T> {
     ~Task127() {};
 };
 
+extern template class Task127<Storage_Incore>;
+
 template <typename T>
 class Task128 : public EnergyTask<T> {
   protected:
@@ -8214,6 +8447,8 @@ class Task128 : public EnergyTask<T> {
     };
     ~Task128() {};
 };
+
+extern template class Task128<Storage_Incore>;
 
 template <typename T>
 class Task129 : public EnergyTask<T> {
@@ -8278,6 +8513,8 @@ class Task129 : public EnergyTask<T> {
     };
     ~Task129() {};
 };
+
+extern template class Task129<Storage_Incore>;
 
 template <typename T>
 class Task130 : public EnergyTask<T> {
@@ -8356,6 +8593,8 @@ class Task130 : public EnergyTask<T> {
     };
     ~Task130() {};
 };
+
+extern template class Task130<Storage_Incore>;
 
 template <typename T>
 class Task131 : public EnergyTask<T> {
@@ -8437,6 +8676,8 @@ class Task131 : public EnergyTask<T> {
     ~Task131() {};
 };
 
+extern template class Task131<Storage_Incore>;
+
 template <typename T>
 class Task132 : public EnergyTask<T> {
   protected:
@@ -8497,6 +8738,8 @@ class Task132 : public EnergyTask<T> {
     };
     ~Task132() {};
 };
+
+extern template class Task132<Storage_Incore>;
 
 template <typename T>
 class Task133 : public EnergyTask<T> {
@@ -8576,6 +8819,8 @@ class Task133 : public EnergyTask<T> {
     ~Task133() {};
 };
 
+extern template class Task133<Storage_Incore>;
+
 template <typename T>
 class Task134 : public EnergyTask<T> {
   protected:
@@ -8636,6 +8881,8 @@ class Task134 : public EnergyTask<T> {
     };
     ~Task134() {};
 };
+
+extern template class Task134<Storage_Incore>;
 
 template <typename T>
 class Task135 : public EnergyTask<T> {
@@ -8712,6 +8959,8 @@ class Task135 : public EnergyTask<T> {
     };
     ~Task135() {};
 };
+
+extern template class Task135<Storage_Incore>;
 
 template <typename T>
 class Task136 : public EnergyTask<T> {
@@ -8791,6 +9040,8 @@ class Task136 : public EnergyTask<T> {
     ~Task136() {};
 };
 
+extern template class Task136<Storage_Incore>;
+
 template <typename T>
 class Task137 : public EnergyTask<T> {
   protected:
@@ -8851,6 +9102,8 @@ class Task137 : public EnergyTask<T> {
     };
     ~Task137() {};
 };
+
+extern template class Task137<Storage_Incore>;
 
 template <typename T>
 class Task138 : public EnergyTask<T> {
@@ -8930,6 +9183,8 @@ class Task138 : public EnergyTask<T> {
     ~Task138() {};
 };
 
+extern template class Task138<Storage_Incore>;
+
 template <typename T>
 class Task139 : public EnergyTask<T> {
   protected:
@@ -8992,6 +9247,8 @@ class Task139 : public EnergyTask<T> {
     };
     ~Task139() {};
 };
+
+extern template class Task139<Storage_Incore>;
 
 template <typename T>
 class Task140 : public EnergyTask<T> {
@@ -9071,6 +9328,8 @@ class Task140 : public EnergyTask<T> {
     ~Task140() {};
 };
 
+extern template class Task140<Storage_Incore>;
+
 template <typename T>
 class Task141 : public EnergyTask<T> {
   protected:
@@ -9132,6 +9391,8 @@ class Task141 : public EnergyTask<T> {
     ~Task141() {};
 };
 
+extern template class Task141<Storage_Incore>;
+
 template <typename T>
 class Task142 : public CorrectionTask<T> {
   protected:
@@ -9192,9 +9453,11 @@ class Task142 : public CorrectionTask<T> {
           for (auto& a2 : *range[2])
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a2, c3, a4}}, in, t[0], range)));
-    };
-    ~Task142() {};
+    }
+    ~Task142() {}
 };
+
+extern template class Task142<Storage_Incore>;
 
 template <typename T>
 class Task143 : public CorrectionTask<T> {
@@ -9258,9 +9521,11 @@ class Task143 : public CorrectionTask<T> {
           for (auto& a4 : *range[2])
             for (auto& c1 : *range[0])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range)));
-    };
-    ~Task143() {};
+    }
+    ~Task143() {}
 };
+
+extern template class Task143<Storage_Incore>;
 
 template <typename T>
 class Task144 : public CorrectionTask<T> {
@@ -9322,9 +9587,11 @@ class Task144 : public CorrectionTask<T> {
           for (auto& a1 : *range[2])
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a1, c2, a3}}, in, t[0], range)));
-    };
-    ~Task144() {};
+    }
+    ~Task144() {}
 };
+
+extern template class Task144<Storage_Incore>;
 
 template <typename T>
 class Task145 : public CorrectionTask<T> {
@@ -9398,9 +9665,11 @@ class Task145 : public CorrectionTask<T> {
           for (auto& a3 : *range[2])
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c2, a1}}, in, t[0], range)));
-    };
-    ~Task145() {};
+    }
+    ~Task145() {}
 };
+
+extern template class Task145<Storage_Incore>;
 
 template <typename T>
 class Task146 : public CorrectionTask<T> {
@@ -9455,9 +9724,11 @@ class Task146 : public CorrectionTask<T> {
       for (auto& x0 : *range[1])
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
-    };
-    ~Task146() {};
+    }
+    ~Task146() {}
 };
+
+extern template class Task146<Storage_Incore>;
 
 template <typename T>
 class Task147 : public CorrectionTask<T> {
@@ -9531,9 +9802,11 @@ class Task147 : public CorrectionTask<T> {
           for (auto& a3 : *range[2])
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a3, c2, a1}}, in, t[0], range)));
-    };
-    ~Task147() {};
+    }
+    ~Task147() {}
 };
+
+extern template class Task147<Storage_Incore>;
 
 template <typename T>
 class Task148 : public CorrectionTask<T> {
@@ -9588,9 +9861,11 @@ class Task148 : public CorrectionTask<T> {
       for (auto& x0 : *range[1])
         for (auto& x1 : *range[1])
           subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x1, x0}}, in, t[0], range)));
-    };
-    ~Task148() {};
+    }
+    ~Task148() {}
 };
+
+extern template class Task148<Storage_Incore>;
 
 template <typename T>
 class Task149 : public CorrectionTask<T> {
@@ -9652,9 +9927,11 @@ class Task149 : public CorrectionTask<T> {
           for (auto& a1 : *range[2])
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a1, x1, a2}}, in, t[0], range)));
-    };
-    ~Task149() {};
+    }
+    ~Task149() {}
 };
+
+extern template class Task149<Storage_Incore>;
 
 template <typename T>
 class Task150 : public CorrectionTask<T> {
@@ -9730,9 +10007,11 @@ class Task150 : public CorrectionTask<T> {
           for (auto& x1 : *range[1])
             for (auto& x0 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task150() {};
+    }
+    ~Task150() {}
 };
+
+extern template class Task150<Storage_Incore>;
 
 template <typename T>
 class Task151 : public CorrectionTask<T> {
@@ -9791,9 +10070,11 @@ class Task151 : public CorrectionTask<T> {
           for (auto& x0 : *range[1])
             for (auto& x3 : *range[1])
               subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task151() {};
+    }
+    ~Task151() {}
 };
+
+extern template class Task151<Storage_Incore>;
 
 template <typename T>
 class Task152 : public DensityTask<T> {
@@ -9865,6 +10146,8 @@ class Task153 : public DensityTask<T> {
     };
     ~Task153() {};
 };
+
+extern template class Task153<Storage_Incore>;
 
 template <typename T>
 class Task154 : public DensityTask<T> {
@@ -9939,6 +10222,8 @@ class Task154 : public DensityTask<T> {
     ~Task154() {};
 };
 
+extern template class Task154<Storage_Incore>;
+
 template <typename T>
 class Task155 : public DensityTask<T> {
   protected:
@@ -10012,6 +10297,8 @@ class Task155 : public DensityTask<T> {
     ~Task155() {};
 };
 
+extern template class Task155<Storage_Incore>;
+
 template <typename T>
 class Task156 : public DensityTask<T> {
   protected:
@@ -10063,6 +10350,8 @@ class Task156 : public DensityTask<T> {
     };
     ~Task156() {};
 };
+
+extern template class Task156<Storage_Incore>;
 
 template <typename T>
 class Task157 : public DensityTask<T> {
@@ -10137,6 +10426,8 @@ class Task157 : public DensityTask<T> {
     ~Task157() {};
 };
 
+extern template class Task157<Storage_Incore>;
+
 template <typename T>
 class Task158 : public DensityTask<T> {
   protected:
@@ -10189,6 +10480,8 @@ class Task158 : public DensityTask<T> {
     ~Task158() {};
 };
 
+extern template class Task158<Storage_Incore>;
+
 template <typename T>
 class Task159 : public DensityTask<T> {
   protected:
@@ -10240,6 +10533,8 @@ class Task159 : public DensityTask<T> {
     };
     ~Task159() {};
 };
+
+extern template class Task159<Storage_Incore>;
 
 template <typename T>
 class Task160 : public DensityTask<T> {
@@ -10312,6 +10607,8 @@ class Task160 : public DensityTask<T> {
     ~Task160() {};
 };
 
+extern template class Task160<Storage_Incore>;
+
 template <typename T>
 class Task161 : public DensityTask<T> {
   protected:
@@ -10373,6 +10670,8 @@ class Task161 : public DensityTask<T> {
     ~Task161() {};
 };
 
+extern template class Task161<Storage_Incore>;
+
 template <typename T>
 class Task162 : public DensityTask<T> {
   protected:
@@ -10424,6 +10723,8 @@ class Task162 : public DensityTask<T> {
     };
     ~Task162() {};
 };
+
+extern template class Task162<Storage_Incore>;
 
 template <typename T>
 class Task163 : public DensityTask<T> {
@@ -10496,6 +10797,8 @@ class Task163 : public DensityTask<T> {
     ~Task163() {};
 };
 
+extern template class Task163<Storage_Incore>;
+
 template <typename T>
 class Task164 : public DensityTask<T> {
   protected:
@@ -10557,6 +10860,8 @@ class Task164 : public DensityTask<T> {
     ~Task164() {};
 };
 
+extern template class Task164<Storage_Incore>;
+
 template <typename T>
 class Task165 : public DensityTask<T> {
   protected:
@@ -10608,6 +10913,8 @@ class Task165 : public DensityTask<T> {
     };
     ~Task165() {};
 };
+
+extern template class Task165<Storage_Incore>;
 
 template <typename T>
 class Task166 : public DensityTask<T> {
@@ -10680,6 +10987,8 @@ class Task166 : public DensityTask<T> {
     ~Task166() {};
 };
 
+extern template class Task166<Storage_Incore>;
+
 template <typename T>
 class Task167 : public DensityTask<T> {
   protected:
@@ -10751,6 +11060,8 @@ class Task167 : public DensityTask<T> {
     ~Task167() {};
 };
 
+extern template class Task167<Storage_Incore>;
+
 template <typename T>
 class Task168 : public DensityTask<T> {
   protected:
@@ -10802,6 +11113,8 @@ class Task168 : public DensityTask<T> {
     };
     ~Task168() {};
 };
+
+extern template class Task168<Storage_Incore>;
 
 template <typename T>
 class Task169 : public DensityTask<T> {
@@ -10874,6 +11187,8 @@ class Task169 : public DensityTask<T> {
     ~Task169() {};
 };
 
+extern template class Task169<Storage_Incore>;
+
 template <typename T>
 class Task170 : public DensityTask<T> {
   protected:
@@ -10926,6 +11241,8 @@ class Task170 : public DensityTask<T> {
     ~Task170() {};
 };
 
+extern template class Task170<Storage_Incore>;
+
 template <typename T>
 class Task171 : public DensityTask<T> {
   protected:
@@ -10977,6 +11294,8 @@ class Task171 : public DensityTask<T> {
     };
     ~Task171() {};
 };
+
+extern template class Task171<Storage_Incore>;
 
 template <typename T>
 class Task172 : public DensityTask<T> {
@@ -11051,6 +11370,8 @@ class Task172 : public DensityTask<T> {
     ~Task172() {};
 };
 
+extern template class Task172<Storage_Incore>;
+
 template <typename T>
 class Task173 : public DensityTask<T> {
   protected:
@@ -11124,6 +11445,8 @@ class Task173 : public DensityTask<T> {
     ~Task173() {};
 };
 
+extern template class Task173<Storage_Incore>;
+
 template <typename T>
 class Task174 : public DensityTask<T> {
   protected:
@@ -11175,6 +11498,8 @@ class Task174 : public DensityTask<T> {
     };
     ~Task174() {};
 };
+
+extern template class Task174<Storage_Incore>;
 
 template <typename T>
 class Task175 : public DensityTask<T> {
@@ -11249,6 +11574,8 @@ class Task175 : public DensityTask<T> {
     ~Task175() {};
 };
 
+extern template class Task175<Storage_Incore>;
+
 template <typename T>
 class Task176 : public DensityTask<T> {
   protected:
@@ -11301,6 +11628,8 @@ class Task176 : public DensityTask<T> {
     ~Task176() {};
 };
 
+extern template class Task176<Storage_Incore>;
+
 template <typename T>
 class Task177 : public DensityTask<T> {
   protected:
@@ -11352,6 +11681,8 @@ class Task177 : public DensityTask<T> {
     };
     ~Task177() {};
 };
+
+extern template class Task177<Storage_Incore>;
 
 template <typename T>
 class Task178 : public DensityTask<T> {
@@ -11425,6 +11756,8 @@ class Task178 : public DensityTask<T> {
     };
     ~Task178() {};
 };
+
+extern template class Task178<Storage_Incore>;
 
 template <typename T>
 class Task179 : public DensityTask<T> {
@@ -11501,6 +11834,8 @@ class Task179 : public DensityTask<T> {
     ~Task179() {};
 };
 
+extern template class Task179<Storage_Incore>;
+
 template <typename T>
 class Task180 : public DensityTask<T> {
   protected:
@@ -11556,6 +11891,8 @@ class Task180 : public DensityTask<T> {
     };
     ~Task180() {};
 };
+
+extern template class Task180<Storage_Incore>;
 
 template <typename T>
 class Task181 : public DensityTask<T> {
@@ -11632,6 +11969,8 @@ class Task181 : public DensityTask<T> {
     ~Task181() {};
 };
 
+extern template class Task181<Storage_Incore>;
+
 template <typename T>
 class Task182 : public DensityTask<T> {
   protected:
@@ -11688,6 +12027,8 @@ class Task182 : public DensityTask<T> {
     ~Task182() {};
 };
 
+extern template class Task182<Storage_Incore>;
+
 template <typename T>
 class Task183 : public DensityTask<T> {
   protected:
@@ -11739,6 +12080,8 @@ class Task183 : public DensityTask<T> {
     };
     ~Task183() {};
 };
+
+extern template class Task183<Storage_Incore>;
 
 template <typename T>
 class Task184 : public DensityTask<T> {
@@ -11811,6 +12154,8 @@ class Task184 : public DensityTask<T> {
     ~Task184() {};
 };
 
+extern template class Task184<Storage_Incore>;
+
 template <typename T>
 class Task185 : public DensityTask<T> {
   protected:
@@ -11882,6 +12227,8 @@ class Task185 : public DensityTask<T> {
     ~Task185() {};
 };
 
+extern template class Task185<Storage_Incore>;
+
 template <typename T>
 class Task186 : public DensityTask<T> {
   protected:
@@ -11933,6 +12280,8 @@ class Task186 : public DensityTask<T> {
     };
     ~Task186() {};
 };
+
+extern template class Task186<Storage_Incore>;
 
 template <typename T>
 class Task187 : public DensityTask<T> {
@@ -12005,6 +12354,8 @@ class Task187 : public DensityTask<T> {
     ~Task187() {};
 };
 
+extern template class Task187<Storage_Incore>;
+
 template <typename T>
 class Task188 : public DensityTask<T> {
   protected:
@@ -12057,6 +12408,8 @@ class Task188 : public DensityTask<T> {
     ~Task188() {};
 };
 
+extern template class Task188<Storage_Incore>;
+
 template <typename T>
 class Task189 : public DensityTask<T> {
   protected:
@@ -12108,6 +12461,8 @@ class Task189 : public DensityTask<T> {
     };
     ~Task189() {};
 };
+
+extern template class Task189<Storage_Incore>;
 
 template <typename T>
 class Task190 : public DensityTask<T> {
@@ -12180,6 +12535,8 @@ class Task190 : public DensityTask<T> {
     ~Task190() {};
 };
 
+extern template class Task190<Storage_Incore>;
+
 template <typename T>
 class Task191 : public DensityTask<T> {
   protected:
@@ -12251,6 +12608,8 @@ class Task191 : public DensityTask<T> {
     ~Task191() {};
 };
 
+extern template class Task191<Storage_Incore>;
+
 template <typename T>
 class Task192 : public DensityTask<T> {
   protected:
@@ -12302,6 +12661,8 @@ class Task192 : public DensityTask<T> {
     };
     ~Task192() {};
 };
+
+extern template class Task192<Storage_Incore>;
 
 template <typename T>
 class Task193 : public DensityTask<T> {
@@ -12374,6 +12735,8 @@ class Task193 : public DensityTask<T> {
     ~Task193() {};
 };
 
+extern template class Task193<Storage_Incore>;
+
 template <typename T>
 class Task194 : public DensityTask<T> {
   protected:
@@ -12426,6 +12789,8 @@ class Task194 : public DensityTask<T> {
     ~Task194() {};
 };
 
+extern template class Task194<Storage_Incore>;
+
 template <typename T>
 class Task195 : public DensityTask<T> {
   protected:
@@ -12477,6 +12842,8 @@ class Task195 : public DensityTask<T> {
     };
     ~Task195() {};
 };
+
+extern template class Task195<Storage_Incore>;
 
 template <typename T>
 class Task196 : public DensityTask<T> {
@@ -12549,6 +12916,8 @@ class Task196 : public DensityTask<T> {
     ~Task196() {};
 };
 
+extern template class Task196<Storage_Incore>;
+
 template <typename T>
 class Task197 : public DensityTask<T> {
   protected:
@@ -12620,6 +12989,8 @@ class Task197 : public DensityTask<T> {
     ~Task197() {};
 };
 
+extern template class Task197<Storage_Incore>;
+
 template <typename T>
 class Task198 : public DensityTask<T> {
   protected:
@@ -12671,6 +13042,8 @@ class Task198 : public DensityTask<T> {
     };
     ~Task198() {};
 };
+
+extern template class Task198<Storage_Incore>;
 
 template <typename T>
 class Task199 : public DensityTask<T> {
@@ -12743,6 +13116,8 @@ class Task199 : public DensityTask<T> {
     ~Task199() {};
 };
 
+extern template class Task199<Storage_Incore>;
+
 template <typename T>
 class Task200 : public DensityTask<T> {
   protected:
@@ -12795,6 +13170,8 @@ class Task200 : public DensityTask<T> {
     ~Task200() {};
 };
 
+extern template class Task200<Storage_Incore>;
+
 template <typename T>
 class Task201 : public DensityTask<T> {
   protected:
@@ -12846,6 +13223,8 @@ class Task201 : public DensityTask<T> {
     };
     ~Task201() {};
 };
+
+extern template class Task201<Storage_Incore>;
 
 template <typename T>
 class Task202 : public DensityTask<T> {
@@ -12917,6 +13296,8 @@ class Task202 : public DensityTask<T> {
     };
     ~Task202() {};
 };
+
+extern template class Task202<Storage_Incore>;
 
 template <typename T>
 class Task203 : public DensityTask<T> {
@@ -12991,6 +13372,8 @@ class Task203 : public DensityTask<T> {
     ~Task203() {};
 };
 
+extern template class Task203<Storage_Incore>;
+
 template <typename T>
 class Task204 : public DensityTask<T> {
   protected:
@@ -13047,6 +13430,8 @@ class Task204 : public DensityTask<T> {
     ~Task204() {};
 };
 
+extern template class Task204<Storage_Incore>;
+
 template <typename T>
 class Task205 : public DensityTask<T> {
   protected:
@@ -13098,6 +13483,8 @@ class Task205 : public DensityTask<T> {
     };
     ~Task205() {};
 };
+
+extern template class Task205<Storage_Incore>;
 
 template <typename T>
 class Task206 : public DensityTask<T> {
@@ -13171,6 +13558,8 @@ class Task206 : public DensityTask<T> {
     };
     ~Task206() {};
 };
+
+extern template class Task206<Storage_Incore>;
 
 template <typename T>
 class Task207 : public DensityTask<T> {
@@ -13247,6 +13636,8 @@ class Task207 : public DensityTask<T> {
     ~Task207() {};
 };
 
+extern template class Task207<Storage_Incore>;
+
 template <typename T>
 class Task208 : public DensityTask<T> {
   protected:
@@ -13303,6 +13694,8 @@ class Task208 : public DensityTask<T> {
     ~Task208() {};
 };
 
+extern template class Task208<Storage_Incore>;
+
 template <typename T>
 class Task209 : public DensityTask<T> {
   protected:
@@ -13354,6 +13747,8 @@ class Task209 : public DensityTask<T> {
     };
     ~Task209() {};
 };
+
+extern template class Task209<Storage_Incore>;
 
 template <typename T>
 class Task210 : public DensityTask<T> {
@@ -13427,6 +13822,8 @@ class Task210 : public DensityTask<T> {
     };
     ~Task210() {};
 };
+
+extern template class Task210<Storage_Incore>;
 
 template <typename T>
 class Task211 : public DensityTask<T> {
@@ -13505,6 +13902,8 @@ class Task211 : public DensityTask<T> {
     ~Task211() {};
 };
 
+extern template class Task211<Storage_Incore>;
+
 template <typename T>
 class Task212 : public DensityTask<T> {
   protected:
@@ -13565,6 +13964,8 @@ class Task212 : public DensityTask<T> {
     ~Task212() {};
 };
 
+extern template class Task212<Storage_Incore>;
+
 template <typename T>
 class Task213 : public DensityTask<T> {
   protected:
@@ -13616,6 +14017,8 @@ class Task213 : public DensityTask<T> {
     };
     ~Task213() {};
 };
+
+extern template class Task213<Storage_Incore>;
 
 template <typename T>
 class Task214 : public DensityTask<T> {
@@ -13687,6 +14090,8 @@ class Task214 : public DensityTask<T> {
     };
     ~Task214() {};
 };
+
+extern template class Task214<Storage_Incore>;
 
 template <typename T>
 class Task215 : public DensityTask<T> {
@@ -13761,6 +14166,8 @@ class Task215 : public DensityTask<T> {
     ~Task215() {};
 };
 
+extern template class Task215<Storage_Incore>;
+
 template <typename T>
 class Task216 : public DensityTask<T> {
   protected:
@@ -13816,6 +14223,8 @@ class Task216 : public DensityTask<T> {
     };
     ~Task216() {};
 };
+
+extern template class Task216<Storage_Incore>;
 
 template <typename T>
 class Task217 : public Density2Task<T> {
@@ -13892,6 +14301,8 @@ class Task218 : public Density2Task<T> {
     ~Task218() {};
 };
 
+extern template class Task218<Storage_Incore>;
+
 template <typename T>
 class Task219 : public Density2Task<T> {
   protected:
@@ -13953,6 +14364,8 @@ class Task219 : public Density2Task<T> {
     ~Task219() {};
 };
 
+extern template class Task219<Storage_Incore>;
+
 template <typename T>
 class Task220 : public Density2Task<T> {
   protected:
@@ -14008,6 +14421,8 @@ class Task220 : public Density2Task<T> {
     };
     ~Task220() {};
 };
+
+extern template class Task220<Storage_Incore>;
 
 template <typename T>
 class Task221 : public Density2Task<T> {
@@ -14080,6 +14495,8 @@ class Task221 : public Density2Task<T> {
     ~Task221() {};
 };
 
+extern template class Task221<Storage_Incore>;
+
 template <typename T>
 class Task222 : public Density2Task<T> {
   protected:
@@ -14131,6 +14548,8 @@ class Task222 : public Density2Task<T> {
     };
     ~Task222() {};
 };
+
+extern template class Task222<Storage_Incore>;
 
 template <typename T>
 class Task223 : public Density2Task<T> {
@@ -14203,6 +14622,8 @@ class Task223 : public Density2Task<T> {
     ~Task223() {};
 };
 
+extern template class Task223<Storage_Incore>;
+
 template <typename T>
 class Task224 : public Density2Task<T> {
   protected:
@@ -14254,6 +14675,8 @@ class Task224 : public Density2Task<T> {
     };
     ~Task224() {};
 };
+
+extern template class Task224<Storage_Incore>;
 
 template <typename T>
 class Task225 : public Density2Task<T> {
@@ -14310,6 +14733,8 @@ class Task225 : public Density2Task<T> {
     };
     ~Task225() {};
 };
+
+extern template class Task225<Storage_Incore>;
 
 template <typename T>
 class Task226 : public Density2Task<T> {
@@ -14384,6 +14809,8 @@ class Task226 : public Density2Task<T> {
     ~Task226() {};
 };
 
+extern template class Task226<Storage_Incore>;
+
 template <typename T>
 class Task227 : public Density2Task<T> {
   protected:
@@ -14439,6 +14866,8 @@ class Task227 : public Density2Task<T> {
     };
     ~Task227() {};
 };
+
+extern template class Task227<Storage_Incore>;
 
 template <typename T>
 class Task228 : public DedciTask<T> {
@@ -14509,6 +14938,8 @@ class Task229 : public DedciTask<T> {
     };
     ~Task229() {};
 };
+
+extern template class Task229<Storage_Incore>;
 
 template <typename T>
 class Task230 : public DedciTask<T> {
@@ -14581,6 +15012,8 @@ class Task230 : public DedciTask<T> {
     ~Task230() {};
 };
 
+extern template class Task230<Storage_Incore>;
+
 template <typename T>
 class Task231 : public DedciTask<T> {
   protected:
@@ -14652,6 +15085,8 @@ class Task231 : public DedciTask<T> {
     ~Task231() {};
 };
 
+extern template class Task231<Storage_Incore>;
+
 template <typename T>
 class Task232 : public DedciTask<T> {
   protected:
@@ -14706,6 +15141,8 @@ class Task232 : public DedciTask<T> {
     };
     ~Task232() {};
 };
+
+extern template class Task232<Storage_Incore>;
 
 template <typename T>
 class Task233 : public DedciTask<T> {
@@ -14778,6 +15215,8 @@ class Task233 : public DedciTask<T> {
     ~Task233() {};
 };
 
+extern template class Task233<Storage_Incore>;
+
 template <typename T>
 class Task234 : public DedciTask<T> {
   protected:
@@ -14832,6 +15271,8 @@ class Task234 : public DedciTask<T> {
     };
     ~Task234() {};
 };
+
+extern template class Task234<Storage_Incore>;
 
 template <typename T>
 class Task235 : public DedciTask<T> {
@@ -14906,6 +15347,8 @@ class Task235 : public DedciTask<T> {
     ~Task235() {};
 };
 
+extern template class Task235<Storage_Incore>;
+
 template <typename T>
 class Task236 : public DedciTask<T> {
   protected:
@@ -14979,6 +15422,8 @@ class Task236 : public DedciTask<T> {
     ~Task236() {};
 };
 
+extern template class Task236<Storage_Incore>;
+
 template <typename T>
 class Task237 : public DedciTask<T> {
   protected:
@@ -15032,6 +15477,8 @@ class Task237 : public DedciTask<T> {
     };
     ~Task237() {};
 };
+
+extern template class Task237<Storage_Incore>;
 
 template <typename T>
 class Task238 : public DedciTask<T> {
@@ -15106,6 +15553,8 @@ class Task238 : public DedciTask<T> {
     ~Task238() {};
 };
 
+extern template class Task238<Storage_Incore>;
+
 template <typename T>
 class Task239 : public DedciTask<T> {
   protected:
@@ -15159,6 +15608,8 @@ class Task239 : public DedciTask<T> {
     };
     ~Task239() {};
 };
+
+extern template class Task239<Storage_Incore>;
 
 template <typename T>
 class Task240 : public DedciTask<T> {
@@ -15233,6 +15684,8 @@ class Task240 : public DedciTask<T> {
     ~Task240() {};
 };
 
+extern template class Task240<Storage_Incore>;
+
 template <typename T>
 class Task241 : public DedciTask<T> {
   protected:
@@ -15306,6 +15759,8 @@ class Task241 : public DedciTask<T> {
     ~Task241() {};
 };
 
+extern template class Task241<Storage_Incore>;
+
 template <typename T>
 class Task242 : public DedciTask<T> {
   protected:
@@ -15359,6 +15814,8 @@ class Task242 : public DedciTask<T> {
     };
     ~Task242() {};
 };
+
+extern template class Task242<Storage_Incore>;
 
 template <typename T>
 class Task243 : public DedciTask<T> {
@@ -15433,6 +15890,8 @@ class Task243 : public DedciTask<T> {
     ~Task243() {};
 };
 
+extern template class Task243<Storage_Incore>;
+
 template <typename T>
 class Task244 : public DedciTask<T> {
   protected:
@@ -15486,6 +15945,8 @@ class Task244 : public DedciTask<T> {
     };
     ~Task244() {};
 };
+
+extern template class Task244<Storage_Incore>;
 
 template <typename T>
 class Task245 : public DedciTask<T> {
@@ -15557,6 +16018,8 @@ class Task245 : public DedciTask<T> {
     };
     ~Task245() {};
 };
+
+extern template class Task245<Storage_Incore>;
 
 template <typename T>
 class Task246 : public DedciTask<T> {
@@ -15633,6 +16096,8 @@ class Task246 : public DedciTask<T> {
     ~Task246() {};
 };
 
+extern template class Task246<Storage_Incore>;
+
 template <typename T>
 class Task247 : public DedciTask<T> {
   protected:
@@ -15708,6 +16173,8 @@ class Task247 : public DedciTask<T> {
     ~Task247() {};
 };
 
+extern template class Task247<Storage_Incore>;
+
 template <typename T>
 class Task248 : public DedciTask<T> {
   protected:
@@ -15761,6 +16228,8 @@ class Task248 : public DedciTask<T> {
     };
     ~Task248() {};
 };
+
+extern template class Task248<Storage_Incore>;
 
 template <typename T>
 class Task249 : public DedciTask<T> {
@@ -15837,6 +16306,8 @@ class Task249 : public DedciTask<T> {
     ~Task249() {};
 };
 
+extern template class Task249<Storage_Incore>;
+
 template <typename T>
 class Task250 : public DedciTask<T> {
   protected:
@@ -15890,6 +16361,8 @@ class Task250 : public DedciTask<T> {
     };
     ~Task250() {};
 };
+
+extern template class Task250<Storage_Incore>;
 
 template <typename T>
 class Task251 : public DedciTask<T> {
@@ -15964,6 +16437,8 @@ class Task251 : public DedciTask<T> {
     ~Task251() {};
 };
 
+extern template class Task251<Storage_Incore>;
+
 template <typename T>
 class Task252 : public DedciTask<T> {
   protected:
@@ -16017,6 +16492,8 @@ class Task252 : public DedciTask<T> {
     };
     ~Task252() {};
 };
+
+extern template class Task252<Storage_Incore>;
 
 template <typename T>
 class Task253 : public DedciTask<T> {
@@ -16091,6 +16568,8 @@ class Task253 : public DedciTask<T> {
     ~Task253() {};
 };
 
+extern template class Task253<Storage_Incore>;
+
 template <typename T>
 class Task254 : public DedciTask<T> {
   protected:
@@ -16144,6 +16623,8 @@ class Task254 : public DedciTask<T> {
     };
     ~Task254() {};
 };
+
+extern template class Task254<Storage_Incore>;
 
 template <typename T>
 class Task255 : public DedciTask<T> {
@@ -16218,6 +16699,8 @@ class Task255 : public DedciTask<T> {
     ~Task255() {};
 };
 
+extern template class Task255<Storage_Incore>;
+
 template <typename T>
 class Task256 : public DedciTask<T> {
   protected:
@@ -16291,6 +16774,8 @@ class Task256 : public DedciTask<T> {
     ~Task256() {};
 };
 
+extern template class Task256<Storage_Incore>;
+
 template <typename T>
 class Task257 : public DedciTask<T> {
   protected:
@@ -16344,6 +16829,8 @@ class Task257 : public DedciTask<T> {
     };
     ~Task257() {};
 };
+
+extern template class Task257<Storage_Incore>;
 
 template <typename T>
 class Task258 : public DedciTask<T> {
@@ -16418,6 +16905,8 @@ class Task258 : public DedciTask<T> {
     ~Task258() {};
 };
 
+extern template class Task258<Storage_Incore>;
+
 template <typename T>
 class Task259 : public DedciTask<T> {
   protected:
@@ -16471,6 +16960,8 @@ class Task259 : public DedciTask<T> {
     };
     ~Task259() {};
 };
+
+extern template class Task259<Storage_Incore>;
 
 template <typename T>
 class Task260 : public DedciTask<T> {
@@ -16545,6 +17036,8 @@ class Task260 : public DedciTask<T> {
     ~Task260() {};
 };
 
+extern template class Task260<Storage_Incore>;
+
 template <typename T>
 class Task261 : public DedciTask<T> {
   protected:
@@ -16618,6 +17111,8 @@ class Task261 : public DedciTask<T> {
     ~Task261() {};
 };
 
+extern template class Task261<Storage_Incore>;
+
 template <typename T>
 class Task262 : public DedciTask<T> {
   protected:
@@ -16671,6 +17166,8 @@ class Task262 : public DedciTask<T> {
     };
     ~Task262() {};
 };
+
+extern template class Task262<Storage_Incore>;
 
 template <typename T>
 class Task263 : public DedciTask<T> {
@@ -16745,6 +17242,8 @@ class Task263 : public DedciTask<T> {
     ~Task263() {};
 };
 
+extern template class Task263<Storage_Incore>;
+
 template <typename T>
 class Task264 : public DedciTask<T> {
   protected:
@@ -16798,6 +17297,8 @@ class Task264 : public DedciTask<T> {
     };
     ~Task264() {};
 };
+
+extern template class Task264<Storage_Incore>;
 
 template <typename T>
 class Task265 : public DedciTask<T> {
@@ -16872,6 +17373,8 @@ class Task265 : public DedciTask<T> {
     ~Task265() {};
 };
 
+extern template class Task265<Storage_Incore>;
+
 template <typename T>
 class Task266 : public DedciTask<T> {
   protected:
@@ -16945,6 +17448,8 @@ class Task266 : public DedciTask<T> {
     ~Task266() {};
 };
 
+extern template class Task266<Storage_Incore>;
+
 template <typename T>
 class Task267 : public DedciTask<T> {
   protected:
@@ -16998,6 +17503,8 @@ class Task267 : public DedciTask<T> {
     };
     ~Task267() {};
 };
+
+extern template class Task267<Storage_Incore>;
 
 template <typename T>
 class Task268 : public DedciTask<T> {
@@ -17072,6 +17579,8 @@ class Task268 : public DedciTask<T> {
     ~Task268() {};
 };
 
+extern template class Task268<Storage_Incore>;
+
 template <typename T>
 class Task269 : public DedciTask<T> {
   protected:
@@ -17125,6 +17634,8 @@ class Task269 : public DedciTask<T> {
     };
     ~Task269() {};
 };
+
+extern template class Task269<Storage_Incore>;
 
 template <typename T>
 class Task270 : public DedciTask<T> {
@@ -17198,6 +17709,8 @@ class Task270 : public DedciTask<T> {
     };
     ~Task270() {};
 };
+
+extern template class Task270<Storage_Incore>;
 
 template <typename T>
 class Task271 : public DedciTask<T> {
@@ -17274,6 +17787,8 @@ class Task271 : public DedciTask<T> {
     ~Task271() {};
 };
 
+extern template class Task271<Storage_Incore>;
+
 template <typename T>
 class Task272 : public DedciTask<T> {
   protected:
@@ -17331,6 +17846,8 @@ class Task272 : public DedciTask<T> {
     };
     ~Task272() {};
 };
+
+extern template class Task272<Storage_Incore>;
 
 template <typename T>
 class Task273 : public DedciTask<T> {
@@ -17405,6 +17922,8 @@ class Task273 : public DedciTask<T> {
     ~Task273() {};
 };
 
+extern template class Task273<Storage_Incore>;
+
 template <typename T>
 class Task274 : public DedciTask<T> {
   protected:
@@ -17461,6 +17980,8 @@ class Task274 : public DedciTask<T> {
     };
     ~Task274() {};
 };
+
+extern template class Task274<Storage_Incore>;
 
 template <typename T>
 class Task275 : public DedciTask<T> {
@@ -17535,6 +18056,8 @@ class Task275 : public DedciTask<T> {
     ~Task275() {};
 };
 
+extern template class Task275<Storage_Incore>;
+
 template <typename T>
 class Task276 : public DedciTask<T> {
   protected:
@@ -17591,6 +18114,8 @@ class Task276 : public DedciTask<T> {
     };
     ~Task276() {};
 };
+
+extern template class Task276<Storage_Incore>;
 
 template <typename T>
 class Task277 : public DedciTask<T> {
@@ -17665,6 +18190,8 @@ class Task277 : public DedciTask<T> {
     ~Task277() {};
 };
 
+extern template class Task277<Storage_Incore>;
+
 template <typename T>
 class Task278 : public DedciTask<T> {
   protected:
@@ -17718,6 +18245,8 @@ class Task278 : public DedciTask<T> {
     };
     ~Task278() {};
 };
+
+extern template class Task278<Storage_Incore>;
 
 template <typename T>
 class Task279 : public DedciTask<T> {
@@ -17792,6 +18321,8 @@ class Task279 : public DedciTask<T> {
     ~Task279() {};
 };
 
+extern template class Task279<Storage_Incore>;
+
 template <typename T>
 class Task280 : public DedciTask<T> {
   protected:
@@ -17845,6 +18376,8 @@ class Task280 : public DedciTask<T> {
     };
     ~Task280() {};
 };
+
+extern template class Task280<Storage_Incore>;
 
 template <typename T>
 class Task281 : public DedciTask<T> {
@@ -17916,6 +18449,8 @@ class Task281 : public DedciTask<T> {
     };
     ~Task281() {};
 };
+
+extern template class Task281<Storage_Incore>;
 
 template <typename T>
 class Task282 : public DedciTask<T> {
@@ -17991,6 +18526,8 @@ class Task282 : public DedciTask<T> {
     };
     ~Task282() {};
 };
+
+extern template class Task282<Storage_Incore>;
 
 template <typename T>
 class Task283 : public DedciTask<T> {
@@ -18069,6 +18606,8 @@ class Task283 : public DedciTask<T> {
     ~Task283() {};
 };
 
+extern template class Task283<Storage_Incore>;
+
 template <typename T>
 class Task284 : public DedciTask<T> {
   protected:
@@ -18126,6 +18665,8 @@ class Task284 : public DedciTask<T> {
     };
     ~Task284() {};
 };
+
+extern template class Task284<Storage_Incore>;
 
 template <typename T>
 class Task285 : public DedciTask<T> {
@@ -18202,6 +18743,8 @@ class Task285 : public DedciTask<T> {
     ~Task285() {};
 };
 
+extern template class Task285<Storage_Incore>;
+
 template <typename T>
 class Task286 : public DedciTask<T> {
   protected:
@@ -18259,6 +18802,8 @@ class Task286 : public DedciTask<T> {
     };
     ~Task286() {};
 };
+
+extern template class Task286<Storage_Incore>;
 
 template <typename T>
 class Task287 : public DedciTask<T> {
@@ -18332,6 +18877,8 @@ class Task287 : public DedciTask<T> {
     };
     ~Task287() {};
 };
+
+extern template class Task287<Storage_Incore>;
 
 template <typename T>
 class Task288 : public DedciTask<T> {
@@ -18408,6 +18955,8 @@ class Task288 : public DedciTask<T> {
     ~Task288() {};
 };
 
+extern template class Task288<Storage_Incore>;
+
 template <typename T>
 class Task289 : public DedciTask<T> {
   protected:
@@ -18465,6 +19014,8 @@ class Task289 : public DedciTask<T> {
     };
     ~Task289() {};
 };
+
+extern template class Task289<Storage_Incore>;
 
 template <typename T>
 class Task290 : public DedciTask<T> {
@@ -18541,6 +19092,8 @@ class Task290 : public DedciTask<T> {
     ~Task290() {};
 };
 
+extern template class Task290<Storage_Incore>;
+
 template <typename T>
 class Task291 : public DedciTask<T> {
   protected:
@@ -18601,6 +19154,8 @@ class Task291 : public DedciTask<T> {
     };
     ~Task291() {};
 };
+
+extern template class Task291<Storage_Incore>;
 
 template <typename T>
 class Task292 : public DedciTask<T> {
@@ -18677,6 +19232,8 @@ class Task292 : public DedciTask<T> {
     ~Task292() {};
 };
 
+extern template class Task292<Storage_Incore>;
+
 template <typename T>
 class Task293 : public DedciTask<T> {
   protected:
@@ -18734,6 +19291,8 @@ class Task293 : public DedciTask<T> {
     };
     ~Task293() {};
 };
+
+extern template class Task293<Storage_Incore>;
 
 template <typename T>
 class Task294 : public DedciTask<T> {
@@ -18805,6 +19364,8 @@ class Task294 : public DedciTask<T> {
     };
     ~Task294() {};
 };
+
+extern template class Task294<Storage_Incore>;
 
 template <typename T>
 class Task295 : public DedciTask<T> {
@@ -18881,6 +19442,8 @@ class Task295 : public DedciTask<T> {
     ~Task295() {};
 };
 
+extern template class Task295<Storage_Incore>;
+
 template <typename T>
 class Task296 : public DedciTask<T> {
   protected:
@@ -18956,6 +19519,8 @@ class Task296 : public DedciTask<T> {
     ~Task296() {};
 };
 
+extern template class Task296<Storage_Incore>;
+
 template <typename T>
 class Task297 : public DedciTask<T> {
   protected:
@@ -19009,6 +19574,8 @@ class Task297 : public DedciTask<T> {
     };
     ~Task297() {};
 };
+
+extern template class Task297<Storage_Incore>;
 
 template <typename T>
 class Task298 : public DedciTask<T> {
@@ -19085,6 +19652,8 @@ class Task298 : public DedciTask<T> {
     ~Task298() {};
 };
 
+extern template class Task298<Storage_Incore>;
+
 template <typename T>
 class Task299 : public DedciTask<T> {
   protected:
@@ -19138,6 +19707,8 @@ class Task299 : public DedciTask<T> {
     };
     ~Task299() {};
 };
+
+extern template class Task299<Storage_Incore>;
 
 template <typename T>
 class Task300 : public DedciTask<T> {
@@ -19212,6 +19783,8 @@ class Task300 : public DedciTask<T> {
     ~Task300() {};
 };
 
+extern template class Task300<Storage_Incore>;
+
 template <typename T>
 class Task301 : public DedciTask<T> {
   protected:
@@ -19285,6 +19858,8 @@ class Task301 : public DedciTask<T> {
     ~Task301() {};
 };
 
+extern template class Task301<Storage_Incore>;
+
 template <typename T>
 class Task302 : public DedciTask<T> {
   protected:
@@ -19338,6 +19913,8 @@ class Task302 : public DedciTask<T> {
     };
     ~Task302() {};
 };
+
+extern template class Task302<Storage_Incore>;
 
 template <typename T>
 class Task303 : public DedciTask<T> {
@@ -19412,6 +19989,8 @@ class Task303 : public DedciTask<T> {
     ~Task303() {};
 };
 
+extern template class Task303<Storage_Incore>;
+
 template <typename T>
 class Task304 : public DedciTask<T> {
   protected:
@@ -19465,6 +20044,8 @@ class Task304 : public DedciTask<T> {
     };
     ~Task304() {};
 };
+
+extern template class Task304<Storage_Incore>;
 
 template <typename T>
 class Task305 : public DedciTask<T> {
@@ -19539,6 +20120,8 @@ class Task305 : public DedciTask<T> {
     ~Task305() {};
 };
 
+extern template class Task305<Storage_Incore>;
+
 template <typename T>
 class Task306 : public DedciTask<T> {
   protected:
@@ -19612,6 +20195,8 @@ class Task306 : public DedciTask<T> {
     ~Task306() {};
 };
 
+extern template class Task306<Storage_Incore>;
+
 template <typename T>
 class Task307 : public DedciTask<T> {
   protected:
@@ -19665,6 +20250,8 @@ class Task307 : public DedciTask<T> {
     };
     ~Task307() {};
 };
+
+extern template class Task307<Storage_Incore>;
 
 template <typename T>
 class Task308 : public DedciTask<T> {
@@ -19739,6 +20326,8 @@ class Task308 : public DedciTask<T> {
     ~Task308() {};
 };
 
+extern template class Task308<Storage_Incore>;
+
 template <typename T>
 class Task309 : public DedciTask<T> {
   protected:
@@ -19792,6 +20381,8 @@ class Task309 : public DedciTask<T> {
     };
     ~Task309() {};
 };
+
+extern template class Task309<Storage_Incore>;
 
 template <typename T>
 class Task310 : public DedciTask<T> {
@@ -19866,6 +20457,8 @@ class Task310 : public DedciTask<T> {
     ~Task310() {};
 };
 
+extern template class Task310<Storage_Incore>;
+
 template <typename T>
 class Task311 : public DedciTask<T> {
   protected:
@@ -19939,6 +20532,8 @@ class Task311 : public DedciTask<T> {
     ~Task311() {};
 };
 
+extern template class Task311<Storage_Incore>;
+
 template <typename T>
 class Task312 : public DedciTask<T> {
   protected:
@@ -19992,6 +20587,8 @@ class Task312 : public DedciTask<T> {
     };
     ~Task312() {};
 };
+
+extern template class Task312<Storage_Incore>;
 
 template <typename T>
 class Task313 : public DedciTask<T> {
@@ -20066,6 +20663,8 @@ class Task313 : public DedciTask<T> {
     ~Task313() {};
 };
 
+extern template class Task313<Storage_Incore>;
+
 template <typename T>
 class Task314 : public DedciTask<T> {
   protected:
@@ -20119,6 +20718,8 @@ class Task314 : public DedciTask<T> {
     };
     ~Task314() {};
 };
+
+extern template class Task314<Storage_Incore>;
 
 template <typename T>
 class Task315 : public DedciTask<T> {
@@ -20193,6 +20794,8 @@ class Task315 : public DedciTask<T> {
     ~Task315() {};
 };
 
+extern template class Task315<Storage_Incore>;
+
 template <typename T>
 class Task316 : public DedciTask<T> {
   protected:
@@ -20249,6 +20852,8 @@ class Task316 : public DedciTask<T> {
     };
     ~Task316() {};
 };
+
+extern template class Task316<Storage_Incore>;
 
 template <typename T>
 class Task317 : public DedciTask<T> {
@@ -20323,6 +20928,8 @@ class Task317 : public DedciTask<T> {
     ~Task317() {};
 };
 
+extern template class Task317<Storage_Incore>;
+
 template <typename T>
 class Task318 : public DedciTask<T> {
   protected:
@@ -20379,6 +20986,8 @@ class Task318 : public DedciTask<T> {
     };
     ~Task318() {};
 };
+
+extern template class Task318<Storage_Incore>;
 
 template <typename T>
 class Task319 : public DedciTask<T> {
@@ -20453,6 +21062,8 @@ class Task319 : public DedciTask<T> {
     ~Task319() {};
 };
 
+extern template class Task319<Storage_Incore>;
+
 template <typename T>
 class Task320 : public DedciTask<T> {
   protected:
@@ -20506,6 +21117,8 @@ class Task320 : public DedciTask<T> {
     };
     ~Task320() {};
 };
+
+extern template class Task320<Storage_Incore>;
 
 template <typename T>
 class Task321 : public DedciTask<T> {
@@ -20580,6 +21193,8 @@ class Task321 : public DedciTask<T> {
     ~Task321() {};
 };
 
+extern template class Task321<Storage_Incore>;
+
 template <typename T>
 class Task322 : public DedciTask<T> {
   protected:
@@ -20633,6 +21248,8 @@ class Task322 : public DedciTask<T> {
     };
     ~Task322() {};
 };
+
+extern template class Task322<Storage_Incore>;
 
 template <typename T>
 class Task323 : public DedciTask<T> {
@@ -20704,6 +21321,8 @@ class Task323 : public DedciTask<T> {
     };
     ~Task323() {};
 };
+
+extern template class Task323<Storage_Incore>;
 
 template <typename T>
 class Task324 : public DedciTask<T> {
@@ -20778,6 +21397,8 @@ class Task324 : public DedciTask<T> {
     ~Task324() {};
 };
 
+extern template class Task324<Storage_Incore>;
+
 template <typename T>
 class Task325 : public DedciTask<T> {
   protected:
@@ -20831,6 +21452,8 @@ class Task325 : public DedciTask<T> {
     };
     ~Task325() {};
 };
+
+extern template class Task325<Storage_Incore>;
 
 template <typename T>
 class Task326 : public DedciTask<T> {
@@ -20905,6 +21528,8 @@ class Task326 : public DedciTask<T> {
     ~Task326() {};
 };
 
+extern template class Task326<Storage_Incore>;
+
 template <typename T>
 class Task327 : public DedciTask<T> {
   protected:
@@ -20958,6 +21583,8 @@ class Task327 : public DedciTask<T> {
     };
     ~Task327() {};
 };
+
+extern template class Task327<Storage_Incore>;
 
 template <typename T>
 class Task328 : public DedciTask<T> {
@@ -21031,6 +21658,8 @@ class Task328 : public DedciTask<T> {
     };
     ~Task328() {};
 };
+
+extern template class Task328<Storage_Incore>;
 
 template <typename T>
 class Task329 : public DedciTask<T> {
@@ -21107,6 +21736,8 @@ class Task329 : public DedciTask<T> {
     ~Task329() {};
 };
 
+extern template class Task329<Storage_Incore>;
+
 template <typename T>
 class Task330 : public DedciTask<T> {
   protected:
@@ -21164,6 +21795,8 @@ class Task330 : public DedciTask<T> {
     };
     ~Task330() {};
 };
+
+extern template class Task330<Storage_Incore>;
 
 template <typename T>
 class Task331 : public DedciTask<T> {
@@ -21235,6 +21868,8 @@ class Task331 : public DedciTask<T> {
     };
     ~Task331() {};
 };
+
+extern template class Task331<Storage_Incore>;
 
 template <typename T>
 class Task332 : public DedciTask<T> {
@@ -21310,6 +21945,8 @@ class Task332 : public DedciTask<T> {
     };
     ~Task332() {};
 };
+
+extern template class Task332<Storage_Incore>;
 
 template <typename T>
 class Task333 : public DedciTask<T> {
@@ -21388,6 +22025,8 @@ class Task333 : public DedciTask<T> {
     ~Task333() {};
 };
 
+extern template class Task333<Storage_Incore>;
+
 template <typename T>
 class Task334 : public DedciTask<T> {
   protected:
@@ -21445,6 +22084,8 @@ class Task334 : public DedciTask<T> {
     };
     ~Task334() {};
 };
+
+extern template class Task334<Storage_Incore>;
 
 template <typename T>
 class Task335 : public DedciTask<T> {
@@ -21518,6 +22159,8 @@ class Task335 : public DedciTask<T> {
     };
     ~Task335() {};
 };
+
+extern template class Task335<Storage_Incore>;
 
 template <typename T>
 class Task336 : public DedciTask<T> {
@@ -21594,6 +22237,8 @@ class Task336 : public DedciTask<T> {
     ~Task336() {};
 };
 
+extern template class Task336<Storage_Incore>;
+
 template <typename T>
 class Task337 : public DedciTask<T> {
   protected:
@@ -21651,6 +22296,8 @@ class Task337 : public DedciTask<T> {
     };
     ~Task337() {};
 };
+
+extern template class Task337<Storage_Incore>;
 
 template <typename T>
 class Task338 : public DedciTask<T> {
@@ -21727,6 +22374,8 @@ class Task338 : public DedciTask<T> {
     ~Task338() {};
 };
 
+extern template class Task338<Storage_Incore>;
+
 template <typename T>
 class Task339 : public DedciTask<T> {
   protected:
@@ -21787,6 +22436,8 @@ class Task339 : public DedciTask<T> {
     };
     ~Task339() {};
 };
+
+extern template class Task339<Storage_Incore>;
 
 template <typename T>
 class Task340 : public DedciTask<T> {
@@ -21863,6 +22514,8 @@ class Task340 : public DedciTask<T> {
     ~Task340() {};
 };
 
+extern template class Task340<Storage_Incore>;
+
 template <typename T>
 class Task341 : public DedciTask<T> {
   protected:
@@ -21920,6 +22573,8 @@ class Task341 : public DedciTask<T> {
     };
     ~Task341() {};
 };
+
+extern template class Task341<Storage_Incore>;
 
 template <typename T>
 class Task342 : public DedciTask<T> {
@@ -21991,6 +22646,8 @@ class Task342 : public DedciTask<T> {
     };
     ~Task342() {};
 };
+
+extern template class Task342<Storage_Incore>;
 
 template <typename T>
 class Task343 : public DedciTask<T> {
@@ -22067,6 +22724,8 @@ class Task343 : public DedciTask<T> {
     ~Task343() {};
 };
 
+extern template class Task343<Storage_Incore>;
+
 template <typename T>
 class Task344 : public DedciTask<T> {
   protected:
@@ -22124,6 +22783,8 @@ class Task344 : public DedciTask<T> {
     };
     ~Task344() {};
 };
+
+extern template class Task344<Storage_Incore>;
 
 
 }
