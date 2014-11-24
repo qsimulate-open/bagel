@@ -38,6 +38,7 @@
 #include <type_traits>
 #include <src/math/matrix.h>
 #include <src/math/matop.h>
+#include <src/smith/prim_op.h>
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>
@@ -541,6 +542,8 @@ class Tensor {
       std::cout << "======================================" << std::endl << std::endl;
     }
 };
+
+extern template class Tensor<Storage_Incore>;
 
 }
 }

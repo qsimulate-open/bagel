@@ -865,6 +865,8 @@ class SpinFreeMethod {
     }
 };
 
+extern template class SpinFreeMethod<Storage_Incore>;
+
 }
 }
 

@@ -30,6 +30,8 @@
 #include <stddef.h>
 #include <list>
 #include <memory>
+#include <algorithm>
+#include <src/smith/storage.h>
 
 namespace bagel {
 namespace SMITH {
@@ -129,6 +131,13 @@ class Density2Task : public Task<T> {
     ~Density2Task() {}
 
 };
+
+extern template class Task<Storage_Incore>;
+extern template class EnergyTask<Storage_Incore>;
+extern template class DedciTask<Storage_Incore>;
+extern template class CorrectionTask<Storage_Incore>;
+extern template class DensityTask<Storage_Incore>;
+extern template class Density2Task<Storage_Incore>;
 
 }
 }
