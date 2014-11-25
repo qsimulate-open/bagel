@@ -29,6 +29,8 @@
 #include <src/asd/asd_base.h>
 #include <src/dimer/dimer_prop.h>
 
+#include <src/asd/asd_nevpt2.h>
+
 namespace bagel {
 
 /// Template for ASD (to be renamed ASD)

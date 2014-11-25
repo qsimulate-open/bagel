@@ -368,60 +368,6 @@ ASD_base::debug_RDM() const {
     debug->print(1.0e-8);
   }
 
-  assert(false);
-
-  { 
-    auto debug = std::make_shared<RDM<3>>(*threerdm_);
-    std::cout << "4RDM debug test 2" << std::endl;
-    for (int l = 0; l != nactA; ++l)
-      for (int d = 0; d != nactA; ++d)
-        for (int k = 0; k != nactA; ++k)
-          for (int c = 0; c != nactA; ++c)
-            for (int j = 0; j != nactA; ++j)
-              for (int b = 0; b != nactA; ++b)
-      for (int i = 0; i != nactA; ++i) {
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(i,i,b,j,c,k,d,l);
-        debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,i,i,c,k,d,l);
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,i,i,d,l);
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,d,l,i,i);
-      }
-    debug->print(1.0e-8);
-  }
-  { 
-    auto debug = std::make_shared<RDM<3>>(*threerdm_);
-    std::cout << "4RDM debug test 3" << std::endl;
-    for (int l = 0; l != nactA; ++l)
-      for (int d = 0; d != nactA; ++d)
-        for (int k = 0; k != nactA; ++k)
-          for (int c = 0; c != nactA; ++c)
-            for (int j = 0; j != nactA; ++j)
-              for (int b = 0; b != nactA; ++b)
-      for (int i = 0; i != nactA; ++i) {
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(i,i,b,j,c,k,d,l);
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,i,i,c,k,d,l);
-        debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,i,i,d,l);
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,d,l,i,i);
-      }
-    debug->print(1.0e-8);
-  }
-  { 
-    auto debug = std::make_shared<RDM<3>>(*threerdm_);
-    std::cout << "4RDM debug test 4" << std::endl;
-    for (int l = 0; l != nactA; ++l)
-      for (int d = 0; d != nactA; ++d)
-        for (int k = 0; k != nactA; ++k)
-          for (int c = 0; c != nactA; ++c)
-            for (int j = 0; j != nactA; ++j)
-              for (int b = 0; b != nactA; ++b)
-      for (int i = 0; i != nactA; ++i) {
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(i,i,b,j,c,k,d,l);
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,i,i,c,k,d,l);
-  //    debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,i,i,d,l);
-        debug->element(b,j,c,k,d,l) -= 1.0/(nelec-3) * fourrdm_->element(b,j,c,k,d,l,i,i);
-      }
-    debug->print(1.0e-8);
-  }
-
 }
 
 #if 0

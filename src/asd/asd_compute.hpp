@@ -105,6 +105,19 @@ void ASD<VecType>::compute() {
   monomer_rdm();
   compute_rdm();
 
+  //ASD-NEVPT2
+//{
+    std::shared_ptr<const Reference> dimerref = dimer_->sref();
+    std::shared_ptr<const Geometry> dimergeom = dimer_->sgeom();
+    std::shared_ptr<PTree> input;
+  //*dimergeom = *dimer_->sgeom();
+    auto asdpt2 = std::make_shared<ASD_NEVPT2>(input, dimergeom, dimerref);
+    asdpt2->compute();
+//}
+
+
+
+
   if (dipoles_) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;
     std::shared_ptr<const Reference> dimerref = dimer_->sref();
