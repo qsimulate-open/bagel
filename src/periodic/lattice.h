@@ -41,6 +41,7 @@ class Lattice {
     std::shared_ptr<const Geometry> primitive_cell_;
     // real lattice vectors g
     std::vector<std::array<double, 3>> lattice_vectors_;
+    std::map<int, std::array<int, 3>> lattice_map_;
 
     double nuclear_repulsion_;
     double compute_nuclear_repulsion() const;
@@ -101,6 +102,7 @@ class Lattice {
     void generate_kpoints();
     int gamma_point() const { return gamma_point_; }
 
+    int find_lattice_vector(const int i, const int j) const;
     void print_primitive_vectors() const;
     void print_primitive_kvectors() const;
     void print_lattice_vectors() const;

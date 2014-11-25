@@ -102,6 +102,8 @@ void Lattice::init() {
           disp[0] = i1 * a1[0];
           disp[1] = i1 * a1[1];
           disp[2] = i1 * a1[2];
+          array<int, 3> vector = {{i1, 0, 0}};
+          lattice_map_.insert(make_pair(i1 +  ncell_, vector));
           lattice_vectors_[i1 + ncell_] = disp;
         }
         const double a1sq = dot(a1, a1);
@@ -115,11 +117,13 @@ void Lattice::init() {
         const array<double, 3> a2 = primitive_cell_->primitive_vectors(1);
         array<double, 3> disp;
         int count = 0;
-        for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
-          for (int i2 = -ncell_; i2 <= ncell_; ++i2, ++count) {
+        for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
+          for (int i1 = -ncell_; i1 <= ncell_; ++i1, ++count) {
             disp[0] = i1 * a1[0] + i2 * a2[0];
             disp[1] = i1 * a1[1] + i2 * a2[1];
             disp[2] = i1 * a1[2] + i2 * a2[2];
+            array<int, 3> vector = {{i1, i2, 0}};
+            lattice_map_.insert(make_pair(count, vector));
             lattice_vectors_[count] = disp;
           }
         }
@@ -138,12 +142,14 @@ void Lattice::init() {
         const array<double, 3> a3 = primitive_cell_->primitive_vectors(2);
         array<double, 3> disp;
         int count = 0;
-        for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
+        for (int i3 = -ncell_; i3 <= ncell_; ++i3) {
           for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
-            for (int i3 = -ncell_; i3 <= ncell_; ++i3, ++count) {
+            for (int i1 = -ncell_; i1 <= ncell_; ++i1, ++count) {
               disp[0] = i1 * a1[0] + i2 * a2[0] + i3 * a3[0];
               disp[1] = i1 * a1[1] + i2 * a2[1] + i3 * a3[1];
               disp[2] = i1 * a1[2] + i2 * a2[2] + i3 * a3[2];
+              array<int, 3> vector = {{i1, i2, i3}};
+              lattice_map_.insert(make_pair(count, vector));
               lattice_vectors_[count] = disp;
             }
           }
@@ -160,6 +166,24 @@ void Lattice::init() {
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
   generate_kpoints();
+}
+
+int Lattice::find_lattice_vector(const int i, const int j) const {
+
+  map<int, array<int, 3>>::const_iterator iter1 = lattice_map_.find(i);
+  assert (iter1 != lattice_map_.end());
+  const array<int, 3> v1 = iter1->second;
+
+  map<int, array<int, 3>>::const_iterator iter2 = lattice_map_.find(j);
+  assert (iter2 != lattice_map_.end());
+  const array<int, 3> v2 = iter2->second;
+
+  const int i1 = abs(v1[0] - v2[0]);
+  const int i2 = abs(v1[1] - v2[1]);
+  const int i3 = abs(v1[2] - v2[2]);
+  const int out = i1 + (2 * ncell_ + 1) * (i2 + (2 * ncell_ + 1) * i3);
+
+  return out;
 }
 
 
