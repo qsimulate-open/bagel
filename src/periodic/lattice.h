@@ -54,6 +54,7 @@ class Lattice {
     // parameter to determine the number of k points
     int k_parameter_;
     int num_lattice_kvectors_;
+    int gamma_point_;
 
     double dot(std::array<double, 3> b, std::array<double, 3> c);
     std::array<double, 3> cross(std::array<double, 3> b, std::array<double, 3> c, double s = 1.0);
@@ -91,13 +92,14 @@ class Lattice {
     void init_df(const double thresh);
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     double volume() const { return volume_; }
-    const int nele();
+    int nele() const { return nele_; }
 
     std::vector<std::array<double, 3>> primitive_kvectors() const { return primitive_kvectors_; }
     std::array<double, 3> primitive_kvectors(const int i) const { return primitive_kvectors_[i]; }
     std::vector<std::array<double, 3>> lattice_kvectors() const { return lattice_kvectors_; }
     std::array<double, 3> lattice_kvectors(const int i) const { return lattice_kvectors_[i]; }
     void generate_kpoints();
+    int gamma_point() const { return gamma_point_; }
 
     void print_primitive_vectors() const;
     void print_primitive_kvectors() const;

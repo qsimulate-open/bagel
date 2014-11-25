@@ -83,8 +83,9 @@ void Lattice::init() {
   primitive_kvectors_.resize(ndim_);
 
   /* TODO: temp parameters */
-  ncell_ = 10;
-  k_parameter_ = 20;
+  ncell_ = 30;
+  k_parameter_ = 61;
+  assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
 
   num_lattice_vectors_ = pow(2*ncell_+1, ndim_);
   lattice_vectors_.resize(num_lattice_vectors_);
@@ -211,6 +212,7 @@ void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
           kvec[1] = u[i] * b1[1];
           kvec[2] = u[i] * b1[2];
           lattice_kvectors_[i] = kvec;
+          if (u[i] == 0.0) gamma_point_ = i;
         }
         break;
       }
@@ -225,6 +227,7 @@ void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
             kvec[1] = u[i] * b1[1] + u[j] * b2[1];
             kvec[2] = u[i] * b1[2] + u[j] * b2[2];
             lattice_kvectors_[i * k_parameter_ + j] = kvec;
+            if (u[i] == 0.0 && u[j] == 0.0) gamma_point_ = i * k_parameter_ + j;
           }
         }
         break;
@@ -241,7 +244,8 @@ void Lattice::generate_kpoints() { /* Monkhorst and Pack PRB 13, 5188 */
               kvec[0] = u[i] * b1[0] + u[j] * b2[0] + u[k] * b3[0];
               kvec[1] = u[i] * b1[1] + u[j] * b2[1] + u[k] * b3[1];
               kvec[2] = u[i] * b1[2] + u[j] * b2[2] + u[k] * b3[2];
-              lattice_kvectors_[i * k_parameter_ * k_parameter_ + j * k_parameter_ + k] = kvec;
+              lattice_kvectors_[k + k_parameter_ * (j + k_parameter_ * i)] = kvec;
+              if (u[i] == 0.0 && u[j] == 0.0 && u[k] == 0.0) gamma_point_ = k + k_parameter_ * (j + k_parameter_ * i);
             }
           }
         }
