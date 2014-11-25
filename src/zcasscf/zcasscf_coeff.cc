@@ -72,7 +72,10 @@ void ZCASSCF::init_kramers_coeff() {
     {
       VectorB eig(fock_tilde->ndim());
       fock_tilde->diagonalize(eig);
-      if (!tsymm_) throw runtime_error("TODO:  Rearrange eigenvectors when not using quaternion diagonalization - 3");
+
+      if (!tsymm_)
+        RelMOFile::rearrange_eig(eig, fock_tilde);
+
     }
 
     // re-order to kramers format and move negative energy states to virtual space
@@ -116,7 +119,10 @@ void ZCASSCF::init_kramers_coeff() {
     {
       VectorB eig(fmo->ndim());
       fmo->diagonalize(eig);
-      if (!tsymm_) throw runtime_error("TODO:  Rearrange eigenvectors when not using quaternion diagonalization - 4");
+
+      if (!tsymm_)
+        RelMOFile::rearrange_eig(eig, fmo);
+
       // move_positronic_orbitals;
       {
         auto move_one = [this, &fmo](const int offset, const int block1, const int block2) {

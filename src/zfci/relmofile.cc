@@ -84,9 +84,11 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
     overlap = make_shared<RelOverlap_London>(geom_);
 
   if (!restricted) {
+    cout << "Using kramers_zquat" << endl;
     kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
   } else {
 #if 1
+    cout << "Skipping kramers_zquat" << endl;
     array<shared_ptr<const ZMatrix>,2> tmp;
     tmp[0] = make_shared<const ZMatrix>(*coeff_->slice_copy(nstart, nstart+(nfence-nstart)/2));
     tmp[1] = make_shared<const ZMatrix>(*coeff_->slice_copy(nstart+(nfence-nstart)/2, nfence));
@@ -242,33 +244,8 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
     VectorB eig(fock_tilde->ndim());
     fock_tilde->diagonalize(eig);
 
-    if (!tsymm_) {
-      const int n = fock_tilde->ndim()/4;
-      assert(4*n == fock_tilde->ndim());  // could be triggered if L+, L-, S+, and S- bases had different sizes or linear dependencies
-
-      // check that pos & neg energy eigenvalues are properly separated
-      assert(*std::min_element(eig.begin()+2*n, eig.begin()+4*n) - *std::max_element(eig.begin(), eig.begin()+2*n) > 10000.0);
-
-      // need to reorder things so negative energy states don't all come at the beginning
-      // TODO there should be a more efficient way...
-      VectorB tempv(4*n);
-      auto tempm = make_shared<ZMatrix>(4*n, 4*n);
-      for (int i=0; i!=n; ++i) {
-        tempv[0*n+i] = eig[0*n+2*i];
-        tempv[1*n+i] = eig[2*n+2*i];
-        tempv[2*n+i] = eig[0*n+2*i+1];
-        tempv[3*n+i] = eig[2*n+2*i+1];
-
-        for (int j=0; j!=4*n; ++j) {
-          tempm->element(j, 0*n+i) = fock_tilde->element(j, 0*n+2*i);
-          tempm->element(j, 1*n+i) = fock_tilde->element(j, 2*n+2*i);
-          tempm->element(j, 2*n+i) = fock_tilde->element(j, 0*n+2*i+1);
-          tempm->element(j, 3*n+i) = fock_tilde->element(j, 2*n+2*i+1);
-        }
-      }
-      eig = tempv;
-      fock_tilde = tempm;
-    }
+    if (!tsymm_)
+      rearrange_eig(eig, fock_tilde);
   }
 
   // re-order to kramers format and move negative energy states to virtual space
@@ -339,7 +316,8 @@ unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const a
   // symmetry requirement
   assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
   // Kramers requirement
-  assert((*make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]) - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8 || !tsymm_);
+  cout << "Kramers symmetry failure = " << (*make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]) - *out[bitset<2>("00")]->get_conjg()).rms() << endl;
+  assert((*make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]) - *out[bitset<2>("00")]->get_conjg()).rms() < 2.0e-8 || !tsymm_);
 
   return out;
 }
@@ -551,3 +529,33 @@ unordered_map<bitset<2>, shared_ptr<const RelDFFull>>
   }
   return out;
 }
+
+
+void RelMOFile::rearrange_eig(VectorB& eig, shared_ptr<ZMatrix> coeff) {
+  const int n = coeff->ndim()/4;
+  assert(4*n == coeff->ndim());  // could be triggered if L+, L-, S+, and S- bases had different sizes or linear dependencies
+
+  // check that pos & neg energy eigenvalues are properly separated
+  assert(*std::min_element(eig.begin()+2*n, eig.begin()+4*n) - *std::max_element(eig.begin(), eig.begin()+2*n) > 10000.0);
+
+  // need to reorder things so negative energy states don't all come at the beginning
+  // TODO there should be a more efficient way...
+  VectorB tempv(4*n);
+  auto tempm = make_shared<ZMatrix>(4*n, 4*n);
+  for (int i=0; i!=n; ++i) {
+    tempv[0*n+i] = eig[0*n+2*i];
+    tempv[1*n+i] = eig[2*n+2*i];
+    tempv[2*n+i] = eig[0*n+2*i+1];
+    tempv[3*n+i] = eig[2*n+2*i+1];
+
+    for (int j=0; j!=4*n; ++j) {
+      tempm->element(j, 0*n+i) = coeff->element(j, 0*n+2*i);
+      tempm->element(j, 1*n+i) = coeff->element(j, 2*n+2*i);
+      tempm->element(j, 2*n+i) = coeff->element(j, 0*n+2*i+1);
+      tempm->element(j, 3*n+i) = coeff->element(j, 2*n+2*i+1);
+    }
+  }
+  eig = tempv;
+  *coeff = *tempm;
+}
+

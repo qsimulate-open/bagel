@@ -310,7 +310,9 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
   if (!unitmat) {
     VectorB vec(rdm1->ndim());
     tmp->diagonalize(vec);
-    if (!tsymm_) throw runtime_error("TODO:  Rearrange eigenvectors when not using quaternion diagonalization - 1");
+
+    if (!tsymm_)
+      RelMOFile::rearrange_eig(vec, tmp);
 
     map<int,int> emap;
     auto buf2 = tmp->clone();
@@ -473,7 +475,10 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
 
   VectorB eig(mofock->ndim());
   mofock->diagonalize(eig);
-  if (!tsymm_) throw runtime_error("TODO:  Rearrange eigenvectors when not using quaternion diagonalization - 2");
+
+  if (!tsymm_)
+    RelMOFile::rearrange_eig(eig, mofock);
+
   // update orbitals and back transform
   *vcoeff *= *mofock;
   quaternion(vcoeff, /*back_trans*/true);
@@ -484,6 +489,7 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   {
     auto unit = ecoeff->clone(); unit->unit();
     double orthonorm = ((*ecoeff % *overlap_ * *ecoeff) - *unit).rms();
+    cout << "orthonorm = " << orthonorm << endl;
     if (orthonorm > 1.0e-12) throw logic_error("MVO Coefficient not sufficiently orthonormal");
   }
 
