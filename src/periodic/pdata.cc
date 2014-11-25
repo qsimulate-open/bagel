@@ -121,12 +121,9 @@ shared_ptr<const PData> PData::ft(const vector<array<double, 3>> gvector, const 
       const double imag = sin(exponent);
       auto tmp1 = make_shared<const ZMatrix>(*(gblock->get_real_part()), complex<double>(real, 0.0));
       auto tmp2 = make_shared<const ZMatrix>(*(gblock->get_real_part()), complex<double>(0.0, imag));
-      auto tmp3 = make_shared<const ZMatrix>(*(gblock->get_imag_part()), complex<double>(-imag, 0.0));
-      auto tmp4 = make_shared<const ZMatrix>(*(gblock->get_imag_part()), complex<double>(0.0, real));
-      *kblock += *tmp1 + *tmp2 + *tmp3 + *tmp4;
+      *kblock += *tmp1 + *tmp2;
       ++g;
     }
-    kblock->fill_upper_conjg();
     out[k] = kblock;
     ++k;
   }

@@ -46,6 +46,7 @@ shared_ptr<const PData> PCoeff::form_density_rhf(const int n, const int offset) 
   for (int i = 0; i != nblock_; ++i) {
     const ZMatrix tmp = pdata_[i]->slice(offset, offset + n);
     auto den = make_shared<ZMatrix>(tmp ^ tmp);
+    *den *= 2.0;
     out[i] = den;
   }
 
