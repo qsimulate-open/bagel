@@ -23,15 +23,16 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/wfn/geometry_connect.h>
 #include <src/molecule/molecule.h>
+#include <src/molecule/molecule_connect.h>
+#include <src/util/constants.h>
 #include <src/util/atommap.h>
 #include <src/math/quatern.h>
 
 using namespace std;
 using namespace bagel;
-using geometry_details::Node;
-using geometry_details::adf_rho;
+using molecule_details::Node;
+using molecule_details::adf_rho;
 
 const static AtomMap atommap_;
 
