@@ -28,7 +28,6 @@
 #define __SRC_REL_DFOCK_H
 
 #include <src/rel/reldf.h>
-#include <src/rel/relhcore.h>
 
 namespace bagel {
 

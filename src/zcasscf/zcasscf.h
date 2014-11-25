@@ -29,7 +29,6 @@
 #include <src/zfci/zharrison.h>
 #include <src/casscf/rotfile.h>
 #include <src/wfn/method.h>
-#include <src/rel/reloverlap.h>
 #include <src/math/bfgs.h>
 #include <src/math/step_restrict_bfgs.h>
 
@@ -65,7 +64,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> coeff_;
     std::shared_ptr<const Matrix>  nr_coeff_;
     std::shared_ptr<const ZMatrix> hcore_;
-    std::shared_ptr<const RelOverlap> overlap_;
+    std::shared_ptr<const ZMatrix> overlap_;
     std::vector<double> occup_;
     std::vector<std::complex<double>> scale_closed_;
     std::vector<std::complex<double>> scale_active_;

@@ -26,7 +26,6 @@
 #ifndef __SRC_REL_RELREFERENCE_H
 #define __SRC_REL_RELREFERENCE_H
 
-#include <src/rel/relhcore.h>
 #include <src/wfn/reference.h>
 #include <src/molecule/mixedbasis.h>
 

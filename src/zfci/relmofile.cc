@@ -31,6 +31,7 @@
 #include <src/math/quatmatrix.h>
 #include <src/zfci/relmofile.h>
 #include <src/rel/reloverlap.h>
+#include <src/rel/relhcore.h>
 #include <src/smith/prim_op.h>
 #include <src/london/reloverlap_london.h>
 #include <src/london/relhcore_london.h>
@@ -231,12 +232,10 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
   quaternion(s12);
 
   shared_ptr<ZMatrix> fock_tilde;
-
-  if (tsymm_) {
+  if (tsymm_)
     fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
-  } else {
+  else
     fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
-  }
 
   // diagonalization - uses quaternion symmetry if applicable
   {
