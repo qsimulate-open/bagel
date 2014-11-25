@@ -51,6 +51,9 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     bool no_kramers_init_;
     bool natocc_;
 
+    // enforce time-reversal symmetry
+    bool tsymm_;
+
     double thresh_;
     double thresh_micro_;
     std::complex<double> rms_grad_;

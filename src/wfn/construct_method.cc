@@ -123,12 +123,27 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     } else if (title == "current")  throw runtime_error("Charge currents are only available when using a GIAO basis set reference.");
+
+  // now the versions to use with magnetic fields
   } else {
     if (title == "hf")              out = make_shared<SCF_London>(itree, geom, ref);
     else if (title == "dhf")        out = make_shared<Dirac>(itree, geom, ref);
     else if (title == "current")    out = make_shared<Current>(itree, geom, ref);
     else if (title == "zfci")       out = make_shared<ZHarrison>(itree, geom, ref);
-    else if (title == "fci")        throw runtime_error("FCI method has not been implemented with an applied magnetic field.");
+    else if (title == "zcasscf") {
+      string algorithm = itree->get<string>("algorithm", "");
+      if (algorithm == "superci" || algorithm == "")
+        //throw runtime_error("ZSuperCI algorithm has not been implemented with an applied magnetic field.");
+        out = make_shared<ZSuperCI>(itree, geom, ref);
+      else if (algorithm == "hybrid")
+        //out = make_shared<ZCASHybrid>(itree, geom, ref);
+        throw runtime_error("ZCASHybrid algorithm has not been implemented with an applied magnetic field.");
+      else if (algorithm == "bfgs")
+        //out = make_shared<ZCASBFGS>(itree, geom, ref);
+        throw runtime_error("ZBFGS algorithm has not been implemented with an applied magnetic field.");
+      else
+        cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
+    } else if (title == "fci")        throw runtime_error("FCI method has not been implemented with an applied magnetic field.");
     else if (title == "ks")         throw runtime_error("KS method has not been implemented with an applied magnetic field.");
     else if (title == "uhf")        throw runtime_error("UHF method has not been implemented with an applied magnetic field.");
     else if (title == "rohf")       throw runtime_error("ROHF method has not been implemented with an applied magnetic field.");

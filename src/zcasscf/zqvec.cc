@@ -25,6 +25,7 @@
 
 #include <src/zcasscf/zqvec.h>
 #include <src/rel/reloverlap.h>
+#include <src/london/reloverlap_london.h>
 #include <src/smith/prim_op.h>
 
 using namespace std;
@@ -142,7 +143,12 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   // transform the active orbital to the original
   // I need overlap..
   // JEB : Transform from NaturalOrbs to standard MOs for index i
-  auto overlap = make_shared<const RelOverlap>(geom);
+  shared_ptr<const ZMatrix> overlap;
+  if (geom->magnetism())
+    overlap = make_shared<const RelOverlap_London>(geom);
+  else
+    overlap = make_shared<const RelOverlap>(geom);
+
   const ZMatView ocoeff = coeff->slice(nclosed*2, nclosed*2+nact*2);
 
   // JEB : conjugate needed since the above lines build up the conjugated matrix products per comment [3]

@@ -28,7 +28,9 @@
 #include <src/math/quatmatrix.h>
 #include <src/zcasscf/zcasscf.h>
 #include <src/rel/relhcore.h>
+#include <src/london/relhcore_london.h>
 #include <src/rel/reloverlap.h>
+#include <src/london/reloverlap_london.h>
 
 using namespace std;
 using namespace bagel;
@@ -42,6 +44,8 @@ ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<
   } else {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
       nr_coeff_ = ref->coeff();
+      if (geom->magnetism()) // TODO Implement nr_coeff_ for GIAO basis sets
+        throw runtime_error("So far only relativistic input coefficients can be used for ZCASSCF with magnetic field");
     }
   }
 // relref needed for many things below ; TODO eliminate dependence on ref_ being a relref
@@ -74,6 +78,9 @@ void ZCASSCF::init() {
   if (!geom_->dfs() || (gaunt_ != relref->gaunt()))
     geom_ = geom_->relativistic(gaunt_);
 
+  // Invoke Kramer's symmetry for any case without magnetic field
+  tsymm_ = !geom_->magnetism();
+
   // coefficient parameters
         bool mvo = idata_->get<bool>("generate_mvo", false);
   const bool kramers_coeff = idata_->get<bool>("kramers_coeff", false);
@@ -86,8 +93,13 @@ void ZCASSCF::init() {
   nneg_ = kramers_coeff ? geom_->nbasis()*2 : relref->nneg();
 
   // set hcore and overlap
-  hcore_   = make_shared<RelHcore>(geom_);
-  overlap_ = make_shared<RelOverlap>(geom_);
+  if (!geom_->magnetism()) {
+    hcore_   = make_shared<RelHcore>(geom_);
+    overlap_ = make_shared<RelOverlap>(geom_);
+  } else {
+    hcore_ = make_shared<RelHcore_London>(geom_);
+    overlap_ = make_shared<RelOverlap_London>(geom_);
+  }
 
   // first set coefficient
   if (coeff_ == nullptr) {
@@ -171,6 +183,7 @@ void ZCASSCF::init() {
 
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
+  cout << "    * Time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl;
 
   const int idel = geom_->nbasis()*2 - nbasis_;
   if (idel)
@@ -284,13 +297,20 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 
 
 shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
+
   // input should be 1rdm in kramers format
-  auto tmp = make_shared<QuatMatrix>(*rdm1);
+  shared_ptr<ZMatrix> tmp;
+  if (tsymm_)
+    tmp = make_shared<QuatMatrix>(*rdm1);
+  else
+    tmp = make_shared<ZMatrix>(*rdm1);
+
   const bool unitmat = tmp->is_identity(1.0e-14);
 
   if (!unitmat) {
     VectorB vec(rdm1->ndim());
     tmp->diagonalize(vec);
+    if (!tsymm_) throw runtime_error("TODO:  Rearrange eigenvectors when not using quaternion diagonalization - 1");
 
     map<int,int> emap;
     auto buf2 = tmp->clone();
@@ -445,9 +465,15 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   shared_ptr<ZMatrix> vcoeff = ecoeff->slice_copy(geom_->nele(), geom_->nele()+hfvirt*2);
   quaternion(vcoeff, /*back_trans*/false);
 
-  auto mofock = make_shared<QuatMatrix>(*vcoeff % *mvofock * *vcoeff);
+  shared_ptr<ZMatrix> mofock;
+  if (tsymm_)
+    mofock = make_shared<QuatMatrix>(*vcoeff % *mvofock * *vcoeff);
+  else
+    mofock = make_shared<ZMatrix>(*vcoeff % *mvofock * *vcoeff);
+
   VectorB eig(mofock->ndim());
   mofock->diagonalize(eig);
+  if (!tsymm_) throw runtime_error("TODO:  Rearrange eigenvectors when not using quaternion diagonalization - 2");
   // update orbitals and back transform
   *vcoeff *= *mofock;
   quaternion(vcoeff, /*back_trans*/true);
