@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: geometry_connect.h
+// Filename: molecule_connect.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,14 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_WFN_GEOMETRY_CONNECT_H
-#define __BAGEL_WFN_GEOMETRY_CONNECT_H
+#ifndef __BAGEL_MOLECULE_MOLECULE_CONNECT_H
+#define __BAGEL_MOLECULE_MOLECULE_CONNECT_H
 
 #include <set>
-#include <src/wfn/geometry.h>
+#include <src/molecule/molecule.h>
 
 namespace bagel {
-namespace geometry_details {
+namespace molecule_details {
 
 class Node {
   protected:
