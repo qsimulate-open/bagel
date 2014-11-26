@@ -84,11 +84,9 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
     overlap = make_shared<RelOverlap_London>(geom_);
 
   if (!restricted) {
-    cout << "Using kramers_zquat" << endl;
     kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
   } else {
 #if 1
-    cout << "Skipping kramers_zquat" << endl;
     array<shared_ptr<const ZMatrix>,2> tmp;
     tmp[0] = make_shared<const ZMatrix>(*coeff_->slice_copy(nstart, nstart+(nfence-nstart)/2));
     tmp[1] = make_shared<const ZMatrix>(*coeff_->slice_copy(nstart+(nfence-nstart)/2, nfence));
@@ -316,8 +314,7 @@ unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const a
   // symmetry requirement
   assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
   // Kramers requirement
-  cout << "Kramers symmetry failure = " << (*make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]) - *out[bitset<2>("00")]->get_conjg()).rms() << endl;
-  assert((*make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]) - *out[bitset<2>("00")]->get_conjg()).rms() < 2.0e-8 || !tsymm_);
+  assert((*make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]) - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8 || !tsymm_);
 
   return out;
 }
@@ -531,28 +528,25 @@ unordered_map<bitset<2>, shared_ptr<const RelDFFull>>
 }
 
 
-void RelMOFile::rearrange_eig(VectorB& eig, shared_ptr<ZMatrix> coeff) {
-  const int n = coeff->ndim()/4;
-  assert(4*n == coeff->ndim());  // could be triggered if L+, L-, S+, and S- bases had different sizes or linear dependencies
+void RelMOFile::rearrange_eig(VectorB& eig, shared_ptr<ZMatrix> coeff, const bool includes_neg) {
+  const int n = coeff->ndim()/2;
+  assert(2*n == coeff->ndim());  // could be triggered if Kramers + and - sets had different sizes or linear dependencies
 
   // check that pos & neg energy eigenvalues are properly separated
-  assert(*std::min_element(eig.begin()+2*n, eig.begin()+4*n) - *std::max_element(eig.begin(), eig.begin()+2*n) > 10000.0);
+  if (includes_neg)
+    assert(*std::min_element(eig.begin()+n, eig.begin()+2*n) - *std::max_element(eig.begin(), eig.begin()+n) > 10000.0);
 
   // need to reorder things so negative energy states don't all come at the beginning
   // TODO there should be a more efficient way...
-  VectorB tempv(4*n);
-  auto tempm = make_shared<ZMatrix>(4*n, 4*n);
+  VectorB tempv(2*n);
+  auto tempm = make_shared<ZMatrix>(2*n, 2*n);
   for (int i=0; i!=n; ++i) {
-    tempv[0*n+i] = eig[0*n+2*i];
-    tempv[1*n+i] = eig[2*n+2*i];
-    tempv[2*n+i] = eig[0*n+2*i+1];
-    tempv[3*n+i] = eig[2*n+2*i+1];
+    tempv[  i] = eig[2*i];
+    tempv[n+i] = eig[2*i+1];
 
-    for (int j=0; j!=4*n; ++j) {
-      tempm->element(j, 0*n+i) = coeff->element(j, 0*n+2*i);
-      tempm->element(j, 1*n+i) = coeff->element(j, 2*n+2*i);
-      tempm->element(j, 2*n+i) = coeff->element(j, 0*n+2*i+1);
-      tempm->element(j, 3*n+i) = coeff->element(j, 2*n+2*i+1);
+    for (int j=0; j!=2*n; ++j) {
+      tempm->element(j,   i) = coeff->element(j, 2*i);
+      tempm->element(j, n+i) = coeff->element(j, 2*i+1);
     }
   }
   eig = tempv;

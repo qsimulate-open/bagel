@@ -312,7 +312,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
     tmp->diagonalize(vec);
 
     if (!tsymm_)
-      RelMOFile::rearrange_eig(vec, tmp);
+      RelMOFile::rearrange_eig(vec, tmp, false);
 
     map<int,int> emap;
     auto buf2 = tmp->clone();
@@ -489,7 +489,6 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   {
     auto unit = ecoeff->clone(); unit->unit();
     double orthonorm = ((*ecoeff % *overlap_ * *ecoeff) - *unit).rms();
-    cout << "orthonorm = " << orthonorm << endl;
     if (orthonorm > 1.0e-12) throw logic_error("MVO Coefficient not sufficiently orthonormal");
   }
 
