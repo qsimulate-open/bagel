@@ -92,10 +92,12 @@ tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRo
     a = srbfgs->extrapolate(newgrad, newrot);
   }
 
-  if (optimize_electrons) {
-    kramers_adapt(a, nclosed_, nact_, nvirtnr);
-  } else {
-    kramers_adapt(a, nclosed_, nact_, nneg_/2);
+  if (tsymm_) {
+    if (optimize_electrons) {
+      kramers_adapt(a, nclosed_, nact_, nvirtnr);
+    } else {
+      kramers_adapt(a, nclosed_, nact_, nneg_/2);
+    }
   }
   cout << setprecision(6) << " Subspace gradient rms  = " << newgrad->rms() << endl;
 

@@ -185,12 +185,14 @@ void ZCASBFGS::compute() {
       cout << " --- Optimizing electrons --- " << endl;
       xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
       tie(ele_rot, ele_energy, grad, xlog, reset) = optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, cold, optimize_electrons);
-      kramers_adapt(ele_rot, nclosed_, nact_, nvirtnr_);
+      if (tsymm_)
+        kramers_adapt(ele_rot, nclosed_, nact_, nvirtnr_);
     } else {
       cout << " --- Optimizing positrons --- " << endl;
       xlog    = make_shared<ZRotFile>(pos_x->log(4), nclosed_*2, nact_*2, nneg_);
       tie(pos_rot, pos_energy, grad, xlog, reset) = optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, cold, optimize_electrons);
-      kramers_adapt(pos_rot, nclosed_, nact_, nneg_/2);
+      if (tsymm_)
+        kramers_adapt(pos_rot, nclosed_, nact_, nneg_/2);
     }
     cout << " ---------------------------------------------------- " << endl << endl;
     more_sorensen_timer.tick_print("More-Sorensen/Hebden extrapolation");
@@ -218,10 +220,12 @@ void ZCASBFGS::compute() {
       for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
     }
     auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
-    if (optimize_electrons) {
-      kramers_adapt(expa, nvirtnr_);
-    } else {
-      kramers_adapt(expa, nneg_/2);
+    if (tsymm_) {
+      if (optimize_electrons) {
+        kramers_adapt(expa, nvirtnr_);
+      } else {
+        kramers_adapt(expa, nneg_/2);
+      }
     }
     expa->purify_unitary();
 

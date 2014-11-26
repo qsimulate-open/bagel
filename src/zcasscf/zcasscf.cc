@@ -298,6 +298,9 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 
 shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
 
+  if (!tsymm_)
+    throw runtime_error("Our natural orbital implementation requires Kramers-adapted coefficients.");
+
   // input should be 1rdm in kramers format
   shared_ptr<ZMatrix> tmp;
   if (tsymm_)
