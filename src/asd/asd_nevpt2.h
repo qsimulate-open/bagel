@@ -35,9 +35,15 @@ namespace bagel {
 //class ASD_NEVPT2 : public Method {
 class ASD_NEVPT2 {
   protected:
+
   //std::shared_ptr<CASSCF> casscf_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
+//TODO : temporary
+    std::tuple<std::shared_ptr<RDM<1>>,
+               std::shared_ptr<RDM<2>>,
+               std::shared_ptr<RDM<3>>,
+               std::shared_ptr<RDM<4>>> rdms_;
     int ncore_;
     int nclosed_;
     int nact_;
@@ -108,8 +114,16 @@ class ASD_NEVPT2 {
     void compute_kmat();
     void compute_abcd();
 
+    //from casscf/qvec.*
+    std::shared_ptr<Matrix> Qvec(const int n, const int m, std::shared_ptr<const Matrix> c, const size_t nclosed);
+
+
   public:
-    ASD_NEVPT2(std::shared_ptr<PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference> = nullptr);
+    ASD_NEVPT2(std::shared_ptr<PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>, 
+               std::tuple<std::shared_ptr<RDM<1>>,
+                          std::shared_ptr<RDM<2>>,
+                          std::shared_ptr<RDM<3>>,
+                          std::shared_ptr<RDM<4>>> rdms );
 
   //virtual void compute() override;
     void compute();

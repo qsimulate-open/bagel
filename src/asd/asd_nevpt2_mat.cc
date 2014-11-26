@@ -27,35 +27,73 @@
 #include <src/asd/asd_nevpt2.h>
 //CHANGED
 #include <src/smith/prim_op.h>
-#include <src/casscf/qvec.h>
+//#include <src/casscf/qvec.h>
 
 using namespace std;
 using namespace bagel;
 
 void ASD_NEVPT2::compute_ints() {
 //TODO
+  const MatView cdata = acoeff_->slice(0,nact_);
+  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(cdata); //cf. fci/mofile.cc
 //shared_ptr<const DFFullDist> full = casscf_->fci()->jop()->mo2e_1ext()->compute_second_transform(acoeff_)->apply_J();
+  shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff_)->apply_J();
 //// integrals (ij|kl) and <ik|jl>
-//shared_ptr<const Matrix> ints = full->form_4index(full, 1.0);
-//auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
-//SMITH::sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact_, nact_, nact_, nact_);
-//ints2_ = tmp;
+  shared_ptr<const Matrix> ints = full->form_4index(full, 1.0);
+  auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
+  SMITH::sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact_, nact_, nact_, nact_);
+  ints2_ = tmp;
 }
 
+  
+shared_ptr<Matrix> ASD_NEVPT2::Qvec(const int n, const int m, shared_ptr<const Matrix> coeff, const size_t nclosed) {
+
+  assert(n == coeff->mdim());
+
+  // one index transformed integrals (active)
+//shared_ptr<const DFHalfDist> half = fci->jop()->mo2e_1ext();
+  const MatView cdata = acoeff_->slice(0,nact_);
+  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(cdata); //cf. fci/mofile.cc
+
+  // J^{-1}(D|xy)
+  // TODO : DFDistT needs to be modified to handle cases where number of nodes is larger than half->nocc() * cdata.mdim()
+  shared_ptr<const DFFullDist> full;
+  if (half->nocc() * coeff->mdim() > mpi__->size()) {
+    full = half->apply_JJ()->compute_second_transform(coeff->slice(nclosed, nclosed+m));
+  } else {
+    full = half->compute_second_transform(coeff->slice(nclosed, nclosed+m))->apply_JJ();
+  }
+
+
+  // [D|tu] = (D|xy)Gamma_xy,tu
+  shared_ptr<RDM<2>> rdm = get<1>(rdms_);
+  shared_ptr<const DFFullDist> prdm = full->apply_2rdm(*rdm);
+
+  // (r,u) = (rt|D)[D|tu]
+  shared_ptr<const Matrix> tmp = half->form_2index(prdm, 1.0);
+
+  // MO transformation of the first index
+//*this = *coeff % *tmp;
+  auto out = make_shared<Matrix>(n,m);
+  *out = *coeff % *tmp;
+  return out;
+
+}
 
 void ASD_NEVPT2::compute_kmat() {
   {
     auto kmat = make_shared<Matrix>(*fockact_c_ * *rdm1_);
 //TODO
 //  *kmat += Qvec(nact_, nact_, acoeff_, /*nclosed_*/0, casscf_->fci(), casscf_->fci()->rdm2(istate_));
-//  kmat->localize();
+    *kmat += *Qvec(nact_, nact_, acoeff_, /*nclosed_*/0);
+    kmat->localize();
 
-//  auto kmatp = make_shared<Matrix>(*kmat * (-1.0));
-//  *kmatp += *fockact_ * 2.0;
-//  kmatp->localize();
+    auto kmatp = make_shared<Matrix>(*kmat * (-1.0));
+    *kmatp += *fockact_ * 2.0;
+    kmatp->localize();
 
-//  kmat_ = kmat;
-//  kmatp_ = kmatp;
+    kmat_ = kmat;
+    kmatp_ = kmatp;
   }
   {
     auto compute_kmat = [this](shared_ptr<const Matrix> rdm2, shared_ptr<const Matrix> rdm3, shared_ptr<const Matrix> fock, const double sign) {

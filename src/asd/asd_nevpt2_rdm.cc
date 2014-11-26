@@ -36,30 +36,37 @@ void ASD_NEVPT2::compute_rdm() {
   {
 //TODO
 //  auto tmp = casscf_->fci()->rdm1(istate_)->rdm1_mat(/*nclosed_*/0);
-//  tmp->localize();
-//  rdm1_ = tmp;
+    auto tmp = get<0>(rdms_)->rdm1_mat(/*nclose*/0);
+    tmp->localize();
+    rdm1_ = tmp;
   }
+  cout << "ASD_NEVPT2_RDM: rdm1.. " << endl;
   // rdm 2
   {
 //TODO
-//  auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
+    auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
 //  shared_ptr<const RDM<2>> r2 = ref_->rdm2(istate_);
-//  SMITH::sort_indices<0,2,1,3,0,1,1,1>(r2->data(), tmp->data(), nact_, nact_, nact_, nact_);
-//  rdm2_ = tmp;
+    shared_ptr<RDM<2>> r2 = get<1>(rdms_);
+    SMITH::sort_indices<0,2,1,3,0,1,1,1>(r2->data(), tmp->data(), nact_, nact_, nact_, nact_);
+    rdm2_ = tmp;
   }
+  cout << "ASD_NEVPT2_RDM: rdm2.. " << endl;
   // rdm 3 and 4
   {
 //TODO
-//  shared_ptr<Matrix> tmp3 = make_shared<Matrix>(nact_*nact_*nact_, nact_*nact_*nact_, true);
-//  shared_ptr<Matrix> tmp4 = make_shared<Matrix>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
+    shared_ptr<Matrix> tmp3 = make_shared<Matrix>(nact_*nact_*nact_, nact_*nact_*nact_, true);
+    shared_ptr<Matrix> tmp4 = make_shared<Matrix>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
 //  shared_ptr<const RDM<3>> r3;
 //  shared_ptr<const RDM<4>> r4;
 //  tie(r3, r4) = casscf_->fci()->compute_rdm34(istate_);
-//  SMITH::sort_indices<0,2,4,  1,3,5,  0,1,1,1>(r3->data(), tmp3->data(), nact_, nact_, nact_, nact_, nact_, nact_);
-//  SMITH::sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), tmp4->data(), nact_, nact_, nact_, nact_, nact_, nact_, nact_, nact_);
-//  rdm3_ = tmp3;
-//  rdm4_ = tmp4;
+    shared_ptr<const RDM<3>> r3 = get<2>(rdms_);
+    shared_ptr<const RDM<4>> r4 = get<3>(rdms_);
+    SMITH::sort_indices<0,2,4,  1,3,5,  0,1,1,1>(r3->data(), tmp3->data(), nact_, nact_, nact_, nact_, nact_, nact_);
+    SMITH::sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), tmp4->data(), nact_, nact_, nact_, nact_, nact_, nact_, nact_, nact_);
+    rdm3_ = tmp3;
+    rdm4_ = tmp4;
   }
+  cout << "ASD_NEVPT2_RDM: rdm3&4.. " << endl;
 }
 
 
@@ -75,6 +82,7 @@ void ASD_NEVPT2::compute_asrdm() {
       for (int k = 0; k != nact_; ++k)
         for (int l = 0; l != nact_; ++l)
           srdm2->element(l+nact_*k,j+nact_*i) = -rdm2_->element(l+nact_*i,k+nact_*j) + (i == j ? 2.0*rdm1_->element(l,k) : 0.0) - (i == k ? rdm1_->element(l,j) : 0.0);
+  cout << "ASD_NEVPT2_RDM: srdm2.. " << endl;
   // <a+ a b+ b> and <a+ a b+ b c+ c>
   shared_ptr<Matrix> ardm2 = rdm2_->clone();
   for (int i = 0; i != nact_; ++i)
@@ -84,6 +92,7 @@ void ASD_NEVPT2::compute_asrdm() {
           ardm2->element(l+nact_*k,j+nact_*i) += rdm2_->element(l+nact_*j,k+nact_*i);
         ardm2->element(k+nact_*j,j+nact_*i) += rdm1_->element(k,i);
       }
+  cout << "ASD_NEVPT2_RDM: ardm2.. " << endl;
   shared_ptr<Matrix> ardm3 = rdm3_->clone();
   shared_ptr<Matrix> srdm3 = rdm3_->clone(); // <a+ a b b+ c+ c>
   for (int i = 0; i != nact_; ++i)
@@ -99,6 +108,7 @@ void ASD_NEVPT2::compute_asrdm() {
 
             srdm3->element(id3(m,l,k),id3(k,j,i)) += 2.0*ardm2->element(id2(m,l),id2(j,i));
           }
+  cout << "ASD_NEVPT2_RDM: srdm3.. " << endl;
   SMITH::sort_indices<0,2,1,3,1,1,-1,1>(ardm3->data(), srdm3->data(), nact_*nact_, nact_, nact_, nact_*nact_);
   shared_ptr<Matrix> ardm4 = rdm4_->clone();
   for (int h = 0; h != nact_; ++h)
@@ -119,6 +129,7 @@ void ASD_NEVPT2::compute_asrdm() {
                   ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (b == g ? 1.0 : 0.0) * rdm3_->element(id3(a,c,e),id3(h,d,f));
                   ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += rdm4_->element(id4(a,c,e,g),id4(b,d,f,h));
                 }
+  cout << "WARN: ASD_NEVPT2_RDM: ardm4.. skipped" << endl;
   ardm2_ = ardm2;
   ardm3_ = ardm3;
   ardm4_ = ardm4;

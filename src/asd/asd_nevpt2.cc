@@ -41,7 +41,13 @@ using namespace bagel;
 
 
 //ASD_NEVPT2::ASD_NEVPT2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
-ASD_NEVPT2::ASD_NEVPT2(shared_ptr<PTree> input, shared_ptr<const Geometry> g, shared_ptr<const Reference> ref) : geom_(g), ref_(ref) {
+ASD_NEVPT2::ASD_NEVPT2(shared_ptr<PTree> input, shared_ptr<const Geometry> g, shared_ptr<const Reference> ref,
+                       std::tuple<std::shared_ptr<RDM<1>>,
+                                  std::shared_ptr<RDM<2>>,
+                                  std::shared_ptr<RDM<3>>,
+                                  std::shared_ptr<RDM<4>>> rdms ) : geom_(g), ref_(ref), rdms_(rdms) {
+//copy RDMs
+
 
 //casscf_ = make_shared<SuperCI>(input, g, ref);
 //casscf_->compute();
@@ -71,12 +77,13 @@ void ASD_NEVPT2::compute() {
 
   nclosed_ = ref_->nclosed() - ncore_;
   nact_ = ref_->nact();
-  nvirt_ = ref_->nvirt();
+//TODO take nvirt from input and put to ref_
+//nvirt_ = ref_->nvirt();
+  nvirt_ = 24; //so that it covers full basis space (benzene dimer sto-3g)
 
   cout << "ASD_NEVPT2: nclosed = " << nclosed_ << endl;
   cout << "ASD_NEVPT2: nact    = " << nact_ << endl;
   cout << "ASD_NEVPT2: nvirt   = " << nvirt_ << endl;
-
 
   if (nclosed_+nact_ < 1) throw runtime_error("no correlated orbitals");
   if (nact_ < 1)          throw runtime_error("no active orbitals");
@@ -86,16 +93,21 @@ void ASD_NEVPT2::compute() {
 
   // coefficients -- will be updated later
   shared_ptr<Matrix> ccoeff = nclosed_ ? ref_->coeff()->slice_copy(ncore_, ncore_+nclosed_) : nullptr;
+  cout << "ASD_NEVPT2: closed coef.. " << endl;
   shared_ptr<Matrix> acoeff =            ref_->coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
+  cout << "ASD_NEVPT2: act coef.. " << endl;
   shared_ptr<Matrix> vcoeff = nvirt_   ? ref_->coeff()->slice_copy(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_) : nullptr;
+  cout << "ASD_NEVPT2: virt coef.. " << endl;
 
-  assert(false);
   // obtain particle RDMs
   compute_rdm();
+  cout << "ASD_NEVPT2: compute_rdm.. " << endl;
   // compute auxiliary RDMs
   compute_asrdm();
+  cout << "ASD_NEVPT2: compute_asrdm.. " << endl;
   // compute hole RDMs
   compute_hrdm();
+  cout << "ASD_NEVPT2: compute_hrdm.. " << endl;
 
   timer.tick_print("RDMs, hole RDMs, others ");
 
@@ -114,7 +126,9 @@ void ASD_NEVPT2::compute() {
   {
     // * core Fock operator
     shared_ptr<const Matrix> hcore = make_shared<Hcore>(geom_);
+    cout << "ASD_NEVPT2: hcore retrieved.. " << endl;
     shared_ptr<const Matrix> ofockao = nclosed_+ncore_ ?  make_shared<Fock<1>>(geom_, hcore, nullptr, ref_->coeff()->slice(0, ncore_+nclosed_), /*store*/false, /*rhf*/true) : hcore;
+    cout << "ASD_NEVPT2: ofockao.. " << endl;
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<Matrix> rdm1_mat = rdm1_->copy();
@@ -122,6 +136,7 @@ void ASD_NEVPT2::compute() {
     rdm1_mat->delocalize();
     auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
     auto fockao = make_shared<Fock<1>>(geom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
+    cout << "ASD_NEVPT2: fockao.. " << endl;
     // MO Fock
     if (nclosed_) {
       Matrix omofock(*ccoeff % *fockao * *ccoeff);
@@ -133,6 +148,7 @@ void ASD_NEVPT2::compute() {
       *vcoeff *= vmofock;
     }
     coeffall = make_shared<Matrix>(acoeff->ndim(), nclosed_+nact_+nvirt_);
+    cout << "ASD_NEVPT2: coeffall.. " << endl;
     if (nclosed_)
       coeffall->copy_block(0, 0             , ccoeff->ndim(), nclosed_, ccoeff);
     coeffall->copy_block(0, nclosed_      , acoeff->ndim(), nact_   , acoeff);
@@ -151,12 +167,14 @@ void ASD_NEVPT2::compute() {
     fockact_p_ = make_shared<Matrix>(*acoeff % *fockao_p * *acoeff);
     fockact_p_->localize();
     fock_p = make_shared<Matrix>(*coeffall % *fockao_p * *coeffall);
+    cout << "ASD_NEVPT2: h'eff.. " << endl;
 
     // h''eff (treat active orbitals as closed)
     auto fockao_h = make_shared<Fock<1>>(geom_, ofockao, nullptr, acoeff, /*store*/false, /*rhf*/true);
     fockact_h_ = make_shared<Matrix>(*acoeff % *fockao_h * *acoeff);
     fockact_h_->localize();
     fock_h = make_shared<Matrix>(*coeffall % *fockao_h * *coeffall);
+    cout << "ASD_NEVPT2: h''eff.. " << endl;
   }
 
   // set coefficient
@@ -168,11 +186,13 @@ void ASD_NEVPT2::compute() {
 
   // implemented in nevpt2_mat.cc
   compute_ints();
+  cout << "ASD_NEVPT2: compute_ints.. " << endl;
   compute_kmat();
-
+  cout << "ASD_NEVPT2: compute_kmat.. " << endl;
   timer.tick_print("K matrices");
 
   compute_abcd();
+  cout << "ASD_NEVPT2: compute_abcd.. " << endl;
 
   timer.tick_print("A, B, C, and D matrices");
 
