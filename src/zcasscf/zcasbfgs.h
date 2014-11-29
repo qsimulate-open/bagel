@@ -56,6 +56,8 @@ class ZCASBFGS : public ZCASSCF {
    std::tuple<std::shared_ptr<ZRotFile>, std::shared_ptr<ZRotFile>> optimize_subspace_rotations(std::vector<double> energy, std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> rot, std::shared_ptr<SRBFGS<ZRotFile>> srbfgs, bool optimize_electrons = true);
    // returns "optimal" level shift
    std::complex<double> find_level_shift(std::shared_ptr<const ZRotFile> rotmat) const;
+   // function to compute the unitary orbital rotation matrix for a given subspace; also stores energies in the appropriate places
+   std::shared_ptr<ZMatrix> compute_unitary_rotation(std::vector<double>& subspace_energy, std::shared_ptr<SRBFGS<ZRotFile>> subspace_bfgs, std::shared_ptr<ZMatrix> displacement_history, const int nvirt_subspace, std::shared_ptr<const ZMatrix> cfockao, std::shared_ptr<ZRotFile>& grad, const bool optimize_electrons);
 
 };
 

@@ -153,69 +153,15 @@ void ZCASBFGS::compute() {
     }
     onebody.tick_print("One body operators");
 
-    // get energy
-    if (nact_) {
-      // use state averaged energy to update trust radius
-      assert(fci_->energy().size() > 0);
-      double sa_en = 0.0;
-      for (auto& i : fci_->energy())
-        sa_en += i;
-      sa_en /= double((fci_->energy()).size());
-      optimize_electrons == true ? ele_energy.push_back(sa_en) : pos_energy.push_back(sa_en);
-      energy_ = fci_->energy();
-    } else {
-      assert(nstate_ == 1 && energy_.size() == 1);
-      optimize_electrons == true ? ele_energy.resize(ele_energy.size()+1) : pos_energy.resize(pos_energy.size()+1);
-      optimize_electrons == true ? ele_energy[ele_energy.size()-1] = geom_->nuclear_repulsion() : pos_energy[pos_energy.size()-1] = geom_->nuclear_repulsion();
-      auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore_) * *coeff_);
-      for (int i = 0; i != nclosed_*2; ++i)
-        optimize_electrons == true ? ele_energy[ele_energy.size()-1] += 0.5*mo->element(i,i).real() : pos_energy[pos_energy.size()-1] += 0.5*mo->element(i,i).real();
-      energy_[0] = optimize_electrons == true ? ele_energy[ele_energy.size()-1] : pos_energy[pos_energy.size()-1];
-    }
-
-    shared_ptr<ZRotFile> xlog;
-    shared_ptr<ZRotFile> subspace_rot;
-    Timer more_sorensen_timer(0);
-    cout << " " << endl;
-    cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
-    // grad is altered during optimization of subspace rotations
+    // compute unitary rotation matrix for given subspace, extract subspace gradient, and update energy vectors
+    shared_ptr<ZMatrix> expa;
     if (optimize_electrons) {
-      cout << " --- Optimizing electrons --- " << endl;
-      xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
-      tie(subspace_rot, grad) = optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, optimize_electrons);
-      kramers_adapt(subspace_rot, nclosed_, nact_, nvirtnr_);
+      expa = compute_unitary_rotation(ele_energy, ele_srbfgs, ele_x, nvirtnr_, cfockao, grad, optimize_electrons);
     } else {
-      cout << " --- Optimizing positrons --- " << endl;
-      xlog    = make_shared<ZRotFile>(pos_x->log(4), nclosed_*2, nact_*2, nneg_);
-      tie(subspace_rot, grad) = optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, optimize_electrons);
-      kramers_adapt(subspace_rot, nclosed_, nact_, nneg_/2);
+      expa = compute_unitary_rotation(pos_energy, pos_srbfgs, pos_x, nneg_/2,  cfockao, grad, optimize_electrons);
     }
-    cout << " ---------------------------------------------------- " << endl << endl;
-    more_sorensen_timer.tick_print("More-Sorensen/Hebden extrapolation");
 
     const double gradient = grad->rms();
-
-    // Rotate orbitals
-    shared_ptr<ZMatrix> amat = subspace_rot->unpack<ZMatrix>();
-
-    // multiply -1 from the formula taken care of in extrap. multiply -i to make amat hermite (will be compensated)
-    *amat *= 1.0 * complex<double>(0.0, -1.0);
-
-    // restore the matrix from RotFile
-    VectorB teig(amat->ndim());
-    amat->diagonalize(teig);
-    auto amat_sav = amat->copy();
-    for (int i = 0; i != amat->ndim(); ++i) {
-      complex<double> ex = exp(complex<double>(0.0, teig(i)));
-      for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
-    }
-    auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
-    if (optimize_electrons) {
-      kramers_adapt(expa, nvirtnr_);
-    } else {
-      kramers_adapt(expa, nneg_/2);
-    }
-    expa->purify_unitary();
 
 //    cold = coeff_->copy(); // TODO : copy old coefficient if step rejection is ever implemented
     if (optimize_electrons) {
