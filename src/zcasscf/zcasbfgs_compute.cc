@@ -174,8 +174,7 @@ void ZCASBFGS::compute() {
     }
 
     shared_ptr<ZRotFile> xlog;
-    shared_ptr<ZRotFile> ele_rot;
-    shared_ptr<ZRotFile> pos_rot;
+    shared_ptr<ZRotFile> subspace_rot;
     bool reset;
     Timer more_sorensen_timer(0);
     cout << " " << endl;
@@ -184,13 +183,13 @@ void ZCASBFGS::compute() {
     if (optimize_electrons) {
       cout << " --- Optimizing electrons --- " << endl;
       xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
-      tie(ele_rot, ele_energy, grad, xlog, reset) = optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, cold, optimize_electrons);
-      kramers_adapt(ele_rot, nclosed_, nact_, nvirtnr_);
+      tie(subspace_rot, ele_energy, grad, xlog, reset) = optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, cold, optimize_electrons);
+      kramers_adapt(subspace_rot, nclosed_, nact_, nvirtnr_);
     } else {
       cout << " --- Optimizing positrons --- " << endl;
       xlog    = make_shared<ZRotFile>(pos_x->log(4), nclosed_*2, nact_*2, nneg_);
-      tie(pos_rot, pos_energy, grad, xlog, reset) = optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, cold, optimize_electrons);
-      kramers_adapt(pos_rot, nclosed_, nact_, nneg_/2);
+      tie(subspace_rot, pos_energy, grad, xlog, reset) = optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, cold, optimize_electrons);
+      kramers_adapt(subspace_rot, nclosed_, nact_, nneg_/2);
     }
     cout << " ---------------------------------------------------- " << endl << endl;
     more_sorensen_timer.tick_print("More-Sorensen/Hebden extrapolation");
@@ -198,12 +197,7 @@ void ZCASBFGS::compute() {
     const double gradient = grad->rms();
 
     // Rotate orbitals
-    shared_ptr<ZMatrix> amat;
-    if (optimize_electrons) {
-      amat = ele_rot->unpack<ZMatrix>();
-    } else {
-      amat = pos_rot->unpack<ZMatrix>();
-    }
+    shared_ptr<ZMatrix> amat = subspace_rot->unpack<ZMatrix>();
 
     // multiply -1 from the formula taken care of in extrap. multiply -i to make amat hermite (will be compensated)
     *amat *= 1.0 * complex<double>(0.0, -1.0);
