@@ -165,12 +165,12 @@ void ZCASBFGS::compute() {
       energy_ = fci_->energy();
     } else {
       assert(nstate_ == 1 && energy_.size() == 1);
-      optimize_electrons == true ? ele_energy.resize(iter/2+1) : pos_energy.resize((iter-1)/2+1);
-      optimize_electrons == true ? ele_energy[iter/2] = geom_->nuclear_repulsion() : pos_energy[(iter-1)/2] = geom_->nuclear_repulsion();
+      optimize_electrons == true ? ele_energy.resize(ele_energy.size()+1) : pos_energy.resize(pos_energy.size()+1);
+      optimize_electrons == true ? ele_energy[ele_energy.size()-1] = geom_->nuclear_repulsion() : pos_energy[pos_energy.size()-1] = geom_->nuclear_repulsion();
       auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore_) * *coeff_);
       for (int i = 0; i != nclosed_*2; ++i)
-        optimize_electrons == true ? ele_energy[iter/2] += 0.5*mo->element(i,i).real() : pos_energy[(iter-1)/2] += 0.5*mo->element(i,i).real();
-      energy_[0] = optimize_electrons == true ? ele_energy[iter/2] : pos_energy[(iter-1)/2];
+        optimize_electrons == true ? ele_energy[ele_energy.size()-1] += 0.5*mo->element(i,i).real() : pos_energy[pos_energy.size()-1] += 0.5*mo->element(i,i).real();
+      energy_[0] = optimize_electrons == true ? ele_energy[ele_energy.size()-1] : pos_energy[pos_energy.size()-1];
     }
 
     shared_ptr<ZRotFile> xlog;
