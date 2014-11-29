@@ -53,7 +53,7 @@ void ZCASBFGS::compute() {
   bool ele_conv = false;
   bool pos_conv = false;
 
-  auto cold = coeff_->clone(); // TODO : needed if step rejection is implemented in the future
+//  auto cold = coeff_->clone(); // TODO : needed if step rejection is implemented in the future
 
   bool optimize_electrons = idata_->get<bool>("optimize_electrons", true);
   const bool only_electrons = idata_->get<bool>("only_electrons", false);
@@ -183,12 +183,12 @@ void ZCASBFGS::compute() {
     if (optimize_electrons) {
       cout << " --- Optimizing electrons --- " << endl;
       xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
-      tie(subspace_rot, ele_energy, grad, xlog, reset) = optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, cold, optimize_electrons);
+      tie(subspace_rot, ele_energy, grad, xlog, reset) = optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, optimize_electrons);
       kramers_adapt(subspace_rot, nclosed_, nact_, nvirtnr_);
     } else {
       cout << " --- Optimizing positrons --- " << endl;
       xlog    = make_shared<ZRotFile>(pos_x->log(4), nclosed_*2, nact_*2, nneg_);
-      tie(subspace_rot, pos_energy, grad, xlog, reset) = optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, cold, optimize_electrons);
+      tie(subspace_rot, pos_energy, grad, xlog, reset) = optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, optimize_electrons);
       kramers_adapt(subspace_rot, nclosed_, nact_, nneg_/2);
     }
     cout << " ---------------------------------------------------- " << endl << endl;
@@ -218,7 +218,7 @@ void ZCASBFGS::compute() {
     }
     expa->purify_unitary();
 
-    cold = coeff_->copy();
+//    cold = coeff_->copy(); // TODO : copy old coefficient if step rejection is ever implemented
     if (optimize_electrons) {
       int nvirtnr = nvirt_ - nneg_/2;
       auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), coeff_->mdim()/2);

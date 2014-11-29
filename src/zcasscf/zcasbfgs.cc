@@ -59,7 +59,7 @@ complex<double> ZCASBFGS::find_level_shift(shared_ptr<const ZRotFile> rotmat) co
 }
 
 
-tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRotFile>, bool> ZCASBFGS::optimize_subspace_rotations(vector<double> energy, shared_ptr<const ZRotFile> grad, shared_ptr<const ZRotFile> rot, shared_ptr<SRBFGS<ZRotFile>> srbfgs, shared_ptr<ZMatrix> cold, bool optimize_electrons) {
+tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRotFile>, bool> ZCASBFGS::optimize_subspace_rotations(vector<double> energy, shared_ptr<const ZRotFile> grad, shared_ptr<const ZRotFile> rot, shared_ptr<SRBFGS<ZRotFile>> srbfgs, bool optimize_electrons) {
   // function to optimize only a single subspace of orbitals neglecting the coupling to the other
   const int nvirtnr = nvirt_ - nneg_/2;
 
