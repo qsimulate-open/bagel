@@ -53,7 +53,7 @@ class ZCASBFGS : public ZCASSCF {
 
     void compute() override;
    // function to optimize only the electronic-electronic or electronic-positronic type rotations
-   std::tuple<std::shared_ptr<ZRotFile>, std::vector<double>, std::shared_ptr<ZRotFile>, std::shared_ptr<ZRotFile>, bool> optimize_subspace_rotations(std::vector<double> energy, std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> rot, std::shared_ptr<SRBFGS<ZRotFile>> srbfgs, bool optimize_electrons = true);
+   std::tuple<std::shared_ptr<ZRotFile>, std::vector<double>, std::shared_ptr<ZRotFile>, std::shared_ptr<ZRotFile>> optimize_subspace_rotations(std::vector<double> energy, std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> rot, std::shared_ptr<SRBFGS<ZRotFile>> srbfgs, bool optimize_electrons = true);
    // returns "optimal" level shift
    std::complex<double> find_level_shift(std::shared_ptr<const ZRotFile> rotmat) const;
 
