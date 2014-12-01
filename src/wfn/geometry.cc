@@ -26,7 +26,6 @@
 
 #include <src/wfn/geometry.h>
 #include <src/df/complexdf.h>
-#include <src/wfn/geometry_connect.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/rys/smalleribatch.h>
 #include <src/integral/rys/mixederibatch.h>
