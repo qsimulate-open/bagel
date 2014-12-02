@@ -328,7 +328,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
       return out;
     }
 
-    void scale(const DataType& a) { std::for_each(data(), data()+size(), [&a](DataType& p){ p *= a; }); }
+    void scale(const DataType& a) { blas::scale_n(a, data(), size()); }
 
     void allreduce() {
       mpi__->allreduce(data(), size());
