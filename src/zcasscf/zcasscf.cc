@@ -327,11 +327,12 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
       // first find the source column
       tuple<int, double> max = make_tuple(-1, 0.0);
       for (int j = 0; j != tmp->ndim()/2; ++j)
-        if (sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))) > get<1>(max))
-          max = make_tuple(j, sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))));
+        if (std::abs(tmp->element(i,j)) > get<1>(max))
+          max = make_tuple(j, std::abs(tmp->element(i,j)));
 
       // register to emap
-      if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. make_natural_orbitals()");
+      if (emap.find(get<0>(max)) != emap.end()) throw logic_error("In ZCASSCF::make_natural_orbitals(), two columns had max values in the same positions.  This should not happen.");
+      assert(get<0>(max) != -1); // can happen if all checked elements are zero, for example
       emap.emplace(get<0>(max), i);
 
       // copy to the target
