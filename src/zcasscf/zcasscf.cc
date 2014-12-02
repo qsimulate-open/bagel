@@ -248,7 +248,10 @@ static streambuf* backup_stream_;
 static ofstream* ofs_;
 
 void ZCASSCF::mute_stdcout() const {
-  ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
+  string filename = "casscf.log";
+  if (max_iter_ > 70) filename = "casscf1.log";
+  if (!tsymm_) filename = "casscf2.log";
+  ofstream* ofs(new ofstream(filename,(backup_stream_ ? ios::app : ios::trunc)));
   ofs_ = ofs;
   backup_stream_ = cout.rdbuf(ofs->rdbuf());
 }
@@ -281,6 +284,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 
    // scale using occupation numbers
    for (int i = 0; i != nact_*2; ++i) {
+     cout << "occup_[" << i << "] = " << occup_[i] << endl;
      assert(occup_[i] >= -1.0e-14);
      const double fac = occup_[i] > 0.0 ? sqrt(occup_[i]) : 0.0;
      for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
@@ -298,8 +302,14 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 
 shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
 
-  if (!tsymm_)
-    throw runtime_error("Our natural orbital implementation requires Kramers-adapted coefficients.");
+  bool use_quat = tsymm_;
+  if (max_iter_ > 70) use_quat = false;
+  if (tsymm_) {
+    cout << "Was given a Kramers-restricted 1RDM" << (use_quat ? " and will take advantage of it." : " but not using quat symmetry here." )<< endl;
+
+  } else {
+    cout << "Input 1RDM has no particular symmetry enforced" << endl;
+  }
 
   // input should be 1rdm in kramers format
   shared_ptr<ZMatrix> tmp;
@@ -321,25 +331,49 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
     map<int,int> emap;
     out = tmp->clone();
     vector<double> vec2(tmp->ndim());
+
     // sort eigenvectors so that buf is close to a unit matrix
-    // target column
-    for (int i = 0; i != tmp->ndim()/2; ++i) {
-      // first find the source column
-      tuple<int, double> max = make_tuple(-1, 0.0);
-      for (int j = 0; j != tmp->ndim()/2; ++j)
-        if (std::abs(tmp->element(i,j)) > get<1>(max))
-          max = make_tuple(j, std::abs(tmp->element(i,j)));
+    if (tsymm_) {
+      // assumes quaternion symmetry - only the top-left quarter is checked
+      // target column
+      for (int i = 0; i != tmp->ndim()/2; ++i) {
+        // first find the source column
+        tuple<int, double> max = make_tuple(-1, 0.0);
+        for (int j = 0; j != tmp->ndim()/2; ++j)
+          if (std::abs(tmp->element(i,j)) > get<1>(max))
+            max = make_tuple(j, std::abs(tmp->element(i,j)));
 
-      // register to emap
-      if (emap.find(get<0>(max)) != emap.end()) throw logic_error("In ZCASSCF::make_natural_orbitals(), two columns had max values in the same positions.  This should not happen.");
-      assert(get<0>(max) != -1); // can happen if all checked elements are zero, for example
-      emap.emplace(get<0>(max), i);
+        // register to emap
+        if (emap.find(get<0>(max)) != emap.end()) throw logic_error("In ZCASSCF::make_natural_orbitals(), two columns had max values in the same positions.  This should not happen.");
+        assert(get<0>(max) != -1); // can happen if all checked elements are zero, for example
+        emap.emplace(get<0>(max), i);
 
-      // copy to the target
-      copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
-      copy_n(tmp->element_ptr(0,get<0>(max)+tmp->ndim()/2), tmp->ndim(), out->element_ptr(0,i+tmp->ndim()/2));
-      vec2[i] = vec[get<0>(max)];
-      vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
+        // copy to the target
+        copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
+        copy_n(tmp->element_ptr(0,get<0>(max)+tmp->ndim()/2), tmp->ndim(), out->element_ptr(0,i+tmp->ndim()/2));
+        vec2[i] = vec[get<0>(max)];
+        vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
+      }
+
+    } else {
+      // assumes no particular symmetry - only the top-left quarter is checked
+      // target column
+      for (int i = 0; i != tmp->ndim(); ++i) {
+        // first find the source column
+        tuple<int, double> max = make_tuple(-1, 0.0);
+        for (int j = 0; j != tmp->ndim(); ++j)
+          if (std::abs(tmp->element(i,j)) > get<1>(max))
+            max = make_tuple(j, std::abs(tmp->element(i,j)));
+
+        // register to emap
+        if (emap.find(get<0>(max)) != emap.end()) throw logic_error("In ZCASSCF::make_natural_orbitals(), two columns had max values in the same positions.  This should not happen.");
+        assert(get<0>(max) != -1); // can happen if all checked elements are zero, for example
+        emap.emplace(get<0>(max), i);
+
+        // copy to the target
+        copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
+        vec2[i] = vec[get<0>(max)];
+      }
     }
 
     // fix the phase
@@ -480,6 +514,7 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   VectorB eig(mofock->ndim());
   mofock->diagonalize(eig);
 
+  cout << "Rearrangement 2" << endl;
   if (!tsymm_)
     RelMOFile::rearrange_eig(eig, mofock);
 
