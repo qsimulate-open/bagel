@@ -309,6 +309,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
     tmp = make_shared<ZMatrix>(*rdm1);
 
   const bool unitmat = tmp->is_identity(1.0e-14);
+  shared_ptr<ZMatrix> out;
 
   if (!unitmat) {
     VectorB vec(rdm1->ndim());
@@ -318,7 +319,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
       RelMOFile::rearrange_eig(vec, tmp, false);
 
     map<int,int> emap;
-    auto buf2 = tmp->clone();
+    out = tmp->clone();
     vector<double> vec2(tmp->ndim());
     // sort eigenvectors so that buf is close to a unit matrix
     // target column
@@ -334,27 +335,26 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
       emap.emplace(get<0>(max), i);
 
       // copy to the target
-      copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), buf2->element_ptr(0,i));
-      copy_n(tmp->element_ptr(0,get<0>(max)+tmp->ndim()/2), tmp->ndim(), buf2->element_ptr(0,i+tmp->ndim()/2));
+      copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
+      copy_n(tmp->element_ptr(0,get<0>(max)+tmp->ndim()/2), tmp->ndim(), out->element_ptr(0,i+tmp->ndim()/2));
       vec2[i] = vec[get<0>(max)];
       vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
     }
 
     // fix the phase
     for (int i = 0; i != tmp->ndim(); ++i) {
-      if (real(buf2->element(i,i)) < 0.0)
-        blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
+      if (real(out->element(i,i)) < 0.0)
+        blas::scale_n(-1.0, out->element_ptr(0,i), tmp->ndim());
     }
     occup_ = vec2;
-    return buf2;
   } else { // set occupation numbers, but coefficients don't need to be updated
     vector<double> vec2(tmp->ndim());
     for (int i=0; i!=tmp->ndim(); ++i)
       vec2[i] = tmp->get_real_part()->element(i,i);
     occup_ = vec2;
-    return tmp;
+    out = tmp;
   }
-
+  return out;
 }
 
 
