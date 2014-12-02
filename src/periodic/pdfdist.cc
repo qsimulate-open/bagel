@@ -60,6 +60,10 @@ PDFDist::PDFDist(const vector<array<double, 3>>& L, const int nbas, const int na
       ++iat;
     }
     dfdist_[i] = make_shared<PDFDist_ints>(L, nbas, naux, atoms0, atoms1, aux_atoms, cell0, thresh, projector_, data1_);
+//  TODO: to be removed (check NAI)
+//  double nai = 0;
+//  for (int j = 0; j != ncell(); ++j) nai += dfdist_[i]->nai_in_cell(j)->element(0, 0);
+//  cout << " *** " << setprecision(9) << nai << endl;
   }
   time.tick_print("3-index and overlap integrals");
 }
@@ -104,7 +108,9 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
 
   // (a|bL)
   auto b3 = make_shared<const Shell>(ashell.front()->spherical());
-  data2_ = make_shared<Matrix>(naux_, naux_, serial_);
+  data2_ = make_shared<Matrix>(naux_, naux_, serial_);    data2_->zero();
+  eta_   = make_shared<Matrix>(naux_, naux_, serial_);    eta_->zero();
+
   vector<shared_ptr<Matrix>> data2_at(ncell());
   for (auto& idat : data2_at) idat = make_shared<Matrix>(naux_, naux_, serial_);
 
@@ -139,8 +145,10 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
   projectorC->unit();
   *projectorC -= *projector_;
 
-  for (int i = 0; i != ncell(); ++i)
+  for (int i = 0; i != ncell(); ++i) {
     *data2_ += *projectorC * *data2_at[i] * *projectorC;
+    *eta_   += *projectorC * *data2_at[i];
+  }
 
   time.tick_print("2-index integrals");
 

@@ -34,13 +34,14 @@ shared_ptr<PData> PDFDist::pcompute_Jop_from_coeff(shared_ptr<const VectorB> coe
   for (int i = 0; i != ncell(); ++i) {
     // lattice sum with NAI
     auto jmat = make_shared<Matrix>(nbasis_, nbasis_);
+    jmat->zero();
     for (int j = 0; j != ncell(); ++j) {
       shared_ptr<DFBlock> data3 = dfdist_[i]->data3_in_cell(j);
       // contract with coeff
       shared_ptr<Matrix> tmp = data3->form_mat(coeff->slice(data3->astart(), data3->astart() + data3->asize()));
       *jmat += *tmp;
       // add NAI contribution
-      *jmat += *dfdist_[i]->nai_in_cell(j);
+      *jmat += 2.0 * *dfdist_[i]->nai_in_cell(j);
     }
     (*out)[i] = make_shared<ZMatrix>(*jmat , complex<double>(1.0, 0.0));
   }
@@ -75,13 +76,13 @@ shared_ptr<VectorB> PDFDist::pcompute_coeff(const shared_ptr<const PData> densit
 
   // contract coeff1 with 2-index
   auto tmp = make_shared<VectorB>(naux_);
-  contract(1.0, *data2_, {0, 1}, *coeff1, {0}, 0.0, *tmp, {1});
+  contract(1.0, *eta_, {0, 1}, *coeff1, {1}, 0.0, *tmp, {0});
   *coeff2 -= *tmp;
 
   // get chargeless coeff
   *coeff2 = *data2_ * *coeff2;
 
-  // get 3-index coeff from the charged and chargeless part
+  // get coeff from the charged and chargeless part
   auto out = make_shared<VectorB>(naux_);
   *out = *coeff1 + *coeff2;
 

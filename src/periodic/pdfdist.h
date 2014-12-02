@@ -47,6 +47,7 @@ class PDFDist {
 
     /// 2-index integrals (i|j_L)^{-1} (sum over L)
     std::shared_ptr<Matrix> data2_;
+    std::shared_ptr<Matrix> eta_;
     void pcompute_2index(const std::vector<std::shared_ptr<const Shell>>& ashell, const double throverlap);
 
     /// normalised 1-index auxiliary charge <i|.>
