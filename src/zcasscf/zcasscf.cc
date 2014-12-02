@@ -320,6 +320,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
 
   const bool unitmat = tmp->is_identity(1.0e-14);
   shared_ptr<ZMatrix> out;
+  vector<double> vec2(tmp->ndim());
 
   if (!unitmat) {
     VectorB vec(rdm1->ndim());
@@ -330,7 +331,6 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
 
     map<int,int> emap;
     out = tmp->clone();
-    vector<double> vec2(tmp->ndim());
 
     // sort eigenvectors so that buf is close to a unit matrix
     if (tsymm_) {
@@ -355,6 +355,12 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
         vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
       }
 
+      // fix the phase
+      for (int i = 0; i != tmp->ndim(); ++i) {
+        if (real(out->element(i,i)) < 0.0)
+        blas::scale_n(-1.0, out->element_ptr(0,i), tmp->ndim());
+      }
+
     } else {
       // assumes no particular symmetry - only the top-left quarter is checked
       // target column
@@ -374,21 +380,21 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
         copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
         vec2[i] = vec[get<0>(max)];
       }
+
+      // fix the phase
+      for (int i = 0; i != tmp->ndim(); ++i) {
+        const double phase = std::arg(out->element(i,i));
+        blas::scale_n(polar(1.0, -phase), out->element_ptr(0,i), tmp->ndim());
+      }
     }
 
-    // fix the phase
-    for (int i = 0; i != tmp->ndim(); ++i) {
-      if (real(out->element(i,i)) < 0.0)
-        blas::scale_n(-1.0, out->element_ptr(0,i), tmp->ndim());
-    }
-    occup_ = vec2;
   } else { // set occupation numbers, but coefficients don't need to be updated
-    vector<double> vec2(tmp->ndim());
     for (int i=0; i!=tmp->ndim(); ++i)
       vec2[i] = tmp->get_real_part()->element(i,i);
-    occup_ = vec2;
     out = tmp;
   }
+
+  occup_ = vec2;
   return out;
 }
 
