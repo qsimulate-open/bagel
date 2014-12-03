@@ -134,44 +134,47 @@ void ZHarrison::print_header() const {
 void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset) {
   shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
   int ndet = nstate*10;
-  start_over:
-  vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet, nelea, neleb);
-
-  // Spin adapt detseeds
   int oindex = offset;
-  vector<bitset<nbit__>> done;
-  for (auto& it : bits) {
-    bitset<nbit__> alpha = it.second;
-    bitset<nbit__> beta = it.first;
-    bitset<nbit__> open_bit = (alpha^beta);
+  while (oindex < offset+nstate) {
+    vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet, nelea, neleb);
 
-    // make sure that we have enough unpaired alpha
-    const int unpairalpha = (alpha ^ (alpha & beta)).count();
-    const int unpairbeta  = (beta ^ (alpha & beta)).count();
-    if (unpairalpha-unpairbeta < nelea-neleb) continue;
+    // Spin adapt detseeds
+    oindex = offset;
+    vector<bitset<nbit__>> done;
+    for (auto& it : bits) {
+      bitset<nbit__> alpha = it.second;
+      bitset<nbit__> beta = it.first;
+      bitset<nbit__> open_bit = (alpha^beta);
 
-    // check if this orbital configuration is already used
-    if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
-    done.push_back(open_bit);
+      // make sure that we have enough unpaired alpha
+      const int unpairalpha = (alpha ^ (alpha & beta)).count();
+      const int unpairbeta  = (beta ^ (alpha & beta)).count();
+      if (unpairalpha-unpairbeta < nelea-neleb) continue;
 
-    pair<vector<tuple<int, int, int>>, double> adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
-    const double fac = adapt.second;
-    for (auto& iter : adapt.first) {
-      out->find(nelea, neleb)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
+      // check if this orbital configuration is already used
+      if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
+      done.push_back(open_bit);
+
+      pair<vector<tuple<int, int, int>>, double> adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+      const double fac = adapt.second;
+      for (auto& iter : adapt.first) {
+        out->find(nelea, neleb)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
+      }
+      cout << "     guess " << setw(3) << oindex << ":   closed " <<
+            setw(20) << left << print_bit(alpha&beta, norb_) << " open " << setw(20) << print_bit(open_bit, norb_) << right << endl;
+
+      ++oindex;
+      if (oindex == offset+nstate) break;
     }
-    cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << print_bit(alpha&beta, norb_) << " open " << setw(20) << print_bit(open_bit, norb_) << right << endl;
 
-    ++oindex;
-    if (oindex == offset+nstate) break;
+    if (oindex < offset+nstate) {
+      for (int i = offset; i != offset+oindex; ++i) {
+        out->find(nelea, neleb)->data(i)->zero();
+      }
+      ndet *= 4;
+    }
   }
-  assert(oindex <= offset+nstate);
-  if (oindex < offset+nstate) {
-    for (int i = offset; i != offset+oindex; ++i)
-      out->find(nelea, neleb)->data(i)->zero();
-    ndet *= 4;
-    goto start_over;
-  }
+  assert(oindex == offset+nstate);
   cout << endl;
 }
 
