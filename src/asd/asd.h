@@ -30,6 +30,7 @@
 #include <src/dimer/dimer_prop.h>
 
 #include <src/asd/asd_nevpt2.h>
+#include <src/asdscf/superci.h>
 
 namespace bagel {
 
