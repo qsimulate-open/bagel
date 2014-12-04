@@ -31,6 +31,7 @@
 #include <cmath>
 #include <memory>
 #include <list>
+#include <iostream>
 #include <src/math/algo.h>
 
 namespace bagel {
@@ -93,6 +94,9 @@ class PairFile {
     void synchronize() { first()->synchronize(); second()->synchronize(); }
 
     void zero() { first()->zero(); second()->zero(); }
+
+    // TODO
+    void print(const double thresh) const { std::cout << "Print function for PairFile has not been implemented." << std::endl; }
 
     std::shared_ptr<PairFile<T, U>> clone() const { return std::make_shared<PairFile<T, U>>(file0_->clone(), file1_->clone()); }
 
