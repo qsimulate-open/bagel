@@ -94,14 +94,14 @@ void PSCF::compute() {
       const ZMatrix kblock = *((*ktildex_)(i)) % *((*kfock)(i)) * *((*ktildex_)(i));
       (*intermediate)[i] = make_shared<ZMatrix>(kblock);
       (*kcoeff)[i] = make_shared<ZMatrix>(*((*ktildex_)(i)) * *((*intermediate)(i)));
-      coeff = kcoeff->ift(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
-      coeff_ = make_shared<const PCoeff>(*coeff);
     }
+    coeff = kcoeff->ift(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+    coeff_ = make_shared<const PCoeff>(*coeff);
   } else {
     throw runtime_error("Working on it...");
   }
 
-  shared_ptr<const PData> aodensity = kcoeff->form_density_rhf(nocc_);
+  shared_ptr<const PData> kdensity = kcoeff->form_density_rhf(nocc_);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
@@ -124,16 +124,16 @@ void PSCF::compute() {
     auto fock = make_shared<const PFock>(lattice_, hcore_, pdensity);
     shared_ptr<const PData> kfock = fock->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
     auto fock0 = make_shared<ZMatrix>(*((*kfock)(gamma)));
-    auto error_vector = make_shared<ZMatrix>(*fock0 * *((*aodensity)(gamma)) * *((*koverlap_)(gamma))
-                                          - *((*koverlap_)(gamma)) * *((*aodensity)(gamma)) * *fock0);
+    auto error_vector = make_shared<ZMatrix>(*fock0 * *((*kdensity)(gamma)) * *((*koverlap_)(gamma))
+                                          - *((*koverlap_)(gamma)) * *((*kdensity)(gamma)) * *fock0);
     const double error = error_vector->rms();
 
     complex<double> energy;
-    for (int i = 0; i != nkblock; ++i) {
-      energy += 0.5 * ((*((*khcore)(i)) + *((*kfock)(i)) * *((*aodensity)(i))).trace()) + lattice_->nuclear_repulsion();
+    for (int i = 0; i != lattice_->num_lattice_vectors(); ++i) {
+      energy += 0.5 * ((*((*hcore_)(i)) + *((*fock)(i)) * *((*pdensity)(i))).trace()) + lattice_->nuclear_repulsion();
       //assert(energy.imag() < 1e-8); //DEBUG: for now
     }
-    energy_ = energy.real() / nkblock;
+    energy_ = energy.real();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << pscftime.tick();
     if (abs(energy.imag()) > 1e-12) {
@@ -158,24 +158,19 @@ void PSCF::compute() {
     }
 
     auto intermediate = make_shared<PData>(blocksize, nkblock);
+    if (iter >= diis_start_)
+      fock0 = diis.extrapolate({(*kfock)(gamma), error_vector});
+
     for (int i = 0; i != nkblock; ++i) {
-#if 0
-      if (iter >= diis_start_) {
-        fock0 = diis.extrapolate({(*kfock)(i), error_vector});
-      } else {
-        fock0 = make_shared<ZMatrix>(*((*kfock)(i)));
-      }
-#endif
-      fock0 = make_shared<ZMatrix>(*((*kfock)(i)));
+      if (iter < diis_start_) *fock0 = *(*kfock)(i);
       ZMatrix kblock = *((*ktildex_)(i)) % *fock0 * *((*ktildex_)(i));
       //cout << i << "   " << setprecision(15) << (kblock - *(kblock.transpose_conjg())).norm()/kblock.size() << endl;
-      kblock.fill_upper_conjg(); // very dangerous!
       (*intermediate)[i] = make_shared<ZMatrix>(kblock);
       (*intermediate)[i]->diagonalize(*eig_[i]);
       (*kcoeff)[i] = make_shared<ZMatrix>(*((*ktildex_)(i)) * *((*intermediate)(i)));
     }
 
-    aodensity = kcoeff->form_density_rhf(nocc_);
+    kdensity = kcoeff->form_density_rhf(nocc_);
     coeff = kcoeff->ift(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
   }
 
