@@ -124,7 +124,7 @@ class PDFIntTask_2index {
       double* const data = data2_->data();
       for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0)
         for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++eridata)
-          data[j0+j1*naux] = *eridata;
+          data[j1+j0*naux] = *eridata;
     }
 };
 
@@ -196,7 +196,7 @@ class PDFIntTask_NAI {
       double* const data = data2_->data();
       for (int j0 = offset_[0]; j0 != offset_[0] + shell_[1]->nbasis(); ++j0)
         for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++naidata)
-          data[j0+j1*nbas] = *naidata;
+          data[j1+j0*nbas] = *naidata;
     }
 };
 

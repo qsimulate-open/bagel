@@ -132,8 +132,8 @@ void PSCF::compute() {
 
     complex<double> energy;
     for (int i = 0; i != lattice_->num_lattice_vectors(); ++i) {
-      energy += 0.5 * ((*((*hcore_)(i)) + *((*fock)(i)) * *((*pdensity)(i))).trace()) + lattice_->nuclear_repulsion();
-      //assert(energy.imag() < 1e-8); //DEBUG: for now
+      energy += 0.5 * ((*((*hcore_)(i)) + *((*fock)(i))) * *((*pdensity)(i))).trace() + lattice_->nuclear_repulsion();
+      assert(energy.imag() < 1e-8);
     }
     energy_ = energy.real();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
@@ -160,11 +160,11 @@ void PSCF::compute() {
     }
 
     auto intermediate = make_shared<PData>(blocksize, nkblock);
-    if (iter >= diis_start_)
+    if (iter > diis_start_)
       fock0 = diis.extrapolate({(*kfock)(gamma), error_vector});
 
     for (int i = 0; i != nkblock; ++i) {
-      if (iter < diis_start_) *fock0 = *(*kfock)(i);
+      if (iter <= diis_start_) *fock0 = *(*kfock)(i);
       ZMatrix kblock = *((*ktildex_)(i)) % *fock0 * *((*ktildex_)(i));
       //cout << i << "   " << setprecision(15) << (kblock - *(kblock.transpose_conjg())).norm()/kblock.size() << endl;
       (*intermediate)[i] = make_shared<ZMatrix>(kblock);
