@@ -104,7 +104,7 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
 
     // Spin adapt detseeds
     oindex = offset;
-    vector<bitset<nbit__>> done;
+    vector<pair<bitset<nbit__>,bitset<nbit__>>> done;
     const int active_electrons = geom_->nele() - charge_ - 2*ncore_;
     for (auto& it : bits) {
       bitset<nbit__> alpha = it.second;
@@ -121,8 +121,8 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       if (unpairalpha-unpairbeta < nelea-neleb) continue;
 
       // check if this orbital configuration is already used
-      if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
-      done.push_back(open_bit);
+      if (find(done.begin(), done.end(), it) != done.end()) continue;
+      done.push_back(it);
 
       pair<vector<tuple<int, int, int>>, double> adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
       const double fac = adapt.second;
