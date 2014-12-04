@@ -25,6 +25,7 @@
 
 #include <src/zfci/zharrison.h>
 #include <src/zfci/relspace.h>
+#include <src/math/comb.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 
@@ -141,15 +142,14 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
     // Spin adapt detseeds
     oindex = offset;
     vector<pair<bitset<nbit__>,bitset<nbit__>>> done;
-    const int active_electrons = geom_->nele() - charge_ - 2*ncore_;
     for (auto& it : bits) {
       bitset<nbit__> alpha = it.second;
       bitset<nbit__> beta = it.first;
       bitset<nbit__> open_bit = (alpha^beta);
 
       // This can happen if all possible determinants are checked without finding nstate acceptable ones.
-      if (alpha.count() + beta.count() != active_electrons)
-        throw logic_error("ZFCI::generate_guess generated a determinant with the wrong number of active electrons.");
+      if (alpha.count() + beta.count() != nele_)
+        throw logic_error("ZFCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
 
       // make sure that we have enough unpaired alpha
       const int unpairalpha = (alpha ^ (alpha & beta)).count();
@@ -218,6 +218,14 @@ void ZHarrison::compute() {
   if (!restarted_) {
     // Creating an initial CI vector
     cc_ = make_shared<RelZDvec>(space_, nstate_); // B runs first
+
+    // TODO really we should check the number of states for each S value, rather than total number
+    const static Comb combination;
+    const size_t max_states = combination(2*norb_, nele_);
+    if (nstate_ > max_states) {
+      const string space = "(" + to_string(nele_) + "," + to_string(norb_) + ")";
+      throw runtime_error("Wrong states specified - a " + space + " active space can only produce " + to_string(max_states) + " eigenstates.");
+    }
 
     // find determinants that have small diagonal energies
     int offset = 0;
