@@ -41,6 +41,9 @@ class QuatMatrix : public ZMatrix {
 
       std::shared_ptr<ZMatrix> u = get_submatrix(0, 0, n, m);
       std::shared_ptr<ZMatrix> v = get_submatrix(n, 0, n, m);
+      assert(u->is_hermitian(thresh));
+      assert(v->is_antisymmetric(thresh));
+
       u->ax_plus_y(-1.0, *get_submatrix(n, m, n, m)->get_conjg());
       v->ax_plus_y( 1.0, *get_submatrix(0, m, n, m)->get_conjg());
 
@@ -60,6 +63,9 @@ class QuatMatrix : public ZMatrix {
     void diagonalize(VecView eig) override {
       assert(ndim() == mdim());
       assert(eig.size() >= ndim());
+      // assert that matrix is hermitian to ensure real eigenvalues
+      assert(is_hermitian(1.0e-10));
+
       // TODO parallelize
       zquatev_(ndim(), data(), eig.data());
       synchronize();
