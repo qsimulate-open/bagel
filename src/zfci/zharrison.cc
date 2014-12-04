@@ -141,10 +141,15 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
     // Spin adapt detseeds
     oindex = offset;
     vector<bitset<nbit__>> done;
+    const int active_electrons = geom_->nele() - charge_ - 2*ncore_;
     for (auto& it : bits) {
       bitset<nbit__> alpha = it.second;
       bitset<nbit__> beta = it.first;
       bitset<nbit__> open_bit = (alpha^beta);
+
+      // This can happen if all possible determinants are checked without finding nstate acceptable ones.
+      if (alpha.count() + beta.count() != active_electrons)
+        throw logic_error("ZFCI::generate_guess generated a determinant with the wrong number of active electrons.");
 
       // make sure that we have enough unpaired alpha
       const int unpairalpha = (alpha ^ (alpha & beta)).count();
