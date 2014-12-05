@@ -143,6 +143,75 @@ pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int sp
 }
 
 
+pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt_zfci(const int spin, bitset<nbit__> alpha, bitset<nbit__> beta) const {
+
+  if (spin < 0)
+    swap(alpha, beta);
+
+  vector<tuple<int, int, int>> out;
+
+  // bit pattern for doubly occupied orbitals
+  bitset<nbit__> common = (alpha & beta);
+
+  bitset<nbit__> alpha_without_common = alpha ^ common;
+  bitset<nbit__> beta_without_common = beta ^ common;
+
+  // alpha pattern without highest spin orbitals
+  vector<int> salpha_array = bit_to_numbers(alpha_without_common);
+  vector<int> ualpha_array;
+  if (salpha_array.size() < abs(spin)) throw logic_error("Something is wrong? Determinants::spin_adapt_zfci");
+  for (int i = 0; i != abs(spin); ++i) {
+    ualpha_array.push_back(salpha_array.back());
+    salpha_array.pop_back();
+  }
+  bitset<nbit__> salpha = numbers_to_bit(salpha_array);
+  bitset<nbit__> ualpha = numbers_to_bit(ualpha_array);
+  bitset<nbit__> common_plus_alpha(common.to_ulong() + ualpha.to_ulong());
+
+  // number of unpaired alpha orbitals (minus Ms)
+  const int nalpha = salpha.count();
+
+  // a vector of number that specify open orbitals
+  vector<int> open = bit_to_numbers(salpha^beta_without_common);
+  assert((salpha^beta_without_common) == (salpha|beta_without_common));
+
+  // to enable antisymmetrization
+  double scale = 1.0;
+  if (open.size() != 0)
+    if (salpha[open[0]])
+      scale = -1.0;
+
+  // take a linear combination to make a vector singlet coupled.
+  // TODO for the time being, we just leave Ms highest orbitals and singlet-couple other orbitals
+  assert(nalpha*2 == open.size());
+  int icnt = 0;
+
+  // sign is always compensated by moving alpha to the left and beta to the right
+  // our convention is (aaaa)(bbbb)|0> due to the alpha-beta string algorithm
+  double sign = 1.0;
+
+  do {
+    bitset<nbit__> ialpha = common_plus_alpha;
+    bitset<nbit__> ibeta = common;
+    for (int i =0; i!=nalpha; ++i) ialpha.flip(open[i]);
+    for (int i=nalpha; i!=open.size(); ++i) ibeta.flip(open[i]);
+
+    if (spin >= 0) {
+      out.push_back(make_tuple(lexical<1>(ibeta), lexical<0>(ialpha), sign));
+      sign *= scale;
+    } else {
+      out.push_back(make_tuple(lexical<1>(ialpha), lexical<0>(ibeta), sign));
+      sign *= scale;
+    }
+    ++icnt;
+  } while (boost::next_combination(open.begin(), open.begin()+nalpha, open.end()));
+
+  // scale to make the vector normalized
+  const double factor = 1.0/sqrt(static_cast<double>(icnt));
+  return {out, factor};
+}
+
+
 void Determinants::link(shared_ptr<Determinants> odet, shared_ptr<CIStringSpace<FCIStringSet>> spacea,
                                                        shared_ptr<CIStringSpace<FCIStringSet>> spaceb) {
   shared_ptr<Determinants> plusdet;
