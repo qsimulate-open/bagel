@@ -372,7 +372,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
       broadcast();
     }
 
-    void print(const double thresh) const { print("Some Matrix"); }
+    void print(const double thresh) const { print("Matrix printout"); }
     virtual void print(const std::string tag = "", const int size = 10) const { btas::print(*this, tag, size); }
 
     // if we use this matrix within node, or in parallel
