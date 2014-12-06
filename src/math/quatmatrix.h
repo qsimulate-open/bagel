@@ -41,8 +41,6 @@ class QuatMatrix : public ZMatrix {
 
       std::shared_ptr<ZMatrix> u = get_submatrix(0, 0, n, m);
       std::shared_ptr<ZMatrix> v = get_submatrix(n, 0, n, m);
-      assert(u->is_hermitian(thresh));
-      assert(v->is_antisymmetric(thresh));
 
       u->ax_plus_y(-1.0, *get_submatrix(n, m, n, m)->get_conjg());
       v->ax_plus_y( 1.0, *get_submatrix(0, m, n, m)->get_conjg());
