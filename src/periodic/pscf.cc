@@ -93,6 +93,7 @@ void PSCF::compute() {
     for (int i = 0; i != nkblock; ++i) {
       const ZMatrix kblock = *((*ktildex_)(i)) % *((*kfock)(i)) * *((*ktildex_)(i));
       (*intermediate)[i] = make_shared<ZMatrix>(kblock);
+      (*intermediate)[i]->diagonalize(*eig_[i]);
       (*kcoeff)[i] = make_shared<ZMatrix>(*((*ktildex_)(i)) * *((*intermediate)(i)));
     }
     coeff = kcoeff->ift(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
