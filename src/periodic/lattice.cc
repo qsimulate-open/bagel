@@ -65,7 +65,7 @@ double Lattice::compute_nuclear_repulsion() const {
         const double c = (*iter1)->atom_charge();
         auto ia1 = distance(atoms.begin(), iter1);
         if (count == icell0 && ia0 == ia1) continue;
-        out += c0 * c / (*iter0)->distance(*iter1);
+        out += 0.5 * c0 * c / (*iter0)->distance(*iter1);
       }
     }
     ++ count;

@@ -169,7 +169,7 @@ void PDFDist_ints::compute_charged_coeff(const vector<shared_ptr<const Shell>>& 
   for (auto& b1 : bgshell) {
     int j0 = 0;
     for (auto& b0 : b0shell) {
-      tasks.emplace_back((array<shared_ptr<const Shell>, 2>{{b1, b0}}), (array<int, 2>{{j0, j1}}), coeffC_, data1_, ncell());
+      tasks.emplace_back((array<shared_ptr<const Shell>, 2>{{b1, b0}}), (array<int, 2>{{j0, j1}}), coeffC_, data1_);
       j0 += b0->nbasis();
     }
     j1 += b1->nbasis();
