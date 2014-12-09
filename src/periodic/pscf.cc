@@ -135,14 +135,14 @@ void PSCF::compute() {
     double charge = 0.0;
     shared_ptr<const PData> overlap = koverlap_->ift(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
     for (int i = 0; i != lattice_->num_lattice_vectors(); ++i) {
-      energy += 0.5 * ((*((*hcore_)(i)) + *((*fock)(i))) * *((*pdensity)(i))).trace() + lattice_->nuclear_repulsion();
+      energy += 0.5 * ((*((*hcore_)(i)) + *((*fock)(i))) * *((*pdensity)(i))).trace();
       assert(energy.imag() < 1e-8);
       for (int j = 0; j != blocksize; ++j)
         for (int k = 0; k != blocksize; ++k)
           charge += ((*overlap)(i)->element(j, k) * (*pdensity)(i)->element(j, k)).real();
     }
     cout << "SP = " << setprecision(1) << charge << "       #ele = " << lattice_->nele();
-    energy_ = energy.real();
+    energy_ = energy.real() + lattice_->nuclear_repulsion();
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << pscftime.tick();
     if (abs(energy.imag()) > 1e-12) {
