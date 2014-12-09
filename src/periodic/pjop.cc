@@ -41,7 +41,7 @@ shared_ptr<PData> PDFDist::pcompute_Jop_from_coeff(shared_ptr<const VectorB> coe
       shared_ptr<Matrix> tmp = data3->form_mat(coeff->slice(data3->astart(), data3->astart() + data3->asize()));
       *jmat += *tmp;
       // add NAI contribution
-      *jmat += 2.0 * *dfdist_[i]->nai_in_cell(j);
+//      *jmat += 2.0 * *dfdist_[i]->nai_in_cell(j);
     }
     (*out)[i] = make_shared<ZMatrix>(*jmat , complex<double>(1.0, 0.0));
   }

@@ -54,7 +54,7 @@ void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
     pdata_[block]->copy_real_block(1.0, offsetb1, offsetb0, dimb1, dimb0, k);
   }
 
-  if (!lattice->primitive_cell()->do_periodic_df()) {
+//  if (!lattice->primitive_cell()->do_periodic_df()) {
     /** (r0 sL'|\delta_L) */
     for (auto& gvec : lattice->lattice_vectors()) {
       auto mol = make_shared<const Geometry>(*(lattice->primitive_cell()), gvec);
@@ -64,7 +64,7 @@ void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
       n.copy_block(0, 0, dimb1, dimb0, nai.data());
 
       pdata_[block]->add_real_block(1.0, offsetb1, offsetb0, dimb1, dimb0, n);
-    }
+//    }
   }
 
 }
