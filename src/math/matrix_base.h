@@ -155,6 +155,21 @@ class Matrix_base : public btas::Tensor2<DataType> {
       return out;
     }
 
+    template<class T>
+    std::shared_ptr<T> swap_columns_impl(const int i, const int iblock, const int j, const int jblock) const {
+      assert(j > i);
+      assert(i + iblock - 1 < j);
+      assert(j + jblock <= mdim());
+      std::cout << " swap columns " << i << " through " << i + iblock - 1 << " with " << j << " through " << j + jblock - 1 << std::endl;
+      auto out = std::make_shared<T>(ndim(), mdim(), localized_);
+      out->copy_block(0,                   0, ndim(),                 i, this->get_submatrix_impl<T>(0,        0, ndim(),                 i));
+      out->copy_block(0,                   i, ndim(),            jblock, this->get_submatrix_impl<T>(0,        j, ndim(),            jblock));
+      out->copy_block(0,          i + jblock, ndim(),    j - (i+iblock), this->get_submatrix_impl<T>(0, i+iblock, ndim(),      j-(i+iblock)));
+      out->copy_block(0, j + jblock - iblock, ndim(),            iblock, this->get_submatrix_impl<T>(0,        i, ndim(),            iblock));
+      out->copy_block(0,          j + jblock, ndim(), mdim()-(j+jblock), this->get_submatrix_impl<T>(0, j+jblock, ndim(), mdim()-(j+jblock)));
+      return out;
+    }
+
   private:
     // serialization
     friend class boost::serialization::access;

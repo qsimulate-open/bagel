@@ -161,6 +161,9 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<const ZMatrix> matrix() const { return shared_from_this(); }
 #endif
     std::shared_ptr<const ZMatrix> form_density_rhf(const int n, const int off = 0, const std::complex<double> scale = 1.0) const;
+    std::shared_ptr<ZMatrix> swap_columns(const int i, const int iblock, const int j, const int jblock) const {
+      return this->swap_columns_impl<ZMatrix>(i, iblock, j, jblock);
+    }
 };
 
 
