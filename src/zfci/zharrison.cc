@@ -37,7 +37,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
-  assert(rr);
+  if (!rr) throw runtime_error("ZFCI currently requires a relativistic reference object");
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);

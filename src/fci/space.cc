@@ -58,15 +58,15 @@ HZSpace::HZSpace(const int norb, const int nelea, const int neleb, const bool co
   spaceb_ = make_shared<CIStringSpace<FCIStringSet>>(listb);
   spaceb_->build_linkage();
 
-  if (!mute) {
-    cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
-    cout << "  o forming links" << endl;
-  }
-
   // build determinants
   for (auto& a : lista)
     for (auto& b : listb)
       detmap_.emplace(make_pair(a->nele(), b->nele()), make_shared<Determinants>(a, b, compress, true));
+
+  if (!mute) {
+    cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
+    cout << "  o forming links" << endl;
+  }
 
   // link determinants
   link();
