@@ -25,7 +25,7 @@
 
 
 #include <src/smith/caspt2grad.h>
-#include <src/casscf/casbfgs.h>
+#include <src/casscf/cashybrid.h>
 #include <src/casscf/qvec.h>
 #include <src/smith/smith.h>
 #include <src/grad/gradeval.h>
@@ -39,7 +39,7 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   : Method(inp, geom, ref) {
 
   // compute CASSCF first
-  auto cas = make_shared<SuperCI>(inp, geom, ref);
+  auto cas = make_shared<CASHybrid>(inp, geom, ref);
   cas->compute();
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
