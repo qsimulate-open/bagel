@@ -72,10 +72,6 @@ class Determinants : public Determinants_base<FCIString>,
 
     std::pair<std::vector<std::tuple<int, int, int>>, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
 
-    // New version to allow ZFCI to return all possible eigenstates
-    // TODO merge with the original spin_adapt(...)?  Probably the non-relativistic version has the same issues
-    std::pair<std::vector<std::tuple<int, int, int>>, double> spin_adapt_zfci(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
-
     std::shared_ptr<const Determinants> addalpha() const { return addalpha_.lock();}
     std::shared_ptr<const Determinants> remalpha() const { return remalpha_.lock();}
     std::shared_ptr<const Determinants> addbeta() const { return addbeta_.lock();}

@@ -160,7 +160,7 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       if (find(done.begin(), done.end(), it) != done.end()) continue;
       done.push_back(it);
 
-      pair<vector<tuple<int, int, int>>, double> adapt = space_->finddet(nelea, neleb)->spin_adapt_zfci(nelea-neleb, alpha, beta);
+      pair<vector<tuple<int, int, int>>, double> adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
       const double fac = adapt.second;
       for (auto& iter : adapt.first) {
         out->find(nelea, neleb)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
