@@ -34,6 +34,7 @@
 
 #include <src/smith/prim_op.h>
 
+#include <src/wfn/reference.h>
 
 namespace bagel {
 
@@ -205,6 +206,7 @@ class ASD_base {
     void symmetrize_RDM4();
     void debug_RDM() const;
     void debug_energy() const;
+  //virtual std::shared_ptr<const Reference> conv_to_ref() const override;
 
 
   template<int a,  int i,  int b,  int j,  int c,  int k,  int d,  int l, // according to the sorted

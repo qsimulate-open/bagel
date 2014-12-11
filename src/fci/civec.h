@@ -663,13 +663,23 @@ class Civector {
       // spin: true -> alpha; false -> beta
 
       std::shared_ptr<const Determinants> source_det = this->det();
-
+      if(!source_det) std::cout << "ERROR: source_det is (nullptr)" << std::endl;
+                            
       const int source_lenb = source_det->lenb();
 
       std::shared_ptr<Civector<DataType>> out;
 
       if (spin) {
         std::shared_ptr<const Determinants> target_det = ( action ? source_det->addalpha() : source_det->remalpha() );
+        if(!target_det) {
+          std::cout << "APPLY: Alpha, action=" << action << std::endl; std::cout.flush();
+          std::cout << "APPLY: source_det info (norb,nelea,neleb,nspin,lena,lenb,size)=" 
+                                << source_det->norb() << " " << source_det->nelea() << " " <<  source_det->neleb() << " " 
+                                << source_det->nspin() << " " << source_det->lena() << " " << source_det->lenb() << " " 
+                                << source_det->size() << std::endl;
+          std::cout << "ERROR: target_det is (nullptr), returning nullptr.." << std::endl;
+          return nullptr;
+        }
         out = std::make_shared<Civector<DataType>>(target_det);
 
         const int target_lenb = target_det->lenb();
@@ -685,6 +695,15 @@ class Civector {
       }
       else {
         std::shared_ptr<const Determinants> target_det = ( action ? source_det->addbeta() : source_det->rembeta() );
+        if(!target_det) {
+          std::cout << "APPLY: Beta, action=" << action << std::endl; std::cout.flush();
+          std::cout << "APPLY: source_det info (norb,nelea,neleb,nspin,lena,lenb,size)=" 
+                                << source_det->norb() << " " << source_det->nelea() << " " <<  source_det->neleb() << " " 
+                                << source_det->nspin() << " " << source_det->lena() << " " << source_det->lenb() << " " 
+                                << source_det->size() << std::endl;
+          std::cout << "ERROR: target_det is (nullptr), returning nullptr.." << std::endl;
+          return nullptr;
+        }
 
         const int target_lena = target_det->lena();
 
@@ -700,6 +719,7 @@ class Civector {
         }
       }
 
+    //std::cout << "APPLY: return.." << std::endl; std::cout.flush();
       return out;
     }
 

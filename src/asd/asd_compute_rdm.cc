@@ -156,8 +156,9 @@ ASD_base::compute_rdm () {
   }
   
 
+//SKIP RDM34
+#if 0 
 //3RDM
-
   // diagonal subspaces
   for (auto& subspace : subspaces) {
     shared_ptr<RDM<3>> r3;
@@ -195,14 +196,16 @@ ASD_base::compute_rdm () {
     }
   }
 
- 
+#endif 
   symmetrize_RDM();
 
+#if 0
   symmetrize_RDM34();
 
   symmetrize_RDM4();
 
   debug_RDM(); 
+#endif
 
 }
 

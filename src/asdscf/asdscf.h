@@ -95,6 +95,8 @@ class ASDSCF : public Method, public std::enable_shared_from_this<ASDSCF> {
     //natural
     std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert();
     void update_rdms(const std::shared_ptr<Matrix>& coeff);
+    std::shared_ptr<Matrix> Qvec(const int n, const int m, std::shared_ptr<const Matrix> c, const size_t nclosed) const;
+    double check_symmetric(std::shared_ptr<Matrix>& mat) const;
 //END ADDED
 
 
@@ -143,7 +145,7 @@ class ASDSCF : public Method, public std::enable_shared_from_this<ASDSCF> {
     void print_natocc() const;
 };
 
-static const double occup_thresh = 1.0e-10;
+static const double occup_thresh_ = 1.0e-10;
 
 }
 

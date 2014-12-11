@@ -49,7 +49,7 @@ void ASDSuperCI::grad_va(const shared_ptr<Matrix> fact, shared_ptr<ASDRotFile> s
   if (!nvirt_ || !nact_) return;
   double* target = sigma->ptr_va();
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
-    const double fac = (occup_[i]>occup_thresh) ? 1.0/std::sqrt(occup_[i]) : 0.0;
+    const double fac = (occup_[i]>occup_thresh_) ? 1.0/std::sqrt(occup_[i]) : 0.0;
     daxpy_(nvirt_, fac, fact->element_ptr(nocc_, i), 1, target, 1);
   }
 }
@@ -60,7 +60,7 @@ void ASDSuperCI::grad_ca(const shared_ptr<Matrix> f, shared_ptr<Matrix> fact, sh
   if (!nclosed_ || !nact_) return;
   double* target = sigma->ptr_ca();
   for (int i = 0; i != nact_; ++i, target += nclosed_) {
-    const double fac = (2.0-occup_[i] > occup_thresh) ? 1.0/std::sqrt(2.0-occup_[i]) : 0.0;
+    const double fac = (2.0-occup_[i] > occup_thresh_) ? 1.0/std::sqrt(2.0-occup_[i]) : 0.0;
     daxpy_(nclosed_, 2.0*fac, f->element_ptr(0,nclosed_+i), 1, target, 1);
     daxpy_(nclosed_, -fac, fact->element_ptr(0,i), 1, target, 1);
   }

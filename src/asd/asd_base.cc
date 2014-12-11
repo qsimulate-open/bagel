@@ -32,6 +32,21 @@ using namespace bagel;
 
 ASD_base::ASD_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> dimer) : dimer_(dimer)
 {
+//TEST
+//auto matrix = make_shared<Matrix>(5,5);
+//for (int i=0; i<5 ; ++i)
+//  for (int j=0; j<5 ; ++j)
+//    matrix->element(i,j) = i*10.0 + j*1.0;
+//
+//for (int i=0; i<5 ; ++i)
+//  for (int j=0; j<5 ; ++j)
+//    cout << i << " " << j << " = " 
+//         << matrix->element(i,j) << ", " 
+//         << *matrix->element_ptr(i,j)
+//         << endl;
+
+//assert(false);
+//END TEST
   nstates_ = input->get<int>("nstates", 10);
   max_iter_ = input->get<int>("max_iter", 50);
   davidson_subspace_ = input->get<int>("davidson_subspace", 10);

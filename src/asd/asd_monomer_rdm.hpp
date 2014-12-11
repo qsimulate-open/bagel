@@ -93,6 +93,8 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
     if(r1) *onerdm_ += *r1;
     if(r2) *twordm_ += *r2;
 
+//SKIP RDM34
+#if 0
     //3&4RDM
     std::shared_ptr<RDM<3>> r3;
     std::shared_ptr<RDM<4>> r4A;
@@ -111,6 +113,7 @@ TODO/ This function is written in such way to facilitate extension to offdiagona
       auto mat = std::make_shared<Matrix>( matv );
       *fourrdmparts_.at("monomerB") += *mat;
     }
+#endif
   }
  
 /*

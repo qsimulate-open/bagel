@@ -71,7 +71,7 @@ void ASDSCF::common_init() {
   // get maxiter from the input
   max_iter_ = 50; //idata_->get<int>("maxiter", 50);
   // get maxiter from the input
-  max_micro_iter_ = 100; //idata_->get<int>("maxiter_micro", 100);
+  max_micro_iter_ = 50; //idata_->get<int>("maxiter_micro", 100);
   // get nstate from the input
   nstate_ = 1; //idata_->get<int>("nstate", 1);
   // get istate from the input (for geometry optimization)
@@ -107,6 +107,7 @@ void ASDSCF::common_init() {
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
   cout << "    * nact     : " << setw(6) << nact_ << endl;
+  cout << "    * nocc     : " << setw(6) << nocc_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
 
   const int idel = geom_->nbasis() - nbasis_;
@@ -184,38 +185,109 @@ shared_ptr<Matrix> ASDSCF::ao_rdm1(shared_ptr<const RDM<1>> rdm1, const bool ina
 }
 
 
+shared_ptr<Matrix> ASDSCF::Qvec(const int n, const int m, shared_ptr<const Matrix> coeff, const size_t nclosed) const {
+  //orig: asd_nevpt2_mat.cc
+  //use half_ (see form_natorb)
+  assert(n == coeff->mdim());
+
+  cout << "ASDSCF-Qvec: check 1" << endl;
+  // one index transformed integrals (active)
+//shared_ptr<const DFHalfDist> half = fci->jop()->mo2e_1ext();
+//const MatView cdata = acoeff_->slice(0,nact_);
+//shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(cdata); //cf. fci/mofile.cc
+
+  // J^{-1}(D|xy)
+  // TODO : DFDistT needs to be modified to handle cases where number of nodes is larger than half->nocc() * cdata.mdim()
+  shared_ptr<const DFFullDist> full;
+  if (half_->nocc() * coeff->mdim() > mpi__->size()) {
+    cout << "ASDSCF-Qvec: check 1a" << endl;
+    full = half_->apply_JJ()->compute_second_transform(coeff->slice(nclosed, nclosed+m));
+  } else {
+    cout << "ASDSCF-Qvec: check 1b" << endl;
+    full = half_->compute_second_transform(coeff->slice(nclosed, nclosed+m))->apply_JJ();
+  }
+
+  cout << "ASDSCF-Qvec: check 2" << endl;
+
+  // [D|tu] = (D|xy)Gamma_xy,tu
+  shared_ptr<const DFFullDist> prdm = full->apply_2rdm(*rdm2_);
+  cout << "ASDSCF-Qvec: check 3" << endl;
+
+  // (r,u) = (rt|D)[D|tu]
+  shared_ptr<const Matrix> tmp = half_->form_2index(prdm, 1.0);
+  cout << "ASDSCF-Qvec: check 4" << endl;
+
+  // MO transformation of the first index
+//*this = *coeff % *tmp;
+  auto out = make_shared<Matrix>(n,m);
+  cout << "ASDSCF-Qvec: check 5" << endl;
+  *out = *coeff % *tmp;
+  cout << "ASDSCF-Qvec: check 6" << endl;
+  return out;
+
+}
+
+
+double ASDSCF::check_symmetric(std::shared_ptr<Matrix>& mat) const {
+  int n = mat->ndim();
+  assert(n == mat->mdim());
+  auto tran = make_shared<Matrix>(n,n);
+  tran = mat->transpose();
+  auto subt = make_shared<Matrix>(n,n);
+  *subt = *mat - *tran;
+  return subt->rms();
+}
 
 void ASDSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact, shared_ptr<Matrix>& factp, shared_ptr<Matrix>& gaa,
                                 shared_ptr<ASDRotFile>& d, const bool superci) const {
 
-  cout << "ASDSCF: one_body_operators: not implemented" << endl;
-  assert(false);
-#if 0
   shared_ptr<Matrix> finact;
 
   // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
   // note: this should be after natorb transformation.
-  auto qxr = make_shared<Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
+//auto qxr = make_shared<Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
+  auto qxr = Qvec(coeff_->mdim(), nact_, coeff_, nclosed_); 
 
   {
     // Fock operators
     // make a matrix that contains rdm1_av
     auto rdm1mat = make_shared<Matrix>(nact_, nact_);
-    copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
+  //copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
+//ADDED
+    rdm1mat = rdm1_->rdm1_mat(/*nclose*/0);
+    auto core_fock = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, coeff_->slice(0,nclosed_), /*grad*/false, /*rhf*/true); // TODO: check coeff slice ?
+    auto hcore = ref_->hcore();
+    rdm1mat->print("1RDM (natural)", nact_);
+//END ADDED
     rdm1mat->sqrt();
     rdm1mat->scale(1.0/sqrt(2.0));
     auto acoeff = coeff_->slice(nclosed_, nclosed_+nact_);
 
-    finact = make_shared<Matrix>(*coeff_ % *fci_->jop()->core_fock() * *coeff_);
-    auto fact_ao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
+  //finact = make_shared<Matrix>(*coeff_ % *fci_->jop()->core_fock() * *coeff_);
+    finact = make_shared<Matrix>(*coeff_ % *core_fock * *coeff_);
+  //auto fact_ao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
+    auto fact_ao = make_shared<Fock<1>>(geom_, hcore->clone(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
     f = make_shared<Matrix>(*finact + *coeff_% *fact_ao * *coeff_);
+  cout << "F symmetric? " << check_symmetric(f) << endl;
+  core_fock->print("Core Fock matrix", f->ndim());
+  finact->print("F_inact matrix", f->ndim());
+  f->print("F matrix", f->ndim());
+  hcore->print("hcore matrix", hcore->ndim());
   }
+
   {
     // active-x Fock operator Dts finact_sx + Qtx
     fact = qxr->copy();// nbasis_ runs first
     for (int i = 0; i != nact_; ++i)
       daxpy_(nbasis_, occup_(i), finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
   }
+  for (int i = 0; i != nbasis_; ++i) {
+    cout << " Fact(" << i << "th row) = ";
+    for (int j = 0; j != nact_; ++j) {
+      cout << fact->element(i,j) << " ";
+    }
+    cout << endl;
+  }    
 
   {
     // active Fock' operator (Fts+Fst) / (ns+nt)
@@ -223,7 +295,7 @@ void ASDSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
     for (int i = 0; i != nact_; ++i)
       for (int j = 0; j != nact_; ++j) {
 #if 1
-        if (occup_(i)+occup_(j) > occup_thresh)
+        if (occup_(i)+occup_(j) > occup_thresh_)
           factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_(i)+occup_(j));
         else
           factp->element(j,i) = 0.0;
@@ -232,10 +304,12 @@ void ASDSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 #endif
       }
   }
+  cout << "Factp symmetric? " << check_symmetric(factp) << endl;
 
   // G matrix (active-active) Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
   gaa = factp->clone();
-  dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
+//dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
+  dgemv_("N", nact_*nact_, nact_*nact_, 1.0, rdm2_->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
   double p = 0.0;
   for (int i = 0; i != nact_; ++i) p += occup_(i) * factp->element(i,i);
   for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_(i) * p;
@@ -246,14 +320,15 @@ void ASDSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   double* target = denom->ptr_va();
   for (int i = 0; i != nact_; ++i) {
-    if (occup_(i) > occup_thresh) {
+    if (occup_(i) > occup_thresh_) {
       for (int j = 0; j != nvirt_; ++j, ++target)
         *target = (gaa->element(i,i) + occup_(i)*f->element(j+nocc_, j+nocc_)) / (superci ? occup_(i) : 1.0);
     } else {
       for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = 1.0/occup_thresh;
+        *target = 1.0/occup_thresh_;
     }
   }
+  cout << "Gaa symmetric? " << check_symmetric(gaa) << endl;
 
   target = denom->ptr_vc();
   for (int i = 0; i != nclosed_; ++i)
@@ -262,16 +337,15 @@ void ASDSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   target = denom->ptr_ca();
   for (int i = 0; i != nact_; ++i) {
-    if (2.0-occup_(i) > occup_thresh) {
+    if (2.0-occup_(i) > occup_thresh_) {
       for (int j = 0; j != nclosed_; ++j, ++target)
         *target = ((f->element(nclosed_+i,nclosed_+i)*2.0-fact->element(i+nclosed_,i)) - f->element(j, j)*(2.0-occup_(i))) / (superci ? 2.0-occup_(i) : 1.0);
     } else {
       for (int j = 0; j != nclosed_; ++j, ++target)
-        *target = 1.0/occup_thresh;
+        *target = 1.0/occup_thresh_;
     }
   }
   d = denom;
-#endif
 }
 
 
@@ -383,16 +457,25 @@ pair<shared_ptr<Matrix>, VectorB> ASDSCF::natorb_convert() {
 //assert(rdm1_av_ != nullptr);
 //TODO: not average, since singel RDM is passed from ASD
   pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_->generate_natural_orbitals();
+  for (int i = 0; i != nact_; ++i) {
+    cout << "nat orb occ (" << i << ") = " << (natorb.second)(i) << endl;
+  }
+
   update_rdms(natorb.first);
 
 //TODO: disabled since fci_ is removed, should be restored
 //jop_->update_1ext_ints(natorb.first); //fci/mofile.cc
   cout << "ASDSCF: update half_ (mo2e_1ext).." << endl;
   const MatView cdata = coeff_->slice(nclosed_, nclosed_+nact_);
-  shared_ptr<DFHalfDist> half_ = geom_->df()->compute_half_transform(cdata);
+  half_ = geom_->df()->compute_half_transform(cdata);
   cout << "ASDSCF: update_1ext_ints.." << endl;
   half_->rotate_occ(natorb.first); // fci/mofile
   cout << "ASDSCF: update_1ext_ints done.." << endl;
+
+//shared_ptr<const DFFullDist> full;
+//full = half_->compute_second_transform(coeff_->slice(nclosed_, nclosed_+nact_))->apply_JJ();
+//cout << "ASDSCF: test done.." << endl;
+//assert(false);
 
   return natorb;
 }
@@ -406,8 +489,15 @@ void ASDSCF::update_rdms(const shared_ptr<Matrix>& coeff) {
 //for (auto iter = rdm2_.begin(); iter != rdm2_.end(); ++iter)
 //  (*iter)->transform(coeff);
 
+  auto rdm1mat = make_shared<Matrix>(nact_, nact_);
+  rdm1mat = rdm1_->rdm1_mat(/*nclose*/0);
+  cout << "symmetric (before)?" << check_symmetric(rdm1mat) << endl;
+
   rdm1_->transform(coeff);
   rdm2_->transform(coeff);
+
+  rdm1mat = rdm1_->rdm1_mat(/*nclose*/0);
+  cout << "symmetric (after)?" << check_symmetric(rdm1mat) << endl;
 
 //TODO DISABLED TEMPORARILY since Nstate=1
   // Only when #state > 1, this is needed.

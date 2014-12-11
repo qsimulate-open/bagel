@@ -32,7 +32,7 @@ namespace bagel {
 
 class ASDSuperCIMicro {
   protected:
-    std::shared_ptr<const ASDSCF> casscf_;
+    std::shared_ptr<const ASDSCF> casscf_; //ASDSCF
 
     // input
     std::shared_ptr<const ASDRotFile> grad_;

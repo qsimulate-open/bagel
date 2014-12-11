@@ -73,10 +73,11 @@ void ASDSuperCI::compute() {
 //
 
     // here make a natural orbitals and update the coefficients
+    cout << "original 1RDM"  << endl;
+    rdm1_->print(1.0e-6);
     shared_ptr<Matrix> natorb = form_natural_orbs();
-
-    cout << "test end" << endl; 
-    assert(false);
+    cout << "natural 1RDM"  << endl;
+    rdm1_->print(1.0e-6);
 
     auto grad = make_shared<ASDRotFile>(nclosed_, nact_, nvirt_);
 
@@ -115,6 +116,7 @@ void ASDSuperCI::compute() {
       cc = micro.cc();
       microiter_time.tick_print("Microiterations");
     }
+    cout << "SuperCI: micro finished.. " << endl;
 
     // unitary matrix
     shared_ptr<Matrix> rot = cc->unpack<Matrix>()->exp();
@@ -147,6 +149,8 @@ void ASDSuperCI::compute() {
       cout << "    * Max iteration reached in the Super CI macro interations. *     " << endl << endl;
     }
   //mute_stdcout();
+    cout << "micro it end / test end" << endl; 
+    assert(false);
 
   }
   // ============================

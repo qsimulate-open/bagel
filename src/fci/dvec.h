@@ -226,8 +226,16 @@ class Dvector {
 
     std::shared_ptr<Dvector<DataType>> apply(const int orbital, const bool action, const int spin) const {
       std::vector<CiPtr> out;
-      for (auto& i : dvec_) out.push_back(i->apply(orbital, action, spin));
-      return std::make_shared<Dvector<DataType>>(out);
+      for (auto& i : dvec_) {
+        out.push_back(i->apply(orbital, action, spin));
+      }
+
+      if(out[0] == nullptr) {
+        std::cout << "APPLY(dvec), returning nullptr" << std::endl;
+        return nullptr;
+      } else {
+        return std::make_shared<Dvector<DataType>>(out);
+      }
     }
 
     void orthog(std::shared_ptr<const Dvector<DataType>> o) {

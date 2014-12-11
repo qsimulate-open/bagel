@@ -38,6 +38,17 @@ void ASDSuperCIMicro::compute() {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
   const int nvirt = casscf_->nvirt();
+   
+  cout << "ASD SuperCI Micro : compute.." << endl;
+  cout << "nclosed:" << nclosed << endl;
+  cout << "nact   :" << nact << endl;
+  cout << "nvirt  :" << nvirt << endl;
+  cout << "nbasis :" << casscf_->nbasis() << endl;
+  cout << "max_micro_iter_ : " << casscf_->max_micro_iter() << endl;
+  for (int i = 0; i != nact; ++i) {
+    cout << "active orb " << i << " : : " << casscf_->occup(i) << endl;
+  }
+
   // a pair of 1*1 matrix and ASDRotFile
   DavidsonDiag<SCIData> davidson(1, casscf_->max_micro_iter());
 
@@ -191,7 +202,7 @@ void ASDSuperCIMicro::sigma_ti_ti_(shared_ptr<const ASDRotFile> cc, shared_ptr<A
   Matrix tmp(nact, nact);
   for (int i = 0; i != nact; ++i) {
     for (int j = 0; j != nact; ++j) {
-      const double fac = ((2.0-casscf_->occup(i))*(2.0-casscf_->occup(j)) > occup_thresh) ? 1.0/std::sqrt((2.0-casscf_->occup(i))*(2.0-casscf_->occup(j))) : 0.0;
+      const double fac = ((2.0-casscf_->occup(i))*(2.0-casscf_->occup(j)) > occup_thresh_) ? 1.0/std::sqrt((2.0-casscf_->occup(i))*(2.0-casscf_->occup(j))) : 0.0;
       tmp(j,i) = -((2.0 - casscf_->occup(j) - casscf_->occup(i)) * fockactp_->element(j,i) - gaa_->element(j,i)) * fac;
     }
   }

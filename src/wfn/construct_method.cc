@@ -49,6 +49,8 @@
 #include <src/london/dirac_london.h>
 #include <src/wfn/construct_method.h>
 
+#include <src/asdscf/superci.h>
+
 using namespace std;
 using namespace bagel;
 
@@ -96,6 +98,14 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       } else
         throw runtime_error("unknown FCI algorithm specified. " + algorithm);
     }
+//ADDED
+    else if (title == "asdscf") {
+      string algorithm = itree->get<string>("algorithm", "");
+      cout << "ASDSCF called with " << algorithm << endl;
+    //if (algorithm == "superci" || algorithm == "")
+    //  out = make_shared<ASDSuperCI>(itree, geom, ref);
+    }
+//END ADDED
     else if (title == "casscf") {
       string algorithm = itree->get<string>("algorithm", "");
       if (algorithm == "superci" || algorithm == "")
