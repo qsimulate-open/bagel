@@ -67,7 +67,6 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   shared_ptr<const PTree> vectors = geominfo->get_child_optional("primitive_vectors");
   if (vectors) {
     int dim = 0;
-    do_periodic_df_ = true;
     for (auto& ivec : *vectors) {
       string id = "a" + to_string(dim+1);
       array<double, 3> vec = ivec->get_array<double, 3>(id);
@@ -116,6 +115,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   /* Set up aux_atoms_ */
   auxfile_ = to_lower(geominfo->get<string>("df_basis", ""));  // default value for non-DF HF.
   if (!auxfile_.empty()) {
+    if (!primitive_vectors_.empty()) do_periodic_df_ = true;
     // read the default aux basis file
     shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
