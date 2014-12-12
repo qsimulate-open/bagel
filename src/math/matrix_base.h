@@ -157,16 +157,35 @@ class Matrix_base : public btas::Tensor2<DataType> {
 
     template<class T>
     std::shared_ptr<T> swap_columns_impl(const int i, const int iblock, const int j, const int jblock) const {
-      assert(j > i);
-      assert(i + iblock - 1 < j);
-      assert(j + jblock <= mdim());
-      std::cout << " swap columns " << i << " through " << i + iblock - 1 << " with " << j << " through " << j + jblock - 1 << std::endl;
+      assert(jblock >= 0 && iblock >= 0);
+      assert(i >= 0 && j + jblock <= mdim());
+      assert(i + iblock <= j);
+      if (iblock && jblock)
+        std::cout << " swap columns " << i << " through " << i + iblock - 1 << " with " << j << " through " << j + jblock - 1 << std::endl;
+      else if (iblock && !jblock)
+        std::cout << " moving columns " << i << " through " << i + iblock - 1 << " to position " << j << std::endl;
+      else if (!iblock && jblock)
+        std::cout << " moving columns " << j << " through " << j + jblock - 1 << " to position " << i << std::endl;
+      else
+        std::cout << " columns not being rearranged " << std::endl;
+
+      auto low0 = {0, 0};
+      auto low1 = {0, j};
+      auto low2 = {0, i+iblock};
+      auto low3 = {0, i};
+      auto low4 = {0, j+jblock};
+      auto up0 = {ndim(), i};
+      auto up1 = {ndim(), j+jblock};
+      auto up2 = {ndim(), j};
+      auto up3 = {ndim(), i+iblock};
+      auto up4 = {ndim(), mdim()};
       auto out = std::make_shared<T>(ndim(), mdim(), localized_);
-      out->copy_block(0,                   0, ndim(),                 i, this->get_submatrix_impl<T>(0,        0, ndim(),                 i));
-      out->copy_block(0,                   i, ndim(),            jblock, this->get_submatrix_impl<T>(0,        j, ndim(),            jblock));
-      out->copy_block(0,          i + jblock, ndim(),    j - (i+iblock), this->get_submatrix_impl<T>(0, i+iblock, ndim(),      j-(i+iblock)));
-      out->copy_block(0, j + jblock - iblock, ndim(),            iblock, this->get_submatrix_impl<T>(0,        i, ndim(),            iblock));
-      out->copy_block(0,          j + jblock, ndim(), mdim()-(j+jblock), this->get_submatrix_impl<T>(0, j+jblock, ndim(), mdim()-(j+jblock)));
+
+      out->copy_block(0,                   0, ndim(),                 i, btas::make_rwview(this->range().slice(low0, up0), this->storage()));
+      out->copy_block(0,                   i, ndim(),            jblock, btas::make_rwview(this->range().slice(low1, up1), this->storage()));
+      out->copy_block(0,          i + jblock, ndim(),    j - (i+iblock), btas::make_rwview(this->range().slice(low2, up2), this->storage()));
+      out->copy_block(0, j + jblock - iblock, ndim(),            iblock, btas::make_rwview(this->range().slice(low3, up3), this->storage()));
+      out->copy_block(0,          j + jblock, ndim(), mdim()-(j+jblock), btas::make_rwview(this->range().slice(low4, up4), this->storage()));
       return out;
     }
 
