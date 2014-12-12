@@ -38,6 +38,8 @@ class PFock : public PData {
     std::shared_ptr<const PData> previous_;
     std::shared_ptr<const PData> pdensity_;
 
+    double correction_;
+
   private:
     // serialization
     friend class boost::serialization::access;
@@ -53,6 +55,7 @@ class PFock : public PData {
           const std::shared_ptr<const PData> pdensity);
     ~PFock() { }
 
+    double correction() const { return correction_; }
     void form_pfock();  /* add 2-electron part */
 };
 

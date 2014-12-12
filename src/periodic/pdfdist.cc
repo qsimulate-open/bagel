@@ -111,6 +111,8 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
   data2_ = make_shared<Matrix>(naux_, naux_, serial_);    data2_->zero();
   eta_   = make_shared<Matrix>(naux_, naux_, serial_);    eta_->zero();
 
+  correction_   = make_shared<Matrix>(naux_, naux_, serial_);    correction_->zero();
+
   vector<shared_ptr<Matrix>> data2_at(ncell());
   for (auto& idat : data2_at) idat = make_shared<Matrix>(naux_, naux_, serial_);
 
@@ -146,8 +148,9 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
   *projectorC -= *projector_;
 
   for (int i = 0; i != ncell(); ++i) {
-    *data2_ += *projectorC * *data2_at[i] * *projectorC;
-    *eta_   += *projectorC * *data2_at[i];
+    *data2_ += *projectorC % *data2_at[i] * *projectorC;
+    *eta_ += *projectorC * *data2_at[i];
+    *correction_   += *data2_at[i];
   }
 
   time.tick_print("2-index integrals");

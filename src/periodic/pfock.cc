@@ -50,7 +50,10 @@ void PFock::form_pfock() {
   Timer time;
   shared_ptr<const PDFDist> df = lattice_->df();
 
-  shared_ptr<PData> jop = df->pcompute_Jop(pdensity_);
+  shared_ptr<const VectorB> coeff = df->pcompute_coeff(pdensity_);
+  shared_ptr<PData> jop = df->pcompute_Jop_from_coeff(coeff);
+  correction_ = df->pcompute_correction_from_coeff(coeff);
+
   for (int i = 0; i != nblock_; ++i)
     *(pdata_[i]) += *((*jop)(i));
 

@@ -53,6 +53,25 @@ shared_ptr<PData> PDFDist::pcompute_Jop_from_coeff(shared_ptr<const VectorB> coe
 }
 
 
+double PDFDist::pcompute_correction_from_coeff(std::shared_ptr<const VectorB> coeff) const {
+
+  // get correction term
+  double out = 0.0;
+  for (int i = 0; i != naux_; ++i)
+    for (int j = 0; j != naux_; ++j)
+      out += -0.5 * *(coeff->data()+i) * *(correction_->data()+j+i*naux_) * *(coeff->data()+j);
+
+  return out;
+}
+
+
+double PDFDist::pcompute_correction(const shared_ptr<const PData> density) const {
+  shared_ptr<const VectorB> coeff = pcompute_coeff(density);
+
+  return pcompute_correction_from_coeff(coeff);
+}
+
+
 shared_ptr<VectorB> PDFDist::pcompute_coeff(const shared_ptr<const PData> density) const {
 
   if (!data2_) throw logic_error("PDFDist::pcompute_coeff was called without 2-index integrals");
@@ -69,15 +88,21 @@ shared_ptr<VectorB> PDFDist::pcompute_coeff(const shared_ptr<const PData> densit
 
     // contract 3-index with density
     shared_ptr<DFBlock> data3 = dfdist_[i]->block(0);
+//    double rms = 0.0;
+//    for (int i = 0; i != naux_ *  nbasis_ * nbasis_; ++i) rms += abs(*(data3->data()+i));
+//    cout << setprecision(9) << rms << endl;
     auto tmp2 = make_shared<VectorB>(naux_);
     contract(1.0, group(*data3, 1, 3), {0, 1}, group(*(density->pdata(i)->get_real_part()), 0, 2), {1}, 0.0, *tmp2, {0});
     *coeff2 += *tmp2;
   }
+  //cout << "+++++++++++++    " << setprecision(9) << coeff1->rms() << "         " << coeff2->rms()  << endl;
 
   // contract coeff1 with 2-index
   auto tmp = make_shared<VectorB>(naux_);
   contract(1.0, *eta_, {0, 1}, *coeff1, {1}, 0.0, *tmp, {0});
   *coeff2 -= *tmp;
+//  cout << setprecision(9) << tmp->rms() << endl; //DEBUG
+//  cout << setprecision(9) << eta_->rms() << "            " << coeff1->rms() << endl; //DEBUG
 
   // get chargeless coeff
   *coeff2 = *data2_ * *coeff2;

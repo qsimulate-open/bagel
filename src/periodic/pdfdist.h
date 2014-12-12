@@ -48,6 +48,7 @@ class PDFDist {
     /// 2-index integrals (i|j_L)^{-1} (sum over L)
     std::shared_ptr<Matrix> data2_;
     std::shared_ptr<Matrix> eta_;
+    std::shared_ptr<Matrix> correction_;
     void pcompute_2index(const std::vector<std::shared_ptr<const Shell>>& ashell, const double throverlap);
 
     /// normalised 1-index auxiliary charge <i|.>
@@ -80,6 +81,10 @@ class PDFDist {
     std::shared_ptr<VectorB> pcompute_coeff(const std::shared_ptr<const PData> density) const;
     std::shared_ptr<PData>   pcompute_Jop_from_coeff(std::shared_ptr<const VectorB> coeff) const;
     std::shared_ptr<PData>   pcompute_Jop(const std::shared_ptr<const PData> density) const;
+
+    /// compute correction term (\tilde{rho}|\tilde{\rho}_L) sum over L
+    double pcompute_correction_from_coeff(std::shared_ptr<const VectorB> coeff) const;
+    double pcompute_correction(std::shared_ptr<const PData> density) const;
 };
 
 }
