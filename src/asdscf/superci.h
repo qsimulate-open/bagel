@@ -43,8 +43,7 @@ class ASDSuperCI : public ASDSCF {
 
     void common_init() {
       std::cout << "    * Using the Super CI algorithm as noted in Roos (1980) IJQC" << std::endl;
-//TODO
-      diis_start_ = 5; //idata_->get<int>("diis_start", 5);
+      diis_start_ = idata_->get<int>("diis_start", 5);
       std::cout << "    * DIIS will be used after " << diis_start_ << " macro iteration" << std::endl << std::endl;
     }
 
@@ -57,11 +56,16 @@ class ASDSuperCI : public ASDSCF {
     std::shared_ptr<Matrix> tailor_rotation(const std::shared_ptr<Matrix> seed);
 
   public:
-  //ASDSuperCI(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
-    ASDSuperCI(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, 
-               std::tuple<std::shared_ptr<RDM<1>>,
-                          std::shared_ptr<RDM<2>>> rdms )
-      : ASDSCF(idat, geom, ref, rdms) { common_init(); }
+    ASDSuperCI(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr) 
+      : ASDSCF(idat, geom, ref) { 
+      std::cout << "ASDSuperCI constructor" << std::endl; 
+      common_init();
+    }
+
+  //ASDSuperCI(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, 
+  //           std::tuple<std::shared_ptr<RDM<1>>,
+  //                      std::shared_ptr<RDM<2>>> rdms )
+  //  : ASDSCF(idat, geom, ref, rdms) { common_init(); }
 
     void compute() override;
 

@@ -36,6 +36,8 @@
 #include <src/asdscf/asdrotfile.h>
 
 #include <src/df/dfblock.h>
+#include <src/dimer/dimer.h>
+
 
 namespace bagel {
 
@@ -43,8 +45,10 @@ class ASDSCF : public Method, public std::enable_shared_from_this<ASDSCF> {
 
   protected:
 //ADDED
-    std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<Dimer> dimer_;
+    std::shared_ptr<PTree> asdinput_;
+//  std::shared_ptr<const Geometry> geom_;
+//  std::shared_ptr<const Reference> ref_;
     std::tuple<std::shared_ptr<RDM<1>>,
                std::shared_ptr<RDM<2>>> rdms_; //untransformed RDM
     std::shared_ptr<RDM<1>> rdm1_; //store transformed rdm (natural orb)
@@ -101,10 +105,11 @@ class ASDSCF : public Method, public std::enable_shared_from_this<ASDSCF> {
 
 
   public:
-  //ASDSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
-    ASDSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref,
-               std::tuple<std::shared_ptr<RDM<1>>,
-                          std::shared_ptr<RDM<2>>> rdms );
+    ASDSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
+
+  //ASDSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref,
+  //           std::tuple<std::shared_ptr<RDM<1>>,
+  //                      std::shared_ptr<RDM<2>>> rdms );
     virtual ~ASDSCF();
 
     virtual void compute() override = 0;

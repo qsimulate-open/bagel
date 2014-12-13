@@ -102,8 +102,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else if (title == "asdscf") {
       string algorithm = itree->get<string>("algorithm", "");
       cout << "ASDSCF called with " << algorithm << endl;
-    //if (algorithm == "superci" || algorithm == "")
-    //  out = make_shared<ASDSuperCI>(itree, geom, ref);
+      if (algorithm == "superci" || algorithm == "")
+        out = make_shared<ASDSuperCI>(itree, geom, ref);
     }
 //END ADDED
     else if (title == "casscf") {

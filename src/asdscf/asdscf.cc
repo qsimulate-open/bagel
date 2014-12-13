@@ -28,12 +28,74 @@
 #include <src/asdscf/asdscf.h>
 #include <src/casscf/qvec.h>
 
+#include <src/wfn/construct_method.h>
+
 using namespace std;
 using namespace bagel;
 
 
-//ASDSCF::ASDSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
-//: Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
+ASDSCF::ASDSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re) 
+  : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
+  cout << "ASDSCF object constructed" << endl;
+  if (!ref_) { //ref_ from method class
+    cout << "ASDSCF ctor: no reference given, create reference.." << endl;
+
+    shared_ptr<const Reference> mref;
+
+    // Monomer HF
+    auto mhfdat = idat->get_child_optional("hf") ? idat->get_child_optional("hf") : make_shared<PTree>();
+    shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", mhfdat, geom_, ref_));
+    rhf->compute();
+    mref = rhf->conv_to_ref();
+    // Dimerize from monomer
+    auto dmrdat = idat->get_child_optional("dimerize") ? idat->get_child_optional("dimerize") : make_shared<PTree>();
+    const string form = dmrdat->get<string>("form", "displace");
+    if (form == "d" || form == "disp" || form == "displace") {
+      if (static_cast<bool>(mref))
+        dimer_ = make_shared<Dimer>(dmrdat, mref);
+      else
+        throw runtime_error("dimerize needs a reference calculation (for now)");
+    }
+    //TODO: form=="refs"
+    // Dimer HF
+    dimer_->scf(dmrdat);
+    //Update Reference & Geometry objects of adapt dimer structure
+    geom_ = dimer_->sgeom();
+    ref_ = dimer_->sref();
+
+    //ASD input
+    asdinput_ = idat->get_child_optional("asd") ? idat->get_child_optional("asd") : make_shared<PTree>();
+
+/*
+        }
+        else if (form == "r" || form == "refs") {
+          vector<shared_ptr<const Reference>> dimer_refs;
+          auto units = itree->get_vector<string>("refs", 2);
+          for (auto& ikey : units) {
+            auto tmp = saved.find(ikey);
+            if (tmp == saved.end()) throw runtime_error(string("No reference found with name: ") + ikey);
+            else dimer_refs.push_back(static_pointer_cast<const Reference>(tmp->second));
+          }
+
+          dimer = make_shared<Dimer>(itree, dimer_refs.at(0), dimer_refs.at(1));
+        }
+
+        dimer->scf(itree);
+
+
+    // SCF
+    auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
+    shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", hfdata, sgeom_, sref_));
+    rhf->compute();
+    sref_ = rhf->conv_to_ref();
+    dimertime.tick_print("Dimer SCF");
+*/
+
+  }
+  common_init();
+}
+
+/*
 ASDSCF::ASDSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> ref, 
                std::tuple<std::shared_ptr<RDM<1>>,
                           std::shared_ptr<RDM<2>>> rdms )
@@ -53,15 +115,15 @@ ASDSCF::ASDSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometr
   common_init();
 
 }
-
+*/
 
 void ASDSCF::common_init() {
   // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("ASDSCF: C1 only at the moment.");
+  if (dimer_->sgeom()->nirrep() > 1) throw runtime_error("ASDSCF: C1 only at the moment.");
   print_header();
 
   // first set coefficient
-  coeff_ = ref_->coeff();
+  coeff_ = dimer_->sref()->coeff();
 #if 0
   // make sure that coefficient diagonalizes overlap // TODO I think this is very dangerous
   coeff_orthog();
@@ -69,33 +131,34 @@ void ASDSCF::common_init() {
 
 //ADDED TODO: get input
   // get maxiter from the input
-  max_iter_ = 50; //idata_->get<int>("maxiter", 50);
+  max_iter_ = idata_->get<int>("maxiter", 50);
   // get maxiter from the input
-  max_micro_iter_ = 50; //idata_->get<int>("maxiter_micro", 100);
+  max_micro_iter_ = idata_->get<int>("maxiter_micro", 100);
   // get nstate from the input
-  nstate_ = 1; //idata_->get<int>("nstate", 1);
+  nstate_ = idata_->get<int>("nstate", 1);
   // get istate from the input (for geometry optimization)
-  istate_ = 0; // idata_->get<int>("istate", 0);
+  istate_ = idata_->get<int>("istate", 0);
   // get thresh (for macro iteration) from the input
-  thresh_ = 1.0e-8; //idata_->get<double>("thresh", 1.0e-8);
+  thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
-  thresh_micro_ = thresh_; //idata_->get<double>("thresh_micro", thresh_);
+  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
   // option for printing natural orbitals
-  natocc_ = false; //idata_->get<bool>("natocc",false);
+  natocc_ = idata_->get<bool>("natocc",false);
 
   // nocc from the input. If not present, full valence active space is generated.
 //nact_ = idata_->get<int>("nact", 0);
 //nact_ = idata_->get<int>("nact_cas", nact_);
-  nact_ = ref_->nact();
+  nact_ = dimer_->sref()->nact();
 
   // nclosed from the input. If not present, full core space is generated.
 //nclosed_ = idata_->get<int>("nclosed", -1);
-  nclosed_ = ref_->nclosed();
+  nclosed_ = dimer_->sref()->nclosed();
 
   if (nclosed_ < -1) {
     throw runtime_error("It appears that nclosed < 0. Check nocc value.");
   } else if (nclosed_ == -1) {
     cout << "    * full core space generated for nclosed." << endl;
+    //TODO below is from monomer geom_ obejct
     nclosed_ = geom_->num_count_ncore_only() / 2;
   }
   nocc_ = nclosed_ + nact_;
@@ -110,7 +173,7 @@ void ASDSCF::common_init() {
   cout << "    * nocc     : " << setw(6) << nocc_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
 
-  const int idel = geom_->nbasis() - nbasis_;
+  const int idel = dimer_->sgeom()->nbasis() - nbasis_;
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 

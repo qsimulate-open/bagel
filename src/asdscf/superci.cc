@@ -36,6 +36,8 @@
 #include <src/math/bfgs.h>
 #include <src/math/hpw_diis.h>
 
+#include <src/asd/construct_asd.h>
+
 using namespace std;
 using namespace bagel;
 
@@ -48,6 +50,7 @@ void ASDSuperCI::compute() {
   // macro iteration from here
   // ============================
   double gradient = 1.0e100;
+  auto asd = construct_ASD(asdinput_, dimer_);
 //mute_stdcout();
   Timer timer;
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -70,6 +73,28 @@ void ASDSuperCI::compute() {
     // get energy
     energy_ = fci_->energy();
 */
+    //Perform ASD
+    if (iter) {
+      //update coeff_ & integrals..
+      cout << "SuperCI: update coeff" << endl;
+      coeff_->print();
+      shared_ptr<Reference> temp;
+      temp = make_shared<Reference>(*(dimer_->sref()));
+      temp->set_coeff(coeff_);
+      dimer_->sref() = temp;
+    //temp = dimer_->sref();
+    //dimer_->sref()->set_coeff(coeff_);
+      //build CI-space
+      asd = construct_ASD(asdinput_, dimer_);
+    }
+    asd->compute();
+    //RDM
+    rdm1_ = make_shared<RDM<1>>(nact_);
+    rdm2_ = make_shared<RDM<2>>(nact_);
+    rdm1_ = asd->rdm1();
+    rdm2_ = asd->rdm2();
+    //get energy
+    energy_ = asd->energy();
 //
 
     // here make a natural orbitals and update the coefficients
@@ -122,6 +147,7 @@ void ASDSuperCI::compute() {
     shared_ptr<Matrix> rot = cc->unpack<Matrix>()->exp();
     // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
+    cout << "SuperCI: rotation matrix computed.. " << endl;
 
     if (diis == nullptr) {
       coeff_ = make_shared<const Coeff>(*coeff_ * *rot);
@@ -134,12 +160,13 @@ void ASDSuperCI::compute() {
       shared_ptr<const Matrix> mcc = diis->extrapolate(tmp2);
       coeff_ = make_shared<const Coeff>(*mcc);
     }
+    cout << "SuperCI: DIIS performed.. " << endl;
 
     // synchronization
     mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
 
     // print out...
-    resume_stdcout();
+  //resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
     if (iter == max_iter_-1) {
@@ -150,12 +177,13 @@ void ASDSuperCI::compute() {
     }
   //mute_stdcout();
     cout << "micro it end / test end" << endl; 
-    assert(false);
 
   }
   // ============================
   // macro iteration to here
   // ============================
+  cout << "macro it end.." << endl;
+  assert(false);
   resume_stdcout();
 
   // block diagonalize coeff_ in nclosed and nvirt
