@@ -28,7 +28,7 @@
 #ifndef __BAGEL_DIMER_JOP_H
 #define __BAGEL_DIMER_JOP_H
 
-#include <src/fci/mofile.h>
+#include <src/ci/fci/mofile.h>
 
 namespace bagel {
 

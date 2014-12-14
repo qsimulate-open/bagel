@@ -32,7 +32,7 @@
 #include <src/asd/dmrg/gamma_forest_prod_asd.h>
 #include <src/asd/dmrg/block_operators.h>
 #include <src/asd/dmrg/kronecker.h>
-#include <src/ras/civector.h>
+#include <src/ci/ras/civector.h>
 
 namespace bagel {
 

@@ -26,7 +26,7 @@
 #ifndef __BAGEL_DIMER_PROP_H
 #define __BAGEL_DIMER_PROP_H
 
-#include <src/fci/properties.h>
+#include <src/ci/fci/properties.h>
 
 namespace bagel {
 

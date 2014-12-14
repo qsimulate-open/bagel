@@ -30,8 +30,8 @@
 
 #include <utility>
 
-#include <src/fci/dvec.h>
-#include <src/ras/civector.h>
+#include <src/ci/fci/dvec.h>
+#include <src/ci/ras/civector.h>
 
 namespace bagel {
 

@@ -26,7 +26,7 @@
 #include <algorithm>
 
 #include <src/asd/dmrg/dmrg_block.h>
-#include <src/ras/civector.h>
+#include <src/ci/ras/civector.h>
 #include <src/asd/dmrg/kronecker.h>
 
 using namespace bagel;

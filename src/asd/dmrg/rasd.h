@@ -28,7 +28,7 @@
 
 #include <src/asd/dmrg/asd_dmrg.h>
 #include <src/asd/dmrg/product_civec.h>
-#include <src/fci/mofile.h>
+#include <src/ci/fci/mofile.h>
 
 namespace bagel {
 

@@ -34,7 +34,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cassert>
-#include <src/fci/civec.h>
+#include <src/ci/fci/civec.h>
 #include <type_traits>
 #include <src/math/matrix.h>
 #include <src/math/matop.h>

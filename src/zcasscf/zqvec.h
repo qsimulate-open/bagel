@@ -27,7 +27,7 @@
 #ifndef __BAGEL_SRC_ZCASSCF_ZQVEC_H
 #define __BAGEL_SRC_ZCASSCF_ZQVEC_H
 
-#include <src/zfci/zharrison.h> // 2RDM and transformed integrals
+#include <src/ci/zfci/zharrison.h> // 2RDM and transformed integrals
 
 namespace bagel {
 
