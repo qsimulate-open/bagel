@@ -92,7 +92,7 @@ void PDFDist::compute_aux_charge(const vector<shared_ptr<const Shell>>& ashell) 
   // P_{ij} = <i|.><.|j>
   Matrix p(naux_, naux_);
   dger_(naux_, naux_, 1.0, data1_->data(), 1, data1_->data(), 1, p.data(), naux_);
-  projector_ = make_shared<const Matrix>(p);
+  projector_ = make_shared<const Matrix>(move(p));
 }
 
 
