@@ -48,6 +48,7 @@ class PDFIntTask_aux {
     void compute() {
 
       auto overlap = std::make_shared<OverlapBatch>(shell_);
+      overlap->compute();
       const double* odata = overlap->data();
       double* const data = pdf_->data();
 
