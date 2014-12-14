@@ -86,6 +86,6 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/asd/test_asd.cc>
 
-#include <src/asd_dmrg/test_asd_dmrg.cc>
+#include <src/asd/dmrg/test_asd_dmrg.cc>
 
 #include <src/london/test_london.cc>
