@@ -76,8 +76,6 @@ void CASSCF::common_init() {
   max_micro_iter_ = idata_->get<int>("maxiter_micro", 100);
   // get nstate from the input
   nstate_ = idata_->get<int>("nstate", 1);
-  // get istate from the input (for geometry optimization)
-  istate_ = idata_->get<int>("istate", 0);
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
@@ -115,7 +113,7 @@ void CASSCF::common_init() {
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
   mute_stdcout();
-  {
+  if (nact_) {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
     fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
@@ -324,35 +322,39 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
 
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
-  auto out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy(),
-                                    fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+  shared_ptr<Reference> out;
+  if (nact_) {
+    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_av(),
+                                 fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+    // TODO
+    // compute one-body operators
+    shared_ptr<Matrix> f;
+    shared_ptr<Matrix> fact, factp, gaa;
+    shared_ptr<RotFile>  denom;
+    one_body_operators(f, fact, factp, gaa, denom);
+    if (natocc_) print_natocc();
 
-  // TODO
-  // compute one-body operators
-  shared_ptr<Matrix> f;
-  shared_ptr<Matrix> fact, factp, gaa;
-  shared_ptr<RotFile>  denom;
-  one_body_operators(f, fact, factp, gaa, denom);
-  if (natocc_) print_natocc();
+    *f *= 2.0;
 
-  *f *= 2.0;
-
-  for (int i = 0; i != nbasis_; ++i) {
-    for (int j = 0; j != nbasis_; ++j) {
-      if (i < nocc_ && j < nocc_) continue;
-      f->element(j,i) = 0.0;
+    for (int i = 0; i != nbasis_; ++i) {
+      for (int j = 0; j != nbasis_; ++j) {
+        if (i < nocc_ && j < nocc_) continue;
+        f->element(j,i) = 0.0;
+      }
     }
-  }
-  for (int j = 0; j != nact_; ++j) {
-    for (int i = 0; i != nocc_; ++i) {
-      f->element(i,j+nclosed_) = fact->element(i,j);
+    for (int j = 0; j != nact_; ++j) {
+      for (int i = 0; i != nocc_; ++i) {
+        f->element(i,j+nclosed_) = fact->element(i,j);
+      }
     }
+
+    auto erdm = make_shared<Matrix>(*coeff_ * *f ^ *coeff_);
+
+    out->set_erdm1(erdm);
+    out->set_nstate(nstate_);
+  } else {
+    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_av());
   }
-
-  auto erdm = make_shared<Matrix>(*coeff_ * *f ^ *coeff_);
-
-  out->set_erdm1(erdm);
-  out->set_nstate(nstate_);
   return out;
 }
 

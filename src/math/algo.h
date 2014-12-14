@@ -142,6 +142,24 @@ namespace {
     return zdotc_(n, p, 1, q, 1);
   }
 
+  template<class T, class U,
+           // T and U have to be either raw pointers or random access iterators
+           class = typename std::enable_if< (std::is_pointer<T>::value) &&
+                                            (std::is_pointer<U>::value) >::type >
+  auto dot_product_noconj(const T p, const size_t n, const U q) -> decltype(*p * *q) {
+    using ResultType = decltype(*p * *q);
+    return std::inner_product(p, p+n, q, static_cast<ResultType>(0.0), std::plus<ResultType>(), [](decltype(*p) i, decltype(*q) j) { return i*j; });
+  }
+  template<>
+  double dot_product_noconj(const double* p, const size_t n, const double* q) {
+    return ddot_(n, p, 1, q, 1);
+  }
+  template<>
+  std::complex<double> dot_product_noconj(const std::complex<double>* p, const size_t n, const std::complex<double>* q) {
+    return zdotu_(n, p, 1, q, 1);
+  }
+
+
   // SCAL
   template<class T, class U,
            // U has to be either raw pointers or random access iterators

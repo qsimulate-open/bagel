@@ -48,7 +48,6 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     // number of MO orbitals. TODO rename to norb. "nbasis" is confusing.
     int nbasis_;
     int nstate_;
-    int istate_;
     int max_iter_;
     int max_micro_iter_;
     double thresh_;
@@ -97,7 +96,6 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     int nvirt() const { return nvirt_; }
     int nbasis() const { return nbasis_; }
     int nstate() const { return nstate_; }
-    int istate() const { return istate_; }
     int max_iter() const { return max_iter_; }
     int max_micro_iter() const { return max_micro_iter_; }
     double thresh() const { return thresh_; }
@@ -107,7 +105,8 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     double occup(const int i) const { return occup_(i); }
 
     double energy(const int i) const { return energy_[i]; };
-    double energy() const { return energy_[istate_]; };
+    double energy_av() const { return std::accumulate(energy_.begin(), energy_.end(), 0.0) / energy_.size(); }
+    const std::vector<double>& energy() const { return energy_; };
     double rms_grad() const { return rms_grad_; };
 
     // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.

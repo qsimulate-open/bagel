@@ -33,7 +33,7 @@
  using namespace std;
  using namespace bagel;
 
-void ZCASHYBRID::compute() {
+void ZCASHybrid::compute() {
 
   double global_thresh = idata_->get<double>("thresh", 1.0e-8);
   shared_ptr<Method> active_method;
@@ -81,7 +81,7 @@ void ZCASHYBRID::compute() {
 }
 
 
-shared_ptr<const Reference> ZCASHYBRID::conv_to_ref() const {
+shared_ptr<const Reference> ZCASHybrid::conv_to_ref() const {
   assert(refout_);
   return refout_;
 }
