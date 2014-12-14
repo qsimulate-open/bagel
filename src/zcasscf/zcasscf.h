@@ -26,7 +26,7 @@
 #ifndef __SRC_ZCASSCF_ZCASSCF_H
 #define __SRC_ZCASSCF_ZCASSCF_H
 
-#include <src/zfci/zharrison.h>
+#include <src/ci/zfci/zharrison.h>
 #include <src/casscf/rotfile.h>
 #include <src/wfn/method.h>
 #include <src/math/bfgs.h>

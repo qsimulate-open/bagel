@@ -29,7 +29,7 @@
 #include <src/asd/dimer/dimer_jop.h>
 #include <src/asd/dmrg/product_civec.h>
 #include <src/asd/dmrg/block_operators.h>
-#include <src/ras/sparse_ij.h>
+#include <src/ci/ras/sparse_ij.h>
 #include <src/asd/dmrg/phi_k_lists.h>
 #include <src/asd/dmrg/phi_ijk_lists.h>
 

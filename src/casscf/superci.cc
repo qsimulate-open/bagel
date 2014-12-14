@@ -27,7 +27,7 @@
 #include <src/casscf/superci.h>
 #include <src/casscf/supercimicro.h>
 #include <iostream>
-#include <src/fci/fci.h>
+#include <src/ci/fci/fci.h>
 #include <src/casscf/rotfile.h>
 #include <src/math/davidson.h>
 #include <src/molecule/hcore.h>

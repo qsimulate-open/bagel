@@ -25,7 +25,7 @@
 
 
 #include <src/asd/dmrg/product_civec.h>
-#include <src/ras/civec_spinop.h>
+#include <src/ci/ras/civec_spinop.h>
 
 using namespace std;
 using namespace bagel;

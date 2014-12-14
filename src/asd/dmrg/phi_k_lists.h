@@ -26,8 +26,8 @@
 #ifndef __SRC_ASD_DMRG_PHI_K_LISTS_H
 #define __SRC_ASD_DMRG_PHI_K_LISTS_H
 
-#include <src/ciutil/citraits.h>
-#include <src/ras/civector.h>
+#include <src/ci/ciutil/citraits.h>
+#include <src/ci/ras/civector.h>
 
 namespace bagel {
 

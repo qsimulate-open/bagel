@@ -26,11 +26,11 @@
 #ifndef __SRC_DIMER_DIMER_H
 #define __SRC_DIMER_DIMER_H
 
-#include <src/fci/distfci.h>
-#include <src/fci/knowles.h>
-#include <src/fci/harrison.h>
-#include <src/ras/rasci.h>
-#include <src/ras/distrasci.h>
+#include <src/ci/fci/distfci.h>
+#include <src/ci/fci/knowles.h>
+#include <src/ci/fci/harrison.h>
+#include <src/ci/ras/rasci.h>
+#include <src/ci/ras/distrasci.h>
 #include <src/asd/dimer/dimer_cispace.h>
 #include <src/wfn/construct_method.h>
 #include <src/util/muffle.h>

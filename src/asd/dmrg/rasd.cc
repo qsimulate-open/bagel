@@ -28,9 +28,9 @@
 #include <src/asd/dmrg/product_rasci.h>
 #include <src/asd/dmrg/form_sigma.h>
 #include <src/asd/dimer/dimer_jop.h>
-#include <src/ras/form_sigma.h>
-#include <src/ras/apply_operator.h>
-#include <src/ras/rasci.h>
+#include <src/ci/ras/form_sigma.h>
+#include <src/ci/ras/apply_operator.h>
+#include <src/ci/ras/rasci.h>
 #include <src/util/muffle.h>
 
 //#define DEBUG

@@ -27,8 +27,8 @@
 #define __asd_gamma_forest_h
 
 #include <set>
-#include <src/fci/dvec.h>
-#include <src/ras/civector.h>
+#include <src/ci/fci/dvec.h>
+#include <src/ci/ras/civector.h>
 #include <src/math/matrix.h>
 #include <src/util/taskqueue.h>
 #include <src/asd/coupling.h>

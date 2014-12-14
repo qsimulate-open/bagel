@@ -28,10 +28,10 @@
 
 #include <algorithm>
 
-#include <src/ras/ras_space.h>
+#include <src/ci/ras/ras_space.h>
 #include <src/asd/dmrg/dmrg_block.h>
 #include <src/math/matrix.h>
-#include <src/ras/civector.h>
+#include <src/ci/ras/civector.h>
 
 namespace bagel {
 

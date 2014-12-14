@@ -32,7 +32,7 @@
 #define __BAGEL_CASSCF_CASSCF_H
 
 #include <src/wfn/reference.h>
-#include <src/fci/knowles.h>
+#include <src/ci/fci/knowles.h>
 #include <src/casscf/rotfile.h>
 
 namespace bagel {

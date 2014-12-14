@@ -28,7 +28,7 @@
 #define __SRC_CASSCF_JKOP_H
 
 // implements external operators.
-#include <src/fci/fci.h>
+#include <src/ci/fci/fci.h>
 
 namespace bagel {
 
