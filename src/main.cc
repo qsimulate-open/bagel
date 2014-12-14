@@ -29,8 +29,8 @@
 #include <src/opt/optimize.h>
 #include <src/molecule/localization.h>
 #include <src/asd/construct_asd.h>
-#include <src/asd_dmrg/rasd.h>
-#include <src/multisite/multisite.h>
+#include <src/asd/dmrg/rasd.h>
+#include <src/asd/multisite/multisite.h>
 #include <src/util/archive.h>
 
 // debugging

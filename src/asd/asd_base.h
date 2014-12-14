@@ -26,8 +26,8 @@
 #ifndef __ASD_ASD_BASE_H
 #define __ASD_ASD_BASE_H
 
-#include <src/dimer/dimer.h>
-#include <src/dimer/dimer_jop.h>
+#include <src/asd/dimer/dimer.h>
+#include <src/asd/dimer/dimer_jop.h>
 #include <src/asd/asd_spin.h>
 #include <src/asd/gamma_tensor.h>
 #include <src/asd/coupling.h>

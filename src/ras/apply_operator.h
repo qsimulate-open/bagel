@@ -28,7 +28,7 @@
 
 #include <src/ciutil/citraits.h>
 #include <src/ras/civector.h>
-#include <src/asd_dmrg/product_civec.h>
+#include <src/asd/dmrg/product_civec.h>
 #include <src/asd/gamma_sq.h>
 
 namespace bagel {
