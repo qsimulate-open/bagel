@@ -60,10 +60,6 @@ PDFDist::PDFDist(const vector<array<double, 3>>& L, const int nbas, const int na
       ++iat;
     }
     dfdist_[i] = make_shared<PDFDist_ints>(L, nbas, naux, atoms0, atoms1, aux_atoms, cell0, thresh, projector_, data1_);
-//  TODO: to be removed (check NAI)
-//  double nai = 0;
-//  for (int j = 0; j != ncell(); ++j) nai += dfdist_[i]->nai_in_cell(j)->element(0, 0);
-//  cout << " *** " << setprecision(9) << nai << endl;
   }
   time.tick_print("3-index and overlap integrals");
 }
@@ -148,10 +144,15 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
   *projectorC -= *projector_;
 
   for (int i = 0; i != ncell(); ++i) {
-    *data2_ += *projectorC % *data2_at[i] * *projectorC;
-    *eta_ += *projectorC * *data2_at[i];
-    *correction_   += *data2_at[i];
+    *data2_ += *projectorC * *data2_at[i] * *projectorC;
+//    *eta_ += *projectorC * *data2_at[i];
+    dgemm_("N", "N", naux_, naux_, naux_, 1.0, projectorC->data(), naux_, data2_at[i]->data(), naux_, 0.0, eta_->data(), naux_);
+    *correction_ += *data2_at[i];
   }
+
+  cout << setprecision(9) << "    eta    " << eta_->rms()                 //DEBUG
+                          << "   dat2    " << data2_->rms()               //DEBUG
+                          << "    corr   " << correction_->rms() << endl; //DEBUG
 
   time.tick_print("2-index integrals");
 

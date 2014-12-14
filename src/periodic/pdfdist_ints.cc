@@ -56,6 +56,7 @@ PDFDist_ints::PDFDist_ints(const vector<array<double, 3>>& L, const int nbas, co
   const size_t asize  = accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); });
   const size_t b0size = accumulate(b0shell.begin(), b0shell.end(), 0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); });
   const size_t bgsize = accumulate(bgshell.begin(), bgshell.end(), 0, [](const int& i, const shared_ptr<const Shell>& o) { return i+o->nbasis(); });
+  assert(naux_ == asize && b0size == nbasis_ && bgsize == nbasis_);
   block_.push_back(make_shared<DFBlock>(adist_shell, adist_averaged, asize, b0size, bgsize, astart, 0, 0));
   block_[0]->zero();
 
@@ -158,6 +159,7 @@ void PDFDist_ints::compute_charged_coeff(const vector<shared_ptr<const Shell>>& 
 
   Timer time;
   coeffC_ = make_shared<btas::Tensor3<double>>(naux_, nbasis_, nbasis_);
+  fill_n(coeffC_->data(), naux_*nbasis_*nbasis_, 0.0);
 
   if (!data1_)
     throw logic_error("auxiliary charge has to be computed first");
