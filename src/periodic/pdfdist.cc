@@ -118,7 +118,7 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
     for (auto& L : lattice_vectors_) {
       int o1 = 0;
       for (auto& b1 : ashell) {
-        auto b11 = make_shared<const Shell>(*(b1->move_atom(L)));
+        shared_ptr<const Shell> b11 = b1->move_atom(L);
         tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b11, b3, b0, b3}}, array<int,2>{{o0, o1}}, data2_at[n]);
         o1 += b1->nbasis();
       }
