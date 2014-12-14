@@ -103,15 +103,12 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
   TaskQueue<PDFIntTask_2index> tasks(ashell.size() * ashell.size() * ncell());
 
   // (a|bL)
-  auto b3 = make_shared<const Shell>(ashell.front()->spherical());
-  data2_ = make_shared<Matrix>(naux_, naux_, serial_);    data2_->zero();
-  eta_   = make_shared<Matrix>(naux_, naux_, serial_);    eta_->zero();
-
-  correction_   = make_shared<Matrix>(naux_, naux_, serial_);    correction_->zero();
-
   vector<shared_ptr<Matrix>> data2_at(ncell());
-  for (auto& idat : data2_at) idat = make_shared<Matrix>(naux_, naux_, serial_);
+  for (auto& idat : data2_at) {
+    idat = make_shared<Matrix>(naux_, naux_, serial_);
+  }
 
+  auto b3 = make_shared<const Shell>(ashell.front()->spherical());
   int o0 = 0;
   for (auto& b0 : ashell) {
     int n = 0;
@@ -143,10 +140,13 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
   projectorC->unit();
   *projectorC -= *projector_;
 
+  data2_ = make_shared<Matrix>(naux_, naux_, serial_);
+  eta_   = make_shared<Matrix>(naux_, naux_, serial_);
+  correction_   = make_shared<Matrix>(naux_, naux_, serial_);
+  auto tmp   = make_shared<Matrix>(naux_, naux_, serial_);
   for (int i = 0; i != ncell(); ++i) {
-    *data2_ += *projectorC * *data2_at[i] * *projectorC;
-//    *eta_ += *projectorC * *data2_at[i];
-    dgemm_("N", "N", naux_, naux_, naux_, 1.0, projectorC->data(), naux_, data2_at[i]->data(), naux_, 0.0, eta_->data(), naux_);
+    *data2_ += *projectorC % *data2_at[i] * *projectorC;
+      *eta_ += *projectorC * *data2_at[i];
     *correction_ += *data2_at[i];
   }
 
