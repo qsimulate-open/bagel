@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: test_mp2.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: test_nevpt2.cc
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -25,9 +25,9 @@
 
 
 #include <memory>
-#include <src/mp2/mp2.h>
+#include <src/pt2/nevpt2/nevpt2.h>
 
-double mp2_energy(const std::string job) {
+double nevpt2_energy(const std::string job) {
 
   auto ofs = std::make_shared<std::ofstream>(job + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
@@ -44,23 +44,22 @@ double mp2_energy(const std::string job) {
     if (method == "molecule") {
       geom = std::make_shared<Geometry>(itree);
 
-    } else if (method == "mp2") {
-      auto mp2 = std::make_shared<MP2>(itree, geom);
-      mp2->compute();
+    } else if (method == "nevpt2") {
+      auto nevpt2 = std::make_shared<NEVPT2>(itree, geom);
+      nevpt2->compute();
 
       std::cout.rdbuf(backup_stream);
-      return mp2->energy();
+      return nevpt2->energy();
     }
   }
   assert(false);
   return 0.0;
 }
 
-BOOST_AUTO_TEST_SUITE(TEST_MP2)
+BOOST_AUTO_TEST_SUITE(TEST_NEVPT2)
 
-BOOST_AUTO_TEST_CASE(MP2) {
-    BOOST_CHECK(compare(mp2_energy("benzene_svp_mp2"),      -231.31440958));
-    BOOST_CHECK(compare(mp2_energy("benzene_svp_mp2_aux"),  -231.31450878));
+BOOST_AUTO_TEST_CASE(NEVPT2) {
+    BOOST_CHECK(compare(nevpt2_energy("h2o_svp_nevpt2"),      -76.0205249495));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

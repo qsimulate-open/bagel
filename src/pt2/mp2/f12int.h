@@ -29,7 +29,7 @@
 
 #include <memory>
 #include <map>
-#include <src/mp2/f12mat.h>
+#include <src/pt2/mp2/f12mat.h>
 #include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 

@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/nevpt2/nevpt2.h>
+#include <src/pt2/nevpt2/nevpt2.h>
 #include <src/smith/prim_op.h>
 
 using namespace std;

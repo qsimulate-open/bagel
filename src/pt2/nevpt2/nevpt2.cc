@@ -25,7 +25,7 @@
 
 #include <set>
 #include <src/smith/prim_op.h>
-#include <src/nevpt2/nevpt2.h>
+#include <src/pt2/nevpt2/nevpt2.h>
 #include <src/df/dfdistt.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/qvec.h>
