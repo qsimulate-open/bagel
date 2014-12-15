@@ -24,7 +24,7 @@
 //
 
 
-#include <src/rel/dfock.h>
+#include <src/scf/dhf/dfock.h>
 #include <src/rel/reloverlap.h>
 #include <src/multi/zcasscf/zqvec.h>
 #include <src/multi/zcasscf/zsuperci.h>

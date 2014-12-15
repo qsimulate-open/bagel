@@ -24,14 +24,14 @@
 //
 
 
-#include <src/util/constants.h>
-#include <src/rel/dirac.h>
-#include <src/rel/dfock.h>
+#include <src/scf/dhf/dirac.h>
+#include <src/scf/dhf/dfock.h>
 #include <src/rel/relhcore.h>
 #include <src/rel/relreference.h>
 #include <src/rel/reloverlap.h>
 #include <src/london/relhcore_london.h>
 #include <src/london/reloverlap_london.h>
+#include <src/util/constants.h>
 #include <src/util/math/zmatrix.h>
 #include <src/util/math/matrix.h>
 #include <src/util/math/diis.h>
