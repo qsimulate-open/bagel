@@ -26,7 +26,7 @@
 #include <src/asd/multisite/multisite.h>
 #include <src/wfn/construct_method.h>
 #include <src/scf/hf/fock.h>
-#include <src/scf/hf/scf.h>
+#include <src/scf/hf/rhf.h>
 
 #include <src/molecule/localization.h>
 #include <src/molecule/overlap.h>
@@ -294,7 +294,7 @@ void MultiSite::scf(const shared_ptr<const PTree> idata) {
 
   // SCF
   auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
-  shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", hfdata, sref_->geom(), sref_));
+  auto rhf = dynamic_pointer_cast<RHF>(construct_method("hf", hfdata, sref_->geom(), sref_));
   rhf->compute();
   sref_ = rhf->conv_to_ref();
   stopwatch.tick_print("Multisite SCF");

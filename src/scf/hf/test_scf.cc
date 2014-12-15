@@ -24,7 +24,7 @@
 //
 
 #include <sstream>
-#include <src/scf/hf/scf.h>
+#include <src/scf/hf/rhf.h>
 #include <src/scf/hf/rohf.h>
 #include <src/scf/hf/uhf.h>
 #include <src/scf/sohf/soscf.h>
@@ -50,7 +50,7 @@ double scf_energy(std::string filename, std::string extension = ".json") {
       geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
       if (ref) ref = ref->project_coeff(geom);
     } else if (method == "hf") {
-      auto scf = std::make_shared<SCF>(itree, geom, ref);
+      auto scf = std::make_shared<RHF>(itree, geom, ref);
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "uhf") {

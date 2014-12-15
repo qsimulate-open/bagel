@@ -29,7 +29,6 @@
 #include <cmath>
 #include <src/util/f77.h>
 #include <src/ci/fci/mofile.h>
-#include <src/scf/hf/scf.h>
 #include <src/scf/hf/fock.h>
 #include <src/smith/prim_op.h>
 

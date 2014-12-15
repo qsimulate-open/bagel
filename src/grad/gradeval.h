@@ -72,7 +72,7 @@ class GradEval : public GradEval_base {
 };
 
 // specialization
-template<> std::shared_ptr<GradFile> GradEval<SCF>::compute();
+template<> std::shared_ptr<GradFile> GradEval<RHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<UHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<KS>::compute();

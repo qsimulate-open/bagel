@@ -37,7 +37,7 @@ CASSCF::CASSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometr
   : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
 
   if (!ref_) {
-    auto scf = make_shared<SCF>(idat, geom);
+    auto scf = make_shared<RHF>(idat, geom);
     scf->compute();
     ref_ = scf->conv_to_ref();
   }

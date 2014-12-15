@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: scf.cc
+// Filename: rhf.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,16 +24,16 @@
 //
 
 #include <src/scf/atomicdensities.h>
-#include <src/scf/hf/scf.h>
+#include <src/scf/hf/rhf.h>
 #include <src/scf/hf/fock.h>
 #include <src/prop/multipole.h>
 
 using namespace bagel;
 using namespace std;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(SCF)
+BOOST_CLASS_EXPORT_IMPLEMENT(RHF)
 
-SCF::SCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
+RHF::RHF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)), restarted_(false) {
 
   cout << indent << "*** RHF ***" << endl << endl;
@@ -49,7 +49,7 @@ SCF::SCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> g
 }
 
 
-void SCF::compute() {
+void RHF::compute() {
   Timer scftime;
 
   shared_ptr<const Matrix> previous_fock = hcore_;
@@ -182,7 +182,7 @@ void SCF::compute() {
 }
 
 
-shared_ptr<const Reference> SCF::conv_to_ref() const {
+shared_ptr<const Reference> RHF::conv_to_ref() const {
   auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
   out->set_eig(eig_);
   return out;

@@ -28,14 +28,14 @@
 #define __SRC_MP2_MP2_H
 
 #include <src/pt2/mp2/f12int.h>
-#include <src/scf/hf/scf.h>
+#include <src/scf/hf/rhf.h>
 #include <src/wfn/method.h>
 
 namespace bagel {
 
 class MP2 : public Method {
   protected:
-    std::shared_ptr<SCF> scf_;
+    std::shared_ptr<RHF> scf_;
     int ncore_;
 
     std::string abasis_;
@@ -51,7 +51,7 @@ class MP2 : public Method {
     double energy() const { return energy_; }
     int ncore() const { return ncore_; }
     std::string abasis() const { return abasis_; }
-    std::shared_ptr<const SCF> scf() const { return scf_; }
+    std::shared_ptr<const RHF> scf() const { return scf_; }
 };
 
 }
