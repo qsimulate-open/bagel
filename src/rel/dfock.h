@@ -27,7 +27,7 @@
 #ifndef __SRC_REL_DFOCK_H
 #define __SRC_REL_DFOCK_H
 
-#include <src/rel/reldf.h>
+#include <src/df/reldf.h>
 
 namespace bagel {
 
@@ -40,7 +40,7 @@ class DFock : public ZMatrix {
     void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const double scale_ex);
 
 
-    void add_Jop_block(std::shared_ptr<const RelDF>, std::list<std::shared_ptr<const CDMatrix>>, const double scale);
+    void add_Jop_block(std::shared_ptr<const RelDF>, std::list<std::shared_ptr<const RelCDMatrix>>, const double scale);
     void add_Exop_block(std::shared_ptr<RelDFHalf>, std::shared_ptr<RelDFHalf>, const double scale, const bool diag = false);
     void driver(std::array<std::shared_ptr<const Matrix>, 4> rocoeff, std::array<std::shared_ptr<const Matrix>, 4> iocoeff,
                            std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,

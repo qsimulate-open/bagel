@@ -23,11 +23,11 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_REL_RELDFFULL_H
-#define __SRC_REL_RELDFFULL_H
+#ifndef __SRC_DF_RELDFFULL_H
+#define __SRC_DF_RELDFFULL_H
 
-#include <src/rel/reldf.h>
-#include <src/rel/reldfhalf.h>
+#include <src/df/reldf.h>
+#include <src/df/reldfhalf.h>
 
 namespace bagel {
 
@@ -62,7 +62,7 @@ class RelDFFull : public RelDFBase {
     RelDFFull& operator+=(const RelDFFull& o) { ax_plus_y(1.0, o); return *this; }
     RelDFFull& operator-=(const RelDFFull& o) { ax_plus_y(-1.0, o); return *this; }
 
-    void add_product(std::shared_ptr<const RelDFFull> o, const std::shared_ptr<const ZMatrix> a, const int nocc, const int offset); 
+    void add_product(std::shared_ptr<const RelDFFull> o, const std::shared_ptr<const ZMatrix> a, const int nocc, const int offset);
 
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
 

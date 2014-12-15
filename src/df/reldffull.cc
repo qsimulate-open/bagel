@@ -24,7 +24,7 @@
 //
 
 
-#include <src/rel/reldffull.h>
+#include <src/df/reldffull.h>
 
 using namespace std;
 using namespace bagel;

@@ -64,7 +64,7 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const doubl
 }
 
 
-void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const CDMatrix>> cd, const double scale) {
+void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const RelCDMatrix>> cd, const double scale) {
 
   const int n = geom_->nbasis();
   vector<shared_ptr<ZMatrix>> dat = dfdata->compute_Jop(cd);
@@ -186,7 +186,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   }
 
   list<shared_ptr<RelDF>> dfdists = make_dfdists(dfs, gaunt);
-  // Note that we are NOT using dagger-ed coefficients! -1 factor for imaginary will be compensated by CDMatrix and Exop
+  // Note that we are NOT using dagger-ed coefficients! -1 factor for imaginary will be compensated by RelCDMatrix and Exop
   list<shared_ptr<RelDFHalf>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
 
   const string printtag = !gaunt ? "Coulomb" : "Gaunt";
@@ -269,11 +269,11 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
 
   timer.tick_print(printtag + ": K operator");
 
-  list<shared_ptr<const CDMatrix>> cd;
+  list<shared_ptr<const RelCDMatrix>> cd;
   // compute J operators
   for (auto& j : half_complex_exch2) {
     for (auto& i : j->basis()) {
-      cd.push_back(make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
+      cd.push_back(make_shared<RelCDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
     }
   }
 

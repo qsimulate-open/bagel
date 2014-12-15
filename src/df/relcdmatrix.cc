@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: cdmatrix.cc
+// Filename: relcdmatrix.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,16 +24,15 @@
 //
 
 
-#include <src/rel/cdmatrix.h>
+#include <src/df/relcdmatrix.h>
 
 using namespace std;
 using namespace bagel;
 
-
 // Also, C and D matrices are either real (for Coulomb) or purely imaginary (for Gaunt and Breit) due to symmetry. We are not taking advantage of it.
 
-CDMatrix::CDMatrix(shared_ptr<const RelDFHalf> dfhc, shared_ptr<const SpinorInfo> abc, array<shared_ptr<const Matrix>, 4> trcoeff,
-                   array<shared_ptr<const Matrix>, 4> ticoeff, shared_ptr<const Matrix> dat2, const bool onlyonce)
+RelCDMatrix::RelCDMatrix(shared_ptr<const RelDFHalf> dfhc, shared_ptr<const SpinorInfo> abc, array<shared_ptr<const Matrix>, 4> trcoeff,
+                         array<shared_ptr<const Matrix>, 4> ticoeff, shared_ptr<const Matrix> dat2, const bool onlyonce)
  : ZVectorB(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)-*dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce),
             *dfhc->get_real()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce)+*dfhc->get_imag()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)),
    alpha_comp_(abc->alpha_comp()) {

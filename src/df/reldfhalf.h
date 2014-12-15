@@ -24,13 +24,13 @@
 //
 
 
-#ifndef __SRC_REL_RELDFHALF_H
-#define __SRC_REL_RELDFHALF_H
+#ifndef __SRC_DF_RELDFHALF_H
+#define __SRC_DF_RELDFHALF_H
 
 #include <map>
 #include <src/wfn/reference.h>
-#include <src/rel/breit2index.h>
-#include <src/rel/reldf.h>
+#include <src/df/breit2index.h>
+#include <src/df/reldf.h>
 
 namespace bagel {
 
@@ -87,7 +87,7 @@ class RelDFHalfB {
     const int basis_;
     const int alpha_;
   public:
-    RelDFHalfB(std::array<std::shared_ptr<DFHalfDist>,2> data, const int basis, const int alpha) : dfhalf_(data), basis_(basis), alpha_(alpha) { } 
+    RelDFHalfB(std::array<std::shared_ptr<DFHalfDist>,2> data, const int basis, const int alpha) : dfhalf_(data), basis_(basis), alpha_(alpha) { }
 
     int basis() const { return basis_; }
     std::shared_ptr<DFDist> back_transform(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, const bool imag = false) const;

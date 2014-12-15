@@ -25,9 +25,9 @@
 
 #include <src/grad/gradeval.h>
 #include <src/util/timer.h>
+#include <src/df/reldffull.h>
 #include <src/rel/alpha.h>
 #include <src/rel/dfock.h>
-#include <src/rel/reldffull.h>
 #include <src/rel/relreference.h>
 #include <src/integral/rys/gsmallnaibatch.h>
 
@@ -176,13 +176,13 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 #endif
 
     // (4) compute C matrix
-    shared_ptr<CDMatrix> cd;
+    shared_ptr<RelCDMatrix> cd;
     for (auto& j : half_complex_exch) {
       for (auto& i : j->basis()) {
         if (cd) {
-          *cd += CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half /* false = multiply J^{-1} */);
+          *cd += RelCDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half /* false = multiply J^{-1} */);
         } else {
-          cd = make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half);
+          cd = make_shared<RelCDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half);
         }
       }
     }

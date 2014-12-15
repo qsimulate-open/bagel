@@ -29,7 +29,7 @@
 
 #include <unordered_map>
 #include <src/util/math/zmatrix.h>
-#include <src/rel/reldffull.h>
+#include <src/df/reldffull.h>
 #include <src/rel/dfock.h>
 #include <src/rel/relreference.h>
 
