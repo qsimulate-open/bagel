@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/dmrg/product_rasci.h>
-#include <src/math/btas_interface.h>
+#include <src/util/math/btas_interface.h>
 #include <src/ci/ras/denomtask.h>
 
 using namespace std;

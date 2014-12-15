@@ -34,10 +34,10 @@
 #include <stddef.h>
 #include <memory>
 #include <stdexcept>
-#include <src/math/algo.h>
 #include <src/smith/smith_info.h>
 #include <src/smith/tensor.h>
 #include <src/scf/fock.h>
+#include <src/util/math/algo.h>
 
 namespace bagel {
 namespace SMITH {

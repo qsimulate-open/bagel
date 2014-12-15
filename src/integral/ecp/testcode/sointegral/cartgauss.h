@@ -13,7 +13,7 @@
 #include <complex>
 #include <memory>
 #include "src/util/constants.h"
-#include "src/math/factorial.h"
+#include "src/util/math/factorial.h"
 
 using namespace bagel;
 using namespace std;

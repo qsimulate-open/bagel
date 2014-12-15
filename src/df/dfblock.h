@@ -27,15 +27,15 @@
 #define __SRC_DF_DFBLOCK_H
 
 #include <numeric>
-#include <src/math/algo.h>
+#include <src/util/math/algo.h>
 #include <src/util/timer.h>
 #include <src/util/simple.h>
 #include <src/util/taskqueue.h>
-#include <src/parallel/staticdist.h>
-#include <src/parallel/mpi_interface.h>
-#include <src/math/btas_interface.h>
-#include <src/math/matrix.h>
-#include <src/math/matop.h>
+#include <src/util/parallel/staticdist.h>
+#include <src/util/parallel/mpi_interface.h>
+#include <src/util/math/btas_interface.h>
+#include <src/util/math/matrix.h>
+#include <src/util/math/matop.h>
 
 namespace bagel {
 

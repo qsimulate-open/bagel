@@ -29,7 +29,7 @@
 #include <src/df/dfdistt.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/qvec.h>
-#include <src/parallel/resources.h>
+#include <src/util/parallel/resources.h>
 
 using namespace std;
 using namespace bagel;

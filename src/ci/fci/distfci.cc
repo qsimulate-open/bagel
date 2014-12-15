@@ -26,11 +26,11 @@
 #include <cassert>
 
 #include <src/util/combination.hpp>
-#include <src/math/comb.h>
+#include <src/util/math/comb.h>
+#include <src/util/math/davidson.h>
 #include <src/ci/fci/modelci.h>
 #include <src/ci/fci/dist_form_sigma.h>
 #include <src/ci/fci/distfci.h>
-#include <src/math/davidson.h>
 #include <src/ci/fci/space.h>
 #include <src/ci/fci/hzdenomtask.h>
 

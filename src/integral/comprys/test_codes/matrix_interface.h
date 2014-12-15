@@ -11,7 +11,7 @@
 
 #include <cstdlib>
 #include <type_traits>
-#include <src/parallel/scalapack.h>
+#include <src/util/parallel/scalapack.h>
 
 namespace ryan {
 

@@ -24,7 +24,7 @@
 //
 
 #include <src/ks/grid.h>
-#include <src/parallel/resources.h>
+#include <src/util/parallel/resources.h>
 
 namespace bagel {
 class GridBasisTask {

@@ -30,8 +30,8 @@
 #include <src/casscf/rotfile.h>
 #include <src/wfn/method.h>
 #include <src/rel/reloverlap.h>
-#include <src/math/bfgs.h>
-#include <src/math/step_restrict_bfgs.h>
+#include <src/util/math/bfgs.h>
+#include <src/util/math/step_restrict_bfgs.h>
 
 namespace bagel {
 

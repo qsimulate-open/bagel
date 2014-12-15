@@ -28,7 +28,7 @@
 
 #include <src/asd/dimer/dimer_jop.h>
 #include <src/asd/dmrg/block_key.h>
-#include <src/math/blocksparsematrix.h>
+#include <src/util/math/blocksparsematrix.h>
 
 namespace bagel {
 

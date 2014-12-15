@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <cmath>
 #include <src/util/f77.h>
-#include <src/math/quatmatrix.h>
+#include <src/util/math/quatmatrix.h>
 #include <src/ci/zfci/relmofile.h>
 #include <src/rel/reloverlap.h>
 #include <src/smith/prim_op.h>

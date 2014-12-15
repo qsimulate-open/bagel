@@ -29,7 +29,7 @@
 
 #include <src/molecule/zoverlap.h>
 #include <src/molecule/zkinetic.h>
-#include <src/math/zmatrix.h>
+#include <src/util/math/zmatrix.h>
 
 namespace bagel {
 

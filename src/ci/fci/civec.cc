@@ -25,7 +25,7 @@
 
 
 #include <src/ci/fci/civec.h>
-#include <src/math/algo.h>
+#include <src/util/math/algo.h>
 
 template class bagel::Civector<double>;
 template class bagel::Civector<std::complex<double>>;

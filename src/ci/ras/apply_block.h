@@ -26,7 +26,7 @@
 #ifndef __SRC_RAS_APPLY_BLOCK_H
 #define __SRC_RAS_APPLY_BLOCK_H
 
-#include <src/math/algo.h>
+#include <src/util/math/algo.h>
 #include <src/ci/ciutil/citraits.h>
 
 namespace bagel {

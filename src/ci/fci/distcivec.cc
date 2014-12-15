@@ -25,9 +25,9 @@
 
 
 #include <src/ci/fci/civec.h>
-#include <src/math/algo.h>
-#include <src/parallel/distqueue.h>
-#include <src/parallel/mpi_interface.h>
+#include <src/util/math/algo.h>
+#include <src/util/parallel/distqueue.h>
+#include <src/util/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;

@@ -32,9 +32,9 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
-#include <src/util/timer.h>
 #include <src/grad/gradeval.h>
-#include <src/io/moldenout.h>
+#include <src/util/timer.h>
+#include <src/util/io/moldenout.h>
 #include <src/wfn/construct_method.h>
 #include <src/alglib/optimization.h>
 

@@ -26,8 +26,8 @@
 
 #include <src/grad/gradeval_base.h>
 #include <src/util/taskqueue.h>
-#include <src/parallel/resources.h>
-#include <src/parallel/mpi_interface.h>
+#include <src/util/parallel/resources.h>
+#include <src/util/parallel/mpi_interface.h>
 #include <array>
 
 using namespace std;

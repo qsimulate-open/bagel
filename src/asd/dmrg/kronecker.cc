@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/dmrg/kronecker.h>
-#include <src/math/matrix.h>
+#include <src/util/math/matrix.h>
 #include <src/util/taskqueue.h>
 
 using namespace bagel;

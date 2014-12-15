@@ -24,7 +24,7 @@
 //
 
 #include <src/ci/ras/apply_operator.h>
-#include <src/math/algo.h>
+#include <src/util/math/algo.h>
 
 using namespace std;
 using namespace bagel;

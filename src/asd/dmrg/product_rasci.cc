@@ -25,7 +25,7 @@
 
 #include <src/asd/dmrg/product_rasci.h>
 #include <src/asd/dmrg/form_sigma.h>
-#include <src/math/davidson.h>
+#include <src/util/math/davidson.h>
 
 using namespace std;
 using namespace bagel;

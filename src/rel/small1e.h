@@ -27,7 +27,7 @@
 #ifndef __SRC_REL_SMALL1E_H
 #define __SRC_REL_SMALL1E_H
 
-#include <src/math/zmatrix.h>
+#include <src/util/math/zmatrix.h>
 #include <src/integral/smallints1e.h>
 #include <src/molecule/matrix1earray.h>
 

@@ -26,9 +26,9 @@
 #ifndef __SRC_ASD_DMRG_KRONECKER_H
 #define __SRC_ASD_DMRG_KRONECKER_H
 
-#include <src/math/algo.h>
-#include <src/parallel/mpi_interface.h>
-#include <src/math/matop.h>
+#include <src/util/math/algo.h>
+#include <src/util/math/matop.h>
+#include <src/util/parallel/mpi_interface.h>
 
 namespace bagel {
 

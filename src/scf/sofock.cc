@@ -24,7 +24,7 @@
 //
 
 
-#include <src/math/matrix.h>
+#include <src/util/math/matrix.h>
 #include <src/scf/sofock.h>
 
 using namespace bagel;

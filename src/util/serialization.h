@@ -47,7 +47,7 @@
 #include <boost/property_tree/ptree_serialization.hpp>
 
 // to avoid duplicate serialize functions, we need to include this here
-#include <src/math/btas_interface.h>
+#include <src/util/math/btas_interface.h>
 
 namespace bagel {
   // default implementation of bagel::base_of

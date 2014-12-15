@@ -28,8 +28,7 @@
 
 #include <memory>
 #include <vector>
-
-#include <src/input/input.h>
+#include <src/util/input/input.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {

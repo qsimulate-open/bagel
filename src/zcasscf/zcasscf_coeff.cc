@@ -24,7 +24,7 @@
 //
 
 #include <src/zcasscf/zcasscf.h>
-#include <src/math/quatmatrix.h>
+#include <src/util/math/quatmatrix.h>
 
 using namespace std;
 using namespace bagel;

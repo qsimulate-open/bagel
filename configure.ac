@@ -137,8 +137,10 @@ fi
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/util/Makefile
-                 src/parallel/Makefile
-                 src/math/Makefile
+                 src/util/input/Makefile
+                 src/util/io/Makefile
+                 src/util/parallel/Makefile
+                 src/util/math/Makefile
                  src/asd/multisite/Makefile
                  src/asd/dimer/Makefile
                  src/asd/dmrg/Makefile
@@ -150,12 +152,10 @@ AC_CONFIG_FILES([Makefile
                  src/df/Makefile
                  src/prop/Makefile
                  src/smith/Makefile
+                 src/molecule/Makefile
                  src/pt2/Makefile
                  src/pt2/mp2/Makefile
                  src/pt2/nevpt2/Makefile
-                 src/molecule/Makefile
-                 src/input/Makefile
-                 src/io/Makefile
                  src/ci/Makefile
                  src/ci/ciutil/Makefile
                  src/ci/fci/Makefile

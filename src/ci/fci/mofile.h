@@ -28,7 +28,7 @@
 #ifndef __BAGEL_FCI_MOFILE_H
 #define __BAGEL_FCI_MOFILE_H
 
-#include <src/math/csymmatrix.h>
+#include <src/util/math/csymmatrix.h>
 #include <src/scf/scf.h>
 
 namespace bagel {
