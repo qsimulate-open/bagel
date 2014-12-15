@@ -25,7 +25,7 @@
 
 #include <sstream>
 #include <src/scf/hf/rhf.h>
-#include <src/rel/dirac.h>
+#include <src/scf/dhf/dirac.h>
 #include <src/wfn/reference.h>
 
 using namespace bagel;
