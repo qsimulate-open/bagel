@@ -51,6 +51,8 @@ void ASDSuperCI::compute() {
   // ============================
   double gradient = 1.0e100;
   auto asd = construct_ASD(asdinput_, dimer_);
+  rdm1_ = make_shared<RDM<1>>(nact_);
+  rdm2_ = make_shared<RDM<2>>(nact_);
 //mute_stdcout();
   Timer timer;
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -78,19 +80,16 @@ void ASDSuperCI::compute() {
       //update coeff_ & integrals..
       cout << "SuperCI: update coeff" << endl;
       coeff_->print();
-      shared_ptr<Reference> temp;
-      temp = make_shared<Reference>(*(dimer_->sref()));
-      temp->set_coeff(coeff_);
-      dimer_->sref() = temp;
-    //temp = dimer_->sref();
-    //dimer_->sref()->set_coeff(coeff_);
+      dimer_->update_coeff(coeff_);
+    //shared_ptr<Reference> temp;
+    //temp = make_shared<Reference>(*(dimer_->sref()));
+    //temp->set_coeff(coeff_);
+    //dimer_->sref() = temp;
       //build CI-space
       asd = construct_ASD(asdinput_, dimer_);
     }
     asd->compute();
     //RDM
-    rdm1_ = make_shared<RDM<1>>(nact_);
-    rdm2_ = make_shared<RDM<2>>(nact_);
     rdm1_ = asd->rdm1();
     rdm2_ = asd->rdm2();
     //get energy

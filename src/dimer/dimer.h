@@ -67,6 +67,15 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
     Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B); ///< Conjoins the provided Reference objects
     Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a); ///< Duplicates provided Reference according to translation vector specified in input
 
+//ADDED
+    void update_coeff(std::shared_ptr<const Matrix> matrix) {
+      std::shared_ptr<Reference> temp;
+      temp = std::make_shared<Reference>(*sref_);
+      temp->set_coeff(matrix);
+      sref_ = temp;
+    } 
+//END ADDED
+
     // Return functions
     std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
     std::pair<Ref<Reference>, Ref<Reference>> isolated_refs() const { return isolated_refs_; }
