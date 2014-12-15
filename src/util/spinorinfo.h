@@ -27,7 +27,7 @@
 #define __SRC_REL_SPINORINFO_H
 
 #include <array>
-#include <src/rel/alpha.h>
+#include <src/util/alpha.h>
 #include <src/util/math/matop.h>
 
 namespace bagel {

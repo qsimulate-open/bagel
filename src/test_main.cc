@@ -58,6 +58,8 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/scf/hf/test_scf.cc>
 
+#include <src/scf/hf/test_molden.cc>
+
 #include <src/scf/ks/test_ks.cc>
 
 #include <src/scf/dhf/test_rel.cc>
@@ -79,8 +81,6 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 #include <src/pt2/nevpt2/test_nevpt2.cc>
 
 #include <src/opt/test_opt.cc>
-
-#include <src/util/io/test_molden.cc>
 
 #include <src/molecule/test_localize.cc>
 

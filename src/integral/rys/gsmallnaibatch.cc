@@ -24,9 +24,7 @@
 //
 
 
-#include <src/rel/alpha.h>
-#include <iostream>
-#include <iomanip>
+#include <src/util/alpha.h>
 #include <src/integral/rys/gnaibatch.h>
 #include <src/integral/rys/gsmallnaibatch.h>
 
