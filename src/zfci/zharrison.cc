@@ -129,7 +129,6 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
     ++oindex;
     if (oindex == offset+nstate) break;
   }
-  assert(oindex <= offset+nstate);
   if (oindex < offset+nstate) {
     for (int i = offset; i != offset+oindex; ++i)
       out->find(nelea, neleb)->data(i)->zero();
@@ -182,22 +181,13 @@ void ZHarrison::compute() {
       for (int i = ispin; i != states_.size(); ++i)
         nstate += states_[i];
 
-      if (nstate == 0)
-        continue;
-
       if ((geom_->nele()+ispin-charge_) % 2 == 1) {
-        if (states_[ispin] == 0) {
-          continue;
-        } else {
-          if ((geom_->nele()-charge_) % 2 == 0) throw runtime_error("Wrong states specified - only integer spins are allowed for even electron counts.");
-          else throw runtime_error("Wrong states specified - only half-integer spins are allowed for odd electron counts.");
-        }
+        if (states_[ispin] != 0) throw runtime_error("wrong states specified");
+        continue;
       }
 
       const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
       const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
-      if (neleb < 0) throw runtime_error("Wrong states specified - there are not enough active electrons for the requested spin state.");
-
       generate_guess(nelea, neleb, nstate, cc_, offset);
       offset += nstate;
       if (nelea != neleb) {
