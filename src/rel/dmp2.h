@@ -27,7 +27,7 @@
 #ifndef __SRC_REL_RELMP2_H
 #define __SRC_REL_RELMP2_H
 
-#include <src/rel/dirac.h>
+#include <src/scf/dhf/dirac.h>
 #include <src/wfn/method.h>
 
 namespace bagel {

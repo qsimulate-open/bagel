@@ -26,6 +26,7 @@
 #include <src/scf/hf/rohf.h>
 #include <src/scf/ks/ks.h>
 #include <src/scf/sohf/soscf.h>
+#include <src/scf/dhf/dirac.h>
 #include <src/ci/fci/distfci.h>
 #include <src/ci/fci/harrison.h>
 #include <src/ci/fci/knowles.h>
@@ -41,7 +42,6 @@
 #include <src/multi/zcasscf/zcasbfgs.h>
 #include <src/multi/zcasscf/zcashybrid.h>
 #include <src/multi/zcasscf/zsuperci.h>
-#include <src/rel/dirac.h>
 #include <src/rel/dmp2.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>

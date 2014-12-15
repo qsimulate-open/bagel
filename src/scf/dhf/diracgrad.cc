@@ -26,8 +26,8 @@
 #include <src/grad/gradeval.h>
 #include <src/util/timer.h>
 #include <src/df/reldffull.h>
+#include <src/scf/dhf/dfock.h>
 #include <src/rel/alpha.h>
-#include <src/rel/dfock.h>
 #include <src/rel/relreference.h>
 #include <src/integral/rys/gsmallnaibatch.h>
 

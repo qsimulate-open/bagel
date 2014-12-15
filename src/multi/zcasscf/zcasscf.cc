@@ -24,7 +24,7 @@
 //
 
 #include <fstream>
-#include <src/rel/dirac.h>
+#include <src/scf/dhf/dirac.h>
 #include <src/util/math/quatmatrix.h>
 #include <src/multi/zcasscf/zcasscf.h>
 #include <src/rel/relhcore.h>
