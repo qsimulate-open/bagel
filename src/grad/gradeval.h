@@ -31,7 +31,7 @@
 #include <src/scf/ks/ks.h>
 #include <src/pt2/mp2/mp2grad.h>
 #include <src/grad/gradeval_base.h>
-#include <src/casscf/supercigrad.h>
+#include <src/multi/casscf/supercigrad.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dmp2grad.h>
 #include <src/smith/caspt2grad.h>
