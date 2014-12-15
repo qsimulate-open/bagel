@@ -24,8 +24,7 @@
 //
 
 #include <map>
-
-#include <src/math/sparsematrix.h>
+#include <src/util/math/sparsematrix.h>
 #include <src/ci/ras/form_sigma.h>
 #include <src/ci/ras/sparse_ij.h>
 

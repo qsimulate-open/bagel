@@ -29,7 +29,7 @@
 #include <set>
 #include <src/ci/fci/dvec.h>
 #include <src/ci/ras/civector.h>
-#include <src/math/matrix.h>
+#include <src/util/math/matrix.h>
 #include <src/util/taskqueue.h>
 #include <src/asd/coupling.h>
 #include <src/asd/dimersubspace.h>

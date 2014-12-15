@@ -27,11 +27,10 @@
 #define __BAGEL_ASD_DMRG_PRODUCT_RAS_H
 
 #include <algorithm>
-
 #include <src/ci/ras/ras_space.h>
-#include <src/asd/dmrg/dmrg_block.h>
-#include <src/math/matrix.h>
 #include <src/ci/ras/civector.h>
+#include <src/asd/dmrg/dmrg_block.h>
+#include <src/util/math/matrix.h>
 
 namespace bagel {
 

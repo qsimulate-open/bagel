@@ -24,12 +24,12 @@
 //
 
 #include <numeric>
-#include <src/util/f77.h>
 #include <src/ks/dftgrid.h>
 #include <src/ks/lebedevlist.h>
-#include <src/util/constants.h>
-#include <src/parallel/mpi_interface.h>
 #include <src/ks/xcfunc.h>
+#include <src/util/f77.h>
+#include <src/util/constants.h>
+#include <src/util/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;

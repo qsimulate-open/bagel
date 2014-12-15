@@ -29,8 +29,8 @@
 
 #include <src/molecule/shell.h>
 #include <src/integral/sortlist.h>
-#include <src/math/xyzfile.h>
-#include <src/parallel/resources.h>
+#include <src/util/math/xyzfile.h>
+#include <src/util/parallel/resources.h>
 #include <src/integral/integral.h>
 
 namespace bagel {

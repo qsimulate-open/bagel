@@ -27,10 +27,10 @@
 #ifndef __SRC_MOLECULE_SHELL_H
 #define __SRC_MOLECULE_SHELL_H
 
-#include <src/math/matrix.h>
-#include <src/math/zmatrix.h>
-#include <src/molecule/shell_base.h>
+#include <src/util/math/matrix.h>
+#include <src/util/math/zmatrix.h>
 #include <src/util/serialization.h>
+#include <src/molecule/shell_base.h>
 
 namespace bagel {
 

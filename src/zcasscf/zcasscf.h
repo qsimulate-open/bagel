@@ -29,8 +29,9 @@
 #include <src/ci/zfci/zharrison.h>
 #include <src/casscf/rotfile.h>
 #include <src/wfn/method.h>
-#include <src/math/bfgs.h>
-#include <src/math/step_restrict_bfgs.h>
+#include <src/rel/reloverlap.h>
+#include <src/util/math/bfgs.h>
+#include <src/util/math/step_restrict_bfgs.h>
 
 namespace bagel {
 
@@ -51,9 +52,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     bool no_kramers_init_;
     bool natocc_;
 
-    // enforce time-reversal symmetry
-    bool tsymm_;
-
     double thresh_;
     double thresh_micro_;
     std::complex<double> rms_grad_;
@@ -67,7 +65,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> coeff_;
     std::shared_ptr<const Matrix>  nr_coeff_;
     std::shared_ptr<const ZMatrix> hcore_;
-    std::shared_ptr<const ZMatrix> overlap_;
+    std::shared_ptr<const RelOverlap> overlap_;
     std::vector<double> occup_;
     std::vector<std::complex<double>> scale_closed_;
     std::vector<std::complex<double>> scale_active_;
@@ -133,7 +131,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double thresh_micro() const { return thresh_micro_; }
     double occup(const int i) const { return occup_[i]; }
     std::complex<double> rms_grad() const { return rms_grad_; };
-    bool tsymm() const { return tsymm_; }
     // function to copy electronic rotations from a rotation file TODO: make lambda
     std::shared_ptr<ZRotFile> copy_electronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
     // function to copy positronic rotations from a rotation file TODO: make lambda

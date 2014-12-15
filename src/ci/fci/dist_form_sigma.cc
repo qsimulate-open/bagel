@@ -24,7 +24,7 @@
 //
 
 #include <src/util/combination.hpp>
-#include <src/math/comb.h>
+#include <src/util/math/comb.h>
 #include <src/ci/fci/distfci_ab.h>
 #include <src/ci/fci/distfci_bb.h>
 #include <src/ci/fci/dist_form_sigma.h>

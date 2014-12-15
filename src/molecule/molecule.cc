@@ -27,7 +27,7 @@
 #include <src/molecule/molecule_connect.h>
 #include <src/util/constants.h>
 #include <src/util/atommap.h>
-#include <src/math/quatern.h>
+#include <src/util/math/quatern.h>
 
 using namespace std;
 using namespace bagel;

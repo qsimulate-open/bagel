@@ -31,7 +31,7 @@
 #include <src/ci/fci/properties.h>
 #include <src/wfn/ciwfn.h>
 #include <src/wfn/method.h>
-#include <src/math/davidson.h>
+#include <src/util/math/davidson.h>
 
 namespace bagel {
 

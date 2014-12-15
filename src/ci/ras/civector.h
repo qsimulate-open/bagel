@@ -31,7 +31,7 @@
 #include <src/ci/ras/civector_base.h>
 #include <src/ci/ras/apply_block.h>
 #include <src/ci/fci/dvector_base.h>
-#include <src/parallel/recvrequest.h>
+#include <src/util/parallel/recvrequest.h>
 
 namespace bagel {
 

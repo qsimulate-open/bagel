@@ -26,7 +26,7 @@
 #include <stdexcept>
 #include <src/ci/fci/determinants.h>
 #include <src/ci/fci/space.h>
-#include <src/math/comb.h>
+#include <src/util/math/comb.h>
 #include <src/util/combination.hpp>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::HZSpace)

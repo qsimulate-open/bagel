@@ -25,7 +25,7 @@
 
 #include <src/scf/rohf.h>
 #include <src/prop/multipole.h>
-#include <src/math/diis.h>
+#include <src/util/math/diis.h>
 
 using namespace std;
 using namespace bagel;

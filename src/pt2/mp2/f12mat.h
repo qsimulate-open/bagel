@@ -32,9 +32,9 @@
 #include <iomanip>
 #include <memory>
 #include <algorithm>
-#include <src/util/f77.h>
 #include <stdexcept>
-#include <src/math/matrix.h>
+#include <src/util/f77.h>
+#include <src/util/math/matrix.h>
 
 namespace bagel {
 

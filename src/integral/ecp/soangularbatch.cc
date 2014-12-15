@@ -24,8 +24,8 @@
 //
 
 
-#include <src/math/bessel.h>
-#include <src/math/algo.h>
+#include <src/util/math/bessel.h>
+#include <src/util/math/algo.h>
 #include <src/integral/ecp/soangularbatch.h>
 #include <src/integral/ecp/sphusplist.h>
 #include <iomanip>

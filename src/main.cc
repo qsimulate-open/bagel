@@ -24,7 +24,6 @@
 //
 
 #include <src/global.h>
-#include <src/io/moldenout.h>
 #include <src/pt2/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
 #include <src/molecule/localization.h>
@@ -32,6 +31,7 @@
 #include <src/asd/dmrg/rasd.h>
 #include <src/asd/multisite/multisite.h>
 #include <src/util/archive.h>
+#include <src/util/io/moldenout.h>
 
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);

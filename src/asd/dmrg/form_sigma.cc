@@ -24,9 +24,8 @@
 //
 
 #include <unordered_map>
-
-#include <src/math/sparsematrix.h>
-#include <src/math/blocksparsematrix.h>
+#include <src/util/math/sparsematrix.h>
+#include <src/util/math/blocksparsematrix.h>
 #include <src/asd/dmrg/form_sigma.h>
 #include <src/ci/ras/form_sigma.h>
 #include <src/ci/ras/apply_operator.h>

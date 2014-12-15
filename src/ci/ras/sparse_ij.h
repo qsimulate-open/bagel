@@ -28,7 +28,7 @@
 
 #include <src/ci/ciutil/citraits.h>
 #include <src/ci/ras/civector.h>
-#include <src/math/sparsematrix.h>
+#include <src/util/math/sparsematrix.h>
 
 namespace bagel {
 

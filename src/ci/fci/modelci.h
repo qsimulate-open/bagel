@@ -26,7 +26,7 @@
 #ifndef __BAGEL_FCI_MODELCI_H
 #define __BAGEL_FCI_MODELCI_H
 
-#include <src/math/matrix.h>
+#include <src/util/math/matrix.h>
 #include <src/ci/fci/mofile.h>
 
 namespace bagel {

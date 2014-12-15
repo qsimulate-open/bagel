@@ -27,7 +27,7 @@
 #ifndef __BAGEL_SRC_SCF_SCF_H
 #define __BAGEL_SRC_SCF_SCF_H
 
-#include <src/math/diis.h>
+#include <src/util/math/diis.h>
 #include <src/scf/scf_base.h>
 #include <src/scf/levelshift.h>
 

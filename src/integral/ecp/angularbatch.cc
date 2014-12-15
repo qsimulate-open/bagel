@@ -24,8 +24,8 @@
 //
 
 
-#include <src/math/bessel.h>
-#include <src/math/algo.h>
+#include <src/util/math/bessel.h>
+#include <src/util/math/algo.h>
 #include <src/integral/ecp/wigner3j.h>
 #include <src/integral/ecp/angularbatch.h>
 #include <src/integral/ecp/sphusplist.h>

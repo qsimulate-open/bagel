@@ -28,7 +28,7 @@
 #define __SRC_REL_CDMATRIX_H
 
 #include <src/rel/reldfhalf.h>
-#include <src/math/vectorb.h>
+#include <src/util/math/vectorb.h>
 
 namespace bagel {
 

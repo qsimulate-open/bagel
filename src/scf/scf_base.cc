@@ -27,7 +27,7 @@
 #include <src/scf/scf_base.h>
 #include <src/rel/relreference.h>
 #include <src/util/timer.h>
-#include <src/math/diis.h>
+#include <src/util/math/diis.h>
 #include <iostream>
 #include <cmath>
 #include <iomanip>

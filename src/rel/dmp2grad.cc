@@ -29,7 +29,6 @@
 #include <stddef.h>
 #include <iostream>
 #include <iomanip>
-#include <src/util/f77.h>
 #include <src/rel/dmp2.h>
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
@@ -37,7 +36,8 @@
 #include <src/rel/reldipole.h>
 #include <src/grad/gradeval.h>
 #include <src/smith/prim_op.h>
-#include <src/parallel/resources.h>
+#include <src/util/f77.h>
+#include <src/util/parallel/resources.h>
 
 using namespace std;
 using namespace bagel;

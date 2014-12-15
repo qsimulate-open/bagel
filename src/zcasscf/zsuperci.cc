@@ -24,13 +24,13 @@
 //
 
 
-#include <src/zcasscf/zqvec.h>
-#include <src/math/step_restrict_bfgs.h>
 #include <src/rel/dfock.h>
+#include <src/rel/reloverlap.h>
+#include <src/zcasscf/zqvec.h>
 #include <src/zcasscf/zsuperci.h>
 #include <src/zcasscf/zsupercimicro.h>
-#include <src/rel/reloverlap.h>
-#include <src/math/hpw_diis.h>
+#include <src/util/math/hpw_diis.h>
+#include <src/util/math/step_restrict_bfgs.h>
 
 using namespace std;
 using namespace bagel;

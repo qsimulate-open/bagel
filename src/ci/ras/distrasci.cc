@@ -26,7 +26,7 @@
 #include <src/ci/ras/distrasci.h>
 #include <src/ci/ras/dist_form_sigma.h>
 #include <src/util/combination.hpp>
-#include <src/math/davidson.h>
+#include <src/util/math/davidson.h>
 
 using namespace std;
 using namespace bagel;

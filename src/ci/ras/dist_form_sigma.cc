@@ -25,11 +25,9 @@
 
 #include <map>
 #include <algorithm>
-
 #include <src/ci/ras/dist_form_sigma.h>
-#include <src/math/sparsematrix.h>
-
 #include <src/ci/ras/form_sigma.h>
+#include <src/util/math/sparsematrix.h>
 
 using namespace std;
 using namespace bagel;

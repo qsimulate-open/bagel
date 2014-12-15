@@ -25,7 +25,7 @@
 
 #include <src/asd/dmrg/gamma_forest_prod_asd.h>
 #include <src/asd/dmrg/product_civec.h>
-#include <src/math/btas_interface.h>
+#include <src/util/math/btas_interface.h>
 
 using namespace bagel;
 using namespace std;

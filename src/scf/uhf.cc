@@ -24,9 +24,9 @@
 //
 
 #include <src/scf/uhf.h>
-#include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
-#include <src/math/diis.h>
+#include <src/prop/multipole.h>
+#include <src/util/math/diis.h>
 
 using namespace std;
 using namespace bagel;

@@ -28,7 +28,7 @@
 #include <src/ci/fci/determinants.h>
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
-#include <src/math/comb.h>
+#include <src/util/math/comb.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Determinants)
 

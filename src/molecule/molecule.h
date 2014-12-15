@@ -29,7 +29,7 @@
 #include <iostream>
 #include <src/molecule/atom.h>
 #include <src/molecule/petite.h>
-#include <src/math/xyzfile.h>
+#include <src/util/math/xyzfile.h>
 #include <src/util/serialization.h>
 
 namespace bagel {

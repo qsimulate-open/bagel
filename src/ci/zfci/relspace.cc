@@ -25,7 +25,7 @@
 
 #include <stdexcept>
 #include <src/ci/zfci/relspace.h>
-#include <src/math/comb.h>
+#include <src/util/math/comb.h>
 #include <src/util/combination.hpp>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelSpace)

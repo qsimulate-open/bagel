@@ -25,7 +25,7 @@
 
 #include <src/molecule/shell.h>
 #include <src/molecule/moment_compute.h>
-#include <src/math/matop.h>
+#include <src/util/math/matop.h>
 #include <src/integral/carsphlist.h>
 
 using namespace std;

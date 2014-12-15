@@ -27,14 +27,14 @@
 // implements the MP2-F12 theory
 
 #include <set>
-#include <src/pt2/mp2/mp2.h>
-#include <src/util/f77.h>
 #include <src/scf/scf.h>
-#include <src/smith/prim_op.h>
-#include <src/pt2/mp2/f12int4.h>
 #include <src/df/dfdistt.h>
+#include <src/smith/prim_op.h>
+#include <src/pt2/mp2/mp2.h>
+#include <src/pt2/mp2/f12int4.h>
+#include <src/util/f77.h>
 #include <src/util/taskqueue.h>
-#include <src/parallel/resources.h>
+#include <src/util/parallel/resources.h>
 
 using namespace std;
 using namespace bagel;

@@ -29,12 +29,12 @@
 
 #include <list>
 #include <numeric>
-#include <src/parallel/staticdist.h>
-#include <src/math/algo.h>
+#include <src/util/math/algo.h>
 #include <src/util/f77.h>
+#include <src/util/parallel/staticdist.h>
+#include <src/util/parallel/accrequest.h>
+#include <src/util/parallel/recvrequest.h>
 #include <src/ci/fci/determinants.h>
-#include <src/parallel/accrequest.h>
-#include <src/parallel/recvrequest.h>
 #include <src/ci/fci/dvector_base.h>
 
 namespace bagel {

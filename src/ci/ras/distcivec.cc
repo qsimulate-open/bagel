@@ -27,7 +27,7 @@
 #include <iomanip>
 #include <unordered_map>
 #include <src/ci/ras/civector.h>
-#include <src/parallel/distqueue.h>
+#include <src/util/parallel/distqueue.h>
 
 using namespace std;
 using namespace bagel;

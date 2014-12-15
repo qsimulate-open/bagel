@@ -24,17 +24,17 @@
 //
 
 
+#include <iostream>
 #include <src/casscf/superci.h>
 #include <src/casscf/supercimicro.h>
-#include <iostream>
 #include <src/ci/fci/fci.h>
 #include <src/casscf/rotfile.h>
-#include <src/math/davidson.h>
 #include <src/molecule/hcore.h>
 #include <src/scf/fock.h>
 #include <src/util/f77.h>
-#include <src/math/bfgs.h>
-#include <src/math/hpw_diis.h>
+#include <src/util/math/davidson.h>
+#include <src/util/math/bfgs.h>
+#include <src/util/math/hpw_diis.h>
 
 using namespace std;
 using namespace bagel;

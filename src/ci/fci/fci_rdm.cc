@@ -26,7 +26,7 @@
 
 #include <src/ci/fci/fci.h>
 #include <src/smith/prim_op.h>
-#include <src/math/algo.h>
+#include <src/util/math/algo.h>
 #include <src/wfn/rdm.h>
 
 using namespace std;

@@ -26,7 +26,7 @@
 #ifndef __BAGEL_ASD_DMRG_PRODUCT_MODELCI_H
 #define __BAGEL_ASD_DMRG_PRODUCT_MODELCI_H
 
-#include <src/math/matrix.h>
+#include <src/util/math/matrix.h>
 #include <src/asd/dimer/dimer_jop.h>
 #include <src/asd/dmrg/block_operators.h>
 

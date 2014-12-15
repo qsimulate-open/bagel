@@ -33,9 +33,9 @@
 #include <memory>
 #include <stdexcept>
 #include <boost/test/unit_test.hpp>
-#include <src/parallel/resources.h>
-#include <src/parallel/mpi_interface.h>
-#include <src/input/input.h>
+#include <src/util/parallel/resources.h>
+#include <src/util/parallel/mpi_interface.h>
+#include <src/util/input/input.h>
 
 using namespace bagel;
 
@@ -81,7 +81,7 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/opt/test_opt.cc>
 
-#include <src/io/test_molden.cc>
+#include <src/util/io/test_molden.cc>
 
 #include <src/molecule/test_localize.cc>
 

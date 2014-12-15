@@ -30,8 +30,8 @@
 #include <bitset>
 #include <algorithm>
 #include <src/util/constants.h>
-#include <src/parallel/staticdist.h>
-#include <src/parallel/mpi_interface.h>
+#include <src/util/parallel/staticdist.h>
+#include <src/util/parallel/mpi_interface.h>
 #include <src/util/serialization.h>
 #include <src/ci/ciutil/cistringmap.h>
 
