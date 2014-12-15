@@ -26,7 +26,7 @@
 #ifndef __asd_asd_spin_h
 #define __asd_asd_spin_h
 
-#include <src/math/sparsematrix.h>
+#include <src/util/math/sparsematrix.h>
 #include <src/asd/coupling.h>
 #include <src/asd/dimersubspace.h>
 

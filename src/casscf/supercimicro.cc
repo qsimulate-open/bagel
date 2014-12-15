@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/math/pairfile.h>
-#include <src/math/bfgs.h>
+#include <src/util/math/pairfile.h>
+#include <src/util/math/bfgs.h>
 #include <src/casscf/supercimicro.h>
 
 using namespace std;

@@ -28,7 +28,7 @@
 #define __SRC_MOLECULE_CARSPH_SHELL_H
 
 #include <memory>
-#include <src/math/matrix.h>
+#include <src/util/math/matrix.h>
 
 namespace bagel {
 

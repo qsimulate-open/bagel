@@ -27,11 +27,11 @@
 #ifndef __SRC_SMITH_CAS_all_active_H
 #define __SRC_SMITH_CAS_all_active_H
 
-#include <src/smith/spinfreebase.h>
-#include <src/scf/fock.h>
-#include <src/util/f77.h>
 #include <iostream>
 #include <iomanip>
+#include <src/smith/spinfreebase.h>
+#include <src/scf/hf/fock.h>
+#include <src/util/f77.h>
 #include <src/smith/queue.h>
 #include <src/smith/CAS_all_active_tasks.h>
 #include <src/smith/smith_info.h>

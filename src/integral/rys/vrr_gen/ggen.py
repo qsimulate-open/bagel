@@ -32,7 +32,7 @@ ss = "\
 \n\
 #include <src/integral/rys/gradbatch.h>\n\
 #include <src/integral/rys/_gvrr_drv.h>\n\
-#include <src/math/comb.h>\n\
+#include <src/util/math/comb.h>\n\
 #include <src/util/f77.h>\n\
 \n\
 using namespace std;\n\

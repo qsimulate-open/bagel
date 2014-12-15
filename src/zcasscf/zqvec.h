@@ -27,7 +27,7 @@
 #ifndef __BAGEL_SRC_ZCASSCF_ZQVEC_H
 #define __BAGEL_SRC_ZCASSCF_ZQVEC_H
 
-#include <src/zfci/zharrison.h> // 2RDM and transformed integrals
+#include <src/ci/zfci/zharrison.h> // 2RDM and transformed integrals
 
 namespace bagel {
 
@@ -35,9 +35,6 @@ class ZQvec : public ZMatrix {
   protected:
 
   public:
-    ZQvec(const int n, const int m, std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> coeff, const int nclosed,
-          std::shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit); // FIXME : this constructor has a bug
-
     ZQvec(const ZMatrix& a) : ZMatrix(a) {}
 
     ZQvec(const int n, const int m, std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> rcoeff, std::shared_ptr<const ZMatrix> acoeff, const int nclosed,

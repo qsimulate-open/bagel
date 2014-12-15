@@ -30,7 +30,6 @@
 #include <src/molecule/zoverlap.h>
 #include <src/molecule/hcore.h>
 #include <src/molecule/zhcore.h>
-#include <src/scf/fock.h>
 #include <src/wfn/method.h>
 
 namespace bagel {

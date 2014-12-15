@@ -26,9 +26,10 @@
 
 #include <src/casscf/casbfgs.h>
 #include <src/casscf/qvec.h>
-#include <src/math/davidson.h>
-#include <src/math/step_restrict_bfgs.h>
-#include <src/math/hpw_diis.h>
+#include <src/scf/hf/fock.h>
+#include <src/util/math/davidson.h>
+#include <src/util/math/step_restrict_bfgs.h>
+#include <src/util/math/hpw_diis.h>
 
 using namespace std;
 using namespace bagel;

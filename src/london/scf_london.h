@@ -28,9 +28,9 @@
 #define __BAGEL_SRC_LONDON_SCF_LONDON_H
 
 #include <src/scf/scf_base.h>
-#include <src/london/fock_london.h>
 #include <src/scf/levelshift.h>
-#include <src/math/diis.h>
+#include <src/london/fock_london.h>
+#include <src/util/math/diis.h>
 #include <src/wfn/method.h>
 
 namespace bagel {

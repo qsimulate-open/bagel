@@ -7,7 +7,7 @@
 #ifndef __ECP_TESTCODE_SOINTEGRAL_SOH_H
 #define __ECP_TESTCODE_SOINTEGRAL_SO_H
 
-#include <src/math/bessel.h>
+#include <src/util/math/bessel.h>
 #include "src/integral/ecp/sphharmonics.h"
 #include "cartgauss.h"
 

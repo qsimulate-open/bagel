@@ -27,7 +27,7 @@
 #ifndef __SRC_ASD_STATE_TENSOR_H
 #define __SRC_ASD_STATE_TENSOR_H
 
-#include <src/math/matrix.h>
+#include <src/util/math/matrix.h>
 #include <src/asd/dimersubspace.h>
 
 namespace bagel {

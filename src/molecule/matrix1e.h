@@ -28,7 +28,7 @@
 #define __SRC_MOLECULE_MATRIX1E_H
 
 #include <src/molecule/molecule.h>
-#include <src/math/matrix.h>
+#include <src/util/math/matrix.h>
 
 namespace bagel {
 

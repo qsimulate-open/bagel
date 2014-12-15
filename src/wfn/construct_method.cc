@@ -23,26 +23,26 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/scf/rohf.h>
-#include <src/ks/ks.h>
-#include <src/scf/soscf.h>
-#include <src/fci/distfci.h>
-#include <src/fci/harrison.h>
-#include <src/fci/knowles.h>
-#include <src/ras/rasci.h>
-#include <src/ras/distrasci.h>
-#include <src/zfci/zharrison.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/ks/ks.h>
+#include <src/scf/sohf/soscf.h>
+#include <src/ci/fci/distfci.h>
+#include <src/ci/fci/harrison.h>
+#include <src/ci/fci/knowles.h>
+#include <src/ci/ras/rasci.h>
+#include <src/ci/ras/distrasci.h>
+#include <src/ci/zfci/zharrison.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/cashybrid.h>
 #include <src/casscf/casbfgs.h>
-#include <src/nevpt2/nevpt2.h>
+#include <src/pt2/nevpt2/nevpt2.h>
+#include <src/pt2/mp2/mp2.h>
 #include <src/zcasscf/zcasscf.h>
 #include <src/zcasscf/zcasbfgs.h>
 #include <src/zcasscf/zcashybrid.h>
 #include <src/zcasscf/zsuperci.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dmp2.h>
-#include <src/mp2/mp2.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/london/scf_london.h>
@@ -58,7 +58,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
 
   shared_ptr<Method> out;
   if (!geom->magnetism()) {
-    if (title == "hf")          out = make_shared<SCF>(itree, geom, ref);
+    if (title == "hf")          out = make_shared<RHF>(itree, geom, ref);
     else if (title == "ks")     out = make_shared<KS>(itree, geom, ref);
     else if (title == "uhf")    out = make_shared<UHF>(itree, geom, ref);
     else if (title == "rohf")   out = make_shared<ROHF>(itree, geom, ref);

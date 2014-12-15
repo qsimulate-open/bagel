@@ -28,7 +28,7 @@
 
 #include <string>
 #include <src/wfn/geometry.h>
-#include <src/math/zmatrix.h>
+#include <src/util/math/zmatrix.h>
 
 namespace bagel {
 

@@ -25,9 +25,10 @@
 
 
 #include <src/grad/cpcasscf.h>
-#include <src/math/linearRM.h>
-#include <src/math/bfgs.h>
+#include <src/util/math/linearRM.h>
+#include <src/util/math/bfgs.h>
 #include <src/casscf/qvec.h>
+#include <src/scf/hf/fock.h>
 
 using namespace std;
 using namespace bagel;

@@ -32,8 +32,8 @@
 #include <complex>
 #include <cmath>
 #include <src/util/constants.h>
-#include <src/math/factorial.h>
-#include <src/math/comb.h>
+#include <src/util/math/factorial.h>
+#include <src/util/math/comb.h>
 
 namespace bagel {
 

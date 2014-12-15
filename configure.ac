@@ -137,13 +137,14 @@ fi
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/util/Makefile
-                 src/parallel/Makefile
-                 src/math/Makefile
-                 src/ciutil/Makefile
-                 src/dimer/Makefile
-                 src/multisite/Makefile
+                 src/util/input/Makefile
+                 src/util/io/Makefile
+                 src/util/parallel/Makefile
+                 src/util/math/Makefile
+                 src/asd/multisite/Makefile
+                 src/asd/dimer/Makefile
+                 src/asd/dmrg/Makefile
                  src/asd/Makefile
-                 src/asd_dmrg/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile
                  src/integral/Makefile
@@ -151,20 +152,18 @@ AC_CONFIG_FILES([Makefile
                  src/df/Makefile
                  src/prop/Makefile
                  src/smith/Makefile
-                 src/mp2/Makefile
                  src/molecule/Makefile
-                 src/input/Makefile
-                 src/io/Makefile
-                 src/fci/Makefile
-                 src/zfci/Makefile
-                 src/ras/Makefile
+                 src/pt2/Makefile
+                 src/pt2/mp2/Makefile
+                 src/pt2/nevpt2/Makefile
+                 src/ci/Makefile
+                 src/ci/ciutil/Makefile
+                 src/ci/fci/Makefile
+                 src/ci/zfci/Makefile
+                 src/ci/ras/Makefile
                  src/casscf/Makefile
                  src/zcasscf/Makefile
-                 src/nevpt2/Makefile
-                 src/pscf/Makefile
-                 src/pmp2/Makefile
                  src/rel/Makefile
-                 src/ks/Makefile
                  src/opt/Makefile
                  src/alglib/Makefile
                  src/london/Makefile
