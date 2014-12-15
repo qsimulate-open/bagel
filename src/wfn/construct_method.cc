@@ -23,9 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/scf/rohf.h>
-#include <src/ks/ks.h>
-#include <src/scf/soscf.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/ks/ks.h>
+#include <src/scf/sohf/soscf.h>
 #include <src/ci/fci/distfci.h>
 #include <src/ci/fci/harrison.h>
 #include <src/ci/fci/knowles.h>

@@ -30,7 +30,7 @@
 #include <src/ci/fci/fci.h>
 #include <src/casscf/rotfile.h>
 #include <src/molecule/hcore.h>
-#include <src/scf/fock.h>
+#include <src/scf/hf/fock.h>
 #include <src/util/f77.h>
 #include <src/util/math/davidson.h>
 #include <src/util/math/bfgs.h>

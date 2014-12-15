@@ -24,9 +24,9 @@
 //
 
 #include <src/asd/multisite/multisite.h>
-#include <src/scf/fock.h>
 #include <src/wfn/construct_method.h>
-#include <src/scf/scf.h>
+#include <src/scf/hf/fock.h>
+#include <src/scf/hf/scf.h>
 
 #include <src/molecule/localization.h>
 #include <src/molecule/overlap.h>

@@ -25,6 +25,7 @@
 
 
 #include <fstream>
+#include <src/scf/hf/fock.h>
 #include <src/casscf/casscf.h>
 #include <src/casscf/qvec.h>
 

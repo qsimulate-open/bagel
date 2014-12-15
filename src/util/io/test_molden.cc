@@ -26,7 +26,7 @@
 
 #include <src/util/io/moldenout.h>
 #include <src/util/io/moldenin.h>
-#include <src/scf/fock.h>
+#include <src/scf/hf/fock.h>
 
 double molden_out_energy(std::string inp1, std::string inp2) {
 

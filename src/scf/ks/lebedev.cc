@@ -1,4 +1,4 @@
-# include <src/ks/lebedevlist.h>
+# include <src/scf/ks/lebedevlist.h>
 # include <stdexcept>
 # include <cmath>
 

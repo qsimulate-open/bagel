@@ -24,10 +24,10 @@
 //
 
 #include <sstream>
-#include <src/scf/scf.h>
-#include <src/scf/rohf.h>
-#include <src/scf/uhf.h>
-#include <src/scf/soscf.h>
+#include <src/scf/hf/scf.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/hf/uhf.h>
+#include <src/scf/sohf/soscf.h>
 #include <src/wfn/reference.h>
 
 using namespace bagel;

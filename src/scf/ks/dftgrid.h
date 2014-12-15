@@ -26,8 +26,8 @@
 #ifndef __SRC_KS_DFTGRID_H
 #define __SRC_KS_DFTGRID_H
 
-#include <src/ks/xcfunc.h>
-#include <src/ks/grid.h>
+#include <src/scf/ks/xcfunc.h>
+#include <src/scf/ks/grid.h>
 
 namespace bagel {
 

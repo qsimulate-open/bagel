@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/scf/fock.h>
+#include <src/scf/hf/fock.h>
 
 using namespace std;
 using namespace bagel;

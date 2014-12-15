@@ -30,7 +30,7 @@
 #include <src/df/df.h>
 #include <src/integral/libint/libint.h>
 #include <src/integral/rys/eribatch.h>
-#include <src/scf/fock_base.h>
+#include <src/scf/hf/fock_base.h>
 
 namespace bagel {
 

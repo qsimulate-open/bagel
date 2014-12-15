@@ -24,7 +24,7 @@
 //
 
 
-#include <src/scf/sohcore.h>
+#include <src/scf/sohf/sohcore.h>
 
 using namespace std;
 using namespace bagel;

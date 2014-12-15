@@ -24,9 +24,9 @@
 //
 
 #include <numeric>
-#include <src/ks/dftgrid.h>
-#include <src/ks/lebedevlist.h>
-#include <src/ks/xcfunc.h>
+#include <src/scf/ks/dftgrid.h>
+#include <src/scf/ks/lebedevlist.h>
+#include <src/scf/ks/xcfunc.h>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
 #include <src/util/parallel/mpi_interface.h>

@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/ks/grid.h>
+#include <src/scf/ks/grid.h>
 #include <src/util/parallel/resources.h>
 
 namespace bagel {

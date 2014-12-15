@@ -27,11 +27,11 @@
 #ifndef __SRC_SMITH_MP2_H
 #define __SRC_SMITH_MP2_H
 
-#include <src/smith/spinfreebase.h>
-#include <src/scf/fock.h>
-#include <src/util/f77.h>
 #include <iostream>
 #include <iomanip>
+#include <src/smith/spinfreebase.h>
+#include <src/scf/hf/fock.h>
+#include <src/util/f77.h>
 #include <src/smith/queue.h>
 #include <src/smith/MP2_tasks.h>
 #include <src/smith/smith_info.h>

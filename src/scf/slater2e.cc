@@ -24,7 +24,7 @@
 //
 
 
-#include <src/scf/fock.h>
+#include <src/scf/hf/fock.h>
 #include <iostream>
 #include <iomanip>
 #include <cassert>
