@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: scf.h
+// Filename: rhf.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __BAGEL_SRC_SCF_SCF_H
-#define __BAGEL_SRC_SCF_SCF_H
+#ifndef __BAGEL_SRC_SCF_HF_RHF_H
+#define __BAGEL_SRC_SCF_HF_RHF_H
 
 #include <src/util/math/diis.h>
 #include <src/scf/scf_base.h>
@@ -33,7 +33,7 @@
 
 namespace bagel {
 
-class SCF : public SCF_base {
+class RHF : public SCF_base {
   protected:
     double lshift_;
     std::shared_ptr<LevelShift<DistMatrix>> levelshift_;
@@ -68,9 +68,9 @@ class SCF : public SCF_base {
     }
 
   public:
-    SCF() { }
-    SCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr);
-    virtual ~SCF() { }
+    RHF() { }
+    RHF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr);
+    virtual ~RHF() { }
 
     void compute() override;
 
@@ -83,6 +83,6 @@ class SCF : public SCF_base {
 }
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::SCF)
+BOOST_CLASS_EXPORT_KEY(bagel::RHF)
 
 #endif

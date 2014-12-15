@@ -29,7 +29,7 @@
 #define __BAGEL_FCI_PROPERTIES_H
 
 #include <src/wfn/reference.h>
-#include <src/scf/hf/scf.h>
+#include <src/scf/hf/rhf.h>
 #include <src/ci/fci/dvec.h>
 
 namespace bagel {

@@ -47,7 +47,7 @@ double localization(std::string filename) {
       geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "hf") {
-      auto scf = std::make_shared<SCF>(itree, geom);
+      auto scf = std::make_shared<RHF>(itree, geom);
       scf->compute();
       ref = scf->conv_to_ref();
 

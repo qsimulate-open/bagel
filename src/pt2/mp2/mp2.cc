@@ -27,7 +27,7 @@
 // implements the MP2-F12 theory
 
 #include <set>
-#include <src/scf/hf/scf.h>
+#include <src/scf/hf/rhf.h>
 #include <src/df/dfdistt.h>
 #include <src/smith/prim_op.h>
 #include <src/pt2/mp2/mp2.h>
@@ -42,7 +42,7 @@ using namespace btas;
 
 MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
-  scf_ = make_shared<SCF>(input, g, ref);
+  scf_ = make_shared<RHF>(input, g, ref);
   scf_->compute();
   ref_ = scf_->conv_to_ref();
 

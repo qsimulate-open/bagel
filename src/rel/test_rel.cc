@@ -24,7 +24,7 @@
 //
 
 #include <sstream>
-#include <src/scf/hf/scf.h>
+#include <src/scf/hf/rhf.h>
 #include <src/rel/dirac.h>
 #include <src/wfn/reference.h>
 
@@ -49,7 +49,7 @@ double rel_energy(std::string filename) {
       geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "hf") {
-      auto scf = std::make_shared<SCF>(itree, geom);
+      auto scf = std::make_shared<RHF>(itree, geom);
       scf->compute();
       ref_ = scf->conv_to_ref();
     } else if (method == "dhf") {

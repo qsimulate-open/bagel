@@ -27,7 +27,6 @@
 // carbon copy of what I wrote in the orz package
 // meant to be standalone
 
-#include <src/scf/hf/scf.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/rys/slaterbatch.h>
 #include <src/wfn/geometry.h>

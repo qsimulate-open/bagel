@@ -59,7 +59,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
 
   shared_ptr<Method> out;
   if (!geom->magnetism()) {
-    if (title == "hf")          out = make_shared<SCF>(itree, geom, ref);
+    if (title == "hf")          out = make_shared<RHF>(itree, geom, ref);
     else if (title == "ks")     out = make_shared<KS>(itree, geom, ref);
     else if (title == "uhf")    out = make_shared<UHF>(itree, geom, ref);
     else if (title == "rohf")   out = make_shared<ROHF>(itree, geom, ref);
