@@ -161,8 +161,9 @@ AC_CONFIG_FILES([Makefile
                  src/ci/fci/Makefile
                  src/ci/zfci/Makefile
                  src/ci/ras/Makefile
-                 src/casscf/Makefile
-                 src/zcasscf/Makefile
+                 src/multi/Makefile
+                 src/multi/casscf/Makefile
+                 src/multi/zcasscf/Makefile
                  src/rel/Makefile
                  src/opt/Makefile
                  src/alglib/Makefile

@@ -25,8 +25,8 @@
 
 
 #include <src/smith/caspt2grad.h>
-#include <src/casscf/cashybrid.h>
-#include <src/casscf/qvec.h>
+#include <src/multi/casscf/cashybrid.h>
+#include <src/multi/casscf/qvec.h>
 #include <src/smith/smith.h>
 #include <src/grad/gradeval.h>
 #include <src/util/math/algo.h>

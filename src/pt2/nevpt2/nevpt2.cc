@@ -28,8 +28,8 @@
 #include <src/pt2/nevpt2/nevpt2.h>
 #include <src/df/dfdistt.h>
 #include <src/scf/hf/fock.h>
-#include <src/casscf/superci.h>
-#include <src/casscf/qvec.h>
+#include <src/multi/casscf/superci.h>
+#include <src/multi/casscf/qvec.h>
 #include <src/util/parallel/resources.h>
 
 using namespace std;
