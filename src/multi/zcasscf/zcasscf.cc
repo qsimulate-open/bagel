@@ -115,9 +115,9 @@ void ZCASSCF::init() {
   } else {
     shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
     shared_ptr<ZMatrix> coeff = ctmp->clone();
-    const int npos = ctmp->mdim() - nneg_;
-    coeff->copy_block(0, 0, ctmp->mdim(), npos, ctmp->slice(nneg_, nneg_+npos));
-    coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
+    const int npos = ctmp->mdim()/2;
+    coeff->copy_block(0, 0, ctmp->ndim(), npos, ctmp->slice(npos, npos+npos));
+    coeff->copy_block(0, npos, ctmp->ndim(), npos, ctmp->slice(0, npos));
     coeff_ = coeff;
   }
 
