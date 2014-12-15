@@ -31,9 +31,9 @@
 #include <src/scf/ks/ks.h>
 #include <src/scf/dhf/dirac.h>
 #include <src/pt2/mp2/mp2grad.h>
+#include <src/pt2/dmp2/dmp2grad.h>
 #include <src/grad/gradeval_base.h>
 #include <src/multi/casscf/supercigrad.h>
-#include <src/rel/dmp2grad.h>
 #include <src/smith/caspt2grad.h>
 
 // T should have

@@ -27,7 +27,7 @@
 #ifndef __SRC_REL_DMP2GRAD_H
 #define __SRC_REL_DMP2GRAD_H
 
-#include <src/rel/dmp2.h>
+#include <src/pt2/dmp2/dmp2.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {

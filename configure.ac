@@ -154,8 +154,6 @@ AC_CONFIG_FILES([Makefile
                  src/smith/Makefile
                  src/molecule/Makefile
                  src/pt2/Makefile
-                 src/pt2/mp2/Makefile
-                 src/pt2/nevpt2/Makefile
                  src/ci/Makefile
                  src/ci/ciutil/Makefile
                  src/ci/fci/Makefile
