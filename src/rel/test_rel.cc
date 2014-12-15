@@ -24,7 +24,7 @@
 //
 
 #include <sstream>
-#include <src/scf/scf.h>
+#include <src/scf/hf/scf.h>
 #include <src/rel/dirac.h>
 #include <src/wfn/reference.h>
 

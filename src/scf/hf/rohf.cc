@@ -23,7 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/scf/rohf.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/hf/fock.h>
 #include <src/prop/multipole.h>
 #include <src/util/math/diis.h>
 

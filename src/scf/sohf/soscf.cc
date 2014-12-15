@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/scf/soscf.h>
-#include <src/scf/sofock.h>
+#include <src/scf/sohf/soscf.h>
+#include <src/scf/sohf/sofock.h>
 #include <src/util/math/diis.h>
 #include <src/rel/relreference.h>
 

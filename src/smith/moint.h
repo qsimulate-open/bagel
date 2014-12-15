@@ -36,7 +36,7 @@
 #include <stdexcept>
 #include <src/smith/smith_info.h>
 #include <src/smith/tensor.h>
-#include <src/scf/fock.h>
+#include <src/scf/hf/fock.h>
 #include <src/util/math/algo.h>
 
 namespace bagel {

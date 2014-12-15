@@ -28,7 +28,7 @@
 #define __SRC_MP2_MP2_H
 
 #include <src/pt2/mp2/f12int.h>
-#include <src/scf/scf.h>
+#include <src/scf/hf/scf.h>
 #include <src/wfn/method.h>
 
 namespace bagel {

@@ -27,12 +27,12 @@
 #ifndef __SRC_SMITH_CAS_test_H
 #define __SRC_SMITH_CAS_test_H
 
-#include <src/smith/spinfreebase.h>
-#include <src/scf/fock.h>
-#include <src/util/f77.h>
 #include <iostream>
 #include <tuple>
 #include <iomanip>
+#include <src/smith/spinfreebase.h>
+#include <src/scf/hf/fock.h>
+#include <src/util/f77.h>
 #include <src/smith/queue.h>
 #include <src/smith/CAS_test_tasks.h>
 #include <src/smith/smith_info.h>

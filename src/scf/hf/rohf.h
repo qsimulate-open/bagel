@@ -27,7 +27,7 @@
 #ifndef __BAGEL_SRC_SCF_ROHF_H
 #define __BAGEL_SRC_SCF_ROHF_H
 
-#include <src/scf/uhf.h>
+#include <src/scf/hf/uhf.h>
 
 // implements UHF as in Tsuchimochi and Scuseria, J. Chem. Phys. 133, 141102 (2010)
 namespace bagel {

@@ -57,9 +57,9 @@ bool compare(const T a, const T b, const double thr = THRESH) {
  return out;
 }
 
-#include <src/scf/test_scf.cc>
+#include <src/scf/hf/test_scf.cc>
 
-#include <src/ks/test_ks.cc>
+#include <src/scf/ks/test_ks.cc>
 
 #include <src/rel/test_rel.cc>
 

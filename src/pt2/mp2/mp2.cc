@@ -27,7 +27,7 @@
 // implements the MP2-F12 theory
 
 #include <set>
-#include <src/scf/scf.h>
+#include <src/scf/hf/scf.h>
 #include <src/df/dfdistt.h>
 #include <src/smith/prim_op.h>
 #include <src/pt2/mp2/mp2.h>

@@ -24,7 +24,7 @@
 //
 
 #include <src/opt/optimize.h>
-#include <src/scf/scf.h>
+#include <src/scf/hf/scf.h>
 #include <src/wfn/reference.h>
 
 std::vector<double> run_opt(std::string filename) {

@@ -28,8 +28,8 @@
 #define __BAGEL_SRC_KS_KS_H
 
 #include <src/scf/scf_base.h>
-#include <src/ks/xcfunc.h>
-#include <src/ks/dftgrid.h>
+#include <src/scf/ks/xcfunc.h>
+#include <src/scf/ks/dftgrid.h>
 
 // I only implement a DF version
 

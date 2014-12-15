@@ -27,6 +27,7 @@
 #include <src/smith/prim_op.h>
 #include <src/pt2/nevpt2/nevpt2.h>
 #include <src/df/dfdistt.h>
+#include <src/scf/hf/fock.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/qvec.h>
 #include <src/util/parallel/resources.h>

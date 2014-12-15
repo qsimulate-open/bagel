@@ -25,9 +25,9 @@
 
 #include <sstream>
 #include <src/prop/multipole.h>
-#include <src/scf/scf.h>
-#include <src/scf/rohf.h>
-#include <src/scf/uhf.h>
+#include <src/scf/hf/scf.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/hf/uhf.h>
 #include <src/wfn/reference.h>
 
 std::vector<double> multipole(std::string filename) {

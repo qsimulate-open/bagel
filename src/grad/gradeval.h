@@ -27,8 +27,8 @@
 #ifndef __SRC_GRAD_GRADEVAL_H
 #define __SRC_GRAD_GRADEVAL_H
 
-#include <src/scf/rohf.h>
-#include <src/ks/ks.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/ks/ks.h>
 #include <src/pt2/mp2/mp2grad.h>
 #include <src/grad/gradeval_base.h>
 #include <src/casscf/supercigrad.h>

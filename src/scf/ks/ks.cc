@@ -23,7 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/ks/ks.h>
+#include <src/scf/ks/ks.h>
+#include <src/scf/hf/fock.h>
 #include <src/prop/multipole.h>
 #include <src/util/math/diis.h>
 

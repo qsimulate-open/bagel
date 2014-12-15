@@ -23,9 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/scf/scf.h>
-#include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
+#include <src/scf/hf/scf.h>
+#include <src/scf/hf/fock.h>
+#include <src/prop/multipole.h>
 
 using namespace bagel;
 using namespace std;

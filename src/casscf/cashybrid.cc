@@ -24,7 +24,7 @@
 //
 
 
-#include <src/scf/scf.h>
+#include <src/scf/hf/scf.h>
 #include <src/casscf/casscf.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/casbfgs.h>
