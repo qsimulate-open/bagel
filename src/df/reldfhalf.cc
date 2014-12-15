@@ -24,7 +24,7 @@
 //
 
 
-#include <src/rel/reldfhalf.h>
+#include <src/df/reldfhalf.h>
 
 using namespace std;
 using namespace bagel;

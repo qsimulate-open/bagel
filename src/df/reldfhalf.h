@@ -24,13 +24,13 @@
 //
 
 
-#ifndef __SRC_REL_RELDFHALF_H
-#define __SRC_REL_RELDFHALF_H
+#ifndef __SRC_DF_RELDFHALF_H
+#define __SRC_DF_RELDFHALF_H
 
 #include <map>
 #include <src/wfn/reference.h>
-#include <src/rel/breit2index.h>
-#include <src/rel/reldf.h>
+#include <src/df/breit2index.h>
+#include <src/df/reldf.h>
 
 namespace bagel {
 

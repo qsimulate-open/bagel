@@ -23,11 +23,11 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_REL_RELDFFULL_H
-#define __SRC_REL_RELDFFULL_H
+#ifndef __SRC_DF_RELDFFULL_H
+#define __SRC_DF_RELDFFULL_H
 
-#include <src/rel/reldf.h>
-#include <src/rel/reldfhalf.h>
+#include <src/df/reldf.h>
+#include <src/df/reldfhalf.h>
 
 namespace bagel {
 

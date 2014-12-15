@@ -24,7 +24,7 @@
 //
 
 
-#include <src/rel/reldf.h>
+#include <src/df/reldf.h>
 #include <src/df/complexdf.h>
 
 using namespace std;
@@ -83,7 +83,7 @@ vector<shared_ptr<RelDFHalf>> RelDF::compute_half_transform(array<shared_ptr<con
 }
 
 
-vector<shared_ptr<ZMatrix>> RelDF::compute_Jop(list<shared_ptr<const CDMatrix>>& cd) const {
+vector<shared_ptr<ZMatrix>> RelDF::compute_Jop(list<shared_ptr<const RelCDMatrix>>& cd) const {
 
   vector<shared_ptr<ZVectorB>> sum;
   for (auto& b : basis_) {

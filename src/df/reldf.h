@@ -24,18 +24,18 @@
 //
 
 
-#ifndef __SRC_REL_RELDF_H
-#define __SRC_REL_RELDF_H
+#ifndef __SRC_DF_RELDF_H
+#define __SRC_DF_RELDF_H
 
 #include <src/df/df.h>
-#include <src/rel/reldfbase.h>
-#include <src/rel/cdmatrix.h>
-#include <src/rel/reldfhalf.h>
+#include <src/df/reldfbase.h>
+#include <src/df/relcdmatrix.h>
+#include <src/df/reldfhalf.h>
 
 namespace bagel {
 
 class RelDFHalf;
-class CDMatrix;
+class RelCDMatrix;
 
 class RelDF : public RelDFBase, public std::enable_shared_from_this<RelDF> {
   protected:
@@ -74,7 +74,7 @@ class RelDF : public RelDFBase, public std::enable_shared_from_this<RelDF> {
         compute_half_transform(std::array<std::shared_ptr<const Matrix>,4> r,
                                std::array<std::shared_ptr<const Matrix>,4> i) const;
 
-    std::vector<std::shared_ptr<ZMatrix>> compute_Jop(std::list<std::shared_ptr<const CDMatrix>>& cd) const;
+    std::vector<std::shared_ptr<ZMatrix>> compute_Jop(std::list<std::shared_ptr<const RelCDMatrix>>& cd) const;
 };
 
 }

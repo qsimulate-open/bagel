@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breit2index.h
+// Filename: breit2index.cc
 // Copyright (C) 2013 Matthew Kelley
 //
 // Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
@@ -24,37 +24,25 @@
 //
 
 
-#ifndef __SRC_REL_BREIT2INDEX_H
-#define __SRC_REL_BREIT2INDEX_H
+#include <stddef.h>
+#include <src/df/breit2index.h>
 
-#include <src/util/math/zmatrix.h>
-#include <src/wfn/geometry.h>
-#include <src/rel/breitint.h>
+using namespace std;
+using namespace bagel;
 
-namespace bagel {
-
-/* class for J^{-1/2} B J^{-1/2} */
-
-class Breit2Index {
-  protected:
-    std::pair<const int, const int> index_;
-    std::shared_ptr<const Matrix> data_;
-
-  public:
-    Breit2Index(std::pair<const int, const int>, std::shared_ptr<const Matrix> breit, std::shared_ptr<const Matrix> data2);
-    Breit2Index(std::pair<const int, const int> index, std::shared_ptr<const Matrix> data) : index_(index), data_(data) { }
-
-    std::shared_ptr<const Matrix> data() const { return data_; }
-    const std::pair<const int, const int>& index() const { return index_; }
-
-    /// returning the same quantity with swapped indices
-    std::shared_ptr<Breit2Index> cross() const;
-
-    void print() const;
-
-};
-
+Breit2Index::Breit2Index(pair<const int, const int> index, shared_ptr<const Matrix> breit, shared_ptr<const Matrix> dat2)
+ : index_(index), data_(make_shared<Matrix>(*dat2 % *breit * *dat2)) {
 }
 
-#endif
 
+shared_ptr<Breit2Index> Breit2Index::cross() const {
+  int i = index_.first;
+  int j = index_.second;
+  return make_shared<Breit2Index>(make_pair(j,i), data_);
+}
+
+
+void Breit2Index::print() const {
+  cout << " Breit2Index::data_" << endl;
+  data_->print();
+}

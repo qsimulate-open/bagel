@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breit2index.cc
+// Filename: relcdmatrix.h
 // Copyright (C) 2013 Matthew Kelley
 //
 // Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
@@ -24,25 +24,29 @@
 //
 
 
-#include <stddef.h>
-#include <src/rel/breit2index.h>
+#ifndef __SRC_DF_CDMATRIX_H
+#define __SRC_DF_CDMATRIX_H
 
-using namespace std;
-using namespace bagel;
+#include <src/df/reldfhalf.h>
+#include <src/util/math/vectorb.h>
 
-Breit2Index::Breit2Index(pair<const int, const int> index, shared_ptr<const Matrix> breit, shared_ptr<const Matrix> dat2)
- : index_(index), data_(make_shared<Matrix>(*dat2 % *breit * *dat2)) {
+namespace bagel {
+
+class RelDFHalf;
+
+class RelCDMatrix : public ZVectorB {
+  protected:
+    const int alpha_comp_;
+
+  public:
+    RelCDMatrix(std::shared_ptr<const RelDFHalf> dfhc, std::shared_ptr<const SpinorInfo> abc, std::array<std::shared_ptr<const Matrix>, 4> trcoeff,
+                std::array<std::shared_ptr<const Matrix>, 4> ticoeff, std::shared_ptr<const Matrix> dat2, const bool onlyonce = true);
+    RelCDMatrix(const ZVectorB& o, const int acomp) : ZVectorB(o), alpha_comp_(acomp) { }
+
+    int alpha_comp() const { return alpha_comp_; }
+
+};
+
 }
 
-
-shared_ptr<Breit2Index> Breit2Index::cross() const {
-  int i = index_.first;
-  int j = index_.second;
-  return make_shared<Breit2Index>(make_pair(j,i), data_);
-}
-
-
-void Breit2Index::print() const {
-  cout << " Breit2Index::data_" << endl;
-  data_->print();
-}
+#endif

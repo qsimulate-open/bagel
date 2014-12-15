@@ -28,7 +28,7 @@
 #define __SRC_REL_DIRAC_H
 
 #include <src/wfn/method.h>
-#include <src/rel/reldfhalf.h>
+#include <src/df/reldfhalf.h>
 
 namespace bagel {
 
