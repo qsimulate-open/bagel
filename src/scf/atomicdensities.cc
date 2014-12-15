@@ -24,9 +24,10 @@
 //
 
 #include <src/scf/atomicdensities.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/hf/fock.h>
 #include <src/util/atommap.h>
-#include <src/math/diis.h>
-#include <src/scf/rohf.h>
+#include <src/util/math/diis.h>
 
 using namespace std;
 using namespace bagel;

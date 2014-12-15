@@ -58,7 +58,7 @@ void Optimize::compute() {
 
   } else if (method == "hf") {
 
-    auto opt = make_shared<Opt<SCF>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<RHF>>(idata_, methodblock, geom_);
     opt->compute();
     geom_ = opt->geometry();
 

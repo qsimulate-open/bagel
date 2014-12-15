@@ -124,14 +124,14 @@ void s2vrr_driver(double* out, const double* const roots, const double* const we
               const int offsetx = rank_ * (amax2 * ix + jx);
               const int jposition = amap[jx + jyz];
               const int ijposition = jposition + ipos_asize;
-              const double xx = std::inner_product(iyiz_nn, iyiz_nn+rank_, worksx+offsetx, 0.0);
-              const double yy = std::inner_product(iyiz_sn, iyiz_sn+rank_, workx +offsetx, 0.0);
-              const double zz = std::inner_product(iyiz_ns, iyiz_ns+rank_, workx +offsetx, 0.0);
+              const double xx = blas::dot_product_noconj(iyiz_nn, rank_, worksx+offsetx);
+              const double yy = blas::dot_product_noconj(iyiz_sn, rank_, workx +offsetx);
+              const double zz = blas::dot_product_noconj(iyiz_ns, rank_, workx +offsetx);
               dataxx[ijposition] = 2.0*xx - yy - zz;
-              dataxy[ijposition] = std::inner_product(iyiz_tn, iyiz_tn+rank_, worktx+offsetx, 0.0);
-              dataxz[ijposition] = std::inner_product(iyiz_nt, iyiz_nt+rank_, worktx+offsetx, 0.0);
+              dataxy[ijposition] = blas::dot_product_noconj(iyiz_tn, rank_, worktx+offsetx);
+              dataxz[ijposition] = blas::dot_product_noconj(iyiz_nt, rank_, worktx+offsetx);
               datayy[ijposition] = 2.0*yy - zz - xx;
-              datayz[ijposition] = std::inner_product(iyiz_tt, iyiz_tt+rank_, workx +offsetx, 0.0);
+              datayz[ijposition] = blas::dot_product_noconj(iyiz_tt, rank_, workx +offsetx);
               datazz[ijposition] = 2.0*zz - xx - yy;
             }
           }

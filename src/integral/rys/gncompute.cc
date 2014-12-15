@@ -26,7 +26,7 @@
 #include <src/integral/carsphlist.h>
 #include <src/integral/sortlist.h>
 #include <src/integral/rys/gnaibatch.h>
-#include <src/math/comb.h>
+#include <src/util/math/comb.h>
 
 using namespace std;
 using namespace bagel;

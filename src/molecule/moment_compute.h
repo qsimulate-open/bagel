@@ -29,8 +29,8 @@
 
 #include <array>
 #include <src/molecule/shell.h>
-#include <src/math/matrix.h>
-#include <src/math/zmatrix.h>
+#include <src/util/math/matrix.h>
+#include <src/util/math/zmatrix.h>
 
 namespace bagel {
 

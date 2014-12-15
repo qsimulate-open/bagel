@@ -27,7 +27,7 @@
 #ifndef __SRC_INTEGRAL_RYS_GSMALLNAIBATCH_H
 #define __SRC_INTEGRAL_RYS_GSMALLNAIBATCH_H
 
-#include <src/math/xyzfile.h>
+#include <src/util/math/xyzfile.h>
 #include <src/integral/smallints1e.h>
 
 namespace bagel {

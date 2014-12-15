@@ -83,8 +83,7 @@ void vrr_driver(DataType* out, const DataType* const roots, const DataType* cons
               const int offsetx = rank_ * (amax1_ * ix + jx);
               const int jposition = amap[jx + jyz];
               const int ijposition = jposition + ipos_asize;
-              DataType zero = 0.0;
-              out[ijposition] = std::inner_product(iyiz, iyiz+rank_, workx+offsetx, zero);
+              out[ijposition] = blas::dot_product_noconj(iyiz, rank_, workx+offsetx);
             }
           }
         }

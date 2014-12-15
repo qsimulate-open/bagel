@@ -29,7 +29,7 @@
 
 #include <src/df/complexdf.h>
 #include <src/integral/comprys/complexeribatch.h>
-#include <src/scf/fock_base.h>
+#include <src/scf/hf/fock_base.h>
 
 namespace bagel {
 

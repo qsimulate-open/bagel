@@ -25,9 +25,9 @@
 
 #include <sstream>
 #include <src/prop/multipole.h>
-#include <src/scf/scf.h>
-#include <src/scf/rohf.h>
-#include <src/scf/uhf.h>
+#include <src/scf/hf/rhf.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/hf/uhf.h>
 #include <src/wfn/reference.h>
 
 std::vector<double> multipole(std::string filename) {
@@ -47,7 +47,7 @@ std::vector<double> multipole(std::string filename) {
       geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "hf") {
-      auto scf = std::make_shared<SCF>(itree, geom);
+      auto scf = std::make_shared<RHF>(itree, geom);
       scf->compute();
       std::shared_ptr<const Matrix> dtot = scf->coeff()->form_density_rhf(scf->nocc());
 

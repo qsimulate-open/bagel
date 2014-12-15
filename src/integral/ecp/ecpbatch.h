@@ -27,7 +27,7 @@
 #ifndef __SRC_INTEGRAL_ECP_ECPBATCH_H
 #define __SRC_INTEGRAL_ECP_ECPBATCH_H
 
-#include <src/parallel/resources.h>
+#include <src/util/parallel/resources.h>
 #include <src/molecule/molecule.h>
 #include <src/integral/integral.h>
 #include <src/integral/ecp/angularbatch.h>

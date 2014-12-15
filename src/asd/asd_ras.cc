@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/asd_ras.h>
-#include <src/ras/form_sigma.h>
+#include <src/ci/ras/form_sigma.h>
 
 using namespace std;
 using namespace bagel;

@@ -30,8 +30,8 @@
 #include <thread>
 #include <src/global.h>
 #include <src/util/string.h>
-#include <src/parallel/mpi_interface.h>
-#include <src/parallel/resources.h>
+#include <src/util/parallel/mpi_interface.h>
+#include <src/util/parallel/resources.h>
 
 // They are used from other files
 namespace bagel{

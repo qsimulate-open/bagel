@@ -31,7 +31,7 @@
 #include <src/scf/coeff.h>
 #include <src/molecule/hcore.h>
 #include <src/wfn/geometry.h>
-#include <src/fci/dvec.h>
+#include <src/ci/fci/dvec.h>
 #include <src/wfn/ciwfn.h>
 #include <src/wfn/rdm.h>
 

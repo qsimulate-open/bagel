@@ -30,7 +30,7 @@
 #include <src/df/df.h>
 #include <src/df/complexdf_base.h>
 #include <src/df/complexdfinttask.h>
-#include <src/math/zmatrix.h>
+#include <src/util/math/zmatrix.h>
 
 namespace bagel {
 

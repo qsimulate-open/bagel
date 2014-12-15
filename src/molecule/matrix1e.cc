@@ -31,8 +31,8 @@
 #include <src/util/f77.h>
 #include <cassert>
 #include <cmath>
-#include <src/parallel/mpi_interface.h>
-#include <src/parallel/resources.h>
+#include <src/util/parallel/mpi_interface.h>
+#include <src/util/parallel/resources.h>
 #include <src/util/taskqueue.h>
 
 using namespace std;

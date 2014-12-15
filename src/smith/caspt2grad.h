@@ -29,8 +29,8 @@
 
 #include <src/wfn/reference.h>
 #include <src/wfn/method.h>
-#include <src/input/input.h>
-#include <src/casscf/casscf.h>
+#include <src/util/input/input.h>
+#include <src/multi/casscf/casscf.h>
 
 namespace bagel {
 

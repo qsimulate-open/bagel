@@ -27,7 +27,7 @@
 #ifndef __SRC_MOLECULE_HSO_H
 #define __SRC_MOLECULE_HSO_H
 
-#include <src/math/matrix.h>
+#include <src/util/math/matrix.h>
 
 namespace bagel {
 
