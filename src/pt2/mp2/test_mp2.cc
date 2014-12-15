@@ -25,7 +25,7 @@
 
 
 #include <memory>
-#include <src/mp2/mp2.h>
+#include <src/pt2/mp2/mp2.h>
 
 double mp2_energy(const std::string job) {
 

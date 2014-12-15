@@ -25,7 +25,7 @@
 
 
 #include <memory>
-#include <src/nevpt2/nevpt2.h>
+#include <src/pt2/nevpt2/nevpt2.h>
 
 double nevpt2_energy(const std::string job) {
 

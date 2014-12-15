@@ -150,7 +150,9 @@ AC_CONFIG_FILES([Makefile
                  src/df/Makefile
                  src/prop/Makefile
                  src/smith/Makefile
-                 src/mp2/Makefile
+                 src/pt2/Makefile
+                 src/pt2/mp2/Makefile
+                 src/pt2/nevpt2/Makefile
                  src/molecule/Makefile
                  src/input/Makefile
                  src/io/Makefile
@@ -161,7 +163,6 @@ AC_CONFIG_FILES([Makefile
                  src/ci/ras/Makefile
                  src/casscf/Makefile
                  src/zcasscf/Makefile
-                 src/nevpt2/Makefile
                  src/pscf/Makefile
                  src/pmp2/Makefile
                  src/rel/Makefile

@@ -27,7 +27,7 @@
 #ifndef __SRC_MP2_MP2GRAD_H
 #define __SRC_MP2_MP2GRAD_H
 
-#include <src/mp2/mp2.h>
+#include <src/pt2/mp2/mp2.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {

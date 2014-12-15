@@ -65,7 +65,7 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/prop/test_prop.cc>
 
-#include <src/mp2/test_mp2.cc>
+#include <src/pt2/mp2/test_mp2.cc>
 
 #include <src/casscf/test_casscf.cc>
 
@@ -77,7 +77,7 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/ci/ras/test_ras.cc>
 
-#include <src/nevpt2/test_nevpt2.cc>
+#include <src/pt2/nevpt2/test_nevpt2.cc>
 
 #include <src/opt/test_opt.cc>
 

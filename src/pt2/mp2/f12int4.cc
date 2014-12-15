@@ -31,7 +31,7 @@
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/rys/slaterbatch.h>
 #include <src/wfn/geometry.h>
-#include <src/mp2/f12int4.h>
+#include <src/pt2/mp2/f12int4.h>
 
 using namespace std;
 using namespace bagel;

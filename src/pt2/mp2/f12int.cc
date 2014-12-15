@@ -26,7 +26,7 @@
 
 #include <stddef.h>
 #include <src/df/df.h>
-#include <src/mp2/f12int.h>
+#include <src/pt2/mp2/f12int.h>
 #include <iostream>
 #include <iomanip>
 

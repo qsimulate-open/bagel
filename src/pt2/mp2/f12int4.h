@@ -36,7 +36,7 @@
 #include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/smith/prim_op.h>
-#include <src/mp2/f12mat.h>
+#include <src/pt2/mp2/f12mat.h>
 #include <tuple>
 
 namespace bagel {

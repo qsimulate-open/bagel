@@ -29,7 +29,7 @@
 
 #include <src/scf/rohf.h>
 #include <src/ks/ks.h>
-#include <src/mp2/mp2grad.h>
+#include <src/pt2/mp2/mp2grad.h>
 #include <src/grad/gradeval_base.h>
 #include <src/casscf/supercigrad.h>
 #include <src/rel/dirac.h>

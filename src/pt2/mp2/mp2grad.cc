@@ -24,7 +24,7 @@
 //
 
 #include <stddef.h>
-#include <src/mp2/mp2grad.h>
+#include <src/pt2/mp2/mp2grad.h>
 #include <src/grad/cphf.h>
 #include <iostream>
 #include <iomanip>
