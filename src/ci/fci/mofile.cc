@@ -27,10 +27,10 @@
 #include <iomanip>
 #include <algorithm>
 #include <cmath>
-#include <src/util/f77.h>
 #include <src/ci/fci/mofile.h>
 #include <src/scf/hf/fock.h>
-#include <src/smith/prim_op.h>
+#include <src/util/f77.h>
+#include <src/util/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -103,7 +103,7 @@ void MOFile::compress_and_set(shared_ptr<const Matrix> buf1e, shared_ptr<const M
     // In this case, there is no compression (this is actually necessary)
     // Is currently ordered like (ij|kl), should be ordered like (ik|jl), with the last index moving the fastest
     // Equivalent to             <ik|jl> --> <ij|kl>
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(buf2e->data(), mo2e_->data(), nocc_, nocc_, nocc_, nocc_);
+    sort_indices<0,2,1,3,0,1,1,1>(buf2e->data(), mo2e_->data(), nocc_, nocc_, nocc_, nocc_);
   }
 
   // h'kl = hkl - 0.5 sum_j (kj|jl)

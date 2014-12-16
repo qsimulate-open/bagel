@@ -35,7 +35,7 @@
 #include <src/integral/rys/slaterbatch.h>
 #include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 #include <src/pt2/mp2/f12mat.h>
 #include <tuple>
 
@@ -110,7 +110,7 @@ class File4 {
         std::unique_ptr<double[]> tmp(new double[n*dim_*dim0_*dim1_]);
         dgemm_("N", "N", dim0_*dim_*dim1_, n, dim_, 1.0, data_.get(), dim0_*dim_*dim1_, c, dim_, 0.0, tmp.get(), dim0_*dim_*dim1_);
         // then sort the indices
-        SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp, tmp2, dim0_, dim_, dim1_, n);
+        sort_indices<0,2,1,3,0,1,1,1>(tmp, tmp2, dim0_, dim_, dim1_, n);
       }
       std::unique_ptr<double[]> tmp(new double[n*n*dim0_*dim1_]);
         for (size_t i = 0; i != n; ++i)

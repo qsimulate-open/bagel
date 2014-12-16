@@ -27,6 +27,7 @@
 #include <src/scf/ks/ks.h>
 #include <src/scf/sohf/soscf.h>
 #include <src/scf/dhf/dirac.h>
+#include <src/scf/giaohf/scf_london.h>
 #include <src/ci/fci/distfci.h>
 #include <src/ci/fci/harrison.h>
 #include <src/ci/fci/knowles.h>
@@ -45,7 +46,6 @@
 #include <src/multi/zcasscf/zsuperci.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
-#include <src/london/scf_london.h>
 #include <src/wfn/construct_method.h>
 
 using namespace std;

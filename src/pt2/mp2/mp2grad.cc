@@ -29,7 +29,7 @@
 #include <iostream>
 #include <iomanip>
 #include <src/util/f77.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 #include <src/prop/multipole.h>
 #include <src/grad/gradeval.h>
 
@@ -102,8 +102,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     *buf = *data;
     *buf2 = *data;
 
-    // using SMITH's symmetrizer (src/smith/prim_op.h)
-    SMITH::sort_indices<2,1,0,2,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
+    // using a symmetrizer (src/util/prim_op.h)
+    sort_indices<2,1,0,2,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
     double* tdata = buf->data();
     double* bdata = buf2->data();
     for (size_t j = 0; j != nocc; ++j) {
@@ -124,9 +124,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     gia->add_product(bv, buf, nocc, offset);
 
     // G(ja|ic) -> G_c(a,ij)
-    SMITH::sort_indices<1,2,0,0,1,1,1>(buf->data(), data->data(), nocc, nvirt, nocc);
+    sort_indices<1,2,0,0,1,1,1>(buf->data(), data->data(), nocc, nvirt, nocc);
     // T(jb|ic) -> T_c(b,ij)
-    SMITH::sort_indices<1,2,0,0,1,1,1>(buf2->data(), buf->data(), nocc, nvirt, nocc);
+    sort_indices<1,2,0,0,1,1,1>(buf2->data(), buf->data(), nocc, nvirt, nocc);
     // D_ab = G(ja|ic) T(jb|ic)
     dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 2.0, buf->data(), nvirt, data->data(), nvirt, 1.0, vptr, nmobasis);
     // D_ij = - G(ja|kc) T(ia|kc)

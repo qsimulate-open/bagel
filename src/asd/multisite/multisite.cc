@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/multisite/multisite.h>
-#include <src/molecule/overlap.h>
+#include <src/mat1e/overlap.h>
 #include <src/util/muffle.h>
 
 using namespace std;

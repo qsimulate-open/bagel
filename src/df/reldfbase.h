@@ -26,7 +26,7 @@
 #ifndef __SRC_REL_RELDFBASE_H
 #define __SRC_REL_RELDFBASE_H
 
-#include <src/rel/spinorinfo.h>
+#include <src/util/spinorinfo.h>
 
 namespace bagel {
 

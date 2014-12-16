@@ -26,7 +26,7 @@
 #include <src/global.h>
 #include <src/pt2/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
-#include <src/molecule/localization.h>
+#include <src/wfn/localization.h>
 #include <src/asd/construct_asd.h>
 #include <src/asd/dmrg/rasd.h>
 #include <src/asd/multisite/multisite.h>

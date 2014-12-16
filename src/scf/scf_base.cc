@@ -25,7 +25,7 @@
 
 
 #include <src/scf/scf_base.h>
-#include <src/rel/relreference.h>
+#include <src/wfn/relreference.h>
 #include <src/util/timer.h>
 #include <src/util/math/diis.h>
 #include <iostream>

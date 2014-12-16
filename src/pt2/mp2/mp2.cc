@@ -29,7 +29,6 @@
 #include <set>
 #include <src/scf/hf/rhf.h>
 #include <src/df/dfdistt.h>
-#include <src/smith/prim_op.h>
 #include <src/pt2/mp2/mp2.h>
 #include <src/pt2/mp2/f12int4.h>
 #include <src/util/f77.h>

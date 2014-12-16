@@ -27,7 +27,7 @@
 #include <src/ci/fci/hztasks.h>
 #include <src/util/math/davidson.h>
 #include <src/util/taskqueue.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -210,7 +210,7 @@ void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
 
   shared_ptr<const ZMatrix> h1 = jop->mo1e(bit2);
   auto h2 = make_shared<ZMatrix>(*jop->mo2e(bit4));
-  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bit4)->data(), h2->data(), norb_, norb_, norb_, norb_);
+  sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bit4)->data(), h2->data(), norb_, norb_, norb_, norb_);
 
   TaskQueue<HZTaskAA<complex<double>>> tasks(det->lena());
 
@@ -399,7 +399,7 @@ void ZHarrison::sigma_2e_h0101_h1001(shared_ptr<const ZDvec> d, shared_ptr<ZDvec
   const int ij = d->ij();
   const int lenab = d->lena()*d->lenb();
   ZMatrix tmp(*jop->mo2e(bitset<4>("0101")));
-  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("1001"))->data(), tmp.data(), norb_, norb_, norb_, norb_);
+  sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("1001"))->data(), tmp.data(), norb_, norb_, norb_, norb_);
 
   zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, tmp.data(), ij, 0.0, e->data(), lenab);
 }

@@ -25,7 +25,7 @@
 
 #include <src/asd/dmrg/block_operators.h>
 #include <src/asd/dmrg/dmrg_block.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -270,7 +270,7 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 
       Matrix ham_block = (gamma_aa_view ^ Q_aa_view) + (gamma_bb_view ^ Q_bb_view);
 
-      SMITH::sort_indices<0,2,1,3,1,1,1,1>(ham_block.data(), diag.data(), source_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, source_pair.right.nstates);
+      sort_indices<0,2,1,3,1,1,1,1>(ham_block.data(), diag.data(), source_pair.left.nstates, source_pair.left.nstates, source_pair.right.nstates, source_pair.right.nstates);
 
       out->add_block(1.0, source_pair.offset, source_pair.offset, source_pair.nstates(), source_pair.nstates(), diag);
     }
@@ -292,12 +292,12 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
 
         // TODO maybe it would make more sense to reorder the block_ops in the first place?
         Matrix Qab(Q_ab_view);
-        SMITH::sort_indices<0,2,1,0,1,1,1>(Q_ab_view.data(), Qab.data(), Qab.ndim(), lnorb, lnorb);
+        sort_indices<0,2,1,0,1,1,1>(Q_ab_view.data(), Qab.data(), Qab.ndim(), lnorb, lnorb);
 
         Matrix ham_block = gamma_view ^ Qab;
 
         Matrix tmp(target_pair.left.nstates*target_pair.right.nstates, source_pair.left.nstates*source_pair.right.nstates);
-        SMITH::sort_indices<1,2,0,3,0,1,1,1>(ham_block.data(), tmp.data(), source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
+        sort_indices<1,2,0,3,0,1,1,1>(ham_block.data(), tmp.data(), source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
 
         out->add_block(2.0, target_pair.offset, source_pair.offset, tmp.ndim(), tmp.mdim(), tmp);
       }
@@ -321,7 +321,7 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
         Matrix ham_block = gamma_view ^ P_aa_view;
         Matrix tmp(target_pair.nstates(), source_pair.nstates());
 
-        SMITH::sort_indices<1,2,0,3,0,1,-1,1>(ham_block.data(), tmp.data() , source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
+        sort_indices<1,2,0,3,0,1,-1,1>(ham_block.data(), tmp.data() , source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
         out->add_block(2.0, target_pair.offset, source_pair.offset, tmp.ndim(), tmp.mdim(), tmp);
       }
     }
@@ -344,7 +344,7 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
         Matrix ham_block = P_bb_view ^ gamma_view;
         Matrix tmp(target_pair.nstates(), source_pair.nstates());
 
-        SMITH::sort_indices<1,2,0,3,0,1,-1,1>(ham_block.data(), tmp.data() , source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
+        sort_indices<1,2,0,3,0,1,-1,1>(ham_block.data(), tmp.data() , source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
         out->add_block(2.0, target_pair.offset, source_pair.offset, tmp.ndim(), tmp.mdim(), tmp);
       }
     }
@@ -365,12 +365,12 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
                                  blocks_->left_block()->coupling({GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}).at({source_pair.left.key(),left_target}).data->storage()), true);
 
         Matrix Pab(P_ab_view);
-        SMITH::sort_indices<0,2,1,0,1,1,1>(P_ab_view.data(), Pab.data(), Pab.ndim(), lnorb, lnorb);
+        sort_indices<0,2,1,0,1,1,1>(P_ab_view.data(), Pab.data(), Pab.ndim(), lnorb, lnorb);
 
         Matrix ham_block = gamma_view ^ Pab;
 
         Matrix tmp(target_pair.nstates(), source_pair.nstates());
-        SMITH::sort_indices<1,2,0,3,0,1,1,1>(ham_block.data(), tmp.data(), source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
+        sort_indices<1,2,0,3,0,1,1,1>(ham_block.data(), tmp.data(), source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
 
         out->add_block(2.0, target_pair.offset, source_pair.offset, tmp.ndim(), tmp.mdim(), tmp);
       }
@@ -400,12 +400,12 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
         Matrix gamma_akk(gamma_aaa_view + gamma_abb_view);
 
         Matrix Da(D_a_view);
-        SMITH::sort_indices<0,3,2,1,0,1,1,1>(D_a_view.data(), Da.data(), Da.ndim(), lnorb, lnorb, lnorb);
+        sort_indices<0,3,2,1,0,1,1,1>(D_a_view.data(), Da.data(), Da.ndim(), lnorb, lnorb, lnorb);
 
         Matrix ham_block = (gamma_view ^ S_a_view) + (gamma_akk ^ Da);
 
         Matrix tmp(target_pair.nstates(), source_pair.nstates());
-        SMITH::sort_indices<1,2,0,3,0,1,1,1>(ham_block.data(), tmp.data(), source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
+        sort_indices<1,2,0,3,0,1,1,1>(ham_block.data(), tmp.data(), source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
 
         const double fac = -2.0 * static_cast<int>(1 - (((source_pair.left.nelea+source_pair.left.neleb)%2) << 1));
         out->add_block(fac, target_pair.offset, source_pair.offset, tmp.ndim(), tmp.mdim(), tmp);
@@ -436,12 +436,12 @@ shared_ptr<Matrix> BlockOperators2::ham(const BlockKey bk) const {
         Matrix gamma_bkk(gamma_bbb_view + gamma_baa_view);
 
         Matrix Db(D_b_view);
-        SMITH::sort_indices<0,3,2,1,0,1,1,1>(D_b_view.data(), Db.data(), Db.ndim(), lnorb, lnorb, lnorb);
+        sort_indices<0,3,2,1,0,1,1,1>(D_b_view.data(), Db.data(), Db.ndim(), lnorb, lnorb, lnorb);
 
         Matrix ham_block = (gamma_view ^ S_b_view) + (gamma_bkk ^ Db);
 
         Matrix tmp(target_pair.nstates(), source_pair.nstates());
-        SMITH::sort_indices<1,2,0,3,0,1,1,1>(ham_block.data(), tmp.data(), source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
+        sort_indices<1,2,0,3,0,1,1,1>(ham_block.data(), tmp.data(), source_pair.left.nstates, target_pair.left.nstates, target_pair.right.nstates, source_pair.right.nstates);
 
         const double fac = -2.0 * static_cast<int>(1 - (((source_pair.left.nelea+source_pair.left.neleb)%2) << 1));
         out->add_block(fac, target_pair.offset, source_pair.offset, tmp.ndim(), tmp.mdim(), tmp);

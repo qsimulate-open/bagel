@@ -31,7 +31,7 @@
 #include <src/integral/rys/gsmalleribatch.h>
 #include <src/integral/os/goverlapbatch.h>
 #include <src/integral/os/gkineticbatch.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 #ifdef LIBINT_INTERFACE
   #include <src/integral/libint/glibint.h>
 #endif
@@ -58,7 +58,7 @@ void GradTask3::compute() {
 
   shared_ptr<btas::Tensor3<double>> db1 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis());
   shared_ptr<btas::Tensor3<double>> db2 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[0], shell_[3]->nbasis(), offset_[1], shell_[2]->nbasis());
-  SMITH::sort_indices<0,2,1,1,1,1,1>(db2->data(), db1->data(), shell_[1]->nbasis(), shell_[3]->nbasis(), shell_[2]->nbasis());
+  sort_indices<0,2,1,1,1,1,1>(db2->data(), db1->data(), shell_[1]->nbasis(), shell_[3]->nbasis(), shell_[2]->nbasis());
 
   for (int iatom = 0; iatom != 4; ++iatom) {
     if (jatom[iatom] < 0) continue;

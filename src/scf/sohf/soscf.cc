@@ -26,7 +26,7 @@
 #include <src/scf/sohf/soscf.h>
 #include <src/scf/sohf/sofock.h>
 #include <src/util/math/diis.h>
-#include <src/rel/relreference.h>
+#include <src/wfn/relreference.h>
 
 using namespace std;
 using namespace bagel;
