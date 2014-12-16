@@ -201,12 +201,17 @@ void ZCASBFGS::compute() {
     resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
-    if (gradient < thresh_ && !optimize_electrons) pos_conv = true;
-    if (gradient < thresh_ &&  optimize_electrons) ele_conv = true;
-    optimize_electrons = optimize_electrons == true ? false : true;
-    if (ele_conv && optimize_electrons) optimize_electrons = false;
-    if (pos_conv && !optimize_electrons) optimize_electrons = true;
-    if (only_electrons) optimize_electrons = true;
+    // Set logic flags based upon convergence criteria and switch optimization subspaces accordingly
+    if (!optimize_electrons) {
+      // end of e-p iteration
+      if (gradient < thresh_) pos_conv = true; // positrons converged
+      optimize_electrons = ele_conv ? false : true; // switch to electrons if e-e rotations are NOT converged
+    } else {
+      // end of e-e iteration
+      if (gradient < thresh_) ele_conv = true; // electrons converged
+      // don't switch to positrons if doing only e-e rotations or positrons are converged
+      optimize_electrons = (only_electrons || pos_conv) ? true : false;
+    }
     if ((ele_conv && only_electrons) || (pos_conv && ele_conv)) {
       cout << " " << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
