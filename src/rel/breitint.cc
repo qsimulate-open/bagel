@@ -25,7 +25,7 @@
 
 
 #include <src/rel/breitint.h>
-#include <src/rel/alpha.h>
+#include <src/util/alpha.h>
 #include <src/integral/rys/breitbatch.h>
 
 using namespace std;

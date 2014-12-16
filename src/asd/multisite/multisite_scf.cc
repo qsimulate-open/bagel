@@ -25,10 +25,9 @@
 
 #include <src/asd/multisite/multisite.h>
 #include <src/wfn/construct_method.h>
+#include <src/wfn/localization.h>
 #include <src/scf/hf/fock.h>
 #include <src/scf/hf/rhf.h>
-
-#include <src/molecule/localization.h>
 #include <src/molecule/overlap.h>
 
 using namespace std;

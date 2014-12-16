@@ -35,7 +35,7 @@
 #include <src/wfn/relreference.h>
 #include <src/rel/reldipole.h>
 #include <src/grad/gradeval.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 #include <src/util/f77.h>
 #include <src/util/parallel/resources.h>
 
@@ -138,8 +138,8 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   for (size_t i = 0; i != nvirt; ++i) {
     shared_ptr<ZMatrix> data = full->form_4index_1fixed(full, 1.0, i);
     *buf = *data;
-    // using SMITH's symmetrizer (src/smith/prim_op.h)
-    SMITH::sort_indices<2,1,0,1,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
+    // using a symmetrizer (src/util/prim_op.h)
+    sort_indices<2,1,0,1,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
     complex<double>* tdata = buf->data();
     for (size_t j = 0; j != nocc; ++j)
       for (size_t k = 0; k != nvirt; ++k)
@@ -156,7 +156,7 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
 #endif
 
     // T(jb|ic) -> T_c(b,ij)
-    SMITH::sort_indices<1,2,0,0,1,1,1>(buf->data(), data->data(), nocc, nvirt, nocc);
+    sort_indices<1,2,0,0,1,1,1>(buf->data(), data->data(), nocc, nvirt, nocc);
     // D_ab = T^*(ja|ic) T(jb|ic)
     zgemm3m_("N", "C", nvirt, nvirt, nocc*nocc, 0.5, data->data(), nvirt, data->data(), nvirt, 1.0, vptr, nbasis*2);
     // D_ij = - T^*(ja|kc) T(ia|kc)

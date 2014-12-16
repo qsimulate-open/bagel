@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_SMITH_PRIM_OP_H
-#define __SRC_SMITH_PRIM_OP_H
+#ifndef __SRC_UTIL_PRIM_OP_H
+#define __SRC_UTIL_PRIM_OP_H
 
 #include <stddef.h>
 #include <memory>
@@ -34,7 +34,6 @@
 #include <src/util/f77.h>
 
 namespace bagel {
-namespace SMITH {
 
 
 template <int an, int ad, int fn, int fd, class T>
@@ -402,7 +401,6 @@ static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T
 
 
 
-}
 }
 
 #endif

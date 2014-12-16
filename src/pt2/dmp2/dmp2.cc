@@ -34,7 +34,7 @@
 #include <src/scf/dhf/dirac.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/wfn/relreference.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 #include <src/util/f77.h>
 #include <src/util/parallel/resources.h>
 
@@ -144,8 +144,8 @@ void DMP2::compute() {
   for (size_t i = 0; i != nvirt; ++i) {
     shared_ptr<ZMatrix> data = full->form_4index_1fixed(full, 1.0, i);
     *buf = *data;
-    // using SMITH's symmetrizer (src/smith/prim_op.h)
-    SMITH::sort_indices<2,1,0,1,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
+    // using a symmetrizer (src/util/prim_op.h)
+    sort_indices<2,1,0,1,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
     complex<double>* tdata = buf->data();
     for (size_t j = 0; j != nocc; ++j)
       for (size_t k = 0; k != nvirt; ++k)

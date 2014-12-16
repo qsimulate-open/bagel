@@ -24,7 +24,7 @@
 //
 
 #include <src/london/scf_london.h>
-#include <src/rel/relreference.h>
+#include <src/wfn/relreference.h>
 #include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
 

@@ -24,7 +24,7 @@
 //
 
 #include <src/ci/zfci/zharrison.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 #include <src/rel/reloverlap.h>
 
 using namespace std;
@@ -179,18 +179,18 @@ void ZHarrison::compute_rdm12() {
           continue;
         } else if (rdm2_[istate].find(s2301) != rdm2_[istate].end()) {
           rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
-          SMITH::sort_indices<2,3,0,1,0,1,1,1>(rdm2_[istate].at(s2301)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
+          sort_indices<2,3,0,1,0,1,1,1>(rdm2_[istate].at(s2301)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
           transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return conj(a); });
         } else if (rdm2_[istate].find(s1032) != rdm2_[istate].end()) {
           rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
-          SMITH::sort_indices<1,0,3,2,0,1,1,1>(rdm2_[istate].at(s1032)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
+          sort_indices<1,0,3,2,0,1,1,1>(rdm2_[istate].at(s1032)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
         } else if (rdm2_[istate].find(s3210) != rdm2_[istate].end()) {
           rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
-          SMITH::sort_indices<3,2,1,0,0,1,1,1>(rdm2_[istate].at(s3210)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
+          sort_indices<3,2,1,0,0,1,1,1>(rdm2_[istate].at(s3210)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
           transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return conj(a); });
         } else if (rdm2_[istate].find(s0132) != rdm2_[istate].end()) {
           rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
-          SMITH::sort_indices<1,0,2,3,0,1,1,1>(rdm2_[istate].at(s0132)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
+          sort_indices<1,0,2,3,0,1,1,1>(rdm2_[istate].at(s0132)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
           transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return -a; });
         } else {
           // This is dangerous... but RDM should be zeroed in constructor
@@ -235,7 +235,7 @@ void ZHarrison::compute_rdm12() {
   // Check the FCI energies computed by RDMs and integrals
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
   auto tmp0101 = jop_->mo2e(bitset<4>("0101"))->copy();
-  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop_->mo2e(bitset<4>("1001"))->data(), tmp0101->data(), norb_, norb_, norb_, norb_);
+  sort_indices<1,0,2,3,1,1,-1,1>(jop_->mo2e(bitset<4>("1001"))->data(), tmp0101->data(), norb_, norb_, norb_, norb_);
 
 //  const int n = norb_;
   auto trace1 = [this](const string st) {
@@ -277,7 +277,7 @@ void ZHarrison::compute_rdm12() {
       auto tmp2rdm = make_shared<ZMatrix>(norb_*norb_,norb_*norb_);
       copy_n(rdm2_av_kramers(i)->data(), norb_*norb_*norb_*norb_, tmp2rdm->data());
       auto tmp2rdm2 = tmp2rdm->copy();
-      SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp2rdm2->data(), tmp2rdm->data(), norb_, norb_, norb_, norb_); // sorts to chemist notation
+      sort_indices<0,2,1,3,0,1,1,1>(tmp2rdm2->data(), tmp2rdm->data(), norb_, norb_, norb_, norb_); // sorts to chemist notation
       for (int i=0; i!=norb_; ++i) {
         for (int j=0; j!=norb_; ++j) {
           norm2rdm += tmp2rdm->element(j*norb_ + j, i*norb_ + i);
@@ -374,7 +374,7 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
   }
 
   // sort indices : G(ik|jl) -> G(ij|kl)
-  SMITH::sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
+  sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
 #if 0
 // DEBUG : check normalization trace condition and symmetry requirement
   {
@@ -428,7 +428,7 @@ shared_ptr<const ZMatrix> ZHarrison::mo2e_full() const {
   }
 
   // sort indices : G(ik|jl) -> G(ij|kl)
-  SMITH::sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
+  sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
 
   return out;
 }

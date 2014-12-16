@@ -25,7 +25,7 @@
 
 
 #include <src/ci/fci/fci.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 #include <src/util/math/algo.h>
 #include <src/wfn/rdm.h>
 
@@ -458,7 +458,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
     {
       auto tmp4 = make_shared<RDM<4>>(norb_);
       dgemm_("T", "N", ebra->ij(), ebra->ij(), nri, 1.0, ebra->data(), nri, ebra->data(), nri, 0.0, tmp4->data(), ebra->ij());
-      SMITH::sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_, norb_, norb_, norb_);
+      sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_, norb_, norb_, norb_);
       for (int l = 0; l != norb_; ++l)
         for (int d = 0; d != norb_; ++d)
           for (int k = 0; k != norb_; ++k)
