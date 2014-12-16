@@ -27,7 +27,7 @@
 
 #include <src/molecule/overlap.h>
 #include <src/util/math/jacobi.h>
-#include <src/molecule/localization.h>
+#include <src/wfn/localization.h>
 
 using namespace bagel;
 using namespace std;

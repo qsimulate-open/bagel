@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __BAGEL_MOLECULE_LOCALIZE_H
-#define __BAGEL_MOLECULE_LOCALIZE_H
+#ifndef __BAGEL_WFN_LOCALIZE_H
+#define __BAGEL_WFN_LOCALIZE_H
 
 #include <vector>
 

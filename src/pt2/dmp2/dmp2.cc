@@ -33,7 +33,7 @@
 #include <src/pt2/dmp2/dmp2.h>
 #include <src/scf/dhf/dirac.h>
 #include <src/scf/dhf/dfock.h>
-#include <src/rel/relreference.h>
+#include <src/wfn/relreference.h>
 #include <src/smith/prim_op.h>
 #include <src/util/f77.h>
 #include <src/util/parallel/resources.h>

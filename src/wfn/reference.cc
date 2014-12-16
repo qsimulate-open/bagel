@@ -24,7 +24,7 @@
 //
 
 #include <src/wfn/reference.h>
-#include <src/rel/relreference.h>
+#include <src/wfn/relreference.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/molecule/mixedbasis.h>
 #include <src/ci/fci/fci.h>

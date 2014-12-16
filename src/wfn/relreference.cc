@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/rel/relreference.h>
 #include <src/rel/reloverlap.h>
+#include <src/wfn/relreference.h>
 #include <src/molecule/zoverlap.h>
 #include <src/london/reloverlap_london.h>
 #include <src/integral/os/overlapbatch.h>

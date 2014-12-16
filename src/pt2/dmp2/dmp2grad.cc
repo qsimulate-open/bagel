@@ -32,7 +32,7 @@
 #include <src/df/reldffull.h>
 #include <src/pt2/dmp2/dmp2.h>
 #include <src/scf/dhf/dfock.h>
-#include <src/rel/relreference.h>
+#include <src/wfn/relreference.h>
 #include <src/rel/reldipole.h>
 #include <src/grad/gradeval.h>
 #include <src/smith/prim_op.h>

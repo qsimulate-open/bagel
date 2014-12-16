@@ -25,7 +25,7 @@
 
 #include <sstream>
 #include <src/wfn/reference.h>
-#include <src/molecule/localization.h>
+#include <src/wfn/localization.h>
 
 using namespace bagel;
 
