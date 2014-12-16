@@ -81,7 +81,7 @@ void ZCASSCF::init() {
     cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
     mvo = false;
   }
-  nneg_ = kramers_coeff ? geom_->nbasis()*2 : relref->nneg();
+  nneg_ = geom_->nbasis()*2;
 
   // set hcore and overlap
   hcore_   = make_shared<RelHcore>(geom_);
@@ -153,7 +153,7 @@ void ZCASSCF::init() {
   }
   nocc_ = nclosed_ + nact_;
 
-  nbasis_ = coeff_->mdim()/2;
+  nbasis_ = geom_->nbasis()*2;
   nvirt_ = nbasis_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
   nvirtnr_ = nvirt_ - nneg_/2;
