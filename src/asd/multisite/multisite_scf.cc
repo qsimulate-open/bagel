@@ -28,7 +28,7 @@
 #include <src/wfn/localization.h>
 #include <src/scf/hf/fock.h>
 #include <src/scf/hf/rhf.h>
-#include <src/molecule/overlap.h>
+#include <src/mat1e/overlap.h>
 
 using namespace std;
 using namespace bagel;

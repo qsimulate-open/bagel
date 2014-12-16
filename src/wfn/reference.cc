@@ -26,7 +26,7 @@
 #include <src/wfn/reference.h>
 #include <src/wfn/relreference.h>
 #include <src/integral/os/overlapbatch.h>
-#include <src/molecule/mixedbasis.h>
+#include <src/mat1e/mixedbasis.h>
 #include <src/ci/fci/fci.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Reference)

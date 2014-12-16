@@ -23,15 +23,15 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/rel/reloverlap.h>
+#include <src/mat1e/mixedbasis.h>
+#include <src/mat1e/rel/reloverlap.h>
+#include <src/mat1e/giao/zoverlap.h>
+#include <src/mat1e/giao/reloverlap_london.h>
 #include <src/wfn/relreference.h>
-#include <src/molecule/zoverlap.h>
-#include <src/london/reloverlap_london.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/integral/compos/complexoverlapbatch.h>
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/smallints1e_london.h>
-#include <src/molecule/mixedbasis.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelReference)
 

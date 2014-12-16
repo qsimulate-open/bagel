@@ -29,7 +29,7 @@
 #include <src/ci/zfci/zharrison.h>
 #include <src/multi/casscf/rotfile.h>
 #include <src/wfn/method.h>
-#include <src/rel/reloverlap.h>
+#include <src/mat1e/rel/reloverlap.h>
 #include <src/util/math/bfgs.h>
 #include <src/util/math/step_restrict_bfgs.h>
 

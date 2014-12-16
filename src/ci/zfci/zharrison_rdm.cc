@@ -25,7 +25,7 @@
 
 #include <src/ci/zfci/zharrison.h>
 #include <src/util/prim_op.h>
-#include <src/rel/reloverlap.h>
+#include <src/mat1e/rel/reloverlap.h>
 
 using namespace std;
 using namespace bagel;

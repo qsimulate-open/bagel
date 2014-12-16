@@ -24,8 +24,7 @@
 //
 
 #include <algorithm>
-
-#include <src/molecule/overlap.h>
+#include <src/mat1e/overlap.h>
 #include <src/util/math/jacobi.h>
 #include <src/wfn/localization.h>
 

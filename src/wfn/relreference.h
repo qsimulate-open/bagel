@@ -26,9 +26,9 @@
 #ifndef __SRC_REL_RELREFERENCE_H
 #define __SRC_REL_RELREFERENCE_H
 
-#include <src/rel/relhcore.h>
+#include <src/mat1e/mixedbasis.h>
+#include <src/mat1e/rel/relhcore.h>
 #include <src/wfn/reference.h>
-#include <src/molecule/mixedbasis.h>
 
 namespace bagel {
 

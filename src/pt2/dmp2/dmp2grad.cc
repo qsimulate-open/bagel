@@ -33,7 +33,7 @@
 #include <src/pt2/dmp2/dmp2.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/wfn/relreference.h>
-#include <src/rel/reldipole.h>
+#include <src/mat1e/rel/reldipole.h>
 #include <src/grad/gradeval.h>
 #include <src/util/prim_op.h>
 #include <src/util/f77.h>
