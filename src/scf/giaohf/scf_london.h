@@ -29,7 +29,7 @@
 
 #include <src/scf/scf_base.h>
 #include <src/scf/levelshift.h>
-#include <src/london/fock_london.h>
+#include <src/scf/giaohf/fock_london.h>
 #include <src/util/math/diis.h>
 #include <src/wfn/method.h>
 
