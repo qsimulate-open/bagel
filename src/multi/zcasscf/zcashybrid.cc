@@ -34,7 +34,8 @@
 
 void ZCASHybrid::compute() {
 
-  double global_thresh = idata_->get<double>("thresh", 1.0e-8);
+  // set convergence threshold
+  double global_thresh = idata_->get<double>("thresh", 1.0e-7);
   shared_ptr<Method> active_method;
   // construct and compute SuperCI
   {
@@ -60,9 +61,11 @@ void ZCASHybrid::compute() {
   // construct and compute step-restricted BFGS
   {
     auto idata = make_shared<PTree>(*idata_);
-    idata->erase("active");
+    idata->erase("read_zcas_coeff");
+    idata->erase("read_kramers_coeff");
+    idata->erase("active"); // coefficient should be in proper order so active is removed to prevent a second reordering
     idata->erase("kramers_coeff");
-    idata->put("kramers_coeff", true);
+    idata->put("kramers_coeff", true); // input coefficient should be time-reversal symmetric by construction
     idata->erase("generate_mvo");
     active_method = make_shared<ZCASBFGS>(idata, geom_, refout_);
     active_method->compute();
