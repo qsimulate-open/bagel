@@ -46,6 +46,7 @@ void ZSuperCIMicro::compute() {
   // BFGS initialization
   auto mbfgs = make_shared<BFGS<ZSCIData>>(make_shared<ZSCIData>(cc0, make_shared<ZRotFile>(*denom_)));
 
+  // start micro iterations
   for (int miter = 0; miter != casscf_->max_micro_iter(); ++miter) {
     Timer mtimer;
 

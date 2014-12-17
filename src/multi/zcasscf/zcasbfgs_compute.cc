@@ -165,20 +165,26 @@ void ZCASBFGS::compute() {
 
 //    cold = coeff_->copy(); // TODO : copy old coefficient if step rejection is ever implemented
     if (optimize_electrons) {
+      // extract electronic orbitals from coefficient
       auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), coeff_->mdim()/2);
       ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2 + nvirtnr_, coeff_->slice(0, nocc_*2 + nvirtnr_));
       ctmp->copy_block(0, nocc_*2 + nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2 + nvirt_, nocc_*2 + nvirt_ + nvirtnr_));
+      // rotate orbitals
       *ctmp = *ctmp * *expa;
+      // copy back to full coeff
       auto ctmp2 = coeff_->copy();
       ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2 + nvirtnr_, ctmp->slice(0, nocc_*2 + nvirtnr_));
       ctmp2->copy_block(0, nocc_*2 + nvirt_, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2 + nvirtnr_, ctmp->mdim()));
       coeff_ = make_shared<const ZMatrix>(*ctmp2);
     } else {
+      // extract occupied and positronic orbitals from coefficient
       auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), coeff_->mdim()/2 + nocc_*2);
       ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
       ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nneg_/2, coeff_->slice(nocc_*2 + nvirtnr_, nocc_*2 + nvirt_));
       ctmp->copy_block(0, nocc_*2 + nneg_/2, coeff_->ndim(), nneg_/2, coeff_->slice(nocc_*2 + nvirt_ + nvirtnr_, nocc_*2 + nvirt_*2));
+      // rotate orbitals
       *ctmp = *ctmp * *expa;
+      // copy back to full coeff
       auto ctmp2 = coeff_->copy();
       ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
       ctmp2->copy_block(0, nocc_*2 + nvirtnr_, coeff_->ndim(), nneg_/2, ctmp->slice(nocc_*2, nocc_*2 +nneg_/2));
@@ -210,6 +216,7 @@ void ZCASBFGS::compute() {
       // don't switch to positrons if doing only e-e rotations or positrons are converged
       optimize_electrons = (only_electrons || pos_conv) ? true : false;
     }
+    // check convergence
     if ((ele_conv && only_electrons) || (pos_conv && ele_conv)) {
       cout << " " << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
