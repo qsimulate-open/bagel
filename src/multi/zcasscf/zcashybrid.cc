@@ -61,8 +61,6 @@ void ZCASHybrid::compute() {
   // construct and compute step-restricted BFGS
   {
     auto idata = make_shared<PTree>(*idata_);
-    idata->erase("read_zcas_coeff");
-    idata->erase("read_kramers_coeff");
     idata->erase("active"); // coefficient should be in proper order so active is removed to prevent a second reordering
     idata->erase("kramers_coeff");
     idata->put("kramers_coeff", true); // input coefficient should be time-reversal symmetric by construction
