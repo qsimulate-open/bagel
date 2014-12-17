@@ -62,6 +62,8 @@ ASDSCF::ASDSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometr
     //Update Reference & Geometry objects of adapt dimer structure
     geom_ = dimer_->sgeom();
     ref_ = dimer_->sref();
+    //update Hcore
+    hcore_ = ref_->Reference::hcore();
 
     //ASD input
     asdinput_ = idat->get_child_optional("asd") ? idat->get_child_optional("asd") : make_shared<PTree>();

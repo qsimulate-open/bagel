@@ -82,7 +82,7 @@ class ASDSCF : public Method, public std::enable_shared_from_this<ASDSCF> {
     void mute_stdcout();
     void resume_stdcout();
 
-    const std::shared_ptr<const Matrix> hcore_;
+    std::shared_ptr<const Matrix> hcore_;
 
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Matrix> cold, std::shared_ptr<const Matrix> natorb) const;
     std::shared_ptr<const Coeff> semi_canonical_orb() const;
