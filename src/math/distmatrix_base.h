@@ -53,8 +53,7 @@ class DistMatrix_base {
     template<class T>
     void ax_plus_y_impl(const DataType a, const T& o) {
       assert(size() == o.size());
-      std::transform(o.local_.get(), o.local_.get()+size(), local_.get(), local_.get(),
-                     [&a](DataType p, DataType q) { return a*p+q; });
+      blas::ax_plus_y_n(a, o.local_.get(), size(), local_.get());
     }
     template<class T>
     DataType dot_product_impl(const T& o) const {
@@ -151,7 +150,7 @@ class DistMatrix_base {
     double norm() const { return std::sqrt(detail::real(dot_product_impl(*this))); }
     double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
 
-    void scale(const DataType a) { std::for_each(local_.get(), local_.get()+size(), [&a](DataType& p) { p *= a; }); }
+    void scale(const DataType a) { blas::scale_n(a, local_.get(), size()); }
 
     void scale(const double* vec) {
       const int localrow = std::get<0>(localsize_);

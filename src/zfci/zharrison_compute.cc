@@ -279,22 +279,6 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
   const size_t lb = cc->lenb();
   assert(lb == d->lenb());
 
-#if 0
-  for (int i = 0; i != norb_; ++i) {
-    for (int j = 0; j != norb_; ++j) {
-      if (i == j) continue;
-      complex<double>* target = d->data(j+norb_*i)->data();
-      for (auto& a : d->det()->string_bits_a()) {
-        if (a[i] || a[j]) continue;
-        auto ca = a; ca.set(i); ca.set(j);
-        const double factor = Determinants::sign(a, i, j) * (i < j ? -1.0 : 1.0);
-        const size_t offas = cc->det()->lexical<0>(ca);
-        const size_t offat = d->det()->lexical<0>(a);
-        blas::ax_plus_y_n(factor, source+lb*offas, lb, target+lb*offat);
-      }
-    }
-  }
-#else
   TaskQueue<function<void(void)>> tq(d->lena());
   size_t aindex = 0;
   for (auto& a : d->det()->string_bits_a()) {
@@ -316,7 +300,6 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
     ++aindex;
   }
   tq.compute();
-#endif
 }
 
 
@@ -381,32 +364,6 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
 
   complex<double>* target_base = sigma->data();
 
-  // TODO can be reduced by a factor of two by using symmetry
-  // TODO not efficient code
-#if 0
-  for (int i = 0; i < norb_; ++i) { // beta
-    for (int j = 0; j < norb_; ++j) { // beta
-      if (i == j) continue;
-      const complex<double>* source_base = e->data(i+norb_*j)->data();
-
-      for (size_t ia = 0; ia != la; ++ia) {
-        complex<double>* target = target_base + ia*lbt;
-        const complex<double>* source = source_base + ia*lbs;
-
-        for (auto& b : int_det->string_bits_b()) {
-          if (b[i] || b[j]) continue;
-          bitset<nbit__> cb = b;
-          cb.set(i); cb.set(j);
-
-          const double sign = (i < j ? 1.0 : -1.0) * Determinants::sign(b, i, j);
-
-          target[base_det->lexical<1>(cb)] += sign * source[int_det->lexical<1>(b)];
-        }
-
-      }
-    }
-  }
-#else
   TaskQueue<function<void(void)>> tq(lbt);
   size_t bindex = 0;
   for (auto& b : base_det->string_bits_b()) {
@@ -433,7 +390,6 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
     ++bindex;
   }
   tq.compute();
-#endif
 }
 
 
