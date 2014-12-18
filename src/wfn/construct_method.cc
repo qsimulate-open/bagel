@@ -27,7 +27,7 @@
 #include <src/scf/ks/ks.h>
 #include <src/scf/sohf/soscf.h>
 #include <src/scf/dhf/dirac.h>
-#include <src/scf/giaohf/scf_london.h>
+#include <src/scf/giaohf/rhf_london.h>
 #include <src/ci/fci/distfci.h>
 #include <src/ci/fci/harrison.h>
 #include <src/ci/fci/knowles.h>
@@ -46,7 +46,7 @@
 #include <src/multi/zcasscf/zsuperci.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
-#include <src/london/current.h>
+#include <src/prop/current.h>
 #include <src/wfn/construct_method.h>
 
 using namespace std;
@@ -126,7 +126,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
 
   // now the versions to use with magnetic fields
   } else {
-    if (title == "hf")              out = make_shared<SCF_London>(itree, geom, ref);
+    if (title == "hf")              out = make_shared<RHF_London>(itree, geom, ref);
     else if (title == "dhf")        out = make_shared<Dirac>(itree, geom, ref);
     else if (title == "current")    out = make_shared<Current>(itree, geom, ref);
     else if (title == "zfci")       out = make_shared<ZHarrison>(itree, geom, ref);

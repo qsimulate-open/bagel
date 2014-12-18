@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: scf_london.cc
+// Filename: rhf_london.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/scf/giaohf/scf_london.h>
+#include <src/scf/giaohf/rhf_london.h>
 #include <src/scf/atomicdensities.h>
 #include <src/wfn/relreference.h>
 #include <src/prop/multipole.h>
@@ -31,10 +31,10 @@
 using namespace bagel;
 using namespace std;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(SCF_London)
+BOOST_CLASS_EXPORT_IMPLEMENT(RHF_London)
 
 
-SCF_London::SCF_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
+RHF_London::RHF_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base_London(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)), restarted_(false) {
 
   cout << indent << "*** RHF ***" << endl << endl;
@@ -50,7 +50,7 @@ SCF_London::SCF_London(const shared_ptr<const PTree> idata, const shared_ptr<con
 }
 
 
-void SCF_London::compute() {
+void RHF_London::compute() {
   Timer scftime;
 
   shared_ptr<const ZMatrix> previous_fock = hcore_;
@@ -197,7 +197,7 @@ void SCF_London::compute() {
 }
 
 
-shared_ptr<const Reference> SCF_London::conv_to_ref() const {
+shared_ptr<const Reference> RHF_London::conv_to_ref() const {
   auto out = make_shared<RelReference>(geom_, coeff_, energy_, 0, nocc_, coeff_->mdim()-nocc_, /*gaunt_*/ false, /*breit_*/ false, /*rel_*/ false);
   out->set_eig(eig_);
   return out;

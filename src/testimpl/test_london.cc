@@ -24,7 +24,7 @@
 //
 
 #include <sstream>
-#include <src/scf/giaohf/scf_london.h>
+#include <src/scf/giaohf/rhf_london.h>
 #include <src/scf/dhf/dirac.h>
 #include <src/wfn/relreference.h>
 
@@ -50,7 +50,7 @@ double london_energy(std::string filename) {
       geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
       if (ref_) ref_ = ref_->project_coeff(geom);
     } else if (method == "hf") {
-      auto scf = std::make_shared<SCF_London>(itree, geom, ref_);
+      auto scf = std::make_shared<RHF_London>(itree, geom, ref_);
       scf->compute();
       ref_ = scf->conv_to_ref();
       energy = ref_->energy();

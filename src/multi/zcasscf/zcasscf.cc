@@ -27,10 +27,10 @@
 #include <src/scf/dhf/dirac.h>
 #include <src/util/math/quatmatrix.h>
 #include <src/multi/zcasscf/zcasscf.h>
-#include <src/rel/relhcore.h>
-#include <src/london/relhcore_london.h>
-#include <src/rel/reloverlap.h>
-#include <src/london/reloverlap_london.h>
+#include <src/mat1e/rel/relhcore.h>
+#include <src/mat1e/giao/relhcore_london.h>
+#include <src/mat1e/rel/reloverlap.h>
+#include <src/mat1e/giao/reloverlap_london.h>
 
 using namespace std;
 using namespace bagel;

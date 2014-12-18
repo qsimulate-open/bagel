@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: scf_london.h
+// Filename: rhf_london.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __BAGEL_SRC_LONDON_SCF_LONDON_H
-#define __BAGEL_SRC_LONDON_SCF_LONDON_H
+#ifndef __BAGEL_SRC_LONDON_RHF_LONDON_H
+#define __BAGEL_SRC_LONDON_RHF_LONDON_H
 
 #include <src/scf/scf_base.h>
 #include <src/scf/levelshift.h>
@@ -35,7 +35,7 @@
 
 namespace bagel {
 
-class SCF_London : public SCF_base_London {
+class RHF_London : public SCF_base_London {
   protected:
     double lshift_;
     std::shared_ptr<LevelShift<DistZMatrix>> levelshift_;
@@ -70,9 +70,9 @@ class SCF_London : public SCF_base_London {
     }
 
   public:
-    SCF_London() { }
-    SCF_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr);
-    virtual ~SCF_London() { }
+    RHF_London() { }
+    RHF_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr);
+    virtual ~RHF_London() { }
 
     void compute() override;
 
@@ -85,6 +85,6 @@ class SCF_London : public SCF_base_London {
 }
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::SCF_London)
+BOOST_CLASS_EXPORT_KEY(bagel::RHF_London)
 
 #endif

@@ -24,8 +24,8 @@
 //
 
 
-#include <src/london/current.h>
-#include <src/rel/relreference.h>
+#include <src/prop/current.h>
+#include <src/wfn/relreference.h>
 #include <src/prop/momentum_london.h>
 #include <src/prop/momentum_point.h>
 
