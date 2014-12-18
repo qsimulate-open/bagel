@@ -27,7 +27,6 @@
 #include <src/ci/fci/hztasks.h>
 #include <src/util/math/davidson.h>
 #include <src/util/taskqueue.h>
-#include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;

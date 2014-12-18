@@ -26,10 +26,10 @@
 #ifndef __SCF_SCF_BASE_H
 #define __SCF_SCF_BASE_H
 
-#include <src/molecule/overlap.h>
-#include <src/molecule/zoverlap.h>
-#include <src/molecule/hcore.h>
-#include <src/molecule/zhcore.h>
+#include <src/mat1e/overlap.h>
+#include <src/mat1e/giao/zoverlap.h>
+#include <src/mat1e/hcore.h>
+#include <src/mat1e/giao/zhcore.h>
 #include <src/wfn/method.h>
 
 namespace bagel {

@@ -24,17 +24,16 @@
 //
 
 #include <iostream>
-#include <iomanip>
 #include <algorithm>
 #include <cmath>
 #include <src/util/f77.h>
 #include <src/util/math/quatmatrix.h>
+#include <src/util/prim_op.h>
 #include <src/ci/zfci/relmofile.h>
-#include <src/rel/reloverlap.h>
-#include <src/rel/relhcore.h>
-#include <src/smith/prim_op.h>
-#include <src/london/reloverlap_london.h>
-#include <src/london/relhcore_london.h>
+#include <src/mat1e/rel/reloverlap.h>
+#include <src/mat1e/rel/relhcore.h>
+#include <src/mat1e/giao/reloverlap_london.h>
+#include <src/mat1e/giao/relhcore_london.h>
 
 using namespace std;
 using namespace bagel;
@@ -293,7 +292,7 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
   // Harrison requires <ij|kl> = (ik|jl)
   for (auto& mat : buf2e) {
     shared_ptr<ZMatrix> tmp = mat.second->clone();
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(mat.second->data(), tmp->data(), nocc_, nocc_, nocc_, nocc_);
+    sort_indices<0,2,1,3,0,1,1,1>(mat.second->data(), tmp->data(), nocc_, nocc_, nocc_, nocc_);
     bitset<4> s = mat.first;
     s[2] = mat.first[1];
     s[1] = mat.first[2];
@@ -444,15 +443,15 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
 
   out[bitset<4>("1010")] = out.at(bitset<4>("0101"))->clone();
   shared_ptr<ZMatrix> m1010 = out.at(bitset<4>("0101"))->get_conjg();
-  SMITH::sort_indices<1,0,3,2,0,1,1,1>(m1010->data(), out[bitset<4>("1010")]->data(), nocc_, nocc_, nocc_, nocc_);
+  sort_indices<1,0,3,2,0,1,1,1>(m1010->data(), out[bitset<4>("1010")]->data(), nocc_, nocc_, nocc_, nocc_);
 
   out[bitset<4>("1101")] = out.at(bitset<4>("1011"))->clone();
   shared_ptr<ZMatrix> m1101 = out.at(bitset<4>("1011"))->get_conjg();
-  SMITH::sort_indices<3,2,1,0,0,1,1,1>(m1101->data(), out[bitset<4>("1101")]->data(), nocc_, nocc_, nocc_, nocc_);
+  sort_indices<3,2,1,0,0,1,1,1>(m1101->data(), out[bitset<4>("1101")]->data(), nocc_, nocc_, nocc_, nocc_);
 
   out[bitset<4>("0100")] = out.at(bitset<4>("0010"))->clone();
   shared_ptr<ZMatrix> m0100 = out.at(bitset<4>("0010"))->get_conjg();
-  SMITH::sort_indices<3,2,1,0,0,1,1,1>(m0100->data(), out[bitset<4>("0100")]->data(), nocc_, nocc_, nocc_, nocc_);
+  sort_indices<3,2,1,0,0,1,1,1>(m0100->data(), out[bitset<4>("0100")]->data(), nocc_, nocc_, nocc_, nocc_);
 
 #if 0
   // for completeness we can compute the others too
@@ -462,7 +461,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
     bitset<4> sb; sb[0] = tb[1]; sb[1] = tb[0]; sb[2] = tb[3]; sb[3] = tb[2];
     assert(out.find(tb) == out.end());
     out[tb] = out.at(sb)->clone();
-    SMITH::sort_indices<1,0,3,2,0,1,1,1>(out.at(sb)->data(), out.at(tb)->data(), nocc_, nocc_, nocc_, nocc_);
+    sort_indices<1,0,3,2,0,1,1,1>(out.at(sb)->data(), out.at(tb)->data(), nocc_, nocc_, nocc_, nocc_);
     transform(out.at(tb)->data(), out.at(tb)->data()+nocc_*nocc_*nocc_*nocc_, out.at(tb)->data(), [](complex<double> a) { return conj(a); });
   }
   out[bitset<4>("1100")] = out.at(bitset<4>("0011"))->transpose();

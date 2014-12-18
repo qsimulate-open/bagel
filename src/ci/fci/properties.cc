@@ -28,8 +28,8 @@
 #include <algorithm>
 #include <cmath>
 #include <src/ci/fci/properties.h>
-#include <src/molecule/dipolematrix.h>
 #include <src/ci/fci/prop1etask.h>
+#include <src/mat1e/dipolematrix.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIProperties)
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Prop1e)

@@ -29,7 +29,7 @@
 
 #include <src/util/math/zmatrix.h>
 #include <src/wfn/geometry.h>
-#include <src/rel/breitint.h>
+#include <src/mat1e/rel/breitint.h>
 
 namespace bagel {
 

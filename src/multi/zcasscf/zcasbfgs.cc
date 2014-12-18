@@ -25,7 +25,6 @@
 
 #include <src/multi/zcasscf/zcasbfgs.h>
 #include <src/multi/zcasscf/zqvec.h>
-#include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;

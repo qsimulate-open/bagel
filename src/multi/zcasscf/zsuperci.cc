@@ -25,7 +25,7 @@
 
 
 #include <src/scf/dhf/dfock.h>
-#include <src/rel/reloverlap.h>
+#include <src/mat1e/rel/reloverlap.h>
 #include <src/multi/zcasscf/zqvec.h>
 #include <src/multi/zcasscf/zsuperci.h>
 #include <src/multi/zcasscf/zsupercimicro.h>

@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/rel/alpha.h>
+#include <src/util/alpha.h>
 #include <src/integral/rys/gradbatch.h>
 #include <src/integral/libint/glibint.h>
 #include <src/integral/rys/gsmalleribatch.h>

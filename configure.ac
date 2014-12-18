@@ -162,9 +162,8 @@ AC_CONFIG_FILES([Makefile
                  src/multi/Makefile
                  src/multi/casscf/Makefile
                  src/multi/zcasscf/Makefile
-                 src/rel/Makefile
+                 src/mat1e/Makefile
                  src/opt/Makefile
                  src/alglib/Makefile
-                 src/london/Makefile
                  src/basis/Makefile])
 AC_OUTPUT

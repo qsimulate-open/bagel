@@ -29,9 +29,9 @@
 
 #include <set>
 #include <src/scf/coeff.h>
-#include <src/molecule/hcore.h>
-#include <src/wfn/geometry.h>
+#include <src/mat1e/hcore.h>
 #include <src/ci/fci/dvec.h>
+#include <src/wfn/geometry.h>
 #include <src/wfn/ciwfn.h>
 #include <src/wfn/rdm.h>
 
