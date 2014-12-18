@@ -90,7 +90,7 @@ void ZCASSCF::init() {
     cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
     mvo = false;
   }
-  nneg_ = kramers_coeff ? geom_->nbasis()*2 : relref->nneg();
+  nneg_ = geom_->nbasis()*2;
 
   // set hcore and overlap
   if (!geom_->magnetism()) {
@@ -130,8 +130,12 @@ void ZCASSCF::init() {
     shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
     shared_ptr<ZMatrix> coeff = ctmp->clone();
     const int npos = ctmp->mdim()/2;
-    coeff->copy_block(0, 0, ctmp->ndim(), npos, ctmp->slice(npos, npos+npos));
-    coeff->copy_block(0, npos, ctmp->ndim(), npos, ctmp->slice(0, npos));
+    if (ctmp->mdim() != ctmp->ndim()) {
+      coeff = ctmp->copy();
+    } else {
+      coeff->copy_block(0, 0, ctmp->ndim(), npos, ctmp->slice(npos, npos+npos));
+      coeff->copy_block(0, npos, ctmp->ndim(), npos, ctmp->slice(0, npos));
+    }
     coeff_ = coeff;
   }
 
@@ -167,7 +171,7 @@ void ZCASSCF::init() {
   }
   nocc_ = nclosed_ + nact_;
 
-  nbasis_ = coeff_->mdim()/2;
+  nbasis_ = geom_->nbasis()*2;
   nvirt_ = nbasis_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
   nvirtnr_ = nvirt_ - nneg_/2;
