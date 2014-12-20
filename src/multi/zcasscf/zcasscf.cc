@@ -224,7 +224,7 @@ void ZCASSCF::print_iteration(int iter, int miter, int tcount, const vector<doub
   if (energy.size() != 1 && iter) cout << endl;
   int i = 0;
   for (auto& e : energy) {
-    cout << "Cycle" << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
+    cout << "Cycle" << setw(5) << iter << setw(4) << i << setw(4) << miter << setw(4) << tcount
                << setw(20) << fixed << setprecision(12) << e << "   "
                << setw(10) << scientific << setprecision(4) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
                << time << endl;
@@ -300,10 +300,26 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
     VectorB vec(rdm1->ndim());
     tmp->diagonalize(vec);
 
+  const bool occ_sort = idata_->get<bool>("occ_sort",false);
+  vector<double> vec2(tmp->ndim());
+  auto buf2 = tmp->clone();
+  if (occ_sort) {
+    // sort by natural orbital occupation numbers
+    int b2n = buf2->ndim();
+    for (int i=0; i!=buf2->mdim()/2; ++i) {
+      copy_n(tmp->element_ptr(0, buf2->mdim()/2-1-i), b2n, buf2->element_ptr(0, i));
+      copy_n(tmp->element_ptr(0, buf2->mdim()-1-i), b2n, buf2->element_ptr(0, i+b2n/2));
+      vec2[b2n/2-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
+      vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;;
+    }
+    // fix the phase
+    for (int i = 0; i != tmp->ndim(); ++i) {
+      if (real(buf2->element(i,i)) < 0.0)
+        blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
+    }
+  } else {
     map<int,int> emap;
-    auto buf2 = tmp->clone();
-    vector<double> vec2(tmp->ndim());
-    // sort eigenvectors so that buf is close to a unit matrix
+    // sort eigenvectors so that buf2 is close to a unit matrix
     // target column
     for (int i = 0; i != tmp->ndim()/2; ++i) {
       // first find the source column
@@ -328,6 +344,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
       if (real(buf2->element(i,i)) < 0.0)
         blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
     }
+}
     occup_ = vec2;
     return buf2;
   } else { // set occupation numbers, but coefficients don't need to be updated
