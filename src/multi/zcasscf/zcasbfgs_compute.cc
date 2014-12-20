@@ -220,16 +220,8 @@ void ZCASBFGS::compute() {
     if ((ele_conv && only_electrons) || (pos_conv && ele_conv)) {
       cout << " " << endl;
       // output energy change for last cycle
-      {
-        double sa_energy = 0.0;
-        double prev_sa_energy = 0.0;
-        for (auto& i : prev_energy_) prev_sa_energy += i;
-        for (auto& i : energy_) sa_energy += i;
-        prev_sa_energy /= prev_energy_.size();
-        sa_energy /= energy_.size();
-        prev_sa_energy -= sa_energy;
-        cout << "    * State averaged energy change from last cycle = " << setprecision(6) << scientific << prev_sa_energy << endl;
-      }
+      cout << "    * State averaged energy change from last cycle = " << setprecision(6) << scientific
+           << blas::average(prev_energy_) - blas::average(energy_) << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
       rms_grad_ = gradient;
       mute_stdcout();

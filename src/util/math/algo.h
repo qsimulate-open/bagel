@@ -174,6 +174,12 @@ namespace {
   template<>
   void scale_n(const std::complex<double> p, std::complex<double>* q, const size_t n) { zscal_(n, p, q, 1); }
 
+  // average
+  template<class T>
+  auto average(const T& container) -> decltype(std::accumulate(container.begin(), container.end(), 0.0)/container.size()) {
+    return std::accumulate(container.begin(), container.end(), 0.0) / container.size();  
+  }
+
 }}
 
 }
