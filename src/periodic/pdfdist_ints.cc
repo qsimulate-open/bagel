@@ -115,6 +115,7 @@ void PDFDist_ints::pcompute_3index(const vector<shared_ptr<const Shell>>& ashell
   *projectorC -= *projector_;
 
   auto tmp = make_shared<btas::Tensor3<double>>(naux_, nbasis_, nbasis_);
+  assert(block_[0]->size() == naux_ * nbasis_ * nbasis_);
   for (int i = 0; i != ncell(); ++i) {
     contract(1.0, *data3_in_cell_[i], {3, 1, 2}, *projectorC, {0, 3}, 0.0, *tmp, {0, 1, 2});
     blas::ax_plus_y_n(1.0, tmp->data(), block_[0]->size(), block_[0]->data());
