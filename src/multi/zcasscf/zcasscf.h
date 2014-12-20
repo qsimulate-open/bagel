@@ -85,6 +85,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     // energy
     std::vector<double> energy_;
+    std::vector<double> prev_energy_;
     double micro_energy_;
 
     // internal functions
