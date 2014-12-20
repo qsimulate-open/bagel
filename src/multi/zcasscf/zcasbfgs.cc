@@ -115,6 +115,7 @@ shared_ptr<ZMatrix> ZCASBFGS::compute_unitary_rotation(vector<double>& subspace_
         sa_en += i;
       sa_en /= double((fci_->energy()).size());
       subspace_energy.push_back(sa_en);
+      if (energy_.size() > 0) prev_energy_ = energy_;
       energy_ = fci_->energy();
     } else {
       assert(nstate_ == 1 && energy_.size() == 1);
