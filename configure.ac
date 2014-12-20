@@ -154,8 +154,6 @@ AC_CONFIG_FILES([Makefile
                  src/smith/Makefile
                  src/molecule/Makefile
                  src/pt2/Makefile
-                 src/pt2/mp2/Makefile
-                 src/pt2/nevpt2/Makefile
                  src/ci/Makefile
                  src/ci/ciutil/Makefile
                  src/ci/fci/Makefile
@@ -164,9 +162,8 @@ AC_CONFIG_FILES([Makefile
                  src/multi/Makefile
                  src/multi/casscf/Makefile
                  src/multi/zcasscf/Makefile
-                 src/rel/Makefile
+                 src/mat1e/Makefile
                  src/opt/Makefile
                  src/alglib/Makefile
-                 src/london/Makefile
                  src/basis/Makefile])
 AC_OUTPUT

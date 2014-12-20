@@ -24,8 +24,8 @@
 //
 
 
-#include <src/rel/dfock.h>
-#include <src/rel/reloverlap.h>
+#include <src/scf/dhf/dfock.h>
+#include <src/mat1e/rel/reloverlap.h>
 #include <src/multi/zcasscf/zqvec.h>
 #include <src/multi/zcasscf/zsuperci.h>
 #include <src/multi/zcasscf/zsupercimicro.h>
@@ -55,6 +55,7 @@ void ZSuperCI::compute() {
   }
   for (int iter = 0; iter != max_iter_; ++iter) {
 
+    // DIIS setup
     if (iter >= diis_start_ && gradient < 1.0e-2 && diis == nullptr) {
       shared_ptr<ZMatrix> tmp = make_shared<ZMatrix>(coeff_->ndim(),coeff_->mdim()/2);
       tmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
@@ -75,6 +76,7 @@ void ZSuperCI::compute() {
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
       fci_time.tick_print("RDMs");
+      if (iter > 0) prev_energy_ = energy_;
       energy_ = fci_->energy();
     }
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirtnr_*2);
@@ -112,20 +114,27 @@ void ZSuperCI::compute() {
     if (gradient < thresh_) {
       resume_stdcout();
       // print out...
-      if (!nact_) {
-        print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
-      } else {
-        print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
-      }
+      print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
       rms_grad_ = gradient;
       cout << " " << endl;
+      // output energy change for last cycle
+      {
+        double sa_energy = 0.0;
+        double prev_sa_energy = 0.0;
+        for (auto& i : prev_energy_) prev_sa_energy += i;
+        for (auto& i : energy_) sa_energy += i;
+        prev_sa_energy /= prev_energy_.size();
+        sa_energy /= energy_.size();
+        prev_sa_energy -= sa_energy;
+        cout << "    * State averaged energy change from last cycle = " << setprecision(6) << scientific << prev_sa_energy << endl;
+      }
       cout << "    * Super CI optimization converged. *    " << endl << endl;
       mute_stdcout();
       break;
     }
 
   // ============================
-     // Micro-iterations go here
+  //   Micro-iterations go here
   // ============================
     shared_ptr<const ZRotFile> cc;
     {
@@ -152,18 +161,23 @@ void ZSuperCI::compute() {
     expa->purify_unitary();
 
     if (diis == nullptr) {
+      // extract electronic orbitals
       auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
       ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
       ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2,nocc_*2+nvirtnr_));
       ctmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_,nocc_*2+nvirt_+nvirtnr_));
+      // rotate orbitals
       *ctmp *= *expa;
+      // copy electronic orbitals back to full coefficient
       auto ctmp2 = coeff_->copy();
       ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
       ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2,nocc_*2+nvirtnr_));
       ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
       coeff_ = make_shared<const ZMatrix>(*ctmp2);
     } else {
+      // DIIS extrapolate
       shared_ptr<const ZMatrix> mcc = diis->extrapolate(expa);
+      // copy electronic orbitals back to full coefficient
       auto ctmp2 = coeff_->copy();
       ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, mcc->slice(0, nocc_*2));
       ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, mcc->slice(nocc_*2,nocc_*2+nvirtnr_));

@@ -24,12 +24,12 @@
 //
 
 #include <set>
-#include <src/smith/prim_op.h>
 #include <src/pt2/nevpt2/nevpt2.h>
 #include <src/df/dfdistt.h>
 #include <src/scf/hf/fock.h>
 #include <src/multi/casscf/superci.h>
 #include <src/multi/casscf/qvec.h>
+#include <src/util/prim_op.h>
 #include <src/util/parallel/resources.h>
 
 using namespace std;
@@ -456,13 +456,13 @@ void NEVPT2::compute() {
       // S(-1)r sector
       shared_ptr<Matrix> ardm3_sorted = ardm3_->clone();
       shared_ptr<Matrix> ardm2_sorted = make_shared<Matrix>(nact_*nact_*nact_, nact_, true);
-      SMITH::sort_indices<1,2,0,3,    0,1,1,1>(ardm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
-      SMITH::sort_indices<1,2,0,4,3,5,0,1,1,1>(ardm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
+      sort_indices<1,2,0,3,    0,1,1,1>(ardm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
+      sort_indices<1,2,0,4,3,5,0,1,1,1>(ardm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
       const int iv = i-nclosed_-nact_;
       const MatView rblock = fullav->slice(iv*nact_, (iv+1)*nact_);
       const Matrix bac = rblock % *fullaa;
       auto abc = make_shared<VectorB>(nact_*nact_*nact_);
-      SMITH::sort_indices<1,0,2,0,1,1,1>(bac.data(), abc->data(), nact_, nact_, nact_);
+      sort_indices<1,0,2,0,1,1,1>(bac.data(), abc->data(), nact_, nact_, nact_);
       auto heff = make_shared<VectorB>(nact_);
       for (int a = 0; a != nact_; ++a)
         (*heff)(a) = (2.0*fock_p->element(a+nclosed_, i) - fock_c->element(a+nclosed_, i));
@@ -478,7 +478,7 @@ void NEVPT2::compute() {
       const MatView iablock = fullai->slice(i*nact_, (i+1)*nact_);
       // reordered srdm
       Matrix srdm2_p(nact_*nact_, nact_*nact_);
-      SMITH::sort_indices<0,2,1,3,0,1,1,1>(srdm2_->data(), srdm2_p.data(), nact_, nact_, nact_, nact_);
+      sort_indices<0,2,1,3,0,1,1,1>(srdm2_->data(), srdm2_p.data(), nact_, nact_, nact_, nact_);
 
       for (int r = 0; r != nvirt_; ++r) {
         const MatView ibr = iblock->slice(r, r+1);
@@ -523,11 +523,11 @@ void NEVPT2::compute() {
       // S(1)i sector
       shared_ptr<Matrix> ardm3_sorted = srdm3_->clone();
       shared_ptr<Matrix> ardm2_sorted = make_shared<Matrix>(nact_*nact_*nact_, nact_, true);
-      SMITH::sort_indices<1,2,0,3,    0,1,1,1>(srdm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
-      SMITH::sort_indices<1,2,0,4,3,5,0,1,1,1>(srdm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
+      sort_indices<1,2,0,3,    0,1,1,1>(srdm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
+      sort_indices<1,2,0,4,3,5,0,1,1,1>(srdm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
       shared_ptr<const Matrix> bac = make_shared<Matrix>(iablock % *fullaa);
       shared_ptr<VectorB> abc = make_shared<VectorB>(nact_*nact_*nact_);
-      SMITH::sort_indices<1,0,2,0,1,1,1>(bac->data(), abc->data(), nact_, nact_, nact_);
+      sort_indices<1,0,2,0,1,1,1>(bac->data(), abc->data(), nact_, nact_, nact_);
       shared_ptr<VectorB> heff = make_shared<VectorB>(nact_);
       for (int a = 0; a != nact_; ++a)
         (*heff)(a) = fock_c->element(a+nclosed_, i);

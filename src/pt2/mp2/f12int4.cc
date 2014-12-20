@@ -29,7 +29,7 @@
 
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/rys/slaterbatch.h>
-#include <src/molecule/overlap.h>
+#include <src/mat1e/overlap.h>
 #include <src/wfn/geometry.h>
 #include <src/pt2/mp2/f12int4.h>
 

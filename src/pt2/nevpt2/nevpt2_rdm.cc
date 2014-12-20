@@ -24,7 +24,7 @@
 //
 
 #include <src/pt2/nevpt2/nevpt2.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -40,7 +40,7 @@ void NEVPT2::compute_rdm() {
   {
     auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
     shared_ptr<const RDM<2>> r2 = ref_->rdm2(istate_);
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(r2->data(), tmp->data(), nact_, nact_, nact_, nact_);
+    sort_indices<0,2,1,3,0,1,1,1>(r2->data(), tmp->data(), nact_, nact_, nact_, nact_);
     rdm2_ = tmp;
   }
   // rdm 3 and 4
@@ -50,8 +50,8 @@ void NEVPT2::compute_rdm() {
     shared_ptr<const RDM<3>> r3;
     shared_ptr<const RDM<4>> r4;
     tie(r3, r4) = casscf_->fci()->compute_rdm34(istate_);
-    SMITH::sort_indices<0,2,4,  1,3,5,  0,1,1,1>(r3->data(), tmp3->data(), nact_, nact_, nact_, nact_, nact_, nact_);
-    SMITH::sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), tmp4->data(), nact_, nact_, nact_, nact_, nact_, nact_, nact_, nact_);
+    sort_indices<0,2,4,  1,3,5,  0,1,1,1>(r3->data(), tmp3->data(), nact_, nact_, nact_, nact_, nact_, nact_);
+    sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), tmp4->data(), nact_, nact_, nact_, nact_, nact_, nact_, nact_, nact_);
     rdm3_ = tmp3;
     rdm4_ = tmp4;
   }
@@ -94,7 +94,7 @@ void NEVPT2::compute_asrdm() {
 
             srdm3->element(id3(m,l,k),id3(k,j,i)) += 2.0*ardm2->element(id2(m,l),id2(j,i));
           }
-  SMITH::sort_indices<0,2,1,3,1,1,-1,1>(ardm3->data(), srdm3->data(), nact_*nact_, nact_, nact_, nact_*nact_);
+  sort_indices<0,2,1,3,1,1,-1,1>(ardm3->data(), srdm3->data(), nact_*nact_, nact_, nact_, nact_*nact_);
   shared_ptr<Matrix> ardm4 = rdm4_->clone();
   for (int h = 0; h != nact_; ++h)
     for (int g = 0; g != nact_; ++g)

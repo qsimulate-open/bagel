@@ -38,7 +38,7 @@
 #include <src/ci/fci/civec.h>
 #include <src/util/math/matrix.h>
 #include <src/util/math/matop.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>

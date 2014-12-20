@@ -45,6 +45,7 @@ class ZSuperCI : public ZCASSCF {
        : ZCASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override;
+    // compute effective fock matrices used to build gradients
     void one_body_operators(std::shared_ptr<ZMatrix>& f, std::shared_ptr<ZMatrix>& fact, std::shared_ptr<ZMatrix>& factp, std::shared_ptr<ZMatrix>& gaa,
                             std::shared_ptr<ZRotFile>& denom);
     // gradient functions for virtual-closed, virtual-active, and closed-active contributions

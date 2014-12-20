@@ -28,7 +28,7 @@
 #define __SRC_SCF_FOCK_BASE_H
 
 #include <src/wfn/geometry.h>
-#include <src/molecule/matrix1e.h>
+#include <src/mat1e/matrix1e.h>
 
 namespace bagel {
 

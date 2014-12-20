@@ -25,7 +25,7 @@
 
 #include <src/asd/dimer/dimer.h>
 #include <src/scf/hf/fock.h>
-#include <src/molecule/localization.h>
+#include <src/wfn/localization.h>
 
 using namespace std;
 using namespace bagel;

@@ -28,7 +28,7 @@
 #define __BAGEL_SRC_SCF_SOSCF_H
 
 #include <src/scf/scf_base.h>
-#include <src/scf/sohf/sohcore.h>
+#include <src/mat1e/sohcore.h>
 
 namespace bagel {
 

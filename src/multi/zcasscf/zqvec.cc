@@ -24,14 +24,12 @@
 //
 
 #include <src/multi/zcasscf/zqvec.h>
-#include <src/rel/reloverlap.h>
-#include <src/smith/prim_op.h>
+#include <src/mat1e/rel/reloverlap.h>
 
 using namespace std;
 using namespace bagel;
 
 
-// constructor to return qvec only in the electronic space (no positronic contributions)
 ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> rcoeff, shared_ptr<const ZMatrix> acoeff, const int nclosed,
              shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit)
  : ZMatrix(nbasis, nact*2) {

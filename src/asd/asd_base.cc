@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/asd_base.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -188,11 +188,11 @@ shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e<true>(const array<MonomerKey
 
   if ((neleA % 2) == 1) {
     // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }
   else {
     // sort: (A,A',B,B') --> (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }
 
   return out;
@@ -229,7 +229,7 @@ shared_ptr<Matrix> ASD_base::compute_inter_2e<true>(const array<MonomerKey,4>& k
 
   // sort: (A,A',B,B') --> (A,B,A',B') + block(A,B,A',B')
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   return out;
 }
 
@@ -260,7 +260,7 @@ shared_ptr<RDM<2>> ASD_base::compute_inter_2e<false>(const array<MonomerKey,4>& 
   {
     auto rdm = make_shared<Matrix>(gamma_AA_alpha % gamma_BB_alpha + gamma_AA_beta % gamma_BB_beta);
     auto rdmt = rdm->clone();
-    SMITH::sort_indices<0,3,2,1,0,1,-1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+    sort_indices<0,3,2,1,0,1,-1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactA, nactB);
     auto low = {0, nactA, nactA, 0};
     auto up  = {nactA, nactA+nactB, nactA+nactB, nactA};
     auto outv = make_rwview(out->range().slice(low, up), out->storage());
@@ -313,10 +313,10 @@ shared_ptr<Matrix> ASD_base::compute_aET<true>(const array<MonomerKey,4>& keys) 
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
   if ((neleA % 2) == 1) {
     // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   } else {
     // sort: (A,A',B,B') --> (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }
   return out;
 }
@@ -339,7 +339,7 @@ shared_ptr<RDM<2>> ASD_base::compute_aET<false>(const array<MonomerKey,4>& keys)
     auto rdm  = make_shared<Matrix>(gamma_A % (gamma_B1+gamma_B2));
     auto rdmt = rdm->clone();
 
-    SMITH::sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactB, nactB, nactB);
+    sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactB, nactB, nactB);
 
     auto low = {0, nactA, nactA, nactA};
     auto up  = {nactA, nactA+nactB, nactA+nactB, nactA+nactB};
@@ -356,7 +356,7 @@ shared_ptr<RDM<2>> ASD_base::compute_aET<false>(const array<MonomerKey,4>& keys)
     auto rdm  = make_shared<Matrix>((gamma_A1+gamma_A2) % gamma_B);
     auto rdmt = rdm->clone();
 
-    SMITH::sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+    sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactA, nactB);
 
     auto low = {0, 0, 0, nactA};
     auto up  = {nactA, nactA, nactA, nactA+nactB};
@@ -411,11 +411,11 @@ shared_ptr<Matrix> ASD_base::compute_bET<true>(const array<MonomerKey,4>& keys) 
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
   if ((neleA % 2) == 1) {
     // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }
   else {
     // sort: (A,A',B,B') --> (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }
 
   return out;
@@ -439,7 +439,7 @@ shared_ptr<RDM<2>> ASD_base::compute_bET<false>(const array<MonomerKey,4>& keys)
     auto rdm  = make_shared<Matrix>(gamma_A % (gamma_B1+gamma_B2));
     auto rdmt = rdm->clone();
 
-    SMITH::sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactB, nactB, nactB);
+    sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactB, nactB, nactB);
 
     auto low = {0, nactA, nactA, nactA};
     auto up  = {nactA, nactA+nactB, nactA+nactB, nactA+nactB};
@@ -456,7 +456,7 @@ shared_ptr<RDM<2>> ASD_base::compute_bET<false>(const array<MonomerKey,4>& keys)
     auto rdm  = make_shared<Matrix>((gamma_A1+gamma_A2) % gamma_B);
     auto rdmt = rdm->clone();
 
-    SMITH::sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactA, nactB);
+    sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactA, nactB);
 
     auto low = {0, 0, 0, nactA};
     auto up  = {nactA, nactA, nactA, nactA+nactB};
@@ -482,7 +482,7 @@ shared_ptr<Matrix> ASD_base::compute_abFlip<true>(const array<MonomerKey,4>& key
 
   // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
 
   return out;
 }
@@ -503,7 +503,7 @@ shared_ptr<RDM<2>> ASD_base::compute_abFlip<false>(const array<MonomerKey,4>& ke
   const int nactA = dimer_->embedded_refs().first->nact();
   const int nactB = dimer_->embedded_refs().second->nact();
 
-  SMITH::sort_indices<0,3,2,1,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
+  sort_indices<0,3,2,1,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
 
   auto out = make_shared<RDM<2>>(nactA+nactB);
   auto low = {0, nactA, nactA, 0};
@@ -530,7 +530,7 @@ shared_ptr<Matrix> ASD_base::compute_abET<true>(const array<MonomerKey,4>& keys)
 
   // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
 
   return out;
 }
@@ -551,7 +551,7 @@ shared_ptr<RDM<2>> ASD_base::compute_abET<false>(const array<MonomerKey,4>& keys
   const int nactA = dimer_->embedded_refs().first->nact();
   const int nactB = dimer_->embedded_refs().second->nact();
 
-  SMITH::sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
+  sort_indices<0,2,1,3,0,1,2,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
 
   auto out = make_shared<RDM<2>>(nactA+nactB);
   auto low = {0, nactA, 0, nactA};
@@ -577,7 +577,7 @@ shared_ptr<Matrix> ASD_base::compute_aaET<true>(const array<MonomerKey,4>& keys)
 
   // sort: (A,A',B,B') --> -0.5 * (A,B,A',B')
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<0,2,1,3,0,1,-1,2>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  sort_indices<0,2,1,3,0,1,-1,2>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
 
   return out;
 }
@@ -598,7 +598,7 @@ shared_ptr<RDM<2>> ASD_base::compute_aaET<false>(const array<MonomerKey,4>& keys
   const int nactA = dimer_->embedded_refs().first->nact();
   const int nactB = dimer_->embedded_refs().second->nact();
 
-  SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
+  sort_indices<0,2,1,3,0,1,1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
 
   auto out = make_shared<RDM<2>>(nactA+nactB);
   auto low = {0, nactA, 0, nactA};
@@ -624,7 +624,7 @@ shared_ptr<Matrix> ASD_base::compute_bbET<true>(const array<MonomerKey,4>& keys)
 
   // sort: (A,A',B,B') --> -0.5 * (A,B,A',B')
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<0,2,1,3,0,1,-1,2>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  sort_indices<0,2,1,3,0,1,-1,2>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
 
   return out;
 }
@@ -645,7 +645,7 @@ shared_ptr<RDM<2>> ASD_base::compute_bbET<false>(const array<MonomerKey,4>& keys
   const int nactA = dimer_->embedded_refs().first->nact();
   const int nactB = dimer_->embedded_refs().second->nact();
 
-  SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
+  sort_indices<0,2,1,3,0,1,1,1>(rdm->data(), rdmt->data(), nactA, nactA, nactB, nactB);
 
   auto out = make_shared<RDM<2>>(nactA+nactB);
   auto low = {0, nactA, 0, nactA};

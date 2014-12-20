@@ -29,7 +29,7 @@
 #include <src/ci/zfci/zharrison.h>
 #include <src/multi/casscf/rotfile.h>
 #include <src/wfn/method.h>
-#include <src/rel/reloverlap.h>
+#include <src/mat1e/rel/reloverlap.h>
 #include <src/util/math/bfgs.h>
 #include <src/util/math/step_restrict_bfgs.h>
 
@@ -67,8 +67,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const RelOverlap> overlap_;
     std::vector<double> occup_;
-    std::vector<std::complex<double>> scale_closed_;
-    std::vector<std::complex<double>> scale_active_;
 
     void print_header() const;
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
@@ -80,14 +78,18 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void resume_stdcout() const;
 
     std::shared_ptr<ZHarrison> fci_;
+    // compute F^{A} matrix ; see Eq. (18) in Roos IJQC 1980
     std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix>, const bool with_hcore = false, const bool bfgs = false);
+    // transform RDM from bitset representation in ZFCI to CAS format
     std::shared_ptr<const ZMatrix> transform_rdm1() const;
 
     // energy
     std::vector<double> energy_;
+    std::vector<double> prev_energy_;
     double micro_energy_;
 
-    // internal function
+    // internal functions
+    // force time-reversal symmetry for a zmatrix with given number of virtual orbitals
     void kramers_adapt(std::shared_ptr<ZMatrix> o, const int nvirt) const;
 
     void zero_positronic_elements(std::shared_ptr<ZRotFile> rot);
@@ -102,6 +104,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // TODO : add FCI quantities to reference
     std::shared_ptr<const Reference> conv_to_ref() const override;
 
+    // diagonalize 1RDM to obtain natural orbital transformation matrix and natural orbital occupation numbers
     std::shared_ptr<ZMatrix> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1);
     // natural orbital transformations for the 1 and 2 RDMs, the coefficient, and qvec
     std::shared_ptr<const ZMatrix> natorb_rdm1_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
@@ -114,7 +117,9 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
     // function to generate modified virtual MOs from either a Fock matrix or the one-electron Hamiltonian
     std::shared_ptr<const ZMatrix> generate_mvo(const int ncore, const bool hcore_mvo = false);
+    // print natural orbital occupation numbers
     void print_natocc() const;
+    // rearrange coefficient to {c,a,v} by selecting active columns from input coefficient
     std::shared_ptr<const ZMatrix> set_active(std::set<int> active_indices) const;
 
     // functions to retrieve protected members

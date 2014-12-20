@@ -30,10 +30,10 @@
 #define __BAGEL_ZFCI_ZHARRISON_H
 
 #include <src/wfn/method.h>
+#include <src/wfn/relreference.h>
 #include <src/ci/zfci/relmofile.h>
 #include <src/ci/zfci/reldvec.h>
 #include <src/util/math/davidson.h>
-#include <src/rel/relreference.h>
 
 namespace bagel {
 
