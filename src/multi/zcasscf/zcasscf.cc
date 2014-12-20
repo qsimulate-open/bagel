@@ -300,51 +300,51 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
     VectorB vec(rdm1->ndim());
     tmp->diagonalize(vec);
 
-  const bool occ_sort = idata_->get<bool>("occ_sort",false);
-  vector<double> vec2(tmp->ndim());
-  auto buf2 = tmp->clone();
-  if (occ_sort) {
-    // sort by natural orbital occupation numbers
-    int b2n = buf2->ndim();
-    for (int i=0; i!=buf2->mdim()/2; ++i) {
-      copy_n(tmp->element_ptr(0, buf2->mdim()/2-1-i), b2n, buf2->element_ptr(0, i));
-      copy_n(tmp->element_ptr(0, buf2->mdim()-1-i), b2n, buf2->element_ptr(0, i+b2n/2));
-      vec2[b2n/2-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
-      vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;;
-    }
-    // fix the phase
-    for (int i = 0; i != tmp->ndim(); ++i) {
-      if (real(buf2->element(i,i)) < 0.0)
-        blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
-    }
-  } else {
-    map<int,int> emap;
-    // sort eigenvectors so that buf2 is close to a unit matrix
-    // target column
-    for (int i = 0; i != tmp->ndim()/2; ++i) {
-      // first find the source column
-      tuple<int, double> max = make_tuple(-1, 0.0);
-      for (int j = 0; j != tmp->ndim()/2; ++j)
-        if (sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))) > get<1>(max))
-          max = make_tuple(j, sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))));
+    const bool occ_sort = idata_->get<bool>("occ_sort",false);
+    vector<double> vec2(tmp->ndim());
+    auto buf2 = tmp->clone();
+    if (occ_sort) {
+      // sort by natural orbital occupation numbers
+      int b2n = buf2->ndim();
+      for (int i=0; i!=buf2->mdim()/2; ++i) {
+        copy_n(tmp->element_ptr(0, buf2->mdim()/2-1-i), b2n, buf2->element_ptr(0, i));
+        copy_n(tmp->element_ptr(0, buf2->mdim()-1-i), b2n, buf2->element_ptr(0, i+b2n/2));
+        vec2[b2n/2-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
+        vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;;
+      }
+      // fix the phase
+      for (int i = 0; i != tmp->ndim(); ++i) {
+        if (real(buf2->element(i,i)) < 0.0)
+          blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
+      }
+    } else {
+      map<int,int> emap;
+      // sort eigenvectors so that buf2 is close to a unit matrix
+      // target column
+      for (int i = 0; i != tmp->ndim()/2; ++i) {
+        // first find the source column
+        tuple<int, double> max = make_tuple(-1, 0.0);
+        for (int j = 0; j != tmp->ndim()/2; ++j)
+          if (sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))) > get<1>(max))
+            max = make_tuple(j, sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))));
 
-      // register to emap
-      if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. make_natural_orbitals()");
-      emap.emplace(get<0>(max), i);
+        // register to emap
+        if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. make_natural_orbitals()");
+        emap.emplace(get<0>(max), i);
 
-      // copy to the target
-      copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), buf2->element_ptr(0,i));
-      copy_n(tmp->element_ptr(0,get<0>(max)+tmp->ndim()/2), tmp->ndim(), buf2->element_ptr(0,i+tmp->ndim()/2));
-      vec2[i] = vec[get<0>(max)];
-      vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
-    }
+        // copy to the target
+        copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), buf2->element_ptr(0,i));
+        copy_n(tmp->element_ptr(0,get<0>(max)+tmp->ndim()/2), tmp->ndim(), buf2->element_ptr(0,i+tmp->ndim()/2));
+        vec2[i] = vec[get<0>(max)];
+        vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
+      }
 
-    // fix the phase
-    for (int i = 0; i != tmp->ndim(); ++i) {
-      if (real(buf2->element(i,i)) < 0.0)
-        blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
+      // fix the phase
+      for (int i = 0; i != tmp->ndim(); ++i) {
+        if (real(buf2->element(i,i)) < 0.0)
+          blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
+      }
     }
-}
     occup_ = vec2;
     return buf2;
   } else { // set occupation numbers, but coefficients don't need to be updated
@@ -417,14 +417,14 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
 }
 
 
- shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
-   // store both pos and neg energy states, only thing saved thus far
-   // TODO : modify to be more like CASSCF than dirac, will need to add FCI stuff
-   shared_ptr<ZMatrix> ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false); // transform coefficient to striped structure
-   auto coeff = make_shared<const ZMatrix>(*ctmp);
-   auto out =  make_shared<RelReference>(geom_, coeff, energy_.back(), 0, nocc_, nvirt_, gaunt_, breit_);
-   return out;
- }
+shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
+  // store both pos and neg energy states, only thing saved thus far
+  // TODO : modify to be more like CASSCF than dirac, will need to add FCI stuff
+  shared_ptr<ZMatrix> ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false); // transform coefficient to striped structure
+  auto coeff = make_shared<const ZMatrix>(*ctmp);
+  auto out =  make_shared<RelReference>(geom_, coeff, energy_.back(), 0, nocc_, nvirt_, gaunt_, breit_);
+  return out;
+}
 
 
 shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcore_mvo) {
