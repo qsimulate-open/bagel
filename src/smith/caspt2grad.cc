@@ -104,8 +104,8 @@ void CASPT2Grad::compute() {
       // TODO we should be able to avoid this Fock build
       auto d0ao = make_shared<Matrix>(*coeff_* *d0  ^ *coeff_);
       auto d1ao = make_shared<Matrix>((*coeff_* *d1_ ^ *coeff_) + *d0ao); // sum of d0 + d1 (to make it positive definite)
-      auto fock  = make_shared<Fock<1>>(geom_, ref_->hcore(), d0ao);
-      auto fock1 = make_shared<Fock<1>>(geom_, ref_->hcore(), d1ao);
+      auto fock  = make_shared<Fock<1>>(geom_, ref_->hcore(), d0ao, vector<double>());
+      auto fock1 = make_shared<Fock<1>>(geom_, ref_->hcore(), d1ao, vector<double>());
       *fock1 -= *fock * (1.0+smith->wf1norm()); // g[d^(2)]
 
       auto acoeff = coeff_->slice(nclosed, nclosed+nact);

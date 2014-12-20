@@ -69,13 +69,12 @@ class Fock : public Fock_base {
 
     // Fock operator
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> prev, const std::shared_ptr<const Matrix> den,
-         const std::vector<double>& d  = std::vector<double>()) : Fock(a,prev,den,den,d) {}
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> prev, const std::shared_ptr<const Matrix> den, const std::vector<double>& d)
+     : Fock(a,prev,den,den,d) {}
 
     // Fock operator with a different density matrix for exchange
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> prev, const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> ex,
-         const std::vector<double>& d = std::vector<double>())
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> prev, const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> ex, const std::vector<double>& d)
      : Fock_base(a,prev,den,d), store_half_(false) {
       fock_two_electron_part(ex);
       fock_one_electron_part();
