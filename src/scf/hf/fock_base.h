@@ -60,7 +60,7 @@ class Fock_base_ : public Matrix1e_<MatType, Enable> {
 
   public:
     Fock_base_() { }
-    Fock_base_(const std::shared_ptr<const Geometry>, const std::shared_ptr<const MatType>, const std::shared_ptr<const MatType>,
+    Fock_base_(const std::shared_ptr<const Geometry>, const std::shared_ptr<const MatType> prev, const std::shared_ptr<const MatType> den,
               const std::vector<double>& = std::vector<double>());
     virtual ~Fock_base_() { }
 
