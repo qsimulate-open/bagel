@@ -82,7 +82,7 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 
 
 void Matrix::diagonalize(VecView eig) {
-  if (ndim() != mdim()) throw logic_error("illegal call of Matrix::diagonalize(double*)");
+  assert(ndim() == mdim());
   assert(eig.size() >= ndim());
   const int n = ndim();
   int info;
