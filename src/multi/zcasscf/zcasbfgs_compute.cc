@@ -228,7 +228,7 @@ void ZCASBFGS::compute() {
         prev_sa_energy /= prev_energy_.size();
         sa_energy /= energy_.size();
         prev_sa_energy -= sa_energy;
-        cout << "    * State averaged Energy change from last cycle = " << setprecision(6) << scientific << prev_sa_energy << endl;
+        cout << "    * State averaged energy change from last cycle = " << setprecision(6) << scientific << prev_sa_energy << endl;
       }
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
       rms_grad_ = gradient;
