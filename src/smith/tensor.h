@@ -51,7 +51,7 @@ const static int shift = 8;
 
 static size_t generate_hash_key(const std::vector<size_t>& o) {
   size_t out = 0;
-  for (auto& i : o.rbegin(); i != o.rend(); ++i) { out <<= shift; out += *i; }
+  for (auto i = o.rbegin(); i != o.rend(); ++i) { out <<= shift; out += *i; }
   return out;
 }
 
