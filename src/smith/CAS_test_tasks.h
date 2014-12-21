@@ -58,7 +58,6 @@ class Task0 : public Task {
     ~Task0() {};
 };
 
-
 class Task1 : public Task {  // associated with gamma
   protected:
     class Task_local : public SubTask<6,2> {
@@ -128,11 +127,10 @@ class Task1 : public Task {  // associated with gamma
                 for (auto& x5 : *range[1])
                   for (auto& x2 : *range[1])
                     for (auto& x3 : *range[1])
-                      subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x5, x0, x4, x1, x3, x2}}, in, t[0], range)));
-    };
-    ~Task1() {};
+                      subtasks_.push_back(std::make_shared<Task_local>(std::array<const Index,6>{{x5, x0, x4, x1, x3, x2}}, in, t[0], range));
+    }
+    ~Task1() {}
 };
-
 
 class Task2 : public Task {  // associated with gamma
   protected:
@@ -183,11 +181,10 @@ class Task2 : public Task {  // associated with gamma
             for (auto& x2 : *range[1])
               for (auto& x0 : *range[1])
                 for (auto& x3 : *range[1])
-                  subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task2() {};
+                  subtasks_.push_back(std::make_shared<Task_local>(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range));
+    }
+    ~Task2() {}
 };
-
 
 class Task3 : public Task {  // associated with gamma
   protected:
@@ -242,11 +239,10 @@ class Task3 : public Task {  // associated with gamma
                 for (auto& x4 : *range[1])
                   for (auto& x0 : *range[1])
                     for (auto& x5 : *range[1])
-                      subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x5, x0, x4, x1, x3, x2}}, in, t[0], range)));
-    };
-    ~Task3() {};
+                      subtasks_.push_back(std::make_shared<Task_local>(std::array<const Index,6>{{x5, x0, x4, x1, x3, x2}}, in, t[0], range));
+    }
+    ~Task3() {}
 };
-
 
 class Task4 : public Task {  // associated with gamma
   protected:
@@ -321,11 +317,10 @@ class Task4 : public Task {  // associated with gamma
                   for (auto& ci0 : *range[3])
                     for (auto& x2 : *range[1])
                       for (auto& x3 : *range[1])
-                        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,7>{{ci0, x5, x0, x4, x1, x3, x2}}, in, t[0], range)));
-    };
-    ~Task4() {};
+                        subtasks_.push_back(std::make_shared<Task_local>(std::array<const Index,7>{{ci0, x5, x0, x4, x1, x3, x2}}, in, t[0], range));
+    }
+    ~Task4() {}
 };
-
 
 class Task5 : public Task {  // associated with gamma
   protected:
@@ -378,11 +373,10 @@ class Task5 : public Task {  // associated with gamma
               for (auto& x0 : *range[1])
                 for (auto& x3 : *range[1])
                   for (auto& ci0 : *range[3])
-                    subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task5() {};
+                    subtasks_.push_back(std::make_shared<Task_local>(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range));
+    }
+    ~Task5() {}
 };
-
 
 class Task6 : public Task {
   protected:
@@ -423,19 +417,9 @@ class Task6 : public Task {
     }
 
   public:
-    Task6(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
-      for (auto& a1 : *range[2])
-        for (auto& x0 : *range[1])
-          for (auto& a2 : *range[2])
-            for (auto& x1 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x1, a2, x0, a1}}, in, t[0], range)));
-    };
-    ~Task6() {};
+    Task6(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task6() {}
 };
-
 
 class Task7 : public Task {
   protected:
@@ -493,20 +477,9 @@ class Task7 : public Task {
     }
 
   public:
-    Task7(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task7() {};
+    Task7(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task7() {}
 };
-
-
 
 class Task8 : public Task {
   protected:
@@ -547,19 +520,9 @@ class Task8 : public Task {
     }
 
   public:
-    Task8(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x4 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x5 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x5, x0, x4, x1}}, in, t[0], range)));
-    };
-    ~Task8() {};
+    Task8(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task8() {}
 };
-
 
 class Task9 : public Task {
   protected:
@@ -617,19 +580,9 @@ class Task9 : public Task {
     }
 
   public:
-    Task9(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task9() {};
+    Task9(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task9() {}
 };
-
 
 class Task10 : public Task {
   protected:
@@ -672,19 +625,9 @@ class Task10 : public Task {
     }
 
   public:
-    Task10(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : Task() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range, e)));
-    };
-    ~Task10() {};
+    Task10(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e);
+    ~Task10() {}
 };
-
 
 class Task11 : public Task {
   protected:
@@ -742,19 +685,9 @@ class Task11 : public Task {
     }
 
   public:
-    Task11(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task11() {};
+    Task11(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task11() {}
 };
-
 
 class Task12 : public Task {
   protected:
@@ -795,19 +728,9 @@ class Task12 : public Task {
     }
 
   public:
-    Task12(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task12() {};
+    Task12(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task12() {}
 };
-
 
 class Task13 : public Task {
   protected:
@@ -853,19 +776,9 @@ class Task13 : public Task {
     }
 
   public:
-    Task13(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
-      for (auto& a1 : *range[2])
-        for (auto& x0 : *range[1])
-          for (auto& a2 : *range[2])
-            for (auto& x1 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x1, a2, x0, a1}}, in, t[0], range)));
-    };
-    ~Task13() {};
+    Task13(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task13() {}
 };
-
 
 class Task14 : public Task {
   protected:
@@ -921,19 +834,9 @@ class Task14 : public Task {
     }
 
   public:
-    Task14(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task14() {};
+    Task14(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task14() {}
 };
-
 
 class Task15 : public Task {
   protected:
@@ -991,19 +894,9 @@ class Task15 : public Task {
     }
 
   public:
-    Task15(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a3 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a3}}, in, t[0], range)));
-    };
-    ~Task15() {};
+    Task15(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task15() {}
 };
-
 
 class Task16 : public Task {
   protected:
@@ -1044,19 +937,9 @@ class Task16 : public Task {
     }
 
   public:
-    Task16(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : Task() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task16() {};
+    Task16(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task16() {}
 };
-
 
 class Task17 : public EnergyTask {
   protected:
@@ -1108,19 +991,9 @@ class Task17 : public EnergyTask {
     }
 
   public:
-    Task17(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& x1 : *range[1])
-          for (auto& a1 : *range[2])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a1, x1, a2}}, in, t[0], range)));
-    };
-    ~Task17() {};
+    Task17(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task17() {}
 };
-
 
 class Task18 : public EnergyTask {
   protected:
@@ -1186,19 +1059,9 @@ class Task18 : public EnergyTask {
     }
 
   public:
-    Task18(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task18() {};
+    Task18(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task18() {}
 };
-
 
 class Task19 : public EnergyTask {
   protected:
@@ -1247,19 +1110,9 @@ class Task19 : public EnergyTask {
     }
 
   public:
-    Task19(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x4 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x5 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x5, x0, x4, x1}}, in, t[0], range)));
-    };
-    ~Task19() {};
+    Task19(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task19() {}
 };
-
 
 class Task20 : public EnergyTask {
   protected:
@@ -1323,19 +1176,9 @@ class Task20 : public EnergyTask {
     }
 
   public:
-    Task20(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task20() {};
+    Task20(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task20() {}
 };
-
 
 class Task21 : public EnergyTask {
   protected:
@@ -1401,19 +1244,9 @@ class Task21 : public EnergyTask {
     }
 
   public:
-    Task21(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a3 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a3}}, in, t[0], range)));
-    };
-    ~Task21() {};
+    Task21(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task21() {}
 };
-
 
 class Task22 : public EnergyTask {
   protected:
@@ -1462,19 +1295,9 @@ class Task22 : public EnergyTask {
     }
 
   public:
-    Task22(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task22() {};
+    Task22(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task22() {}
 };
-
 
 class Task23 : public EnergyTask {
   protected:
@@ -1540,19 +1363,9 @@ class Task23 : public EnergyTask {
     }
 
   public:
-    Task23(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task23() {};
+    Task23(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task23() {}
 };
-
 
 class Task24 : public EnergyTask {
   protected:
@@ -1603,19 +1416,9 @@ class Task24 : public EnergyTask {
     }
 
   public:
-    Task24(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e) : EnergyTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range, e)));
-    };
-    ~Task24() {};
+    Task24(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range, const double e);
+    ~Task24() {}
 };
-
 
 class Task25 : public EnergyTask {
   protected:
@@ -1681,19 +1484,9 @@ class Task25 : public EnergyTask {
     }
 
   public:
-    Task25(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task25() {};
+    Task25(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task25() {}
 };
-
 
 class Task26 : public EnergyTask {
   protected:
@@ -1742,19 +1535,9 @@ class Task26 : public EnergyTask {
     }
 
   public:
-    Task26(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range) : EnergyTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task26() {};
+    Task26(std::vector<std::shared_ptr<Tensor>> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task26() {}
 };
-
 
 class Task27 : public CorrectionTask {
   protected:
@@ -1806,19 +1589,9 @@ class Task27 : public CorrectionTask {
     }
 
   public:
-    Task27(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& x1 : *range[1])
-          for (auto& a1 : *range[2])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, a1, x1, a2}}, in, t[0], range)));
-    }
+    Task27(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
     ~Task27() {}
 };
-
 
 class Task28 : public CorrectionTask {
   protected:
@@ -1884,19 +1657,9 @@ class Task28 : public CorrectionTask {
     }
 
   public:
-    Task28(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    }
+    Task28(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
     ~Task28() {}
 };
-
 
 class Task29 : public CorrectionTask {
   protected:
@@ -1945,19 +1708,9 @@ class Task29 : public CorrectionTask {
     }
 
   public:
-    Task29(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : CorrectionTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
-    }
+    Task29(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
     ~Task29() {}
 };
-
 
 class Task30 : public DensityTask {
   protected:
@@ -1976,7 +1729,6 @@ class Task30 : public DensityTask {
     };
     ~Task30() {};
 };
-
 
 class Task31 : public DensityTask {
   protected:
@@ -2018,18 +1770,9 @@ class Task31 : public DensityTask {
     }
 
   public:
-    Task31(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
-      for (auto& x3 : *range[1])
-        for (auto& x2 : *range[1])
-          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x2, x3}}, in, t[0], range)));
-    };
-    ~Task31() {};
+    Task31(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task31() {}
 };
-
-
 
 class Task32 : public DensityTask {
   protected:
@@ -2092,17 +1835,9 @@ class Task32 : public DensityTask {
     }
 
   public:
-    Task32(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
-      for (auto& x2 : *range[1])
-        for (auto& x3 : *range[1])
-          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{x3, x2}}, in, t[0], range)));
-    };
-    ~Task32() {};
+    Task32(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task32() {}
 };
-
 
 class Task33 : public DensityTask {
   protected:
@@ -2165,21 +1900,9 @@ class Task33 : public DensityTask {
     }
 
   public:
-    Task33(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x2 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& x1 : *range[1])
-                for (auto& x0 : *range[1])
-                  subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x0, x1, x3, x2, a1, a2}}, in, t[0], range)));
-    };
-    ~Task33() {};
+    Task33(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task33() {}
 };
-
 
 class Task34 : public DensityTask {
   protected:
@@ -2225,21 +1948,9 @@ class Task34 : public DensityTask {
     }
 
   public:
-    Task34(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x2 : *range[1])
-        for (auto& x3 : *range[1])
-          for (auto& x1 : *range[1])
-            for (auto& x4 : *range[1])
-              for (auto& x0 : *range[1])
-                for (auto& x5 : *range[1])
-                  subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,6>{{x5, x0, x4, x1, x3, x2}}, in, t[0], range)));
-    };
-    ~Task34() {};
+    Task34(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task34() {}
 };
-
 
 class Task35 : public DensityTask {
   protected:
@@ -2281,17 +1992,9 @@ class Task35 : public DensityTask {
     }
 
   public:
-    Task35(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock());
-      for (auto& a3 : *range[2])
-        for (auto& a2 : *range[2])
-          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{a2, a3}}, in, t[0], range)));
-    };
-    ~Task35() {};
+    Task35(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task35() {}
 };
-
 
 class Task36 : public DensityTask {
   protected:
@@ -2352,17 +2055,9 @@ class Task36 : public DensityTask {
     }
 
   public:
-    Task36(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a3 : *range[2])
-          subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,2>{{a3, a2}}, in, t[0], range)));
-    };
-    ~Task36() {};
+    Task36(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task36() {}
 };
-
 
 class Task37 : public DensityTask {
   protected:
@@ -2423,19 +2118,9 @@ class Task37 : public DensityTask {
     }
 
   public:
-    Task37(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a3 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a3}}, in, t[0], range)));
-    };
-    ~Task37() {};
+    Task37(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task37() {}
 };
-
 
 class Task38 : public DensityTask {
   protected:
@@ -2479,19 +2164,9 @@ class Task38 : public DensityTask {
     }
 
   public:
-    Task38(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : DensityTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task38() {};
+    Task38(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task38() {}
 };
-
 
 class Task39 : public Density2Task {
   protected:
@@ -2510,7 +2185,6 @@ class Task39 : public Density2Task {
     };
     ~Task39() {};
 };
-
 
 class Task40 : public Density2Task {
   protected:
@@ -2554,19 +2228,9 @@ class Task40 : public Density2Task {
     }
 
   public:
-    Task40(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
-      for (auto& a1 : *range[2])
-        for (auto& x0 : *range[1])
-          for (auto& a2 : *range[2])
-            for (auto& x1 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x1, a2, x0, a1}}, in, t[0], range)));
-    };
+    Task40(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
     ~Task40() {};
 };
-
 
 class Task41 : public Density2Task {
   protected:
@@ -2627,19 +2291,9 @@ class Task41 : public Density2Task {
     }
 
   public:
-    Task41(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x0, x1, a1, a2}}, in, t[0], range)));
-    };
+    Task41(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
     ~Task41() {};
 };
-
 
 class Task42 : public Density2Task {
   protected:
@@ -2683,19 +2337,9 @@ class Task42 : public Density2Task {
     }
 
   public:
-    Task42(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range) : Density2Task() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,4>{{x3, x0, x2, x1}}, in, t[0], range)));
-    };
+    Task42(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
     ~Task42() {};
 };
-
 
 class Task43 : public DedciTask {
   protected:
@@ -2707,15 +2351,14 @@ class Task43 : public DedciTask {
 
     void compute_() {
       dec_->zero();
-    };
+    }
 
   public:
     Task43(std::vector<std::shared_ptr<Tensor>> t) : DedciTask() {
       dec_ =  t[0];
-    };
-    ~Task43() {};
+    }
+    ~Task43() {}
 };
-
 
 class Task44 : public DedciTask {
   protected:
@@ -2756,16 +2399,9 @@ class Task44 : public DedciTask {
     }
 
   public:
-    Task44(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[3]->nblock());
-      for (auto& ci0 : *range[3])
-        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
-    };
-    ~Task44() {};
+    Task44(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task44() {}
 };
-
 
 class Task45 : public DedciTask {
   protected:
@@ -2827,16 +2463,9 @@ class Task45 : public DedciTask {
     }
 
   public:
-    Task45(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[3]->nblock());
-      for (auto& ci0 : *range[3])
-        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
-    };
-    ~Task45() {};
+    Task45(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task45() {}
 };
-
 
 class Task46 : public DedciTask {
   protected:
@@ -2898,20 +2527,9 @@ class Task46 : public DedciTask {
     }
 
   public:
-    Task46(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task46() {};
+    Task46(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task46() {}
 };
-
 
 class Task47 : public DedciTask {
   protected:
@@ -2956,20 +2574,9 @@ class Task47 : public DedciTask {
     }
 
   public:
-    Task47(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x4 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x5 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x5, x0, x4, x1}}, in, t[0], range)));
-    };
-    ~Task47() {};
+    Task47(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task47() {}
 };
-
 
 class Task48 : public DedciTask {
   protected:
@@ -3029,20 +2636,9 @@ class Task48 : public DedciTask {
     }
 
   public:
-    Task48(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task48() {};
+    Task48(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task48() {}
 };
-
 
 class Task49 : public DedciTask {
   protected:
@@ -3104,20 +2700,9 @@ class Task49 : public DedciTask {
     }
 
   public:
-    Task49(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a3 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a3}}, in, t[0], range)));
-    };
-    ~Task49() {};
+    Task49(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task49() {}
 };
-
 
 class Task50 : public DedciTask {
   protected:
@@ -3162,20 +2747,9 @@ class Task50 : public DedciTask {
     }
 
   public:
-    Task50(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task50() {};
+    Task50(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task50() {}
 };
-
 
 class Task51 : public DedciTask {
   protected:
@@ -3237,20 +2811,9 @@ class Task51 : public DedciTask {
     }
 
   public:
-    Task51(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task51() {};
+    Task51(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task51() {}
 };
-
 
 class Task52 : public DedciTask {
   protected:
@@ -3298,20 +2861,9 @@ class Task52 : public DedciTask {
     }
 
   public:
-    Task52(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range, double e) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range, e)));
-    };
-    ~Task52() {};
+    Task52(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range, double e);
+    ~Task52() {}
 };
-
 
 class Task53 : public DedciTask {
   protected:
@@ -3373,20 +2925,9 @@ class Task53 : public DedciTask {
     }
 
   public:
-    Task53(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x1 : *range[1])
-            for (auto& x0 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
-    };
-    ~Task53() {};
+    Task53(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task53() {}
 };
-
 
 class Task54 : public DedciTask {
   protected:
@@ -3431,20 +2972,9 @@ class Task54 : public DedciTask {
     }
 
   public:
-    Task54(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task54() {};
+    Task54(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task54() {}
 };
-
 
 class Task55 : public DedciTask {
   protected:
@@ -3506,16 +3036,9 @@ class Task55 : public DedciTask {
     }
 
   public:
-    Task55(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[3]->nblock());
-      for (auto& ci0 : *range[3])
-        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
-    };
-    ~Task55() {};
+    Task55(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task55() {}
 };
-
 
 class Task56 : public DedciTask {
   protected:
@@ -3577,20 +3100,9 @@ class Task56 : public DedciTask {
     }
 
   public:
-    Task56(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x4 : *range[1])
-            for (auto& x5 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x5, x4, a1, a2}}, in, t[0], range)));
-    };
-    ~Task56() {};
+    Task56(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task56() {}
 };
-
 
 class Task57 : public DedciTask {
   protected:
@@ -3635,20 +3147,9 @@ class Task57 : public DedciTask {
     }
 
   public:
-    Task57(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x4 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x5 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x5, x0, x4, x1}}, in, t[0], range)));
-    };
-    ~Task57() {};
+    Task57(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task57() {}
 };
-
 
 class Task58 : public DedciTask {
   protected:
@@ -3710,16 +3211,9 @@ class Task58 : public DedciTask {
     }
 
   public:
-    Task58(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[3]->nblock());
-      for (auto& ci0 : *range[3])
-        subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
-    };
-    ~Task58() {};
+    Task58(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task58() {}
 };
-
 
 class Task59 : public DedciTask {
   protected:
@@ -3779,20 +3273,9 @@ class Task59 : public DedciTask {
     }
 
   public:
-    Task59(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x2 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a2}}, in, t[0], range)));
-    };
-    ~Task59() {};
+    Task59(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task59() {}
 };
-
 
 class Task60 : public DedciTask {
   protected:
@@ -3854,20 +3337,9 @@ class Task60 : public DedciTask {
     }
 
   public:
-    Task60(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a3 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x2 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a3}}, in, t[0], range)));
-    };
-    ~Task60() {};
+    Task60(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task60() {}
 };
-
 
 class Task61 : public DedciTask {
   protected:
@@ -3912,20 +3384,9 @@ class Task61 : public DedciTask {
     }
 
   public:
-    Task61(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task61() {};
+    Task61(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task61() {}
 };
-
 
 class Task62 : public DedciTask {
   protected:
@@ -3987,20 +3448,9 @@ class Task62 : public DedciTask {
     }
 
   public:
-    Task62(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x2 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a2}}, in, t[0], range)));
-    };
-    ~Task62() {};
+    Task62(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task62() {}
 };
-
 
 class Task63 : public DedciTask {
   protected:
@@ -4048,20 +3498,9 @@ class Task63 : public DedciTask {
     }
 
   public:
-    Task63(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range, double e) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range, e)));
-    };
-    ~Task63() {};
+    Task63(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range, double e);
+    ~Task63() {}
 };
-
 
 class Task64 : public DedciTask {
   protected:
@@ -4123,20 +3562,9 @@ class Task64 : public DedciTask {
     }
 
   public:
-    Task64(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-
-      subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& a2 : *range[2])
-        for (auto& a1 : *range[2])
-          for (auto& x2 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a2}}, in, t[0], range)));
-    };
-    ~Task64() {};
+    Task64(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task64() {}
 };
-
 
 class Task65 : public DedciTask {
   protected:
@@ -4181,18 +3609,8 @@ class Task65 : public DedciTask {
     }
 
   public:
-    Task65(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask() {
-      std::array<std::shared_ptr<const Tensor>,1> in = {{t[1]}};
-
-      subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-      for (auto& x1 : *range[1])
-        for (auto& x2 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x3 : *range[1])
-              for (auto& ci0 : *range[3])
-                subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
-    };
-    ~Task65() {};
+    Task65(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range);
+    ~Task65() {}
 };
 
 
