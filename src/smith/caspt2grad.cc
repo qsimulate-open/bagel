@@ -381,12 +381,19 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
       for (int k = ncore_; k != nocc; ++k)
         for (int t = 0; t != nall; ++t) // extend
           for (int l = ncore_; l != nocc; ++l) {
-            if (t >= nclosed && s >= nclosed) {
+            // TODO ugly code - there should be a smart way of doing this! just need a logic to test if it has to be symmetrized
+            // ccaa, cxaa, xxaa
+            if (t >= nocc && s >= nocc) {
               (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-              // TODO this is not correct for general cases. Need some generic logic
-              if ((k >= nclosed) ^ (l >= nclosed)) {
+              // cxaa
+              if ((k >= nclosed) ^ (l >= nclosed))
                 (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              }
+            // ccxa, ccxx
+            } else if (t >= nclosed && s >= nclosed && k < nclosed && l < nclosed) {
+              (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              // ccxa
+              if ((t < nocc) ^ (s < nocc))
+                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
             }
           }
   }
