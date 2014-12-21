@@ -49,19 +49,13 @@ namespace SMITH {
 // this assumes < 256 blocks; TODO runtime determination?
 const static int shift = 8;
 
-/* obsolete function */
-static
-size_t generate_hash_key(const std::vector<size_t>& o) {
+static size_t generate_hash_key(const std::vector<size_t>& o) {
   size_t out = 0;
-  for (auto i = o.rbegin(); i != o.rend(); ++i) {
-    out <<= shift;
-    out += *i;
-  }
+  for (auto& i : o.rbegin(); i != o.rend(); ++i) { out <<= shift; out += *i; }
   return out;
 }
 
-static
-size_t generate_hash_key() { return 0; }
+static size_t generate_hash_key() { return 0; }
 
 template<class T, typename... args>
 size_t generate_hash_key(const T& head, const args&... tail) {
@@ -137,49 +131,6 @@ class Tensor {
     size_t get_size(const args& ...p) const {
       return data_->blocksize(generate_hash_key(p...));
     }
-
-/****************** following functions are obsolete *************************/
-    std::unique_ptr<double[]> get_block(const std::vector<size_t>& p) const {
-      assert(p.size() == rank_ || (rank_ == 0 && p.size() == 1));
-      if (data_ == nullptr) throw std::logic_error("Tensor not initialized");
-      return data_->get_block(generate_hash_key(p));
-    }
-
-    std::unique_ptr<double[]> get_block(const std::initializer_list<size_t>& p) const {
-      return get_block(std::vector<size_t>(p.begin(), p.end()));
-    }
-
-    std::unique_ptr<double[]> move_block(const std::vector<size_t>& p) {
-      assert(p.size() == rank_ || (rank_ == 0 && p.size() == 1));
-      return data_->move_block(generate_hash_key(p));
-    }
-
-    std::unique_ptr<double[]> move_block(const std::initializer_list<size_t>& p) const {
-      return move_block(std::vector<size_t>(p.begin(), p.end()));
-    }
-
-    void put_block(const std::vector<size_t>& p, std::unique_ptr<double[]>& o) {
-      data_->put_block(generate_hash_key(p), o);
-    }
-
-    void put_block(const std::initializer_list<size_t>& p, std::unique_ptr<double[]>& o) {
-      put_block(std::vector<size_t>(p.begin(), p.end()), o);
-    }
-
-    void add_block(const std::vector<size_t>& p, const std::unique_ptr<double[]>& o) {
-      if (data_ == nullptr) throw std::logic_error("Tensor not initialized");
-      data_->add_block(generate_hash_key(p), o);
-    }
-
-    void add_block(const std::initializer_list<size_t>& p, std::unique_ptr<double[]>& o) {
-      add_block(std::vector<size_t>(p.begin(), p.end()), o);
-    }
-
-    size_t get_size(const std::vector<size_t>& p) {
-      assert(p.size() == rank_);
-      return data_->blocksize(generate_hash_key(p));
-    }
-/****************** to here *************************/
 
     void zero() {
       data_->zero();
