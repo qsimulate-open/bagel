@@ -117,7 +117,7 @@ class IndexRange {
        size_ += o.size_;
     }
 
-    bool operator==(const IndexRange& o) {
+    bool operator==(const IndexRange& o) const {
       bool out = size_ == o.size_;
       if (range_.size() == o.range_.size()) {
         auto i = range_.begin();
@@ -127,7 +127,7 @@ class IndexRange {
       }
       return out;
     }
-    bool operator!=(const IndexRange& o) { return !(*this == o); }
+    bool operator!=(const IndexRange& o) const { return !(*this == o); }
 
     std::string str() const {
       std::stringstream ss;

@@ -41,7 +41,7 @@ namespace bagel {
 
 class Smith : public Method {
   protected:
-    std::shared_ptr<SMITH::SpinFreeMethod<SMITH::Storage_Incore>> algo_;
+    std::shared_ptr<SMITH::SpinFreeMethod> algo_;
 
     // correlated density matrices
     // second order density matrix
@@ -72,7 +72,7 @@ class Smith : public Method {
     std::shared_ptr<const Civec> cideriv() const { return cider_; }
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
-    std::shared_ptr<const SMITH::SpinFreeMethod<SMITH::Storage_Incore>> algo() const { return algo_; }
+    std::shared_ptr<const SMITH::SpinFreeMethod> algo() const { return algo_; }
 
 };
 
