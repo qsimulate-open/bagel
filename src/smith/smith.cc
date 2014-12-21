@@ -25,8 +25,6 @@
 
 
 #include <src/smith/smith.h>
-#include <src/smith/MP2.h>
-#include <src/smith/CAS_all_active.h>
 #include <src/smith/CAS_test.h>
 
 
@@ -40,12 +38,8 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
   // make a smith_info class
   auto info = make_shared<SMITH_Info>(r, idata);
 
-  if (method == "mp2") {
-    algo_ = make_shared<MP2::MP2<Storage_Incore>>(info);
-  } else if (method == "caspt2") {
-    algo_ = make_shared<CAS_all_active::CAS_all_active<Storage_Incore>>(info);
-  } else if (method == "caspt2-test") {
-    algo_ = make_shared<CAS_test::CAS_test<Storage_Incore>>(info);
+  if (method == "caspt2-test") {
+    algo_ = make_shared<CAS_test::CAS_test>(info);
   } else {
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());
@@ -56,7 +50,7 @@ void Smith::compute() {
   algo_->solve();
 
   // TODO toggle by something better than this.
-  auto algop = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_);
+  auto algop = dynamic_pointer_cast<CAS_test::CAS_test>(algo_);
   if (algop) {
     dm1_ = algop->rdm12();
     dm11_ = algop->rdm11();

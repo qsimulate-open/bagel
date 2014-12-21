@@ -191,7 +191,8 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civector, half, halfjj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(1.0e-12);
+//tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
 
   // form relaxed 1RDM
   // form Zd + dZ^+
@@ -292,6 +293,12 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
     separable_pair(smallz, dsa);
 
   // compute gradients
+dtotao->print("dtotao", 20);
+xmatao->print("xmatao", 20);
+
+qq->symmetrize();
+qq->print("qq");
+
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq);
   gradient->print();
   // set energy
