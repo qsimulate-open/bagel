@@ -27,15 +27,12 @@
 #ifndef __SRC_SMITH_SMITH_H
 #define __SRC_SMITH_SMITH_H
 
-#include <src/smith/storage.h>
 #include <src/smith/spinfreebase.h>
 #include <stddef.h>
 #include <map>
 #include <memory>
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
-
-#include <src/smith/CAS_test.h>
 
 namespace bagel {
 
