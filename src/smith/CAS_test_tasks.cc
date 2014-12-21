@@ -31,6 +31,11 @@ using namespace bagel;
 using namespace bagel::SMITH;
 using namespace bagel::SMITH::CAS_test;
 
+Task0::Task0(vector<shared_ptr<Tensor>> t) {
+  r_ =  t[0];
+}
+
+
 Task1::Task1(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
 
