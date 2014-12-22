@@ -118,6 +118,14 @@ class DensityTask : public Task {
 
 };
 
+class Density1Task : public Task {
+  protected:
+  public:
+    Density1Task() : Task() {}
+    ~Density1Task() {}
+
+};
+
 class Density2Task : public Task {
   protected:
   public:
