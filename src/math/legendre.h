@@ -25,8 +25,8 @@
 
 //
 
-#ifndef __BAGEL_UTIL_BESSEL_H
-#define __BAGEL_UTIL_BESSEL_H
+#ifndef __BAGEL_MATH_LEGENDRE_H
+#define __BAGEL_MATH_LEGENDRE_H
 
 #include <src/math/factorial.h>
 

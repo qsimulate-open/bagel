@@ -25,12 +25,9 @@
 
 //
 
-#ifndef __BAGEL_UTIL_BESSEL_H
-#define __BAGEL_UTIL_BESSEL_H
+#ifndef __BAGEL_MATH_BESSEL_H
+#define __BAGEL_MATH_BESSEL_H
 
-#include <iostream>
-#include <cmath>
-#include <vector>
 #include <src/math/factorial.h>
 
 namespace bagel {
