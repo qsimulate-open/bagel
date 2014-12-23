@@ -109,30 +109,31 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
   assert(b.size() == 2 && b[0] == b[1]);
   const int ncore   = ref_->ncore();
   const int nclosed = ref_->nclosed() - ncore;
+  assert(nclosed >= 0);
   const int nocc    = ref_->nocc();
   const int nact    = ref_->nact();
   const int nvirt   = ref_->nvirt();
   const int nbasis  = coeff_->ndim();
 
   data_  = make_shared<Tensor>(blocks_, false);
-  hcore_ = make_shared<Tensor>(blocks_, false);
+  cfock_ = make_shared<Tensor>(blocks_, false);
 
-  shared_ptr<const Matrix> hcore = ref_->hcore();
-  // if frozen core orbitals are present, hcore is replaced by core-fock matrix
-  if (ncore)
-    hcore = make_shared<Fock<1>>(r->geom(), hcore, nullptr, coeff_->slice(0, ncore), false, true);
+  // cfock
+  shared_ptr<const Matrix> cfock = ref_->hcore();
+  if (ncore+nclosed)
+    cfock = make_shared<Fock<1>>(r->geom(), ref_->hcore(), nullptr, coeff_->slice(0, ncore+nclosed), false, true);
 
   shared_ptr<const Matrix> fock1;
-  {
-    shared_ptr<Matrix> weighted_coeff = coeff_->slice_copy(ncore, nocc);
-    if (nact) {
-      Matrix tmp(nact, nact);
-      copy_n(ref_->rdm1(r->target())->data(), tmp.size(), tmp.data());
-      tmp.sqrt();
-      tmp.scale(1.0/sqrt(2.0));
-      weighted_coeff->copy_block(0, nclosed, nbasis, nact, weighted_coeff->slice(nclosed, nclosed+nact) * tmp);
-    }
-    fock1 = make_shared<Fock<1>>(r->geom(), hcore, nullptr, weighted_coeff, false, true);
+  if (nact) {
+    Matrix tmp(nact, nact);
+    copy_n(ref_->rdm1(r->target())->data(), tmp.size(), tmp.data());
+    tmp.sqrt();
+    tmp.scale(1.0/sqrt(2.0));
+    shared_ptr<Matrix> weighted_coeff = coeff_->slice_copy(ncore+nclosed, nocc);
+    *weighted_coeff *= tmp;
+    fock1 = make_shared<Fock<1>>(r->geom(), cfock, nullptr, weighted_coeff, false, true);
+  } else {
+    fock1 = cfock;
   }
   const Matrix forig = *coeff_ % *fock1 * *coeff_;
 
@@ -149,7 +150,7 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
     coeff_->copy_block(0, nocc, nbasis, nvirt, coeff_->slice(nocc, nocc+nvirt) * *fvirt);
   }
   const Matrix f = *coeff_ % *fock1 * *coeff_;
-  const Matrix hc = *coeff_ % *hcore * *coeff_;
+  const Matrix fc = *coeff_ % *cfock * *coeff_;
 
   for (auto& i0 : blocks_[0]) {
     for (auto& i1 : blocks_[1]) {
@@ -159,10 +160,10 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
         copy_n(target->data(), target->size(), tmp.get());
         data_->put_block(tmp, i1, i0);
       } {
-        shared_ptr<const Matrix> target = hc.get_submatrix(i1.offset(), i0.offset(), i1.size(), i0.size());
+        shared_ptr<const Matrix> target = fc.get_submatrix(i1.offset(), i0.offset(), i1.size(), i0.size());
         unique_ptr<double[]> tmp(new double[target->size()]);
         copy_n(target->data(), target->size(), tmp.get());
-        hcore_->put_block(tmp, i1, i0);
+        cfock_->put_block(tmp, i1, i0);
       }
     }
   }
