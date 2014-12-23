@@ -204,8 +204,9 @@ ASD_base::compute_rdm () {
 
   symmetrize_RDM4();
 
-  debug_RDM(); 
 #endif
+  debug_RDM(); 
+  debug_energy();
 
 }
 

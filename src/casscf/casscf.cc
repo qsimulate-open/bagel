@@ -186,21 +186,33 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
     // make a matrix that contains rdm1_av
     auto rdm1mat = make_shared<Matrix>(nact_, nact_);
     copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
+  rdm1mat->print("1RDM (natural)", nact_);
     rdm1mat->sqrt();
     rdm1mat->scale(1.0/sqrt(2.0));
+  rdm1mat->print("1RDM (scaled)", nact_);
     auto acoeff = coeff_->slice(nclosed_, nclosed_+nact_);
 
     finact = make_shared<Matrix>(*coeff_ % *fci_->jop()->core_fock() * *coeff_);
     auto fact_ao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
     f = make_shared<Matrix>(*finact + *coeff_% *fact_ao * *coeff_);
   }
+  fci_->jop()->core_fock()->print("Core Fock matrix", f->ndim());
+  finact->print("F_inact matrix", f->ndim());
+  f->print("F matrix", f->ndim());
+  hcore_->clone()->print("hcore matrix", hcore_->ndim());
   {
     // active-x Fock operator Dts finact_sx + Qtx
     fact = qxr->copy();// nbasis_ runs first
     for (int i = 0; i != nact_; ++i)
       daxpy_(nbasis_, occup_(i), finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
   }
-
+  for (int i = 0; i != nbasis_; ++i) {
+    cout << " Fact(" << i << "th row) = ";
+    for (int j = 0; j != nact_; ++j) {
+      cout << fact->element(i,j) << " ";
+    }
+    cout << endl;
+  }    
   {
     // active Fock' operator (Fts+Fst) / (ns+nt)
     factp = make_shared<Matrix>(nact_, nact_);

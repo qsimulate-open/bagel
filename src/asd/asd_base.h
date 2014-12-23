@@ -208,6 +208,8 @@ class ASD_base {
     void debug_energy() const;
   //virtual std::shared_ptr<const Reference> conv_to_ref() const override;
 
+    std::shared_ptr<RDM<1>> rdm1() const { return onerdm_; }
+    std::shared_ptr<RDM<2>> rdm2() const { return twordm_; } 
 
   template<int a,  int i,  int b,  int j,  int c,  int k,  int d,  int l, // according to the sorted
            int Xa, int Xi, int Xb, int Xj, int Xc, int Xk, int Xd, int Xl, // 0 for A, 1 for B

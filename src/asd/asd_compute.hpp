@@ -104,7 +104,7 @@ void ASD<VecType>::compute() {
   //RDM computation
   monomer_rdm();
   compute_rdm();
-
+/*
   //ASDSCF
   {
     std::shared_ptr<const Reference> dimerref = dimer_->sref();
@@ -118,12 +118,12 @@ void ASD<VecType>::compute() {
     std::shared_ptr<const Reference> dimerref = dimer_->sref();
     std::shared_ptr<const Geometry> dimergeom = dimer_->sgeom();
     std::shared_ptr<PTree> input;
-  //auto asdscf = std::make_shared<ASDSuperCI>(input, dimergeom, dimerref, std::make_tuple(onerdm_,twordm_,threerdm_,fourrdm_));
-  //*dimergeom = *dimer_->sgeom();
+  // auto asdscf = std::make_shared<ASDSuperCI>(input, dimergeom, dimerref, std::make_tuple(onerdm_,twordm_,threerdm_,fourrdm_));
+  // *dimergeom = *dimer_->sgeom();
     auto asdpt2 = std::make_shared<ASD_NEVPT2>(input, dimergeom, dimerref, std::make_tuple(onerdm_,twordm_,threerdm_,fourrdm_));
     asdpt2->compute();
   }
-
+*/
 
 
 

@@ -196,6 +196,7 @@ void ASD_NEVPT2::compute() {
 
   timer.tick_print("A, B, C, and D matrices");
 
+
   // compute transformed integrals
   shared_ptr<DFDistT> fullvi;
   shared_ptr<const Matrix> fullav;

@@ -207,6 +207,7 @@ ASD_base::debug_RDM() const {
   }
 */
 
+#if 0
   //3RDM: Gamma_ij,kl,mn
   std::cout << "-------------- 3RDM --------------" << std::endl;
   { //Trace A
@@ -367,6 +368,7 @@ ASD_base::debug_RDM() const {
       }
     debug->print(1.0e-8);
   }
+#endif
 
 }
 

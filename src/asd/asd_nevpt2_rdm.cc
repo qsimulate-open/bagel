@@ -111,6 +111,7 @@ void ASD_NEVPT2::compute_asrdm() {
   cout << "ASD_NEVPT2_RDM: srdm3.. " << endl;
   SMITH::sort_indices<0,2,1,3,1,1,-1,1>(ardm3->data(), srdm3->data(), nact_*nact_, nact_, nact_, nact_*nact_);
   shared_ptr<Matrix> ardm4 = rdm4_->clone();
+/*
   for (int h = 0; h != nact_; ++h)
     for (int g = 0; g != nact_; ++g)
       for (int f = 0; f != nact_; ++f)
@@ -129,12 +130,47 @@ void ASD_NEVPT2::compute_asrdm() {
                   ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (b == g ? 1.0 : 0.0) * rdm3_->element(id3(a,c,e),id3(h,d,f));
                   ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += rdm4_->element(id4(a,c,e,g),id4(b,d,f,h));
                 }
-  cout << "WARN: ASD_NEVPT2_RDM: ardm4.. skipped" << endl;
+*/
+  for (int h = 0; h != nact_; ++h)
+    for (int g = 0; g != nact_; ++g) {
+      const int gh = id2(g,h); 
+      for (int f = 0; f != nact_; ++f) {
+        const int fgh = id3(f,g,h);
+        for (int e = 0; e != nact_; ++e) {
+          const int efgh = id4(e,f,g,h);
+          for (int d = 0; d != nact_; ++d) {
+            const int dgh = id3(d,g,h);
+            const int hdf = id3(h,d,f);
+            for (int c = 0; c != nact_; ++c)
+              for (int b = 0; b != nact_; ++b) {
+                const int bdh = id3(b,d,h);
+                const int bhf = id3(b,h,f);
+                const int bdfg = id4(b,d,f,g);
+                for (int a = 0; a != nact_; ++a) {
+                  const int abcd = id4(a,b,c,d);
+                  const int ace = id3(a,c,e);
+                  *ardm4->element_ptr(abcd,efgh) += (b == c ? 1.0 : 0.0) * *ardm3->element_ptr(id3(a,d,e),fgh);
+                  *ardm4->element_ptr(abcd,efgh) -= (d == e && b == c ? 1.0 : 0.0) * *ardm2->element_ptr(id2(a,f),gh);
+                  *ardm4->element_ptr(abcd,efgh) += (d == e ? 1.0 : 0.0) * *ardm3->element_ptr(id3(a,b,c),fgh);
+                  *ardm4->element_ptr(abcd,efgh) -= (b == e && c == f ? 1.0 : 0.0) * *ardm2->element_ptr(id2(a,d),gh);
+                  *ardm4->element_ptr(abcd,efgh) += (b == e ? 1.0 : 0.0) * *ardm3->element_ptr(id3(a,f,c),dgh);
+                  *ardm4->element_ptr(abcd,efgh) += (f == g ? 1.0 : 0.0) * *rdm3_->element_ptr(ace,bdh);
+                  *ardm4->element_ptr(abcd,efgh) += (d == g ? 1.0 : 0.0) * *rdm3_->element_ptr(ace,bhf);
+                  *ardm4->element_ptr(abcd,efgh) += (b == g ? 1.0 : 0.0) * *rdm3_->element_ptr(ace,hdf);
+                  *ardm4->element_ptr(abcd,efgh) += *rdm4_->element_ptr(id4(a,c,e,g),bdfg);
+                }
+              }
+          }
+        }
+      }
+    }
+  cout << "ASD_NEVPT2_RDM: ardm4.." << endl;
   ardm2_ = ardm2;
   ardm3_ = ardm3;
   ardm4_ = ardm4;
   srdm2_ = srdm2;
   srdm3_ = srdm3;
+
 }
 
 

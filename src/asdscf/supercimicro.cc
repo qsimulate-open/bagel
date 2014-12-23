@@ -192,7 +192,6 @@ void ASDSuperCIMicro::sigma_ai_ti_(shared_ptr<const ASDRotFile> cc, shared_ptr<A
 
 }
 
-
 // sigma_ti_ti = - delta_ij ((2-nt-nu)Fact_tu - G_tu)/sqrt((2-nt)(2-nu)) - delta_tu f_ij
 void ASDSuperCIMicro::sigma_ti_ti_(shared_ptr<const ASDRotFile> cc, shared_ptr<ASDRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();

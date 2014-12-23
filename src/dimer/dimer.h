@@ -162,6 +162,7 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
 
   auto run_calculations = [this, &fcidata, &castime]
     (std::vector<std::vector<int>> spaces, std::shared_ptr<const Reference> eref, std::shared_ptr<const Reference> aref, std::string label) {
+    std::cout << "run_calculations: " << std::endl;
     std::cout << "    Starting embedded CAS-CI calculations on monomer " << label << std::endl;
     std::vector<std::shared_ptr<const VecType>> results;
     for (auto& ispace : spaces) {
@@ -202,8 +203,10 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
     return results;
   };
 
-  for (auto& i : run_calculations(spaces_A, embedded_refs_.first, active_refs_.first, "A"))
+  for (auto& i : run_calculations(spaces_A, embedded_refs_.first, active_refs_.first, "A")) {
+    std::cout << "dimer: run_calculations (A).. inserting.." << std::endl;
     out->template insert<0>(i);
+  }
 
   for (auto& i : run_calculations(spaces_B, embedded_refs_.second, active_refs_.second, "B"))
     out->template insert<1>(i);

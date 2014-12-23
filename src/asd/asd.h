@@ -28,9 +28,9 @@
 
 #include <src/asd/asd_base.h>
 #include <src/dimer/dimer_prop.h>
-
-#include <src/asd/asd_nevpt2.h>
-#include <src/asdscf/superci.h>
+//TODO disabled for now
+//#include <src/asd/asd_nevpt2.h>
+//#include <src/asdscf/superci.h>
 
 namespace bagel {
 

@@ -50,6 +50,8 @@
 #include <src/wfn/construct_method.h>
 
 #include <src/asdscf/superci.h>
+#include <src/asdscf/bfgs.h>
+#include <src/asdscf/hybrid.h>
 
 using namespace std;
 using namespace bagel;
@@ -102,8 +104,15 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else if (title == "asdscf") {
       string algorithm = itree->get<string>("algorithm", "");
       cout << "ASDSCF called with " << algorithm << endl;
+
       if (algorithm == "superci" || algorithm == "")
         out = make_shared<ASDSuperCI>(itree, geom, ref);
+      else if (algorithm == "bfgs")
+        out = make_shared<ASDBFGS>(itree, geom, ref);
+      else if (algorithm == "hybrid")
+        out = make_shared<ASDHybrid>(itree, geom, ref);
+      else
+        throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
     }
 //END ADDED
     else if (title == "casscf") {
