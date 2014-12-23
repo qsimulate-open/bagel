@@ -350,7 +350,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
       dkl->sqrt();
       dkl->scale(1.0/sqrt(2.0));
     }
-    Fock<1> fock(geom_, ref_->hcore(), nullptr, dkl ? ocoeff * *dkl : Matrix(ocoeff), /*grad*/false, /*rhf*/true);
+    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, dkl ? ocoeff * *dkl : Matrix(ocoeff), /*grad*/false, /*rhf*/true);
     *out += *coeff_ % fock * *coeff_ * *dm1 * 2.0;
   }
 
