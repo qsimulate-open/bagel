@@ -62,7 +62,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     vector<IndexRange> o = {all_, all_};
     MOFock fock(ref_, o);
     f1_ = fock.tensor();
-    h1_ = fock.hcore();
+    h1_ = fock.cfock();
     // canonical orbitals within closed and virtual subspaces
     coeff_ = fock.coeff();
   }
