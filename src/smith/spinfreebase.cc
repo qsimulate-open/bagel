@@ -575,7 +575,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
           unique_ptr<double[]> data0 = r->get_block(i0, i1, i2, i3);
           unique_ptr<double[]> data1(new double[r->get_size(i0, i1, i2, i3)]);
           // sort. Active indices run slower
-          sort_indices<0,3,2,1,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
+          sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
           // intermediate area
           unique_ptr<double[]> interm(new double[i0.size()*i2.size()*nact*nact]);
 
