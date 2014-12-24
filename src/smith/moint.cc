@@ -116,10 +116,10 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
   const int nbasis  = coeff_->ndim();
 
   data_  = make_shared<Tensor>(blocks_, false);
-  cfock_ = make_shared<Tensor>(blocks_, false);
+  h1_    = make_shared<Tensor>(blocks_, false);
 
   // cfock
-  shared_ptr<const Matrix> cfock = ref_->hcore();
+  shared_ptr<Matrix> cfock = ref_->hcore()->copy();
   if (ncore+nclosed)
     cfock = make_shared<Fock<1>>(r->geom(), ref_->hcore(), nullptr, coeff_->slice(0, ncore+nclosed), false, true);
 
@@ -135,9 +135,17 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
   } else {
     fock1 = cfock;
   }
-  const Matrix forig = *coeff_ % *fock1 * *coeff_;
+
+  // We substitute diagonal part of the two-body integrals.
+  // Note that E_ij,kl = E_ij E_kl - delta_jk E_il
+  // and SMITH uses E_ij E_kl type excitations throughout. j and k must be active
+  if (nact) {
+    shared_ptr<const DFHalfDist> half = r->geom()->df()->compute_half_transform(coeff_->slice(ncore+nclosed, nocc))->apply_J();
+    *cfock -= *half->form_2index(half, 0.5);
+  }
 
   // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
+  const Matrix forig = *coeff_ % *fock1 * *coeff_;
   VectorB eig(nbasis);
   if (nclosed > 1) {
     shared_ptr<Matrix> fcl = forig.get_submatrix(ncore, ncore, nclosed, nclosed);
@@ -150,7 +158,7 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
     coeff_->copy_block(0, nocc, nbasis, nvirt, coeff_->slice(nocc, nocc+nvirt) * *fvirt);
   }
   const Matrix f = *coeff_ % *fock1 * *coeff_;
-  const Matrix fc = *coeff_ % *cfock * *coeff_;
+  const Matrix h1 = *coeff_ % *cfock * *coeff_;
 
   for (auto& i0 : blocks_[0]) {
     for (auto& i1 : blocks_[1]) {
@@ -160,10 +168,10 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
         copy_n(target->data(), target->size(), tmp.get());
         data_->put_block(tmp, i1, i0);
       } {
-        shared_ptr<const Matrix> target = fc.get_submatrix(i1.offset(), i0.offset(), i1.size(), i0.size());
+        shared_ptr<const Matrix> target = h1.get_submatrix(i1.offset(), i0.offset(), i1.size(), i0.size());
         unique_ptr<double[]> tmp(new double[target->size()]);
         copy_n(target->data(), target->size(), tmp.get());
-        cfock_->put_block(tmp, i1, i0);
+        h1_->put_block(tmp, i1, i0);
       }
     }
   }

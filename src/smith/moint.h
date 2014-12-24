@@ -72,15 +72,19 @@ class MOFock {
     std::shared_ptr<Coeff> coeff_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor> data_;
-    std::shared_ptr<Tensor> cfock_;
+    std::shared_ptr<Tensor> h1_;
 
   public:
     MOFock(std::shared_ptr<const SMITH_Info> r, std::vector<IndexRange> b);
     ~MOFock() {}
 
+    // fock operator
     std::shared_ptr<Tensor> data() { return data_; }
     std::shared_ptr<Tensor> tensor() { return data_; }
-    std::shared_ptr<Tensor> cfock() { return cfock_; }
+
+    // core Fock operator minus diagonal part of the two-body integrals
+    std::shared_ptr<Tensor> h1() { return h1_; }
+
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 };
 
