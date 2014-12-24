@@ -394,6 +394,18 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
               // ccxa
               if ((t < nocc) ^ (s < nocc))
                 (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+            // cxxa, xcxa
+            } else if (((k >= nclosed) ^ (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
+              (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+            // cxxx
+            } else if (((k >= nclosed) ^ (l >= nclosed)) && ((t < nocc) && (s < nocc)) && (t >= nclosed && s >= nclosed)) {
+              (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+            // xxxa
+            } else if (((k >= nclosed) && (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
+              (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
             }
           }
   }
