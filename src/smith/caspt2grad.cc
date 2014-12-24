@@ -120,6 +120,8 @@ void CASPT2Grad::compute() {
 
     d2_ = smith->dm2();
     energy_ = smith->algo()->energy() + ref_energy_[target_];
+
+    cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
   }
 }
 
