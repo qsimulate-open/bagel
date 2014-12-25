@@ -76,6 +76,10 @@ void CASPT2Grad::compute() {
     // save correlated density matrices d(1), d(2), and ci derivatives
     auto d1tmp = make_shared<Matrix>(*smith->dm1());
     auto d11tmp = make_shared<Matrix>(*smith->dm11());
+    d11tmp->symmetrize();
+    // TODO not sure about the scale
+    d11tmp->scale(2.0);
+
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     if (nact) {
       const double wf1norm = smith->wf1norm();
@@ -193,7 +197,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civector, half, halfjj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(1.0e-12);
+  tie(zmat, zvec, xmat, smallz) = cp->solve(1.0e-13);
 //tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
 
   // form relaxed 1RDM
@@ -201,10 +205,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const Matrix> dsa = nact ? rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis) : d0;
   auto dm = make_shared<Matrix>(*zmat * *dsa + (*dsa ^ *zmat));
 
-  shared_ptr<Matrix> dtot = d0->copy();
-  dtot->ax_plus_y(1.0, dm);
-  dtot->ax_plus_y(1.0, d1);
-  dtot->ax_plus_y(1.0, d11);
+  auto dtot = make_shared<Matrix>(*d0 + *d11 + *d1 + *dm);
   if (smallz)
     dtot->add_block(1.0, 0, 0, nocc, nocc, smallz);
 
@@ -378,17 +379,20 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   auto D1 = make_shared<btas::Tensor4<double>>(nocc,nall,nocc,nall);
   fill(D1->begin(), D1->end(), 0.0);
   {
+    auto is_act = [&](const int& i) { return i >= nclosed && i < nocc; };
+    auto is_virt = [&](const int& i) { return i >= nocc; };
+
     // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
-    for (int s = 0; s != nall; ++s) // extend
+    for (int s = ncore_; s != nall; ++s) // extend
       for (int k = ncore_; k != nocc; ++k)
-        for (int t = 0; t != nall; ++t) // extend
+        for (int t = ncore_; t != nall; ++t) // extend
           for (int l = ncore_; l != nocc; ++l) {
             // TODO ugly code - there should be a smart way of doing this! just need a logic to test if it has to be symmetrized
             // ccaa, cxaa, xxaa
-            if (t >= nocc && s >= nocc) {
+            if (is_virt(t) && is_virt(s)) {
               (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
               // cxaa
-              if ((k >= nclosed) ^ (l >= nclosed))
+              if (is_act(k) ^ is_act(l))
                 (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
             // ccxa, ccxx
             } else if (t >= nclosed && s >= nclosed && k < nclosed && l < nclosed) {
@@ -397,14 +401,24 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
               if ((t < nocc) ^ (s < nocc))
                 (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
             // cxxa, xcxa
-            } else if (((k >= nclosed) ^ (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
+            } else if ((is_act(k) ^ is_act(l)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
               (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
               (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-            // cxxx
-            } else if (((k >= nclosed) ^ (l >= nclosed)) && ((t < nocc) && (s < nocc)) && (t >= nclosed && s >= nclosed)) {
+            // cxxx - no correction needed
+            } else if ((is_act(k) ^ is_act(l)) && is_act(t) && is_act(s)) {
               (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
               (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-            // xxxa
+            // cccx
+            } else if (k < nclosed && l < nclosed && (is_act(s) ^ is_act(t))) {
+              if (s == k)
+                (*D1)(l, t, k, s)  += 2.0*dm11->element(l, t);
+              if (s == l)
+                (*D1)(l, t, k, s)  -= dm11->element(k, t);
+              if (t == l)
+                (*D1)(l, t, k, s)  += 2.0*dm11->element(k, s);
+              if (t == k)
+                (*D1)(l, t, k, s)  -= dm11->element(l, s);
+            // xxax - no correction needed
             } else if (((k >= nclosed) && (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
               (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
               (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
