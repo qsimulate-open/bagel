@@ -57,7 +57,7 @@ void Smith::compute() {
     dm2_ = algop->rdm21();
 
     // compute <1|1>
-    wf1norm_ = algop->rdm1_correction();
+    wf1norm_ = algop->correlated_norm();
 
     // convert ci derivative tensor to civec
     cider_ = algop->ci_deriv();
