@@ -401,7 +401,6 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
               // ccxa
               if ((t < nocc) ^ (s < nocc))
                 (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-            // TODO still broken
             // cxxa, xcxa
             } else if ((is_act(k) ^ is_act(l)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
               (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
@@ -414,9 +413,10 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
             } else if (((k >= nclosed) && (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
               (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
               (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-            // c(cc)x and x(cc)a // TODO maybe better to work with inactive Fock to deal with this contribution
+            // c(cc)x, c(cc)a, x(cc)a // TODO maybe better to work with inactive Fock to deal with this contribution
             } else if ((is_closed(k) && is_closed(l) && (is_act(s) ^ is_act(t))) // c(cc)x
-                   ||  ((is_act(k) ^ is_act(l)) && ((is_closed(s) && is_virt(t)) || (is_virt(s) && is_closed(t))))) { // x(cc)a
+                   || ((is_act(k) ^ is_act(l)) && ((is_closed(s) && is_virt(t)) || (is_virt(s) && is_closed(t)))) // x(cc)a
+                   ||  (is_closed(k) && is_closed(l) && ((is_closed(s) && is_virt(t)) || (is_virt(s) && is_closed(t))))) { // c(cc)a
               if (s == k)
                 (*D1)(l, t, k, s)  += 2.0*dm11->element(l, t);
               if (s == l)
