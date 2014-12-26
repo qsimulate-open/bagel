@@ -1,11 +1,30 @@
 //
-// Author : Toru Shiozaki
-// Date   : May 2009
+// BAGEL - Parallel electron correlation program.
+// Filename: molden_transforms.cc
+// Copyright (C) 2012 Shane Parker
 //
-// Modified by :  Shane Parker
-// Date        :  July 2012
+// Author: Shane Parker <shane.parker@u.northwestern.edu>
+// Maintainer: NU theory
 //
-// This was originally code found in src/rysint/carsph_gen/carsph_gen.cc
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+//
+// This was originally code found in src/integral/.../carsph_gen.cc
 // but repurposed here for the molden section. At the moment, it is limited to at most
 // f functions.
 //
