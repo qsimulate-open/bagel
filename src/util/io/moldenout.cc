@@ -32,8 +32,7 @@ using namespace std;
 /************************************************************************************
 ************************************************************************************/
 
-MoldenOut::MoldenOut(string filename) : MoldenIO(filename) {
-  ofs_.open(filename);
+MoldenOut::MoldenOut(string filename) : MoldenIO(filename), ofs_(filename) {
   ofs_ << "[Molden Format]" << endl;
 }
 
