@@ -27,19 +27,11 @@
 #ifndef __SRC_SMITH_SPINFREEBASE_H
 #define __SRC_SMITH_SPINFREEBASE_H
 
-#include <src/util/prim_op.h>
-#include <src/smith/tensor.h>
-#include <src/smith/moint.h>
-#include <src/smith/denom.h>
-#include <src/smith/smith_info.h>
-#include <src/prop/multipole.h>
-#include <src/grad/cphf.h>
 #include <chrono>
-
-// temp. todo relocate gradient
-#include <src/grad/cpcasscf.h>
-#include <src/util/math/pairfile.h>
-
+#include <src/ci/fci/civec.h>
+#include <src/smith/denom.h>
+#include <src/smith/tensor.h>
+#include <src/smith/smith_info.h>
 
 namespace bagel {
 namespace SMITH {
