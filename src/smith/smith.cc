@@ -25,7 +25,7 @@
 
 
 #include <src/smith/smith.h>
-#include <src/smith/CAS_test.h>
+#include <src/smith/CASPT2.h>
 
 
 using namespace std;
@@ -38,8 +38,8 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
   // make a smith_info class
   auto info = make_shared<SMITH_Info>(r, idata);
 
-  if (method == "caspt2-test") {
-    algo_ = make_shared<CAS_test::CAS_test>(info);
+  if (method == "caspt2") {
+    algo_ = make_shared<CASPT2::CASPT2>(info);
   } else {
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());
@@ -50,7 +50,7 @@ void Smith::compute() {
   algo_->solve();
 
   // TODO toggle by something better than this.
-  auto algop = dynamic_pointer_cast<CAS_test::CAS_test>(algo_);
+  auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
   if (algop) {
     dm1_ = algop->rdm12();
     dm11_ = algop->rdm11();
