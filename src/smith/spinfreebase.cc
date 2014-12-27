@@ -32,6 +32,7 @@ using namespace bagel::SMITH;
 
 
 SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
+  Timer timer;
   const int max = r->maxtile();
   if (r->ncore() > r->nclosed())
     throw runtime_error("frozen core has been specified but there are not enough closed orbitals");
@@ -88,6 +89,8 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     K2ext v2k(ref_, coeff_, o);
     v2_ = v2k.tensor();
   }
+
+  timer.tick_print("MO integral evaluation");
 
   // make a ci tensor.
   if (ref_->ciwfn()) {
@@ -190,6 +193,8 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     }
   }
 
+  timer.tick_print("RDM derivative evaluation");
+
   // rdms.
   if (ref_->ciwfn()) {
     vector<IndexRange> o = {active_, active_};
@@ -289,9 +294,12 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     auto rdm1 = make_shared<RDM<1>>(*ref_->rdm1(ref_->target()));
     auto rdm2 = make_shared<RDM<2>>(*ref_->rdm2(ref_->target()));
 
+    timer.tick_print("RDM evaluation");
+
     // construct denominator
     denom_ = make_shared<const Denom>(*rdm1, *rdm2, *rdm3, *rdm4, *fockact);
 
+    timer.tick_print("Denominator evaluation");
   }
 
   // set e0

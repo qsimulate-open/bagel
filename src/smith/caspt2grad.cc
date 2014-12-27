@@ -40,12 +40,11 @@ using namespace bagel;
 CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
   : Method(inp, geom, ref) {
 
+  Timer timer;
+
   // compute CASSCF first
   auto cas = make_shared<CASHybrid>(inp, geom, ref);
   cas->compute();
-
-  cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
-  if (geom->df() == nullptr) throw logic_error("CASPT2Grad is only implemented with DF");
 
   // update reference
   ref_ = cas->conv_to_ref();
@@ -53,6 +52,12 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   // TODO
   thresh_ = 1.0e-10; //cas->thresh();
   ref_energy_ = cas->energy();
+
+  timer.tick_print("Reference calculation");
+
+  cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
+  if (geom->df() == nullptr)
+    throw logic_error("CASPT2Grad is only implemented with DF");
 }
 
 
@@ -74,6 +79,8 @@ void CASPT2Grad::compute() {
     }
     target_ = smith->algo()->ref()->target();
     ncore_  = smith->algo()->ref()->ncore();
+
+    Timer timer;
 
     // save correlated density matrices d(1), d(2), and ci derivatives
     auto d1tmp = make_shared<Matrix>(*smith->dm1());
@@ -127,6 +134,7 @@ void CASPT2Grad::compute() {
     d2_ = smith->dm2();
     energy_ = smith->algo()->energy() + ref_energy_[target_];
 
+    timer.tick_print("Postprocessing SMITH");
     cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
   }
 }
@@ -134,6 +142,8 @@ void CASPT2Grad::compute() {
 
 template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
+  Timer timer;
+
   shared_ptr<const Reference> ref = task_->ref();
   shared_ptr<FCI> fci = task_->fci();
 
@@ -182,6 +192,8 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
   tie(yrs, fulld1) = task_->compute_Y(d1, d11, d2, half, halfj, halfjj);
 
+  timer.tick_print("Yrs evaluation");
+
   // solve CPCASSCF
   auto g0 = yrs;
   auto g1 = nact ? make_shared<Dvec>(cider, ref->nstate())
@@ -199,8 +211,9 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civector, half, halfjj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(1.0e-13);
-//tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
+
+  timer.tick_print("Z-CASSCF solution");
 
   // form relaxed 1RDM
   // form Zd + dZ^+
@@ -297,15 +310,13 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   if (ncore)
     separable_pair(smallz, dsa);
 
+  timer.tick_print("Effective densities");
+
   // compute gradients
-dtotao->print("dtotao", 20);
-xmatao->print("xmatao", 20);
-
-qq->symmetrize();
-qq->print("qq");
-
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq);
   gradient->print();
+  timer.tick_print("Gradient integral contraction");
+
   // set energy
   energy_ = task_->energy();
   return gradient;
