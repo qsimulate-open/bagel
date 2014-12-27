@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: multipole.cc
+// Filename: fmm.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,46 +24,22 @@
 //
 
 
-#include <src/periodic/multipole.h>
+#ifndef __SRC_PERIODIC_FMM_H
+#define __SRC_PERIODIC_FMM_H
 
-using namespace std;
-using namespace bagel;
+#include <src/periodic/multipolebatch.h>
 
-const static Legendre plm;
-const static Factorial f;
+namespace bagel {
 
-Multipole::Multipole(const array<double, 3> c, const int l) : centre_(c), lmax_(l) {
+class FMM {
+  protected:
 
-  r_ = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-  theta_ = acos(centre_[2]/r_);
-  phi_ = atan2(centre_[1], centre_[0]);
+  public:
+    FMM() { }
+    ~FMM() { }
 
-  compute_multipoles();
-}
-
-
-void Multipole::compute_multipoles() {
-
-  multipole_.resize((lmax_ + 1) * (lmax_ + 1));
-
-  int count = 0;
-  for (int l = 0; l != lmax_; ++l) {
-    for (int mm = 0; mm != 2 * l; ++mm) {
-      const int m = mm - l;
-      const double coeff = pow(r_, l) * plm.compute(l, abs(m), cos(theta_)) / f(l + abs(m));
-
-      double real = coeff * cos(-m * phi_);
-      double imag = coeff * sin(-m * phi_);
-      multipole_[count] = complex<double>(real, imag);
-
-      ++count;
-    }
-  }
+};
 
 }
 
-
-void Multipole::print_multipoles() const {
-
-}
-
+#endif
