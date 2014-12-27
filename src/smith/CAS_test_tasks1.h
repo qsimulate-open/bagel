@@ -36,6 +36,9 @@ namespace bagel {
 namespace SMITH {
 namespace CAS_test{
 
+class Task0 : public Task {
+  protected:
+    std::shared_ptr<Tensor> r_;
     IndexRange closed_;
     IndexRange active_;
     IndexRange virt_;
