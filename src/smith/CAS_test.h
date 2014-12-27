@@ -34,7 +34,6 @@
 #include <src/scf/hf/fock.h>
 #include <src/util/f77.h>
 #include <src/smith/queue.h>
-#include <src/smith/CAS_test_tasks.h>
 #include <src/smith/smith_info.h>
 
 namespace bagel {

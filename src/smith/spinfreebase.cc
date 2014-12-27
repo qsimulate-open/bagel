@@ -67,6 +67,15 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     coeff_ = fock.coeff();
   }
 
+  // for later use
+  const int nact = ref_->nact();
+  const int nclo = ref_->nclosed();
+  auto fockact = make_shared<Matrix>(nact, nact);
+  for (auto& i1 : active_)
+    for (auto& i0 : active_)
+      fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), f1_->get_block(i0, i1).get());
+
+
   // v2 tensor.
   {
     IndexRange occ(closed_);
@@ -93,7 +102,6 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 
     vector<IndexRange> o = {ci_, active_, active_};
     rdm1deriv_ = make_shared<Tensor>(o, false);
-    const int nclo = ref_->nclosed();
     for (auto& i0 : active_) {
       for (auto& i1 : active_) {
         for (auto& ci0 : ci_) {
@@ -141,9 +149,13 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 
   if (ref_->ciwfn()) {
     shared_ptr<const Dvec> rdm3d = r->rdm3deriv(ref_->target());
+    // RDM4 is contracted a priori by the Fock operator
+    shared_ptr<const Dvec> rdm4d = r->rdm4deriv(ref_->target(), fockact);
+    assert(rdm3d->ij() == rdm4d->ij());
 
     vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_};
     rdm3deriv_ = make_shared<Tensor>(o, false);
+    rdm4deriv_ = make_shared<Tensor>(o, false);
     const int nclo = ref_->nclosed();
     for (auto& i0 : active_) {
       for (auto& i1 : active_) {
@@ -154,6 +166,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
                 for (auto& ci0 : ci_) {
                   const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * ci0.size();
                   unique_ptr<double[]> data(new double[size]);
+                  unique_ptr<double[]> data2(new double[size]);
                   int iall = 0;
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is  creation
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
@@ -161,48 +174,12 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
                         for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
                           for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4) // this is creation
                             for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) // this is annhilation
-                              for (int j6 = ci0.offset(); j6 != ci0.offset()+ci0.size(); ++j6, ++iall)
-                                data[iall] = rdm3d->data((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))->data(j6);
+                              for (int j6 = ci0.offset(); j6 != ci0.offset()+ci0.size(); ++j6, ++iall) {
+                                data[iall]  = rdm3d->data((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))->data(j6);
+                                data2[iall] = rdm4d->data((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))->data(j6);
+                              }
                   rdm3deriv_->put_block(data, ci0, i5, i4, i3, i2, i1, i0);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  if (ref_->ciwfn()) {
-    shared_ptr<const Dvec> rdm4d = r->rdm4deriv(ref_->target());
-
-    vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_, active_, active_};
-    rdm4deriv_ = make_shared<Tensor>(o, false);
-    const int nclo = ref_->nclosed();
-    for (auto& i0 : active_) {
-      for (auto& i1 : active_) {
-        for (auto& i2 : active_) {
-          for (auto& i3 : active_) {
-            for (auto& i4 : active_) {
-              for (auto& i5 : active_) {
-                for (auto& i6 : active_) {
-                  for (auto& i7 : active_) {
-                    for (auto& ci0 : ci_) {
-                      const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * i6.size() * i7.size() * ci0.size();
-                      unique_ptr<double[]> data(new double[size]);
-                      int iall = 0;
-                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is  creation
-                        for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
-                          for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
-                            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
-                              for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4) // this is creation
-                                for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) // this is annhilation
-                                  for (int j6 = i6.offset(); j6 != i6.offset()+i6.size(); ++j6) // this is creation
-                                    for (int j7 = i7.offset(); j7 != i7.offset()+i7.size(); ++j7) // this is annhilation
-                                      for (int j8 = ci0.offset(); j8 != ci0.offset()+ci0.size(); ++j8, ++iall)
-                                        data[iall] = rdm4d->data((j7-nclo)+r->nact()*((j6-nclo)+r->nact()*((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))))->data(j8);
-                      rdm4deriv_->put_block(data, ci0, i7, i6, i5, i4, i3, i2, i1, i0);
-                    }
-                  }
+                  rdm4deriv_->put_block(data2, ci0, i5, i4, i3, i2, i1, i0);
                 }
               }
             }
@@ -307,12 +284,6 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
                 rdm4_->put_block(data, i0, i1, i2, i3, i4, i5, i6, i7);
               }
 
-
-    const int nact = ref_->nact();
-    auto fockact = make_shared<Matrix>(nact, nact);
-    for (auto& i1 : active_)
-      for (auto& i0 : active_)
-        fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block(i0, i1).get());
 
     auto rdm1 = make_shared<RDM<1>>(*ref_->rdm1(ref_->target()));
     auto rdm2 = make_shared<RDM<2>>(*ref_->rdm2(ref_->target()));

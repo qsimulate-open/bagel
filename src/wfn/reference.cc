@@ -98,9 +98,9 @@ shared_ptr<Dvec> Reference::rdm3deriv(const int istate) const {
 }
 
 
-shared_ptr<Dvec> Reference::rdm4deriv(const int istate) const {
+shared_ptr<Dvec> Reference::rdm4deriv(const int istate, shared_ptr<const Matrix> fock) const {
   FCI_bare fci(ciwfn_);
-  return fci.rdm4deriv(istate);
+  return fci.rdm4deriv(istate, fock);
 }
 
 

@@ -222,7 +222,8 @@ shared_ptr<Dvec> FCI::rdm3deriv(const int target) const {
 }
 
 
-shared_ptr<Dvec> FCI::rdm4deriv(const int target) const {
+shared_ptr<Dvec> FCI::rdm4deriv(const int target, shared_ptr<const Matrix> fock) const {
+  assert(fock->ndim() == norb_ && fock->mdim() == norb_);
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
   shared_ptr<Civec> cbra = cc_->data(target);
@@ -281,10 +282,10 @@ shared_ptr<Dvec> FCI::rdm4deriv(const int target) const {
   }
 
   // now make target:  <L|o+m+k+i+jlnp|0>  =  <L|o+p|K><K|m+k+i+jln|0> - delta_pm<L|o+k+i+jln|0> - delta_pk<L|m+o+i+jln|0> - delta_pi<L|m+k+o+jln|0>
-  auto gbra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_*norb_*norb_*norb_*norb_);
+  // ** multiplied by f(op) **
+  auto gbra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_*norb_*norb_);
   {
     auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
-    int ijklmnop = 0;
     int ijklmn = 0;
     for (auto iter = fbra->dvec().begin(); iter != fbra->dvec().end(); ++iter, ++ijklmn) {
       const int j = ijklmn/(norb_*norb_*norb_*norb_*norb_);
@@ -296,14 +297,13 @@ shared_ptr<Dvec> FCI::rdm4deriv(const int target) const {
       tmp->zero();
       sigma_2a1(*iter, tmp);
       sigma_2a2(*iter, tmp);
-      int op = 0;
-      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijklmnop, ++op) {
-        const int p = op/norb_;
-        const int o = op-p*norb_;
-        *gbra->data(ijklmnop) = **t;
-        if (p == m) *gbra->data(ijklmnop) -= *fbra->data(o+norb_*(n+norb_*(k+norb_*(l+norb_*(i+norb_*(j))))));
-        if (p == k) *gbra->data(ijklmnop) -= *fbra->data(m+norb_*(n+norb_*(o+norb_*(l+norb_*(i+norb_*(j))))));
-        if (p == i) *gbra->data(ijklmnop) -= *fbra->data(m+norb_*(n+norb_*(k+norb_*(l+norb_*(o+norb_*(j))))));
+      for (int p = 0; p != norb_; ++p) {
+        for (int o = 0; o != norb_; ++o) {
+          gbra->data(ijklmn)->ax_plus_y(fock->element(o, p), tmp->data(o+norb_*p));
+          if (p == m) gbra->data(ijklmn)->ax_plus_y(-fock->element(o,p), fbra->data(o+norb_*(n+norb_*(k+norb_*(l+norb_*(i+norb_*(j)))))));
+          if (p == k) gbra->data(ijklmn)->ax_plus_y(-fock->element(o,p), fbra->data(m+norb_*(n+norb_*(o+norb_*(l+norb_*(i+norb_*(j)))))));
+          if (p == i) gbra->data(ijklmn)->ax_plus_y(-fock->element(o,p), fbra->data(m+norb_*(n+norb_*(k+norb_*(l+norb_*(o+norb_*(j)))))));
+        }
       }
     }
   }
