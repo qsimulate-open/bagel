@@ -60,7 +60,7 @@ class SOBatch : public RadialInt {
 
   public:
     SOBatch(const std::shared_ptr<const SOECP> _so, const std::array<std::shared_ptr<const Shell>,2>& _info,
-                 const double contA, const double contC, const std::array<int, 3> angA, const std::array<int, 3> angC,
+                 const int contA, const int contC, const std::array<int, 3> angA, const std::array<int, 3> angC,
                  const bool print = false, const int max_iter = 100, const double thresh_int = PRIM_SCREEN_THRESH);
 
     ~SOBatch() {}
