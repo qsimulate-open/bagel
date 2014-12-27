@@ -31,7 +31,13 @@ using namespace bagel;
 
 MultipoleBatch::MultipoleBatch(const array<shared_ptr<const Shell>,2>& sh, const shared_ptr<const Atom> atom,
                                shared_ptr<StackMem> stack)
- : MultipoleBatch_base(sh, atom, stack) { }
+ : MultipoleBatch_base(sh, atom, stack) {
+
+ const double integral_thresh = PRIM_SCREEN_THRESH;
+ allocate_arrays(primsize_);
+
+ compute_ss(integral_thresh);
+}
 
 void MultipoleBatch::compute() {
 

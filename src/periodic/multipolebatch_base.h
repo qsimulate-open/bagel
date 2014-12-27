@@ -42,18 +42,28 @@ class MultipoleBatch_base : public Integral {
 
     bool swap01_;
     double* P_;
+    std::array<double, 3> AB_;
 
-    size_t size_block_, size_alloc_;
-    int prim0size_, prim1size_, cont0size_, cont1size_;
-    int asize_, amax_, amin_;
+    size_t size_block_, size_alloc_, size_allocated_;
+    int primsize_, prim0size_, prim1size_;
+    int contsize_, cont0size_, cont1size_;
+    int asize_, size_final_, amax_, amax1_;
+    int num_multipoles_;
+    std::complex<double>* multipole_;
 
     bool allocated_here_;
     std::shared_ptr<StackMem> stack_;
 
     double* data_;
-    double* stack_save_;
+    double* buff_, stack_save_;
+    std::complex<double>* multipole_buff;
 
+    int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
+
+    void init();
+    void allocate_arrays(const size_t ps);
     void compute_ss(const double thresh);
+    void allocate_data(const int asize_final_sph);
 
   public:
     MultipoleBatch_base(const std::array<std::shared_ptr<const Shell>,2>& shells, const std::shared_ptr<const Atom> atom,
@@ -63,6 +73,11 @@ class MultipoleBatch_base : public Integral {
     std::shared_ptr<const Atom> site() const { return site_; }
 
     virtual void compute() = 0;
+
+    double* data(const int i) override { assert(i == 0); return data_; }
+    const double* data() const { return data_; }
+
+    bool swap01() const { return swap01_; }
 
 };
 
