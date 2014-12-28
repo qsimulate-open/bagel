@@ -38,6 +38,8 @@
 #include <vector>
 #include <cassert>
 #include <stdexcept>
+#include <fstream>
+#include <cstdio>
 
 namespace bagel {
 namespace SMITH {
@@ -109,7 +111,41 @@ class Storage_Incore : public Storage_base {
     void initialize();
 };
 
+class Storage_Disk : public Storage_base {
+  protected:
+    std::string filename_;
+    mutable std::fstream data_;
+
+    size_t totalsize_;
+    std::map<size_t, size_t> offset_;
+
+    const long long cachesize_ = 100000lu;
+
+  public:
+    Storage_Disk(const std::map<size_t, size_t>& size, bool init);
+    ~Storage_Disk() { std::remove(filename_.c_str()); }
+
+    std::unique_ptr<double[]> get_block(const size_t& key) const;
+    std::unique_ptr<double[]> move_block(const size_t& key);
+    void put_block(const size_t& key, std::unique_ptr<double[]>& dat);
+    void add_block(const size_t& key, const std::unique_ptr<double[]>& dat);
+
+    void zero();
+    void scale(const double a);
+
+    Storage_Disk& operator=(const Storage_Disk& o);
+    void ax_plus_y(const double a, const Storage_Disk& o);
+    void ax_plus_y(const double a, const std::shared_ptr<Storage_Disk> o) { ax_plus_y(a, *o); };
+    double dot_product(const Storage_Disk& o) const;
+
+    void initialize();
+};
+
+#ifdef SMITH_INCORE
 using Storage = Storage_Incore;
+#else
+using Storage = Storage_Disk;
+#endif
 
 }
 }
