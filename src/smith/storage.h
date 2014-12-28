@@ -109,6 +109,8 @@ class Storage_Incore : public Storage_base {
     void initialize();
 };
 
+using Storage = Storage_Incore;
+
 }
 }
 

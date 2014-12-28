@@ -67,7 +67,7 @@ class Tensor {
   protected:
 
     std::vector<IndexRange> range_;
-    std::shared_ptr<Storage_Incore> data_;
+    std::shared_ptr<Storage> data_;
     int rank_;
     bool initialized_;
 
