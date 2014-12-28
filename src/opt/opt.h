@@ -193,8 +193,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   // first calculate reference (if needed)
   std::shared_ptr<PTree> cinput; 
   std::shared_ptr<const Reference> ref;
-//if (iter_ == 0) {
-  if (true) {
+  if (iter_ == 0) {
     auto m = input_->begin();
     for ( ; m != --input_->end(); ++m) {
       const std::string title = to_lower((*m)->get<std::string>("title", ""));
