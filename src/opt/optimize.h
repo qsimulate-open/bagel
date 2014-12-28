@@ -26,7 +26,7 @@
 #ifndef __SRC_OPT_OPTIMIZE_H
 #define __SRC_OPT_OPTIMIZE_H
 
-#include <src/wfn/geometry.h>
+#include <src/wfn/reference.h>
 
 namespace bagel {
 
@@ -34,12 +34,13 @@ class Optimize {
   protected:
     const std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Reference> ref_;
 
     int maxiter_;
     double thresh_;
 
   public:
-    Optimize(const std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>);
+    Optimize(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute();
     std::shared_ptr<const Geometry> geometry() const { return geom_; }
