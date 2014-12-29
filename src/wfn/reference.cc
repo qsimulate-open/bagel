@@ -122,7 +122,6 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
   for (auto& i : geom_->atoms()) {
     moved |= i->distance(*j) > 1.0e-12;
     newbasis |= i->basis() != (*j)->basis();
-    ++j;
   }
 
   if (moved && newbasis)
