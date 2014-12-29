@@ -116,51 +116,23 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
   if (geomin->magnetism())
     throw std::runtime_error("Projection from real to GIAO basis set is not implemented.   Use the GIAO code at zero-field.");
 
-  bool moved = false;
-  bool newbasis = false;
-  auto j = geomin->atoms().begin();
-  for (auto& i : geom_->atoms()) {
-    moved |= i->distance(*j) > 1.0e-12;
-    newbasis |= i->basis() != (*j)->basis();
-  }
+  // project to a new basis
+  const Overlap snew(geomin);
+  Overlap snewinv = snew;
+  snewinv.inverse_symmetric();
+  MixedBasis<OverlapBatch> mixed(geom_, geomin);
+  auto c = make_shared<Coeff>(snewinv * mixed * *coeff_);
 
-  if (moved && newbasis)
-    throw runtime_error("changing geometry and basis set at the same time is not allowed");
+  // make coefficient orthogonal (under the overlap metric)
+  Matrix unit = *c % snew * *c;
+  unit.inverse_half();
+  *c *= unit;
 
-  shared_ptr<Reference> out;
-
-  if (newbasis) {
-    // project to a new basis
-    const Overlap snew(geomin);
-    Overlap snewinv = snew;
-    snewinv.inverse_symmetric();
-    MixedBasis<OverlapBatch> mixed(geom_, geomin);
-    auto c = make_shared<Coeff>(snewinv * mixed * *coeff_);
-
-    // make coefficient orthogonal (under the overlap metric)
-    Matrix unit = *c % snew * *c;
-    unit.inverse_half();
-    *c *= unit;
-
-    out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
-    if (coeffA_) {
-      assert(coeffB_);
-      out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_ * unit);
-      out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_ * unit);
-    }
-  } else {
-    Overlap snew(geomin);
-    Overlap sold(geom_);
-    snew.sqrt();
-    sold.inverse_half();
-    auto c = make_shared<Coeff>(snew * sold * *coeff_);
-
-    out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
-    if (coeffA_) {
-      assert(coeffB_);
-      out->coeffA_ = make_shared<Coeff>(snew * sold * *coeffA_);
-      out->coeffB_ = make_shared<Coeff>(snew * sold * *coeffB_);
-    }
+  auto out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
+  if (coeffA_) {
+    assert(coeffB_);
+    out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_);
+    out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_);
   }
 
   return out;
