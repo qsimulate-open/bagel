@@ -359,8 +359,8 @@ double Storage_Disk::dot_product(const Storage_Disk& o) const {
 
   data_.clear();
   o.data_.clear();
-  data_.seekg(0):
-  o.data_.seekg(0):
+  data_.seekg(0);
+  o.data_.seekg(0);
   unique_ptr<double[]> buf(new double[cachesize_]);
   unique_ptr<double[]> buf2(new double[cachesize_]);
 
