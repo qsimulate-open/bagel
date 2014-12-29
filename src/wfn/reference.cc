@@ -122,6 +122,7 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
   for (auto& i : geom_->atoms()) {
     moved |= i->distance(*j) > 1.0e-12;
     newbasis |= i->basis() != (*j)->basis();
+    ++j;
   }
 
   if (moved && newbasis)
@@ -151,8 +152,8 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
   } else {
     Overlap snew(geomin);
     Overlap sold(geom_);
-    snew.sqrt();
-    sold.inverse_half();
+    snew.inverse_half();
+    sold.sqrt();
     auto c = make_shared<Coeff>(snew * sold * *coeff_);
 
     out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
