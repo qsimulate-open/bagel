@@ -96,8 +96,8 @@ class Tensor {
 
     void scale(const double a) { data_->scale(a); }
 
-    double dot_product(const Tensor& o) { return data_->dot_product(*o.data_); }
-    double dot_product(const std::shared_ptr<Tensor>& o) { return data_->dot_product(*o->data_); }
+    double dot_product(const Tensor& o) const { return data_->dot_product(*o.data_); }
+    double dot_product(const std::shared_ptr<Tensor>& o) const { return data_->dot_product(*o->data_); }
 
     size_t size() const { return data_->length(); }
     size_t length() const { return data_->length(); }
