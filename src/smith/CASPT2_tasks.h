@@ -27,6 +27,7 @@
 #define __SRC_SMITH_CASPT2_TASKS_H
 
 #include <src/smith/CASPT2_tasks1.h>
+#include <src/smith/CASPT2_tasks2.h>
 
 #endif
 
