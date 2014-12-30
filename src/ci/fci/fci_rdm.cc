@@ -298,12 +298,11 @@ shared_ptr<Dvec> FCI::rdm4deriv(const int target, shared_ptr<const Matrix> fock)
       sigma_2a1(*iter, tmp);
       sigma_2a2(*iter, tmp);
       for (int p = 0; p != norb_; ++p) {
-        for (int o = 0; o <= p; ++o) {
-          const double fac = fock->element(o, p) * (o == p ? 1.0 : 2.0);
-          gbra->data(ijklmn)->ax_plus_y(fac, tmp->data(o+norb_*p));
-          if (p == m) gbra->data(ijklmn)->ax_plus_y(-fac, fbra->data(o+norb_*(n+norb_*(k+norb_*(l+norb_*(i+norb_*(j)))))));
-          if (p == k) gbra->data(ijklmn)->ax_plus_y(-fac, fbra->data(m+norb_*(n+norb_*(o+norb_*(l+norb_*(i+norb_*(j)))))));
-          if (p == i) gbra->data(ijklmn)->ax_plus_y(-fac, fbra->data(m+norb_*(n+norb_*(k+norb_*(l+norb_*(o+norb_*(j)))))));
+        for (int o = 0; o != norb_; ++o) {
+          gbra->data(ijklmn)->ax_plus_y(fock->element(o, p), tmp->data(o+norb_*p));
+          if (p == m) gbra->data(ijklmn)->ax_plus_y(-fock->element(o,p), fbra->data(o+norb_*(n+norb_*(k+norb_*(l+norb_*(i+norb_*(j)))))));
+          if (p == k) gbra->data(ijklmn)->ax_plus_y(-fock->element(o,p), fbra->data(m+norb_*(n+norb_*(o+norb_*(l+norb_*(i+norb_*(j)))))));
+          if (p == i) gbra->data(ijklmn)->ax_plus_y(-fock->element(o,p), fbra->data(m+norb_*(n+norb_*(k+norb_*(l+norb_*(o+norb_*(j)))))));
         }
       }
     }
