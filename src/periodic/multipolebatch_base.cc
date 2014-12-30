@@ -64,12 +64,14 @@ void MultipoleBatch_base::init() {
   // set angular numbers
   const int ang0 = basisinfo_[0]->angular_number();
   const int ang1 = basisinfo_[1]->angular_number();
+  assert(max(ang0, ang1) < ANG_VRR_END);
 
   amax_ = ang0 + ang1;
-  amax1_ = amax_ + 1;
+  const int amax1 = amax_ + 1;
 
-  asize_ = 0;
-  for (int i = 0; i <= amax_; ++i) asize_ += (i + 1) * (i + 2) / 2;
+//  asize_ = 0;
+//  for (int i = 0; i <= amax_; ++i) asize_ += (i + 1) * (i + 2) / 2;
+  asize_ = (amax_ + 1) * (amax_ + 1);
 
   const int asize_final = (ang0 + 1) * (ang0 + 2) * (ang1 + 1) * (ang1 + 2) / 4;
 
@@ -81,32 +83,37 @@ void MultipoleBatch_base::init() {
       for (int iy = 0; iy <= i - iz; ++iy) {
         const int ix = i - iy - iz;
         if (ix >= 0)
-          amapping_[ix + amax1_ * (iy + amax1_ * iz)] = cnt++;
+          ang_mapping_[ix + amax1 * (iy + amax1 * iz)] = cnt++;
       }
     }
   }
 
   allocate_data(asize_final_sph);
   num_multipoles_ = (ANG_VRR_END + 1) * (ANG_VRR_END + 1);
-
 }
 
 
 void MultipoleBatch_base::allocate_data(const int asize_final_sph) {
 
-  size_alloc_ = asize_final_sph * contsize_;
+  const unsigned int size_start = asize_ * primsize_;
+  const unsigned int size_intermediate = asize_final_sph * contsize_;
+  size_mem_alloc_ = max(size_start, size_intermediate) * num_multipoles_;
+
+  data_ = stack_->get<complex<double>>(size_mem_alloc_);
 }
 
 
 void MultipoleBatch_base::allocate_arrays(const size_t ps) {
 
-  size_allocated_ = ps * 3;
-  buff_ = stack_->get(size_allocated_);
+  size_array_alloc_ = ps * 5;
+  buff_ = stack_->get(size_array_alloc_);
   double* pointer = buff_;
   P_ = pointer;                  pointer += ps * 3;
+  xp_ = pointer;                 pointer += ps;
+  xb_ = pointer;                 pointer += ps;
 
-  multipole_buff = stack_->get<complex<double>>(ps * num_multipoles_);
-  complex<double> *cpointer = multipole_buff;
+  multipole_buff_ = stack_->get<complex<double>>(ps * num_multipoles_);
+  complex<double> *cpointer = multipole_buff_;
   multipole_ = cpointer;        cpointer += ps * num_multipoles_;
 }
 
@@ -128,6 +135,8 @@ void MultipoleBatch_base::compute_ss(const double thr) {
       P_[index * 3    ] = (basisinfo_[0]->position(0) * *e0 + basisinfo_[1]->position(0) * *e1) * cxp_inv;
       P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *e0 + basisinfo_[1]->position(1) * *e1) * cxp_inv;
       P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *e0 + basisinfo_[1]->position(2) * *e1) * cxp_inv;
+      xp_[index] = cxp;
+      xb_[index] = *e1;
       const double Sab = pow(pi__ * cxp_inv, 1.5) * exp(- ab * cxp_inv * (AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]));
 
       array<double, 3> PQ;
@@ -136,7 +145,7 @@ void MultipoleBatch_base::compute_ss(const double thr) {
       PQ[2] = P_[index * 3 + 2] - site_->position(2);
       auto Mpq = make_shared<const Multipole>(PQ);
       for (int i = 0; i != num_multipoles_; ++i)
-        multipole_[i] = Mpq->multipole(i) * Sab;
+        multipole_[index * primsize_ + i] = Mpq->multipole(i) * Sab;
     }
   }
 }

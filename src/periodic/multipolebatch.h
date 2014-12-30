@@ -40,6 +40,7 @@ class MultipoleBatch : public MultipoleBatch_base {
     ~MultipoleBatch() { }
 
     void compute() override;
+    void perform_contraction();
 
 };
 

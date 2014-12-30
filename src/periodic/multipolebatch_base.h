@@ -34,7 +34,7 @@
 
 namespace bagel {
 
-class MultipoleBatch_base : public Integral {
+class MultipoleBatch_base : public Integral_base<std::complex<double>> {
   protected:
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     std::shared_ptr<const Atom> site_;
@@ -42,23 +42,25 @@ class MultipoleBatch_base : public Integral {
 
     bool swap01_;
     double* P_;
+    double* xb_;
+    double* xp_;
     std::array<double, 3> AB_;
 
-    size_t size_block_, size_alloc_, size_allocated_;
+    size_t size_mem_alloc_, size_array_alloc_;
     int primsize_, prim0size_, prim1size_;
     int contsize_, cont0size_, cont1size_;
-    int asize_, size_final_, amax_, amax1_;
+    int asize_, size_final_, amax_;
     int num_multipoles_;
     std::complex<double>* multipole_;
 
     bool allocated_here_;
     std::shared_ptr<StackMem> stack_;
 
-    double* data_;
-    double* buff_, stack_save_;
-    std::complex<double>* multipole_buff;
+    std::complex<double>* data_;
+    double* buff_;
+    std::complex<double>* multipole_buff_;
 
-    int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
+    int ang_mapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
 
     void init();
     void allocate_arrays(const size_t ps);
@@ -74,8 +76,8 @@ class MultipoleBatch_base : public Integral {
 
     virtual void compute() = 0;
 
-    double* data(const int i) override { assert(i == 0); return data_; }
-    const double* data() const { return data_; }
+    std::complex<double>* data(const int i) override { assert(i == 0); return data_; }
+    const std::complex<double>* data() const { return data_; }
 
     bool swap01() const { return swap01_; }
 
