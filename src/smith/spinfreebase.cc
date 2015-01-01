@@ -344,7 +344,7 @@ double SpinFreeMethod::compute_e0() const {
 }
 
 
-void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Tensor> r, const bool put) {
+void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Tensor> r) {
 
   // ranks of t and r are assumed to be the same
 
@@ -368,11 +368,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
                 for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                   // note that e0 is cancelled by another term
                   data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
-          if (!put) {
-            t->add_block(data0, i0, i1, i2, i3);
-          } else {
-            t->put_block(data0, i0, i1, i2, i3);
-          }
+          t->add_block(data0, i0, i1, i2, i3);
         }
       }
     }
@@ -417,11 +413,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
           // sort back to the original order
           sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
-          if (!put) {
-            t->add_block(data1, i0, i1, i2, i3);
-          } else {
-            t->put_block(data1, i0, i1, i2, i3);
-          }
+          t->add_block(data1, i0, i1, i2, i3);
         }
       }
     }
@@ -462,11 +454,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
           dgemm_("T", "N", i0.size(), i1.size()*i2.size()*i3.size(), nact, 1.0, transp, nact, interm, nact,
                                                                            0.0, data2,  i0.size());
 
-          if (!put) {
-            t->add_block(data2, i0, i1, i2, i3);
-          } else {
-            t->put_block(data2, i0, i1, i2, i3);
-          }
+          t->add_block(data2, i0, i1, i2, i3);
         }
       }
     }
@@ -507,11 +495,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
           dgemm_("N", "N", i0.size()*i1.size()*i2.size(), i3.size(), nact, 1.0, interm, i0.size()*i1.size()*i2.size(), transp, nact,
                                                                            0.0, data2,  i0.size()*i1.size()*i2.size());
 
-          if (!put) {
-            t->add_block(data2, i0, i1, i2, i3);
-          } else {
-            t->put_block(data2, i0, i1, i2, i3);
-          }
+          t->add_block(data2, i0, i1, i2, i3);
         }
       }
     }
@@ -555,11 +539,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
           // sort back to the original order
           sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
-          if (!put) {
-            t->add_block(data1, i0, i1, i2, i3);
-          } else {
-            t->put_block(data1, i0, i1, i2, i3);
-          }
+          t->add_block(data1, i0, i1, i2, i3);
         }
       }
     }
@@ -609,13 +589,8 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
           // sort back to the original order
           copy_n(data2.get(), blocksize, data0.get());
           sort_indices<2,1,0,3,0,1,1,1>(data2.get()+blocksize, data1.get(), i0.size(), i1.size(), i2.size(), i3.size());
-          if (!put) {
-            t->add_block(data0, i0, i1, i2, i3);
-            t->add_block(data1, i2, i1, i0, i3);
-          } else {
-            t->put_block(data0, i0, i1, i2, i3);
-            t->put_block(data1, i2, i1, i0, i3);
-          }
+          t->add_block(data0, i0, i1, i2, i3);
+          t->add_block(data1, i2, i1, i0, i3);
         }
       }
     }
@@ -659,11 +634,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
           // sort back to the original order
           sort_indices<1,0,2,3,0,1,1,1>(data0, data1, i1.size(), i0.size(), i2.size(), i3.size());
-          if (!put) {
-            t->add_block(data1, i0, i1, i2, i3);
-          } else {
-            t->put_block(data1, i0, i1, i2, i3);
-          }
+          t->add_block(data1, i0, i1, i2, i3);
         }
       }
     }
@@ -707,13 +678,65 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
           // sort back to the original order
           sort_indices<1,2,0,3,0,1,1,1>(data0, data1, i2.size(), i0.size(), i1.size(), i3.size());
-          if (!put) {
-            t->add_block(data1, i0, i1, i2, i3);
-          } else {
-            t->put_block(data1, i0, i1, i2, i3);
-          }
+          t->add_block(data1, i0, i1, i2, i3);
         }
       }
     }
   }
 }
+
+
+shared_ptr<Tensor> SpinFreeMethod::init_amplitude() const {
+  shared_ptr<Tensor> out = v2_->clone();
+  auto put = [this, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+    const size_t size = v2_->get_size_alloc(i0, i1, i2, i3);
+    unique_ptr<double[]> buf(new double[size]);
+    fill_n(buf.get(), size, 0.0);
+    out->put_block(buf, i0, i1, i2, i3);
+  };
+  for (auto& i3 : virt_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          put(i0, i1, i2, i3);
+  for (auto& i2 : active_)
+    for (auto& i0 : active_)
+      for (auto& i3 : virt_)
+        for (auto& i1 : virt_)
+          put(i0, i1, i2, i3);
+  for (auto& i0 : active_)
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          put(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          put(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i2 : closed_)
+        for (auto& i0 : closed_)
+          put(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_) {
+          put(i0, i1, i2, i3);
+          put(i2, i1, i0, i3);
+        }
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i0 : active_)
+        for (auto& i1 : virt_)
+          put(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i0 : active_)
+        for (auto& i2 : closed_)
+          put(i0, i1, i2, i3);
+  return out;
+}
+
+
