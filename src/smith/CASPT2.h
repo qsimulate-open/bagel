@@ -67,7 +67,6 @@ class CASPT2 : public SpinFreeMethod {
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     double e0_;
-    std::shared_ptr<Tensor> sigma_;
     std::shared_ptr<Tensor> den1;
     std::shared_ptr<Tensor> den2;
     std::shared_ptr<Tensor> Den1;

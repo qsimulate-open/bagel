@@ -44,34 +44,107 @@
 namespace bagel {
 namespace SMITH {
 
+class StorageBlock {
+  protected:
+    std::unique_ptr<double[]> data_;
+    size_t size_;
+    bool initialized_;
+
+    double* data() { return data_.get(); }
+    const double* data() const { return data_.get(); }
+  public:
+    StorageBlock(const size_t size, const bool init) : size_(size), initialized_(init) {
+      if (init) {
+        data_ = std::unique_ptr<double[]>(new double[size_]);
+        zero();
+      }
+    }
+
+    void zero() {
+      if (initialized_)
+        std::fill_n(data(), size_, 0.0);
+    }
+
+    size_t size() const { return size_; }
+    size_t size_alloc() const { return initialized_ ? size_ : 0lu; }
+
+    StorageBlock& operator=(const StorageBlock& o) {
+      if (o.initialized_ && !initialized_) {
+        data_ = std::unique_ptr<double[]>(new double[size_]);
+        initialized_ = true;
+      }
+      if (o.initialized_)
+        std::copy_n(o.data(), size_, data());
+      return *this;
+    }
+
+    void put_block(std::unique_ptr<double[]>&& o) {
+      assert(!initialized_);
+      initialized_ = true;
+      data_ = std::move(o);
+    }
+
+    std::unique_ptr<double[]> get_block() const {
+      assert(initialized_);
+      std::unique_ptr<double[]> out(new double[size_]);
+      std::copy_n(data_.get(), size_, out.get());
+      return std::move(out);
+    }
+
+    std::unique_ptr<double[]> move_block() {
+      if (!initialized_) {
+        initialized_ = true;
+        data_ = std::unique_ptr<double[]>(new double[size_]);
+        zero();
+      }
+      initialized_ = false;
+      return std::move(data_);
+    }
+
+    void add_block(const std::unique_ptr<double[]>& o) {
+      assert(initialized_);
+      blas::ax_plus_y_n(1.0, o.get(), size_, data());
+    }
+
+    double dot_product(const StorageBlock& o) const {
+      assert(size_ == o.size_ && !(initialized_ ^ o.initialized_));
+      return initialized_ ? blas::dot_product(data(), size_, o.data()) : 0.0;
+    }
+
+    void ax_plus_y(const double a, const StorageBlock& o) {
+      assert(size_ == o.size_ && !(initialized_ ^ o.initialized_));
+      if (initialized_)
+        blas::ax_plus_y_n(a, o.data(), size_, data());
+    }
+
+    void scale(const double a) {
+      if (initialized_)
+        blas::scale_n(a, data(), size_);
+    }
+};
+
 class Storage_base {
   protected:
-    // length of this storage
-    size_t length_;
     // this relates hash keys, block number, and block lengths (in this order).
-    std::map<size_t, std::pair<size_t, size_t>> hashtable_;
-    std::vector<bool> initialized_;
-
+    std::map<size_t, std::shared_ptr<StorageBlock>> hashtable_;
 
   public:
     // size contains hashkey and length (in this order)
     Storage_base(const std::map<size_t, size_t>& size, bool init) {
-      length_ = 0lu;
-      size_t cnt = 0;
-      for (auto i = size.begin(); i != size.end(); ++i, ++cnt) {
-        auto j = hashtable_.emplace(i->first, std::make_pair(cnt, i->second));
-        if (!j.second) throw std::logic_error("duplicated hash keys in Storage::Storage");
-        length_ += i->second;
-      }
-      initialized_ = std::vector<bool>(cnt, init);
+      for (auto& i : size)
+        hashtable_.emplace(i.first, std::make_shared<StorageBlock>(i.second, init));
     }
 
     // functions that return protected members
-    size_t length() const { return length_; }
     size_t blocksize(const size_t hash) const {
       auto a = hashtable_.find(hash);
-      return a != hashtable_.end() ? a->second.second : 0;
+      return a != hashtable_.end() ? a->second->size() : 0lu;
     }
+    size_t blocksize_alloc(const size_t hash) const {
+      auto a = hashtable_.find(hash);
+      return a != hashtable_.end() ? a->second->size_alloc() : 0lu;
+    }
+
 
     // get, move, put, and add a block from the storage and returns unique_ptr<double[]>, which is local
     virtual std::unique_ptr<double[]> get_block(const size_t& key) const = 0;
@@ -82,16 +155,9 @@ class Storage_base {
     virtual void zero() = 0;
     virtual void scale(const double a) = 0;
 
-    virtual void initialize() = 0;
-
-    bool initialized(const int i) const { return initialized_[i]; }
-
 };
 
 class Storage_Incore : public Storage_base {
-  protected:
-    std::vector<std::unique_ptr<double[]>> data_;
-
   public:
     Storage_Incore(const std::map<size_t, size_t>& size, bool init);
 
@@ -108,9 +174,9 @@ class Storage_Incore : public Storage_base {
     void ax_plus_y(const double a, const std::shared_ptr<Storage_Incore> o) { ax_plus_y(a, *o); };
     double dot_product(const Storage_Incore& o) const;
 
-    void initialize();
 };
 
+#if 0
 class Storage_Disk : public Storage_base {
   protected:
     std::string filename_;
@@ -138,10 +204,11 @@ class Storage_Disk : public Storage_base {
     void ax_plus_y(const double a, const std::shared_ptr<Storage_Disk> o) { ax_plus_y(a, *o); };
     double dot_product(const Storage_Disk& o) const;
 
-    void initialize();
 };
+#endif
 
-#ifdef SMITH_INCORE
+//#ifdef SMITH_INCORE
+#if 1
 using Storage = Storage_Incore;
 #else
 using Storage = Storage_Disk;

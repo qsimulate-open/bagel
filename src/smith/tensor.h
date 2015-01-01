@@ -69,12 +69,9 @@ class Tensor {
     std::vector<IndexRange> range_;
     std::shared_ptr<Storage> data_;
     int rank_;
-    bool initialized_;
 
   public:
-    Tensor(std::vector<IndexRange> in, bool init = true);
-
-    void initialize() { data_->initialize(); }
+    Tensor(std::vector<IndexRange> in, bool init = false);
 
     Tensor& operator=(const Tensor& o) {
       *data_ = *(o.data_);
@@ -99,11 +96,10 @@ class Tensor {
     double dot_product(const Tensor& o) const { return data_->dot_product(*o.data_); }
     double dot_product(const std::shared_ptr<Tensor>& o) const { return data_->dot_product(*o->data_); }
 
-    size_t size() const { return data_->length(); }
-    size_t length() const { return data_->length(); }
+    size_t size_alloc() const;
 
-    double norm() { return std::sqrt(dot_product(*this)); }
-    double rms() { return std::sqrt(dot_product(*this)/size()); }
+    double norm() const { return std::sqrt(dot_product(*this)); }
+    double rms() const { return std::sqrt(dot_product(*this)/size_alloc()); }
 
     std::vector<IndexRange> indexrange() const { return range_; }
 
@@ -132,13 +128,16 @@ class Tensor {
       return data_->blocksize(generate_hash_key(p...));
     }
 
+    template<typename ...args>
+    size_t get_size_alloc(const args& ...p) const {
+      return data_->blocksize_alloc(generate_hash_key(p...));
+    }
+
     void zero() {
       data_->zero();
     }
 
     std::vector<double> diag() const;
-
-    std::shared_ptr<Tensor> add_dagger();
 
     std::shared_ptr<Matrix> matrix() const;
     std::shared_ptr<Matrix> matrix2() const;

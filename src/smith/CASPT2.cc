@@ -571,7 +571,6 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
   this->eig_ = f1_->diag();
   t2 = v2_->clone();
   e0_ = this->e0();
-  sigma_ = this->sigma();
   this->update_amplitude(t2, v2_, true);
   t2->scale(2.0);
   r = t2->clone();

@@ -93,10 +93,6 @@ class SpinFreeMethod {
     // For instance, E0 is 0 for MP2.
     double compute_e0() const;
 
-
-    // sigma is defined as Trace(f(x,x), rdm1derivative(x,x))
-    std::shared_ptr<Tensor> compute_sigma() const;
-
     std::shared_ptr<const Denom> denom_;
     std::shared_ptr<const Matrix> shalf_xhh() const { return denom_->shalf_xhh(); }
     std::shared_ptr<const Matrix> shalf_xxh() const { return denom_->shalf_xxh(); }
@@ -129,7 +125,6 @@ class SpinFreeMethod {
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     double e0() const { return e0_; }
-    std::shared_ptr<Tensor> sigma() const { return sigma_; }
 
     double energy() const { return energy_; }
 

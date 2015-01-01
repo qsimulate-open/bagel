@@ -304,8 +304,6 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 
   // set e0
   e0_ = compute_e0();
-  if (ref_->nact())
-    sigma_ = compute_sigma();
 }
 
 
@@ -345,25 +343,6 @@ double SpinFreeMethod::compute_e0() const {
   return sum;
 }
 
-shared_ptr<Tensor> SpinFreeMethod::compute_sigma() const {
-  if (ref_->nact() != 0 && !(static_cast<bool>(f1_) && static_cast<bool>(rdm1deriv_)))
-    throw logic_error("SpinFreeMethod::compute_sigma was called before f1_ or rdm1deriv_ was computed. Strange.");
-  shared_ptr<Tensor> out = rdm0deriv_->copy();
-  for (auto& i1 : active_) {
-    for (auto& i0 : active_) {
-      for (auto& ci0 : ci_) {
-        unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
-        unique_ptr<double[]> rdata = rdm1deriv_->get_block(ci0, i0, i1);
-        unique_ptr<double[]> data(new double[ci0.size()]);
-        dgemv_("N", ci0.size(), i0.size()*i1.size(), 1.0, rdata, ci0.size(), fdata, 1, 0.0, data, 1);
-        out->put_block(data, ci0);
-      }
-    }
-  }
-
-  return out;
-}
-
 
 void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Tensor> r, const bool put) {
 
@@ -375,7 +354,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
       for (auto& i1 : virt_) {
         for (auto& i0 : closed_) {
           // if this block is not included in the current wave function, skip it
-          if (!r->get_size(i0, i1, i2, i3)) continue;
+          if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
           unique_ptr<double[]>       data0 = r->get_block(i0, i1, i2, i3);
           const unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
 
@@ -412,7 +391,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
       for (auto& i3 : virt_) {
         for (auto& i1 : virt_) {
           // if this block is not included in the current wave function, skip it
-          if (!r->get_size(i0, i1, i2, i3)) continue;
+          if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
           // data0 is the source area
           unique_ptr<double[]> data0 = r->get_block(i0, i1, i2, i3);
           unique_ptr<double[]> data1(new double[r->get_size(i0, i1, i2, i3)]);
@@ -459,8 +438,8 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
     for (auto& i3 : virt_) {
       for (auto& i2 : closed_) {
         for (auto& i1 : virt_) {
-          if (!r->get_size(i2, i3, i0, i1)) continue;
-          assert(r->get_size(i2, i1, i0, i3));
+          if (!r->get_size_alloc(i2, i3, i0, i1)) continue;
+          assert(r->get_size_alloc(i2, i1, i0, i3));
           unique_ptr<double[]>       data0 = r->get_block(i2, i3, i0, i1);
           const unique_ptr<double[]> data1 = r->get_block(i2, i1, i0, i3);
           unique_ptr<double[]> data2(new double[r->get_size(i2, i3, i0, i1)]);
@@ -504,8 +483,8 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
     for (auto& i2 : closed_) {
       for (auto& i1 : virt_) {
         for (auto& i0 : closed_) {
-          if (!r->get_size(i2, i3, i0, i1)) continue;
-          assert(r->get_size(i0, i3, i2, i1));
+          if (!r->get_size_alloc(i2, i3, i0, i1)) continue;
+          assert(r->get_size_alloc(i0, i3, i2, i1));
           unique_ptr<double[]>       data0 = r->get_block(i2, i3, i0, i1);
           const unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
           unique_ptr<double[]> data2(new double[r->get_size(i2, i3, i0, i1)]);
@@ -550,7 +529,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
       for (auto& i2 : closed_) {
         for (auto& i0 : closed_) {
           // if this block is not included in the current wave function, skip it
-          if (!r->get_size(i0, i1, i2, i3)) continue;
+          if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
           // data0 is the source area
           unique_ptr<double[]> data0 = r->get_block(i0, i1, i2, i3);
           unique_ptr<double[]> data1(new double[r->get_size(i0, i1, i2, i3)]);
@@ -600,9 +579,9 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
       for (auto& i1 : virt_) {
         for (auto& i0 : closed_) {
           // if this block is not included in the current wave function, skip it
-          const size_t blocksize = r->get_size(i2, i3, i0, i1);
+          const size_t blocksize = r->get_size_alloc(i2, i3, i0, i1);
           if (!blocksize) continue;
-          assert(blocksize == r->get_size(i0, i3, i2, i1));
+          assert(blocksize == r->get_size_alloc(i0, i3, i2, i1));
           unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
           unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
 
@@ -655,7 +634,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
         for (auto& i1 : virt_) {
           // if this block is not included in the current wave function, skip it
-          const size_t blocksize = r->get_size(i2, i3, i0, i1);
+          const size_t blocksize = r->get_size_alloc(i2, i3, i0, i1);
           if (!blocksize) continue;
           // data0 is the source area
           unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
@@ -703,7 +682,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
         for (auto& i2 : closed_) {
           // if this block is not included in the current wave function, skip it
-          const size_t blocksize = r->get_size(i2, i3, i0, i1);
+          const size_t blocksize = r->get_size_alloc(i2, i3, i0, i1);
           if (!blocksize) continue;
           // data0 is the source area
           unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);

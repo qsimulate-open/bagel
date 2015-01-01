@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-Tensor::Tensor(vector<IndexRange> in, bool init) : range_(in), rank_(in.size()), initialized_(init) {
+Tensor::Tensor(vector<IndexRange> in, bool init) : range_(in), rank_(in.size()) {
   // make blocl list
   if (!in.empty()) {
     LoopGenerator lg(in);
@@ -58,6 +58,20 @@ Tensor::Tensor(vector<IndexRange> in, bool init) : range_(in), rank_(in.size()),
 }
 
 
+size_t Tensor::size_alloc() const {
+  size_t out = 0lu;
+  LoopGenerator lg(range_);
+  vector<vector<Index>> index = lg.block_loop();
+  for (auto& i : index) {
+    vector<size_t> h;
+    for (auto& j : i)
+      h.push_back(j.key());
+    out += data_->blocksize_alloc(generate_hash_key(h));
+  }
+  return out;
+}
+
+
 vector<double> Tensor::diag() const {
   if (rank_ != 2 || range_.at(0) != range_.at(1))
     throw logic_error("Tensor::diag can be called only with a square tensor of rank 2");
@@ -74,26 +88,6 @@ vector<double> Tensor::diag() const {
 }
 
 
-shared_ptr<Tensor> Tensor::add_dagger() {
-  shared_ptr<Tensor> out = clone();
-  vector<IndexRange> o = indexrange();
-  assert(o.size() == 4);
-  for (auto& i3 : o[3].range()) {
-    for (auto& i2 : o[2].range()) {
-      for (auto& i1 : o[1].range()) {
-        for (auto& i0 : o[0].range()) {
-          unique_ptr<double[]>       data0 = get_block(i0, i1, i2, i3);
-          const unique_ptr<double[]> data1 = get_block(i2, i3, i0, i1);
-          sort_indices<2,3,0,1,1,1,1,1>(data1, data0, i2.size(), i3.size(), i0.size(), i1.size());
-          out->put_block(data0, i0, i1, i2, i3);
-        }
-      }
-    }
-  }
-  return out;
-}
-
-
 shared_ptr<Matrix> Tensor::matrix() const {
   vector<IndexRange> o = indexrange();
   assert(o.size() == 2);
@@ -106,8 +100,10 @@ shared_ptr<Matrix> Tensor::matrix() const {
 
   for (auto& i1 : o[1].range()) {
     for (auto& i0 : o[0].range()) {
-      unique_ptr<double[]> target = get_block(i0, i1);
-      out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target.get());
+      if (get_size_alloc(i0, i1)) {
+        unique_ptr<double[]> target = get_block(i0, i1);
+        out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target.get());
+      }
     }
   }
   return out;
@@ -133,12 +129,14 @@ shared_ptr<Matrix> Tensor::matrix2() const {
     for (auto& i2 : o[2].range()) {
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
-          unique_ptr<double[]> target = get_block(i0, i1, i2, i3);
-          const double* ptr = target.get();
-          for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ptr += i0.size())
-                copy_n(ptr, i0.size(), out->element_ptr(i0.offset()-off0+dim0*(j1-off1), j2-off2+dim2*(j3-off3)));
+          if (get_size_alloc(i0, i1, i2, i3)) {
+            unique_ptr<double[]> target = get_block(i0, i1, i2, i3);
+            const double* ptr = target.get();
+            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ptr += i0.size())
+                  copy_n(ptr, i0.size(), out->element_ptr(i0.offset()-off0+dim0*(j1-off1), j2-off2+dim2*(j3-off3)));
+          }
         }
       }
     }
