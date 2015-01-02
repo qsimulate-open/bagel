@@ -111,18 +111,23 @@ tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const
 }
 
 
-shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
+shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin, const bool check_geom_change) const {
 
   if (geomin->magnetism())
     throw std::runtime_error("Projection from real to GIAO basis set is not implemented.   Use the GIAO code at zero-field.");
 
   bool moved = false;
   bool newbasis = false;
-  auto j = geomin->atoms().begin();
-  for (auto& i : geom_->atoms()) {
-    moved |= i->distance(*j) > 1.0e-12;
-    newbasis |= i->basis() != (*j)->basis();
-    ++j;
+
+  if (check_geom_change) {
+    auto j = geomin->atoms().begin();
+    for (auto& i : geom_->atoms()) {
+      moved |= i->distance(*j) > 1.0e-12;
+      newbasis |= i->basis() != (*j)->basis();
+      ++j;
+    }
+  } else {
+    newbasis = true;
   }
 
   if (moved && newbasis)

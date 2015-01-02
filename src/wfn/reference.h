@@ -160,7 +160,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Dvec> rdm4deriv(const int istate, std::shared_ptr<const Matrix> fock) const;
 
     // basis-set projection based on SVD
-    virtual std::shared_ptr<Reference> project_coeff(const std::shared_ptr<const Geometry>) const;
+    virtual std::shared_ptr<Reference> project_coeff(const std::shared_ptr<const Geometry>, const bool check_geom_change = true) const;
 
 };
 
