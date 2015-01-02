@@ -29,58 +29,37 @@
 
 #include <src/parallel/resources.h>
 #include <src/molecule/atom.h>
-#include <src/integral/integral.h>
+#include <src/integral/os/osintegral.h>
 #include <src/periodic/multipole.h>
 
 namespace bagel {
 
-class MultipoleBatch_base : public Integral_base<std::complex<double>> {
+class MultipoleBatch_base : public OSIntegral<std::complex<double>> {
   protected:
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     std::shared_ptr<const Atom> site_;
-    bool spherical_;
+    int lmax_;
 
-    bool swap01_;
-    double* P_;
-    double* xb_;
-    double* xp_;
-    std::array<double, 3> AB_;
+    int asize_, asize_final_, asize_final_sph_, amax_;
 
-    size_t size_mem_alloc_, size_array_alloc_;
-    int primsize_, prim0size_, prim1size_;
-    int contsize_, cont0size_, cont1size_;
-    int asize_, size_final_, amax_;
     int num_multipoles_;
     std::complex<double>* multipole_;
 
-    bool allocated_here_;
-    std::shared_ptr<StackMem> stack_;
-
-    std::complex<double>* data_;
-    double* buff_;
     std::complex<double>* multipole_buff_;
-
-    int ang_mapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
 
     void init();
     void allocate_arrays(const size_t ps);
     void compute_ss(const double thresh);
-    void allocate_data(const int asize_final_sph);
+    int nblocks() const override { return num_multipoles_; }
 
   public:
     MultipoleBatch_base(const std::array<std::shared_ptr<const Shell>,2>& shells, const std::shared_ptr<const Atom> atom,
-                        std::shared_ptr<StackMem> stack = nullptr);
+                        const int lmax = ANG_VRR_END, std::shared_ptr<StackMem> stack = nullptr);
     ~MultipoleBatch_base() { }
 
     std::shared_ptr<const Atom> site() const { return site_; }
 
     virtual void compute() = 0;
-
-    std::complex<double>* data(const int i) override { assert(i == 0); return data_; }
-    const std::complex<double>* data() const { return data_; }
-
-    bool swap01() const { return swap01_; }
-
 };
 
 }

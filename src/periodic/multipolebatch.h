@@ -36,12 +36,10 @@ class MultipoleBatch : public MultipoleBatch_base {
 
   public:
     MultipoleBatch(const std::array<std::shared_ptr<const Shell>,2>& shells, const std::shared_ptr<const Atom> atom,
-                   std::shared_ptr<StackMem> = nullptr);
+                   const int lmax = ANG_VRR_END, std::shared_ptr<StackMem> = nullptr);
     ~MultipoleBatch() { }
 
     void compute() override;
-    void perform_contraction();
-
 };
 
 }
