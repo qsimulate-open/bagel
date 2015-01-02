@@ -95,6 +95,13 @@ template<>
 void transpose(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
 
 template<typename T,
+         class = typename std::enable_if< std::is_same<double,T>::value >::type
+        >
+void transpose_add(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
+template<>
+void transpose_add(const double* a, const int b, const int c, double* d, const double fac);
+
+template<typename T,
          class = typename std::enable_if< std::is_same<std::complex<double>,T>::value >::type
         >
 void transpose_conjg(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
