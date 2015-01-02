@@ -38,7 +38,8 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelReference)
 using namespace std;
 using namespace bagel;
 
-shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geomin) const {
+shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geomin, const bool check_geom_change) const {
+  assert(check_geom_change);
 
   shared_ptr<Reference> out;
   const bool giao = (geomin->magnetism() || geom_->magnetism());
