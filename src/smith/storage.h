@@ -67,6 +67,13 @@ class Storage_base {
       return a != hashtable_.end() ? a->second->size_alloc() : 0lu;
     }
 
+    size_t size() const {
+      return std::accumulate(hashtable_.begin(), hashtable_.end(), 0lu, [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size(); });
+    }
+
+    size_t size_alloc() const {
+      return std::accumulate(hashtable_.begin(), hashtable_.end(), 0lu, [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size_alloc(); });
+    }
 
     // get, move, put, and add a block from the storage and returns unique_ptr<double[]>, which is local
     virtual std::unique_ptr<double[]> get_block(const size_t& key) const = 0;
