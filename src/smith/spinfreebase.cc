@@ -105,7 +105,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     shared_ptr<const Dvec> rdm1d = r->rdm1deriv(ref_->target());
 
     vector<IndexRange> o = {ci_, active_, active_};
-    rdm1deriv_ = make_shared<Tensor>(o, false);
+    rdm1deriv_ = make_shared<Tensor>(o);
     for (auto& i0 : active_) {
       for (auto& i1 : active_) {
         for (auto& ci0 : ci_) {
@@ -127,7 +127,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     shared_ptr<const Dvec> rdm2d = r->rdm2deriv(ref_->target());
 
     vector<IndexRange> o = {ci_, active_, active_, active_, active_};
-    rdm2deriv_ = make_shared<Tensor>(o, false);
+    rdm2deriv_ = make_shared<Tensor>(o);
     const int nclo = ref_->nclosed();
     for (auto& i0 : active_) {
       for (auto& i1 : active_) {
@@ -158,8 +158,8 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     assert(rdm3d->ij() == rdm4d->ij());
 
     vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_};
-    rdm3deriv_ = make_shared<Tensor>(o, false);
-    rdm4deriv_ = make_shared<Tensor>(o, false);
+    rdm3deriv_ = make_shared<Tensor>(o);
+    rdm4deriv_ = make_shared<Tensor>(o);
     const int nclo = ref_->nclosed();
     for (auto& i0 : active_) {
       for (auto& i1 : active_) {
@@ -198,7 +198,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   // rdms.
   if (ref_->ciwfn()) {
     vector<IndexRange> o = {active_, active_};
-    rdm1_ = make_shared<Tensor>(o, false);
+    rdm1_ = make_shared<Tensor>(o);
     const int nclo = ref_->nclosed();
     for (auto& i1 : active_) {
       for (auto& i0 : active_) {
@@ -214,7 +214,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   }
   if (ref_->ciwfn()) {
     vector<IndexRange> o = {active_, active_, active_, active_};
-    rdm2_ = make_shared<Tensor>(o, false);
+    rdm2_ = make_shared<Tensor>(o);
     const int nclo = ref_->nclosed();
     for (auto& i3 : active_) {
       for (auto& i2 : active_) {
@@ -238,9 +238,9 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   if (ref_->ciwfn()) {
     {
       vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
-      rdm3_ = make_shared<Tensor>(o, false);
+      rdm3_ = make_shared<Tensor>(o);
       vector<IndexRange> p = {active_, active_, active_, active_, active_, active_, active_, active_};
-      rdm4_ = make_shared<Tensor>(p, false);
+      rdm4_ = make_shared<Tensor>(p);
     }
 
     shared_ptr<RDM<3>> rdm3;

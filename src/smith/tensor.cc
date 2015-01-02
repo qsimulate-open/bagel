@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-Tensor::Tensor(vector<IndexRange> in, bool init) : range_(in), rank_(in.size()) {
+Tensor::Tensor(vector<IndexRange> in) : range_(in), rank_(in.size()) {
   // make blocl list
   if (!in.empty()) {
     LoopGenerator lg(in);
@@ -49,11 +49,11 @@ Tensor::Tensor(vector<IndexRange> in, bool init) : range_(in), rank_(in.size()) 
       off += size;
     }
 
-    data_ = make_shared<Storage>(hashmap, init);
+    data_ = make_shared<Storage>(hashmap, false);
   } else {
     rank_ = 0;
     map<size_t, size_t> hashmap {{0lu, 1lu}};
-    data_ = make_shared<Storage>(hashmap, init);
+    data_ = make_shared<Storage>(hashmap, false);
   }
 }
 

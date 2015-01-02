@@ -71,7 +71,7 @@ class Tensor {
     int rank_;
 
   public:
-    Tensor(std::vector<IndexRange> in, bool init = false);
+    Tensor(std::vector<IndexRange> in);
 
     Tensor& operator=(const Tensor& o) {
       *data_ = *(o.data_);

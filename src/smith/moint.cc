@@ -34,7 +34,7 @@ K2ext::K2ext(shared_ptr<const SMITH_Info> r, shared_ptr<const Coeff> c, vector<I
   // so far MOInt can be called for 2-external K integral and all-internals.
   if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
     throw logic_error("MOInt called with wrong blocks");
-  data_ = make_shared<Tensor>(blocks_, false);
+  data_ = make_shared<Tensor>(blocks_);
   form_4index(generate_list());
 }
 
@@ -115,8 +115,8 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
   const int nvirt   = ref_->nvirt();
   const int nbasis  = coeff_->ndim();
 
-  data_  = make_shared<Tensor>(blocks_, false);
-  h1_    = make_shared<Tensor>(blocks_, false);
+  data_  = make_shared<Tensor>(blocks_);
+  h1_    = make_shared<Tensor>(blocks_);
 
   // cfock
   shared_ptr<Matrix> cfock = ref_->hcore()->copy();
@@ -182,7 +182,7 @@ Ci::Ci(shared_ptr<const SMITH_Info> r, vector<IndexRange> b, shared_ptr<const Ci
   assert(b.size() == 1);
 
   // form ci coefficient tensor
-  rdm0deriv_  = make_shared<Tensor>(blocks_, false);
+  rdm0deriv_  = make_shared<Tensor>(blocks_);
 
   for (auto& i0 : blocks_[0]) {
     const size_t size = i0.size();
