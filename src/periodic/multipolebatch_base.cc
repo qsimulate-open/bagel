@@ -29,9 +29,9 @@
 using namespace std;
 using namespace bagel;
 
-MultipoleBatch_base::MultipoleBatch_base(const array<shared_ptr<const Shell>,2>& sh, const shared_ptr<const Atom> a,
+MultipoleBatch_base::MultipoleBatch_base(const array<shared_ptr<const Shell>,2>& sh, const array<double, 3> c,
                                          const int lmax, shared_ptr<StackMem> stack)
- : OSIntegral(sh, stack), site_(a), lmax_(lmax) {
+ : OSIntegral(sh, stack), centre_(c), lmax_(lmax) {
 
   init();
   common_init();
@@ -73,9 +73,9 @@ void MultipoleBatch_base::compute_ss(const double thr) {
       P[2] = (basisinfo_[0]->position(2) * *e0 + basisinfo_[1]->position(2) * *e1) * cxp_inv;
       const double Sab = pow(pi__ * cxp_inv, 1.5) * exp(- ab * cxp_inv * (AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]));
 
-      PQ[0] = P[0] - site_->position(0);
-      PQ[1] = P[1] - site_->position(1);
-      PQ[2] = P[2] - site_->position(2);
+      PQ[0] = P[0] - centre_[0];
+      PQ[1] = P[1] - centre_[1];
+      PQ[2] = P[2] - centre_[2];
       auto Mpq = make_shared<const Multipole>(PQ);
       for (int i = 0; i != num_multipoles_; ++i)
         multipole_[index * prim0_ * prim1_ + i] = Mpq->multipole(i) * Sab;

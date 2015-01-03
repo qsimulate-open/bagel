@@ -36,9 +36,9 @@ using namespace bagel;
 const static CHRRList hrr;
 const static CCarSphList carsphlist;
 
-MultipoleBatch::MultipoleBatch(const array<shared_ptr<const Shell>,2>& sh, const shared_ptr<const Atom> atom,
+MultipoleBatch::MultipoleBatch(const array<shared_ptr<const Shell>,2>& sh, const array<double, 3> centre,
                                const int lmax, shared_ptr<StackMem> stack)
- : MultipoleBatch_base(sh, atom, lmax, stack) {
+ : MultipoleBatch_base(sh, centre, lmax, stack) {
 
  const double integral_thresh = PRIM_SCREEN_THRESH;
  allocate_arrays(prim0_ * prim1_);

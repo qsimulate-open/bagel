@@ -56,6 +56,7 @@ class Multipole {
 
     std::vector<std::complex<double>> multipoles() { return multipole_; }
     std::complex<double> multipole(const int i) const { return multipole_[i]; }
+    std::complex<double> multipole(const int l, const int m) const { return multipole_[l * l + l + m]; }
     std::vector<std::complex<double>> multipoles(const int l) {
       std::vector<std::complex<double>> out(2 * l + 1);
       const int i0 = (l + 1) * (l + 1);

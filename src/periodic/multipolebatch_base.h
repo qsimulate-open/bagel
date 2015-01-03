@@ -37,7 +37,7 @@ namespace bagel {
 class MultipoleBatch_base : public OSIntegral<std::complex<double>> {
   protected:
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
-    std::shared_ptr<const Atom> site_;
+    std::array<double, 3> centre_;
     int lmax_;
 
     int asize_, asize_final_, asize_final_sph_, amax_;
@@ -53,11 +53,11 @@ class MultipoleBatch_base : public OSIntegral<std::complex<double>> {
     int nblocks() const override { return num_multipoles_; }
 
   public:
-    MultipoleBatch_base(const std::array<std::shared_ptr<const Shell>,2>& shells, const std::shared_ptr<const Atom> atom,
+    MultipoleBatch_base(const std::array<std::shared_ptr<const Shell>,2>& shells, const std::array<double, 3> centre,
                         const int lmax = ANG_VRR_END, std::shared_ptr<StackMem> stack = nullptr);
     ~MultipoleBatch_base() { }
 
-    std::shared_ptr<const Atom> site() const { return site_; }
+    std::array<double, 3> centre() const { return centre_; }
 
     virtual void compute() = 0;
 };
