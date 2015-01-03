@@ -70,7 +70,6 @@ class SpinFreeMethod {
     std::shared_ptr<const Determinants> det_;
 
     // rdm ci derivatives
-    std::shared_ptr<Tensor> rdm0deriv_;
     std::shared_ptr<Tensor> rdm1deriv_;
     std::shared_ptr<Tensor> rdm2deriv_;
     std::shared_ptr<Tensor> rdm3deriv_;
@@ -131,9 +130,6 @@ class SpinFreeMethod {
 
     virtual void solve() = 0;
 
-    std::shared_ptr<const Civec> rdm0deriv() const {
-      return rdm0deriv_->civec(det_);
-    }
 };
 
 }

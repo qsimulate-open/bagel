@@ -92,14 +92,6 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 
   timer.tick_print("MO integral evaluation");
 
-  // make a ci tensor.
-  if (ref_->ciwfn()) {
-    vector<IndexRange> o = {ci_};
-    // TODO fix later when referece has civec
-    Ci dci(ref_, o, civec_);
-    rdm0deriv_ = dci.tensor();
-  }
-
   // rdm ci derivatives.
   if (ref_->ciwfn()) {
     shared_ptr<const Dvec> rdm1d = r->rdm1deriv(ref_->target());
