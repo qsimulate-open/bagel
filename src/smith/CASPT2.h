@@ -73,11 +73,17 @@ class CASPT2 : public SpinFreeMethod {
     double correlated_norm_;
     std::shared_ptr<Tensor> deci;
 
-    std::tuple<std::shared_ptr<Queue>, std::shared_ptr<Queue>, std::shared_ptr<Queue>,  std::shared_ptr<Queue>,  std::shared_ptr<Queue>, std::shared_ptr<Queue>, std::shared_ptr<Queue>> make_queue_();
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma4_();
     std::shared_ptr<FutureTensor> Gamma6_();
+    std::shared_ptr<Queue> make_residualq();
+    std::shared_ptr<Queue> make_energyq();
+    std::shared_ptr<Queue> make_corrq();
+    std::shared_ptr<Queue> make_densityq();
+    std::shared_ptr<Queue> make_density1q();
+    std::shared_ptr<Queue> make_density2q();
+    std::shared_ptr<Queue> make_deciq();
 
   public:
     CASPT2(std::shared_ptr<const SMITH_Info> ref);
