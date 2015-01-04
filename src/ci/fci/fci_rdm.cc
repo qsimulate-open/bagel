@@ -371,8 +371,10 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
       sort_indices<1,0,3,2,4,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_*norb_*norb_*norb_);
       for (int l = 0; l != norb_; ++l)
         for (int k = 0; k != norb_; ++k)
-          for (int j = 0; j != norb_; ++j) {
+          for (int j = 0; j != norb_; ++j)
             for (int b = 0; b != norb_; ++b) {
+              blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,k,b,l), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,j,k,b,l));
+              blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,l,b,k), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,b,k,j,l));
               for (int i = 0; i != norb_; ++i) {
                 blas::ax_plus_y_n(-1.0, rdm2_[ist]->element_ptr(0,k,b,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,j,l));
                 blas::ax_plus_y_n(-1.0, rdm2_[ist]->element_ptr(0,l,b,k), norb_, rdm4->element_ptr(0,i,b,j,j,k,i,l));
@@ -382,11 +384,6 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
                 }
               }
             }
-            for (int d = 0; d != norb_; ++d) {
-              blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,k,d,l), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,j,k,d,l));
-              blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,l,d,k), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,d,k,j,l));
-            }
-          }
     }
   }
 
