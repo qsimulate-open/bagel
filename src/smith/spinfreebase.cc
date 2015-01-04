@@ -144,9 +144,9 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   }
 
   if (ref_->ciwfn()) {
-    shared_ptr<const Dvec> rdm3d = r->rdm3deriv(ref_->target());
+    shared_ptr<const Dvec> rdm3d, rdm4d;
     // RDM4 is contracted a priori by the Fock operator
-    shared_ptr<const Dvec> rdm4d = r->rdm4deriv(ref_->target(), fockact);
+    tie(rdm3d, rdm4d) = r->rdm34deriv(ref_->target(), fockact);
     assert(rdm3d->ij() == rdm4d->ij());
 
     vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_};
