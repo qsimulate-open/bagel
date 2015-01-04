@@ -160,7 +160,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
             for (auto& i4 : active_) {
               for (auto& i5 : active_) {
                 for (auto& ci0 : ci_) {
-                  const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * ci0.size();
+                  const size_t size = rdm3deriv_->get_size(ci0, i5, i4, i3, i2, i1, i0);
                   unique_ptr<double[]> data(new double[size]);
                   unique_ptr<double[]> data2(new double[size]);
                   int iall = 0;
@@ -169,12 +169,13 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
                       for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
                         for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
                           for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4) // this is creation
-                            for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) // this is annhilation
-                              for (int j6 = ci0.offset(); j6 != ci0.offset()+ci0.size(); ++j6, ++iall) {
-                                data[iall]  = rdm3d->data((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))->data(j6);
-                                data2[iall] = rdm4d->data((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))->data(j6);
-                              }
-                  rdm3deriv_->put_block(data, ci0, i5, i4, i3, i2, i1, i0);
+                            for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) { // this is annhilation
+                              const size_t loc = (j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo))))));
+                              copy_n(rdm3d->data(loc)->data()+ci0.offset(), ci0.size(), data.get() + iall);
+                              copy_n(rdm4d->data(loc)->data()+ci0.offset(), ci0.size(), data2.get()+ iall);
+                              iall += ci0.size();
+                            }
+                  rdm3deriv_->put_block(data,  ci0, i5, i4, i3, i2, i1, i0);
                   rdm4deriv_->put_block(data2, ci0, i5, i4, i3, i2, i1, i0);
                 }
               }
