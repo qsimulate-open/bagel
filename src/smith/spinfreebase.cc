@@ -108,7 +108,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
               for (int j2 = ci0.offset(); j2 != ci0.offset()+ci0.size(); ++j2, ++iall)
                 // Dvec - first index is annihilation, second is creation (see const_phis_ in fci/determinants.h and knowles_compute.cc)
-                data[iall] = rdm1d->data((j1-nclo)+r->nact()*(j0-nclo))->data(j2);
+                data[iall] = rdm1d->data((j1-nclo)+nact*(j0-nclo))->data(j2);
           rdm1deriv_->put_block(data, ci0, i1, i0);
         }
       }
@@ -134,7 +134,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
                     for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
                       for (int j4 = ci0.offset(); j4 != ci0.offset()+ci0.size(); ++j4, ++iall)
-                        data[iall] = rdm2d->data((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*(j0-nclo))))->data(j4);
+                        data[iall] = rdm2d->data((j3-nclo)+nact*((j2-nclo)+nact*((j1-nclo)+nact*(j0-nclo))))->data(j4);
               rdm2deriv_->put_block(data, ci0, i3, i2, i1, i0);
             }
           }
@@ -170,7 +170,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
                         for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
                           for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4) // this is creation
                             for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) { // this is annhilation
-                              const size_t loc = (j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo))))));
+                              const size_t loc = (j5-nclo)+nact*((j4-nclo)+nact*((j3-nclo)+nact*((j2-nclo)+nact*((j1-nclo)+nact*((j0-nclo))))));
                               copy_n(rdm3d->data(loc)->data()+ci0.offset(), ci0.size(), data.get() + iall);
                               copy_n(rdm4d->data(loc)->data()+ci0.offset(), ci0.size(), data2.get()+ iall);
                               iall += ci0.size();
