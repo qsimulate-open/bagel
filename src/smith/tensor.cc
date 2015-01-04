@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-Tensor::Tensor(vector<IndexRange> in) : range_(in), rank_(in.size()) {
+Tensor::Tensor(vector<IndexRange> in) : range_(in), rank_(in.size()), initialized_(false) {
   // make blocl list
   if (!in.empty()) {
     LoopGenerator lg(in);
@@ -78,11 +78,10 @@ vector<double> Tensor::diag() const {
   const size_t size = range_.at(0).back().offset() + range_.at(0).back().size();
   vector<double> buf(size);
   for (auto& i : range_.at(0)) {
-    unique_ptr<double[]> data0 = move_block(i, i);
+    unique_ptr<double[]> data0 = get_block(i, i);
     for (int j = 0; j != i.size(); ++j) {
       buf[j+i.offset()] = data0[j+j*i.size()];
     }
-    put_block(data0, i, i);
   }
   return buf;
 }

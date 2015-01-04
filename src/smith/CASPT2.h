@@ -31,6 +31,7 @@
 #include <tuple>
 #include <iomanip>
 #include <src/smith/spinfreebase.h>
+#include <src/smith/futuretensor.h>
 #include <src/scf/hf/fock.h>
 #include <src/util/f77.h>
 #include <src/smith/queue.h>
@@ -58,7 +59,6 @@ class CASPT2 : public SpinFreeMethod {
     using SpinFreeMethod::rdm2_;
     using SpinFreeMethod::rdm3_;
     using SpinFreeMethod::rdm4_;
-    using SpinFreeMethod::rdm0deriv_;
     using SpinFreeMethod::rdm1deriv_;
     using SpinFreeMethod::rdm2deriv_;
     using SpinFreeMethod::rdm3deriv_;
@@ -74,6 +74,10 @@ class CASPT2 : public SpinFreeMethod {
     std::shared_ptr<Tensor> deci;
 
     std::tuple<std::shared_ptr<Queue>, std::shared_ptr<Queue>, std::shared_ptr<Queue>,  std::shared_ptr<Queue>,  std::shared_ptr<Queue>, std::shared_ptr<Queue>, std::shared_ptr<Queue>> make_queue_();
+
+    std::shared_ptr<FutureTensor> Gamma0_();
+    std::shared_ptr<FutureTensor> Gamma4_();
+    std::shared_ptr<FutureTensor> Gamma6_();
 
   public:
     CASPT2(std::shared_ptr<const SMITH_Info> ref);

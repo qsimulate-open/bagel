@@ -70,6 +70,9 @@ class Tensor {
     std::shared_ptr<Storage> data_;
     int rank_;
 
+    virtual void init() const { }
+    mutable bool initialized_;
+
   public:
     Tensor(std::vector<IndexRange> in);
 
@@ -105,21 +108,22 @@ class Tensor {
 
     template<typename ...args>
     std::unique_ptr<double[]> get_block(const args& ...p) const {
+      if (!initialized_) init();
       return data_->get_block(generate_hash_key(p...));
     }
 
     template<typename ...args>
-    std::unique_ptr<double[]> move_block(const args& ...p) const {
+    std::unique_ptr<double[]> move_block(const args& ...p) {
       return data_->move_block(generate_hash_key(p...));
     }
 
     template<typename ...args>
-    void put_block(std::unique_ptr<double[]>& o, const args& ...p) const {
+    void put_block(std::unique_ptr<double[]>& o, const args& ...p) {
       data_->put_block(generate_hash_key(p...), o);
     }
 
     template<typename ...args>
-    void add_block(std::unique_ptr<double[]>& o, const args& ...p) const {
+    void add_block(std::unique_ptr<double[]>& o, const args& ...p) {
       data_->add_block(generate_hash_key(p...), o);
     }
 
