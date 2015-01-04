@@ -73,6 +73,12 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     template<typename ...args>
     const DataType& element(const args&... index) const { return (*this)(index...); }
 
+    template<typename ...args>
+    DataType* element_ptr(const args&... index) { return &(*this)(index...); }
+
+    template<typename ...args>
+    const DataType* element_ptr(const args&... index) const { return &(*this)(index...); }
+
     RDM<rank,DataType>& operator+=(const RDM<rank,DataType>& o) { this->ax_plus_y(1.0, o); return *this; }
     RDM<rank,DataType>& operator-=(const RDM<rank,DataType>& o) { this->ax_plus_y(-1.0, o); return *this; }
     RDM<rank,DataType> operator+(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out += o; return out; }
