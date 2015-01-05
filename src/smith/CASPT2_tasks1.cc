@@ -2913,7 +2913,7 @@ void Task31::Task_local::compute() {
   const Index x1 = b(3);
   const Index x5 = b(4);
   const Index x0 = b(5);
-  // tensor label: Gamma268
+  // tensor label: Gamma162
   std::unique_ptr<double[]> odata = out()->move_block(x0, x5, x1, x4, x3, x2);
   {
     if (x1 == x5 && x0 == x4) {
@@ -2947,7 +2947,7 @@ void Task31::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x1 == x4 && x0 == x2 && x3 == x5) {
+    if (x3 == x5 && x1 == x4 && x0 == x2) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i5 = 0; i5 != x5.size(); ++i5) {
@@ -2974,7 +2974,7 @@ void Task31::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x3 == x4 && x0 == x2 && x1 == x5) {
+    if (x3 == x4 && x1 == x5 && x0 == x2) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i5 = 0; i5 != x5.size(); ++i5) {
@@ -2985,7 +2985,7 @@ void Task31::Task_local::compute() {
     }
   }
   {
-    if (x0 == x2 && x1 == x5) {
+    if (x1 == x5 && x0 == x2) {
       std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x4);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -3048,7 +3048,7 @@ void Task31::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x3 == x5 && x1 == x2 && x0 == x4) {
+    if (x3 == x5 && x0 == x4 && x1 == x2) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i5 = 0; i5 != x5.size(); ++i5) {
@@ -3059,7 +3059,7 @@ void Task31::Task_local::compute() {
     }
   }
   {
-    if (x1 == x2 && x0 == x4) {
+    if (x0 == x4 && x1 == x2) {
       std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x5);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -3323,7 +3323,7 @@ void Task32::Task_local::compute() {
   const Index x1 = b(3);
   const Index x0 = b(4);
   const Index x5 = b(5);
-  // tensor label: Gamma299
+  // tensor label: Gamma193
   std::unique_ptr<double[]> odata = out()->move_block(x5, x0, x1, x4, x3, x2);
   {
     if (x1 == x4) {
@@ -3405,7 +3405,7 @@ void Task33::Task_local::compute() {
   const Index x3 = b(3);
   const Index x4 = b(4);
   const Index x5 = b(5);
-  // tensor label: Gamma302
+  // tensor label: Gamma196
   std::unique_ptr<double[]> odata = out()->move_block(x5, x4, x3, x2, x1, x0);
   {
     if (x1 == x4) {
@@ -3487,7 +3487,7 @@ void Task34::Task_local::compute() {
   const Index x4 = b(3);
   const Index x0 = b(4);
   const Index x5 = b(5);
-  // tensor label: Gamma360
+  // tensor label: Gamma254
   std::unique_ptr<double[]> odata = out()->move_block(x5, x0, x4, x1, x3, x2);
   {
     std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x0, x4, x1, x3, x2);
@@ -3505,7 +3505,7 @@ void Task35::Task_local::compute() {
   const Index x2 = b(5);
   const Index x6 = b(6);
   const Index x7 = b(7);
-  // tensor label: Gamma273
+  // tensor label: Gamma167
   std::unique_ptr<double[]> odata = out()->move_block(x7, x6, x2, x5, x4, x3, x1, x0);
   {
     if (x2 == x6 && x1 == x5) {
@@ -4025,7 +4025,7 @@ void Task36::Task_local::compute() {
   const Index x6 = b(5);
   const Index x0 = b(6);
   const Index x7 = b(7);
-  // tensor label: Gamma326
+  // tensor label: Gamma220
   std::unique_ptr<double[]> odata = out()->move_block(x7, x0, x6, x5, x4, x3, x2, x1);
   {
     if (x2 == x5) {
@@ -4121,7 +4121,7 @@ void Task37::Task_local::compute() {
   const Index x2 = b(1);
   const Index x3 = b(2);
   const Index x0 = b(3);
-  // tensor label: Gamma282
+  // tensor label: Gamma176
   std::unique_ptr<double[]> odata = out()->move_block(x0, x3, x2, x1);
   {
     if (x0 == x3) {
@@ -4187,16 +4187,16 @@ void Task38::Task_local::compute() {
   const Index x4 = b(4);
   const Index x3 = b(5);
   const Index x2 = b(6);
-  // tensor label: Gamma378
+  // tensor label: Gamma272
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x5, x1, x4);
   // associated with merged
   std::unique_ptr<double[]> fdata = in(4)->get_block(x3, x2);
-  if (x0 == x4 && x1 == x5) {
+  if (x1 == x5 && x0 == x4) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(ci0, x3, x2);
     for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
       for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-        for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-          for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
+        for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
+          for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
             for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
               odata[ici0+ci0.size()*(ix4+x0.size()*(ix5+x5.size()*(ix5+x1.size()*(ix4))))]
                 += (-2.0) * i0data[ici0+ci0.size()*(ix3+x3.size()*(ix2))] * fdata[ix3+x3.size()*(ix2)];
@@ -4234,12 +4234,12 @@ void Task38::Task_local::compute() {
       }
     }
   }
-  if (x0 == x2 && x1 == x4) {
+  if (x1 == x4 && x0 == x2) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(ci0, x3, x5);
     for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
       for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-        for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
-          for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+        for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+          for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
             for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
               odata[ici0+ci0.size()*(ix2+x0.size()*(ix5+x5.size()*(ix4+x1.size()*(ix4))))]
                 += (-2.0) * i0data[ici0+ci0.size()*(ix3+x3.size()*(ix5))] * fdata[ix3+x3.size()*(ix2)];
@@ -4250,11 +4250,11 @@ void Task38::Task_local::compute() {
     }
   }
   // rdm0 merged ci derivative case
-  if (x3 == x4 && x1 == x5 && x0 == x2) {
+  if (x3 == x4 && x0 == x2 && x1 == x5) {
     std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
     for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-      for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-        for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+      for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+        for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
           for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
             odata[ici0+ci0.size()*(ix2+x0.size()*(ix5+x5.size()*(ix5+x1.size()*(ix4))))]  += -2.0 * fdata[ix4+x3.size()*(ix2)] * i0data[ici0];
           }
@@ -4262,12 +4262,12 @@ void Task38::Task_local::compute() {
       }
     }
   }
-  if (x1 == x5 && x0 == x2) {
+  if (x0 == x2 && x1 == x5) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(ci0, x3, x4);
     for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
       for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-        for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-          for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+        for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+          for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
             for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
               odata[ici0+ci0.size()*(ix2+x0.size()*(ix5+x5.size()*(ix5+x1.size()*(ix4))))]
                 += (1.0) * i0data[ici0+ci0.size()*(ix3+x3.size()*(ix4))] * fdata[ix3+x3.size()*(ix2)];
@@ -4385,11 +4385,11 @@ void Task38::Task_local::compute() {
     }
   }
   // rdm0 merged ci derivative case
-  if (x3 == x4 && x1 == x2 && x0 == x5) {
+  if (x3 == x4 && x0 == x5 && x1 == x2) {
     std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
     for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-      for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
-        for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
+      for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
+        for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
           for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
             odata[ici0+ci0.size()*(ix5+x0.size()*(ix5+x5.size()*(ix2+x1.size()*(ix4))))]  += 4.0 * fdata[ix4+x3.size()*(ix2)] * i0data[ici0];
           }
@@ -4397,12 +4397,12 @@ void Task38::Task_local::compute() {
       }
     }
   }
-  if (x1 == x2 && x0 == x5) {
+  if (x0 == x5 && x1 == x2) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(ci0, x3, x4);
     for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
       for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-        for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
-          for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
+        for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
+          for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
             for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
               odata[ici0+ci0.size()*(ix5+x0.size()*(ix5+x5.size()*(ix2+x1.size()*(ix4))))]
                 += (-2.0) * i0data[ici0+ci0.size()*(ix3+x3.size()*(ix4))] * fdata[ix3+x3.size()*(ix2)];
@@ -4617,7 +4617,7 @@ void Task39::Task_local::compute() {
   const Index x3 = b(2);
   const Index x1 = b(3);
   const Index x2 = b(4);
-  // tensor label: Gamma379
+  // tensor label: Gamma273
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x3, x1, x2);
   {
     // rdm0 non-merged ci derivative case
@@ -4720,7 +4720,7 @@ void Task40::Task_local::compute() {
   const Index x3 = b(4);
   const Index x1 = b(5);
   const Index x2 = b(6);
-  // tensor label: Gamma380
+  // tensor label: Gamma274
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x4, x0, x3, x1, x2);
   {
     if (x1 == x3 && x0 == x2) {
@@ -4951,7 +4951,7 @@ void Task41::Task_local::compute() {
   const Index x3 = b(2);
   const Index x0 = b(3);
   const Index x2 = b(4);
-  // tensor label: Gamma381
+  // tensor label: Gamma275
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x3, x0, x2);
   {
     // rdm0 non-merged ci derivative case
@@ -5054,7 +5054,7 @@ void Task42::Task_local::compute() {
   const Index x4 = b(4);
   const Index x1 = b(5);
   const Index x0 = b(6);
-  // tensor label: Gamma382
+  // tensor label: Gamma276
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x2, x5, x3, x4, x1, x0);
   {
     if (x2 == x5 && x1 == x4) {
@@ -5289,7 +5289,7 @@ void Task43::Task_local::compute() {
   const Index x0 = b(6);
   const Index x4 = b(7);
   const Index x3 = b(8);
-  // tensor label: Gamma383
+  // tensor label: Gamma277
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x7, x6, x2, x5, x1, x0);
   // associated with merged
   std::unique_ptr<double[]> fdata = in(4)->get_block(x4, x3);
@@ -5825,7 +5825,7 @@ void Task44::Task_local::compute() {
   const Index x3 = b(4);
   const Index x1 = b(5);
   const Index x0 = b(6);
-  // tensor label: Gamma384
+  // tensor label: Gamma278
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x4, x2, x3, x1, x0);
   {
     if (x2 == x4 && x1 == x3) {
@@ -5950,7 +5950,7 @@ void Task45::Task_local::compute() {
   const Index x3 = b(2);
   const Index x1 = b(3);
   const Index x0 = b(4);
-  // tensor label: Gamma385
+  // tensor label: Gamma279
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x2, x3, x1, x0);
   {
     if (x1 == x3) {
@@ -5997,7 +5997,7 @@ void Task46::Task_local::compute() {
   const Index x4 = b(4);
   const Index x1 = b(5);
   const Index x0 = b(6);
-  // tensor label: Gamma387
+  // tensor label: Gamma281
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x3, x2, x4, x1, x0);
   {
     if (x2 == x4 && x1 == x3) {
@@ -6122,7 +6122,7 @@ void Task47::Task_local::compute() {
   const Index x2 = b(2);
   const Index x0 = b(3);
   const Index x1 = b(4);
-  // tensor label: Gamma390
+  // tensor label: Gamma284
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x2, x0, x1);
   {
     if (x0 == x1) {
@@ -6167,7 +6167,7 @@ void Task48::Task_local::compute() {
   const Index x3 = b(2);
   const Index x2 = b(3);
   const Index x1 = b(4);
-  // tensor label: Gamma392
+  // tensor label: Gamma286
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x3);
   // associated with merged
   std::unique_ptr<double[]> fdata = in(3)->get_block(x2, x1);
@@ -6243,7 +6243,7 @@ void Task49::Task_local::compute() {
   const Index ci0 = b(0);
   const Index x0 = b(1);
   const Index x1 = b(2);
-  // tensor label: Gamma394
+  // tensor label: Gamma288
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x0, x1);
   {
     // rdm0 non-merged ci derivative case

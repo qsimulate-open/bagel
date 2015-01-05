@@ -345,7 +345,7 @@ double SpinFreeMethod::compute_e0() const {
 }
 
 
-void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Tensor> r) {
+void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Tensor> r) {
 
   // ranks of t and r are assumed to be the same
 
@@ -737,6 +737,64 @@ shared_ptr<Tensor> SpinFreeMethod::init_amplitude() const {
       for (auto& i0 : active_)
         for (auto& i2 : closed_)
           put(i0, i1, i2, i3);
+  return out;
+}
+
+
+double SpinFreeMethod::dot_product_transpose(shared_ptr<const Tensor> r, shared_ptr<const Tensor> t2) const {
+  auto prod = [this, &r, &t2](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+    const size_t size = r->get_size_alloc(i2, i3, i0, i1);
+    if (size == 0) return 0.0;
+
+    unique_ptr<double[]> tmp0 = t2->get_block(i0, i1, i2, i3);
+    unique_ptr<double[]> tmp1(new double[size]);
+    sort_indices<2,3,0,1,0,1,1,1>(tmp0.get(), tmp1.get(), i0.size(), i1.size(), i2.size(), i3.size());
+
+    return blas::dot_product(tmp1.get(), size, r->get_block(i2, i3, i0, i1).get());
+  };
+  double out = 0.0;
+  for (auto& i3 : virt_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i2 : active_)
+    for (auto& i0 : active_)
+      for (auto& i3 : virt_)
+        for (auto& i1 : virt_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i0 : active_)
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i2 : closed_)
+        for (auto& i0 : closed_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_) {
+          out += prod(i0, i1, i2, i3);
+          out += prod(i2, i1, i0, i3);
+        }
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i0 : active_)
+        for (auto& i1 : virt_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i0 : active_)
+        for (auto& i2 : closed_)
+          out += prod(i0, i1, i2, i3);
   return out;
 }
 

@@ -70,7 +70,7 @@ class Tensor {
     std::shared_ptr<Storage> data_;
     int rank_;
 
-    virtual void init() const { }
+    virtual void init() const { initialized_ = true; }
     mutable bool initialized_;
 
   public:

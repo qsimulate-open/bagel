@@ -50,18 +50,6 @@
 #include <src/smith/CASPT2_tasks22.h>
 #include <src/smith/CASPT2_tasks23.h>
 #include <src/smith/CASPT2_tasks24.h>
-#include <src/smith/CASPT2_tasks25.h>
-#include <src/smith/CASPT2_tasks26.h>
-#include <src/smith/CASPT2_tasks27.h>
-#include <src/smith/CASPT2_tasks28.h>
-#include <src/smith/CASPT2_tasks29.h>
-#include <src/smith/CASPT2_tasks30.h>
-#include <src/smith/CASPT2_tasks31.h>
-#include <src/smith/CASPT2_tasks32.h>
-#include <src/smith/CASPT2_tasks33.h>
-#include <src/smith/CASPT2_tasks34.h>
-#include <src/smith/CASPT2_tasks35.h>
-#include <src/smith/CASPT2_tasks36.h>
 
 #endif
 

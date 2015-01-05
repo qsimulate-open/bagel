@@ -110,7 +110,8 @@ class SpinFreeMethod {
     const double& denom_x(const size_t i) const { return denom_->denom_x(i); }
 
     std::shared_ptr<Tensor> init_amplitude() const;
-    void update_amplitude(std::shared_ptr<Tensor> t, const std::shared_ptr<Tensor> r);
+    double dot_product_transpose(std::shared_ptr<const Tensor> r, std::shared_ptr<const Tensor> t2) const;
+    void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r);
 
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info> r);
