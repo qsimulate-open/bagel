@@ -36,66 +36,52 @@ shared_ptr<Queue> CASPT2::CASPT2::make_deciq() {
   array<shared_ptr<const IndexRange>,4> cindex = {{rclosed_, ractive_, rvirt_, rci_}};
 
   auto deciq = make_shared<Queue>();
-  vector<shared_ptr<Tensor>> tensor62 = {deci};
-  auto task62 = make_shared<Task62>(tensor62);
-  deciq->add_task(task62);
+  vector<shared_ptr<Tensor>> tensor45 = {deci};
+  auto task45 = make_shared<Task45>(tensor45);
+  deciq->add_task(task45);
 
-  vector<IndexRange> I62_index = {ci_};
-  auto I62 = make_shared<Tensor>(I62_index);
-  vector<shared_ptr<Tensor>> tensor63 = {deci, I62};
-  auto task63 = make_shared<Task63>(tensor63, cindex);
-  task63->add_dep(task62);
-  deciq->add_task(task63);
+  vector<IndexRange> I40_index = {ci_};
+  auto I40 = make_shared<Tensor>(I40_index);
+  vector<shared_ptr<Tensor>> tensor46 = {deci, I40};
+  auto task46 = make_shared<Task46>(tensor46, cindex);
+  task46->add_dep(task45);
+  deciq->add_task(task46);
 
-  vector<IndexRange> I63_index;
-  auto I63 = make_shared<Tensor>(I63_index);
-  vector<shared_ptr<Tensor>> tensor64 = {I62, Gamma6_(), I63};
-  auto task64 = make_shared<Task64>(tensor64, cindex);
-  task63->add_dep(task64);
-  task64->add_dep(task62);
-  deciq->add_task(task64);
+  vector<IndexRange> I41_index;
+  auto I41 = make_shared<Tensor>(I41_index);
+  vector<shared_ptr<Tensor>> tensor47 = {I40, Gamma4_(), I41};
+  auto task47 = make_shared<Task47>(tensor47, cindex);
+  task46->add_dep(task47);
+  task47->add_dep(task45);
+  deciq->add_task(task47);
 
-  vector<IndexRange> I64_index = {virt_, closed_, virt_, closed_};
-  auto I64 = make_shared<Tensor>(I64_index);
-  vector<shared_ptr<Tensor>> tensor65 = {I63, t2, I64};
-  auto task65 = make_shared<Task65>(tensor65, cindex);
-  task64->add_dep(task65);
-  task65->add_dep(task62);
-  deciq->add_task(task65);
+  vector<IndexRange> I42_index = {closed_, virt_, closed_, virt_};
+  auto I42 = make_shared<Tensor>(I42_index);
+  vector<shared_ptr<Tensor>> tensor48 = {I41, t2, I42};
+  auto task48 = make_shared<Task48>(tensor48, cindex);
+  task47->add_dep(task48);
+  task48->add_dep(task45);
+  deciq->add_task(task48);
 
-  vector<shared_ptr<Tensor>> tensor66 = {I64, t2};
-  auto task66 = make_shared<Task66>(tensor66, cindex);
-  task65->add_dep(task66);
-  task66->add_dep(task62);
-  deciq->add_task(task66);
+  vector<shared_ptr<Tensor>> tensor49 = {I42, t2};
+  auto task49 = make_shared<Task49>(tensor49, cindex);
+  task48->add_dep(task49);
+  task49->add_dep(task45);
+  deciq->add_task(task49);
 
-  vector<IndexRange> I67_index = {closed_, virt_, closed_, virt_};
-  auto I67 = make_shared<Tensor>(I67_index);
-  vector<shared_ptr<Tensor>> tensor67 = {I63, t2, I67};
-  auto task67 = make_shared<Task67>(tensor67, cindex);
-  task64->add_dep(task67);
-  task67->add_dep(task62);
-  deciq->add_task(task67);
+  vector<IndexRange> I45_index = {virt_, closed_, virt_, closed_};
+  auto I45 = make_shared<Tensor>(I45_index);
+  vector<shared_ptr<Tensor>> tensor50 = {I41, t2, I45};
+  auto task50 = make_shared<Task50>(tensor50, cindex);
+  task47->add_dep(task50);
+  task50->add_dep(task45);
+  deciq->add_task(task50);
 
-  vector<shared_ptr<Tensor>> tensor68 = {I67, t2};
-  auto task68 = make_shared<Task68>(tensor68, cindex);
-  task67->add_dep(task68);
-  task68->add_dep(task62);
-  deciq->add_task(task68);
-
-  vector<IndexRange> I73_index = {virt_, closed_, virt_, closed_};
-  auto I73 = make_shared<Tensor>(I73_index);
-  vector<shared_ptr<Tensor>> tensor69 = {I63, t2, I73};
-  auto task69 = make_shared<Task69>(tensor69, cindex);
-  task64->add_dep(task69);
-  task69->add_dep(task62);
-  deciq->add_task(task69);
-
-  vector<shared_ptr<Tensor>> tensor70 = {I73, t2};
-  auto task70 = make_shared<Task70>(tensor70, cindex);
-  task69->add_dep(task70);
-  task70->add_dep(task62);
-  deciq->add_task(task70);
+  vector<shared_ptr<Tensor>> tensor51 = {I45, t2};
+  auto task51 = make_shared<Task51>(tensor51, cindex);
+  task50->add_dep(task51);
+  task51->add_dep(task45);
+  deciq->add_task(task51);
 
   return deciq;
 }

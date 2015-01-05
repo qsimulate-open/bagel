@@ -47,15 +47,17 @@ void CASPT2::CASPT2::solve() {
   this->print_iteration();
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
+    shared_ptr<Queue> energyq = make_energyq();
+    this->energy_ = accumulate(energyq);
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
-    this->update_amplitude(t2, r);
+    this->energy_ += dot_product_transpose(r, t2) * 0.25;
     const double err = r->rms();
-    r->zero();
-    shared_ptr<Queue> energyq = make_energyq();
-    this->energy_ = accumulate(energyq);
     this->print_iteration(iter, this->energy_, err);
+
+    this->update_amplitude(t2, r);
+    r->zero();
     if (err < ref_->thresh()) break;
   }
   this->print_iteration(iter == ref_->maxiter());
