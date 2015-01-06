@@ -35,86 +35,86 @@ shared_ptr<Queue> CASPT2::CASPT2::make_density1q() {
 
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
   auto density1q = make_shared<Queue>();
-  vector<shared_ptr<Tensor>> tensor741 = {den1};
-  auto task741 = make_shared<Task741>(tensor741);
+  vector<shared_ptr<Tensor>> tensor730 = {den1};
+  auto task730 = make_shared<Task730>(tensor730);
+  density1q->add_task(task730);
+
+  vector<IndexRange> I734_index = {closed_, active_};
+  auto I734 = make_shared<Tensor>(I734_index);
+  vector<shared_ptr<Tensor>> tensor731 = {den1, I734};
+  auto task731 = make_shared<Task731>(tensor731, pindex);
+  task731->add_dep(task730);
+  density1q->add_task(task731);
+
+  vector<IndexRange> I735_index = {active_, active_, closed_, active_};
+  auto I735 = make_shared<Tensor>(I735_index);
+  vector<shared_ptr<Tensor>> tensor732 = {I734, Gamma12_(), I735};
+  auto task732 = make_shared<Task732>(tensor732, pindex);
+  task731->add_dep(task732);
+  task732->add_dep(task730);
+  density1q->add_task(task732);
+
+  vector<shared_ptr<Tensor>> tensor733 = {I735, t2};
+  auto task733 = make_shared<Task733>(tensor733, pindex);
+  task732->add_dep(task733);
+  task733->add_dep(task730);
+  density1q->add_task(task733);
+
+  vector<IndexRange> I736_index = {virt_, closed_};
+  auto I736 = make_shared<Tensor>(I736_index);
+  vector<shared_ptr<Tensor>> tensor734 = {den1, I736};
+  auto task734 = make_shared<Task734>(tensor734, pindex);
+  task734->add_dep(task730);
+  density1q->add_task(task734);
+
+  vector<IndexRange> I737_index = {active_, virt_, closed_, active_};
+  auto I737 = make_shared<Tensor>(I737_index);
+  vector<shared_ptr<Tensor>> tensor735 = {I736, Gamma38_(), I737};
+  auto task735 = make_shared<Task735>(tensor735, pindex);
+  task734->add_dep(task735);
+  task735->add_dep(task730);
+  density1q->add_task(task735);
+
+  vector<shared_ptr<Tensor>> tensor736 = {I737, t2};
+  auto task736 = make_shared<Task736>(tensor736, pindex);
+  task735->add_dep(task736);
+  task736->add_dep(task730);
+  density1q->add_task(task736);
+
+  vector<IndexRange> I739_index = {active_, active_};
+  auto I739 = make_shared<Tensor>(I739_index);
+  vector<shared_ptr<Tensor>> tensor737 = {I736, t2, I739};
+  auto task737 = make_shared<Task737>(tensor737, pindex);
+  task734->add_dep(task737);
+  task737->add_dep(task730);
+  density1q->add_task(task737);
+
+  vector<shared_ptr<Tensor>> tensor738 = {I739, Gamma38_()};
+  auto task738 = make_shared<Task738>(tensor738, pindex);
+  task737->add_dep(task738);
+  task738->add_dep(task730);
+  density1q->add_task(task738);
+
+  vector<IndexRange> I740_index = {active_, virt_};
+  auto I740 = make_shared<Tensor>(I740_index);
+  vector<shared_ptr<Tensor>> tensor739 = {den1, I740};
+  auto task739 = make_shared<Task739>(tensor739, pindex);
+  task739->add_dep(task730);
+  density1q->add_task(task739);
+
+  vector<IndexRange> I741_index = {active_, active_, active_, active_};
+  auto I741 = make_shared<Tensor>(I741_index);
+  vector<shared_ptr<Tensor>> tensor740 = {I740, t2, I741};
+  auto task740 = make_shared<Task740>(tensor740, pindex);
+  task739->add_dep(task740);
+  task740->add_dep(task730);
+  density1q->add_task(task740);
+
+  vector<shared_ptr<Tensor>> tensor741 = {I741, Gamma60_()};
+  auto task741 = make_shared<Task741>(tensor741, pindex);
+  task740->add_dep(task741);
+  task741->add_dep(task730);
   density1q->add_task(task741);
-
-  vector<IndexRange> I748_index = {closed_, active_};
-  auto I748 = make_shared<Tensor>(I748_index);
-  vector<shared_ptr<Tensor>> tensor742 = {den1, I748};
-  auto task742 = make_shared<Task742>(tensor742, pindex);
-  task742->add_dep(task741);
-  density1q->add_task(task742);
-
-  vector<IndexRange> I749_index = {active_, active_, closed_, active_};
-  auto I749 = make_shared<Tensor>(I749_index);
-  vector<shared_ptr<Tensor>> tensor743 = {I748, Gamma12_(), I749};
-  auto task743 = make_shared<Task743>(tensor743, pindex);
-  task742->add_dep(task743);
-  task743->add_dep(task741);
-  density1q->add_task(task743);
-
-  vector<shared_ptr<Tensor>> tensor744 = {I749, t2};
-  auto task744 = make_shared<Task744>(tensor744, pindex);
-  task743->add_dep(task744);
-  task744->add_dep(task741);
-  density1q->add_task(task744);
-
-  vector<IndexRange> I750_index = {virt_, closed_};
-  auto I750 = make_shared<Tensor>(I750_index);
-  vector<shared_ptr<Tensor>> tensor745 = {den1, I750};
-  auto task745 = make_shared<Task745>(tensor745, pindex);
-  task745->add_dep(task741);
-  density1q->add_task(task745);
-
-  vector<IndexRange> I751_index = {active_, virt_, closed_, active_};
-  auto I751 = make_shared<Tensor>(I751_index);
-  vector<shared_ptr<Tensor>> tensor746 = {I750, Gamma38_(), I751};
-  auto task746 = make_shared<Task746>(tensor746, pindex);
-  task745->add_dep(task746);
-  task746->add_dep(task741);
-  density1q->add_task(task746);
-
-  vector<shared_ptr<Tensor>> tensor747 = {I751, t2};
-  auto task747 = make_shared<Task747>(tensor747, pindex);
-  task746->add_dep(task747);
-  task747->add_dep(task741);
-  density1q->add_task(task747);
-
-  vector<IndexRange> I753_index = {active_, active_};
-  auto I753 = make_shared<Tensor>(I753_index);
-  vector<shared_ptr<Tensor>> tensor748 = {I750, t2, I753};
-  auto task748 = make_shared<Task748>(tensor748, pindex);
-  task745->add_dep(task748);
-  task748->add_dep(task741);
-  density1q->add_task(task748);
-
-  vector<shared_ptr<Tensor>> tensor749 = {I753, Gamma38_()};
-  auto task749 = make_shared<Task749>(tensor749, pindex);
-  task748->add_dep(task749);
-  task749->add_dep(task741);
-  density1q->add_task(task749);
-
-  vector<IndexRange> I754_index = {active_, virt_};
-  auto I754 = make_shared<Tensor>(I754_index);
-  vector<shared_ptr<Tensor>> tensor750 = {den1, I754};
-  auto task750 = make_shared<Task750>(tensor750, pindex);
-  task750->add_dep(task741);
-  density1q->add_task(task750);
-
-  vector<IndexRange> I755_index = {active_, active_, active_, active_};
-  auto I755 = make_shared<Tensor>(I755_index);
-  vector<shared_ptr<Tensor>> tensor751 = {I754, t2, I755};
-  auto task751 = make_shared<Task751>(tensor751, pindex);
-  task750->add_dep(task751);
-  task751->add_dep(task741);
-  density1q->add_task(task751);
-
-  vector<shared_ptr<Tensor>> tensor752 = {I755, Gamma60_()};
-  auto task752 = make_shared<Task752>(tensor752, pindex);
-  task751->add_dep(task752);
-  task752->add_dep(task741);
-  density1q->add_task(task752);
 
   return density1q;
 }

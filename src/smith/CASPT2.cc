@@ -52,6 +52,7 @@ void CASPT2::CASPT2::solve() {
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
+    diagonal(r, t2);
     this->energy_ += dot_product_transpose(r, t2) * 0.25;
     const double err = r->rms();
     this->print_iteration(iter, this->energy_, err);
