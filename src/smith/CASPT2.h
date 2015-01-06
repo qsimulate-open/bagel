@@ -75,8 +75,11 @@ class CASPT2 : public SpinFreeMethod {
 
 
     std::shared_ptr<FutureTensor> Gamma0_();
-    std::shared_ptr<FutureTensor> Gamma2_();
     std::shared_ptr<FutureTensor> Gamma4_();
+    std::shared_ptr<FutureTensor> Gamma26_();
+    std::shared_ptr<FutureTensor> Gamma36_();
+    std::shared_ptr<FutureTensor> Gamma38_();
+    std::shared_ptr<FutureTensor> Gamma42_();
     std::shared_ptr<Queue> make_residualq();
     std::shared_ptr<Queue> make_energyq();
     std::shared_ptr<Queue> make_corrq();

@@ -110,7 +110,8 @@ class SpinFreeMethod {
 
     std::shared_ptr<Tensor> init_amplitude() const;
     double dot_product_transpose(std::shared_ptr<const Tensor> r, std::shared_ptr<const Tensor> t2) const;
-    void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r);
+    void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r) const;
+    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
 
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info> r);

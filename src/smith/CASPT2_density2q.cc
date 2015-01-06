@@ -35,22 +35,43 @@ shared_ptr<Queue> CASPT2::CASPT2::make_density2q() {
 
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
   auto density2q = make_shared<Queue>();
-  vector<shared_ptr<Tensor>> tensor42 = {Den1};
-  auto task42 = make_shared<Task42>(tensor42);
-  density2q->add_task(task42);
+  vector<shared_ptr<Tensor>> tensor113 = {Den1};
+  auto task113 = make_shared<Task113>(tensor113);
+  density2q->add_task(task113);
 
-  vector<IndexRange> I38_index = {closed_, virt_, closed_, virt_};
-  auto I38 = make_shared<Tensor>(I38_index);
-  vector<shared_ptr<Tensor>> tensor43 = {Den1, I38};
-  auto task43 = make_shared<Task43>(tensor43, pindex);
-  task43->add_dep(task42);
-  density2q->add_task(task43);
+  vector<IndexRange> I114_index = {closed_, virt_, closed_, virt_};
+  auto I114 = make_shared<Tensor>(I114_index);
+  vector<shared_ptr<Tensor>> tensor114 = {Den1, I114};
+  auto task114 = make_shared<Task114>(tensor114, pindex);
+  task114->add_dep(task113);
+  density2q->add_task(task114);
 
-  vector<shared_ptr<Tensor>> tensor44 = {I38, t2};
-  auto task44 = make_shared<Task44>(tensor44, pindex);
-  task43->add_dep(task44);
-  task44->add_dep(task42);
-  density2q->add_task(task44);
+  vector<shared_ptr<Tensor>> tensor115 = {I114, t2};
+  auto task115 = make_shared<Task115>(tensor115, pindex);
+  task114->add_dep(task115);
+  task115->add_dep(task113);
+  density2q->add_task(task115);
+
+  vector<IndexRange> I116_index = {virt_, closed_, virt_, active_};
+  auto I116 = make_shared<Tensor>(I116_index);
+  vector<shared_ptr<Tensor>> tensor116 = {Den1, I116};
+  auto task116 = make_shared<Task116>(tensor116, pindex);
+  task116->add_dep(task113);
+  density2q->add_task(task116);
+
+  vector<IndexRange> I117_index = {active_, virt_, closed_, virt_};
+  auto I117 = make_shared<Tensor>(I117_index);
+  vector<shared_ptr<Tensor>> tensor117 = {I116, Gamma0_(), I117};
+  auto task117 = make_shared<Task117>(tensor117, pindex);
+  task116->add_dep(task117);
+  task117->add_dep(task113);
+  density2q->add_task(task117);
+
+  vector<shared_ptr<Tensor>> tensor118 = {I117, t2};
+  auto task118 = make_shared<Task118>(tensor118, pindex);
+  task117->add_dep(task118);
+  task118->add_dep(task113);
+  density2q->add_task(task118);
 
   return density2q;
 }

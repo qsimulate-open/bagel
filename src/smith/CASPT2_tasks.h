@@ -28,6 +28,8 @@
 
 #include <src/smith/CASPT2_tasks1.h>
 #include <src/smith/CASPT2_tasks2.h>
+#include <src/smith/CASPT2_tasks3.h>
+#include <src/smith/CASPT2_tasks4.h>
 
 #endif
 
