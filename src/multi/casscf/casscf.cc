@@ -158,7 +158,7 @@ void CASSCF::print_iteration(int iter, int miter, int tcount, const vector<doubl
   int i = 0;
   for (auto& e : energy) {
     cout << "  " << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
-                 << setw(20) << fixed << setprecision(12) << e << "   "
+                 << setw(16) << fixed << setprecision(8) << e << "   "
                  << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
                  << time << endl;
     ++i;
