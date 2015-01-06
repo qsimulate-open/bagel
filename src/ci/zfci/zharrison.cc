@@ -249,6 +249,7 @@ void ZHarrison::compute() {
       const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
       const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
       if (neleb < 0) throw runtime_error("Wrong states specified - there are not enough active electrons for the requested spin state.");
+      if (nelea > norb_) throw runtime_error("Wrong states specified - there are not enough active orbitals for the requested spin state.");
 
       generate_guess(nelea, neleb, nstate, cc_, offset);
       offset += nstate;
