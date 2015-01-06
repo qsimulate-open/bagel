@@ -53,13 +53,14 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   for (int i = 0; i != states_.size(); ++i)
     nstate_ += states_[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
 
-  gaunt_ = idata_->get<bool>("gaunt",rr->gaunt());
-  breit_ = idata_->get<bool>("breit",rr->breit());
+  gaunt_ = idata_->get<bool>("gaunt", rr->gaunt());
+  breit_ = idata_->get<bool>("breit", rr->breit());
   if (gaunt_ != rr->gaunt())
     geom_ = geom_->relativistic(gaunt_);
 
   // Invoke Kramer's symmetry for any case without magnetic field
   tsymm_ = !geom_->magnetism();
+  spin_adapt_ = idata_->get<bool>("spin_adapt", true);
 
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
@@ -139,6 +140,9 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
   while (oindex < offset+nstate) {
     vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet, nelea, neleb);
 
+    cout << endl << endl << "Making a guess - sorting through (up to) " << ndet << " determinants." << endl;
+    int bitcount = 0;
+
     // Spin adapt detseeds
     oindex = offset;
     vector<pair<bitset<nbit__>,bitset<nbit__>>> done;
@@ -154,13 +158,32 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       // make sure that we have enough unpaired alpha
       const int unpairalpha = (alpha ^ (alpha & beta)).count();
       const int unpairbeta  = (beta ^ (alpha & beta)).count();
-      if (unpairalpha-unpairbeta < nelea-neleb) continue;
+
+      cout << endl << "  Determinant " << bitcount++ << ": unpaired alpha = " << unpairalpha << ", unpaired beta = " << unpairbeta << endl;
+      cout << "    Alpha: " << print_bit(alpha, norb_) << "    Beta: " << print_bit(beta, norb_) << "     Open: " << print_bit(open_bit, norb_) << endl;
+      cout << "    nalpha = " << alpha.count() << ", nbeta = " << beta.count() << ", target total = " << nele_ << endl;
+      cout << "    unpairalpha = " << unpairalpha << ", unpairbeta = " << unpairbeta << "...  unpaired dif = " << unpairalpha-unpairbeta << ", nele dif = " << nelea-neleb << endl;
+      if (unpairalpha-unpairbeta != nelea-neleb) {
+        cout << "    skipping due to wrong number of unpaired a-b" << endl;
+        continue;
+      }
 
       // check if this orbital configuration is already used
-      if (find(done.begin(), done.end(), it) != done.end()) continue;
-      done.push_back(it);
+      if (find(done.begin(), done.end(), it) != done.end()) {
+        cout << "    skipping because this one's already being used. " << endl;
+        continue;
+      }
 
-      pair<vector<tuple<int, int, int>>, double> adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+      done.push_back(it);
+      pair<vector<tuple<int, int, int>>, double> adapt;
+      if (spin_adapt_) {
+        adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+      } else {
+        adapt.first = vector<tuple<int, int, int>>(1, make_tuple(space_->finddet(nelea, neleb)->lexical<1>(beta),
+                                                                 space_->finddet(nelea, neleb)->lexical<0>(alpha), 1));
+        adapt.second = 1.0;
+      }
+
       const double fac = adapt.second;
       for (auto& iter : adapt.first) {
         out->find(nelea, neleb)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
@@ -209,6 +232,9 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
   return out;
 }
 
+//      cout << "ispin = " << ispin << endl;
+//        if ((geom_->nele()+ispin-charge_) % 2 == 0 && states_[i] != 0)
+//          cout << "  need " << states_[i] << " states of spin " << ispin << " from J = " << i << " contribution." << endl;
 
 void ZHarrison::compute() {
   Timer pdebug(2);
@@ -248,15 +274,26 @@ void ZHarrison::compute() {
 
       const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
       const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
+      cout << "nelea = " << nelea << endl;
+      cout << "neleb = " << neleb << endl;
       if (neleb < 0) throw runtime_error("Wrong states specified - there are not enough active electrons for the requested spin state.");
       if (nelea > norb_) throw runtime_error("Wrong states specified - there are not enough active orbitals for the requested spin state.");
 
+#if 1
       generate_guess(nelea, neleb, nstate, cc_, offset);
       offset += nstate;
       if (nelea != neleb) {
         generate_guess(neleb, nelea, nstate, cc_, offset);
         offset += nstate;
       }
+#else
+      model_guess(nelea, neleb, nstate, cc_, offset);
+      offset += nstate;
+      if (nelea != neleb) {
+        model_guess(nelea, neleb, nstate, cc_, offset);
+        offset += nstate;
+      }
+#endif
     }
     pdebug.tick_print("guess generation");
 
@@ -292,8 +329,38 @@ void ZHarrison::compute() {
     auto sigman = make_shared<RelZDvec>(sigma);
     ccn->synchronize();
     sigman->synchronize();
+/*
+    cout << endl << "Here come the Civecs that make up the RelZDvec cc_" << endl << endl;
+    ccn->print(0.0001);
+    cout << endl << "Here come the Civecs that make up the sigma-vector" << endl << endl;
+    sigman->print(0.0001);
+*/
+    auto ccnvec = ccn->dvec(conv);
+    auto sigmavec = sigman->dvec(conv);
+    cout << endl << "Here come the Civecs that make up the RelZDvec cc_->dvec(conv)" << endl << endl;
+    for (int i=0; i!=ccnvec.size(); ++i) {
+      cout << "NEW CIVEC:  i = " << i << endl;
+      if (ccnvec[i])
+        ccnvec[i]->print(0.0001);
+      else
+        cout << "This seems to be a nullptr..." << endl;
+    }
+/*
+    cout << endl << "Here come the Civecs that make up the sigma-vector->dvec(conv)" << endl << endl;
+    for (int i=0; i!=sigmavec.size(); ++i) {
+      cout << "NEW CIVEC:  i = " << i << endl;
+      if (sigmavec[i])
+        sigmavec[i]->print(0.0001);
+      else
+        cout << "This seems to be a nullptr..." << endl;
+    }
+*/
+
+    cout << "About to compute Davidson Diagonalization" << endl;
 
     const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
+    cout << "Finished computation of Davidson Diagonalization" << endl;
+
     // get residual and new vectors
     vector<shared_ptr<RelZDvec>> errvec = davidson_->residual();
     for (auto& i : errvec)
@@ -303,6 +370,8 @@ void ZHarrison::compute() {
     // compute errors
     vector<double> errors;
     for (int i = 0; i != nstate_; ++i) {
+//      cout << "About to print out the error vectors for state " << i << endl;
+//      errvec[i]->print(0.0001);
       errors.push_back(errvec[i]->rms());
       conv[i] = static_cast<int>(errors[i] < thresh_);
     }
@@ -337,7 +406,7 @@ void ZHarrison::compute() {
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
-                              << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
+                              << setw(17) << fixed << setprecision(12) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
                               << fcitime.tick() << endl;
       energy_[i] = energies[i]+nuc_core;
@@ -387,9 +456,28 @@ shared_ptr<const ZMatrix> ZHarrison::set_active(set<int> active_indices, shared_
     ++pos;
   };
 
+
+  /***** DEBUG VERSION:  Same as cp(i, iactive); below, but maintains the order provided in input file *****/
+  const shared_ptr<const PTree> iactive2 = idata_->get_child_optional("active");
+  assert(iactive2);
+  assert(iactive2->size() == norb_);
+  vector<int> active_indices2 = {};
+
+  for (auto& i : *iactive2)
+    active_indices2.push_back(lexical_cast<int>(i->data()) - 1);
+  cout << " " << endl;
+  cout << "    ==== Active orbitals (in order used) : ===== " << endl;
+  for (auto& i : active_indices2)
+    cout << "         Orbital " << i+1 << endl;
+  cout << "    ============================ " << endl << endl;
+  for (int i=0; i < norb_; ++i) {
+    cp(active_indices2[i], iactive);
+  }
+  /***** DEBUG CODE ENDS *****/
+
   for (int i = 0; i < nmobasis; ++i) {
     if (active_indices.find(i) != active_indices.end()) {
-      cp(i, iactive);
+//      cp(i, iactive);
     } else if (i < nclosed_start) {
       cp(i, iclosed);
     } else {
@@ -412,5 +500,67 @@ shared_ptr<const ZMatrix> ZHarrison::swap_pos_neg(shared_ptr<const ZMatrix> coef
   out->copy_block(0, 0, n, m, coeffin->get_submatrix(0, m, n, m));
   out->copy_block(0, m, n, m, coeffin->get_submatrix(0, 0, n, m));
   return out;
+}
+
+
+void ZHarrison::model_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset) {
+#if 0
+  multimap<double, pair<bitset<nbit__>, bitset<nbit__>>> ordered_elements;
+  const double* d = denom_->find(nelea, neleb)->data();
+  for (auto& abit : space_->string_bits_a()) {
+    for (auto& bbit : space_->string_bits_b()) {
+      ordered_elements.emplace(*d++, make_pair(abit, bbit));
+    }
+  }
+
+  vector<pair<bitset<nbit__>, bitset<nbit__>>> basis;
+  double last_value = 0.0;
+  for (auto& p : ordered_elements) {
+    double val = p.first;
+    if (basis.size() >= nguess_ && val != last_value)
+      break;
+    else
+      basis.push_back(p.second);
+  }
+  const int nguess = basis.size();
+
+  shared_ptr<Matrix> spin = make_shared<CISpin>(basis, norb_);
+  VectorB eigs(nguess);
+  spin->diagonalize(eigs);
+
+  int start, end;
+  const double target_spin = 0.25 * static_cast<double>(det_->nspin()*(det_->nspin()+2));
+  for (start = 0; start < nguess; ++start)
+    if (fabs(eigs(start) - target_spin) < 1.0e-8) break;
+  for (end = start; end < nguess; ++end)
+    if (fabs(eigs(end) - target_spin) > 1.0e-8) break;
+
+  if ((end-start) >= nstate_) {
+    const MatView coeffs = spin->slice(start, end);
+
+    shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
+    hamiltonian = make_shared<Matrix>(coeffs % *hamiltonian * coeffs);
+    hamiltonian->diagonalize(eigs);
+
+#if 0
+    const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
+    for (int i = 0; i < end-start; ++i)
+      cout << setw(12) << setprecision(8) << eigs(i) + nuc_core << endl;
+#endif
+
+    auto coeffs1 = make_shared<Matrix>(coeffs * *hamiltonian);
+    for (int i = 0; i < nguess; ++i) {
+      const size_t ia = det_->lexical<0>(basis[i].first);
+      const size_t ib = det_->lexical<1>(basis[i].second);
+
+      for (int j = 0; j < nstate_; ++j)
+        out->data(j)->element(ib, ia) = coeffs1->element(i, j);
+    }
+  }
+  else {
+    nguess_ *= 2;
+    model_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset);
+  }
+#endif
 }
 
