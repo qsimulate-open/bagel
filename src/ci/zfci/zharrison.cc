@@ -429,10 +429,13 @@ void ZHarrison::compute() {
 
 shared_ptr<const ZMatrix> ZHarrison::set_active(set<int> active_indices, shared_ptr<const ZMatrix> coeffin) const {
   // assumes coefficient is in striped format
-  if (active_indices.size() != norb_) throw logic_error("ZHarrison::set_active - Number of active indices does not match number of active orbitals");
-
   const int naobasis = coeffin->ndim();
   const int nmobasis = coeffin->mdim()/4;
+
+  if (active_indices.size() != norb_)
+    throw logic_error("ZHarrison::set_active - Number of active indices does not match number of active orbitals");
+  if (any_of(active_indices.begin(), active_indices.end(), [nmobasis](int i){ return (i < 0 || i >= nmobasis); }) )
+    throw runtime_error("ZHarrison::set_active - Invalid MO index provided.  (Should be from 1 to " + to_string(nmobasis) + ")");
 
   auto coeff = coeffin;
   auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);

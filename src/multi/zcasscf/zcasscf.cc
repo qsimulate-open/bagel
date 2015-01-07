@@ -558,10 +558,13 @@ void ZCASSCF::print_natocc() const {
 
 shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
   // assumes coefficient is in striped format
-  if (active_indices.size() != nact_) throw logic_error("ZCASSCF::set_active - Number of active indices does not match number of active orbitals");
-
   const int naobasis = coeff_->ndim();
   const int nmobasis = coeff_->mdim()/4;
+
+  if (active_indices.size() != nact_)
+    throw logic_error("ZCASSCF::set_active - Number of active indices does not match number of active orbitals");
+  if (any_of(active_indices.begin(), active_indices.end(), [nmobasis](int i){ return (i < 0 || i >= nmobasis); }) )
+    throw runtime_error("ZCASSCF::set_active - Invalid MO index provided.  (Should be from 1 to " + to_string(nmobasis) + ")");
 
   auto coeff = coeff_;
   auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
