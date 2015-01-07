@@ -126,10 +126,15 @@ void PSCF::compute() {
     auto fock = make_shared<const PFock>(lattice_, hcore_, pdensity);
     shared_ptr<const PData> kfock = fock->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
     auto fock0 = make_shared<ZMatrix>(*((*kfock)(gamma)));
-    //auto error_vector = make_shared<const ZMatrix>(*((*kdensity)(gamma)) - *olddensity);
-    auto error_vector = make_shared<ZMatrix>(*fock0 * *((*kdensity)(gamma)) * *((*koverlap_)(gamma))
+    double error = 0;
+    for (int i =0; i != nkblock; ++i) {
+      auto error_vector = make_shared<ZMatrix>(*((*kfock)(i)) * *((*kdensity)(i)) * *((*koverlap_)(i))
+                                            - *((*koverlap_)(i)) * *((*kdensity)(i)) * *((*kfock)(i)));
+      error += error_vector->rms();
+    }
+    //auto diis_vector = make_shared<const ZMatrix>(*((*kdensity)(gamma)) - *olddensity);
+    auto diis_vector = make_shared<ZMatrix>(*fock0 * *((*kdensity)(gamma)) * *((*koverlap_)(gamma))
                                           - *((*koverlap_)(gamma)) * *((*kdensity)(gamma)) * *fock0);
-    const double error = error_vector->rms();
 
     complex<double> energy;
     double charge = 0.0;
@@ -154,7 +159,7 @@ void PSCF::compute() {
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * PSCF iteration converged." << endl << endl;
       cout << indent << endl << indent << "    Eigenvalues with nbasis = " << blocksize << endl << endl;
-#if 0
+#if 1
       for (int i = 0; i != nkblock; ++i) {
         for (int n = 0; n != blocksize; ++n) cout << setprecision(9) << (*eig_[i])(n) << "    ";
         cout << endl;
@@ -168,7 +173,7 @@ void PSCF::compute() {
 
     auto intermediate = make_shared<PData>(blocksize, nkblock);
     if (iter >= diis_start_)
-      fock0 = diis.extrapolate({(*kfock)(gamma), error_vector});
+      fock0 = diis.extrapolate({(*kfock)(gamma), diis_vector});
 
     for (int i = 0; i != nkblock; ++i) {
       if (iter < diis_start_) *fock0 = *(*kfock)(i);
