@@ -150,10 +150,6 @@ void PDFDist::pcompute_2index(const vector<shared_ptr<const Shell>>& ashell, con
     *correction_ += *data2_at[i];
   }
 
-  cout << setprecision(9) << "    eta    " << eta_->rms()                 //DEBUG
-                          << "   dat2    " << data2_->rms()               //DEBUG
-                          << "    corr   " << correction_->rms() << endl; //DEBUG
-
   time.tick_print("2-index integrals");
 
   // make data2_ positive definite
