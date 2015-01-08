@@ -158,12 +158,10 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       if (unpairalpha-unpairbeta < nelea-neleb) continue;
 
       // check if this orbital configuration is already used
-      if (find(done.begin(), done.end(), it) != done.end()) {
-        cout << "    skipping because this one's already being used. " << endl;
-        continue;
-      }
+      pair<bitset<nbit__>,bitset<nbit__>> config = spin_adapt_ ? make_pair(open_bit, alpha & beta) : it;
+      if (find(done.begin(), done.end(), config) != done.end()) continue;
 
-      done.push_back(it);
+      done.push_back(config);
       pair<vector<tuple<int, int, int>>, double> adapt;
       if (spin_adapt_) {
         adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
