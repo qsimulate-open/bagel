@@ -328,7 +328,6 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
     if (tsymm_) {
       // TODO Implement occ_sort for Kramers-unrestricted calculations as well.
       const bool occ_sort = idata_->get<bool>("occ_sort",false);
-      vector<double> vec2(tmp->ndim());
       if (occ_sort) {
         // sort by natural orbital occupation numbers
         int b2n = out->ndim();
