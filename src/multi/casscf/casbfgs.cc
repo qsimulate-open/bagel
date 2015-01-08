@@ -237,15 +237,11 @@ shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock,
     }
   }
 
-#if 0
   const double thresh = 1.0e-8;
   for (int i = 0; i != out->size(); ++i)
     if (fabs(out->data(i)) < thresh) {
       out->data(i) = 1.0e10;
     }
-#endif
-  for (int i = 0; i != out->size(); ++i)
-    if (fabs(out->data(i)) < 0.1) out->data(i) = 0.1; 
   return out;
 }
 

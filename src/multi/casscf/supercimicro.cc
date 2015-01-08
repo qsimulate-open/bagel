@@ -45,7 +45,7 @@ void SuperCIMicro::compute() {
   auto cc0    = make_shared<Matrix>(1,1,true);
   auto cc1    = make_shared<RotFile>(nclosed, nact, nvirt);
   // BFGS initialization
-  auto mbfgs = make_shared<BFGS<SCIData>>(make_shared<SCIData>(cc0, make_shared<RotFile>(*denom_)), true);
+  auto mbfgs = make_shared<BFGS<SCIData>>(make_shared<SCIData>(cc0, make_shared<RotFile>(*denom_)));
 
   for (int miter = 0; miter != casscf_->max_micro_iter(); ++miter) {
     Timer mtimer;
