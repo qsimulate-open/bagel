@@ -80,7 +80,7 @@ void SuperCIMicro::compute() {
     cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
          << setw(10) << scientific << setprecision(2) << error << fixed << " " << mtimer.tick() << endl;
 
-    if (miter > 0 && error < casscf_->thresh_micro()) { cout << endl; break; }
+    if (miter > 2 && error < casscf_->thresh_micro()) { cout << endl; break; }
     if (miter+1 == casscf_->max_micro_iter()) throw runtime_error("max_micro_iter_ is reached in CASSCF");
 
     // update cc0 and cc1

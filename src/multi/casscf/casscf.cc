@@ -92,7 +92,7 @@ void CASSCF::common_init() {
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
-  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
+  thresh_micro_ = idata_->get<double>("thresh_micro", 5.0e-6);
   // option for printing natural orbitals
   natocc_ = idata_->get<bool>("natocc",false);
 
