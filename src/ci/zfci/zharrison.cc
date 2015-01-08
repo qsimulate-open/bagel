@@ -140,9 +140,6 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
   while (oindex < offset+nstate) {
     vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet, nelea, neleb);
 
-    cout << endl << endl << "Making a guess - sorting through (up to) " << ndet << " determinants." << endl;
-    int bitcount = 0;
-
     // Spin adapt detseeds
     oindex = offset;
     vector<pair<bitset<nbit__>,bitset<nbit__>>> done;
@@ -158,15 +155,7 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       // make sure that we have enough unpaired alpha
       const int unpairalpha = (alpha ^ (alpha & beta)).count();
       const int unpairbeta  = (beta ^ (alpha & beta)).count();
-
-      cout << endl << "  Determinant " << bitcount++ << ": unpaired alpha = " << unpairalpha << ", unpaired beta = " << unpairbeta << endl;
-      cout << "    Alpha: " << print_bit(alpha, norb_) << "    Beta: " << print_bit(beta, norb_) << "     Open: " << print_bit(open_bit, norb_) << endl;
-      cout << "    nalpha = " << alpha.count() << ", nbeta = " << beta.count() << ", target total = " << nele_ << endl;
-      cout << "    unpairalpha = " << unpairalpha << ", unpairbeta = " << unpairbeta << "...  unpaired dif = " << unpairalpha-unpairbeta << ", nele dif = " << nelea-neleb << endl;
-      if (unpairalpha-unpairbeta != nelea-neleb) {
-        cout << "    skipping due to wrong number of unpaired a-b" << endl;
-        continue;
-      }
+      if (unpairalpha-unpairbeta < nelea-neleb) continue;
 
       // check if this orbital configuration is already used
       if (find(done.begin(), done.end(), it) != done.end()) {
@@ -232,9 +221,6 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
   return out;
 }
 
-//      cout << "ispin = " << ispin << endl;
-//        if ((geom_->nele()+ispin-charge_) % 2 == 0 && states_[i] != 0)
-//          cout << "  need " << states_[i] << " states of spin " << ispin << " from J = " << i << " contribution." << endl;
 
 void ZHarrison::compute() {
   Timer pdebug(2);
@@ -274,26 +260,15 @@ void ZHarrison::compute() {
 
       const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
       const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
-      cout << "nelea = " << nelea << endl;
-      cout << "neleb = " << neleb << endl;
       if (neleb < 0) throw runtime_error("Wrong states specified - there are not enough active electrons for the requested spin state.");
       if (nelea > norb_) throw runtime_error("Wrong states specified - there are not enough active orbitals for the requested spin state.");
 
-#if 1
       generate_guess(nelea, neleb, nstate, cc_, offset);
       offset += nstate;
       if (nelea != neleb) {
         generate_guess(neleb, nelea, nstate, cc_, offset);
         offset += nstate;
       }
-#else
-      model_guess(nelea, neleb, nstate, cc_, offset);
-      offset += nstate;
-      if (nelea != neleb) {
-        model_guess(nelea, neleb, nstate, cc_, offset);
-        offset += nstate;
-      }
-#endif
     }
     pdebug.tick_print("guess generation");
 
@@ -329,38 +304,8 @@ void ZHarrison::compute() {
     auto sigman = make_shared<RelZDvec>(sigma);
     ccn->synchronize();
     sigman->synchronize();
-/*
-    cout << endl << "Here come the Civecs that make up the RelZDvec cc_" << endl << endl;
-    ccn->print(0.0001);
-    cout << endl << "Here come the Civecs that make up the sigma-vector" << endl << endl;
-    sigman->print(0.0001);
-*/
-    auto ccnvec = ccn->dvec(conv);
-    auto sigmavec = sigman->dvec(conv);
-    cout << endl << "Here come the Civecs that make up the RelZDvec cc_->dvec(conv)" << endl << endl;
-    for (int i=0; i!=ccnvec.size(); ++i) {
-      cout << "NEW CIVEC:  i = " << i << endl;
-      if (ccnvec[i])
-        ccnvec[i]->print(0.0001);
-      else
-        cout << "This seems to be a nullptr..." << endl;
-    }
-/*
-    cout << endl << "Here come the Civecs that make up the sigma-vector->dvec(conv)" << endl << endl;
-    for (int i=0; i!=sigmavec.size(); ++i) {
-      cout << "NEW CIVEC:  i = " << i << endl;
-      if (sigmavec[i])
-        sigmavec[i]->print(0.0001);
-      else
-        cout << "This seems to be a nullptr..." << endl;
-    }
-*/
-
-    cout << "About to compute Davidson Diagonalization" << endl;
 
     const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
-    cout << "Finished computation of Davidson Diagonalization" << endl;
-
     // get residual and new vectors
     vector<shared_ptr<RelZDvec>> errvec = davidson_->residual();
     for (auto& i : errvec)
@@ -370,8 +315,6 @@ void ZHarrison::compute() {
     // compute errors
     vector<double> errors;
     for (int i = 0; i != nstate_; ++i) {
-//      cout << "About to print out the error vectors for state " << i << endl;
-//      errvec[i]->print(0.0001);
       errors.push_back(errvec[i]->rms());
       conv[i] = static_cast<int>(errors[i] < thresh_);
     }
