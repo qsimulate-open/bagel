@@ -49,8 +49,7 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   // update reference
   ref_ = cas->conv_to_ref();
   fci_ = cas->fci();
-  // TODO
-  thresh_ = 1.0e-10; //cas->thresh();
+  thresh_ = cas->thresh();
   ref_energy_ = cas->energy();
 
   timer.tick_print("Reference calculation");

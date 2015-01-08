@@ -124,7 +124,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     shared_ptr<Matrix> d0;
     tie(d0, fock) = compute_orb_denom_and_fock();
     for (auto& i : *d0)
-      if (fabs(i) < 1.0e-8) i = 1.0e10;
+      if (fabs(i) < 0.1) i = 0.1;
 
     shared_ptr<Dvec> d1;
     if (nact) {

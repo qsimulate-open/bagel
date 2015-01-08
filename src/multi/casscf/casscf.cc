@@ -281,6 +281,8 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
         *target = 1.0/occup_thresh;
     }
   }
+  for (auto& i : *denom)
+    i = fabs(i) < 0.1 ? 0.1 : i;
   d = denom;
 }
 
