@@ -47,7 +47,7 @@ class Multipole {
 
   public:
     Multipole() { }
-    Multipole(const std::array<double, 3> c, const int lmax = ANG_VRR_END);
+    Multipole(const std::array<double, 3> c, const int lmax = ANG_HRR_END);
     ~Multipole() { }
 
     std::array<double, 3> centre() const { return centre_; }

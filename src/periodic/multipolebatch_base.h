@@ -51,10 +51,11 @@ class MultipoleBatch_base : public OSIntegral<std::complex<double>> {
     void allocate_arrays(const size_t ps);
     void compute_ss(const double thresh);
     int nblocks() const override { return num_multipoles_; }
+    int nrank() const override { return 0; }
 
   public:
     MultipoleBatch_base(const std::array<std::shared_ptr<const Shell>,2>& shells, const std::array<double, 3> centre,
-                        const int lmax = ANG_VRR_END, std::shared_ptr<StackMem> stack = nullptr);
+                        const int lmax = ANG_HRR_END, std::shared_ptr<StackMem> stack = nullptr);
     ~MultipoleBatch_base() { }
 
     std::array<double, 3> centre() const { return centre_; }

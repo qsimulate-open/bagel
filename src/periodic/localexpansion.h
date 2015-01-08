@@ -45,7 +45,7 @@ class LocalExpansion {
 
   public:
     LocalExpansion(const std::array<double, 3> centre, std::vector<std::complex<double>> moments,
-                   const int lmax = ANG_VRR_END);
+                   const int lmax = ANG_HRR_END);
     ~LocalExpansion() { }
 
     int lmax() const { return lmax_; }
