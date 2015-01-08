@@ -123,8 +123,6 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   {
     shared_ptr<Matrix> d0;
     tie(d0, fock) = compute_orb_denom_and_fock();
-    for (auto& i : *d0)
-      if (fabs(i) < 0.1) i = 0.1;
 
     shared_ptr<Dvec> d1;
     if (nact) {
@@ -211,6 +209,8 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   Timer timer;
   for (int iter = 0; iter != zmaxiter; ++iter) {
+    solver->orthog(z);
+
     // given z, computes sigma (before anti-symmetrization)
     shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, half, fullb, detex, cinv);
     sigma->first()->antisymmetrize();
@@ -222,7 +222,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     z = bfgs->extrapolate(z, solver->civec());
     z->second()->project_out(civector_);
 
-    cout << setw(7) <<  iter << " " << setw(20) << setprecision(14) << z->rms() << setw(15) << setprecision(2) << timer.tick() << endl;
+    cout << setw(10) <<  iter << " " << setw(17) << setprecision(10) << z->rms() << setw(10) << setprecision(2) << timer.tick() << endl;
     if (z->rms() < zthresh) break;
   }
 
