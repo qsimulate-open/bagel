@@ -462,14 +462,16 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
 }
 
 
- shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
-   // store both pos and neg energy states, only thing saved thus far
-   // TODO : modify to be more like CASSCF than dirac, will need to add FCI stuff
-   shared_ptr<ZMatrix> ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false); // transform coefficient to striped structure
-   auto coeff = make_shared<const ZMatrix>(*ctmp);
-   auto out =  make_shared<RelReference>(geom_, coeff, energy_.back(), 0, nocc_, nvirt_, gaunt_, breit_);
-   return out;
- }
+shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
+  // store both pos and neg energy states, only thing saved thus far
+  // TODO : modify to be more like CASSCF than dirac, will need to add FCI stuff
+  shared_ptr<ZMatrix> ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false); // transform coefficient to striped structure
+  assert(ctmp->mdim() == 2*nneg_);
+  auto coeff = make_shared<const ZMatrix>(*ctmp);
+
+  auto out = make_shared<RelReference>(geom_, coeff, energy_.back(), 0, nocc_, nvirt_, gaunt_, breit_, /*rel*/true, /*kramers*/true);
+  return out;
+}
 
 
 shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcore_mvo) {
