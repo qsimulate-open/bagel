@@ -83,7 +83,7 @@ void ZCASSCF::init() {
 
   // coefficient parameters
         bool mvo = idata_->get<bool>("generate_mvo", false);
-  const bool kramers_coeff = idata_->get<bool>("kramers_coeff", false);
+  const bool kramers_coeff = idata_->get<bool>("kramers_coeff", relref->kramers());
   const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
   const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->nele());
   if (mvo && ncore_mvo == geom_->nele()) {
@@ -187,6 +187,7 @@ void ZCASSCF::init() {
 
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
+  cout << "    * Correlation of " << geom_->nele() - charge_ - nclosed_*2 << " active electrons in " << nact_ << " orbitals."  << endl;
   cout << "    * Time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl;
 
   const int idel = geom_->nbasis()*2 - nbasis_;
