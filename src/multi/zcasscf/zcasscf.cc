@@ -254,8 +254,6 @@ static ofstream* ofs_;
 
 void ZCASSCF::mute_stdcout() const {
   string filename = "casscf.log";
-  if (max_iter_ > 70) filename = "casscf1.log";
-  if (!tsymm_) filename = "casscf2.log";
   ofstream* ofs(new ofstream(filename,(backup_stream_ ? ios::app : ios::trunc)));
   ofs_ = ofs;
   backup_stream_ = cout.rdbuf(ofs->rdbuf());
@@ -289,7 +287,6 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 
    // scale using occupation numbers
    for (int i = 0; i != nact_*2; ++i) {
-     cout << "occup_[" << i << "] = " << occup_[i] << endl;
      assert(occup_[i] >= -1.0e-14);
      const double fac = occup_[i] > 0.0 ? sqrt(occup_[i]) : 0.0;
      for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
@@ -306,15 +303,6 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 
 
 shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
-
-  bool use_quat = tsymm_;
-  if (max_iter_ > 70) use_quat = false;
-  if (tsymm_) {
-    cout << "Was given a Kramers-restricted 1RDM" << (use_quat ? " and will take advantage of it." : " but not using quat symmetry here." )<< endl;
-
-  } else {
-    cout << "Input 1RDM has no particular symmetry enforced" << endl;
-  }
 
   // input should be 1rdm in kramers format
   shared_ptr<ZMatrix> tmp;
@@ -545,7 +533,6 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   VectorB eig(mofock->ndim());
   mofock->diagonalize(eig);
 
-  cout << "Rearrangement 2" << endl;
   if (!tsymm_)
     RelMOFile::rearrange_eig(eig, mofock);
 
