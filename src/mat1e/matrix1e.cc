@@ -56,7 +56,7 @@ class Matrix1eTask_ {
   protected:
     Matrix1e_<MatType>* parent_;
     size_t ob0, ob1;
-    array<shared_ptr<const Shell>,2> bas; 
+    array<shared_ptr<const Shell>,2> bas;
     shared_ptr<const Molecule> mol;
   public:
     Matrix1eTask_(array<shared_ptr<const Shell>,2> a, size_t b, size_t c, shared_ptr<const Molecule> m, Matrix1e_<MatType>* d)

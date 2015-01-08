@@ -98,7 +98,7 @@ void MoldenIO::const_maps() {
 double MoldenIO::denormalize(int l, double alpha) {
    double denom = 1.0;
    for (int ii = 2; ii <= l; ++ii) denom *= 2 * ii - 1;
-   double value = ::pow(2.0 * alpha / pi__, 0.75) * ::pow(::sqrt(4.0 * alpha), static_cast<double>(l)) / ::sqrt(denom);
+   const double value = pow(2.0 * alpha / pi__, 0.75) * pow(sqrt(4.0 * alpha), static_cast<double>(l)) / sqrt(denom);
 
-   return (1.0 / value);
+   return 1.0 / value;
 }

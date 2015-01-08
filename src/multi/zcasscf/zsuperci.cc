@@ -76,6 +76,7 @@ void ZSuperCI::compute() {
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
       fci_time.tick_print("RDMs");
+      if (iter > 0) prev_energy_ = energy_;
       energy_ = fci_->energy();
     }
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirtnr_*2);
@@ -115,7 +116,10 @@ void ZSuperCI::compute() {
       // print out...
       print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
       rms_grad_ = gradient;
-      cout << " " << endl;
+      cout << endl;
+      // output energy change for last cycle
+      cout << "    * State averaged energy change from last cycle = " << setprecision(6) << scientific
+           << blas::average(prev_energy_) - blas::average(energy_) << endl;
       cout << "    * Super CI optimization converged. *    " << endl << endl;
       mute_stdcout();
       break;

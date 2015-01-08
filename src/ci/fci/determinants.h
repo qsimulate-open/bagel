@@ -57,7 +57,7 @@ class Determinants : public Determinants_base<FCIString>,
     }
 
   public:
-    Determinants() { }
+    Determinants() : Determinants(1,1,1,true,true) { }
     Determinants(const int norb, const int nelea, const int neleb, const bool compress = true, const bool mute = false);
     Determinants(std::shared_ptr<const FCIString> ast, std::shared_ptr<const FCIString> bst, const bool compress = true, const bool mute = false);
     Determinants(std::shared_ptr<const CIStringSet<FCIString>> ast, std::shared_ptr<const CIStringSet<FCIString>> bst, const bool compress = true, const bool mute = false);

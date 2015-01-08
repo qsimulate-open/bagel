@@ -136,8 +136,12 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   {
     shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*ref_->coeff() * zmat->slice(0,nocc));
     {
-      const RDM<2> D(*ref_->rdm2(target)+*zrdm2);
-      const RDM<1> dd(*ref_->rdm1(target)+*zrdm1);
+      RDM<2> D(*ref_->rdm2(target)+*zrdm2);
+      RDM<1> dd(*ref_->rdm1(target)+*zrdm1);
+      // symetrize dd (zrdm1 needs symmetrization)
+      for (int i = 0; i != nact; ++i)
+        for (int j = 0; j != nact; ++j)
+          dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
 
       shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D, dd, nclosed, nact);
       qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));

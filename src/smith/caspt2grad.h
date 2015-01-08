@@ -37,9 +37,13 @@ namespace bagel {
 class CASPT2Grad : public Method {
   protected:
     std::shared_ptr<const Matrix> coeff_;
+    // second-order density matrix
     std::shared_ptr<const Matrix> d1_;
+    // first-order density matrices
+    std::shared_ptr<const Matrix> d11_;
     std::shared_ptr<const Matrix> d2_;
-    std::shared_ptr<const Civec> cideriv_;
+
+    std::shared_ptr<Civec> cideriv_;
 
     std::shared_ptr<FCI> fci_;
 
@@ -58,6 +62,7 @@ class CASPT2Grad : public Method {
 
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
     std::shared_ptr<const Matrix> d1() const { return d1_; }
+    std::shared_ptr<const Matrix> d11() const { return d11_; }
     std::shared_ptr<const Matrix> d2() const { return d2_; }
     std::shared_ptr<const Civec> cideriv() const { return cideriv_; }
 
@@ -70,7 +75,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
-      compute_y(std::shared_ptr<const Matrix> dm1, std::shared_ptr<const Matrix> dm2, std::shared_ptr<const Civec> cider,
+      compute_Y(std::shared_ptr<const Matrix> dm1, std::shared_ptr<const Matrix> dm11, std::shared_ptr<const Matrix> dm2,
                 std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 };
 

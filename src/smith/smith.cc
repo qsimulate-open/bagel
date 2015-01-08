@@ -25,8 +25,6 @@
 
 
 #include <src/smith/smith.h>
-#include <src/smith/MP2.h>
-#include <src/smith/CAS_all_active.h>
 #include <src/smith/CAS_test.h>
 
 
@@ -40,12 +38,8 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
   // make a smith_info class
   auto info = make_shared<SMITH_Info>(r, idata);
 
-  if (method == "mp2") {
-    algo_ = make_shared<MP2::MP2<Storage_Incore>>(info);
-  } else if (method == "caspt2") {
-    algo_ = make_shared<CAS_all_active::CAS_all_active<Storage_Incore>>(info);
-  } else if (method == "caspt2-test") {
-    algo_ = make_shared<CAS_test::CAS_test<Storage_Incore>>(info);
+  if (method == "caspt2-test") {
+    algo_ = make_shared<CAS_test::CAS_test>(info);
   } else {
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());
@@ -56,24 +50,19 @@ void Smith::compute() {
   algo_->solve();
 
   // TODO toggle by something better than this.
-  auto algop = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_);
+  auto algop = dynamic_pointer_cast<CAS_test::CAS_test>(algo_);
   if (algop) {
-    dm1_ = algop->rdm1();
-    dm2_ = algop->rdm2();
+    dm1_ = algop->rdm12();
+    dm11_ = algop->rdm11();
+    dm2_ = algop->rdm21();
 
-    // calculate unrelaxed dipole moment from correlated dm
-    correction_ = algop->rdm1_correction();
+    // compute <1|1>
+    wf1norm_ = algop->rdm1_correction();
 
     // convert ci derivative tensor to civec
     cider_ = algop->ci_deriv();
 
     // todo check
     coeff_ = algop->coeff();
-
-#if 0
-    cout << "  * Printing ci derivative civec:" << endl;
-    cider_->print(0.1e-15);
-    cout << "  * Printing civec ci derivative * cI =     " <<  setprecision(10) << cider_->dot_product(*(algo_->rdm0deriv())) << endl;
-#endif
   }
 }

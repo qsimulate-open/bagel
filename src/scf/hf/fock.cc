@@ -61,7 +61,7 @@ void Fock<0>::fock_two_electron_part(shared_ptr<const Matrix> den) {
       for (int ii = ioffset; ii != ioffset + isize; ++ii) {
         const int iin = ii * ndim();
         for (int jj = joffset; jj != joffset + jsize; ++jj) {
-          cmax = max(cmax, ::fabs(density_data[iin + jj]));
+          cmax = max(cmax, fabs(density_data[iin + jj]));
         }
       }
       const int ij = i * size + j;

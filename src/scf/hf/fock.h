@@ -56,26 +56,26 @@ class Fock : public Fock_base {
     Fock() { }
     // Fock operator for DF cases
     template<int DF1 = DF, class = typename std::enable_if<DF1==1>::type>
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> prev, const std::shared_ptr<const Matrix> den,
          const MatView ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
-     : Fock_base(a,b,c), store_half_(store) {
+     : Fock_base(a,prev,den), store_half_(store) {
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
       fock_one_electron_part();
     }
-    // the same is above.
+    // the same as above.
     template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
-         std::shared_ptr<T> o, const bool store = false, const bool rhf = false, const double scale_ex = 1.0) : Fock(a,b,c,*o,store,rhf,scale_ex) { }
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> prev, const std::shared_ptr<const Matrix> den,
+         std::shared_ptr<T> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0) : Fock(a,prev,den,*ocoeff,store,rhf,scale_ex) { }
 
     // Fock operator
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c, const std::vector<double>& d) : Fock(a,b,c,c,d) {}
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> prev, const std::shared_ptr<const Matrix> den, const std::vector<double>& d)
+     : Fock(a,prev,den,den,d) {}
 
     // Fock operator with a different density matrix for exchange
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c, std::shared_ptr<const Matrix> ex,
-         const std::vector<double>& d)
-     : Fock_base(a,b,c,d), store_half_(false) {
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> prev, const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> ex, const std::vector<double>& d)
+     : Fock_base(a,prev,den,d), store_half_(false) {
       fock_two_electron_part(ex);
       fock_one_electron_part();
     }

@@ -8,7 +8,7 @@ using namespace bagel;
 
 /******************************************************************************/
 
-static int gen_oh ( int code, double a, double b, double v, double *x, double *y, 
+static int gen_oh ( int code, double a, double b, double v, double *x, double *y,
   double *z, double *w )
 
 /******************************************************************************/
@@ -273,7 +273,7 @@ void LebedevList::ld0006 ( double *x, double *y, double *z, double *w )
 }
 /******************************************************************************/
 
-void LebedevList::ld0014 ( double *x, double *y, double *z, double *w ) 
+void LebedevList::ld0014 ( double *x, double *y, double *z, double *w )
 
 /******************************************************************************/
 /*

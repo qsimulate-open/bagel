@@ -133,28 +133,15 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
       if (algorithm == "superci" || algorithm == "")
-        //throw runtime_error("ZSuperCI algorithm has not been implemented with an applied magnetic field.");
         out = make_shared<ZSuperCI>(itree, geom, ref);
       else if (algorithm == "hybrid")
-        //out = make_shared<ZCASHybrid>(itree, geom, ref);
-        throw runtime_error("ZCASHybrid algorithm has not been implemented with an applied magnetic field.");
+        out = make_shared<ZCASHybrid>(itree, geom, ref);
       else if (algorithm == "bfgs")
-        //out = make_shared<ZCASBFGS>(itree, geom, ref);
-        throw runtime_error("ZBFGS algorithm has not been implemented with an applied magnetic field.");
+        out = make_shared<ZCASBFGS>(itree, geom, ref);
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
-    } else if (title == "fci")        throw runtime_error("FCI method has not been implemented with an applied magnetic field.");
-    else if (title == "ks")         throw runtime_error("KS method has not been implemented with an applied magnetic field.");
-    else if (title == "uhf")        throw runtime_error("UHF method has not been implemented with an applied magnetic field.");
-    else if (title == "rohf")       throw runtime_error("ROHF method has not been implemented with an applied magnetic field.");
-    else if (title == "soscf")      throw runtime_error("SOSCF method has not been implemented with an applied magnetic field.");
-    else if (title == "mp2")        throw runtime_error("MP2 method has not been implemented with an applied magnetic field.");
-    else if (title == "dmp2")       throw runtime_error("DMP2 method has not been implemented with an applied magnetic field.");
-    else if (title == "smith")      throw runtime_error("SMITH method has not been implemented with an applied magnetic field.");
-    else if (title == "nevpt2")     throw runtime_error("NEVPT2 method has not been implemented with an applied magnetic field.");
-    else if (title == "zcasscf")    throw runtime_error("ZCASSCF method has not been implemented with an applied magnetic field.");
-    else if (title == "caspt2grad") throw runtime_error("CASPT2grad method has not been implemented with an applied magnetic field.");
-    else if (title == "casscf")     throw runtime_error("CASSCF method has not been implemented with an applied magnetic field.");
+    } else
+      throw runtime_error(to_upper(title) + "method has not been implemented with an applied magnetic field.");
   }
   return out;
 }

@@ -45,7 +45,7 @@ DMP2::DMP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry>
 
   if (geom_->dfs() || (ref && ref->geom()->dfs())) {
     if (!geom_) geom_ = ref->geom();
-  } else { 
+  } else {
     scf_ = make_shared<Dirac>(input, g, ref);
     scf_->compute();
     ref_ = scf_->conv_to_ref();
@@ -132,7 +132,7 @@ void DMP2::compute() {
   DFock::factorize(dffull);
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
-  shared_ptr<const RelDFFull> full = dffull.front(); 
+  shared_ptr<const RelDFFull> full = dffull.front();
 
   cout << "    * 3-index integral transformation done" << endl;
 

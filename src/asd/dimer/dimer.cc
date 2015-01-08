@@ -92,8 +92,8 @@ void Dimer::construct_geometry() {
 }
 
 shared_ptr<const Matrix> Dimer::form_projected_coeffs() {
-  shared_ptr<const Matrix> projectedA = isolated_refs_.first->project_coeff(sgeom_)->coeff();
-  shared_ptr<const Matrix> projectedB = isolated_refs_.second->project_coeff(sgeom_)->coeff();
+  shared_ptr<const Matrix> projectedA = isolated_refs_.first->project_coeff(sgeom_, false)->coeff();
+  shared_ptr<const Matrix> projectedB = isolated_refs_.second->project_coeff(sgeom_, false)->coeff();
 
   shared_ptr<Matrix> projected = projectedA->merge(projectedB);
 
@@ -135,7 +135,7 @@ shared_ptr<const Matrix> Dimer::construct_coeff() {
 
   const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
   if (mdata) {
-    isolated_refs_ = {isolated_refs_.first->project_coeff(geoms_.first), isolated_refs_.second->project_coeff(geoms_.second)};
+    isolated_refs_ = {isolated_refs_.first->project_coeff(geoms_.first, false), isolated_refs_.second->project_coeff(geoms_.second, false)};
   }
 
   shared_ptr<const Matrix> projected = form_projected_coeffs();

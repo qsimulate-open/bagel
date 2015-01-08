@@ -3,7 +3,7 @@
 // Filename: soscf.h
 // Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu> 
+// Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -42,7 +42,7 @@ class SOSCF : public SCF_base {
     std::shared_ptr<const ZMatrix> sooverlap_;
     std::shared_ptr<const ZMatrix> sotildex_;
     VectorB soeig_;
-    
+
   private:
     // serialization
     friend class boost::serialization::access;

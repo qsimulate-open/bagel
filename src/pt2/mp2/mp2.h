@@ -46,7 +46,7 @@ class MP2 : public Method {
     MP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>, const std::shared_ptr<const Reference> = nullptr);
 
     virtual void compute() override;
-    virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; } 
+    virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
     double energy() const { return energy_; }
     int ncore() const { return ncore_; }

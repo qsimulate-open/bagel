@@ -66,10 +66,22 @@ void CASSCF::common_init() {
 
   // first set coefficient
   coeff_ = ref_->coeff();
-#if 0
-  // make sure that coefficient diagonalizes overlap // TODO I think this is very dangerous
-  coeff_orthog();
+  if (geom_->nbasis() != coeff_->mdim()) {
+    Overlap ovl(geom_);
+    shared_ptr<const Matrix> tildex = ovl.tildex();
+
+    Matrix c(coeff_->ndim(), tildex->mdim());
+    c.copy_block(0, 0, coeff_->ndim(), coeff_->mdim(), coeff_);
+
+    shared_ptr<const Matrix> trans = get<0>((*tildex % ovl * *coeff_).svd());
+    c.copy_block(0, coeff_->mdim(), coeff_->ndim(), tildex->mdim()-coeff_->mdim(), *tildex * trans->slice(coeff_->mdim(), tildex->mdim()));
+    coeff_ = make_shared<Coeff>(move(c));
+
+#ifndef NDEBUG
+    Matrix unit(coeff_->mdim(), coeff_->mdim()); unit.unit();
+    assert((*coeff_ % ovl * *coeff_ - unit).rms() < 1.0e-10);
 #endif
+  }
 
   // get maxiter from the input
   max_iter_ = idata_->get<int>("maxiter", 50);

@@ -49,7 +49,7 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   ref_ = cas->conv_to_ref();
   fci_ = cas->fci();
   // TODO
-  thresh_ = 1.0e-8; //cas->thresh();
+  thresh_ = 1.0e-10; //cas->thresh();
   ref_energy_ = cas->energy();
 }
 
@@ -67,27 +67,61 @@ void CASPT2Grad::compute() {
     // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
     coeff_ = smith->coeff();
 
-    cideriv_ = smith->cideriv();
+    if (nact) {
+      cideriv_ = smith->cideriv()->copy();
+    }
     target_ = smith->algo()->ref()->target();
     ncore_  = smith->algo()->ref()->ncore();
 
     // save correlated density matrices d(1), d(2), and ci derivatives
-    shared_ptr<Matrix> d1tmp = make_shared<Matrix>(*smith->dm1());
-    const double correction = smith->correction();
-    // add correction to active part of the correlated one-body density
-    shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
-    for (int i = nclosed; i != nclosed+nact; ++i)
-      for (int j = nclosed; j != nclosed+nact; ++j)
-        d1tmp->element(j-ncore_, i-ncore_) -=  correction * d0->element(j, i);
+    auto d1tmp = make_shared<Matrix>(*smith->dm1());
+    auto d11tmp = make_shared<Matrix>(*smith->dm11());
+    // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
+    if (nact) {
+      const double wf1norm = smith->wf1norm();
+      shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
+      for (int i = nclosed; i != nclosed+nact; ++i)
+        for (int j = nclosed; j != nclosed+nact; ++j)
+          d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm * d0->element(j, i);
+    }
     if (!ncore_) {
       d1_ = d1tmp;
+      d11_ = d11tmp;
     } else {
       auto d1tmp2 = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
       d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1tmp);
-      d1_ = d1tmp2;
+      d1_ = d1tmp2->copy();
+      d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d11tmp);
+      d11_ = d1tmp2;
     }
+
+    // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]
+    // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
+    // -> y_I += [(h+g[d^(0)+d^(2)]) - (1+N)F] <I|E_ij|0>
+    if (nact) {
+      const int nmobasis = coeff_->mdim();
+      auto d0 = ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis);
+      // TODO we should be able to avoid this Fock build
+      auto d0ao = make_shared<Matrix>(*coeff_* *d0  ^ *coeff_);
+      auto d1ao = make_shared<Matrix>((*coeff_* *d1_ ^ *coeff_) + *d0ao); // sum of d0 + d1 (to make it positive definite)
+      auto fock  = make_shared<Fock<1>>(geom_, ref_->hcore(), d0ao, vector<double>());
+      auto fock1 = make_shared<Fock<1>>(geom_, ref_->hcore(), d1ao, vector<double>());
+      *fock1 -= *fock * (1.0+smith->wf1norm()); // g[d^(2)]
+
+      auto acoeff = coeff_->slice(nclosed, nclosed+nact);
+      auto fock1mo = make_shared<Matrix>(acoeff % *fock1 * acoeff);
+      shared_ptr<const Dvec> deriv = ref_->rdm1deriv(target_);
+      assert(deriv->ij() == nact*nact);
+
+      for (int i = 0; i != nact; ++i)
+        for (int j = 0; j != nact; ++j)
+          cideriv_->ax_plus_y(2.0*fock1mo->element(j,i), deriv->data(j+i*nact));
+    }
+
     d2_ = smith->dm2();
     energy_ = smith->algo()->energy() + ref_energy_[target_];
+
+    cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
   }
 }
 
@@ -101,12 +135,15 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   const int nact = ref->nact();
 
   // state-averaged density matrices
-  shared_ptr<const RDM<1>> rdm1_av = ref->rdm1_av();
-  shared_ptr<const RDM<2>> rdm2_av = ref->rdm2_av();
+  shared_ptr<const RDM<1>> rdm1_av = nact ? ref->rdm1_av() : nullptr;
+  shared_ptr<const RDM<2>> rdm2_av = nact ? ref->rdm2_av() : nullptr;
 
+  // second order density matrix
   shared_ptr<const Matrix> d1 = task_->d1();
+  // first order density matrices
+  shared_ptr<const Matrix> d11 = task_->d11();
   shared_ptr<const Matrix> d2 = task_->d2();
-  shared_ptr<const Civec> cider = task_->cideriv();
+  shared_ptr<const Civec> cider = nact ? task_->cideriv() : nullptr;
 
   shared_ptr<const Matrix> coeff = task_->coeff();
 
@@ -115,12 +152,20 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   const int nmobasis = coeff->mdim();
 
   // d0 including core
-  shared_ptr<const Matrix> d0 = ref->rdm1_mat(task_->target())->resize(nmobasis,nmobasis);
+  shared_ptr<const Matrix> d0;
+  if (nact) {
+    d0 = ref->rdm1_mat(task_->target())->resize(nmobasis,nmobasis);
+  } else {
+    auto tmp = make_shared<Matrix>(nmobasis,nmobasis);
+    for (int i = 0; i != nclosed; ++i) tmp->element(i,i) = 2.0;
+    d0 = tmp;
+  }
   const MatView ocoeff = coeff->slice(0, nocc);
 
   {
-    auto dtotao = make_shared<Matrix>(*coeff * (*d0 + *d1) ^ *coeff);
+    auto dtotao = make_shared<Matrix>(*coeff * (*d0 + *d11 + *d1) ^ *coeff);
     Dipole dipole(geom_, dtotao, "CASPT2 unrelaxed");
+    dipole.compute();
   }
 
   // compute Yrs
@@ -129,37 +174,51 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const DFHalfDist> halfjj = halfj->apply_J();
   shared_ptr<Matrix> yrs;
   shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
-  tie(yrs, fulld1) = task_->compute_y(d1, d2, cider, half, halfj, halfjj);
+  tie(yrs, fulld1) = task_->compute_Y(d1, d11, d2, half, halfj, halfjj);
 
   // solve CPCASSCF
   auto g0 = yrs;
-  auto g1 = make_shared<Dvec>(cider, ref->nstate()); // FIXME this is wrong for nstate > 1 in CASSCF
+  auto g1 = nact ? make_shared<Dvec>(cider, ref->nstate())
+                 : make_shared<Dvec>(make_shared<Determinants>(), 1); // FIXME this is wrong for nstate > 1 in CASSCF
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
-  auto cp = make_shared<CPCASSCF>(grad, ref->ciwfn()->civectors(), half, halfjj, ref, fci, ncore, coeff);
+
+  shared_ptr<const Dvec> civector;
+  if (nact) {
+    civector = ref->ciwfn()->civectors();
+  } else {
+    auto civec = make_shared<Dvec>(make_shared<Determinants>(), 1);
+    civec->data(0)->element(0,0) = 1.0;
+    civector = civec;
+  }
+  auto cp = make_shared<CPCASSCF>(grad, civector, half, halfjj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(1.0e-12);
+//tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
 
   // form relaxed 1RDM
   // form Zd + dZ^+
-  shared_ptr<Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
+  shared_ptr<const Matrix> dsa = nact ? rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis) : d0;
   auto dm = make_shared<Matrix>(*zmat * *dsa + (*dsa ^ *zmat));
 
   shared_ptr<Matrix> dtot = d0->copy();
   dtot->ax_plus_y(1.0, dm);
   dtot->ax_plus_y(1.0, d1);
+  dtot->ax_plus_y(1.0, d11);
   if (smallz)
     dtot->add_block(1.0, 0, 0, nocc, nocc, smallz);
 
   // form zdensity
-  auto detex = make_shared<Determinants>(nact, fci->nelea(), fci->neleb(), false, /*mute=*/true);
   shared_ptr<const RDM<1>> zrdm1;
   shared_ptr<const RDM<2>> zrdm2;
-  tie(zrdm1, zrdm2) = fci->compute_rdm12_av_from_dvec(ref->ciwfn()->civectors(), zvec, detex);
+  if (nact) {
+    auto detex = make_shared<Determinants>(nact, fci->nelea(), fci->neleb(), false, /*mute=*/true);
+    tie(zrdm1, zrdm2) = fci->compute_rdm12_av_from_dvec(ref->ciwfn()->civectors(), zvec, detex);
 
-  shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
-  zrdm1_mat->symmetrize();
-  dtot->ax_plus_y(1.0, zrdm1_mat);
+    shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
+    zrdm1_mat->symmetrize();
+    dtot->ax_plus_y(1.0, zrdm1_mat);
+  }
 
   // compute relaxed dipole to check
   auto dtotao = make_shared<Matrix>(*coeff * *dtot ^ *coeff);
@@ -177,16 +236,27 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<DFHalfDist> qri;
   {
     shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*coeff * zmat->slice(0,nocc));
-    {
-      const RDM<2> D(*ref->rdm2(task_->target())+*zrdm2);
-      const RDM<1> dd(*ref->rdm1(task_->target())+*zrdm1);
-
+    if (nact) {
+      RDM<2> D(*ref->rdm2(task_->target())+*zrdm2);
+      RDM<1> dd(*ref->rdm1(task_->target())+*zrdm1);
+      // symetrize dd (zrdm1 needs symmetrization)
+      for (int i = 0; i != nact; ++i)
+        for (int j = 0; j != nact; ++j)
+          dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
       shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D, dd, nclosed, nact);
+
       qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
       qri = qijd->back_transform(ocoeff);
-    }
-    {
+
       shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
+      qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
+
+    } else {
+      shared_ptr<DFFullDist> qijd = qij->apply_closed_2RDM();
+      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_closed_2RDM());
+      qri = qijd->back_transform(ocoeff);
+
+      shared_ptr<const DFFullDist> qijd2 = qij->apply_closed_2RDM();
       qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
     }
   }
@@ -219,12 +289,18 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
     *qq += *halfjj->form_aux_2index(sepd, -1.0);
   };
 
-  separable_pair(ref->rdm1_mat(task_->target()), d1);
+  separable_pair(nact ? ref->rdm1_mat(task_->target()) : d0->get_submatrix(0,0,nocc,nocc), d1);
 
-  if (ncore && ncore < nclosed)
+  if (ncore)
     separable_pair(smallz, dsa);
 
   // compute gradients
+dtotao->print("dtotao", 20);
+xmatao->print("xmatao", 20);
+
+qq->symmetrize();
+qq->print("qq");
+
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq);
   gradient->print();
   // set energy
@@ -234,7 +310,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 
 
 tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
-  CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, shared_ptr<const Matrix> dm2, shared_ptr<const Civec> cider,
+  CASPT2Grad::compute_Y(shared_ptr<const Matrix> dm1, shared_ptr<const Matrix> dm11, shared_ptr<const Matrix> dm2,
                         shared_ptr<const DFHalfDist> half, shared_ptr<const DFHalfDist> halfj, shared_ptr<const DFHalfDist> halfjj) {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
@@ -245,8 +321,6 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   assert(nall == nmobasis);
 
   const MatView ocmat = coeff_->slice(0, nocc);
-
-  auto dmr = make_shared<Matrix>(*dm1);
 
   shared_ptr<const DFFullDist> full = halfj->compute_second_transform(coeff_);
   shared_ptr<const DFFullDist> fullo = halfj->compute_second_transform(ocmat);
@@ -259,41 +333,81 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     // 2 Y1 = h(d0 + d1 + d2) * 2
     // one-electron contributions
     auto hmo = make_shared<const Matrix>(*coeff_ % *ref_->hcore() * *coeff_);
-    auto d0 = make_shared<Matrix>(*ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis));
-    *out += *hmo * (*dmr + *d0) * 2.0;
+    shared_ptr<Matrix> d0;
+    if (nact) {
+      d0 = ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis);
+    } else {
+      d0 = make_shared<Matrix>(nmobasis,nmobasis);
+      for (int i = 0; i != nclosed; ++i)
+        d0->element(i,i) = 2.0;
+    }
+    *out += *hmo * (*dm1 + *dm11 + *d0) * 2.0;
   }
 
   {
     // Y2 = Y2_rs = Y2_ri + Y2_ra, so making both at once
-    shared_ptr<Matrix> dkl = ref_->rdm1_mat(target_);
-    dkl->sqrt();
-    dkl->scale(1.0/sqrt(2.0));
-    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, ocoeff * *dkl, /*grad*/false, /*rhf*/true);
-    *out += *coeff_ % fock * *coeff_ * *dmr * 2.0;
+    shared_ptr<Matrix> dkl;
+    if (nact) {
+      dkl = ref_->rdm1_mat(target_);
+      dkl->sqrt();
+      dkl->scale(1.0/sqrt(2.0));
+    }
+    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, dkl ? ocoeff * *dkl : Matrix(ocoeff), /*grad*/false, /*rhf*/true);
+    *out += *coeff_ % fock * *coeff_ * *dm1 * 2.0;
   }
 
   {
     // 2 Y3 = 2 Y3_ri*dm0_ji
     // coulomb
-    auto dmrao = make_shared<Matrix>(*coeff_ * *dmr ^ *coeff_);
+    auto dmrao = make_shared<Matrix>(*coeff_ * *dm1 ^ *coeff_);
     auto jop = geom_->df()->compute_Jop(dmrao);
     // exchange
     auto kopi = halfjj->compute_Kop_1occ(dmrao, -0.5)->transpose();
 
-    out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % (*jop * ocoeff + *kopi) * *ref_->rdm1_mat(target_));
+    auto tmp = make_shared<Matrix>(*coeff_ % (*jop * ocoeff + *kopi));
+    if (nact) {
+      *tmp *= *ref_->rdm1_mat(target_);
+    } else {
+      *tmp *= 2.0;
+    }
+    out->add_block(2.0, 0, 0, nmobasis, nocc, tmp);
   }
 
   // TODO D1 must be parallelised as it is very big.
   // construct D1 to be used in Y4 and Y5
   auto D1 = make_shared<btas::Tensor4<double>>(nocc,nall,nocc,nall);
+  fill(D1->begin(), D1->end(), 0.0);
   {
     // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
     for (int s = 0; s != nall; ++s) // extend
       for (int k = ncore_; k != nocc; ++k)
         for (int t = 0; t != nall; ++t) // extend
           for (int l = ncore_; l != nocc; ++l) {
-            if (t >= nclosed && s >= nclosed) {
+            // TODO ugly code - there should be a smart way of doing this! just need a logic to test if it has to be symmetrized
+            // ccaa, cxaa, xxaa
+            if (t >= nocc && s >= nocc) {
               (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              // cxaa
+              if ((k >= nclosed) ^ (l >= nclosed))
+                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+            // ccxa, ccxx
+            } else if (t >= nclosed && s >= nclosed && k < nclosed && l < nclosed) {
+              (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              // ccxa
+              if ((t < nocc) ^ (s < nocc))
+                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+            // cxxa, xcxa
+            } else if (((k >= nclosed) ^ (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
+              (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+            // cxxx
+            } else if (((k >= nclosed) ^ (l >= nclosed)) && ((t < nocc) && (s < nocc)) && (t >= nclosed && s >= nclosed)) {
+              (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+            // xxxa
+            } else if (((k >= nclosed) && (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
+              (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
             }
           }
   }
@@ -306,7 +420,8 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     fullks = full->apply_2rdm(*D1);
     *out += *full->form_2index(fullks, 2.0);
     // D0 part
-    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(*ref_->rdm2(target_), *ref_->rdm1(target_), nclosed, nact);
+    shared_ptr<const DFFullDist> fulld = nact ? fullo->apply_2rdm(*ref_->rdm2(target_), *ref_->rdm1(target_), nclosed, nact)
+                                              : fullo->apply_closed_2RDM();
     out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulld, 1.0));
   }
 

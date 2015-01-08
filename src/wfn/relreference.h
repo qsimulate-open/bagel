@@ -66,7 +66,7 @@ class RelReference : public Reference {
     bool rel() const { return rel_; }
     bool kramers() const { return kramers_; }
 
-    std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
+    std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin, const bool check_geom_change = true) const override;
 
 };
 

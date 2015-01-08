@@ -98,8 +98,8 @@ std::vector<double> reference_cas_act_opt() {
 }
 std::vector<double> reference_sacas_act_opt() {
   std::vector<double> out(6);
-  out[2] = 1.702357;
-  out[5] =-0.000262;
+  out[2] = 1.702348;
+  out[5] =-0.000261;
   return out;
 }
 std::vector<double> reference_mp2_opt() {

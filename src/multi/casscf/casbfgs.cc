@@ -127,7 +127,7 @@ void CASBFGS::compute() {
     if (nact_) {
       energy_ = fci_->energy();
       // use state averaged energy to update trust radius
-      const double sa_en = accumulate(energy_.begin(), energy_.end(), 0.0) / static_cast<double>(fci_->energy().size());
+      const double sa_en = blas::average(energy_);
       evals.push_back(sa_en);
     } else {
       const double en = (ccoeff % (*cfockao + *hcore_) * ccoeff).trace() + geom_->nuclear_repulsion();
