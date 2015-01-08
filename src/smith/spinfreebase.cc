@@ -316,8 +316,8 @@ void SpinFreeMethod::print_iteration() const {
 void SpinFreeMethod::print_iteration(const int i, const double en, const double err) const {
   auto end = chrono::high_resolution_clock::now();
   const double tim = chrono::duration_cast<chrono::milliseconds>(end-time_).count() * 0.001;
-  cout << "     " << setw(4) << i << setw(15) << fixed << setprecision(10) << en
-                                            << setw(15) << fixed << setprecision(10) << err
+  cout << "     " << setw(4) << i << setw(15) << fixed << setprecision(8) << en
+                                            << setw(15) << fixed << setprecision(8) << err
                                             << setw(10) << fixed << setprecision(2) << tim << endl;
   time_ = end;
 }
