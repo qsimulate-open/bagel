@@ -90,6 +90,7 @@ int main(int argc, char** argv) {
       if ((title == "smith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
 
+#ifndef DISABLE_SERIALIZATION
       if (itree->get<bool>("load_ref", false)) {
         const string name = itree->get<string>("ref_in", "");
         if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
@@ -98,6 +99,7 @@ int main(int argc, char** argv) {
         archive >> ptr;
         ref = shared_ptr<Reference>(ptr);
       }
+#endif
 
       // most methods are constructed here
       method = construct_method(title, itree, geom, ref);
@@ -115,11 +117,13 @@ int main(int argc, char** argv) {
 
         method->compute();
         ref = method->conv_to_ref();
+#ifndef DISABLE_SERIALIZATION
         if (itree->get<bool>("save_ref", false)) {
           const string name = itree->get<string>("ref_out", "reference");
           OArchive archive(name);
           archive << ref;
         }
+#endif
 
       } else if (title == "optimize") {
 
