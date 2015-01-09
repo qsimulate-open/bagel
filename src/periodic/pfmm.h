@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: fmm.h
-// Copyright (C) 2014 Toru Shiozaki
+// Filename: pfmm.h
+// Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,20 +24,26 @@
 //
 
 
-#ifndef __SRC_PERIODIC_FMM_H
-#define __SRC_PERIODIC_FMM_H
+#ifndef __SRC_PERIODIC_PFMM_H
+#define __SRC_PERIODIC_PFMM_H
 
 #include <src/periodic/pmultipole.h>
 #include <src/periodic/localexpansion.h>
 
 namespace bagel {
 
-class FMM {
+class PFMM {
   protected:
+    std::shared_ptr<const Lattice> lattice_;
+    int lmax_;
+    int num_multipoles_;
 
   public:
-    FMM() { }
-    ~FMM() { }
+    PFMM(std::shared_ptr<const Lattice> lattice, const int lmax = ANG_HRR_END);
+    ~PFMM() { }
+
+    std::vector<std::vector<std::complex<double>>> atomic_multipoles(const std::shared_ptr<const Atom> atom, const std::shared_ptr<const PData> density);
+    void print_atomic_multipoles(std::vector<std::complex<double>> multipoles) const;
 
 };
 
