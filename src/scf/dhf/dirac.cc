@@ -35,6 +35,7 @@
 #include <src/util/math/zmatrix.h>
 #include <src/util/math/matrix.h>
 #include <src/util/math/diis.h>
+#include <src/multi/zcasscf/zcasscf.h>
 
 using namespace std;
 using namespace bagel;
@@ -161,6 +162,18 @@ void Dirac::compute() {
   }
 
   coeff_ = coeff->matrix();
+
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    string filename = "dhf.log";
+    ofstream* ofs(new ofstream(filename, ios::trunc));
+    streambuf* backup_stream_ = cout.rdbuf(ofs->rdbuf());
+
+    ZCASSCF::population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_);
+
+    cout.rdbuf(backup_stream_);
+    delete ofs;
+  }
 
 }
 

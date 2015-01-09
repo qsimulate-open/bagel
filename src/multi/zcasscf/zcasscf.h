@@ -124,6 +124,9 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // rearrange coefficient to {c,a,v} by selecting active columns from input coefficient
     std::shared_ptr<const ZMatrix> set_active(std::set<int> active_indices) const;
 
+    // print contributions of AOs to MOs - static so it can also be used by Dirac
+    static void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView coeff_pos, std::shared_ptr<const ZMatrix> overlap);
+
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
     int nclosed() const { return nclosed_; }

@@ -211,6 +211,12 @@ void ZSuperCI::compute() {
     fci_->compute_rdm12();
   }
 
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    mute_stdcout();
+    population_analysis(geom_, coeff_->slice(0, nclosed_+nact_+nvirtnr_), overlap_);
+    resume_stdcout();
+  }
 }
 
 
