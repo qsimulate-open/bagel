@@ -36,11 +36,8 @@ namespace bagel {
 
 class MultipoleBatch_base : public OSIntegral<std::complex<double>> {
   protected:
-    std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     std::array<double, 3> centre_;
     int lmax_;
-
-    int asize_, asize_final_, asize_final_sph_, amax_;
 
     int num_multipoles_;
     std::complex<double>* multipole_;
