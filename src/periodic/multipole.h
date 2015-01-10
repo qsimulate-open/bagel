@@ -41,7 +41,7 @@ class Multipole {
     std::array<double, 3> centre_;
     int lmax_;
 
-    double r_, theta_, phi_;
+    int num_multipoles_;
     std::vector<std::complex<double>> multipole_;
     void compute_multipoles();
 
@@ -52,18 +52,25 @@ class Multipole {
 
     std::array<double, 3> centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
-    std::array<double, 3> spherical_coordinates() const { return {{r_, theta_, phi_}}; }
+
+    int num_multipoles() const { return num_multipoles_; }
 
     std::vector<std::complex<double>> multipoles() { return multipole_; }
-    std::complex<double> multipole(const int i) const { return multipole_[i]; }
-    std::complex<double> multipole(const int l, const int m) const { return multipole_[l * l + l + m]; }
+    std::complex<double> multipole(const int i) const { assert(i < num_multipoles_); return multipole_[i]; }
+    std::complex<double> multipole(const int l, const int m) const {
+      assert (l <= lmax_ && abs(m) <= l); return multipole_[l * l + l + m];
+    }
+
     std::vector<std::complex<double>> multipoles(const int l) {
+      assert (l <= lmax_);
       std::vector<std::complex<double>> out(2 * l + 1);
       const int i0 = (l + 1) * (l + 1);
       for (int i = 0; i != 2 * l + 1; ++i) out[i] = multipole_[i + i0];
 
       return out;
     }
+
+//    std::shared_ptr<const Multipole> translate(std::array<double, 3> displ);
 
     void print_multipoles() const;
 };

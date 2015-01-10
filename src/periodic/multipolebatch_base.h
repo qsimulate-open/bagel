@@ -30,7 +30,6 @@
 #include <src/parallel/resources.h>
 #include <src/molecule/atom.h>
 #include <src/integral/os/osintegral.h>
-#include <src/periodic/multipole.h>
 
 namespace bagel {
 
@@ -40,9 +39,7 @@ class MultipoleBatch_base : public OSIntegral<std::complex<double>> {
     int lmax_;
 
     int num_multipoles_;
-    std::complex<double>* multipole_;
-
-    std::complex<double>* multipole_buff_;
+    std::vector<std::complex<double>> multipole_;
 
     void init();
     void allocate_arrays(const size_t ps);

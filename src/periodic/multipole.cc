@@ -34,26 +34,27 @@ const static Factorial f;
 
 Multipole::Multipole(const array<double, 3> c, const int l) : centre_(c), lmax_(l) {
 
-  r_ = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-  theta_ = acos(centre_[2]/r_);
-  phi_ = atan2(centre_[1], centre_[0]);
-
+  num_multipoles_ = (lmax_ + 1) * (lmax_ + 1);
   compute_multipoles();
 }
 
 
 void Multipole::compute_multipoles() {
 
-  multipole_.resize((lmax_ + 1) * (lmax_ + 1));
+  const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
+  const double theta = acos(centre_[2]/r);
+  const double phi = atan2(centre_[1], centre_[0]);
+
+  multipole_.resize(num_multipoles_);
 
   int count = 0;
   for (int l = 0; l != lmax_; ++l) {
     for (int mm = 0; mm != 2 * l; ++mm) {
       const int m = mm - l;
-      const double coeff = pow(r_, l) * plm.compute(l, abs(m), cos(theta_)) / f(l + abs(m));
+      const double coeff = pow(r, l) * plm.compute(l, abs(m), cos(theta)) / f(l + abs(m));
 
-      double real = coeff * cos(-m * phi_);
-      double imag = coeff * sin(-m * phi_);
+      double real = coeff * cos(-m * phi);
+      double imag = coeff * sin(-m * phi);
       multipole_[count] = complex<double>(real, imag);
 
       ++count;

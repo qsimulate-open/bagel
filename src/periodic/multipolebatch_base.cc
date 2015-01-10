@@ -25,6 +25,7 @@
 
 
 #include <src/periodic/multipolebatch_base.h>
+#include <src/periodic/multipole.h>
 
 using namespace std;
 using namespace bagel;
@@ -47,9 +48,7 @@ void MultipoleBatch_base::init() {
 
 void MultipoleBatch_base::allocate_arrays(const size_t ps) {
 
-  multipole_buff_ = stack_->get<complex<double>>(ps * num_multipoles_);
-  complex<double> *cpointer = multipole_buff_;
-  multipole_ = cpointer;        cpointer += ps * num_multipoles_;
+  multipole_.resize(ps * num_multipoles_);
 }
 
 
@@ -77,8 +76,10 @@ void MultipoleBatch_base::compute_ss(const double thr) {
       PQ[1] = P[1] - centre_[1];
       PQ[2] = P[2] - centre_[2];
       auto Mpq = make_shared<const Multipole>(PQ);
-      for (int i = 0; i != num_multipoles_; ++i)
-        multipole_[index * prim0_ * prim1_ + i] = Mpq->multipole(i) * Sab;
+      for (int i = 0; i != num_multipoles_; ++i) {
+        cout << " size = " << multipole_.size() << " pos = " << index + i * prim0_ * prim1_ << endl;
+        multipole_[index + i * prim0_ * prim1_] = Mpq->multipole(i) * Sab;
+      }
     }
   }
 }
