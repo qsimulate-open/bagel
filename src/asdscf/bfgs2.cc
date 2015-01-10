@@ -135,10 +135,12 @@ void ASDBFGS2::compute() {
     // first make a weighted coefficient
     shared_ptr<Matrix> acoeff = coeff_->slice_copy(nclosed_, nocc_);
     shared_ptr<Matrix> rdm1_mat = rdm1_->rdm1_mat(/*nclose*/0);
+
     shared_ptr<Matrix> rdm1_scaled = rdm1_mat->copy();
     rdm1_scaled->sqrt();
     rdm1_scaled->delocalize();
-    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_scaled);
+    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_scaled); // such that C' * (1/2 D) C will be obtained.
+
 //  for (int i = 0; i != nact_; ++i)
 //    blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
     // then make a AO density matrix
@@ -154,6 +156,20 @@ void ASDBFGS2::compute() {
     auto qxr = Qvec(coeff_->mdim(), nact_, coeff_, nclosed_); //uses internal rdm1_ and rdm2_
     cout << "BFGS: Qvec done.." << endl;
 
+
+    //mcfock
+    shared_ptr<Matrix> mcfock = make_shared<Matrix>(*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat
+                                                    + *qxr->get_submatrix(nclosed_, 0, nact_, nact_) );
+    cout << "MC Fock Matrix: symmetric check:" << check_symmetric(mcfock) << endl;
+    {
+      shared_ptr<Matrix> p = make_shared<Matrix>(*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat );
+      shared_ptr<Matrix> q = make_shared<Matrix>( *qxr->get_submatrix(nclosed_, 0, nact_, nact_) );
+      cout << "TEST P Matrix: symmetric check:" << check_symmetric(p) << endl;
+      cout << "TEST Q Matrix: symmetric check:" << check_symmetric(q) << endl;
+    }
+  
+
+
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);
     cout << "BFGS: Gradient vc done.." << endl;
@@ -163,11 +179,13 @@ void ASDBFGS2::compute() {
     // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
     grad_ca(cfock, afock, qxr, rdm1_mat, sigma);
     cout << "BFGS: Gradient ca done.." << endl;
+    grad_aa(mcfock, sigma);
+    cout << "BFGS: Gradient aa done.." << endl;
 
     // if this is the first time, set up the BFGS solver
     if (iter == 0) {
       // BFGS and DIIS should start at the same time
-      shared_ptr<const ASDRotFile2> denom = compute_denom(cfock, afock, qxr, rdm1_mat);
+      shared_ptr<const ASDRotFile2> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock);
       bfgs = make_shared<SRBFGS<ASDRotFile2>>(denom);
     }
 
@@ -231,7 +249,7 @@ void ASDBFGS2::compute() {
 }
 
 
-shared_ptr<const ASDRotFile2> ASDBFGS2::compute_denom(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1) const {
+shared_ptr<const ASDRotFile2> ASDBFGS2::compute_denom(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> mcfock) const {
   auto out = make_shared<ASDRotFile2>(nclosed_, nact_, nvirt_, nactA_, nactB_ );
 //const double tiny = 1.0e-15;
 
@@ -277,9 +295,19 @@ shared_ptr<const ASDRotFile2> ASDBFGS2::compute_denom(shared_ptr<const Matrix> c
     }
   }
   // tu part
-  /*
-    TODO
-  */
+  if (nact_) {
+    double* target = out->ptr_aa();
+    for (int i = nactA_; i != nact_; ++i) { //B
+      for (int j = 0; j != nactA_; ++j) { //A
+        *target++ = 2.0*( 
+                    - mcfock->element(j,j) - mcfock->element(i,i) 
+                    + rdm1->element(j,j)*cfock->element(i,i) + rdm1->element(i,i)*cfock->element(j,j) 
+                    - rdm1->element(i,j)*cfock->element(j,i) - rdm1->element(j,i)*cfock->element(i,j)
+                    + 2.0*afock->element(i,i) + 2.0*afock->element(j,j)
+                    );
+      }
+    }
+  }
 
   const double thresh = 1.0e-8;
   for (int i = 0; i != out->size(); ++i)
@@ -329,6 +357,14 @@ void ASDBFGS2::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> 
   }
 }
 
-// grad
-//void ASDBFGS2::grad_aa(?) const {
-//}
+// grad(t/t)
+void ASDBFGS2::grad_aa(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRotFile2> sigma) const {
+  if (!nact_) return;
+  double* target = sigma->ptr_aa();
+  for (int i = 0; i != nactB_; ++i) { //B
+    for (int j = 0; j != nactA_; ++j, ++target) { //A
+      *target = 2.0*(mcfock->element(j,i+nactA_) - mcfock->element(i+nactA_,j));
+    //*target = - mcfock->element(j,i+nactA_) + mcfock->element(i+nactA_,j);
+    }
+  }
+}
