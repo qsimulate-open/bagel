@@ -51,6 +51,7 @@
 
 #include <src/asdscf/superci.h>
 #include <src/asdscf/bfgs.h>
+#include <src/asdscf/bfgs2.h>
 #include <src/asdscf/hybrid.h>
 
 using namespace std;
@@ -109,6 +110,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<ASDSuperCI>(itree, geom, ref);
       else if (algorithm == "bfgs")
         out = make_shared<ASDBFGS>(itree, geom, ref);
+      else if (algorithm == "bfgs2")
+        out = make_shared<ASDBFGS2>(itree, geom, ref);
       else if (algorithm == "hybrid")
         out = make_shared<ASDHybrid>(itree, geom, ref);
       else
