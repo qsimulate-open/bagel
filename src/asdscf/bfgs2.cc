@@ -128,22 +128,23 @@ void ASDBFGS2::compute() {
     shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
     cout << "BFGS: 2.." << endl;
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
-    cout << "BFGS: Fock(closed) done.." << endl;
+    cout << "BFGS: Fock(closed) done..: size = " << cfock->ndim() << " x " << cfock->mdim() << endl;
 
 
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<Matrix> acoeff = coeff_->slice_copy(nclosed_, nocc_);
     shared_ptr<Matrix> rdm1_mat = rdm1_->rdm1_mat(/*nclose*/0);
-    rdm1_mat->sqrt();
-    rdm1_mat->delocalize();
-    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
+    shared_ptr<Matrix> rdm1_scaled = rdm1_mat->copy();
+    rdm1_scaled->sqrt();
+    rdm1_scaled->delocalize();
+    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_scaled);
 //  for (int i = 0; i != nact_; ++i)
 //    blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
     // then make a AO density matrix
-    shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore_, nullptr, acoeffw, /*store*/false, /*rhf*/true);
-    shared_ptr<const Matrix> afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);
-    cout << "BFGS: Fock(active) done.." << endl;
+    shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeffw, /*store*/false, /*rhf*/true);
+    shared_ptr<const Matrix> afock = make_shared<Matrix>(*coeff_ % *afockao * *coeff_);
+    cout << "BFGS: Fock(active) done..: size = " << afock->ndim() << " x " << afock->mdim() << endl;
 
 
 
