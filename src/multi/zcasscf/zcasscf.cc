@@ -577,14 +577,10 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
   auto coeff = coeff_;
   auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
 
-  int nclosed_start = ref_->nclosed()/2;
-  int nclosed       = nclosed_start;
-  for (auto& iter : active_indices)
-    if (iter < nclosed_start) --nclosed;
-
   int iclosed = 0;
-  int iactive = nclosed;
-  int ivirt   = nclosed + nact_;
+  int iactive = nclosed_;
+  int ivirt   = nclosed_ + nact_;
+  int nclosed_start = (geom_->nele() - charge_) / 2;
 
   auto cp   = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) {
     copy_n(coeff->element_ptr(0,i*2), naobasis, tmp_coeff->element_ptr(0, pos*2));
@@ -592,11 +588,20 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices) const {
     ++pos;
   };
 
+  int closed_count = 0;
   for (int i = 0; i < nmobasis; ++i) {
-    if (active_indices.find(i) != active_indices.end()) cp(i, iactive);
-    else if (i < nclosed_start) cp(i, iclosed);
-    else cp(i, ivirt);
+    if (active_indices.find(i) != active_indices.end()) {
+      cp(i, iactive);
+    } else if (i < nclosed_start) {
+      cp(i, iclosed);
+      closed_count++;
+    } else {
+      cp(i, ivirt);
+    }
   }
+
+  if (closed_count != nclosed_)
+    throw runtime_error("Invalid combination of closed and active orbitals.");
 
   // copy positrons
   tmp_coeff->copy_block(0, nmobasis*2, naobasis, nmobasis*2, coeff_->slice(nmobasis*2, nmobasis*4));
