@@ -381,15 +381,10 @@ shared_ptr<const ZMatrix> ZHarrison::set_active(set<int> active_indices, shared_
   auto coeff = coeffin;
   auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
 
-  int nclosed_start = ref_->nclosed()/2;
-  int nclosed       = nclosed_start;
-  for (auto& iter : active_indices)
-    if (iter < nclosed_start) --nclosed;
-  assert(nclosed == ncore_);
-
   int iclosed = 0;
-  int iactive = nclosed;
-  int ivirt   = nclosed + norb_;
+  int iactive = ncore_;
+  int ivirt   = ncore_ + norb_;
+  int nclosed_start = (geom_->nele() - charge_) / 2;
 
   if (!tsymm_)  // TODO figure out a good way to sort spin orbitals
     cout << "******** Assuming Kramers-paired orbitals are coming out from the reference coeff in order, but not making sure of it.  ********" << endl;
@@ -400,15 +395,20 @@ shared_ptr<const ZMatrix> ZHarrison::set_active(set<int> active_indices, shared_
     ++pos;
   };
 
+  int closed_count = 0;
   for (int i = 0; i < nmobasis; ++i) {
     if (active_indices.find(i) != active_indices.end()) {
       cp(i, iactive);
     } else if (i < nclosed_start) {
       cp(i, iclosed);
+      closed_count++;
     } else {
       cp(i, ivirt);
     }
   }
+
+  if (closed_count != ncore_)
+    throw runtime_error("Invalid combination of closed and active orbitals.");
 
   // copy positrons
   tmp_coeff->copy_block(0, nmobasis*2, naobasis, nmobasis*2, coeffin->slice(nmobasis*2, nmobasis*4));
