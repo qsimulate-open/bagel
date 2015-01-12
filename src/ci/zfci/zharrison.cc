@@ -347,7 +347,7 @@ void ZHarrison::compute() {
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
       cout << setw(7) << iter << setw(4) << i << " " << setw(2) << (conv[i] ? "*" : " ")
-                              << setw(17) << fixed << setprecision(12) << energies[i]+nuc_core << "   "
+                              << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
                               << fcitime.tick() << endl;
       energy_[i] = energies[i]+nuc_core;
@@ -400,28 +400,9 @@ shared_ptr<const ZMatrix> ZHarrison::set_active(set<int> active_indices, shared_
     ++pos;
   };
 
-
-  /***** DEBUG VERSION:  Same as cp(i, iactive); below, but maintains the order provided in input file *****/
-  const shared_ptr<const PTree> iactive2 = idata_->get_child_optional("active");
-  assert(iactive2);
-  assert(iactive2->size() == norb_);
-  vector<int> active_indices2 = {};
-
-  for (auto& i : *iactive2)
-    active_indices2.push_back(lexical_cast<int>(i->data()) - 1);
-  cout << " " << endl;
-  cout << "    ==== Active orbitals (in order used) : ===== " << endl;
-  for (auto& i : active_indices2)
-    cout << "         Orbital " << i+1 << endl;
-  cout << "    ============================ " << endl << endl;
-  for (int i=0; i < norb_; ++i) {
-    cp(active_indices2[i], iactive);
-  }
-  /***** DEBUG CODE ENDS *****/
-
   for (int i = 0; i < nmobasis; ++i) {
     if (active_indices.find(i) != active_indices.end()) {
-//      cp(i, iactive);
+      cp(i, iactive);
     } else if (i < nclosed_start) {
       cp(i, iclosed);
     } else {
