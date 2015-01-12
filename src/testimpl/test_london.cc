@@ -40,7 +40,7 @@ double london_energy(std::string filename) {
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
 
-  std::shared_ptr<const Reference> ref_;
+  std::shared_ptr<const Reference> ref;
   double energy = 0.0;
 
   for (auto& itree : *keys) {
@@ -48,17 +48,17 @@ double london_energy(std::string filename) {
 
     if (method == "molecule") {
       geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
-      if (ref_) ref_ = ref_->project_coeff(geom);
+      if (ref) ref = ref->project_coeff(geom);
     } else if (method == "hf") {
-      auto scf = std::make_shared<RHF_London>(itree, geom, ref_);
+      auto scf = std::make_shared<RHF_London>(itree, geom, ref);
       scf->compute();
-      ref_ = scf->conv_to_ref();
-      energy = ref_->energy();
+      ref = scf->conv_to_ref();
+      energy = ref->energy();
     } else if (method == "dhf") {
-      auto rel = std::make_shared<Dirac>(itree, geom, ref_);
+      auto rel = std::make_shared<Dirac>(itree, geom, ref);
       rel->compute();
-      ref_ = rel->conv_to_ref();
-      energy = ref_->energy();
+      ref = rel->conv_to_ref();
+      energy = ref->energy();
     }
   }
   std::cout.rdbuf(backup_stream);
