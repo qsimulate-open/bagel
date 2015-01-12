@@ -121,10 +121,13 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> generate_mvo(const int ncore, const bool hcore_mvo = false);
     // print natural orbital occupation numbers
     void print_natocc() const;
-    // rearrange coefficient to {c,a,v} by selecting active columns from input coefficient
-    std::shared_ptr<const ZMatrix> set_active(std::set<int> active_indices) const;
 
-    // print contributions of AOs to MOs - static so it can also be used by Dirac
+    // rearrange coefficient to {c,a,v} by selecting active columns from input coefficient
+    // -- static so it can also be used by ZFCI
+    static std::shared_ptr<const ZMatrix> set_active(std::set<int> active_indices, std::shared_ptr<const ZMatrix> coeff, const int nclosed, const int nele, const int nact);
+
+    // print contributions of AOs to MOs
+    // -- static so it can also be used by Dirac
     static void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView coeff_pos, std::shared_ptr<const ZMatrix> overlap);
 
     // functions to retrieve protected members

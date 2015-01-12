@@ -26,6 +26,7 @@
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/zfci/relspace.h>
 #include <src/util/math/comb.h>
+#include <src/multi/zcasscf/zcasscf.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 
@@ -106,7 +107,10 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
       for (auto& i : active_indices)
         cout << "         Orbital " << i+1 << endl;
       cout << "    ============================ " << endl << endl;
-      coeff = set_active(active_indices, swap_pos_neg(rr->relcoeff_full()));
+      coeff = ZCASSCF::set_active(active_indices, swap_pos_neg(rr->relcoeff_full()), ncore_, geom_->nele()-charge_, norb_);
+
+      if (!tsymm_)  // TODO figure out a good way to sort spin orbitals
+        cout << "******** Assuming Kramers-paired orbitals are coming out from the reference coeff in order, but not making sure of it.  ********" << endl;
     } else {
       coeff = swap_pos_neg(rr->relcoeff_full());
     }
@@ -365,55 +369,6 @@ void ZHarrison::compute() {
     iprop->print();
   }
 #endif
-}
-
-
-shared_ptr<const ZMatrix> ZHarrison::set_active(set<int> active_indices, shared_ptr<const ZMatrix> coeffin) const {
-  // assumes coefficient is in striped format
-  const int naobasis = coeffin->ndim();
-  const int nmobasis = coeffin->mdim()/4;
-
-  if (active_indices.size() != norb_)
-    throw logic_error("ZHarrison::set_active - Number of active indices does not match number of active orbitals");
-  if (any_of(active_indices.begin(), active_indices.end(), [nmobasis](int i){ return (i < 0 || i >= nmobasis); }) )
-    throw runtime_error("ZHarrison::set_active - Invalid MO index provided.  (Should be from 1 to " + to_string(nmobasis) + ")");
-
-  auto coeff = coeffin;
-  auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
-
-  int iclosed = 0;
-  int iactive = ncore_;
-  int ivirt   = ncore_ + norb_;
-  int nclosed_start = (geom_->nele() - charge_) / 2;
-
-  if (!tsymm_)  // TODO figure out a good way to sort spin orbitals
-    cout << "******** Assuming Kramers-paired orbitals are coming out from the reference coeff in order, but not making sure of it.  ********" << endl;
-
-  auto cp   = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) {
-    copy_n(coeff->element_ptr(0,i*2), naobasis, tmp_coeff->element_ptr(0, pos*2));
-    copy_n(coeff->element_ptr(0,i*2+1), naobasis, tmp_coeff->element_ptr(0, pos*2+1));
-    ++pos;
-  };
-
-  int closed_count = 0;
-  for (int i = 0; i < nmobasis; ++i) {
-    if (active_indices.find(i) != active_indices.end()) {
-      cp(i, iactive);
-    } else if (i < nclosed_start) {
-      cp(i, iclosed);
-      closed_count++;
-    } else {
-      cp(i, ivirt);
-    }
-  }
-
-  if (closed_count != ncore_)
-    throw runtime_error("Invalid combination of closed and active orbitals.");
-
-  // copy positrons
-  tmp_coeff->copy_block(0, nmobasis*2, naobasis, nmobasis*2, coeffin->slice(nmobasis*2, nmobasis*4));
-
-  return make_shared<const ZMatrix>(*tmp_coeff);
 }
 
 

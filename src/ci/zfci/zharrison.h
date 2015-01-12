@@ -176,9 +176,6 @@ class ZHarrison : public Method {
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
-    // Adapted from a member function of ZCASSCF - TODO eliminate redundancy
-    std::shared_ptr<const ZMatrix> set_active(std::set<int> active_indices, std::shared_ptr<const ZMatrix> coeffin) const;
-
     // "restricted" refers to whether the coefficient matrix is already Kramers-adapted
     void update(std::shared_ptr<const ZMatrix> coeff, const bool restricted = false) {
       Timer timer;
