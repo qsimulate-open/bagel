@@ -33,25 +33,23 @@ PFMM::PFMM(shared_ptr<const Lattice> lattice, const int lmax) : lattice_(lattice
 
   assert(lmax_ <= ANG_HRR_END);
   num_multipoles_ = (lmax_ + 1) * (lmax_ + 1);
-
-//  auto cell0 = make_shared<const Geometry>(lattice->primitive_cell());
 }
 
 
-vector<vector<complex<double>>> PFMM::atomic_multipoles(const std::shared_ptr<const Atom> atom, const std::shared_ptr<const PData> density) {
+vector<vector<complex<double>>> PFMM::multipoles(const shared_ptr<const PData> density) {
 
   vector<vector<complex<double>>> out(num_multipoles_);
   const int ncell = density->nblock();
   const int nbasis = density->blocksize();
 
-  auto pm = make_shared<const PMultipole>(lattice_, atom, lmax_);
+  auto pm = make_shared<const PMultipole>(lattice_, lmax_);
   for (int n = 0; n != num_multipoles_; ++n) {
     PData olm = (*pm)[n];
     vector<complex<double>> olm_n(ncell);
     for (int i = 0; i != ncell; ++i) {
       for (int j = 0; j != nbasis; ++j) {
         for (int k = 0; k != nbasis; ++k)
-          olm_n[n] += *(olm(i)->data()+k+j*nbasis) * *((*density)(i)->data()+k+j*nbasis);
+          olm_n[i] += *(olm(i)->data()+k+j*nbasis) * *((*density)(i)->data()+k+j*nbasis);
       }
     }
     out[n] = olm_n;
@@ -61,13 +59,12 @@ vector<vector<complex<double>>> PFMM::atomic_multipoles(const std::shared_ptr<co
 }
 
 
-void PFMM::print_atomic_multipoles(vector<complex<double>> multipoles) const {
+void PFMM::print_multipoles(vector<complex<double>> multipoles) const {
+  cout << "LMAX = " << lmax_ << endl;
+  int cnt = 0;
   for (int l = 0; l <= lmax_; ++l) {
-    cout << "Rank " << l << endl;
-    for (int m = 0; m <= l; ++m) {
-      const int index = l * l + m;
-      cout << setprecision(9) << multipoles[index] << "   ";
-    }
+    for (int m = 0; m <= 2 * l; ++m, ++cnt)
+      cout << setprecision(9) << multipoles[cnt] << "   ";
     cout << endl;
   }
 }

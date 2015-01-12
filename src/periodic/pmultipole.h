@@ -33,14 +33,14 @@ namespace bagel {
 
 class PMultipole : public PMatrix1eArray<64> {
   protected:
-    std::shared_ptr<const Atom> atom_;
     int lmax_;
     int num_multipoles_;
+    std::array<double, 3> centre_;
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Lattice>, const int) override;
 
   public:
     PMultipole() { }
-    PMultipole(const std::shared_ptr<const Lattice>, std::shared_ptr<const Atom> atom, const int lmax = ANG_HRR_END);
+    PMultipole(const std::shared_ptr<const Lattice>, const int lmax = ANG_HRR_END);
 
     ~PMultipole() { }
 

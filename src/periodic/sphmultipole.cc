@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: multipole.cc
+// Filename: sphmultipole.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,7 +24,8 @@
 //
 
 
-#include <src/periodic/multipole.h>
+#include <iomanip>
+#include <src/periodic/sphmultipole.h>
 
 using namespace std;
 using namespace bagel;
@@ -32,26 +33,26 @@ using namespace bagel;
 const static Legendre plm;
 const static Factorial f;
 
-Multipole::Multipole(const array<double, 3> c, const int l) : centre_(c), lmax_(l) {
+SphMultipole::SphMultipole(const array<double, 3> c, const int l) : centre_(c), lmax_(l) {
 
   num_multipoles_ = (lmax_ + 1) * (lmax_ + 1);
   compute_multipoles();
 }
 
 
-void Multipole::compute_multipoles() {
+void SphMultipole::compute_multipoles() {
 
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-  const double theta = acos(centre_[2]/r);
+  const double ctheta = centre_[2]/r;
   const double phi = atan2(centre_[1], centre_[0]);
 
   multipole_.resize(num_multipoles_);
 
   int count = 0;
-  for (int l = 0; l != lmax_; ++l) {
-    for (int mm = 0; mm != 2 * l; ++mm) {
+  for (int l = 0; l <= lmax_; ++l) {
+    for (int mm = 0; mm <= 2 * l; ++mm) {
       const int m = mm - l;
-      const double coeff = pow(r, l) * plm.compute(l, abs(m), cos(theta)) / f(l + abs(m));
+      const double coeff = pow(r, l) * plm.compute(l, abs(m), ctheta) / f(l + abs(m));
 
       double real = coeff * cos(-m * phi);
       double imag = coeff * sin(-m * phi);
@@ -64,7 +65,30 @@ void Multipole::compute_multipoles() {
 }
 
 
-void Multipole::print_multipoles() const {
+complex<double> SphMultipole::multipole(const int l, const int m) const {
+  assert (l <= lmax_ && abs(m) <= l); return multipole_[l * l + l + m];
+}
 
+
+
+vector<std::complex<double>> SphMultipole::multipoles(const int l) {
+  assert (l <= lmax_);
+  vector<std::complex<double>> out(2 * l + 1);
+  const int i0 = (l + 1) * (l + 1);
+  for (int i = 0; i != 2 * l + 1; ++i) out[i] = multipole_[i + i0];
+
+  return out;
+}
+
+
+void SphMultipole::print_multipoles() const {
+
+  cout << "LMAX = " << lmax_ << endl;
+  int cnt = 0;
+  for (int l = 0; l <= lmax_; ++l) {
+    for (int m = 0; m <= 2 * l; ++m, ++cnt)
+      cout << setprecision(9) << multipole_[cnt] << "   ";
+    cout << endl;
+  }
 }
 

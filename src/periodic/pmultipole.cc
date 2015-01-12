@@ -30,8 +30,8 @@
 using namespace std;
 using namespace bagel;
 
-PMultipole::PMultipole(const shared_ptr<const Lattice> lattice, shared_ptr<const Atom> atom, const int lmax)
- : PMatrix1eArray<64>(lattice), atom_(atom), lmax_(lmax) {
+PMultipole::PMultipole(const shared_ptr<const Lattice> lattice, const int lmax)
+ : PMatrix1eArray<64>(lattice), lmax_(lmax), centre_(lattice->centre()) {
 
   num_multipoles_ = (lmax + 1) * (lmax + 1);
   assert(num_multipoles_ <= Nblocks());
@@ -46,8 +46,7 @@ void PMultipole::computebatch(const array<shared_ptr<const Shell>,2>& input, con
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
 
-  const array<double, 3> centre = atom_->position();
-  MultipoleBatch mm(input, centre);
+  MultipoleBatch mm(input, centre_);
   mm.compute();
 
   for (int i = 0; i != num_multipoles_; ++i) {
@@ -57,5 +56,3 @@ void PMultipole::computebatch(const array<shared_ptr<const Shell>,2>& input, con
     (*pdata_blocks_[i])[block]->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, m);
   }
 }
-
-

@@ -42,8 +42,8 @@ class PFMM {
     PFMM(std::shared_ptr<const Lattice> lattice, const int lmax = ANG_HRR_END);
     ~PFMM() { }
 
-    std::vector<std::vector<std::complex<double>>> atomic_multipoles(const std::shared_ptr<const Atom> atom, const std::shared_ptr<const PData> density);
-    void print_atomic_multipoles(std::vector<std::complex<double>> multipoles) const;
+    std::vector<std::vector<std::complex<double>>> multipoles(const std::shared_ptr<const PData> density);
+    void print_multipoles(std::vector<std::complex<double>> multipoles) const;
 
 };
 
