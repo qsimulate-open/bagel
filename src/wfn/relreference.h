@@ -51,8 +51,8 @@ class RelReference : public Reference {
   public:
     RelReference() { }
     RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en,
-                 const int nneg, const int nocc, const int nvirt, const bool ga, const bool br, const bool rel = true, const bool kram = false)
-     : Reference(g, nullptr, nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c), rel_(rel), kramers_(kram) {
+                 const int nneg, const int nocc, const int nact, const int nvirt, const bool ga, const bool br, const bool rel = true, const bool kram = false)
+     : Reference(g, nullptr, nocc, nact, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c), rel_(rel), kramers_(kram) {
     }
 
     std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }

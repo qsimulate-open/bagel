@@ -479,7 +479,7 @@ shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
   assert(ctmp->mdim() == 2*nneg_);
   auto coeff = make_shared<const ZMatrix>(*ctmp);
 
-  auto out = make_shared<RelReference>(geom_, coeff, energy_.back(), 0, nocc_, nvirt_, gaunt_, breit_, /*rel*/true, /*kramers*/true);
+  auto out = make_shared<RelReference>(geom_, coeff, energy_.back(), 0, nclosed_, nact_, nvirt_, gaunt_, breit_, /*rel*/true, /*kramers*/true);
   return out;
 }
 

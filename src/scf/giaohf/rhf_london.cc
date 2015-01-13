@@ -198,7 +198,7 @@ void RHF_London::compute() {
 
 
 shared_ptr<const Reference> RHF_London::conv_to_ref() const {
-  auto out = make_shared<RelReference>(geom_, coeff_, energy_, 0, nocc_, coeff_->mdim()-nocc_, /*gaunt_*/ false, /*breit_*/ false, /*rel_*/ false);
+  auto out = make_shared<RelReference>(geom_, coeff_, energy_, 0, nocc_, 0, coeff_->mdim()-nocc_, /*gaunt_*/ false, /*breit_*/ false, /*rel_*/ false);
   out->set_eig(eig_);
   return out;
 }
