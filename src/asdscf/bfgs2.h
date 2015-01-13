@@ -36,6 +36,8 @@ namespace bagel {
 class ASDBFGS2 : public ASDSCF2 {
 
   protected:
+    std::shared_ptr<VectorB> preg_;
+
     void common_init() {
       std::cout << "    * Using the Quasi 2nd-order algorithm as noted in Chaban et al. TCA (1997)" << std::endl << std::endl;
     }
@@ -46,6 +48,7 @@ class ASDBFGS2 : public ASDSCF2 {
     void grad_ca(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<Matrix> rdm1, std::shared_ptr<ASDRotFile2> sigma) const;
 
     void grad_aa(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASDRotFile2> sigma) const;
+    void grad_aa_with_preg(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASDRotFile2> sigma) const;
 
     // compute diagonal denominators
     std::shared_ptr<const ASDRotFile2> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock) const;

@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: casbfgs.cc
-// Copyright (C) 2013 Toru Shiozaki
+// Filename: bfgs2.cc
+// Copyright (C) 2015 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Inkoo Kim <inkoo.kim@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,7 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #include <src/asdscf/bfgs2.h> //TODO bfgs2->bfgs
 #include <src/math/davidson.h>
 #include <src/math/step_restrict_bfgs.h>
@@ -39,6 +38,9 @@ void ASDBFGS2::compute() {
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 
   shared_ptr<SRBFGS<ASDRotFile2>> bfgs;
+
+  //TODO: test/previous gradient
+  preg_ = make_shared<VectorB>(nactA_*nactB_);
 
   // ============================
   // macro iteration from here
@@ -72,6 +74,12 @@ void ASDBFGS2::compute() {
     if (iter) {
       //update coeff_ & integrals..
       cout << "BFGS: update coeff" << endl;
+      {
+        shared_ptr<Matrix> temp = make_shared<Matrix>(nact_,nact_);
+        *temp = *coeff_->get_submatrix(nclosed_,nclosed_,nact_,nact_);
+        cout << "active coeff only : " << temp->ndim() << " x " << temp->mdim() << endl;
+        temp->print("ACTIVE ONLY", nact_);
+      }
       coeff_->print();
       dimer_->update_coeff(coeff_);
       //build CI-space with updated coeff
@@ -157,7 +165,7 @@ void ASDBFGS2::compute() {
     cout << "BFGS: Qvec done.." << endl;
 
 
-    //mcfock
+    //mcfock(nact_,nact_)
     shared_ptr<Matrix> mcfock = make_shared<Matrix>(*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat
                                                     + *qxr->get_submatrix(nclosed_, 0, nact_, nact_) );
     cout << "MC Fock Matrix: symmetric check:" << check_symmetric(mcfock) << endl;
@@ -205,7 +213,7 @@ void ASDBFGS2::compute() {
     expa->purify_unitary();
 
     // updating coefficients
-    coeff_ = make_shared<const Coeff>(*coeff_**expa);
+    coeff_ = make_shared<const Coeff>(*coeff_ * *expa);
     // for next BFGS extrapolation
     *x *= *expa;
 
@@ -214,6 +222,7 @@ void ASDBFGS2::compute() {
 
     // setting error of macro iteration
     const double gradient = sigma->rms();
+    cout << "Macro gradient = " << gradient << endl;
 
 //  resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
@@ -246,125 +255,4 @@ void ASDBFGS2::compute() {
 //fci_->update(coeff_);
 //fci_->compute();
 //fci_->compute_rdm12();
-}
-
-
-shared_ptr<const ASDRotFile2> ASDBFGS2::compute_denom(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> mcfock) const {
-  auto out = make_shared<ASDRotFile2>(nclosed_, nact_, nvirt_, nactA_, nactB_ );
-//const double tiny = 1.0e-15;
-
-  shared_ptr<Matrix> cfockd;
-  if (nact_) {
-    cfockd = make_shared<Matrix>(*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1);
-    //TODO check symmetric??
-  }
-
-  // ia part (4.7a)
-  if (nvirt_ && nclosed_) {
-    double* target = out->ptr_vc();
-    for (int i = 0; i != nclosed_; ++i) {
-      for (int j = 0; j != nvirt_; ++j) {
-        *target++ = 4.0*(cfock->element(j+nocc_, j+nocc_)+afock->element(j+nocc_, j+nocc_)) - 4.0*(cfock->element(i,i)+afock->element(i,i));
-      }
-    }
-  }
-  // ra part (4.7b)
-  if (nvirt_ && nact_) {
-    double* target = out->ptr_va();
-    for (int i = 0; i != nact_; ++i) {
-    //if (occup_[i] < tiny) continue;
-      for (int j = 0; j != nvirt_; ++j) {
-    //  *target++ = 2.0*occup_[i]*(cfock->element(j+nocc_, j+nocc_)+afock->element(j+nocc_, j+nocc_))
-    //            - 2.0*occup_[i]*cfock->element(i+nclosed_, i+nclosed_) - 2.0*qxr->element(i+nclosed_, i);
-        *target++ = 2.0*rdm1->element(i,i)*(cfock->element(j+nocc_, j+nocc_)+afock->element(j+nocc_, j+nocc_))
-                  - 2.0*cfockd->element(i,i) - 2.0*qxr->element(i+nclosed_, i);
-      }
-    }
-  }
-  // it part (4.7c)
-  if (nclosed_ && nact_) {
-    double* target = out->ptr_ca();
-    for (int i = 0; i != nact_; ++i) {
-//    if (occup_[i] < tiny) continue;
-      for (int j = 0; j != nclosed_; ++j) {
-//      *target++ = 4.0*(cfock->element(i+nclosed_, i+nclosed_)+afock->element(i+nclosed_, i+nclosed_) - cfock->element(j,j) - afock->element(j,j))
-//                + 2.0*occup_[i]*(cfock->element(j,j)+afock->element(j,j)) - 2.0*occup_[i]*cfock->element(i+nclosed_, i+nclosed_) - 2.0*qxr->element(i+nclosed_, i);
-        *target++ = 4.0*(cfock->element(i+nclosed_, i+nclosed_)+afock->element(i+nclosed_, i+nclosed_) - cfock->element(j,j) - afock->element(j,j))
-                  + 2.0*rdm1->element(i,i)*(cfock->element(j,j)+afock->element(j,j)) - 2.0*cfockd->element(i,i) - 2.0*qxr->element(i+nclosed_, i);
-      }
-    }
-  }
-  // tu part
-  if (nact_) {
-    double* target = out->ptr_aa();
-    for (int i = nactA_; i != nact_; ++i) { //B
-      for (int j = 0; j != nactA_; ++j) { //A
-        *target++ = 2.0*( 
-                    - mcfock->element(j,j) - mcfock->element(i,i) 
-                    + rdm1->element(j,j)*cfock->element(i,i) + rdm1->element(i,i)*cfock->element(j,j) 
-                    - rdm1->element(i,j)*cfock->element(j,i) - rdm1->element(j,i)*cfock->element(i,j)
-                    + 2.0*afock->element(i,i) + 2.0*afock->element(j,j)
-                    );
-      }
-    }
-  }
-
-  const double thresh = 1.0e-8;
-  for (int i = 0; i != out->size(); ++i)
-    if (fabs(out->data(i)) < thresh) {
-      out->data(i) = 1.0e10;
-    }
-  return out;
-}
-
-
-// grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
-void ASDBFGS2::grad_vc(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<ASDRotFile2> sigma) const {
-  if (!nvirt_ || !nclosed_) return;
-  double* target = sigma->ptr_vc();
-  for (int i = 0; i != nclosed_; ++i, target += nvirt_) {
-    daxpy_(nvirt_, 4.0, cfock->element_ptr(nocc_,i), 1, target, 1);
-    daxpy_(nvirt_, 4.0, afock->element_ptr(nocc_,i), 1, target, 1);
-  }
-}
-
-
-// grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
-void ASDBFGS2::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> qxr, shared_ptr<Matrix> rdm1, shared_ptr<ASDRotFile2> sigma) const {
-  if (!nvirt_ || !nact_) return;
-  dgemm_("N", "T", nvirt_, nact_, nact_, 2.0, cfock->element_ptr(nocc_,nclosed_), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_);
-  double* target = sigma->ptr_va();
-  for (int i = 0; i != nact_; ++i, target += nvirt_) {
-//  daxpy_(nvirt_, 2.0*occup_[i], cfock->element_ptr(nocc_, i+nclosed_), 1, target, 1);
-    daxpy_(nvirt_, 2.0, qxr->element_ptr(nocc_, i), 1, target, 1);
-  }
-}
-
-
-// grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
-void ASDBFGS2::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<Matrix> rdm1, shared_ptr<ASDRotFile2> sigma) const {
-  if (!nclosed_ || !nact_) return;
-  {
-    double* target = sigma->ptr_ca();
-    for (int i = 0; i != nact_; ++i, target += nclosed_) {
-    //daxpy_(nclosed_, 4.0-2.0*occup_[i], cfock->element_ptr(0,nclosed_+i), 1, target, 1);
-      daxpy_(nclosed_, 4.0, cfock->element_ptr(0,nclosed_+i), 1, target, 1);
-      daxpy_(nclosed_, 4.0, afock->element_ptr(0,nclosed_+i), 1, target, 1);
-      daxpy_(nclosed_, -2.0, qxr->element_ptr(0, i), 1, target, 1);
-    }
-    //-2 cfock_iu * D_ur
-    dgemm_("T", "N", nclosed_, nact_, nact_, -2.0, cfock->element_ptr(nclosed_,0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_);
-  }
-}
-
-// grad(t/t)
-void ASDBFGS2::grad_aa(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRotFile2> sigma) const {
-  if (!nact_) return;
-  double* target = sigma->ptr_aa();
-  for (int i = 0; i != nactB_; ++i) { //B
-    for (int j = 0; j != nactA_; ++j, ++target) { //A
-      *target = 2.0*(mcfock->element(j,i+nactA_) - mcfock->element(i+nactA_,j));
-    //*target = - mcfock->element(j,i+nactA_) + mcfock->element(i+nactA_,j);
-    }
-  }
 }

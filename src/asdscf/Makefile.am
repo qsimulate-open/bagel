@@ -4,6 +4,6 @@ libbagel_asdscf_la_SOURCES = asdscf.cc \
                              bfgs.cc \
                              hybrid.cc \
                              asdscf2.cc \
-                             bfgs2.cc
+                             bfgs2.cc bfgs2_denom.cc bfgs2_grad.cc
 #qvec.cc supercigrad.cc casbfgs.cc cashybrid.cc
 AM_CXXFLAGS=-I$(top_srcdir)

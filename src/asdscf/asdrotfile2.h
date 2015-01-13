@@ -194,7 +194,7 @@ class ASDRotationMatrix2 {
         for (int j = 0; j != nvirt_;   ++j) {
           out->element(j+nocc, i+nclosed_) = ele_va(j, i);
         }
-        //Virtual-Closed
+        //Active-Closed
         for (int j = 0; j != nclosed_; ++j) {
           out->element(i+nclosed_, j) = ele_ca(j, i);
         }
@@ -208,7 +208,9 @@ class ASDRotationMatrix2 {
       //Active-Active 
       for (int i = 0; i != nactB_; ++i) {
         for (int j = 0; j != nactA_; ++j) {
-          out->element(j+nclosed_, i+nclosed_+nactA_) = ele_aa(j, i);
+        //out->element(j+nclosed_, i+nclosed_+nactA_) = ele_aa(j, i);
+          out->element(i+nclosed_+nactA_,j+nclosed_) = -ele_aa(j,i);
+        //out->element(i+nclosed_+nactA_,j+nclosed_) = ele_aa(j,i);
         }
       }
       //Anti-symmetric
