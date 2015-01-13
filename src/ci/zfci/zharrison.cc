@@ -54,6 +54,9 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   for (int i = 0; i != states_.size(); ++i)
     nstate_ += states_[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
 
+  // if nstate was specified on construction, it should match
+  assert(nstate == nstate_ || nstate == -1);
+
   gaunt_ = idata_->get<bool>("gaunt", rr->gaunt());
   breit_ = idata_->get<bool>("breit", rr->breit());
   if (gaunt_ != rr->gaunt())

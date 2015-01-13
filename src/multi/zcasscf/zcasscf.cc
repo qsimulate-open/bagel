@@ -144,8 +144,14 @@ void ZCASSCF::init() {
   max_iter_ = idata_->get<int>("maxiter", 100);
   // get maxiter from the input
   max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
-  // get nstate from the input
-  nstate_ = idata_->get<int>("nstate", 1);
+
+  { // TODO This is repeated in ZFCI; can reduce redundancy
+    vector<int> states = idata_->get_vector<int>("state", 0);
+    nstate_ = 0;
+    for (int i = 0; i != states.size(); ++i)
+      nstate_ += states[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
+  }
+
 #if 0
   // get istate from the input (for geometry optimization)
   istate_ = idata_->get<int>("istate", 0);
