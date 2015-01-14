@@ -429,16 +429,14 @@ void Matrix::rotate(vector<tuple<int, int, double>>& rotations) {
 bool Matrix::is_symmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A -= *A->transpose();
-  const double err = A->norm()/A->size();
-  return (err < thresh);
+  return (A->rms() < thresh);
 }
 
 
 bool Matrix::is_antisymmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A += *A->transpose();
-  const double err = A->norm()/A->size();
-  return (err < thresh);
+  return (A->rms() < thresh);
 }
 
 
@@ -447,8 +445,7 @@ bool Matrix::is_identity(const double thresh) const {
   shared_ptr<Matrix> B = A->clone();
   B->unit();
   *A -= *B;
-  const double err = A->norm()/A->size();
-  return (err < thresh);
+  return (A->rms() < thresh);
 }
 
 
