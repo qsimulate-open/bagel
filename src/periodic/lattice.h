@@ -112,6 +112,10 @@ class Lattice {
     // density fitting
     void form_df(const double thresh);
     std::shared_ptr<PDFDist> df() const { return df_; }
+
+    std::array<double, 3> centre() const { return primitive_cell_->charge_center(); }
+    double centre(const int i) const { return primitive_cell_->charge_center()[i]; }
+    std::array<double, 3> cell_centre(const int icell) const;
 };
 
 }

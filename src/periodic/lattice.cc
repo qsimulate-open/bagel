@@ -352,6 +352,19 @@ void Lattice::print_lattice_coordinates() const {
 }
 
 
+array<double, 3> Lattice::cell_centre(const int icell) const {
+
+  array<double, 3> displacement = lattice_vectors_[icell];
+
+  array<double, 3> out;
+  out[0] = centre(0) + displacement[0];
+  out[1] = centre(1) + displacement[1];
+  out[2] = centre(2) + displacement[2];
+
+  return out;
+}
+
+
 void Lattice::form_df(const double thresh) { /*form df object for all blocks in direct space*/
 
   const int nbasis = primitive_cell_->nbasis();
