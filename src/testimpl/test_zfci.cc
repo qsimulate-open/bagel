@@ -79,8 +79,8 @@ std::vector<double> reference_relfci_energy3() {
 
 std::vector<double> reference_relfci_energy4() {
   std::vector<double> out(2);
-  out[0] = -8845.56599033;
-  out[1] = -8845.56349544;
+  out[0] = -3187.40021421;
+  out[1] = -3184.76981146;
   return out;
 }
 
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(ZHARRISON) {
   BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_coulomb"), reference_relfci_energy()));
   BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_gaunt"), reference_relfci_energy2()));
 //  BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_breit"), reference_relfci_energy3()));
-  BOOST_CHECK(compare(relfci_energy("pb_london_relfci_coulomb"), reference_relfci_energy4()));
+  BOOST_CHECK(compare(relfci_energy("i_london_relfci_coulomb"), reference_relfci_energy4()));
   BOOST_CHECK(compare(relfci_energy("h2_tzvpp_london_relfci_coulomb"), reference_relfci_energy5()));
   BOOST_CHECK(compare(relfci_energy("ca_london_relfci_coulomb"), reference_relfci_energy6()));
 }
