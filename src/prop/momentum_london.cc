@@ -31,8 +31,7 @@ using namespace std;
 using namespace bagel;
 
 Momentum_London::Momentum_London(shared_ptr<const Geometry> g) : geom_(g) {
-assert(geom_->magnetism());
-
+  assert(geom_->magnetism());
 }
 
 

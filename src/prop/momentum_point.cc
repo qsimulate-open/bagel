@@ -31,8 +31,7 @@ using namespace std;
 using namespace bagel;
 
 Momentum_Point::Momentum_Point(shared_ptr<const Geometry> g, const array<double,3> loc) : geom_(g), location_(loc) {
-assert(geom_->magnetism());
-
+  assert(geom_->magnetism());
 }
 
 
