@@ -467,7 +467,11 @@ void gemm (
    static_assert(std::is_same<typename __traits_C::iterator_category, std::random_access_iterator_tag>::value,
                  "iterator C must be a random access iterator");
 
-   gemm_impl<std::is_convertible<_T, value_type>::value>::call(order, transA, transB, Msize, Nsize, Ksize, alpha, itrA, LDA, itrB, LDB, beta, itrC, LDC);
+   typename _IteratorA::pointer A = &(*itrA);
+   typename _IteratorB::pointer B = &(*itrB);
+   typename _IteratorC::pointer C = &(*itrC);
+   gemm_impl<std::is_convertible<_T, value_type>::value>::call(order, transA, transB, Msize, Nsize, Ksize, alpha, A, LDA, B, LDB, beta, C, LDC);
+
 }
 
 //  ================================================================================================
@@ -572,11 +576,17 @@ void gemm (
    Nsize = Barea / Ksize;
 
    if(order == CblasRowMajor) {
-     LDA = Ksize;
-     LDB = Nsize;
+     if(transA == CblasNoTrans) LDA = Ksize;
+     else LDA = Msize;
+     if(transB == CblasNoTrans) LDB = Nsize;
+     else LDB = Ksize;
      LDC = Nsize;
    }
    else {
+     if(transA == CblasNoTrans) LDA = Msize;
+     else LDA = Ksize;
+     if(transB == CblasNoTrans) LDB = Ksize;
+     else LDB = Msize;
      LDA = Msize;
      LDB = Ksize;
      LDC = Msize;
