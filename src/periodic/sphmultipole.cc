@@ -49,18 +49,33 @@ void SphMultipole::compute_multipoles() {
   multipole_.resize(num_multipoles_);
 
   int count = 0;
-  for (int l = 0; l <= lmax_; ++l) {
-    for (int mm = 0; mm <= 2 * l; ++mm) {
+  multipole_[0] = 1.0;
+  for (int l = 1; l <= lmax_; ++l) {
+    for (int mm = 0; mm <= 2 * l; ++mm, ++count) {
       const int m = mm - l;
-      const double coeff = pow(r, l) * plm.compute(l, abs(m), ctheta) / f(l + abs(m));
+      const int am = abs(m);
+      if (r > 1e-15) {
+        const double coeff = pow(r, l) * plm.compute(l, am, ctheta) / f(l + am);
 
-      double real = coeff * cos(-m * phi);
-      double imag = coeff * sin(-m * phi);
-      multipole_[count] = complex<double>(real, imag);
+        const double real = coeff * cos(-m * phi);
+        const double imag = coeff * sin(-m * phi);
+        multipole_[count] = complex<double>(real, imag);
+        if (m < 0) multipole_[count] *= pow(-1.0, m) * f(l - m) / f(l + m);
+      } else {
+        multipole_[count] = 0.0;
+      }
 
-      ++count;
     }
   }
+#if 0
+      if (r < 1e-5) {
+        cout << "*************************** very small r {" << endl;
+        cout << " centre = " << centre_[0] << ", " << centre_[1] << ", " << centre_[2] << endl;
+        cout << "(r, th, ph) = " << r << ", " << acos(ctheta) << ", " << phi << endl;
+        print_multipoles();
+        cout << "}" << endl;
+      }
+#endif
 
 }
 
