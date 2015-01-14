@@ -140,8 +140,9 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<ZCASBFGS>(itree, geom, ref);
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
+    } else if (title == "molecule") {
     } else
-      throw runtime_error(to_upper(title) + "method has not been implemented with an applied magnetic field.");
+      throw runtime_error(to_upper(title) + " method has not been implemented with an applied magnetic field.");
   }
   return out;
 }
