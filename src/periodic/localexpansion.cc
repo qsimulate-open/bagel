@@ -42,7 +42,7 @@ LocalExpansion::LocalExpansion(const array<double, 3> c, vector<complex<double>>
 void LocalExpansion::compute_local_moments() {
 
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-  const double theta = acos(centre_[2]/r);
+  const double ctheta = centre_[2]/r;
   const double phi = atan2(centre_[1], centre_[0]);
 
   local_moments_.resize((lmax_ + 1) * (lmax_ + 1));
@@ -56,7 +56,7 @@ void LocalExpansion::compute_local_moments() {
         for (int k = 0; j != 2 * j; ++k, ++i2) {
           const int a = l + j;
           const int b = m - l + k - j;
-          const double prefactor = f(a - abs(b)) * plm.compute(a, abs(b), cos(theta)) / pow(r, a + 1);
+          const double prefactor = f(a - abs(b)) * plm.compute(a, abs(b), ctheta) / pow(r, a + 1);
           const double real = prefactor * cos(b * phi);
           const double imag = prefactor * sin(b * phi);
           complex<double> coeff(real, imag);

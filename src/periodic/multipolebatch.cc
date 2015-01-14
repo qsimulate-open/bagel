@@ -66,23 +66,23 @@ void MultipoleBatch::compute() {
       current_data[imul] = intermediate_p + iprim * asize_ + imul * asize_ * prim0_ * prim1_;
 
     for (int cnt = 0; cnt != nmul; ++cnt) {
-      workx[cnt] = multipole_[iprim * prim0_ * prim1_ + cnt];
-      worky[cnt] = 1.0;
-      workz[cnt] = 1.0;
+      workx[cnt] = multipolex_[cnt * prim0_ * prim1_ + iprim];
+      worky[cnt] = multipoley_[cnt * prim0_ * prim1_ + iprim];
+      workz[cnt] = multipolez_[cnt * prim0_ * prim1_ + iprim];
     }
 
     if (amax_ > 0) {
       int cnt = 0;
       for (int l = 0; l <= lmax_; ++l) {
         for (int m = 0; m <= 2*l; ++m, ++cnt) {
-          workx[nmul + cnt] = - 2.0 * xb_[iprim] * AB_[0] * multipole_[iprim * prim0_ * prim1_ + cnt];
-          worky[nmul + cnt] = - 2.0 * xb_[iprim] * AB_[1] * multipole_[iprim * prim0_ * prim1_ + cnt];
-          workz[nmul + cnt] = - 2.0 * xb_[iprim] * AB_[2] * multipole_[iprim * prim0_ * prim1_ + cnt];
+          workx[nmul + cnt] = - 2.0 * xb_[iprim] * AB_[0] * workx[cnt];
+          worky[nmul + cnt] = - 2.0 * xb_[iprim] * AB_[1] * worky[cnt];
+          workz[nmul + cnt] = - 2.0 * xb_[iprim] * AB_[2] * workz[cnt];
           if (abs(m - l) < l - 1) {
             const int i1 = (l - 1) * (l - 1) + m;
-            workx[nmul + cnt] += 0.5 * (multipole_[iprim * prim0_ * prim1_ + i1] + multipole_[iprim * prim0_ * prim1_ + i1 - 2]);
-            worky[nmul + cnt] += complex<double>(0.0, 0.5) * (multipole_[iprim * prim0_ * prim1_ + i1] + multipole_[iprim * prim0_ * prim1_ + i1 - 2]);
-            workz[nmul + cnt] += multipole_[iprim * prim0_ * prim1_ + i1 - 1];
+            workx[nmul + cnt] += 0.5 * (multipolex_[i1 * prim0_ * prim1_ + iprim] + multipolex_[(i1 - 2) * prim0_ * prim1_ + iprim]);
+            worky[nmul + cnt] += complex<double>(0.0, 0.5) * (multipoley_[i1 * prim0_ * prim1_ + iprim] + multipoley_[(i1 - 2) * prim0_ * prim1_ + iprim]);
+            workz[nmul + cnt] += multipolez_[(i1 - 1) * prim0_ * prim1_ + iprim];
           }
         }
       }
@@ -96,8 +96,8 @@ void MultipoleBatch::compute() {
             workz[a * nmul + cnt] = (a - 1.0) * workz[(a - 2) * nmul + cnt] - 2.0 * xb_[iprim] * AB_[2] * workz[(a - 1) * nmul + cnt];
             if (abs(m - l) < l - 1) {
               const int i1 = (l - 1) * (l - 1) + m;
-              workx[a * nmul + cnt] += 0.5 * (workx[(a - 1) * nmul + i1] + multipole_[(a - 1) * nmul + i1 - 2]);
-              worky[a * nmul + cnt] += complex<double>(0.0, 0.5) * (worky[(a - 1) * nmul + i1] + multipole_[(a - 1) * nmul + i1 - 2]);
+              workx[a * nmul + cnt] += 0.5 * (workx[(a - 1) * nmul + i1] + workx[(a - 1) * nmul + i1 - 2]);
+              worky[a * nmul + cnt] += complex<double>(0.0, 0.5) * (worky[(a - 1) * nmul + i1] + worky[(a - 1) * nmul + i1 - 2]);
               workz[a * nmul + cnt] += workz[(a - 1) * nmul + i1 - 1];
             }
           }
@@ -110,14 +110,13 @@ void MultipoleBatch::compute() {
     for (int iz = 0; iz <= amax_; ++iz) {
       for (int iy = 0; iy <= amax_ - iz; ++iy) {
         for (int ix = 0; ix <= amax_ - iy - iz; ++ix) {
+          const int iang = amapping_[ix + amax1 * (iy + amax1 * iz)];
 
           for (int imul = 0; imul != nmul; ++imul) {
-            const int iang = amapping_[ix + amax1 * (iy + amax1 * iz)];
-            if (!swap01_) {
-              current_data[imul][iang] = workx[ix * nmul + imul] * worky[iy * nmul + imul] * workz[iz * nmul + imul];
-            } else {
-              current_data[imul][iang] = -workx[ix * nmul + imul] * worky[iy * nmul + imul] * workz[iz * nmul + imul];
-            }
+            current_data[imul][iang] = workx[ix * nmul + imul] * worky[iy * nmul + imul] * workz[iz * nmul + imul];
+            if (swap01_)
+              current_data[imul][iang] = std::conj(current_data[imul][iang]) ;
+            //cout << setprecision(9) << "current_data L120 multipolebatch.cc "  << current_data[imul][iang] << endl;
           }
 
         }
@@ -129,8 +128,7 @@ void MultipoleBatch::compute() {
   complex<double>* data_start = intermediate_p;
   complex<double>* data_final = data_;
 
-  for (int imul = 0; imul != nmul; ++imul, data_start += imul * prim0_ * prim1_ * asize_,
-                                           data_final += imul * cont0_ * cont1_ * asize_final_) {
+  for (int imul = 0; imul != nmul; ++imul) {
     const int size_intermediate = asize_ * cont0_ * cont1_;
     complex<double>* intermediate_c = stack_->get<complex<double>>(size_intermediate);
     perform_contraction(asize_, data_start, prim0_, prim1_, intermediate_c,
@@ -161,6 +159,9 @@ void MultipoleBatch::compute() {
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       sort.sortfunc_call(sort_index, data_final, intermediate_fi, cont1_, cont0_, 1, swap01_);
     }
+
+    data_start += prim0_ * prim1_ * asize_;
+    data_final += size_block_;
 
     stack_->release(size_final_car, intermediate_fi);
     stack_->release(size_intermediate, intermediate_c);

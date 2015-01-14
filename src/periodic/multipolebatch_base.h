@@ -39,9 +39,10 @@ class MultipoleBatch_base : public OSIntegral<std::complex<double>> {
     int lmax_;
 
     int num_multipoles_;
-    std::vector<std::complex<double>> multipole_;
+    std::vector<std::complex<double>> multipolex_;
+    std::vector<std::complex<double>> multipoley_;
+    std::vector<std::complex<double>> multipolez_;
 
-    void init();
     void allocate_arrays(const size_t ps);
     void compute_ss(const double thresh);
     int nblocks() const override { return num_multipoles_; }
@@ -53,6 +54,7 @@ class MultipoleBatch_base : public OSIntegral<std::complex<double>> {
     ~MultipoleBatch_base() { }
 
     std::array<double, 3> centre() const { return centre_; }
+    int num_blocks() const { return nblocks(); }
 
     virtual void compute() = 0;
 };

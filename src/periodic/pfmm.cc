@@ -38,21 +38,23 @@ PFMM::PFMM(shared_ptr<const Lattice> lattice, const int lmax) : lattice_(lattice
 
 vector<vector<complex<double>>> PFMM::multipoles(const shared_ptr<const PData> density) {
 
-  vector<vector<complex<double>>> out(num_multipoles_);
   const int ncell = density->nblock();
   const int nbasis = density->blocksize();
 
-  auto pm = make_shared<const PMultipole>(lattice_, lmax_);
-  for (int n = 0; n != num_multipoles_; ++n) {
-    PData olm = (*pm)[n];
-    vector<complex<double>> olm_n(ncell);
-    for (int i = 0; i != ncell; ++i) {
+  vector<vector<complex<double>>> out(ncell);
+
+  for (int i = 0; i != ncell; ++i) {
+    auto pm = make_shared<const PMultipole>(lattice_, i, lmax_);
+
+    vector<complex<double>> olm_n(num_multipoles_);
+    for (int n = 0; n != num_multipoles_; ++n) {
+      PData olm = (*pm)[n];
       for (int j = 0; j != nbasis; ++j) {
         for (int k = 0; k != nbasis; ++k)
-          olm_n[i] += *(olm(i)->data()+k+j*nbasis) * *((*density)(i)->data()+k+j*nbasis);
+          olm_n[n] += *(olm(i)->data()+k+j*nbasis) * *((*density)(i)->data()+j+k*nbasis);
       }
     }
-    out[n] = olm_n;
+    out[i] = olm_n;
   }
 
   return out;
@@ -64,7 +66,7 @@ void PFMM::print_multipoles(vector<complex<double>> multipoles) const {
   int cnt = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m, ++cnt)
-      cout << setprecision(9) << multipoles[cnt] << "   ";
+      cout << setprecision(5) << multipoles[cnt] << "   ";
     cout << endl;
   }
 }
