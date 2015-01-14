@@ -354,7 +354,8 @@ bool Matrix::inverse_half(const double thresh) {
 
 #ifndef NDEBUG
   // check numerical stability of the inversion - bypassed if we detect linear dependency
-  assert((*this % *ref * *this).is_identity() || !rm.empty());
+  if (rm.empty())
+    assert((*this % *ref * *this).is_identity());
 #endif
 
   return rm.empty();

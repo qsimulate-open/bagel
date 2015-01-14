@@ -337,7 +337,8 @@ bool ZMatrix::inverse_half(const double thresh) {
 
 #ifndef NDEBUG
   // check numerical stability of the inversion - bypassed if we detect linear dependency
-  assert((*this % *ref * *this).is_identity() || lindep);
+  if (!lindep)
+    assert((*this % *ref * *this).is_identity());
 #endif
 
   return !lindep;
