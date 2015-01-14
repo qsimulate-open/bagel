@@ -430,8 +430,6 @@ bool Matrix::is_symmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A -= *A->transpose();
   const double err = A->norm()/A->size();
-  if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - Matrix symmetry not fully satisfied: error norm/size = " << err << endl;
   return (err < thresh);
 }
 
@@ -440,8 +438,6 @@ bool Matrix::is_antisymmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A += *A->transpose();
   const double err = A->norm()/A->size();
-  if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - Matrix antisymmetry not fully satisfied: error norm/size = " << err << endl;
   return (err < thresh);
 }
 
@@ -452,8 +448,6 @@ bool Matrix::is_identity(const double thresh) const {
   B->unit();
   *A -= *B;
   const double err = A->norm()/A->size();
-  if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - Inversion not perfectly accurate: error norm/size = " << err << endl;
   return (err < thresh);
 }
 

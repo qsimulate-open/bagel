@@ -411,8 +411,6 @@ bool ZMatrix::is_symmetric(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A -= *A->transpose();
   const double err = A->norm()/A->size();
-  if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - ZMatrix symmetry not fully satisfied: error norm/size = " << err << endl;
   return (err < thresh);
 }
 
@@ -421,8 +419,6 @@ bool ZMatrix::is_antisymmetric(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A += *A->transpose();
   const double err = A->norm()/A->size();
-  if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - ZMatrix antisymmetry not fully satisfied: error norm/size = " << err << endl;
   return (err < thresh);
 }
 
@@ -431,8 +427,6 @@ bool ZMatrix::is_hermitian(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A -= *A->transpose_conjg();
   const double err = A->norm()/A->size();
-  if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - Hermitian symmetry not fully satisfied: error norm/size = " << err << endl;
   return (err < thresh);
 }
 
@@ -443,8 +437,6 @@ bool ZMatrix::is_identity(const double thresh) const {
   B->unit();
   *A -= *B;
   const double err = A->norm()/A->size();
-  if (100.0*err > thresh)
-    cout << scientific << setprecision(2) << "    - Inversion not perfectly accurate: error norm/size = " << err << endl;
   return (err < thresh);
 }
 
