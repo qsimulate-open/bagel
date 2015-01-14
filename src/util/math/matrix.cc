@@ -259,9 +259,7 @@ void Matrix::inverse() {
   if (info) throw runtime_error("dgesv failed in Matrix::inverse()");
 
   // check numerical stability of the inversion
-#ifndef NDEBUG
   assert((*ref * *buf).is_identity());
-#endif
 
   copy_n(buf->data(), n*n, data());
 }
@@ -305,10 +303,10 @@ bool Matrix::inverse_symmetric(const double thresh) {
     cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
+#endif
 
   // check numerical stability of the inversion
   assert((*this * *ref).is_identity());
-#endif
 
   return rm.empty();
 }
@@ -352,11 +350,8 @@ bool Matrix::inverse_half(const double thresh) {
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 
-#ifndef NDEBUG
   // check numerical stability of the inversion - bypassed if we detect linear dependency
-  if (rm.empty())
-    assert((*this % *ref * *this).is_identity());
-#endif
+  assert(rm.empty() || (*this % *ref * *this).is_identity());
 
   return rm.empty();
 }
@@ -435,10 +430,8 @@ bool Matrix::is_symmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A -= *A->transpose();
   const double err = A->norm()/A->size();
-#ifndef NDEBUG
   if (100.0*err > thresh)
     cout << scientific << setprecision(2) << "    - Matrix symmetry not fully satisfied: error norm/size = " << err << endl;
-#endif
   return (err < thresh);
 }
 
@@ -447,10 +440,8 @@ bool Matrix::is_antisymmetric(const double thresh) const {
   shared_ptr<Matrix> A = copy();
   *A += *A->transpose();
   const double err = A->norm()/A->size();
-#ifndef NDEBUG
   if (100.0*err > thresh)
     cout << scientific << setprecision(2) << "    - Matrix antisymmetry not fully satisfied: error norm/size = " << err << endl;
-#endif
   return (err < thresh);
 }
 
@@ -461,10 +452,8 @@ bool Matrix::is_identity(const double thresh) const {
   B->unit();
   *A -= *B;
   const double err = A->norm()/A->size();
-#ifndef NDEBUG
   if (100.0*err > thresh)
     cout << scientific << setprecision(2) << "    - Inversion not perfectly accurate: error norm/size = " << err << endl;
-#endif
   return (err < thresh);
 }
 

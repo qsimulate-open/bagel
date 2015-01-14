@@ -303,9 +303,7 @@ void ZMatrix::inverse() {
   if (info) throw runtime_error("dsysv failed in ZMatrix::inverse()");
 
   // check numerical stability of the inversion
-#ifndef NDEBUG
   assert((*ref * *buf).is_identity());
-#endif
 
   copy_n(buf->data(), n*n, data());
 }
@@ -335,11 +333,8 @@ bool ZMatrix::inverse_half(const double thresh) {
 
   const bool lindep = std::any_of(vec.begin(), vec.end(), [&thresh] (const double& e) { return e < thresh; });
 
-#ifndef NDEBUG
   // check numerical stability of the inversion - bypassed if we detect linear dependency
-  if (!lindep)
-    assert((*this % *ref * *this).is_identity());
-#endif
+  assert(lindep || (*this % *ref * *this).is_identity());
 
   return !lindep;
 }
@@ -416,10 +411,8 @@ bool ZMatrix::is_symmetric(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A -= *A->transpose();
   const double err = A->norm()/A->size();
-#ifndef NDEBUG
   if (100.0*err > thresh)
     cout << scientific << setprecision(2) << "    - ZMatrix symmetry not fully satisfied: error norm/size = " << err << endl;
-#endif
   return (err < thresh);
 }
 
@@ -428,10 +421,8 @@ bool ZMatrix::is_antisymmetric(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A += *A->transpose();
   const double err = A->norm()/A->size();
-#ifndef NDEBUG
   if (100.0*err > thresh)
     cout << scientific << setprecision(2) << "    - ZMatrix antisymmetry not fully satisfied: error norm/size = " << err << endl;
-#endif
   return (err < thresh);
 }
 
@@ -440,10 +431,8 @@ bool ZMatrix::is_hermitian(const double thresh) const {
   shared_ptr<ZMatrix> A = copy();
   *A -= *A->transpose_conjg();
   const double err = A->norm()/A->size();
-#ifndef NDEBUG
   if (100.0*err > thresh)
     cout << scientific << setprecision(2) << "    - Hermitian symmetry not fully satisfied: error norm/size = " << err << endl;
-#endif
   return (err < thresh);
 }
 
@@ -454,10 +443,8 @@ bool ZMatrix::is_identity(const double thresh) const {
   B->unit();
   *A -= *B;
   const double err = A->norm()/A->size();
-#ifndef NDEBUG
   if (100.0*err > thresh)
     cout << scientific << setprecision(2) << "    - Inversion not perfectly accurate: error norm/size = " << err << endl;
-#endif
   return (err < thresh);
 }
 
