@@ -163,9 +163,6 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       const int unpairbeta  = (beta ^ (alpha & beta)).count();
       if (unpairalpha-unpairbeta < nelea-neleb) continue;
 
-      // check if this orbital configuration is already used
-      pair<bitset<nbit__>,bitset<nbit__>> config = spin_adapt_ ? make_pair(open_bit, alpha & beta) : it;
-
       if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
 
       done.push_back(open_bit);
