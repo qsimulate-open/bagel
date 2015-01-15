@@ -26,7 +26,7 @@
 {
   "title" : "zfci",
   "charge" : "+50",
-  "norb" : "20",
+  "norb" : "12",
   "davidson_subspace" : "3",
   "thresh" : 1.0e-7,
   "state" : [0,1]

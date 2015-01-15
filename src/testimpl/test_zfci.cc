@@ -79,8 +79,8 @@ std::vector<double> reference_relfci_energy3() {
 
 std::vector<double> reference_relfci_energy4() {
   std::vector<double> out(2);
-  out[0] = -3187.40021421;
-  out[1] = -3184.76981146;
+  out[0] = -3187.40001447;
+  out[1] = -3184.76955058;
   return out;
 }
 
@@ -92,8 +92,8 @@ std::vector<double> reference_relfci_energy5() {
 
 std::vector<double> reference_relfci_energy6() {
   std::vector<double> out(2);
-  out[0] = -679.34301869;
-  out[1] = -679.23381529;
+  out[0] = -679.32861057;
+  out[1] = -679.23201607;
   return out;
 }
 
