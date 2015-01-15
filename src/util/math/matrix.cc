@@ -84,7 +84,7 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 void Matrix::diagonalize(VecView eig) {
   assert(ndim() == mdim());
   assert(eig.size() >= ndim());
-  assert(is_symmetric(1.0e-8));
+  assert(is_symmetric(1.0e-10));
   const int n = ndim();
   int info;
 

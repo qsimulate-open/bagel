@@ -321,10 +321,10 @@ class Matrix_base : public btas::Tensor2<DataType> {
     }
 
     // check the symmetry of a matrix
-    virtual bool is_symmetric(const double thresh = 1.0e-6) const = 0;
-    virtual bool is_antisymmetric(const double thresh = 1.0e-6) const = 0;
-    virtual bool is_hermitian(const double thresh = 1.0e-6) const = 0;
-    virtual bool is_identity(const double thresh = 1.0e-6) const = 0;
+    virtual bool is_symmetric(const double thresh = 1.0e-8) const = 0;
+    virtual bool is_antisymmetric(const double thresh = 1.0e-8) const = 0;
+    virtual bool is_hermitian(const double thresh = 1.0e-8) const = 0;
+    virtual bool is_identity(const double thresh = 1.0e-8) const = 0;
 
     virtual void diagonalize(VecView vec) = 0;
 
