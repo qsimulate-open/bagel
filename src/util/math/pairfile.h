@@ -31,7 +31,6 @@
 #include <cmath>
 #include <memory>
 #include <list>
-#include <iostream>
 #include <src/util/math/algo.h>
 
 namespace bagel {
