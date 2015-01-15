@@ -62,12 +62,20 @@ void ZCASSCF::init_kramers_coeff() {
     shared_ptr<ZMatrix> s12 = overlap_->tildex(1.0e-9);
     quaternion(s12);
 
-    auto fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
+    shared_ptr<ZMatrix> fock_tilde;
+    if (tsymm_)
+      fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
+    else
+      fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
 
     // quaternion diagonalization
     {
       VectorB eig(fock_tilde->ndim());
       fock_tilde->diagonalize(eig);
+
+      if (!tsymm_)
+        RelMOFile::rearrange_eig(eig, fock_tilde);
+
     }
 
     // re-order to kramers format and move negative energy states to virtual space
@@ -100,11 +108,21 @@ void ZCASSCF::init_kramers_coeff() {
     ctmp->copy_block(0, 0, coefftmp->ndim(), norb/2, coefftmp->slice(0, norb/2));
     ctmp->copy_block(0, norb/2, coefftmp->ndim(), norb/2, coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()/2+norb/2));
     focktmp = make_shared<DFock>(geom_, hcore_, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
-    auto fmo = make_shared<QuatMatrix>(*coefftmp % *focktmp * *coefftmp);
+
+    shared_ptr<ZMatrix> fmo;
+    if (tsymm_)
+      fmo = make_shared<QuatMatrix>(*coefftmp % (*focktmp) * *coefftmp);
+    else
+      fmo = make_shared<ZMatrix>(*coefftmp % (*focktmp) * *coefftmp);
+
     // quaternion diagonalization
     {
       VectorB eig(fmo->ndim());
       fmo->diagonalize(eig);
+
+      if (!tsymm_)
+        RelMOFile::rearrange_eig(eig, fmo);
+
       // move_positronic_orbitals;
       {
         auto move_one = [this, &fmo](const int offset, const int block1, const int block2) {

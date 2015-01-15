@@ -35,6 +35,8 @@
 #include <src/util/math/zmatrix.h>
 #include <src/util/math/matrix.h>
 #include <src/util/math/diis.h>
+#include <src/util/muffle.h>
+#include <src/multi/zcasscf/zcasscf.h>
 
 using namespace std;
 using namespace bagel;
@@ -115,6 +117,7 @@ void Dirac::compute() {
 
 // TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
 #if 0
+    assert(fock->is_hermitian());
     fock->hermite();
 #endif
     // distribute
@@ -160,6 +163,14 @@ void Dirac::compute() {
   }
 
   coeff_ = coeff->matrix();
+
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    cout << "    * Printing out population analysis to dhf.log" << endl;
+    Muffle muf ("dhf.log");
+    ZCASSCF::population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_);
+  }
+
 }
 
 
@@ -173,7 +184,7 @@ void Dirac::print_eig() const {
 shared_ptr<const Reference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
   const size_t npos = coeff_->mdim() - nneg_;
-  auto out = make_shared<RelReference>(geom_, coeff_, energy_, nneg_, nele_, npos-nele_, gaunt_, breit_);
+  auto out = make_shared<RelReference>(geom_, coeff_, energy_, nneg_, nele_, 0, npos-nele_, gaunt_, breit_);
   vector<double> eigp(eig_.begin()+nneg_, eig_.end());
   vector<double> eigm(eig_.begin(), eig_.begin()+nneg_);
   VectorB eig(eig_.size());
@@ -206,6 +217,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       coeff = make_shared<const DistZMatrix>(*s12 * interm);
     } else {
       // Non-relativistic, GIAO-based reference
+      const string typeinfo = geom_->london() ? "GIAO" : "(common origin)";
       assert(geom_->magnetism());
       const int nocc = ref_->nocc();
       shared_ptr<ZMatrix> fock;
@@ -236,7 +248,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       assert(nocca+noccb == nele_);
       auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
       ocoeff->add_real_block(1.0, 0,     0, n, nocca, ref_->coeffA()->slice(0,nocca));
-      ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->slice(nocca,nocca+noccb));
+      ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->slice(0,noccb));
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     } else {
       // CASSCF

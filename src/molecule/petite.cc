@@ -121,7 +121,7 @@ Petite::Petite(const vector<shared_ptr<const Atom>>& atoms, const string sym) : 
           }
         }
         if (!found)
-          throw logic_error("Petite constrcutor error");
+          throw logic_error("Petite constructor error");
       }
       sym_atommap_.push_back(tmp);
 

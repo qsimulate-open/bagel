@@ -45,6 +45,7 @@ static MPI_Interface c;
 MPI_Interface* bagel::mpi__ = &c;
 
 static double THRESH = 1.0e-8;
+static std::string location__ = "../../test/";
 
 bool compare(const double a, const double b, const double thr = THRESH) { return fabs(a-b) < thr; };
 
@@ -64,12 +65,12 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 #include <src/testimpl/test_mp2.cc>
 #include <src/testimpl/test_casscf.cc>
 #include <src/testimpl/test_fci.cc>
-//#include <src/testimpl/test_zfci.cc>
+#include <src/testimpl/test_zfci.cc>
 //#include <src/testimpl/test_zcasscf.cc>
 #include <src/testimpl/test_ras.cc>
 #include <src/testimpl/test_nevpt2.cc>
 #include <src/testimpl/test_opt.cc>
 #include <src/testimpl/test_localize.cc>
 #include <src/testimpl/test_asd.cc>
-#include <src/testimpl/test_asd_dmrg.cc>
+//#include <src/testimpl/test_asd_dmrg.cc>
 #include <src/testimpl/test_london.cc>

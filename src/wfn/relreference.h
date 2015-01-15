@@ -26,8 +26,6 @@
 #ifndef __SRC_REL_RELREFERENCE_H
 #define __SRC_REL_RELREFERENCE_H
 
-#include <src/mat1e/mixedbasis.h>
-#include <src/mat1e/rel/relhcore.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {
@@ -41,18 +39,20 @@ class RelReference : public Reference {
     std::shared_ptr<const ZMatrix> relcoeff_full_;
 
     bool rel_;  // Non-relativistic GIAO wavefunctions also use this class
+    bool kramers_;  // Indicates whether or not relcoeff_ has been kramers-adapted
 
   private:
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & relcoeff_full_ & rel_;
+      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & relcoeff_full_ & rel_ & kramers_;
     }
 
   public:
     RelReference() { }
-    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en, const int nneg, const int nocc, const int nvirt, const bool ga, const bool br, const bool rel = true)
-     : Reference(g, nullptr, nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c), rel_(rel) {
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en,
+                 const int nneg, const int nocc, const int nact, const int nvirt, const bool ga, const bool br, const bool rel = true, const bool kram = false)
+     : Reference(g, nullptr, nocc, nact, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c), rel_(rel), kramers_(kram) {
     }
 
     std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
@@ -64,6 +64,7 @@ class RelReference : public Reference {
     int nneg() const { return nneg_; }
 
     bool rel() const { return rel_; }
+    bool kramers() const { return kramers_; }
 
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin, const bool check_geom_change = true) const override;
 

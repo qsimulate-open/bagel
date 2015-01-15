@@ -44,6 +44,10 @@ using namespace std;
 using namespace bagel;
 
 CIGraph::CIGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb), size_(1) {
+  // Maximum active space size is hard-coded as nbit__ in src/util/constants.h
+  if (norb_ > nbit__)
+    throw runtime_error("Active space is too large.");
+
   if (nele*norb != 0) {
     weights_ = vector<size_t>(nele * norb, 0ull);
 

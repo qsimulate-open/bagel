@@ -128,7 +128,7 @@ namespace btas {
       }
 
       difference_type distance_to(const RangeIterator& other) const {
-        TA_ASSERT(range_ == other.range_);
+        assert(range_ == other.range_);
         return range_->distance_to(current_, other.current_);
       }
 

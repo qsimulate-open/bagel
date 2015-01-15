@@ -91,10 +91,12 @@ tuple<shared_ptr<ZRotFile>, shared_ptr<ZRotFile>> ZCASBFGS::optimize_subspace_ro
     a = srbfgs->extrapolate(newgrad, newrot);
   }
 
-  if (optimize_electrons) {
-    kramers_adapt(a, nclosed_, nact_, nvirtnr);
-  } else {
-    kramers_adapt(a, nclosed_, nact_, nneg_/2);
+  if (tsymm_) {
+    if (optimize_electrons) {
+      kramers_adapt(a, nclosed_, nact_, nvirtnr);
+    } else {
+      kramers_adapt(a, nclosed_, nact_, nneg_/2);
+    }
   }
   cout << setprecision(6) << " Subspace gradient rms  = " << newgrad->rms() << endl;
 
@@ -116,7 +118,6 @@ shared_ptr<ZMatrix> ZCASBFGS::compute_unitary_rotation(vector<double>& subspace_
       sa_en += i;
     sa_en /= double((fci_->energy()).size());
     subspace_energy.push_back(sa_en);
-    if (energy_.size() > 0) prev_energy_ = energy_;
     energy_ = fci_->energy();
   } else {
     assert(nstate_ == 1 && energy_.size() == 1);
@@ -139,12 +140,14 @@ shared_ptr<ZMatrix> ZCASBFGS::compute_unitary_rotation(vector<double>& subspace_
     cout << " --- Optimizing electrons --- " << endl;
   else
     cout << " --- Optimizing positrons --- " << endl;
+
   // grad is altered during optimization of subspace rotations
   xlog    = make_shared<ZRotFile>(displacement_history->log(4), nclosed_*2, nact_*2, nvirt_subspace*2);
   tie(subspace_rot, grad) = optimize_subspace_rotations(subspace_energy, grad, xlog, subspace_bfgs, optimize_electrons);
   cout << " ---------------------------------------------------- " << endl << endl;
   more_sorensen_timer.tick_print("More-Sorensen/Hebden extrapolation");
-  kramers_adapt(subspace_rot, nclosed_, nact_, nvirt_subspace);
+  if (tsymm_)
+    kramers_adapt(subspace_rot, nclosed_, nact_, nvirt_subspace);
 
   // Rotate orbitals
   shared_ptr<ZMatrix> amat = subspace_rot->unpack<ZMatrix>();
@@ -162,7 +165,8 @@ shared_ptr<ZMatrix> ZCASBFGS::compute_unitary_rotation(vector<double>& subspace_
   }
   auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
   // enforce time-reversal symmetry and unitarity
-  kramers_adapt(expa, nvirt_subspace);
+  if (tsymm_)
+    kramers_adapt(expa, nvirt_subspace);
   expa->purify_unitary();
 
   return expa;

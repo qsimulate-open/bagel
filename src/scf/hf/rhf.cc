@@ -174,7 +174,7 @@ void RHF::compute() {
     pdebug.tick_print("Post process");
   }
   // by default we compute dipoles
-  if (!geom_->external()) {
+  if (!geom_->external() && multipole_print_) {
     if (dodf_) aodensity_ = aodensity->matrix();
     Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();

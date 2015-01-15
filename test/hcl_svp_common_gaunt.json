@@ -3,7 +3,7 @@
 {
   "title" : "molecule",
   "symmetry" : "C1",
-  "basis" : "svp",
+  "basis" : "3-21g",
   "df_basis" : "svp-jkfit",
   "basis_type" : "gaussian",
   "magnetic_field" : [  0.2000,   0.3000,  -0.1500   ],
@@ -17,6 +17,7 @@
 
 {
   "title" : "dhf",
+  "thresh" : 1.0e-7,
   "gaunt" : "true",
   "breit" : "false"
 }

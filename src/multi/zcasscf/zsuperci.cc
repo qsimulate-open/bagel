@@ -139,7 +139,8 @@ void ZSuperCI::compute() {
 
     // orbital rotation matrix
     shared_ptr<ZMatrix> amat = cc->unpack<ZMatrix>();
-    kramers_adapt(amat, nvirtnr_);
+    if (tsymm_)
+      kramers_adapt(amat, nvirtnr_);
     // multiply -i to make amat hermite (will be compensated), sqrt(2) to recover non-rel limit
     *amat *= sqrt(2.0) * complex<double>(0.0, -1.0);
     VectorB teig(amat->ndim());
@@ -210,6 +211,13 @@ void ZSuperCI::compute() {
     fci_->compute_rdm12();
   }
 
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    cout << "    * Printing out population analysis to casscf.log" << endl;
+    mute_stdcout();
+    population_analysis(geom_, coeff_->slice(0, nclosed_+nact_+nvirtnr_), overlap_);
+    resume_stdcout();
+  }
 }
 
 

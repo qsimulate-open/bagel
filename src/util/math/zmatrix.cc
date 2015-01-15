@@ -91,8 +91,8 @@ void ZMatrix::diagonalize(VecView eig) {
   if (ndim() != mdim()) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)");
   assert(eig.size() >= ndim());
 
-  //assert that matrix is hermitian to ensure real eigenvalues
-  assert((*this - *(this->transpose_conjg())).norm()/size() < 1e-10);
+  // assert that matrix is hermitian to ensure real eigenvalues
+  assert(is_hermitian(1.0e-10));
 
   const int n = ndim();
   int info;
@@ -123,12 +123,12 @@ void ZMatrix::diagonalize(VecView eig) {
     const int lwork = round(max(131072.0, wsize.real()*2.0));
     unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
     pzheevd_("V", "U", n, local.get(), desc_.data(), eig.data(), coeff.get(), desc_.data(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
-    if(info) throw runtime_error("diagonalize failed");
 
     setlocal_(coeff);
   }
 #endif
 
+  if(info) throw runtime_error("diagonalize failed");
 }
 
 
@@ -218,35 +218,17 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 }
 
 
-shared_ptr<ZMatrix> ZMatrix::transpose() const {
+shared_ptr<ZMatrix> ZMatrix::transpose(const complex<double> factor) const {
   auto out = make_shared<ZMatrix>(mdim(), ndim(), localized_);
-  blas::transpose(data(), ndim(), mdim(), out->data());
+  blas::transpose(data(), ndim(), mdim(), out->data(), factor);
   return out;
 }
 
 
-shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
+shared_ptr<ZMatrix> ZMatrix::transpose_conjg(const complex<double> factor) const {
   auto out = make_shared<ZMatrix>(mdim(), ndim(), localized_);
-  blas::transpose_conjg(data(), ndim(), mdim(), out->data());
+  blas::transpose_conjg(data(), ndim(), mdim(), out->data(), factor);
   return out;
-}
-
-
-void ZMatrix::antisymmetrize() {
-  assert(ndim() == mdim());
-
-  shared_ptr<ZMatrix> trans = transpose();
-  *this -= *trans;
-  *this *= 0.5;
-}
-
-
-void ZMatrix::hermite() {
-  assert(ndim() == mdim());
-
-  shared_ptr<ZMatrix> trans = transpose_conjg();
-  *this += *trans;
-  *this *= 0.5;
 }
 
 
@@ -297,6 +279,9 @@ void ZMatrix::purify_idempotent(const ZMatrix& s) {
 void ZMatrix::inverse() {
   assert(ndim() == mdim());
   const int n = ndim();
+#ifndef NDEBUG
+  shared_ptr<ZMatrix> ref = this->copy();
+#endif
   shared_ptr<ZMatrix> buf = this->clone();
   buf->unit();
 
@@ -304,6 +289,9 @@ void ZMatrix::inverse() {
   unique_ptr<int[]> ipiv(new int[n]);
   zgesv_(n, n, data(), n, ipiv.get(), buf->data(), n, info);
   if (info) throw runtime_error("dsysv failed in ZMatrix::inverse()");
+
+  // check numerical stability of the inversion
+  assert((*ref * *buf).is_identity());
 
   copy_n(buf->data(), n*n, data());
 }
@@ -313,6 +301,9 @@ void ZMatrix::inverse() {
 bool ZMatrix::inverse_half(const double thresh) {
   assert(ndim() == mdim());
   const int n = ndim();
+#ifndef NDEBUG
+  shared_ptr<ZMatrix> ref = this->copy();
+#endif
   VectorB vec(n);
   diagonalize(vec);
 
@@ -329,6 +320,10 @@ bool ZMatrix::inverse_half(const double thresh) {
   *this = *this ^ *this;
 
   const bool lindep = std::any_of(vec.begin(), vec.end(), [&thresh] (const double& e) { return e < thresh; });
+
+  // check numerical stability of the inversion - bypassed if we detect linear dependency
+  assert(lindep || (*this % *ref * *this).is_identity());
+
   return !lindep;
 }
 
@@ -351,6 +346,10 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
     }
     out = out->slice_copy(0,m);
   }
+
+  // check numerical stability of the orthogonalization
+  assert((*out % *this * *out).is_identity());
+
   return out;
 }
 
@@ -393,6 +392,35 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
   for (auto& o : *out)
     o = conj(*i++);
   return out;
+}
+
+
+bool ZMatrix::is_symmetric(const double thresh) const {
+  shared_ptr<ZMatrix> tmp = transpose();
+  *tmp -= *this;
+  return tmp->rms() < thresh;
+}
+
+
+bool ZMatrix::is_antisymmetric(const double thresh) const {
+  shared_ptr<ZMatrix> tmp = transpose();
+  *tmp += *this;
+  return tmp->rms() < thresh;
+}
+
+
+bool ZMatrix::is_hermitian(const double thresh) const {
+  shared_ptr<ZMatrix> tmp = transpose_conjg();
+  *tmp -= *this;
+  return tmp->rms() < thresh;
+}
+
+
+bool ZMatrix::is_identity(const double thresh) const {
+  shared_ptr<ZMatrix> tmp = clone();
+  tmp->unit();
+  *tmp -= *this;
+  return tmp->rms() < thresh;
 }
 
 
