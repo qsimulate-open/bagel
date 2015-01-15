@@ -61,9 +61,6 @@ class ZHarrison : public Method {
     // enforce time-reversal symmetry
     bool tsymm_;
 
-    // to use spin-adapted CFSs as initial guess or raw determinants
-    bool spin_adapt_;
-
     // number of states
     int nstate_;
     std::vector<int> states_;

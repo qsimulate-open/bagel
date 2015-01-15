@@ -64,7 +64,6 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
 
   // Invoke Kramer's symmetry for any case without magnetic field
   tsymm_ = !geom_->magnetism();
-  spin_adapt_ = idata_->get<bool>("spin_adapt", true);
 
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
@@ -149,7 +148,7 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
 
     // Spin adapt detseeds
     oindex = offset;
-    vector<pair<bitset<nbit__>,bitset<nbit__>>> done;
+    vector<bitset<nbit__>> done;
     for (auto& it : bits) {
       bitset<nbit__> alpha = it.second;
       bitset<nbit__> beta = it.first;
@@ -166,17 +165,12 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
 
       // check if this orbital configuration is already used
       pair<bitset<nbit__>,bitset<nbit__>> config = spin_adapt_ ? make_pair(open_bit, alpha & beta) : it;
-      if (find(done.begin(), done.end(), config) != done.end()) continue;
 
-      done.push_back(config);
+      if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
+
+      done.push_back(open_bit);
       pair<vector<tuple<int, int, int>>, double> adapt;
-      if (spin_adapt_) {
-        adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
-      } else {
-        adapt.first = vector<tuple<int, int, int>>(1, make_tuple(space_->finddet(nelea, neleb)->lexical<1>(beta),
-                                                                 space_->finddet(nelea, neleb)->lexical<0>(alpha), 1));
-        adapt.second = 1.0;
-      }
+      adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
 
       const double fac = adapt.second;
       for (auto& iter : adapt.first) {
