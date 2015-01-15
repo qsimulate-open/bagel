@@ -208,7 +208,7 @@ namespace btas {
       friend class boost::serialization::access;
       template<class Archive>
       void serialize(Archive& ar, const unsigned int version) {
-        ar & stride_ & offset_ & contiguous_;
+        ar & BOOST_SERIALIZATION_NVP(stride_) & BOOST_SERIALIZATION_NVP(offset_) & BOOST_SERIALIZATION_NVP(contiguous_);
       }
 
       stride_type stride_; //!< stride of each dimension (stride in the language of NumPy)
