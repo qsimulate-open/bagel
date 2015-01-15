@@ -55,7 +55,8 @@ void ZSuperCIMicro::compute() {
 
     if (miter != 0) {
       sigma1 = form_sigma(cc1);
-      ZCASSCF::kramers_adapt(sigma1, nclosed, nact, nvirt);
+      if (casscf_->tsymm())
+        ZCASSCF::kramers_adapt(sigma1, nclosed, nact, nvirt);
       // projection to reference
       (*cc0)   (0,0) = 0.0;
       (*sigma0)(0,0) = grad_->dot_product(*cc1);
@@ -88,7 +89,8 @@ void ZSuperCIMicro::compute() {
     // update cc0 and cc1
     cc1 = mbfgs->extrapolate(residual, davidson.civec().front())->second();
     cc1->normalize();
-    ZCASSCF::kramers_adapt(cc1, nclosed, nact, nvirt);
+    if (casscf_->tsymm())
+      ZCASSCF::kramers_adapt(cc1, nclosed, nact, nvirt);
     cc0 = cc0->clone();
   }
 
@@ -98,7 +100,8 @@ void ZSuperCIMicro::compute() {
   shared_ptr<ZRotFile> tmp = result->second()->copy();
   *tmp *= 1.0/cref;
   tmp->synchronize();
-  ZCASSCF::kramers_adapt(tmp, nclosed, nact, nvirt);
+  if (casscf_->tsymm())
+    ZCASSCF::kramers_adapt(tmp, nclosed, nact, nvirt);
   cc_ = tmp;
 }
 

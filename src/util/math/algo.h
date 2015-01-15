@@ -177,7 +177,7 @@ namespace {
   // average
   template<class T>
   auto average(const T& container) -> decltype(std::accumulate(container.begin(), container.end(), 0.0)/container.size()) {
-    return std::accumulate(container.begin(), container.end(), 0.0) / container.size();  
+    return std::accumulate(container.begin(), container.end(), 0.0) / container.size();
   }
 
 }}

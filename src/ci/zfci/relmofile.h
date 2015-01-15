@@ -39,6 +39,7 @@ class RelMOFile {
   protected:
     int nocc_;
     int nbasis_;
+    int charge_;
     double core_energy_;
 
     std::shared_ptr<const Geometry> geom_;
@@ -48,6 +49,7 @@ class RelMOFile {
 
     bool gaunt_;
     bool breit_;
+    bool tsymm_;
 
     // creates integral files and returns the core energy.
     void init(const int nstart, const int nend, const bool restricted = false);
@@ -68,12 +70,14 @@ class RelMOFile {
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt_;
 
   public:
-    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, const bool gaunt, const bool breit);
+    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, const int charge, const bool gaunt, const bool breit, const bool tsymm);
 
     // static function
     static std::array<std::shared_ptr<const ZMatrix>,2> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_zquat(const int nstart, const int nfence, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> hcore);
 
+    // static function used to make the order of eigenvalues & eigenvectors of ZMatrix::diagonalize() match that given by QuatMatrix::diagonalize()
+    static void rearrange_eig(VectorB& eig, std::shared_ptr<ZMatrix> coeff, const bool includes_neg = true);
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
 
@@ -116,8 +120,9 @@ class RelJop : public RelMOFile {
     std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) override;
 
   public:
-    RelJop(const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit, const bool restricted = false)
-      : RelMOFile(geo, coeff, gaunt, breit) { init(c, d, restricted); }
+    RelJop(const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff, const int charge,
+      const bool gaunt, const bool breit, const bool restricted = false, const bool tsymm = true)
+      : RelMOFile(geo, coeff, charge, gaunt, breit, tsymm) { init(c, d, restricted); }
 };
 
 

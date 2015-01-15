@@ -84,6 +84,7 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 void Matrix::diagonalize(VecView eig) {
   assert(ndim() == mdim());
   assert(eig.size() >= ndim());
+  assert(is_symmetric(1.0e-10));
   const int n = ndim();
   int info;
 
@@ -191,14 +192,6 @@ shared_ptr<Matrix> Matrix::transpose(const double factor) const {
 }
 
 
-void Matrix::antisymmetrize() {
-  assert(ndim() == mdim());
-  shared_ptr<Matrix> trans = transpose();
-  *this -= *trans;
-  *this *= 0.5;
-}
-
-
 void Matrix::purify_unitary() {
   assert(ndim() == mdim());
   for (int i = 0; i != ndim(); ++i) {
@@ -242,13 +235,19 @@ void Matrix::purify_idempotent(const Matrix& s) {
 void Matrix::inverse() {
   assert(ndim() == mdim());
   const int n = ndim();
+#ifndef NDEBUG
+  shared_ptr<Matrix> ref = this->copy();
+#endif
   shared_ptr<Matrix> buf = this->clone();
   buf->unit();
 
   int info;
   unique_ptr<int[]> ipiv(new int[n]);
   dgesv_(n, n, data(), n, ipiv.get(), buf->data(), n, info);
-  if (info) throw runtime_error("dsysv failed in Matrix::inverse()");
+  if (info) throw runtime_error("dgesv failed in Matrix::inverse()");
+
+  // check numerical stability of the inversion
+  assert((*ref * *buf).is_identity());
 
   copy_n(buf->data(), n*n, data());
 }
@@ -272,6 +271,9 @@ shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const 
 // compute S^{-1} using diagonalization
 bool Matrix::inverse_symmetric(const double thresh) {
   assert(ndim() == mdim());
+#ifndef NDEBUG
+  shared_ptr<Matrix> ref = this->copy();
+#endif
   const int n = ndim();
   VectorB vec(n);
   diagonalize(vec);
@@ -290,6 +292,10 @@ bool Matrix::inverse_symmetric(const double thresh) {
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 #endif
+
+  // check numerical stability of the inversion
+  assert((*this * *ref).is_identity());
+
   return rm.empty();
 }
 
@@ -299,6 +305,9 @@ bool Matrix::inverse_half(const double thresh) {
   assert(ndim() == mdim());
   const int n = ndim();
   VectorB vec(n);
+#ifndef NDEBUG
+  shared_ptr<Matrix> ref = this->copy();
+#endif
 
 #ifdef HAVE_SCALAPACK
   if (localized_) {
@@ -328,6 +337,10 @@ bool Matrix::inverse_half(const double thresh) {
     cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
+
+  // check numerical stability of the inversion - bypassed if we detect linear dependency
+  assert(!rm.empty() || (*this % *ref * *this).is_identity());
+
   return rm.empty();
 }
 
@@ -349,6 +362,10 @@ shared_ptr<Matrix> Matrix::tildex(const double thresh) const {
     }
     out = out->slice_copy(0,m);
   }
+
+  // check numerical stability of the orthogonalization
+  assert((*out % *this * *out).is_identity());
+
   return out;
 }
 
@@ -397,6 +414,28 @@ void Matrix::rotate(vector<tuple<int, int, double>>& rotations) {
 }
 
 
+bool Matrix::is_symmetric(const double thresh) const {
+  shared_ptr<Matrix> tmp = transpose();
+  *tmp -= *this;
+  return tmp->rms() < thresh;
+}
+
+
+bool Matrix::is_antisymmetric(const double thresh) const {
+  shared_ptr<Matrix> tmp = transpose();
+  *tmp += *this;
+  return tmp->rms() < thresh;
+}
+
+
+bool Matrix::is_identity(const double thresh) const {
+  shared_ptr<Matrix> tmp = clone();
+  tmp->unit();
+  *tmp -= *this;
+  return tmp->rms() < thresh;
+}
+
+
 #ifdef HAVE_SCALAPACK
 shared_ptr<DistMatrix> Matrix::distmatrix() const {
   return make_shared<DistMatrix>(*this);
@@ -414,19 +453,4 @@ shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset)
   auto out = make_shared<Matrix>(tmp ^ tmp);
   *out *= 2.0;
   return out;
-}
-
-
-shared_ptr<Matrix> Matrix::swap_columns(const int i, const int iblock, const int j, const int jblock) const {
-    assert(j > i);
-    assert(i + iblock - 1 < j);
-    assert(j + jblock <= mdim());
-    cout << " swap columns " << i << " through " << i + iblock << " with " << j << " through " << j + jblock << endl;
-    auto out = this->clone();
-    out->copy_block(0, 0, ndim(), i, this->slice(0, i));
-    out->copy_block(0, i, ndim(), jblock, this->slice(j, j + jblock));
-    out->copy_block(0, i + jblock, ndim(), j - (i+iblock), this->slice(i+iblock, j));
-    out->copy_block(0, j + jblock - iblock, ndim(), iblock, this->slice(i, i+iblock));
-    out->copy_block(0, j + jblock, ndim(), mdim()-(j+jblock), this->slice(j+jblock, mdim()));
-    return out;
 }

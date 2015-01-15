@@ -135,6 +135,8 @@ class DavidsonDiag {
 
       // canonical orthogonalization
       std::shared_ptr<const MatType> ovlp_scr = overlap_->tildex();
+      if (ovlp_scr->mdim() < nstate_)
+        throw std::runtime_error("Too much linear dependency in guess vectors provided to DavidsonDiag; cannot obtain the requested number of states.");
 
       // diagonalize matrix to get
       eig_ = std::make_shared<MatType>(*ovlp_scr % *mat_ * *ovlp_scr);

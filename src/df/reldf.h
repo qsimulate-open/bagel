@@ -30,7 +30,6 @@
 #include <src/df/df.h>
 #include <src/df/reldfbase.h>
 #include <src/df/relcdmatrix.h>
-#include <src/df/reldfhalf.h>
 
 namespace bagel {
 
