@@ -408,32 +408,31 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
 
 
 bool ZMatrix::is_symmetric(const double thresh) const {
-  shared_ptr<ZMatrix> A = copy();
-  *A -= *A->transpose();
-  return (A->rms() < thresh);
+  shared_ptr<ZMatrix> tmp = transpose();
+  *tmp -= *this;
+  return (tmp->rms() < thresh);
 }
 
 
 bool ZMatrix::is_antisymmetric(const double thresh) const {
-  shared_ptr<ZMatrix> A = copy();
-  *A += *A->transpose();
-  return (A->rms() < thresh);
+  shared_ptr<ZMatrix> tmp = transpose();
+  *tmp += *this;
+  return (tmp->rms() < thresh);
 }
 
 
 bool ZMatrix::is_hermitian(const double thresh) const {
-  shared_ptr<ZMatrix> A = copy();
-  *A -= *A->transpose_conjg();
-  return (A->rms() < thresh);
+  shared_ptr<ZMatrix> tmp = transpose_conjg();
+  *tmp -= *this;
+  return (tmp->rms() < thresh);
 }
 
 
 bool ZMatrix::is_identity(const double thresh) const {
-  shared_ptr<ZMatrix> A = copy();
-  shared_ptr<ZMatrix> B = A->clone();
-  B->unit();
-  *A -= *B;
-  return (A->rms() < thresh);
+  shared_ptr<ZMatrix> tmp = clone();
+  tmp->unit();
+  *tmp -= *this;
+  return (tmp->rms() < thresh);
 }
 
 
