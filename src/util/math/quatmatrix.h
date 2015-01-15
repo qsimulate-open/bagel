@@ -38,15 +38,9 @@ class QuatMatrix : public ZMatrix {
       assert(mdim()%2 == 0 && ndim()%2 == 0);
       const int m = mdim()/2;
       const int n = ndim()/2;
-
-      std::shared_ptr<ZMatrix> u = get_submatrix(0, 0, n, m);
-      std::shared_ptr<ZMatrix> v = get_submatrix(n, 0, n, m);
-
-      u->ax_plus_y(-1.0, *get_submatrix(n, m, n, m)->get_conjg());
-      v->ax_plus_y( 1.0, *get_submatrix(0, m, n, m)->get_conjg());
-
-      const double err = u->rms() + v->rms();
-      return err < thresh;
+      const ZMatrix u = *get_submatrix(0, 0, n, m) - *get_submatrix(n, m, n, m)->get_conjg();
+      const ZMatrix v = *get_submatrix(n, 0, n, m) + *get_submatrix(0, m, n, m)->get_conjg();
+      return (u.rms()+v.rms()) < thresh;
     }
 
   public:
