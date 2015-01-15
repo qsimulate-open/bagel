@@ -46,7 +46,7 @@ class QuatMatrix : public ZMatrix {
       v->ax_plus_y( 1.0, *get_submatrix(0, m, n, m)->get_conjg());
 
       const double err = u->rms() + v->rms();
-      return (err < thresh);
+      return err < thresh;
     }
 
   public:
