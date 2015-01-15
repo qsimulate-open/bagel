@@ -95,9 +95,6 @@ class PairFile {
 
     void zero() { first()->zero(); second()->zero(); }
 
-    // TODO
-    void print(const double thresh) const { std::cout << "Print function for PairFile has not been implemented." << std::endl; }
-
     std::shared_ptr<PairFile<T, U>> clone() const { return std::make_shared<PairFile<T, U>>(file0_->clone(), file1_->clone()); }
 
     // assumes that c is already orthogonal with each other.

@@ -160,16 +160,6 @@ class Matrix_base : public btas::Tensor2<DataType> {
       assert(jblock >= 0 && iblock >= 0);
       assert(i >= 0 && j + jblock <= mdim());
       assert(i + iblock <= j);
-#ifndef NDEBUG
-      if (iblock && jblock)
-        std::cout << " swap columns " << i << " through " << i + iblock - 1 << " with " << j << " through " << j + jblock - 1 << std::endl;
-      else if (iblock && !jblock)
-        std::cout << " moving columns " << i << " through " << i + iblock - 1 << " to position " << j << std::endl;
-      else if (!iblock && jblock)
-        std::cout << " moving columns " << j << " through " << j + jblock - 1 << " to position " << i << std::endl;
-      else
-        std::cout << " columns not being rearranged " << std::endl;
-#endif
 
       auto low0 = {0, 0};
       auto low1 = {0, j};
@@ -408,7 +398,6 @@ class Matrix_base : public btas::Tensor2<DataType> {
       broadcast();
     }
 
-    void print(const double thresh) const { print("Matrix printout"); }
     virtual void print(const std::string tag = "", const int size = 10) const { btas::print(*this, tag, size); }
 
     // if we use this matrix within node, or in parallel
