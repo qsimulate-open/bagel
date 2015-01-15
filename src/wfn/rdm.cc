@@ -130,7 +130,7 @@ shared_ptr<Matrix> RDM<1>::rdm1_mat(const int nclosed, const bool all) const {
 
 
 template<>
-void RDM<1>::print(const double thresh) const {
+void RDM<1, double>::print(const double thresh) const {
   const double* ptr = data();
   for (int i = 0; i != norb(); ++i)
     for (int j = 0; j != norb(); ++j)
@@ -139,7 +139,16 @@ void RDM<1>::print(const double thresh) const {
 
 
 template<>
-void RDM<2>::print(const double thresh) const {
+void RDM<1, complex<double>>::print(const double thresh) const {
+  const complex<double>* ptr = data();
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
+      cout << setw(24) << setprecision(7) << *ptr++ << endl;
+}
+
+
+template<>
+void RDM<2, double>::print(const double thresh) const {
   const double* ptr = data();
   for (int i = 0; i != norb(); ++i)
     for (int j = 0; j != norb(); ++j)
@@ -153,16 +162,46 @@ void RDM<2>::print(const double thresh) const {
 
 
 template<>
-void RDM<3>::print(const double thresh) const {
+void RDM<2, complex<double>>::print(const double thresh) const {
+  const complex<double>* ptr = data();
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
+      for (int k = 0; k != norb(); ++k)
+        for (int l = 0; l != norb(); ++l, ++ptr)
+          if (fabs(*ptr) > thresh)
+            cout << setw(3) << l << setw(3)
+                      << k << setw(3) << j << setw(3) << i
+                      << setw(24) << setprecision(7) << *ptr << endl;
+}
+
+
+template<>
+void RDM<3, double>::print(const double thresh) const {
   const double* ptr = data();
   for (int i = 0; i != norb(); ++i)
     for (int j = 0; j != norb(); ++j)
       for (int k = 0; k != norb(); ++k)
         for (int l = 0; l != norb(); ++l)
-        for (int m = 0; m != norb(); ++m)
-        for (int n = 0; n != norb(); ++n, ++ptr)
-          if (fabs(*ptr) > thresh)
-            cout << setw(3) << n << setw(3) << m << setw(3) << l << setw(3)
-                 << k << setw(3) << j << setw(3) << i
-                 << setw(12) << setprecision(7) << *ptr << endl;
+          for (int m = 0; m != norb(); ++m)
+            for (int n = 0; n != norb(); ++n, ++ptr)
+              if (fabs(*ptr) > thresh)
+                cout << setw(3) << n << setw(3) << m << setw(3) << l << setw(3)
+                     << k << setw(3) << j << setw(3) << i
+                     << setw(12) << setprecision(7) << *ptr << endl;
+}
+
+
+template<>
+void RDM<3, complex<double>>::print(const double thresh) const {
+  const complex<double>* ptr = data();
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
+      for (int k = 0; k != norb(); ++k)
+        for (int l = 0; l != norb(); ++l)
+          for (int m = 0; m != norb(); ++m)
+            for (int n = 0; n != norb(); ++n, ++ptr)
+              if (fabs(*ptr) > thresh)
+                cout << setw(3) << n << setw(3) << m << setw(3) << l << setw(3)
+                     << k << setw(3) << j << setw(3) << i
+                     << setw(24) << setprecision(7) << *ptr << endl;
 }

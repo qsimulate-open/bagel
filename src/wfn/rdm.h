@@ -161,6 +161,9 @@ template<> std::shared_ptr<Matrix> RDM<1,double>::rdm1_mat(const int nclosed, co
 template<> void RDM<1,double>::print(const double thresh) const;
 template<> void RDM<2,double>::print(const double thresh) const;
 template<> void RDM<3,double>::print(const double thresh) const;
+template<> void RDM<1,std::complex<double>>::print(const double thresh) const;
+template<> void RDM<2,std::complex<double>>::print(const double thresh) const;
+template<> void RDM<3,std::complex<double>>::print(const double thresh) const;
 
 }
 
