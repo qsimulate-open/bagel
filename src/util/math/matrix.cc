@@ -351,7 +351,7 @@ bool Matrix::inverse_half(const double thresh) {
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 
   // check numerical stability of the inversion - bypassed if we detect linear dependency
-  assert(rm.empty() || (*this % *ref * *this).is_identity());
+  assert(!rm.empty() || (*this % *ref * *this).is_identity());
 
   return rm.empty();
 }
