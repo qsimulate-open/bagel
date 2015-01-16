@@ -34,6 +34,8 @@
 
 namespace bagel {
 
+static const double pisq__ = pi__ * pi__;
+
 template <int N>
 class PMatrix1eArrayTask;
 
@@ -61,6 +63,60 @@ class PMatrix1eArray {
     constexpr static int Nblocks() { return N; }
 
     void fill_upper_conjg() { for (int i = 0 ; i < N; ++i) pdata_blocks_[i]->fill_upper_conjg(); }
+
+
+    std::array<double, 3> distribution_centre(std::array<std::shared_ptr<const Shell>, 2> shells) {
+      const std::vector<double> exp0 = shells[0]->exponents();
+      const std::vector<double> exp1 = shells[1]->exponents();
+      std::array<double, 3> out = {{0.0, 0.0, 0.0}};
+      for (auto& expi0 : exp0) {
+        for (auto& expi1 : exp1) {
+          const double cxp_inv = 1.0 / (expi0 + expi1);
+          out[0] += (shells[0]->position(0) * expi0 + shells[1]->position(0) * expi1) * cxp_inv;
+          out[1] += (shells[0]->position(1) * expi0 + shells[1]->position(1) * expi1) * cxp_inv;
+          out[2] += (shells[0]->position(2) * expi0 + shells[1]->position(2) * expi1) * cxp_inv;
+        }
+      }
+      const int denom = shells[0]->exponents().size() + shells[1]->exponents().size();
+      out[0] /= denom;
+      out[1] /= denom;
+      out[2] /= denom;
+
+      return out;
+    }
+
+
+    double distribution_extent(std::array<std::shared_ptr<const Shell>, 2> shells, const double thresh = PRIM_SCREEN_THRESH) {
+      const std::array<double, 3> centre = distribution_centre(shells);
+
+      const std::vector<double> exp0 = shells[0]->exponents();
+      const std::vector<double> exp1 = shells[1]->exponents();
+      std::array<double, 3> AB;
+      AB[0] = shells[0]->position(0) - shells[1]->position(0);
+      AB[1] = shells[0]->position(1) - shells[1]->position(1);
+      AB[2] = shells[0]->position(2) - shells[1]->position(2);
+      const double rsq = AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2];
+      const double lnthresh = std::log(thresh);
+
+      double out = 0.0;
+      for (auto& expi0 : exp0) {
+        for (auto& expi1 : exp1) {
+          const double cxp_inv = 1.0 / (expi0 + expi1);
+          const double expi01 = expi0 * expi1;
+          const double lda_kl = std::sqrt(- lnthresh - expi01 * rsq * cxp_inv + 0.75 * std::log(4.0 * expi01 / pisq__)) * cxp_inv;
+
+          std::array<double, 3> tmp;
+          tmp[0] = (shells[0]->position(0) * expi0 + shells[1]->position(0) * expi1) * cxp_inv - centre[0];
+          tmp[1] = (shells[0]->position(1) * expi0 + shells[1]->position(1) * expi1) * cxp_inv - centre[1];
+          tmp[2] = (shells[0]->position(2) * expi0 + shells[1]->position(2) * expi1) * cxp_inv - centre[2];
+
+          const double extent = std::sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + lda_kl;
+          if (extent > out) out = extent;
+        }
+      }
+
+      return out;
+    }
 };
 
 
