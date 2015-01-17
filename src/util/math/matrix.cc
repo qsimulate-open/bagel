@@ -84,7 +84,6 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 void Matrix::diagonalize(VecView eig) {
   assert(ndim() == mdim());
   assert(eig.size() >= ndim());
-  assert(is_symmetric(1.0e-10));
   const int n = ndim();
   int info;
 
@@ -246,9 +245,6 @@ void Matrix::inverse() {
   dgesv_(n, n, data(), n, ipiv.get(), buf->data(), n, info);
   if (info) throw runtime_error("dgesv failed in Matrix::inverse()");
 
-  // check numerical stability of the inversion
-  assert((*ref * *buf).is_identity());
-
   copy_n(buf->data(), n*n, data());
 }
 
@@ -293,9 +289,6 @@ bool Matrix::inverse_symmetric(const double thresh) {
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 #endif
 
-  // check numerical stability of the inversion
-  assert((*this * *ref).is_identity());
-
   return rm.empty();
 }
 
@@ -338,9 +331,6 @@ bool Matrix::inverse_half(const double thresh) {
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 
-  // check numerical stability of the inversion - bypassed if we detect linear dependency
-  assert(!rm.empty() || (*this % *ref * *this).is_identity());
-
   return rm.empty();
 }
 
@@ -362,9 +352,6 @@ shared_ptr<Matrix> Matrix::tildex(const double thresh) const {
     }
     out = out->slice_copy(0,m);
   }
-
-  // check numerical stability of the orthogonalization
-  assert((*out % *this * *out).is_identity());
 
   return out;
 }
