@@ -290,9 +290,6 @@ void ZMatrix::inverse() {
   zgesv_(n, n, data(), n, ipiv.get(), buf->data(), n, info);
   if (info) throw runtime_error("dsysv failed in ZMatrix::inverse()");
 
-  // check numerical stability of the inversion
-  assert((*ref * *buf).is_identity());
-
   copy_n(buf->data(), n*n, data());
 }
 
@@ -321,9 +318,6 @@ bool ZMatrix::inverse_half(const double thresh) {
 
   const bool lindep = std::any_of(vec.begin(), vec.end(), [&thresh] (const double& e) { return e < thresh; });
 
-  // check numerical stability of the inversion - bypassed if we detect linear dependency
-  assert(lindep || (*this % *ref * *this).is_identity());
-
   return !lindep;
 }
 
@@ -346,9 +340,6 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
     }
     out = out->slice_copy(0,m);
   }
-
-  // check numerical stability of the orthogonalization
-  assert((*out % *this * *out).is_identity());
 
   return out;
 }
