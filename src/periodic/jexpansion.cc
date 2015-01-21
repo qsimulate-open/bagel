@@ -126,40 +126,43 @@ vector<shared_ptr<const ZMatrix>> JExpansion::compute(shared_ptr<const Matrix> d
 
   assert(is_well_separated());
   vector<shared_ptr<const ZMatrix>> out(num_multipoles_);
-
-  const int dimb1 = basisinfo_[0]->nbasis();
-  const int dimb0 = basisinfo_[1]->nbasis();
-  MultipoleBatch mpole0(array<shared_ptr<const Shell>, 2>{{basisinfo_[0], basisinfo_[1]}}, centre0_);
-  mpole0.compute();
-
-  const int dimb3 = basisinfo_[2]->nbasis();
-  const int dimb2 = basisinfo_[3]->nbasis();
-  assert(density->ndim() == dimb3 && density->mdim() == dimb2);
-  MultipoleBatch mpole1(array<shared_ptr<const Shell>, 2>{{basisinfo_[2], basisinfo_[3]}}, centre1_);
-  mpole1.compute();
-
   vector<shared_ptr<const ZMatrix>> multipoles0(num_multipoles_);
   vector<shared_ptr<const ZMatrix>> multipoles1(num_multipoles_);
 
-  for (int i = 0; i != num_multipoles_; ++i) {
-    ZMatrix tmp0(dimb1, dimb0);
-    tmp0.copy_block(0, 0, dimb1, dimb0, mpole0.data(i));
-    multipoles0[i] = make_shared<const ZMatrix>(tmp0);
+  const int dimb1 = basisinfo_[0]->nbasis();
+  const int dimb0 = basisinfo_[1]->nbasis();
+  {
+    MultipoleBatch mpole0(array<shared_ptr<const Shell>, 2>{{basisinfo_[0], basisinfo_[1]}}, centre0_, lmax_);
+    mpole0.compute();
 
-    ZMatrix tmp1(dimb3, dimb2);
-    tmp1.copy_block(0, 0, dimb3, dimb2, mpole1.data(i));
-    multipoles1[i] = make_shared<const ZMatrix>(tmp1);
+    for (int i = 0; i != num_multipoles_; ++i) {
+      ZMatrix tmp0(dimb1, dimb0);
+      tmp0.copy_block(0, 0, dimb1, dimb0, mpole0.data(i));
+      multipoles0[i] = make_shared<const ZMatrix>(tmp0);
+    }
   }
 
-  LocalExpansion local(centre1_, multipoles1);
+  const int dimb3 = basisinfo_[2]->nbasis();
+  const int dimb2 = basisinfo_[3]->nbasis();
+  {
+    assert(density->mdim() == dimb3 && density->ndim() == dimb2);
+    MultipoleBatch mpole1(array<shared_ptr<const Shell>, 2>{{basisinfo_[2], basisinfo_[3]}}, centre1_, lmax_);
+    mpole1.compute();
+
+    for (int i = 0; i != num_multipoles_; ++i) {
+      ZMatrix tmp1(dimb3, dimb2);
+      tmp1.copy_block(0, 0, dimb3, dimb2, mpole1.data(i));
+      multipoles1[i] = make_shared<const ZMatrix>(tmp1);
+    }
+  }
+
+  LocalExpansion local(centre1_, multipoles1, lmax_);
   vector<shared_ptr<const ZMatrix>> lmoments = local.local_moments();
   for (int i = 0; i != num_multipoles_; ++i) {
     complex<double> contract = 0.0;
     for (int j = 0; j != dimb2; ++j)
       for (int k = 0; k != dimb3; ++k)
         contract += lmoments[i]->element(k, j) * density->element(k, j);
-//    ZMatrix tmp(dimb1, dimb0);
-//    tmp = contract * *multipoles0[i];
     out[i] = make_shared<const ZMatrix>(contract * *multipoles0[i]);
     out[i]->print("Multipole expansion approximation");
   }

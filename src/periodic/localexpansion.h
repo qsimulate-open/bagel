@@ -27,24 +27,26 @@
 #ifndef __SRC_PERIODIC_LOCALEXPANSION_H
 #define __SRC_PERIODIC_LOCALEXPANSION_H
 
-#include <cmath>
-#include <complex>
 #include <vector>
-#include <src/math/legendre.h>
 #include <src/util/constants.h>
+#include <src/math/legendre.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 
 class LocalExpansion {
   protected:
     std::array<double, 3> centre_;
-    std::vector<std::complex<double>> moments_;
+    std::vector<std::shared_ptr<const ZMatrix>> moments_;
     int lmax_;
 
-    std::vector<std::complex<double>> local_moments_;
+    int nbasis0_, nbasis1_;
+    int num_multipoles_;
+
+    std::vector<std::shared_ptr<const ZMatrix>> local_moments_;
 
   public:
-    LocalExpansion(const std::array<double, 3> centre, std::vector<std::complex<double>> moments,
+    LocalExpansion(const std::array<double, 3> centre, std::vector<std::shared_ptr<const ZMatrix>> moments,
                    const int lmax = ANG_HRR_END);
     ~LocalExpansion() { }
 
@@ -52,13 +54,13 @@ class LocalExpansion {
     std::array<double, 3> centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
 
-    std::vector<std::complex<double>> moments() const { return moments_; }
-    std::complex<double> moment(const int i) const { return moments_[i]; }
-    std::complex<double> moment(const int l, const int m) const { return moments_[l * l + l + m]; }
+    std::vector<std::shared_ptr<const ZMatrix>> moments() const { return moments_; }
+    std::shared_ptr<const ZMatrix> moment(const int i) const { return moments_[i]; }
+    std::shared_ptr<const ZMatrix> moment(const int l, const int m) const { return moments_[l * l + l + m]; }
 
-    std::vector<std::complex<double>> local_moments() const { return local_moments_; }
-    std::complex<double> local_moment(const int i) const { return local_moments_[i]; }
-    std::complex<double> local_moment(const int l, const int m) const { return local_moments_[l * l + l + m]; }
+    std::vector<std::shared_ptr<const ZMatrix>> local_moments() const { return local_moments_; }
+    std::shared_ptr<const ZMatrix> local_moment(const int i) const { return local_moments_[i]; }
+    std::shared_ptr<const ZMatrix> local_moment(const int l, const int m) const { assert (l <= lmax_); return local_moments_[l * l + l + m]; }
 
     void compute_local_moments();
 };

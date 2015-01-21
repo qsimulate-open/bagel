@@ -102,7 +102,7 @@ void SphMultipole::print_multipoles() const {
   int cnt = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m, ++cnt)
-      cout << setprecision(9) << multipole_[cnt] << "   ";
+      cout << setprecision(6) << multipole_[cnt] << "   ";
     cout << endl;
   }
 }

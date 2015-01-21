@@ -32,10 +32,15 @@ using namespace bagel;
 const static Legendre plm;
 const static Factorial f;
 
-LocalExpansion::LocalExpansion(const array<double, 3> c, vector<complex<double>> m, const int lmax)
+LocalExpansion::LocalExpansion(const array<double, 3> c, vector<shared_ptr<const ZMatrix>> m, const int lmax)
  : centre_(c), moments_(m), lmax_(lmax) {
 
-  assert(m.size() == (lmax + 1) * (lmax + 1));
+  nbasis1_ = m.front()->ndim();
+  nbasis0_ = m.front()->mdim();
+  num_multipoles_ = (lmax + 1) * (lmax + 1);
+  assert(m.size() == num_multipoles_);
+
+  compute_local_moments();
 }
 
 
@@ -45,25 +50,29 @@ void LocalExpansion::compute_local_moments() {
   const double ctheta = centre_[2]/r;
   const double phi = atan2(centre_[1], centre_[0]);
 
-  local_moments_.resize((lmax_ + 1) * (lmax_ + 1));
+  local_moments_.resize(num_multipoles_);
 
   int i1 = 0;
-  for (int l = 0; l != lmax_; ++l) {
-    for (int m = 0; m != 2 * l; ++m, ++i1) {
+  for (int l = 0; l <= lmax_; ++l) {
+    for (int m = 0; m <= 2 * l; ++m, ++i1) {
 
+      ZMatrix local(nbasis1_, nbasis0_);
       int i2 = 0;
       for (int j = 0; j != lmax_; ++j) {
-        for (int k = 0; j != 2 * j; ++k, ++i2) {
+        for (int k = 0; k != 2 * k; ++k, ++i2) {
+
           const int a = l + j;
           const int b = m - l + k - j;
           const double prefactor = f(a - abs(b)) * plm.compute(a, abs(b), ctheta) / pow(r, a + 1);
           const double real = prefactor * cos(b * phi);
           const double imag = prefactor * sin(b * phi);
           complex<double> coeff(real, imag);
+          if (b < 0) coeff *= pow(-1.0, b) * f(a - b) / f(a + b);
 
-          local_moments_[i1] += coeff * moments_[i2];
+          blas::ax_plus_y_n(coeff, moments_[i2]->data(), local.size(), local.data());
         }
       }
+      local_moments_[i1] = make_shared<const ZMatrix>(local);
     }
   }
 }
