@@ -64,7 +64,7 @@ SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool sph
         for (int p = 2; p <= x; ++p) denom *= p;
         for (int p = 2; p <= y; ++p) denom *= p;
         for (int p = 2; p <= z; ++p) denom *= p;
-        const double factor = ::pow(movex, x) * ::pow(movey, y) * ::pow(movez, z) * denom;
+        const double factor = pow(movex, x) * pow(movey, y) * pow(movez, z) * denom;
         pitmp[cnt * dim + cnt] = factor;
         ++cnt;
       }
@@ -80,7 +80,7 @@ SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool sph
         double norm = 0.0;
         for (int k = 0; k != dimsph; ++k)
           norm += pisph[k + j * dimsph] * pisph[k + j * dimsph];
-        norm = 1.0 / ::sqrt(norm);
+        norm = 1.0 / sqrt(norm);
         for (int k = 0; k != dimsph; ++k)
           pisph[k + j * dimsph] *= norm;
       }
@@ -90,7 +90,7 @@ SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool sph
         double norm = 0.0;
         for (int k = 0; k != dim; ++k)
           norm += pitmp[k + j * dim] * pitmp[k + j * dim];
-        norm = 1.0 / ::sqrt(norm);
+        norm = 1.0 / sqrt(norm);
         for (int k = 0; k != dim; ++k)
           pitmp[k + j * dim] *= norm;
       }

@@ -33,9 +33,9 @@
 #include <memory>
 #include <stdexcept>
 #include <boost/test/unit_test.hpp>
-#include <src/parallel/resources.h>
-#include <src/parallel/mpi_interface.h>
-#include <src/input/input.h>
+#include <src/util/parallel/resources.h>
+#include <src/util/parallel/mpi_interface.h>
+#include <src/util/input/input.h>
 
 using namespace bagel;
 
@@ -45,6 +45,7 @@ static MPI_Interface c;
 MPI_Interface* bagel::mpi__ = &c;
 
 static double THRESH = 1.0e-8;
+static std::string location__ = "../../test/";
 
 bool compare(const double a, const double b, const double thr = THRESH) { return fabs(a-b) < thr; };
 
@@ -56,34 +57,20 @@ bool compare(const T a, const T b, const double thr = THRESH) {
  return out;
 }
 
-#include <src/scf/test_scf.cc>
-
-#include <src/ks/test_ks.cc>
-
-#include <src/rel/test_rel.cc>
-
-#include <src/prop/test_prop.cc>
-
-#include <src/mp2/test_mp2.cc>
-
-#include <src/casscf/test_casscf.cc>
-
-#include <src/fci/test_fci.cc>
-
-//#include <src/zfci/test_zfci.cc>
-
-//#include <src/zcasscf/test_zcasscf.cc>
-
-#include <src/ras/test_ras.cc>
-
-#include <src/nevpt2/test_nevpt2.cc>
-
-#include <src/opt/test_opt.cc>
-
-#include <src/io/test_molden.cc>
-
-#include <src/molecule/test_localize.cc>
-
-#include <src/asd/test_asd.cc>
-
-#include <src/london/test_london.cc>
+#include <src/testimpl/test_scf.cc>
+#include <src/testimpl/test_molden.cc>
+#include <src/testimpl/test_prop.cc>
+#include <src/testimpl/test_ks.cc>
+#include <src/testimpl/test_rel.cc>
+#include <src/testimpl/test_mp2.cc>
+#include <src/testimpl/test_casscf.cc>
+#include <src/testimpl/test_fci.cc>
+#include <src/testimpl/test_zfci.cc>
+//#include <src/testimpl/test_zcasscf.cc>
+#include <src/testimpl/test_ras.cc>
+#include <src/testimpl/test_nevpt2.cc>
+#include <src/testimpl/test_opt.cc>
+#include <src/testimpl/test_localize.cc>
+#include <src/testimpl/test_asd.cc>
+#include <src/testimpl/test_asd_dmrg.cc>
+#include <src/testimpl/test_london.cc>

@@ -138,18 +138,22 @@ void ASDSuperCI::compute() {
     {
     //auto id2 = [this](const int k, const int l) { return ((k+nact_*l)); };
       const int mact = nact_ / 2;
-      Matrix overlap(2*mact*mact, 2*mact*mact);
+      const int dim = 2*mact*mact;
+    //const int dim = mact*mact;
+      Matrix overlap(dim,dim);
       // <qs|pr>
       overlap.zero();
       int qs = -1;
       for (int q = 0; q != nact_; ++q)
         for (int s = 0; s != nact_; ++s) {
           if( (q < mact && s < mact ) || (q >= mact && s >= mact ) ) continue;
+        //if( (q < mact && s < mact ) || (q >= mact && s >= mact ) || (q < mact && s >=mact) ) continue;
           ++qs;
           int pr = -1;
           for (int p = 0; p != nact_; ++p)
             for (int r = 0; r != nact_; ++r) {
               if( (p < mact && r < mact ) || (p >= mact && r >= mact ) ) continue;
+            //if( (p < mact && r < mact ) || (p >= mact && r >= mact ) || (p < mact && r >= mact) ) continue;
               ++pr;
               overlap.element(qs,pr) = 2.0 * ( rdm2_->element(p,r,s,q) - rdm2_->element(p,r,q,s) ) 
                                      + ( (r == s ? 1.0 : 0.0)*rdm1_->element(p,q) )
@@ -160,25 +164,26 @@ void ASDSuperCI::compute() {
                                               + rdm1_->element(p,p) + rdm1_->element(r,r) );
               overlap.element(qs,pr) /= sqrt( (2.0 * (rdm2_->element(q,s,s,q) - rdm2_->element(q,s,q,s)))
                                               + rdm1_->element(q,q) + rdm1_->element(s,s) );
+              cout << "<qs| = " << qs << ", |pr> = " << pr << endl;
             //if (t == v && u == w) overlap.element(tu,vw) += rdm1_->element(u,u);
             //if (t == v && u == w) overlap.element(tu,vw) += occup(u);
             }
         }
 
       cout << "Diagonal of Overlap (NEW)" << endl;
-      for (int i = 0; i != 2*mact*mact; ++i) {
+      for (int i = 0; i != dim; ++i) {
         cout << i << " : " << overlap.element(i,i) << endl;
       }
 
       //diagonalize
-      VectorB eig(2*mact*mact);
+      VectorB eig(dim);
       overlap.diagonalize(eig);
       cout << "Original Eigenvectors of active-active overlap (NEW)" << endl;
-      for (int i = 0; i != 2*mact*mact; ++i) {
+      for (int i = 0; i != dim; ++i) {
         cout << i << " : " << eig[i] << endl;
       }
     }
-
+    assert(false);
 
 
     // here make a natural orbitals and update the coefficients

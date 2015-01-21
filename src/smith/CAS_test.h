@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: CAS_test.h
-// Copyright (C) 2012 Shiozaki group
+// Copyright (C) 2014 Shiozaki group
 //
 // Author: Shiozaki group <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -27,12 +27,12 @@
 #ifndef __SRC_SMITH_CAS_test_H
 #define __SRC_SMITH_CAS_test_H
 
-#include <src/smith/spinfreebase.h>
-#include <src/scf/fock.h>
-#include <src/util/f77.h>
 #include <iostream>
 #include <tuple>
 #include <iomanip>
+#include <src/smith/spinfreebase.h>
+#include <src/scf/hf/fock.h>
+#include <src/util/f77.h>
 #include <src/smith/queue.h>
 #include <src/smith/CAS_test_tasks.h>
 #include <src/smith/smith_info.h>
@@ -41,358 +41,563 @@ namespace bagel {
 namespace SMITH {
 namespace CAS_test{
 
-template <typename T>
-class CAS_test : public SpinFreeMethod<T>{
+class CAS_test : public SpinFreeMethod {
   protected:
-    using SpinFreeMethod<T>::ref_;
+    using SpinFreeMethod::ref_;
 
-    std::shared_ptr<Tensor<T>> t2;
-    std::shared_ptr<Tensor<T>> r;
+    std::shared_ptr<Tensor> t2;
+    std::shared_ptr<Tensor> r;
     double e0_;
-    std::shared_ptr<Tensor<T>> sigma_;
-    std::shared_ptr<Tensor<T>> den1;
-    std::shared_ptr<Tensor<T>> den2;
+    std::shared_ptr<Tensor> sigma_;
+    std::shared_ptr<Tensor> den1;
+    std::shared_ptr<Tensor> den2;
+    std::shared_ptr<Tensor> Den1;
     double correlated_norm;
-    std::shared_ptr<Tensor<T>> deci;
+    std::shared_ptr<Tensor> deci;
 
-    std::tuple<std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>> make_queue_() {
-      std::shared_ptr<Queue<T>> queue_(new Queue<T>());
+    std::tuple<std::shared_ptr<Queue>, std::shared_ptr<Queue>, std::shared_ptr<Queue>,  std::shared_ptr<Queue>,  std::shared_ptr<Queue>, std::shared_ptr<Queue>, std::shared_ptr<Queue>> make_queue_() {
+      auto queue_ = std::make_shared<Queue>();
       std::array<std::shared_ptr<const IndexRange>,3> pindex = {{this->rclosed_, this->ractive_, this->rvirt_}};
       std::array<std::shared_ptr<const IndexRange>,4> cindex = {{this->rclosed_, this->ractive_, this->rvirt_, this->rci_}};
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor0 = {r};
-      std::shared_ptr<Task0<T>> task0(new Task0<T>(tensor0));
+      std::vector<std::shared_ptr<Tensor>> tensor0 = {r};
+      auto task0 = std::make_shared<Task0>(tensor0);
       queue_->add_task(task0);
 
-      std::vector<IndexRange> Gamma0_index;
-      std::shared_ptr<Tensor<T>> Gamma0(new Tensor<T>(Gamma0_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor1 = {Gamma0, this->rdm1_, this->f1_};
-      std::shared_ptr<Task1<T>> task1(new Task1<T>(tensor1, pindex));
+      std::vector<IndexRange> Gamma0_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> Gamma0(new Tensor(Gamma0_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor1 = {Gamma0, this->rdm3_, this->f1_};
+      auto task1 = std::make_shared<Task1>(tensor1, pindex);
       task1->add_dep(task0);
       queue_->add_task(task1);
 
-      std::vector<IndexRange> Gamma2_index = {this->active_, this->active_};
-      std::shared_ptr<Tensor<T>> Gamma2(new Tensor<T>(Gamma2_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor2 = {Gamma2, this->rdm1_};
-      std::shared_ptr<Task2<T>> task2(new Task2<T>(tensor2, pindex));
+      std::vector<IndexRange> Gamma2_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> Gamma2(new Tensor(Gamma2_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor2 = {Gamma2, this->rdm2_};
+      auto task2 = std::make_shared<Task2>(tensor2, pindex);
       task2->add_dep(task0);
       queue_->add_task(task2);
 
-      std::vector<IndexRange> Gamma4_index = {this->ci_};
-      std::shared_ptr<Tensor<T>> Gamma4(new Tensor<T>(Gamma4_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor3 = {Gamma4, this->rdm1deriv_, this->f1_};
-      std::shared_ptr<Task3<T>> task3(new Task3<T>(tensor3, cindex));
+      std::vector<IndexRange> Gamma9_index = {this->active_, this->active_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> Gamma9(new Tensor(Gamma9_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor3 = {Gamma9, this->rdm3_};
+      auto task3 = std::make_shared<Task3>(tensor3, pindex);
       task3->add_dep(task0);
       queue_->add_task(task3);
 
-      std::vector<IndexRange> I0_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T>> I0(new Tensor<T>(I0_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor4 = {r, I0};
-      std::shared_ptr<Task4<T>> task4(new Task4<T>(tensor4, pindex));
+      std::vector<IndexRange> Gamma12_index = {this->ci_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> Gamma12(new Tensor(Gamma12_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor4 = {Gamma12, this->rdm3deriv_, this->f1_};
+      auto task4 = std::make_shared<Task4>(tensor4, cindex);
       task4->add_dep(task0);
       queue_->add_task(task4);
 
-
-      std::vector<std::shared_ptr<Tensor<T>>> tensor5 = {I0, t2, this->v2_};
-      std::shared_ptr<Task5<T>> task5(new Task5<T>(tensor5, pindex, this->e0_));
-      task4->add_dep(task5);
+      std::vector<IndexRange> Gamma13_index = {this->ci_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> Gamma13(new Tensor(Gamma13_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor5 = {Gamma13, this->rdm2deriv_};
+      auto task5 = std::make_shared<Task5>(tensor5, cindex);
       task5->add_dep(task0);
       queue_->add_task(task5);
 
-
-      std::vector<IndexRange> I1_index;
-      std::shared_ptr<Tensor<T>> I1(new Tensor<T>(I1_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor6 = {I0, t2, I1};
-      std::shared_ptr<Task6<T>> task6(new Task6<T>(tensor6, pindex));
-      task4->add_dep(task6);
+      std::vector<IndexRange> I0_index = {this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I0(new Tensor(I0_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor6 = {r, I0};
+      auto task6 = std::make_shared<Task6>(tensor6, pindex);
       task6->add_dep(task0);
       queue_->add_task(task6);
 
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor7 = {I1, Gamma0};
-      std::shared_ptr<Task7<T>> task7(new Task7<T>(tensor7, pindex));
+      std::vector<IndexRange> I1_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I1(new Tensor(I1_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor7 = {I0, t2, I1};
+      auto task7 = std::make_shared<Task7>(tensor7, pindex);
       task6->add_dep(task7);
       task7->add_dep(task0);
       queue_->add_task(task7);
 
-      task7->add_dep(task1);
 
-      std::vector<IndexRange> I3_index;
-      std::shared_ptr<Tensor<T>> I3(new Tensor<T>(I3_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor8 = {I0, t2, I3};
-      std::shared_ptr<Task8<T>> task8(new Task8<T>(tensor8, pindex));
-      task4->add_dep(task8);
+      std::vector<std::shared_ptr<Tensor>> tensor8 = {I1, Gamma0};
+      auto task8 = std::make_shared<Task8>(tensor8, pindex);
+      task7->add_dep(task8);
       task8->add_dep(task0);
       queue_->add_task(task8);
 
+      task8->add_dep(task1);
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor9 = {I3, Gamma0};
-      std::shared_ptr<Task9<T>> task9(new Task9<T>(tensor9, pindex));
-      task8->add_dep(task9);
+      std::vector<IndexRange> I6_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I6(new Tensor(I6_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor9 = {I0, t2, I6};
+      auto task9 = std::make_shared<Task9>(tensor9, pindex);
+      task6->add_dep(task9);
       task9->add_dep(task0);
       queue_->add_task(task9);
 
-      task9->add_dep(task1);
 
-      std::vector<IndexRange> I4_index = {this->closed_, this->virt_, this->virt_, this->closed_};
-      std::shared_ptr<Tensor<T>> I4(new Tensor<T>(I4_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor10 = {r, I4};
-      std::shared_ptr<Task10<T>> task10(new Task10<T>(tensor10, pindex));
+      std::vector<std::shared_ptr<Tensor>> tensor10 = {I6, Gamma2};
+      auto task10 = std::make_shared<Task10>(tensor10, pindex, this->e0_);
+      task9->add_dep(task10);
       task10->add_dep(task0);
       queue_->add_task(task10);
 
+      task10->add_dep(task2);
 
-      std::vector<IndexRange> I5_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T>> I5(new Tensor<T>(I5_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor11 = {I4, this->f1_, I5};
-      std::shared_ptr<Task11<T>> task11(new Task11<T>(tensor11, pindex));
-      task10->add_dep(task11);
+      std::vector<IndexRange> I8_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I8(new Tensor(I8_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor11 = {I0, this->v2_, I8};
+      auto task11 = std::make_shared<Task11>(tensor11, pindex);
+      task6->add_dep(task11);
       task11->add_dep(task0);
       queue_->add_task(task11);
 
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor12 = {I5, t2};
-      std::shared_ptr<Task12<T>> task12(new Task12<T>(tensor12, pindex));
+      std::vector<std::shared_ptr<Tensor>> tensor12 = {I8, Gamma2};
+      auto task12 = std::make_shared<Task12>(tensor12, pindex);
       task11->add_dep(task12);
       task12->add_dep(task0);
       queue_->add_task(task12);
 
+      task12->add_dep(task2);
 
-      std::vector<IndexRange> I9_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T>> I9(new Tensor<T>(I9_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor13 = {I4, this->f1_, I9};
-      std::shared_ptr<Task13<T>> task13(new Task13<T>(tensor13, pindex));
-      task10->add_dep(task13);
+      std::vector<IndexRange> I2_index = {this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I2(new Tensor(I2_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor13 = {r, I2};
+      auto task13 = std::make_shared<Task13>(tensor13, pindex);
       task13->add_dep(task0);
       queue_->add_task(task13);
 
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor14 = {I9, t2};
-      std::shared_ptr<Task14<T>> task14(new Task14<T>(tensor14, pindex));
+      std::vector<IndexRange> I3_index = {this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I3(new Tensor(I3_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor14 = {I2, this->f1_, I3};
+      auto task14 = std::make_shared<Task14>(tensor14, pindex);
       task13->add_dep(task14);
       task14->add_dep(task0);
       queue_->add_task(task14);
 
 
-      std::shared_ptr<Queue<T>> energy_(new Queue<T>());
-      std::vector<IndexRange> I16_index;
-      std::shared_ptr<Tensor<T>> I16(new Tensor<T>(I16_index, false));
-      std::vector<IndexRange> I17_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T>> I17(new Tensor<T>(I17_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor15 = {I16, t2, I17};
-      std::shared_ptr<Task15<T>> task15(new Task15<T>(tensor15, pindex));
-      energy_->add_task(task15);
+      std::vector<IndexRange> I4_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I4(new Tensor(I4_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor15 = {I3, t2, I4};
+      auto task15 = std::make_shared<Task15>(tensor15, pindex);
+      task14->add_dep(task15);
+      task15->add_dep(task0);
+      queue_->add_task(task15);
 
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor16 = {I17, this->v2_};
-      std::shared_ptr<Task16<T>> task16(new Task16<T>(tensor16, pindex));
+      std::vector<std::shared_ptr<Tensor>> tensor16 = {I4, Gamma2};
+      auto task16 = std::make_shared<Task16>(tensor16, pindex);
       task15->add_dep(task16);
-      energy_->add_task(task16);
+      task16->add_dep(task0);
+      queue_->add_task(task16);
+
+      task16->add_dep(task2);
+
+      auto energy_ = std::make_shared<Queue>();
+      std::vector<IndexRange> I9_index;
+      std::shared_ptr<Tensor> I9(new Tensor(I9_index, false));
+      std::vector<IndexRange> I10_index = {this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I10(new Tensor(I10_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor17 = {I9, t2, I10};
+      auto task17 = std::make_shared<Task17>(tensor17, pindex);
+      energy_->add_task(task17);
 
 
-      std::shared_ptr<Queue<T>> correction_(new Queue<T>());
-      std::vector<IndexRange> I20_index;
-      std::shared_ptr<Tensor<T>> I20(new Tensor<T>(I20_index, false));
-      std::vector<IndexRange> I21_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T>> I21(new Tensor<T>(I21_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor17 = {I20, t2, I21};
-      std::shared_ptr<Task17<T>> task17(new Task17<T>(tensor17, pindex));
-      correction_->add_task(task17);
-
-
-      std::vector<std::shared_ptr<Tensor<T>>> tensor18 = {I21, t2};
-      std::shared_ptr<Task18<T>> task18(new Task18<T>(tensor18, pindex));
+      std::vector<IndexRange> I11_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I11(new Tensor(I11_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor18 = {I10, t2, I11};
+      auto task18 = std::make_shared<Task18>(tensor18, pindex);
       task17->add_dep(task18);
-      correction_->add_task(task18);
+      energy_->add_task(task18);
 
 
-      std::shared_ptr<Queue<T>> density_(new Queue<T>());
-      std::vector<std::shared_ptr<Tensor<T>>> tensor19 = {den1};
-      std::shared_ptr<Task19<T>> task19(new Task19<T>(tensor19));
-      density_->add_task(task19);
+      std::vector<std::shared_ptr<Tensor>> tensor19 = {I11, Gamma0};
+      auto task19 = std::make_shared<Task19>(tensor19, pindex);
+      task18->add_dep(task19);
+      energy_->add_task(task19);
 
-      std::vector<IndexRange> I24_index = {this->active_, this->active_};
-      std::shared_ptr<Tensor<T>> I24(new Tensor<T>(I24_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor20 = {den1, I24};
-      std::shared_ptr<Task20<T>> task20(new Task20<T>(tensor20, pindex));
-      task20->add_dep(task19);
-      density_->add_task(task20);
+      task19->add_dep(task1);
+
+      std::vector<IndexRange> I14_index = {this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I14(new Tensor(I14_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor20 = {I10, this->f1_, I14};
+      auto task20 = std::make_shared<Task20>(tensor20, pindex);
+      task17->add_dep(task20);
+      energy_->add_task(task20);
 
 
-      std::vector<IndexRange> I25_index = {this->active_, this->active_, this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T>> I25(new Tensor<T>(I25_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor21 = {I24, t2, I25};
-      std::shared_ptr<Task21<T>> task21(new Task21<T>(tensor21, pindex));
+      std::vector<IndexRange> I15_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I15(new Tensor(I15_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor21 = {I14, t2, I15};
+      auto task21 = std::make_shared<Task21>(tensor21, pindex);
       task20->add_dep(task21);
-      task21->add_dep(task19);
-      density_->add_task(task21);
+      energy_->add_task(task21);
 
 
-      std::vector<IndexRange> I26_index = {this->active_, this->active_};
-      std::shared_ptr<Tensor<T>> I26(new Tensor<T>(I26_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor22 = {I25, t2, I26};
-      std::shared_ptr<Task22<T>> task22(new Task22<T>(tensor22, pindex));
+      std::vector<std::shared_ptr<Tensor>> tensor22 = {I15, Gamma2};
+      auto task22 = std::make_shared<Task22>(tensor22, pindex);
       task21->add_dep(task22);
-      task22->add_dep(task19);
-      density_->add_task(task22);
+      energy_->add_task(task22);
+
+      task22->add_dep(task2);
+
+      std::vector<IndexRange> I18_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I18(new Tensor(I18_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor23 = {I10, t2, I18};
+      auto task23 = std::make_shared<Task23>(tensor23, pindex);
+      task17->add_dep(task23);
+      energy_->add_task(task23);
 
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor23 = {I26, Gamma2};
-      std::shared_ptr<Task23<T>> task23(new Task23<T>(tensor23, pindex));
-      task22->add_dep(task23);
-      task23->add_dep(task19);
-      density_->add_task(task23);
+      std::vector<std::shared_ptr<Tensor>> tensor24 = {I18, Gamma2};
+      auto task24 = std::make_shared<Task24>(tensor24, pindex, this->e0_);
+      task23->add_dep(task24);
+      energy_->add_task(task24);
 
-      task23->add_dep(task2);
+      task24->add_dep(task2);
 
-      std::vector<IndexRange> I29_index = {this->active_, this->active_};
-      std::shared_ptr<Tensor<T>> I29(new Tensor<T>(I29_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor24 = {I25, t2, I29};
-      std::shared_ptr<Task24<T>> task24(new Task24<T>(tensor24, pindex));
-      task21->add_dep(task24);
-      task24->add_dep(task19);
-      density_->add_task(task24);
+      std::vector<IndexRange> I21_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I21(new Tensor(I21_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor25 = {I10, this->v2_, I21};
+      auto task25 = std::make_shared<Task25>(tensor25, pindex);
+      task17->add_dep(task25);
+      energy_->add_task(task25);
 
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor25 = {I29, Gamma2};
-      std::shared_ptr<Task25<T>> task25(new Task25<T>(tensor25, pindex));
-      task24->add_dep(task25);
-      task25->add_dep(task19);
-      density_->add_task(task25);
+      std::vector<std::shared_ptr<Tensor>> tensor26 = {I21, Gamma2};
+      auto task26 = std::make_shared<Task26>(tensor26, pindex);
+      task25->add_dep(task26);
+      energy_->add_task(task26);
 
-      task25->add_dep(task2);
+      task26->add_dep(task2);
 
-      std::vector<IndexRange> I30_index = {this->closed_, this->closed_};
-      std::shared_ptr<Tensor<T>> I30(new Tensor<T>(I30_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor26 = {den1, I30};
-      std::shared_ptr<Task26<T>> task26(new Task26<T>(tensor26, pindex));
-      task26->add_dep(task19);
-      density_->add_task(task26);
-
-
-      std::vector<IndexRange> I31_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T>> I31(new Tensor<T>(I31_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor27 = {I30, t2, I31};
-      std::shared_ptr<Task27<T>> task27(new Task27<T>(tensor27, pindex));
-      task26->add_dep(task27);
-      task27->add_dep(task19);
-      density_->add_task(task27);
+      auto correction_ = std::make_shared<Queue>();
+      std::vector<IndexRange> I22_index;
+      std::shared_ptr<Tensor> I22(new Tensor(I22_index, false));
+      std::vector<IndexRange> I23_index = {this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I23(new Tensor(I23_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor27 = {I22, t2, I23};
+      auto task27 = std::make_shared<Task27>(tensor27, pindex);
+      correction_->add_task(task27);
 
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor28 = {I31, t2};
-      std::shared_ptr<Task28<T>> task28(new Task28<T>(tensor28, pindex));
+      std::vector<IndexRange> I24_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I24(new Tensor(I24_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor28 = {I23, t2, I24};
+      auto task28 = std::make_shared<Task28>(tensor28, pindex);
       task27->add_dep(task28);
-      task28->add_dep(task19);
-      density_->add_task(task28);
+      correction_->add_task(task28);
 
 
-      std::vector<IndexRange> I34_index = {this->virt_, this->virt_};
-      std::shared_ptr<Tensor<T>> I34(new Tensor<T>(I34_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor29 = {den1, I34};
-      std::shared_ptr<Task29<T>> task29(new Task29<T>(tensor29, pindex));
-      task29->add_dep(task19);
-      density_->add_task(task29);
+      std::vector<std::shared_ptr<Tensor>> tensor29 = {I24, Gamma2};
+      auto task29 = std::make_shared<Task29>(tensor29, pindex);
+      task28->add_dep(task29);
+      correction_->add_task(task29);
 
+      task29->add_dep(task2);
 
-      std::vector<IndexRange> I35_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T>> I35(new Tensor<T>(I35_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor30 = {I34, t2, I35};
-      std::shared_ptr<Task30<T>> task30(new Task30<T>(tensor30, pindex));
-      task29->add_dep(task30);
-      task30->add_dep(task19);
+      auto density_ = std::make_shared<Queue>();
+      std::vector<std::shared_ptr<Tensor>> tensor30 = {den2};
+      auto task30 = std::make_shared<Task30>(tensor30);
       density_->add_task(task30);
 
-
-      std::vector<std::shared_ptr<Tensor<T>>> tensor31 = {I35, t2};
-      std::shared_ptr<Task31<T>> task31(new Task31<T>(tensor31, pindex));
-      task30->add_dep(task31);
-      task31->add_dep(task19);
+      std::vector<IndexRange> I25_index = {this->active_, this->active_};
+      std::shared_ptr<Tensor> I25(new Tensor(I25_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor31 = {den2, I25};
+      auto task31 = std::make_shared<Task31>(tensor31, pindex);
+      task31->add_dep(task30);
       density_->add_task(task31);
 
 
-      std::shared_ptr<Queue<T>> density2_(new Queue<T>());
-      std::vector<std::shared_ptr<Tensor<T>>> tensor32 = {den2};
-      std::shared_ptr<Task32<T>> task32(new Task32<T>(tensor32));
-      density2_->add_task(task32);
-
-      std::vector<IndexRange> I38_index = {this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T>> I38(new Tensor<T>(I38_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor33 = {den2, I38};
-      std::shared_ptr<Task33<T>> task33(new Task33<T>(tensor33, pindex));
-      task33->add_dep(task32);
-      density2_->add_task(task33);
+      std::vector<IndexRange> I26_index = {this->active_, this->active_, this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I26(new Tensor(I26_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor32 = {I25, t2, I26};
+      auto task32 = std::make_shared<Task32>(tensor32, pindex);
+      task31->add_dep(task32);
+      task32->add_dep(task30);
+      density_->add_task(task32);
 
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor34 = {I38, t2};
-      std::shared_ptr<Task34<T>> task34(new Task34<T>(tensor34, pindex));
+      std::vector<IndexRange> I27_index = {this->active_, this->active_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I27(new Tensor(I27_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor33 = {I26, t2, I27};
+      auto task33 = std::make_shared<Task33>(tensor33, pindex);
+      task32->add_dep(task33);
+      task33->add_dep(task30);
+      density_->add_task(task33);
+
+
+      std::vector<std::shared_ptr<Tensor>> tensor34 = {I27, Gamma9};
+      auto task34 = std::make_shared<Task34>(tensor34, pindex);
       task33->add_dep(task34);
-      task34->add_dep(task32);
-      density2_->add_task(task34);
+      task34->add_dep(task30);
+      density_->add_task(task34);
+
+      task34->add_dep(task3);
+
+      std::vector<IndexRange> I28_index = {this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I28(new Tensor(I28_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor35 = {den2, I28};
+      auto task35 = std::make_shared<Task35>(tensor35, pindex);
+      task35->add_dep(task30);
+      density_->add_task(task35);
 
 
-      std::shared_ptr<Queue<T>> dedci_(new Queue<T>());
-      std::vector<std::shared_ptr<Tensor<T>>> tensor35 = {deci};
-      std::shared_ptr<Task35<T>> task35(new Task35<T>(tensor35));
-      dedci_->add_task(task35);
-
-      std::vector<IndexRange> I40_index = {this->ci_};
-      std::shared_ptr<Tensor<T>> I40(new Tensor<T>(I40_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor36 = {deci, I40};
-      std::shared_ptr<Task36<T>> task36(new Task36<T>(tensor36, cindex));
-      task36->add_dep(task35);
-      dedci_->add_task(task36);
+      std::vector<IndexRange> I29_index = {this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I29(new Tensor(I29_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor36 = {I28, t2, I29};
+      auto task36 = std::make_shared<Task36>(tensor36, pindex);
+      task35->add_dep(task36);
+      task36->add_dep(task30);
+      density_->add_task(task36);
 
 
-      std::vector<IndexRange> I41_index = {this->ci_, this->closed_, this->virt_, this->closed_, this->virt_};
-      std::shared_ptr<Tensor<T>> I41(new Tensor<T>(I41_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor37 = {I40, t2, I41};
-      std::shared_ptr<Task37<T>> task37(new Task37<T>(tensor37, cindex));
+      std::vector<IndexRange> I30_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I30(new Tensor(I30_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor37 = {I29, t2, I30};
+      auto task37 = std::make_shared<Task37>(tensor37, pindex);
       task36->add_dep(task37);
-      task37->add_dep(task35);
-      dedci_->add_task(task37);
+      task37->add_dep(task30);
+      density_->add_task(task37);
 
 
-      std::vector<IndexRange> I42_index = {this->ci_};
-      std::shared_ptr<Tensor<T>> I42(new Tensor<T>(I42_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor38 = {I41, t2, I42};
-      std::shared_ptr<Task38<T>> task38(new Task38<T>(tensor38, cindex));
+      std::vector<std::shared_ptr<Tensor>> tensor38 = {I30, Gamma2};
+      auto task38 = std::make_shared<Task38>(tensor38, pindex);
       task37->add_dep(task38);
-      task38->add_dep(task35);
-      dedci_->add_task(task38);
+      task38->add_dep(task30);
+      density_->add_task(task38);
+
+      task38->add_dep(task2);
+
+      auto density1_ = std::make_shared<Queue>();
+      auto density2_ = std::make_shared<Queue>();
+      std::vector<std::shared_ptr<Tensor>> tensor39 = {Den1};
+      auto task39 = std::make_shared<Task39>(tensor39);
+      density2_->add_task(task39);
+
+      std::vector<IndexRange> I31_index = {this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I31(new Tensor(I31_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor40 = {Den1, I31};
+      auto task40 = std::make_shared<Task40>(tensor40, pindex);
+      task40->add_dep(task39);
+      density2_->add_task(task40);
 
 
-      std::vector<std::shared_ptr<Tensor<T>>> tensor39 = {I42, Gamma4};
-      std::shared_ptr<Task39<T>> task39(new Task39<T>(tensor39, cindex));
-      task38->add_dep(task39);
-      task39->add_dep(task35);
-      dedci_->add_task(task39);
-
-      task39->add_dep(task3);
-      task39->add_dep(task3);
-
-      std::vector<IndexRange> I45_index = {this->ci_};
-      std::shared_ptr<Tensor<T>> I45(new Tensor<T>(I45_index, false));
-      std::vector<std::shared_ptr<Tensor<T>>> tensor40 = {I41, t2, I45};
-      std::shared_ptr<Task40<T>> task40(new Task40<T>(tensor40, cindex));
-      task37->add_dep(task40);
-      task40->add_dep(task35);
-      dedci_->add_task(task40);
-
-
-      std::vector<std::shared_ptr<Tensor<T>>> tensor41 = {I45, Gamma4};
-      std::shared_ptr<Task41<T>> task41(new Task41<T>(tensor41, cindex));
+      std::vector<IndexRange> I32_index = {this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I32(new Tensor(I32_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor41 = {I31, t2, I32};
+      auto task41 = std::make_shared<Task41>(tensor41, pindex);
       task40->add_dep(task41);
-      task41->add_dep(task35);
-      dedci_->add_task(task41);
+      task41->add_dep(task39);
+      density2_->add_task(task41);
 
-      task41->add_dep(task3);
-      task41->add_dep(task3);
 
-      return make_tuple(queue_, energy_, correction_, density_, density2_, dedci_);
+      std::vector<std::shared_ptr<Tensor>> tensor42 = {I32, Gamma2};
+      auto task42 = std::make_shared<Task42>(tensor42, pindex);
+      task41->add_dep(task42);
+      task42->add_dep(task39);
+      density2_->add_task(task42);
+
+      task42->add_dep(task2);
+
+      auto dedci_ = std::make_shared<Queue>();
+      std::vector<std::shared_ptr<Tensor>> tensor43 = {deci};
+      auto task43 = std::make_shared<Task43>(tensor43);
+      dedci_->add_task(task43);
+
+      std::vector<IndexRange> I33_index = {this->ci_};
+      std::shared_ptr<Tensor> I33(new Tensor(I33_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor44 = {deci, I33};
+      auto task44 = std::make_shared<Task44>(tensor44, cindex);
+      task44->add_dep(task43);
+      dedci_->add_task(task44);
+
+
+      std::vector<IndexRange> I34_index = {this->ci_, this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I34(new Tensor(I34_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor45 = {I33, t2, I34};
+      auto task45 = std::make_shared<Task45>(tensor45, cindex);
+      task44->add_dep(task45);
+      task45->add_dep(task43);
+      dedci_->add_task(task45);
+
+
+      std::vector<IndexRange> I35_index = {this->ci_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I35(new Tensor(I35_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor46 = {I34, t2, I35};
+      auto task46 = std::make_shared<Task46>(tensor46, cindex);
+      task45->add_dep(task46);
+      task46->add_dep(task43);
+      dedci_->add_task(task46);
+
+
+      std::vector<std::shared_ptr<Tensor>> tensor47 = {I35, Gamma12};
+      auto task47 = std::make_shared<Task47>(tensor47, cindex);
+      task46->add_dep(task47);
+      task47->add_dep(task43);
+      dedci_->add_task(task47);
+
+      task47->add_dep(task4);
+
+      std::vector<IndexRange> I38_index = {this->ci_, this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I38(new Tensor(I38_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor48 = {I34, this->f1_, I38};
+      auto task48 = std::make_shared<Task48>(tensor48, cindex);
+      task45->add_dep(task48);
+      task48->add_dep(task43);
+      dedci_->add_task(task48);
+
+
+      std::vector<IndexRange> I39_index = {this->ci_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I39(new Tensor(I39_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor49 = {I38, t2, I39};
+      auto task49 = std::make_shared<Task49>(tensor49, cindex);
+      task48->add_dep(task49);
+      task49->add_dep(task43);
+      dedci_->add_task(task49);
+
+
+      std::vector<std::shared_ptr<Tensor>> tensor50 = {I39, Gamma13};
+      auto task50 = std::make_shared<Task50>(tensor50, cindex);
+      task49->add_dep(task50);
+      task50->add_dep(task43);
+      dedci_->add_task(task50);
+
+      task50->add_dep(task5);
+
+      std::vector<IndexRange> I49_index = {this->ci_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I49(new Tensor(I49_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor51 = {I34, t2, I49};
+      auto task51 = std::make_shared<Task51>(tensor51, cindex);
+      task45->add_dep(task51);
+      task51->add_dep(task43);
+      dedci_->add_task(task51);
+
+
+      std::vector<std::shared_ptr<Tensor>> tensor52 = {I49, Gamma13};
+      auto task52 = std::make_shared<Task52>(tensor52, cindex, this->e0_);
+      task51->add_dep(task52);
+      task52->add_dep(task43);
+      dedci_->add_task(task52);
+
+      task52->add_dep(task5);
+
+      std::vector<IndexRange> I55_index = {this->ci_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I55(new Tensor(I55_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor53 = {I34, this->v2_, I55};
+      auto task53 = std::make_shared<Task53>(tensor53, cindex);
+      task45->add_dep(task53);
+      task53->add_dep(task43);
+      dedci_->add_task(task53);
+
+
+      std::vector<std::shared_ptr<Tensor>> tensor54 = {I55, Gamma13};
+      auto task54 = std::make_shared<Task54>(tensor54, cindex);
+      task53->add_dep(task54);
+      task54->add_dep(task43);
+      dedci_->add_task(task54);
+
+      task54->add_dep(task5);
+
+      std::vector<IndexRange> I41_index = {this->ci_, this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I41(new Tensor(I41_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor55 = {I33, t2, I41};
+      auto task55 = std::make_shared<Task55>(tensor55, cindex);
+      task44->add_dep(task55);
+      task55->add_dep(task43);
+      dedci_->add_task(task55);
+
+
+      std::vector<IndexRange> I42_index = {this->ci_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I42(new Tensor(I42_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor56 = {I41, t2, I42};
+      auto task56 = std::make_shared<Task56>(tensor56, cindex);
+      task55->add_dep(task56);
+      task56->add_dep(task43);
+      dedci_->add_task(task56);
+
+
+      std::vector<std::shared_ptr<Tensor>> tensor57 = {I42, Gamma12};
+      auto task57 = std::make_shared<Task57>(tensor57, cindex);
+      task56->add_dep(task57);
+      task57->add_dep(task43);
+      dedci_->add_task(task57);
+
+      task57->add_dep(task4);
+
+      std::vector<IndexRange> I44_index = {this->ci_, this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I44(new Tensor(I44_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor58 = {I33, t2, I44};
+      auto task58 = std::make_shared<Task58>(tensor58, cindex);
+      task44->add_dep(task58);
+      task58->add_dep(task43);
+      dedci_->add_task(task58);
+
+
+      std::vector<IndexRange> I45_index = {this->ci_, this->active_, this->active_, this->virt_, this->virt_};
+      std::shared_ptr<Tensor> I45(new Tensor(I45_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor59 = {I44, this->f1_, I45};
+      auto task59 = std::make_shared<Task59>(tensor59, cindex);
+      task58->add_dep(task59);
+      task59->add_dep(task43);
+      dedci_->add_task(task59);
+
+
+      std::vector<IndexRange> I46_index = {this->ci_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I46(new Tensor(I46_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor60 = {I45, t2, I46};
+      auto task60 = std::make_shared<Task60>(tensor60, cindex);
+      task59->add_dep(task60);
+      task60->add_dep(task43);
+      dedci_->add_task(task60);
+
+
+      std::vector<std::shared_ptr<Tensor>> tensor61 = {I46, Gamma13};
+      auto task61 = std::make_shared<Task61>(tensor61, cindex);
+      task60->add_dep(task61);
+      task61->add_dep(task43);
+      dedci_->add_task(task61);
+
+      task61->add_dep(task5);
+
+      std::vector<IndexRange> I52_index = {this->ci_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I52(new Tensor(I52_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor62 = {I44, t2, I52};
+      auto task62 = std::make_shared<Task62>(tensor62, cindex);
+      task58->add_dep(task62);
+      task62->add_dep(task43);
+      dedci_->add_task(task62);
+
+
+      std::vector<std::shared_ptr<Tensor>> tensor63 = {I52, Gamma13};
+      auto task63 = std::make_shared<Task63>(tensor63, cindex, this->e0_);
+      task62->add_dep(task63);
+      task63->add_dep(task43);
+      dedci_->add_task(task63);
+
+      task63->add_dep(task5);
+
+      std::vector<IndexRange> I58_index = {this->ci_, this->active_, this->active_, this->active_, this->active_};
+      std::shared_ptr<Tensor> I58(new Tensor(I58_index, false));
+      std::vector<std::shared_ptr<Tensor>> tensor64 = {I44, this->v2_, I58};
+      auto task64 = std::make_shared<Task64>(tensor64, cindex);
+      task58->add_dep(task64);
+      task64->add_dep(task43);
+      dedci_->add_task(task64);
+
+
+      std::vector<std::shared_ptr<Tensor>> tensor65 = {I58, Gamma13};
+      auto task65 = std::make_shared<Task65>(tensor65, cindex);
+      task64->add_dep(task65);
+      task65->add_dep(task43);
+      dedci_->add_task(task65);
+
+      task65->add_dep(task5);
+
+      return make_tuple(queue_, energy_, correction_, density_, density1_, density2_, dedci_);
     };
 
   public:
-    CAS_test(std::shared_ptr<const SMITH_Info> ref) : SpinFreeMethod<T>(ref) {
+    CAS_test(std::shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
       this->eig_ = this->f1_->diag();
       t2 = this->v2_->clone();
       e0_ = this->e0();
@@ -401,7 +606,8 @@ class CAS_test : public SpinFreeMethod<T>{
       t2->scale(2.0);
       r = t2->clone();
       den1 = this->h1_->clone();
-      den2 = this->v2_->clone();
+      den2 = this->h1_->clone();
+      Den1 = this->v2_->clone();
       deci = this->rdm0deriv_->clone();
     };
     ~CAS_test() {};
@@ -409,9 +615,9 @@ class CAS_test : public SpinFreeMethod<T>{
     void solve() {
       this->print_iteration();
       int iter = 0;
-      std::shared_ptr<Queue<T>> queue, energ, correct, dens, dens2, dec;
+      std::shared_ptr<Queue> queue, energ, correct, dens2, dens1, Dens1, dec;
       for ( ; iter != ref_->maxiter(); ++iter) {
-        std::tie(queue, energ, correct, dens, dens2, dec) = make_queue_();
+        std::tie(queue, energ, correct, dens2, dens1, Dens1, dec) = make_queue_();
         while (!queue->done())
           queue->next_compute();
         this->update_amplitude(t2, r);
@@ -423,43 +629,66 @@ class CAS_test : public SpinFreeMethod<T>{
       }
       this->print_iteration(iter == ref_->maxiter());
 
+      std::cout << " === Computing correlated overlap, <1|1> ===" << std::endl;
       correlated_norm = correction(correct);
-      std::cout << "Norm, correlated overlap: <1|1> = " << std::setprecision(10) << correlated_norm << std::endl;
+      std::cout << std::endl;
+      std::cout << "      Norm  = " << std::setprecision(10) << correlated_norm << std::endl;
+      std::cout << std::endl;
 
-      std::cout << " === Computing unrelaxed density matrix, dm1, <1|E_pq|1> + 2<0|E_pq|1> ===" << std::endl;
-      while (!dens->done())
-        dens->next_compute();
-      std::cout << " === Computing unrelaxed density matrix, dm2, <0|E_pqrs|1>  ===" << std::endl;
+      std::cout << " === Computing unrelaxed one-body density matrix, dm2, <1|E_pq|1>  ===" << std::endl;
       while (!dens2->done())
         dens2->next_compute();
-      std::cout << " === Calculating cI derivative dE/dcI ===" << std::endl;
+#if 0
+      den2->print2("smith d1 correlated one-body density matrix dm2 ", 1.0e-5);
+#endif
+      std::cout << std::endl;
+      std::cout << " === Computing unrelaxed one-body density matrix, dm1, 2<0|E_pq|1> ===" << std::endl;
+      while (!dens1->done())
+        dens1->next_compute();
+#if 0
+      den1->print2("smith d1 correlated one-body density matrix dm1", 1.0e-5);
+#endif
+      std::cout << std::endl;
+      std::cout << " === Computing unrelaxed two-body density matrix, D1, <0|E_pqrs|1>  ===" << std::endl;
+      while (!Dens1->done())
+        Dens1->next_compute();
+#if 0
+      Den1->print4("smith d2 correlated two-body density matrix D1", 1.0e-5);
+#endif
+      std::cout << std::endl;
+
+      std::cout << " === Computing cI derivative dE/dcI ===" << std::endl;
       while (!dec->done())
         dec->next_compute();
-      deci->ax_plus_y(-correlated_norm, sigma_);
+      deci->print1("cI derivative tensor: ", 1.0e-15);
+      std::cout << std::endl;
+      std::cout << "      cI derivative * cI    = " << std::setprecision(10) <<  deci->dot_product(this->rdm0deriv_) << std::endl;
+      std::cout << "      Expecting 2E          = " << std::setprecision(10) <<  2.0*this->energy_ << std::endl;
       std::cout << std::endl;
 
     };
 
-    double energy(std::shared_ptr<Queue<T>> energ) {
+    double energy(std::shared_ptr<Queue> energ) {
       double en = 0.0;
       while (!energ->done()) {
-        std::shared_ptr<Task<T>> c = energ->next_compute();
+        std::shared_ptr<Task> c = energ->next_compute();
         en += c->energy();
       }
       return en;
     }
 
-    double correction(std::shared_ptr<Queue<T>> correct) {
+    double correction(std::shared_ptr<Queue> correct) {
       double n = 0.0;
       while (!correct->done()) {
-        std::shared_ptr<Task<T>> c = correct->next_compute();
+        std::shared_ptr<Task> c = correct->next_compute();
         n += c->correction();
       }
       return n;
     }
 
-    std::shared_ptr<const Matrix> rdm1() const { return den1->matrix(); }
-    std::shared_ptr<const Matrix> rdm2() const { return den2->matrix2(); }
+    std::shared_ptr<const Matrix> rdm11() const { return den1->matrix(); }
+    std::shared_ptr<const Matrix> rdm12() const { return den2->matrix(); }
+    std::shared_ptr<const Matrix> rdm21() const { return Den1->matrix2(); }
 
     double rdm1_correction() const { return correlated_norm; }
 

@@ -83,7 +83,7 @@ namespace btas {
         bool_type(bool b) {
           assert(b == value);
         }
-        operator bool() {
+        operator bool() const {
           return value;
         }
         bool operator()() const noexcept {

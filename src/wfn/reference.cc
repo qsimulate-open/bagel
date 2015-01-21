@@ -24,9 +24,10 @@
 //
 
 #include <src/wfn/reference.h>
+#include <src/wfn/relreference.h>
 #include <src/integral/os/overlapbatch.h>
-#include <src/molecule/mixedbasis.h>
-#include <src/fci/fci.h>
+#include <src/mat1e/mixedbasis.h>
+#include <src/ci/fci/fci.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Reference)
 
@@ -39,7 +40,7 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      vector<shared_ptr<RDM<1>>> _rdm1, vector<shared_ptr<RDM<2>>> _rdm2,
                      shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av,
                      shared_ptr<const CIWfn> ci)
- : geom_(g), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), ciwfn_(ci), rdm1_(_rdm1), rdm2_(_rdm2),
+ : geom_(g), noccA_(0), noccB_(0), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), ciwfn_(ci), rdm1_(_rdm1), rdm2_(_rdm2),
    rdm1_av_(_rdm1_av), rdm2_av_(_rdm2_av) {
 
   // we need to make sure that all the quantities are consistent in every MPI process
@@ -110,25 +111,64 @@ tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const
 }
 
 
-shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
-  // project to a new basis
-  const Overlap snew(geomin);
-  Overlap snewinv = snew;
-  snewinv.inverse_symmetric();
-  MixedBasis<OverlapBatch> mixed(geom_, geomin);
-  auto c = make_shared<Coeff>(snewinv * mixed * *coeff_);
+shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin, const bool check_geom_change) const {
 
-  // make coefficient orthogonal (under the overlap metric)
-  Matrix unit = *c % snew * *c;
-  unit.inverse_half();
-  *c *= unit;
+  if (geomin->magnetism())
+    throw std::runtime_error("Projection from real to GIAO basis set is not implemented.   Use the GIAO code at zero-field.");
 
-  auto out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
-  if (coeffA_) {
-    assert(coeffB_);
-    out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_);
-    out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_);
+  bool moved = false;
+  bool newbasis = false;
+
+  if (check_geom_change) {
+    auto j = geomin->atoms().begin();
+    for (auto& i : geom_->atoms()) {
+      moved |= i->distance(*j) > 1.0e-12;
+      newbasis |= i->basis() != (*j)->basis();
+      ++j;
+    }
+  } else {
+    newbasis = true;
   }
+
+  if (moved && newbasis)
+    throw runtime_error("changing geometry and basis set at the same time is not allowed");
+
+  shared_ptr<Reference> out;
+
+  if (newbasis) {
+    // project to a new basis
+    const Overlap snew(geomin);
+    Overlap snewinv = snew;
+    snewinv.inverse_symmetric();
+    MixedBasis<OverlapBatch> mixed(geom_, geomin);
+    auto c = make_shared<Coeff>(snewinv * mixed * *coeff_);
+
+    // make coefficient orthogonal (under the overlap metric)
+    Matrix unit = *c % snew * *c;
+    unit.inverse_half();
+    *c *= unit;
+
+    out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
+    if (coeffA_) {
+      assert(coeffB_);
+      out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_ * unit);
+      out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_ * unit);
+    }
+  } else {
+    Overlap snew(geomin);
+    Overlap sold(geom_);
+    snew.inverse_half();
+    sold.sqrt();
+    auto c = make_shared<Coeff>(snew * sold * *coeff_);
+
+    out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
+    if (coeffA_) {
+      assert(coeffB_);
+      out->coeffA_ = make_shared<Coeff>(snew * sold * *coeffA_);
+      out->coeffB_ = make_shared<Coeff>(snew * sold * *coeffB_);
+    }
+  }
+
   return out;
 }
 

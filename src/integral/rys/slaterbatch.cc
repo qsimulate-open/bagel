@@ -47,7 +47,7 @@ using namespace bagel;
 #define GM1_THRESH 1.0e-15
 #define GM1_THRESH_MAX 1.0e+15
 
-static const double pitwohalf__ = ::pow(pi__, 2.5);
+static const double pitwohalf__ = pow(pi__, 2.5);
 
 // TODO need to update
 const static SRootList root;
@@ -98,13 +98,13 @@ void SlaterBatch::root_weight(const int prim) {
 
 
 void SlaterBatch::root1_direct() {
-  const double prefac = ::sqrt(pi__) * 0.25;
+  const double prefac = sqrt(pi__) * 0.25;
   for (int i = 0; i != screening_size_; ++i) {
     const int ii = screening_[i];
     const double ct = T_[ii];
     const double cu = U_[ii];
-    const double sqct = ::sqrt(ct);
-    const double sqcu = ::sqrt(cu);
+    const double sqct = sqrt(ct);
+    const double sqcu = sqrt(cu);
     const double lambda = sqct + sqcu;
     const double kappa = sqcu - sqct;
     double gm1, g0;
@@ -117,14 +117,14 @@ void SlaterBatch::root1_direct() {
       if (kappa < 0.0) {
         const double experfc_lambda = experfc(lambda);
         const double erfc_kappa = experfcm(kappa);
-        const double factor1 = ::exp(-ct) * prefac;
-        const double factor2 = ::exp(kappa * kappa - ct) * prefac;
+        const double factor1 = exp(-ct) * prefac;
+        const double factor2 = exp(kappa * kappa - ct) * prefac;
         gm1 = (factor2 * erfc_kappa + factor1 * experfc_lambda) / sqcu;
         g0 =  (factor2 * erfc_kappa - factor1 * experfc_lambda) / sqct;
       } else {
         const double experfc_lambda = experfc(lambda);
         const double experfc_kappa  = experfc(kappa);
-        const double factor = ::exp(-ct) * prefac;
+        const double factor = exp(-ct) * prefac;
         gm1 = factor / sqcu * (experfc_kappa + experfc_lambda);
         g0 =  factor / sqct * (experfc_kappa - experfc_lambda);
       }
@@ -147,8 +147,8 @@ void SlaterBatch::root2_direct() {
     const int ii = screening_[i];
     const double ct = T_[ii];
     const double cu = U_[ii];
-    const double sqct = ::sqrt(ct);
-    const double sqcu = ::sqrt(cu);
+    const double sqct = sqrt(ct);
+    const double sqcu = sqrt(cu);
     const double lambda = sqct + sqcu;
     const double kappa = sqcu - sqct;
     double gm1, g0, g1, g2;
@@ -164,9 +164,9 @@ void SlaterBatch::root2_direct() {
       if (kappa < 0.0) {
         const double experfc_lambda = experfc(lambda);
         const double erfc_kappa = experfcm(kappa);
-        const double expct = ::exp(-ct);
+        const double expct = exp(-ct);
         const double factor1 = expct * prefac;
-        const double factor2 = ::exp(kappa * kappa - ct) * prefac;
+        const double factor2 = exp(kappa * kappa - ct) * prefac;
         gm1 = (factor2 * erfc_kappa + factor1 * experfc_lambda) / sqcu;
         g0 = (factor2 * erfc_kappa - factor1 * experfc_lambda) / sqct;
         const double cu2 = cu + cu;
@@ -176,7 +176,7 @@ void SlaterBatch::root2_direct() {
       } else {
         const double experfc_lambda = experfc(lambda);
         const double experfc_kappa  = experfc(kappa);
-        const double expct = ::exp(-ct);
+        const double expct = exp(-ct);
         const double factor = expct * prefac;
         gm1 = factor / sqcu * (experfc_kappa + experfc_lambda);
         g0 = factor / sqct * (experfc_kappa - experfc_lambda);
@@ -204,7 +204,7 @@ void SlaterBatch::root2_direct() {
 
       const double dd = x[0] + x[1];
       double g = x[0] - x[1];
-      g = ::sqrt(g * g + 4.0 * w[0]);
+      g = sqrt(g * g + 4.0 * w[0]);
       const double s = (dd - g) * 0.5;
       const double c = (dd + g) * 0.5;
       const double bb = w[0];
@@ -266,7 +266,7 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
 #if 0
     const double cxp_min = minexp0 + minexp1;
     const double cxp_inv_min = 1.0 / cxp_min;
-    const double min_Eab = ::exp(-r01_sq * min_ab * cxp_inv_min);
+    const double min_Eab = exp(-r01_sq * min_ab * cxp_inv_min);
 #endif
     int index23 = 0;
     for (auto expi2 = exp2.begin(); expi2 != exp2.end(); ++expi2) {
@@ -276,7 +276,7 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
         const double cxq_inv = 1.0 / cxq;
 
         if (-r23_sq * (cd * cxq_inv) < MIN_EXPONENT) continue;
-        Ecd_save[index23] = ::exp(-r23_sq * (cd * cxq_inv) );
+        Ecd_save[index23] = exp(-r23_sq * (cd * cxq_inv) );
         qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
         qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
         qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
@@ -302,7 +302,7 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
       const double ab = *expi0 * *expi1;
       const double cxp_inv = 1.0 / cxp;
       if (-r01_sq * (ab * cxp_inv) < MIN_EXPONENT) continue;
-      const double Eab = ::exp(-r01_sq * (ab * cxp_inv) );
+      const double Eab = exp(-r01_sq * (ab * cxp_inv) );
       const double coeff_half = 2 * Eab * pitwohalf__;
       const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
       const double py = (ay * *expi0 + by * *expi1) * cxp_inv;

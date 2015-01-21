@@ -38,10 +38,10 @@ class Muffle {
     std::streambuf* saved_;
 
   public:
-    Muffle(std::string filename = "") {
+    Muffle(std::string filename = "", const bool append = false) {
       saved_ = std::cout.rdbuf();
       if ( (mpi__->rank() == 0) && filename != "")
-        redirect_ = std::make_shared<std::ofstream>(filename);
+        redirect_ = append ? std::make_shared<std::ofstream>(filename, std::ios::app) : std::make_shared<std::ofstream>(filename);
       else
         redirect_ = std::make_shared<std::ostringstream>();
 

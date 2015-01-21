@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/asd_ras.h>
-#include <src/ras/form_sigma.h>
+#include <src/ci/ras/form_sigma.h>
 
 using namespace std;
 using namespace bagel;
@@ -43,7 +43,10 @@ shared_ptr<RASDvec> ASD_RAS::form_sigma(shared_ptr<const RASDvec> ccvec, shared_
 
 shared_ptr<RASDvec> ASD_RAS::form_sigma_1e(shared_ptr<const RASDvec> ccvec, const double* modata) const {
   FormSigmaRAS form;
-  return form(ccvec, modata);
+  const int norb = ccvec->det()->norb();
+  auto mo1e = make_shared<Matrix>(norb, norb);
+  copy_n(modata, norb*norb, mo1e->data());
+  return form(ccvec, mo1e, nullptr, vector<int>(ccvec->ij(), static_cast<int>(false)));
 }
 
 std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>, std::shared_ptr<RDM<4>>> ASD_RAS::compute_rdm34_monomer (std::pair<int,int> offset, std::array<RASDvec,4>& fourvecs) const {

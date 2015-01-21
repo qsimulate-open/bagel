@@ -27,7 +27,7 @@
 #define __ASD_ASD_DIST_CAS_H
 
 #include <src/asd/asd.h>
-#include <src/fci/civec.h>
+#include <src/ci/fci/civec.h>
 
 namespace bagel {
 

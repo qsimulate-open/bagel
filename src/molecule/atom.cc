@@ -25,7 +25,7 @@
 
 
 #include <src/molecule/atom.h>
-#include <src/math/quatern.h>
+#include <src/util/math/quatern.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/util/atommap.h>
 

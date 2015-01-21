@@ -28,7 +28,7 @@
 #define __SRC_WFN_GEOMETRY_H
 
 #include <src/df/df.h>
-#include <src/input/input.h>
+#include <src/util/input/input.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {
@@ -133,7 +133,7 @@ class Geometry : public Molecule {
     }
 
     // initialize relativistic components
-    std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;
+    std::shared_ptr<const Geometry> relativistic(const bool do_gaunt, const bool do_coulomb = true) const;
     void compute_relativistic_integrals(const bool do_gaunt);
     void discard_relativistic() const;
 

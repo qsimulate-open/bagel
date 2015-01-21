@@ -29,7 +29,7 @@
 
 #include <src/scf/coeff.h>
 #include <src/wfn/geometry.h>
-#include <src/fci/dvec.h>
+#include <src/ci/fci/dvec.h>
 
 // Stores the result of some CI type wavefunction (FCI, CASSCF, etc.)
 

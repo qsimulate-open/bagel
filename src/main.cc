@@ -24,13 +24,14 @@
 //
 
 #include <src/global.h>
-#include <src/io/moldenout.h>
-#include <src/mp2/mp2grad.h>
+#include <src/pt2/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
-#include <src/london/reference_london.h>
-#include <src/molecule/localization.h>
+#include <src/wfn/localization.h>
 #include <src/asd/construct_asd.h>
+#include <src/asd/dmrg/rasd.h>
+#include <src/asd/multisite/multisite.h>
 #include <src/util/archive.h>
+#include <src/util/io/moldenout.h>
 
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
@@ -60,6 +61,7 @@ int main(int argc, char** argv) {
     shared_ptr<Geometry> geom;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
+    shared_ptr<MultiSite> multisite;
 
     map<string, shared_ptr<const void>> saved;
     bool dodf = true;
@@ -88,6 +90,17 @@ int main(int argc, char** argv) {
       if ((title == "smith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
 
+#ifndef DISABLE_SERIALIZATION
+      if (itree->get<bool>("load_ref", false)) {
+        const string name = itree->get<string>("ref_in", "");
+        if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
+        IArchive archive(name);
+        shared_ptr<Reference> ptr;
+        archive >> ptr;
+        ref = shared_ptr<Reference>(ptr);
+      }
+#endif
+
       // most methods are constructed here
       method = construct_method(title, itree, geom, ref);
 
@@ -104,6 +117,13 @@ int main(int argc, char** argv) {
 
         method->compute();
         ref = method->conv_to_ref();
+#ifndef DISABLE_SERIALIZATION
+        if (itree->get<bool>("save_ref", false)) {
+          const string name = itree->get<string>("ref_out", "reference");
+          OArchive archive(name);
+          archive << ref;
+        }
+#endif
 
       } else if (title == "optimize") {
 
@@ -137,6 +157,21 @@ int main(int argc, char** argv) {
         ref = dimer->sref();
       } else if (title == "asd") {
           auto asd = construct_ASD(itree, dimer);
+          asd->compute();
+      } else if (title == "multisite") {
+          vector<shared_ptr<const Reference>> site_refs;
+          auto sitenames = itree->get_vector<string>("refs");
+          for (auto& s : sitenames)
+            site_refs.push_back(static_pointer_cast<const Reference>(saved.at(s)));
+          auto ms = make_shared<MultiSite>(itree, site_refs);
+          ms->scf(itree);
+          multisite = ms;
+          ref = ms->conv_to_ref();
+          *geom = *ref->geom();
+      } else if (title == "asd_dmrg") {
+          if (!multisite)
+            throw runtime_error("multisite must be called before asd_dmrg");
+          auto asd = make_shared<RASD>(itree, multisite);
           asd->compute();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
@@ -183,7 +218,9 @@ int main(int argc, char** argv) {
     print_footer();
 
   } catch (const exception &e) {
-    cout << "  ERROR: EXCEPTION RAISED:" << e.what() << endl;
+    resources__->proc()->cout_on();
+    cout << "  ERROR ON RANK " << mpi__->rank() << ": EXCEPTION RAISED:" << e.what() << endl;
+    resources__->proc()->cout_off();
     throw;
   } catch (...) {
     throw;

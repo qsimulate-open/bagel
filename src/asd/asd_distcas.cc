@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/asd_distcas.h>
-#include <src/fci/dist_form_sigma.h>
+#include <src/ci/fci/dist_form_sigma.h>
 
 using namespace std;
 using namespace bagel;

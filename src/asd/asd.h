@@ -27,14 +27,18 @@
 #define __ASD_ASD_H
 
 #include <src/asd/asd_base.h>
+<<<<<<< HEAD
 #include <src/dimer/dimer_prop.h>
 //TODO disabled for now
 //#include <src/asd/asd_nevpt2.h>
 //#include <src/asdscf/superci.h>
+=======
+#include <src/asd/dimer/dimer_prop.h>
+>>>>>>> origin/master
 
 namespace bagel {
 
-/// Template for ASD (to be renamed ASD)
+/// Template for ASD
 template <class VecType>
 class ASD : public ASD_base {
   protected: using DSubSpace = DimerSubspace<VecType>;

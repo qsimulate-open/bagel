@@ -77,7 +77,7 @@ class DFDist : public ParallelDF {
     std::shared_ptr<DFDist> clone() const;
 
     // split up smalleri integrals into 6 dfdist objects
-    std::vector<std::shared_ptr<const DFDist>> split_blocks() const {
+    virtual std::vector<std::shared_ptr<const DFDist>> split_blocks() const {
       std::vector<std::shared_ptr<const DFDist>> out;
       assert(nindex1_ == nindex2_);
       for (auto& i : block_)

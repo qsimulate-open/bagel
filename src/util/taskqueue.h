@@ -41,7 +41,7 @@
 #ifdef HAVE_MKL_H
   #include "mkl_service.h"
 #endif
-#include <src/parallel/resources.h>
+#include <src/util/parallel/resources.h>
 
 namespace bagel {
 
