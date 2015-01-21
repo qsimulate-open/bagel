@@ -39,9 +39,7 @@ class MultipoleBatch_base : public OSIntegral<std::complex<double>> {
     int lmax_;
 
     int num_multipoles_;
-    std::vector<std::complex<double>> multipolex_;
-    std::vector<std::complex<double>> multipoley_;
-    std::vector<std::complex<double>> multipolez_;
+    std::vector<std::complex<double>> multipole_;
 
     void allocate_arrays(const size_t ps);
     void compute_ss(const double thresh);

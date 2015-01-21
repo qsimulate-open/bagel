@@ -43,9 +43,7 @@ MultipoleBatch_base::MultipoleBatch_base(const array<shared_ptr<const Shell>,2>&
 
 void MultipoleBatch_base::allocate_arrays(const size_t ps) {
 
-  multipolex_.resize(ps * num_multipoles_);
-  multipoley_.resize(ps * num_multipoles_);
-  multipolez_.resize(ps * num_multipoles_);
+  multipole_.resize(ps * num_multipoles_);
 }
 
 
@@ -54,9 +52,9 @@ void MultipoleBatch_base::compute_ss(const double thr) {
   const vector<double> exp0 = basisinfo_[0]->exponents();
   const vector<double> exp1 = basisinfo_[1]->exponents();
 
-  int index = 0;
+  int iprim = 0;
   for (auto e0 = exp0.begin(); e0 != exp0.end(); ++e0) {
-    for (auto e1 = exp1.begin(); e1 != exp1.end(); ++e1, ++index) {
+    for (auto e1 = exp1.begin(); e1 != exp1.end(); ++e1, ++iprim) {
 
       const double cxp = *e0 + *e1;
       const double cxp_inv = 1.0 / cxp;
@@ -73,25 +71,13 @@ void MultipoleBatch_base::compute_ss(const double thr) {
 
       auto Mpq = make_shared<const SphMultipole>(PQ, lmax_);
 
-      const double coeff1 = pisqrt__ * sqrt(cxp_inv);
+      const double coeff1 = pisqrt__ * pi__ * sqrt(cxp_inv) * cxp_inv;
 
       for (int i = 0; i != num_multipoles_; ++i) {
-        complex<double> coeff2;
-        if (swap01_) {
-          coeff2 = coeff1 * Mpq->multipole(i);
-        } else {
-          coeff2 = coeff1 * conj(Mpq->multipole(i));
-        }
-//        cout << "coeff2 = " << setprecision(9) << coeff2 << " AB = " << AB_[0] << "  " << AB_[1] << "  " << AB_[2] << endl;
-        multipolex_[index + i * prim0_ * prim1_] = coeff2 * exp(- *e0 * *e1 * cxp_inv * (AB_[0] * AB_[0]));
-        multipoley_[index + i * prim0_ * prim1_] = coeff2 * exp(- *e0 * *e1 * cxp_inv * (AB_[1] * AB_[1]));
-        multipolez_[index + i * prim0_ * prim1_] = coeff2 * exp(- *e0 * *e1 * cxp_inv * (AB_[2] * AB_[2]));
+        const double ABsq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2];
+        multipole_[iprim + i * prim0_ * prim1_] = coeff1 * Mpq->multipole(i) * exp(- *e0 * *e1 * cxp_inv * ABsq);
 #if 0
-        cout << "xyz in ss " << setprecision(9) << multipolex_[index + i * prim0_ * prim1_] << "  "
-                                                << multipoley_[index + i * prim0_ * prim1_] << "  "
-                                                << multipolez_[index + i * prim0_ * prim1_] << "  "
-                                                << multipolex_[index + i * prim0_ * prim1_] * multipoley_[index + i * prim0_ * prim1_]
-                                                                                            * multipolez_[index + i * prim0_ * prim1_] << endl;
+        cout << "xyz in ss " << setprecision(9) << multipole_[i * prim0_ * prim1_ + iprim] << endl;
 #endif
       }
     }

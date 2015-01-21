@@ -48,90 +48,113 @@ MultipoleBatch::MultipoleBatch(const array<shared_ptr<const Shell>,2>& sh, const
 
 void MultipoleBatch::compute() {
 
-  // First, do (a|O_lm|0) using VRR
-  const int worksize = num_multipoles_ * (amax_ + 1);
-  complex<double>* const workx = stack_->get<complex<double>>(worksize);
-  complex<double>* const worky = stack_->get<complex<double>>(worksize);
-  complex<double>* const workz = stack_->get<complex<double>>(worksize);
+  // First, do (ix, iy, iz; l; m) = (n|O_lm|0) using VRR
+  const int amax1 = amax_ + 1;
+  const int asize = (amax_ + 1) * (amax_ + 2) / 2;
 
-  const int size_start = num_multipoles_ * asize_ * prim0_ * prim1_;
+  const int size_start = num_multipoles_ * asize * prim0_ * prim1_;
   complex<double>* intermediate_p = stack_->get<complex<double>>(size_start);
+  complex<double>* const current_data = intermediate_p;
 
   const int nmul = num_multipoles_;
-
   for (int iprim = 0; iprim != prim0_ * prim1_; ++iprim) {
+    const double cxp_inv = 1.0 / xp_[iprim];
 
-    vector<complex<double>*> current_data(nmul);
+    vector<complex<double>> workz(amax1 * nmul); // (0, 0, iz, l, m)
+
+    // (0, 0, 0, l, m)
     for (int imul = 0; imul != nmul; ++imul)
-      current_data[imul] = intermediate_p + iprim * asize_ + imul * asize_ * prim0_ * prim1_;
+      workz[imul] = multipole_[imul * prim0_ * prim1_ + iprim];
 
-    for (int cnt = 0; cnt != nmul; ++cnt) {
-      workx[cnt] = multipolex_[cnt * prim0_ * prim1_ + iprim];
-      worky[cnt] = multipoley_[cnt * prim0_ * prim1_ + iprim];
-      workz[cnt] = multipolez_[cnt * prim0_ * prim1_ + iprim];
-    }
-
-    if (amax_ > 0) {
-      int cnt = 0;
-      for (int l = 0; l <= lmax_; ++l) {
-        for (int m = 0; m <= 2*l; ++m, ++cnt) {
-          workx[nmul + cnt] = - 2.0 * xb_[iprim] * AB_[0] * workx[cnt];
-          worky[nmul + cnt] = - 2.0 * xb_[iprim] * AB_[1] * worky[cnt];
-          workz[nmul + cnt] = - 2.0 * xb_[iprim] * AB_[2] * workz[cnt];
-          if (abs(m - l) < l - 1) {
-            const int i1 = (l - 1) * (l - 1) + m;
-            workx[nmul + cnt] += 0.5 * (multipolex_[i1 * prim0_ * prim1_ + iprim] + multipolex_[(i1 - 2) * prim0_ * prim1_ + iprim]);
-            worky[nmul + cnt] += complex<double>(0.0, 0.5) * (multipoley_[i1 * prim0_ * prim1_ + iprim] + multipoley_[(i1 - 2) * prim0_ * prim1_ + iprim]);
-            workz[nmul + cnt] += multipolez_[(i1 - 1) * prim0_ * prim1_ + iprim];
+    int iang = 0;
+    for (int iz = 0; iz <= amax_; ++iz) {
+      // (0, 0, iz, l, m)
+      for (int c = 1; c <= iz; ++c) {
+        int imul = 0;
+        for (int l = 0; l <= lmax_; ++l) {
+          for (int m = 0; m <= 2 * l; ++m, ++imul) {
+            workz[c * nmul + imul] = -2.0 * xb_[iprim] * AB_[2] * workz[(c-1)*nmul+imul];
+            if (c > 1)
+              workz[c * nmul + imul] += (c-1.0) * workz[(c-2)*nmul+imul];
+            if (l > 0 && m < l) {
+              const int i1 = (l-1)*(l-1) + m;
+              workz[c * nmul + imul] += -0.5 * workz[(c-1)*nmul+i1];
+            }
+            workz[c * nmul + imul] *= 0.5 * cxp_inv;
           }
         }
       }
 
-      for (int a = 2; a <= amax_; ++a) {
-        int cnt = 0;
-        for (int l = 0; l <= lmax_; ++l) {
-          for (int m = 0; m <= 2*l; ++m, ++cnt) {
-            workx[a * nmul + cnt] = (a - 1.0) * workx[(a - 2) * nmul + cnt] - 2.0 * xb_[iprim] * AB_[0] * workx[(a - 1) * nmul + cnt];
-            worky[a * nmul + cnt] = (a - 1.0) * worky[(a - 2) * nmul + cnt] - 2.0 * xb_[iprim] * AB_[1] * worky[(a - 1) * nmul + cnt];
-            workz[a * nmul + cnt] = (a - 1.0) * workz[(a - 2) * nmul + cnt] - 2.0 * xb_[iprim] * AB_[2] * workz[(a - 1) * nmul + cnt];
-            if (abs(m - l) < l - 1) {
-              const int i1 = (l - 1) * (l - 1) + m;
-              workx[a * nmul + cnt] += 0.5 * (workx[(a - 1) * nmul + i1] + workx[(a - 1) * nmul + i1 - 2]);
-              worky[a * nmul + cnt] += complex<double>(0.0, 0.5) * (worky[(a - 1) * nmul + i1] + worky[(a - 1) * nmul + i1 - 2]);
-              workz[a * nmul + cnt] += workz[(a - 1) * nmul + i1 - 1];
+
+      vector<complex<double>> worky((amax1 - iz) * nmul);
+      for (int imul = 0; imul != nmul; ++imul)
+        worky[imul] = workz[iz * nmul + imul];
+
+      for (int iy = 0; iy <= amax_ - iz; ++iy, ++iang) {
+        // (0, iy, iz, l, m)
+        for (int b = 1; b <= iy; ++b) {
+          int imul = 0;
+          for (int l = 0; l <= lmax_; ++l) {
+            for (int m = 0; m <= 2 * l; ++m, ++imul) {
+              worky[b * nmul + imul] = -2.0 * xb_[iprim] * AB_[1] * worky[(b-1)*nmul+imul];
+              if (b > 1)
+                worky[b * nmul + imul] += (b-1.0) * worky[(b-2)*nmul+imul];
+              if (l > 0) {
+                const int i1 = (l-1)*(l-1) + m;
+                worky[b * nmul + imul] += complex<double>(0.0, 0.5) * worky[(b-1)*nmul+i1-1];
+                if (m-l < l-1)
+                  worky[b * nmul + imul] += complex<double>(0.0, 0.5) * worky[(b-1)*nmul+i1+1];
+              }
+              worky[b * nmul + imul] *= 0.5 * cxp_inv;
             }
           }
         }
-      }
-    }
 
-    // get (a|O|0) from x, y, z components
-    const int amax1 = amax_ + 1;
-    for (int iz = 0; iz <= amax_; ++iz) {
-      for (int iy = 0; iy <= amax_ - iz; ++iy) {
-        for (int ix = 0; ix <= amax_ - iy - iz; ++ix) {
-          const int iang = amapping_[ix + amax1 * (iy + amax1 * iz)];
+        vector<complex<double>> workx((amax1 - iz - iy) * nmul);
+        for (int imul = 0; imul != nmul; ++imul)
+          workx[imul] = worky[iy * nmul + imul];
 
-          for (int imul = 0; imul != nmul; ++imul) {
-            current_data[imul][iang] = workx[ix * nmul + imul] * worky[iy * nmul + imul] * workz[iz * nmul + imul];
-            if (swap01_)
-              current_data[imul][iang] = std::conj(current_data[imul][iang]) ;
-            //cout << setprecision(9) << "current_data L120 multipolebatch.cc "  << current_data[imul][iang] << endl;
+        const int ix = amax_ - iz - iy;
+        // (ix, iy, iz, l, m)
+        for (int a = 1; a <= ix; ++a) {
+          int imul = 0;
+          for (int l = 0; l <= lmax_; ++l) {
+            for (int m = 0; m <= 2 * l; ++m, ++imul) {
+              workx[a * nmul + imul] = -2.0 * xb_[iprim] * AB_[0] * workx[(a-1)*nmul+imul];
+              if (a > 1)
+                workx[a * nmul + imul] += (a-1.0) * workx[(a-2)*nmul+imul];
+              if (l > 0) {
+                const int i1 = (l-1)*(l-1) + m;
+                workx[a * nmul + imul] += -0.5 * workx[(a-1)*nmul+i1-1];
+                if (m-l < l-1)
+                  workx[a * nmul + imul] += 0.5 * workx[(a-1)*nmul+i1+1];
+              }
+              workz[a * nmul + imul] *= 0.5 * cxp_inv;
+            }
           }
-
         }
-      }
-    }
-  } // end loop over primitives
+
+        int imul = 0;
+        for (int l = 0; l <= lmax_; ++l) {
+          for (int m = 0; m <= 2 * l; ++m, ++imul) {
+            const int index = imul * asize * prim0_ * prim1_ + iang * prim0_ * prim1_ + iprim;
+            current_data[index] = workx[ix * nmul + imul];
+          }
+        }
+
+      } //iy
+    } //iz
+
+  } // end loop over primitives - done (n|O|0)
 
   const CSortList sort(spherical_);
   complex<double>* data_start = intermediate_p;
   complex<double>* data_final = data_;
 
   for (int imul = 0; imul != nmul; ++imul) {
-    const int size_intermediate = asize_ * cont0_ * cont1_;
+    const int size_intermediate = asize * cont0_ * cont1_;
     complex<double>* intermediate_c = stack_->get<complex<double>>(size_intermediate);
-    perform_contraction(asize_, data_start, prim0_, prim1_, intermediate_c,
+    perform_contraction(asize, data_start, prim0_, prim1_, intermediate_c,
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
@@ -160,17 +183,23 @@ void MultipoleBatch::compute() {
       sort.sortfunc_call(sort_index, data_final, intermediate_fi, cont1_, cont0_, 1, swap01_);
     }
 
-    data_start += prim0_ * prim1_ * asize_;
+    data_start += prim0_ * prim1_ * asize;
     data_final += size_block_;
 
     stack_->release(size_final_car, intermediate_fi);
     stack_->release(size_intermediate, intermediate_c);
   } // end loop over multipoles
 
+#if 0
+  for (int i = 0; i != nmul; ++i) {
+    for (int j = 0; j != cont1_ * cont0_ * asize; ++j) {
+       const int k = i * size_block_ + j;
+       cout << setprecision(7) << data_[k] << endl;
+    }
+  }
+#endif
+
 
   // release resources
   stack_->release(size_start, intermediate_p);
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx);
 }
