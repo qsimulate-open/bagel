@@ -145,7 +145,7 @@ vector<shared_ptr<const ZMatrix>> JExpansion::compute(shared_ptr<const Matrix> d
   const int dimb3 = basisinfo_[2]->nbasis();
   const int dimb2 = basisinfo_[3]->nbasis();
   {
-    assert(density->mdim() == dimb3 && density->ndim() == dimb2);
+    assert(density->ndim() == dimb3 && density->mdim() == dimb2);
     MultipoleBatch mpole1(array<shared_ptr<const Shell>, 2>{{basisinfo_[2], basisinfo_[3]}}, centre1_, lmax_);
     mpole1.compute();
 
