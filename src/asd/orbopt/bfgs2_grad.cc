@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/asdscf/bfgs2.h> //TODO bfgs2->bfgs
+#include <src/asd/orbopt/bfgs2.h> //TODO bfgs2->bfgs
 
 using namespace std;
 using namespace bagel;

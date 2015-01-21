@@ -25,8 +25,9 @@
 
 
 #include <fstream>
-#include <src/asdscf/asdscf2.h>
-#include <src/casscf/qvec.h>
+#include <src/scf/hf/fock.h>
+#include <src/asd/orbopt/asdscf2.h>
+//#include <src/casscf/qvec.h>
 
 #include <src/wfn/construct_method.h>
 
@@ -44,7 +45,7 @@ ASDSCF2::ASDSCF2(std::shared_ptr<const PTree> idat, const shared_ptr<const Geome
 
     // Monomer HF
     auto mhfdat = idat->get_child_optional("hf") ? idat->get_child_optional("hf") : make_shared<PTree>();
-    shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", mhfdat, geom_, ref_));
+    shared_ptr<RHF> rhf = dynamic_pointer_cast<RHF>(construct_method("hf", mhfdat, geom_, ref_));
     rhf->compute();
     mref = rhf->conv_to_ref();
     // Dimerize from monomer

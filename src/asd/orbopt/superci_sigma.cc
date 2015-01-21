@@ -24,7 +24,7 @@
 //
 
 
-#include <src/asdscf/superci.h>
+#include <src/asd/orbopt/superci.h>
 
 using namespace std;
 using namespace bagel;

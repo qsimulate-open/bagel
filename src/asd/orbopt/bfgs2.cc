@@ -23,10 +23,11 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/asdscf/bfgs2.h> //TODO bfgs2->bfgs
-#include <src/math/davidson.h>
-#include <src/math/step_restrict_bfgs.h>
-#include <src/math/hpw_diis.h>
+#include <src/scf/hf/fock.h>
+#include <src/asd/orbopt/bfgs2.h> //TODO bfgs2->bfgs
+#include <src/util/math/davidson.h>
+#include <src/util/math/step_restrict_bfgs.h>
+#include <src/util/math/hpw_diis.h>
 
 #include <src/asd/construct_asd.h>
 

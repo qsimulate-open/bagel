@@ -1,5 +1,5 @@
-lib_LTLIBRARIES = libbagel_asdscf.la
-libbagel_asdscf_la_SOURCES = asdscf.cc \
+lib_LTLIBRARIES = libbagel_asd_orbopt.la
+libbagel_asd_orbopt_la_SOURCES = asdscf.cc \
                              superci.cc superci_sigma.cc supercimicro.cc \
                              bfgs.cc \
                              hybrid.cc \

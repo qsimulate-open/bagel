@@ -23,9 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/math/pairfile.h>
-#include <src/math/bfgs.h>
-#include <src/asdscf/supercimicro.h>
+#include <src/util/math/pairfile.h>
+#include <src/util/math/bfgs.h>
+#include <src/asd/orbopt/supercimicro.h>
 
 using namespace std;
 using namespace bagel;
