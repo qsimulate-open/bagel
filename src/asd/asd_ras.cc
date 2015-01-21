@@ -46,14 +46,132 @@ shared_ptr<RASDvec> ASD_RAS::form_sigma_1e(shared_ptr<const RASDvec> ccvec, cons
   return form(ccvec, modata);
 }
 
-std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer (std::pair<int,int> offset, std::array<RASDvec,4>& fourvecs) const {
-  std::cout << "ASD_RAS: compute_rdm12_monomer called" << std::endl;
-  assert(false);
-}
-
 std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>, std::shared_ptr<RDM<4>>> ASD_RAS::compute_rdm34_monomer (std::pair<int,int> offset, std::array<RASDvec,4>& fourvecs) const {
   std::cout << "ASD_RAS: compute_rdm34_monomer called" << std::endl;
   assert(false);
 }
 
 
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer (pair<int,int> offset, array<RASDvec,4>& fourvecs) const {
+  cout << "ASD_RAS: compute_rdm12_monomer called" << endl;
+  //based on asd_cas.cc(compute_rdm12_monomer)
+  //TODO: template this
+
+  //Dvec decomposition
+  auto& A  = fourvecs[0]; // <I'>
+  auto& Ap = fourvecs[1]; // |I>
+
+  auto& B  = fourvecs[2]; // <J'|
+  auto& Bp = fourvecs[3]; // |J>
+
+  //Offsets
+  const int ioff = std::get<0>(offset);
+  const int joff = std::get<1>(offset);
+
+  const int nactA = dimer_->active_refs().first->nact(); //dimer_ (ASD_base)
+  const int nactB = dimer_->active_refs().second->nact();
+
+  auto rdm1A = std::make_shared<RDM<1>>(nactA);
+  auto rdm2A = std::make_shared<RDM<2>>(nactA);
+  auto rdm1B = std::make_shared<RDM<1>>(nactB);
+  auto rdm2B = std::make_shared<RDM<2>>(nactB);
+
+  rdm1A->zero(); rdm2A->zero();
+  rdm1B->zero(); rdm2B->zero();
+  const int nstA  = A.ij();
+  const int nstAp = Ap.ij();
+  std::cout << "<I'| x |I> = " << nstA << " x " << nstAp << std::endl;
+
+  const int nstB  = B.ij();
+  const int nstBp = Bp.ij();
+  std::cout << "<J'| x |J> = " << nstA << " x " << nstAp << std::endl;
+
+  assert(nstA == nstB && nstAp == nstBp);
+
+  //currently, Diagonal subspace only
+  assert(nstA == nstAp);
+
+  //ground state only
+  //const int istate = 0;
+  
+  //MonomerA
+  for (int i = 0; i != nstA; ++i) {//<I'|
+    for (int ip = 0; ip != nstAp; ++ip) {// |I>
+  
+      shared_ptr<RDM<1>> r1;
+      shared_ptr<RDM<2>> r2;
+//    tie(r1,r2) = compute_rdm12_from_civec(A.data(i), Ap.data(ip)); // <I'|E(op)|I>
+
+      double csum = 0.0; //coeff sum
+      for (int j = 0; j != nstB; ++j) { // delta_J'J
+        const int ij  = i  + (j*nstA);
+        const int ijp = ip + (j*nstAp);
+        csum += adiabats_->element(ioff+ij,0) * adiabats_->element(joff+ijp,0);
+      } //I'I
+
+      r1->scale(csum);
+      *rdm1A += *r1;
+      r2->scale(csum);
+      *rdm2A += *r2;
+    } //|I>
+  } //<I'|
+  //MonomerB
+  for (int j = 0; j != nstB; ++j) {//<J'|
+    for (int jp = 0; jp != nstBp; ++jp) {// |J>
+  
+      shared_ptr<RDM<1>> r1;
+      shared_ptr<RDM<2>> r2;
+//    tie(r1,r2) = compute_rdm12_from_civec(B.data(j), Bp.data(jp)); // <J'|E(op)|J>
+
+      double csum = 0.0; //coeff sum
+      for (int i = 0; i != nstA; ++i) { // delta_I'I
+        const int ij  = i + (j*nstA);
+        const int ijp = i + (jp*nstAp);
+        csum += adiabats_->element(ioff+ij,0) * adiabats_->element(joff+ijp,0);
+      } //I'I
+
+      r1->scale(csum);
+      *rdm1B += *r1;
+      r2->scale(csum);
+      *rdm2B += *r2;
+    } //|J>
+  } //<J'|
+  //END NEW
+
+  auto out1 = std::make_shared<RDM<1>>(nactA+nactB);
+  out1->zero();
+  {
+    //Monomer A
+    auto low = {0,0};
+    auto up  = {nactA,nactA};
+    auto outv = make_rwview(out1->range().slice(low,up), out1->storage());
+    copy(rdm1A->begin(), rdm1A->end(), outv.begin());
+  }
+  {
+    //Monomer B
+    auto low = {nactA,nactA};
+    auto up  = {nactA+nactB,nactA+nactB};
+    auto outv = make_rwview(out1->range().slice(low,up), out1->storage());
+    copy(rdm1B->begin(), rdm1B->end(), outv.begin());
+  }
+  auto out2 = std::make_shared<RDM<2>>(nactA+nactB);
+  out2->zero();
+  {
+    //Monomer A
+    auto low = {0,0,0,0};
+    auto up  = {nactA,nactA,nactA,nactA};
+    auto outv = make_rwview(out2->range().slice(low,up), out2->storage());
+    copy(rdm2A->begin(), rdm2A->end(), outv.begin());
+  }
+  {
+    //Monomer B
+    auto low = {nactA,nactA,nactA,nactA};
+    auto up  = {nactA+nactB,nactA+nactB,nactA+nactB,nactA+nactB};
+    auto outv = make_rwview(out2->range().slice(low,up), out2->storage());
+    copy(rdm2B->begin(), rdm2B->end(), outv.begin());
+  }
+
+  return std::make_tuple(out1, out2);
+
+  assert(false);
+}

@@ -169,8 +169,8 @@ void Dimer::embed_refs() {
 
   shared_ptr<const Matrix> scoeff = sref_->coeff();
 
-  cout << "SCOEFF" << endl;
-  scoeff->print();
+  cout << "Super Coefficients : " << scoeff->ndim() << " x " << scoeff->mdim() << endl;
+  scoeff->print("C",scoeff->ndim());
 
   const int dimerbasis = sgeom_->nbasis();
 
