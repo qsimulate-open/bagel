@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/asd_base.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -489,7 +489,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,0,0>();
     auto int2 = make_shared<Matrix>(nactA*nactA*nactA*nactA,1);
-    SMITH::sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactA); //conver to chemist not.
+    sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactA); //conver to chemist not.
 
     auto low = {0,0,0,0};
     auto up  = {nactA,nactA,nactA,nactA};
@@ -504,7 +504,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,1,1>();
     auto int2 = make_shared<Matrix>(1,nactB*nactB*nactB*nactB);
-    SMITH::sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactB, nactB, nactB, nactB); //conver to chemist not.
+    sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactB, nactB, nactB, nactB); //conver to chemist not.
 
     auto low = {nactA,nactA,nactA,nactA};
     auto up  = {nactT,nactT,nactT,nactT};
@@ -520,7 +520,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,0,1>(); // <pq|rs'> in (pqr,s') format
     auto int2 = make_shared<Matrix>(nactA*nactA*nactA*nactB,1);
-    SMITH::sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not.
+    sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not.
     auto low = {    0,    0,    0,nactA};
     auto up  = {nactA,nactA,nactA,nactT};
     auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AAAB sector of d
@@ -534,7 +534,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,0,0>(); // <pq'|rs> in (prs,q') format 
     auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactA,1);
-    SMITH::sort_indices<0,1,3,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not. [ij|k'l]
+    sort_indices<0,1,3,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not. [ij|k'l]
 
     auto low = {    0,    0,nactA,    0};
     auto up  = {nactA,nactA,nactT,nactA};
@@ -549,7 +549,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,0,0>(); // <p'q|rs> in (qrs,p') format 
     auto int2 = make_shared<Matrix>(nactB,nactA*nactA*nactA);
-    SMITH::sort_indices<3,1,0,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not.
+    sort_indices<3,1,0,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not.
 
     auto low = {nactA,    0,    0,    0};
     auto up  = {nactT,nactA,nactA,nactA};
@@ -564,7 +564,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,1,0>(); // <pq|r's> in (pqs,r') format 
     auto int2 = make_shared<Matrix>(nactA*nactB*nactA*nactA,1);
-    SMITH::sort_indices<0,3,1,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not. [pr'|qs]=[ij'|kl]
+    sort_indices<0,3,1,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not. [pr'|qs]=[ij'|kl]
 
     auto low = {    0,nactA,    0,    0};
     auto up  = {nactA,nactT,nactA,nactA};
@@ -582,7 +582,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,1,1>(); // <pq'|r's'> in (p,q'r's') format 
     auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
-    SMITH::sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [pr'|q's']=[ij'|k'l']
+    sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [pr'|q's']=[ij'|k'l']
 
     auto low = {    0,nactA,nactA,nactA};
     auto up  = {nactA,nactT,nactT,nactT};
@@ -596,7 +596,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,0,1>(); // <p'q'|rs'> in (r,p'q's') format 
     auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
-    SMITH::sort_indices<1,0,2,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r|q's']=[i'j|k'l']
+    sort_indices<1,0,2,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r|q's']=[i'j|k'l']
 
     auto low = {nactA,    0,nactA,nactA};
     auto up  = {nactT,nactA,nactT,nactT};
@@ -610,7 +610,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,1,1>(); // <p'q|r's'> in (q,p'r's') format 
     auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
-    SMITH::sort_indices<1,2,0,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r'|qs']=[i'j'|kl']
+    sort_indices<1,2,0,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r'|qs']=[i'j'|kl']
 
     auto low = {nactA,nactA,    0,nactA};
     auto up  = {nactT,nactT,nactA,nactT};
@@ -624,7 +624,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,1,0>(); // <p'q'|r's> in (s,p'q'r') format 
     auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
-    SMITH::sort_indices<1,3,2,0, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r'|q's]=[i'j'|k'l]
+    sort_indices<1,3,2,0, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r'|q's]=[i'j'|k'l]
 
     auto low = {nactA,nactA,nactA,    0};
     auto up  = {nactT,nactT,nactT,nactA};
@@ -640,7 +640,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,0,1>(); // <pq'|rs'> in (pr,q's') format 
     auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
-    SMITH::sort_indices<0,1,2,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr|q's']=[ij|k'l']
+    sort_indices<0,1,2,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr|q's']=[ij|k'l']
 
     auto low = {    0,    0,nactA,nactA};
     auto up  = {nactA,nactA,nactT,nactT};
@@ -654,7 +654,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,1,0>(); // <p'q|r's> in (qs,p'r') format 
     auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
-    SMITH::sort_indices<2,3,0,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r'|qs]=[i'j'|kl]
+    sort_indices<2,3,0,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r'|qs]=[i'j'|kl]
 
     auto low = {nactA,nactA,    0,    0};
     auto up  = {nactT,nactT,nactA,nactA};
@@ -669,7 +669,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,1,1>(); // <pq|r's'> in (pq,r's') format 
     auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
-    SMITH::sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr'|qs']=[ij'|kl']
+    sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr'|qs']=[ij'|kl']
 
     auto low = {    0,nactA,    0,nactA};
     auto up  = {nactA,nactT,nactA,nactT};
@@ -683,7 +683,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,0,0>(); // <p'q'|rs> in (rs,p'q') format 
     auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
-    SMITH::sort_indices<2,0,3,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r|q's]=[i'j|k'l]
+    sort_indices<2,0,3,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r|q's]=[i'j|k'l]
 
     auto low = {nactA,    0,nactA,    0};
     auto up  = {nactT,nactA,nactT,nactA};
@@ -698,7 +698,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,1,0>(); // <pq'|r's> in (ps,q'r') format 
     auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
-    SMITH::sort_indices<0,3,2,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr'|q's]=[ij'|k'l]
+    sort_indices<0,3,2,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr'|q's]=[ij'|k'l]
 
     auto low = {    0,nactA,nactA,    0};
     auto up  = {nactA,nactT,nactT,nactA};
@@ -712,7 +712,7 @@ ASD_base::debug_energy() const {
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,0,1>(); // <p'q|rs'> in (qr,p's') format 
     auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
-    SMITH::sort_indices<2,1,0,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r|qs']=[i'j|kl']
+    sort_indices<2,1,0,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r|qs']=[i'j|kl']
 
     auto low = {nactA,    0,    0,nactA};
     auto up  = {nactT,nactA,nactA,nactT};

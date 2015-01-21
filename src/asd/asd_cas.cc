@@ -27,7 +27,7 @@
 #include <src/ci/fci/hztasks.h>
 #include <src/ci/fci/prop1etask.h>
 
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -415,7 +415,7 @@ ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<cons
     dgemm_("T", "N", ebra->ij(), dket->ij(), nri, 1.0, ebra->data(), nri, dket->data(), nri, 0.0, tmp3->data(), ebra->ij());
   
     //reorder oprators, note p25
-    SMITH::sort_indices<1,0,3,2,4,5, 0,1,1,1>(tmp3->data(), rdm3->data(), norb, norb, norb, norb, norb, norb);
+    sort_indices<1,0,3,2,4,5, 0,1,1,1>(tmp3->data(), rdm3->data(), norb, norb, norb, norb, norb, norb);
 
     // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
     for (int n = 0; n != norb; ++n) 
@@ -435,7 +435,7 @@ ASD_CAS::compute_rdm34_from_civec (shared_ptr<const Civec> cbra, shared_ptr<cons
     auto tmp4 = make_shared<RDM<4>>(norb);
     dgemm_("T", "N", ebra->ij(), eket->ij(), nri, 1.0, ebra->data(), nri, eket->data(), nri, 0.0, tmp4->data(), ebra->ij());
     //reorder, cf. 3RDM
-    SMITH::sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(tmp4->data(), rdm4->data(), norb, norb, norb, norb, norb, norb, norb, norb);
+    sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(tmp4->data(), rdm4->data(), norb, norb, norb, norb, norb, norb, norb, norb);
 
     for (int l = 0; l != norb; ++l)
       for (int d = 0; d != norb; ++d)

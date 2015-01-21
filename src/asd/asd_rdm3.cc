@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/asd_base.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 #include <cmath>
 
 using namespace std;
@@ -238,27 +238,27 @@ ASD_base::compute_diag_RDM34(const array<MonomerKey,4>& keys, const bool subdia)
       auto rdmt = rdmA_a->clone();
       // E_a'i',bj,ck
       //                  a i b j c k                                                                                       original order: cbjk|ai
-      SMITH::sort_indices<4,5,1,2,0,3, 0,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'a'aa|a'a
-      SMITH::sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|a'a
-      SMITH::sort_indices<4,5,0,3,1,2, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a    bckj|ai
-      SMITH::sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'b'bb|a'a
+      sort_indices<4,5,1,2,0,3, 0,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'a'aa|a'a
+      sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|a'a
+      sort_indices<4,5,0,3,1,2, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a    bckj|ai
+      sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'b'bb|a'a
       
-      SMITH::sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmB_a->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //a'a'aa|b'b
-      SMITH::sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
-      SMITH::sort_indices<4,5,0,3,1,2, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|b'b    bckj|ai
-      SMITH::sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmB_b->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //b'b'bb|b'b
+      sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmB_a->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //a'a'aa|b'b
+      sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
+      sort_indices<4,5,0,3,1,2, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|b'b    bckj|ai
+      sort_indices<4,5,1,2,0,3, 1,1,  1,1>(rdmB_b->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //b'b'bb|b'b
       
       if (!subdia) { // <M|op|N> contribution k'j'bc|i'a
         //                  a i b j c k                                                                                       original order: kjbc|ia
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'a'aa|a'a
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|a'a
-        SMITH::sort_indices<5,4,3,0,2,1, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a    jkcb
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'b'bb|a'a
+        sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'a'aa|a'a
+        sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|a'a
+        sort_indices<5,4,3,0,2,1, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a    jkcb
+        sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'b'bb|a'a
 
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmB_a->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'a'aa|b'b
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
-        SMITH::sort_indices<5,4,3,0,2,1, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|b'b    jkcb
-        SMITH::sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'b'bb|b'b
+        sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmB_a->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'a'aa|b'b
+        sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
+        sort_indices<5,4,3,0,2,1, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|b'b    jkcb
+        sort_indices<5,4,2,1,3,0, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'b'bb|b'b
       }
       
       auto low = {nactA, nactA,     0,     0,     0,     0};
@@ -271,19 +271,19 @@ ASD_base::compute_diag_RDM34(const array<MonomerKey,4>& keys, const bool subdia)
       auto rdmt = rdmA_a->clone();
       // E_a'i,bj',ck (sign: -1)  
       //                  a i b j c k                                                                                       original order : cbik|aj
-      SMITH::sort_indices<4,2,1,5,0,3, 0,1, -1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'a'aa|a'a
-      SMITH::sort_indices<4,3,0,5,1,2, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a     bcki|aj
+      sort_indices<4,2,1,5,0,3, 0,1, -1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'a'aa|a'a
+      sort_indices<4,3,0,5,1,2, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a     bcki|aj
       
-      SMITH::sort_indices<4,2,1,5,0,3, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
-      SMITH::sort_indices<4,2,1,5,0,3, 1,1, -1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'b'bb|b'b
+      sort_indices<4,2,1,5,0,3, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
+      sort_indices<4,2,1,5,0,3, 1,1, -1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'b'bb|b'b
       
       if (!subdia) { // <M|op|N> contribution k'i'bc|j'a
         //                  a i b j c k                                                                                       original order : kibc|ja
-        SMITH::sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdmA_a->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //a'a'aa|a'a
-        SMITH::sort_indices<5,0,3,4,2,1, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a     ikcb
+        sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdmA_a->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //a'a'aa|a'a
+        sort_indices<5,0,3,4,2,1, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //b'a'ab|a'a     ikcb
         
-        SMITH::sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
-        SMITH::sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdmB_b->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //b'b'bb|b'b
+        sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); //a'b'ba|b'b
+        sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdmB_b->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB);  //b'b'bb|b'b
       }
       //          a     i     b     j     c     k 
       auto low = {nactA,    0,    0,nactA,    0,    0};
@@ -311,27 +311,27 @@ ASD_base::compute_diag_RDM34(const array<MonomerKey,4>& keys, const bool subdia)
       auto rdmt = rdmA_a->clone();
       // E_a'i',b'j',ck   (sign: +1)
       //                  a i b j c k                                                                                       original order: ck|baij
-      SMITH::sort_indices<3,4,2,5,0,1, 0,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
-      SMITH::sort_indices<3,4,2,5,0,1, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'b'ba
-      SMITH::sort_indices<2,5,3,4,0,1, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'a'ab    ck|abji
-      SMITH::sort_indices<3,4,2,5,0,1, 1,1,  1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'b'bb
+      sort_indices<3,4,2,5,0,1, 0,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
+      sort_indices<3,4,2,5,0,1, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'b'ba
+      sort_indices<2,5,3,4,0,1, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'a'ab    ck|abji
+      sort_indices<3,4,2,5,0,1, 1,1,  1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'b'bb
 
-      SMITH::sort_indices<3,4,2,5,0,1, 1,1,  1,1>(rdmB_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'a'aa
-      SMITH::sort_indices<3,4,2,5,0,1, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'b'ba
-      SMITH::sort_indices<2,5,3,4,0,1, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'a'ab    ck|abji
-      SMITH::sort_indices<3,4,2,5,0,1, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
+      sort_indices<3,4,2,5,0,1, 1,1,  1,1>(rdmB_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'a'aa
+      sort_indices<3,4,2,5,0,1, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'b'ba
+      sort_indices<2,5,3,4,0,1, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'a'ab    ck|abji
+      sort_indices<3,4,2,5,0,1, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
       
       if (!subdia) {
         //                  a i b j c k                                                                                       original order: kc|jiab
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'b'ba
-        SMITH::sort_indices<5,2,4,3,1,0, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'a'ab    kc|ijba
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'b'bb
+        sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
+        sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'b'ba
+        sort_indices<5,2,4,3,1,0, 1,1,  1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'a'ab    kc|ijba
+        sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmA_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'b'bb
         
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmB_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'a'aa  
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'b'ba
-        SMITH::sort_indices<5,2,4,3,1,0, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'a'ab    kc|ijba
-        SMITH::sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
+        sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmB_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'a'aa  
+        sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'b'ba
+        sort_indices<5,2,4,3,1,0, 1,1,  1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'a'ab    kc|ijba
+        sort_indices<4,3,5,2,1,0, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
       }
       
       auto low = {nactA, nactA, nactA, nactA,     0,     0};
@@ -343,19 +343,19 @@ ASD_base::compute_diag_RDM34(const array<MonomerKey,4>& keys, const bool subdia)
       auto rdmt = rdmA_a->clone();
       // E_a'i,b'j',ck'   (sign:+1)
       //                  a i b j c k                                                                                       original order: ci|bajk
-      SMITH::sort_indices<3,1,2,4,0,5, 0,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
-      SMITH::sort_indices<2,1,3,4,0,5, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'a'ba   -ci|abjk
+      sort_indices<3,1,2,4,0,5, 0,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
+      sort_indices<2,1,3,4,0,5, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|b'a'ba   -ci|abjk
                                                                                                                                    
-      SMITH::sort_indices<3,1,2,5,0,4, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'b'ab   -ci|bakj
-      SMITH::sort_indices<3,1,2,4,0,5, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
+      sort_indices<3,1,2,5,0,4, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|a'b'ab   -ci|bakj
+      sort_indices<3,1,2,4,0,5, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
       
       if (!subdia) {
         //                  a i b j c k                                                                                       original order: ic|kjab
-        SMITH::sort_indices<4,0,5,3,1,2, 1,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
-        SMITH::sort_indices<5,0,4,3,1,2, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'b'ab   -ic|kjba
+        sort_indices<4,0,5,3,1,2, 1,1,  1,1>(rdmA_a->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'a'aa
+        sort_indices<5,0,4,3,1,2, 1,1, -1,1>(rdmA_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //a'a|a'b'ab   -ic|kjba
                                                                                                                                      
-        SMITH::sort_indices<4,0,5,2,1,3, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'a'ba   -ic|jkab
-        SMITH::sort_indices<4,0,5,3,1,2, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
+        sort_indices<4,0,5,2,1,3, 1,1, -1,1>(rdmB_ab->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'a'ba   -ic|jkab
+        sort_indices<4,0,5,3,1,2, 1,1,  1,1>(rdmB_b->data(),  rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); //b'b|b'b'bb
       }
       //          a     i     b     j     c     k     
       auto low = {nactA,    0,nactA,nactA,    0,nactA};
@@ -418,10 +418,10 @@ ASD_base::compute_aET_RDM34(const array<MonomerKey,4>& keys) const {
     // E_ai,bj,ck'          even  odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     //                  a i b j c k                                                                                    original order: cbaij|k
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); // a'a'a'aa|a
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); // a'b'a'ab|a
-    SMITH::sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); // a'a'b'ba|a   cabji|k
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); // a'b'b'bb|a
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); // a'a'a'aa|a
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); // a'b'a'ab|a
+    sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); // a'a'b'ba|a   cabji|k
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); // a'b'b'bb|a
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
@@ -449,9 +449,9 @@ ASD_base::compute_aET_RDM34(const array<MonomerKey,4>& keys) const {
     { // E_a'i,bj',ck'         even odd
       int fac = {neleA%2 == 0 ? -1 : 1};
       //                  a i b j c k                                                                                    original order: cbi|ajk
-      SMITH::sort_indices<3,2,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a|a'aa  
-      SMITH::sort_indices<3,2,1,5,0,4, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'b|b'ba  -cbi|akj
-      SMITH::sort_indices<3,2,0,4,1,5, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b|b'ab  -bci|ajk
+      sort_indices<3,2,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a|a'aa  
+      sort_indices<3,2,1,5,0,4, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'b|b'ba  -cbi|akj
+      sort_indices<3,2,0,4,1,5, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b|b'ab  -bci|ajk
       rdmt->scale(fac);
       cout << "rearranged" << endl; cout.flush();
       
@@ -464,10 +464,10 @@ ASD_base::compute_aET_RDM34(const array<MonomerKey,4>& keys) const {
     { // E_a'i',bj',ck         even odd
       int fac = {neleA%2 == 0 ? -1 : 1};
       //                  a i b j c k                                                                                    original order: cbk|aij
-      SMITH::sort_indices<3,4,1,5,0,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a|a'aa
-      SMITH::sort_indices<3,4,0,5,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b|a'aa  -bck|aij
-      SMITH::sort_indices<3,5,1,4,0,2, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a|b'ba  -cbk|aji
-      SMITH::sort_indices<3,5,0,4,1,2, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b|b'ba   bck|aji
+      sort_indices<3,4,1,5,0,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a|a'aa
+      sort_indices<3,4,0,5,1,2, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b|a'aa  -bck|aij
+      sort_indices<3,5,1,4,0,2, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'a|b'ba  -cbk|aji
+      sort_indices<3,5,0,4,1,2, 1,1,  1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b|b'ba   bck|aji
       rdmt->scale(fac);
       cout << "rearranged" << endl; cout.flush();
       
@@ -495,10 +495,10 @@ ASD_base::compute_aET_RDM34(const array<MonomerKey,4>& keys) const {
     // E_a'i',b'j',ck'       even odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     //                  a i b j c k                                                                                    original order: c|baijk
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|a'a'aaa 
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|a'b'baa
-    SMITH::sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|b'a'aba   c|abjik
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|b'b'bba
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|a'a'aaa 
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|a'b'baa
+    sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|b'a'aba   c|abjik
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|b'b'bba
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
@@ -547,10 +547,10 @@ ASD_base::compute_bET_RDM34(const array<MonomerKey,4>& keys) const {
     // E_ai,bj,ck'           even odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     //                  a i b j c k                                                                                    original order: cbaij|k 
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); //b'a'a'aa|b
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); //b'b'a'ab|b
-    SMITH::sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); //b'a'b'ba|b    cabji|k
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); //b'b'b'bb|b
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); //b'a'a'aa|b
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); //b'b'a'ab|b
+    sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); //b'a'b'ba|b    cabji|k
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactA, nactB); //b'b'b'bb|b
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
@@ -578,9 +578,9 @@ ASD_base::compute_bET_RDM34(const array<MonomerKey,4>& keys) const {
     { // E_a'i,bj',ck'          even odd
       int fac = {neleA%2 == 0 ? -1 : 1};
       //                  a i b j c k                                                                                       original order: cbi|ajk
-      SMITH::sort_indices<3,2,1,5,0,4, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a|a'ab     -     kj
-      SMITH::sort_indices<3,2,0,4,1,5, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'a|a'ba     -bc
-      SMITH::sort_indices<3,2,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'b'b|b'bb
+      sort_indices<3,2,1,5,0,4, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a|a'ab     -     kj
+      sort_indices<3,2,0,4,1,5, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'a|a'ba     -bc
+      sort_indices<3,2,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'b'b|b'bb
       rdmt->scale(fac);
       cout << "rearranged" << endl; cout.flush();
       
@@ -593,10 +593,10 @@ ASD_base::compute_bET_RDM34(const array<MonomerKey,4>& keys) const {
     { // E_a'i',bj',ck         even odd
       int fac = {neleA%2 == 0 ? -1 : 1};
       //                  a i b j c k                                                                                    original order: cbk|aij
-      SMITH::sort_indices<3,5,0,4,1,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); //a'b'a|a'ab    bc   ji
-      SMITH::sort_indices<3,4,1,5,0,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); //b'b'b|b'bb
-      SMITH::sort_indices<3,4,0,5,1,2, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); //a'b'a|b'bb   -bc
-      SMITH::sort_indices<3,5,1,4,0,2, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); //b'b'b|a'ab   -     ji
+      sort_indices<3,5,0,4,1,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); //a'b'a|a'ab    bc   ji
+      sort_indices<3,4,1,5,0,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); //b'b'b|b'bb
+      sort_indices<3,4,0,5,1,2, 1,1, -1,1>(rdm3->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); //a'b'a|b'bb   -bc
+      sort_indices<3,5,1,4,0,2, 1,1, -1,1>(rdm4->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); //b'b'b|a'ab   -     ji
       rdmt->scale(fac);
       cout << "rearranged" << endl; cout.flush();
       
@@ -623,10 +623,10 @@ ASD_base::compute_bET_RDM34(const array<MonomerKey,4>& keys) const {
     // E_a'i',b'j',ck'       even odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     //                  a i b j c k                                                                                       original order: c|baijk
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|a'a'aaa
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|a'b'baa
-    SMITH::sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|b'a'aba        abji
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|b'b'bba
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|a'a'aaa
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|a'b'baa
+    sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|b'a'aba        abji
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm3->data(), rdmt->data(), nactA, nactB, nactB, nactB, nactB, nactB); // a'|b'b'bba
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
     //          a      i      b      j      c      k
@@ -672,11 +672,11 @@ ASD_base::compute_abFlip_RDM34(const array<MonomerKey,4>& keys) const {
 
     // E_a'i,bj',ck (sign: -1)
     //                  a i b j c k                                                                                       original order: cbik|aj
-    SMITH::sort_indices<4,2,1,5,0,3, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'b'aa|a'b
-    SMITH::sort_indices<4,2,1,5,0,3, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'b'ab|a'b
+    sort_indices<4,2,1,5,0,3, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'b'aa|a'b
+    sort_indices<4,2,1,5,0,3, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'b'ab|a'b
     //(N,M) contribution                                                                                                  original order: kibc|ji
-    SMITH::sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'b'aa|a'b 
-    SMITH::sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'b'ab|a'b 
+    sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'b'aa|a'b 
+    sort_indices<5,1,2,4,3,0, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'b'ab|a'b 
     cout << "rearranged" << endl; cout.flush();
     //          a      i      b      j      c      k
     auto low = {nactA,     0,     0, nactA,     0,     0};
@@ -699,11 +699,11 @@ ASD_base::compute_abFlip_RDM34(const array<MonomerKey,4>& keys) const {
 
     // E_a'i,b'j',ck' (sign: +1)
     //                  a i b j c k                                                                                       original order: ci|bajk
-    SMITH::sort_indices<3,1,2,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a|a'a'ab
-    SMITH::sort_indices<3,1,2,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a|b'a'bb
+    sort_indices<3,1,2,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a|a'a'ab
+    sort_indices<3,1,2,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a|b'a'bb
     //(N,M) contribution                                                                                                  original order: ic|kjab
-    SMITH::sort_indices<5,0,4,3,1,2, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a|a'a'ba           ba     
-    SMITH::sort_indices<4,0,5,2,1,3, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a|a'b'bb         jk
+    sort_indices<5,0,4,3,1,2, 1,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a|a'a'ba           ba     
+    sort_indices<4,0,5,2,1,3, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a|a'b'bb         jk
     cout << "rearranged" << endl; cout.flush();
     //          a      i      b      j      c      k
     auto low = {nactA,     0, nactA, nactA,     0, nactA};
@@ -748,10 +748,10 @@ ASD_base::compute_abET_RDM34(const array<MonomerKey,4>& keys) const {
 
     // E_ai,bj',ck' (sign: +1)
     //                  a i b j c k                                                                                       original order: cbai|jk
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'a|ab
-    SMITH::sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'a|ba      bc  |kj
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'b|ab
-    SMITH::sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'b|ba      bc  |kj
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'a'a'a|ab
+    sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'b'a'a|ba      bc  |kj
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'a'b'b|ab
+    sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'b'b'b|ba      bc  |kj
     cout << "rearranged" << endl; cout.flush();
 
     auto low = {    0,     0,     0, nactA,     0, nactA};
@@ -774,10 +774,10 @@ ASD_base::compute_abET_RDM34(const array<MonomerKey,4>& keys) const {
 
     // E_a'i',bj',ck' (sign: +1)
     //                  a i b j c k                                                                                       original order: cb|aijk
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // a'b'|a'aba
-    SMITH::sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a'|a'aab      bc|  kj
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // a'b'|b'bba
-    SMITH::sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a'|b'bab      bc|  kj
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // a'b'|a'aba
+    sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a'|a'aab      bc|  kj
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // a'b'|b'bba
+    sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'a'|b'bab      bc|  kj
     cout << "rearranged" << endl; cout.flush();
 
     auto low = {nactA, nactA,     0, nactA,     0, nactA};
@@ -822,8 +822,8 @@ ASD_base::compute_aaET_RDM34(const array<MonomerKey,4>& keys) const {
 
     // E_ai,bj',ck' (sign: +1)
     //                  a i b j c k                                                                                       original order: cbai|jk
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'a|aa
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'b|aa
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'a'a'a|aa
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // a'a'b'b|aa
     cout << "rearranged" << endl; cout.flush();
 
     auto low = {    0,     0,     0, nactA,     0, nactA};
@@ -846,8 +846,8 @@ ASD_base::compute_aaET_RDM34(const array<MonomerKey,4>& keys) const {
 
     // E_a'i',bj',ck' (sign: +1)
     //                  a i b j c k                                                                                       original order: cb|aijk
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // a'a'|a'aaa
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // a'a'|b'baa
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // a'a'|a'aaa
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // a'a'|b'baa
     cout << "rearranged" << endl; cout.flush();
 
     auto low = {nactA, nactA,     0, nactA,     0, nactA};
@@ -892,8 +892,8 @@ ASD_base::compute_bbET_RDM34(const array<MonomerKey,4>& keys) const {
 
     // E_ai,bj',ck' (sign: +1)
     //                  a i b j c k                                                                                       original order: cbai|jk
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'a|bb
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'b|bb
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'b'a'a|bb
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactA, nactB, nactB); // b'b'b'b|bb
     cout << "rearranged" << endl; cout.flush();
 
     auto low = {    0,     0,     0, nactA,     0, nactA};
@@ -916,8 +916,8 @@ ASD_base::compute_bbET_RDM34(const array<MonomerKey,4>& keys) const {
 
     // E_a'i',bj',ck' (sign:+1)
     //                  a i b j c k                                                                                       original order: cb|aijk
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'b'|a'abb
-    SMITH::sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'b'|b'bbb
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'b'|a'abb
+    sort_indices<2,3,1,4,0,5, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactB, nactB, nactB, nactB); // b'b'|b'bbb
     cout << "rearranged" << endl; cout.flush();
 
     auto low = {nactA, nactA,     0, nactA,     0, nactA};
@@ -962,7 +962,7 @@ ASD_base::compute_aaaET_RDM34(const array<MonomerKey,4>& keys) const {
 
     // E_ai',bj',ck'        even  odd
     int fac = {neleA%2 == 0 ? 1 : -1};
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
     //          a      i      b      j     c     k
@@ -1007,7 +1007,7 @@ ASD_base::compute_bbbET_RDM34(const array<MonomerKey,4>& keys) const {
     // E_ai',bj',ck'         even odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     //                  a i b j c k 
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB);
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
     //          a     i     b     j     c     k
@@ -1052,9 +1052,9 @@ ASD_base::compute_aabET_RDM34(const array<MonomerKey,4>& keys) const {
     // E_ai',bj',ck'        even  odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     //                  a i b j c k                                                                                    original order  (cba|ijk)
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'a'|aba
-    SMITH::sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a'|aab    bc   kj  
-    SMITH::sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'b'|baa     ab|ji 
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'a'|aba
+    sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'a'|aab    bc   kj  
+    sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'b'|baa     ab|ji 
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
     //          a     i     b     j     c     k
@@ -1099,9 +1099,9 @@ ASD_base::compute_abbET_RDM34(const array<MonomerKey,4>& keys) const {
     // E_ai',bj',ck'        even  odd
     int fac = {neleA%2 == 0 ? 1 : -1};
     //                  a i b j c k                                                                                    original order  (cba|ijk)
-    SMITH::sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b'|bab  
-    SMITH::sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'b'|bba    bc   kj
-    SMITH::sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'b'a'|abb     ab|ji
+    sort_indices<2,3,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'a'b'|bab  
+    sort_indices<2,3,0,5,1,4, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'b'b'|bba    bc   kj
+    sort_indices<1,4,2,3,0,5, 1,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'b'a'|abb     ab|ji
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
     //          a     i     b     j     c     k
@@ -1146,7 +1146,7 @@ ASD_base::compute_aETFlip_RDM34(const array<MonomerKey,4>& keys) const {
     // E_a'i,bj',ck'         even odd
     int fac = {neleA%2 == 0 ? -1 : 1};
     //                  a i b j c k                                                                                       original order: cbi|ajk
-    SMITH::sort_indices<3,2,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'b|b'aa
+    sort_indices<3,2,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // a'a'b|b'aa
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
@@ -1191,7 +1191,7 @@ ASD_base::compute_bETFlip_RDM34(const array<MonomerKey,4>& keys) const {
     // E_a'i,bj',ck'         even  odd
     int fac = {neleA%2 == 0 ? -1 : 1};
     //                  a i b j c k                                                                                       original order: cbi|ajk
-    SMITH::sort_indices<3,2,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'b'a|a'bb
+    sort_indices<3,2,1,4,0,5, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB, nactB, nactB); // b'b'a|a'bb
     rdmt->scale(fac);
     cout << "rearranged" << endl; cout.flush();
 
@@ -1260,7 +1260,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(a,a,a,B,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,5),nactB);
       //                  a i c k b j                                           unsorted dimensions
-      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
+      sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
       auto low = {    0,    0,    0,nactA,    0,    0};
       auto up  = {nactA,nactA,nactA,nactT,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1269,7 +1269,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //3.E(a,B,a,a,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,5),nactB);
       //                  c k a i b j                                           unsorted dimensions
-      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
+      sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
       auto low = {    0,nactA,    0,    0,    0,    0};
       auto up  = {nactA,nactT,nactA,nactA,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1278,7 +1278,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //4.E(a,a,a,a,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,5),nactB);
       //                  i a j b k c                                           unsorted dimensions
-      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
+      sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
       auto low = {    0,    0,    0,    0,nactA,    0};
       auto up  = {nactA,nactA,nactA,nactA,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1287,7 +1287,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //5.E(a,a,B,a,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,5),nactB);
       //                  i a k c j b                                           unsorted dimensions
-      SMITH::sort_indices<1,0,5,4,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
+      sort_indices<1,0,5,4,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
       auto low = {    0,    0,nactA,    0,    0,    0};
       auto up  = {nactA,nactA,nactT,nactA,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1296,7 +1296,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //6.E(B,a,a,a,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,5),nactB);
       //                  k c i a j b                                           unsorted dimensions
-      SMITH::sort_indices<5,4,1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
+      sort_indices<5,4,1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactA, nactA, nactB); 
       auto low = {nactA,    0,    0,    0,    0,    0};
       auto up  = {nactT,nactA,nactA,nactA,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1314,7 +1314,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(a,B,a,a,a,B)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  b j a i c k                                           unsorted dimensions
-      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
+      sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
       auto low = {    0,nactA,    0,    0,    0,nactA};
       auto up  = {nactA,nactT,nactA,nactA,nactA,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1323,7 +1323,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //3.E(a,B,a,B,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  b j c k a i                                           unsorted dimensions
-      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
+      sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
       auto low = {    0,nactA,    0,nactA,    0,    0};
       auto up  = {nactA,nactT,nactA,nactT,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1332,7 +1332,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //4.E(a,a,B,a,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  i a j b k c                                           unsorted dimensions
-      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
+      sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
       auto low = {    0,    0,nactA,    0,nactA,    0};
       auto up  = {nactA,nactA,nactT,nactA,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1341,7 +1341,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //5.E(B,a,a,a,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  j b i a k c                                           unsorted dimensions
-      SMITH::sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
+      sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
       auto low = {nactA,    0,    0,    0,nactA,    0};
       auto up  = {nactT,nactA,nactA,nactA,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1350,7 +1350,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //6.E(B,a,B,a,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  j b k c i a                                           unsorted dimensions
-      SMITH::sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
+      sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactA, nactA, nactB, nactA, nactB); 
       auto low = {nactA,    0,nactA,    0,    0,    0};
       auto up  = {nactT,nactA,nactT,nactA,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1368,7 +1368,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(B,a,a,a,a,B)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  a i c k b j                                           unsorted dimensions
-      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
+      sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
       auto low = {nactA,    0,    0,    0,    0,nactA};
       auto up  = {nactT,nactA,nactA,nactA,nactA,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1377,7 +1377,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //3.E(a,B,B,a,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  b j a i c k                                           unsorted dimensions
-      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
+      sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
       auto low = {    0,nactA,nactA,    0,    0,    0};
       auto up  = {nactA,nactT,nactT,nactA,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1386,7 +1386,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //4.E(a,B,a,a,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  b j c k a i                                           unsorted dimensions
-      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
+      sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
       auto low = {    0,nactA,    0,    0,nactA,    0};
       auto up  = {nactA,nactT,nactA,nactA,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1395,7 +1395,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //5.E(a,a,a,B,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  c k b j a i                                           unsorted dimensions
-      SMITH::sort_indices<4,5,2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
+      sort_indices<4,5,2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
       auto low = {    0,    0,    0,nactA,nactA,    0};
       auto up  = {nactA,nactA,nactA,nactT,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1404,7 +1404,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //6.E(a,a,B,a,a,B)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  c k a i b j                                           unsorted dimensions
-      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
+      sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactA); 
       auto low = {    0,    0,nactA,    0,    0,nactA};
       auto up  = {nactA,nactA,nactT,nactA,nactA,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1422,7 +1422,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //1.E(a,a,B,B,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  b j a i c k                                           unsorted dimensions
-      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactA, nactA, nactA); 
+      sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactA, nactA, nactA); 
       auto low = {    0,    0,nactA,nactA,    0,    0};
       auto up  = {nactA,nactA,nactT,nactT,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1431,7 +1431,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(a,a,a,a,B,B)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  b j c k a i                                           unsorted dimensions
-      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactA, nactA, nactA); 
+      sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactA, nactA, nactA); 
       auto low = {    0,    0,    0,    0,nactA,nactA};
       auto up  = {nactA,nactA,nactA,nactA,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1449,7 +1449,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(B,a,B,a,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  i a j b k c                                           unsorted dimensions
-      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactB, nactA, nactB); 
+      sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactB, nactA, nactB); 
       auto low = {nactA,    0,nactA,    0,nactA,    0};
       auto up  = {nactT,nactA,nactT,nactA,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1467,7 +1467,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(B,B,a,a,a,B)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  a i c k b j                                           unsorted dimensions
-      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {nactA,nactA,    0,    0,    0,nactA};
       auto up  = {nactT,nactT,nactA,nactA,nactA,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1476,7 +1476,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //3.E(a,B,B,B,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  b j a i c k                                           unsorted dimensions
-      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {    0,nactA,nactA,nactA,    0,    0};
       auto up  = {nactA,nactT,nactT,nactT,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1485,7 +1485,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //4.E(a,B,a,a,B,B)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  b j c k a i                                           unsorted dimensions
-      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {    0,nactA,    0,    0,nactA,nactA};
       auto up  = {nactA,nactT,nactA,nactA,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1494,7 +1494,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //5.E(a,a,a,B,B,B)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  c k b j a i                                           unsorted dimensions
-      SMITH::sort_indices<4,5,2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<4,5,2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {    0,    0,    0,nactA,nactA,nactA};
       auto up  = {nactA,nactA,nactA,nactT,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1503,7 +1503,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //6.E(a,a,B,B,a,B)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  c k a i b j                                           unsorted dimensions
-      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {    0,    0,nactA,nactA,    0,nactA};
       auto up  = {nactA,nactA,nactT,nactT,nactA,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1512,7 +1512,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //7.E(B,B,B,a,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  i a j b k c                                           unsorted dimensions
-      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {nactA,nactA,nactA,    0,    0,    0};
       auto up  = {nactT,nactT,nactT,nactA,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1521,7 +1521,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //8.E(B,B,a,a,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  i a k c j b                                           unsorted dimensions
-      SMITH::sort_indices<1,0,5,4,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<1,0,5,4,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {nactA,nactA,    0,    0,nactA,    0};
       auto up  = {nactT,nactT,nactA,nactA,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1530,7 +1530,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //9.E(B,a,B,B,a,a)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  j b i a k c                                           unsorted dimensions
-      SMITH::sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {nactA,    0,nactA,nactA,    0,    0};
       auto up  = {nactT,nactA,nactT,nactT,nactA,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1539,7 +1539,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //10.E(B,a,a,a,B,B)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  j b k c i a                                           unsorted dimensions
-      SMITH::sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {nactA,    0,    0,    0,nactA,nactA};
       auto up  = {nactT,nactA,nactA,nactA,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1548,7 +1548,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //11.E(a,a,B,B,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  k c i a j b                                           unsorted dimensions
-      SMITH::sort_indices<5,4,1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<5,4,1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {    0,    0,nactA,nactA,nactA,    0};
       auto up  = {nactA,nactA,nactT,nactT,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1557,7 +1557,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //12.E(a,a,B,a,B,B)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  k c j b i a                                           unsorted dimensions
-      SMITH::sort_indices<5,4,3,2,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
+      sort_indices<5,4,3,2,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactA); 
       auto low = {    0,    0,nactA,    0,nactA,nactA};
       auto up  = {nactA,nactA,nactT,nactA,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1575,7 +1575,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(a,B,B,a,a,B)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  b j a i c k                                           unsorted dimensions
-      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
+      sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
       auto low = {    0,nactA,nactA,    0,    0,nactA};
       auto up  = {nactA,nactT,nactT,nactA,nactA,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1584,7 +1584,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //3.E(a,B,a,B,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  b j c k a i                                           unsorted dimensions
-      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
+      sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
       auto low = {    0,nactA,    0,nactA,nactA,    0};
       auto up  = {nactA,nactT,nactA,nactT,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1593,7 +1593,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //4.E(a,B,B,a,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  i a j b k c                                           unsorted dimensions
-      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
+      sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
       auto low = {    0,nactA,nactA,    0,nactA,    0};
       auto up  = {nactA,nactT,nactT,nactA,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1602,7 +1602,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //5.E(B,a,a,B,B,a)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  j b i a k c                                           unsorted dimensions
-      SMITH::sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
+      sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
       auto low = {nactA,    0,    0,nactA,nactA,    0};
       auto up  = {nactT,nactA,nactA,nactT,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1611,7 +1611,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //6.E(B,a,B,a,a,B)
       auto outmat = make_shared<Matrix>(pow(nactA,3),pow(nactB,3));
       //                  j b k c i a                                           unsorted dimensions
-      SMITH::sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
+      sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactA, nactB, nactA, nactB); 
       auto low = {nactA,    0,nactA,    0,    0,nactA};
       auto up  = {nactT,nactA,nactT,nactA,nactA,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1629,7 +1629,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(a,B,B,B,a,B)
       auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
       //                  b j a i c k                                           unsorted dimensions
-      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
+      sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
       auto low = {    0,nactA,nactA,nactA,    0,nactA};
       auto up  = {nactA,nactT,nactT,nactT,nactA,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1638,7 +1638,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //3.E(a,B,a,B,B,B)
       auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
       //                  b j c k a i                                           unsorted dimensions
-      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
+      sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
       auto low = {    0,nactA,    0,nactA,nactA,nactA};
       auto up  = {nactA,nactT,nactA,nactT,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1647,7 +1647,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //4.E(B,B,B,a,B,a)
       auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
       //                  i a j b k c                                           unsorted dimensions
-      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
+      sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
       auto low = {nactA,nactA,nactA,    0,nactA,    0};
       auto up  = {nactT,nactT,nactT,nactA,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1656,7 +1656,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //5.E(B,a,B,B,B,a)
       auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
       //                  j b i a k c                                           unsorted dimensions
-      SMITH::sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
+      sort_indices<3,2,1,0,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
       auto low = {nactA,    0,nactA,nactA,nactA,    0};
       auto up  = {nactT,nactA,nactT,nactT,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1665,7 +1665,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //6.E(B,a,B,a,B,B)
       auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
       //                  j b k c i a                                           unsorted dimensions
-      SMITH::sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
+      sort_indices<3,2,5,4,1,0, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactA, nactB, nactA, nactB); 
       auto low = {nactA,    0,nactA,    0,nactA,nactA};
       auto up  = {nactT,nactA,nactT,nactA,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1683,7 +1683,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(B,a,a,B,B,B)
       auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
       //                  a i c k b j                                           unsorted dimensions
-      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
+      sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
       auto low = {nactA,    0,    0,nactA,nactA,nactA};
       auto up  = {nactT,nactA,nactA,nactT,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1692,7 +1692,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //3.E(B,B,B,a,a,B)
       auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
       //                  b j a i c k                                           unsorted dimensions
-      SMITH::sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
+      sort_indices<2,3,0,1,4,5, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
       auto low = {nactA,nactA,nactA,    0,    0,nactA};
       auto up  = {nactT,nactT,nactT,nactA,nactA,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1701,7 +1701,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //4.E(B,B,a,B,B,a)
       auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
       //                  b j c k a i                                           unsorted dimensions
-      SMITH::sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
+      sort_indices<2,3,4,5,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
       auto low = {nactA,nactA,    0,nactA,nactA,    0};
       auto up  = {nactT,nactT,nactA,nactT,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1710,7 +1710,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //5.E(a,B,B,B,B,a)
       auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
       //                  c k b j a i                                           unsorted dimensions
-      SMITH::sort_indices<4,5,2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
+      sort_indices<4,5,2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
       auto low = {    0,nactA,nactA,nactA,nactA,    0};
       auto up  = {nactA,nactT,nactT,nactT,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1719,7 +1719,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //6.E(a,B,B,a,B,B)
       auto outmat = make_shared<Matrix>(nactA*nactA, pow(nactB,4));
       //                  c k a i b j                                           unsorted dimensions
-      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
+      sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactA, nactB, nactB, nactA, nactB); 
       auto low = {    0,nactA,nactA,    0,nactA,nactA};
       auto up  = {nactA,nactT,nactT,nactA,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1737,7 +1737,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //1.E(B,B,a,a,B,B)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  a i c k b j                                           unsorted dimensions
-      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactA); 
+      sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactA); 
       auto low = {nactA,nactA,    0,    0,nactA,nactA};
       auto up  = {nactT,nactT,nactA,nactA,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1746,7 +1746,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(a,a,B,B,B,B)
       auto outmat = make_shared<Matrix>(pow(nactA,4),nactB*nactB);
       //                  c k a i b j                                           unsorted dimensions
-      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactA); 
+      sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactA); 
       auto low = {    0,    0,nactA,nactA,nactA,nactA};
       auto up  = {nactA,nactA,nactT,nactT,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1764,7 +1764,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //2.E(B,B,a,B,B,B)
       auto outmat = make_shared<Matrix>(nactA,pow(nactB,5));
       //                  a i c k b j                                           unsorted dimensions
-      SMITH::sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
+      sort_indices<0,1,4,5,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
       auto low = {nactA,nactA,    0,nactA,nactA,nactA};
       auto up  = {nactT,nactT,nactA,nactT,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1773,7 +1773,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //3.E(a,B,B,B,B,B)
       auto outmat = make_shared<Matrix>(nactA,pow(nactB,5));
       //                  c k a i b j                                           unsorted dimensions
-      SMITH::sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
+      sort_indices<4,5,0,1,2,3, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
       auto low = {    0,nactA,nactA,nactA,nactA,nactA};
       auto up  = {nactA,nactT,nactT,nactT,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1782,7 +1782,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //4.E(B,B,B,B,B,a)
       auto outmat = make_shared<Matrix>(nactA,pow(nactB,5));
       //                  i a j b k c                                           unsorted dimensions
-      SMITH::sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
+      sort_indices<1,0,3,2,5,4, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
       auto low = {nactA,nactA,nactA,nactA,nactA,    0};
       auto up  = {nactT,nactT,nactT,nactT,nactT,nactA};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1791,7 +1791,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //5.E(B,B,B,a,B,B)
       auto outmat = make_shared<Matrix>(nactA,pow(nactB,5));
       //                  i a k c j b                                           unsorted dimensions
-      SMITH::sort_indices<1,0,5,4,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
+      sort_indices<1,0,5,4,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
       auto low = {nactA,nactA,nactA,    0,nactA,nactA};
       auto up  = {nactT,nactT,nactT,nactA,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 
@@ -1800,7 +1800,7 @@ void ASD_base::symmetrize_RDM34() const {
     { //6.E(B,a,B,B,B,B)
       auto outmat = make_shared<Matrix>(nactA,pow(nactB,5));
       //                  k c i a j b                                           unsorted dimensions
-      SMITH::sort_indices<5,4,1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
+      sort_indices<5,4,1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactB, nactB, nactB, nactB, nactA, nactB); 
       auto low = {nactA,    0,nactA,nactA,nactA,nactA};
       auto up  = {nactT,nactA,nactT,nactT,nactT,nactT};
       auto outv = btas::make_rwview(threerdm_->range().slice(low,up), threerdm_->storage()); 

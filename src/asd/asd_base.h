@@ -32,7 +32,7 @@
 #include <src/asd/gamma_tensor.h>
 #include <src/asd/coupling.h>
 
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 
 #include <src/wfn/reference.h>
 
@@ -244,14 +244,14 @@ class ASD_base {
 
     if (trans) { //transposed
                         //sorted                                                unsorted dim/s
-      SMITH::sort_indices<i,a,j,b,k,c,l,d, 0,1, 1,1>(rdmt->data(), mat->data(), n0, n1, n2, n3, n4, n5, n6, n7);
+      sort_indices<i,a,j,b,k,c,l,d, 0,1, 1,1>(rdmt->data(), mat->data(), n0, n1, n2, n3, n4, n5, n6, n7);
       auto low = {li,la,lj,lb,lk,lc,ll,ld};
       auto up  = {hi,ha,hj,hb,hk,hc,hl,hd};
       auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage());
       copy(mat->begin(), mat->end(), outv.begin());
     } else { //normal
                         //sorted                                                unsorted dim/s
-      SMITH::sort_indices<a,i,b,j,c,k,d,l, 0,1, 1,1>(rdmt->data(), mat->data(), n0, n1, n2, n3, n4, n5, n6, n7);
+      sort_indices<a,i,b,j,c,k,d,l, 0,1, 1,1>(rdmt->data(), mat->data(), n0, n1, n2, n3, n4, n5, n6, n7);
       auto low = {la,li,lb,lj,lc,lk,ld,ll};
       auto up  = {ha,hi,hb,hj,hc,hk,hd,hl};
       auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage());

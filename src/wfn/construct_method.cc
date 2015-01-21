@@ -49,10 +49,10 @@
 #include <src/prop/current.h>
 #include <src/wfn/construct_method.h>
 
-#include <src/asdscf/superci.h>
-#include <src/asdscf/bfgs.h>
-#include <src/asdscf/bfgs2.h>
-#include <src/asdscf/hybrid.h>
+#include <src/asd/orbopt/superci.h>
+#include <src/asd/orbopt/bfgs.h>
+#include <src/asd/orbopt/bfgs2.h>
+#include <src/asd/orbopt/hybrid.h>
 
 using namespace std;
 using namespace bagel;

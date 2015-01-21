@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/asd_base.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -185,11 +185,11 @@ shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e_H(const array<MonomerKey,4>&
 
   if ((neleA % 2) == 1) {
     // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }
   else {
     // sort: (A,A',B,B') --> (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }
 
   return out;
@@ -217,7 +217,7 @@ shared_ptr<Matrix> ASD_base::compute_inter_2e_H(const array<MonomerKey,4>& keys)
 
   // sort: (A,A',B,B') --> (A,B,A',B') + block(A,B,A',B')
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   return out;
 }
 
@@ -261,10 +261,10 @@ shared_ptr<Matrix> ASD_base::compute_aET_H(const array<MonomerKey,4>& keys) cons
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
   if ((neleA % 2) == 1) {
     // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   } else {
     // sort: (A,A',B,B') --> (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }
   return out;
 }
@@ -310,11 +310,11 @@ shared_ptr<Matrix> ASD_base::compute_bET_H(const array<MonomerKey,4>& keys) cons
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
   if ((neleA % 2) == 1) {
     // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }
   else {
     // sort: (A,A',B,B') --> (A,B,A',B')
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+    sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
   }
 
   return out;
@@ -332,7 +332,7 @@ shared_ptr<Matrix> ASD_base::compute_abFlip_H(const array<MonomerKey,4>& keys) c
 
   // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
 
   return out;
 }
@@ -349,7 +349,7 @@ shared_ptr<Matrix> ASD_base::compute_abET_H(const array<MonomerKey,4>& keys) con
 
   // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
 
   return out;
 }
@@ -365,7 +365,7 @@ shared_ptr<Matrix> ASD_base::compute_aaET_H(const array<MonomerKey,4>& keys) con
 
   // sort: (A,A',B,B') --> -0.5 * (A,B,A',B')
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<0,2,1,3,0,1,-1,2>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  sort_indices<0,2,1,3,0,1,-1,2>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
 
   return out;
 }
@@ -381,7 +381,7 @@ shared_ptr<Matrix> ASD_base::compute_bbET_H(const array<MonomerKey,4>& keys) con
 
   // sort: (A,A',B,B') --> -0.5 * (A,B,A',B')
   auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  SMITH::sort_indices<0,2,1,3,0,1,-1,2>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  sort_indices<0,2,1,3,0,1,-1,2>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
 
   return out;
 }
