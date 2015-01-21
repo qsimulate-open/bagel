@@ -24,11 +24,11 @@
 //
 
 
-#include <src/scf/scf.h>
-#include <src/asdscf/asdscf.h>
-#include <src/asdscf/superci.h>
-#include <src/asdscf/bfgs.h>
-#include <src/asdscf/hybrid.h>
+#include <src/scf/hf/rhf.h>
+#include <src/asd/orbopt/asdscf.h>
+#include <src/asd/orbopt/superci.h>
+#include <src/asd/orbopt/bfgs.h>
+#include <src/asd/orbopt/hybrid.h>
 
  using namespace std;
  using namespace bagel;

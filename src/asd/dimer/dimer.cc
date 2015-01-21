@@ -57,15 +57,12 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
   isolated_refs_ = {A, tmpref};
   shared_ptr<const Matrix> coeff = construct_coeff();
 
-<<<<<<< HEAD:src/dimer/dimer.cc
   cout << "Decompose dimer MO space.." << endl;
   cout << "Closed : " << A->nclosed() << " " << A->nclosed() << endl;
   cout << "Active : " << A->nact() << " " << A->nact() << endl;
   cout << "Virtual: " << A->nvirt() << " " << A->nvirt() << endl;
 
-=======
   nvirt_ = {A->nvirt(), A->nvirt()};
->>>>>>> origin/master:src/asd/dimer/dimer.cc
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), 2*A->nclosed(), 2*A->nact(), 2*A->nvirt());
 }
 
@@ -76,15 +73,12 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, share
   isolated_refs_ = {A, B};
   shared_ptr<const Matrix> coeff = construct_coeff();
 
-<<<<<<< HEAD:src/dimer/dimer.cc
   cout << "Decompose dimer MO space.." << endl;
   cout << "Closed : " << A->nclosed() << " " << B->nclosed() << endl;
   cout << "Active : " << A->nact() << " " << B->nact() << endl;
   cout << "Virtual: " << A->nvirt() << " " << B->nvirt() << endl;
 
-=======
   nvirt_ = {A->nvirt(), B->nvirt()};
->>>>>>> origin/master:src/asd/dimer/dimer.cc
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed()+B->nclosed(), A->nact()+B->nact(), A->nvirt()+B->nvirt());
 }
 

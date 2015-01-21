@@ -26,7 +26,7 @@
 #ifndef __SRC_ASDSCF_SUPERCIMICRO_H
 #define __SRC_ASDSCF_SUPERCIMICRO_H
 
-#include <src/asdscf/asdscf.h>
+#include <src/asd/orbrot/asdscf.h>
 
 namespace bagel {
 

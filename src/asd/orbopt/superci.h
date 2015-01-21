@@ -28,8 +28,8 @@
 #define __BAGEL_ASDSCF_SUPERCI_H
 
 #include <map>
-#include <src/scf/scf.h>
-#include <src/asdscf/asdscf.h>
+#include <src/scf/hf/rhf.h>
+#include <src/asd/orbopt/asdscf.h>
 #include <src/wfn/rdm.h>
 
 namespace bagel {

@@ -27,7 +27,7 @@
 #ifndef __BAGEL_ASDSCF_ASDBFGS_H
 #define __BAGEL_ASDSCF_ASDBFGS_H
 
-#include <src/asdscf/asdscf.h>
+#include <src/asd/orbopt/asdscf.h>
 
 namespace bagel {
 

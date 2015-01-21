@@ -32,11 +32,11 @@
 #define __BAGEL_ASDSCF2_ASDSCF2_H
 
 #include <src/wfn/reference.h>
-#include <src/fci/knowles.h>
-#include <src/asdscf/asdrotfile2.h>
+#include <src/ci/fci/knowles.h>
+#include <src/asd/orbopt/asdrotfile2.h>
 
 #include <src/df/dfblock.h>
-#include <src/dimer/dimer.h>
+#include <src/asd/dimer/dimer.h>
 
 
 namespace bagel {

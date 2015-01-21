@@ -208,13 +208,8 @@ class GammaTask {
       constexpr int nops = 4;
       const int norb = tree_->norb();
 
-<<<<<<< HEAD
-      auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };    //True : create
-      auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); }; //True : alpha
-=======
       auto action = [] (const int op) { return is_creation(GammaSQ(op)); };
       auto spin = [] (const int op) { return is_alpha(GammaSQ(op)); };
->>>>>>> origin/master
 
       std::shared_ptr<GammaBranch<VecType>> first = tree_->base()->branch(operation_);
       assert(first->active()); // This should have been checked before sending it to the TaskQueue

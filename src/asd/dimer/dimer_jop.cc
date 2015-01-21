@@ -110,15 +110,11 @@ void DimerJop::common_init(const int norbA, const int norbB) {
       }
     }
   }
-
-<<<<<<< HEAD:src/dimer/dimer_jop.cc
+//ADDED
 //mo2eA->zero(); //TEST: 1e only
 //mo2eB->zero();
-
-  monomer_mo2es_ = {mo2eA, mo2eB};
-
-=======
->>>>>>> origin/master:src/asd/dimer/dimer_jop.cc
+//monomer_mo2es_ = {mo2eA, mo2eB};
+//END ADDED
   auto c1eA = make_shared<CSymMatrix>(mo1eA);
   auto c1eB = make_shared<CSymMatrix>(mo1eB);
 

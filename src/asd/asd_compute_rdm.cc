@@ -25,7 +25,7 @@
 
 #include <src/asd/asd_base.h>
 #include <src/asd/state_tensor.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 
 using namespace std;
 using namespace bagel;
