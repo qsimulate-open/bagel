@@ -76,7 +76,7 @@ void MultipoleBatch::compute() {
             workz[c * nmul + imul] = -2.0 * xb_[iprim] * AB_[2] * workz[(c-1)*nmul+imul];
             if (c > 1)
               workz[c * nmul + imul] += (c-1.0) * workz[(c-2)*nmul+imul];
-            if (l > 0 && m < l) {
+            if (l > 0 && abs(m) < l) {
               const int i1 = (l-1)*(l-1) + m;
               workz[c * nmul + imul] += -0.5 * workz[(c-1)*nmul+i1];
             }
@@ -101,8 +101,9 @@ void MultipoleBatch::compute() {
                 worky[b * nmul + imul] += (b-1.0) * worky[(b-2)*nmul+imul];
               if (l > 0) {
                 const int i1 = (l-1)*(l-1) + m;
-                worky[b * nmul + imul] += complex<double>(0.0, 0.5) * worky[(b-1)*nmul+i1-1];
-                if (m-l < l-1)
+                if (abs(m - l - 1) < l)
+                  worky[b * nmul + imul] += complex<double>(0.0, 0.5) * worky[(b-1)*nmul+i1-1];
+                if (abs(m - l + 1) < l)
                   worky[b * nmul + imul] += complex<double>(0.0, 0.5) * worky[(b-1)*nmul+i1+1];
               }
               worky[b * nmul + imul] *= 0.5 * cxp_inv;
@@ -125,8 +126,9 @@ void MultipoleBatch::compute() {
                 workx[a * nmul + imul] += (a-1.0) * workx[(a-2)*nmul+imul];
               if (l > 0) {
                 const int i1 = (l-1)*(l-1) + m;
-                workx[a * nmul + imul] += -0.5 * workx[(a-1)*nmul+i1-1];
-                if (m-l < l-1)
+                if (abs(m - l - 1) < l)
+                  workx[a * nmul + imul] += -0.5 * workx[(a-1)*nmul+i1-1];
+                if (abs(m - l + 1) < l)
                   workx[a * nmul + imul] += 0.5 * workx[(a-1)*nmul+i1+1];
               }
               workz[a * nmul + imul] *= 0.5 * cxp_inv;

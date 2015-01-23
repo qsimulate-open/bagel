@@ -122,10 +122,9 @@ double JExpansion::distribution_extent(array<shared_ptr<const Shell>, 2> shells,
 }
 
 
-vector<shared_ptr<const ZMatrix>> JExpansion::compute(shared_ptr<const Matrix> density) {
+shared_ptr<const ZMatrix> JExpansion::compute(shared_ptr<const Matrix> density) {
 
   assert(is_well_separated());
-  vector<shared_ptr<const ZMatrix>> out(num_multipoles_);
   vector<shared_ptr<const ZMatrix>> multipoles0(num_multipoles_);
   vector<shared_ptr<const ZMatrix>> multipoles1(num_multipoles_);
 
@@ -144,8 +143,8 @@ vector<shared_ptr<const ZMatrix>> JExpansion::compute(shared_ptr<const Matrix> d
 
   const int dimb3 = basisinfo_[2]->nbasis();
   const int dimb2 = basisinfo_[3]->nbasis();
+  assert(density->ndim() == dimb3 && density->mdim() == dimb2);
   {
-    assert(density->ndim() == dimb3 && density->mdim() == dimb2);
     MultipoleBatch mpole1(array<shared_ptr<const Shell>, 2>{{basisinfo_[2], basisinfo_[3]}}, centre1_, lmax_);
     mpole1.compute();
 
@@ -158,14 +157,15 @@ vector<shared_ptr<const ZMatrix>> JExpansion::compute(shared_ptr<const Matrix> d
 
   LocalExpansion local(centre1_, multipoles1, lmax_);
   vector<shared_ptr<const ZMatrix>> lmoments = local.local_moments();
+  auto out = make_shared<ZMatrix>(dimb1, dimb0);
   for (int i = 0; i != num_multipoles_; ++i) {
     complex<double> contract = 0.0;
     for (int j = 0; j != dimb2; ++j)
       for (int k = 0; k != dimb3; ++k)
         contract += lmoments[i]->element(k, j) * density->element(k, j);
-    out[i] = make_shared<const ZMatrix>(contract * *multipoles0[i]);
-    out[i]->print("Multipole expansion approximation");
+    *out += contract * *multipoles0[i];
   }
+  out->print("Multipole expansion approximation");
 
   return out;
 }

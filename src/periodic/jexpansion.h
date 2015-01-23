@@ -51,7 +51,7 @@ class JExpansion {
 
     void init();
     bool is_well_separated();
-    std::vector<std::shared_ptr<const ZMatrix>> compute(std::shared_ptr<const Matrix> density);
+    std::shared_ptr<const ZMatrix> compute(std::shared_ptr<const Matrix> density);
 };
 
 }
