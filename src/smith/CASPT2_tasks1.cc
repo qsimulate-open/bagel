@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 
 #include <src/smith/CASPT2_tasks1.h>
 
@@ -2927,7 +2929,7 @@ void Task30::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x3 == x5 && x1 == x4 && x0 == x2) {
+    if (x0 == x2 && x1 == x4 && x3 == x5) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i5 = 0; i5 != x5.size(); ++i5) {
@@ -3028,7 +3030,7 @@ void Task30::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x3 == x5 && x1 == x2 && x0 == x4) {
+    if (x3 == x5 && x0 == x4 && x1 == x2) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i5 = 0; i5 != x5.size(); ++i5) {
@@ -3039,7 +3041,7 @@ void Task30::Task_local::compute() {
     }
   }
   {
-    if (x1 == x2 && x0 == x4) {
+    if (x0 == x4 && x1 == x2) {
       std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x5);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -6288,3 +6290,4 @@ void Task49::Task_local::compute() {
   out()->put_block(odata, ci0, x3, x1, x0, x2);
 }
 
+#endif

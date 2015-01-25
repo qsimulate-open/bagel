@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: CASPT2.cc
+// Filename: CASPT2_gamma.cc
 // Copyright (C) 2014 Shiozaki group
 //
 // Author: Shiozaki group <shiozaki@northwestern.edu>
@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 
 #include <src/smith/CASPT2.h>
 #include <src/smith/CASPT2_tasks.h>
@@ -652,3 +654,4 @@ shared_ptr<FutureTensor> CASPT2::CASPT2::Gamma395_() {
   return make_shared<FutureTensor>(*Gamma395, task68);
 }
 
+#endif

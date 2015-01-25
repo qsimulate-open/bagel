@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 
 #include <src/smith/CASPT2_tasks24.h>
 
@@ -179,3 +181,4 @@ Task1165::Task1165(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRan
           subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, c1, x4, x5}}, in, t[0], range));
 }
 
+#endif

@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 
 #include <src/smith/CASPT2.h>
 #include <src/smith/CASPT2_tasks.h>
@@ -264,3 +267,4 @@ shared_ptr<Queue> CASPT2::CASPT2::make_corrq() {
 }
 
 
+#endif

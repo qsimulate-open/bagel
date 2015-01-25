@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 
 #include <src/smith/CASPT2_tasks15.h>
 
@@ -1016,3 +1018,4 @@ void Task749::Task_local::compute() {
   out()->put_block(odata, c3, x0, c1, a2);
 }
 
+#endif

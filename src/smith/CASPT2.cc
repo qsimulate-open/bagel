@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 
 #include <src/smith/CASPT2.h>
 
@@ -88,3 +91,4 @@ void CASPT2::CASPT2::solve() {
 }
 
 
+#endif

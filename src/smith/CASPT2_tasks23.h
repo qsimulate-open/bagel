@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #ifndef __SRC_SMITH_CASPT2_TASKS23_H
 #define __SRC_SMITH_CASPT2_TASKS23_H
 
@@ -1192,5 +1195,6 @@ class Task1149 : public Task {
 }
 }
 }
+#endif
 #endif
 
