@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/smith/moint.h>
 #include <src/smith/spinfreebase.h>
 
 using namespace std;
@@ -31,6 +32,7 @@ using namespace bagel::SMITH;
 
 
 SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
+  Timer timer;
   const int max = r->maxtile();
   if (r->ncore() > r->nclosed())
     throw runtime_error("frozen core has been specified but there are not enough closed orbitals");
@@ -67,6 +69,15 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     coeff_ = fock.coeff();
   }
 
+  // for later use
+  const int nact = ref_->nact();
+  const int nclo = ref_->nclosed();
+  auto fockact = make_shared<Matrix>(nact, nact);
+  for (auto& i1 : active_)
+    for (auto& i0 : active_)
+      fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), f1_->get_block(i0, i1).get());
+
+
   // v2 tensor.
   {
     IndexRange occ(closed_);
@@ -78,6 +89,8 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     K2ext v2k(ref_, coeff_, o);
     v2_ = v2k.tensor();
   }
+
+  timer.tick_print("MO integral evaluation");
 
   // make a ci tensor.
   if (ref_->ciwfn()) {
@@ -92,8 +105,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     shared_ptr<const Dvec> rdm1d = r->rdm1deriv(ref_->target());
 
     vector<IndexRange> o = {ci_, active_, active_};
-    rdm1deriv_ = make_shared<Tensor>(o, false);
-    const int nclo = ref_->nclosed();
+    rdm1deriv_ = make_shared<Tensor>(o);
     for (auto& i0 : active_) {
       for (auto& i1 : active_) {
         for (auto& ci0 : ci_) {
@@ -104,7 +116,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
               for (int j2 = ci0.offset(); j2 != ci0.offset()+ci0.size(); ++j2, ++iall)
                 // Dvec - first index is annihilation, second is creation (see const_phis_ in fci/determinants.h and knowles_compute.cc)
-                data[iall] = rdm1d->data((j1-nclo)+r->nact()*(j0-nclo))->data(j2);
+                data[iall] = rdm1d->data((j1-nclo)+nact*(j0-nclo))->data(j2);
           rdm1deriv_->put_block(data, ci0, i1, i0);
         }
       }
@@ -115,7 +127,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     shared_ptr<const Dvec> rdm2d = r->rdm2deriv(ref_->target());
 
     vector<IndexRange> o = {ci_, active_, active_, active_, active_};
-    rdm2deriv_ = make_shared<Tensor>(o, false);
+    rdm2deriv_ = make_shared<Tensor>(o);
     const int nclo = ref_->nclosed();
     for (auto& i0 : active_) {
       for (auto& i1 : active_) {
@@ -130,7 +142,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
                     for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
                       for (int j4 = ci0.offset(); j4 != ci0.offset()+ci0.size(); ++j4, ++iall)
-                        data[iall] = rdm2d->data((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*(j0-nclo))))->data(j4);
+                        data[iall] = rdm2d->data((j3-nclo)+nact*((j2-nclo)+nact*((j1-nclo)+nact*(j0-nclo))))->data(j4);
               rdm2deriv_->put_block(data, ci0, i3, i2, i1, i0);
             }
           }
@@ -140,10 +152,14 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   }
 
   if (ref_->ciwfn()) {
-    shared_ptr<const Dvec> rdm3d = r->rdm3deriv(ref_->target());
+    shared_ptr<const Dvec> rdm3d, rdm4d;
+    // RDM4 is contracted a priori by the Fock operator
+    tie(rdm3d, rdm4d) = r->rdm34deriv(ref_->target(), fockact);
+    assert(rdm3d->ij() == rdm4d->ij());
 
     vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_};
-    rdm3deriv_ = make_shared<Tensor>(o, false);
+    rdm3deriv_ = make_shared<Tensor>(o);
+    rdm4deriv_ = make_shared<Tensor>(o);
     const int nclo = ref_->nclosed();
     for (auto& i0 : active_) {
       for (auto& i1 : active_) {
@@ -152,18 +168,23 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
             for (auto& i4 : active_) {
               for (auto& i5 : active_) {
                 for (auto& ci0 : ci_) {
-                  const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * ci0.size();
+                  const size_t size = rdm3deriv_->get_size(ci0, i5, i4, i3, i2, i1, i0);
                   unique_ptr<double[]> data(new double[size]);
+                  unique_ptr<double[]> data2(new double[size]);
                   int iall = 0;
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is  creation
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
                       for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
                         for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
                           for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4) // this is creation
-                            for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) // this is annhilation
-                              for (int j6 = ci0.offset(); j6 != ci0.offset()+ci0.size(); ++j6, ++iall)
-                                data[iall] = rdm3d->data((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))->data(j6);
-                  rdm3deriv_->put_block(data, ci0, i5, i4, i3, i2, i1, i0);
+                            for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) { // this is annhilation
+                              const size_t loc = (j5-nclo)+nact*((j4-nclo)+nact*((j3-nclo)+nact*((j2-nclo)+nact*((j1-nclo)+nact*((j0-nclo))))));
+                              copy_n(rdm3d->data(loc)->data()+ci0.offset(), ci0.size(), data.get() + iall);
+                              copy_n(rdm4d->data(loc)->data()+ci0.offset(), ci0.size(), data2.get()+ iall);
+                              iall += ci0.size();
+                            }
+                  rdm3deriv_->put_block(data,  ci0, i5, i4, i3, i2, i1, i0);
+                  rdm4deriv_->put_block(data2, ci0, i5, i4, i3, i2, i1, i0);
                 }
               }
             }
@@ -172,50 +193,13 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
       }
     }
   }
-  if (ref_->ciwfn()) {
-    shared_ptr<const Dvec> rdm4d = r->rdm4deriv(ref_->target());
 
-    vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_, active_, active_};
-    rdm4deriv_ = make_shared<Tensor>(o, false);
-    const int nclo = ref_->nclosed();
-    for (auto& i0 : active_) {
-      for (auto& i1 : active_) {
-        for (auto& i2 : active_) {
-          for (auto& i3 : active_) {
-            for (auto& i4 : active_) {
-              for (auto& i5 : active_) {
-                for (auto& i6 : active_) {
-                  for (auto& i7 : active_) {
-                    for (auto& ci0 : ci_) {
-                      const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * i6.size() * i7.size() * ci0.size();
-                      unique_ptr<double[]> data(new double[size]);
-                      int iall = 0;
-                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is  creation
-                        for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
-                          for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
-                            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
-                              for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4) // this is creation
-                                for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) // this is annhilation
-                                  for (int j6 = i6.offset(); j6 != i6.offset()+i6.size(); ++j6) // this is creation
-                                    for (int j7 = i7.offset(); j7 != i7.offset()+i7.size(); ++j7) // this is annhilation
-                                      for (int j8 = ci0.offset(); j8 != ci0.offset()+ci0.size(); ++j8, ++iall)
-                                        data[iall] = rdm4d->data((j7-nclo)+r->nact()*((j6-nclo)+r->nact()*((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))))->data(j8);
-                      rdm4deriv_->put_block(data, ci0, i7, i6, i5, i4, i3, i2, i1, i0);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  timer.tick_print("RDM derivative evaluation");
 
   // rdms.
   if (ref_->ciwfn()) {
     vector<IndexRange> o = {active_, active_};
-    rdm1_ = make_shared<Tensor>(o, false);
+    rdm1_ = make_shared<Tensor>(o);
     const int nclo = ref_->nclosed();
     for (auto& i1 : active_) {
       for (auto& i0 : active_) {
@@ -231,7 +215,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   }
   if (ref_->ciwfn()) {
     vector<IndexRange> o = {active_, active_, active_, active_};
-    rdm2_ = make_shared<Tensor>(o, false);
+    rdm2_ = make_shared<Tensor>(o);
     const int nclo = ref_->nclosed();
     for (auto& i3 : active_) {
       for (auto& i2 : active_) {
@@ -255,9 +239,9 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   if (ref_->ciwfn()) {
     {
       vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
-      rdm3_ = make_shared<Tensor>(o, false);
+      rdm3_ = make_shared<Tensor>(o);
       vector<IndexRange> p = {active_, active_, active_, active_, active_, active_, active_, active_};
-      rdm4_ = make_shared<Tensor>(p, false);
+      rdm4_ = make_shared<Tensor>(p);
     }
 
     shared_ptr<RDM<3>> rdm3;
@@ -308,24 +292,19 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
               }
 
 
-    const int nact = ref_->nact();
-    auto fockact = make_shared<Matrix>(nact, nact);
-    for (auto& i1 : active_)
-      for (auto& i0 : active_)
-        fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block(i0, i1).get());
-
     auto rdm1 = make_shared<RDM<1>>(*ref_->rdm1(ref_->target()));
     auto rdm2 = make_shared<RDM<2>>(*ref_->rdm2(ref_->target()));
+
+    timer.tick_print("RDM evaluation");
 
     // construct denominator
     denom_ = make_shared<const Denom>(*rdm1, *rdm2, *rdm3, *rdm4, *fockact);
 
+    timer.tick_print("Denominator evaluation");
   }
 
   // set e0
   e0_ = compute_e0();
-  if (ref_->nact())
-    sigma_ = compute_sigma();
 }
 
 
@@ -337,8 +316,8 @@ void SpinFreeMethod::print_iteration() const {
 void SpinFreeMethod::print_iteration(const int i, const double en, const double err) const {
   auto end = chrono::high_resolution_clock::now();
   const double tim = chrono::duration_cast<chrono::milliseconds>(end-time_).count() * 0.001;
-  cout << "     " << setw(4) << i << setw(15) << fixed << setprecision(10) << en
-                                            << setw(15) << fixed << setprecision(10) << err
+  cout << "     " << setw(4) << i << setw(15) << fixed << setprecision(8) << en
+                                            << setw(15) << fixed << setprecision(8) << err
                                             << setw(10) << fixed << setprecision(2) << tim << endl;
   time_ = end;
 }
@@ -365,27 +344,8 @@ double SpinFreeMethod::compute_e0() const {
   return sum;
 }
 
-shared_ptr<Tensor> SpinFreeMethod::compute_sigma() const {
-  if (ref_->nact() != 0 && !(static_cast<bool>(f1_) && static_cast<bool>(rdm1deriv_)))
-    throw logic_error("SpinFreeMethod::compute_sigma was called before f1_ or rdm1deriv_ was computed. Strange.");
-  shared_ptr<Tensor> out = rdm0deriv_->copy();
-  for (auto& i1 : active_) {
-    for (auto& i0 : active_) {
-      for (auto& ci0 : ci_) {
-        unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
-        unique_ptr<double[]> rdata = rdm1deriv_->get_block(ci0, i0, i1);
-        unique_ptr<double[]> data(new double[ci0.size()]);
-        dgemv_("N", ci0.size(), i0.size()*i1.size(), 1.0, rdata, ci0.size(), fdata, 1, 0.0, data, 1);
-        out->put_block(data, ci0);
-      }
-    }
-  }
 
-  return out;
-}
-
-
-void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Tensor> r, const bool put) {
+void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Tensor> r) const {
 
   // ranks of t and r are assumed to be the same
 
@@ -395,7 +355,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
       for (auto& i1 : virt_) {
         for (auto& i0 : closed_) {
           // if this block is not included in the current wave function, skip it
-          if (!r->get_size(i0, i1, i2, i3)) continue;
+          if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
           unique_ptr<double[]>       data0 = r->get_block(i0, i1, i2, i3);
           const unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
 
@@ -409,11 +369,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
                 for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                   // note that e0 is cancelled by another term
                   data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
-          if (!put) {
-            t->add_block(data0, i0, i1, i2, i3);
-          } else {
-            t->put_block(data0, i0, i1, i2, i3);
-          }
+          t->add_block(data0, i0, i1, i2, i3);
         }
       }
     }
@@ -432,7 +388,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
       for (auto& i3 : virt_) {
         for (auto& i1 : virt_) {
           // if this block is not included in the current wave function, skip it
-          if (!r->get_size(i0, i1, i2, i3)) continue;
+          if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
           // data0 is the source area
           unique_ptr<double[]> data0 = r->get_block(i0, i1, i2, i3);
           unique_ptr<double[]> data1(new double[r->get_size(i0, i1, i2, i3)]);
@@ -458,11 +414,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
           // sort back to the original order
           sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
-          if (!put) {
-            t->add_block(data1, i0, i1, i2, i3);
-          } else {
-            t->put_block(data1, i0, i1, i2, i3);
-          }
+          t->add_block(data1, i0, i1, i2, i3);
         }
       }
     }
@@ -479,8 +431,8 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
     for (auto& i3 : virt_) {
       for (auto& i2 : closed_) {
         for (auto& i1 : virt_) {
-          if (!r->get_size(i2, i3, i0, i1)) continue;
-          assert(r->get_size(i2, i1, i0, i3));
+          if (!r->get_size_alloc(i2, i3, i0, i1)) continue;
+          assert(r->get_size_alloc(i2, i1, i0, i3));
           unique_ptr<double[]>       data0 = r->get_block(i2, i3, i0, i1);
           const unique_ptr<double[]> data1 = r->get_block(i2, i1, i0, i3);
           unique_ptr<double[]> data2(new double[r->get_size(i2, i3, i0, i1)]);
@@ -503,11 +455,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
           dgemm_("T", "N", i0.size(), i1.size()*i2.size()*i3.size(), nact, 1.0, transp, nact, interm, nact,
                                                                            0.0, data2,  i0.size());
 
-          if (!put) {
-            t->add_block(data2, i0, i1, i2, i3);
-          } else {
-            t->put_block(data2, i0, i1, i2, i3);
-          }
+          t->add_block(data2, i0, i1, i2, i3);
         }
       }
     }
@@ -524,8 +472,8 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
     for (auto& i2 : closed_) {
       for (auto& i1 : virt_) {
         for (auto& i0 : closed_) {
-          if (!r->get_size(i2, i3, i0, i1)) continue;
-          assert(r->get_size(i0, i3, i2, i1));
+          if (!r->get_size_alloc(i2, i3, i0, i1)) continue;
+          assert(r->get_size_alloc(i0, i3, i2, i1));
           unique_ptr<double[]>       data0 = r->get_block(i2, i3, i0, i1);
           const unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
           unique_ptr<double[]> data2(new double[r->get_size(i2, i3, i0, i1)]);
@@ -548,11 +496,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
           dgemm_("N", "N", i0.size()*i1.size()*i2.size(), i3.size(), nact, 1.0, interm, i0.size()*i1.size()*i2.size(), transp, nact,
                                                                            0.0, data2,  i0.size()*i1.size()*i2.size());
 
-          if (!put) {
-            t->add_block(data2, i0, i1, i2, i3);
-          } else {
-            t->put_block(data2, i0, i1, i2, i3);
-          }
+          t->add_block(data2, i0, i1, i2, i3);
         }
       }
     }
@@ -570,12 +514,12 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
       for (auto& i2 : closed_) {
         for (auto& i0 : closed_) {
           // if this block is not included in the current wave function, skip it
-          if (!r->get_size(i0, i1, i2, i3)) continue;
+          if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
           // data0 is the source area
           unique_ptr<double[]> data0 = r->get_block(i0, i1, i2, i3);
           unique_ptr<double[]> data1(new double[r->get_size(i0, i1, i2, i3)]);
           // sort. Active indices run slower
-          sort_indices<0,3,2,1,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
+          sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
           // intermediate area
           unique_ptr<double[]> interm(new double[i0.size()*i2.size()*nact*nact]);
 
@@ -596,11 +540,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
           // sort back to the original order
           sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
-          if (!put) {
-            t->add_block(data1, i0, i1, i2, i3);
-          } else {
-            t->put_block(data1, i0, i1, i2, i3);
-          }
+          t->add_block(data1, i0, i1, i2, i3);
         }
       }
     }
@@ -620,9 +560,9 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
       for (auto& i1 : virt_) {
         for (auto& i0 : closed_) {
           // if this block is not included in the current wave function, skip it
-          const size_t blocksize = r->get_size(i2, i3, i0, i1);
+          const size_t blocksize = r->get_size_alloc(i2, i3, i0, i1);
           if (!blocksize) continue;
-          assert(blocksize == r->get_size(i0, i3, i2, i1));
+          assert(blocksize == r->get_size_alloc(i0, i3, i2, i1));
           unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
           unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
 
@@ -650,13 +590,8 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
           // sort back to the original order
           copy_n(data2.get(), blocksize, data0.get());
           sort_indices<2,1,0,3,0,1,1,1>(data2.get()+blocksize, data1.get(), i0.size(), i1.size(), i2.size(), i3.size());
-          if (!put) {
-            t->add_block(data0, i0, i1, i2, i3);
-            t->add_block(data1, i2, i1, i0, i3);
-          } else {
-            t->put_block(data0, i0, i1, i2, i3);
-            t->put_block(data1, i2, i1, i0, i3);
-          }
+          t->add_block(data0, i0, i1, i2, i3);
+          t->add_block(data1, i2, i1, i0, i3);
         }
       }
     }
@@ -675,7 +610,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
         for (auto& i1 : virt_) {
           // if this block is not included in the current wave function, skip it
-          const size_t blocksize = r->get_size(i2, i3, i0, i1);
+          const size_t blocksize = r->get_size_alloc(i2, i3, i0, i1);
           if (!blocksize) continue;
           // data0 is the source area
           unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
@@ -700,11 +635,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
           // sort back to the original order
           sort_indices<1,0,2,3,0,1,1,1>(data0, data1, i1.size(), i0.size(), i2.size(), i3.size());
-          if (!put) {
-            t->add_block(data1, i0, i1, i2, i3);
-          } else {
-            t->put_block(data1, i0, i1, i2, i3);
-          }
+          t->add_block(data1, i0, i1, i2, i3);
         }
       }
     }
@@ -723,7 +654,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
         for (auto& i2 : closed_) {
           // if this block is not included in the current wave function, skip it
-          const size_t blocksize = r->get_size(i2, i3, i0, i1);
+          const size_t blocksize = r->get_size_alloc(i2, i3, i0, i1);
           if (!blocksize) continue;
           // data0 is the source area
           unique_ptr<double[]> data0 = r->get_block(i2, i3, i0, i1);
@@ -748,11 +679,145 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, const shared_ptr<Ten
 
           // sort back to the original order
           sort_indices<1,2,0,3,0,1,1,1>(data0, data1, i2.size(), i0.size(), i1.size(), i3.size());
-          if (!put) {
-            t->add_block(data1, i0, i1, i2, i3);
-          } else {
-            t->put_block(data1, i0, i1, i2, i3);
-          }
+          t->add_block(data1, i0, i1, i2, i3);
+        }
+      }
+    }
+  }
+}
+
+
+shared_ptr<Tensor> SpinFreeMethod::init_amplitude() const {
+  shared_ptr<Tensor> out = v2_->clone();
+  auto put = [this, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+    const size_t size = v2_->get_size_alloc(i0, i1, i2, i3);
+    unique_ptr<double[]> buf(new double[size]);
+    fill_n(buf.get(), size, 0.0);
+    out->put_block(buf, i0, i1, i2, i3);
+  };
+  for (auto& i3 : virt_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          put(i0, i1, i2, i3);
+  for (auto& i2 : active_)
+    for (auto& i0 : active_)
+      for (auto& i3 : virt_)
+        for (auto& i1 : virt_)
+          put(i0, i1, i2, i3);
+  for (auto& i0 : active_)
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          put(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          put(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i2 : closed_)
+        for (auto& i0 : closed_)
+          put(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_) {
+          put(i0, i1, i2, i3);
+          put(i2, i1, i0, i3);
+        }
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i0 : active_)
+        for (auto& i1 : virt_)
+          put(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i0 : active_)
+        for (auto& i2 : closed_)
+          put(i0, i1, i2, i3);
+  return out;
+}
+
+
+double SpinFreeMethod::dot_product_transpose(shared_ptr<const Tensor> r, shared_ptr<const Tensor> t2) const {
+  auto prod = [this, &r, &t2](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+    const size_t size = r->get_size_alloc(i2, i3, i0, i1);
+    if (size == 0) return 0.0;
+
+    unique_ptr<double[]> tmp0 = t2->get_block(i0, i1, i2, i3);
+    unique_ptr<double[]> tmp1(new double[size]);
+    sort_indices<2,3,0,1,0,1,1,1>(tmp0.get(), tmp1.get(), i0.size(), i1.size(), i2.size(), i3.size());
+
+    return blas::dot_product(tmp1.get(), size, r->get_block(i2, i3, i0, i1).get());
+  };
+  double out = 0.0;
+  for (auto& i3 : virt_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i2 : active_)
+    for (auto& i0 : active_)
+      for (auto& i3 : virt_)
+        for (auto& i1 : virt_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i0 : active_)
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i2 : closed_)
+        for (auto& i0 : closed_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_) {
+          out += prod(i0, i1, i2, i3);
+          out += prod(i2, i1, i0, i3);
+        }
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i0 : active_)
+        for (auto& i1 : virt_)
+          out += prod(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i0 : active_)
+        for (auto& i2 : closed_)
+          out += prod(i0, i1, i2, i3);
+  return out;
+}
+
+
+void SpinFreeMethod::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) const {
+  for (auto& i3 : virt_) {
+    for (auto& i2 : closed_) {
+      for (auto& i1 : virt_) {
+        for (auto& i0 : closed_) {
+          // if this block is not included in the current wave function, skip it
+          if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
+          unique_ptr<double[]>       data0 = t->get_block(i0, i1, i2, i3);
+          const unique_ptr<double[]> data1 = t->get_block(i0, i3, i2, i1);
+
+          sort_indices<0,3,2,1,8,1,-4,1>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+          size_t iall = 0;
+          for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                  // note that e0 is cancelled by another term
+                  data0[iall] *= -(eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
+          r->add_block(data0, i0, i1, i2, i3);
         }
       }
     }

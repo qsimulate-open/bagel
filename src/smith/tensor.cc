@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-Tensor::Tensor(vector<IndexRange> in, bool init) : range_(in), rank_(in.size()), initialized_(init) {
+Tensor::Tensor(vector<IndexRange> in) : range_(in), rank_(in.size()), initialized_(false) {
   // make blocl list
   if (!in.empty()) {
     LoopGenerator lg(in);
@@ -49,12 +49,26 @@ Tensor::Tensor(vector<IndexRange> in, bool init) : range_(in), rank_(in.size()),
       off += size;
     }
 
-    data_ = make_shared<Storage_Incore>(hashmap, init);
+    data_ = make_shared<Storage>(hashmap, false);
   } else {
     rank_ = 0;
     map<size_t, size_t> hashmap {{0lu, 1lu}};
-    data_ = make_shared<Storage_Incore>(hashmap, init);
+    data_ = make_shared<Storage>(hashmap, false);
   }
+}
+
+
+size_t Tensor::size_alloc() const {
+  size_t out = 0lu;
+  LoopGenerator lg(range_);
+  vector<vector<Index>> index = lg.block_loop();
+  for (auto& i : index) {
+    vector<size_t> h;
+    for (auto& j : i)
+      h.push_back(j.key());
+    out += data_->blocksize_alloc(generate_hash_key(h));
+  }
+  return out;
 }
 
 
@@ -64,33 +78,12 @@ vector<double> Tensor::diag() const {
   const size_t size = range_.at(0).back().offset() + range_.at(0).back().size();
   vector<double> buf(size);
   for (auto& i : range_.at(0)) {
-    unique_ptr<double[]> data0 = move_block(i, i);
+    unique_ptr<double[]> data0 = get_block(i, i);
     for (int j = 0; j != i.size(); ++j) {
       buf[j+i.offset()] = data0[j+j*i.size()];
     }
-    put_block(data0, i, i);
   }
   return buf;
-}
-
-
-shared_ptr<Tensor> Tensor::add_dagger() {
-  shared_ptr<Tensor> out = clone();
-  vector<IndexRange> o = indexrange();
-  assert(o.size() == 4);
-  for (auto& i3 : o[3].range()) {
-    for (auto& i2 : o[2].range()) {
-      for (auto& i1 : o[1].range()) {
-        for (auto& i0 : o[0].range()) {
-          unique_ptr<double[]>       data0 = get_block(i0, i1, i2, i3);
-          const unique_ptr<double[]> data1 = get_block(i2, i3, i0, i1);
-          sort_indices<2,3,0,1,1,1,1,1>(data1, data0, i2.size(), i3.size(), i0.size(), i1.size());
-          out->put_block(data0, i0, i1, i2, i3);
-        }
-      }
-    }
-  }
-  return out;
 }
 
 
@@ -106,8 +99,10 @@ shared_ptr<Matrix> Tensor::matrix() const {
 
   for (auto& i1 : o[1].range()) {
     for (auto& i0 : o[0].range()) {
-      unique_ptr<double[]> target = get_block(i0, i1);
-      out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target.get());
+      if (get_size_alloc(i0, i1)) {
+        unique_ptr<double[]> target = get_block(i0, i1);
+        out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target.get());
+      }
     }
   }
   return out;
@@ -133,12 +128,14 @@ shared_ptr<Matrix> Tensor::matrix2() const {
     for (auto& i2 : o[2].range()) {
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
-          unique_ptr<double[]> target = get_block(i0, i1, i2, i3);
-          const double* ptr = target.get();
-          for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ptr += i0.size())
-                copy_n(ptr, i0.size(), out->element_ptr(i0.offset()-off0+dim0*(j1-off1), j2-off2+dim2*(j3-off3)));
+          if (get_size_alloc(i0, i1, i2, i3)) {
+            unique_ptr<double[]> target = get_block(i0, i1, i2, i3);
+            const double* ptr = target.get();
+            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ptr += i0.size())
+                  copy_n(ptr, i0.size(), out->element_ptr(i0.offset()-off0+dim0*(j1-off1), j2-off2+dim2*(j3-off3)));
+          }
         }
       }
     }

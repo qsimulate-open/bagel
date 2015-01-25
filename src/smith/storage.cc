@@ -25,36 +25,95 @@
 
 
 #include <src/util/f77.h>
+#include <src/util/math/algo.h>
 #include <src/smith/storage.h>
 #include <stdexcept>
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 
 using namespace bagel::SMITH;
 using namespace std;
 
 
-Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Storage_base(size, init) {
+StorageBlock::StorageBlock(const size_t size, const bool init) : size_(size), initialized_(init) {
   if (init) {
-    for (auto& i : size) {
-      unique_ptr<double[]> tmp(new double[i.second]);
-      fill_n(tmp.get(), i.second, 0.0);
-      data_.push_back(move(tmp));
-    }
-  } else {
-    // if not init, we make a dummy tensor with size 1
-    for (int i = 0; i != size.size(); ++i) {
-      unique_ptr<double[]> tmp(new double[1]);
-      data_.push_back(move(tmp));
-    }
+    data_ = unique_ptr<double[]>(new double[size_]);
+    zero();
   }
 }
 
-void Storage_Incore::initialize() {
-  for (auto& i : this->hashtable_) {
-    unique_ptr<double[]> tmp(new double[i.second.second]);
-    data_.push_back(move(tmp));
+
+void StorageBlock::zero() {
+  if (initialized_)
+    fill_n(data(), size_, 0.0);
+}
+
+
+StorageBlock& StorageBlock::operator=(const StorageBlock& o) {
+  if (o.initialized_ && !initialized_) {
+    data_ = unique_ptr<double[]>(new double[size_]);
+    initialized_ = true;
   }
+  if (o.initialized_)
+    copy_n(o.data(), size_, data());
+  return *this;
+}
+
+
+void StorageBlock::put_block(unique_ptr<double[]>&& o) {
+  assert(!initialized_);
+  initialized_ = true;
+  data_ = move(o);
+}
+
+
+void StorageBlock::add_block(const std::unique_ptr<double[]>& o) {
+  assert(initialized_);
+  blas::ax_plus_y_n(1.0, o.get(), size_, data());
+}
+
+
+unique_ptr<double[]> StorageBlock::get_block() const {
+  assert(initialized_);
+  unique_ptr<double[]> out(new double[size_]);
+  copy_n(data_.get(), size_, out.get());
+  return move(out);
+}
+
+
+unique_ptr<double[]> StorageBlock::move_block() {
+  if (!initialized_) {
+    initialized_ = true;
+    data_ = unique_ptr<double[]>(new double[size_]);
+    zero();
+  }
+  initialized_ = false;
+  return move(data_);
+}
+
+
+double StorageBlock::dot_product(const StorageBlock& o) const {
+  assert(size_ == o.size_ && !(initialized_ ^ o.initialized_));
+  return initialized_ ? blas::dot_product(data(), size_, o.data()) : 0.0;
+}
+
+
+void StorageBlock::ax_plus_y(const double a, const StorageBlock& o) {
+  assert(size_ == o.size_ && !(initialized_ ^ o.initialized_));
+  if (initialized_)
+    blas::ax_plus_y_n(a, o.data(), size_, data());
+}
+
+
+void StorageBlock::scale(const double a) {
+  if (initialized_)
+    blas::scale_n(a, data(), size_);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Storage_base<StorageBlock>(size, init) {
 }
 
 
@@ -63,18 +122,7 @@ unique_ptr<double[]> Storage_Incore::get_block(const size_t& key) const {
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::get_block(const size_t&)");
-
-  // then create a memory
-  const size_t blocksize = hash->second.second;
-  const size_t blocknum  = hash->second.first;
-  unique_ptr<double[]> buf(new double[blocksize]);
-
-  assert(initialized_[blocknum]);
-
-  // then copy...
-  copy_n(data_.at(blocknum).get(), blocksize, buf.get());
-
-  return move(buf);
+  return hash->second->get_block();
 }
 
 
@@ -83,17 +131,7 @@ unique_ptr<double[]> Storage_Incore::move_block(const size_t& key) {
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::move_block(const size_t&)");
-  const size_t blocknum  = hash->second.first;
-
-  if (!initialized(blocknum)) {
-    unique_ptr<double[]> tmp(new double[hash->second.second]);
-    fill_n(tmp.get(), hash->second.second, 0.0);
-    data_[blocknum] = move(tmp);
-    initialized_[blocknum] = true;
-  }
-
-  assert(initialized_[blocknum]);
-  return move(data_.at(blocknum));
+  return hash->second->move_block();
 }
 
 
@@ -101,9 +139,7 @@ void Storage_Incore::put_block(const size_t& key, unique_ptr<double[]>& dat) {
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
-  const size_t blocknum  = hash->second.first;
-  data_[blocknum] = move(dat);
-  initialized_[blocknum] = true;
+  hash->second->put_block(move(dat));
 }
 
 
@@ -111,39 +147,28 @@ void Storage_Incore::add_block(const size_t& key, const unique_ptr<double[]>& da
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
-
-  const size_t blocksize = hash->second.second;
-  const size_t blocknum  = hash->second.first;
-
-  daxpy_(blocksize, 1.0, dat, 1, data_.at(blocknum), 1);
+  hash->second->add_block(dat);
 }
 
 
 void Storage_Incore::zero() {
-  for (auto& i : hashtable_) {
-    const size_t bn = i.second.first;
-    const size_t ln = i.second.second;
-    fill_n(data_[bn].get(), ln, 0.0);
-  }
+  for (auto& i : hashtable_)
+    i.second->zero();
 }
+
 
 void Storage_Incore::scale(const double a) {
-  for (auto& i : hashtable_) {
-    const size_t bn = i.second.first;
-    const size_t ln = i.second.second;
-    dscal_(ln, a, data_[bn], 1);
-  }
+  for (auto& i : hashtable_)
+    i.second->scale(a);
 }
 
+
 Storage_Incore& Storage_Incore::operator=(const Storage_Incore& o) {
-  if (data_.size() == o.data_.size()) {
-    auto i = data_.begin();
-    auto k = hashtable_.begin();
-    auto l = o.hashtable_.begin();
-    for (auto j = o.data_.begin(); j != o.data_.end(); ++j, ++i, ++k, ++l) {
-      if (k->second != l->second || k->first != l->first)
-        throw logic_error("Trying to copy something different in Storage_Incore");
-      copy_n(j->get(), k->second.second, i->get());
+  if (hashtable_.size() == o.hashtable_.size()) {
+    auto i = hashtable_.begin();
+    for (auto& j : o.hashtable_) {
+      *i->second = *j.second;
+      ++i;
     }
   } else {
     throw logic_error("Trying to copy something different in Storage_Incore");
@@ -153,14 +178,11 @@ Storage_Incore& Storage_Incore::operator=(const Storage_Incore& o) {
 
 
 void Storage_Incore::ax_plus_y(const double a, const Storage_Incore& o) {
-  if (data_.size() == o.data_.size()) {
-    auto i = data_.begin();
-    auto k = hashtable_.begin();
-    auto l = o.hashtable_.begin();
-    for (auto j = o.data_.begin(); j != o.data_.end(); ++j, ++i, ++k, ++l) {
-      if (k->second != l->second || k->first != l->first)
-        throw logic_error("Trying to copy something different in Storage_Incore");
-      daxpy_(k->second.second, a, *j, 1, *i, 1);
+  if (hashtable_.size() == o.hashtable_.size()) {
+    auto i = hashtable_.begin();
+    for (auto& j : o.hashtable_) {
+      i->second->ax_plus_y(a, *j.second);
+      ++i;
     }
   } else {
     throw logic_error("Trying to copy something different in Storage_Incore");
@@ -170,14 +192,11 @@ void Storage_Incore::ax_plus_y(const double a, const Storage_Incore& o) {
 
 double Storage_Incore::dot_product(const Storage_Incore& o) const {
   double out = 0.0;
-  if (data_.size() == o.data_.size()) {
-    auto i = data_.begin();
-    auto k = hashtable_.begin();
-    auto l = o.hashtable_.begin();
-    for (auto j = o.data_.begin(); j != o.data_.end(); ++j, ++i, ++k, ++l) {
-      if (k->second != l->second || k->first != l->first)
-        throw logic_error("Trying to copy something different in Storage_Incore");
-      out += ddot_(k->second.second, *j, 1, *i, 1);
+  if (hashtable_.size() == o.hashtable_.size()) {
+    auto i = hashtable_.begin();
+    for (auto& j : o.hashtable_) {
+      out += i->second->dot_product(*j.second);
+      ++i;
     }
   } else {
     throw logic_error("Trying to copy something different in Storage_Incore");
