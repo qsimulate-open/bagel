@@ -47,6 +47,10 @@ class RASDeterminants : public Determinants_base<RASString>,
 
     std::vector<std::vector<DetMapBlock>> phia_ij_;
     std::vector<std::vector<DetMapBlock>> phib_ij_;
+//ADDED (expanded lists)
+    std::vector<std::vector<DetMapBlock>> uncompressed_phia_ij_;
+    std::vector<std::vector<DetMapBlock>> uncompressed_phib_ij_;
+//
 
   public:
     RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false);
@@ -150,11 +154,11 @@ class RASDeterminants : public Determinants_base<RASString>,
       spin_adapt(const int spin, const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
-    template <int spin> void construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij);
+    template <int spin> void construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij, std::vector<std::vector<DetMapBlock>>& uncompressed_phi_ij);
 };
 
 template <int spin>
-void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij) {
+void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij, std::vector<std::vector<DetMapBlock>>& uncompressed_phi_ij) {
 
   phi = stringspace->phi();
 
@@ -166,17 +170,24 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
   phi_ij.resize(nij);
   for (auto& iphi : phi_ij) iphi.reserve(stringsize);
 
+  const int nn = norb() * norb();
+  uncompressed_phi_ij.clear();
+  uncompressed_phi_ij.resize(nn);
+  for ( auto& iphi : uncompressed_phi_ij) iphi.reserve(stringsize);
+
   std::unordered_map<std::bitset<nbit__>, size_t> lexmap;
   for (size_t i = 0; i < stringsize; ++i)
     lexmap[(spin == 0 ? this->string_bits_a(i) : this->string_bits_b(i))] = i;
 
   std::vector<size_t> offsets(nij, 0);
+  std::vector<size_t> uncompressed_offsets(nn, 0);
 
   for (auto& ispace : *stringspace) {
     size_t tindex = 0;
     for (auto istring = ispace->begin(); istring != ispace->end(); ++istring, ++tindex) {
       const std::bitset<nbit__> targetbit = *istring;
       std::vector<std::vector<DetMap>> pij;
+      std::vector<std::vector<DetMap>> uncompressed_pij;
       pij.resize( nij );
       for (int j = 0; j < norb(); ++j) {
         if ( !targetbit[j] ) continue;
@@ -189,6 +200,7 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
             int minij, maxij;
             std::tie(minij, maxij) = std::minmax(i,j);
             pij[minij+((maxij*(maxij+1))>>1)].emplace_back(source_lex, sign(targetbit, i, j), tindex, j+i*norb());
+            uncompressed_pij[i + j*norb()].emplace_back(source_lex, sign(targetbit, i, j), tindex, j+i*norb());
           }
         }
       }
@@ -196,6 +208,11 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
         pij[i].shrink_to_fit();
         phi_ij[i].emplace_back(offsets[i], ispace, std::move(pij[i]));
         offsets[i] += phi_ij[i].back().size();
+      }
+      for (int i = 0; i < nn; ++i) if (uncompressed_pij[i].size() > 0) {
+        uncompressed_pij[i].shrink_to_fit();
+        uncompressed_phi_ij[i].emplace_back(uncompressed_offsets[i], ispace, std::move(uncompressed_pij[i]));
+        uncompressed_offsets[i] += uncompressed_phi_ij[i].back().size();
       }
     }
   }
