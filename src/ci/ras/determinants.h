@@ -133,6 +133,9 @@ class RASDeterminants : public Determinants_base<RASString>,
     const std::vector<DetMapBlock>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
     const std::vector<DetMapBlock>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }
 
+    const std::vector<DetMapBlock>& uncompressed_phia_ij(const size_t ij) const { return uncompressed_phia_ij_[ij]; }
+    const std::vector<DetMapBlock>& uncompressed_phib_ij(const size_t ij) const { return uncompressed_phib_ij_[ij]; }
+
     std::shared_ptr<const RASDeterminants> addalpha() const { return addalpha_.lock();}
     std::shared_ptr<const RASDeterminants> remalpha() const { return remalpha_.lock();}
     std::shared_ptr<const RASDeterminants> addbeta() const { return addbeta_.lock();}
