@@ -70,6 +70,12 @@ class RASCivector_base {
     std::shared_ptr<BlockType> block(const std::shared_ptr<const RASString>& beta, const std::shared_ptr<const RASString>& alpha) {
       return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
     }
+    std::shared_ptr<BlockType> block(const std::bitset<nbit__>& bstring, const std::shared_ptr<const RASString>& alpha) {
+      return block( alpha->nholes(), det_->nholes(bstring), alpha->nparticles(), det_->nparticles(bstring) );
+    }
+    std::shared_ptr<BlockType> block(const std::shared_ptr<const RASString>& beta, const std::bitset<nbit__>& astring) {
+      return block( det_->nholes(astring), beta->nholes(), det_->nparticles(astring), beta->nparticles() );
+    }
 
     std::shared_ptr<const BlockType> block(const int& nha, const int& nhb, const int& npa, const int& npb) const {
       if ( det_->allowed(nha, nhb, npa, npb) ) {
@@ -82,6 +88,12 @@ class RASCivector_base {
     }
     std::shared_ptr<const BlockType> block(const std::shared_ptr<const RASString>& beta, const std::shared_ptr<const RASString>& alpha) const {
       return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
+    }
+    std::shared_ptr<BlockType> block(const std::bitset<nbit__>& bstring, const std::shared_ptr<const RASString>& alpha) const {
+      return block( alpha->nholes(), det_->nholes(bstring), alpha->nparticles(), det_->nparticles(bstring) );
+    }
+    std::shared_ptr<BlockType> block(const std::shared_ptr<const RASString>& beta, const std::bitset<nbit__>& astring) const {
+      return block( det_->nholes(astring), beta->nholes(), det_->nparticles(astring), beta->nparticles() );
     }
 
     // Return set of allowed blocks given an input string or block
