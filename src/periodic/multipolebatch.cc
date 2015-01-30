@@ -50,15 +50,15 @@ void MultipoleBatch::compute() {
 
   // First, do (ix, iy, iz; l; m) = (n|O_lm|0) using VRR
   const int amax1 = amax_ + 1;
-  const int asize = (amax_ + 1) * (amax_ + 2) / 2;
 
-  const int size_start = num_multipoles_ * asize * prim0_ * prim1_;
+  const int size_start = num_multipoles_ * asize_ * prim0_ * prim1_;
   complex<double>* intermediate_p = stack_->get<complex<double>>(size_start);
-  complex<double>* const current_data = intermediate_p;
 
   const int nmul = num_multipoles_;
   for (int iprim = 0; iprim != prim0_ * prim1_; ++iprim) {
-    const double cxp_inv = 1.0 / xp_[iprim];
+    vector<complex<double>*> current_data(nmul);
+    for (int imul = 0; imul != nmul; ++imul)
+      current_data[imul] = intermediate_p + imul * asize_ * prim0_ * prim1_ + iprim * asize_;
 
     vector<complex<double>> workz(amax1 * nmul); // (0, 0, iz, l, m)
 
@@ -90,7 +90,7 @@ void MultipoleBatch::compute() {
       for (int imul = 0; imul != nmul; ++imul)
         worky[imul] = workz[iz * nmul + imul];
 
-      for (int iy = 0; iy <= amax_ - iz; ++iy, ++iang) {
+      for (int iy = 0; iy <= amax_ - iz; ++iy) {
         // (0, iy, iz, l, m)
         for (int b = 1; b <= iy; ++b) {
           int imul = 0;
@@ -100,63 +100,72 @@ void MultipoleBatch::compute() {
               if (b > 1)
                 worky[b * nmul + imul] += (b-1.0) * worky[(b-2)*nmul+imul];
               if (l > 0) {
-                const int i1 = (l-1)*(l-1) + m;
+                const int i1 = (l-1)*(l-1) + m - 1;
                 if (abs(m - l - 1) < l)
                   worky[b * nmul + imul] += complex<double>(0.0, 0.5) * worky[(b-1)*nmul+i1-1];
                 if (abs(m - l + 1) < l)
                   worky[b * nmul + imul] += complex<double>(0.0, 0.5) * worky[(b-1)*nmul+i1+1];
               }
-              worky[b * nmul + imul] *= 0.5 * cxp_inv;
+              worky[b * nmul + imul] *= 0.5 / xp_[iprim];
             }
           }
         }
 
-        vector<complex<double>> workx((amax1 - iz - iy) * nmul);
+        vector<complex<double>> workx((amax1 - iy - iz) * nmul);
         for (int imul = 0; imul != nmul; ++imul)
           workx[imul] = worky[iy * nmul + imul];
 
-        const int ix = amax_ - iz - iy;
-        // (ix, iy, iz, l, m)
-        for (int a = 1; a <= ix; ++a) {
+        for (int ix = max(0, amin_ - iy - iz); ix <= amax_ - iy - iz; ++ix, ++iang) {
+          // (ix, iy, iz, l, m)
+          for (int a = 1; a <= ix; ++a) {
+            int imul = 0;
+            for (int l = 0; l <= lmax_; ++l) {
+              for (int m = 0; m <= 2 * l; ++m, ++imul) {
+                workx[a * nmul + imul] = -2.0 * xb_[iprim] * AB_[0] * workx[(a-1)*nmul+imul];
+                if (a > 1)
+                  workx[a * nmul + imul] += (a-1.0) * workx[(a-2)*nmul+imul];
+                if (l > 0) {
+                  const int i1 = (l-1)*(l-1) + m - 1;
+                  if (abs(m - l - 1) < l)
+                    workx[a * nmul + imul] -= 0.5 * workx[(a-1)*nmul+i1-1];
+                  if (abs(m - l + 1) < l)
+                    workx[a * nmul + imul] += 0.5 * workx[(a-1)*nmul+i1+1];
+                }
+                workx[a * nmul + imul] *= 0.5 / xp_[iprim];
+              }
+            }
+          }
+
           int imul = 0;
           for (int l = 0; l <= lmax_; ++l) {
             for (int m = 0; m <= 2 * l; ++m, ++imul) {
-              workx[a * nmul + imul] = -2.0 * xb_[iprim] * AB_[0] * workx[(a-1)*nmul+imul];
-              if (a > 1)
-                workx[a * nmul + imul] += (a-1.0) * workx[(a-2)*nmul+imul];
-              if (l > 0) {
-                const int i1 = (l-1)*(l-1) + m;
-                if (abs(m - l - 1) < l)
-                  workx[a * nmul + imul] += -0.5 * workx[(a-1)*nmul+i1-1];
-                if (abs(m - l + 1) < l)
-                  workx[a * nmul + imul] += 0.5 * workx[(a-1)*nmul+i1+1];
+              const int pos = amapping_[ix + amax1_ * (iy + amax1_ * iz)];
+              if (!swap01_) {
+                current_data[imul][pos] = workx[ix * nmul + imul];
+              } else {
+                current_data[imul][pos] = conj(workx[ix * nmul + imul]);
               }
-              workz[a * nmul + imul] *= 0.5 * cxp_inv;
             }
           }
-        }
-
-        int imul = 0;
-        for (int l = 0; l <= lmax_; ++l) {
-          for (int m = 0; m <= 2 * l; ++m, ++imul) {
-            const int index = imul * asize * prim0_ * prim1_ + iang * prim0_ * prim1_ + iprim;
-            current_data[index] = workx[ix * nmul + imul];
-          }
-        }
-
+        } // ix
       } //iy
     } //iz
+    if (iang > asize_) cout << "iang = " << iang << " asize_ = " << asize_ << endl;
+    assert(iang <= asize_);
 
   } // end loop over primitives - done (n|O|0)
 
   const CSortList sort(spherical_);
   complex<double>* data_start = intermediate_p;
   complex<double>* data_final = data_;
+  fill_n(data_, size_alloc_, 0.0);
 
-  for (int imul = 0; imul != nmul; ++imul) {
-    const int size_intermediate = asize * cont0_ * cont1_;
-    complex<double>* intermediate_c = stack_->get<complex<double>>(size_intermediate);
-    perform_contraction(asize, data_start, prim0_, prim1_, intermediate_c,
+
+  for (int imul = 0; imul != nmul; ++imul, data_start += prim0_ * prim1_ * asize_, data_final += size_block_) {
+
+    const int size_intermediate = asize_ * cont0_ * cont1_;
+    complex<double>* const intermediate_c = stack_->get<complex<double>>(size_intermediate);
+    perform_contraction(asize_, data_start, prim0_, prim1_, intermediate_c,
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
@@ -165,8 +174,8 @@ void MultipoleBatch::compute() {
 
     // now get (a|O_lm|b) using HRR
     if (basisinfo_[1]->angular_number() != 0) {
-      const int hrr_iprim = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-      hrr.hrrfunc_call(hrr_iprim, cont0_ * cont1_, intermediate_c, AB_, intermediate_fi);
+      const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
+      hrr.hrrfunc_call(hrr_index, cont0_ * cont1_, intermediate_c, AB_, intermediate_fi);
     } else {
       copy_n(intermediate_c, size_final_car, intermediate_fi);
     }
@@ -184,9 +193,6 @@ void MultipoleBatch::compute() {
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       sort.sortfunc_call(sort_index, data_final, intermediate_fi, cont1_, cont0_, 1, swap01_);
     }
-
-    data_start += prim0_ * prim1_ * asize;
-    data_final += size_block_;
 
     stack_->release(size_final_car, intermediate_fi);
     stack_->release(size_intermediate, intermediate_c);

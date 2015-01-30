@@ -57,10 +57,9 @@ void SphMultipole::compute_multipoles() {
       if (r > 1e-15) {
         const double coeff = pow(r, l) * plm.compute(l, am, ctheta) / f(l + am);
 
-        const double real = coeff * cos(-m * phi);
-        const double imag = coeff * sin(-m * phi);
+        const double real = (m >=0) ? (coeff * cos(am * phi)) : (-1.0 * coeff * cos(am * phi));
+        const double imag = coeff * sin(am * phi);
         multipole_[count] = complex<double>(real, imag);
-        if (m < 0) multipole_[count] *= pow(-1.0, m) * f(l - m) / f(l + m);
       } else {
         multipole_[count] = 0.0;
       }

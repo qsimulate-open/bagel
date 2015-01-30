@@ -58,20 +58,22 @@ void LocalExpansion::compute_local_moments() {
 
       ZMatrix local(nbasis1_, nbasis0_);
       int i2 = 0;
-      for (int j = 0; j != lmax_; ++j) {
-        for (int k = 0; k != 2 * k; ++k, ++i2) {
+      for (int j = 0; j <= lmax_; ++j) {
+        for (int k = 0; k <= 2 * j; ++k, ++i2) {
 
           const int a = l + j;
           const int b = m - l + k - j;
           const double prefactor = f(a - abs(b)) * plm.compute(a, abs(b), ctheta) / pow(r, a + 1);
-          const double real = prefactor * cos(b * phi);
-          const double imag = prefactor * sin(b * phi);
-          complex<double> coeff(real, imag);
-          if (b < 0) coeff *= pow(-1.0, b) * f(a - b) / f(a + b);
+          const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
+          const double imag = prefactor * sin(abs(b) * phi);
+          const complex<double> coeff(real, imag);
 
-          blas::ax_plus_y_n(coeff, moments_[i2]->data(), local.size(), local.data());
+          if (abs(coeff) > 1e-15)
+            zaxpy_(nbasis0_ * nbasis1_, coeff, moments_[i2]->data(), 1, local.data(), 1);
         }
       }
+      //if (local.rms() > 1e-5) local.print("Local");
+      assert(i2 == num_multipoles_);
       local_moments_[i1] = make_shared<const ZMatrix>(local);
     }
   }
