@@ -157,14 +157,14 @@ class RASDeterminants : public Determinants_base<RASString>,
       spin_adapt(const int spin, const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
-    template <int spin> void construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij, std::vector<std::vector<DetMapBlock>>& uncompressed_phi_ij);
+    template <int spin> void construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::shared_ptr<const StringMap>& uncompressed_phi, std::vector<std::vector<DetMapBlock>>& phi_ij, std::vector<std::vector<DetMapBlock>>& uncompressed_phi_ij);
 };
 
 template <int spin>
-void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij, std::vector<std::vector<DetMapBlock>>& uncompressed_phi_ij) {
+void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::shared_ptr<const StringMap>& uncompressed_phi, std::vector<std::vector<DetMapBlock>>& phi_ij, std::vector<std::vector<DetMapBlock>>& uncompressed_phi_ij) {
 
   phi = stringspace->phi();
-
+  uncompressed_phi = stringspace->uncompressed_phi();
 
   // old code for phi_ij TODO replace
   const int nij = (norb() * (norb() + 1))/2;

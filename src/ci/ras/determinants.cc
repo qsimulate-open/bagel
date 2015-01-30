@@ -90,10 +90,13 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
       if (!mute) cout << "   - beta strings: "  <<  betaspaces_->size() << endl << endl;
 
       if (!mute) cout << " o Constructing alpha and beta displacement lists" << endl;
-      construct_phis_<0>(alphaspaces_, phia_, phia_ij_, uncompressed_phia_ij_);
+      //                               <- base ---------------->  <- RASdet -------------------->
+      construct_phis_<0>(alphaspaces_, phia_, phia_uncompressed_, phia_ij_, uncompressed_phia_ij_);
       if (!mute) cout << "   - alpha lists: " << phia_->size() << endl;
-      construct_phis_<1>(betaspaces_, phib_, phib_ij_, uncompressed_phib_ij_);
+      assert(phia_->size() == phia_uncompressed_->size());
+      construct_phis_<1>(betaspaces_, phib_, phib_uncompressed_, phib_ij_, uncompressed_phib_ij_);
       if (!mute) cout << "   - beta lists: "  << phib_->size() << endl;
+      assert(phib_->size() == phib_uncompressed_->size());
 
       if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
 
