@@ -39,15 +39,19 @@ namespace bagel {
 class SphMultipole {
   protected:
     std::array<double, 3> centre_;
+    bool do_complex_;
     int lmax_;
 
     int num_multipoles_;
     std::vector<std::complex<double>> multipole_;
     void compute_multipoles();
 
+    std::vector<double> real_multipole_;
+    void compute_real_multipoles();
+
   public:
     SphMultipole() { }
-    SphMultipole(const std::array<double, 3> c, const int lmax = ANG_HRR_END);
+    SphMultipole(const std::array<double, 3> c, const bool do_complex = true, const int lmax = ANG_HRR_END);
     ~SphMultipole() { }
 
     std::array<double, 3> centre() const { return centre_; }
@@ -59,6 +63,9 @@ class SphMultipole {
     std::complex<double> multipole(const int i) const { assert(i < num_multipoles_); return multipole_[i]; }
     std::complex<double> multipole(const int l, const int m) const;
     std::vector<std::complex<double>> multipoles(const int l);
+
+    std::vector<double> real_multipoles() { return real_multipole_; }
+    double real_multipole(const int i) const { assert(i < num_multipoles_); return real_multipole_[i]; }
 
     void print_multipoles() const;
 };

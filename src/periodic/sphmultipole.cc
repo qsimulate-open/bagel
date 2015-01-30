@@ -33,10 +33,14 @@ using namespace bagel;
 const static Legendre plm;
 const static Factorial f;
 
-SphMultipole::SphMultipole(const array<double, 3> c, const int l) : centre_(c), lmax_(l) {
+SphMultipole::SphMultipole(const array<double, 3> c, const bool do_complex, const int l) : centre_(c), do_complex_(do_complex), lmax_(l) {
 
   num_multipoles_ = (lmax_ + 1) * (lmax_ + 1);
-  compute_multipoles();
+  if (do_complex_) {
+    compute_multipoles();
+  } else {
+    compute_real_multipoles();
+  }
 }
 
 
@@ -66,16 +70,6 @@ void SphMultipole::compute_multipoles() {
 
     }
   }
-#if 0
-      if (r < 1e-5) {
-        cout << "*************************** very small r {" << endl;
-        cout << " centre = " << centre_[0] << ", " << centre_[1] << ", " << centre_[2] << endl;
-        cout << "(r, th, ph) = " << r << ", " << acos(ctheta) << ", " << phi << endl;
-        print_multipoles();
-        cout << "}" << endl;
-      }
-#endif
-
 }
 
 
@@ -95,14 +89,40 @@ vector<std::complex<double>> SphMultipole::multipoles(const int l) {
 }
 
 
+void SphMultipole::compute_real_multipoles() {
+
+  const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
+  const double ctheta = centre_[2]/r;
+  const double phi = atan2(centre_[1], centre_[0]);
+
+  real_multipole_.resize(num_multipoles_);
+
+  real_multipole_[0] = 1.0;
+  const double sqrttwo = sqrt(2.0);
+  for (int l = 1; l <= lmax_; ++l) {
+    real_multipole_[l * l] = 0.5 * pow(r, l) * plm.compute(l, 0, ctheta);
+    for (int m = 1; m <= l; ++m) {
+
+      const double coeff = pow(r, l) * plm.compute(l, m, ctheta) * sqrt(f(l - m) / f(l + m));
+
+      real_multipole_[l*l+l+m] = sqrttwo * coeff * cos(m * phi);
+      real_multipole_[l*l+l-m] = sqrttwo * coeff * sin(m * phi);
+    }
+  }
+}
+
+
 void SphMultipole::print_multipoles() const {
 
   cout << "LMAX = " << lmax_ << endl;
   int cnt = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m, ++cnt)
-      cout << setprecision(6) << multipole_[cnt] << "   ";
+      if (do_complex_) {
+        cout << setprecision(6) << multipole_[cnt] << "   ";
+      } else {
+        cout << setprecision(6) << real_multipole_[cnt] << "   ";
+      }
     cout << endl;
   }
 }
-
