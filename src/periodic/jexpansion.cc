@@ -157,15 +157,26 @@ shared_ptr<const ZMatrix> JExpansion::compute(shared_ptr<const Matrix> density) 
 
   LocalExpansion local(centre1_, multipoles1, lmax_);
   vector<shared_ptr<const ZMatrix>> lmoments = local.local_moments();
-  auto out = make_shared<ZMatrix>(dimb1, dimb0);
+
+  ZMatrix out(dimb1, dimb0);
   for (int i = 0; i != num_multipoles_; ++i) {
     complex<double> contract = 0.0;
     for (int j = 0; j != dimb2; ++j)
       for (int k = 0; k != dimb3; ++k)
         contract += lmoments[i]->element(k, j) * density->element(k, j);
-    *out += contract * *multipoles0[i];
-  }
-  out->print("Multipole expansion approximation");
 
-  return out;
+    out += contract * *multipoles0[i];
+  }
+  out.print("Multipole expansion approximation");
+
+  return make_shared<const ZMatrix>(out);
+}
+
+
+void JExpansion::map_lm_index() {
+
+  int cnt = 0;
+  for (int l = 0; l <= lmax_; ++l)
+    for (int m = 0; m <= 2 * l; ++m, ++cnt)
+      lm_map_.push_back(make_pair(l, m-l));
 }

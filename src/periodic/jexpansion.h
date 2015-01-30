@@ -41,6 +41,8 @@ class JExpansion {
     std::array<double, 3> centre0_, centre1_, r12_;
     double extent0_, extent1_;
     int num_multipoles_;
+    std::vector<std::pair<int, int>> lm_map_;
+    void map_lm_index();
 
     std::array<double, 3> distribution_centre(std::array<std::shared_ptr<const Shell>, 2> shells);
     double distribution_extent(std::array<std::shared_ptr<const Shell>, 2> shells, const double thresh = PRIM_SCREEN_THRESH);

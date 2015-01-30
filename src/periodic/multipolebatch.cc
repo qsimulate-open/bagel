@@ -69,18 +69,19 @@ void MultipoleBatch::compute() {
     int iang = 0;
     for (int iz = 0; iz <= amax_; ++iz) {
       // (0, 0, iz, l, m)
-      for (int c = 1; c <= iz; ++c) {
+      if (iz > 0) {
         int imul = 0;
         for (int l = 0; l <= lmax_; ++l) {
           for (int m = 0; m <= 2 * l; ++m, ++imul) {
-            workz[c * nmul + imul] = -2.0 * xb_[iprim] * AB_[2] * workz[(c-1)*nmul+imul];
-            if (c > 1)
-              workz[c * nmul + imul] += (c-1.0) * workz[(c-2)*nmul+imul];
-            if (l > 0 && abs(m) < l) {
-              const int i1 = (l-1)*(l-1) + m;
-              workz[c * nmul + imul] += -0.5 * workz[(c-1)*nmul+i1];
+            assert(l * l + m == imul);
+            workz[iz * nmul + imul] = -2.0 * xb_[iprim] * AB_[2] * workz[(iz-1)*nmul+imul];
+            if (iz > 1)
+              workz[iz * nmul + imul] += (iz-1.0) * workz[(iz-2)*nmul+imul];
+            if (l > 0 && abs(m-l) < l) {
+              const int i1 = (l-1)*(l-1) + m - 1;
+              workz[iz * nmul + imul] += workz[(iz-1)*nmul+i1];
             }
-            workz[c * nmul + imul] *= 0.5 * cxp_inv;
+            workz[iz * nmul + imul] *= 0.5 / xp_[iprim];
           }
         }
       }
@@ -197,16 +198,6 @@ void MultipoleBatch::compute() {
     stack_->release(size_final_car, intermediate_fi);
     stack_->release(size_intermediate, intermediate_c);
   } // end loop over multipoles
-
-#if 0
-  for (int i = 0; i != nmul; ++i) {
-    for (int j = 0; j != cont1_ * cont0_ * asize; ++j) {
-       const int k = i * size_block_ + j;
-       cout << setprecision(7) << data_[k] << endl;
-    }
-  }
-#endif
-
 
   // release resources
   stack_->release(size_start, intermediate_p);
