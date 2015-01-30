@@ -192,6 +192,7 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
       std::vector<std::vector<DetMap>> pij;
       std::vector<std::vector<DetMap>> uncompressed_pij;
       pij.resize( nij );
+      uncompressed_pij.resize( nn );
       for (int j = 0; j < norb(); ++j) {
         if ( !targetbit[j] ) continue;
         std::bitset<nbit__> intermediatebit = targetbit; intermediatebit.reset(j);

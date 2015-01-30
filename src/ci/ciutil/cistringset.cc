@@ -57,12 +57,14 @@ void CIStringSet<FCIString>::construct_phi() {
             tie(minij, maxij) = minmax(i,j);
             auto detmap = DetMap(lexical_zero(mbit), sign(mbit, i, j), source, i+norb()*j);
             (*phi_)[minij+((maxij*(maxij+1))>>1)].push_back(detmap);
+            cout << "FCI phi[" << minij+((maxij*(maxij+1))>>1) << "] = " << lexical_zero(mbit) << " " << sign(mbit, i, j) << " " << source << " " << i+norb()*j << endl;
             (*uncompressed_phi_)[i + j*norb()].push_back(detmap);
           }
         }
       }
     }
   }
+  cout << "phi_ and uncompressed_phi_ sizes : " << phi_->size() << " " << uncompressed_phi_->size() << endl;
 }
 
 // RAS version
@@ -70,6 +72,7 @@ template<>
 void CIStringSet<RASString>::construct_phi() {
   phi_ = make_shared<StringMap>(size_);
   phi_->reserve(norb_*norb_);
+  cout << "CIStringSet:: phi_ reserve.. " << norb_ << " " << norb_*norb_ << endl;
 
   unordered_map<bitset<nbit__>, size_t> lexmap;
   for (size_t i = 0; i < size_; ++i)
@@ -86,9 +89,34 @@ void CIStringSet<RASString>::construct_phi() {
         if (allowed(sourcebit)) {
           assert(lexmap.find(sourcebit) != lexmap.end());
           (*phi_)[tindex].emplace_back(tindex, sign(istring, i, j), lexmap[sourcebit], j+i*norb_);
+          cout << "phi[" << tindex << "] = (" << tindex << ", " << sign(istring,i,j) << ", " << lexmap[sourcebit] << ", " << j+i*norb_ << ") " << endl;
         }
       }
     }
     (*phi_)[tindex++].shrink_to_fit();
+  }
+
+  //actually sindex arranged phi
+  uncompressed_phi_ = make_shared<StringMap>(size_);
+  uncompressed_phi_->reserve(norb_*norb_);
+  cout << "CIStringSet:: uncompressed phi_ reserve.. " << norb_ << " " << norb_*norb_ << endl;
+
+  tindex = 0; //source index
+  for (auto& istring : strings_) {
+    for (int j = 0; j < norb_; ++j) { // <source| i^+
+      if (!istring[j]) continue;
+      bitset<nbit__> intermediatebit = istring; intermediatebit.reset(j);
+      for (int i = 0; i < norb_; ++i) { // <source| i^+ j
+        if (intermediatebit[i]) continue;
+        bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i); // <source| i^+ j  =  <target|  
+        if (allowed(sourcebit)) {
+          assert(lexmap.find(sourcebit) != lexmap.end());
+          //                                             target          sign               source  j i' = E_ij
+          (*uncompressed_phi_)[tindex].emplace_back(lexmap[sourcebit], sign(istring, i, j), tindex, i+j*norb_);
+          cout << "phi[" << tindex << "] = (" << lexmap[sourcebit] << ", " << sign(istring,i,j) << ", " << tindex << ", " << i+j*norb_ << ") " << endl;
+        }
+      }
+    }
+    (*uncompressed_phi_)[tindex++].shrink_to_fit();
   }
 }
