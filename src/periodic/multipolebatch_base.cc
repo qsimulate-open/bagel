@@ -72,6 +72,12 @@ void MultipoleBatch_base::compute_ss(const double thr) {
       const double rPQsq = PQ[0]*PQ[0] + PQ[1]*PQ[1] + PQ[2]*PQ[2];
       const bool same_centre = (rPQsq < 1e-15) ? true : false;
 
+      #if 0 //debug print
+      if (!same_centre) {
+        Mpq->print_multipoles();
+        cout << "PQ = (" << setprecision(6) << PQ[0] << ", " << PQ[1] << ", " << PQ[2] << ")" << endl;
+      }
+      #endif
 
       const double coeff1 = pisqrt__ * pi__ * sqrt(cxp_inv) * cxp_inv;
 
@@ -79,10 +85,8 @@ void MultipoleBatch_base::compute_ss(const double thr) {
         const double rABsq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2];
         multipole_[iprim + i * prim0_ * prim1_] = (same_centre) ? coeff1 * exp(- *e0 * *e1 * cxp_inv * rABsq)
                                                                 : coeff1 * Mpq->multipole(i) * exp(- *e0 * *e1 * cxp_inv * rABsq);
-        if (swap01_) multipole_[iprim + i * prim0_ * prim1_] = conj(multipole_[iprim + i * prim0_ * prim1_]);
-#if 0
-        cout << "xyz in ss " << setprecision(9) << multipole_[i * prim0_ * prim1_ + iprim] << endl;
-#endif
+        if (swap01_)
+          multipole_[iprim + i * prim0_ * prim1_] = conj(multipole_[iprim + i * prim0_ * prim1_]);
       }
     }
   }

@@ -49,7 +49,6 @@ MultipoleBatch::MultipoleBatch(const array<shared_ptr<const Shell>,2>& sh, const
 void MultipoleBatch::compute() {
 
   // First, do (ix, iy, iz; l; m) = (n|O_lm|0) using VRR
-  const int amax1 = amax_ + 1;
 
   const int size_start = num_multipoles_ * asize_ * prim0_ * prim1_;
   complex<double>* intermediate_p = stack_->get<complex<double>>(size_start);
@@ -60,7 +59,7 @@ void MultipoleBatch::compute() {
     for (int imul = 0; imul != nmul; ++imul)
       current_data[imul] = intermediate_p + imul * asize_ * prim0_ * prim1_ + iprim * asize_;
 
-    vector<complex<double>> workz(amax1 * nmul); // (0, 0, iz, l, m)
+    vector<complex<double>> workz(amax1_ * nmul); // (0, 0, iz, l, m)
 
     // (0, 0, 0, l, m)
     for (int imul = 0; imul != nmul; ++imul)
@@ -87,7 +86,7 @@ void MultipoleBatch::compute() {
       }
 
 
-      vector<complex<double>> worky((amax1 - iz) * nmul);
+      vector<complex<double>> worky((amax1_ - iz) * nmul);
       for (int imul = 0; imul != nmul; ++imul)
         worky[imul] = workz[iz * nmul + imul];
 
@@ -112,7 +111,7 @@ void MultipoleBatch::compute() {
           }
         }
 
-        vector<complex<double>> workx((amax1 - iy - iz) * nmul);
+        vector<complex<double>> workx((amax1_ - iy - iz) * nmul);
         for (int imul = 0; imul != nmul; ++imul)
           workx[imul] = worky[iy * nmul + imul];
 
