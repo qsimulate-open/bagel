@@ -58,9 +58,9 @@ void JExpansion::init() {
   extent0_ = distribution_extent(array<shared_ptr<const Shell>, 2>{{basisinfo_[0], basisinfo_[1]}});
   extent1_ = distribution_extent(array<shared_ptr<const Shell>, 2>{{basisinfo_[2], basisinfo_[3]}});
 
-  r12_[0] = centre0_[0] - centre1_[0];
-  r12_[1] = centre0_[1] - centre1_[1];
-  r12_[2] = centre0_[2] - centre1_[2];
+  r12_[0] = centre1_[0] - centre0_[0];
+  r12_[1] = centre1_[1] - centre0_[1];
+  r12_[2] = centre1_[2] - centre0_[2];
 
   num_multipoles_ = (lmax_ + 1) * (lmax_ + 1);
 }
