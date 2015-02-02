@@ -43,6 +43,12 @@ class ASD_RAS : public ASD<RASDvec> {
     void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
     void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
     void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
+
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12_from_civec(std::shared_ptr<const RASCivec>, std::shared_ptr<const RASCivec>) const;
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12_last_step(std::shared_ptr<const RASDvec>, std::shared_ptr<const RASDvec>, std::shared_ptr<const RASCivec>) const;
+    void sigma_2a1(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> d) const;
+    void sigma_2a2(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> d) const;
+
 };
 
 }

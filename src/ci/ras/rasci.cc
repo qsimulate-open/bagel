@@ -347,6 +347,11 @@ void RASCI::compute() {
     cc_->data(istate)->print(print_thresh_);
   }
 
+  //RDM
+  int istate = 0;
+  compute_rdm12(cc_->data(istate), cc_->data(istate));
+  assert(false);
+
 #if 0
   for (auto& iprop : properties_) {
     iprop->compute(cc_);

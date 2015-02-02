@@ -71,6 +71,8 @@ class RASCI : public Method {
     // CI vector at convergence
     std::shared_ptr<RASDvec> cc_;
 
+    std::shared_ptr<RDM<1>> rdm1_;
+    std::shared_ptr<RDM<2>> rdm2_;
 #ifndef NORDMS
     // RDMs; should be resized in constructors
     std::vector<std::shared_ptr<RDM<1>>> rdm1_;
@@ -105,12 +107,6 @@ class RASCI : public Method {
     // functions related to natural orbitals
     void update_rdms(const std::shared_ptr<Matrix>& coeff);
 
-#ifndef NORDMS
-    // internal function for RDM1 and RDM2 computations
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_last_step(std::shared_ptr<RASDvec>, std::shared_ptr<const RASDvec>, std::shared_ptr<const RASCivec>) const;
-#endif
-
     // print functions
     void print_header() const;
 
@@ -133,6 +129,13 @@ class RASCI : public Method {
     //virtual int nij() const { return norb_*(norb_+1)/2; }
 
     //double weight(const int i) const { return weight_[i]; }
+
+    void compute_rdm12(std::shared_ptr<RASCivec>, std:: shared_ptr<RASCivec>);
+    void sigma_2a1(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
+    void sigma_2a2(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
+    // internal function for RDM1 and RDM2 computations
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
+      compute_rdm12_last_step(std::shared_ptr<RASDvec>, std::shared_ptr<RASDvec>, std::shared_ptr<const RASCivec>) const;
 
 #ifndef NORDMS
     // rdms

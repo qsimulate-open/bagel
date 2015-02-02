@@ -661,6 +661,9 @@ ASD_CAS::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const D
   const int norb = cibra->det()->norb();
   //END
 
+  cout << "TEST: Civec lena = " << cibra->lena() << ", lenb = " << cibra->lenb() << endl;
+  cout << "TEST: Dvec  lena = " << dbra->lena() << ", lenb = " << dbra->lenb() << endl;
+
   const int nri = dbra->lena()*dbra->lenb();
   const int ij  = norb*norb;
 

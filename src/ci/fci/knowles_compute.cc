@@ -95,10 +95,15 @@ void FCI::sigma_2a1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
   assert(d->det() == cc->det());
   const int lb = d->lenb();
   const int ij = d->ij();
+  cout << "FCI:: sigma_2a1: lb = d->lenb() : " << lb << endl;
+  cout << "                 ij = d->ij()   : " << ij << endl;
   const double* const source_base = cc->data();
   for (int ip = 0; ip != ij; ++ip) {
     double* const target_base = d->data(ip)->data();
-    for (auto& iter : cc->det()->phia(ip)) {
+    cout << "target_base: " << ip << " -> " << target_base << endl;
+    for (auto& iter : cc->det()->phia(ip)) { // DetMap
+      DetMap temp {iter};
+      cout << "FCI phi[" << ip << "] = " << temp.target << " " << temp.sign << " " << temp.source << " " << temp.ij << endl;
       const double sign = static_cast<double>(iter.sign);
       double* const target_array = target_base + iter.source*lb;
       daxpy_(lb, sign, source_base + iter.target*lb, 1, target_array, 1);
