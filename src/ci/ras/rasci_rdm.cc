@@ -20,7 +20,7 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
     dbra->data(ij)->zero();
   }
 //dbra->zero();
-//sigma_2a1(cbra, dbra);
+  sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
 
   shared_ptr<RASDvec> dket;
@@ -31,7 +31,7 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
       dket->data(ij)->zero();
     }
   //dket->zero();
-  //sigma_2a1(cket, dket);
+    sigma_2a1(cket, dket);
     sigma_2a2(cket, dket);
   } else {
     dket = dbra;
@@ -51,32 +51,24 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
 
 void RASCI::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
   cout << "sigma_2a1" << endl;
-  const int nij = norb_*norb_;
+  //based on sigma_2a2
+  
   shared_ptr<const RASDeterminants> det = cc->det();
 
-  for (auto& ispace : *det->stringspaceb()) {
-    cout << "ispace" << endl;
-    for (auto istring = ispace->begin(); istring != ispace->end(); ++istring) {
-      cout << " istring" << endl;
-      const std::bitset<nbit__> bbit = *istring;
-      for (int ij = 0; ij != nij; ++ij) {    
-        cout << "  ij" << endl;
-        for (auto& phiblock : det->uncompressed_phia_ij(ij)) {
-          cout << "   phiblock" << endl;
-          for (auto& phi : phiblock) {
-            cout << "    phi" << endl;
+  for (auto& ispace : *det->stringspaceb()) { 
+    for (size_t ib = 0; ib != ispace->size(); ++ib) {
+      const std::bitset<nbit__> bbit = ispace->strings(ib);
+      for (auto& jspace : *det->stringspacea()) {
+        const size_t offset = jspace->offset();
+        for (size_t ja = 0; ja != jspace->size(); ++ja) { 
+          for (auto& phi : det->phia(ja+offset)) {
             const double sign = static_cast<double>(phi.sign);
-            const auto sbit = det->string_bits_a(phi.source);
-            cout << "     sbit:" << print_bit(sbit,norb_) << endl;
-            const auto tbit = det->string_bits_a(phi.target);
-            cout << "     tbit:" << print_bit(tbit,norb_) << endl;
-          //if(!allowed(sbit,bbit)) continue; //alpha first
+            const auto sbit = det->string_bits_b(phi.source);
+            const auto tbit = det->string_bits_b(phi.target);
+            const auto ij = phi.ij;
             if(!det->allowed(tbit,bbit)) continue;
             if(!det->allowed(sbit,bbit)) continue;
-            cout << "     cc: " << cc->element(bbit,tbit) <<  endl;
-            cout << "      d: " << d->data(ij)->element(bbit,sbit) << endl;
-            d->data(ij)->element(bbit,sbit) += sign * cc->element(bbit,tbit); //beta first
-            cout << "     ---: " << endl;
+            d->data(ij)->element(bbit,sbit) += sign * cc->element(bbit,tbit);
           }
         }
       }
