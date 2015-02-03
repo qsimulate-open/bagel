@@ -11,11 +11,15 @@ using namespace bagel;
 void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) {
   cout << "compute_rdm12.." << endl;
 
+  //reconstruct det space
+  det_ = make_shared<const RASDeterminants>(ras_, nelea_, neleb_, max_holes_, max_particles_, /*mute*/false, /*allblock*/true);
+
   rdm1_ = make_shared<RDM<1>>(norb_);
   rdm2_ = make_shared<RDM<2>>(norb_);
 
   // since we consider here number conserving operators...
-  auto dbra = make_shared<RASDvec>(cbra->det(), norb_*norb_);
+  auto dbra = make_shared<RASDvec>(det_, norb_*norb_, true);
+//auto dbra = make_shared<RASDvec>(cbra->det(), norb_*norb_);
   for (int ij = 0; ij != norb_*norb_; ++ij) {
     dbra->data(ij)->zero();
   }
@@ -26,7 +30,8 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
   shared_ptr<RASDvec> dket;
   // if bra and ket vectors are different, we need to form Sigma for ket as well.
   if (cbra != cket) {
-    dket = make_shared<RASDvec>(cket->det(), norb_*norb_);
+    dket = make_shared<RASDvec>(det_, norb_*norb_, true);
+  //dket = make_shared<RASDvec>(cket->det(), norb_*norb_);
     for (int ij = 0; ij != norb_*norb_; ++ij) {
       dket->data(ij)->zero();
     }
@@ -112,7 +117,7 @@ void RASCI::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
   cout << "sigma_2a1" << endl;
   //based on sigma_2a2
   
-  shared_ptr<const RASDeterminants> det = cc->det();
+  shared_ptr<const RASDeterminants> det = det_; //cc->det();
 
   for (auto& ispace : *det->stringspaceb()) { 
     for (size_t ib = 0; ib != ispace->size(); ++ib) {
@@ -126,7 +131,7 @@ void RASCI::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
             const auto tbit = det->string_bits_b(phi.target);
             const auto ij = phi.ij;
             if(!det->allowed(tbit,bbit)) continue;
-            if(!det->allowed(sbit,bbit)) continue;
+          //if(!det->allowed(sbit,bbit)) continue;
             d->data(ij)->element(bbit,sbit) += sign * cc->element(bbit,tbit);
           }
         }
@@ -140,7 +145,7 @@ void RASCI::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
   cout << "sigma_2a2" << endl;
   
 //const int nij = norb_*norb_;
-  shared_ptr<const RASDeterminants> det = cc->det();
+  shared_ptr<const RASDeterminants> det = det_; //cc->det();
 //const size_t lb = det->lenb();
 
   for (auto& ispace : *det->stringspacea()) { // alpha determinant space
@@ -162,7 +167,7 @@ void RASCI::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
           //  cout << "diag[" << i << "] : " << phi.source << " " << phi.target << endl;
           //}
             if(!det->allowed(abit,tbit)) continue;
-            if(!det->allowed(abit,sbit)) continue;
+          //if(!det->allowed(abit,sbit)) continue;
             d->data(ij)->element(sbit,abit) += sign * cc->element(tbit,abit);
           }
         }

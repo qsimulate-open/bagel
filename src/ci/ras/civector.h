@@ -563,7 +563,19 @@ class RASCivector : public RASCivector_impl<DataType, RASCivector<DataType>> {
         }
       }
     }
+    //TODO test: use all blocks (used for RASDvec only)
+    RASCivector(std::shared_ptr<const RASDeterminants> det, bool allb) : RASCivector_impl<DataType, RASCivector<DataType>>(det) {
+      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      std::cout << "RASCivector constructor sets size = " << size() << std::endl;
+      std::fill_n(data_.get(), size(), 0.0);
+      if(!allb) assert(false); 
 
+      size_t sz = 0;
+      for (auto& ipair : det->blockinfo()) {
+        blocks_.push_back(std::make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), data_.get()+sz, sz));
+        sz += blocks_.back()->size();
+      }
+    }
     RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det()) { std::copy_n(o.data(), size(), data_.get()); }
     RASCivector(const RASCivecView_<DataType>& o) : RASCivector(o.det()) { std::copy_n(o.data(), size(), data_.get()); }
 

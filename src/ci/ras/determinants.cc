@@ -169,3 +169,92 @@ pair<vector<tuple<bitset<nbit__>, bitset<nbit__>, int>>, double> RASDeterminants
   const double factor = 1.0/sqrt(static_cast<double>(icnt));
   return {out, factor};
 }
+
+//ADDED 
+RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb,
+                                 const int max_holes, const int max_particles, const bool mute, const bool allb)
+ : ras_{{norb1, norb2, norb3}}, max_holes_(max_holes), max_particles_(max_particles) {
+
+  if ( nelea < 0 || neleb < 0) throw runtime_error("nele < 0");
+
+  //TEST
+  assert(allb);
+
+  // check that nbit__ is big enough
+  if ( max_particles_ >= nbit__ || std::max(nelea,neleb) >= nbit__)
+    throw logic_error("Inappropriate value for \"nbit__\". Must be greater than nele AND max_particles");
+
+  // Construct spaces and with them, a list of strings
+  if (!mute) cout << " o Restricted Active Spaces:" << endl;
+  if (!mute) cout << "   - RAS1 -> " << ras_[0] << endl;
+  if (!mute) cout << "   - RAS2 -> " << ras_[1] << endl;
+  if (!mute) cout << "   - RAS3 -> " << ras_[2] << endl << endl;
+
+  if (!mute) cout << " o Constructing all possible strings with up to " << max_holes_ << " holes and " << max_particles_ << " particles + intermediate states" << endl;
+  {
+    list<shared_ptr<const RASString>> alpha;
+    list<shared_ptr<const RASString>> beta;
+
+    for (int nholes = 0; nholes <= max_holes_; ++nholes) {
+      const int nele1 = norb1 - nholes;
+      for (int nparticles = 0; nparticles <= max_particles_; ++nparticles) {
+        const int nele3 = nparticles;
+        const int nele2a = nelea - (nele1 + nele3);
+        const int nele2b = neleb - (nele1 + nele3);
+
+        if (nele1 >= 0 && nele3 <= norb3) {
+          if (nele2a >= 0 && nele2a <= norb2) {
+            auto astring = make_shared<RASString>(nele1, norb1, nele2a, norb2, nele3, norb3);
+            if (astring->size() > 0)
+              alpha.push_back(astring);
+          }
+
+          if (nele2b >= 0 && nele2b <= norb2) {
+            auto bstring = make_shared<RASString>(nele1, norb1, nele2b, norb2, nele3, norb3);
+            if (bstring->size() > 0)
+              beta.push_back(bstring);
+          }
+        }
+      }
+    }
+    if (!alpha.empty())
+      alphaspaces_ = make_shared<CIStringSet<RASString>>(alpha);
+    if (!beta.empty())
+      betaspaces_ = make_shared<CIStringSet<RASString>>(beta);
+  }
+
+  size_ = 0;
+
+  if (alphaspaces_ && betaspaces_) {
+    if (alphaspaces_->size()*betaspaces_->size() > 0) {
+      if (!mute) cout << "   - alpha strings: " << alphaspaces_->size() << endl;
+      if (!mute) cout << "   - beta strings: "  <<  betaspaces_->size() << endl << endl;
+
+      if (!mute) cout << " o Constructing alpha and beta displacement lists" << endl;
+      //                               <- base ---------------->  <- RASdet -------------------->
+      construct_phis_<0>(alphaspaces_, phia_, phia_uncompressed_, phia_ij_, uncompressed_phia_ij_);
+      if (!mute) cout << "   - alpha lists: " << phia_->size() << endl;
+      assert(phia_->size() == phia_uncompressed_->size());
+      construct_phis_<1>(betaspaces_, phib_, phib_uncompressed_, phib_ij_, uncompressed_phib_ij_);
+      if (!mute) cout << "   - beta lists: "  << phib_->size() << endl;
+      assert(phib_->size() == phib_uncompressed_->size());
+
+      if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
+
+      for (int nha = 0; nha <= max_holes_; ++nha) {
+        for (int nhb = 0; nhb <= max_holes_; ++ nhb) {
+
+          for (int npa = 0; npa <= max_particles_; ++npa) {
+            for (int npb = 0; npb <= max_particles_; ++npb) {
+              //                                                     alpha               beta
+              auto block = make_shared<const CIBlockInfo<RASString>>(space<0>(nha, npa), space<1>(nhb, npb), size_);
+              blockinfo_.push_back(block);
+              if (!block->empty()) size_ += block->size();
+            }
+          }
+        }
+      }
+    }
+    if (!mute) cout << "   - size of restricted space: " << size_ << endl;
+  }
+}

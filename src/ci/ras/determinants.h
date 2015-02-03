@@ -57,6 +57,11 @@ class RASDeterminants : public Determinants_base<RASString>,
     RASDeterminants(std::array<int, 3> ras, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false) :
       RASDeterminants(ras[0], ras[1], ras[2], nelea, neleb, max_holes, max_particles, mute) {}
 
+    RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute, const bool allb);
+    RASDeterminants(std::array<int, 3> ras, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute, const bool allb) :
+      RASDeterminants(ras[0], ras[1], ras[2], nelea, neleb, max_holes, max_particles, mute, allb) {}
+
+
     std::shared_ptr<RASDeterminants> clone(const int nelea, const int neleb) const
       { return std::make_shared<RASDeterminants>(ras_, nelea, neleb, max_holes_, max_particles_, true); }
     std::shared_ptr<RASDeterminants> transpose() const { return this->clone(neleb(), nelea()); }

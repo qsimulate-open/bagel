@@ -61,6 +61,12 @@ class Dvector_base {
       for (int i = 0; i < ij_; ++i) dvec_.push_back( std::make_shared<CiType>(det_) );
     }
 
+    //TEST: RASCI only use all blocks
+    Dvector_base(std::shared_ptr<const DetType> det, const size_t ij, bool allb) : det_(det), ij_(ij) {
+      dvec_.clear();
+      for (int i = 0; i < ij_; ++i) dvec_.push_back( std::make_shared<CiType>(det_,allb) );
+    }
+
     Dvector_base(const Dvector_base<CiType>& o) : det_(o.det_), ij_(o.ij_) {
       for ( auto& ivec : o.dvec() ) dvec_.push_back( std::make_shared<CiType>(ivec) );
     }
