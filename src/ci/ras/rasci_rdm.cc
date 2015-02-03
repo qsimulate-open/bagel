@@ -1,7 +1,7 @@
 
 
 #include <src/ci/ras/rasci.h>
-//#include <src/util/prim_op.h>
+#include <src/util/prim_op.h>
 //#include <src/util/math/algo.h>
 #include <src/wfn/rdm.h>
 
@@ -45,6 +45,65 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
   mat->print("1RDM",norb_);
 //rdm1->print(1.0e-6);
 
+  //Trace
+  { 
+    double sum = 0.0;
+    for (int j = 0; j != norb_; ++j) 
+      sum += rdm1->element(j,j);
+    cout << "1RDM Trace = " << sum << endl;
+    sum = 0.0;
+    for (int i = 0; i != norb_; ++i)
+      for (int j = 0; j != norb_; ++j) 
+        sum += rdm2->element(i,i,j,j);
+    cout << "2RDM Trace = " << sum << endl;
+  }
+  //Partial trace
+  {
+    cout << "2RDM Partial Trace Sum_k (i,j,k,k)" << endl;
+    auto debug = make_shared<RDM<1>>(*rdm1);
+    for (int i = 0; i != norb_; ++i)
+    for (int j = 0; j != norb_; ++j)
+    for (int k = 0; k != norb_; ++k) {
+      debug->element(i,j) -= 1.0/(nelea_+neleb_-1) * rdm2->element(i,j,k,k);
+    }
+    debug->print(1.0e-3);
+  }
+
+
+  //Energy calculation
+  cout << "RASCI: Energy calculated from RDM:" << endl;
+  cout << "Number of closed orbitals: " << ncore_ << endl;
+  cout << "Number of active orbitals: " << norb_  << endl;
+  const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
+  cout << "Nuc+Core  = " << nuc_core << endl;
+
+  shared_ptr<const Matrix> h = jop_->mo1e()->matrix();
+
+  auto int1 = make_shared<Matrix>(norb_,norb_);
+  int1->zero();
+  int1->copy_block(0,0,h->ndim(),h->mdim(),h);
+  int1->print("1e integral",norb_);
+  auto onerdm = rdm1->rdm1_mat(0);
+
+  double  e1 = ddot_(norb_*norb_, int1->element_ptr(0,0), 1, onerdm->element_ptr(0,0), 1);
+  cout << "1E energy = " << e1 << endl;
+
+  shared_ptr<const Matrix> pint2 = jop_->mo2e()->matrix();
+  auto int2 = make_shared<Matrix>(norb_*norb_*norb_*norb_,1);
+  sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), norb_, norb_, norb_, norb_); //conver to chemist not.
+
+  auto low = {0,0,0,0};
+  auto up  = {norb_,norb_,norb_,norb_};
+  auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); 
+  auto twordm = make_shared<Matrix>(norb_*norb_*norb_,norb_,1); 
+  copy(view.begin(), view.end(), twordm->begin());
+
+  double e2 = 0.5 * ddot_(norb_*norb_*norb_*norb_, int2->element_ptr(0,0), 1, twordm->element_ptr(0,0), 1);
+  cout << "2E energy = " << e2 << endl;
+
+  //Energy print
+  cout << "Total energy = " << nuc_core + e1 + e2 << endl;
+
 //return compute_rdm12_last_step(dbra, dket, cbra);
 }
 
@@ -57,7 +116,7 @@ void RASCI::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
 
   for (auto& ispace : *det->stringspaceb()) { 
     for (size_t ib = 0; ib != ispace->size(); ++ib) {
-      const std::bitset<nbit__> bbit = ispace->strings(ib);
+      const bitset<nbit__> bbit = ispace->strings(ib);
       for (auto& jspace : *det->stringspacea()) {
         const size_t offset = jspace->offset();
         for (size_t ja = 0; ja != jspace->size(); ++ja) { 
@@ -87,7 +146,7 @@ void RASCI::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
   for (auto& ispace : *det->stringspacea()) { // alpha determinant space
   //const size_t offset = ispace->offset();
     for (size_t ia = 0; ia != ispace->size(); ++ia) { // determinants associated with a given space
-      const std::bitset<nbit__> abit = ispace->strings(ia);
+      const bitset<nbit__> abit = ispace->strings(ia);
 
     //for (auto& phi : det->uncompressed_phib(ia+offset)) {
       for (auto& jspace : *det->stringspaceb()) {
@@ -114,7 +173,7 @@ void RASCI::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
 /*
   for (auto& ispace : *det->stringspacea()) { // alpha determinant space
     for (auto istring = ispace->begin(); istring != ispace->end(); ++istring) {
-      const std::bitset<nbit__> abit = *istring;
+      const bitset<nbit__> abit = *istring;
     //for (int ij = 0; ij != nij; ++ij) {    
       for (int i = 0, ij = 0; i != norb_; ++i)
       for (int j = 0; j !=norb_; ++j, ++ij) {
@@ -139,8 +198,7 @@ void RASCI::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   RASCI::compute_rdm12_last_step(shared_ptr<RASDvec> dbra, shared_ptr<RASDvec> dket, shared_ptr<const RASCivec> cibra) const {
 
-  cout << "last-step test" << endl;
-  auto rdm2 = make_shared<RDM<2>>(norb_);
+  cout << "last-step entered.." << endl;
 /*
   const int nri = dbra->lena()*dbra->lenb();
   const int ij  = norb_*norb_;
@@ -180,13 +238,38 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
       }
     }
   }
+  cout << "1rdm done.." << endl;
 
 
-/*
   // 2RDM
   // \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
   auto rdm2 = make_shared<RDM<2>>(norb_);
-  dgemm_("T", "N", ij, ij, nri, 1.0, dbra->data(0)->data(), nri, dket->data(0)->data(), nri, 0.0, rdm2->data(), ij);
+  rdm2->zero();
+//dgemm_("T", "N", ij, ij, nri, 1.0, dbra->data(0)->data(), nri, dket->data(0)->data(), nri, 0.0, rdm2->data(), ij);
+  for (int i = 0, ij = 0; i != norb_; ++i){
+    for (int j = 0; j != norb_; ++j, ++ij) {
+      //fixed ij
+      for (int k = 0, kl = 0; k != norb_; ++k){
+        for (int l = 0; l != norb_; ++l, ++kl) {
+          //fixed kl
+          
+          for (auto& cblock : cibra->blocks()) { //just run over allowed blocks/ TODO: replace this
+            if (!cblock) continue;
+    
+            for (size_t ca = 0, cab = 0; ca < cblock->stringsa()->size(); ++ca) {
+              for (size_t cb = 0; cb < cblock->stringsb()->size(); ++cb, ++cab) {
+                auto abit = cblock->stringsa()->strings(ca);
+                auto bbit = cblock->stringsb()->strings(cb);
+                rdm2->element(i,j,k,l) += dbra->data(ij)->element(bbit,abit) * dket->data(kl)->element(bbit,abit);
+              }
+            }
+
+          }
+        }
+      }
+
+    }
+  }
 
   // sorting... a bit stupid but cheap anyway
   // This is since we transpose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb_**2).
@@ -204,7 +287,8 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
     for (int k = 0; k != norb_; ++k)
       for (int j = 0; j != norb_; ++j)
         rdm2->element(j,k,k,i) -= rdm1->element(j,i);
-*/
+
+  cout << "2rdm done.." << endl;
   return tie(rdm1, rdm2);
 }
 
@@ -402,8 +486,8 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
         double* i = iblock->data();
         for (auto& ia : *iblock->stringsa()) {
           for (auto& ib : *iblock->stringsb()) {
-            if (std::abs(*i) > thr)
-              tmp.emplace(-std::abs(*i), std::make_tuple(*i, ia, ib));
+            if (abs(*i) > thr)
+              tmp.emplace(-abs(*i), make_tuple(*i, ia, ib));
             ++i;
           }
         }
