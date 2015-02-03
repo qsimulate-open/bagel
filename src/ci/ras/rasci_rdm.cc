@@ -66,7 +66,17 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
     for (int k = 0; k != norb_; ++k) {
       debug->element(i,j) -= 1.0/(nelea_+neleb_-1) * rdm2->element(i,j,k,k);
     }
-    debug->print(1.0e-3);
+    debug->print(1.0e-8);
+  }
+  {
+    cout << "2RDM Partial Trace Sum_k (k,k,i,j)" << endl;
+    auto debug = make_shared<RDM<1>>(*rdm1);
+    for (int i = 0; i != norb_; ++i)
+    for (int j = 0; j != norb_; ++j)
+    for (int k = 0; k != norb_; ++k) {
+      debug->element(i,j) -= 1.0/(nelea_+neleb_-1) * rdm2->element(k,k,i,j);
+    }
+    debug->print(1.0e-8);
   }
 
 
@@ -77,15 +87,11 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
   cout << "Nuc+Core  = " << nuc_core << endl;
 
-  shared_ptr<const Matrix> h = jop_->mo1e()->matrix();
-
-  auto int1 = make_shared<Matrix>(norb_,norb_);
-  int1->zero();
-  int1->copy_block(0,0,h->ndim(),h->mdim(),h);
-  int1->print("1e integral",norb_);
+  shared_ptr<const Matrix> h1 = jop_->mo1e()->matrix();
+  assert(norb_ == h1->ndim() && norb_ == h1->mdim());
+  h1->print("1e integral",norb_);
   auto onerdm = rdm1->rdm1_mat(0);
-
-  double  e1 = ddot_(norb_*norb_, int1->element_ptr(0,0), 1, onerdm->element_ptr(0,0), 1);
+  double  e1 = ddot_(norb_*norb_, h1->element_ptr(0,0), 1, onerdm->element_ptr(0,0), 1);
   cout << "1E energy = " << e1 << endl;
 
   shared_ptr<const Matrix> pint2 = jop_->mo2e()->matrix();
@@ -122,8 +128,8 @@ void RASCI::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
         for (size_t ja = 0; ja != jspace->size(); ++ja) { 
           for (auto& phi : det->phia(ja+offset)) {
             const double sign = static_cast<double>(phi.sign);
-            const auto sbit = det->string_bits_b(phi.source);
-            const auto tbit = det->string_bits_b(phi.target);
+            const auto sbit = det->string_bits_a(phi.source);
+            const auto tbit = det->string_bits_a(phi.target);
             const auto ij = phi.ij;
             if(!det->allowed(tbit,bbit)) continue;
             if(!det->allowed(sbit,bbit)) continue;
