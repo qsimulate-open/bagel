@@ -205,6 +205,7 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
             std::tie(minij, maxij) = std::minmax(i,j);
             pij[minij+((maxij*(maxij+1))>>1)].emplace_back(source_lex, sign(targetbit, i, j), tindex, j+i*norb());
             uncompressed_pij[i + j*norb()].emplace_back(source_lex, sign(targetbit, i, j), tindex, j+i*norb());
+            if (i == j) std::cout << "DET: diag[" << i << "] : " << source_lex << " " << tindex << std::endl;
           }
         }
       }

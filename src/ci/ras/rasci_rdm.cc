@@ -16,16 +16,22 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
 
   // since we consider here number conserving operators...
   auto dbra = make_shared<RASDvec>(cbra->det(), norb_*norb_);
+  for (int ij = 0; ij != norb_*norb_; ++ij) {
+    dbra->data(ij)->zero();
+  }
 //dbra->zero();
-  sigma_2a1(cbra, dbra);
+//sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
 
   shared_ptr<RASDvec> dket;
   // if bra and ket vectors are different, we need to form Sigma for ket as well.
   if (cbra != cket) {
     dket = make_shared<RASDvec>(cket->det(), norb_*norb_);
+    for (int ij = 0; ij != norb_*norb_; ++ij) {
+      dket->data(ij)->zero();
+    }
   //dket->zero();
-    sigma_2a1(cket, dket);
+  //sigma_2a1(cket, dket);
     sigma_2a2(cket, dket);
   } else {
     dket = dbra;
@@ -82,19 +88,28 @@ void RASCI::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
 void RASCI::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
   cout << "sigma_2a2" << endl;
   
-  const int nij = norb_*norb_;
+//const int nij = norb_*norb_;
   shared_ptr<const RASDeterminants> det = cc->det();
 //const size_t lb = det->lenb();
 
   for (auto& ispace : *det->stringspacea()) { // alpha determinant space
-    for (auto istring = ispace->begin(); istring != ispace->end(); ++istring) {
-      const std::bitset<nbit__> abit = *istring;
-      for (int ij = 0; ij != nij; ++ij) {    
-        for (auto& phiblock : det->uncompressed_phib_ij(ij)) {
-          for (auto& phi : phiblock) {
+  //const size_t offset = ispace->offset();
+    for (size_t ia = 0; ia != ispace->size(); ++ia) { // determinants associated with a given space
+      const std::bitset<nbit__> abit = ispace->strings(ia);
+
+    //for (auto& phi : det->uncompressed_phib(ia+offset)) {
+      for (auto& jspace : *det->stringspaceb()) {
+        const size_t offset = jspace->offset();
+        for (size_t jb = 0; jb != jspace->size(); ++jb) { // determinants associated with a given space
+
+          for (auto& phi : det->phib(jb+offset)) {
             const double sign = static_cast<double>(phi.sign);
             const auto sbit = det->string_bits_b(phi.source);
             const auto tbit = det->string_bits_b(phi.target);
+            const auto ij = phi.ij;
+          //if(i == j) {
+          //  cout << "diag[" << i << "] : " << phi.source << " " << phi.target << endl;
+          //}
             if(!det->allowed(abit,tbit)) continue;
             if(!det->allowed(abit,sbit)) continue;
             d->data(ij)->element(sbit,abit) += sign * cc->element(tbit,abit);
@@ -104,7 +119,31 @@ void RASCI::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
     }
   }
 }
-
+/*
+  for (auto& ispace : *det->stringspacea()) { // alpha determinant space
+    for (auto istring = ispace->begin(); istring != ispace->end(); ++istring) {
+      const std::bitset<nbit__> abit = *istring;
+    //for (int ij = 0; ij != nij; ++ij) {    
+      for (int i = 0, ij = 0; i != norb_; ++i)
+      for (int j = 0; j !=norb_; ++j, ++ij) {
+        for (auto& phiblock : det->uncompressed_phib_ij(ij)) { //<DetMapBlock>
+          for (auto& phi : phiblock) { //<DetMap>
+            const double sign = static_cast<double>(phi.sign);
+            const auto sbit = det->string_bits_b(phi.source);
+            const auto tbit = det->string_bits_b(phi.target);
+            if(i == j) {
+              cout << "diag[" << i << "] : " << phi.source << " " << phi.target << endl;
+            }
+            if(!det->allowed(abit,tbit)) continue;
+            if(!det->allowed(abit,sbit)) continue;
+            d->data(ij)->element(sbit,abit) += sign * cc->element(tbit,abit);
+          }
+        }
+      }
+    }
+  }
+}
+*/
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   RASCI::compute_rdm12_last_step(shared_ptr<RASDvec> dbra, shared_ptr<RASDvec> dket, shared_ptr<const RASCivec> cibra) const {
 
@@ -122,6 +161,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   // c^dagger <I|\hat{E}|0>
   shared_ptr<const RASDeterminants> det = cibra->det();
   auto rdm1 = make_shared<RDM<1>>(norb_);
+  rdm1->zero();
 //dgemv_("T", nri, ij, 1.0, dket->data(0)->data(), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
   for (int i = 0, ij = 0; i != norb_; ++i){
     for (int j = 0; j!= norb_; ++j, ++ij) {
@@ -135,7 +175,14 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
           //cout << "[" << ca << "," << cb << "] = " << *cptr << " " <<cblock->element(cab) << endl;
             auto abit = cblock->stringsa()->strings(ca);
             auto bbit = cblock->stringsb()->strings(cb);
-            rdm1->element(i,j) += dket->data(ij)->element(bbit,abit) * cblock->element(cab);
+          //rdm1->element(i,j) += dket->data(ij)->element(bbit,abit) * cblock->element(cab);
+          //rdm1->element(i,j) += dket->data(ij)->element(bbit,abit) * cblock->element(bbit,abit); 
+            rdm1->element(i,j) += dket->data(ij)->element(bbit,abit) * cibra->element(bbit,abit); 
+          //cout << endl;
+          //cout << "check: " << cblock->element(cab) << endl;
+          //cout << "       " << cblock->element(bbit,abit) << endl;
+          //cout << "       " << cibra->element(bbit,abit) << endl;
+          //cout << endl;
           }
         }
       }
