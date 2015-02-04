@@ -19,9 +19,18 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
   for (int ij = 0; ij != norb_*norb_; ++ij) {
     dbra->data(ij)->zero();
   }
+  //new
+  auto eket = make_shared<RASDvec>(cket->det(), norb_*norb_*norb_*norb_);
+  for (int ij = 0; ij != norb_*norb_*norb_*norb_; ++ij)
+    eket->data(ij)->zero();
+
 //dbra->zero();
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
+
+  sigma_2a1_new(cket, eket);
+  sigma_2a2_new(cket, eket);
+  sigma_2a3_new(cket, eket);
 
   shared_ptr<RASDvec> dket;
   // if bra and ket vectors are different, we need to form Sigma for ket as well.
@@ -39,7 +48,7 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
 
   auto rdm1 = make_shared<RDM<1>>(norb_);
   auto rdm2 = make_shared<RDM<2>>(norb_);
-  tie(rdm1,rdm2) = compute_rdm12_last_step(dbra,dket,cbra);
+  tie(rdm1,rdm2) = compute_rdm12_last_step(dbra,dket,cbra,eket);
   cout << "RASCI: RDM1" << endl;
   auto mat = rdm1->rdm1_mat(0);
   mat->print("1RDM",norb_);
@@ -196,7 +205,7 @@ void RASCI::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
 }
 */
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
-  RASCI::compute_rdm12_last_step(shared_ptr<RASDvec> dbra, shared_ptr<RASDvec> dket, shared_ptr<const RASCivec> cibra) const {
+  RASCI::compute_rdm12_last_step(shared_ptr<RASDvec> dbra, shared_ptr<RASDvec> dket, shared_ptr<const RASCivec> cibra, shared_ptr<RASDvec> eket) const {
 
   cout << "last-step entered.." << endl;
 /*
@@ -240,7 +249,37 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   }
   cout << "1rdm done.." << endl;
 
-
+  auto new2 = make_shared<RDM<2>>(norb_);
+  {
+    //NEW 2RDM
+    new2->zero();
+    for (int i = 0, ij = 0, ijkl = 0; i != norb_; ++i){
+      for (int j = 0; j != norb_; ++j, ++ij) {
+        //fixed ij
+        for (int k = 0, kl = 0; k != norb_; ++k){
+          for (int l = 0; l != norb_; ++l, ++kl, ++ijkl) {
+            //fixed kl
+            
+            for (auto& cblock : cibra->blocks()) { //just run over allowed blocks/ TODO: replace this
+              if (!cblock) continue;
+      
+              for (size_t ca = 0, cab = 0; ca < cblock->stringsa()->size(); ++ca) {
+                for (size_t cb = 0; cb < cblock->stringsb()->size(); ++cb, ++cab) {
+                  auto abit = cblock->stringsa()->strings(ca);
+                  auto bbit = cblock->stringsb()->strings(cb);
+                  new2->element(i,j,k,l) += cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit);
+                }
+              }
+ 
+            }
+          }
+        }
+ 
+      }
+    }
+ 
+  }
+/*
   // 2RDM
   // \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
   auto rdm2 = make_shared<RDM<2>>(norb_);
@@ -260,7 +299,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
               for (size_t cb = 0; cb < cblock->stringsb()->size(); ++cb, ++cab) {
                 auto abit = cblock->stringsa()->strings(ca);
                 auto bbit = cblock->stringsb()->strings(cb);
-                rdm2->element(i,j,k,l) += dbra->data(ij)->element(bbit,abit) * dket->data(kl)->element(bbit,abit);
+                rdm2->element(i,j,k,l) += 2.0* dbra->data(ij)->element(bbit,abit) * dket->data(kl)->element(bbit,abit); //ab & ba
               }
             }
 
@@ -280,7 +319,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
       blas::transpose(buf.get(), norb_, norb_, &rdm2->element(0,0,k,i));
     }
   }
-
   // put in diagonal into 2RDM
   // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
   for (int i = 0; i != norb_; ++i)
@@ -288,13 +326,127 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
       for (int j = 0; j != norb_; ++j)
         rdm2->element(j,k,k,i) -= rdm1->element(j,i);
 
+  //add
+  daxpy_(norb_*norb_*norb_*norb_, 1.0, &rdm2->element(0,0,0,0), 1, &new2->element(0,0,0,0), 1);
+
+*/
+    // put in diagonal into 2RDM
+    // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
+    for (int i = 0; i != norb_; ++i)
+      for (int k = 0; k != norb_; ++k)
+        for (int j = 0; j != norb_; ++j)
+          new2->element(j,k,k,i) -= rdm1->element(j,i);
+
   cout << "2rdm done.." << endl;
-  return tie(rdm1, rdm2);
+
+//return tie(rdm1, rdm2);
+  return tie(rdm1, new2);
 }
 
+void RASCI::sigma_2a1_new(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
+  cout << "sigma_2a1_new" << endl;
+  //based on sigma_2a2
+  
+  shared_ptr<const RASDeterminants> det = cc->det();
 
+  for (auto& ispace : *det->stringspaceb()) { 
+    for (size_t ib = 0; ib != ispace->size(); ++ib) {
+      const bitset<nbit__> bbit = ispace->strings(ib);
+      for (auto& jspace : *det->stringspacea()) {
+        const size_t offset = jspace->offset();
+        for (size_t ja = 0; ja != jspace->size(); ++ja) { 
+          for (auto& phi : det->phia(ja+offset)) {
+            assert(phi.target == ja+offset);
+            const double sign = static_cast<double>(phi.sign);
+          //const auto ibit = det->string_bits_b(phi.source); //intermediate
+            const auto tbit = det->string_bits_a(phi.target);
+            const auto kl = phi.ij;
+            if(!det->allowed(tbit,bbit)) continue;
+            for (auto& phi2 : det->phia(phi.source)) {
+              const double sign2 = static_cast<double>(phi2.sign);
+              const auto sbit = det->string_bits_a(phi2.source);
+              const auto ij = phi2.ij;
+              if(!det->allowed(sbit,bbit)) continue;
+              d->data(ij + kl*norb_*norb_)->element(bbit,sbit) += sign * sign2 * cc->element(bbit,tbit);
+            }
+          }
+        }
+      }
+    }
+  }
 
+}
 
+void RASCI::sigma_2a2_new(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
+  cout << "sigma_2a2_new" << endl;
+  
+  shared_ptr<const RASDeterminants> det = cc->det();
+
+  for (auto& ispace : *det->stringspacea()) { 
+    for (size_t ia = 0; ia != ispace->size(); ++ia) {
+      const bitset<nbit__> abit = ispace->strings(ia);
+      for (auto& jspace : *det->stringspaceb()) {
+        const size_t offset = jspace->offset();
+        for (size_t jb = 0; jb != jspace->size(); ++jb) { 
+          for (auto& phi : det->phib(jb+offset)) {
+            assert(phi.target == jb+offset);
+            const double sign = static_cast<double>(phi.sign);
+          //const auto ibit = det->string_bits_b(phi.source); //intermediate
+            const auto tbit = det->string_bits_b(phi.target);
+            const auto kl = phi.ij;
+            if(!det->allowed(abit,tbit)) continue;
+            for (auto& phi2 : det->phib(phi.source)) {
+              const double sign2 = static_cast<double>(phi2.sign);
+              const auto sbit = det->string_bits_b(phi2.source);
+              const auto ij = phi2.ij;
+              if(!det->allowed(abit,sbit)) continue;
+              d->data(ij + kl*norb_*norb_)->element(sbit,abit) += sign * sign2 * cc->element(tbit,abit);
+            }
+          }
+        }
+      }
+    }
+  }
+
+}
+
+void RASCI::sigma_2a3_new(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
+  cout << "sigma_2a3_new" << endl;
+  //based on sigma_2a2
+  
+  shared_ptr<const RASDeterminants> det = cc->det();
+
+  for (auto& ispace : *det->stringspaceb()) { 
+    const size_t boffset = ispace->offset();
+    for (size_t ib = 0; ib != ispace->size(); ++ib) {
+      const bitset<nbit__> bbit = ispace->strings(ib);
+      for (auto& jspace : *det->stringspacea()) {
+        const size_t offset = jspace->offset();
+        for (size_t ja = 0; ja != jspace->size(); ++ja) {  //fix a-string
+          for (auto& phi : det->phia(ja+offset)) {
+            assert(phi.target == ja+offset);
+            const double sign = static_cast<double>(phi.sign);
+            const auto sbit = det->string_bits_a(phi.source); //sbit(alpha)
+            const auto tbit = det->string_bits_a(phi.target);
+            const auto kl = phi.ij;
+            if(!det->allowed(tbit,bbit)) continue; //coeff
+            for (auto& phi2 : det->phib(ib+boffset)) {
+              const double sign2 = static_cast<double>(phi2.sign);
+              const auto sbbit = det->string_bits_b(phi2.source);
+              const auto ij = phi2.ij;
+              if(!det->allowed(sbit,sbbit)) continue; //double replacement ket
+            //cout << cc->element(bbit,tbit) << endl;
+            //cout << d->data(ij + kl*norb_*norb_)->element(sbbit,sbit) << endl;
+            //cout << endl;
+              d->data(ij + kl*norb_*norb_)->element(sbbit,sbit) += 2.0 * sign * sign2 * cc->element(bbit,tbit);
+            }
+          }
+        }
+      }
+    }
+  }
+
+}
 #if 0
 
   shared_ptr<const RASDeterminants> det = cc->det();
