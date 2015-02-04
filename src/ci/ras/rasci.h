@@ -133,9 +133,12 @@ class RASCI : public Method {
     void compute_rdm12(std::shared_ptr<RASCivec>, std:: shared_ptr<RASCivec>);
     void sigma_2a1(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
     void sigma_2a2(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
+    void sigma_2a1_new(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
+    void sigma_2a2_new(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
+    void sigma_2a3_new(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
     // internal function for RDM1 and RDM2 computations
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_last_step(std::shared_ptr<RASDvec>, std::shared_ptr<RASDvec>, std::shared_ptr<const RASCivec>) const;
+      compute_rdm12_last_step(std::shared_ptr<RASDvec>, std::shared_ptr<RASDvec>, std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
 
 #ifndef NORDMS
     // rdms

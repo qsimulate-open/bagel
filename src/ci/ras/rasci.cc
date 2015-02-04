@@ -350,7 +350,7 @@ void RASCI::compute() {
   //RDM
   int istate = 0;
   compute_rdm12(cc_->data(istate), cc_->data(istate));
-  assert(false);
+//assert(false);
 
 #if 0
   for (auto& iprop : properties_) {
