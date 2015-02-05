@@ -1,3 +1,27 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: asd/orbopt/ras/bfgs_denom.cc
+// Copyright (C) 2015 Toru Shiozaki
+//
+// Author: Inkoo Kim: <inkoo.kim@northwestern.edu>
+// Maintainer: Shiozaki Group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
 
 #include <src/asd/orbopt/ras/bfgs.h>
 
@@ -5,7 +29,7 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<const ASDRASRotFile> ASDRASBFGS::compute_denom(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> mcfock) const {
-  auto out = make_shared<ASDRASRotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_ );
+  auto out = make_shared<ASDRASRotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_);
 //const double tiny = 1.0e-15;
 
   shared_ptr<Matrix> cfockd;

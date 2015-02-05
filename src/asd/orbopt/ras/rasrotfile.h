@@ -1,3 +1,27 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: asd/orbopt/ras/rasrotfile.h
+// Copyright (C) 2015 Toru Shiozaki
+//
+// Author: Inkoo Kim: <inkoo.kim@northwestern.edu>
+// Maintainer: Shiozaki Group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
 
 #ifndef __BAGEL_ASD_ORBOPT_RASROTFILE_H
 #define __BAGEL_ASD_ORBOPT_RASROTFILE_H
@@ -20,20 +44,23 @@ class ASDRASRotationMatrix {
     const int size_;
     std::unique_ptr<DataType[]> data_;
 
+    std::array<int,3> rasA_;
+    std::array<int,3> rasB_;
+
   public:
-    ASDRASRotationMatrix(const int iclos, const int iact, const int ivirt, const int iactA, const int iactB)
-     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), nactA_(iactA), nactB_(iactB), size_(iclos*iact+iclos*ivirt+iact*ivirt+iactA*iactB), data_(new DataType[size_]) {
+    ASDRASRotationMatrix(const int iclos, const int iact, const int ivirt, const int iactA, const int iactB, std::array<int,3> rasA, std::array<int,3> rasB)
+     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), nactA_(iactA), nactB_(iactB), size_(iclos*iact+iclos*ivirt+iact*ivirt+iactA*iactB), data_(new DataType[size_]), rasA_(rasA), rasB_(rasB) {
       zero();
     }
-    ASDRASRotationMatrix(const ASDRASRotationMatrix& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), nactA_(o.nactA_), nactB_(o.nactB_),  size_(o.size_), data_(new DataType[o.size_]) {
+    ASDRASRotationMatrix(const ASDRASRotationMatrix& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), nactA_(o.nactA_), nactB_(o.nactB_),  size_(o.size_), data_(new DataType[o.size_]), rasA_(o.rasA_), rasB_(o.rasB_) {
       *this = o;
     }
     ASDRASRotationMatrix(std::shared_ptr<const ASDRASRotationMatrix> o)
-      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), nactA_(o->nactA_), nactB_(o->nactB_), size_(o->size_), data_(new DataType[o->size_]) {
+      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), nactA_(o->nactA_), nactB_(o->nactB_), size_(o->size_), data_(new DataType[o->size_]), rasA_(o->rasA_), rasB_(o->rasB_) {
       *this = *o;
     }
     //Matrix to ASDRotationMatrix conversion
-    ASDRASRotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt, const int iactA, const int iactB)
+    ASDRASRotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt, const int iactA, const int iactB, std::array<int,3> rasA, std::array<int,3> rasB)
       : nclosed_(iclos), nact_(iact), nvirt_(ivirt), nactA_(iactA), nactB_(iactB), size_(iclos*iact+iclos*ivirt+iact*ivirt+iactA*iactB), data_(new DataType[size_]) {
       const int nocc = nclosed_ + nact_;
       assert(iact == iactA+iactB);
@@ -58,7 +85,7 @@ class ASDRASRotationMatrix {
     }
 
     std::shared_ptr<ASDRASRotationMatrix<DataType>> clone() const {
-      return std::make_shared<ASDRASRotationMatrix<DataType>>(nclosed_, nact_, nvirt_, nactA_, nactB_);
+      return std::make_shared<ASDRASRotationMatrix<DataType>>(nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_);
     }
     std::shared_ptr<ASDRASRotationMatrix<DataType>> copy() const {
       return std::make_shared<ASDRASRotationMatrix<DataType>>(*this);

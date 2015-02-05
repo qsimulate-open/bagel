@@ -1,4 +1,27 @@
-
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: asd/orbopt/ras/rasscf.cc
+// Copyright (C) 2015 Toru Shiozaki
+//
+// Author: Inkoo Kim: <inkoo.kim@northwestern.edu>
+// Maintainer: Shiozaki Group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
 
 #include <fstream>
 #include <src/scf/hf/fock.h>
@@ -129,8 +152,17 @@ void ASDRASSCF::common_init() {
 //nact_ = idata_->get<int>("nact_cas", nact_);
   nact_ = dimer_->sref()->nact();
 
+  //TODO: this is temporarily hard-coded
   nactA_ = nact_ / 2;
   nactB_ = nact_ / 2;
+  rasA_ = {2,2,2};
+  rasB_ = {2,2,2};
+  for(const auto& s: rasA_) 
+    std::cout << "RAS(A) " << s << " ";
+  cout << endl;
+  for(const auto& s: rasB_) 
+    std::cout << "RAS(B) " << s << " ";
+  cout << endl;
   cout << "TODO: nactA & B are set to half of nact_ for now" << endl;
   assert(nactA_ + nactB_ == nact_);
 
@@ -362,7 +394,7 @@ void ASDRASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fa
   for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_(i) * p;
 
   // denominator
-  auto denom = make_shared<ASDRASRotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_ );
+  auto denom = make_shared<ASDRASRotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_);
   fill_n(denom->data(), denom->size(), 1.0e100);
 
   double* target = denom->ptr_va();

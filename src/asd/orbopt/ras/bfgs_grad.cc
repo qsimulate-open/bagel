@@ -1,3 +1,27 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: asd/orbopt/ras/bfgs_grad.cc
+// Copyright (C) 2015 Toru Shiozaki
+//
+// Author: Inkoo Kim: <inkoo.kim@northwestern.edu>
+// Maintainer: Shiozaki Group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
 
 #include <src/asd/orbopt/ras/bfgs.h>
 
@@ -57,18 +81,3 @@ void ASDRASBFGS::grad_aa(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRASRotFi
   }
 }
 
-// grad(t/t) /with previous gradient as constant
-void ASDRASBFGS::grad_aa_with_preg(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRASRotFile> sigma) const {
-  if (!nact_) return;
-  double* target = sigma->ptr_aa();
-  double* preg_p = preg_->data();
-  for (int i = 0; i != nactB_; ++i) { //B
-    for (int j = 0; j != nactA_; ++j, ++target, ++preg_p) { //A
-      *target = *preg_p - 2.0*(mcfock->element(j,i+nactA_) - mcfock->element(i+nactA_,j));
-      *preg_p = 2.0*(mcfock->element(j,i+nactA_) - mcfock->element(i+nactA_,j));
-    //*target = 2.0*(mcfock->element(j,i+nactA_) - mcfock->element(i+nactA_,j));
-      cout << "Grad(" << i << "," << j << ") = " << 2.0*(mcfock->element(j,i+nactA_) - mcfock->element(i+nactA_,j)) << endl;
-    //*target = - mcfock->element(j,i+nactA_) + mcfock->element(i+nactA_,j);
-    }
-  }
-}

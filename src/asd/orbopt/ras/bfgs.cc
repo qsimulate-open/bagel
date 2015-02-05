@@ -1,3 +1,27 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: asd/orbopt/ras/bfgs.cc
+// Copyright (C) 2015 Toru Shiozaki
+//
+// Author: Inkoo Kim <inkoo.kim@northwestern.edu>
+// Maintainer: Shiozaki Group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
 
 #include <src/scf/hf/fock.h>
 #include <src/asd/orbopt/ras/bfgs.h> 
@@ -11,13 +35,10 @@ using namespace std;
 using namespace bagel;
 
 void ASDRASBFGS::compute() {
-
+  cout << "ASDBFGS-compute entered.." << endl;
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 
   shared_ptr<SRBFGS<ASDRASRotFile>> bfgs;
-
-  //TODO: test/previous gradient
-  preg_ = make_shared<VectorB>(nactA_*nactB_);
 
   // ============================
   // macro iteration from here
@@ -99,7 +120,9 @@ void ASDRASBFGS::compute() {
     half_ = geom_->df()->compute_half_transform(cdata);
 //END
 
-    auto sigma = make_shared<ASDRASRotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_ );
+    assert(false);
+
+    auto sigma = make_shared<ASDRASRotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_ );
     sigma->zero();
 
     // compute one-body operators
@@ -179,7 +202,7 @@ void ASDRASBFGS::compute() {
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
 //  *x *= *natorb_mat;
     auto xcopy = x->log(8);
-    auto xlog  = make_shared<ASDRASRotFile>(xcopy, nclosed_, nact_, nvirt_, nactA_, nactB_ );
+    auto xlog  = make_shared<ASDRASRotFile>(xcopy, nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_);
     bfgs->check_step(evals, sigma, xlog);
     shared_ptr<ASDRASRotFile> a = bfgs->more_sorensen_extrapolate(sigma, xlog);
     cout << " ---------------------------------------------------- " << endl << endl;
