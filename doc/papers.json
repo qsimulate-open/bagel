@@ -90,5 +90,19 @@
         "type"    : "article"
       }
     ]
+  },
+  {
+    "year" : "2015",
+    "references" : [
+      {
+        "author"  : "J. E. Bates and T. Shiozaki",
+        "journal" : "The Journal of Chemical Physics",
+        "volume"  : "142",
+        "pages"   : "044112",
+        "title"   : "Fully relativistic complete active space self-consistent field for large molecules: Quasi-second-order minimax optimization",
+        "doi"     : "10.1063/1.4906344",
+        "type"    : "article"
+      }
+    ]
   }
 ]

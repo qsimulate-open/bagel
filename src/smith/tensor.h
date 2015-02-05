@@ -67,14 +67,14 @@ class Tensor {
   protected:
 
     std::vector<IndexRange> range_;
-    std::shared_ptr<Storage_Incore> data_;
+    std::shared_ptr<Storage> data_;
     int rank_;
-    bool initialized_;
+
+    virtual void init() const { initialized_ = true; }
+    mutable bool initialized_;
 
   public:
-    Tensor(std::vector<IndexRange> in, bool init = true);
-
-    void initialize() { data_->initialize(); }
+    Tensor(std::vector<IndexRange> in);
 
     Tensor& operator=(const Tensor& o) {
       *data_ = *(o.data_);
@@ -96,34 +96,34 @@ class Tensor {
 
     void scale(const double a) { data_->scale(a); }
 
-    double dot_product(const Tensor& o) { return data_->dot_product(*o.data_); }
-    double dot_product(const std::shared_ptr<Tensor>& o) { return data_->dot_product(*o->data_); }
+    double dot_product(const Tensor& o) const { return data_->dot_product(*o.data_); }
+    double dot_product(const std::shared_ptr<Tensor>& o) const { return data_->dot_product(*o->data_); }
 
-    size_t size() const { return data_->length(); }
-    size_t length() const { return data_->length(); }
+    size_t size_alloc() const;
 
-    double norm() { return std::sqrt(dot_product(*this)); }
-    double rms() { return std::sqrt(dot_product(*this)/size()); }
+    double norm() const { return std::sqrt(dot_product(*this)); }
+    double rms() const { return std::sqrt(dot_product(*this)/size_alloc()); }
 
     std::vector<IndexRange> indexrange() const { return range_; }
 
     template<typename ...args>
     std::unique_ptr<double[]> get_block(const args& ...p) const {
+      if (!initialized_) init();
       return data_->get_block(generate_hash_key(p...));
     }
 
     template<typename ...args>
-    std::unique_ptr<double[]> move_block(const args& ...p) const {
+    std::unique_ptr<double[]> move_block(const args& ...p) {
       return data_->move_block(generate_hash_key(p...));
     }
 
     template<typename ...args>
-    void put_block(std::unique_ptr<double[]>& o, const args& ...p) const {
+    void put_block(std::unique_ptr<double[]>& o, const args& ...p) {
       data_->put_block(generate_hash_key(p...), o);
     }
 
     template<typename ...args>
-    void add_block(std::unique_ptr<double[]>& o, const args& ...p) const {
+    void add_block(std::unique_ptr<double[]>& o, const args& ...p) {
       data_->add_block(generate_hash_key(p...), o);
     }
 
@@ -132,13 +132,16 @@ class Tensor {
       return data_->blocksize(generate_hash_key(p...));
     }
 
+    template<typename ...args>
+    size_t get_size_alloc(const args& ...p) const {
+      return data_->blocksize_alloc(generate_hash_key(p...));
+    }
+
     void zero() {
       data_->zero();
     }
 
     std::vector<double> diag() const;
-
-    std::shared_ptr<Tensor> add_dagger();
 
     std::shared_ptr<Matrix> matrix() const;
     std::shared_ptr<Matrix> matrix2() const;

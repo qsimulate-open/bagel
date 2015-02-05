@@ -36,6 +36,7 @@ std::vector<double> run_opt(std::string filename) {
   auto idata = std::make_shared<const PTree>(inputname);
   auto keys = idata->get_child("bagel");
   std::shared_ptr<const Geometry> geom;
+  std::shared_ptr<const Reference> ref;
 
   for (auto& itree : *keys) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
@@ -43,7 +44,7 @@ std::vector<double> run_opt(std::string filename) {
     if (method == "molecule") {
       geom = std::make_shared<const Geometry>(itree);
     } else {
-      auto opt = std::make_shared<Optimize>(itree, geom);
+      auto opt = std::make_shared<Optimize>(itree, geom, ref);
       opt->compute();
 
       std::cout.rdbuf(backup_stream);

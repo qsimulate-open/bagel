@@ -49,6 +49,12 @@ fi
 AC_ARG_WITH([slater], [AS_HELP_STRING([--with-slater],[build F12 methods])], [slater=yes], [slater=no])
 AC_ARG_WITH([libxc], [AS_HELP_STRING([--with-libxc],[build DFT with libxc])], [libxc=yes], [libxc=no])
 
+#toggle for smith
+AC_ARG_ENABLE(smith, [AS_HELP_STRING([--enable-smith],[enable SMITH code.])], [compile_smith=yes], [compile_smith=no])
+if test "x${compile_smith}" != xno; then
+    AC_DEFINE([COMPILE_SMITH], [], [Compile SMITH generated code])
+fi
+
 #lapack and blas
 AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
 AC_ARG_ENABLE(scalapack, [AS_HELP_STRING([--enable-scalapack],[enable scalapack - used for parallel diagonalization])], [use_scalapack=yes], [use_scalapack=no])

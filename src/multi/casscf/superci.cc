@@ -91,7 +91,7 @@ void SuperCI::compute() {
 
     // setting error of macro iteration
     gradient = grad->rms();
-    if (gradient < thresh_) {
+    if (iter > 2 && gradient < thresh_) {
       rms_grad_ = gradient;
       resume_stdcout();
       cout << " " << endl;

@@ -160,155 +160,73 @@ shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
 }
 
 
-shared_ptr<Dvec> FCI::rdm3deriv(const int target) const {
+tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> FCI::rdm34deriv(const int target, shared_ptr<const Matrix> fock) const {
+  assert(fock->ndim() == norb_ && fock->mdim() == norb_);
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
   shared_ptr<Civec> cbra = cc_->data(target);
 
-  // first make <I|i+j|0>
-  auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
-  dbra->zero();
-  sigma_2a1(cbra, dbra);
-  sigma_2a2(cbra, dbra);
-
-  // second make <J|k+i+jl|0> = <J|k+l|I><I|i+j|0> - delta_li <J|k+j|0>
-  auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
-  {
-    auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
-    int ijkl = 0;
-    int ij = 0;
-    for (auto iter = dbra->dvec().begin(); iter != dbra->dvec().end(); ++iter, ++ij) {
-      const int j = ij/norb_;
-      const int i = ij-j*norb_;
-      tmp->zero();
-      sigma_2a1(*iter, tmp);
-      sigma_2a2(*iter, tmp);
-      int kl = 0;
-      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
-        *ebra->data(ijkl) = **t;
-        const int l = kl/norb_;
-        const int k = kl-l*norb_;
-        if (l == i) *ebra->data(ijkl) -= *dbra->data(k+norb_*j);
-      }
-    }
-  }
-
-  // now make target  <K|m+k+i+jln|0>  =  <K|m+n|J><J|k+i+jl|0> - delta_nk<K|m+i+jl|0> - delta_ni<K|k+m+jl|0>
-  auto fbra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_*norb_*norb_);
-  {
-    auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
-    int ijklmn = 0;
-    int ijkl = 0;
-    for (auto iter = ebra->dvec().begin(); iter != ebra->dvec().end(); ++iter, ++ijkl) {
-      const int j = ijkl/(norb_*norb_*norb_);
-      const int i = ijkl/(norb_*norb_)-j*norb_;
-      const int l = ijkl/norb_-i*norb_-j*norb_*norb_;
-      const int k = ijkl-l*norb_-i*norb_*norb_-j*norb_*norb_*norb_;
-      tmp->zero();
-      sigma_2a1(*iter, tmp);
-      sigma_2a2(*iter, tmp);
-      int mn = 0;
-      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijklmn, ++mn) {
-        const int n = mn/norb_;
-        const int m = mn-n*norb_;
-        *fbra->data(ijklmn) = **t;
-        if (n == k) *fbra->data(ijklmn) -= *ebra->data(m+norb_*(l+norb_*(i+norb_*(j))));
-        if (n == i) *fbra->data(ijklmn) -= *ebra->data(k+norb_*(l+norb_*(m+norb_*(j))));
-      }
-    }
-  }
-
-  return fbra;
-}
-
-
-shared_ptr<Dvec> FCI::rdm4deriv(const int target) const {
-  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
-  cc_->set_det(detex);
-  shared_ptr<Civec> cbra = cc_->data(target);
+  const size_t norb2 = norb_*norb_;
+  const size_t norb3 = norb2*norb_;
+  const size_t norb4 = norb2*norb2;
+  const size_t norb5 = norb3*norb2;
+  const size_t norb6 = norb4*norb2;
 
   // first make <I|i+j|0>
-  auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
-  dbra->zero();
-  sigma_2a1(cbra, dbra);
-  sigma_2a2(cbra, dbra);
-
+  auto dbra = rdm1deriv(target);
   // second make <J|k+i+jl|0> = <J|k+l|I><I|i+j|0> - delta_li <J|k+j|0>
-  auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
-  {
-    auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
-    int ijkl = 0;
-    int ij = 0;
-    for (auto iter = dbra->dvec().begin(); iter != dbra->dvec().end(); ++iter, ++ij) {
-      const int j = ij/norb_;
-      const int i = ij-j*norb_;
-      tmp->zero();
-      sigma_2a1(*iter, tmp);
-      sigma_2a2(*iter, tmp);
-      int kl = 0;
-      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
-        *ebra->data(ijkl) = **t;
-        const int l = kl/norb_;
-        const int k = kl-l*norb_;
-        if (l == i) *ebra->data(ijkl) -= *dbra->data(k+norb_*j);
-      }
-    }
-  }
+  auto ebra = rdm2deriv(target);
 
   // third make <K|m+k+i+jln|0>  =  <K|m+n|J><J|k+i+jl|0> - delta_nk<K|m+i+jl|0> - delta_ni<K|k+m+jl|0>
-  auto fbra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_*norb_*norb_);
+  auto fbra = make_shared<Dvec>(cbra->det(), norb6);
   {
-    auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
-    int ijklmn = 0;
+    auto tmp = make_shared<Dvec>(cbra->det(), norb2);
     int ijkl = 0;
     for (auto iter = ebra->dvec().begin(); iter != ebra->dvec().end(); ++iter, ++ijkl) {
-      const int j = ijkl/(norb_*norb_*norb_);
-      const int i = ijkl/(norb_*norb_)-j*norb_;
-      const int l = ijkl/norb_-i*norb_-j*norb_*norb_;
-      const int k = ijkl-l*norb_-i*norb_*norb_-j*norb_*norb_*norb_;
+      const int j = ijkl/norb3;
+      const int i = ijkl/norb2-j*norb_;
+      const int l = ijkl/norb_-i*norb_-j*norb2;
+      const int k = ijkl-l*norb_-i*norb2-j*norb3;
       tmp->zero();
       sigma_2a1(*iter, tmp);
       sigma_2a2(*iter, tmp);
-      int mn = 0;
-      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijklmn, ++mn) {
-        const int n = mn/norb_;
-        const int m = mn-n*norb_;
-        *fbra->data(ijklmn) = **t;
-        if (n == k) *fbra->data(ijklmn) -= *ebra->data(m+norb_*(l+norb_*(i+norb_*(j))));
-        if (n == i) *fbra->data(ijklmn) -= *ebra->data(k+norb_*(l+norb_*(m+norb_*(j))));
+      for (int m = 0; m != norb_; ++m) {
+        for (int n = 0; n != norb_; ++n)
+          *fbra->data(ijkl+norb4*m+norb5*n) += *tmp->data(m+norb_*n);
+        *fbra->data(ijkl+norb4*m+norb5*k) -= *ebra->data(m+norb_*(l+norb_*(i+norb_*(j))));
+        *fbra->data(ijkl+norb4*m+norb5*i) -= *ebra->data(k+norb_*(l+norb_*(m+norb_*(j))));
       }
     }
   }
 
-  // now make target:  <L|o+m+k+i+jlnp|0>  =  <L|o+p|K><K|m+k+i+jln|0> - delta_pm<L|o+k+i+jln|0> - delta_pk<L|m+o+i+jln|0> - delta_pi<L|m+k+o+jln|0>
-  auto gbra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_*norb_*norb_*norb_*norb_);
+  // now make target:  f_mn <L|E_op,mn,kl,ij|0> = [L|E_kl,ij,op|0]  =  <L|o+p|K>[K|E_kl,ij|0] - f_np<L|E_kl,ij,on|0> - delta_pk[L|E_ij,ol|0] - delta_pi[L|E_kl,oj|0]
+  // calculate [K|k+i+jl|0]
+  auto fock_fbra = ebra->clone();
+  dgemv_("N", fbra->size()/norb2, norb2, 1.0, fbra->data(), fbra->size()/norb2, fock->data(), 1, 0.0, fock_fbra->data(), 1);
+
+  auto gbra = fbra->clone();
   {
-    auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
-    int ijklmnop = 0;
-    int ijklmn = 0;
-    for (auto iter = fbra->dvec().begin(); iter != fbra->dvec().end(); ++iter, ++ijklmn) {
-      const int j = ijklmn/(norb_*norb_*norb_*norb_*norb_);
-      const int i = ijklmn/(norb_*norb_*norb_*norb_)-j*norb_;
-      const int l = ijklmn/(norb_*norb_*norb_)-i*norb_-j*norb_*norb_;
-      const int k = ijklmn/(norb_*norb_)-l*norb_-i*norb_*norb_-j*norb_*norb_*norb_;
-      const int n = ijklmn/norb_-k*norb_-l*norb_*norb_-i*norb_*norb_*norb_-j*norb_*norb_*norb_*norb_;
-      const int m = ijklmn-n*norb_-k*norb_*norb_-l*norb_*norb_*norb_-i*norb_*norb_*norb_*norb_-j*norb_*norb_*norb_*norb_*norb_;
+    auto tmp = make_shared<Dvec>(cbra->det(), norb2);
+    int ijkl = 0;
+    for (auto iter = fock_fbra->dvec().begin(); iter != fock_fbra->dvec().end(); ++iter, ++ijkl) {
+      const int j = ijkl/norb3;
+      const int i = ijkl/norb2-j*norb_;
+      const int l = ijkl/norb_-i*norb_-j*norb2;
+      const int k = ijkl-l*norb_-i*norb2-j*norb3;
       tmp->zero();
       sigma_2a1(*iter, tmp);
       sigma_2a2(*iter, tmp);
-      int op = 0;
-      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijklmnop, ++op) {
-        const int p = op/norb_;
-        const int o = op-p*norb_;
-        *gbra->data(ijklmnop) = **t;
-        if (p == m) *gbra->data(ijklmnop) -= *fbra->data(o+norb_*(n+norb_*(k+norb_*(l+norb_*(i+norb_*(j))))));
-        if (p == k) *gbra->data(ijklmnop) -= *fbra->data(m+norb_*(n+norb_*(o+norb_*(l+norb_*(i+norb_*(j))))));
-        if (p == i) *gbra->data(ijklmnop) -= *fbra->data(m+norb_*(n+norb_*(k+norb_*(l+norb_*(o+norb_*(j))))));
+      for (int o = 0; o != norb_; ++o) {
+        for (int p = 0; p != norb_; ++p)
+          *gbra->data(ijkl+norb4*o+norb5*p) += *tmp->data(o+norb_*p);
+        *gbra->data(ijkl+norb4*o+norb5*k) -= *fock_fbra->data(i+norb_*(j+norb_*(o+norb_*l)));
+        *gbra->data(ijkl+norb4*o+norb5*i) -= *fock_fbra->data(k+norb_*(l+norb_*(o+norb_*j)));
       }
     }
+    dgemm_("N", "N", fbra->size()/norb_, norb_, norb_, -1.0, fbra->data(), fbra->size()/norb_, fock->data(), norb_, 1.0, gbra->data(), fbra->size()/norb_);
   }
 
-  return gbra;
+  return make_tuple(fbra, gbra);
 }
 
 
@@ -432,25 +350,17 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
   {
     auto tmp3 = make_shared<RDM<3>>(norb_);
     dgemm_("T", "N", dbra->ij(), ebra->ij(), nri, 1.0, dbra->data(), nri, ebra->data(), nri, 0.0, tmp3->data(), dbra->ij());
+    sort_indices<1,0,2,0,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb_*norb_*norb_*norb_);
 
     // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
     // we assume that rdm2_[ist] is set
-    for (int i0 = 0; i0 != norb_; ++i0) {
-      for (int i1 = 0; i1 != norb_; ++i1) {
-        for (int i2 = 0; i2 != norb_; ++i2) {
+    for (int i0 = 0; i0 != norb_; ++i0)
+      for (int i1 = 0; i1 != norb_; ++i1)
+        for (int i2 = 0; i2 != norb_; ++i2)
           for (int i3 = 0; i3 != norb_; ++i3) {
-            // i4 and i5 correspond to m and n (they should be transposed here)
-            for (int i5 = 0; i5 != norb_; ++i5) {
-              for (int i4 = 0; i4 != norb_; ++i4) {
-                rdm3->element(i5, i4, i3, i2, i1, i0) = tmp3->element(i4, i5, i3, i2, i1, i0);
-              }
-              rdm3->element(i5, i3, i3, i2, i1, i0) -= rdm2_[ist]->element(i5, i2, i1, i0);
-              rdm3->element(i5, i1, i3, i2, i1, i0) -= rdm2_[ist]->element(i3, i2, i5, i0);
-            }
+            blas::ax_plus_y_n(-1.0, rdm2_[ist]->element_ptr(0, i2, i1, i0), norb_, rdm3->element_ptr(0, i3, i3, i2, i1, i0));
+            blas::ax_plus_y_n(-1.0, rdm2_[ist]->element_ptr(0, i0, i3, i2), norb_, rdm3->element_ptr(0, i1, i3, i2, i1, i0));
           }
-        }
-      }
-    }
   }
 
   // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
@@ -458,43 +368,24 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
     {
       auto tmp4 = make_shared<RDM<4>>(norb_);
       dgemm_("T", "N", ebra->ij(), ebra->ij(), nri, 1.0, ebra->data(), nri, ebra->data(), nri, 0.0, tmp4->data(), ebra->ij());
-      sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_, norb_, norb_, norb_);
+      sort_indices<1,0,3,2,4,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_*norb_*norb_*norb_);
       for (int l = 0; l != norb_; ++l)
-        for (int d = 0; d != norb_; ++d)
-          for (int k = 0; k != norb_; ++k)
-            for (int c = 0; c != norb_; ++c)
-              for (int j = 0; j != norb_; ++j)
-                for (int b = 0; b != norb_; ++b)
-                  for (int i = 0; i != norb_; ++i)
-                    for (int a = 0; a != norb_; ++a) {
-                      if (c == i && d == j) rdm4->element(a,i,b,j,c,k,d,l) -= rdm2_[ist]->element(a,k,b,l);
-                      if (c == j && d == i) rdm4->element(a,i,b,j,c,k,d,l) -= rdm2_[ist]->element(a,l,b,k);
-                      if (c == i)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,k,b,j,d,l);
-                      if (c == j)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,i,b,k,d,l);
-                      if (d == i)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,l,b,j,c,k);
-                      if (d == j)           rdm4->element(a,i,b,j,c,k,d,l) -= rdm3->element(a,i,b,l,c,k);
-                    }
+        for (int k = 0; k != norb_; ++k)
+          for (int j = 0; j != norb_; ++j)
+            for (int b = 0; b != norb_; ++b) {
+              blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,k,b,l), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,j,k,b,l));
+              blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,l,b,k), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,b,k,j,l));
+              for (int i = 0; i != norb_; ++i) {
+                blas::ax_plus_y_n(-1.0, rdm2_[ist]->element_ptr(0,k,b,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,j,l));
+                blas::ax_plus_y_n(-1.0, rdm2_[ist]->element_ptr(0,l,b,k), norb_, rdm4->element_ptr(0,i,b,j,j,k,i,l));
+                for (int d = 0; d != norb_; ++d) {
+                  blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,k,b,j,d,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,d,l));
+                  blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,l,b,j,d,k), norb_, rdm4->element_ptr(0,i,b,j,d,k,i,l));
+                }
+              }
+            }
     }
   }
-#if 0
-  // Checking 4RDM by comparing with 3RDM
-  auto debug = make_shared<RDM<3>>(*rdm3);
-  cout << "printing out rdm" << endl;
-  for (int l = 0; l != norb_; ++l)
-    for (int d = 0; d != norb_; ++d)
-      for (int k = 0; k != norb_; ++k)
-        for (int c = 0; c != norb_; ++c)
-          for (int j = 0; j != norb_; ++j)
-            for (int b = 0; b != norb_; ++b)
-    for (int i = 0; i != norb_; ++i) {
-      debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(i,i,b,j,c,k,d,l);
-//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,i,i,c,k,d,l);
-//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,c,k,i,i,d,l);
-//    debug->element(b,j,c,k,d,l) -= 1.0/(nelea()+neleb()-3) * rdm4->element(b,j,c,k,d,l,i,i);
-    }
-  debug->print(1.0e-8);
-  cout << "printing out rdm - end" << endl;
-#endif
 
   cc_->set_det(det_);
 

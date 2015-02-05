@@ -34,7 +34,7 @@
 
 void CASHybrid::compute() {
 
-  const double global_thresh = idata_->get<double>("thresh", 1.0e-8);
+  thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // construct and compute SuperCI
   {
     auto idata = make_shared<PTree>(*idata_);
@@ -52,7 +52,7 @@ void CASHybrid::compute() {
     refout_ = active_method->conv_to_ref();
 
     const double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
-    if (grad < global_thresh) {
+    if (grad < thresh_) {
       cout << "      * CASSCF converged *    " << endl;
       fci_ = active_method->fci();
       energy_ = active_method->energy();
@@ -69,7 +69,7 @@ void CASHybrid::compute() {
     refout_ = active_method->conv_to_ref();
 
     const double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
-    if (grad < global_thresh) {
+    if (grad < thresh_) {
       cout << " " << endl;
       cout << "      * CASSCF converged *    " << endl;
     }

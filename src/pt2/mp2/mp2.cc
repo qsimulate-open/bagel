@@ -26,10 +26,10 @@
 
 // implements the MP2-F12 theory
 
-#include <set>
 #include <src/scf/hf/rhf.h>
 #include <src/df/dfdistt.h>
 #include <src/pt2/mp2/mp2.h>
+#include <src/pt2/mp2/mp2cache.h>
 #include <src/pt2/mp2/f12int4.h>
 #include <src/util/f77.h>
 #include <src/util/taskqueue.h>
@@ -110,10 +110,10 @@ void MP2::compute() {
 
   cout << "    * 3-index integral transformation done" << endl;
 
-  // make a list of static distribution of ij
-  const int myrank = mpi__->rank();
+  // task should be formed here
   vector<vector<tuple<int,int,int,int>>> tasks(mpi__->size());
   {
+    // make a list of static distribution of ij
     int nmax = 0;
     StaticDist ijdist(nocc*(nocc+1)/2, mpi__->size());
     for (int inode = 0; inode != mpi__->size(); ++inode) {
@@ -128,85 +128,15 @@ void MP2::compute() {
       for (int j = 0; j != nmax-n; ++j) i.push_back(make_tuple(-1,-1,-1,-1));
     }
   }
-  const int nloop = tasks[0].size();
 
   // start communication (n fetch behind) - n is determined by memory size
-  // the data is stored in a map
-  map<int, shared_ptr<Matrix>> cache;
-  // pair of node and set of integers
-  vector<set<int>> cachetable(mpi__->size());
-  vector<int> sendreqs;
+  MP2Cache cache(naux, nocc, nvirt, fullt, tasks);
 
-  auto cache_block = [&](const int nadd, const int ndrop) {
-    assert(ndrop < nadd);
-    if (ndrop >= 0) {
-      for (int inode = 0; inode != mpi__->size(); ++inode) {
-        const int id = get<0>(tasks[inode][ndrop]);
-        const int jd = get<1>(tasks[inode][ndrop]);
-        // if id and jd are no longer used in the cache, delete the element
-        set<int> used;
-        for (int i = ndrop+1; i <= nadd; ++i) {
-          used.insert(get<0>(tasks[inode][i]));
-          used.insert(get<1>(tasks[inode][i]));
-        }
-        if (!used.count(id)) {
-          if (inode == myrank) cache.erase(id);
-          cachetable[inode].erase(id);
-        }
-        if (!used.count(jd)) {
-          if (inode == myrank) cache.erase(jd);
-          cachetable[inode].erase(jd);
-        }
-      }
-    }
-    if (nadd < nloop) {
-      // issue recv requests
-      auto request_one_ = [&](const int i, const int rank) {
-        if (i < 0) return -1;
-        cachetable[rank].insert(i);
-        int tag = -1;
-        if (cache.find(i) == cache.end() && myrank == rank) {
-          const int origin = fullt->locate(0, i*nvirt);
-          if (origin == myrank) {
-            cache[i] = fullt->get_slice(i*nvirt, (i+1)*nvirt).front();
-          } else {
-            cache[i] = make_shared<Matrix>(naux, nvirt, true);
-            tag = mpi__->request_recv(cache[i]->data(), cache[i]->size(), origin, myrank*nocc+i);
-          }
-        }
-        return tag;
-      };
-
-      // issue send requests
-      auto send_one_ = [&](const int i, const int dest) {
-        // see if "i" is cached at dest
-        if (i < 0 || cachetable[dest].count(i) || fullt->locate(0, i*nvirt) != myrank)
-          return -1;
-        return mpi__->request_send(fullt->data() + (i*nvirt-fullt->bstart())*naux, nvirt*naux, dest, dest*nocc+i);
-      };
-
-      for (int inode = 0; inode != mpi__->size(); ++inode) {
-        if (inode == myrank) {
-          // recieve data from other processes
-          get<2>(tasks[myrank][nadd]) = request_one_(get<0>(tasks[myrank][nadd]), myrank); // receive requests
-          get<3>(tasks[myrank][nadd]) = request_one_(get<1>(tasks[myrank][nadd]), myrank);
-        } else {
-          // send data to other processes
-          const int i = send_one_(get<0>(tasks[inode][nadd]), inode); // send requests
-          if (i >= 0) sendreqs.push_back(i);
-          request_one_(get<0>(tasks[inode][nadd]), inode); // update cachetable
-          const int j = send_one_(get<1>(tasks[inode][nadd]), inode); // send requests
-          if (j >= 0) sendreqs.push_back(j);
-          request_one_(get<1>(tasks[inode][nadd]), inode);
-        }
-      }
-    }
-  };
-
+  const int nloop = cache.nloop();
   const int ncache = min(memory_size/(nvirt*nvirt), size_t(20));
   cout << "    * ncache = " << ncache << endl;
   for (int n = 0; n != min(ncache, nloop); ++n)
-    cache_block(n, -1);
+    cache.block(n, -1);
 
   // denominator info
   const vector<double> eig(ref_->eig().begin()+ncore_, ref_->eig().end());
@@ -216,19 +146,19 @@ void MP2::compute() {
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
     if (n+ncache < nloop)
-      cache_block(n+ncache, n-1);
+      cache.block(n+ncache, n-1);
 
-    const int i = get<0>(tasks[myrank][n]);
-    const int j = get<1>(tasks[myrank][n]);
+    const int i = get<0>(cache.task(n));
+    const int j = get<1>(cache.task(n));
     if (i < 0 || j < 0) continue;
 
-    const int ti = get<2>(tasks[myrank][n]);
-    const int tj = get<3>(tasks[myrank][n]);
+    const int ti = get<2>(cache.task(n));
+    const int tj = get<3>(cache.task(n));
     if (ti >= 0) mpi__->wait(ti);
     if (tj >= 0) mpi__->wait(tj);
 
-    shared_ptr<const Matrix> iblock = cache.at(i);
-    shared_ptr<const Matrix> jblock = cache.at(j);
+    shared_ptr<const Matrix> iblock = cache(i);
+    shared_ptr<const Matrix> jblock = cache(j);
     const Matrix mat(*iblock % *jblock);
 
     // should thread
@@ -247,8 +177,7 @@ void MP2::compute() {
   }
 
   // just to double check that all the communition is done
-  for (auto& i : sendreqs)
-    mpi__->wait(i);
+  cache.wait();
   // allreduce energy contributions
   mpi__->allreduce(&energy_, 1);
 

@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
 
       } else if (title == "optimize") {
 
-        auto opt = make_shared<Optimize>(itree, geom);
+        auto opt = make_shared<Optimize>(itree, geom, ref);
         opt->compute();
 
 

@@ -74,63 +74,17 @@ class Task : public std::enable_shared_from_this<Task> {
 
     bool ready() const { return !done_ && std::all_of(depend_.begin(), depend_.end(), [](std::shared_ptr<Task> o) { return o->done(); }); }
 
-    virtual double energy() const { return 0.0; }
-    virtual double dedci() const { return 0.0; }
-    virtual double correction() const { return 0.0; }
+    virtual double target() const { return 0.0; }
 };
 
 
-class EnergyTask : public Task {
+class AccTask : public Task {
   protected:
-    double energy_;
+    double target_;
   public:
-    EnergyTask() : Task() {}
-    ~EnergyTask() {}
-    double energy() const { return energy_; }
-
-};
-
-class DedciTask : public Task {
-  protected:
-    double dedci_;
-  public:
-    DedciTask() : Task() {}
-    ~DedciTask() {}
-    double dedci() const { return dedci_; }
-
-};
-
-class CorrectionTask : public Task {
-  protected:
-    double correction_;
-  public:
-    CorrectionTask() : Task() {}
-    ~CorrectionTask() {}
-    double correction() const { return correction_; }
-
-};
-
-class DensityTask : public Task {
-  protected:
-  public:
-    DensityTask() : Task() {}
-    ~DensityTask() {}
-
-};
-
-class Density1Task : public Task {
-  protected:
-  public:
-    Density1Task() : Task() {}
-    ~Density1Task() {}
-
-};
-
-class Density2Task : public Task {
-  protected:
-  public:
-    Density2Task() : Task() {}
-    ~Density2Task() {}
+    AccTask() {}
+    ~AccTask() {}
+    double target() const { return target_; }
 
 };
 
