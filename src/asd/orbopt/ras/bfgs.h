@@ -44,6 +44,13 @@ class ASDRASBFGS : public ASDRASSCF {
 
     void grad_aa(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASDRASRotFile> sigma) const;
 
+    void grad_aa12A(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASDRASRotFile> sigma) const;
+    void grad_aa13A(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASDRASRotFile> sigma) const;
+    void grad_aa23A(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASDRASRotFile> sigma) const;
+    void grad_aa12B(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASDRASRotFile> sigma) const;
+    void grad_aa13B(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASDRASRotFile> sigma) const;
+    void grad_aa23B(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASDRASRotFile> sigma) const;
+
     // compute diagonal denominators
     std::shared_ptr<const ASDRASRotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock) const;
 

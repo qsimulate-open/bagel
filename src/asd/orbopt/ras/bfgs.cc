@@ -120,8 +120,6 @@ void ASDRASBFGS::compute() {
     half_ = geom_->df()->compute_half_transform(cdata);
 //END
 
-    assert(false);
-
     auto sigma = make_shared<ASDRASRotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_ );
     sigma->zero();
 
@@ -189,6 +187,12 @@ void ASDRASBFGS::compute() {
     cout << "BFGS: Gradient ca done.." << endl;
     grad_aa(mcfock, sigma);
     cout << "BFGS: Gradient aa done.." << endl;
+    grad_aa12A(mcfock, sigma);
+    grad_aa13A(mcfock, sigma);
+    grad_aa23A(mcfock, sigma);
+    grad_aa12B(mcfock, sigma);
+    grad_aa13B(mcfock, sigma);
+    grad_aa23B(mcfock, sigma);
 
     // if this is the first time, set up the BFGS solver
     if (iter == 0) {

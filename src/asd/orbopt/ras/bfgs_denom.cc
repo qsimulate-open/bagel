@@ -89,7 +89,92 @@ shared_ptr<const ASDRASRotFile> ASDRASBFGS::compute_denom(shared_ptr<const Matri
       }
     }
   }
+  //RAS monomer A part
+  if (nact_) {
+    //RAS12A
+    {
+      double* target = out->ptr_aa12A();
+      for (int i = rasA_[0]; i != rasA_[0]+rasA_[1]; ++i) //RAS2(A)
+        for (int j = 0; j != rasA_[0]; ++j) { //RAS1(A)
+          *target++ = 2.0*( 
+                      - mcfock->element(j,j) - mcfock->element(i,i) 
+                      + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_) 
+                      - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
+                      + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_))
+                      );
+        }
+    }
+    //RAS13A
+    {
+      double* target = out->ptr_aa13A();
+      for (int i = rasA_[0]+rasA_[1]; i != nactA_; ++i) //RAS3(A)
+        for (int j = 0; j != rasA_[0]; ++j) { //RAS1(A)
+          *target++ = 2.0*( 
+                      - mcfock->element(j,j) - mcfock->element(i,i) 
+                      + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_) 
+                      - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
+                      + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_))
+                      );
+        }
+    }
+    //RAS23A
+    {
+      double* target = out->ptr_aa23A();
+      for (int i = rasA_[0]+rasA_[1]; i != nactA_; ++i) //RAS3(A)
+        for (int j = rasA_[0]; j != rasA_[0]+rasA_[1]; ++j) { //RAS2(A)
+          *target++ = 2.0*( 
+                      - mcfock->element(j,j) - mcfock->element(i,i) 
+                      + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_) 
+                      - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
+                      + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_))
+                      );
+        }
+    }
 
+  }
+  //RAS monomer B part
+  if (nact_) {
+    //RAS12B
+    {
+      double* target = out->ptr_aa12B();
+      for (int i = nactA_+rasB_[0]; i != nactA_+rasB_[0]+rasB_[1]; ++i) //RAS2(B)
+        for (int j = nactA_; j != nactA_+rasB_[0]; ++j) { //RAS1(B)
+          *target++ = 2.0*( 
+                      - mcfock->element(j,j) - mcfock->element(i,i) 
+                      + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_) 
+                      - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
+                      + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_))
+                      );
+        }
+    }
+    //RAS13B
+    {
+      double* target = out->ptr_aa13B();
+      for (int i = nactA_+rasB_[0]+rasB_[1]; i != nact_; ++i) //RAS3(B)
+        for (int j = nactA_; j != nactA_+rasB_[0]; ++j) { //RAS1(B)
+          *target++ = 2.0*( 
+                      - mcfock->element(j,j) - mcfock->element(i,i) 
+                      + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_) 
+                      - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
+                      + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_))
+                      );
+        }
+    }
+    //RAS23B
+    {
+      double* target = out->ptr_aa23B();
+      for (int i = nactA_+rasB_[0]+rasB_[1]; i != nact_; ++i) //RAS3(B)
+        for (int j = nactA_+rasB_[0]; j != nactA_+rasB_[0]+rasB_[1]; ++j) { //RAS2(B)
+          *target++ = 2.0*( 
+                      - mcfock->element(j,j) - mcfock->element(i,i) 
+                      + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_) 
+                      - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
+                      + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_))
+                      );
+        }
+    }
+
+  }
   const double thresh = 1.0e-8;
   for (int i = 0; i != out->size(); ++i)
     if (fabs(out->data(i)) < thresh) {

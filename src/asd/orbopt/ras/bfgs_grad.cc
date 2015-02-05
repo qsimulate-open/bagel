@@ -81,3 +81,56 @@ void ASDRASBFGS::grad_aa(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRASRotFi
   }
 }
 
+void ASDRASBFGS::grad_aa12A(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRASRotFile> sigma) const {
+  if (!nact_) return;
+  double* target = sigma->ptr_aa12A();
+  for (int jb = rasA_[0]; jb != rasA_[0]+rasA_[1]; ++jb)  //RAS2(A)
+    for (int ia = 0; ia != rasA_[0]; ++ia, ++target) { //RAS1(A)
+      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+}
+
+void ASDRASBFGS::grad_aa13A(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRASRotFile> sigma) const {
+  if (!nact_) return;
+  double* target = sigma->ptr_aa13A();
+  for (int jb = rasA_[0]+rasA_[1]; jb != nactA_; ++jb)  //RAS3(A)
+    for (int ia = 0; ia != rasA_[0]; ++ia, ++target) { //RAS1(A)
+      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+}
+
+void ASDRASBFGS::grad_aa23A(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRASRotFile> sigma) const {
+  if (!nact_) return;
+  double* target = sigma->ptr_aa23A();
+  for (int jb = rasA_[0]+rasA_[1]; jb != nactA_; ++jb)  //RAS3(A)
+    for (int ia = rasA_[0]; ia != rasA_[0]+rasA_[1]; ++ia, ++target) { //RAS2(A)
+      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+}
+
+void ASDRASBFGS::grad_aa12B(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRASRotFile> sigma) const {
+  if (!nact_) return;
+  double* target = sigma->ptr_aa12B();
+  for (int jb = nactA_+rasB_[0]; jb != nactA_+rasB_[0]+rasB_[1]; ++jb)  //RAS2(B)
+    for (int ia = nactA_; ia != nactA_+rasB_[0]; ++ia, ++target) { //RAS1(B)
+      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+}
+
+void ASDRASBFGS::grad_aa13B(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRASRotFile> sigma) const {
+  if (!nact_) return;
+  double* target = sigma->ptr_aa13B();
+  for (int jb = nactA_+rasB_[0]+rasB_[1]; jb != nact_; ++jb)  //RAS3(B)
+    for (int ia = nactA_; ia != nactA_+rasB_[0]; ++ia, ++target) { //RAS1(B)
+      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+}
+
+void ASDRASBFGS::grad_aa23B(shared_ptr<const Matrix> mcfock, shared_ptr<ASDRASRotFile> sigma) const {
+  if (!nact_) return;
+  double* target = sigma->ptr_aa23B();
+  for (int jb = nactA_+rasB_[0]+rasB_[1]; jb != nact_; ++jb)  //RAS3(B)
+    for (int ia = nactA_+rasB_[0]; ia != nactA_+rasB_[0]+rasB_[1]; ++ia, ++target) { //RAS2(B)
+      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+}
