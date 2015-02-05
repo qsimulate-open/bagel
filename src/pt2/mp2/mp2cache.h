@@ -46,29 +46,12 @@ class MP2Cache {
     std::vector<std::set<int>> cachetable_;
     std::vector<int> sendreqs_;
 
-    int myrank_;
-    int nloop_;
+    const int myrank_;
+    const int nloop_;
 
   public:
-    MP2Cache(const int naux, const int nocc, const int nvirt, std::shared_ptr<const DFDistT> fullt)
-     : naux_(naux), nocc_(nocc), nvirt_(nvirt), fullt_(fullt), tasks_(mpi__->size()), cachetable_(mpi__->size()) {
-      myrank_ = mpi__->rank();
-
-      // make a list of static distribution of ij
-      int nmax = 0;
-      StaticDist ijdist(nocc_*(nocc_+1)/2, mpi__->size());
-      for (int inode = 0; inode != mpi__->size(); ++inode) {
-        for (int i = 0, cnt = 0; i < nocc; ++i)
-          for (int j = i; j < nocc; ++j, ++cnt)
-            if (cnt >= ijdist.start(inode) && cnt < ijdist.start(inode) + ijdist.size(inode))
-              tasks_[inode].push_back(std::make_tuple(j, i, /*mpitags*/-1,-1));
-        if (tasks_[inode].size() > nmax) nmax = tasks_[inode].size();
-      }
-      for (auto& i : tasks_) {
-        const int n = i.size();
-        for (int j = 0; j != nmax-n; ++j) i.push_back(std::make_tuple(-1,-1,-1,-1));
-      }
-      nloop_ = tasks_[0].size();
+    MP2Cache(const int naux, const int nocc, const int nvirt, std::shared_ptr<const DFDistT> fullt, const std::vector<std::vector<std::tuple<int,int,int,int>>>& tasks)
+     : naux_(naux), nocc_(nocc), nvirt_(nvirt), fullt_(fullt), tasks_(tasks), cachetable_(mpi__->size()), myrank_(mpi__->rank()), nloop_(tasks_[0].size()) {
     }
 
     std::shared_ptr<const Matrix> operator()(const int i) const { return cache_.at(i); }
@@ -102,7 +85,7 @@ class MP2Cache {
       if (nadd < nloop_) {
         // issue recv requests
         auto request_one_ = [&](const int i, const int rank) {
-          if (i < 0) return -1;
+          if (i < 0 || i >= nocc_) return -1;
           cachetable_[rank].insert(i);
           int tag = -1;
           if (cache_.find(i) == cache_.end() && myrank_ == rank) {
@@ -120,7 +103,7 @@ class MP2Cache {
         // issue send requests
         auto send_one_ = [&](const int i, const int dest) {
           // see if "i" is cached at dest
-          if (i < 0 || cachetable_[dest].count(i) || fullt_->locate(0, i*nvirt_) != myrank_)
+          if (i < 0 || i >= nocc_ || cachetable_[dest].count(i) || fullt_->locate(0, i*nvirt_) != myrank_)
             return -1;
           return mpi__->request_send(fullt_->data() + (i*nvirt_-fullt_->bstart())*naux_, nvirt_*naux_, dest, dest*nocc_+i);
         };
