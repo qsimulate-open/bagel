@@ -1,3 +1,4 @@
+SUBDIRS = ras
 lib_LTLIBRARIES = libbagel_asd_orbopt.la
 libbagel_asd_orbopt_la_SOURCES = asdscf.cc \
                              superci.cc superci_sigma.cc supercimicro.cc \

@@ -54,6 +54,8 @@
 #include <src/asd/orbopt/bfgs2.h>
 #include <src/asd/orbopt/hybrid.h>
 
+#include <src/asd/orbopt/ras/bfgs.h>
+
 using namespace std;
 using namespace bagel;
 
@@ -114,6 +116,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<ASDBFGS2>(itree, geom, ref);
       else if (algorithm == "hybrid")
         out = make_shared<ASDHybrid>(itree, geom, ref);
+      else if (algorithm == "rasbfgs")
+        out = make_shared<ASDRASBFGS>(itree, geom, ref);
       else
         throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
     }

@@ -145,6 +145,7 @@ AC_CONFIG_FILES([Makefile
                  src/asd/dimer/Makefile
                  src/asd/dmrg/Makefile
                  src/asd/orbopt/Makefile
+                 src/asd/orbopt/ras/Makefile
                  src/asd/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile
