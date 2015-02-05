@@ -114,7 +114,6 @@ class ASDRASRotationMatrix {
         for (int j = 0; j != rasB_[1]; ++ j) {
           ele_aa23A(j, i) = o->element(j+nclosed_+nactA_+rasB_[0], i+nclosed_+nactA_+rasB_[0]+rasB_[1]);
         }
-      //TBA
     }
 
     std::shared_ptr<ASDRASRotationMatrix<DataType>> clone() const {
@@ -361,8 +360,46 @@ class ASDRASRotationMatrix {
           std::cout << std::endl;
         }
       }
-      //TODO
-      std::cout << "RAS A & B missing" << std::endl;
+      if (nactA_ && nactB_) {
+        std::cout << " printing RAS(A) blocks" << std::endl;
+        std::cout << "          RAS1-RAS2 blocks" << std::endl;
+        for (int i = 0; i != rasA_[1]; ++i) 
+          for (int j = 0; j != rasA_[0]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa12A(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << "          RAS1-RAS3 blocks" << std::endl;
+        for (int i = 0; i != rasA_[2]; ++i) 
+          for (int j = 0; j != rasA_[0]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa13A(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << "          RAS2-RAS3 blocks" << std::endl;
+        for (int i = 0; i != rasA_[2]; ++i) 
+          for (int j = 0; j != rasA_[1]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa23A(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << " printing RAS(B) blocks" << std::endl;
+        std::cout << "          RAS1-RAS2 blocks" << std::endl;
+        for (int i = 0; i != rasB_[1]; ++i) 
+          for (int j = 0; j != rasB_[0]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa12B(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << "          RAS1-RAS3 blocks" << std::endl;
+        for (int i = 0; i != rasB_[2]; ++i) 
+          for (int j = 0; j != rasB_[0]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa13B(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << "          RAS2-RAS3 blocks" << std::endl;
+        for (int i = 0; i != rasB_[2]; ++i) 
+          for (int j = 0; j != rasB_[1]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa23B(j,i);
+          }
+        std::cout << std::endl;
+      }
     }
 };
 

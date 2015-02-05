@@ -193,6 +193,7 @@ void ASDRASBFGS::compute() {
     grad_aa12B(mcfock, sigma);
     grad_aa13B(mcfock, sigma);
     grad_aa23B(mcfock, sigma);
+    cout << "BFGS: RAS Gradient aa done.." << endl;
 
     // if this is the first time, set up the BFGS solver
     if (iter == 0) {
@@ -226,6 +227,7 @@ void ASDRASBFGS::compute() {
 
     // setting error of macro iteration
     const double gradient = sigma->rms();
+    sigma->print("RASGRADIENTS");
     cout << "Macro gradient = " << gradient << endl;
 
 //  resume_stdcout();
