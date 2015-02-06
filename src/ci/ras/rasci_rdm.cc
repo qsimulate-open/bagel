@@ -8,6 +8,29 @@
 using namespace std;
 using namespace bagel;
 
+
+void RASCI::compute_rdm12() {
+//// Needs initialization here because we use daxpy.
+//// For nstate_ == 1, rdm1_av_ = rdm1_[0].
+//if (rdm1_av_ == nullptr && nstate_ > 1) {
+//  rdm1_av_ = make_shared<RDM<1>>(norb_);
+//  rdm2_av_ = make_shared<RDM<2>>(norb_);
+//}
+//if (nstate_ > 1) {
+//  rdm1_av_->zero();
+//  rdm2_av_->zero();
+//}
+//// we need expanded lists
+//auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, /*compressed=*/false, /*mute=*/true);
+//cc_->set_det(detex);
+
+//for (int i = 0; i != nstate_; ++i) compute_rdm12(i);
+
+//cc_->set_det(det_);
+  assert(false);
+}
+
+
 void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) {
   cout << "compute_rdm12.." << endl;
 

@@ -129,7 +129,7 @@ class RASCI : public Method {
     //virtual int nij() const { return norb_*(norb_+1)/2; }
 
     //double weight(const int i) const { return weight_[i]; }
-
+    void compute_rdm12(); // compute all states at once + averaged rdm
     void compute_rdm12(std::shared_ptr<RASCivec>, std:: shared_ptr<RASCivec>);
     void sigma_2a1(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
     void sigma_2a2(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
