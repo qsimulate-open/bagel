@@ -246,7 +246,7 @@ void RASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
     for (int i = 0; i != nact_; ++i)
       for (int j = 0; j != nact_; ++j) {
 #if 1
-        if (occup_(i)+occup_(j) > occup_thresh)
+        if (occup_(i)+occup_(j) > roccup_thresh)
           factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_(i)+occup_(j));
         else
           factp->element(j,i) = 0.0;
@@ -269,12 +269,12 @@ void RASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   double* target = denom->ptr_va();
   for (int i = 0; i != nact_; ++i) {
-    if (occup_(i) > occup_thresh) {
+    if (occup_(i) > roccup_thresh) {
       for (int j = 0; j != nvirt_; ++j, ++target)
         *target = (gaa->element(i,i) + occup_(i)*f->element(j+nocc_, j+nocc_)) / (superci ? occup_(i) : 1.0);
     } else {
       for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = 1.0/occup_thresh;
+        *target = 1.0/roccup_thresh;
     }
   }
 
@@ -285,12 +285,12 @@ void RASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   target = denom->ptr_ca();
   for (int i = 0; i != nact_; ++i) {
-    if (2.0-occup_(i) > occup_thresh) {
+    if (2.0-occup_(i) > roccup_thresh) {
       for (int j = 0; j != nclosed_; ++j, ++target)
         *target = ((f->element(nclosed_+i,nclosed_+i)*2.0-fact->element(i+nclosed_,i)) - f->element(j, j)*(2.0-occup_(i))) / (superci ? 2.0-occup_(i) : 1.0);
     } else {
       for (int j = 0; j != nclosed_; ++j, ++target)
-        *target = 1.0/occup_thresh;
+        *target = 1.0/roccup_thresh;
     }
   }
   d = denom;

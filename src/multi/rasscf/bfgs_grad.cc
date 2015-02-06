@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: multi/rasscr/bfgs_grad.cc
+// Filename: multi/rasscf/bfgs_grad.cc
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>

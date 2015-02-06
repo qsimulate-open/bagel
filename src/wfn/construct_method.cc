@@ -44,6 +44,7 @@
 #include <src/multi/zcasscf/zcasbfgs.h>
 #include <src/multi/zcasscf/zcashybrid.h>
 #include <src/multi/zcasscf/zsuperci.h>
+#include <src/multi/rasscf/bfgs.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/prop/current.h>
@@ -132,6 +133,13 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<CASBFGS>(itree, geom, ref);
       else
         throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
+    }
+    else if (title == "rasscf") {
+      string algorithm = itree->get<string>("algorithm", "");
+      if (algorithm == "bfgs")
+        out = make_shared<RASBFGS>(itree, geom, ref);
+      else
+        throw runtime_error("unknown RASSCF algorithm specified: " + algorithm);
     }
     else if (title == "caspt2grad") {
       // TODO to be called from optimizer

@@ -119,7 +119,7 @@ class RASSCF : public Method, public std::enable_shared_from_this<RASSCF> {
     void print_natocc() const;
 };
 
-static const double occup_thresh = 1.0e-10;
+static const double roccup_thresh = 1.0e-10;
 
 }
 

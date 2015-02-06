@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: multi/rasscr/bfgs.cc
+// Filename: multi/rasscf/bfgs.cc
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
@@ -56,6 +56,8 @@ void RASBFGS::compute() {
 
     const shared_ptr<const Coeff> cold = coeff_;
     const shared_ptr<const Matrix> xold = x->copy();
+
+    assert(false);
 
     // first perform RASCI to obtain RDMs
     if (nact_) {
