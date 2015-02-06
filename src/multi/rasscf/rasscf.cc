@@ -124,12 +124,12 @@ void RASSCF::common_init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
 
-  // RASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
+  // RASSCF methods should have RASCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
   mute_stdcout();
   if (nact_) {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
-    fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+    rasci_ = make_shared<RASCI>(idata, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
   }
   resume_stdcout();
 
@@ -198,7 +198,7 @@ shared_ptr<Matrix> RASSCF::ao_rdm1(shared_ptr<const RDM<1>> rdm1, const bool ina
 }
 
 
-
+#if 0
 void RASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact, shared_ptr<Matrix>& factp, shared_ptr<Matrix>& gaa,
                                 shared_ptr<RASRotFile>& d, const bool superci) const {
 
@@ -295,7 +295,7 @@ void RASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
   }
   d = denom;
 }
-
+#endif
 
 shared_ptr<const Coeff> RASSCF::update_coeff(const shared_ptr<const Matrix> cold, shared_ptr<const Matrix> mat) const {
   auto cnew = make_shared<Coeff>(*cold);
@@ -307,7 +307,7 @@ shared_ptr<const Coeff> RASSCF::update_coeff(const shared_ptr<const Matrix> cold
 }
 
 
-
+#if 0
 shared_ptr<Matrix> RASSCF::form_natural_orbs() {
   // here make a natural orbitals and update the coefficients
   // this effectively updates 1,2RDM and integrals
@@ -319,8 +319,9 @@ shared_ptr<Matrix> RASSCF::form_natural_orbs() {
   if (natocc_) print_natocc();
   return natorb.first;
 }
+#endif
 
-
+#if 0
 shared_ptr<const Coeff> RASSCF::semi_canonical_orb() const {
   auto rdm1mat = make_shared<Matrix>(nact_, nact_);
   copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
@@ -344,13 +345,14 @@ shared_ptr<const Coeff> RASSCF::semi_canonical_orb() const {
   trans.copy_block(nocc_, nocc_, nvirt_, nvirt_, vfock);
   return make_shared<Coeff>(*coeff_ * trans);
 }
+#endif
 
-
+#if 0
 shared_ptr<const Reference> RASSCF::conv_to_ref() const {
   shared_ptr<Reference> out;
   if (nact_) {
     out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_av(),
-                                 fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+                                 rasci_->rdm1(), rasci_->rdm2(), rasci_->rdm1_av(), rasci_->rdm2_av(), rasci_->conv_to_ciwfn());
     // TODO
     // compute one-body operators
     shared_ptr<Matrix> f;
@@ -382,8 +384,9 @@ shared_ptr<const Reference> RASSCF::conv_to_ref() const {
   }
   return out;
 }
+#endif
 
-
+#if 0
 void RASSCF::print_natocc() const {
   assert(occup_.size() > 0);
   cout << " " << endl;
@@ -393,3 +396,4 @@ void RASSCF::print_natocc() const {
     cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
   cout << "  ============================================ " << endl;
 }
+#endif

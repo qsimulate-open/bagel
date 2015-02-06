@@ -61,17 +61,17 @@ void RASBFGS::compute() {
 
     // first perform RASCI to obtain RDMs
     if (nact_) {
-      if (iter) fci_->update(coeff_);
-      Timer fci_time(0);
-      fci_->compute();
-      fci_->compute_rdm12();
-      fci_time.tick_print("FCI and RDMs");
+      if (iter) rasci_->update(coeff_);
+      Timer rasci_time(0);
+      rasci_->compute();
+      rasci_->compute_rdm12();
+      rasci_time.tick_print("FCI and RDMs");
     }
 
     shared_ptr<Matrix> natorb_mat = x->clone();
     if (nact_) {
       // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
-      shared_ptr<const Matrix> natorb = form_natural_orbs();
+    //shared_ptr<const Matrix> natorb = form_natural_orbs();
       natorb_mat->unit();
       natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
     } else {
@@ -105,9 +105,9 @@ void RASBFGS::compute() {
       afock = cfock->clone();
     }
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
-    shared_ptr<const Qvec> qxr;
+    shared_ptr<const RASQvec> qxr;
     if (nact_) {
-      qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
+      qxr = make_shared<const RASQvec>(coeff_->mdim(), nact_, coeff_, nclosed_, rasci_, rasci_->rdm2_av());
     }
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
@@ -127,7 +127,7 @@ void RASBFGS::compute() {
 
     // get energy
     if (nact_) {
-      energy_ = fci_->energy();
+      energy_ = rasci_->energy();
       // use state averaged energy to update trust radius
       const double sa_en = blas::average(energy_);
       evals.push_back(sa_en);
@@ -191,14 +191,14 @@ void RASBFGS::compute() {
   // ============================
 
   // block diagonalize coeff_ in nclosed and nvirt
-  coeff_ = semi_canonical_orb();
+//coeff_ = semi_canonical_orb();
 
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
   if (nact_) {
-    fci_->update(coeff_);
-    fci_->compute();
-    fci_->compute_rdm12();
+    rasci_->update(coeff_);
+    rasci_->compute();
+    rasci_->compute_rdm12();
   }
 }
 

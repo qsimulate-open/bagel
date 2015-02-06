@@ -32,7 +32,7 @@
 #define __BAGEL_RASSCF_RASSCF_H
 
 #include <src/wfn/reference.h>
-#include <src/ci/fci/knowles.h>
+#include <src/ci/ras/rasci.h>
 #include <src/multi/rasscf/rotfile.h>
 
 namespace bagel {
@@ -57,7 +57,7 @@ class RASSCF : public Method, public std::enable_shared_from_this<RASSCF> {
     VectorB occup_;
     std::shared_ptr<const Coeff> coeff_;
 
-    std::shared_ptr<FCI> fci_;
+    std::shared_ptr<RASCI> rasci_;
     void print_header() const;
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
     void common_init();
@@ -86,8 +86,8 @@ class RASSCF : public Method, public std::enable_shared_from_this<RASSCF> {
     std::shared_ptr<const Reference> ref() const { return ref_; }
     virtual std::shared_ptr<const Reference> conv_to_ref() const override;
 
-    std::shared_ptr<FCI> fci() { return fci_; }
-    std::shared_ptr<const FCI> fci() const { return fci_; }
+    std::shared_ptr<RASCI> rasci() { return rasci_; }
+    std::shared_ptr<const RASCI> rasci() const { return rasci_; }
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
