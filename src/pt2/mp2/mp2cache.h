@@ -46,12 +46,34 @@ class MP2Cache {
     std::vector<std::set<int>> cachetable_;
     std::vector<int> sendreqs_;
 
-    const int myrank_;
-    const int nloop_;
+    int myrank_;
+    int nloop_;
 
   public:
-    MP2Cache(const int naux, const int nocc, const int nvirt, std::shared_ptr<const DFDistT> fullt, const std::vector<std::vector<std::tuple<int,int,int,int>>>& tasks)
-     : naux_(naux), nocc_(nocc), nvirt_(nvirt), fullt_(fullt), tasks_(tasks), cachetable_(mpi__->size()), myrank_(mpi__->rank()), nloop_(tasks_[0].size()) {
+    MP2Cache(const int naux, const int nocc, const int nvirt, std::shared_ptr<const DFDistT> fullt,
+             const std::vector<std::vector<std::tuple<int,int,int,int>>>& tasks = std::vector<std::vector<std::tuple<int,int,int,int>>>())
+     : naux_(naux), nocc_(nocc), nvirt_(nvirt), fullt_(fullt), tasks_(tasks), cachetable_(mpi__->size()), myrank_(mpi__->rank()) {
+
+      assert(naux_ == fullt->naux());
+
+      // if not specified make a list for static distribution of ij
+      if (tasks_.empty()) {
+        tasks_.resize(mpi__->size());
+        int nmax = 0;
+        StaticDist ijdist(nocc*(nocc+1)/2, mpi__->size());
+        for (int inode = 0; inode != mpi__->size(); ++inode) {
+          for (int i = 0, cnt = 0; i < nocc; ++i)
+            for (int j = i; j < nocc; ++j, ++cnt)
+              if (cnt >= ijdist.start(inode) && cnt < ijdist.start(inode) + ijdist.size(inode))
+                tasks_[inode].push_back(std::make_tuple(j, i, /*mpitags*/-1,-1));
+          if (tasks_[inode].size() > nmax) nmax = tasks_[inode].size();
+        }
+        for (auto& i : tasks_) {
+          const int n = i.size();
+          for (int j = 0; j != nmax-n; ++j) i.push_back(std::make_tuple(-1,-1,-1,-1));
+        }
+      }
+      nloop_ = tasks_[0].size();
     }
 
     std::shared_ptr<const Matrix> operator()(const int i) const { return cache_.at(i); }
