@@ -94,11 +94,11 @@ class MP2Cache {
             used.insert(std::get<0>(tasks_[inode][i]));
             used.insert(std::get<1>(tasks_[inode][i]));
           }
-          if (!used.count(id)) {
+          if (id >= 0 && id < nocc_ && !used.count(id)) {
             if (inode == myrank_) cache_.erase(id);
             cachetable_[inode].erase(id);
           }
-          if (!used.count(jd)) {
+          if (jd >= 0 && jd < nocc_ && !used.count(jd)) {
             if (inode == myrank_) cache_.erase(jd);
             cachetable_[inode].erase(jd);
           }
