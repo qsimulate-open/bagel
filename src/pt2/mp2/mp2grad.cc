@@ -23,9 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/df/dfdistt.h>
 #include <src/pt2/mp2/mp2grad.h>
 #include <src/pt2/mp2/mp2cache.h>
+#include <src/pt2/mp2/mp2accum.h>
 #include <src/grad/cphf.h>
 #include <iostream>
 #include <iomanip>
@@ -91,40 +91,12 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const VecView eig = eig_tm.slice(ncore, eig_tm.size());
 
   auto dmp2 = make_shared<Matrix>(nmobasis, nmobasis);
-
   double ecorr = 0.0;
-////////////////////////////////////// old code //////////////////////////////////////////
-  {
-    auto buf = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
-    for (size_t i = 0; i != nvirt; ++i) {
-      // nocc * nvirt * nocc
-      shared_ptr<Matrix> data = full->form_4index_1fixed(full, 1.0, i);
-      *buf = *data;
-
-      // using a symmetrizer (src/util/prim_op.h)
-      sort_indices<2,1,0,2,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
-      double* tdata = buf->data();
-      for (size_t j = 0; j != nocc; ++j) {
-        for (size_t k = 0; k != nvirt; ++k) {
-          for (size_t l = 0; l != nocc; ++l, ++tdata) {
-            const double denom = 1.0 / (-eig(i+nocc)+eig(j)-eig(k+nocc)+eig(l));
-            *tdata *= denom;
-          }
-        }
-      }
-
-      // form Gia : TODO distribute
-      // Gia(D|ic) = BV(D|ja) G_c(ja|i)
-      // BV and gia are DFFullDist
-      const size_t offset = i*nocc;
-      gia->add_product(bv, buf, nocc, offset);
-    }
-  }
-//////////////////////////////////////// new code ////////////////////////////////////////
   {
     // second transform for virtual index and rearrange data
     auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc2());
     auto fullt = make_shared<DFDistT>(full->swap(), dist);
+
     MP2Cache cache(fullt->naux(), nocc, nvirt, fullt);
 
     size_t memory_size = half->block(0)->size() * 2;
@@ -143,11 +115,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       const int i = get<0>(cache.task(n));
       const int j = get<1>(cache.task(n));
       if (i < 0 || j < 0) continue;
-
-      const int ti = get<2>(cache.task(n));
-      const int tj = get<3>(cache.task(n));
-      if (ti >= 0) mpi__->wait(ti);
-      if (tj >= 0) mpi__->wait(tj);
+      cache.data_wait(n);
 
       shared_ptr<const Matrix> iblock = cache(i);
       shared_ptr<const Matrix> jblock = cache(j);
@@ -162,8 +130,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       for (int a = 0; a != nvirt; ++a) {
         for (int b = 0; b != nvirt; ++b) {
           const double denom = -eig(a+nocc)+eig(i)-eig(b+nocc)+eig(j);
-          mat2(a,b) /= denom;
-          mat3(a,b) /= denom;
+          mat2(b,a) /= denom;
+          mat3(b,a) /= denom;
         }
       }
 
@@ -186,6 +154,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     auto fullt = make_shared<DFDistT>(full, dist);
     MP2Cache cache(fullt->naux(), nvirt, nocc, fullt);
 
+    auto giat = fullt->clone();
+    MP2Accum accum(fullt->naux(), nvirt, nocc, giat, cache.tasks());
+
     size_t memory_size = half->block(0)->size() * 2;
     mpi__->broadcast(&memory_size, 1, 0);
     const int nloop = cache.nloop();
@@ -202,11 +173,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       const int i = get<0>(cache.task(n));
       const int j = get<1>(cache.task(n));
       if (i < 0 || j < 0) continue;
-
-      const int ti = get<2>(cache.task(n));
-      const int tj = get<3>(cache.task(n));
-      if (ti >= 0) mpi__->wait(ti);
-      if (tj >= 0) mpi__->wait(tj);
+      cache.data_wait(n);
 
       shared_ptr<const Matrix> iblock = cache(i);
       shared_ptr<const Matrix> jblock = cache(j);
@@ -220,18 +187,27 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       for (int a = 0; a != nocc; ++a) {
         for (int b = 0; b != nocc; ++b) {
           const double denom = -eig(a)+eig(i+nocc)-eig(b)+eig(j+nocc);
-          mat2(a,b) /= denom;
-          mat3(a,b) /= denom;
+          mat2(b,a) /= denom;
+          mat3(b,a) /= denom;
         }
       }
+
+      accum.accumulate<0>(n, make_shared<Matrix>(*jblock ^ mat2));
+      if (i != j)
+        accum.accumulate<1>(n, make_shared<Matrix>(*iblock * mat2));
 
       dmp2->add_block(-2.0, ncore, ncore, nocc, nocc, mat2 % mat3);
       if (i != j)
         dmp2->add_block(-2.0, ncore, ncore, nocc, nocc, mat2 ^ mat3);
     }
+    accum.wait();
+    cache.wait();
+    giat = giat->apply_J();
+    giat->get_paralleldf(gia);
   }
+
   dmp2->allreduce();
-//////////////////////////////////////////////////////////////////////////////////////////
+  gia->scale(-1.0);
 
   time.tick_print("assembly (+ unrelaxed rdm)");
   cout << endl;

@@ -37,7 +37,7 @@ class MP2Cache {
     const size_t nocc_;
     const size_t nvirt_;
 
-    const std::shared_ptr<const DFDistT> fullt_;
+    const std::shared_ptr<const DFDistT> fullt_; // aux, virt, occ
     std::vector<std::vector<std::tuple<int,int,int,int>>> tasks_;
 
     // the data is stored in a map
@@ -81,6 +81,7 @@ class MP2Cache {
     int nloop() const { return nloop_; }
 
     const std::tuple<int,int,int,int>& task(const int i) const { return tasks_[myrank_][i]; }
+    const std::vector<std::vector<std::tuple<int,int,int,int>>>& tasks() const { return tasks_; }
 
     void block(const int nadd, const int ndrop) {
       assert(ndrop < nadd);
