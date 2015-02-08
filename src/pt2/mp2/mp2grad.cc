@@ -230,6 +230,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
         dmp2->add_block(-2.0, ncore, ncore, nocc, nocc, mat2 ^ mat3);
     }
   }
+  dmp2->allreduce();
 //////////////////////////////////////////////////////////////////////////////////////////
 
   time.tick_print("assembly (+ unrelaxed rdm)");
