@@ -132,11 +132,7 @@ void MP2::compute() {
     const int i = get<0>(cache.task(n));
     const int j = get<1>(cache.task(n));
     if (i < 0 || j < 0) continue;
-
-    const int ti = get<2>(cache.task(n));
-    const int tj = get<3>(cache.task(n));
-    if (ti >= 0) mpi__->wait(ti);
-    if (tj >= 0) mpi__->wait(tj);
+    cache.data_wait(n);
 
     shared_ptr<const Matrix> iblock = cache(i);
     shared_ptr<const Matrix> jblock = cache(j);

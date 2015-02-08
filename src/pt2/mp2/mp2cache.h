@@ -148,6 +148,13 @@ class MP2Cache {
       }
     }
 
+    void data_wait(const int n) const {
+      const int ti = std::get<2>(task(n));
+      const int tj = std::get<3>(task(n));
+      if (ti >= 0) mpi__->wait(ti);
+      if (tj >= 0) mpi__->wait(tj);
+    }
+
     void wait() const {
       for (auto& i : sendreqs_)
         mpi__->wait(i);

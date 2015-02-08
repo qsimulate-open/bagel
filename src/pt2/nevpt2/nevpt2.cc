@@ -219,7 +219,6 @@ void NEVPT2::compute() {
 
   /////////////////////////////////////////////////////////////////////////////////////
   // make a list of static distribution
-  const int myrank = mpi__->rank();
   vector<vector<tuple<int,int,int,int>>> tasks(mpi__->size());
   // distribution of closed-closed
   if (nclosed_) {
@@ -287,17 +286,15 @@ void NEVPT2::compute() {
     if (n+ncache < nloop)
       cache.block(n+ncache, n-1);
 
-    const int i = get<0>(tasks[myrank][n]);
-    const int j = get<1>(tasks[myrank][n]);
+    const int i = get<0>(cache.task(n));
+    const int j = get<1>(cache.task(n));
+
+    // wait till the data is available
+    cache.data_wait(n);
 
     if (i < 0 && j < 0) {
       continue;
     } else if (i < nclosed_ && j < nclosed_ && i >= 0 && j >= 0) {
-      const int ti = get<2>(tasks[myrank][n]);
-      const int tj = get<3>(tasks[myrank][n]);
-      if (ti >= 0) mpi__->wait(ti);
-      if (tj >= 0) mpi__->wait(tj);
-
       shared_ptr<const Matrix> iblock = cache(i);
       shared_ptr<const Matrix> jblock = cache(j);
       const Matrix mat(*iblock % *jblock);
@@ -399,6 +396,7 @@ void NEVPT2::compute() {
     } else if (i < nclosed_ && j < 0) {
       // (g|vi) with i fixed
       shared_ptr<const Matrix> iblock = cache(i);
+
       // (g|ai) with i fixed
       const MatView iablock = fullai->slice(i*nact_, (i+1)*nact_);
       // reordered srdm
