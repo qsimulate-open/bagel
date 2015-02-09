@@ -37,14 +37,21 @@ class RASBFGS : public RASSCF {
     void common_init() {
       std::cout << "    * Using the Quasi 2nd-order algorithm as noted in Chaban et al. TCA (1997)" << std::endl << std::endl;
     }
+//ADDED
+    std::shared_ptr<DFHalfDist> half_;
 
     // compute orbital gradients
     void grad_vc(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<RASRotFile> sigma) const;
-    void grad_va(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> qxr,   std::shared_ptr<RASRotFile> sigma) const;
-    void grad_ca(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<RASRotFile> sigma) const;
+    void grad_va(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> qxr,   std::shared_ptr<const Matrix> rdm1, std::shared_ptr<RASRotFile> sigma) const;
+    void grad_ca(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr,  std::shared_ptr<const Matrix> rdm1, std::shared_ptr<RASRotFile> sigma) const;
+    void grad_aa12(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<RASRotFile> sigma) const;
+    void grad_aa13(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<RASRotFile> sigma) const;
+    void grad_aa23(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<RASRotFile> sigma) const;
+
+
 
     // compute diagonal denominators
-    std::shared_ptr<const RASRotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr) const;
+    std::shared_ptr<const RASRotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock) const;
 
   public:
     RASBFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)

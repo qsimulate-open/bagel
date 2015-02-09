@@ -41,6 +41,7 @@ RASCI::RASCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_
 void RASCI::common_init() {
   print_header();
 
+  cout << "RASCI:: read input.." << endl;
 //const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
@@ -52,6 +53,7 @@ void RASCI::common_init() {
   nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
 
+  cout << "RASCI:: check1.." << nstate_ << endl;
   // No defaults for RAS, must set "active"
   const shared_ptr<const PTree> iactive = idata_->get_child("active");
   if (iactive->size() != 3) throw runtime_error("Must specify three active spaces in RAS calculations.");
@@ -62,15 +64,18 @@ void RASCI::common_init() {
       if (!tmpset.insert(lexical_cast<int>(j->data()) - 1).second) throw runtime_error("Duplicate orbital in list of active orbitals.");
     acts.push_back(tmpset);
   }
+  cout << "RASCI:: check1a.." << endl;
   ref_ = ref_->set_ractive(acts[0], acts[1], acts[2]);
   ncore_ = ref_->nclosed();
 
+  cout << "RASCI:: check2.." << endl;
   ras_ = {{ static_cast<int>(acts[0].size()), static_cast<int>(acts[1].size()), static_cast<int>(acts[2].size()) }};
   norb_ = ras_[0] + ras_[1] + ras_[2];
 
   max_holes_ = idata_->get<int>("max_holes", 0);
   max_particles_ = idata_->get<int>("max_particles", 0);
 
+  cout << "RASCI:: check3.." << endl;
   // Configure properties to be calculated on the final wavefunctions
   //if (idata_->get<bool>("dipoles", false)) properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
 
@@ -82,6 +87,7 @@ void RASCI::common_init() {
   if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
   nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
+  cout << "RASCI:: check4.." << endl;
 
   // TODO allow for zero electron (quick return)
   if (nelea_ < 0 || neleb_ < 0) throw runtime_error("#electrons cannot be negative in RASCI");
@@ -94,6 +100,7 @@ void RASCI::common_init() {
 #endif
   energy_.resize(nstate_);
 
+  cout << "RASCI:: check5.." << endl;
   // construct a determinant space in which this RASCI will be performed.
   det_ = make_shared<const RASDeterminants>(ras_, nelea_, neleb_, max_holes_, max_particles_);
 }
@@ -348,8 +355,8 @@ void RASCI::compute() {
   }
 
   //RDM
-  int istate = 0;
-  compute_rdm12(cc_->data(istate), cc_->data(istate));
+//int istate = 0;
+//compute_rdm12(cc_->data(istate), cc_->data(istate));
 //assert(false);
 
 #if 0

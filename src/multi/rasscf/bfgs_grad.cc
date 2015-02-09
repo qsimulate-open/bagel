@@ -42,26 +42,68 @@ void RASBFGS::grad_vc(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> a
 
 // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
 // gamma is assumed to be diagonal
-void RASBFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> qxr, shared_ptr<RASRotFile> sigma) const {
+void RASBFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1, shared_ptr<RASRotFile> sigma) const {
   if (!nvirt_ || !nact_) return;
+//double* target = sigma->ptr_va();
+//for (int i = 0; i != nact_; ++i, target += nvirt_) {
+//  daxpy_(nvirt_, 2.0*occup_[i], cfock->element_ptr(nocc_, i+nclosed_), 1, target, 1);
+//  daxpy_(nvirt_, 2.0, qxr->element_ptr(nocc_, i), 1, target, 1);
+//}
+  dgemm_("N", "T", nvirt_, nact_, nact_, 2.0, cfock->element_ptr(nocc_,nclosed_), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_);
   double* target = sigma->ptr_va();
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
-    daxpy_(nvirt_, 2.0*occup_[i], cfock->element_ptr(nocc_, i+nclosed_), 1, target, 1);
+//  daxpy_(nvirt_, 2.0*occup_[i], cfock->element_ptr(nocc_, i+nclosed_), 1, target, 1);
     daxpy_(nvirt_, 2.0, qxr->element_ptr(nocc_, i), 1, target, 1);
   }
 }
 
 
 // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
-void RASBFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<RASRotFile> sigma) const {
+void RASBFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1, shared_ptr<RASRotFile> sigma) const {
   if (!nclosed_ || !nact_) return;
   {
+  //double* target = sigma->ptr_ca();
+  //for (int i = 0; i != nact_; ++i, target += nclosed_) {
+  //  daxpy_(nclosed_, 4.0-2.0*occup_[i], cfock->element_ptr(0,nclosed_+i), 1, target, 1);
+  //  daxpy_(nclosed_, 4.0, afock->element_ptr(0,nclosed_+i), 1, target, 1);
+  //  daxpy_(nclosed_, -2.0, qxr->element_ptr(0, i), 1, target, 1);
+  //}
     double* target = sigma->ptr_ca();
     for (int i = 0; i != nact_; ++i, target += nclosed_) {
-      daxpy_(nclosed_, 4.0-2.0*occup_[i], cfock->element_ptr(0,nclosed_+i), 1, target, 1);
+    //daxpy_(nclosed_, 4.0-2.0*occup_[i], cfock->element_ptr(0,nclosed_+i), 1, target, 1);
+      daxpy_(nclosed_, 4.0, cfock->element_ptr(0,nclosed_+i), 1, target, 1);
       daxpy_(nclosed_, 4.0, afock->element_ptr(0,nclosed_+i), 1, target, 1);
       daxpy_(nclosed_, -2.0, qxr->element_ptr(0, i), 1, target, 1);
     }
+    //-2 cfock_iu * D_ur
+    dgemm_("T", "N", nclosed_, nact_, nact_, -2.0, cfock->element_ptr(nclosed_,0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_);
   }
+}
+
+void RASBFGS::grad_aa12(shared_ptr<const Matrix> mcfock, shared_ptr<RASRotFile> sigma) const {
+  if (!nact_) return;
+  double* target = sigma->ptr_aa12();
+  for (int jb = ras_[0]; jb != ras_[0]+ras_[1]; ++jb)  //RAS2(A)
+    for (int ia = 0; ia != ras_[0]; ++ia, ++target) { //RAS1(A)
+      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+}
+
+void RASBFGS::grad_aa13(shared_ptr<const Matrix> mcfock, shared_ptr<RASRotFile> sigma) const {
+  if (!nact_) return;
+  double* target = sigma->ptr_aa13();
+  for (int jb = ras_[0]+ras_[1]; jb != nact_; ++jb)  //RAS3(A)
+    for (int ia = 0; ia != ras_[0]; ++ia, ++target) { //RAS1(A)
+      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+}
+
+void RASBFGS::grad_aa23(shared_ptr<const Matrix> mcfock, shared_ptr<RASRotFile> sigma) const {
+  if (!nact_) return;
+  double* target = sigma->ptr_aa23();
+  for (int jb = ras_[0]+ras_[1]; jb != nact_; ++jb)  //RAS3(A)
+    for (int ia = ras_[0]; ia != ras_[0]+ras_[1]; ++ia, ++target) { //RAS2(A)
+      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
 }
 

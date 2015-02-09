@@ -10,32 +10,38 @@ using namespace bagel;
 
 
 void RASCI::compute_rdm12() {
-//// Needs initialization here because we use daxpy.
-//// For nstate_ == 1, rdm1_av_ = rdm1_[0].
-//if (rdm1_av_ == nullptr && nstate_ > 1) {
-//  rdm1_av_ = make_shared<RDM<1>>(norb_);
-//  rdm2_av_ = make_shared<RDM<2>>(norb_);
-//}
-//if (nstate_ > 1) {
-//  rdm1_av_->zero();
-//  rdm2_av_->zero();
-//}
-//// we need expanded lists
+
+  rdm1_.resize(nstate_);
+  rdm2_.resize(nstate_);
+
+  // Needs initialization here because we use daxpy.
+  // For nstate_ == 1, rdm1_av_ = rdm1_[0].
+  if (rdm1_av_ == nullptr && nstate_ > 1) {
+    rdm1_av_ = make_shared<RDM<1>>(norb_);
+    rdm2_av_ = make_shared<RDM<2>>(norb_);
+  }
+  if (nstate_ > 1) {
+    rdm1_av_->zero();
+    rdm2_av_->zero();
+  }
+  // we need expanded lists
 //auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, /*compressed=*/false, /*mute=*/true);
 //cc_->set_det(detex);
 
 //for (int i = 0; i != nstate_; ++i) compute_rdm12(i);
 
 //cc_->set_det(det_);
-  assert(false);
+
+  int istate = 0;
+  tie(rdm1_av_,rdm2_av_) = compute_rdm12(cc_->data(istate), cc_->data(istate));
 }
 
-
-void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
+     RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) {
   cout << "compute_rdm12.." << endl;
 
-  rdm1_ = make_shared<RDM<1>>(norb_);
-  rdm2_ = make_shared<RDM<2>>(norb_);
+//rdm1_ = make_shared<RDM<1>>(norb_);
+//rdm2_ = make_shared<RDM<2>>(norb_);
 
   // since we consider here number conserving operators...
   auto dbra = make_shared<RASDvec>(cbra->det(), norb_*norb_);
@@ -145,6 +151,7 @@ void RASCI::compute_rdm12(shared_ptr<RASCivec> cbra, shared_ptr<RASCivec> cket) 
   cout << "Total energy = " << nuc_core + e1 + e2 << endl;
 
 //return compute_rdm12_last_step(dbra, dket, cbra);
+  return tie(rdm1, rdm2);
 }
 
 

@@ -54,6 +54,8 @@ class RASSCF : public Method, public std::enable_shared_from_this<RASSCF> {
     double thresh_micro_;
     bool natocc_;
 
+    std::array<int,3> ras_;
+
     VectorB occup_;
     std::shared_ptr<const Coeff> coeff_;
 

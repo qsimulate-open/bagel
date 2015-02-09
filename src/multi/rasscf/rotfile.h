@@ -40,24 +40,28 @@ class RASRotationMatrix {
     const int nclosed_;
     const int nact_;
     const int nvirt_;
-  //std::array<int,3> ras_;
+    std::array<int,3> ras_;
     const int size_;
     std::unique_ptr<DataType[]> data_;
 
   public:
-    RASRotationMatrix(const int iclos, const int iact, const int ivirt/*, std::array<int,3> rsp*/)
-     : nclosed_(iclos), nact_(iact), nvirt_(ivirt),/* ras_(rsp),*/ size_(iclos*iact+iclos*ivirt+iact*ivirt), data_(new DataType[size_]) {
+    RASRotationMatrix(const int iclos, const int iact, const int ivirt, std::array<int,3> rsp)
+     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), ras_(rsp), 
+       size_(iclos*iact+iclos*ivirt+iact*ivirt + rsp[0]*rsp[1] + rsp[0]*rsp[2] + rsp[1]*rsp[2] ), 
+       data_(new DataType[size_]) {
       zero();
     }
-    RASRotationMatrix(const RASRotationMatrix& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), /*ras_(o.ras_),*/ size_(o.size_), data_(new DataType[o.size_]) {
+    RASRotationMatrix(const RASRotationMatrix& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), ras_(o.ras_), size_(o.size_), data_(new DataType[o.size_]) {
       *this = o;
     }
     RASRotationMatrix(std::shared_ptr<const RASRotationMatrix> o)
-      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), /*ras_(o->ras_),*/ size_(o->size_), data_(new DataType[o->size_]) {
+      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), ras_(o->ras_), size_(o->size_), data_(new DataType[o->size_]) {
       *this = *o;
     }
-    RASRotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt/*, std::array<int,3> rsp*/)
-      : nclosed_(iclos), nact_(iact), nvirt_(ivirt), /*ras_(rsp),*/ size_(iclos*iact+iclos*ivirt+iact*ivirt), data_(new DataType[size_]) {
+    RASRotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt, std::array<int,3> rsp)
+      : nclosed_(iclos), nact_(iact), nvirt_(ivirt), ras_(rsp), 
+        size_(iclos*iact+iclos*ivirt+iact*ivirt + rsp[0]*rsp[1] + rsp[0]*rsp[2] + rsp[1]*rsp[2] ), 
+        data_(new DataType[size_]) {
       const int nocc = nclosed_ + nact_;
       for (int i = 0; i != nact_; ++i) {
         for (int j = 0; j != nvirt_;   ++j) {
@@ -72,10 +76,23 @@ class RASRotationMatrix {
           ele_vc(j, i) = o->element(j+nocc, i);
         }
       }
+      //RAS
+      for (int i = 0; i != ras_[1]; ++i)
+        for (int j = 0; j != ras_[0]; ++ j) {
+          ele_aa12(j, i) = o->element(j+nclosed_, i+nclosed_+ras_[0]);
+        }
+      for (int i = 0; i != ras_[2]; ++i)
+        for (int j = 0; j != ras_[0]; ++ j) {
+          ele_aa13(j, i) = o->element(j+nclosed_, i+nclosed_+ras_[0]+ras_[1]);
+        }
+      for (int i = 0; i != ras_[2]; ++i)
+        for (int j = 0; j != ras_[1]; ++ j) {
+          ele_aa23(j, i) = o->element(j+nclosed_+ras_[0], i+nclosed_+ras_[0]+ras_[1]);
+        }
     }
 
     std::shared_ptr<RASRotationMatrix<DataType>> clone() const {
-      return std::make_shared<RASRotationMatrix<DataType>>(nclosed_, nact_, nvirt_);
+      return std::make_shared<RASRotationMatrix<DataType>>(nclosed_, nact_, nvirt_, ras_);
     }
     std::shared_ptr<RASRotationMatrix<DataType>> copy() const {
       return std::make_shared<RASRotationMatrix<DataType>>(*this);
@@ -157,6 +174,21 @@ class RASRotationMatrix {
     const DataType* ptr_va() const { return data() + nclosed_*nact_; }
     const DataType* ptr_vc() const { return data() + (nclosed_+nvirt_)*nact_; }
 
+// RAS 
+    DataType& ele_aa12(const int ia, const int ib) { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ia + ib*ras_[0]]; }
+    DataType& ele_aa13(const int ia, const int ib) { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ras_[0]*ras_[1] + ia + ib*ras_[0]]; }
+    DataType& ele_aa23(const int ia, const int ib) { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ras_[0]*ras_[1] + ras_[0]*ras_[2] + ia + ib*ras_[1]]; }
+    DataType* ptr_aa12() { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_; }
+    DataType* ptr_aa13() { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ras_[0]*ras_[1]; }
+    DataType* ptr_aa23() { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ras_[0]*ras_[1] + ras_[0]*ras_[2]; }
+
+    const DataType& ele_aa12(const int ia, const int ib) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ia + ib*ras_[0]]; }
+    const DataType& ele_aa13(const int ia, const int ib) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ras_[0]*ras_[1] + ia + ib*ras_[0]]; }
+    const DataType& ele_aa23(const int ia, const int ib) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ras_[0]*ras_[1] + ras_[0]*ras_[2] + ia + ib*ras_[1]]; }
+    const DataType* ptr_aa12() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_; }
+    const DataType* ptr_aa13() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ras_[0]*ras_[1]; }
+    const DataType* ptr_aa23() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ras_[0]*ras_[1] + ras_[0]*ras_[2]; }
+
     // unpack to Matrix
     template<class MatType>
     std::shared_ptr<MatType> unpack(const DataType a = 0.0) const {
@@ -183,11 +215,25 @@ class RASRotationMatrix {
           out->element(j, i) = - detail::conj(out->element(i, j));
         }
       }
+      //RAS 
+      for (int i = 0; i != ras_[1]; ++i)
+        for (int j = 0; j != ras_[0]; ++j) {
+          out->element(i+nclosed_+ras_[0],j+nclosed_) = -ele_aa12(j,i);
+        }
+      for (int i = 0; i != ras_[2]; ++i)
+        for (int j = 0; j != ras_[0]; ++j) {
+          out->element(i+nclosed_+ras_[0]+ras_[1],j+nclosed_) = -ele_aa13(j,i);
+        }
+      for (int i = 0; i != ras_[2]; ++i)
+        for (int j = 0; j != ras_[1]; ++j) {
+          out->element(i+nclosed_+ras_[0]+ras_[1],j+nclosed_+ras_[0]) = -ele_aa23(j,i);
+        }
       return out;
     }
 
     template<class MatType>
     std::shared_ptr<MatType> unpack_sym(const DataType a = 0.0) const {
+      assert(false);
       const int nocc = nclosed_ + nact_;
       const int nbasis = nclosed_ + nact_ + nvirt_;
       auto out = std::make_shared<MatType>(nbasis, nbasis);
@@ -243,11 +289,34 @@ class RASRotationMatrix {
           std::cout << std::endl;
         }
       }
+
+      if (nact_) {
+        std::cout << " printing RAS blocks" << std::endl;
+        std::cout << "          RAS1-RAS2 blocks" << std::endl;
+        for (int i = 0; i != ras_[1]; ++i)
+          for (int j = 0; j != ras_[0]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa12(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << "          RAS1-RAS3 blocks" << std::endl;
+        for (int i = 0; i != ras_[2]; ++i)
+          for (int j = 0; j != ras_[0]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa13(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << "          RAS2-RAS3 blocks" << std::endl;
+        for (int i = 0; i != ras_[2]; ++i)
+          for (int j = 0; j != ras_[1]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa23(j,i);
+          }
+        std::cout << std::endl;
+      }
+
     }
 };
 
 using RASRotFile = RASRotationMatrix<double>;
-using ZRASRotFile = RASRotationMatrix<std::complex<double>>;
+//using ZRASRotFile = RASRotationMatrix<std::complex<double>>;
 
 }
 

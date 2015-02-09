@@ -127,9 +127,13 @@ void RASSCF::common_init() {
   // RASSCF methods should have RASCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
   mute_stdcout();
   if (nact_) {
-    auto idata = make_shared<PTree>(*idata_);
-    idata->erase("active");
-    rasci_ = make_shared<RASCI>(idata, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+//  auto idata = make_shared<PTree>(*idata_);
+//  idata->erase("active");
+    cout << "let's call rasci" << endl;
+    auto idata = idata_->get_child_optional("ras") ? idata_->get_child_optional("ras") : make_shared<PTree>();
+  //rasci_ = make_shared<RASCI>(idata, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+    rasci_ = make_shared<RASCI>(idata, geom_, ref_); 
+    ras_ = rasci_->rasarray();
   }
   resume_stdcout();
 
@@ -347,9 +351,11 @@ shared_ptr<const Coeff> RASSCF::semi_canonical_orb() const {
 }
 #endif
 
-#if 0
 shared_ptr<const Reference> RASSCF::conv_to_ref() const {
   shared_ptr<Reference> out;
+  assert(false);
+}
+#if 0
   if (nact_) {
     out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_av(),
                                  rasci_->rdm1(), rasci_->rdm2(), rasci_->rdm1_av(), rasci_->rdm2_av(), rasci_->conv_to_ciwfn());

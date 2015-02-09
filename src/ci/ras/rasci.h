@@ -26,7 +26,6 @@
 #ifndef __BAGEL_RAS_RASCI_H
 #define __BAGEL_RAS_RASCI_H
 
-#define NORDMS
 
 #include <src/ci/fci/mofile.h>
 #include <src/ci/fci/properties.h>
@@ -71,9 +70,8 @@ class RASCI : public Method {
     // CI vector at convergence
     std::shared_ptr<RASDvec> cc_;
 
-    std::shared_ptr<RDM<1>> rdm1_;
-    std::shared_ptr<RDM<2>> rdm2_;
-#ifndef NORDMS
+//  std::shared_ptr<RDM<1>> rdm1_;
+//  std::shared_ptr<RDM<2>> rdm2_;
     // RDMs; should be resized in constructors
     std::vector<std::shared_ptr<RDM<1>>> rdm1_;
     std::vector<std::shared_ptr<RDM<2>>> rdm2_;
@@ -81,7 +79,6 @@ class RASCI : public Method {
     std::vector<double> weight_;
     std::shared_ptr<RDM<1>> rdm1_av_;
     std::shared_ptr<RDM<2>> rdm2_av_;
-#endif
 
     // MO integrals
     std::shared_ptr<MOFile> jop_;
@@ -124,13 +121,13 @@ class RASCI : public Method {
     int neleb() const { return neleb_; }
     int ncore() const { return ncore_; }
     template <int space> int ras() const { return std::get<space>(ras_); }
+    std::array<int,3> rasarray() const { return ras_; }
     double core_energy() const { return jop_->core_energy(); }
 
     //virtual int nij() const { return norb_*(norb_+1)/2; }
 
     //double weight(const int i) const { return weight_[i]; }
-    void compute_rdm12(); // compute all states at once + averaged rdm
-    void compute_rdm12(std::shared_ptr<RASCivec>, std:: shared_ptr<RASCivec>);
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12(std::shared_ptr<RASCivec>, std:: shared_ptr<RASCivec>);
     void sigma_2a1(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
     void sigma_2a2(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
     void sigma_2a1_new(std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
@@ -140,7 +137,6 @@ class RASCI : public Method {
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_last_step(std::shared_ptr<RASDvec>, std::shared_ptr<RASDvec>, std::shared_ptr<const RASCivec>, std::shared_ptr<RASDvec>) const;
 
-#ifndef NORDMS
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
     void compute_rdm12(const int istate);
@@ -168,7 +164,6 @@ class RASCI : public Method {
 
     // move to natural orbitals
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> natorb_convert();
-#endif
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; }
 
