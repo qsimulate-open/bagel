@@ -91,6 +91,8 @@ class RASSCF : public Method, public std::enable_shared_from_this<RASSCF> {
     std::shared_ptr<RASCI> rasci() { return rasci_; }
     std::shared_ptr<const RASCI> rasci() const { return rasci_; }
 
+    double check_symmetric(std::shared_ptr<Matrix>& mat) const;
+
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
     int nclosed() const { return nclosed_; }

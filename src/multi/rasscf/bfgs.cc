@@ -69,8 +69,8 @@ void RASBFGS::compute() {
     cout << "RASBFGS:: check 1" << endl;
 
 //TODO: temporary
-    const MatView cdata = coeff_->slice(nclosed_, nclosed_+nact_);
-    half_ = geom_->df()->compute_half_transform(cdata);
+//  const MatView cdata = coeff_->slice(nclosed_, nclosed_+nact_);
+//  half_ = geom_->df()->compute_half_transform(cdata);
 
     cout << "RASBFGS:: check 2" << endl;
     auto sigma = make_shared<RASRotFile>(nclosed_, nact_, nvirt_, ras_);
@@ -123,6 +123,19 @@ void RASBFGS::compute() {
     shared_ptr<Matrix> mcfock = make_shared<Matrix>(*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat
                                                     + *qxr->get_submatrix(nclosed_, 0, nact_, nact_) );
     cout << "RASBFGS:: check 9" << endl;
+    mcfock->print("MCFOCK", nact_);
+    {
+      cfock->print("Closed Fock", nbasis_);
+      shared_ptr<Matrix> acfock = make_shared<Matrix>(*cfock->get_submatrix(nclosed_,nclosed_,nact_,nact_));
+      cout << "Closed Fock symmetric?" << check_symmetric(acfock) << endl;
+      cout << "RDM1 symmetric?" << check_symmetric(rdm1_mat) << endl;
+      (*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat).print("CFock*1RDM", nact_);
+      (*qxr->get_submatrix(nclosed_, 0, nact_, nact_)).print("Qvec", nact_);
+      qxr->print("Qvec");
+      rdm1_mat->print("RDM1");
+      cout << "RDM2" << endl;
+      rasci_->rdm2_av()->print(1.0e-1);
+    }
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);
@@ -136,6 +149,8 @@ void RASBFGS::compute() {
     grad_aa13(mcfock, sigma);
     grad_aa23(mcfock, sigma);
     cout << "RASBFGS:: check 11" << endl;
+    cout << "GRADIENT" << endl;
+    sigma->print();
 
     // if this is the first time, set up the BFGS solver
     if (iter == 0) {

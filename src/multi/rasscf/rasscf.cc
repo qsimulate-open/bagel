@@ -403,3 +403,23 @@ void RASSCF::print_natocc() const {
   cout << "  ============================================ " << endl;
 }
 #endif
+
+double RASSCF::check_symmetric(std::shared_ptr<Matrix>& mat) const {
+  int n = mat->ndim();
+  assert(n == mat->mdim());
+  auto tran = make_shared<Matrix>(n,n);
+  tran = mat->transpose();
+  auto subt = make_shared<Matrix>(n,n);
+  *subt = *mat - *tran;
+  cout << "Dimension = " << subt->ndim() << "x" << subt->mdim() << endl;
+  for (int i = 0; i != subt->ndim(); ++i)
+    for (int j = 0; j != subt->mdim(); ++j) {
+      if(abs(subt->element(i,j)) > 0.00000001) {
+        cout << "(" << i << "," << j << ") = " << subt->element(i,j) << " : "
+             << mat->element(i,j) << " - " << mat->element(j,i)
+             <<  endl;
+      }
+    }
+  return subt->rms();
+}
+

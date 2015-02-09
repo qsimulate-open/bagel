@@ -38,7 +38,7 @@ class RASBFGS : public RASSCF {
       std::cout << "    * Using the Quasi 2nd-order algorithm as noted in Chaban et al. TCA (1997)" << std::endl << std::endl;
     }
 //ADDED
-    std::shared_ptr<DFHalfDist> half_;
+  //std::shared_ptr<DFHalfDist> half_;
 
     // compute orbital gradients
     void grad_vc(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<RASRotFile> sigma) const;

@@ -67,14 +67,15 @@ void CASBFGS::compute() {
     }
 
     shared_ptr<Matrix> natorb_mat = x->clone();
-    if (nact_) {
-      // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
-      shared_ptr<const Matrix> natorb = form_natural_orbs();
-      natorb_mat->unit();
-      natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
-    } else {
-      natorb_mat->unit();
-    }
+//TODO: disalbed below to compare with RASSCF
+//  if (nact_) {
+//    // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
+//    shared_ptr<const Matrix> natorb = form_natural_orbs();
+//    natorb_mat->unit();
+//    natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
+//  } else {
+//    natorb_mat->unit();
+//  }
 
     auto sigma = make_shared<RotFile>(nclosed_, nact_, nvirt_);
     sigma->zero();
@@ -86,13 +87,14 @@ void CASBFGS::compute() {
     // * core Fock operator
     shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
+    cfock->print("Closed Fock", nbasis_);
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<Matrix> acoeff;
     if (nact_) {
       acoeff = coeff_->slice_copy(nclosed_, nocc_);
-      for (int i = 0; i != nact_; ++i)
-        blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
+//    for (int i = 0; i != nact_; ++i)
+//      blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
     }
     // then make a AO density matrix
     shared_ptr<const Matrix> afock;
@@ -107,6 +109,12 @@ void CASBFGS::compute() {
     if (nact_) {
       qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
     }
+    shared_ptr<Matrix> rdm1_mat = fci_->rdm1_av()->rdm1_mat(/*nclose*/0);
+    rdm1_mat->print("RDM1");
+    cout << "RDM2" << endl;
+    fci_->rdm2_av()->print(1.0e-1);
+    qxr->print("Qvec");
+    assert(false);
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);
