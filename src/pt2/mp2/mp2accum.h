@@ -74,7 +74,7 @@ class MP2Accum {
       }
 
       // tag should not overlap with MP2Cache
-      auto tag = [&](const int dest, const int origin) { return n + nloop_*(dest + mpi__->size()*origin) + nocc_*mpi__->size(); };
+      auto tag = [&](const int dest, const int origin) { return N + 2*(n + nloop_*(dest + mpi__->size()*origin)) + nocc_*mpi__->size(); };
 
       // issue send requests
       auto send_one_ = [&](const int i) {
@@ -87,13 +87,12 @@ class MP2Accum {
         }
       };
 
-      // issue send requests
-      auto recv_one_ = [&](const int i) {
+      // issue recv requests
+      auto recv_one_ = [&](const int i, const int origin) {
         if (i < 0 || i >= nocc_ || fullt_->locate(0, i*nvirt_) != myrank_)
           return;
         auto buf = std::make_shared<Matrix>(naux_, nvirt_);
-        const int origin = fullt_->locate(0, i*nvirt_);
-        recvreqs_.emplace(mpi__->request_send(buf->data(), buf->size(), origin, tag(myrank_, origin)), std::make_pair(buf, i));
+        recvreqs_.emplace(mpi__->request_recv(buf->data(), buf->size(), origin, tag(myrank_, origin)), std::make_pair(buf, i));
       };
 
       // send, or locally accumulate
@@ -101,15 +100,19 @@ class MP2Accum {
       for (int inode = 0; inode != mpi__->size(); ++inode) {
         // check if somebody is sending data to me
         if (inode != myrank_)
-          recv_one_(std::get<N>(tasks_[inode][n]));
+          recv_one_(std::get<N>(tasks_[inode][n]), inode);
       }
     }
 
-    void wait() const {
+    void wait() {
       for (auto& i : recvreqs_) {
         mpi__->wait(i.first);
         blas::ax_plus_y_n(1.0, i.second.first->data(), i.second.first->size(), fullt_->data()+fullt_->offset(0, i.second.second*nvirt_));
       }
+      recvreqs_.clear();
+      for (auto& i : sendreqs_)
+        mpi__->wait(i.first);
+      sendreqs_.clear();
     }
 
 };

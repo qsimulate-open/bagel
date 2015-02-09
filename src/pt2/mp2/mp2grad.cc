@@ -160,7 +160,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     size_t memory_size = half->block(0)->size() * 2;
     mpi__->broadcast(&memory_size, 1, 0);
     const int nloop = cache.nloop();
-    const int ncache = min(memory_size/(nocc*nocc), size_t(50));
+    const int ncache = min(memory_size/(nocc*nocc), size_t(30));
     cout << "    * ncache = " << ncache << endl;
     for (int n = 0; n != min(ncache, nloop); ++n)
       cache.block(n, -1);
