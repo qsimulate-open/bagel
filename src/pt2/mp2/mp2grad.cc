@@ -88,7 +88,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   // assemble
   const VectorB eig_tm = ref_->eig();
-  const VecView eig = eig_tm.slice(ncore, eig_tm.size());
+  const double* eig = eig_tm.data() + ncore;
 
   auto dmp2 = make_shared<Matrix>(nmobasis, nmobasis);
   double ecorr = 0.0;
@@ -129,7 +129,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
       for (int a = 0; a != nvirt; ++a) {
         for (int b = 0; b != nvirt; ++b) {
-          const double denom = -eig(a+nocc)+eig(i)-eig(b+nocc)+eig(j);
+          const double denom = -eig[a+nocc]+eig[i]-eig[b+nocc]+eig[j];
           mat2(b,a) /= denom;
           mat3(b,a) /= denom;
         }
@@ -145,6 +145,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     // allreduce energy contributions
     mpi__->allreduce(&ecorr, 1);
   }
+
+  time.tick_print("First pass based on occupied orbitals");
 
   // do the same with virtual-virtual index distribution to obtain D_ij
   // TODO is there any better way??
@@ -186,7 +188,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
       for (int a = 0; a != nocc; ++a) {
         for (int b = 0; b != nocc; ++b) {
-          const double denom = -eig(a)+eig(i+nocc)-eig(b)+eig(j+nocc);
+          const double denom = -eig[a]+eig[i+nocc]-eig[b]+eig[j+nocc];
           mat2(b,a) /= denom;
           mat3(b,a) /= denom;
         }
@@ -208,7 +210,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   dmp2->allreduce();
   gia->scale(-1.0);
 
-  time.tick_print("assembly (+ unrelaxed rdm)");
+  time.tick_print("Second pass based on virtual orbitals");
   cout << endl;
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << ecorr << endl << endl;
 
