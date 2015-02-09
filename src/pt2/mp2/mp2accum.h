@@ -96,10 +96,12 @@ class MP2Accum {
       };
 
       // send, or locally accumulate
-      send_one_(std::get<N>(tasks_[myrank_][n]));
+      if (N == 0 || std::get<0>(tasks_[myrank_][n]) != std::get<1>(tasks_[myrank_][n]))
+        send_one_(std::get<N>(tasks_[myrank_][n]));
+
       for (int inode = 0; inode != mpi__->size(); ++inode) {
         // check if somebody is sending data to me
-        if (inode != myrank_)
+        if (inode != myrank_ && (N == 0 || std::get<0>(tasks_[inode][n]) != std::get<1>(tasks_[inode][n])))
           recv_one_(std::get<N>(tasks_[inode][n]), inode);
       }
     }

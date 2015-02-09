@@ -193,8 +193,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
       }
 
       accum.accumulate<0>(n, make_shared<Matrix>(*jblock ^ mat2));
-      if (i != j)
-        accum.accumulate<1>(n, make_shared<Matrix>(*iblock * mat2));
+      accum.accumulate<1>(n, make_shared<Matrix>(*iblock * mat2));
 
       dmp2->add_block(-2.0, ncore, ncore, nocc, nocc, mat2 % mat3);
       if (i != j)
