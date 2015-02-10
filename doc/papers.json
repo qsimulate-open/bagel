@@ -102,6 +102,15 @@
         "title"   : "Fully relativistic complete active space self-consistent field for large molecules: Quasi-second-order minimax optimization",
         "doi"     : "10.1063/1.4906344",
         "type"    : "article"
+      },
+      {
+        "author"  : "M. K. MacLeod and T. Shiozaki",
+        "journal" : "The Journal of Chemical Physics",
+        "volume"  : "142",
+        "pages"   : "051103",
+        "title"   : "Automatic code generation enables nuclear gradient computations for fully internally contracted multireference theory",
+        "doi"     : "10.1063/1.4907717",
+        "type"    : "article"
       }
     ]
   }
