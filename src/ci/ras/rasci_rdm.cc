@@ -59,8 +59,8 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
 
   sigma_2a1_new(cket, eket);
   sigma_2a2_new(cket, eket);
-//sigma_2a3_new(cket, eket);
-//sigma_2a4_new(cket, eket);
+  sigma_2a3_new(cket, eket);
+  sigma_2a4_new(cket, eket);
 
   shared_ptr<RASDvec> dket;
   // if bra and ket vectors are different, we need to form Sigma for ket as well.
@@ -306,8 +306,13 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
                 for (size_t cb = 0; cb < cblock->stringsb()->size(); ++cb, ++cab) {
                   auto abit = cblock->stringsa()->strings(ca);
                   auto bbit = cblock->stringsb()->strings(cb);
-                //new2->element(k,l,i,j) += cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit);
-                  new2->element(i,j,k,l) += cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit);
+                  assert(det->allowed(abit,bbit));
+                  new2->element(k,l,i,j) += cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit);
+                //new2->element(i,j,k,l) += cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit);
+                //if(abs(cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit)) > 0.01) {
+                    if(i == 0 && l == 0 && j == 5 && k == 5) cout << "0550 : " << cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit) << endl;
+                    if(i == 5 && l == 5 && j == 0 && k == 0) cout << "5005 : " << cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit) << endl;
+                //}
                 }
               }
  
@@ -374,8 +379,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
     // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
     for (int i = 0; i != norb_; ++i)
       for (int k = 0; k != norb_; ++k)
-        for (int j = 0; j != norb_; ++j)
-//        new2->element(j,k,k,i) -= rdm1->element(j,i);
+        for (int j = 0; j != norb_; ++j) {
+          new2->element(j,k,k,i) -= rdm1->element(j,i);
+        }
 
   cout << "2rdm done.." << endl;
 
@@ -424,29 +430,34 @@ void RASCI::sigma_2a2_new(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) 
 
   for (auto& ispace : *det->stringspacea()) { 
     for (size_t ia = 0; ia != ispace->size(); ++ia) {
-      const bitset<nbit__> abit = ispace->strings(ia);
+      const bitset<nbit__> abit = ispace->strings(ia); //fix alpha-det
       for (auto& jspace : *det->stringspaceb()) {
-        const size_t offset = jspace->offset();
+        const size_t offset = jspace->offset(); //scan through beta-det
         for (size_t jb = 0; jb != jspace->size(); ++jb) { 
-          for (auto& phi : det->phib(jb+offset)) {
+          for (auto& phi : det->phib(jb+offset)) { //first E
             assert(phi.target == jb+offset);
             const double sign = static_cast<double>(phi.sign);
           //const auto ibit = det->string_bits_b(phi.source); //intermediate
-            const auto tbit = det->string_bits_b(phi.target);
+            const auto tbit = det->string_bits_b(phi.target); //coeff
             const auto kl = phi.ij;
-            if(!det->allowed(abit,tbit)) continue;
+            if(!det->allowed(abit,tbit)) continue; //coeff
             for (auto& phi2 : det->phib(phi.source)) {
+              assert(phi2.target == phi.source);
               const double sign2 = static_cast<double>(phi2.sign);
               const auto sbit = det->string_bits_b(phi2.source);
               const auto ij = phi2.ij;
               if(!det->allowed(abit,sbit)) continue;
               d->data(ij + kl*norb_*norb_)->element(sbit,abit) += sign * sign2 * cc->element(tbit,abit);
+              if(ij == 5 && kl == 30) cout << "0550 : " << sign * sign2 * cc->element(tbit,abit) << endl;
+              if(ij == 30 && kl == 5) cout << "5005 : " << sign * sign2 * cc->element(tbit,abit) << endl;
             }
           }
         }
       }
     }
   }
+
+  cout << "break" << endl;
 
 }
 
