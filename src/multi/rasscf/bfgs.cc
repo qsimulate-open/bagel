@@ -79,6 +79,11 @@ void RASBFGS::compute() {
       natorb_mat->unit();
     }
 
+      rasci_->update(coeff_);
+      rasci_->compute();
+      rasci_->compute_rdm12();
+    //assert(false); -> this gives the same energy / validates the unitary transformation!
+
     cout << "RASBFGS:: check 2" << endl;
     auto sigma = make_shared<RASRotFile>(nclosed_, nact_, nvirt_, ras_);
     sigma->zero();
@@ -187,7 +192,7 @@ void RASBFGS::compute() {
     Timer extrap(0);
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
-    *x *= *natorb_mat;
+//  *x *= *natorb_mat;
     auto xcopy = x->log(8);
     auto xlog  = make_shared<RASRotFile>(xcopy, nclosed_, nact_, nvirt_, ras_);
     bfgs->check_step(evals, sigma, xlog, /*tight*/false, limited_memory);

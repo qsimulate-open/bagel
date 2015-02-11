@@ -210,11 +210,6 @@ class RASRotationMatrix {
           out->element(j+nocc, i) = ele_vc(j, i);
         }
       }
-      for (int i = 0; i != nbasis; ++i) {
-        for (int j = 0; j <= i; ++j) {
-          out->element(j, i) = - detail::conj(out->element(i, j));
-        }
-      }
       //RAS 
       for (int i = 0; i != ras_[1]; ++i)
         for (int j = 0; j != ras_[0]; ++j) {
@@ -228,6 +223,13 @@ class RASRotationMatrix {
         for (int j = 0; j != ras_[1]; ++j) {
           out->element(i+nclosed_+ras_[0]+ras_[1],j+nclosed_+ras_[0]) = -ele_aa23(j,i);
         }
+      out->print("Rotation Matrix before anti-sym",nbasis);
+      for (int i = 0; i != nbasis; ++i) {
+        for (int j = 0; j <= i; ++j) {
+          out->element(j, i) = - detail::conj(out->element(i, j));
+        }
+      }
+      out->print("Rotation Matrix after anti-sym",nbasis);
       return out;
     }
 
