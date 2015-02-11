@@ -31,7 +31,6 @@
 
 namespace bagel {
 
-// TODO maybe good to make a base of MP2Accum and MP2Cache
 class MP2Accum {
   protected:
     const size_t naux_;
@@ -56,7 +55,6 @@ class MP2Accum {
 
     template <int N, class = typename std::enable_if<N == 0 or N == 1>::type>
     void accumulate(const int n, std::shared_ptr<const Matrix> send) {
-      assert(send->ndim() == naux_ && send->mdim() == nvirt_);
       // first scan sendreqs and recvreqs and drop matrices that have been sent/received
       for (auto i = sendreqs_.begin(); i != sendreqs_.end(); ) {
         if (mpi__->test(i->first))
@@ -111,9 +109,9 @@ class MP2Accum {
         mpi__->wait(i.first);
         blas::ax_plus_y_n(1.0, i.second.first->data(), i.second.first->size(), fullt_->data()+fullt_->offset(0, i.second.second*nvirt_));
       }
-      recvreqs_.clear();
       for (auto& i : sendreqs_)
         mpi__->wait(i.first);
+      recvreqs_.clear();
       sendreqs_.clear();
     }
 

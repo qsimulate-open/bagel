@@ -174,32 +174,37 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
       const int i = get<0>(cache.task(n));
       const int j = get<1>(cache.task(n));
-      if (i < 0 || j < 0) continue;
-      cache.data_wait(n);
+      if (i >= 0 && j >= 0) {
+        cache.data_wait(n);
 
-      shared_ptr<const Matrix> iblock = cache(i);
-      shared_ptr<const Matrix> jblock = cache(j);
-      Matrix mat2 = *iblock % *jblock; // 2T-T^t
-      Matrix mat3 = mat2; // T
-      if (i != j) {
-        mat2 *= 2.0;
-        mat2 -= *mat3.transpose();
-      }
-
-      for (int a = 0; a != nocc; ++a) {
-        for (int b = 0; b != nocc; ++b) {
-          const double denom = -eig[a]+eig[i+nocc]-eig[b]+eig[j+nocc];
-          mat2(b,a) /= denom;
-          mat3(b,a) /= denom;
+        shared_ptr<const Matrix> iblock = cache(i);
+        shared_ptr<const Matrix> jblock = cache(j);
+        Matrix mat2 = *iblock % *jblock; // 2T-T^t
+        Matrix mat3 = mat2; // T
+        if (i != j) {
+          mat2 *= 2.0;
+          mat2 -= *mat3.transpose();
         }
+
+        for (int a = 0; a != nocc; ++a) {
+          for (int b = 0; b != nocc; ++b) {
+            const double denom = -eig[a]+eig[i+nocc]-eig[b]+eig[j+nocc];
+            mat2(b,a) /= denom;
+            mat3(b,a) /= denom;
+          }
+        }
+
+        accum.accumulate<0>(n, make_shared<Matrix>(*jblock ^ mat2));
+        accum.accumulate<1>(n, make_shared<Matrix>(*iblock * mat2));
+
+        dmp2->add_block(-2.0, ncore, ncore, nocc, nocc, mat2 % mat3);
+        if (i != j)
+          dmp2->add_block(-2.0, ncore, ncore, nocc, nocc, mat2 ^ mat3);
+      } else {
+        // for receiving data
+        accum.accumulate<0>(n, nullptr);
+        accum.accumulate<1>(n, nullptr);
       }
-
-      accum.accumulate<0>(n, make_shared<Matrix>(*jblock ^ mat2));
-      accum.accumulate<1>(n, make_shared<Matrix>(*iblock * mat2));
-
-      dmp2->add_block(-2.0, ncore, ncore, nocc, nocc, mat2 % mat3);
-      if (i != j)
-        dmp2->add_block(-2.0, ncore, ncore, nocc, nocc, mat2 ^ mat3);
     }
     accum.wait();
     cache.wait();
