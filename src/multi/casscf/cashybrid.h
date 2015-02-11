@@ -37,6 +37,7 @@ class CASHybrid : public Method {
   protected:
     int maxiter_switch_;
     double thresh_switch_;
+    double thresh_;
 
     std::vector<double> energy_;
 
@@ -71,6 +72,8 @@ class CASHybrid : public Method {
     const std::vector<double>& energy() const { return energy_; }
 
     std::shared_ptr<FCI> fci() { return fci_; }
+
+    double thresh() const { return thresh_; }
 };
 
 }

@@ -23,8 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <stddef.h>
 #include <src/pt2/mp2/mp2grad.h>
+#include <src/pt2/mp2/mp2cache.h>
+#include <src/pt2/mp2/mp2accum.h>
 #include <src/grad/cphf.h>
 #include <iostream>
 #include <iomanip>
@@ -86,54 +87,135 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   time.tick_print("3-index integral transform");
 
   // assemble
-  auto buf = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
-  auto buf2 = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
   const VectorB eig_tm = ref_->eig();
-  const VecView eig = eig_tm.slice(ncore, eig_tm.size());
+  const double* eig = eig_tm.data() + ncore;
 
   auto dmp2 = make_shared<Matrix>(nmobasis, nmobasis);
-  double* optr = dmp2->element_ptr(ncore, ncore);
-  double* vptr = dmp2->element_ptr(nocca, nocca);
-
   double ecorr = 0.0;
-  for (size_t i = 0; i != nvirt; ++i) {
-    // nocc * nvirt * nocc
-    shared_ptr<Matrix> data = full->form_4index_1fixed(full, 1.0, i);
-    *buf = *data;
-    *buf2 = *data;
+  {
+    // second transform for virtual index and rearrange data
+    auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc2());
+    auto fullt = make_shared<DFDistT>(full->swap(), dist);
 
-    // using a symmetrizer (src/util/prim_op.h)
-    sort_indices<2,1,0,2,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
-    double* tdata = buf->data();
-    double* bdata = buf2->data();
-    for (size_t j = 0; j != nocc; ++j) {
-      for (size_t k = 0; k != nvirt; ++k) {
-        for (size_t l = 0; l != nocc; ++l, ++tdata, ++bdata) {
-          const double denom = 1.0 / (-eig(i+nocc)+eig(j)-eig(k+nocc)+eig(l));
-          *tdata *= denom;
-          *bdata *= denom;
+    MP2Cache cache(fullt->naux(), nocc, nvirt, fullt);
+
+    size_t memory_size = half->block(0)->size() * 2;
+    mpi__->broadcast(&memory_size, 1, 0);
+    const int nloop = cache.nloop();
+    const int ncache = min(memory_size/(nvirt*nvirt), size_t(20));
+    cout << "    * ncache = " << ncache << endl;
+    for (int n = 0; n != min(ncache, nloop); ++n)
+      cache.block(n, -1);
+
+    for (int n = 0; n != nloop; ++n) {
+      // take care of data. The communication should be hidden
+      if (n+ncache < nloop)
+        cache.block(n+ncache, n-1);
+
+      const int i = get<0>(cache.task(n));
+      const int j = get<1>(cache.task(n));
+      if (i < 0 || j < 0) continue;
+      cache.data_wait(n);
+
+      shared_ptr<const Matrix> iblock = cache(i);
+      shared_ptr<const Matrix> jblock = cache(j);
+      const Matrix mat(*iblock % *jblock); // V
+      Matrix mat2 = mat; // 2T-T^t
+      if (i != j) {
+        mat2 *= 2.0;
+        mat2 -= *mat.transpose();
+      }
+      Matrix mat3 = mat; // T
+
+      for (int a = 0; a != nvirt; ++a) {
+        for (int b = 0; b != nvirt; ++b) {
+          const double denom = -eig[a+nocc]+eig[i]-eig[b+nocc]+eig[j];
+          mat2(b,a) /= denom;
+          mat3(b,a) /= denom;
         }
       }
+
+      const double fac = i == j ? 1.0 : 2.0;
+      ecorr += mat.dot_product(mat2) * fac;
+      dmp2->add_block(2.0, nocca, nocca, nvirt, nvirt, mat2 % mat3);
+      if (i != j)
+        dmp2->add_block(2.0, nocca, nocca, nvirt, nvirt, mat2 ^ mat3);
     }
-    ecorr += data->dot_product(buf);
-
-    // form Gia : TODO distribute
-    // Gia(D|ic) = BV(D|ja) G_c(ja|i)
-    // BV and gia are DFFullDist
-    const size_t offset = i*nocc;
-    gia->add_product(bv, buf, nocc, offset);
-
-    // G(ja|ic) -> G_c(a,ij)
-    sort_indices<1,2,0,0,1,1,1>(buf->data(), data->data(), nocc, nvirt, nocc);
-    // T(jb|ic) -> T_c(b,ij)
-    sort_indices<1,2,0,0,1,1,1>(buf2->data(), buf->data(), nocc, nvirt, nocc);
-    // D_ab = G(ja|ic) T(jb|ic)
-    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 2.0, buf->data(), nvirt, data->data(), nvirt, 1.0, vptr, nmobasis);
-    // D_ij = - G(ja|kc) T(ia|kc)
-    dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf->data(), nvirt*nocc, data->data(), nvirt*nocc, 1.0, optr, nmobasis);
+    cache.wait();
+    // allreduce energy contributions
+    mpi__->allreduce(&ecorr, 1);
   }
 
-  time.tick_print("assembly (+ unrelaxed rdm)");
+  time.tick_print("First pass based on occupied orbitals");
+
+  // do the same with virtual-virtual index distribution to obtain D_ij
+  // TODO is there any better way??
+  {
+    // second transform for virtual index and rearrange data
+    auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
+    auto fullt = make_shared<DFDistT>(full, dist);
+    MP2Cache cache(fullt->naux(), nvirt, nocc, fullt);
+
+    auto giat = fullt->clone();
+    MP2Accum accum(fullt->naux(), nvirt, nocc, giat, cache.tasks());
+
+    size_t memory_size = half->block(0)->size() * 2;
+    mpi__->broadcast(&memory_size, 1, 0);
+    const int nloop = cache.nloop();
+    const int ncache = min(memory_size/(nocc*nocc), size_t(30));
+    cout << "    * ncache = " << ncache << endl;
+    for (int n = 0; n != min(ncache, nloop); ++n)
+      cache.block(n, -1);
+
+    for (int n = 0; n != nloop; ++n) {
+      // take care of data. The communication should be hidden
+      if (n+ncache < nloop)
+        cache.block(n+ncache, n-1);
+
+      const int i = get<0>(cache.task(n));
+      const int j = get<1>(cache.task(n));
+      if (i >= 0 && j >= 0) {
+        cache.data_wait(n);
+
+        shared_ptr<const Matrix> iblock = cache(i);
+        shared_ptr<const Matrix> jblock = cache(j);
+        Matrix mat2 = *iblock % *jblock; // 2T-T^t
+        Matrix mat3 = mat2; // T
+        if (i != j) {
+          mat2 *= 2.0;
+          mat2 -= *mat3.transpose();
+        }
+
+        for (int a = 0; a != nocc; ++a) {
+          for (int b = 0; b != nocc; ++b) {
+            const double denom = -eig[a]+eig[i+nocc]-eig[b]+eig[j+nocc];
+            mat2(b,a) /= denom;
+            mat3(b,a) /= denom;
+          }
+        }
+
+        accum.accumulate<0>(n, make_shared<Matrix>(*jblock ^ mat2));
+        accum.accumulate<1>(n, make_shared<Matrix>(*iblock * mat2));
+
+        dmp2->add_block(-2.0, ncore, ncore, nocc, nocc, mat2 % mat3);
+        if (i != j)
+          dmp2->add_block(-2.0, ncore, ncore, nocc, nocc, mat2 ^ mat3);
+      } else {
+        // for receiving data
+        accum.accumulate<0>(n, nullptr);
+        accum.accumulate<1>(n, nullptr);
+      }
+    }
+    accum.wait();
+    cache.wait();
+    giat = giat->apply_J();
+    giat->get_paralleldf(gia);
+  }
+
+  dmp2->allreduce();
+  gia->scale(-1.0);
+
+  time.tick_print("Second pass based on virtual orbitals");
   cout << endl;
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << ecorr << endl << endl;
 

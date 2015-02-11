@@ -27,19 +27,11 @@
 #ifndef __SRC_SMITH_SPINFREEBASE_H
 #define __SRC_SMITH_SPINFREEBASE_H
 
-#include <src/util/prim_op.h>
-#include <src/smith/tensor.h>
-#include <src/smith/moint.h>
-#include <src/smith/denom.h>
-#include <src/smith/smith_info.h>
-#include <src/prop/multipole.h>
-#include <src/grad/cphf.h>
 #include <chrono>
-
-// temp. todo relocate gradient
-#include <src/grad/cpcasscf.h>
-#include <src/util/math/pairfile.h>
-
+#include <src/ci/fci/civec.h>
+#include <src/smith/denom.h>
+#include <src/smith/tensor.h>
+#include <src/smith/smith_info.h>
 
 namespace bagel {
 namespace SMITH {
@@ -101,10 +93,6 @@ class SpinFreeMethod {
     // For instance, E0 is 0 for MP2.
     double compute_e0() const;
 
-
-    // sigma is defined as Trace(f(x,x), rdm1derivative(x,x))
-    std::shared_ptr<Tensor> compute_sigma() const;
-
     std::shared_ptr<const Denom> denom_;
     std::shared_ptr<const Matrix> shalf_xhh() const { return denom_->shalf_xhh(); }
     std::shared_ptr<const Matrix> shalf_xxh() const { return denom_->shalf_xxh(); }
@@ -121,7 +109,10 @@ class SpinFreeMethod {
     const double& denom_h(const size_t i) const { return denom_->denom_h(i); }
     const double& denom_x(const size_t i) const { return denom_->denom_x(i); }
 
-    void update_amplitude(std::shared_ptr<Tensor> t, const std::shared_ptr<Tensor> r, const bool put = false);
+    std::shared_ptr<Tensor> init_amplitude() const;
+    double dot_product_transpose(std::shared_ptr<const Tensor> r, std::shared_ptr<const Tensor> t2) const;
+    void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r) const;
+    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
 
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info> r);
@@ -137,7 +128,6 @@ class SpinFreeMethod {
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     double e0() const { return e0_; }
-    std::shared_ptr<Tensor> sigma() const { return sigma_; }
 
     double energy() const { return energy_; }
 

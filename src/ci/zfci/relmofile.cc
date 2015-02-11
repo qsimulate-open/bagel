@@ -532,14 +532,13 @@ void RelMOFile::rearrange_eig(VectorB& eig, shared_ptr<ZMatrix> coeff, const boo
   assert(2*n == coeff->ndim());  // could be triggered if Kramers + and - sets had different sizes or linear dependencies
 
   // check that pos & neg energy eigenvalues are properly separated
-  if (includes_neg)
-    assert(*std::min_element(eig.begin()+n, eig.begin()+2*n) - *std::max_element(eig.begin(), eig.begin()+n) > 10000.0);
+  assert(!includes_neg || *std::min_element(eig.begin()+n, eig.begin()+2*n) - *std::max_element(eig.begin(), eig.begin()+n) > c__*c__);
 
   // need to reorder things so negative energy states don't all come at the beginning
   // TODO there should be a more efficient way...
   VectorB tempv(2*n);
-  auto tempm = make_shared<ZMatrix>(2*n, 2*n);
-  for (int i=0; i!=n; ++i) {
+  shared_ptr<ZMatrix> tempm = coeff->clone();
+  for (int i = 0; i != n; ++i) {
     tempv[  i] = eig[2*i];
     tempv[n+i] = eig[2*i+1];
 

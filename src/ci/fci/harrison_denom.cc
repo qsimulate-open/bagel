@@ -49,7 +49,7 @@ void HarrisonZarrabian::const_denom() {
       (*jop)(j, i) = (*jop)(i, j) = 0.5*jop_->mo2e_hz(j, i, j, i);
       (*kop)(j, i) = (*kop)(i, j) = 0.5*jop_->mo2e_hz(j, i, i, j);
     }
-    (*h)(i,0) = jop_->mo1e(i,i);
+    (*h)(i) = jop_->mo1e(i,i);
   }
   denom_t.tick_print("jop, kop");
 

@@ -180,4 +180,146 @@ void transpose(const double* h, const int m, const int n, double* vec, const dou
 #endif
 }
 
+
+template<>
+void transpose_add(const double* h, const int m, const int n, double* vec, const double fac) {
+  const int mresidual = m % 10;
+  const int nresidual = n % 10;
+  const int mlim = m - mresidual;
+  const int nlim = n - nresidual;
+  for (int i = 0; i < nlim; i += 10) {
+    for (int j = 0; j < mlim; j += 10) {
+      vec[i   + n*(j  )] += fac*h[j   + m*(i  )];
+      vec[i+1 + n*(j  )] += fac*h[j   + m*(i+1)];
+      vec[i+2 + n*(j  )] += fac*h[j   + m*(i+2)];
+      vec[i+3 + n*(j  )] += fac*h[j   + m*(i+3)];
+      vec[i+4 + n*(j  )] += fac*h[j   + m*(i+4)];
+      vec[i+5 + n*(j  )] += fac*h[j   + m*(i+5)];
+      vec[i+6 + n*(j  )] += fac*h[j   + m*(i+6)];
+      vec[i+7 + n*(j  )] += fac*h[j   + m*(i+7)];
+      vec[i+8 + n*(j  )] += fac*h[j   + m*(i+8)];
+      vec[i+9 + n*(j  )] += fac*h[j   + m*(i+9)];
+      vec[i   + n*(j+1)] += fac*h[j+1 + m*(i  )];
+      vec[i+1 + n*(j+1)] += fac*h[j+1 + m*(i+1)];
+      vec[i+2 + n*(j+1)] += fac*h[j+1 + m*(i+2)];
+      vec[i+3 + n*(j+1)] += fac*h[j+1 + m*(i+3)];
+      vec[i+4 + n*(j+1)] += fac*h[j+1 + m*(i+4)];
+      vec[i+5 + n*(j+1)] += fac*h[j+1 + m*(i+5)];
+      vec[i+6 + n*(j+1)] += fac*h[j+1 + m*(i+6)];
+      vec[i+7 + n*(j+1)] += fac*h[j+1 + m*(i+7)];
+      vec[i+8 + n*(j+1)] += fac*h[j+1 + m*(i+8)];
+      vec[i+9 + n*(j+1)] += fac*h[j+1 + m*(i+9)];
+      vec[i   + n*(j+2)] += fac*h[j+2 + m*(i  )];
+      vec[i+1 + n*(j+2)] += fac*h[j+2 + m*(i+1)];
+      vec[i+2 + n*(j+2)] += fac*h[j+2 + m*(i+2)];
+      vec[i+3 + n*(j+2)] += fac*h[j+2 + m*(i+3)];
+      vec[i+4 + n*(j+2)] += fac*h[j+2 + m*(i+4)];
+      vec[i+5 + n*(j+2)] += fac*h[j+2 + m*(i+5)];
+      vec[i+6 + n*(j+2)] += fac*h[j+2 + m*(i+6)];
+      vec[i+7 + n*(j+2)] += fac*h[j+2 + m*(i+7)];
+      vec[i+8 + n*(j+2)] += fac*h[j+2 + m*(i+8)];
+      vec[i+9 + n*(j+2)] += fac*h[j+2 + m*(i+9)];
+      vec[i   + n*(j+3)] += fac*h[j+3 + m*(i  )];
+      vec[i+1 + n*(j+3)] += fac*h[j+3 + m*(i+1)];
+      vec[i+2 + n*(j+3)] += fac*h[j+3 + m*(i+2)];
+      vec[i+3 + n*(j+3)] += fac*h[j+3 + m*(i+3)];
+      vec[i+4 + n*(j+3)] += fac*h[j+3 + m*(i+4)];
+      vec[i+5 + n*(j+3)] += fac*h[j+3 + m*(i+5)];
+      vec[i+6 + n*(j+3)] += fac*h[j+3 + m*(i+6)];
+      vec[i+7 + n*(j+3)] += fac*h[j+3 + m*(i+7)];
+      vec[i+8 + n*(j+3)] += fac*h[j+3 + m*(i+8)];
+      vec[i+9 + n*(j+3)] += fac*h[j+3 + m*(i+9)];
+      vec[i   + n*(j+4)] += fac*h[j+4 + m*(i  )];
+      vec[i+1 + n*(j+4)] += fac*h[j+4 + m*(i+1)];
+      vec[i+2 + n*(j+4)] += fac*h[j+4 + m*(i+2)];
+      vec[i+3 + n*(j+4)] += fac*h[j+4 + m*(i+3)];
+      vec[i+4 + n*(j+4)] += fac*h[j+4 + m*(i+4)];
+      vec[i+5 + n*(j+4)] += fac*h[j+4 + m*(i+5)];
+      vec[i+6 + n*(j+4)] += fac*h[j+4 + m*(i+6)];
+      vec[i+7 + n*(j+4)] += fac*h[j+4 + m*(i+7)];
+      vec[i+8 + n*(j+4)] += fac*h[j+4 + m*(i+8)];
+      vec[i+9 + n*(j+4)] += fac*h[j+4 + m*(i+9)];
+      vec[i   + n*(j+5)] += fac*h[j+5 + m*(i  )];
+      vec[i+1 + n*(j+5)] += fac*h[j+5 + m*(i+1)];
+      vec[i+2 + n*(j+5)] += fac*h[j+5 + m*(i+2)];
+      vec[i+3 + n*(j+5)] += fac*h[j+5 + m*(i+3)];
+      vec[i+4 + n*(j+5)] += fac*h[j+5 + m*(i+4)];
+      vec[i+5 + n*(j+5)] += fac*h[j+5 + m*(i+5)];
+      vec[i+6 + n*(j+5)] += fac*h[j+5 + m*(i+6)];
+      vec[i+7 + n*(j+5)] += fac*h[j+5 + m*(i+7)];
+      vec[i+8 + n*(j+5)] += fac*h[j+5 + m*(i+8)];
+      vec[i+9 + n*(j+5)] += fac*h[j+5 + m*(i+9)];
+      vec[i   + n*(j+6)] += fac*h[j+6 + m*(i  )];
+      vec[i+1 + n*(j+6)] += fac*h[j+6 + m*(i+1)];
+      vec[i+2 + n*(j+6)] += fac*h[j+6 + m*(i+2)];
+      vec[i+3 + n*(j+6)] += fac*h[j+6 + m*(i+3)];
+      vec[i+4 + n*(j+6)] += fac*h[j+6 + m*(i+4)];
+      vec[i+5 + n*(j+6)] += fac*h[j+6 + m*(i+5)];
+      vec[i+6 + n*(j+6)] += fac*h[j+6 + m*(i+6)];
+      vec[i+7 + n*(j+6)] += fac*h[j+6 + m*(i+7)];
+      vec[i+8 + n*(j+6)] += fac*h[j+6 + m*(i+8)];
+      vec[i+9 + n*(j+6)] += fac*h[j+6 + m*(i+9)];
+      vec[i   + n*(j+7)] += fac*h[j+7 + m*(i  )];
+      vec[i+1 + n*(j+7)] += fac*h[j+7 + m*(i+1)];
+      vec[i+2 + n*(j+7)] += fac*h[j+7 + m*(i+2)];
+      vec[i+3 + n*(j+7)] += fac*h[j+7 + m*(i+3)];
+      vec[i+4 + n*(j+7)] += fac*h[j+7 + m*(i+4)];
+      vec[i+5 + n*(j+7)] += fac*h[j+7 + m*(i+5)];
+      vec[i+6 + n*(j+7)] += fac*h[j+7 + m*(i+6)];
+      vec[i+7 + n*(j+7)] += fac*h[j+7 + m*(i+7)];
+      vec[i+8 + n*(j+7)] += fac*h[j+7 + m*(i+8)];
+      vec[i+9 + n*(j+7)] += fac*h[j+7 + m*(i+9)];
+      vec[i   + n*(j+8)] += fac*h[j+8 + m*(i  )];
+      vec[i+1 + n*(j+8)] += fac*h[j+8 + m*(i+1)];
+      vec[i+2 + n*(j+8)] += fac*h[j+8 + m*(i+2)];
+      vec[i+3 + n*(j+8)] += fac*h[j+8 + m*(i+3)];
+      vec[i+4 + n*(j+8)] += fac*h[j+8 + m*(i+4)];
+      vec[i+5 + n*(j+8)] += fac*h[j+8 + m*(i+5)];
+      vec[i+6 + n*(j+8)] += fac*h[j+8 + m*(i+6)];
+      vec[i+7 + n*(j+8)] += fac*h[j+8 + m*(i+7)];
+      vec[i+8 + n*(j+8)] += fac*h[j+8 + m*(i+8)];
+      vec[i+9 + n*(j+8)] += fac*h[j+8 + m*(i+9)];
+      vec[i   + n*(j+9)] += fac*h[j+9 + m*(i  )];
+      vec[i+1 + n*(j+9)] += fac*h[j+9 + m*(i+1)];
+      vec[i+2 + n*(j+9)] += fac*h[j+9 + m*(i+2)];
+      vec[i+3 + n*(j+9)] += fac*h[j+9 + m*(i+3)];
+      vec[i+4 + n*(j+9)] += fac*h[j+9 + m*(i+4)];
+      vec[i+5 + n*(j+9)] += fac*h[j+9 + m*(i+5)];
+      vec[i+6 + n*(j+9)] += fac*h[j+9 + m*(i+6)];
+      vec[i+7 + n*(j+9)] += fac*h[j+9 + m*(i+7)];
+      vec[i+8 + n*(j+9)] += fac*h[j+9 + m*(i+8)];
+      vec[i+9 + n*(j+9)] += fac*h[j+9 + m*(i+9)];
+    }
+    for (int j = mlim; j != m; ++j) {
+      vec[i   + n*j] += fac*h[j  + m*(i  )];
+      vec[i+1 + n*j] += fac*h[j  + m*(i+1)];
+      vec[i+2 + n*j] += fac*h[j  + m*(i+2)];
+      vec[i+3 + n*j] += fac*h[j  + m*(i+3)];
+      vec[i+4 + n*j] += fac*h[j  + m*(i+4)];
+      vec[i+5 + n*j] += fac*h[j  + m*(i+5)];
+      vec[i+6 + n*j] += fac*h[j  + m*(i+6)];
+      vec[i+7 + n*j] += fac*h[j  + m*(i+7)];
+      vec[i+8 + n*j] += fac*h[j  + m*(i+8)];
+      vec[i+9 + n*j] += fac*h[j  + m*(i+9)];
+    }
+  }
+  for (int i = nlim; i != n; ++i) {
+    for (int j = 0; j < mlim; j += 10) {
+      vec[i   + n*(j  )] += fac*h[j   + m*(i  )];
+      vec[i   + n*(j+1)] += fac*h[j+1 + m*(i  )];
+      vec[i   + n*(j+2)] += fac*h[j+2 + m*(i  )];
+      vec[i   + n*(j+3)] += fac*h[j+3 + m*(i  )];
+      vec[i   + n*(j+4)] += fac*h[j+4 + m*(i  )];
+      vec[i   + n*(j+5)] += fac*h[j+5 + m*(i  )];
+      vec[i   + n*(j+6)] += fac*h[j+6 + m*(i  )];
+      vec[i   + n*(j+7)] += fac*h[j+7 + m*(i  )];
+      vec[i   + n*(j+8)] += fac*h[j+8 + m*(i  )];
+      vec[i   + n*(j+9)] += fac*h[j+9 + m*(i  )];
+    }
+    for (int j = mlim; j !=  m; ++j) {
+      vec[i   + n*(j  )] += fac*h[j   + m*(i  )];
+    }
+  }
+}
+
 }}

@@ -32,6 +32,12 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
   for CG and L-BFGS optimizers. See http://www.alglib.net.
 
 
+*** Support ***
+
+  DOE Basic Energy Sciences (DE-FG02-13ER16398)
+  NSF CAREER Program (CHE-1351598)
+  AFOSR Young Investigator Program (FA9550-15-1-0031)
+
 *** Disclaimer ***
 
   This is a public pre-alpha version and may have serious bugs.

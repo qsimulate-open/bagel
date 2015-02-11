@@ -62,8 +62,6 @@ class RelDFFull : public RelDFBase {
     RelDFFull& operator+=(const RelDFFull& o) { ax_plus_y(1.0, o); return *this; }
     RelDFFull& operator-=(const RelDFFull& o) { ax_plus_y(-1.0, o); return *this; }
 
-    void add_product(std::shared_ptr<const RelDFFull> o, const std::shared_ptr<const ZMatrix> a, const int nocc, const int offset);
-
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
 
     std::shared_ptr<Matrix> form_aux_2index_real() const {

@@ -188,6 +188,9 @@ void CASBFGS::compute() {
   // macro iteration to here
   // ============================
 
+  // block diagonalize coeff_ in nclosed and nvirt
+  coeff_ = semi_canonical_orb();
+
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
   if (nact_) {

@@ -123,19 +123,15 @@ void SOSCF::compute() {
 
 shared_ptr<const ZMatrix> SOSCF::sotildex() {
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(2 * tildex_->ndim(), 2 * tildex_->mdim());
-  out->zero();
-  out->add_real_block(complex<double>(1.0, 0.0), 0, 0, tildex_->ndim(), tildex_->mdim(), *tildex_);
-  out->add_real_block(complex<double>(1.0, 0.0), tildex_->ndim(), tildex_->mdim(), tildex_->ndim(), tildex_->mdim(), *tildex_);
-
+  out->add_real_block(1.0, 0, 0, tildex_->ndim(), tildex_->mdim(), *tildex_);
+  out->add_real_block(1.0, tildex_->ndim(), tildex_->mdim(), tildex_->ndim(), tildex_->mdim(), *tildex_);
   return out;
 }
 
 shared_ptr<const ZMatrix> SOSCF::sooverlap() {
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(2 * overlap_->ndim(), 2 * overlap_->mdim());
-  out->zero();
-  out->add_real_block(complex<double>(1.0, 0.0), 0, 0, overlap_->ndim(), overlap_->mdim(), *overlap_);
-  out->add_real_block(complex<double>(1.0, 0.0), overlap_->ndim(), overlap_->mdim(), overlap_->ndim(), overlap_->mdim(), *overlap_);
-
+  out->add_real_block(1.0, 0, 0, overlap_->ndim(), overlap_->mdim(), *overlap_);
+  out->add_real_block(1.0, overlap_->ndim(), overlap_->mdim(), overlap_->ndim(), overlap_->mdim(), *overlap_);
   return out;
 }
 

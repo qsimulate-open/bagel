@@ -25,6 +25,7 @@
 
 #include <src/global.h>
 #include <src/pt2/mp2/mp2grad.h>
+#include <src/grad/force.h>
 #include <src/opt/optimize.h>
 #include <src/wfn/localization.h>
 #include <src/asd/construct_asd.h>
@@ -127,9 +128,13 @@ int main(int argc, char** argv) {
 
       } else if (title == "optimize") {
 
-        auto opt = make_shared<Optimize>(itree, geom);
+        auto opt = make_shared<Optimize>(itree, geom, ref);
         opt->compute();
 
+      } else if (title == "force") {
+
+        auto opt = make_shared<Force>(itree, geom, ref);
+        opt->compute();
 
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         const string form = itree->get<string>("form", "displace");

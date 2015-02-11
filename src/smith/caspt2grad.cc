@@ -24,12 +24,14 @@
 //
 
 
-#include <src/smith/caspt2grad.h>
+#include <src/scf/hf/fock.h>
+#include <src/grad/cpcasscf.h>
+#include <src/grad/gradeval.h>
 #include <src/multi/casscf/cashybrid.h>
 #include <src/multi/casscf/qvec.h>
 #include <src/smith/smith.h>
-#include <src/grad/gradeval.h>
-#include <src/util/math/algo.h>
+#include <src/smith/caspt2grad.h>
+#include <src/prop/multipole.h>
 
 
 using namespace std;
@@ -38,19 +40,23 @@ using namespace bagel;
 CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
   : Method(inp, geom, ref) {
 
+  Timer timer;
+
   // compute CASSCF first
   auto cas = make_shared<CASHybrid>(inp, geom, ref);
   cas->compute();
 
-  cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
-  if (geom->df() == nullptr) throw logic_error("CASPT2Grad is only implemented with DF");
-
   // update reference
   ref_ = cas->conv_to_ref();
   fci_ = cas->fci();
-  // TODO
-  thresh_ = 1.0e-10; //cas->thresh();
+  thresh_ = cas->thresh();
   ref_energy_ = cas->energy();
+
+  timer.tick_print("Reference calculation");
+
+  cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
+  if (geom->df() == nullptr)
+    throw logic_error("CASPT2Grad is only implemented with DF");
 }
 
 
@@ -73,9 +79,15 @@ void CASPT2Grad::compute() {
     target_ = smith->algo()->ref()->target();
     ncore_  = smith->algo()->ref()->ncore();
 
+    Timer timer;
+
     // save correlated density matrices d(1), d(2), and ci derivatives
     auto d1tmp = make_shared<Matrix>(*smith->dm1());
     auto d11tmp = make_shared<Matrix>(*smith->dm11());
+    d11tmp->symmetrize();
+    // TODO not sure about the scale
+    d11tmp->scale(2.0);
+
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     if (nact) {
       const double wf1norm = smith->wf1norm();
@@ -121,6 +133,7 @@ void CASPT2Grad::compute() {
     d2_ = smith->dm2();
     energy_ = smith->algo()->energy() + ref_energy_[target_];
 
+    timer.tick_print("Postprocessing SMITH");
     cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
   }
 }
@@ -128,6 +141,8 @@ void CASPT2Grad::compute() {
 
 template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
+  Timer timer;
+
   shared_ptr<const Reference> ref = task_->ref();
   shared_ptr<FCI> fci = task_->fci();
 
@@ -176,6 +191,8 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
   tie(yrs, fulld1) = task_->compute_Y(d1, d11, d2, half, halfj, halfjj);
 
+  timer.tick_print("Yrs evaluation");
+
   // solve CPCASSCF
   auto g0 = yrs;
   auto g1 = nact ? make_shared<Dvec>(cider, ref->nstate())
@@ -193,18 +210,16 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civector, half, halfjj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(1.0e-12);
-//tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
+
+  timer.tick_print("Z-CASSCF solution");
 
   // form relaxed 1RDM
   // form Zd + dZ^+
   shared_ptr<const Matrix> dsa = nact ? rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis) : d0;
   auto dm = make_shared<Matrix>(*zmat * *dsa + (*dsa ^ *zmat));
 
-  shared_ptr<Matrix> dtot = d0->copy();
-  dtot->ax_plus_y(1.0, dm);
-  dtot->ax_plus_y(1.0, d1);
-  dtot->ax_plus_y(1.0, d11);
+  auto dtot = make_shared<Matrix>(*d0 + *d11 + *d1 + *dm);
   if (smallz)
     dtot->add_block(1.0, 0, 0, nocc, nocc, smallz);
 
@@ -294,15 +309,13 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   if (ncore)
     separable_pair(smallz, dsa);
 
+  timer.tick_print("Effective densities");
+
   // compute gradients
-dtotao->print("dtotao", 20);
-xmatao->print("xmatao", 20);
-
-qq->symmetrize();
-qq->print("qq");
-
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq);
   gradient->print();
+  timer.tick_print("Gradient integral contraction");
+
   // set energy
   energy_ = task_->energy();
   return gradient;
@@ -332,7 +345,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   {
     // 2 Y1 = h(d0 + d1 + d2) * 2
     // one-electron contributions
-    auto hmo = make_shared<const Matrix>(*coeff_ % *ref_->hcore() * *coeff_);
+    const Matrix hmo(*coeff_ % *ref_->hcore() * *coeff_);
     shared_ptr<Matrix> d0;
     if (nact) {
       d0 = ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis);
@@ -341,7 +354,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
       for (int i = 0; i != nclosed; ++i)
         d0->element(i,i) = 2.0;
     }
-    *out += *hmo * (*dm1 + *dm11 + *d0) * 2.0;
+    *out += hmo * (*dm1 + *dm11 + *d0) * 2.0;
   }
 
   {
@@ -378,36 +391,57 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   auto D1 = make_shared<btas::Tensor4<double>>(nocc,nall,nocc,nall);
   fill(D1->begin(), D1->end(), 0.0);
   {
+    auto is_cc = [&](const int& i) { return i < nclosed; };
+    auto is_closed = [&](const int& i) { return i < nclosed && i >= ncore_; };
+    auto is_act = [&](const int& i) { return i >= nclosed && i < nocc; };
+    auto is_virt = [&](const int& i) { return i >= nocc; };
+
     // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
     for (int s = 0; s != nall; ++s) // extend
-      for (int k = ncore_; k != nocc; ++k)
+      for (int k = 0; k != nocc; ++k)
         for (int t = 0; t != nall; ++t) // extend
-          for (int l = ncore_; l != nocc; ++l) {
+          for (int l = 0; l != nocc; ++l) {
             // TODO ugly code - there should be a smart way of doing this! just need a logic to test if it has to be symmetrized
-            // ccaa, cxaa, xxaa
-            if (t >= nocc && s >= nocc) {
-              (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-              // cxaa
-              if ((k >= nclosed) ^ (l >= nclosed))
+            if (k >=  ncore_ && l >= ncore_) {
+              // ccaa, cxaa, xxaa
+              if (is_virt(t) && is_virt(s)) {
+                (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+                // cxaa
+                if (is_act(k) ^ is_act(l))
+                  (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+              // ccxa, ccxx
+              } else if (t >= nclosed && s >= nclosed && is_closed(k) && is_closed(l)) {
+                (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+                // ccxa
+                if ((t < nocc) ^ (s < nocc))
+                  (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+              // cxxa, xcxa
+              } else if ((is_act(k) ^ is_act(l)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
+                (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
                 (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-            // ccxa, ccxx
-            } else if (t >= nclosed && s >= nclosed && k < nclosed && l < nclosed) {
-              (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-              // ccxa
-              if ((t < nocc) ^ (s < nocc))
+              // cxxx
+              } else if ((is_act(k) ^ is_act(l)) && is_act(t) && is_act(s)) {
+                (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
                 (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-            // cxxa, xcxa
-            } else if (((k >= nclosed) ^ (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
-              (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-              (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-            // cxxx
-            } else if (((k >= nclosed) ^ (l >= nclosed)) && ((t < nocc) && (s < nocc)) && (t >= nclosed && s >= nclosed)) {
-              (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-              (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-            // xxxa
-            } else if (((k >= nclosed) && (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
-              (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-              (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+              // xxxa
+              } else if (((k >= nclosed) && (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
+                (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
+              }
+            }
+
+            // c(cc)x, c(cc)a, x(cc)a // TODO maybe better to work with inactive Fock to deal with this contribution
+            if ((is_cc(k) && is_cc(l) && (is_act(s) ^ is_act(t))) // c(cc)x
+            || ((is_act(k) ^ is_act(l)) && ((is_cc(s) && is_virt(t)) || (is_virt(s) && is_cc(t)))) // x(cc)a
+            ||  (is_cc(k) && is_cc(l) && ((is_cc(s) && is_virt(t)) || (is_virt(s) && is_cc(t))))) { // c(cc)a
+              if (s == k)
+                (*D1)(l, t, k, s)  += 2.0*dm11->element(l, t);
+              if (s == l)
+                (*D1)(l, t, k, s)  -= dm11->element(k, t);
+              if (t == l)
+                (*D1)(l, t, k, s)  += 2.0*dm11->element(k, s);
+              if (t == k)
+                (*D1)(l, t, k, s)  -= dm11->element(l, s);
             }
           }
   }

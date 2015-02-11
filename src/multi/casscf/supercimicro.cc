@@ -39,7 +39,7 @@ void SuperCIMicro::compute() {
   const int nact = casscf_->nact();
   const int nvirt = casscf_->nvirt();
   // a pair of 1*1 matrix and RotFile
-  DavidsonDiag<SCIData> davidson(1, casscf_->max_micro_iter());
+  DavidsonDiag<SCIData> davidson(1, 5);
 
   // current coefficient
   auto cc0    = make_shared<Matrix>(1,1,true);
@@ -80,7 +80,7 @@ void SuperCIMicro::compute() {
     cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
          << setw(10) << scientific << setprecision(2) << error << fixed << " " << mtimer.tick() << endl;
 
-    if (error < casscf_->thresh_micro()) { cout << endl; break; }
+    if (miter > 2 && error < casscf_->thresh_micro()) { cout << endl; break; }
     if (miter+1 == casscf_->max_micro_iter()) throw runtime_error("max_micro_iter_ is reached in CASSCF");
 
     // update cc0 and cc1
