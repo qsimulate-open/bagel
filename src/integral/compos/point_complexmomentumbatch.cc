@@ -39,7 +39,7 @@ static const double pisqrtinv__ = 1.0 / sqrt(pi__);
 void Point_ComplexMomentumBatch::compute() {
 
 
-  const CSortList sort_ (spherical_);
+  const CSortList sort_(spherical_);
 
   complex<double>* const intermediate_p = stack_->get<complex<double>>(size_block_*3);
   fill_n(intermediate_p, size_block_*3, 0.0);
