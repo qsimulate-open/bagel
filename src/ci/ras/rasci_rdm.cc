@@ -34,6 +34,8 @@ void RASCI::compute_rdm12() {
 
   int istate = 0;
   tie(rdm1_av_,rdm2_av_) = compute_rdm12(cc_->data(istate), cc_->data(istate));
+  rdm1_[0] = rdm1_av_;
+  rdm2_[0] = rdm2_av_;
 }
 
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
@@ -83,6 +85,22 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   auto mat = rdm1->rdm1_mat(0);
   mat->print("1RDM",norb_);
 //rdm1->print(1.0e-6);
+
+  //Symmetry check
+  {
+    for (int l = 0; l != norb_; ++l)
+    for (int k = 0; k != norb_; ++k)
+    for (int j = 0; j != norb_; ++j)
+    for (int i = 0; i != norb_; ++i) {
+      double ijkl = rdm2->element(i,j,k,l);
+      double klij = rdm2->element(k,l,i,j);
+      double jilk = rdm2->element(j,i,l,k);
+      double lkji = rdm2->element(l,k,j,i);
+      if( abs(ijkl-klij) > 1.0e-10) assert(false); //cout << "ERROR1" << endl;
+      if( abs(ijkl-jilk) > 1.0e-10) assert(false); //cout << "ERROR2" << endl;
+      if( abs(ijkl-lkji) > 1.0e-10) assert(false); //cout << "ERROR3" << endl;
+    }
+  }
 
   //Trace
   { 
@@ -538,6 +556,166 @@ void RASCI::sigma_2a4_new(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) 
   }
 
 }
+
+
+// note that this does not transform internal integrals (since it is not needed in CASSCF).
+pair<shared_ptr<Matrix>, vector<double>> RASCI::natorb_convert() {
+  assert(rdm1_av_ != nullptr);
+  pair<shared_ptr<Matrix>, vector<double>> natorb = generate_natural_orbitals();
+  update_rdms(natorb.first);
+  jop_->update_1ext_ints(natorb.first);
+  return natorb;
+}
+
+
+void RASCI::update_rdms(const shared_ptr<Matrix>& coeff) {
+  (rdm1_av_->rdm1_mat(0))->print("ORIGINAL RDM1");
+  for (auto iter = rdm1_.begin(); iter != rdm1_.end(); ++iter)
+    (*iter)->transform(coeff);
+  for (auto iter = rdm2_.begin(); iter != rdm2_.end(); ++iter)
+    (*iter)->transform(coeff);
+  (rdm1_av_->rdm1_mat(0))->print("TRANSFORMD RDM1");
+/* TODO: 1state only at the moment
+  // Only when #state > 1, this is needed.
+  // Actually rdm1_av_ points to the same object as rdm1_ in 1 state runs. Therefore if you do twice, you get wrong.
+  if (rdm1_.size() > 1)   rdm1_av_->transform(coeff);
+  if (rdm2_.size() > 1)   rdm2_av_->transform(coeff);
+  assert(rdm1_.size() > 1 || rdm1_.front() == rdm1_av_);
+  assert(rdm2_.size() > 1 || rdm2_.front() == rdm2_av_);
+*/
+
+
+  //Energy calculation
+  cout << "T// RASCI: Energy calculated from RDM:" << endl;
+  cout << "T// Number of closed orbitals: " << ncore_ << endl;
+  cout << "T// Number of active orbitals: " << norb_  << endl;
+  const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
+  cout << "T// Nuc       = " << geom_->nuclear_repulsion() << endl;
+  cout << "T// Core      = " << jop_->core_energy() << endl;
+  cout << "T// Nuc+Core  = " << nuc_core << endl;
+
+  shared_ptr<const Matrix> h1 = jop_->mo1e()->matrix();
+  assert(norb_ == h1->ndim() && norb_ == h1->mdim());
+//h1->print("1e integral",norb_);
+  auto onerdm = rdm1_av_->rdm1_mat(0);
+  double  e1 = ddot_(norb_*norb_, h1->element_ptr(0,0), 1, onerdm->element_ptr(0,0), 1);
+  cout << "T// 1E energy = " << e1 << endl;
+
+  shared_ptr<const Matrix> pint2 = jop_->mo2e()->matrix();
+  auto int2 = make_shared<Matrix>(norb_*norb_*norb_*norb_,1);
+  sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), norb_, norb_, norb_, norb_); //conver to chemist not.
+
+  auto low = {0,0,0,0};
+  auto up  = {norb_,norb_,norb_,norb_};
+  auto view = btas::make_view(rdm2_av_->range().slice(low,up), rdm2_av_->storage()); 
+  auto twordm = make_shared<Matrix>(norb_*norb_*norb_,norb_,1); 
+  copy(view.begin(), view.end(), twordm->begin());
+
+  double e2 = 0.5 * ddot_(norb_*norb_*norb_*norb_, int2->element_ptr(0,0), 1, twordm->element_ptr(0,0), 1);
+  cout << "T// 2E energy = " << e2 << endl;
+
+  //Energy print
+  cout << "T// Total energy = " << nuc_core + e1 + e2 << endl;
+
+}
+
+pair<shared_ptr<Matrix>, vector<double>> RASCI::generate_natural_orbitals() {
+  cout << "GENERATE RAS NATURAL ORBITALS .... " << endl;
+  shared_ptr<Matrix> rdm1 = rdm1_av_->rdm1_mat(/*closed*/0);
+  //subspace rdm
+  vector<shared_ptr<Matrix>> srdm;
+  srdm.push_back(make_shared<Matrix>(*rdm1->get_submatrix(0,0,ras_[0],ras_[0])));
+  srdm.push_back(make_shared<Matrix>(*rdm1->get_submatrix(ras_[0],ras_[0],ras_[1],ras_[1])));
+  srdm.push_back(make_shared<Matrix>(*rdm1->get_submatrix(ras_[0]+ras_[1],ras_[0]+ras_[1],ras_[2],ras_[2])));
+
+  auto outm = make_shared<Matrix>(norb_,norb_,true);
+  outm->unit();
+  vector<double> outv(norb_);
+
+  for(int ispace = 0; ispace != 3; ++ispace) {
+//for(int ispace = 1; ispace != 2; ++ispace) {
+
+    auto buf = make_shared<Matrix>(ras_[ispace],ras_[ispace],true);
+    buf->add_diag(2.0);
+    daxpy_(ras_[ispace]*ras_[ispace], -1.0, srdm[ispace]->data(), 1, buf->data(), 1);
+ 
+    VectorB vec(ras_[ispace]);
+    buf->diagonalize(vec);
+    for (int i = 0; i != ras_[ispace]; ++i) {
+      cout << "vec (" << i << ") = " << vec(i) << endl;
+    }
+ 
+    for (auto& i : vec) i = 2.0-i;
+ 
+    map<int,int> emap;
+    auto buf2 = buf->clone();
+    VectorB vec2(ras_[ispace]);
+    // sort eigenvectors so that buf is close to a unit matrix
+    // target column
+    for (int i = 0; i != ras_[ispace]; ++i) {
+      // first find the source column
+      tuple<int, double> max = make_tuple(-1, 0.0);
+      for (int j = 0; j != ras_[ispace]; ++j)
+        if (fabs(buf->element(i,j)) > get<1>(max))
+          max = make_tuple(j, fabs(buf->element(i,j)));
+ 
+      // register to emap
+      if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. RDM<1>::generate_natural_orbitals()");
+      emap.emplace(get<0>(max), i);
+ 
+      // copy to the target
+      copy_n(buf->element_ptr(0,get<0>(max)), ras_[ispace], buf2->element_ptr(0,i));
+      vec2(i) = vec(get<0>(max));
+    }
+ 
+    // fix the phase
+    for (int i = 0; i != ras_[ispace]; ++i) {
+      if (buf2->element(i,i) < 0.0)
+        blas::scale_n(-1.0, buf2->element_ptr(0,i), ras_[ispace]);
+    }
+ 
+    for (int i = 0; i != ras_[ispace]; ++i) {
+      cout << "vec2(" << i << ") = " << setw(10) << setprecision(6) << vec2(i) << endl;
+    }
+
+    assert(buf2->ndim() == ras_[ispace]);
+    assert(buf2->mdim() == ras_[ispace]);
+    assert(vec2.size() == ras_[ispace]);
+    switch (ispace) {
+      case 0: //RAS1
+        outm->copy_block(0, 0, buf2->ndim(), buf2->mdim(), buf2);
+        for (int i = 0; i != vec2.size(); ++i) {
+          outv[i] = vec2(i);
+        }
+        break;
+      case 1: //RAS2
+        outm->copy_block(ras_[0], ras_[0], buf2->ndim(), buf2->mdim(), buf2);
+        for (int i = 0; i != vec2.size(); ++i) {
+          outv[ras_[0]+i] = vec2(i);
+        }
+        break;
+      case 2: //RAS3
+        outm->copy_block(ras_[0]+ras_[1], ras_[0]+ras_[1], buf2->ndim(), buf2->mdim(), buf2);
+        for (int i = 0; i != vec2.size(); ++i) {
+          outv[ras_[0]+ras_[1]+i] = vec2(i);
+        }
+        break;
+      default:
+        cout << "out of RAS space" << endl;
+        assert(false);
+        break;
+    }
+  } //ispace
+
+  for (int i = 0; i != norb_; ++i) {
+    cout << "nat occ(" << i << ") = " << setw(10) << setprecision(6) << outv[i] << endl;
+  }
+  
+  outm->print("TRANSFORMATION MATRIX");
+
+  return {outm, outv}; //TEMP
+}
+
 
 #if 0
 

@@ -56,7 +56,7 @@ class RASSCF : public Method, public std::enable_shared_from_this<RASSCF> {
 
     std::array<int,3> ras_;
 
-    VectorB occup_;
+    std::vector<double> occup_;
     std::shared_ptr<const Coeff> coeff_;
 
     std::shared_ptr<RASCI> rasci_;
@@ -105,8 +105,8 @@ class RASSCF : public Method, public std::enable_shared_from_this<RASSCF> {
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
 
-    void set_occup(const VectorB& o) { occup_ = o; }
-    double occup(const int i) const { return occup_(i); }
+//  void set_occup(const VectorB& o) { occup_ = o; }
+    double occup(const int i) const { return occup_[i]; }
 
     double energy(const int i) const { return energy_[i]; }
     double energy_av() const { return blas::average(energy_); }

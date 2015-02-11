@@ -173,7 +173,7 @@ static streambuf* backup_stream_;
 static ofstream* ofs_;
 
 void RASSCF::mute_stdcout() {
-  ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
+  ofstream* ofs(new ofstream("rasscf.log",(backup_stream_ ? ios::app : ios::trunc)));
   ofs_ = ofs;
   backup_stream_ = cout.rdbuf(ofs->rdbuf());
 }
@@ -311,11 +311,10 @@ shared_ptr<const Coeff> RASSCF::update_coeff(const shared_ptr<const Matrix> cold
 }
 
 
-#if 0
 shared_ptr<Matrix> RASSCF::form_natural_orbs() {
   // here make a natural orbitals and update the coefficients
   // this effectively updates 1,2RDM and integrals
-  const pair<shared_ptr<Matrix>, VectorB> natorb = fci_->natorb_convert();
+  const pair<shared_ptr<Matrix>, vector<double>> natorb = rasci_->natorb_convert();
   // new coefficients
   coeff_ = update_coeff(coeff_, natorb.first);
   // occupation number of the natural orbitals
@@ -323,7 +322,6 @@ shared_ptr<Matrix> RASSCF::form_natural_orbs() {
   if (natocc_) print_natocc();
   return natorb.first;
 }
-#endif
 
 #if 0
 shared_ptr<const Coeff> RASSCF::semi_canonical_orb() const {

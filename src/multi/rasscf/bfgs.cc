@@ -68,9 +68,16 @@ void RASBFGS::compute() {
  
     cout << "RASBFGS:: check 1" << endl;
 
-//TODO: temporary
-//  const MatView cdata = coeff_->slice(nclosed_, nclosed_+nact_);
-//  half_ = geom_->df()->compute_half_transform(cdata);
+    //diagonalize the RDM of each subspace
+    shared_ptr<Matrix> natorb_mat = x->clone();
+    if (nact_) {
+      // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
+      shared_ptr<const Matrix> natorb = form_natural_orbs();
+      natorb_mat->unit();
+      natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
+    } else {
+      natorb_mat->unit();
+    }
 
     cout << "RASBFGS:: check 2" << endl;
     auto sigma = make_shared<RASRotFile>(nclosed_, nact_, nvirt_, ras_);
@@ -135,6 +142,7 @@ void RASBFGS::compute() {
       rdm1_mat->print("RDM1");
       cout << "RDM2" << endl;
       rasci_->rdm2_av()->print(1.0e-1);
+      cout << "MCFOCK symmetric?" << check_symmetric(mcfock) << endl;
     }
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
@@ -179,7 +187,7 @@ void RASBFGS::compute() {
     Timer extrap(0);
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
-//  *x *= *natorb_mat;
+    *x *= *natorb_mat;
     auto xcopy = x->log(8);
     auto xlog  = make_shared<RASRotFile>(xcopy, nclosed_, nact_, nvirt_, ras_);
     bfgs->check_step(evals, sigma, xlog, /*tight*/false, limited_memory);
