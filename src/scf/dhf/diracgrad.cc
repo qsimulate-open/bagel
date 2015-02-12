@@ -325,11 +325,11 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   TaskQueue<shared_ptr<GradTask>> tq(move(task));
   tq.compute();
 
-  // allreduce
-  grad_->allreduce();
-
   // adds nuclear contributions
   *grad_ += *geom_->compute_grad_vnuc();
+
+  // allreduce
+  grad_->allreduce();
 
 #ifdef LOCAL_TIMING
     mpi__->barrier();

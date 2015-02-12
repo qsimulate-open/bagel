@@ -515,15 +515,17 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
   int i = 0;
   for (auto& a : atoms_) {
     const double ac = a->atom_charge();
-    for (auto& b : atoms_) {
-      if (a == b) continue;
-      const array<double,3> displ = a->displ(b);
-      const double c = b->atom_charge() * ac;
-      const double dist = a->distance(b);
-      const double dist3 = dist*dist*dist;
-      grad->element(0,i) += c*displ[0]/dist3;
-      grad->element(1,i) += c*displ[1]/dist3;
-      grad->element(2,i) += c*displ[2]/dist3;
+    if (i % mpi__->size() == mpi__->rank()) {
+      for (auto& b : atoms_) {
+        if (a == b) continue;
+        const array<double,3> displ = a->displ(b);
+        const double c = b->atom_charge() * ac;
+        const double dist = a->distance(b);
+        const double dist3 = dist*dist*dist;
+        grad->element(0,i) += c*displ[0]/dist3;
+        grad->element(1,i) += c*displ[1]/dist3;
+        grad->element(2,i) += c*displ[2]/dist3;
+      }
     }
     ++i;
   }
