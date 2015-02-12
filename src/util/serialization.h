@@ -41,7 +41,7 @@
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/nvp.hpp>
-#include <boost/serialization/shared_ptr.hpp>
+//#include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/complex.hpp>
 #include <boost/serialization/array.hpp>
 #include <boost/archive/shared_ptr_helper.hpp>
