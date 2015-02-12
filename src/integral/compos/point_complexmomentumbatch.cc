@@ -106,11 +106,7 @@ void Point_ComplexMomentumBatch::perform_VRR(complex<double>* intermediate) {
   for (int ii = 0; ii != prim0_*prim1_; ++ii) {
     // Perform VRR
     int offset_ii = ii*asize_intermediate_;
-    //const double cop = 1.0 / xp_[ii];
     const double cb = xb_[ii];
-    //const complex<double> cxpa = P_[ii*3  ]-basisinfo_[0]->position(0);
-    //const complex<double> cypa = P_[ii*3+1]-basisinfo_[0]->position(1);
-    //const complex<double> czpa = P_[ii*3+2]-basisinfo_[0]->position(2);
     complex<double>* current_data = &intermediate[offset_ii];
 
     const double cxp = xp_[ii];
