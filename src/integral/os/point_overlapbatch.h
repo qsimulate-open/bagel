@@ -45,7 +45,8 @@ class Point_OverlapBatch : public OSIntegral<double,Int_t::Standard> {
     bool diagonal_;
 
   public:
-    Point_OverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, const std::array<double,3> _loc,
+    // TODO Can dummy argument be avoided?
+    Point_OverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, const std::array<double,3> dummy, const std::array<double,3> _loc,
                          std::shared_ptr<StackMem> stack = nullptr)
      : OSIntegral<double,Int_t::Standard>(basis, stack), location_(_loc) { common_init();
        if (*basisinfo_[0] == *basisinfo_[1])
