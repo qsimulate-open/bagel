@@ -323,10 +323,9 @@ shared_ptr<Matrix> RASSCF::form_natural_orbs() {
   return natorb.first;
 }
 
-#if 0
 shared_ptr<const Coeff> RASSCF::semi_canonical_orb() const {
   auto rdm1mat = make_shared<Matrix>(nact_, nact_);
-  copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
+  copy_n(rasci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
   rdm1mat->sqrt();
   rdm1mat->scale(1.0/sqrt(2.0));
   auto ocoeff = coeff_->slice(0, nclosed_);
@@ -334,7 +333,7 @@ shared_ptr<const Coeff> RASSCF::semi_canonical_orb() const {
   auto vcoeff = coeff_->slice(nocc_, nbasis_);
 
   VectorB eig(coeff_->mdim());
-  Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
+  Fock<1> fock(geom_, rasci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
   Matrix trans(nbasis_, nbasis_);
   trans.unit();
   if (nclosed_) {
@@ -347,7 +346,6 @@ shared_ptr<const Coeff> RASSCF::semi_canonical_orb() const {
   trans.copy_block(nocc_, nocc_, nvirt_, nvirt_, vfock);
   return make_shared<Coeff>(*coeff_ * trans);
 }
-#endif
 
 shared_ptr<const Reference> RASSCF::conv_to_ref() const {
   shared_ptr<Reference> out;

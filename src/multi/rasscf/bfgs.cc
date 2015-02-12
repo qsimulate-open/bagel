@@ -54,8 +54,8 @@ void RASBFGS::compute() {
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
-    const shared_ptr<const Coeff> cold = coeff_;
-    const shared_ptr<const Matrix> xold = x->copy();
+//  const shared_ptr<const Coeff> cold = coeff_;
+//  const shared_ptr<const Matrix> xold = x->copy();
 
     // first perform RASCI to obtain RDMs
     if (nact_) {
@@ -82,6 +82,8 @@ void RASBFGS::compute() {
       rasci_->update(coeff_);
       rasci_->compute();
       rasci_->compute_rdm12();
+      const shared_ptr<const Coeff> cold = coeff_;
+      const shared_ptr<const Matrix> xold = x->copy();
     //assert(false); -> this gives the same energy / validates the unitary transformation!
 
     cout << "RASBFGS:: check 2" << endl;
@@ -192,7 +194,7 @@ void RASBFGS::compute() {
     Timer extrap(0);
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
-//  *x *= *natorb_mat;
+    *x *= *natorb_mat;
     auto xcopy = x->log(8);
     auto xlog  = make_shared<RASRotFile>(xcopy, nclosed_, nact_, nvirt_, ras_);
     bfgs->check_step(evals, sigma, xlog, /*tight*/false, limited_memory);
@@ -202,7 +204,21 @@ void RASBFGS::compute() {
     cout << " " << endl;
 
     // restore the matrix from RASRotFile
-    shared_ptr<const Matrix> amat = a->unpack<Matrix>();
+  //shared_ptr<const Matrix> amat = a->unpack<Matrix>();
+    shared_ptr<Matrix> amat = a->unpack<Matrix>();
+    
+    double maxv = 0.0;
+    for (int i = 0; i != nbasis_; ++i) {
+      for (int j = 0; j != i; ++j) {
+        maxv = std::max(maxv,abs(amat->element(i,j)));
+      }
+    }
+    cout << "Offdiagonal maximum (absolute)" << maxv << endl;
+    if (maxv >= 1.0) {
+      assert(false);
+      amat->scale(1.0 / (2.0*maxv) );
+    }
+
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 

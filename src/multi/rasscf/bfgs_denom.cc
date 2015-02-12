@@ -57,8 +57,13 @@ shared_ptr<const RASRotFile> RASBFGS::compute_denom(shared_ptr<const Matrix> cfo
       for (int j = 0; j != nvirt_; ++j) {
       //*target++ = 2.0*occup_[i]*(cfock->element(j+nocc_, j+nocc_)+afock->element(j+nocc_, j+nocc_))
       //          - 2.0*occup_[i]*cfock->element(i+nclosed_, i+nclosed_) - 2.0*qxr->element(i+nclosed_, i);
+      //*target++ = 2.0*rdm1->element(i,i)*(cfock->element(j+nocc_, j+nocc_)+afock->element(j+nocc_, j+nocc_))
+      //          - 2.0*rdm1->element(i,i)*cfock->element(i+nclosed_, i+nclosed_) - 2.0*qxr->element(i+nclosed_, i);
         *target++ = 2.0*rdm1->element(i,i)*(cfock->element(j+nocc_, j+nocc_)+afock->element(j+nocc_, j+nocc_))
                   - 2.0*cfockd->element(i,i) - 2.0*qxr->element(i+nclosed_, i);
+      //*target++ = 2.0*rdm1->element(i,i)*cfock->element(j+nocc_, j+nocc_)
+      //          - 2.0*cfockd->element(i,i) - 2.0*qxr->element(i+nclosed_, i)
+      //          + (i < ras_[0]+ras_[1] ? 2.0*rdm1->element(i,i)*afock->element(j+nocc_, j+nocc_) : 0.0);
       }
     }
   }
@@ -70,8 +75,20 @@ shared_ptr<const RASRotFile> RASBFGS::compute_denom(shared_ptr<const Matrix> cfo
       for (int j = 0; j != nclosed_; ++j) {
       //*target++ = 4.0*(cfock->element(i+nclosed_, i+nclosed_)+afock->element(i+nclosed_, i+nclosed_) - cfock->element(j,j) - afock->element(j,j))
       //          + 2.0*occup_[i]*(cfock->element(j,j)+afock->element(j,j)) - 2.0*occup_[i]*cfock->element(i+nclosed_, i+nclosed_) - 2.0*qxr->element(i+nclosed_, i);
+      //*target++ = 4.0*(cfock->element(i+nclosed_, i+nclosed_)+afock->element(i+nclosed_, i+nclosed_) - cfock->element(j,j) - afock->element(j,j))
+      //          + 2.0*rdm1->element(i,i)*(cfock->element(j,j)+afock->element(j,j)) - 2.0*rdm1->element(i,i)*cfock->element(i+nclosed_, i+nclosed_) - 2.0*qxr->element(i+nclosed_, i);
         *target++ = 4.0*(cfock->element(i+nclosed_, i+nclosed_)+afock->element(i+nclosed_, i+nclosed_) - cfock->element(j,j) - afock->element(j,j))
                   + 2.0*rdm1->element(i,i)*(cfock->element(j,j)+afock->element(j,j)) - 2.0*cfockd->element(i,i) - 2.0*qxr->element(i+nclosed_, i);
+      //*target++ = 4.0*(cfock->element(i+nclosed_, i+nclosed_)+afock->element(i+nclosed_, i+nclosed_) - cfock->element(j,j) - afock->element(j,j))
+      //          + 2.0*rdm1->element(i,i)*cfock->element(j,j) - 2.0*cfockd->element(i,i) - 2.0*qxr->element(i+nclosed_, i)
+      //          + (i < ras_[0]+ras_[1] ? 2.0*rdm1->element(i,i)*afock->element(j,j) : 0.0);
+      //if(i < ras_[0]+ras_[1]) {
+      //  *target++ = 4.0*(cfock->element(i+nclosed_, i+nclosed_)+afock->element(i+nclosed_, i+nclosed_) - cfock->element(j,j) - afock->element(j,j))
+      //            + 2.0*rdm1->element(i,i)*(cfock->element(j,j)+afock->element(j,j)) - 2.0*cfockd->element(i,i) - 2.0*qxr->element(i+nclosed_, i);
+
+      //} else {
+      //  *target++ = 4.0*(cfock->element(i+nclosed_, i+nclosed_)+afock->element(i+nclosed_, i+nclosed_)) - 4.0*(cfock->element(j,j)+afock->element(j,j));
+      //}
        //VERIFIED!
       }
     }

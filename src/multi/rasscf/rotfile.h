@@ -223,12 +223,17 @@ class RASRotationMatrix {
         for (int j = 0; j != ras_[1]; ++j) {
           out->element(i+nclosed_+ras_[0]+ras_[1],j+nclosed_+ras_[0]) = -ele_aa23(j,i);
         }
-      out->print("Rotation Matrix before anti-sym",nbasis);
-      for (int i = 0; i != nbasis; ++i) {
-        for (int j = 0; j <= i; ++j) {
-          out->element(j, i) = - detail::conj(out->element(i, j));
-        }
-      }
+    //out->print("Rotation Matrix before anti-sym",nbasis);
+    //for (int i = 0; i != nbasis; ++i) {
+    //  for (int j = 0; j <= i; ++j) {
+    //    if (std::abs(out->element(i,j)) < 1.0e-13) {
+    //      out->element(i, j) = 0.0;
+    //      out->element(j, i) = 0.0;
+    //    } else {
+    //      out->element(j, i) = - detail::conj(out->element(i, j));
+    //    }
+    //  }
+    //}
       out->print("Rotation Matrix after anti-sym",nbasis);
       return out;
     }

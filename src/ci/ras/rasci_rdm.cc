@@ -711,6 +711,7 @@ pair<shared_ptr<Matrix>, vector<double>> RASCI::generate_natural_orbitals() {
     cout << "nat occ(" << i << ") = " << setw(10) << setprecision(6) << outv[i] << endl;
   }
   
+  outm->purify_unitary();
   outm->print("TRANSFORMATION MATRIX");
 
   return {outm, outv}; //TEMP

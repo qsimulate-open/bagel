@@ -78,6 +78,10 @@ void RASBFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> a
     //-2 cfock_iu * D_ur
     dgemm_("T", "N", nclosed_, nact_, nact_, -2.0, cfock->element_ptr(nclosed_,0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_);
   }
+//double* target = sigma->ptr_ca();
+//for (int i = 0; i != nclosed_*nact_; ++i) {
+//  *target *= -1.0; 
+//}
 }
 
 void RASBFGS::grad_aa12(shared_ptr<const Matrix> mcfock, shared_ptr<RASRotFile> sigma) const {
