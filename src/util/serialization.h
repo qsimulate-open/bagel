@@ -77,14 +77,14 @@ namespace bagel {
 namespace boost {
   namespace serialization {
 
+// eariler BOOST does not have serialization of std::shared_ptr
+#if BOOST_VERSION < 105600
     template<class Archive, class T>
     inline void serialize(Archive& ar, std::shared_ptr<T>& t, const unsigned int version) {
       BOOST_STATIC_ASSERT(tracking_level<T>::value != track_never);
       split_free(ar, t, version);
     }
 
-// eariler BOOST does not have serialization of std::shared_ptr
-#if BOOST_VERSION < 105600
     // base, non-const classes
     template<class Archive, class T, typename = void>
     struct save_impl {
@@ -124,7 +124,6 @@ namespace boost {
       T* u = t.get();
       save_impl<Archive, T>::save(ar, u);
     }
-#endif
 
     // base, non-const classes
     template<class Archive, class T, typename = void>
@@ -176,9 +175,7 @@ namespace boost {
     inline void load(Archive& ar, std::shared_ptr<T>& t, const unsigned int) {
       load_impl<Archive, T>::load(ar, t);
     }
-
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
+#endif
 
     // serialization of weak_ptr
     template<class Archive, class T>
