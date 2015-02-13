@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: current.h
+// Filename: moprint.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
@@ -24,38 +24,38 @@
 //
 
 
-#ifndef __SRC_PROP_CURRENT_H
-#define __SRC_PROP_CURRENT_H
+#ifndef __SRC_PROP_MOPRINT_H
+#define __SRC_PROP_MOPRINT_H
 
 #include <src/wfn/method.h>
 
 namespace bagel {
 
-class Current : public Method {
+class MOPrint : public Method {
 
-  friend class CurrentTask;
+  friend class MOPrintTask;
 
   protected:
     bool relativistic_;
-    bool paramagnetic_;
-    bool diamagnetic_;
+    bool cubefile_;
     size_t ngrid_;
 
     std::array<double,3> inc_size_;
     std::array<size_t,3> ngrid_dim_;
+    std::vector<size_t,3> orbitals_;
 
-    std::shared_ptr<const ZMatrix> density_;
+    std::vector<std::shared_ptr<const ZMatrix>> density_;
 
     std::vector<double> coords_;
 
-    // size = 3*(ngrid_+1); last 3 entries give the total integrated current
-    std::vector<std::complex<double>> currents_;
+    // size = ngrid_+1; last entry gives the total integrated charge
+    std::vector<double> points_;
 
     void computepoint(const size_t pos);
     void print() const;
 
   public:
-    Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re);
+    MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re);
 
     void compute() override;
 
