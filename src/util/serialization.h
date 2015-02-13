@@ -83,8 +83,8 @@ namespace boost {
       split_free(ar, t, version);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// eariler BOOST does not have serialization of std::shared_ptr
+#if BOOST_VERSION < 105600
     // base, non-const classes
     template<class Archive, class T, typename = void>
     struct save_impl {
@@ -124,8 +124,7 @@ namespace boost {
       T* u = t.get();
       save_impl<Archive, T>::save(ar, u);
     }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
+#endif
 
     // base, non-const classes
     template<class Archive, class T, typename = void>
