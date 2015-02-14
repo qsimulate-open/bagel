@@ -32,6 +32,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <type_traits>
+#include <boost/version.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/complex.hpp>
 #include <boost/serialization/bitset.hpp>
@@ -41,11 +42,16 @@
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/nvp.hpp>
-//#include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/complex.hpp>
 #include <boost/serialization/array.hpp>
 #include <boost/archive/shared_ptr_helper.hpp>
 #include <boost/property_tree/ptree_serialization.hpp>
+
+#if BOOST_VERSION >= 105600
+#include <boost/serialization/shared_ptr.hpp>
+#include <boost/serialization/weak_ptr.hpp>
+#include <boost/serialization/unordered_map.hpp>
+#endif
 
 // to avoid duplicate serialize functions, we need to include this here
 #include <src/util/math/btas_interface.h>
@@ -76,6 +82,28 @@ namespace bagel {
 
 namespace boost {
   namespace serialization {
+
+// as of 1.57 there is a problem with serialization of std::shared_ptr<const T>
+#if BOOST_VERSION >= 105600
+    template<class Archive, class T>
+    inline void serialize(Archive& ar, std::shared_ptr<const T>& t, const unsigned int version) {
+      BOOST_STATIC_ASSERT(tracking_level<T>::value != track_never);
+      split_free(ar, t, version);
+    }
+
+    template<class Archive, class T>
+    inline void save(Archive& ar, std::shared_ptr<const T>& t, const unsigned int version) {
+      auto tt =  std::const_pointer_cast<T>(t);
+      save(ar, tt, version);
+    }
+
+    template<class Archive, class T>
+    inline void load(Archive& ar, std::shared_ptr<const T>& t, const unsigned int version) {
+      std::shared_ptr<T> tt;
+      load(ar, tt, version);
+      t = tt;
+    }
+#else
 
     template<class Archive, class T>
     inline void serialize(Archive& ar, std::shared_ptr<T>& t, const unsigned int version) {
@@ -222,8 +250,15 @@ namespace boost {
       }
     }
 
-
     /////////////////////////////////////////////////////////////////////////////////////////////////////
+    // serialization of std::array
+#ifndef BOOST_SERIALIZATION_STD_ARRAY
+    template<class Archive, typename T, size_t N>
+    void serialize(Archive& ar, std::array<T,N>& t, const unsigned int) {
+      ar & bagel::make_array(t.data(), N);
+    }
+#endif
+#endif
 
     // serialization of tuple
     template <size_t N>
@@ -245,14 +280,6 @@ namespace boost {
     void serialize(Archive& ar, std::tuple<Args...>& t, const unsigned int version) {
       Serialize<sizeof...(Args)>::serialize(ar, t, version);
     }
-
-    // serialization of std::array
-#ifndef BOOST_SERIALIZATION_STD_ARRAY
-    template<class Archive, typename T, size_t N>
-    void serialize(Archive& ar, std::array<T,N>& t, const unsigned int) {
-      ar & bagel::make_array(t.data(), N);
-    }
-#endif
 
   }
 }
