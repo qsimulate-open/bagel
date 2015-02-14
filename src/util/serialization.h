@@ -41,7 +41,7 @@
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/nvp.hpp>
-#include <boost/serialization/shared_ptr.hpp>
+//#include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/complex.hpp>
 #include <boost/serialization/array.hpp>
 #include <boost/archive/shared_ptr_helper.hpp>
@@ -77,8 +77,6 @@ namespace bagel {
 namespace boost {
   namespace serialization {
 
-// eariler BOOST does not have serialization of std::shared_ptr
-#if BOOST_VERSION < 105600
     template<class Archive, class T>
     inline void serialize(Archive& ar, std::shared_ptr<T>& t, const unsigned int version) {
       BOOST_STATIC_ASSERT(tracking_level<T>::value != track_never);
@@ -175,7 +173,6 @@ namespace boost {
     inline void load(Archive& ar, std::shared_ptr<T>& t, const unsigned int) {
       load_impl<Archive, T>::load(ar, t);
     }
-#endif
 
     // serialization of weak_ptr
     template<class Archive, class T>
