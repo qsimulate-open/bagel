@@ -86,19 +86,18 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   mat->print("1RDM",norb_);
 //rdm1->print(1.0e-6);
 
-  //Symmetry check
+  //RDM2 symmetrize (out-of-excitation free parts are copied)
   {
-    for (int l = 0; l != norb_; ++l)
-    for (int k = 0; k != norb_; ++k)
-    for (int j = 0; j != norb_; ++j)
-    for (int i = 0; i != norb_; ++i) {
-      double ijkl = rdm2->element(i,j,k,l);
-      double klij = rdm2->element(k,l,i,j);
-      double jilk = rdm2->element(j,i,l,k);
-      double lkji = rdm2->element(l,k,j,i);
-      if( abs(ijkl-klij) > 1.0e-10) assert(false); //cout << "ERROR1" << endl;
-      if( abs(ijkl-jilk) > 1.0e-10) assert(false); //cout << "ERROR2" << endl;
-      if( abs(ijkl-lkji) > 1.0e-10) assert(false); //cout << "ERROR3" << endl;
+    for (int i = 0, ij = 0; i != norb_; ++i) {
+      for (int j = 0; j != norb_; ++j, ++ij) {
+        for (int k = 0, kl = 0; k != norb_; ++k) {
+          for (int l = 0; l != norb_; ++l, ++kl) {
+            if (kl > ij) {
+              rdm2->element(i,j,k,l) = rdm2->element(k,l,i,j);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -136,6 +135,49 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
     debug->print(1.0e-8);
   }
 
+  //Symmetry check
+  {//RDM1
+    for (int j = 0; j != norb_; ++j)
+    for (int i = 0; i != norb_; ++i) {
+      double ij = rdm1->element(i,j);
+      double ji = rdm1->element(j,i);
+      if( abs(ij-ji) > 1.0e-10) { //assert(false); //cout << "ERROR1" << endl;
+        cout << "R1: " << ij << " " << ji << endl;
+      }
+    }
+  }
+  {//RDM2 
+    for (int l = 0; l != norb_; ++l)
+    for (int k = 0; k != norb_; ++k)
+    for (int j = 0; j != norb_; ++j)
+    for (int i = 0; i != norb_; ++i) {
+      double ijkl = rdm2->element(i,j,k,l);
+      double klij = rdm2->element(k,l,i,j);
+      double jilk = rdm2->element(j,i,l,k);
+      double lkji = rdm2->element(l,k,j,i);
+      if( abs(ijkl-klij) > 1.0e-10) { //assert(false); //cout << "ERROR1" << endl;
+        cout << "W1: " << i << j << k << l << ":" << ijkl << " /= "  
+                       << k << l << i << j << ":" << klij << endl;
+      }
+      if( abs(ijkl-jilk) > 1.0e-10) { // assert(false); //cout << "ERROR2" << endl;
+        cout << "W2: " << i << j << k << l << ":" << ijkl << " /= "
+                       << j << i << l << k << ":" << jilk << endl;
+      }
+      if( abs(ijkl-lkji) > 1.0e-10) { // assert(false); //cout << "ERROR3" << endl;
+        cout << "W3: " << i << j << k << l << ":" << ijkl << " " << lkji << endl;
+      }
+    }
+  }
+
+  {//RDM2 print
+    for (int l = 0; l != norb_; ++l)
+    for (int k = 0; k != norb_; ++k)
+    for (int j = 0; j != norb_; ++j)
+    for (int i = 0; i != norb_; ++i) {
+      double ijkl = rdm2->element(i,j,k,l);
+      cout << "2RDM: " << i << j << k << l << ":" << ijkl << endl;
+    }
+  }
 
   //Energy calculation
   cout << "RASCI: Energy calculated from RDM:" << endl;
@@ -169,6 +211,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   //Energy print
   cout << "Total energy = " << nuc_core + e1 + e2 << endl;
 
+    assert(false);
 //return compute_rdm12_last_step(dbra, dket, cbra);
   return tie(rdm1, rdm2);
 }
@@ -182,11 +225,13 @@ void RASCI::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
 
   for (auto& ispace : *det->stringspaceb()) { 
     for (size_t ib = 0; ib != ispace->size(); ++ib) {
-      const bitset<nbit__> bbit = ispace->strings(ib);
+    //const bitset<nbit__> bbit = ispace->strings(ib);
+      const auto bbit = ispace->strings(ib);
       for (auto& jspace : *det->stringspacea()) {
         const size_t offset = jspace->offset();
         for (size_t ja = 0; ja != jspace->size(); ++ja) { 
           for (auto& phi : det->phia(ja+offset)) {
+            assert(phi.target == ja+offset);
             const double sign = static_cast<double>(phi.sign);
             const auto sbit = det->string_bits_a(phi.source);
             const auto tbit = det->string_bits_a(phi.target);
@@ -212,7 +257,8 @@ void RASCI::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
   for (auto& ispace : *det->stringspacea()) { // alpha determinant space
   //const size_t offset = ispace->offset();
     for (size_t ia = 0; ia != ispace->size(); ++ia) { // determinants associated with a given space
-      const bitset<nbit__> abit = ispace->strings(ia);
+    //const bitset<nbit__> abit = ispace->strings(ia);
+      const auto abit = ispace->strings(ia);
 
     //for (auto& phi : det->uncompressed_phib(ia+offset)) {
       for (auto& jspace : *det->stringspaceb()) {
@@ -220,6 +266,7 @@ void RASCI::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) cons
         for (size_t jb = 0; jb != jspace->size(); ++jb) { // determinants associated with a given space
 
           for (auto& phi : det->phib(jb+offset)) {
+            assert(phi.target == jb+offset);
             const double sign = static_cast<double>(phi.sign);
             const auto sbit = det->string_bits_b(phi.source);
             const auto tbit = det->string_bits_b(phi.target);
@@ -328,8 +375,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
                   new2->element(k,l,i,j) += cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit);
                 //new2->element(i,j,k,l) += cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit);
                 //if(abs(cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit)) > 0.01) {
-                    if(i == 0 && l == 0 && j == 5 && k == 5) cout << "0550 : " << cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit) << endl;
-                    if(i == 5 && l == 5 && j == 0 && k == 0) cout << "5005 : " << cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit) << endl;
                 //}
                 }
               }
@@ -340,6 +385,17 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
  
       }
     }
+    // put in diagonal into 2RDM
+    // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
+    for (int i = 0; i != norb_; ++i) {
+      for (int k = 0; k != norb_; ++k) {
+        for (int j = 0; j != norb_; ++j) {
+          new2->element(j,k,k,i) -= rdm1->element(j,i);
+        } 
+      }
+    }
+
+  cout << "2rdm done.." << endl;
  
   }
 /*
@@ -393,15 +449,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   daxpy_(norb_*norb_*norb_*norb_, 1.0, &rdm2->element(0,0,0,0), 1, &new2->element(0,0,0,0), 1);
 
 */
-    // put in diagonal into 2RDM
-    // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
-    for (int i = 0; i != norb_; ++i)
-      for (int k = 0; k != norb_; ++k)
-        for (int j = 0; j != norb_; ++j) {
-          new2->element(j,k,k,i) -= rdm1->element(j,i);
-        }
-
-  cout << "2rdm done.." << endl;
 
 //return tie(rdm1, rdm2);
   return tie(rdm1, new2);
@@ -427,6 +474,7 @@ void RASCI::sigma_2a1_new(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) 
             const auto kl = phi.ij;
             if(!det->allowed(tbit,bbit)) continue;
             for (auto& phi2 : det->phia(phi.source)) {
+              assert(phi2.target == phi.source);
               const double sign2 = static_cast<double>(phi2.sign);
               const auto sbit = det->string_bits_a(phi2.source);
               const auto ij = phi2.ij;
@@ -448,7 +496,8 @@ void RASCI::sigma_2a2_new(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) 
 
   for (auto& ispace : *det->stringspacea()) { 
     for (size_t ia = 0; ia != ispace->size(); ++ia) {
-      const bitset<nbit__> abit = ispace->strings(ia); //fix alpha-det
+    //const bitset<nbit__> abit = ispace->strings(ia); //fix alpha-det
+      const auto abit = ispace->strings(ia);
       for (auto& jspace : *det->stringspaceb()) {
         const size_t offset = jspace->offset(); //scan through beta-det
         for (size_t jb = 0; jb != jspace->size(); ++jb) { 
@@ -466,8 +515,8 @@ void RASCI::sigma_2a2_new(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) 
               const auto ij = phi2.ij;
               if(!det->allowed(abit,sbit)) continue;
               d->data(ij + kl*norb_*norb_)->element(sbit,abit) += sign * sign2 * cc->element(tbit,abit);
-              if(ij == 5 && kl == 30) cout << "0550 : " << sign * sign2 * cc->element(tbit,abit) << endl;
-              if(ij == 30 && kl == 5) cout << "5005 : " << sign * sign2 * cc->element(tbit,abit) << endl;
+            //if(ij == 5 && kl == 30) cout << "0550 : " << sign * sign2 * cc->element(tbit,abit) << endl;
+            //if(ij == 30 && kl == 5) cout << "5005 : " << sign * sign2 * cc->element(tbit,abit) << endl;
             }
           }
         }
