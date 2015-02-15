@@ -92,7 +92,7 @@ namespace boost {
     }
 
     template<class Archive, class T>
-    inline void save(Archive& ar, std::shared_ptr<const T>& t, const unsigned int version) {
+    inline void save(Archive& ar, const std::shared_ptr<const T>& t, const unsigned int version) {
       auto tt =  std::const_pointer_cast<T>(t);
       save(ar, tt, version);
     }
