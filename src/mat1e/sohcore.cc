@@ -31,14 +31,14 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SOHcore)
 
-SOHcore::SOHcore(const shared_ptr<const Molecule> geom, const shared_ptr<const Hcore> h)
-            : ZMatrix(2 * geom->nbasis(), 2 * geom->nbasis()), geom_(geom), hcore_(h) {
+SOHcore::SOHcore(shared_ptr<const Molecule> geom, shared_ptr<const Hcore> h)
+            : ZMatrix(2*geom->nbasis(), 2*geom->nbasis()), hcore_(h) {
   form_sohcore();
 }
 
 void SOHcore::form_sohcore() {
 
-  const int nbasis = geom_->nbasis();
+  const int nbasis = ndim()/2;
   const complex<double> real(1.0, 0.0);
   const complex<double> imag(0.0, 1.0);
 

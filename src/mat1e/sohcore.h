@@ -35,7 +35,6 @@ namespace bagel {
 
 class SOHcore : public ZMatrix {
   protected:
-    std::shared_ptr<const Molecule> geom_;
     std::shared_ptr<const Hcore> hcore_;
 
     void form_sohcore();
@@ -45,12 +44,12 @@ class SOHcore : public ZMatrix {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<ZMatrix>(*this) & geom_ & hcore_;
+      ar & boost::serialization::base_object<ZMatrix>(*this) & hcore_;
     }
 
   public:
     SOHcore() { }
-    SOHcore(const std::shared_ptr<const Molecule> geom, const std::shared_ptr<const Hcore> h);
+    SOHcore(std::shared_ptr<const Molecule> geom, std::shared_ptr<const Hcore> h);
 
 };
 
