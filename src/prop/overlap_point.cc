@@ -30,9 +30,7 @@ using namespace std;
 using namespace bagel;
 
 template <typename MatType, typename IntType, class Enable>
-Overlap_Point_<MatType, IntType, Enable>::Overlap_Point_(shared_ptr<const Geometry> g, const array<double,3> loc) : geom_(g), location_(loc) {
-  assert(geom_->magnetism());
-}
+Overlap_Point_<MatType, IntType, Enable>::Overlap_Point_(shared_ptr<const Geometry> g, const array<double,3> loc) : geom_(g), location_(loc) { }
 
 
 template <typename MatType, typename IntType, class Enable>

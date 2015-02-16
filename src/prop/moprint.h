@@ -42,7 +42,7 @@ class MOPrint : public Method {
 
     std::array<double,3> inc_size_;
     std::array<size_t,3> ngrid_dim_;
-    std::vector<size_t,3> orbitals_;
+    std::vector<int> orbitals_;
 
     std::vector<std::shared_ptr<const ZMatrix>> density_;
 

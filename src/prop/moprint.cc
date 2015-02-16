@@ -38,26 +38,25 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
                  const std::shared_ptr<const Reference> re) : Method(idata, geom, re) {
 
   // For now, disable for GIAO wavefunctions
-  assert(!geom_->magnetism());
+  //assert(!geom_->magnetism());
   auto newref = dynamic_pointer_cast<const RelReference>(ref_);
-  if (!newref) {
+  if (newref) {
     relativistic_ = newref->rel();
-    assert(relativistic_);
+    //assert(relativistic_);
   } else {
     relativistic_ = false;
   }
 
   // Determine which MOs to get
-  vector<int> orbitals_;
   const shared_ptr<const PTree> iorb = idata_->get_child_optional("orbitals");
 
   if (iorb)
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
     for (auto& i : *iorb)
-      active_indices.push_back(lexical_cast<int>(i->data()) - 1);
+      orbitals_.push_back(lexical_cast<int>(i->data()) - 1);
   else
     for (int i=0; i!=geom_->nbasis(); ++i)
-      active_indices.push_back(i);
+      orbitals_.push_back(i);
 
   // Determine coordinates where current will be computed
   const bool angstrom = idata->get<bool>("angstrom", false);
@@ -86,16 +85,28 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
   assert(ngrid_*3 == coords_.size());
 
   // Form density matrices
-  const double scale = relativistic_ ? 1.0 : 2.0;
-  for (int i=0; i!=orbitals_.size(); ++i)
-    density_.back() = newref->relcoeff()->form_density_rhf(1, orbitals[i], scale);
-  density_.push_back(newref->relcoeff()->form_density_rhf(newref->nclosed(), 0, scale));
+  if (newref) {
+    const double scale = relativistic_ ? 1.0 : 2.0;
+    for (int i=0; i!=orbitals_.size(); ++i) {
+      density_.push_back(newref->relcoeff()->form_density_rhf(1, orbitals_[i], scale));
+    }
+    density_.push_back(newref->relcoeff()->form_density_rhf(newref->nclosed(), 0, scale));
+  } else {
+    // TODO Optimize - We shouldn't be storing ZMatrices with the imaginary parts all zero (let alone re-allocating them...)
+    for (int i=0; i!=orbitals_.size(); ++i) {
+      density_.push_back(make_shared<ZMatrix>(*ref_->coeff()->form_density_rhf(1, orbitals_[i]), 1.0));
+    }
+    density_.push_back(make_shared<ZMatrix>(*ref_->coeff()->form_density_rhf(ref_->nclosed(), 0), 1.0));
+  }
+
 
   // TODO NONREL version, also make sure it is okay with striped vs. block coefficients...
   // TODO Should combine the spin-up and spin-down components of relativistic MOs...
 
   const string mtype = relativistic_ ? "relativistic" : "non-relativistic";
   cout << "Printing " << mtype << " MO densities at " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << ". " << endl;
+
+  if (relativistic_) cout << "Caution:  Currently orbital printing ignores the small components of relativistic MOs."  << endl;
 
   cout << endl;
 
@@ -118,6 +129,7 @@ namespace bagel {
 
 void MOPrint::compute() {
 
+  assert(density_.size() == orbitals_.size()+1);
   // The last Task will compute integrated total charge
   TaskQueue<MOPrintTask> task(ngrid_+1);
   points_.resize(ngrid_*(orbitals_.size()+1), 0.0);
@@ -130,31 +142,31 @@ void MOPrint::compute() {
 
   mpi__->allreduce(points_.data(), points_.size());
   print();
+  assert(density_.size() == orbitals_.size()+1);
 
 }
 
 
 void MOPrint::computepoint(const size_t pos) {
+  assert(density_.size() == orbitals_.size()+1);
   // TODO avoid overhead?  This is repeated for each point
-  vector<complex<double>> out = {};
-  out.resize(orbitals_.size() + i);
 
   shared_ptr<ZMatrix> ao_density;
   shared_ptr<ZMatrix> input_ovlp;
 
   if (pos == ngrid_) {
     auto ovlp = make_shared<Overlap>(geom_);
-    input_ovlp = make_shared<ZMatrix>(ovlp->compute(), 1.0);
+    input_ovlp = make_shared<ZMatrix>(*ovlp, 1.0);
   } else {
     array<double,3> tmp = {{ coords_[3*pos], coords_[3*pos+1], coords_[3*pos+2] }};
     auto ovlp = make_shared<Overlap_Point>(geom_, tmp);
-    input_ovlp = make_shared<ZMatrix>(ovlp->compute(), 1.0);
+    input_ovlp = make_shared<ZMatrix>(*ovlp->compute(), 1.0);
   }
 
   // First build the current matrix in AO basis
   if (relativistic_) {
     const int n = geom_->nbasis();
-    ao_density[0] = make_shared<ZMatrix>(4*n, 4*n);
+    ao_density = make_shared<ZMatrix>(4*n, 4*n);
 
     const complex<double> re( 0.1,  0.0);
     const complex<double> im( 0.0,  1.0);
@@ -162,25 +174,28 @@ void MOPrint::computepoint(const size_t pos) {
     // Assumes RMB basis
     ao_density->add_block( re, 0*n, 0*n, n, n, *input_ovlp);
     ao_density->add_block( re, 1*n, 1*n, n, n, *input_ovlp);
-    assert(false);
     // TODO Need to fill in the small component blocks too - requires point_kinetic, I guess?  Could also use Small1e<Overlap_point>...
   } else {
-    ao_density = make_shared<ZMatrix>(input_ovlp);
+    ao_density = make_shared<ZMatrix>(*input_ovlp);
   }
 
   // Now compute total MO density using AO contributions
-  for (int i=0; i<=density_.size(); ++i)
-    out[i] = density_[i]->dot_product(*ao_density);
+  for (int i=0; i!=density_.size(); ++i) {
+    const complex<double> out = density_[i]->dot_product(*ao_density);
+    assert(std::abs(std::imag(out)) < 1.0e-8);
+    points_[(orbitals_.size()+1)*pos+i] = std::real(out);
+  }
 
-  points_[(orbitals_.size()+1)*pos+i] = out[i];
-
+  assert(density_.size() == orbitals_.size()+1);
 }
 
 
 void MOPrint::print() const {
-  array<complex<double>,3> current_sum = {{ 0.0, 0.0, 0.0 }};
+  assert(density_.size() == orbitals_.size()+1);
+  vector<double> density_sum = {};
+  density_sum.resize(density_.size());
   cout << fixed << setprecision(10);
-  cout << "   x-coord        y-coord        z-coord           Re(x-current)  Re(y-current)  Re(z-current)       Im(x-current)  Im(y-current)  Im(z-current)" << endl;
+  cout << "   x-coord        y-coord        z-coord           Orbital 1      Orbital 2      Orbital 3           Orbital 4      Orbital 5      Orbital 6    " << endl;
   for (int i=0; i!=ngrid_; ++i) {
     cout << ((coords_[3*i+0] < 0) ? "" : " ") << coords_[3*i+0] << "  "
          << ((coords_[3*i+1] < 0) ? "" : " ") << coords_[3*i+1] << "  "
@@ -192,32 +207,12 @@ void MOPrint::print() const {
          //<< ((imag(points_[3*i+0]) < 0) ? "" : " ") << imag(points_[3*i+0]) << "  "
          //<< ((imag(points_[3*i+1]) < 0) ? "" : " ") << imag(points_[3*i+1]) << "  "
          << endl;
-     current_sum[0] += points_[3*i+0];
-     //current_sum[1] += points_[3*i+1];
-     //current_sum[2] += points_[3*i+2];
+     density_sum[0] += points_[3*i+0];
+     //density_sum[1] += points_[3*i+1];
+     //density_sum[2] += points_[3*i+2];
   }
 
-  cout << endl << "Sum of all gridpoints = ( " << current_sum[0] << ", " << current_sum[1] << ", " << current_sum[2] << " ). " << endl << endl;;
-
-  // TODO some of this should be moved out of the ``print'' function
-  // determine if the gridpoints form a flat plane
-  array<bool,3> single;
-  for (int i=0; i!=3; ++i) single[i] = (ngrid_dim_[i] == 1);
-  int direction = -1;
-  if (single[0] && !single[1] && !single[2]) direction = 0;
-  if (!single[0] && single[1] && !single[2]) direction = 1;
-  if (!single[0] && !single[1] && single[2]) direction = 2;
-
-  // report integrated current through that plane
-  if (direction != -1) {
-    double area = 1.0;
-    for (int i=0; i!=3; ++i)
-      if (i != direction)
-        area *= inc_size_[i];
-    const array<string,3> plane = {{ "yz", "xz", "xy" }};
-    const complex<double> int_current = current_sum[direction]*area*au2coulomb__/au2second__*1.0e9;
-    cout << endl << "Integrated current through the selected slice of the " << plane[direction] << " plane = " << int_current << " nA." << endl << endl;
-  }
+  cout << endl << "Sum of all gridpoints = ( " << density_sum[0] << ", " << density_sum[1] << ", " << density_sum[2] << " ). " << endl << endl;;
 
   cout << endl << "Orbital density integrated over all space = ( " << points_[3*ngrid_+0] << " ). " << endl << endl;;
 
