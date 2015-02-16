@@ -277,6 +277,7 @@ void FormSigmaRAS::sigma_ab(const RASCivecView cc, RASCivecView sigma, const dou
               reduced_phi.emplace_back(phi.source, phi.sign, o);
             }
           }
+          cout << "   reduced block.." << endl;
 
           if (reduced_phi.empty()) continue;
 

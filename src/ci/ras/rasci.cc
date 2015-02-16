@@ -36,6 +36,7 @@ RASCI::RASCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_
  : Method(idat, g, r) {
   common_init();
   update(ref_->coeff());
+  cout << "RASCI constructor done.. " << endl;
 }
 
 void RASCI::common_init() {
@@ -66,6 +67,7 @@ void RASCI::common_init() {
   }
   cout << "RASCI:: check1a.." << endl;
   ref_ = ref_->set_ractive(acts[0], acts[1], acts[2]);
+  cout << "RASCI:: check1b.." << endl;
   ncore_ = ref_->nclosed();
 
   cout << "RASCI:: check2.." << endl;
@@ -198,12 +200,17 @@ void RASCI::generate_guess(const int nspin, const int nstate, shared_ptr<RASDvec
     if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
     done.push_back(open_bit);
 
+    cout << "check" << endl;
     pair<vector<tuple<bitset<nbit__>, bitset<nbit__>, int>>, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
+    cout << "spin-adapt" << endl;
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
       out->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
+      cout << "element" << endl;
     }
+    cout << "element fn done" << endl;
     out->data(oindex)->spin_decontaminate();
+    cout << "spin-decon" << endl;
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << print_bit(alpha&beta, det()->norb()) << " open " << setw(20) << print_bit(open_bit, det()->norb()) << right << endl;
@@ -221,6 +228,7 @@ void RASCI::generate_guess(const int nspin, const int nstate, shared_ptr<RASDvec
 
 // returns seed determinants for initial guess
 vector<pair<bitset<nbit__> , bitset<nbit__>>> RASCI::detseeds(const int ndet) {
+  cout << "detseeds start" << endl;
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
   for (int i = 0; i != ndet; ++i) tmp.emplace(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0)));
 
@@ -242,6 +250,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> RASCI::detseeds(const int ndet) {
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);
+  cout << "detseeds end" << endl;
   return out;
 }
 
@@ -253,6 +262,7 @@ void RASCI::print_header() const {
 
 
 void RASCI::compute() {
+  cout << "RASCI-compute.." << endl;
   Timer pdebug(0);
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
@@ -260,12 +270,16 @@ void RASCI::compute() {
 
   // Creating an initial CI vector
   cc_ = make_shared<RASDvec>(det_, nstate_);
+  cout << "RASCI-initial CI vec.." << endl;
 
   // find determinants that have small diagonal energies
-  if (nguess_ <= nstate_)
+  if (nguess_ <= nstate_) {
+    cout << "RASCI-generate guess.." << endl;
     generate_guess(nelea_-neleb_, nstate_, cc_);
-  else
+  } else {
+    cout << "RASCI-model guess.." << endl;
     model_guess(cc_);
+  }
   pdebug.tick_print("guess generation");
 
   // nuclear energy retrieved from geometry
@@ -356,6 +370,8 @@ void RASCI::compute() {
 
   //RDM
 //int istate = 0;
+//compute_rdm12();
+//assert(false);
 //compute_rdm12(cc_->data(istate), cc_->data(istate));
 //assert(false);
 

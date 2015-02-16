@@ -211,7 +211,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   //Energy print
   cout << "Total energy = " << nuc_core + e1 + e2 << endl;
 
-    assert(false);
 //return compute_rdm12_last_step(dbra, dket, cbra);
   return tie(rdm1, rdm2);
 }

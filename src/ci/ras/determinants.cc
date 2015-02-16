@@ -101,9 +101,11 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
       if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
 
       for (int nholes = 0; nholes <= max_holes_; ++nholes) {
+        if(nholes == 1) continue;
         for (int nha = nholes; nha >= 0; --nha) {
           const int nhb = nholes - nha;
           for (int npart = 0; npart <= max_particles_; ++npart) {
+            if(npart == 1) continue;
             for (int npa = npart; npa >= 0; --npa) {
               const int npb = npart - npa;
 

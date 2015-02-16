@@ -83,11 +83,14 @@ class RASDeterminants : public Determinants_base<RASString>,
     const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
 
     const bool allowed(const int nha, const int nhb, const int npa, const int npb) const
-      { return ( (nha + nhb) <= max_holes_ && (npa + npb) <= max_particles_ ); }
+      { return ( (nha + nhb) <= max_holes_ && (npa + npb) <= max_particles_ 
+                 && (nha+nhb) != 1 && (npa+npb) != 1 ); }
     const bool allowed(const std::bitset<nbit__> abit, const std::bitset<nbit__> bbit) const
-      { return (nholes(abit) + nholes(bbit)) <= max_holes_ && (nparticles(abit) + nparticles(bbit)) <= max_particles_; }
+      { return (nholes(abit) + nholes(bbit)) <= max_holes_ && (nparticles(abit) + nparticles(bbit)) <= max_particles_ 
+            && (nholes(abit) + nholes(bbit)) != 1          && (nparticles(abit) + nparticles(bbit)) != 1 ; }
     const bool allowed(const std::shared_ptr<const RASString> alpha, const std::shared_ptr<const RASString> beta) const
-      { return (beta->nholes() + alpha->nholes()) <= max_holes_ && (beta->nparticles() + alpha->nparticles()) <= max_particles_; }
+      { return (beta->nholes() + alpha->nholes()) <= max_holes_ && (beta->nparticles() + alpha->nparticles()) <= max_particles_
+            && (beta->nholes() + alpha->nholes()) != 1          && (beta->nparticles() + alpha->nparticles()) != 1; }
 
     template <int spin>
     const std::vector<std::shared_ptr<const RASString>> allowed_spaces(std::shared_ptr<const RASString> sp) const {
