@@ -101,17 +101,23 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
       if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
 
       for (int nholes = 0; nholes <= max_holes_; ++nholes) {
-        if(nholes == 1) continue;
+//      if(nholes == 1) continue;
         for (int nha = nholes; nha >= 0; --nha) {
           const int nhb = nholes - nha;
           for (int npart = 0; npart <= max_particles_; ++npart) {
-            if(npart == 1) continue;
+//          if(npart == 1) continue;
             for (int npa = npart; npa >= 0; --npa) {
               const int npb = npart - npa;
-
-              auto block = make_shared<const CIBlockInfo<RASString>>(space<0>(nha, npa), space<1>(nhb, npb), size_);
-              blockinfo_.push_back(block);
-              if (!block->empty()) size_ += block->size();
+              
+              if (nholes == 1 || npart == 1) {
+                auto block = make_shared<const CIBlockInfo<RASString>>(space<0>(nha, npa), space<1>(nhb, npb), size_, true); 
+                blockinfo_.push_back(block);
+                if (!block->empty()) size_ += block->size();
+              } else {
+                auto block = make_shared<const CIBlockInfo<RASString>>(space<0>(nha, npa), space<1>(nhb, npb), size_);
+                blockinfo_.push_back(block);
+                if (!block->empty()) size_ += block->size();
+              }
             }
           }
         }
