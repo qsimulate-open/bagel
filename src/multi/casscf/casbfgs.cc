@@ -66,16 +66,15 @@ void CASBFGS::compute() {
       fci_time.tick_print("FCI and RDMs");
     }
 
-//  shared_ptr<Matrix> natorb_mat = x->clone();
-//TODO: disalbed below to compare with RASSCF
-//  if (nact_) {
-//    // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
-//    shared_ptr<const Matrix> natorb = form_natural_orbs();
-//    natorb_mat->unit();
-//    natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
-//  } else {
-//    natorb_mat->unit();
-//  }
+    shared_ptr<Matrix> natorb_mat = x->clone();
+    if (nact_) {
+      // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
+      shared_ptr<const Matrix> natorb = form_natural_orbs();
+      natorb_mat->unit();
+      natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
+    } else {
+      natorb_mat->unit();
+    }
 
     auto sigma = make_shared<RotFile>(nclosed_, nact_, nvirt_);
     sigma->zero();
@@ -87,27 +86,18 @@ void CASBFGS::compute() {
     // * core Fock operator
     shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
-    cfock->print("Closed Fock", nbasis_);
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<Matrix> acoeff;
     if (nact_) {
       acoeff = coeff_->slice_copy(nclosed_, nocc_);
-//    for (int i = 0; i != nact_; ++i)
-//      blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
+      for (int i = 0; i != nact_; ++i)
+        blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
     }
-    shared_ptr<Matrix> rdm1_mat = fci_->rdm1_av()->rdm1_mat(/*nclose*/0);
-    cout << "RASBFGS:: check 5" << endl;
-
-    shared_ptr<Matrix> rdm1_scaled = rdm1_mat->copy();
-    rdm1_scaled->sqrt();
-  //rdm1_scaled->delocalize();
-    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_scaled);
-
     // then make a AO density matrix
     shared_ptr<const Matrix> afock;
     if (nact_) {
-      auto afockao = make_shared<Fock<1>>(geom_, hcore_, nullptr, acoeffw, /*store*/false, /*rhf*/true);
+      auto afockao = make_shared<Fock<1>>(geom_, hcore_, nullptr, acoeff, /*store*/false, /*rhf*/true);
       afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);
     } else {
       afock = cfock->clone();
@@ -117,23 +107,18 @@ void CASBFGS::compute() {
     if (nact_) {
       qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
     }
-  //shared_ptr<Matrix> rdm1_mat = fci_->rdm1_av()->rdm1_mat(/*nclose*/0);
-    rdm1_mat->print("RDM1");
-    cout << "RDM2" << endl;
-    fci_->rdm2_av()->print(1.0e-1);
-    qxr->print("Qvec");
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);
     // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
-    grad_va(cfock, qxr, rdm1_mat, sigma);
+    grad_va(cfock, qxr, sigma);
     // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
-    grad_ca(cfock, afock, qxr, rdm1_mat, sigma);
+    grad_ca(cfock, afock, qxr, sigma);
 
     // if this is the first time, set up the BFGS solver
     if (iter == 0) {
       // BFGS and DIIS should start at the same time
-      shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat);
+      shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
       bfgs = make_shared<SRBFGS<RotFile>>(denom);
     }
     onebody.tick_print("One body operators");
@@ -154,7 +139,7 @@ void CASBFGS::compute() {
     Timer extrap(0);
     cout << " " << endl;
     cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
-//  *x *= *natorb_mat;
+    *x *= *natorb_mat;
     auto xcopy = x->log(8);
     auto xlog  = make_shared<RotFile>(xcopy, nclosed_, nact_, nvirt_);
     bfgs->check_step(evals, sigma, xlog, /*tight*/false, limited_memory);
@@ -187,7 +172,6 @@ void CASBFGS::compute() {
       cout << " " << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
       mute_stdcout();
-      assert(false);
       break;
     }
 
@@ -200,7 +184,6 @@ void CASBFGS::compute() {
     mute_stdcout();
   }
   resume_stdcout();
-  assert(false);
   // ============================
   // macro iteration to here
   // ============================
@@ -218,14 +201,9 @@ void CASBFGS::compute() {
 }
 
 
-shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1) const {
+shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr) const {
   auto out = make_shared<RotFile>(nclosed_, nact_, nvirt_);
-//const double tiny = 1.0e-15;
-
-  shared_ptr<Matrix> cfockd;
-  if (nact_) {
-    cfockd = make_shared<Matrix>(*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1);
-  }
+  const double tiny = 1.0e-15;
 
   // ia part (4.7a)
   if (nvirt_ && nclosed_) {
@@ -236,34 +214,6 @@ shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock,
       }
     }
   }
-  // ra part (4.7b)
-  if (nvirt_ && nact_) {
-    double* target = out->ptr_va();
-    for (int i = 0; i != nact_; ++i) {
-    //if (occup_[i] < tiny) continue;
-      for (int j = 0; j != nvirt_; ++j) {
-      //*target++ = 2.0*occup_[i]*(cfock->element(j+nocc_, j+nocc_)+afock->element(j+nocc_, j+nocc_))
-      //          - 2.0*occup_[i]*cfock->element(i+nclosed_, i+nclosed_) - 2.0*qxr->element(i+nclosed_, i);
-        *target++ = 2.0*rdm1->element(i,i)*(cfock->element(j+nocc_, j+nocc_)+afock->element(j+nocc_, j+nocc_))
-                  - 2.0*cfockd->element(i,i) - 2.0*qxr->element(i+nclosed_, i);
-      }
-    }
-  }
-  // it part (4.7c)
-  if (nclosed_ && nact_) {
-    double* target = out->ptr_ca();
-    for (int i = 0; i != nact_; ++i) {
-    //if (occup_[i] < tiny) continue;
-      for (int j = 0; j != nclosed_; ++j) {
-      //*target++ = 4.0*(cfock->element(i+nclosed_, i+nclosed_)+afock->element(i+nclosed_, i+nclosed_) - cfock->element(j,j) - afock->element(j,j))
-      //          + 2.0*occup_[i]*(cfock->element(j,j)+afock->element(j,j)) - 2.0*occup_[i]*cfock->element(i+nclosed_, i+nclosed_) - 2.0*qxr->element(i+nclosed_, i);
-        *target++ = 4.0*(cfock->element(i+nclosed_, i+nclosed_)+afock->element(i+nclosed_, i+nclosed_) - cfock->element(j,j) - afock->element(j,j))
-                  + 2.0*rdm1->element(i,i)*(cfock->element(j,j)+afock->element(j,j)) - 2.0*cfockd->element(i,i) - 2.0*qxr->element(i+nclosed_, i);
-       //VERIFIED!
-      }
-    }
-  }
-#if 0
   // ra part (4.7b)
   if (nvirt_ && nact_) {
     double* target = out->ptr_va();
@@ -286,7 +236,7 @@ shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock,
       }
     }
   }
-#endif
+
   const double thresh = 1.0e-8;
   for (int i = 0; i != out->size(); ++i)
     if (fabs(out->data(i)) < thresh) {
@@ -309,44 +259,26 @@ void CASBFGS::grad_vc(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> a
 
 // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
 // gamma is assumed to be diagonal
-void CASBFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1, shared_ptr<RotFile> sigma) const {
+void CASBFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> qxr, shared_ptr<RotFile> sigma) const {
   if (!nvirt_ || !nact_) return;
-//double* target = sigma->ptr_va();
-//for (int i = 0; i != nact_; ++i, target += nvirt_) {
-//  daxpy_(nvirt_, 2.0*occup_[i], cfock->element_ptr(nocc_, i+nclosed_), 1, target, 1);
-//  daxpy_(nvirt_, 2.0, qxr->element_ptr(nocc_, i), 1, target, 1);
-//}
-  dgemm_("N", "T", nvirt_, nact_, nact_, 2.0, cfock->element_ptr(nocc_,nclosed_), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_);
   double* target = sigma->ptr_va();
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
-//  daxpy_(nvirt_, 2.0*occup_[i], cfock->element_ptr(nocc_, i+nclosed_), 1, target, 1);
+    daxpy_(nvirt_, 2.0*occup_[i], cfock->element_ptr(nocc_, i+nclosed_), 1, target, 1);
     daxpy_(nvirt_, 2.0, qxr->element_ptr(nocc_, i), 1, target, 1);
   }
-
 }
 
 
 // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
-void CASBFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1, shared_ptr<RotFile> sigma) const {
+void CASBFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<RotFile> sigma) const {
   if (!nclosed_ || !nact_) return;
   {
-//  double* target = sigma->ptr_ca();
-//  for (int i = 0; i != nact_; ++i, target += nclosed_) {
-//    daxpy_(nclosed_, 4.0-2.0*occup_[i], cfock->element_ptr(0,nclosed_+i), 1, target, 1);
-//    daxpy_(nclosed_, 4.0, afock->element_ptr(0,nclosed_+i), 1, target, 1);
-//    daxpy_(nclosed_, -2.0, qxr->element_ptr(0, i), 1, target, 1);
-//  }
-//}
     double* target = sigma->ptr_ca();
     for (int i = 0; i != nact_; ++i, target += nclosed_) {
-    //daxpy_(nclosed_, 4.0-2.0*occup_[i], cfock->element_ptr(0,nclosed_+i), 1, target, 1);
-      daxpy_(nclosed_, 4.0, cfock->element_ptr(0,nclosed_+i), 1, target, 1);
+      daxpy_(nclosed_, 4.0-2.0*occup_[i], cfock->element_ptr(0,nclosed_+i), 1, target, 1);
       daxpy_(nclosed_, 4.0, afock->element_ptr(0,nclosed_+i), 1, target, 1);
       daxpy_(nclosed_, -2.0, qxr->element_ptr(0, i), 1, target, 1);
     }
-    //-2 cfock_iu * D_ur
-    dgemm_("T", "N", nclosed_, nact_, nact_, -2.0, cfock->element_ptr(nclosed_,0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_);
   }
-
 }
 

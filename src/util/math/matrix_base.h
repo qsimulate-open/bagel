@@ -364,12 +364,12 @@ class Matrix_base : public btas::Tensor2<DataType> {
         blas::ax_plus_y_n(a, o+j*ld, nsize, element_ptr(nstart, i));
     }
 
-    DataType& element(size_t i, size_t j) { return (*this)(i, j); }
+    DataType& operator()(size_t i, size_t j) { return element(i, j); }
+    DataType& element(size_t i, size_t j) { return *element_ptr(i, j); }
     DataType* element_ptr(size_t i, size_t j) { return data()+i+j*ndim(); }
-    DataType* element_ptr1(size_t n) { return data()+n; }
-    const DataType& element(size_t i, size_t j) const { return (*this)(i, j); }
+    const DataType& operator()(size_t i, size_t j) const { return element(i, j); }
+    const DataType& element(size_t i, size_t j) const { return *element_ptr(i, j); }
     const DataType* element_ptr(size_t i, size_t j) const { return data()+i+j*ndim(); }
-    const DataType* element_ptr1(size_t n) const { return data()+n; }
 
     void ax_plus_y(const DataType a, const std::shared_ptr<const Matrix_base<DataType>> o) { ax_plus_y_impl(a, *o); }
     DataType dot_product(const std::shared_ptr<const Matrix_base<DataType>> o) const { return dot_product_impl(*o); }

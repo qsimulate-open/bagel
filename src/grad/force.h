@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sohcore.h
-// Copyright (C) 2014 Toru Shiozaki
+// Filename: force.h
+// Copyright (C) 2015 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,40 +23,27 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifndef __SRC_GRAD_FORCE_H
+#define __SRC_GRAD_FORCE_H
 
-#ifndef __SRC_SCF_SOHCORE_H
-#define __SRC_SCF_SOHCORE_H
-
-#include <src/util/math/zmatrix.h>
-#include <src/molecule/molecule.h>
-#include <src/mat1e/hcore.h>
+#include <src/wfn/reference.h>
 
 namespace bagel {
 
-class SOHcore : public ZMatrix {
+class Force {
   protected:
-    std::shared_ptr<const Hcore> hcore_;
-
-    void form_sohcore();
-
-  private:
-    // serialization
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<ZMatrix>(*this) & hcore_;
-    }
+    const std::shared_ptr<const PTree> idata_;
+    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Reference> ref_;
 
   public:
-    SOHcore() { }
-    SOHcore(std::shared_ptr<const Molecule> geom, std::shared_ptr<const Hcore> h);
+    Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
+
+    void compute();
 
 };
 
+
 }
 
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::SOHcore)
-
 #endif
-

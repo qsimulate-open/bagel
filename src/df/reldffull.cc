@@ -86,17 +86,6 @@ shared_ptr<RelDFFull> RelDFFull::clone() const {
 }
 
 
-void RelDFFull::add_product(shared_ptr<const RelDFFull> o, const shared_ptr<const ZMatrix> a, const int nocc, const int offset) {
-  shared_ptr<const Matrix> ra = a->get_real_part();
-  shared_ptr<const Matrix> ia = a->get_real_part();
-  // taking the complex conjugate of "o"
-  dffull_[0]->add_product(o->dffull_[0], ra, nocc, offset, 1.0);
-  dffull_[0]->add_product(o->dffull_[1], ia, nocc, offset, 1.0);
-  dffull_[1]->add_product(o->dffull_[0], ra, nocc, offset, 1.0);
-  dffull_[1]->add_product(o->dffull_[1], ra, nocc, offset, -1.0);
-}
-
-
 void RelDFFull::ax_plus_y(complex<double> a, const RelDFFull& o) {
   if (imag(a) == 0.0) {
     const double fac = real(a);

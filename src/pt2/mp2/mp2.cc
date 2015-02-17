@@ -110,27 +110,8 @@ void MP2::compute() {
 
   cout << "    * 3-index integral transformation done" << endl;
 
-  // task should be formed here
-  vector<vector<tuple<int,int,int,int>>> tasks(mpi__->size());
-  {
-    // make a list of static distribution of ij
-    int nmax = 0;
-    StaticDist ijdist(nocc*(nocc+1)/2, mpi__->size());
-    for (int inode = 0; inode != mpi__->size(); ++inode) {
-      for (int i = 0, cnt = 0; i < nocc; ++i)
-        for (int j = i; j < nocc; ++j, ++cnt)
-          if (cnt >= ijdist.start(inode) && cnt < ijdist.start(inode) + ijdist.size(inode))
-            tasks[inode].push_back(make_tuple(j, i, /*mpitags*/-1,-1));
-      if (tasks[inode].size() > nmax) nmax = tasks[inode].size();
-    }
-    for (auto& i : tasks) {
-      const int n = i.size();
-      for (int j = 0; j != nmax-n; ++j) i.push_back(make_tuple(-1,-1,-1,-1));
-    }
-  }
-
   // start communication (n fetch behind) - n is determined by memory size
-  MP2Cache cache(naux, nocc, nvirt, fullt, tasks);
+  MP2Cache cache(naux, nocc, nvirt, fullt);
 
   const int nloop = cache.nloop();
   const int ncache = min(memory_size/(nvirt*nvirt), size_t(20));
@@ -151,11 +132,7 @@ void MP2::compute() {
     const int i = get<0>(cache.task(n));
     const int j = get<1>(cache.task(n));
     if (i < 0 || j < 0) continue;
-
-    const int ti = get<2>(cache.task(n));
-    const int tj = get<3>(cache.task(n));
-    if (ti >= 0) mpi__->wait(ti);
-    if (tj >= 0) mpi__->wait(tj);
+    cache.data_wait(n);
 
     shared_ptr<const Matrix> iblock = cache(i);
     shared_ptr<const Matrix> jblock = cache(j);

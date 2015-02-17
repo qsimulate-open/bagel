@@ -49,16 +49,12 @@ vector<double> RDM<1>::diag() const {
 
 template<>
 pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals() const {
-  cout << "GENERATE NATURAL ORBITALS .... " << endl;
   auto buf = make_shared<Matrix>(norb(),norb(),true);
   buf->add_diag(2.0);
   daxpy_(norb()*norb(), -1.0, data(), 1, buf->data(), 1);
 
   VectorB vec(norb());
   buf->diagonalize(vec);
-  for (int i = 0; i != norb(); ++i) {
-    cout << "vec (" << i << ") = " << vec(i) << endl;
-  }
 
   for (auto& i : vec) i = 2.0-i;
 
@@ -87,10 +83,6 @@ pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals() const {
   for (int i = 0; i != norb(); ++i) {
     if (buf2->element(i,i) < 0.0)
       blas::scale_n(-1.0, buf2->element_ptr(0,i), norb());
-  }
-
-  for (int i = 0; i != norb(); ++i) {
-    cout << "vec2(" << i << ") = " << vec2(i) << endl;
   }
 
   return {buf2, vec2};
@@ -141,12 +133,8 @@ template<>
 void RDM<1>::print(const double thresh) const {
   const double* ptr = data();
   for (int i = 0; i != norb(); ++i)
-    for (int j = 0; j != norb(); ++j, ++ptr)
-    //cout << setw(12) << setprecision(7) << *ptr++ << endl;
-      if (fabs(*ptr) > thresh)
-        cout << setw(3) << j << setw(3)
-                        << i << setw(3)
-                        << setw(12) << setprecision(7) << *ptr << endl;
+    for (int j = 0; j != norb(); ++j)
+      cout << setw(12) << setprecision(7) << *ptr++ << endl;
 }
 
 

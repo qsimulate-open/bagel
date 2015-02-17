@@ -92,7 +92,6 @@ void SuperCIMicro::compute() {
   // rotation parameters
   shared_ptr<const SCIData> result = davidson.civec().front();
   const double cref = result->first()->element(0,0);
-  cout << "cref =" << cref << endl;
   shared_ptr<RotFile> tmp = result->second()->copy();
   *tmp *= 1.0/cref;
   tmp->synchronize();

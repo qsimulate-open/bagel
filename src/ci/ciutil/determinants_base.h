@@ -126,10 +126,6 @@ class Determinants_base {
     const std::vector<DetMap>& phia(const int i) const { return phia_->data(i); }
     const std::vector<DetMap>& phib(const int i) const { return phib_->data(i); }
 
-    //RASCI version
-    const std::vector<DetMap>& uncompressed_phia(const int i) const { return phia_uncompressed_->data(i); }
-    const std::vector<DetMap>& uncompressed_phib(const int i) const { return phib_uncompressed_->data(i); }
-
     // two indices goes to uncompressed versions
     const std::vector<DetMap>& phia(const int i, const int j) const { return phia_uncompressed_->data(i + j*norb()); }
     const std::vector<DetMap>& phib(const int i, const int j) const { return phib_uncompressed_->data(i + j*norb()); }

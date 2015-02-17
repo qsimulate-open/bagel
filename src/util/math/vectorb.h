@@ -60,8 +60,8 @@ class VecView_ : public btas::TensorView1<DataType> {
     size_t size() const { return this->storage().size(); }
     double rms() const { return std::sqrt(detail::real(btas::dotc(*this, *this))/size()); }
 
-    DataType* data() { assert(contiguous()); return &*begin(); }
-    const DataType* data() const { assert(contiguous()); return &*cbegin(); }
+    DataType* data() { /*assert(contiguous());*/ return &*begin(); }
+    const DataType* data() const { /*assert(contiguous());*/ return &*cbegin(); }
 
     DataType& operator()(const int i) { return *(data()+i); }
     const DataType& operator()(const int i) const { return *(data()+i); }
@@ -127,6 +127,9 @@ class Vector_ : public btas::Tensor1<DataType> {
 
     std::shared_ptr<Vector_<DataType>> clone() const { return std::make_shared<Vector_<DataType>>(size()); }
     std::shared_ptr<Vector_<DataType>> copy()  const { return std::make_shared<Vector_<DataType>>(*this); }
+
+    DataType& operator()(size_t i) { return *(data()+i); }
+    const DataType& operator()(size_t i) const { return *(data()+i); }
 
     VecView_<DataType> slice(const int mstart, const int mend) {
       auto low = {mstart};
