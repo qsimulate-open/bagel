@@ -44,8 +44,6 @@ class CIBlockInfo {
     std::shared_ptr<const StringType> bstrings_;
 
     size_t offset_;
-  
-    bool removed_;
 
   private:
     friend class boost::serialization::access;
@@ -56,13 +54,6 @@ class CIBlockInfo {
     CIBlockInfo() { }
     CIBlockInfo(std::shared_ptr<const StringType> ast, std::shared_ptr<const StringType> bst, const size_t o = 0)
       : astrings_(ast), bstrings_(bst), offset_(o) {
-      removed_ = false;
-      static_assert(std::is_base_of<CIString_base, StringType>::value, "illegal StringType specified");
-      // norb should match or one of strings is dummy
-      assert(astrings_->norb() == bstrings_->norb() || astrings_->norb()*bstrings_->norb() == 0);
-    }
-    CIBlockInfo(std::shared_ptr<const StringType> ast, std::shared_ptr<const StringType> bst, const size_t o, bool rem)
-      : astrings_(ast), bstrings_(bst), offset_(o), removed_(rem) {
       static_assert(std::is_base_of<CIString_base, StringType>::value, "illegal StringType specified");
       // norb should match or one of strings is dummy
       assert(astrings_->norb() == bstrings_->norb() || astrings_->norb()*bstrings_->norb() == 0);
@@ -78,8 +69,7 @@ class CIBlockInfo {
     int neleb() const { return bstrings_->nele(); }
     size_t offset() const { return offset_; }
 
-    bool empty() const { return (size() == 0 || removed_); }
-    bool removed() const { return removed_; }
+    bool empty() const { return size() == 0; }
 
     // static constants
     static const int Alpha = 0;
