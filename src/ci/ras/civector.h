@@ -449,39 +449,27 @@ class RASCivector_impl : public RASCivector_base<RASBlock<DataType>> {
 
     DataType spin_expectation() const { return static_cast<const Derived*>(this)->dot_product(*static_cast<const Derived*>(this)->spin()); }
     void spin_decontaminate_impl(const double thresh) {
-      std::cout << "spin_decontaminate: 1" << std::endl;
       const int nspin = det_->nspin();
       const int max_spin = det_->nelea() + det_->neleb();
 
-      std::cout << "spin_decontaminate: 2" << std::endl;
       const double pure_expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
 
-      std::cout << "spin_decontaminate: 3" << std::endl;
       auto S2 = static_cast<Derived*>(this)->spin();
-      std::cout << "spin_decontaminate: 4" << std::endl;
       double actual_expectation = static_cast<Derived*>(this)->dot_product(*S2);
-      std::cout << "spin_decontaminate: 5" << std::endl;
 
       int k = nspin + 2;
       while( fabs(actual_expectation - pure_expectation) > thresh ) {
         if ( k > max_spin ) { this->print(0.05); throw std::runtime_error("Spin decontamination failed."); }
 
-      std::cout << "spin_decontaminate: 6" << std::endl;
         const double factor = -4.0/(static_cast<double>(k*(k+2)));
         static_cast<Derived*>(this)->ax_plus_y(factor, *S2);
-      std::cout << "spin_decontaminate: 7" << std::endl;
 
         const double norm = this->norm();
-      std::cout << "spin_decontaminate: 8" << std::endl;
         const double rescale = (norm*norm > 1.0e-60) ? 1.0/norm : 0.0;
-      std::cout << "spin_decontaminate: 9" << std::endl;
         scale(rescale);
 
-      std::cout << "spin_decontaminate: 10" << std::endl;
         S2 = static_cast<Derived*>(this)->spin();
-      std::cout << "spin_decontaminate: 11" << std::endl;
         actual_expectation = static_cast<Derived*>(this)->dot_product(*S2);
-      std::cout << "spin_decontaminate: 12" << std::endl;
 
         k += 2;
       }

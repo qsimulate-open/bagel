@@ -88,7 +88,6 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, sh
 
   auto mo2e_hz = [&norb, &mo2e] (const int i, const int j, const int k, const int l) { return mo2e->element(i + norb*j, k + norb*l); };
 
-  cout << "FormSigmaRAS:: make g" << endl;
   Matrix g(norb, norb);
   if (mo1e)
     g += *mo1e;
@@ -115,7 +114,6 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, sh
       ++kl;
     }
   }
-  cout << "FormSigmaRAS:: done make g" << endl;
 
   auto sigmavec = make_shared<RASDvec>(det, nstate);
 
@@ -136,17 +134,14 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, sh
       RASCivecView sigma(*sigmavec->data(istate));
 
       // (taskaa)
-      cout << "FormSigmaRAS:: aa" << endl;
       sigma_aa(cc, sigma, g.data(), twoelectron->data());
       pdebug.tick_print("taskaa");
 
       // (taskbb)
-      cout << "FormSigmaRAS:: bb" << endl;
       sigma_bb(cc, sigma, g.data(), twoelectron->data());
       pdebug.tick_print("taskbb");
 
       // (taskab) alpha-beta contributions
-      cout << "FormSigmaRAS:: ab" << endl;
       if (mo2e)
         sigma_ab(cc, sigma, twoelectron->data());
       pdebug.tick_print("taskab");
@@ -174,7 +169,6 @@ void FormSigmaRAS::sigma_aa(const RASCivecView cc, RASCivecView sigma, const dou
   const size_t la = det->lena();
 
   Matrix F(la, batchsize_);
-  cout << "RASCI::F matrix info: " << F.ndim() << " x " << F.mdim() << ", batchsize = " << batchsize_ << endl;
 
   // Let's just get it working first, thread it later
   for (auto& ispace : *det->stringspacea()) {
@@ -183,8 +177,6 @@ void FormSigmaRAS::sigma_aa(const RASCivecView cc, RASCivecView sigma, const dou
     for (int batch = 0; batch < nbatches; ++batch) {
       const size_t batchstart = batch * batchsize_;
       const size_t batchlength = min(static_cast<size_t>(batchsize_), ispace->size() - batchstart);
-
-      cout << "RASCI::  batchlength = " << batchlength << endl;
 
       F.zero();
 
@@ -199,7 +191,6 @@ void FormSigmaRAS::sigma_aa(const RASCivecView cc, RASCivecView sigma, const dou
             const int jj = iterij.ij%norb;
             const int kk = iterkl.ij/norb;
             const int ll = iterkl.ij%norb;
-//          cout << "RASCI::    " << ii << " " << jj << " " << kk << " " << ll << endl;
             fdata[iterij.source] += static_cast<double>(iterkl.sign*iterij.sign) * (iterkl.ij == iterij.ij ? 0.5 : 1.0) * mo2e[ii + kk*norb + norb*norb*(jj + ll * norb)];
           }
         }
@@ -209,9 +200,7 @@ void FormSigmaRAS::sigma_aa(const RASCivecView cc, RASCivecView sigma, const dou
       // S(beta, alpha) += C(beta, alpha) * F(alpha, alpha')
       for (auto& iblock : cc.blocks()) {
         if (!iblock) continue;
-        cout << "RASCI:: nonzero block of blocks_ : " << iblock->lena() << endl;
         if (!det->allowed(ispace, iblock->stringsb())) continue;
-        cout << "RASCI::   and is allowed" << endl;
         shared_ptr<RASBlock<double>> target_block = sigma.block(iblock->stringsb(), ispace);
 
         assert(iblock->lenb() == target_block->lenb());
@@ -226,11 +215,8 @@ void FormSigmaRAS::sigma_aa(const RASCivecView cc, RASCivecView sigma, const dou
 }
 
 void FormSigmaRAS::sigma_bb(const RASCivecView cc, RASCivecView sigma, const double* g, const double* mo2e) const {
-  cout << "inside sigma_bb" << endl;
   shared_ptr<const RASCivec> cc_trans = cc.transpose();
-  cout << "cc_trans" << endl;
   auto sig_trans = make_shared<RASCivec>(cc_trans->det());
-  cout << "sigma_trans" << endl;
 
   sigma_aa(RASCivecView(*cc_trans), RASCivecView(*sig_trans), g, mo2e);
 
@@ -262,9 +248,7 @@ void FormSigmaRAS::sigma_ab(const RASCivecView cc, RASCivecView sigma, const dou
       for (auto& target_bspace : *det->stringspaceb()) {
         const size_t tlb = target_bspace->size();
         // looping over source_aspace
-        cout << "phiblock of " << ij << endl;
         for (auto& phiblock : det->phia_ij(ij) ) {
-          cout << " block.." << endl;
           const shared_ptr<const RASString>& source_aspace = phiblock.source_space();
 
           // make a reduced list of only those excitations that will contribute to the sigma vector
@@ -277,7 +261,6 @@ void FormSigmaRAS::sigma_ab(const RASCivecView cc, RASCivecView sigma, const dou
               reduced_phi.emplace_back(phi.source, phi.sign, o);
             }
           }
-          cout << "   reduced block.." << endl;
 
           if (reduced_phi.empty()) continue;
 
