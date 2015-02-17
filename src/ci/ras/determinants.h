@@ -47,10 +47,6 @@ class RASDeterminants : public Determinants_base<RASString>,
 
     std::vector<std::vector<DetMapBlock>> phia_ij_;
     std::vector<std::vector<DetMapBlock>> phib_ij_;
-//ADDED (expanded lists)
-    std::vector<std::vector<DetMapBlock>> uncompressed_phia_ij_;
-    std::vector<std::vector<DetMapBlock>> uncompressed_phib_ij_;
-//
 
   public:
     RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false);
@@ -83,14 +79,11 @@ class RASDeterminants : public Determinants_base<RASString>,
     const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
 
     const bool allowed(const int nha, const int nhb, const int npa, const int npb) const
-      { return ( (nha + nhb) <= max_holes_ && (npa + npb) <= max_particles_ 
-                 && (nha+nhb) != 1 && (npa+npb) != 1 ); }
+      { return ( (nha + nhb) <= max_holes_ && (npa + npb) <= max_particles_ ); }
     const bool allowed(const std::bitset<nbit__> abit, const std::bitset<nbit__> bbit) const
-      { return (nholes(abit) + nholes(bbit)) <= max_holes_ && (nparticles(abit) + nparticles(bbit)) <= max_particles_ 
-            && (nholes(abit) + nholes(bbit)) != 1          && (nparticles(abit) + nparticles(bbit)) != 1 ; }
+      { return (nholes(abit) + nholes(bbit)) <= max_holes_ && (nparticles(abit) + nparticles(bbit)) <= max_particles_; }
     const bool allowed(const std::shared_ptr<const RASString> alpha, const std::shared_ptr<const RASString> beta) const
-      { return (beta->nholes() + alpha->nholes()) <= max_holes_ && (beta->nparticles() + alpha->nparticles()) <= max_particles_
-            && (beta->nholes() + alpha->nholes()) != 1          && (beta->nparticles() + alpha->nparticles()) != 1; }
+      { return (beta->nholes() + alpha->nholes()) <= max_holes_ && (beta->nparticles() + alpha->nparticles()) <= max_particles_; }
 
     template <int spin>
     const std::vector<std::shared_ptr<const RASString>> allowed_spaces(std::shared_ptr<const RASString> sp) const {
@@ -136,9 +129,6 @@ class RASDeterminants : public Determinants_base<RASString>,
     const std::vector<DetMapBlock>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
     const std::vector<DetMapBlock>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }
 
-    const std::vector<DetMapBlock>& uncompressed_phia_ij(const size_t ij) const { return uncompressed_phia_ij_[ij]; }
-    const std::vector<DetMapBlock>& uncompressed_phib_ij(const size_t ij) const { return uncompressed_phib_ij_[ij]; }
-
     std::shared_ptr<const RASDeterminants> addalpha() const { return addalpha_.lock();}
     std::shared_ptr<const RASDeterminants> remalpha() const { return remalpha_.lock();}
     std::shared_ptr<const RASDeterminants> addbeta() const { return addbeta_.lock();}
@@ -160,14 +150,14 @@ class RASDeterminants : public Determinants_base<RASString>,
       spin_adapt(const int spin, const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
-    template <int spin> void construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::shared_ptr<const StringMap>& uncompressed_phi, std::vector<std::vector<DetMapBlock>>& phi_ij, std::vector<std::vector<DetMapBlock>>& uncompressed_phi_ij);
+    template <int spin> void construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij);
 };
 
 template <int spin>
-void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::shared_ptr<const StringMap>& uncompressed_phi, std::vector<std::vector<DetMapBlock>>& phi_ij, std::vector<std::vector<DetMapBlock>>& uncompressed_phi_ij) {
+void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij) {
 
   phi = stringspace->phi();
-  uncompressed_phi = stringspace->uncompressed_phi();
+
 
   // old code for phi_ij TODO replace
   const int nij = (norb() * (norb() + 1))/2;
@@ -176,26 +166,18 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
   phi_ij.resize(nij);
   for (auto& iphi : phi_ij) iphi.reserve(stringsize);
 
-  const int nn = norb() * norb();
-  uncompressed_phi_ij.clear();
-  uncompressed_phi_ij.resize(nn);
-  for ( auto& iphi : uncompressed_phi_ij) iphi.reserve(stringsize);
-
   std::unordered_map<std::bitset<nbit__>, size_t> lexmap;
   for (size_t i = 0; i < stringsize; ++i)
     lexmap[(spin == 0 ? this->string_bits_a(i) : this->string_bits_b(i))] = i;
 
   std::vector<size_t> offsets(nij, 0);
-  std::vector<size_t> uncompressed_offsets(nn, 0);
 
   for (auto& ispace : *stringspace) {
     size_t tindex = 0;
     for (auto istring = ispace->begin(); istring != ispace->end(); ++istring, ++tindex) {
       const std::bitset<nbit__> targetbit = *istring;
       std::vector<std::vector<DetMap>> pij;
-      std::vector<std::vector<DetMap>> uncompressed_pij;
       pij.resize( nij );
-      uncompressed_pij.resize( nn );
       for (int j = 0; j < norb(); ++j) {
         if ( !targetbit[j] ) continue;
         std::bitset<nbit__> intermediatebit = targetbit; intermediatebit.reset(j);
@@ -207,8 +189,6 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
             int minij, maxij;
             std::tie(minij, maxij) = std::minmax(i,j);
             pij[minij+((maxij*(maxij+1))>>1)].emplace_back(source_lex, sign(targetbit, i, j), tindex, j+i*norb());
-            uncompressed_pij[i + j*norb()].emplace_back(source_lex, sign(targetbit, i, j), tindex, j+i*norb());
-            if (i == j) std::cout << "DET: diag[" << i << "] : " << source_lex << " " << tindex << std::endl;
           }
         }
       }
@@ -216,11 +196,6 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
         pij[i].shrink_to_fit();
         phi_ij[i].emplace_back(offsets[i], ispace, std::move(pij[i]));
         offsets[i] += phi_ij[i].back().size();
-      }
-      for (int i = 0; i < nn; ++i) if (uncompressed_pij[i].size() > 0) {
-        uncompressed_pij[i].shrink_to_fit();
-        uncompressed_phi_ij[i].emplace_back(uncompressed_offsets[i], ispace, std::move(uncompressed_pij[i]));
-        uncompressed_offsets[i] += uncompressed_phi_ij[i].back().size();
       }
     }
   }

@@ -51,28 +51,20 @@ namespace bagel {
         unique_ptr<double[]> source(new double[det_->lenb()]);
 
         for (auto& iter : det_->phia(det_->lexical_offset<0>(target_))) {
-          cout << "spintask 1" << endl;
           const int ii = iter.ij / norb;
           const int jj = iter.ij % norb;
           bitset<nbit__> mask1; mask1.set(ii); mask1.set(jj);
           bitset<nbit__> mask2; mask2.set(ii);
 
           bitset<nbit__> maskij; maskij.set(ii); maskij.flip(jj);
-          cout << "spintask 1-a" << endl;
 
           fill_n(source.get(), det_->lenb(), 0.0);
-          cout << "spintask 1-b" << endl;
-          cout << print_bit(det_->string_bits_a(iter.source),0,norb) << endl;
           vector<shared_ptr<RASBlock<double>>> sourceblocks = out_->allowed_blocks<0>(det_->string_bits_a(iter.source));
-          cout << "spintask 1-c" << endl;
           for (auto& iblock : sourceblocks) {
-            cout << "spintask 1-d" << endl;
             const size_t offset = iblock->stringsb()->offset();
-            cout << "spintask 1-e : " << offset <<  endl;
             copy_n(&this_->element(iblock->stringsb()->strings(0), det_->string_bits_a(iter.source)), iblock->lenb(), source.get()+offset);
           }
 
-          cout << "spintask 2" << endl;
           for (auto& iblock : out_->allowed_blocks<0>(target_)) {
             double* outelement = &out_->element(iblock->stringsb()->strings(0), target_);
             for (auto& btstring : *iblock->stringsb()) {
@@ -84,7 +76,6 @@ namespace bagel {
               ++outelement;
             }
           }
-          cout << "spintask 3" << endl;
         }
       }
     };
@@ -104,7 +95,7 @@ void RAS::spin_impl(const RASCivecView cc, RASCivecView out) {
     tasks.emplace_back(istring, &cc, &out, det, &lexicalmap);
   }
 
-  tasks.compute(1);
+  tasks.compute();
 
   const double sz = static_cast<double>(det->nspin()) * 0.5;
   const double fac = sz*sz + sz + static_cast<double>(det->neleb());
