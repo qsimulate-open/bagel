@@ -35,6 +35,9 @@
 #include <src/ci/ras/rasci.h>
 #include <src/multi/rasscf/rotfile.h>
 
+#include <src/multi/rasscf/Lrotfile.h>
+#include <src/multi/rasscf/Srotfile.h>
+
 namespace bagel {
 
 class RASSCF : public Method, public std::enable_shared_from_this<RASSCF> {

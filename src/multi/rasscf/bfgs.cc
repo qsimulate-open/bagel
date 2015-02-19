@@ -38,7 +38,9 @@ void RASBFGS::compute() {
 
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 
-  shared_ptr<SRBFGS<RASRotFile>> bfgs;
+//shared_ptr<SRBFGS<RASRotFile>> bfgs;
+  shared_ptr<SRBFGS<LargeRotFile>> bfgs_large;
+  shared_ptr<SRBFGS<SmallRotFile>> bfgs_small;
 
   // ============================
   // macro iteration from here
@@ -54,6 +56,8 @@ void RASBFGS::compute() {
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
+    bool large = iter%2 == 0 ? true : false;
+      
 //  const shared_ptr<const Coeff> cold = coeff_;
 //  const shared_ptr<const Matrix> xold = x->copy();
 
@@ -69,26 +73,36 @@ void RASBFGS::compute() {
     cout << "RASBFGS:: check 1" << endl;
 
     //diagonalize the RDM of each subspace
-    shared_ptr<Matrix> natorb_mat = x->clone();
-    if (nact_) {
-      // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
-      shared_ptr<const Matrix> natorb = form_natural_orbs();
-      natorb_mat->unit();
-      natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
-    } else {
-      natorb_mat->unit();
-    }
+//  shared_ptr<Matrix> natorb_mat = x->clone();
+//  if (nact_) {
+//    // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
+//    shared_ptr<const Matrix> natorb = form_natural_orbs();
+//    natorb_mat->unit();
+//    natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
+//  } else {
+//    natorb_mat->unit();
+//  }
 
-      rasci_->update(coeff_);
-      rasci_->compute();
-      rasci_->compute_rdm12();
-      const shared_ptr<const Coeff> cold = coeff_;
-      const shared_ptr<const Matrix> xold = x->copy();
+    //rasci_->update(coeff_);
+    //rasci_->compute();
+    //rasci_->compute_rdm12();
+    //const shared_ptr<const Coeff> cold = coeff_;
+    //const shared_ptr<const Matrix> xold = x->copy();
     //assert(false); -> this gives the same energy / validates the unitary transformation!
 
     cout << "RASBFGS:: check 2" << endl;
-    auto sigma = make_shared<RASRotFile>(nclosed_, nact_, nvirt_, ras_);
-    sigma->zero();
+//  auto sigma = make_shared<RASRotFile>(nclosed_, nact_, nvirt_, ras_);
+//  sigma->zero();
+    shared_ptr<LargeRotFile> sigma_large;
+    shared_ptr<SmallRotFile> sigma_small;
+    if (large) {
+      sigma_large = make_shared<LargeRotFile>(nclosed_, nact_, nvirt_);
+      sigma_large->zero();
+    } else {
+      //small
+      sigma_small = make_shared<SmallRotFile>(nclosed_, nact_, nvirt_, ras_);
+      sigma_small->zero();
+    }
 
     cout << "RASBFGS:: check 3" << endl;
     // compute one-body operators
@@ -153,26 +167,53 @@ void RASBFGS::compute() {
     }
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
-    grad_vc(cfock, afock, sigma);
-    // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
-    grad_va(cfock, qxr, rdm1_mat, sigma);
-    // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
-    grad_ca(cfock, afock, qxr, rdm1_mat, sigma);
-    cout << "RASBFGS:: check 10" << endl;
+//  grad_vc(cfock, afock, sigma);
+//  // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
+//  grad_va(cfock, qxr, rdm1_mat, sigma);
+//  // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
+//  grad_ca(cfock, afock, qxr, rdm1_mat, sigma);
 
-    grad_aa12(mcfock, sigma);
-    grad_aa13(mcfock, sigma);
-    grad_aa23(mcfock, sigma);
+    if (large) {
+      grad_vc_large(cfock, afock, sigma_large);
+      // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
+      grad_va_large(cfock, qxr, rdm1_mat, sigma_large);
+      // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
+      grad_ca_large(cfock, afock, qxr, rdm1_mat, sigma_large);
+    } else {
+      //small
+      grad_aa12_small(mcfock, sigma_small);
+      grad_aa13_small(mcfock, sigma_small);
+      grad_aa23_small(mcfock, sigma_small);
+    }
+
+//  grad_aa12(mcfock, sigma);
+//  grad_aa13(mcfock, sigma);
+//  grad_aa23(mcfock, sigma);
     cout << "RASBFGS:: check 11" << endl;
     cout << "GRADIENT" << endl;
-    sigma->print();
+//  sigma->print();
+    if (large)
+      sigma_large->print();
+    else 
+      sigma_small->print();
 
     // if this is the first time, set up the BFGS solver
+//  if (iter == 0) {
+//    // BFGS and DIIS should start at the same time
+//    shared_ptr<const RASRotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock);
+//    bfgs = make_shared<SRBFGS<RASRotFile>>(denom);
+//  }
     if (iter == 0) {
-      // BFGS and DIIS should start at the same time
-      shared_ptr<const RASRotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock);
-      bfgs = make_shared<SRBFGS<RASRotFile>>(denom);
+      shared_ptr<const LargeRotFile> denom_large = compute_denom_large(cfock, afock, qxr, rdm1_mat);
+      bfgs_large = make_shared<SRBFGS<LargeRotFile>>(denom_large);
+    } else if (iter == 1) {
+      //small
+      shared_ptr<const SmallRotFile> denom_small = compute_denom_small(cfock, afock, rdm1_mat, mcfock);
+      bfgs_small = make_shared<SRBFGS<SmallRotFile>>(denom_small);
     }
+
+
+
     onebody.tick_print("One body operators");
 
     cout << "RASBFGS:: check 12" << endl;
@@ -189,35 +230,43 @@ void RASBFGS::compute() {
       evals.push_back(en);
     }
 
-    cout << "RASBFGS:: check 13" << endl;
     // extrapolation using BFGS
     Timer extrap(0);
     cout << " " << endl;
-    cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
-    *x *= *natorb_mat;
-    auto xcopy = x->log(8);
-    auto xlog  = make_shared<RASRotFile>(xcopy, nclosed_, nact_, nvirt_, ras_);
-    bfgs->check_step(evals, sigma, xlog, /*tight*/false, limited_memory);
-    shared_ptr<RASRotFile> a = bfgs->more_sorensen_extrapolate(sigma, xlog);
-    cout << " ---------------------------------------------------- " << endl;
-    extrap.tick_print("More-Sorensen/Hebden extrapolation");
-    cout << " " << endl;
+//  cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
+//  *x *= *natorb_mat;
+//  auto xcopy = x->log(8);
+//  auto xlog  = make_shared<RASRotFile>(xcopy, nclosed_, nact_, nvirt_, ras_);
+//  bfgs->check_step(evals, sigma, xlog, /*tight*/false, limited_memory);
+//  shared_ptr<RASRotFile> a = bfgs->more_sorensen_extrapolate(sigma, xlog);
+//  cout << " ---------------------------------------------------- " << endl;
+    shared_ptr<LargeRotFile> a;
+    shared_ptr<SmallRotFile> b;
+    if (large) {
+      cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
+      auto xcopy = x->log(8);
+      auto xlog  = make_shared<LargeRotFile>(xcopy, nclosed_, nact_, nvirt_);
+      bfgs_large->check_step(evals, sigma_large, xlog, /*tight*/false, limited_memory);
+      a = bfgs_large->more_sorensen_extrapolate(sigma_large, xlog);
+      cout << " ---------------------------------------------------- " << endl;
+      extrap.tick_print("More-Sorensen/Hebden extrapolation");
+      cout << " " << endl;
+    } else {
+      //small
+      cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
+      auto xcopy = x->log(8);
+      auto xlog  = make_shared<SmallRotFile>(xcopy, nclosed_, nact_, nvirt_, ras_);
+      bfgs_small->check_step(evals, sigma_small, xlog, /*tight*/false, limited_memory);
+      b = bfgs_small->more_sorensen_extrapolate(sigma_small, xlog);
+      cout << " ---------------------------------------------------- " << endl;
+      extrap.tick_print("More-Sorensen/Hebden extrapolation");
+      cout << " " << endl;
+    }
 
     // restore the matrix from RASRotFile
-  //shared_ptr<const Matrix> amat = a->unpack<Matrix>();
-    shared_ptr<Matrix> amat = a->unpack<Matrix>();
-    
-    double maxv = 0.0;
-    for (int i = 0; i != nbasis_; ++i) {
-      for (int j = 0; j != i; ++j) {
-        maxv = std::max(maxv,abs(amat->element(i,j)));
-      }
-    }
-    cout << "Offdiagonal maximum (absolute)" << maxv << endl;
-    if (maxv >= 1.0) {
-      assert(false);
-      amat->scale(1.0 / (2.0*maxv) );
-    }
+//  shared_ptr<const Matrix> amat = a->unpack<Matrix>();
+    shared_ptr<const Matrix> amat = iter%2 == 0 ? a->unpack<Matrix>() : b->unpack<Matrix>();
+
 
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
@@ -231,7 +280,8 @@ void RASBFGS::compute() {
     mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
 
     // setting error of macro iteration
-    const double gradient = sigma->rms();
+//  const double gradient = sigma->rms();
+    const double gradient = iter%2 == 0 ? sigma_large->rms() : sigma_small->rms() ;
 
     resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());

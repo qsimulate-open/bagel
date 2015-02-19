@@ -48,10 +48,21 @@ class RASBFGS : public RASSCF {
     void grad_aa13(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<RASRotFile> sigma) const;
     void grad_aa23(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<RASRotFile> sigma) const;
 
+//TEST
+    void grad_vc_large(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<LargeRotFile> sigma) const;
+    void grad_va_large(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> qxr,   std::shared_ptr<const Matrix> rdm1, std::shared_ptr<LargeRotFile> sigma) const;
+    void grad_ca_large(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr,  std::shared_ptr<const Matrix> rdm1, std::shared_ptr<LargeRotFile> sigma) const;
+    void grad_aa12_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<SmallRotFile> sigma) const;
+    void grad_aa13_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<SmallRotFile> sigma) const;
+    void grad_aa23_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<SmallRotFile> sigma) const;
 
 
     // compute diagonal denominators
     std::shared_ptr<const RASRotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock) const;
+
+    std::shared_ptr<const LargeRotFile> compute_denom_large(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr,  std::shared_ptr<const Matrix> rdm1) const;
+    std::shared_ptr<const SmallRotFile> compute_denom_small(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock) const;
+
 
   public:
     RASBFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)

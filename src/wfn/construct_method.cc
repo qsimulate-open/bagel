@@ -50,6 +50,8 @@
 #include <src/prop/current.h>
 #include <src/wfn/construct_method.h>
 
+#include <src/asd/orbital/bfgs.h>
+
 #include <src/asd/orbopt/superci.h>
 #include <src/asd/orbopt/bfgs.h>
 #include <src/asd/orbopt/bfgs2.h>
@@ -105,6 +107,13 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         throw runtime_error("unknown FCI algorithm specified. " + algorithm);
     }
 //ADDED
+    else if (title == "asdcasscf") {
+      string algorithm = itree->get<string>("algorithm", "");
+      if (algorithm == "bfgs")
+        out = make_shared<ASD_BFGS>(itree, geom, ref);
+      else
+        throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
+    }
     else if (title == "asdscf") {
       string algorithm = itree->get<string>("algorithm", "");
       cout << "ASDSCF called with " << algorithm << endl;

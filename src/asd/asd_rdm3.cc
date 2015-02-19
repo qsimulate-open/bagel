@@ -135,7 +135,8 @@ double ASD_base::element_3RDM(const int a, const int i, const int b, const int j
   //      c
 
   //            Matrix             Element
-  double* ptr = rdm3_.at(bstring)->element_ptr1(n);
+//double* ptr = rdm3_.at(bstring)->element_ptr1(n);
+  double* ptr = rdm3_.at(bstring)->element_ptr(n,1);
   double out = *ptr;
   delete ptr;
 
