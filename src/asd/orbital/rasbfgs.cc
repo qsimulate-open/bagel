@@ -1,10 +1,10 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: bfgs2.cc
+// Filename: asd/orbital/rasbfgs.cc
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: Shiozaki Group
 //
 // This file is part of the BAGEL package.
 //
@@ -24,7 +24,7 @@
 //
 
 #include <src/scf/hf/fock.h>
-#include <src/asd/orbital/bfgs.h> 
+#include <src/asd/orbital/rasbfgs.h> 
 #include <src/util/math/davidson.h>
 #include <src/util/math/step_restrict_bfgs.h>
 #include <src/util/math/hpw_diis.h>
@@ -34,18 +34,18 @@
 using namespace std;
 using namespace bagel;
 
-void ASD_BFGS::compute() {
-
+void ASD_RAS_BFGS::compute() {
+  cout << "ASDBFGS-compute entered.." << endl;
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 
-  shared_ptr<SRBFGS<ASD_RotFile>> bfgs;
+  shared_ptr<SRBFGS<ASD_RAS_RotFile>> bfgs;
   pair<double,double> gpair;
   bool together = false;
   bool together_denom = false;
-  double gthr = 1.0e-5;
+  double gthr = 5.0e-4;
 
   shared_ptr<SRBFGS<RotFile>> bfgs_large;
-  shared_ptr<SRBFGS<ASD_ActiveRotFile>> bfgs_small;
+  shared_ptr<SRBFGS<ASD_RAS_ActiveRotFile>> bfgs_small;
 
   // ============================
   // macro iteration from here
@@ -58,6 +58,11 @@ void ASD_BFGS::compute() {
   shared_ptr<const Matrix> xstart;
   vector<double> evals;
 
+  auto x_large = make_shared<Matrix>(nbasis_, nbasis_);
+  x_large->unit();
+  auto x_small = make_shared<Matrix>(nbasis_, nbasis_);
+  x_small->unit();
+
   auto asd = construct_ASD(asdinput_, dimer_);
   rdm1_ = make_shared<RDM<1>>(nact_);
   rdm2_ = make_shared<RDM<2>>(nact_);
@@ -65,10 +70,17 @@ void ASD_BFGS::compute() {
 //mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
-//  const shared_ptr<const Coeff> cold = coeff_;
-//  const shared_ptr<const Matrix> xold = x->copy();
-
     bool large = iter%2 == 0 ? true : false;
+
+    const shared_ptr<const Coeff> cold = coeff_;
+    const shared_ptr<const Matrix> xold = x->copy();
+
+    // first perform CASCI to obtain RDMs
+//  if (iter) fci_->update(coeff_);
+//  fci_->compute();
+//  fci_->compute_rdm12();
+//  // get energy
+//  energy_ = fci_->energy();
 
     //Perform ASD
     if (iter) {
@@ -121,12 +133,14 @@ void ASD_BFGS::compute() {
     const MatView cdata = coeff_->slice(nclosed_, nclosed_+nact_);
     half_ = geom_->df()->compute_half_transform(cdata);
 //END
-  
-    shared_ptr<ASD_RotFile> sigma;
+
+//  auto sigma = make_shared<ASD_RAS_RotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_ );
+//  sigma->zero();
+    shared_ptr<ASD_RAS_RotFile> sigma;
     shared_ptr<RotFile> sigma_large;
-    shared_ptr<ASD_ActiveRotFile> sigma_small;
+    shared_ptr<ASD_RAS_ActiveRotFile> sigma_small;
     if (together) {
-      sigma = make_shared<ASD_RotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_ );
+      sigma = make_shared<ASD_RAS_RotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_ );
       sigma->zero();
     } else {
       if (large) {
@@ -134,7 +148,7 @@ void ASD_BFGS::compute() {
         sigma_large->zero();
       } else {
         //small
-        sigma_small = make_shared<ASD_ActiveRotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_ );
+        sigma_small = make_shared<ASD_RAS_ActiveRotFile>(nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_ );
         sigma_small->zero();
       }
     }
@@ -191,64 +205,92 @@ void ASD_BFGS::compute() {
     }
   
 
-
     if (together) {
-    // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
+      // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
       grad_vc(cfock, afock, sigma);
+      cout << "BFGS: Gradient vc done.." << endl;
       // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
       grad_va(cfock, qxr, rdm1_mat, sigma);
+      cout << "BFGS: Gradient va done.." << endl;
       // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
       grad_ca(cfock, afock, qxr, rdm1_mat, sigma);
+      cout << "BFGS: Gradient ca done.." << endl;
       grad_aa(mcfock, sigma);
+      cout << "BFGS: Gradient aa done.." << endl;
+      grad_aa12A(mcfock, sigma);
+      grad_aa13A(mcfock, sigma);
+      grad_aa23A(mcfock, sigma);
+      grad_aa12B(mcfock, sigma);
+      grad_aa13B(mcfock, sigma);
+      grad_aa23B(mcfock, sigma);
+      cout << "BFGS: RAS Gradient aa done.." << endl;
     } else {
-      if (large) {
+        if (large) {
         grad_vc_large(cfock, afock, sigma_large);
         grad_va_large(cfock, qxr, rdm1_mat, sigma_large);
         grad_ca_large(cfock, afock, qxr, rdm1_mat, sigma_large);
       } else {
         //small
         grad_aa_small(mcfock, sigma_small);
+        grad_aa12A_small(mcfock, sigma_small);
+        grad_aa13A_small(mcfock, sigma_small);
+        grad_aa23A_small(mcfock, sigma_small);
+        grad_aa12B_small(mcfock, sigma_small);
+        grad_aa13B_small(mcfock, sigma_small);
+        grad_aa23B_small(mcfock, sigma_small);
       }
     }
 
     // if this is the first time, set up the BFGS solver
 //  if (iter == 0) {
 //    // BFGS and DIIS should start at the same time
-//    shared_ptr<const ASD_RotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock);
-//    bfgs = make_shared<SRBFGS<ASD_RotFile>>(denom);
+//    shared_ptr<const ASD_RAS_RotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock);
+//    bfgs = make_shared<SRBFGS<ASD_RAS_RotFile>>(denom);
 //  }
     if (iter == 0) {
       shared_ptr<const RotFile> denom_large = compute_denom_large(cfock, afock, qxr, rdm1_mat);
       bfgs_large = make_shared<SRBFGS<RotFile>>(denom_large);
     } else if (iter == 1) {
       //small
-      shared_ptr<const ASD_ActiveRotFile> denom_small = compute_denom_small(cfock, afock, rdm1_mat, mcfock);
-      bfgs_small = make_shared<SRBFGS<ASD_ActiveRotFile>>(denom_small);
+      shared_ptr<const ASD_RAS_ActiveRotFile> denom_small = compute_denom_small(cfock, afock, rdm1_mat, mcfock);
+      bfgs_small = make_shared<SRBFGS<ASD_RAS_ActiveRotFile>>(denom_small);
     }
     if (together && !together_denom) {
-      shared_ptr<const ASD_RotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock);
-      bfgs = make_shared<SRBFGS<ASD_RotFile>>(denom);
+      shared_ptr<const ASD_RAS_RotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock);
+      bfgs = make_shared<SRBFGS<ASD_RAS_RotFile>>(denom);
       together_denom = true;
     }
+
+
+//  // extrapolation using BFGS
+//  cout << " " << endl;
+//  cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
+//  *x *= *natorb_mat;
+//  auto xcopy = x->log(8);
+//  auto xlog  = make_shared<ASD_RAS_RotFile>(xcopy, nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_);
+//  bfgs->check_step(evals, sigma, xlog);
+//  shared_ptr<ASD_RAS_RotFile> a = bfgs->more_sorensen_extrapolate(sigma, xlog);
+//  cout << " ---------------------------------------------------- " << endl << endl;
+
 
     // extrapolation using BFGS
     Timer extrap(0);
     shared_ptr<RotFile> a;
-    shared_ptr<ASD_ActiveRotFile> b;
-    shared_ptr<ASD_RotFile> c;
+    shared_ptr<ASD_RAS_ActiveRotFile> b;
+    shared_ptr<ASD_RAS_RotFile> c;
 //  cout << " " << endl;
     if (together) {
       cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
 ////*x *= *natorb_mat;
       auto xcopy = x->log(8);
-      auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, nactA_, nactB_ );
+      auto xlog  = make_shared<ASD_RAS_RotFile>(xcopy, nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_);
       bfgs->check_step(evals, sigma, xlog);
       c = bfgs->more_sorensen_extrapolate(sigma, xlog);
       cout << " ---------------------------------------------------- " << endl << endl;
     } else {
       if (large) {
         cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
-        auto xcopy = x->log(8);
+        auto xcopy = x_large->log(8);
         auto xlog  = make_shared<RotFile>(xcopy, nclosed_, nact_, nvirt_);
         bfgs_large->check_step(evals, sigma_large, xlog); //, /*tight*/false, limited_memory);
         a = bfgs_large->more_sorensen_extrapolate(sigma_large, xlog);
@@ -258,8 +300,8 @@ void ASD_BFGS::compute() {
       } else {
         //small
         cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
-        auto xcopy = x->log(8);
-        auto xlog  = make_shared<ASD_ActiveRotFile>(xcopy, nclosed_, nact_, nvirt_, nactA_, nactB_);
+        auto xcopy = x_small->log(8);
+        auto xlog  = make_shared<ASD_RAS_ActiveRotFile>(xcopy, nclosed_, nact_, nvirt_, nactA_, nactB_, rasA_, rasB_);
         bfgs_small->check_step(evals, sigma_small, xlog); //, /*tight*/false, limited_memory);
         b = bfgs_small->more_sorensen_extrapolate(sigma_small, xlog);
         cout << " ---------------------------------------------------- " << endl;
@@ -268,23 +310,32 @@ void ASD_BFGS::compute() {
       }
     }
 
-    // restore the matrix from ASD_RotFile
+
+
+
+    // restore the matrix from ASD_RAS_RotFile
 //  shared_ptr<const Matrix> amat = a->unpack<Matrix>();
-//  shared_ptr<const Matrix> amat = iter%2 == 0 ? a->unpack<Matrix>() : b->unpack<Matrix>();
     shared_ptr<Matrix> amat;
     if (together) {
       amat = c->unpack<Matrix>();
     } else {
       amat = iter%2 == 0 ? a->unpack<Matrix>() : b->unpack<Matrix>();
     }
-
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 
     // updating coefficients
     coeff_ = make_shared<const Coeff>(*coeff_ * *expa);
-    // for next BFGS e2xtrapolation
-    *x *= *expa;
+    // for next BFGS extrapolation
+//  *x *= *expa;
+    if (together) {
+      *x *= *expa;
+    } else {
+      if (large)
+        *x_large *= *expa;
+      else
+        *x_small *= *expa;
+    }
 
     // synchronization
     mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
@@ -298,7 +349,7 @@ void ASD_BFGS::compute() {
       gradient = iter%2 == 0 ? sigma_large->rms() : sigma_small->rms() ;
     }
 
-    if (large) 
+    if (large)
       get<0>(gpair) = gradient;
     else
       get<1>(gpair) = gradient;
@@ -310,6 +361,7 @@ void ASD_BFGS::compute() {
       }
     }
 
+//  sigma->print("RASGRADIENTS");
     cout << "Macro gradient = " << gradient << endl;
 
 //  resume_stdcout();

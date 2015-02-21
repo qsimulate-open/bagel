@@ -51,6 +51,7 @@ class ASD_RAS : public ASD<RASDvec> {
     void sigma_2a1_new(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
     void sigma_2a2_new(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
     void sigma_2a3_new(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
+    void sigma_2a4_new(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
 
 };
 

@@ -42,7 +42,7 @@ void ASD_BFGS::compute() {
   pair<double,double> gpair;
   bool together = false;
   bool together_denom = false;
-  double gthr = 1.0e-5;
+  double gthr = 5.0e-4;
 
   shared_ptr<SRBFGS<RotFile>> bfgs_large;
   shared_ptr<SRBFGS<ASD_ActiveRotFile>> bfgs_small;
