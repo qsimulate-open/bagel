@@ -327,7 +327,8 @@ void ASD_BFGS::compute() {
     const double cgr = gradient;
     print_iteration(iter, 0, 0, energy_, cgr, timer.tick());
 
-    if (gradient < thresh_) {
+//  if (gradient < thresh_) {
+    if (max(get<0>(gpair),get<1>(gpair)) < thresh_) {
       rms_grad_ = gradient;
       cout << " " << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;

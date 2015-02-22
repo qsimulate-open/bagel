@@ -61,9 +61,9 @@ class ASD_ActiveRotationMatrix {
       : nclosed_(iclos), nact_(iact), nvirt_(ivirt), nactA_(iactA), nactB_(iactB), size_(iactA*iactB), data_(new DataType[size_]) {
     //const int nocc = nclosed_ + nact_;
       assert(iact == iactA+iactB);
-      for (int i = 0; i != nactB_; ++i) {
-        for (int j = 0; j != nactA_; ++j) {
-          ele_aa(j, i) = o->element(j+nclosed_,i+nclosed_+nactA_);
+      for (int i = 0; i != nactA_; ++i) {
+        for (int j = 0; j != nactB_; ++j) {
+          ele_aa(j, i) = o->element(j+nclosed_+nactA_,i+nclosed_);
         }
       }
     }
@@ -142,10 +142,10 @@ class ASD_ActiveRotationMatrix {
 
     // active-active block. A index runs first
     DataType* ptr_aa() { return data(); }
-    DataType& ele_aa(const int ia, const int ib) { return data_[ia + ib*nactA_]; }
+    DataType& ele_aa(const int ib, const int ia) { return data_[ib + ia*nactB_]; }
 
     // const references and pointers
-    const DataType& ele_aa(const int ia, const int ib) const { return data_[ia + ib*nactA_]; }
+    const DataType& ele_aa(const int ib, const int ia) const { return data_[ib + ia*nactB_]; }
     const DataType* ptr_aa() const { return data(); }
 
     // unpack to Matrix
@@ -157,11 +157,9 @@ class ASD_ActiveRotationMatrix {
       std::fill_n(out->data(), out->size(), a);
 
       //Active-Active 
-      for (int i = 0; i != nactB_; ++i) {
-        for (int j = 0; j != nactA_; ++j) {
-        //out->element(j+nclosed_, i+nclosed_+nactA_) = ele_aa(j, i);
-          out->element(i+nclosed_+nactA_,j+nclosed_) = -ele_aa(j,i);
-        //out->element(i+nclosed_+nactA_,j+nclosed_) = ele_aa(j,i);
+      for (int i = 0; i != nactA_; ++i) {
+        for (int j = 0; j != nactB_; ++j) {
+          out->element(j+nclosed_+nactA_,i+nclosed_) = ele_aa(j,i);
         }
       }
       //Anti-symmetric
@@ -178,9 +176,9 @@ class ASD_ActiveRotationMatrix {
     void print(const std::string in = "") const {
       std::cout << "++++ " + in + " ++++" << std::endl;
       if (nactA_ && nactB_) {
-        std::cout << " printing active(A)-active(B) block" << std::endl;
-        for (int i = 0; i != nactB_; ++i) {
-          for (int j = 0; j != nactA_; ++j) {
+        std::cout << " printing active(B)-active(A) block" << std::endl;
+        for (int i = 0; i != nactA_; ++i) {
+          for (int j = 0; j != nactB_; ++j) {
             std::cout << std::setw(10) << std::setprecision(6) << ele_aa(j,i);
           }
           std::cout << std::endl;

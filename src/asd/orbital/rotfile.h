@@ -74,9 +74,9 @@ class ASD_RotationMatrix {
           ele_vc(j, i) = o->element(j+nocc, i);
         }
       }
-      for (int i = 0; i != nactB_; ++i) {
-        for (int j = 0; j != nactA_; ++j) {
-          ele_aa(j, i) = o->element(j+nclosed_,i+nclosed_+nactA_);
+      for (int i = 0; i != nactA_; ++i) {
+        for (int j = 0; j != nactB_; ++j) {
+          ele_aa(j, i) = o->element(j+nclosed_+nactA_,i+nclosed_);
         }
       }
     }
@@ -147,7 +147,7 @@ class ASD_RotationMatrix {
     // return data_
     DataType* end() { return data()+size_; }
 
-    // ROTATION MATRIX
+    // ROTATION MATRIX (Note: transpose below)
     //   C   A   V        A(A) A(B)   ORDERED AS:
     // C .  ca  cv    A(A)  .  [aa]   ca -> va -> vc -> aa
     // A . [aa] av    A(B)  .    .
@@ -162,15 +162,15 @@ class ASD_RotationMatrix {
     // closed-virtual block. virtual runs first
     DataType* ptr_vc() { return data() + (nclosed_+nvirt_)*nact_; }
     DataType& ele_vc(const int iv, const int ic) { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
-    // active-active block. A index runs first
+    // active-active block. B index runs first
     DataType* ptr_aa() { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_; }
-    DataType& ele_aa(const int ia, const int ib) { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ia + ib*nactA_]; }
+    DataType& ele_aa(const int ib, const int ia) { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ib + ia*nactB_]; }
 
     // const references and pointers
     const DataType& ele_ca(const int ic, const int ia) const { return data_[ic + ia*nclosed_]; }
     const DataType& ele_va(const int iv, const int ia) const { return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
     const DataType& ele_vc(const int iv, const int ic) const { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
-    const DataType& ele_aa(const int ia, const int ib) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ia + ib*nactA_]; }
+    const DataType& ele_aa(const int ib, const int ia) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ib + ia*nactB_]; }
 
     const DataType* ptr_ca() const { return data(); }
     const DataType* ptr_va() const { return data() + nclosed_*nact_; }
@@ -202,11 +202,9 @@ class ASD_RotationMatrix {
         }
       }
       //Active-Active 
-      for (int i = 0; i != nactB_; ++i) {
-        for (int j = 0; j != nactA_; ++j) {
-        //out->element(j+nclosed_, i+nclosed_+nactA_) = ele_aa(j, i);
-          out->element(i+nclosed_+nactA_,j+nclosed_) = -ele_aa(j,i);
-        //out->element(i+nclosed_+nactA_,j+nclosed_) = ele_aa(j,i);
+      for (int i = 0; i != nactA_; ++i) {
+        for (int j = 0; j != nactB_; ++j) {
+          out->element(j+nclosed_+nactA_,i+nclosed_) = ele_aa(j,i);
         }
       }
       //Anti-symmetric
@@ -250,9 +248,9 @@ class ASD_RotationMatrix {
         }
       }
       if (nactA_ && nactB_) {
-        std::cout << " printing active(A)-active(B) block" << std::endl;
-        for (int i = 0; i != nactB_; ++i) {
-          for (int j = 0; j != nactA_; ++j) {
+        std::cout << " printing active(B)-active(A) block" << std::endl;
+        for (int i = 0; i != nactA_; ++i) {
+          for (int j = 0; j != nactB_; ++j) {
             std::cout << std::setw(10) << std::setprecision(6) << ele_aa(j,i);
           }
           std::cout << std::endl;

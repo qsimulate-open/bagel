@@ -71,9 +71,9 @@ void ASD_BFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> 
 void ASD_BFGS::grad_aa(shared_ptr<const Matrix> mcfock, shared_ptr<ASD_RotFile> sigma) const {
   if (!nact_) return;
   double* target = sigma->ptr_aa();
-  for (int jb = nactA_; jb != nact_; ++jb) { //B
-    for (int ia = 0; ia != nactA_; ++ia, ++target) { //A
-      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+  for (int ia = 0; ia != nactA_; ++ia) { //A
+    for (int jb = nactA_; jb != nact_; ++jb, ++target) { //B
+      *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
     }
   }
 }
@@ -121,9 +121,9 @@ void ASD_BFGS::grad_ca_large(shared_ptr<const Matrix> cfock, shared_ptr<const Ma
 void ASD_BFGS::grad_aa_small(shared_ptr<const Matrix> mcfock, shared_ptr<ASD_ActiveRotFile> sigma) const {
   if (!nact_) return;
   double* target = sigma->ptr_aa();
-  for (int jb = nactA_; jb != nact_; ++jb) { //B
-    for (int ia = 0; ia != nactA_; ++ia, ++target) { //A
-      *target = -2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+  for (int ia = 0; ia != nactA_; ++ia) { //A
+    for (int jb = nactA_; jb != nact_; ++jb, ++target) { //B
+      *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
     }
   }
 }
