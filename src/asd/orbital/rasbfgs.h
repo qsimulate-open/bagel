@@ -44,13 +44,6 @@ class ASD_RAS_BFGS : public ASD_RASSCF {
 
     void grad_aa(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_RotFile> sigma) const;
 
-    void grad_aa12A(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_RotFile> sigma) const;
-    void grad_aa13A(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_RotFile> sigma) const;
-    void grad_aa23A(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_RotFile> sigma) const;
-    void grad_aa12B(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_RotFile> sigma) const;
-    void grad_aa13B(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_RotFile> sigma) const;
-    void grad_aa23B(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_RotFile> sigma) const;
-
     //large
     void grad_vc_large(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<RotFile> sigma) const;
     void grad_va_large(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> qxr,   std::shared_ptr<Matrix> rdm1, std::shared_ptr<RotFile> sigma) const;
@@ -58,12 +51,6 @@ class ASD_RAS_BFGS : public ASD_RASSCF {
 
     //small
     void grad_aa_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_ActiveRotFile> sigma) const;
-    void grad_aa12A_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_ActiveRotFile> sigma) const;
-    void grad_aa13A_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_ActiveRotFile> sigma) const;
-    void grad_aa23A_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_ActiveRotFile> sigma) const;
-    void grad_aa12B_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_ActiveRotFile> sigma) const;
-    void grad_aa13B_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_ActiveRotFile> sigma) const;
-    void grad_aa23B_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RAS_ActiveRotFile> sigma) const;
 
     // compute diagonal denominators
     std::shared_ptr<const ASD_RAS_RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock) const;

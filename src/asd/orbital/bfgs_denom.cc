@@ -68,8 +68,8 @@ shared_ptr<const ASD_RotFile> ASD_BFGS::compute_denom(shared_ptr<const Matrix> c
   // tu part
   if (nact_) {
     double* target = out->ptr_aa();
-    for (int i = nactA_; i != nact_; ++i) { //B
-      for (int j = 0; j != nactA_; ++j) { //A
+    for (int i = 0; i != nactA_; ++i) { //A
+      for (int j = nactA_; j != nact_; ++j) { //B
         *target++ = 2.0*( 
                     - mcfock->element(j,j) - mcfock->element(i,i) 
                     + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_) 

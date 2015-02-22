@@ -237,24 +237,24 @@ class ASD_RAS_RotationMatrix {
     const DataType& ele_vc(const int iv, const int ic) const { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
     const DataType& ele_aa(const int ib, const int ia) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ib + ia*nactB_]; }
 
-    const DataType& ele_aa12A(const int ia, const int ib) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + ia + ib*rasA_[0]]; }
-    const DataType& ele_aa13A(const int ia, const int ib) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + ia + ib*rasA_[0]]; }
-    const DataType& ele_aa23A(const int ia, const int ib) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + ia + ib*rasA_[1]]; }
-    const DataType& ele_aa12B(const int ia, const int ib) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + ia + ib*rasB_[0]]; }
-    const DataType& ele_aa13B(const int ia, const int ib) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1] + ia + ib*rasB_[0]]; }
-    const DataType& ele_aa23B(const int ia, const int ib) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1] + rasB_[0]*rasB_[2] + ia + ib*rasB_[1]]; }
+    const DataType& ele_aa21A(const int i2, const int i1) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + i2 + i1*rasA_[1]]; }
+    const DataType& ele_aa31A(const int i3, const int i1) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + i3 + i1*rasA_[2]]; }
+    const DataType& ele_aa32A(const int i3, const int i2) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + i3 + i2*rasA_[2]]; }
+    const DataType& ele_aa21B(const int i2, const int i1) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + i2 + i1*rasB_[1]]; }
+    const DataType& ele_aa31B(const int i3, const int i1) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1] + i3 + i1*rasB_[2]]; }
+    const DataType& ele_aa32B(const int i3, const int i2) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1] + rasB_[0]*rasB_[2] + i3 + i2*rasB_[2]]; }
 
     const DataType* ptr_ca() const { return data(); }
     const DataType* ptr_va() const { return data() + nclosed_*nact_; }
     const DataType* ptr_vc() const { return data() + (nclosed_+nvirt_)*nact_; }
     const DataType* ptr_aa() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_; }
-    const DataType* ptr_aa12A() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_; }
-    const DataType* ptr_aa13A() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1]; }
-    const DataType* ptr_aa23A() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2]; }
-    const DataType* ptr_aa12B() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2]; }
-    const DataType* ptr_aa13B() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2]
+    const DataType* ptr_aa21A() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_; }
+    const DataType* ptr_aa31A() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1]; }
+    const DataType* ptr_aa32A() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2]; }
+    const DataType* ptr_aa21B() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2]; }
+    const DataType* ptr_aa31B() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2]
                                                                                                                   + rasB_[0]*rasB_[1]; }
-    const DataType* ptr_aa23B() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2]
+    const DataType* ptr_aa32B() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2]
                                                                                                                   + rasB_[0]*rasB_[1] + rasB_[0]*rasB_[2]; }
 
     // unpack to Matrix
@@ -282,38 +282,36 @@ class ASD_RAS_RotationMatrix {
         }
       }
       //Active-Active 
-      for (int i = 0; i != nactB_; ++i) {
-        for (int j = 0; j != nactA_; ++j) {
-        //out->element(j+nclosed_, i+nclosed_+nactA_) = ele_aa(j, i);
-          out->element(i+nclosed_+nactA_,j+nclosed_) = -ele_aa(j,i);
-        //out->element(i+nclosed_+nactA_,j+nclosed_) = ele_aa(j,i);
+      for (int i = 0; i != nactA_; ++i) {
+        for (int j = 0; j != nactB_; ++j) {
+          out->element(j+nclosed_+nactA_,i+nclosed_) = ele_aa(j,i);
         }
       }
-      //RAS A: follows Active-active parity
-      for (int i = 0; i != rasA_[1]; ++i)
-        for (int j = 0; j != rasA_[0]; ++j) {
-          out->element(i+nclosed_+rasA_[0],j+nclosed_) = -ele_aa12A(j,i);
-        }
-      for (int i = 0; i != rasA_[2]; ++i) 
-        for (int j = 0; j != rasA_[0]; ++j) {
-          out->element(i+nclosed_+rasA_[0]+rasA_[1],j+nclosed_) = -ele_aa13A(j,i);
-        }
-      for (int i = 0; i != rasA_[2]; ++i) 
+      //RAS A
+      for (int i = 0; i != rasA_[0]; ++i)
         for (int j = 0; j != rasA_[1]; ++j) {
-          out->element(i+nclosed_+rasA_[0]+rasA_[1],j+nclosed_+rasA_[0]) = -ele_aa23A(j,i);
+          out->element(j+nclosed_+rasA_[0],i+nclosed_) = ele_aa21A(j,i);
+        }
+      for (int i = 0; i != rasA_[0]; ++i) 
+        for (int j = 0; j != rasA_[2]; ++j) {
+          out->element(j+nclosed_+rasA_[0]+rasA_[1],i+nclosed_) = ele_aa31A(j,i);
+        }
+      for (int i = 0; i != rasA_[1]; ++i) 
+        for (int j = 0; j != rasA_[2]; ++j) {
+          out->element(j+nclosed_+rasA_[0]+rasA_[1],i+nclosed_+rasA_[0]) = ele_aa32A(j,i);
         }
       //RAS B
-      for (int i = 0; i != rasB_[1]; ++i) 
-        for (int j = 0; j != rasB_[0]; ++j) {
-          out->element(i+nclosed_+nactA_+rasB_[0],j+nclosed_+nactA_) = -ele_aa12B(j,i);
-        }
-      for (int i = 0; i != rasB_[2]; ++i) 
-        for (int j = 0; j != rasB_[0]; ++j) {
-          out->element(i+nclosed_+nactA_+rasB_[0]+rasB_[1],j+nclosed_+nactA_) = -ele_aa13B(j,i);
-        }
-      for (int i = 0; i != rasB_[2]; ++i) 
+      for (int i = 0; i != rasB_[0]; ++i) 
         for (int j = 0; j != rasB_[1]; ++j) {
-          out->element(i+nclosed_+nactA_+rasB_[0]+rasB_[1],j+nclosed_+nactA_+rasB_[0]) = -ele_aa23B(j,i);
+          out->element(j+nclosed_+nactA_+rasB_[0],i+nclosed_+nactA_) = ele_aa21B(j,i);
+        }
+      for (int i = 0; i != rasB_[0]; ++i) 
+        for (int j = 0; j != rasB_[2]; ++j) {
+          out->element(j+nclosed_+nactA_+rasB_[0]+rasB_[1],i+nclosed_+nactA_) = ele_aa31B(j,i);
+        }
+      for (int i = 0; i != rasB_[1]; ++i) 
+        for (int j = 0; j != rasB_[2]; ++j) {
+          out->element(j+nclosed_+nactA_+rasB_[0]+rasB_[1],i+nclosed_+nactA_+rasB_[0]) = ele_aa32B(j,i);
         }
 
       //Anti-symmetric
@@ -357,9 +355,9 @@ class ASD_RAS_RotationMatrix {
         }
       }
       if (nactA_ && nactB_) {
-        std::cout << " printing active(A)-active(B) block" << std::endl;
-        for (int i = 0; i != nactB_; ++i) {
-          for (int j = 0; j != nactA_; ++j) {
+        std::cout << " printing active(B)-active(A) block" << std::endl;
+        for (int i = 0; i != nactA_; ++i) {
+          for (int j = 0; j != nactB_; ++j) {
             std::cout << std::setw(10) << std::setprecision(6) << ele_aa(j,i);
           }
           std::cout << std::endl;
@@ -368,40 +366,40 @@ class ASD_RAS_RotationMatrix {
       if (nactA_ && nactB_) {
         std::cout << " printing RAS(A) blocks" << std::endl;
         std::cout << "          RAS1-RAS2 blocks" << std::endl;
-        for (int i = 0; i != rasA_[1]; ++i) 
-          for (int j = 0; j != rasA_[0]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa12A(j,i);
-          }
-        std::cout << std::endl;
-        std::cout << "          RAS1-RAS3 blocks" << std::endl;
-        for (int i = 0; i != rasA_[2]; ++i) 
-          for (int j = 0; j != rasA_[0]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa13A(j,i);
-          }
-        std::cout << std::endl;
-        std::cout << "          RAS2-RAS3 blocks" << std::endl;
-        for (int i = 0; i != rasA_[2]; ++i) 
+        for (int i = 0; i != rasA_[0]; ++i) 
           for (int j = 0; j != rasA_[1]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa23A(j,i);
-          }
-        std::cout << std::endl;
-        std::cout << " printing RAS(B) blocks" << std::endl;
-        std::cout << "          RAS1-RAS2 blocks" << std::endl;
-        for (int i = 0; i != rasB_[1]; ++i) 
-          for (int j = 0; j != rasB_[0]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa12B(j,i);
-          }
-        std::cout << std::endl;
-        std::cout << "          RAS1-RAS3 blocks" << std::endl;
-        for (int i = 0; i != rasB_[2]; ++i) 
-          for (int j = 0; j != rasB_[0]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa13B(j,i);
-          }
-        std::cout << std::endl;
-        std::cout << "          RAS2-RAS3 blocks" << std::endl;
-        for (int i = 0; i != rasB_[2]; ++i) 
-          for (int j = 0; j != rasB_[1]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa23B(j,i);
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa21A(j,i);
+          }                                                               
+        std::cout << std::endl;                                           
+        std::cout << "          RAS1-RAS3 blocks" << std::endl;           
+        for (int i = 0; i != rasA_[0]; ++i)                               
+          for (int j = 0; j != rasA_[2]; ++j) {                           
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa31A(j,i);
+          }                                                               
+        std::cout << std::endl;                                           
+        std::cout << "          RAS2-RAS3 blocks" << std::endl;           
+        for (int i = 0; i != rasA_[1]; ++i)                               
+          for (int j = 0; j != rasA_[2]; ++j) {                           
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa32A(j,i);
+          }                                                               
+        std::cout << std::endl;                                           
+        std::cout << " printing RAS(B) blocks" << std::endl;              
+        std::cout << "          RAS1-RAS2 blocks" << std::endl;           
+        for (int i = 0; i != rasB_[0]; ++i)                               
+          for (int j = 0; j != rasB_[1]; ++j) {                           
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa21B(j,i);
+          }                                                               
+        std::cout << std::endl;                                           
+        std::cout << "          RAS1-RAS3 blocks" << std::endl;           
+        for (int i = 0; i != rasB_[0]; ++i)                               
+          for (int j = 0; j != rasB_[2]; ++j) {                           
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa31B(j,i);
+          }                                                               
+        std::cout << std::endl;                                           
+        std::cout << "          RAS2-RAS3 blocks" << std::endl;           
+        for (int i = 0; i != rasB_[1]; ++i)                               
+          for (int j = 0; j != rasB_[2]; ++j) {                           
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa32B(j,i);
           }
         std::cout << std::endl;
       }

@@ -217,13 +217,6 @@ void ASD_RAS_BFGS::compute() {
       cout << "BFGS: Gradient ca done.." << endl;
       grad_aa(mcfock, sigma);
       cout << "BFGS: Gradient aa done.." << endl;
-      grad_aa12A(mcfock, sigma);
-      grad_aa13A(mcfock, sigma);
-      grad_aa23A(mcfock, sigma);
-      grad_aa12B(mcfock, sigma);
-      grad_aa13B(mcfock, sigma);
-      grad_aa23B(mcfock, sigma);
-      cout << "BFGS: RAS Gradient aa done.." << endl;
     } else {
         if (large) {
         grad_vc_large(cfock, afock, sigma_large);
@@ -232,12 +225,6 @@ void ASD_RAS_BFGS::compute() {
       } else {
         //small
         grad_aa_small(mcfock, sigma_small);
-        grad_aa12A_small(mcfock, sigma_small);
-        grad_aa13A_small(mcfock, sigma_small);
-        grad_aa23A_small(mcfock, sigma_small);
-        grad_aa12B_small(mcfock, sigma_small);
-        grad_aa13B_small(mcfock, sigma_small);
-        grad_aa23B_small(mcfock, sigma_small);
       }
     }
 
