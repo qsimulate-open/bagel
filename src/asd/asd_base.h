@@ -101,9 +101,8 @@ class ASD_base {
     std::vector<double> diagonalize(std::shared_ptr<Matrix>& cc, const std::vector<DimerSubspace_base>& subspace, const bool mute = false);
 
     // Off-diagonal stuff
-    template <bool _N, typename return_type = typename std::conditional<_N, Matrix, RDM<2>>::type>
-    std::shared_ptr<return_type> couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const; // Off-diagonal driver for H
-
+    template <bool _N, typename return_type = typename std::conditional<_N, std::shared_ptr<Matrix>, std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>>>::type>
+    return_type couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const; // Off-diagonal driver for H
 
     template <bool _N> typename std::conditional<_N, std::shared_ptr<Matrix>, std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>>>::type
       compute_offdiagonal_1e(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix> h) const { assert(false); return nullptr; }
@@ -159,10 +158,12 @@ class ASD_base {
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
-    void symmetrize_RDM() const;
     //RDM debug functions
     void debug_RDM() const;
     void debug_energy() const;
+
+  private:
+    void symmetrize_rdm12(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&) const;
 };
 
 template<> std::shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e<true>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
@@ -175,15 +176,15 @@ template<> std::shared_ptr<Matrix> ASD_base::compute_aaET<true>(const std::array
 template<> std::shared_ptr<Matrix> ASD_base::compute_bbET<true>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<Matrix> ASD_base::compute_diagonal_block<true>(const DimerSubspace_base& subspace) const;
 
-template<> std::shared_ptr<RDM<2>> ASD_base::compute_offdiagonal_1e<false>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
-template<> std::shared_ptr<RDM<2>> ASD_base::compute_inter_2e<false>(const std::array<MonomerKey,4>&, const bool subdia) const;
-template<> std::shared_ptr<RDM<2>> ASD_base::compute_aET<false>(const std::array<MonomerKey,4>&) const;
-template<> std::shared_ptr<RDM<2>> ASD_base::compute_bET<false>(const std::array<MonomerKey,4>&) const;
-template<> std::shared_ptr<RDM<2>> ASD_base::compute_abFlip<false>(const std::array<MonomerKey,4>&) const;
-template<> std::shared_ptr<RDM<2>> ASD_base::compute_abET<false>(const std::array<MonomerKey,4>&) const;
-template<> std::shared_ptr<RDM<2>> ASD_base::compute_aaET<false>(const std::array<MonomerKey,4>&) const;
-template<> std::shared_ptr<RDM<2>> ASD_base::compute_bbET<false>(const std::array<MonomerKey,4>&) const;
-template<> std::shared_ptr<RDM<2>> ASD_base::compute_diagonal_block<false>(const DimerSubspace_base& subspace) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>>std::shared_ptr<RDM<2>> ASD_base::compute_offdiagonal_1e<false>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_inter_2e<false>(const std::array<MonomerKey,4>&, const bool subdia) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_aET<false>(const std::array<MonomerKey,4>&) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_bET<false>(const std::array<MonomerKey,4>&) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_abFlip<false>(const std::array<MonomerKey,4>&) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_abET<false>(const std::array<MonomerKey,4>&) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_aaET<false>(const std::array<MonomerKey,4>&) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_bbET<false>(const std::array<MonomerKey,4>&) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_diagonal_block<false>(const DimerSubspace_base& subspace) const;
 
 namespace {
   template<typename T>
@@ -195,7 +196,7 @@ namespace {
 }
 
 template <bool _N, typename return_type>
-std::shared_ptr<return_type> ASD_base::couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
+return_type ASD_base::couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
 
   Coupling term_type = coupling_type(AB, ApBp);
 
@@ -208,7 +209,7 @@ std::shared_ptr<return_type> ASD_base::couple_blocks(const DimerSubspace_base& A
     std::swap(space1,space2);
   }
 
-  std::shared_ptr<return_type> out;
+  return_type out;
   std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
 
   switch(term_type) {

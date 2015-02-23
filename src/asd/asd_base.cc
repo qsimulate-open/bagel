@@ -71,6 +71,8 @@ ASD_base::ASD_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> 
 
   energies_ = vector<double>(nstates_, 0.0);
 
+  for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
+
   // resizing rdm vectors (with null pointers)
   rdm1_.resize(nstates_);
   rdm2_.resize(nstates_);

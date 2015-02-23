@@ -35,24 +35,12 @@ class ASD_RAS : public ASD<RASDvec> {
     ASD_RAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerRAS> cispace);
 
   private:
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12_monomer(std::pair<int,int>, std::array<RASDvec,4>&) const override;
-    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>, std::shared_ptr<RDM<4>>> compute_rdm34_monomer(std::pair<int,int>, std::array<RASDvec,4>&) const override;
     std::shared_ptr<RASDvec> form_sigma(std::shared_ptr<const RASDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
     std::shared_ptr<RASDvec> form_sigma_1e(std::shared_ptr<const RASDvec> ccvec, const double* modata) const override;
 
     void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
     void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
     void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
-
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12_from_civec(std::shared_ptr<const RASCivec>, std::shared_ptr<const RASCivec>) const;
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12_last_step(std::shared_ptr<const RASDvec>, std::shared_ptr<const RASDvec>, std::shared_ptr<const RASCivec>, std::shared_ptr<const RASDvec>) const;
-    void sigma_2a1(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> d) const;
-    void sigma_2a2(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> d) const;
-    void sigma_2a1_new(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
-    void sigma_2a2_new(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
-    void sigma_2a3_new(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
-    void sigma_2a4_new(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
-
 };
 
 }

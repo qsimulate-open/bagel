@@ -34,49 +34,18 @@ namespace bagel {
 enum class Coupling {
   none = 0,       ///< no coupling
   diagonal = 1,   ///< no change in occupation patterns
-  aET = 2,        ///< alpha transfer (A <-- B)
-  inv_aET = -2,   ///< inverse alpha transfer (A --> B)
-  bET = 3,        ///< beta transfer (A <-- B)
-  inv_bET = -3,   ///< inverse beta transfer (A --> B)
+  aET = 2,        ///< alpha transfer (A --> B)
+  inv_aET = -2,   ///< inverse alpha transfer (B --> A)
+  bET = 3,        ///< beta transfer (A --> B)
+  inv_bET = -3,   ///< inverse beta transfer (B --> A)
   abFlip = 4,     ///< alpha-beta flip
   baFlip = -4,    ///< beta-alpha flip
-  abET = 5,       ///< alpha+beta transfer (A <-- B)
-  inv_abET = -5,  ///< inverse alpha+beta (A --> B)
-  aaET = 6,       ///< alpha+alpha transfer (A <-- B)
-  inv_aaET = -6,  ///< inverse alpha+alpha transfer (A --> B)
-  bbET = 7,       ///< beta+beta transfer (A <-- B)
-  inv_bbET = -7,  ///< inverse beta+beta transfer (A --> B)
-  //ADDED for RDM3
-  aaaET     =  8,
-  inv_aaaET = -8,
-  bbbET     =  9,
-  inv_bbbET = -9,
-  aabET     =  10,
-  inv_aabET = -10,
-  abbET     =  11,
-  inv_abbET = -11,
-  aETflp    =  12,
-  inv_aETflp = -12,
-  bETflp     =  13,
-  inv_bETflp = -13
-  //4RDM
-//a4ET      =  14,
-//inv_a4ET  = -14,
-//b4ET      =  15,
-//inv_b4ET  = -15,
-//a3bET     =  16,
-//inv_a3bET = -16,
-//ab3ET     =  17,
-//inv_ab3ET = -17,
-//a2b2ET    =  18,
-//inv_a2b2ET= -18,
-//doubleFlip     =  19,
-//inv_doubleFlip = -19,
-//a2ETflp     =  20,
-//inv_a2ETflp = -20,
-//b2ETflp     =  21,
-//inv_b2ETflp = -21
-  //END ADDED
+  abET = 5,       ///< alpha+beta transfer (A --> B)
+  inv_abET = -5,  ///< inverse alpha+beta (B --> A)
+  aaET = 6,       ///< alpha+alpha transfer (A --> B)
+  inv_aaET = -6,  ///< inverse alpha+alpha transfer (B --> A)
+  bbET = 7,       ///< beta+beta transfer (A --> B)
+  inv_bbET = -7   ///< inverse beta+beta transfer (B --> A)
 };
 
 inline std::ostream& operator<<(std::ostream& out, const Coupling value){
@@ -104,9 +73,6 @@ inline std::ostream& operator<<(std::ostream& out, const Coupling value){
 
 Coupling coupling_type(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp);
 Coupling coupling_type(const std::array<MonomerKey,4>& keys);
-
-Coupling coupling_type_RDM34(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp);
-Coupling coupling_type_RDM34(const std::array<MonomerKey,4>& keys);
 
 }
 
