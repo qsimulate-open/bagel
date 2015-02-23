@@ -69,22 +69,26 @@ void Tree::build_tree() {
   nodes_[0] = make_shared<Node>();
 
   bitset<nbit__>  current_key;
-  for (int i = (nbit__ - 1)/3 - 1; i >= 0; --i) { /* top down */
-    const int level = (nbit__ - 1)/3 - i;
+  for (int i = max_height_ - 1; i >= 0; --i) { /* top down */
+    const int level = max_height_ - i;
 
-    if (level <= max_height_) {
-      const unsigned int shift = i * 3;
-      bitset<nbit__> key;
+    const unsigned int shift = i * 3;
+    bitset<nbit__> key;
 
-      for (int n = 0; n != nvertex_; ++n) {
-        key = (leaves_[n]->key() >> shift);
+    for (int n = 0; n != nvertex_; ++n) {
+      key = (leaves_[n]->key() >> shift);
 
-        if (key != current_key) { /* insert node */
-          current_key = key;
+      if (key != current_key) { /* insert node */
+        current_key = key;
+        nodes_.resize(nnode_ + 1);
+        const int depth = max_height_ - i;
+
+        if (level == 1) {
+          nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[0]);
+          (nodes_[nnode_])->insert_vertex(leaves_[n]);
+        } else {
           bitset<nbit__> parent_key;
           parent_key  = parent_key | (key >> 3);
-          nodes_.resize(nnode_ + 1);
-          const int depth = (nbit__ - 1)/3 - i;
           bool parent_found = false;
           for (int j = 0; j != nnode_; ++j) {
             if (parent_key == nodes_[j]->key()) {
@@ -96,14 +100,14 @@ void Tree::build_tree() {
 
           if (!parent_found)
             throw runtime_error("add a node without a parent");
-
-          ++nnode_;
-        } else { /* node exists */
-          (nodes_[nnode_-1])->insert_vertex(leaves_[n]);
         }
 
-      } // end of vertex loop
-    } // end of max height check
+        ++nnode_;
+      } else { /* node exists */
+        (nodes_[nnode_-1])->insert_vertex(leaves_[n]);
+      }
+
+    } // end of vertex loop
   } // end if bit loop
 
 
