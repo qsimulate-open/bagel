@@ -58,7 +58,12 @@ class ASD : public ASD_base {
 
   private:
 
-    void monomer_rdm();
+    // rdms
+    void compute_rdm12(); // compute all states at once + averaged rdm
+    void compute_rdm12(const int istate);
+//  std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> compute_rdm34(const int istate) const;
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12_monomer(const int istate);
+
     virtual std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12_monomer (std::pair<int,int>, std::array<VecType,4>&) const = 0;
     virtual std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>, std::shared_ptr<RDM<4>>> compute_rdm34_monomer (std::pair<int,int>, std::array<VecType,4>&) const = 0;
 
