@@ -34,15 +34,36 @@ Node::Node(const std::bitset<nbit__> key, const int depth, std::shared_ptr<const
   if (depth == 0)
     key_[0] = 1;
 
+  is_complete_ = false;
   nbody_  = 0;
 }
 
 
 void Node::insert_vertex(shared_ptr<const Vertex> p) {
 
+  assert(!is_complete_);
   bodies_.resize(nbody_ + 1);
   bodies_[nbody_] = p;
   ++nbody_;
 
   //cout << bodies_[nbody_-1]->position(0) << "  " << bodies_[nbody_-1]->position(1) << "  " << bodies_[nbody_-1]->position(2) << endl;
+}
+
+
+
+void Node::mark_complete() {
+
+  is_complete_ = true;
+
+  position_ = {{0.0, 0.0, 0.0}};
+  double sum = 0.0;
+  for (auto& body : bodies_) {
+    position_[0] += body->atom()->atom_charge() * body->position(0);
+    position_[1] += body->atom()->atom_charge() * body->position(1);
+    position_[2] += body->atom()->atom_charge() * body->position(2);
+    sum += body->atom()->atom_charge();
+  }
+  position_[0] /= sum;
+  position_[1] /= sum;
+  position_[2] /= sum;
 }

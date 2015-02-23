@@ -42,12 +42,15 @@ class Node {
 //    std::array<std::weak_ptr<const Node>, 8> children_;
 
     std::array<double, 3> position_;
+    bool is_complete_;
     int nbody_;
     std::vector<std::shared_ptr<const Vertex>> bodies_;
     std::vector<std::shared_ptr<const Node>> interaction_list_;
 
     void insert_vertex(std::shared_ptr<const Vertex>);
+    void mark_complete();
     void get_interaction_list();
+    void compute_position();
 
   public:
     Node(const std::bitset<nbit__> key = 0, const int depth = 0, std::shared_ptr<const Node> parent = NULL);
@@ -61,6 +64,7 @@ class Node {
     std::array<double, 3> position() const { return position_; }
     double position(const int i) const { return position_[i]; }
 
+    bool is_complete() const { return is_complete_; }
     int nbody() const { return nbody_; }
     std::vector<std::shared_ptr<const Vertex>> bodies() const { return bodies_; }
     std::shared_ptr<const Vertex> bodies(const int i) const { return bodies_[i]; }

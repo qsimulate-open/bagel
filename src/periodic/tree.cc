@@ -30,7 +30,7 @@
 using namespace bagel;
 using namespace std;
 
-Tree::Tree(shared_ptr<const Molecule> mol, const int maxht) : max_height_(maxht) {
+Tree::Tree(shared_ptr<const Molecule> mol, const int maxht) : mol_(mol), max_height_(maxht) {
 
   nvertex_ = mol->natom();
   position_ = mol->charge_center();
@@ -64,15 +64,14 @@ void Tree::init() {
 
 void Tree::build_tree() {
 
-  int nnode = 1;
-  nodes_.resize(nnode);
+  nnode_ = 1;
+  nodes_.resize(nnode_);
   nodes_[0] = make_shared<Node>();
 
   bitset<nbit__>  current_key;
   for (int i = (nbit__ - 1)/3 - 1; i >= 0; --i) { /* top down */
     const int level = (nbit__ - 1)/3 - i;
 
-    cout << "Level " << level << endl;
     if (level <= max_height_) {
       const unsigned int shift = i * 3;
       bitset<nbit__> key;
@@ -84,13 +83,13 @@ void Tree::build_tree() {
           current_key = key;
           bitset<nbit__> parent_key;
           parent_key  = parent_key | (key >> 3);
-          nodes_.resize(nnode + 1);
+          nodes_.resize(nnode_ + 1);
           const int depth = (nbit__ - 1)/3 - i;
           bool parent_found = false;
-          for (int j = 0; j != nnode; ++j) {
+          for (int j = 0; j != nnode_; ++j) {
             if (parent_key == nodes_[j]->key()) {
-              nodes_[nnode] = make_shared<Node>(key, depth, nodes_[j]);
-              (nodes_[nnode])->insert_vertex(leaves_[n]);
+              nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[j]);
+              (nodes_[nnode_])->insert_vertex(leaves_[n]);
               parent_found = true;
             }
           }
@@ -98,19 +97,20 @@ void Tree::build_tree() {
           if (!parent_found)
             throw runtime_error("add a node without a parent");
 
-          ++nnode;
+          ++nnode_;
         } else { /* node exists */
-          (nodes_[nnode-1])->insert_vertex(leaves_[n]);
+          (nodes_[nnode_-1])->insert_vertex(leaves_[n]);
         }
 
       } // end of vertex loop
     } // end of max height check
   } // end if bit loop
 
-  for (int i = 1; i != nnode; ++i) {
-    cout << "Level = " << nodes_[i]->depth() << " Node " << i << "  key " << nodes_[i]->key() << endl;//" parent " << (nodes_[i]->parent())->key() << endl;
-    for (int j = 0; j != nodes_[i]->nbody(); ++j)
-      cout << nodes_[i]->bodies(j)->position(0) << "   " << nodes_[i]->bodies(j)->position(1) << "   " << nodes_[i]->bodies(j)->position(2) << endl;
+
+  print_tree_xyz();
+  for (int i = 1; i != nnode_; ++i) {
+    nodes_[i]->mark_complete();
+    cout << i << "  " << nodes_[i]->position(0) << "  " << nodes_[i]->position(1) << "   " << nodes_[i]->position(2) << endl;
   }
 }
 
@@ -171,7 +171,87 @@ void Tree::keysort() {
 
   leaves_.resize(nvertex_);
   for (int n = 0; n != nvertex_; ++n) {
-    auto leaf = make_shared<Vertex>(particle_keys_[n], coordinates_[id[n]]);
+    auto leaf = make_shared<Vertex>(particle_keys_[n], mol_->atoms(id[n]));
     leaves_[n] = leaf;
+  }
+}
+
+
+void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough atoms for higher level!
+
+  int current_level = 0;
+  int node = 0;
+  for (int i = 1; i != nnode_; ++i) {
+    if (nodes_[i]->depth() != current_level) {
+      ++current_level;
+      cout << endl;
+      cout << mol_->natom() << endl;
+      cout << "Level " << current_level << endl;
+      node = 0;
+    }
+    ++node;
+    string symbol("");
+    switch(node) {
+      case 1: symbol = "H "; break;
+      case 2: symbol = "He"; break;
+      case 3: symbol = "Li"; break;
+      case 4: symbol = "Be"; break;
+      case 5: symbol = "B "; break;
+      case 6: symbol = "C "; break;
+      case 7: symbol = "N "; break;
+      case 8: symbol = "O "; break;
+      case 9: symbol = "F "; break;
+      case 10: symbol = "Ne"; break;
+      case 11: symbol = "Na"; break;
+      case 12: symbol = "Mg"; break;
+      case 13: symbol = "Al"; break;
+      case 14: symbol = "Si"; break;
+      case 15: symbol = "P "; break;
+      case 16: symbol = "S "; break;
+      case 17: symbol = "Cl"; break;
+      case 18: symbol = "Ar"; break;
+      case 19: symbol = "K "; break;
+      case 20: symbol = "Ca"; break;
+      case 21: symbol = "Sc"; break;
+      case 22: symbol = "Ti"; break;
+      case 23: symbol = "V "; break;
+      case 24: symbol = "Cr"; break;
+      case 25: symbol = "Mn"; break;
+      case 26: symbol = "Fe"; break;
+      case 27: symbol = "Co"; break;
+      case 28: symbol = "Ni"; break;
+      case 29: symbol = "Cu"; break;
+      case 30: symbol = "Zn"; break;
+      case 31: symbol = "Ga"; break;
+      case 32: symbol = "Ge"; break;
+      case 33: symbol = "As"; break;
+      case 34: symbol = "Se"; break;
+      case 35: symbol = "Br"; break;
+      case 36: symbol = "Kr"; break;
+      case 37: symbol = "Rb"; break;
+      case 38: symbol = "Sr"; break;
+      case 39: symbol = "Y "; break;
+      case 40: symbol = "Zr"; break;
+      case 41: symbol = "Nb"; break;
+      case 42: symbol = "Mo"; break;
+      case 43: symbol = "Tc"; break;
+      case 44: symbol = "Ru"; break;
+      case 45: symbol = "Rh"; break;
+      case 46: symbol = "Pd"; break;
+      case 47: symbol = "Ag"; break;
+      case 48: symbol = "Cd"; break;
+      case 49: symbol = "In"; break;
+      case 50: symbol = "Sn"; break;
+      case 51: symbol = "Sb"; break;
+      case 52: symbol = "Te"; break;
+      case 53: symbol = "I "; break;
+      case 54: symbol = "Xe"; break;
+      case 55: symbol = "Cs"; break;
+      case 56: symbol = "Ba"; break;
+    }
+    for (int j = 0; j != nodes_[i]->nbody(); ++j)
+      cout << setw(5) << symbol << setprecision(5) << setw(10) << nodes_[i]->bodies(j)->position(0) << "   "
+                                                   << setw(10) << nodes_[i]->bodies(j)->position(1) << "   "
+                                                   << setw(10) << nodes_[i]->bodies(j)->position(2) << endl;
   }
 }

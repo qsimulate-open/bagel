@@ -37,6 +37,7 @@ namespace bagel {
 class Node;
 class Tree {
   protected:
+    std::shared_ptr<const Molecule> mol_;
     int max_height_;
     int nvertex_;
     std::vector<std::array<double, 3>> coordinates_;
@@ -45,6 +46,7 @@ class Tree {
     double box_length_;
     std::vector<std::bitset<nbit__>> particle_keys_;
     std::vector<std::shared_ptr<const Vertex>> leaves_;
+    int nnode_;
     std::vector<std::shared_ptr<Node>> nodes_;
     int height_;
 
@@ -58,6 +60,7 @@ class Tree {
     Tree(std::shared_ptr<const Molecule> mol, const int max_height = (nbit__ - 1)/3);
     ~Tree() { }
 
+    void print_tree_xyz() const;
 };
 
 }

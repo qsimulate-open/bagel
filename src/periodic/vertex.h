@@ -30,19 +30,24 @@
 #include <array>
 #include <bitset>
 #include <iostream>
+#include <iomanip>
 #include <src/util/constants.h>
+#include <src/molecule/atom.h>
 
 namespace bagel {
 
 class Vertex {
   protected:
     std::bitset<64> key_;
+    std::shared_ptr<const Atom> atom_;
     std::array<double, 3> position_;
 
     void compute_multipoles();
 
   public:
-    Vertex(std::bitset<64> key, std::array<double, 3> coord) : key_(key), position_(coord) { }
+    Vertex(std::bitset<64> key, std::shared_ptr<const Atom> atom) : key_(key), atom_(atom) {
+      position_ = atom->position();
+    }
     ~Vertex() { }
 
     std::bitset<64> key() const { return key_; }
@@ -56,6 +61,8 @@ class Vertex {
 
     std::array<double, 3> position() const { return position_; }
     double position(const int i) const { return position_[i]; }
+
+    std::shared_ptr<const Atom> atom() const { return atom_; }
 };
 
 }
