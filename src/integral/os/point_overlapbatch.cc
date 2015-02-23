@@ -37,7 +37,6 @@ static const double pisqrtinv__ = 1.0 / sqrt(pi__);
 
 void Point_OverlapBatch::compute() {
 
-
   const SortList sort_(spherical_);
 
   double* const intermediate_p = stack_->get<double>(size_block_);
@@ -77,9 +76,9 @@ void Point_OverlapBatch::compute() {
 void Point_OverlapBatch::perform_VRR(double* intermediate) {
 
   const int worksize = amax1_;
-  double* workx = stack_->get<double>(worksize);
-  double* worky = stack_->get<double>(worksize);
-  double* workz = stack_->get<double>(worksize);
+  double* workx = stack_->get<double>(worksize*worksize);
+  double* worky = stack_->get<double>(worksize*worksize);
+  double* workz = stack_->get<double>(worksize*worksize);
 
   const double pAx = location_[0] - basisinfo_[0]->position(0);
   const double pAy = location_[1] - basisinfo_[0]->position(1);
@@ -104,7 +103,7 @@ void Point_OverlapBatch::perform_VRR(double* intermediate) {
     worky[0] = coeffsy_[ii] * tmp * std::exp(- cxp * (cypl * cypl));
     workz[0] = coeffsz_[ii] * tmp * std::exp(- cxp * (czpl * czpl));
 
-    for (int i = 1; i != amax1_; ++i) {
+    for (int i = 1; i <= amax_; ++i) {
       // obtain S(i, 0)
       workx[i] = pAx*workx[i-1];
       worky[i] = pAy*worky[i-1];
@@ -112,31 +111,40 @@ void Point_OverlapBatch::perform_VRR(double* intermediate) {
     }
 
     // peform HRR
-    for (int j = 1; j <= ang1_ + 1; ++j) {
-      for (int i = 0; i != amax1_ - j; ++i) {
+    for (int j = 1; j <= ang1_; ++j) {
+      for (int i = 0; i != amax_ - j; ++i) {
         // obtain S(i, j)
-        workx[j*amax1_+i] = pBx*workx[(j-1)*amax1_+i];
-        worky[j*amax1_+i] = pBy*worky[(j-1)*amax1_+i];
-        workz[j*amax1_+i] = pBz*workz[(j-1)*amax1_+i];
+        workx[j*amax_+i] = pBx*workx[(j-1)*amax_+i];
+        worky[j*amax_+i] = pBy*worky[(j-1)*amax_+i];
+        workz[j*amax_+i] = pBz*workz[(j-1)*amax_+i];
       }
     }
 
-    /// assembly process
+    // now we obtain the output
+    assert((ang0_+1)*(ang0_+2)*(ang1_+1)*(ang1_+2)/4 == asize_intermediate_);
 
-    for (int iz = 0; iz <= amax_; ++iz) {
-      for (int iy = 0; iy <= amax_ - iz; ++iy) {
-        const double iyiz = workz[iz] * worky[iy];
-        for (int ix = max(0, amin_ - iy - iz); ix <= amax_ - iy - iz; ++ix) {
-          int pos = amapping_[ix + amax1_ * (iy + amax1_ * iz)];
-          current_data[pos] = workx[ix] * iyiz;
+    int cnt = 0;
+    for (int iz = 0; iz <= ang0_; ++iz) {
+      for (int iy = 0; iy <= ang0_-iz; ++iy) {
+        const int ix = ang0_-iy-iz;
+        if (ix >= 0) {
+          for (int jz = 0; jz <= ang1_; ++jz) {
+            for (int jy = 0; jy <= ang1_-jz; ++jy) {
+              const int jx = ang1_-jy-jz;
+              if (jx >= 0) {
+                current_data[cnt] = workx[ix+amax1_*jx]*worky[iy+amax1_*jy]*workz[iz+amax1_*jz];
+                ++cnt;
+              }
+            }
+          }
         }
       }
     }
 
   } // end of primsize loop
 
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx);
+  stack_->release(worksize*worksize, workz);
+  stack_->release(worksize*worksize, worky);
+  stack_->release(worksize*worksize, workx);
 }
 
