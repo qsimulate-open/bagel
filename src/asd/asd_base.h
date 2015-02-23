@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd_base.h
+// Filename: asd/asd_base.h
 // Copyright (C) 2014 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -138,13 +138,15 @@ class ASD_base {
     ASD_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer);
 
     virtual void compute() = 0;
-    virtual void compute_rdm12() = 0;
+
+    // rdms
+    void compute_rdm12(); // compute all states at once + averaged rdm
+    void compute_rdm12(const int istate);
 
     std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> model(const int i) { return models_[i]; }
 
     std::vector<double> energy() const { return energies_; }
     double energy(const int i) const { return energies_.at(i); }
-
 
     std::vector<std::shared_ptr<RDM<1>>> rdm1() { return rdm1_; }
     std::vector<std::shared_ptr<RDM<2>>> rdm2() { return rdm2_; }
@@ -157,16 +159,14 @@ class ASD_base {
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
-
     void symmetrize_RDM() const;
     //RDM debug functions
     void debug_RDM() const;
     void debug_energy() const;
-
 };
 
 template<> std::shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e<true>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
-template<> std::shared_ptr<Matrix> ASD_base::compute_inter_2e<true>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<Matrix> ASD_base::compute_inter_2e<true>(const std::array<MonomerKey,4>&, const bool subdia) const;
 template<> std::shared_ptr<Matrix> ASD_base::compute_aET<true>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<Matrix> ASD_base::compute_bET<true>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<Matrix> ASD_base::compute_abFlip<true>(const std::array<MonomerKey,4>&) const;
@@ -176,7 +176,7 @@ template<> std::shared_ptr<Matrix> ASD_base::compute_bbET<true>(const std::array
 template<> std::shared_ptr<Matrix> ASD_base::compute_diagonal_block<true>(const DimerSubspace_base& subspace) const;
 
 template<> std::shared_ptr<RDM<2>> ASD_base::compute_offdiagonal_1e<false>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
-template<> std::shared_ptr<RDM<2>> ASD_base::compute_inter_2e<false>(const std::array<MonomerKey,4>&) const;
+template<> std::shared_ptr<RDM<2>> ASD_base::compute_inter_2e<false>(const std::array<MonomerKey,4>&, const bool subdia) const;
 template<> std::shared_ptr<RDM<2>> ASD_base::compute_aET<false>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<RDM<2>> ASD_base::compute_bET<false>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<RDM<2>> ASD_base::compute_abFlip<false>(const std::array<MonomerKey,4>&) const;
@@ -184,6 +184,58 @@ template<> std::shared_ptr<RDM<2>> ASD_base::compute_abET<false>(const std::arra
 template<> std::shared_ptr<RDM<2>> ASD_base::compute_aaET<false>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<RDM<2>> ASD_base::compute_bbET<false>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<RDM<2>> ASD_base::compute_diagonal_block<false>(const DimerSubspace_base& subspace) const;
+
+namespace {
+  template<typename T>
+  void transpose_call(std::shared_ptr<T>& o) { assert(false); }
+  template<>
+  void transpose_call(std::shared_ptr<Matrix>& o) { o = o->transpose(); }
+  template<>
+  void transpose_call(std::shared_ptr<RDM<2>>& o) { /* doing nothing */ }
+}
+
+template <bool _N, typename return_type>
+std::shared_ptr<return_type> ASD_base::couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
+
+  Coupling term_type = coupling_type(AB, ApBp);
+
+  const DimerSubspace_base* space1 = &AB;
+  const DimerSubspace_base* space2 = &ApBp;
+
+  bool flip = (static_cast<int>(term_type) < 0);
+  if (flip) {
+    term_type = Coupling(-1*static_cast<int>(term_type));
+    std::swap(space1,space2);
+  }
+
+  std::shared_ptr<return_type> out;
+  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
+
+  switch(term_type) {
+    case Coupling::none :
+      out = nullptr; break;
+    case Coupling::diagonal :
+      out = compute_inter_2e<_N>(keys, /*subspace diagonal, meaningful for _N=false*/false); break;
+    case Coupling::aET :
+      out = compute_aET<_N>(keys); break;
+    case Coupling::bET :
+      out = compute_bET<_N>(keys); break;
+    case Coupling::abFlip :
+      out = compute_abFlip<_N>(keys); break;
+    case Coupling::abET :
+      out = compute_abET<_N>(keys); break;
+    case Coupling::aaET :
+      out = compute_aaET<_N>(keys); break;
+    case Coupling::bbET :
+      out = compute_bbET<_N>(keys); break;
+    default :
+      throw std::logic_error("Asking for a coupling type that has not been written.");
+  }
+
+  /* if we are computing the Hamiltonian and flip = true, then we tranpose the output (see above) */
+  if (flip) transpose_call(out);
+  return out;
+}
 
 }
 

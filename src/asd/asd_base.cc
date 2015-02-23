@@ -125,50 +125,6 @@ shared_ptr<Matrix> ASD_base::compute_intra(const DimerSubspace_base& AB, shared_
 
 
 template <>
-shared_ptr<Matrix> ASD_base::couple_blocks<true>(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
-
-  Coupling term_type = coupling_type(AB, ApBp);
-
-  const DimerSubspace_base* space1 = &AB;
-  const DimerSubspace_base* space2 = &ApBp;
-
-  bool flip = (static_cast<int>(term_type) < 0);
-  if (flip) {
-    term_type = Coupling(-1*static_cast<int>(term_type));
-    swap(space1,space2);
-  }
-
-  shared_ptr<return_type> out;
-  array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
-
-  switch(term_type) {
-    case Coupling::none :
-      out = nullptr; break;
-    case Coupling::diagonal :
-      out = compute_inter_2e<true>(keys); break;
-    case Coupling::aET :
-      out = compute_aET<true>(keys); break;
-    case Coupling::bET :
-      out = compute_bET<true>(keys); break;
-    case Coupling::abFlip :
-      out = compute_abFlip<true>(keys); break;
-    case Coupling::abET :
-      out = compute_abET<true>(keys); break;
-    case Coupling::aaET :
-      out = compute_aaET<true>(keys); break;
-    case Coupling::bbET :
-      out = compute_bbET<true>(keys); break;
-    default :
-      throw logic_error("Asking for a coupling type that has not been written.");
-  }
-
-  if (flip) out = out->transpose();
-
-  return out;
-}
-
-
-template <>
 shared_ptr<Matrix> ASD_base::compute_diagonal_block<true>(const DimerSubspace_base& subspace) const {
   const double core = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy();
 
@@ -439,4 +395,3 @@ void ASD_base::print(const double thresh) const {
   print_states(*adiabats_, energies_, thresh, "Adiabatic States");
   if (dipoles_) {for (auto& prop : properties_) print_property(prop.first, prop.second, nstates_); }
 }
-
