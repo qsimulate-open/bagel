@@ -39,6 +39,7 @@ class MOPrint : public Method {
     bool relativistic_;
     bool cubefile_;
     size_t ngrid_;
+    size_t norb_;
 
     std::array<double,3> inc_size_;
     std::array<size_t,3> ngrid_dim_;

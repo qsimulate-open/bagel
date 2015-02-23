@@ -33,6 +33,24 @@
 using namespace std;
 using namespace bagel;
 
+/*
+// simple local function to help things align properly
+namespace {
+  int digits(int x) {
+    int out = (x < 10 ? 1 :
+              (x < 100 ? 2 :
+              (x < 1000 ? 3 :
+              (x < 10000 ? 4 :
+              (x < 100000 ? 5 :
+              (x < 1000000 ? 6 :
+              (x < 10000000 ? 7 :
+              (x < 100000000 ? 8 :
+              (x < 1000000000 ? 9 : 10)))))))));
+    if (x < 0) out++;
+    return out;
+  }
+}
+*/
 
 MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
                  const std::shared_ptr<const Reference> re) : Method(idata, geom, re) {
@@ -57,6 +75,8 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
   else
     for (int i=0; i!=geom_->nbasis(); ++i)
       orbitals_.push_back(i);
+  norb_ = orbitals_.size();
+
 
   // Determine coordinates where current will be computed
   const bool angstrom = idata->get<bool>("angstrom", false);
@@ -87,13 +107,13 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
   // Form density matrices
   if (newref) {
     const double scale = relativistic_ ? 1.0 : 2.0;
-    for (int i=0; i!=orbitals_.size(); ++i) {
+    for (int i=0; i!=norb_; ++i) {
       density_.push_back(newref->relcoeff()->form_density_rhf(1, orbitals_[i], scale));
     }
     density_.push_back(newref->relcoeff()->form_density_rhf(newref->nclosed(), 0, scale));
   } else {
     // TODO Optimize - We shouldn't be storing ZMatrices with the imaginary parts all zero (let alone re-allocating them...)
-    for (int i=0; i!=orbitals_.size(); ++i) {
+    for (int i=0; i!=norb_; ++i) {
       density_.push_back(make_shared<ZMatrix>(*ref_->coeff()->form_density_rhf(1, orbitals_[i]), 1.0));
     }
     density_.push_back(make_shared<ZMatrix>(*ref_->coeff()->form_density_rhf(ref_->nclosed(), 0), 1.0));
@@ -129,10 +149,10 @@ namespace bagel {
 
 void MOPrint::compute() {
 
-  assert(density_.size() == orbitals_.size()+1);
+  assert(density_.size() == orbitals_.size()+1 && density_.size() == norb_+1);
   // The last Task will compute integrated total charge
   TaskQueue<MOPrintTask> task(ngrid_+1);
-  points_.resize(ngrid_*(orbitals_.size()+1), 0.0);
+  points_.resize((ngrid_+1)*(norb_+1), 0.0);
 
   for (int i=0; i<=ngrid_; ++i)
     if (i % mpi__->size() == mpi__->rank())
@@ -142,26 +162,42 @@ void MOPrint::compute() {
 
   mpi__->allreduce(points_.data(), points_.size());
   print();
-  assert(density_.size() == orbitals_.size()+1);
 
 }
 
 
 void MOPrint::computepoint(const size_t pos) {
-  assert(density_.size() == orbitals_.size()+1);
   // TODO avoid overhead?  This is repeated for each point
 
   shared_ptr<ZMatrix> ao_density;
   shared_ptr<ZMatrix> input_ovlp;
 
-  if (pos == ngrid_) {
-    auto ovlp = make_shared<Overlap>(geom_);
-    input_ovlp = make_shared<ZMatrix>(*ovlp, 1.0);
-  } else {
+  if (pos != ngrid_) {
+    // for each point in space
     array<double,3> tmp = {{ coords_[3*pos], coords_[3*pos+1], coords_[3*pos+2] }};
     auto ovlp = make_shared<Overlap_Point>(geom_, tmp);
     input_ovlp = make_shared<ZMatrix>(*ovlp->compute(), 1.0);
+  } else {
+    // total integrated overlap is also stored
+    auto ovlp = make_shared<Overlap>(geom_);
+    input_ovlp = make_shared<ZMatrix>(*ovlp, 1.0);
   }
+
+  /*****/
+  /*
+  {
+    assert(input_ovlp->ndim() == input_ovlp->mdim());
+    for (int i=0; i!=input_ovlp->ndim(); ++i) {
+      if (std::real(input_ovlp->element(i, i)) < -1.0e-5) {
+        input_ovlp->print("AO matrix of overlaps", 40);
+        cout << "pos = " << pos << ", i = " << i << ", value = " << scientific << input_ovlp->element(i, i) << endl;
+      }
+      assert(std::real(input_ovlp->element(i, i)) > -1.0e-5);
+      assert(std::abs(std::imag(input_ovlp->element(i, i))) < 1.0e-9);
+    }
+  }
+  */
+  /*****/
 
   // First build the current matrix in AO basis
   if (relativistic_) {
@@ -180,41 +216,84 @@ void MOPrint::computepoint(const size_t pos) {
   }
 
   // Now compute total MO density using AO contributions
-  for (int i=0; i!=density_.size(); ++i) {
+  for (int i=0; i!=norb_+1; ++i) {
     const complex<double> out = density_[i]->dot_product(*ao_density);
+
+    /*****/
+    /*
+    // density matrix has only real values along the diagonal - debug check passed
+    assert(density_[i]->ndim() == density_[i]->mdim());
+    for (int j=0; j!=density_[i]->ndim(); ++j) {
+      cout << "j = " << j << ", value = " << scientific << density_[i]->element(j, j) << endl;
+      assert(std::real(density_[i]->element(j, j)) > -1.0e-9);
+      assert(std::abs(std::imag(density_[i]->element(j, j))) < 1.0e-9);
+    }
+    */
+    /*****/
+
+    /*
+    if (std::real(out) < -1.0e-5) {
+      density_[i]->print("Density matrix", 40);
+      ao_density->print("AO density contributions", 40);
+      cout << "orbital " << i << ", out = " << scientific << out << endl;
+    }
+    assert(std::real(out) > -1.0e-5);
+    */
     assert(std::abs(std::imag(out)) < 1.0e-8);
-    points_[(orbitals_.size()+1)*pos+i] = std::real(out);
+    points_[(norb_+1)*pos+i] = std::real(out);
   }
 
-  assert(density_.size() == orbitals_.size()+1);
 }
 
 
 void MOPrint::print() const {
-  assert(density_.size() == orbitals_.size()+1);
   vector<double> density_sum = {};
-  density_sum.resize(density_.size());
+  density_sum.resize(norb_+1);
   cout << fixed << setprecision(10);
-  cout << "   x-coord        y-coord        z-coord           Orbital 1      Orbital 2      Orbital 3           Orbital 4      Orbital 5      Orbital 6    " << endl;
-  for (int i=0; i!=ngrid_; ++i) {
-    cout << ((coords_[3*i+0] < 0) ? "" : " ") << coords_[3*i+0] << "  "
-         << ((coords_[3*i+1] < 0) ? "" : " ") << coords_[3*i+1] << "  "
-         << ((coords_[3*i+2] < 0) ? "" : " ") << coords_[3*i+2] << "       "
-         << ((real(points_[3*i+0]) < 0) ? "" : " ") << real(points_[3*i+0]) << "  "
-         << ((imag(points_[3*i+0]) < 0) ? "" : " ") << imag(points_[3*i+0])
-         //<< ((real(points_[3*i+1]) < 0) ? "" : " ") << real(points_[3*i+1]) << "  "
-         //<< ((real(points_[3*i+2]) < 0) ? "" : " ") << real(pionts_[3*i+2]) << "       "
-         //<< ((imag(points_[3*i+0]) < 0) ? "" : " ") << imag(points_[3*i+0]) << "  "
-         //<< ((imag(points_[3*i+1]) < 0) ? "" : " ") << imag(points_[3*i+1]) << "  "
-         << endl;
-     density_sum[0] += points_[3*i+0];
-     //density_sum[1] += points_[3*i+1];
-     //density_sum[2] += points_[3*i+2];
+
+  // TODO set with input
+  const bool cube_format = false;
+
+  if (cube_format) {
+    throw runtime_error("Not yet implemented");
+  } else {
+
+    std::string heading = "   x-coord        y-coord        z-coord     ";
+    for (int i=0; i!=norb_; ++i) {
+      heading += "      Orbital " + to_string(orbitals_[i]+1);
+    }
+    heading += "        Total density";
+
+    cout << heading << endl;
+
+    for (int i=0; i!=ngrid_; ++i) {
+      string line = "";
+      for (int j=0; j!=3; ++j)
+        line += ((coords_[3*i+j] < 0) ? "" : " ") + to_string(coords_[3*i+j]) + "  ";
+
+      for (int j=0; j<=norb_; ++j) {
+        line += ((points_[(norb_+1)*i+j] < 0) ? "" : " ") + to_string(points_[(norb_+1)*i+j]) + "  ";
+        density_sum[j] += points_[(norb_+1)*i+j];
+      }
+
+      cout << line << endl;
+    }
+
+
+    const double scale = inc_size_[0] * inc_size_[1] * inc_size_[2];
+    for (int j=0; j!=norb_; ++j)
+      cout << "Sum of all gridpoints for orbital " << orbitals_[j]+1 << " = " << density_sum[j]*scale << ".  Integrated orbital density = " << points_[(norb_+1)*ngrid_+j] << "." << endl;
+    cout << "Sum of all gridpoints for total density = " << density_sum.back()*scale << ".  Total integrated density = " << points_.back() << "." << endl;
+
+    cout << "density_sum.back() = " << density_sum.back() << endl;
+    cout << "density_sum[norb_] = " << density_sum[norb_] << endl;
+    cout << "points_.back() = " << points_.back() << endl;
+    cout << "points_[(norb_+1)*ngrid_+norb_] = " << points_[(norb_+1)*ngrid_+norb_] << endl;
+
+    assert(density_sum.back() == density_sum[norb_]);
+    assert(points_.back() == points_[(norb_+1)*ngrid_+norb_]);
+
   }
-
-  cout << endl << "Sum of all gridpoints = ( " << density_sum[0] << ", " << density_sum[1] << ", " << density_sum[2] << " ). " << endl << endl;;
-
-  cout << endl << "Orbital density integrated over all space = ( " << points_[3*ngrid_+0] << " ). " << endl << endl;;
 
 }
 
