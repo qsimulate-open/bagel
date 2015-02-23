@@ -53,13 +53,6 @@
 #include <src/asd/orbital/bfgs.h>
 #include <src/asd/orbital/rasbfgs.h>
 
-#include <src/asd/orbopt/superci.h>
-#include <src/asd/orbopt/bfgs.h>
-#include <src/asd/orbopt/bfgs2.h>
-#include <src/asd/orbopt/hybrid.h>
-
-#include <src/asd/orbopt/ras/bfgs.h>
-
 using namespace std;
 using namespace bagel;
 
@@ -121,23 +114,6 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<ASD_RAS_BFGS>(itree, geom, ref);
       else
         throw runtime_error("unknown ASD-RASSCF algorithm specified: " + algorithm);
-    }
-    else if (title == "asdscf") {
-      string algorithm = itree->get<string>("algorithm", "");
-      cout << "ASDSCF called with " << algorithm << endl;
-
-      if (algorithm == "superci" || algorithm == "")
-        out = make_shared<ASDSuperCI>(itree, geom, ref);
-      else if (algorithm == "bfgs")
-        out = make_shared<ASDBFGS>(itree, geom, ref);
-      else if (algorithm == "bfgs2")
-        out = make_shared<ASDBFGS2>(itree, geom, ref);
-      else if (algorithm == "hybrid")
-        out = make_shared<ASDHybrid>(itree, geom, ref);
-      else if (algorithm == "rasbfgs")
-        out = make_shared<ASDRASBFGS>(itree, geom, ref);
-      else
-        throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
     }
 //END ADDED
     else if (title == "casscf") {

@@ -35,16 +35,16 @@ void ASD_base::compute_rdm12() {
   const int norbA = dimer_->active_refs().first->nact();
   const int norbB = dimer_->active_refs().second->nact();
 
-  if (rdm1_av_ == nullptr && nstate_ > 1) {
+  if (rdm1_av_ == nullptr && nstates_ > 1) {
     rdm1_av_ = make_shared<RDM<1>>(norbA+norbB);
     rdm2_av_ = make_shared<RDM<2>>(norbA+norbB);
   }
-  if (nstate_ > 1) {
+  if (nstates_ > 1) {
     rdm1_av_->zero();
     rdm2_av_->zero();
   }
 
-  for (int i = 0; i != nstate_; ++i) compute_rdm12(i);
+  for (int i = 0; i != nstates_; ++i) compute_rdm12(i);
 
 }
 
@@ -125,13 +125,13 @@ void ASD_base::compute_rdm12(const int istate) {
   
   symmetrize_rdm12(rdm1, rdm2); 
 
-  debug_RDM(); 
-  debug_energy();
+  debug_RDM(rdm1, rdm2); 
+  debug_energy(rdm1, rdm2);
   
   // setting to private members.
   rdm1_[istate] = rdm1;
   rdm2_[istate] = rdm2;
-  if (nstate_ != 1) {
+  if (nstates_ != 1) {
     rdm1_av_->ax_plus_y(weight_[istate], rdm1);
     rdm2_av_->ax_plus_y(weight_[istate], rdm2);
   } else {
@@ -143,7 +143,7 @@ void ASD_base::compute_rdm12(const int istate) {
 
 
 template <>
-shared_ptr<RDM<2>> ASD_base::compute_diagonal_block<false>(const DimerSubspace_base& subspace) const {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_diagonal_block<false>(const DimerSubspace_base& subspace) const {
 
   array<MonomerKey,4> keys {{ subspace.monomerkey<0>(), subspace.monomerkey<1>(), subspace.monomerkey<0>(), subspace.monomerkey<1>() }};
   auto out = compute_inter_2e<false>(keys, /*subspace diagonal*/true);
@@ -153,13 +153,56 @@ shared_ptr<RDM<2>> ASD_base::compute_diagonal_block<false>(const DimerSubspace_b
 
 
 template <>
-shared_ptr<RDM<2>> ASD_base::compute_offdiagonal_1e<false>(const array<MonomerKey,4>& keys, shared_ptr<const Matrix> hAB) const {
-  return nullptr;
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::couple_blocks<false>(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
+
+  Coupling term_type = coupling_type(AB, ApBp);
+
+  const DimerSubspace_base* space1 = &AB;
+  const DimerSubspace_base* space2 = &ApBp;
+
+  bool flip = (static_cast<int>(term_type) < 0);
+  if (flip) {
+    term_type = Coupling(-1*static_cast<int>(term_type));
+    std::swap(space1,space2);
+  }
+
+  tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> out;
+  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
+
+  switch(term_type) {
+    case Coupling::none :
+      out = make_tuple(nullptr,nullptr); break;
+    case Coupling::diagonal :
+      out = compute_inter_2e<false>(keys, /*subspace diagonal, meaningful for false=false*/false); break;
+    case Coupling::aET :
+      out = compute_aET<false>(keys); break;
+    case Coupling::bET :
+      out = compute_bET<false>(keys); break;
+    case Coupling::abFlip :
+      out = compute_abFlip<false>(keys); break;
+    case Coupling::abET :
+      out = compute_abET<false>(keys); break;
+    case Coupling::aaET :
+      out = compute_aaET<false>(keys); break;
+    case Coupling::bbET :
+      out = compute_bbET<false>(keys); break;
+    default :
+      throw std::logic_error("Asking for a coupling type that has not been written.");
+  }
+
+  return out;
 }
 
 
 template <>
-shared_ptr<RDM<2>> ASD_base::compute_inter_2e<false>(const array<MonomerKey,4>& keys, const bool subdia) const {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_offdiagonal_1e<false>(const array<MonomerKey,4>& keys, shared_ptr<const Matrix> hAB) const {
+  assert(false);
+  return make_tuple(nullptr, nullptr);
+}
+
+
+template <>
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e<false>(const array<MonomerKey,4>& keys, const bool subdia) const {
   auto& B  = keys[1]; 
   auto& Bp = keys[3];
 
@@ -214,12 +257,12 @@ shared_ptr<RDM<2>> ASD_base::compute_inter_2e<false>(const array<MonomerKey,4>& 
     copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
 
-  return out;
+  return make_tuple(nullptr, out);
 }
 
 
 template <>
-shared_ptr<RDM<2>> ASD_base::compute_aET<false>(const array<MonomerKey,4>& keys) const {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_aET<false>(const array<MonomerKey,4>& keys) const {
   auto& Ap = keys[2];
 
   auto& B  = keys[1];
@@ -295,65 +338,12 @@ shared_ptr<RDM<2>> ASD_base::compute_aET<false>(const array<MonomerKey,4>& keys)
     copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
   
-  return make_tuple(out1,out2);
+  return make_tuple(out1, out2);
 }
 
 
 template <>
-shared_ptr<Matrix> ASD_base::compute_bET<false>(const array<MonomerKey,4>& keys) const {
-  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
-  Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
-
-  // One-body bET
-  {
-    auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta});
-    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta});
-
-    shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
-
-    tmp += gamma_A * (*Fmatrix) ^ gamma_B;
-  }
-
-
-  //Two-body bET, type 1
-  {
-    auto gamma_A  = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta});
-    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
-    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
-
-    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,1,1>();
-
-    tmp -= gamma_A * (*Jmatrix) ^ (gamma_B1 + gamma_B2);
-  }
-
-  //Two-body aET, type 2
-  {
-    auto gamma_A1 = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
-    auto gamma_A2 = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
-    auto gamma_B  = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta});
-
-    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,0>();
-
-    tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
-  }
-
-  const int neleA = Ap.nelea() + Ap.neleb();
-  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-  if ((neleA % 2) == 1) {
-    // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
-    sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
-  }
-  else {
-    // sort: (A,A',B,B') --> (A,B,A',B')
-    sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
-  }
-
-  return out;
-}
-
-
-template <>
-shared_ptr<RDM<2>> ASD_base::compute_bET<false>(const array<MonomerKey,4>& keys) const {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_bET<false>(const array<MonomerKey,4>& keys) const {
   auto& Ap = keys[2];
 
   auto& B  = keys[1];
@@ -432,7 +422,7 @@ shared_ptr<RDM<2>> ASD_base::compute_bET<false>(const array<MonomerKey,4>& keys)
 
 
 template <>
-shared_ptr<RDM<2>> ASD_base::compute_abFlip<false>(const array<MonomerKey,4>& keys) const {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_abFlip<false>(const array<MonomerKey,4>& keys) const {
 // if ab-flip, account ba-flip arising from (N,M)
 // if(M,N) is ba-flip then (N,M) is ab-flip and this will include ba-flip of (M,N) too.
   auto& B = keys[1];
@@ -462,12 +452,12 @@ shared_ptr<RDM<2>> ASD_base::compute_abFlip<false>(const array<MonomerKey,4>& ke
   assert(rdmt->size() == outv.size());
   copy(rdmt->begin(), rdmt->end(), outv.begin());
 
-  return out;
+  return make_tuple(nullptr, out);
 }
 
 
 template <>
-shared_ptr<RDM<2>>> ASD_base::compute_abET<false>(const array<MonomerKey,4>& keys) const {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_abET<false>(const array<MonomerKey,4>& keys) const {
 // for (M,N)
 // if inverse ab-ET / compute (N,M)
   auto& B = keys[1]; auto& Bp = keys[3];
@@ -495,12 +485,12 @@ shared_ptr<RDM<2>>> ASD_base::compute_abET<false>(const array<MonomerKey,4>& key
   assert(rdmt->size() == outv.size());
   copy(rdmt->begin(), rdmt->end(), outv.begin());
 
-  return out;
+  return make_tuple(nullptr, out);
 }
 
 
 template <>
-shared_ptr<RDM<2>> ASD_base::compute_aaET<false>(const array<MonomerKey,4>& keys) const {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_aaET<false>(const array<MonomerKey,4>& keys) const {
 //off-diagonal subspaces only!
 // if(M,N) is inverse-aa-ET, swap M,N as (N,M) will be aa-ET and contribute to 2RDM
   auto& B = keys[1]; auto& Bp = keys[3];
@@ -527,12 +517,12 @@ shared_ptr<RDM<2>> ASD_base::compute_aaET<false>(const array<MonomerKey,4>& keys
   assert(rdmt->size() == outv.size());
   copy(rdmt->begin(), rdmt->end(), outv.begin());
 
-  return out;
+  return make_tuple(nullptr, out);
 }
 
 
 template <>
-shared_ptr<RDM<2>> ASD_base::compute_bbET<false>(const array<MonomerKey,4>& keys) const {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_bbET<false>(const array<MonomerKey,4>& keys) const {
 // cf. aaET
   auto& B = keys[1]; auto& Bp = keys[3];
 
@@ -558,11 +548,11 @@ shared_ptr<RDM<2>> ASD_base::compute_bbET<false>(const array<MonomerKey,4>& keys
   assert(rdmt->size() == outv.size());
   copy(rdmt->begin(), rdmt->end(), outv.begin());
 
-  return out;
+  return make_tuple(nullptr, out);
 }
 
 
-void ASD_base::debug_RDM() const {
+void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) const {
   const int nactA = dimer_->embedded_refs().first->nact();
   const int nactB = dimer_->embedded_refs().second->nact();
   const int nactT = nactA+nactB;
@@ -579,14 +569,14 @@ void ASD_base::debug_RDM() const {
   {
     auto low = {0,0};
     auto up  = {nactA,nactA};
-    auto view = btas::make_view(onerdm_->range().slice(low,up), onerdm_->storage());
+    auto view = btas::make_view(rdm1->range().slice(low,up), rdm1->storage());
     copy(view.begin(), view.end(), rdm1A->begin());
   }
   auto rdm1B = make_shared<RDM<1>>(nactB);
   {
     auto low = {nactA,nactA};
     auto up  = {nactT,nactT};
-    auto view = btas::make_view(onerdm_->range().slice(low,up), onerdm_->storage());
+    auto view = btas::make_view(rdm1->range().slice(low,up), rdm1->storage());
     copy(view.begin(), view.end(), rdm1B->begin());
   }
 
@@ -594,17 +584,18 @@ void ASD_base::debug_RDM() const {
   {
     auto low = {0,0,0,0};
     auto up  = {nactA,nactA,nactA,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage());
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage());
     copy(view.begin(), view.end(), rdm2A->begin());
   }
   auto rdm2B = make_shared<RDM<2>>(nactB);
   {
     auto low = {nactA,nactA,nactA,nactA};
     auto up  = {nactT,nactT,nactT,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage());
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage());
     copy(view.begin(), view.end(), rdm2B->begin());
   }
 
+/*
   auto rdm3A = make_shared<RDM<3>>(nactA);
   {
     auto low = {0,0,0,0,0,0};
@@ -619,26 +610,27 @@ void ASD_base::debug_RDM() const {
     auto view = btas::make_view(threerdm_->range().slice(low,up), threerdm_->storage());
     copy(view.begin(), view.end(), rdm3B->begin());
   }
+*/
 
   //1RDM
   { //Monomer A
     double sum = 0.0;
     for (int i = 0; i != nactA; ++i) {
-      sum += onerdm_->element(i,i);
+      sum += rdm1->element(i,i);
     }
     cout << "1RDM(A)  Trace = " << sum << endl;
   }
   { //Monomer B
     double sum = 0.0;
     for (int i = nactA; i != nactT; ++i) {
-      sum += onerdm_->element(i,i);
+      sum += rdm1->element(i,i);
     }
     cout << "1RDM(B)  Trace = " << sum << endl;
   }
   { //Dimer AB
     double sum = 0.0;
     for (int i = 0; i != nactT; ++i) {
-      sum += onerdm_->element(i,i);
+      sum += rdm1->element(i,i);
     }
     cout << "1RDM(AB) Trace = " << sum << endl;
   }
@@ -649,7 +641,7 @@ void ASD_base::debug_RDM() const {
     double sum = 0.0;
     for (int i = 0; i != nactA; ++i)
     for (int j = 0; j != nactA; ++j) {
-      sum += twordm_->element(i,i,j,j);
+      sum += rdm2->element(i,i,j,j);
     }
     cout << "2RDM(A)  Trace = " << sum << endl;
   }
@@ -657,7 +649,7 @@ void ASD_base::debug_RDM() const {
     double sum = 0.0;
     for (int i = nactA; i != nactT; ++i)
     for (int j = nactA; j != nactT; ++j) {
-      sum += twordm_->element(i,i,j,j);
+      sum += rdm2->element(i,i,j,j);
     }
     cout << "2RDM(B)  Trace = " << sum << endl;
   }
@@ -665,7 +657,7 @@ void ASD_base::debug_RDM() const {
     double sum = 0.0;
     for (int i = 0; i != nactT; ++i)
     for (int j = 0; j != nactT; ++j) {
-      sum += twordm_->element(i,i,j,j);
+      sum += rdm2->element(i,i,j,j);
     }
     cout << "2RDM(AB) Trace = " << sum << endl;
   }
@@ -676,7 +668,7 @@ void ASD_base::debug_RDM() const {
     for (int i = 0; i != nactA; ++i)
     for (int j = 0; j != nactA; ++j)
     for (int k = 0; k != nactA; ++k) {
-      debug->element(i,j) -= 1.0/(neleA-1) * twordm_->element(i,j,k,k);
+      debug->element(i,j) -= 1.0/(neleA-1) * rdm2->element(i,j,k,k);
     }
     debug->print(1.0e-3);
   }
@@ -686,17 +678,17 @@ void ASD_base::debug_RDM() const {
     for (int i = nactA; i != nactT; ++i)
     for (int j = nactA; j != nactT; ++j)
     for (int k = nactA; k != nactT; ++k) {
-      debug->element(i-nactA,j-nactA) -= 1.0/(neleB-1) * twordm_->element(i,j,k,k);
+      debug->element(i-nactA,j-nactA) -= 1.0/(neleB-1) * rdm2->element(i,j,k,k);
     }
     debug->print(1.0e-3);
   }
   { //Gamma_ij,kk
     cout << "2RDM(AB) Partial Trace Sum_k (i,j,k,k)" << endl;
-    auto debug = make_shared<RDM<1>>(*onerdm_);
+    auto debug = make_shared<RDM<1>>(*rdm1);
     for (int i = 0; i != nactT; ++i)
     for (int j = 0; j != nactT; ++j)
     for (int k = 0; k != nactT; ++k) {
-      debug->element(i,j) -= 1.0/(nelec-1) * twordm_->element(i,j,k,k);
+      debug->element(i,j) -= 1.0/(nelec-1) * rdm2->element(i,j,k,k);
     }
     debug->print(1.0e-3);
   }
@@ -706,10 +698,10 @@ void ASD_base::debug_RDM() const {
   cout << "Build approx 2RDM:" << endl;
   for (int i = 0; i != nactA; ++i)
   for (int j = nactA; j != nactT; ++j) {
-    approx2rdm_->element(i,i,j,j) = onerdm_->element(i,i) * onerdm_->element(j,j);
+    approx2rdm_->element(i,i,j,j) = rdm1->element(i,i) * rdm1->element(j,j);
     approx2rdm_->element(j,j,i,i) = approx2rdm_->element(i,i,j,j);
-    approx2rdm_->element(i,j,j,i) = -0.5*(onerdm_->element(i,i) * onerdm_->element(j,j));// - onerdm_->element(i,i);
-    approx2rdm_->element(j,i,i,j) = approx2rdm_->element(i,j,j,i); //-onerdm_->element(i,i) * onerdm_->element(j,j);// - onerdm_->element(j,j);
+    approx2rdm_->element(i,j,j,i) = -0.5*(rdm1->element(i,i) * rdm1->element(j,j));// - rdm1->element(i,i);
+    approx2rdm_->element(j,i,i,j) = approx2rdm_->element(i,j,j,i); //-rdm1->element(i,i) * rdm1->element(j,j);// - rdm1->element(j,j);
   }
   { //Dimer AB
     double sum = 0.0;
@@ -720,7 +712,7 @@ void ASD_base::debug_RDM() const {
     cout << "APPROX2RDM(AB) Trace = " << sum << endl;
   }
   { //difference
-    auto debug = make_shared<RDM<2>>(*twordm_);
+    auto debug = make_shared<RDM<2>>(*rdm2);
     for (int i = 0; i != nactT; ++i)
     for (int j = 0; j != nactT; ++j)
     for (int k = 0; k != nactT; ++k)
@@ -771,7 +763,7 @@ void ASD_base::debug_RDM() const {
 
   { //Gamma_ij,kl,mm : p21
     cout << "3RDM Partial Trace Sum_m (i,j,k,l,m,m)" << endl;
-    auto debug = make_shared<RDM<2>>(*twordm_);
+    auto debug = make_shared<RDM<2>>(*rdm2);
     for (int i = 0; i != nactT; ++i)
     for (int j = 0; j != nactT; ++j)
     for (int k = 0; k != nactT; ++k) 
@@ -783,7 +775,7 @@ void ASD_base::debug_RDM() const {
   }
   { //Gamma_ij,mm,kl : p21
     cout << "3RDM Partial Trace Sum_m (i,j,m,m,k,l)" << endl;
-    auto debug = make_shared<RDM<2>>(*twordm_);
+    auto debug = make_shared<RDM<2>>(*rdm2);
     for (int i = 0; i != nactT; ++i)
     for (int j = 0; j != nactT; ++j)
     for (int k = 0; k != nactT; ++k) 
@@ -795,7 +787,7 @@ void ASD_base::debug_RDM() const {
   }
   { //Gamma_ij,kl,mm : p21
     cout << "3RDM Partial Trace Sum_m (m,m,i,j,k,l)" << endl;
-    auto debug = make_shared<RDM<2>>(*twordm_);
+    auto debug = make_shared<RDM<2>>(*rdm2);
     for (int i = 0; i != nactT; ++i)
     for (int j = 0; j != nactT; ++j)
     for (int k = 0; k != nactT; ++k) 
@@ -807,7 +799,7 @@ void ASD_base::debug_RDM() const {
   }
   { //Gamma_ij,kk,mm : p21
     cout << "3RDM Partial Trace Sum_m (i,j,k,k,m,m)" << endl;
-    auto debug = make_shared<RDM<1>>(*onerdm_);
+    auto debug = make_shared<RDM<1>>(*rdm1);
     for (int i = 0; i != nactT; ++i)
     for (int j = 0; j != nactT; ++j)
     for (int k = 0; k != nactT; ++k) 
@@ -978,7 +970,7 @@ void ASD_base::debug_RDM() const {
   assert(false);
 #endif
 
-void ASD_base::debug_energy() const {
+void ASD_base::debug_energy(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) const {
   //Energy calculation
   cout << "!@# Energy calculated from RDM:" << endl;
   const int nclosedA = dimer_->active_refs().first->nclosed();
@@ -1004,10 +996,10 @@ void ASD_base::debug_energy() const {
   int1->copy_block(nactA,0,hc->mdim(),hc->ndim(),hc->transpose());
   int1->print("1e integral",nactT);
 
-  auto rdm1 = onerdm_->rdm1_mat(0);
-  rdm1->print("1RDM",nactT);
+  auto rdm1_mat = rdm1->rdm1_mat(0);
+  rdm1_mat->print("1RDM",nactT);
 
-  double  e1 = ddot_(nactT*nactT, int1->element_ptr(0,0), 1, rdm1->element_ptr(0,0), 1);
+  double  e1 = ddot_(nactT*nactT, int1->element_ptr(0,0), 1, rdm1_mat->element_ptr(0,0), 1);
   cout << "1E energy = " << e1 << endl;
 
   double e2 = 0.0;
@@ -1019,7 +1011,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {0,0,0,0};
     auto up  = {nactA,nactA,nactA,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AAAA sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_AAAA sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactA*nactA,nactA,1); //empty d_AAAA (note: the dimension specification actually do not matter)
     copy(view.begin(), view.end(), rdm2->begin()); //d_AAAA filled
     cout << "2E energy (AAAA) = " << 0.5 * ddot_(nactA*nactA*nactA*nactA, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1034,7 +1026,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {nactA,nactA,nactA,nactA};
     auto up  = {nactT,nactT,nactT,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BBBB sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BBBB sector of d
     auto rdm2 = make_shared<Matrix>(1,nactB*nactB*nactB*nactB); //empty d_BBBB
     copy(view.begin(), view.end(), rdm2->begin()); //d_BBBB filled
     cout << "2E energy (BBBB) = " << 0.5 * ddot_(nactB*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1049,7 +1041,7 @@ void ASD_base::debug_energy() const {
     sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not.
     auto low = {    0,    0,    0,nactA};
     auto up  = {nactA,nactA,nactA,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AAAB sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_AAAB sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactA*nactA*nactB,1); //empty d_AAAB
     copy(view.begin(), view.end(), rdm2->begin()); //d_AAAB filled
     cout << "2E energy (AAAB) = " << 0.5 * ddot_(nactA*nactA*nactA*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1064,7 +1056,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {    0,    0,nactA,    0};
     auto up  = {nactA,nactA,nactT,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AABA sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_AABA sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactA,1); //empty d_AABA
     copy(view.begin(), view.end(), rdm2->begin()); //d_AABA filled
     cout << "2E energy (AABA) = " << 0.5 * ddot_(nactA*nactA*nactB*nactA, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1079,7 +1071,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {nactA,    0,    0,    0};
     auto up  = {nactT,nactA,nactA,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BAAA sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BAAA sector of d
     auto rdm2 = make_shared<Matrix>(nactB,nactA*nactA*nactA); //empty d_BAAA
     copy(view.begin(), view.end(), rdm2->begin()); //d_BAAA filled
     cout << "2E energy (BAAA) = " << 0.5 * ddot_(nactB*nactA*nactA*nactA, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1094,7 +1086,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {    0,nactA,    0,    0};
     auto up  = {nactA,nactT,nactA,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABAA sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_ABAA sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactB*nactA*nactA,1); //empty d_ABAA
     copy(view.begin(), view.end(), rdm2->begin()); //d_ABAA filled
     cout << "2E energy (ABAA) = " << 0.5 * ddot_(nactA*nactB*nactA*nactA, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1112,7 +1104,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {    0,nactA,nactA,nactA};
     auto up  = {nactA,nactT,nactT,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABBB sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_ABBB sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_ABBB
     copy(view.begin(), view.end(), rdm2->begin()); //d_ABBB filled
     cout << "2E energy (ABBB) = " << 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1126,7 +1118,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {nactA,    0,nactA,nactA};
     auto up  = {nactT,nactA,nactT,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BABB sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BABB sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_BABB
     copy(view.begin(), view.end(), rdm2->begin()); //d_ABBB filled
     cout << "2E energy (BABB) = " << 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1140,7 +1132,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {nactA,nactA,    0,nactA};
     auto up  = {nactT,nactT,nactA,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAB sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BBAB sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_BBAB
     copy(view.begin(), view.end(), rdm2->begin()); //d_ABBB filled
     cout << "2E energy (BBAB) = " << 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1154,7 +1146,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {nactA,nactA,nactA,    0};
     auto up  = {nactT,nactT,nactT,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BBBA sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BBBA sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_BBBA
     copy(view.begin(), view.end(), rdm2->begin()); //d_BBBA filled
     cout << "2E energy (BBBA) = " << 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1170,7 +1162,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {    0,    0,nactA,nactA};
     auto up  = {nactA,nactA,nactT,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_AABB sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_AABB sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_AABB
     copy(view.begin(), view.end(), rdm2->begin()); //d_AABB filled
     cout << "2E energy (AABB) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1184,7 +1176,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {nactA,nactA,    0,    0};
     auto up  = {nactT,nactT,nactA,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BBAA sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BBAA sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_BBAA
     copy(view.begin(), view.end(), rdm2->begin()); //d_BBAA filled
     cout << "2E energy (BBAA) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1199,7 +1191,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {    0,nactA,    0,nactA};
     auto up  = {nactA,nactT,nactA,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABAB sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_ABAB sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_ABAB
     copy(view.begin(), view.end(), rdm2->begin()); //d_ABAB filled
     cout << "2E energy (ABAB) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1213,7 +1205,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {nactA,    0,nactA,    0};
     auto up  = {nactT,nactA,nactT,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BABA sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BABA sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_BABA
     copy(view.begin(), view.end(), rdm2->begin()); //d_BABA filled
     cout << "2E energy (BABA) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1228,7 +1220,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {    0,nactA,nactA,    0};
     auto up  = {nactA,nactT,nactT,nactA};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_ABBA sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_ABBA sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_ABBA
     copy(view.begin(), view.end(), rdm2->begin()); //d_ABBA filled
     cout << "2E energy (ABBA) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;
@@ -1242,7 +1234,7 @@ void ASD_base::debug_energy() const {
 
     auto low = {nactA,    0,    0,nactA};
     auto up  = {nactT,nactA,nactA,nactT};
-    auto view = btas::make_view(twordm_->range().slice(low,up), twordm_->storage()); //d_BAAB sector of d
+    auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BAAB sector of d
     auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_BAAB
     copy(view.begin(), view.end(), rdm2->begin()); //d_BAAB filled
     cout << "2E energy (BAAB) = " << 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1) << endl;

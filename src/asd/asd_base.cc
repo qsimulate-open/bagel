@@ -71,7 +71,7 @@ ASD_base::ASD_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> 
 
   energies_ = vector<double>(nstates_, 0.0);
 
-  for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
+  for (int i = 0; i != nstates_; ++i) weight_.push_back(1.0/static_cast<double>(nstates_));
 
   // resizing rdm vectors (with null pointers)
   rdm1_.resize(nstates_);
@@ -270,6 +270,59 @@ shared_ptr<Matrix> ASD_base::compute_aET<true>(const array<MonomerKey,4>& keys) 
 
 
 template <>
+shared_ptr<Matrix> ASD_base::compute_bET<true>(const array<MonomerKey,4>& keys) const {
+  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
+  Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
+
+  // One-body bET
+  {
+    auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta});
+    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta});
+
+    shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
+
+    tmp += gamma_A * (*Fmatrix) ^ gamma_B;
+  }
+
+
+  //Two-body bET, type 1
+  {
+    auto gamma_A  = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta});
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
+
+    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,1,1>();
+
+    tmp -= gamma_A * (*Jmatrix) ^ (gamma_B1 + gamma_B2);
+  }
+
+  //Two-body aET, type 2
+  {
+    auto gamma_A1 = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
+    auto gamma_A2 = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+    auto gamma_B  = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta});
+
+    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,0>();
+
+    tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
+  }
+
+  const int neleA = Ap.nelea() + Ap.neleb();
+  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
+  if ((neleA % 2) == 1) {
+    // sort: (A,A',B,B') --> -1.0 * (A,B,A',B')
+    sort_indices<0,2,1,3,0,1,-1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  }
+  else {
+    // sort: (A,A',B,B') --> (A,B,A',B')
+    sort_indices<0,2,1,3,0,1,1,1>(tmp.data(), out->data(), A.nstates(), Ap.nstates(), B.nstates(), Bp.nstates());
+  }
+
+  return out;
+}
+
+
+template <>
 shared_ptr<Matrix> ASD_base::compute_abFlip<true>(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
@@ -396,4 +449,49 @@ void ASD_base::print_property(const string label, shared_ptr<const Matrix> prope
 void ASD_base::print(const double thresh) const {
   print_states(*adiabats_, energies_, thresh, "Adiabatic States");
   if (dipoles_) {for (auto& prop : properties_) print_property(prop.first, prop.second, nstates_); }
+}
+
+
+template <>
+shared_ptr<Matrix> ASD_base::couple_blocks<true>(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
+
+  Coupling term_type = coupling_type(AB, ApBp);
+
+  const DimerSubspace_base* space1 = &AB;
+  const DimerSubspace_base* space2 = &ApBp;
+
+  bool flip = (static_cast<int>(term_type) < 0);
+  if (flip) {
+    term_type = Coupling(-1*static_cast<int>(term_type));
+    std::swap(space1,space2);
+  }
+
+  shared_ptr<Matrix> out;
+  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
+
+  switch(term_type) {
+    case Coupling::none :
+      out = nullptr; break;
+    case Coupling::diagonal :
+      out = compute_inter_2e<true>(keys, /*subspace diagonal, meaningful for true=false*/false); break;
+    case Coupling::aET :
+      out = compute_aET<true>(keys); break;
+    case Coupling::bET :
+      out = compute_bET<true>(keys); break;
+    case Coupling::abFlip :
+      out = compute_abFlip<true>(keys); break;
+    case Coupling::abET :
+      out = compute_abET<true>(keys); break;
+    case Coupling::aaET :
+      out = compute_aaET<true>(keys); break;
+    case Coupling::bbET :
+      out = compute_bbET<true>(keys); break;
+    default :
+      throw std::logic_error("Asking for a coupling type that has not been written.");
+  }
+
+  /* For the Hamiltonian with flip = true, we tranpose the output */
+  if (flip) out = out->transpose();
+
+  return out;
 }

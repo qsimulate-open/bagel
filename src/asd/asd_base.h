@@ -101,8 +101,8 @@ class ASD_base {
     std::vector<double> diagonalize(std::shared_ptr<Matrix>& cc, const std::vector<DimerSubspace_base>& subspace, const bool mute = false);
 
     // Off-diagonal stuff
-    template <bool _N, typename return_type = typename std::conditional<_N, std::shared_ptr<Matrix>, std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>>>::type>
-    return_type couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const; // Off-diagonal driver for H
+    template <bool _N> typename std::conditional<_N, std::shared_ptr<Matrix>, std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>>>::type
+      couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const; // Off-diagonal driver for H
 
     template <bool _N> typename std::conditional<_N, std::shared_ptr<Matrix>, std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>>>::type
       compute_offdiagonal_1e(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix> h) const { assert(false); return nullptr; }
@@ -133,6 +133,10 @@ class ASD_base {
     void print_property(const std::string label, std::shared_ptr<const Matrix>, const int size = 10) const ;
     void print(const double thresh = 0.01) const;
 
+    //RDM debug functions
+    void debug_RDM(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&) const;
+    void debug_energy(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&) const;
+
   public:
     ASD_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer);
 
@@ -158,14 +162,11 @@ class ASD_base {
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
-    //RDM debug functions
-    void debug_RDM() const;
-    void debug_energy() const;
-
   private:
     void symmetrize_rdm12(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&) const;
 };
 
+template<> std::shared_ptr<Matrix> ASD_base::couple_blocks<true>(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
 template<> std::shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e<true>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
 template<> std::shared_ptr<Matrix> ASD_base::compute_inter_2e<true>(const std::array<MonomerKey,4>&, const bool subdia) const;
 template<> std::shared_ptr<Matrix> ASD_base::compute_aET<true>(const std::array<MonomerKey,4>&) const;
@@ -176,7 +177,8 @@ template<> std::shared_ptr<Matrix> ASD_base::compute_aaET<true>(const std::array
 template<> std::shared_ptr<Matrix> ASD_base::compute_bbET<true>(const std::array<MonomerKey,4>&) const;
 template<> std::shared_ptr<Matrix> ASD_base::compute_diagonal_block<true>(const DimerSubspace_base& subspace) const;
 
-template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>>std::shared_ptr<RDM<2>> ASD_base::compute_offdiagonal_1e<false>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::couple_blocks<false>(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
+template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_offdiagonal_1e<false>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
 template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_inter_2e<false>(const std::array<MonomerKey,4>&, const bool subdia) const;
 template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_aET<false>(const std::array<MonomerKey,4>&) const;
 template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_bET<false>(const std::array<MonomerKey,4>&) const;
@@ -185,58 +187,6 @@ template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base:
 template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_aaET<false>(const std::array<MonomerKey,4>&) const;
 template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_bbET<false>(const std::array<MonomerKey,4>&) const;
 template<> std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> ASD_base::compute_diagonal_block<false>(const DimerSubspace_base& subspace) const;
-
-namespace {
-  template<typename T>
-  void transpose_call(std::shared_ptr<T>& o) { assert(false); }
-  template<>
-  void transpose_call(std::shared_ptr<Matrix>& o) { o = o->transpose(); }
-  template<>
-  void transpose_call(std::shared_ptr<RDM<2>>& o) { /* doing nothing */ }
-}
-
-template <bool _N, typename return_type>
-return_type ASD_base::couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
-
-  Coupling term_type = coupling_type(AB, ApBp);
-
-  const DimerSubspace_base* space1 = &AB;
-  const DimerSubspace_base* space2 = &ApBp;
-
-  bool flip = (static_cast<int>(term_type) < 0);
-  if (flip) {
-    term_type = Coupling(-1*static_cast<int>(term_type));
-    std::swap(space1,space2);
-  }
-
-  return_type out;
-  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
-
-  switch(term_type) {
-    case Coupling::none :
-      out = nullptr; break;
-    case Coupling::diagonal :
-      out = compute_inter_2e<_N>(keys, /*subspace diagonal, meaningful for _N=false*/false); break;
-    case Coupling::aET :
-      out = compute_aET<_N>(keys); break;
-    case Coupling::bET :
-      out = compute_bET<_N>(keys); break;
-    case Coupling::abFlip :
-      out = compute_abFlip<_N>(keys); break;
-    case Coupling::abET :
-      out = compute_abET<_N>(keys); break;
-    case Coupling::aaET :
-      out = compute_aaET<_N>(keys); break;
-    case Coupling::bbET :
-      out = compute_bbET<_N>(keys); break;
-    default :
-      throw std::logic_error("Asking for a coupling type that has not been written.");
-  }
-
-  /* if we are computing the Hamiltonian and flip = true, then we tranpose the output (see above) */
-  if (flip) transpose_call(out);
-  return out;
-}
 
 }
 
