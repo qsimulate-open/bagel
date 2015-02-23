@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd_rdm.cc
+// Filename: asd/asd_rdm.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
@@ -24,15 +24,130 @@
 //
 
 #include <src/asd/asd_base.h>
+#include <src/asd/state_tensor.h>
 #include <src/util/prim_op.h>
 
 using namespace std;
 using namespace bagel;
+using namespace btas;
 
-//***************************************************************************************************************
-void
-ASD_base::debug_RDM() const {
-//***************************************************************************************************************
+void ASD_base::compute_rdm12() {
+  const int norbA = dimer_->active_refs().first->nact();
+  const int norbB = dimer_->active_refs().second->nact();
+
+  if (rdm1_av_ == nullptr && nstate_ > 1) {
+    rdm1_av_ = make_shared<RDM<1>>(norbA+norbB);
+    rdm2_av_ = make_shared<RDM<2>>(norbA+norbB);
+  }
+  if (nstate_ > 1) {
+    rdm1_av_->zero();
+    rdm2_av_->zero();
+  }
+
+  // compute transformed gammas (J',J,zeta)
+  StateTensor st(adiabats_, subspaces_base());
+  st.print();
+
+  // TODO parallelize
+  // Loop over both tensors and mupltiply
+  const int istate = 0;
+  for (int istate = 0; istate != nstates_; ++istate) {
+
+    auto rdm = make_shared<RDM<2>>(norbA+norbB);
+
+    GammaTensor half;
+    for (auto& i : *gammatensor_[0]) {
+      for (auto& j : st) {
+        // if the third index of the gamma tensor is identical to the first one of the state tensor we contract
+        auto& ikey = i.first;
+        auto& jkey = j.first;
+        if (get<0>(jkey) == istate && get<2>(ikey) == get<1>(jkey)) {
+          auto tag = make_tuple(get<0>(ikey), get<1>(ikey), get<2>(jkey));
+          if (half.exist(tag)) {
+            contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *half.get_block(tag), {0,3,2});
+          } else {
+            auto data = make_shared<Tensor3<double>>(get<1>(ikey).nstates(), get<2>(jkey).nstates(), i.second->extent(2));
+            contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *data, {0,3,2});
+            half.emplace(tag, data);
+          }
+        }
+      }
+    }
+ 
+    worktensor_ = make_shared<GammaTensor>();
+    for (auto& i : half) {
+      for (auto& j : st) {
+        auto& ikey = i.first;
+        auto& jkey = j.first;
+        if (get<0>(jkey) == istate && get<1>(ikey) == get<1>(jkey)) {
+          auto tag = make_tuple(get<0>(ikey), get<2>(jkey), get<2>(ikey));
+ 
+          // TODO check if this transformation is necessary
+          if (worktensor_->exist(tag)) {
+            contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 1.0, *worktensor_->get_block(tag), {3,1,2});
+          } else {
+            auto data = make_shared<Tensor3<double>>(get<2>(jkey).nstates(), get<2>(ikey).nstates(), i.second->extent(2));
+            contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 0.0, *data, {3,1,2});
+            worktensor_->emplace(tag, data);
+          }
+        }
+      }
+    }
+ 
+    const auto subspaces = subspaces_base();
+ 
+    // diagonal subspaces
+    for (auto& subspace : subspaces) {
+      shared_ptr<RDM<1>> r1;
+      shared_ptr<RDM<2>> r2;
+      tie(r1,r2) = compute_diagonal_block<false>(subspace);
+      if (r1) assert(false); //*onerdm_ += *r1;
+      if (r2) *twordm_ += *r2;
+    }
+    
+    // off diagonal subspaces
+    for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
+      for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
+        shared_ptr<RDM<1>> r1;
+        shared_ptr<RDM<2>> r2;
+        tie(r1,r2) = couple_blocks<false>(*jAB, *iAB); //Lower-triangular (i<->j)
+        if (r1) *onerdm_ += *r1;
+        if (r2) *twordm_ += *r2;
+      }
+    }
+  }
+  
+  symmetrize_RDM();
+  debug_RDM(); 
+  debug_energy();
+
+}
+
+
+void ASD_base::compute_rdm12(const int ist) {
+
+  shared_ptr<RDM<1>> rdm1;
+  shared_ptr<RDM<2>> rdm2;
+  tie(rdm1, rdm2) = compute_rdm12_from_civec(cc, cc);
+
+  // setting to private members.
+  rdm1_[ist] = rdm1;
+  rdm2_[ist] = rdm2;
+  if (nstate_ != 1) {
+    rdm1_av_->ax_plus_y(weight_[ist], rdm1);
+    rdm2_av_->ax_plus_y(weight_[ist], rdm2);
+  } else {
+    rdm1_av_ = rdm1;
+    rdm2_av_ = rdm2;
+  }
+
+}
+
+
+
+
+
+void ASD_base::debug_RDM() const {
   const int nactA = dimer_->embedded_refs().first->nact();
   const int nactB = dimer_->embedded_refs().second->nact();
   const int nactT = nactA+nactB;
@@ -448,11 +563,7 @@ ASD_base::debug_RDM() const {
   assert(false);
 #endif
 
-//***************************************************************************************************************
-void
-ASD_base::debug_energy() const {
-//***************************************************************************************************************
-
+void ASD_base::debug_energy() const {
   //Energy calculation
   cout << "!@# Energy calculated from RDM:" << endl;
   const int nclosedA = dimer_->active_refs().first->nclosed();

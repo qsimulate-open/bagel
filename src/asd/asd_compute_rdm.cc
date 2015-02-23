@@ -31,10 +31,7 @@ using namespace std;
 using namespace bagel;
 using namespace btas;
 
-//***************************************************************************************************************
-void
-ASD_base::compute_rdm () {
-//***************************************************************************************************************
+void ASD_base::compute_rdm () {
 //const int norbA = dimer_->active_refs().first->nact();
 //const int norbB = dimer_->active_refs().second->nact();
 
@@ -139,7 +136,7 @@ ASD_base::compute_rdm () {
   for (auto& subspace : subspaces) {
     shared_ptr<RDM<1>> r1;
     shared_ptr<RDM<2>> r2;
-    tie(r1,r2) = compute_diagonal_block_RDM(subspace);
+    tie(r1,r2) = compute_diagonal_block<false>(subspace);
     if (r1) assert(false); //*onerdm_ += *r1;
     if (r2) *twordm_ += *r2;
   }
@@ -149,7 +146,7 @@ ASD_base::compute_rdm () {
     for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
       shared_ptr<RDM<1>> r1;
       shared_ptr<RDM<2>> r2;
-      tie(r1,r2) = couple_blocks_RDM(*jAB, *iAB); //Lower-triangular (i<->j)
+      tie(r1,r2) = couple_blocks<false>(*jAB, *iAB); //Lower-triangular (i<->j)
       if (r1) *onerdm_ += *r1;
       if (r2) *twordm_ += *r2;
     }

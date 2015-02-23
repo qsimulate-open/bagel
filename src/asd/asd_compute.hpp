@@ -66,7 +66,7 @@ void ASD<VecType>::compute() {
 
   for (auto& subspace : subspaces_) {
     compute_pure_terms(subspace, jop_);
-    std::shared_ptr<Matrix> block = compute_diagonal_block_H(subspace);
+    std::shared_ptr<Matrix> block = compute_diagonal_block<true>(subspace);
     if (store_matrix_)
       hamiltonian_->add_block(1.0, subspace.offset(), subspace.offset(), block->ndim(), block->mdim(), block);
     const int n = block->ndim();
@@ -81,7 +81,7 @@ void ASD<VecType>::compute() {
         const int joff = jAB->offset();
 
 // TODO remove this comment once the gammaforst issue has been fixed (bra and ket have been exchanged)
-        std::shared_ptr<Matrix> block = couple_blocks_H(*jAB, *iAB);
+        std::shared_ptr<Matrix> block = couple_blocks<true>(*jAB, *iAB);
 
         if (block) {
           hamiltonian_->add_block(1.0, joff, ioff, block->ndim(), block->mdim(), block);
@@ -105,14 +105,6 @@ void ASD<VecType>::compute() {
   monomer_rdm();
   compute_rdm();
 /*
-  //ASDSCF
-  {
-    std::shared_ptr<const Reference> dimerref = dimer_->sref();
-    std::shared_ptr<const Geometry> dimergeom = dimer_->sgeom();
-    std::shared_ptr<PTree> input;
-    auto asdscf = std::make_shared<ASDSuperCI>(input, dimergeom, dimerref, std::make_tuple(onerdm_,twordm_));
-    asdscf->compute();
-  }
   //ASD-NEVPT2
   {
     std::shared_ptr<const Reference> dimerref = dimer_->sref();
