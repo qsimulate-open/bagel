@@ -191,7 +191,107 @@ void ASD_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
 }
 
 
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(const int istate, pair<int,int>, array<Dvec,4>&) const {
-  return make_tuple(nullptr,nullptr);
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const Dvec> ccvec, const int i, const int ip) const {
+  shared_ptr<const Civec> cbra = ccvec->data(i);
+  shared_ptr<const Civec> cket = ccvec->data(ip);
+
+  const int norb = cbra->det()->norb();
+  assert(*cbra->det() == *cket->det());
+
+  // since we consider here number conserving operators...
+  auto dbra = make_shared<Dvec>(cbra->det(), norb*norb);
+  dbra->zero();
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  shared_ptr<Dvec> dket;
+  // if bra and ket vectors are different, we need to form Sigma for ket as well.
+  if (cbra != cket) {
+    dket = make_shared<Dvec>(cket->det(), norb*norb);
+    dket->zero();
+    sigma_2a1(cket, dket);
+    sigma_2a2(cket, dket);
+  } else {
+    dket = dbra;
+  }
+
+  return compute_rdm12_last_step(dbra, dket, cbra);
 }
 
+
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
+
+  //ADDED
+  const int norb = cibra->det()->norb();
+  //END
+
+  cout << "TEST: Civec lena = " << cibra->lena() << ", lenb = " << cibra->lenb() << endl;
+  cout << "TEST: Dvec  lena = " << dbra->lena() << ", lenb = " << dbra->lenb() << endl;
+
+  const int nri = dbra->lena()*dbra->lenb();
+  const int ij  = norb*norb;
+
+  if (nri != dket->lena()*dket->lenb())
+    throw logic_error("FCI::compute_rdm12_last_step called with inconsistent RI spaces");
+
+  // 1RDM
+  // c^dagger <I|\hat{E}|0>
+  auto rdm1 = make_shared<RDM<1>>(norb);
+  dgemv_("T", nri, ij, 1.0, dket->data(0)->data(), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
+  // 2RDM
+  // \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
+  auto rdm2 = make_shared<RDM<2>>(norb);
+  dgemm_("T", "N", ij, ij, nri, 1.0, dbra->data(0)->data(), nri, dket->data(0)->data(), nri, 0.0, rdm2->data(), ij);
+
+  // sorting... a bit stupid but cheap anyway
+  // This is since we transpose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb**2).
+  unique_ptr<double[]> buf(new double[norb*norb]);
+  for (int i = 0; i != norb; ++i) {
+    for (int k = 0; k != norb; ++k) {
+      copy_n(&rdm2->element(0,0,k,i), norb*norb, buf.get());
+      blas::transpose(buf.get(), norb, norb, &rdm2->element(0,0,k,i));
+    }
+  }
+
+  // put in diagonal into 2RDM
+  // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
+  for (int i = 0; i != norb; ++i)
+    for (int k = 0; k != norb; ++k)
+      for (int j = 0; j != norb; ++j)
+        rdm2->element(j,k,k,i) -= rdm1->element(j,i);
+
+  return tie(rdm1, rdm2);
+}
+
+
+void ASD_CAS::sigma_2a1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
+  assert(d->det() == cc->det());
+  const int lb = d->lenb();
+  const int ij = d->ij();
+  const double* const source_base = cc->data();
+  for (int ip = 0; ip != ij; ++ip) {
+    double* const target_base = d->data(ip)->data();
+    for (auto& iter : cc->det()->phia(ip)) {
+      const double sign = static_cast<double>(iter.sign);
+      double* const target_array = target_base + iter.source*lb;
+      daxpy_(lb, sign, source_base + iter.target*lb, 1, target_array, 1);
+    }
+  }
+}
+
+
+void ASD_CAS::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
+  assert(d->det() == cc->det());
+  const int la = d->lena();
+  const int ij = d->ij();
+  for (int i = 0; i < la; ++i) {
+    const double* const source_array0 = cc->element_ptr(0, i);
+    for (int ip = 0; ip != ij; ++ip) {
+      double* const target_array0 = d->data(ip)->element_ptr(0, i);
+      for (auto& iter : cc->det()->phib(ip)) {
+        const double sign = static_cast<double>(iter.sign);
+        target_array0[iter.source] += sign * source_array0[iter.target];
+      }
+    }
+  }
+}

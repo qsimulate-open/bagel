@@ -44,9 +44,6 @@ void ASD_base::compute_rdm12_dimer() {
     rdm2_[i] = rdm2;
   }
 
-//debug_RDM(rdm1, rdm2); 
-//debug_energy(rdm1, rdm2);
-
 }
 
 

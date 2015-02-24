@@ -51,7 +51,7 @@ shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma_1e(shared_ptr<const DistRASDvec>
   return nullptr;
 }
 
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_DistRAS::compute_rdm12_monomer(const int istate, pair<int,int>, array<DistRASDvec,4>&) const {
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_DistRAS::compute_rdm12_monomer(shared_ptr<const DistRASDvec> ccvec, const int i, const int j) const {
   assert(false);
   return make_tuple(nullptr,nullptr);
 }
