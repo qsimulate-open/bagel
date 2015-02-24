@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-shared_ptr<Dvec> ASD_CAS::form_sigma(shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop) const {
+shared_ptr<Dvec> ASD_CAS::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop) const {
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();
@@ -189,3 +189,9 @@ void ASD_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
     }
   }
 }
+
+
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(const int istate, pair<int,int>, array<Dvec,4>&) const {
+  return make_tuple(nullptr,nullptr);
+}
+

@@ -31,34 +31,31 @@ using namespace std;
 using namespace bagel;
 using namespace btas;
 
-void ASD_base::compute_rdm12() {
-  const int norbA = dimer_->active_refs().first->nact();
-  const int norbB = dimer_->active_refs().second->nact();
+void ASD_base::compute_rdm12_dimer() {
+  // compute transformed gammas (J',J,zeta)
+  StateTensor st(adiabats_, subspaces_base());
+  st.print();
 
-  if (rdm1_av_ == nullptr && nstates_ > 1) {
-    rdm1_av_ = make_shared<RDM<1>>(norbA+norbB);
-    rdm2_av_ = make_shared<RDM<2>>(norbA+norbB);
-  }
-  if (nstates_ > 1) {
-    rdm1_av_->zero();
-    rdm2_av_->zero();
+  for (int i = 0; i != nstates_; ++i) {
+    shared_ptr<RDM<1>> rdm1;
+    shared_ptr<RDM<2>> rdm2;
+    tie(rdm1,rdm2) = compute_rdm12_dimer(i, st);
+    rdm1_[i] = rdm1;
+    rdm2_[i] = rdm2;
   }
 
-  for (int i = 0; i != nstates_; ++i) compute_rdm12(i);
+//debug_RDM(rdm1, rdm2); 
+//debug_energy(rdm1, rdm2);
 
 }
 
 
-void ASD_base::compute_rdm12(const int istate) {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_rdm12_dimer(const int istate, const StateTensor& st) {
   const int norbA = dimer_->active_refs().first->nact();
   const int norbB = dimer_->active_refs().second->nact();
 
   auto rdm1 = make_shared<RDM<1>>(norbA+norbB);
   auto rdm2 = make_shared<RDM<2>>(norbA+norbB);
-
-  // compute transformed gammas (J',J,zeta)
-  StateTensor st(adiabats_, subspaces_base());
-  st.print();
 
   // TODO parallelize
   // Loop over both tensors and mupltiply
@@ -125,20 +122,7 @@ void ASD_base::compute_rdm12(const int istate) {
   
   symmetrize_rdm12(rdm1, rdm2); 
 
-  debug_RDM(rdm1, rdm2); 
-  debug_energy(rdm1, rdm2);
-  
-  // setting to private members.
-  rdm1_[istate] = rdm1;
-  rdm2_[istate] = rdm2;
-  if (nstates_ != 1) {
-    rdm1_av_->ax_plus_y(weight_[istate], rdm1);
-    rdm2_av_->ax_plus_y(weight_[istate], rdm2);
-  } else {
-    rdm1_av_ = rdm1;
-    rdm2_av_ = rdm2;
-  }
-
+  return make_tuple(rdm1, rdm2);
 }
 
 

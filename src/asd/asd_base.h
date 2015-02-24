@@ -31,6 +31,7 @@
 #include <src/asd/asd_spin.h>
 #include <src/asd/gamma_tensor.h>
 #include <src/asd/coupling.h>
+#include <src/asd/state_tensor.h>
 
 namespace bagel {
 
@@ -133,6 +134,8 @@ class ASD_base {
     void print_property(const std::string label, std::shared_ptr<const Matrix>, const int size = 10) const ;
     void print(const double thresh = 0.01) const;
 
+    void compute_rdm12_dimer();
+
     //RDM debug functions
     void debug_RDM(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&) const;
     void debug_energy(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&) const;
@@ -141,10 +144,6 @@ class ASD_base {
     ASD_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer);
 
     virtual void compute() = 0;
-
-    // rdms
-    void compute_rdm12(); // compute all states at once + averaged rdm
-    void compute_rdm12(const int istate);
 
     std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> model(const int i) { return models_[i]; }
 
@@ -163,6 +162,7 @@ class ASD_base {
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
   private:
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> compute_rdm12_dimer(const int i, const StateTensor& st);
     void symmetrize_rdm12(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&) const;
 };
 

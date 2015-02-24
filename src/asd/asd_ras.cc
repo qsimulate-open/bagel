@@ -48,3 +48,7 @@ shared_ptr<RASDvec> ASD_RAS::form_sigma_1e(shared_ptr<const RASDvec> ccvec, cons
   copy_n(modata, norb*norb, mo1e->data());
   return form(ccvec, mo1e, nullptr, vector<int>(ccvec->ij(), static_cast<int>(false)));
 }
+
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer(const int istate, pair<int,int>, array<RASDvec,4>&) const {
+  return make_tuple(nullptr,nullptr);
+}

@@ -50,3 +50,8 @@ shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma_1e(shared_ptr<const DistRASDvec>
   throw logic_error("ASD_DistRAS::form_sigma_1e function not yet written");
   return nullptr;
 }
+
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_DistRAS::compute_rdm12_monomer(const int istate, pair<int,int>, array<DistRASDvec,4>&) const {
+  assert(false);
+  return make_tuple(nullptr,nullptr);
+}
