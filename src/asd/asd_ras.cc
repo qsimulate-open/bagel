@@ -143,10 +143,10 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
   cout << "2rdm done.." << endl;
 
   //RDM2 symmetrize (out-of-excitation free parts are copied)
-  for (int i = 0, ij = 0; i != norb_; ++i) 
-    for (int j = 0; j != norb_; ++j, ++ij) 
-      for (int k = 0, kl = 0; k != norb_; ++k)
-        for (int l = 0; l != norb_; ++l, ++kl)
+  for (int i = 0, ij = 0; i != norb; ++i) 
+    for (int j = 0; j != norb; ++j, ++ij) 
+      for (int k = 0, kl = 0; k != norb; ++k)
+        for (int l = 0; l != norb; ++l, ++kl)
           if (kl > ij) rdm2->element(i,j,k,l) = rdm2->element(k,l,i,j);
 
   return tie(rdm1, rdm2);
