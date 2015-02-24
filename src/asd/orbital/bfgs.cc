@@ -94,8 +94,8 @@ void ASD_BFGS::compute() {
     asd->compute();
     cout << "BFGS: ASD done.." << endl;
     //get RDM
-    rdm1_ = asd->rdm1();
-    rdm2_ = asd->rdm2();
+    rdm1_ = asd->rdm1_av();
+    rdm2_ = asd->rdm2_av();
     //get energy
     energy_ = asd->energy();
 

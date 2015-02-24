@@ -155,18 +155,16 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
 
 
 void ASD_RAS::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
-  cout << "sigma_2a1" << endl;
-  //based on sigma_2a2
-  
   shared_ptr<const RASDeterminants> det = cc->det();
 
   for (auto& ispace : *det->stringspaceb()) { 
     for (size_t ib = 0; ib != ispace->size(); ++ib) {
-    //const bitset<nbit__> bbit = ispace->strings(ib);
       const auto bbit = ispace->strings(ib);
+
       for (auto& jspace : *det->stringspacea()) {
         const size_t offset = jspace->offset();
-        for (size_t ja = 0; ja != jspace->size(); ++ja) { 
+        for (size_t ja = 0; ja != jspace->size(); ++ja) {
+
           for (auto& phi : det->phia(ja+offset)) {
             assert(phi.target == ja+offset);
             const double sign = static_cast<double>(phi.sign);
@@ -177,28 +175,23 @@ void ASD_RAS::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) co
             if(!det->allowed(sbit,bbit)) continue;
             d->data(ij)->element(bbit,sbit) += sign * cc->element(bbit,tbit);
           }
+
         }
       }
+
     }
-  }
+  } 
 
 }
 
 
 void ASD_RAS::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
-  cout << "sigma_2a2" << endl;
-  
-//const int nij = norb*norb;
   shared_ptr<const RASDeterminants> det = cc->det();
-//const size_t lb = det->lenb();
 
   for (auto& ispace : *det->stringspacea()) { // alpha determinant space
-  //const size_t offset = ispace->offset();
     for (size_t ia = 0; ia != ispace->size(); ++ia) { // determinants associated with a given space
-    //const bitset<nbit__> abit = ispace->strings(ia);
       const auto abit = ispace->strings(ia);
 
-    //for (auto& phi : det->uncompressed_phib(ia+offset)) {
       for (auto& jspace : *det->stringspaceb()) {
         const size_t offset = jspace->offset();
         for (size_t jb = 0; jb != jspace->size(); ++jb) { // determinants associated with a given space
@@ -209,9 +202,6 @@ void ASD_RAS::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) co
             const auto sbit = det->string_bits_b(phi.source);
             const auto tbit = det->string_bits_b(phi.target);
             const auto ij = phi.ij;
-          //if(i == j) {
-          //  cout << "diag[" << i << "] : " << phi.source << " " << phi.target << endl;
-          //}
             if(!det->allowed(abit,tbit)) continue;
             if(!det->allowed(abit,sbit)) continue;
             d->data(ij)->element(sbit,abit) += sign * cc->element(tbit,abit);
@@ -220,29 +210,29 @@ void ASD_RAS::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) co
       }
     }
   }
+
 }
 
 
 void ASD_RAS::sigma_2a1_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
-  cout << "sigma_2a1_new" << endl;
-  //based on sigma_2a2
-  
   shared_ptr<const RASDeterminants> det = cc->det();
   const int norb = cc->det()->norb();
 
   for (auto& ispace : *det->stringspaceb()) { 
     for (size_t ib = 0; ib != ispace->size(); ++ib) {
       const bitset<nbit__> bbit = ispace->strings(ib);
+
       for (auto& jspace : *det->stringspacea()) {
         const size_t offset = jspace->offset();
         for (size_t ja = 0; ja != jspace->size(); ++ja) { 
+
           for (auto& phi : det->phia(ja+offset)) {
             assert(phi.target == ja+offset);
             const double sign = static_cast<double>(phi.sign);
-          //const auto ibit = det->string_bits_b(phi.source); //intermediate
             const auto tbit = det->string_bits_a(phi.target);
             const auto kl = phi.ij;
             if(!det->allowed(tbit,bbit)) continue;
+
             for (auto& phi2 : det->phia(phi.source)) {
               assert(phi2.target == phi.source);
               const double sign2 = static_cast<double>(phi2.sign);
@@ -259,19 +249,19 @@ void ASD_RAS::sigma_2a1_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
 
 }
 
+
 void ASD_RAS::sigma_2a2_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
-  cout << "sigma_2a2_new" << endl;
-  
   shared_ptr<const RASDeterminants> det = cc->det();
   const int norb = cc->det()->norb();
 
   for (auto& ispace : *det->stringspacea()) { 
     for (size_t ia = 0; ia != ispace->size(); ++ia) {
-    //const bitset<nbit__> abit = ispace->strings(ia); //fix alpha-det
       const auto abit = ispace->strings(ia);
+
       for (auto& jspace : *det->stringspaceb()) {
         const size_t offset = jspace->offset(); //scan through beta-det
         for (size_t jb = 0; jb != jspace->size(); ++jb) { 
+
           for (auto& phi : det->phib(jb+offset)) { //first E
             assert(phi.target == jb+offset);
             const double sign = static_cast<double>(phi.sign);
@@ -279,6 +269,7 @@ void ASD_RAS::sigma_2a2_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
             const auto tbit = det->string_bits_b(phi.target); //coeff
             const auto kl = phi.ij;
             if(!det->allowed(abit,tbit)) continue; //coeff
+
             for (auto& phi2 : det->phib(phi.source)) {
               assert(phi2.target == phi.source);
               const double sign2 = static_cast<double>(phi2.sign);
@@ -286,8 +277,6 @@ void ASD_RAS::sigma_2a2_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
               const auto ij = phi2.ij;
               if(!det->allowed(abit,sbit)) continue;
               d->data(ij + kl*norb*norb)->element(sbit,abit) += sign * sign2 * cc->element(tbit,abit);
-            //if(ij == 5 && kl == 30) cout << "0550 : " << sign * sign2 * cc->element(tbit,abit) << endl;
-            //if(ij == 30 && kl == 5) cout << "5005 : " << sign * sign2 * cc->element(tbit,abit) << endl;
             }
           }
         }
@@ -295,26 +284,22 @@ void ASD_RAS::sigma_2a2_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
     }
   }
 
-  cout << "break" << endl;
-
 }
 
 
 void ASD_RAS::sigma_2a3_ba(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
-
-  cout << "sigma_2a3_new" << endl;
-  //based on sigma_2a2
-  
   shared_ptr<const RASDeterminants> det = cc->det();
   const int norb = cc->det()->norb();
 
   for (auto& ispace : *det->stringspaceb()) { 
     const size_t boffset = ispace->offset();
     for (size_t ib = 0; ib != ispace->size(); ++ib) {
-      const bitset<nbit__> bbit = ispace->strings(ib);
+      const auto bbit = ispace->strings(ib); //bitset<nbit__>
+
       for (auto& jspace : *det->stringspacea()) {
         const size_t offset = jspace->offset();
         for (size_t ja = 0; ja != jspace->size(); ++ja) {  //fix a-string
+
           for (auto& phi : det->phia(ja+offset)) {
             assert(phi.target == ja+offset);
             const double sign = static_cast<double>(phi.sign);
@@ -322,16 +307,13 @@ void ASD_RAS::sigma_2a3_ba(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
             const auto tbit = det->string_bits_a(phi.target);
             const auto kl = phi.ij;
             if(!det->allowed(tbit,bbit)) continue; //coeff
+
             for (auto& phi2 : det->phib(ib+boffset)) {
               const double sign2 = static_cast<double>(phi2.sign);
               const auto sbbit = det->string_bits_b(phi2.source);
               const auto ij = phi2.ij;
               if(!det->allowed(sbit,sbbit)) continue; //double replacement ket
-            //cout << cc->element(bbit,tbit) << endl;
-            //cout << d->data(ij + kl*norb*norb)->element(sbbit,sbit) << endl;
-            //cout << endl;
               d->data(ij + kl*norb*norb)->element(sbbit,sbit) += sign * sign2 * cc->element(bbit,tbit);
-            //d->data(kl + ij*norb*norb)->element(sbbit,sbit) += sign * sign2 * cc->element(bbit,tbit);
             }
           }
         }
@@ -341,10 +323,8 @@ void ASD_RAS::sigma_2a3_ba(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
 
 }
 
+
 void ASD_RAS::sigma_2a4_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
-  cout << "sigma_2a4_new" << endl;
-  //based on sigma_2a2
-  
   shared_ptr<const RASDeterminants> det = cc->det();
   const int norb = cc->det()->norb();
 
@@ -352,9 +332,11 @@ void ASD_RAS::sigma_2a4_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
     const size_t aoffset = ispace->offset();
     for (size_t ia = 0; ia != ispace->size(); ++ia) {
       const bitset<nbit__> abit = ispace->strings(ia);
+
       for (auto& jspace : *det->stringspaceb()) {
         const size_t offset = jspace->offset();
         for (size_t jb = 0; jb != jspace->size(); ++jb) {  //fix b-string
+
           for (auto& phi : det->phib(jb+offset)) {
             assert(phi.target == jb+offset);
             const double sign = static_cast<double>(phi.sign);
@@ -362,16 +344,13 @@ void ASD_RAS::sigma_2a4_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
             const auto tbit = det->string_bits_b(phi.target);
             const auto kl = phi.ij;
             if(!det->allowed(abit,tbit)) continue; //coeff
+
             for (auto& phi2 : det->phia(ia+aoffset)) {
               const double sign2 = static_cast<double>(phi2.sign);
               const auto sabit = det->string_bits_a(phi2.source);
               const auto ij = phi2.ij;
               if(!det->allowed(sabit,sbit)) continue; //double replacement ket
-            //cout << cc->element(bbit,tbit) << endl;
-            //cout << d->data(ij + kl*norb*norb)->element(sbbit,sbit) << endl;
-            //cout << endl;
               d->data(ij + kl*norb*norb)->element(sbit,sabit) += sign * sign2 * cc->element(tbit,abit);
-            //d->data(kl + ij*norb*norb)->element(sbbit,sbit) += sign * sign2 * cc->element(bbit,tbit);
             }
           }
         }

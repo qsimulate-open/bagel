@@ -593,7 +593,7 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
   }
 */
 
-  //1RDM
+  //1RDM (Trace)
   { //Monomer A
     double sum = 0.0;
     for (int i = 0; i != nactA; ++i) {
@@ -615,6 +615,9 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
     }
     cout << "1RDM(AB) Trace = " << sum << endl;
   }
+
+  shared_ptr<Matrix> rdm1_mat = rdm1->rdm1_mat(/*nclose*/0);
+  cout << "is 1RDM symmetric? " << rdm1_mat->is_symmetric() << endl;
 
   //2RDM check (A) Gamma_ij,kl = <0|E_ij,kl|0> = <0|(k1)'(i2)'(j2)(l1)|0>  1,2 = spin 
   //diagonal: i=j, k=l
@@ -643,6 +646,29 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
     cout << "2RDM(AB) Trace = " << sum << endl;
   }
 
+  {//RDM2 symmetric check
+    for (int l = 0; l != nactT; ++l)
+    for (int k = 0; k != nactT; ++k)
+    for (int j = 0; j != nactT; ++j)
+    for (int i = 0; i != nactT; ++i) {
+      double ijkl = rdm2->element(i,j,k,l);
+      double klij = rdm2->element(k,l,i,j);
+      double jilk = rdm2->element(j,i,l,k);
+      double lkji = rdm2->element(l,k,j,i);
+      if( abs(ijkl-klij) > 1.0e-10) assert(false); //cout << "ERROR1" << endl;
+    //  cout << "W1: " << i << j << k << l << ":" << ijkl << " /= "
+    //                 << k << l << i << j << ":" << klij << endl;
+    //}
+      if( abs(ijkl-jilk) > 1.0e-10) assert(false); //cout << "ERROR2" << endl;
+    //  cout << "W2: " << i << j << k << l << ":" << ijkl << " /= "
+    //                 << j << i << l << k << ":" << jilk << endl;
+    //} 
+      if( abs(ijkl-lkji) > 1.0e-10) assert(false); //cout << "ERROR3" << endl;
+    //  cout << "W3: " << i << j << k << l << ":" << ijkl << " " << lkji << endl;
+    //}
+    }
+  }
+
   { //Gamma_ij,kk
     cout << "2RDM(A) Partial Trace Sum_k (i,j,k,k)" << endl;
     auto debug = make_shared<RDM<1>>(*rdm1A);
@@ -651,7 +677,7 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
     for (int k = 0; k != nactA; ++k) {
       debug->element(i,j) -= 1.0/(neleA-1) * rdm2->element(i,j,k,k);
     }
-    debug->print(1.0e-3);
+    debug->print(1.0e-10);
   }
   { //Gamma_ij,kk
     cout << "2RDM(B) Partial Trace Sum_k (i,j,k,k)" << endl;
@@ -661,7 +687,7 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
     for (int k = nactA; k != nactT; ++k) {
       debug->element(i-nactA,j-nactA) -= 1.0/(neleB-1) * rdm2->element(i,j,k,k);
     }
-    debug->print(1.0e-3);
+    debug->print(1.0e-10);
   }
   { //Gamma_ij,kk
     cout << "2RDM(AB) Partial Trace Sum_k (i,j,k,k)" << endl;
@@ -671,7 +697,7 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
     for (int k = 0; k != nactT; ++k) {
       debug->element(i,j) -= 1.0/(nelec-1) * rdm2->element(i,j,k,k);
     }
-    debug->print(1.0e-3);
+    debug->print(1.0e-10);
   }
 
 /*

@@ -43,6 +43,7 @@ void ASD_RAS_BFGS::compute() {
   bool together = false;
   bool together_denom = false;
   double gthr = 5.0e-4;
+//double gthr = 1.0e-5;
 
   shared_ptr<SRBFGS<RotFile>> bfgs_large;
   shared_ptr<SRBFGS<ASD_RAS_ActiveRotFile>> bfgs_small;
@@ -101,8 +102,8 @@ void ASD_RAS_BFGS::compute() {
     asd->compute();
     cout << "BFGS: ASD done.." << endl;
     //get RDM
-    rdm1_ = asd->rdm1();
-    rdm2_ = asd->rdm2();
+    rdm1_ = asd->rdm1_av();
+    rdm2_ = asd->rdm2_av();
     //get energy
     energy_ = asd->energy();
 
@@ -267,6 +268,7 @@ void ASD_RAS_BFGS::compute() {
     shared_ptr<ASD_RAS_RotFile> c;
 //  cout << " " << endl;
     if (together) {
+      cout << "ASD_RAS_Rotation" << endl;
       cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
 ////*x *= *natorb_mat;
       auto xcopy = x->log(8);
