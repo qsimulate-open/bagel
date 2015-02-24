@@ -211,8 +211,8 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e<false>(
     sort_indices<0,3,2,1, 0,1, -1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa
     sort_indices<0,3,2,1, 1,1, -1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb
     if (!subdia) {
-      sort_indices<1,2,3,0, 1,1, -1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa of (N,M)
-      sort_indices<1,2,3,0, 1,1, -1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb of (N,M)
+      sort_indices<3,0,1,2, 1,1, -1,1>(rdmAA->data(), rdmt->data(), nactA, nactA, nactB, nactB); //aa of (N,M)
+      sort_indices<3,0,1,2, 1,1, -1,1>(rdmBB->data(), rdmt->data(), nactA, nactA, nactB, nactB); //bb of (N,M)
     }
     auto low = {    0, nactA, nactA,     0};
     auto up  = {nactA, nactT, nactT, nactA};
@@ -655,17 +655,17 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
       double klij = rdm2->element(k,l,i,j);
       double jilk = rdm2->element(j,i,l,k);
       double lkji = rdm2->element(l,k,j,i);
-      if( abs(ijkl-klij) > 1.0e-10) assert(false); //cout << "ERROR1" << endl;
-    //  cout << "W1: " << i << j << k << l << ":" << ijkl << " /= "
-    //                 << k << l << i << j << ":" << klij << endl;
-    //}
-      if( abs(ijkl-jilk) > 1.0e-10) assert(false); //cout << "ERROR2" << endl;
-    //  cout << "W2: " << i << j << k << l << ":" << ijkl << " /= "
-    //                 << j << i << l << k << ":" << jilk << endl;
-    //} 
-      if( abs(ijkl-lkji) > 1.0e-10) assert(false); //cout << "ERROR3" << endl;
-    //  cout << "W3: " << i << j << k << l << ":" << ijkl << " " << lkji << endl;
-    //}
+      if( abs(ijkl-klij) > 1.0e-10) { //assert(false); //cout << "ERROR1" << endl;
+        cout << "ERROR1: " << i << j << k << l << ":" << ijkl << " /= "
+                       << k << l << i << j << ":" << klij << endl;
+      }
+      if( abs(ijkl-jilk) > 1.0e-10) { //assert(false); //cout << "ERROR2" << endl;
+        cout << "ERROR2: " << i << j << k << l << ":" << ijkl << " /= "
+                       << j << i << l << k << ":" << jilk << endl;
+      } 
+      if( abs(ijkl-lkji) > 1.0e-10) { //assert(false); //cout << "ERROR3" << endl;
+        cout << "ERROR3: " << i << j << k << l << ":" << ijkl << " " << lkji << endl;
+      }
     }
   }
 

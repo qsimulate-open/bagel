@@ -84,67 +84,96 @@ AB [ ]
   std::vector<std::shared_ptr<RDM<1>>> rdm1B; rdm1B.resize(nstates_);
   std::vector<std::shared_ptr<RDM<2>>> rdm2B; rdm2B.resize(nstates_);
 
+  int isub = 0;
   for (auto& AB : subspaces_) { //diagonal dimer subspace
+    isub++;
     const int ioff = AB.offset();
-
     std::shared_ptr<const VecType> A = AB.template ci<0>(); 
     std::shared_ptr<const VecType> B = AB.template ci<1>();
-
     const int nstA = A->ij();
     const int nstB = B->ij();
+    assert(nstA == AB.nstatesA());
+    assert(nstB == AB.nstatesB());
 
-    //MonomerA
-    for (int i = 0; i != nstA; ++i) { // <I|
-      for (int ip = 0; ip != nstA; ++ip) { // |I'> both belong to the same Dvec
-    
-        std::shared_ptr<RDM<1>> rdm1;
-        std::shared_ptr<RDM<2>> rdm2;
-        std::tie(rdm1,rdm2) = compute_rdm12_monomer(A, i, ip); // <I'|E(op)|I>
-  
-        for (int kst = 0; kst != nstates_; ++kst) {
+    int jsub = 0;
+    for (auto& ApBp : subspaces_) { //TEST
+      jsub++;
+    //if (!isub != jsub) continue; //force diagonal
+      const int joff = ApBp.offset();
+      std::shared_ptr<const VecType> Ap = ApBp.template ci<0>(); 
+      std::shared_ptr<const VecType> Bp = ApBp.template ci<1>();
+      const int nstAp = Ap->ij();
+      const int nstBp = Bp->ij();
+      assert(nstAp == ApBp.nstatesA());
+      assert(nstBp == ApBp.nstatesB());
 
-          double csum = 0.0; //coeff sum
-          for (int j = 0; j != nstB; ++j) { // delta_J'J
-            const int ij  = i  + (j*nstA);
-            const int ijp = ip + (j*nstA);
-            csum += adiabats_->element(ioff+ij,kst) * adiabats_->element(ioff+ijp,kst);
-          }
- 
-          if (!rdm1A[kst]) rdm1A[kst] = std::make_shared<RDM<1>>(nactA);          
-          if (!rdm2A[kst]) rdm2A[kst] = std::make_shared<RDM<2>>(nactA);          
-          rdm1A[kst]->ax_plus_y(csum, rdm1);
-          rdm2A[kst]->ax_plus_y(csum, rdm2);
-
-        }
-      } 
-    } //A
-
-    //MonomerB
-    for (int j = 0; j != nstB; ++j) { //<J|
-      for (int jp = 0; jp != nstB; ++jp) { // |J'>
-    
-        std::shared_ptr<RDM<1>> rdm1;
-        std::shared_ptr<RDM<2>> rdm2;
-        std::tie(rdm1,rdm2) = compute_rdm12_monomer(B, j, jp); // <J'|E(op)|J>
-  
-        for (int kst = 0; kst != nstates_; ++kst) {
-
-          double csum = 0.0; //coeff sum
-          for (int i = 0; i != nstA; ++i) { // delta_I'I
-            const int ij  = i + (j*nstA);
-            const int ijp = i + (jp*nstA);
-            csum += adiabats_->element(ioff+ij,kst) * adiabats_->element(ioff+ijp,kst);
+      //MonomerA
+      if (B == Bp) {
+        if(isub != jsub) std::cout << "A: nondiagonal contribution" << isub << jsub << std::endl;
+        assert(nstB == nstBp);
+        for (int i = 0; i != nstA; ++i) { // <I|
+          for (int ip = 0; ip != nstAp; ++ip) { // |I'> 
+        
+            std::shared_ptr<RDM<1>> rdm1;
+            std::shared_ptr<RDM<2>> rdm2;
+            std::tie(rdm1,rdm2) = compute_rdm12_monomer(A, i, Ap, ip); // <I'|E(op)|I>
+       
+            for (int kst = 0; kst != nstates_; ++kst) {
+      
+              double csum = 0.0; //coeff sum
+              for (int j = 0; j != nstB; ++j) { // delta_J'J
+                const int ij  = i  + (j*nstA);
+                const int ijp = ip + (j*nstAp);
+                csum += adiabats_->element(ioff+ij,kst) * adiabats_->element(joff+ijp,kst); //cf. dimerindex()
+                std::cout << "     " << adiabats_->element(ioff+ij,kst) << " * " <<
+                                        adiabats_->element(joff+ijp,kst) << std:: endl;
+              }
+              std::cout << "coeff sum = " << csum << std::endl;
+      
+              if (!rdm1A[kst]) rdm1A[kst] = std::make_shared<RDM<1>>(nactA);          
+              if (!rdm2A[kst]) rdm2A[kst] = std::make_shared<RDM<2>>(nactA);          
+              rdm1A[kst]->ax_plus_y(csum, rdm1);
+              rdm2A[kst]->ax_plus_y(csum, rdm2);
+      
+            }
           } 
+        } //A
+      }
+     
+      //MonomerB
+      if (A == Ap) {
+        if(isub != jsub) std::cout << "B: nondiagonal contribution" << isub << jsub << std::endl;
+        assert(nstA == nstAp);
+        for (int j = 0; j != nstB; ++j) { //<J|
+          for (int jp = 0; jp != nstBp; ++jp) { // |J'>
+        
+            std::shared_ptr<RDM<1>> rdm1;
+            std::shared_ptr<RDM<2>> rdm2;
+            std::tie(rdm1,rdm2) = compute_rdm12_monomer(B, j, Bp, jp); // <J'|E(op)|J>
+       
+            for (int kst = 0; kst != nstates_; ++kst) {
+      
+              double csum = 0.0; //coeff sum
+              for (int i = 0; i != nstA; ++i) { // delta_I'I
+                const int ij  = i + (j*nstA);
+                const int ijp = i + (jp*nstAp);
+                csum += adiabats_->element(ioff+ij,kst) * adiabats_->element(joff+ijp,kst);
+                std::cout << "     " << adiabats_->element(ioff+ij,kst) << " * " <<
+                                        adiabats_->element(joff+ijp,kst) << std:: endl;
+              }
+              std::cout << "coeff sum = " << csum << std::endl;
+      
+              if (!rdm1B[kst]) rdm1B[kst] = std::make_shared<RDM<1>>(nactB);          
+              if (!rdm2B[kst]) rdm2B[kst] = std::make_shared<RDM<2>>(nactB);          
+              rdm1B[kst]->ax_plus_y(csum, rdm1);
+              rdm2B[kst]->ax_plus_y(csum, rdm2);
+      
+            }
+          } 
+        } //B
+      }
 
-          if (!rdm1B[kst]) rdm1B[kst] = std::make_shared<RDM<1>>(nactB);          
-          if (!rdm2B[kst]) rdm2B[kst] = std::make_shared<RDM<2>>(nactB);          
-          rdm1B[kst]->ax_plus_y(csum, rdm1);
-          rdm2B[kst]->ax_plus_y(csum, rdm2);
-
-        }
-      } 
-    } //B
-
+    }
   } //subspaces
 
   for (int istate = 0; istate != nstates_; ++istate) {

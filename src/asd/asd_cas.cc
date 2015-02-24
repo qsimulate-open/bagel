@@ -191,9 +191,9 @@ void ASD_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
 }
 
 
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const Dvec> ccvec, const int i, const int ip) const {
-  shared_ptr<const Civec> cbra = ccvec->data(i);
-  shared_ptr<const Civec> cket = ccvec->data(ip);
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const Dvec> civec, const int i, shared_ptr<const Dvec> cipvec, const int ip) const {
+  shared_ptr<const Civec> cbra = civec->data(i);
+  shared_ptr<const Civec> cket = cipvec->data(ip);
 
   const int norb = cbra->det()->norb();
   assert(*cbra->det() == *cket->det());

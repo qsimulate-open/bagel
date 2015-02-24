@@ -101,6 +101,8 @@ void ASD<VecType>::compute() {
 
   adiabats_ = cc->copy();
 
+  adiabats_->print("ADIABATS", adiabats_->ndim());
+
   compute_rdm12();
 
   if (dipoles_) { // TODO Redo to make better use of memory

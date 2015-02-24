@@ -50,10 +50,10 @@ shared_ptr<RASDvec> ASD_RAS::form_sigma_1e(shared_ptr<const RASDvec> ccvec, cons
 }
 
 
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer(shared_ptr<const RASDvec> ccvec, const int i, const int ip) const {
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer(shared_ptr<const RASDvec> civec, const int i, shared_ptr<const RASDvec> cipvec,  const int ip) const {
   cout << "compute_rdm12_from_civec" << endl;
-  shared_ptr<const RASCivec> cbra = ccvec->data(i);
-  shared_ptr<const RASCivec> cket = ccvec->data(ip);
+  shared_ptr<const RASCivec> cbra = civec->data(i);
+  shared_ptr<const RASCivec> cket = cipvec->data(ip);
   const int norb = cbra->det()->norb();
   assert(*cbra->det() == *cket->det());
 
