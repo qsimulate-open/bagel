@@ -112,7 +112,7 @@ void Point_OverlapBatch::perform_VRR(double* intermediate) {
 
     // peform HRR
     for (int j = 1; j <= ang1_; ++j) {
-      for (int i = 0; i != amax_ - j; ++i) {
+      for (int i = 0; i <= amax_ - j; ++i) {
         // obtain S(i, j)
         workx[j*amax_+i] = pBx*workx[(j-1)*amax_+i];
         worky[j*amax_+i] = pBy*worky[(j-1)*amax_+i];
@@ -132,7 +132,7 @@ void Point_OverlapBatch::perform_VRR(double* intermediate) {
             for (int jy = 0; jy <= ang1_-jz; ++jy) {
               const int jx = ang1_-jy-jz;
               if (jx >= 0) {
-                current_data[cnt] = workx[ix+amax1_*jx]*worky[iy+amax1_*jy]*workz[iz+amax1_*jz];
+                current_data[cnt] = workx[ix+amax_*jx]*worky[iy+amax_*jy]*workz[iz+amax_*jz];
                 ++cnt;
               }
             }
