@@ -75,8 +75,8 @@ void Point_OverlapBatch::compute() {
 
 void Point_OverlapBatch::perform_VRR(double* intermediate) {
 
-  const int worksize = (ang0_+1) * (ang1_+1);
   const int ang0s = ang0_+1;
+  const int worksize = (ang0_+1) * (ang1_+1);
   double* workx = stack_->get<double>(worksize);
   double* worky = stack_->get<double>(worksize);
   double* workz = stack_->get<double>(worksize);
