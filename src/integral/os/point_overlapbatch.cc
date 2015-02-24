@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: point_overlapbatch.cc
-// Copyright (C) 2014 Toru Shiozaki
+// Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -75,10 +75,11 @@ void Point_OverlapBatch::compute() {
 
 void Point_OverlapBatch::perform_VRR(double* intermediate) {
 
-  const int worksize = amax1_;
-  double* workx = stack_->get<double>(worksize*worksize);
-  double* worky = stack_->get<double>(worksize*worksize);
-  double* workz = stack_->get<double>(worksize*worksize);
+  const int worksize = (ang0_+1) * (ang1_+1);
+  const int ang0s = ang0_+1;
+  double* workx = stack_->get<double>(worksize);
+  double* worky = stack_->get<double>(worksize);
+  double* workz = stack_->get<double>(worksize);
 
   const double pAx = location_[0] - basisinfo_[0]->position(0);
   const double pAy = location_[1] - basisinfo_[0]->position(1);
@@ -103,7 +104,7 @@ void Point_OverlapBatch::perform_VRR(double* intermediate) {
     worky[0] = coeffsy_[ii] * tmp * std::exp(- cxp * (cypl * cypl));
     workz[0] = coeffsz_[ii] * tmp * std::exp(- cxp * (czpl * czpl));
 
-    for (int i = 1; i <= amax_; ++i) {
+    for (int i = 1; i <= ang0_; ++i) {
       // obtain S(i, 0)
       workx[i] = pAx*workx[i-1];
       worky[i] = pAy*worky[i-1];
@@ -112,11 +113,11 @@ void Point_OverlapBatch::perform_VRR(double* intermediate) {
 
     // peform HRR
     for (int j = 1; j <= ang1_; ++j) {
-      for (int i = 0; i <= amax_ - j; ++i) {
+      for (int i = 0; i <= ang0_; ++i) {
         // obtain S(i, j)
-        workx[j*amax_+i] = pBx*workx[(j-1)*amax_+i];
-        worky[j*amax_+i] = pBy*worky[(j-1)*amax_+i];
-        workz[j*amax_+i] = pBz*workz[(j-1)*amax_+i];
+        workx[j*ang0s+i] = pBx*workx[(j-1)*ang0s+i];
+        worky[j*ang0s+i] = pBy*worky[(j-1)*ang0s+i];
+        workz[j*ang0s+i] = pBz*workz[(j-1)*ang0s+i];
       }
     }
 
@@ -132,7 +133,7 @@ void Point_OverlapBatch::perform_VRR(double* intermediate) {
             for (int jy = 0; jy <= ang1_-jz; ++jy) {
               const int jx = ang1_-jy-jz;
               if (jx >= 0) {
-                current_data[cnt] = workx[ix+amax_*jx]*worky[iy+amax_*jy]*workz[iz+amax_*jz];
+                current_data[cnt] = workx[ix+ang0s*jx]*worky[iy+ang0s*jy]*workz[iz+ang0s*jz];
                 ++cnt;
               }
             }
@@ -143,8 +144,8 @@ void Point_OverlapBatch::perform_VRR(double* intermediate) {
 
   } // end of primsize loop
 
-  stack_->release(worksize*worksize, workz);
-  stack_->release(worksize*worksize, worky);
-  stack_->release(worksize*worksize, workx);
+  stack_->release(worksize, workz);
+  stack_->release(worksize, worky);
+  stack_->release(worksize, workx);
 }
 

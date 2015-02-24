@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: point_complexoverlapbatch.cc
-// Copyright (C) 2014 Toru Shiozaki
+// Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
