@@ -51,50 +51,61 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_rdm12_dimer(cons
   const int norbA = dimer_->active_refs().first->nact();
   const int norbB = dimer_->active_refs().second->nact();
 
-  auto rdm1 = make_shared<RDM<1>>(norbA+norbB);
-  auto rdm2 = make_shared<RDM<2>>(norbA+norbB);
-
   // TODO parallelize
   // Loop over both tensors and mupltiply
+  // compute transformed Gamma_(J,J',zeta)
   GammaTensor half;
   for (auto& i : *gammatensor_[0]) {
+    auto ops = get<0>(i.first);
+    string label = get<1>(i.first).to_string() + "| ops |" + get<2>(i.first).to_string();
+    cout << "Gammatensor: <" << label << ">" << endl; 
+    ops.print();
+    cout << *i.second << endl;
     for (auto& j : st) {
       // if the third index of the gamma tensor is identical to the first one of the state tensor we contract
       auto& ikey = i.first;
       auto& jkey = j.first;
-      if (get<0>(jkey) == istate && get<2>(ikey) == get<1>(jkey)) {
-        auto tag = make_tuple(get<0>(ikey), get<1>(ikey), get<2>(jkey));
+      if (get<0>(jkey) == istate && get<2>(ikey) == get<1>(jkey)) { // ikey:Gamma,tag_(zeta,I,[I']) == jkey:State,tag_(istate,[I'],J')
+        auto tag = make_tuple(get<0>(ikey), get<1>(ikey), get<2>(jkey)); // tag(zeta,I,J')
         if (half.exist(tag)) {
-          contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *half.get_block(tag), {0,3,2});
+          contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 1.0, *half.get_block(tag), {0,3,2});
         } else {
-          auto data = make_shared<Tensor3<double>>(get<1>(ikey).nstates(), get<2>(jkey).nstates(), i.second->extent(2));
+          auto data = make_shared<Tensor3<double>>(get<1>(ikey).nstates(), get<2>(jkey).nstates(), i.second->extent(2)); // aim for (I,J',zeta)
           contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *data, {0,3,2});
+          // Gamma_(I,I',zeta) * State_(I',J') -> Half_(I,J',zeta)
+          //        0 1  2              1  3            0 3  2
           half.emplace(tag, data);
         }
       }
     }
   }
- 
+
+  if (worktensor_) worktensor_.reset();
   worktensor_ = make_shared<GammaTensor>();
   for (auto& i : half) {
     for (auto& j : st) {
       auto& ikey = i.first;
       auto& jkey = j.first;
-      if (get<0>(jkey) == istate && get<1>(ikey) == get<1>(jkey)) {
-        auto tag = make_tuple(get<0>(ikey), get<2>(jkey), get<2>(ikey));
+      if (get<0>(jkey) == istate && get<1>(ikey) == get<1>(jkey)) { // ikey:Half,tag_(zeta,[I],J') == jkey:State,tag_(istate,[I],J)
+        auto tag = make_tuple(get<0>(ikey), get<2>(jkey), get<2>(ikey)); //tag(zeta,J,J')
  
         // TODO check if this transformation is necessary
         if (worktensor_->exist(tag)) {
           contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 1.0, *worktensor_->get_block(tag), {3,1,2});
         } else {
-          auto data = make_shared<Tensor3<double>>(get<2>(jkey).nstates(), get<2>(ikey).nstates(), i.second->extent(2));
+          auto data = make_shared<Tensor3<double>>(get<2>(jkey).nstates(), get<2>(ikey).nstates(), i.second->extent(2)); // aim for (J,J',zeta)
           contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 0.0, *data, {3,1,2});
+          //Half_(I,J',zeta) * State_(I,J) -> Work_(J,J',zeta)
+          //      0 1  2              0 3           3 1  2
           worktensor_->emplace(tag, data);
         }
       }
     }
   }
  
+  auto rdm1 = make_shared<RDM<1>>(norbA+norbB);
+  auto rdm2 = make_shared<RDM<2>>(norbA+norbB);
+
   const auto subspaces = subspaces_base();
  
   // diagonal subspaces
@@ -118,6 +129,15 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_rdm12_dimer(cons
   }
   
   symmetrize_rdm12(rdm1, rdm2); 
+
+    double sum = 0.0;
+    for (int l = 0; l != norbA+norbB; ++l)
+    for (int k = 0; k != norbA+norbB; ++k)
+    for (int j = 0; j != norbA+norbB; ++j)
+    for (int i = 0; i != norbA+norbB; ++i)
+      sum += rdm2->element(i,j,k,l);
+    cout << "2RDM SUM = " << sum << endl;
+    rdm2->print(1.0e-3);
 
   return make_tuple(rdm1, rdm2);
 }
@@ -144,11 +164,11 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::couple_blocks<false>(con
   bool flip = (static_cast<int>(term_type) < 0);
   if (flip) {
     term_type = Coupling(-1*static_cast<int>(term_type));
-    std::swap(space1,space2);
+    swap(space1,space2);
   }
 
   tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> out;
-  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
+  array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
 
   switch(term_type) {
     case Coupling::none :
@@ -168,7 +188,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::couple_blocks<false>(con
     case Coupling::bbET :
       out = compute_bbET<false>(keys); break;
     default :
-      throw std::logic_error("Asking for a coupling type that has not been written.");
+      throw logic_error("Asking for a coupling type that has not been written.");
   }
 
   return out;
@@ -199,6 +219,11 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e<false>(
   // beta-beta
   auto gamma_AA_beta = worktensor_->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
   auto gamma_BB_beta = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+
+  cout << "ZZ AA_alpha (worktensor)  " << make_shared<Matrix>(gamma_AA_alpha)->rms() << endl;
+  cout << "ZZ AA_beta (worktensor)   " << make_shared<Matrix>(gamma_AA_beta)->rms() << endl;
+  cout << "ZZ BB_alpha (gammatensor) " << make_shared<Matrix>(gamma_BB_alpha)->rms() << endl;
+  cout << "ZZ BB_beta (gammatensor)  " << make_shared<Matrix>(gamma_BB_beta)->rms() << endl;
 
   auto rdmAA = make_shared<Matrix>(gamma_AA_alpha % gamma_BB_alpha);
   auto rdmBB = make_shared<Matrix>(gamma_AA_beta  % gamma_BB_beta);
@@ -655,15 +680,15 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
       double klij = rdm2->element(k,l,i,j);
       double jilk = rdm2->element(j,i,l,k);
       double lkji = rdm2->element(l,k,j,i);
-      if( abs(ijkl-klij) > 1.0e-10) { //assert(false); //cout << "ERROR1" << endl;
+      if (abs(ijkl-klij) > 1.0e-10) { //assert(false); //cout << "ERROR1" << endl;
         cout << "ERROR1: " << i << j << k << l << ":" << ijkl << " /= "
                        << k << l << i << j << ":" << klij << endl;
       }
-      if( abs(ijkl-jilk) > 1.0e-10) { //assert(false); //cout << "ERROR2" << endl;
+      if (abs(ijkl-jilk) > 1.0e-10) { //assert(false); //cout << "ERROR2" << endl;
         cout << "ERROR2: " << i << j << k << l << ":" << ijkl << " /= "
                        << j << i << l << k << ":" << jilk << endl;
       } 
-      if( abs(ijkl-lkji) > 1.0e-10) { //assert(false); //cout << "ERROR3" << endl;
+      if (abs(ijkl-lkji) > 1.0e-10) { //assert(false); //cout << "ERROR3" << endl;
         cout << "ERROR3: " << i << j << k << l << ":" << ijkl << " " << lkji << endl;
       }
     }
@@ -1267,20 +1292,20 @@ void ASD_base::symmetrize_rdm12(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rd
   const int nactT = nactA + nactB;  
 
   //Symmetrize: D_AB (calculated) D_BA (uncalc.& symmetrized here)
-  auto matBA = std::make_shared<Matrix>(nactB,nactA); //D_BA empty
+  auto matBA = make_shared<Matrix>(nactB,nactA); //D_BA empty
   {
     auto low = {0, nactA};
     auto up  = {nactA, nactT};
     auto view = btas::make_view(rdm1->range().slice(low,up), rdm1->storage()); //D_AB sector of D (read ptr)
-    auto matAB = std::make_shared<Matrix>(nactA,nactB); //D_AB empty
-    std::copy(view.begin(), view.end(), matAB->begin()); //D_AB filled
+    auto matAB = make_shared<Matrix>(nactA,nactB); //D_AB empty
+    copy(view.begin(), view.end(), matAB->begin()); //D_AB filled
     sort_indices<1,0, 0,1, 1,1>(matAB->data(), matBA->data(), nactA, nactB); // transpose and fill D_BA
   }
   {
     auto low = {nactA, 0};
     auto up  = {nactT, nactA};
     auto outv = btas::make_rwview(rdm1->range().slice(low,up), rdm1->storage()); //D_BA sector of D (read & write ptr)
-    std::copy(matBA->begin(), matBA->end(), outv.begin()); //copy D_BA -> D_BA sector of D
+    copy(matBA->begin(), matBA->end(), outv.begin()); //copy D_BA -> D_BA sector of D
   }
 
   cout << "!@# Symmetrized 1RDM" << endl;
@@ -1355,7 +1380,7 @@ void ASD_base::symmetrize_rdm12(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rd
 
   //Symmetrize: d(ABBA) note p19
   {
-    auto low = {0,nactA,nactA,0};
+    auto low = {    0,nactA,nactA,    0};
     auto up  = {nactA,nactT,nactT,nactA};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_ABBA sector of d
     auto inmat = make_shared<Matrix>(nactA*nactB,nactB*nactA); //empty d_ABBA
@@ -1363,7 +1388,7 @@ void ASD_base::symmetrize_rdm12(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rd
     { //d(BAAB)
       auto outmat = make_shared<Matrix>(nactB*nactA,nactA*nactB); //empty d_BAAB
       sort_indices<2,3,0,1, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactB, nactA); //reorder and fill d_BAAB
-      auto low = {nactA,0,0,nactA};
+      auto low = {nactA,    0,    0,nactA};
       auto up  = {nactT,nactA,nactA,nactT};
       auto outv = btas::make_rwview(rdm2->range().slice(low,up), rdm2->storage()); //d_BAAB sector of d
       copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BAAB into d_BAAB sector of d
@@ -1389,7 +1414,7 @@ void ASD_base::symmetrize_rdm12(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rd
 
   //Symmetrize: d(ABAB) note p19
   {
-    auto low = {0,nactA,0,nactA};
+    auto low = {    0,nactA,    0,nactA};
     auto up  = {nactA,nactT,nactA,nactT};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_ABAB sector of d
     auto inmat = make_shared<Matrix>(nactA*nactB,nactA*nactB); //empty d_ABAB
@@ -1397,7 +1422,7 @@ void ASD_base::symmetrize_rdm12(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rd
     { //d(BABA)
       auto outmat = make_shared<Matrix>(nactB*nactA,nactB*nactA); //empty d_BABA
       sort_indices<1,0,3,2, 0,1, 1,1>(inmat->data(), outmat->data(), nactA, nactB, nactA, nactB); //reorder and fill d_BABA
-      auto low = {nactA,0,nactA,0};
+      auto low = {nactA,    0,nactA,    0};
       auto up  = {nactT,nactA,nactT,nactA};
       auto outv = btas::make_rwview(rdm2->range().slice(low,up), rdm2->storage()); //d_BABA sector of d
       copy(outmat->begin(), outmat->end(), outv.begin()); //copy d_BBBA into d_BABA sector of d

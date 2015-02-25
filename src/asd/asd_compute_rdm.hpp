@@ -124,6 +124,8 @@ AB [ ]
               for (int j = 0; j != nstB; ++j) { // delta_J'J
                 const int ij  = i  + (j*nstA);
                 const int ijp = ip + (j*nstAp);
+                assert(ij < adiabats_->ndim());
+                assert(ijp < adiabats_->ndim());
                 csum += adiabats_->element(ioff+ij,kst) * adiabats_->element(joff+ijp,kst); //cf. dimerindex()
                 std::cout << "     " << adiabats_->element(ioff+ij,kst) << " * " <<
                                         adiabats_->element(joff+ijp,kst) << std:: endl;
@@ -157,6 +159,8 @@ AB [ ]
               for (int i = 0; i != nstA; ++i) { // delta_I'I
                 const int ij  = i + (j*nstA);
                 const int ijp = i + (jp*nstAp);
+                assert(ij < adiabats_->ndim());
+                assert(ijp < adiabats_->ndim());
                 csum += adiabats_->element(ioff+ij,kst) * adiabats_->element(joff+ijp,kst);
                 std::cout << "     " << adiabats_->element(ioff+ij,kst) << " * " <<
                                         adiabats_->element(joff+ijp,kst) << std:: endl;
