@@ -29,13 +29,17 @@
 using namespace bagel;
 using namespace std;
 
+static const double pisq__ = pi__ * pi__;
+
 Node::Node(const std::bitset<nbit__> key, const int depth, std::shared_ptr<const Node> parent)
  : key_(key), depth_(depth), parent_(parent) {
   if (depth == 0)
     key_[0] = 1;
 
+  is_leaf_ = false;
   is_complete_ = false;
-  nbody_  = 0;
+  nchild_  = 0;
+  nbody_   = 0;
 }
 
 
@@ -45,15 +49,26 @@ void Node::insert_vertex(shared_ptr<const Vertex> p) {
   bodies_.resize(nbody_ + 1);
   bodies_[nbody_] = p;
   ++nbody_;
-
-  //cout << bodies_[nbody_-1]->position(0) << "  " << bodies_[nbody_-1]->position(1) << "  " << bodies_[nbody_-1]->position(2) << endl;
 }
 
 
+void Node::insert_child(shared_ptr<const Node> child) {
 
-void Node::mark_complete() {
+  if (child = NULL) {
+    is_leaf_ = false;
+  } else {
+    assert(!is_leaf_);
+    children_.resize(nchild_ + 1);
+    children_[nchild_] = child;
+    ++nchild_;
+  }
+}
+
+
+void Node::init() {
 
   is_complete_ = true;
+  if (nchild_ == 0) is_leaf_ = true;
 
   position_ = {{0.0, 0.0, 0.0}};
   double sum = 0.0;
@@ -66,4 +81,42 @@ void Node::mark_complete() {
   position_[0] /= sum;
   position_[1] /= sum;
   position_[2] /= sum;
+
+}
+
+
+void Node::compute_extent(const double thresh) {
+
+  std::vector<std::shared_ptr<const Shell>> shells;
+  for (auto& body : bodies_) shells.insert(shells.end(), body->atom()->shells().begin(), body->atom()->shells().end());
+  const array<double, 3> centre = position_; // use charge centre for now
+
+  extent_ = 0.0;
+  for (auto& ish : shells)
+    for (auto& jsh : shells) {
+      const vector<double> exp0 = ish->exponents();
+      const vector<double> exp1 = jsh->exponents();
+      array<double, 3> AB;
+      AB[0] = ish->position(0) - jsh->position(0);
+      AB[1] = ish->position(1) - jsh->position(1);
+      AB[2] = ish->position(2) - jsh->position(2);
+      const double rsq = AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2];
+      const double lnthresh = log(thresh);
+
+      for (auto& expi0 : exp0) {
+        for (auto& expi1 : exp1) {
+          const double cxp_inv = 1.0 / (expi0 + expi1);
+          const double expi01 = expi0 * expi1;
+          const double lda_kl = sqrt((- lnthresh - expi01 * rsq * cxp_inv + 0.75 * log(4.0 * expi01 / pisq__)) * cxp_inv);
+
+          array<double, 3> tmp;
+          tmp[0] = (ish->position(0) * expi0 + jsh->position(0) * expi1) * cxp_inv - centre[0];
+          tmp[1] = (ish->position(1) * expi0 + jsh->position(1) * expi1) * cxp_inv - centre[1];
+          tmp[2] = (ish->position(2) * expi0 + jsh->position(2) * expi1) * cxp_inv - centre[2];
+
+          const double extent0 = sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + lda_kl;
+          if (extent0 > extent_) extent_ = extent0;
+        }
+      }
+    }
 }

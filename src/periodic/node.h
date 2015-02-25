@@ -39,18 +39,23 @@ class Node {
     std::bitset<nbit__> key_;
     int depth_;
     std::shared_ptr<const Node> parent_;
-//    std::array<std::weak_ptr<const Node>, 8> children_;
+    std::vector<std::weak_ptr<const Node>> children_;
 
     std::array<double, 3> position_;
     bool is_complete_;
-    int nbody_;
+    bool is_leaf_;
+    int nbody_, nchild_;
+    double extent_;
     std::vector<std::shared_ptr<const Vertex>> bodies_;
     std::vector<std::shared_ptr<const Node>> interaction_list_;
+    std::vector<std::shared_ptr<const Node>> neighbour_;
 
     void insert_vertex(std::shared_ptr<const Vertex>);
-    void mark_complete();
+    void insert_child(std::shared_ptr<const Node> = NULL);
+    void init();
     void get_interaction_list();
     void compute_position();
+    void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
 
   public:
     Node(const std::bitset<nbit__> key = 0, const int depth = 0, std::shared_ptr<const Node> parent = NULL);
@@ -65,9 +70,12 @@ class Node {
     double position(const int i) const { return position_[i]; }
 
     bool is_complete() const { return is_complete_; }
+    bool is_leaf() const { return is_leaf_; }
     int nbody() const { return nbody_; }
+    int nchild() const { return nchild_; }
     std::vector<std::shared_ptr<const Vertex>> bodies() const { return bodies_; }
     std::shared_ptr<const Vertex> bodies(const int i) const { return bodies_[i]; }
+    std::vector<std::weak_ptr<const Node>> children() const { return children_; }
 
     std::vector<std::shared_ptr<const Node>> interaction_list() const { return interaction_list_; }
 };

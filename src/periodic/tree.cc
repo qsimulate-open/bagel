@@ -86,6 +86,7 @@ void Tree::build_tree() {
         if (level == 1) {
           nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[0]);
           (nodes_[nnode_])->insert_vertex(leaves_[n]);
+          nodes_[0]->insert_child(nodes_[nnode_]);
         } else {
           bitset<nbit__> parent_key;
           parent_key  = parent_key | (key >> 3);
@@ -95,6 +96,7 @@ void Tree::build_tree() {
               nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[j]);
               (nodes_[nnode_])->insert_vertex(leaves_[n]);
               parent_found = true;
+              nodes_[j]->insert_child(nodes_[nnode_]);
             }
           }
 
@@ -113,8 +115,9 @@ void Tree::build_tree() {
 
   print_tree_xyz();
   for (int i = 1; i != nnode_; ++i) {
-    nodes_[i]->mark_complete();
-    cout << i << "  " << nodes_[i]->position(0) << "  " << nodes_[i]->position(1) << "   " << nodes_[i]->position(2) << endl;
+    nodes_[i]->init();
+    //cout << i << "  " << nodes_[i]->position(0) << "  " << nodes_[i]->position(1) << "   " << nodes_[i]->position(2) << endl;
+    //cout << "Node " << i << "   has    " << nodes_[i]->nchild() << " children and is_leaf_ is " << nodes_[i]->is_leaf() << endl;
   }
 }
 
@@ -252,6 +255,14 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
       case 54: symbol = "Xe"; break;
       case 55: symbol = "Cs"; break;
       case 56: symbol = "Ba"; break;
+      case 57: symbol = "La"; break;
+      case 58: symbol = "Ce"; break;
+      case 59: symbol = "Pr"; break;
+      case 60: symbol = "Nd"; break;
+      case 61: symbol = "Pm"; break;
+      case 62: symbol = "Sm"; break;
+      case 63: symbol = "Eu"; break;
+      case 64: symbol = "Gd"; break;
     }
     for (int j = 0; j != nodes_[i]->nbody(); ++j)
       cout << setw(5) << symbol << setprecision(5) << setw(10) << nodes_[i]->bodies(j)->position(0) << "   "
