@@ -44,7 +44,7 @@ class Node {
     std::array<double, 3> position_;
     bool is_complete_;
     bool is_leaf_;
-    int nbody_, nchild_;
+    int nbody_, nchild_, nneighbour_;
     double extent_;
     std::vector<std::shared_ptr<const Vertex>> bodies_;
     std::vector<std::shared_ptr<const Node>> interaction_list_;
@@ -56,6 +56,7 @@ class Node {
     void get_interaction_list();
     void compute_position();
     void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
+    void insert_neighbour(std::shared_ptr<const Node> neigh, const bool is_neighbour = false, const int ws = 2);
 
   public:
     Node(const std::bitset<nbit__> key = 0, const int depth = 0, std::shared_ptr<const Node> parent = NULL);
@@ -77,6 +78,9 @@ class Node {
     std::shared_ptr<const Vertex> bodies(const int i) const { return bodies_[i]; }
     std::vector<std::weak_ptr<const Node>> children() const { return children_; }
 
+    double extent() const { return extent_; }
+    int nneighbour() const { return nneighbour_; }
+    std::vector<std::shared_ptr<const Node>> neighbour() const { return neighbour_; }
     std::vector<std::shared_ptr<const Node>> interaction_list() const { return interaction_list_; }
 };
 

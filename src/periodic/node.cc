@@ -40,6 +40,7 @@ Node::Node(const std::bitset<nbit__> key, const int depth, std::shared_ptr<const
   is_complete_ = false;
   nchild_  = 0;
   nbody_   = 0;
+  nneighbour_ = 0;
 }
 
 
@@ -82,6 +83,7 @@ void Node::init() {
   position_[1] /= sum;
   position_[2] /= sum;
 
+  compute_extent();
 }
 
 
@@ -119,4 +121,26 @@ void Node::compute_extent(const double thresh) {
         }
       }
     }
+}
+
+
+void Node::insert_neighbour(shared_ptr<const Node> neigh, const bool is_neighbour, const int ws) {
+
+  assert(neigh->depth() == depth_);
+  if (!is_neighbour) {
+    array<double, 3> r12;
+    r12[0] = position_[0] - neigh->position(0);
+    r12[1] = position_[1] - neigh->position(1);
+    r12[2] = position_[2] - neigh->position(2);
+    const double r = sqrt(r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2]);
+    if (r < (1.0 + ws) * (extent_ + neigh->extent())) {
+      neighbour_.resize(nneighbour_ + 1);
+      neighbour_[nneighbour_] = neigh;
+      ++nneighbour_;
+    }
+  } else {
+    neighbour_.resize(nneighbour_ + 1);
+    neighbour_[nneighbour_] = neigh;
+    ++nneighbour_;
+  }
 }

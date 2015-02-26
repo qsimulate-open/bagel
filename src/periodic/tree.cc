@@ -57,8 +57,8 @@ void Tree::init() {
 //    cout << particle_keys_[i] << endl;
 //  cout << " Now sort " << endl;
   keysort();
-  for (int i = 0; i != nvertex_; ++i)
-    cout << particle_keys_[i] << endl;
+//  for (int i = 0; i != nvertex_; ++i)
+//    cout << particle_keys_[i] << endl;
 }
 
 
@@ -75,6 +75,7 @@ void Tree::build_tree() {
     const unsigned int shift = i * 3;
     bitset<nbit__> key;
 
+    int max_nbody = 0;
     for (int n = 0; n != nvertex_; ++n) {
       key = (leaves_[n]->key() >> shift);
 
@@ -107,17 +108,29 @@ void Tree::build_tree() {
         ++nnode_;
       } else { /* node exists */
         (nodes_[nnode_-1])->insert_vertex(leaves_[n]);
+        if (nodes_[nnode_-1]->nbody() > max_nbody)
+          max_nbody = nodes_[nnode_-1]->nbody();
       }
 
     } // end of vertex loop
+    if (max_nbody <= 1) break;
   } // end if bit loop
-
+  height_ = nodes_[nnode_-1]->depth();
 
   print_tree_xyz();
   for (int i = 1; i != nnode_; ++i) {
     nodes_[i]->init();
     //cout << i << "  " << nodes_[i]->position(0) << "  " << nodes_[i]->position(1) << "   " << nodes_[i]->position(2) << endl;
     //cout << "Node " << i << "   has    " << nodes_[i]->nchild() << " children and is_leaf_ is " << nodes_[i]->is_leaf() << endl;
+    for (int j = 1; j !=nnode_; ++j) {
+      if (nodes_[j]->depth() == nodes_[i]->depth()) {
+        nodes_[i]->insert_neighbour(nodes_[j], false, 1);
+      } else if (nodes_[j]->depth() > nodes_[i]->depth()) {
+        break;
+      }
+    }
+    cout << "Node " << i << " at level " << nodes_[i]->depth() << " has extent = " << setprecision(5) << nodes_[i]->extent()
+                         << " and " << nodes_[i]->nneighbour() << " neighbours" << endl;
   }
 }
 
@@ -181,6 +194,12 @@ void Tree::keysort() {
     auto leaf = make_shared<Vertex>(particle_keys_[n], mol_->atoms(id[n]));
     leaves_[n] = leaf;
   }
+}
+
+
+void Tree::compute_multipoles(shared_ptr<const Node> node, const int lmax, shared_ptr<const Matrix> density) {
+
+  assert(node->is_leaf());
 }
 
 
