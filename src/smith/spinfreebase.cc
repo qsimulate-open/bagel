@@ -75,7 +75,7 @@ static void fill_block(shared_ptr<Tensor> target, shared_ptr<const btas::TensorN
       copy_n(input->data()+offset, backsize, buffer.get()+n);
     }
 
-    target->put_block(buffer, indices);
+    target->put_block(buffer, vector<Index>(indices.rbegin(), indices.rend()));
   }
 }
 
@@ -145,115 +145,48 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 
   timer.tick_print("MO integral evaluation");
 
-  // make a ci tensor.
-  if (ref_->ciwfn()) {
-    vector<IndexRange> o = {ci_};
-    // TODO fix later when referece has civec
-    Ci dci(ref_, o, civec_);
-    rdm0deriv_ = dci.tensor();
-  }
-
   // rdm ci derivatives.
   if (ref_->ciwfn()) {
-    shared_ptr<const Dvec> rdm1d = r->rdm1deriv(ref_->target());
+    vector<IndexRange> o = {ci_};
+    Ci dci(ref_, o, civec_);
+    rdm0deriv_ = dci.tensor();
 
-    vector<IndexRange> o = {ci_, active_, active_};
-    rdm1deriv_ = make_shared<Tensor>(o);
-    for (auto& i0 : active_) {
-      for (auto& i1 : active_) {
-        for (auto& ci0 : ci_) {
-          const size_t size = i0.size() * i1.size() * ci0.size();
-          unique_ptr<double[]> data(new double[size]);
-          int iall = 0;
-          for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is creation
-            for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
-              for (int j2 = ci0.offset(); j2 != ci0.offset()+ci0.size(); ++j2, ++iall)
-                // Dvec - first index is annihilation, second is creation (see const_phis_ in fci/determinants.h and knowles_compute.cc)
-                data[iall] = rdm1d->data((j1-nclo)+nact*(j0-nclo))->data(j2);
-          rdm1deriv_->put_block(data, ci0, i1, i0);
-        }
-      }
-    }
-  }
-
-  if (ref_->ciwfn()) {
-    shared_ptr<const Dvec> rdm2d = r->rdm2deriv(ref_->target());
-
-    vector<IndexRange> o = {ci_, active_, active_, active_, active_};
-    rdm2deriv_ = make_shared<Tensor>(o);
-    const int nclo = ref_->nclosed();
-    for (auto& i0 : active_) {
-      for (auto& i1 : active_) {
-        for (auto& i2 : active_) {
-          for (auto& i3 : active_) {
-            for (auto& ci0 : ci_) {
-              const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * ci0.size();
-              unique_ptr<double[]> data(new double[size]);
-              int iall = 0;
-              for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is creation
-                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
-                  for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
-                    for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
-                      for (int j4 = ci0.offset(); j4 != ci0.offset()+ci0.size(); ++j4, ++iall)
-                        data[iall] = rdm2d->data((j3-nclo)+nact*((j2-nclo)+nact*((j1-nclo)+nact*(j0-nclo))))->data(j4);
-              rdm2deriv_->put_block(data, ci0, i3, i2, i1, i0);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  if (ref_->ciwfn()) {
-    shared_ptr<const Dvec> rdm3d, rdm4d;
+    shared_ptr<Dvec> rdm1d = r->rdm1deriv(ref_->target());
+    shared_ptr<Dvec> rdm2d = r->rdm2deriv(ref_->target());
+    shared_ptr<Dvec> rdm3d, rdm4d;
     // RDM4 is contracted a priori by the Fock operator
     tie(rdm3d, rdm4d) = r->rdm34deriv(ref_->target(), fockact);
     assert(rdm3d->ij() == rdm4d->ij());
 
-    vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_};
-    rdm3deriv_ = make_shared<Tensor>(o);
-    rdm4deriv_ = make_shared<Tensor>(o);
+    vector<IndexRange> o3 = {ci_, active_, active_};
+    vector<IndexRange> o5 = {ci_, active_, active_, active_, active_};
+    vector<IndexRange> o7 = {ci_, active_, active_, active_, active_, active_, active_};
+    rdm1deriv_ = make_shared<Tensor>(o3);
+    rdm2deriv_ = make_shared<Tensor>(o5);
+    rdm3deriv_ = make_shared<Tensor>(o7);
+    rdm4deriv_ = make_shared<Tensor>(o7);
+
     const int nclo = ref_->nclosed();
-#if 0
-    vector<int> inpoffsets(7,nclo); inpoffsets[0] = 0;
-    fill_block<7>(rdm3deriv_, rdm3d, inpoffsets, o); 
-    fill_block<7>(rdm4deriv_, rdm4d, inpoffsets, o); 
-#else
-    for (auto& i0 : active_) {
-      for (auto& i1 : active_) {
-        for (auto& i2 : active_) {
-          for (auto& i3 : active_) {
-            for (auto& i4 : active_) {
-              for (auto& i5 : active_) {
-                for (auto& ci0 : ci_) {
-                  const size_t size = rdm3deriv_->get_size(ci0, i5, i4, i3, i2, i1, i0);
-                  unique_ptr<double[]> data(new double[size]);
-                  unique_ptr<double[]> data2(new double[size]);
-                  int iall = 0;
-                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is  creation
-                    for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
-                      for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
-                        for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
-                          for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4) // this is creation
-                            for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) { // this is annhilation
-                              const size_t loc = (j5-nclo)+nact*((j4-nclo)+nact*((j3-nclo)+nact*((j2-nclo)+nact*((j1-nclo)+nact*((j0-nclo))))));
-                              copy_n(rdm3d->data(loc)->data()+ci0.offset(), ci0.size(), data.get() + iall);
-                              copy_n(rdm4d->data(loc)->data()+ci0.offset(), ci0.size(), data2.get()+ iall);
-                              iall += ci0.size();
-                            }
-                  rdm3deriv_->put_block(data,  ci0, i5, i4, i3, i2, i1, i0);
-                  rdm4deriv_->put_block(data2, ci0, i5, i4, i3, i2, i1, i0);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-#endif
+    vector<int> inpoff3(2,nclo); inpoff3.push_back(0);
+    vector<int> inpoff5(4,nclo); inpoff5.push_back(0);
+    vector<int> inpoff7(6,nclo); inpoff7.push_back(0);
+
+    const btas::CRange<3> range3(rdm1d->extent(0)*rdm1d->extent(1), nact, nact);
+    const btas::CRange<5> range5(rdm2d->extent(0)*rdm2d->extent(1), nact, nact, nact, nact);
+    const btas::CRange<7> range7(rdm3d->extent(0)*rdm3d->extent(1), nact, nact, nact, nact, nact, nact);
+
+    rdm1d->resize(range3);
+    rdm2d->resize(range5);
+    rdm3d->resize(range7);
+    rdm4d->resize(range7);
+    fill_block<3>(rdm1deriv_, rdm1d, inpoff3, vector<IndexRange>(o3.rbegin(), o3.rend())); 
+    fill_block<5>(rdm2deriv_, rdm2d, inpoff5, vector<IndexRange>(o5.rbegin(), o5.rend())); 
+    fill_block<7>(rdm3deriv_, rdm3d, inpoff7, vector<IndexRange>(o7.rbegin(), o7.rend())); 
+    fill_block<7>(rdm4deriv_, rdm4d, inpoff7, vector<IndexRange>(o7.rbegin(), o7.rend())); 
+
+    timer.tick_print("RDM derivative evaluation");
   }
 
-  timer.tick_print("RDM derivative evaluation");
 
   // rdms.
   if (ref_->ciwfn()) {
