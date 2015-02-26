@@ -28,6 +28,7 @@
 #include <src/util/math/step_restrict_bfgs.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/mat1e/rel/reloverlap.h>
+#include <src/scf/dhf/population_analysis.h>
 
 using namespace std;
 using namespace bagel;

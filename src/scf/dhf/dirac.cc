@@ -36,7 +36,7 @@
 #include <src/util/math/matrix.h>
 #include <src/util/math/diis.h>
 #include <src/util/muffle.h>
-#include <src/multi/zcasscf/zcasscf.h>
+#include <src/scf/dhf/population_analysis.h>
 
 using namespace std;
 using namespace bagel;
@@ -168,7 +168,7 @@ void Dirac::compute() {
   if (idata_->get<bool>("pop", false)) {
     cout << "    * Printing out population analysis to dhf.log" << endl;
     Muffle muf ("dhf.log");
-    ZCASSCF::population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_);
+    population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_);
   }
 
 }
@@ -266,3 +266,4 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
   }
   return coeff;
 }
+

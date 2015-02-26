@@ -31,6 +31,7 @@
 #include <src/multi/zcasscf/zsupercimicro.h>
 #include <src/util/math/hpw_diis.h>
 #include <src/util/math/step_restrict_bfgs.h>
+#include <src/scf/dhf/population_analysis.h>
 
 using namespace std;
 using namespace bagel;
