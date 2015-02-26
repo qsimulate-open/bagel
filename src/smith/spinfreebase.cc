@@ -31,6 +31,55 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 
+template<int N>
+static void fill_block(shared_ptr<Tensor> target, shared_ptr<const btas::TensorN<double,N>> input,
+                       const vector<int> inpoffsets, const vector<IndexRange> ranges) {
+  assert(input->range().ordinal().contiguous());
+  assert(target->rank() == input->range().rank() && target->rank() > 0);
+  const int rank = target->rank();
+
+  auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
+
+  LoopGenerator gen(ranges);
+  vector<vector<Index>> loop = gen.block_loop();
+  for (auto& indices : loop) {
+    assert(indices.size() == rank);
+
+    const size_t buffersize = accumulate(indices.begin(), indices.end(), 1ul, prod);
+    unique_ptr<double[]> buffer(new double[buffersize]);
+    vector<size_t> stride;
+    for (auto i = indices.begin(); i != indices.end(); ++i) {
+      auto ii = i; ++ii;
+      stride.push_back(accumulate(ii, indices.end(), 1ul, prod));
+    }
+
+    vector<size_t> extent(rank);
+    auto e = extent.rbegin();
+    for (int i = 0; i != rank; ++i)
+      *e++ = input->extent(i); 
+
+    vector<size_t> stride_target;
+    for (auto i = extent.begin(); i != extent.end(); ++i) {
+      auto ii = i; ++ii;
+      stride_target.push_back(accumulate(ii, extent.end(), 1ul, multiplies<size_t>()));
+    }
+
+    const size_t backsize = indices.back().size();
+    for (size_t n = 0; n != buffersize; n += backsize) {
+      size_t offset = 0lu;
+      size_t tmp = n;
+      for (int i = 0; i != rank; ++i) {
+        offset += (tmp / stride[i] + indices[i].offset() - inpoffsets[i]) * stride_target[i]; 
+        tmp = n % stride[i];
+      }
+      copy_n(input->data()+offset, backsize, buffer.get()+n);
+    }
+
+    target->put_block(buffer, indices);
+  }
+}
+
+
 SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   Timer timer;
   const int max = r->maxtile();
@@ -80,10 +129,14 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 
   // v2 tensor.
   {
-    IndexRange occ(closed_);
-    occ.merge(active_);
-    IndexRange virt(active_);
-    virt.merge(virt_);
+    IndexRange occ(closed_);  occ.merge(active_);
+    IndexRange virt(active_); virt.merge(virt_);
+
+    // in the case of MRCI, we need to include all sectors
+    if (to_upper(ref_->method()) == "MRCI") {
+      occ = all_;
+      virt = all_;
+    }
 
     vector<IndexRange> o = {occ, virt, occ, virt};
     K2ext v2k(ref_, coeff_, o);
@@ -161,6 +214,11 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     rdm3deriv_ = make_shared<Tensor>(o);
     rdm4deriv_ = make_shared<Tensor>(o);
     const int nclo = ref_->nclosed();
+#if 0
+    vector<int> inpoffsets(7,nclo); inpoffsets[0] = 0;
+    fill_block<7>(rdm3deriv_, rdm3d, inpoffsets, o); 
+    fill_block<7>(rdm4deriv_, rdm4d, inpoffsets, o); 
+#else
     for (auto& i0 : active_) {
       for (auto& i1 : active_) {
         for (auto& i2 : active_) {
@@ -192,108 +250,30 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
         }
       }
     }
+#endif
   }
 
   timer.tick_print("RDM derivative evaluation");
 
   // rdms.
   if (ref_->ciwfn()) {
-    vector<IndexRange> o = {active_, active_};
-    rdm1_ = make_shared<Tensor>(o);
     const int nclo = ref_->nclosed();
-    for (auto& i1 : active_) {
-      for (auto& i0 : active_) {
-        const size_t size = i0.size() * i1.size();
-        unique_ptr<double[]> data(new double[size]);
-        int iall = 0;
-        for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-          for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-            data[iall] = ref_->rdm1(ref_->target())->element(j0-nclo, j1-nclo);
-        rdm1_->put_block(data, i0, i1);
-      }
-    }
-  }
-  if (ref_->ciwfn()) {
-    vector<IndexRange> o = {active_, active_, active_, active_};
-    rdm2_ = make_shared<Tensor>(o);
-    const int nclo = ref_->nclosed();
-    for (auto& i3 : active_) {
-      for (auto& i2 : active_) {
-        for (auto& i1 : active_) {
-          for (auto& i0 : active_) {
-            const size_t size = i0.size() * i1.size() * i2.size() * i3.size();
-            unique_ptr<double[]> data(new double[size]);
-            int iall = 0;
-            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                    data[iall] = ref_->rdm2(ref_->target())->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo);
-             rdm2_->put_block(data, i0, i1, i2, i3);
-          }
-        }
-      }
-    }
-  }
-  // TODO generic function??
-  if (ref_->ciwfn()) {
-    {
-      vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
-      rdm3_ = make_shared<Tensor>(o);
-      vector<IndexRange> p = {active_, active_, active_, active_, active_, active_, active_, active_};
-      rdm4_ = make_shared<Tensor>(p);
-    }
 
+    rdm1_ = make_shared<Tensor>(vector<IndexRange>(2,active_));
+    rdm2_ = make_shared<Tensor>(vector<IndexRange>(4,active_));
+    rdm3_ = make_shared<Tensor>(vector<IndexRange>(6,active_));
+    rdm4_ = make_shared<Tensor>(vector<IndexRange>(8,active_));
+
+    shared_ptr<const RDM<1>> rdm1 = ref_->rdm1(ref_->target());
+    shared_ptr<const RDM<2>> rdm2 = ref_->rdm2(ref_->target());
     shared_ptr<RDM<3>> rdm3;
     shared_ptr<RDM<4>> rdm4;
     tie(rdm3, rdm4) = ref_->compute_rdm34(ref_->target());
 
-    const int nclo = ref_->nclosed();
-    for (auto& i5 : active_)
-      for (auto& i4 : active_)
-        for (auto& i3 : active_)
-          for (auto& i2 : active_)
-            for (auto& i1 : active_)
-              for (auto& i0 : active_) {
-                const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size();
-                unique_ptr<double[]> data(new double[size]);
-                int iall = 0;
-                for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5)
-                  for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4)
-                    for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-                      for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                        for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                          for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                            data[iall] = rdm3->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo);
-                rdm3_->put_block(data, i0, i1, i2, i3, i4, i5);
-              }
-    // TODO there should be a better way of doing this!!!
-    for (auto& i7 : active_)
-      for (auto& i6 : active_)
-        for (auto& i5 : active_)
-          for (auto& i4 : active_)
-            for (auto& i3 : active_)
-              for (auto& i2 : active_)
-                for (auto& i1 : active_)
-                  for (auto& i0 : active_) {
-                    const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * i6.size() * i7.size();
-                    unique_ptr<double[]> data(new double[size]);
-                    int iall = 0;
-                    for (int j7 = i7.offset(); j7 != i7.offset()+i7.size(); ++j7)
-                      for (int j6 = i6.offset(); j6 != i6.offset()+i6.size(); ++j6)
-                        for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5)
-                          for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4)
-                            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-                              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                                    data[iall] = rdm4->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo, j4-nclo, j5-nclo, j6-nclo, j7-nclo);
-                rdm4_->put_block(data, i0, i1, i2, i3, i4, i5, i6, i7);
-              }
-
-
-    auto rdm1 = make_shared<RDM<1>>(*ref_->rdm1(ref_->target()));
-    auto rdm2 = make_shared<RDM<2>>(*ref_->rdm2(ref_->target()));
+    fill_block<2>(rdm1_, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_)); 
+    fill_block<4>(rdm2_, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_)); 
+    fill_block<6>(rdm3_, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_)); 
+    fill_block<8>(rdm4_, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_)); 
 
     timer.tick_print("RDM evaluation");
 
@@ -800,6 +780,7 @@ double SpinFreeMethod::dot_product_transpose(shared_ptr<const Tensor> r, shared_
 
 
 void SpinFreeMethod::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) const {
+  assert(to_upper(ref_->method()) == "CASPT2");
   for (auto& i3 : virt_) {
     for (auto& i2 : closed_) {
       for (auto& i1 : virt_) {

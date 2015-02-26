@@ -55,6 +55,12 @@ static size_t generate_hash_key(const std::vector<size_t>& o) {
   return out;
 }
 
+static size_t generate_hash_key(const std::vector<Index>& o) {
+  size_t out = 0;
+  for (auto i = o.rbegin(); i != o.rend(); ++i) { out <<= shift; out += i->key(); }
+  return out;
+}
+
 static size_t generate_hash_key() { return 0; }
 
 template<class T, typename... args>
@@ -99,6 +105,7 @@ class Tensor {
     double dot_product(const Tensor& o) const { return data_->dot_product(*o.data_); }
     double dot_product(const std::shared_ptr<Tensor>& o) const { return data_->dot_product(*o->data_); }
 
+    int rank() const { return rank_; }
     size_t size_alloc() const;
 
     double norm() const { return std::sqrt(dot_product(*this)); }
