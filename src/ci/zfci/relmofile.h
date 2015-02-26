@@ -83,7 +83,6 @@ class RelMOFile {
 
     std::shared_ptr<const ZMatrix> mo1e(const std::bitset<2>& b) const { return mo1e_.at(b); }
     std::shared_ptr<const ZMatrix> mo2e(const std::bitset<4>& b) const { return mo2e_.at(b); }
-//  const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i) const { return mo1e_.at(b)->data(i); }
     const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i, const size_t j) const { return mo1e_.at(b)->element(i,j); }
     const std::complex<double>& mo2e(const std::bitset<4>& b, const size_t i, const size_t j, const size_t k, const size_t l) const { return mo2e_.at(b)->element(i+nocc_*j, k+nocc_*l); }
     std::shared_ptr<const ZMatrix> mo1e(std::string&& b) const { return mo1e(std::bitset<2>(std::move(b))); }
@@ -124,20 +123,6 @@ class RelJop : public RelMOFile {
       const bool gaunt, const bool breit, const bool restricted = false, const bool tsymm = true)
       : RelMOFile(geo, coeff, charge, gaunt, breit, tsymm) { init(c, d, restricted); }
 };
-
-
-#if 0
-class RelHtilde : public ZHtilde_Base, public RelMOFile {
-  protected:
-    std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
-    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override { return h2_tmp_; };
-  public:
-    RelHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const ZMatrix> h1, std::shared_ptr<const ZMatrix> h2)
-      : ZHtilde_Base(h1, std::move(h2)), RelMOFile(b) {
-      core_energy_ = create_Jiiii(c, d);
-    }
-};
-#endif
 
 }
 

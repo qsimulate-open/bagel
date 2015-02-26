@@ -176,10 +176,8 @@ class ZHarrison : public Method {
     // "restricted" refers to whether the coefficient matrix is already Kramers-adapted
     void update(std::shared_ptr<const ZMatrix> coeff, const bool restricted = false) {
       Timer timer;
-//      assert((restricted && tsymm_) || !restricted);
       jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, charge_, gaunt_, breit_, restricted, tsymm_);
 
-      // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
       const_denom();
     }
