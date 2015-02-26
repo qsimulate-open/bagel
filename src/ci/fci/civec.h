@@ -778,6 +778,8 @@ template<> void Civector<double>::spin_decontaminate(const double thresh);
 using Civec = Civector<double>;
 using ZCivec = Civector<std::complex<double>>;
 
+using CASDvec = Dvector_base<Civec>;
+
 }
 
 extern template class bagel::Civector<double>;

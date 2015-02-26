@@ -281,8 +281,8 @@ void FCI::compute() {
 #endif
 
     // constructing Dvec's for Davidson
-    auto ccn = make_shared<const Dvec>(cc_);
-    auto sigman = make_shared<const Dvec>(sigma);
+    auto ccn = make_shared<const CASDvec>(cc_->dvec());
+    auto sigman = make_shared<const CASDvec>(sigma->dvec());
     const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
 
     // get residual and new vectors
@@ -329,9 +329,8 @@ void FCI::compute() {
   }
   // main iteration ends here
 
-  auto s = make_shared<Dvec>(davidson_->civec());
-  s->print(print_thresh_);
-  cc_ = make_shared<Dvec>(s);
+  cc_ = make_shared<Dvec>(davidson_->civec());
+  cc_->print(print_thresh_);
 
   for (auto& iprop : properties_) {
     iprop->compute(cc_);

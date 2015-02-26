@@ -103,15 +103,10 @@ class Dvector {
     }
 
     Dvector(const Dvector<DataType>& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
-      if (o.data()) {
-        data_ = btas::Tensor3<DataType>(o.data_);
-        DataType* tmp = data();
-        for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
-          dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
-      } else {
-        for (auto& i : o.dvec_)
-          dvec_.push_back(std::make_shared<Civector<DataType>>(*i));
-      }
+      data_ = btas::Tensor3<DataType>(o.data_);
+      DataType* tmp = data();
+      for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
+        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
     }
 
     Dvector(const Dvector_base<DistCivector<DataType>>& o) : det_(o.det()), lena_(det_->lena()), lenb_(det_->lenb()), ij_(o.ij()) {
@@ -126,12 +121,6 @@ class Dvector {
         std::copy_n(e->data(), lenb_*lena_, c->data());
         dvec_.push_back(c);
       }
-    }
-
-    // I think this is very confusiong... this is done this way in order not to delete Civec when Dvector is deleted.
-    Dvector(std::shared_ptr<const Dvector<DataType>> o) : det_(o->det_), lena_(o->lena_), lenb_(o->lenb_), ij_(o->ij_) {
-      for (int i = 0; i != ij_; ++i)
-        dvec_.push_back(std::make_shared<Civector<DataType>>(*(o->data(i))));
     }
 
     Dvector(std::vector<std::shared_ptr<Civector<DataType>>> o) : det_(o.front()->det()), ij_(o.size()) {
@@ -157,8 +146,8 @@ class Dvector {
     std::vector<std::shared_ptr<Civector<DataType>>> dvec(const std::vector<int>& conv) {
       std::vector<std::shared_ptr<Civector<DataType>>> out;
       auto c = conv.begin();
-      for (auto& iter : dvec_) {
-        if (*c++ == 0) out.push_back(iter);
+      for (auto& i : dvec_) {
+        if (*c++ == 0) out.push_back(i);
         else out.push_back(nullptr);
       }
       return out;
@@ -166,8 +155,8 @@ class Dvector {
     std::vector<std::shared_ptr<const Civector<DataType>>> dvec(const std::vector<int>& conv) const {
       std::vector<std::shared_ptr<const Civector<DataType>>> out;
       auto c = conv.begin();
-      for (auto& iter : dvec_) {
-        if (*c++ == 0) out.push_back(iter);
+      for (auto& i : dvec_) {
+        if (*c++ == 0) out.push_back(i);
         else out.push_back(nullptr);
       }
       return out;
@@ -186,6 +175,9 @@ class Dvector {
     // some functions for convenience
     DataType dot_product(const Dvector<DataType>& other) const {
       return std::inner_product(dvec_.begin(), dvec_.end(), other.dvec_.begin(), DataType(0.0), std::plus<DataType>(), [](CiPtr p, CiPtr q){ return p->dot_product(q); });
+    }
+    void ax_plus_y(const DataType a, std::shared_ptr<const Dvector<DataType>> other) {
+      ax_plus_y(a, *other);
     }
     void ax_plus_y(const DataType a, const Dvector<DataType>& other) {
       std::transform(other.dvec_.begin(), other.dvec_.end(), dvec_.begin(), dvec_.begin(), [&a](CiPtr p, CiPtr q){ q->ax_plus_y(a, p); return q; });
@@ -220,7 +212,7 @@ class Dvector {
 
     // for double versions
     std::shared_ptr<Dvector<DataType>> spin() const { assert(false); return nullptr; }
-    std::shared_ptr<Dvector<DataType>> spinflip(std::shared_ptr<const Determinants> det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<Dvector<DataType>> transpose(std::shared_ptr<const Determinants> det = nullptr) const { assert(false); return nullptr; }
     std::shared_ptr<Dvector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = nullptr) const { assert(false); return nullptr; }
     std::shared_ptr<Dvector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = nullptr) const { assert(false); return nullptr; }
 
@@ -259,7 +251,7 @@ class Dvector {
 };
 
 template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin() const;
-template<> std::shared_ptr<Dvector<double>> Dvector<double>::spinflip(std::shared_ptr<const Determinants> det) const;
+template<> std::shared_ptr<Dvector<double>> Dvector<double>::transpose(std::shared_ptr<const Determinants> det) const;
 template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin_lower(std::shared_ptr<const Determinants> det) const;
 template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin_raise(std::shared_ptr<const Determinants> det) const;
 

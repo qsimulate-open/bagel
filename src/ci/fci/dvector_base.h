@@ -45,6 +45,7 @@ class Dvector_base {
 
   // only for use in lambdas
   using CiPtr = std::shared_ptr<CiType>;
+  using CiConstPtr = std::shared_ptr<const CiType>;
 
   protected:
     // the determinant space where Dvector_base's are sitting
@@ -58,20 +59,30 @@ class Dvector_base {
   public:
     Dvector_base(std::shared_ptr<const DetType> det, const size_t ij) : det_(det), ij_(ij) {
       dvec_.clear();
-      for (int i = 0; i < ij_; ++i) dvec_.push_back( std::make_shared<CiType>(det_) );
+      for (int i = 0; i < ij_; ++i) dvec_.push_back(std::make_shared<CiType>(det_));
     }
 
     Dvector_base(const Dvector_base<CiType>& o) : det_(o.det_), ij_(o.ij_) {
-      for ( auto& ivec : o.dvec() ) dvec_.push_back( std::make_shared<CiType>(ivec) );
+      for (auto& ivec : o.dvec()) dvec_.push_back(std::make_shared<CiType>(*ivec));
     }
 
     Dvector_base(const std::vector<CiPtr> o) : det_(o.front()->det()), ij_(o.size()) {
-      for (auto& ivec : o) dvec_.push_back( ivec->copy() );
+      for (auto& ivec : o) dvec_.push_back(ivec->copy());
     }
 
     template <class T>
     Dvector_base(std::shared_ptr<const Dvector_base<T>> o) : det_(o->det()), ij_(o->ij()) {
       for (int i = 0; i < ij_; ++i) dvec_.push_back(std::make_shared<CiType>(o->data(i)));
+    }
+
+    void zero() { std::for_each(dvec_.begin(), dvec_.end(), [](CiPtr p) { p->zero(); }); }
+
+    template <typename DataType>
+    void ax_plus_y(const DataType& a, const Dvector_base<CiType>& o) {
+      assert(o.ij() == ij());
+      auto oiter = o.dvec().begin();
+      for (auto& i : dvec_)
+        i->ax_plus_y(a, *oiter++);
     }
 
     std::shared_ptr<const DetType> det() const { return det_; }
@@ -81,6 +92,26 @@ class Dvector_base {
 
     std::vector<CiPtr>& dvec() { return dvec_; }
     const std::vector<CiPtr>& dvec() const { return dvec_; }
+
+    // returns a vector of CiType's which correspond to an unconverged state
+    std::vector<CiPtr> dvec(const std::vector<int>& conv) {
+      std::vector<CiPtr> out;
+      auto c = conv.begin();
+      for (auto& i : dvec_) {
+        if (*c++ == 0) out.push_back(i);
+        else out.push_back(nullptr);
+      }
+      return out;
+    }
+    std::vector<CiConstPtr> dvec(const std::vector<int>& conv) const {
+      std::vector<CiConstPtr> out;
+      auto c = conv.begin();
+      for (auto& i : dvec_) {
+        if (*c++ == 0) out.push_back(i);
+        else out.push_back(nullptr);
+      }
+      return out;
+    }
 
     size_t ij() const { return ij_; }
     size_t size() const { return ij_ * det_->size(); }

@@ -43,8 +43,8 @@ shared_ptr<Dvector<double>> Dvector<double>::spin() const {
 }
 
 template<>
-shared_ptr<Dvector<double>> Dvector<double>::spinflip(shared_ptr<const Determinants> det) const {
-  if(det == nullptr) det = det_->transpose();
+shared_ptr<Dvector<double>> Dvector<double>::transpose(shared_ptr<const Determinants> det) const {
+  if (det == nullptr) det = det_->transpose();
 
   vector<shared_ptr<Civec>> ccvec;
   for (auto& cc : dvec_) {
