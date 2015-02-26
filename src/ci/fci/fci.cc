@@ -329,7 +329,8 @@ void FCI::compute() {
   }
   // main iteration ends here
 
-  cc_ = make_shared<Dvec>(davidson_->civec());
+  auto cc = make_shared<CASDvec>(davidson_->civec());
+  cc_ = make_shared<Dvec>(*cc);
   cc_->print(print_thresh_);
 
   for (auto& iprop : properties_) {
