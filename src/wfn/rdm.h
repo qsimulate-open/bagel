@@ -48,7 +48,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-// TODO
+      ar & boost::serialization::base_object<btas::TensorN<DataType,N>>(*this);
     }
 
   public:
