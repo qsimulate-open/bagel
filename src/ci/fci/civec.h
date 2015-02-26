@@ -126,7 +126,7 @@ class DistCivector {
     size_t asize() const { return aend_ - astart_; }
 
     void zero() { std::fill_n(local_.get(), size(), DataType(0.0)); }
-    void synchronize() { /* do nothing */ }
+    void synchronize(const int root = 0) { /* do nothing */ }
 
     std::shared_ptr<Civector<DataType>> civec() const { return std::make_shared<Civector<DataType>>(*this); }
     std::shared_ptr<const Determinants> det() const { return det_; }
@@ -766,9 +766,9 @@ class Civector {
       return dist;
     }
 
-    void synchronize() {
+    void synchronize(const int root = 0) {
 #ifdef HAVE_MPI_H
-      mpi__->broadcast(cc_ptr_, size(), 0);
+      mpi__->broadcast(cc_ptr_, size(), root);
 #endif
     }
 };
