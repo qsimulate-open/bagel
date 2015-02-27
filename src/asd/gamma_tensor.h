@@ -144,10 +144,6 @@ class GammaTensor {
       return MatView(btas::make_view(range, tensor->storage()), /*localized*/false);
     }
 
-    std::shared_ptr<Matrix> get_block_as_matrix(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
-      return std::make_shared<Matrix>(get_block_as_matview(i, j, o));
-    }
-
     std::shared_ptr<Matrix> contract_block_with_statetensor(const std::array<MonomerKey,4>& keys, const std::initializer_list<GammaSQ>& ops, const std::shared_ptr<StateTensor>& statetensor, const int istate) const {
       auto& A  = keys[0]; auto& B  = keys[1];
       auto& Ap = keys[2]; auto& Bp = keys[3];

@@ -146,17 +146,17 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const a
 
   // alpha-alpha
   auto gamma_AA_alpha = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
-  auto gamma_BB_alpha = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
+  auto gamma_BB_alpha = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
 
   // beta-beta
   auto gamma_AA_beta = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}, statetensor_, istate);
-  auto gamma_BB_beta = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+  auto gamma_BB_beta = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
 
-  auto rdmAA = make_shared<Matrix>(*gamma_AA_alpha % *gamma_BB_alpha);
-  auto rdmBB = make_shared<Matrix>(*gamma_AA_beta  % *gamma_BB_beta);
+  auto rdmAA = make_shared<Matrix>(*gamma_AA_alpha % gamma_BB_alpha);
+  auto rdmBB = make_shared<Matrix>(*gamma_AA_beta  % gamma_BB_beta);
 
-  auto rdmAB = make_shared<Matrix>(*gamma_AA_alpha % *gamma_BB_beta);
-  auto rdmBA = make_shared<Matrix>(*gamma_AA_beta  % *gamma_BB_alpha);
+  auto rdmAB = make_shared<Matrix>(*gamma_AA_alpha % gamma_BB_beta);
+  auto rdmBA = make_shared<Matrix>(*gamma_AA_beta  % gamma_BB_alpha);
 
   {// P(p,q',r',s) : p15
     auto rdmt = rdmAA->clone();
@@ -212,9 +212,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_aET(const array<
   //1RDM
   {
     auto gamma_A = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha}, statetensor_, istate);
-    auto gamma_B = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::AnnihilateAlpha});
+    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha});
     
-    auto rdm = make_shared<Matrix>(*gamma_A % *gamma_B);
+    auto rdm = make_shared<Matrix>(*gamma_A % gamma_B);
     auto rdmt = rdm->clone();
 
     // P(p,q') : p10
@@ -231,11 +231,11 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_aET(const array<
   //2RDM
   {
     auto gamma_A  = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha}, statetensor_, istate);
-    auto gamma_B1 = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
-    auto gamma_B2 = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});
 
-    auto rdm1 = make_shared<Matrix>(*gamma_A % *gamma_B1);
-    auto rdm2 = make_shared<Matrix>(*gamma_A % *gamma_B2);
+    auto rdm1 = make_shared<Matrix>(*gamma_A % gamma_B1);
+    auto rdm2 = make_shared<Matrix>(*gamma_A % gamma_B2);
     auto rdmt = rdm1->clone();
 
     // P(p,q',r',s') : p15
@@ -252,10 +252,10 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_aET(const array<
   {
     auto gamma_A1 = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
     auto gamma_A2 = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}, statetensor_, istate);
-    auto gamma_B  = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::AnnihilateAlpha});
+    auto gamma_B  = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha});
 
-    auto rdm1 = make_shared<Matrix>(*gamma_A1 % *gamma_B);
-    auto rdm2 = make_shared<Matrix>(*gamma_A2 % *gamma_B);
+    auto rdm1 = make_shared<Matrix>(*gamma_A1 % gamma_B);
+    auto rdm2 = make_shared<Matrix>(*gamma_A2 % gamma_B);
     auto rdmt = rdm1->clone();
 
     //P(p,q',r,s) : p15
@@ -291,9 +291,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_bET(const array<
   //RDM1
   {
     auto gamma_A = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta}, statetensor_, istate);
-    auto gamma_B = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::AnnihilateBeta});
+    auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta});
     
-    auto rdm = make_shared<Matrix>(*gamma_A % *gamma_B);
+    auto rdm = make_shared<Matrix>(*gamma_A % gamma_B);
     auto rdmt = rdm->clone();
     
     // P(p,q') : p10
@@ -310,11 +310,11 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_bET(const array<
   //RDM2
   {
     auto gamma_A  = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta}, statetensor_, istate);
-    auto gamma_B1 = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
-    auto gamma_B2 = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
+    auto gamma_B1 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
+    auto gamma_B2 = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
 
-    auto rdm1 = make_shared<Matrix>(*gamma_A % *gamma_B1);
-    auto rdm2 = make_shared<Matrix>(*gamma_A % *gamma_B2);
+    auto rdm1 = make_shared<Matrix>(*gamma_A % gamma_B1);
+    auto rdm2 = make_shared<Matrix>(*gamma_A % gamma_B2);
     auto rdmt = rdm1->clone();
 
     // P(p,q',r',s') : p15
@@ -331,10 +331,10 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_bET(const array<
   {
     auto gamma_A1 = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
     auto gamma_A2 = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta}, statetensor_, istate);
-    auto gamma_B  = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::AnnihilateBeta});
+    auto gamma_B  = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta});
 
-    auto rdm1 = make_shared<Matrix>(*gamma_A1 % *gamma_B);
-    auto rdm2 = make_shared<Matrix>(*gamma_A2 % *gamma_B);
+    auto rdm1 = make_shared<Matrix>(*gamma_A1 % gamma_B);
+    auto rdm2 = make_shared<Matrix>(*gamma_A2 % gamma_B);
     auto rdmt = rdm1->clone();
 
     // P(p,q',r,s) : p15
@@ -369,9 +369,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_abFlip(const arr
   auto out = make_shared<RDM<2>>(nactA+nactB);
 
   auto gamma_A = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
-  auto gamma_B = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta});
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta});
 
-  auto rdm = make_shared<Matrix>(*gamma_A % *gamma_B);
+  auto rdm = make_shared<Matrix>(*gamma_A % gamma_B);
   auto rdmt = rdm->clone();
 
   // P(p,q',r',s) : p4  ab-flip of (M,N)
@@ -397,9 +397,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_abET(const array
   assert(gammatensor_[0]->exist(keys[0], keys[2], {GammaSQ::CreateAlpha, GammaSQ::CreateBeta}));
 
   auto gamma_A = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta}, statetensor_, istate);
-  auto gamma_B = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});
 
-  auto rdm  = make_shared<Matrix>(*gamma_A % *gamma_B);
+  auto rdm  = make_shared<Matrix>(*gamma_A % gamma_B);
   auto rdmt = rdm->clone();
 
   const int nactA = dimer_->embedded_refs().first->nact();
@@ -430,9 +430,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_aaET(const array
   assert(gammatensor_[0]->exist(keys[0], keys[2], {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}));
 
   auto gamma_A = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha}, statetensor_, istate);
-  auto gamma_B = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
 
-  auto rdm  = make_shared<Matrix>(*gamma_A % *gamma_B);
+  auto rdm  = make_shared<Matrix>(*gamma_A % gamma_B);
   auto rdmt = rdm->clone();
 
   const int nactA = dimer_->embedded_refs().first->nact();
@@ -461,9 +461,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_bbET(const array
   assert(gammatensor_[0]->exist(keys[0], keys[2], {GammaSQ::CreateBeta, GammaSQ::CreateBeta}));
 
   auto gamma_A = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta, GammaSQ::CreateBeta}, statetensor_, istate);
-  auto gamma_B = gammatensor_[1]->get_block_as_matrix(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
+  auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
 
-  auto rdm  = make_shared<Matrix>(*gamma_A % *gamma_B);
+  auto rdm  = make_shared<Matrix>(*gamma_A % gamma_B);
   auto rdmt = rdm->clone();
 
   const int nactA = dimer_->embedded_refs().first->nact();
