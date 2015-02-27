@@ -28,6 +28,7 @@
 
 #include <src/asd/gamma_forest.h>
 #include <src/asd/dimersubspace.h>
+#include <src/asd/state_tensor.h>
 
 namespace bagel {
 
@@ -142,6 +143,30 @@ class GammaTensor {
       btas::CRange<2> range(tensor->extent(0)*tensor->extent(1), tensor->extent(2));
       return MatView(btas::make_view(range, tensor->storage()), /*localized*/false);
     }
+
+    std::shared_ptr<Matrix> get_block_as_matrix(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
+      return std::make_shared<Matrix>(get_block_as_matview(i, j, o));
+    }
+
+    std::shared_ptr<Matrix> contract_block_with_statetensor(const std::array<MonomerKey,4>& keys, const std::initializer_list<GammaSQ>& ops, const std::shared_ptr<StateTensor>& statetensor, const int istate) const {
+      auto& A  = keys[0]; auto& B  = keys[1];
+      auto& Ap = keys[2]; auto& Bp = keys[3];
+
+      assert(exist(std::make_tuple(std::list<GammaSQ>(ops), A, Ap)));
+      assert(statetensor->exist(std::make_tuple(istate,Ap,Bp)));
+      assert(statetensor->exist(std::make_tuple(istate,A,B)));
+
+      auto gamma = sparse_.at(std::make_tuple(std::list<GammaSQ>(ops),A,Ap));
+      auto half = std::make_shared<btas::Tensor3<double>>(A.nstates(), Bp.nstates(), gamma->extent(2));
+      btas::contract(1.0, *gamma, {0,1,2}, statetensor->get_block(Ap,Bp,istate), {1,3}, 0.0, *half, {0,3,2});
+      auto full = std::make_shared<btas::Tensor3<double>>(B.nstates(), Bp.nstates(), half->extent(2));
+      btas::contract(1.0, *half, {0,1,2}, statetensor->get_block(A,B,istate), {0,3}, 0.0, *full, {3,1,2});
+      btas::CRange<2> range(full->extent(0)*full->extent(1), full->extent(2));
+      MatView view(btas::make_view(range, full->storage()), /*localized*/false);
+
+      return std::make_shared<Matrix>(view);
+    }
+
 };
 
 }

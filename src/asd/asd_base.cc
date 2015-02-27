@@ -126,20 +126,18 @@ shared_ptr<Matrix> ASD_base::compute_intra(const DimerSubspace_base& AB, shared_
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_diagonal_block<true>(const DimerSubspace_base& subspace) const {
+shared_ptr<Matrix> ASD_base::compute_diagonal_block(const DimerSubspace_base& subspace) const {
   const double core = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy();
 
   auto out = compute_intra(subspace, jop_, core);
   array<MonomerKey,4> keys {{ subspace.monomerkey<0>(), subspace.monomerkey<1>(), subspace.monomerkey<0>(), subspace.monomerkey<1>() }};
-  *out += *compute_inter_2e<true>(keys);
+  *out += *compute_inter_2e(keys);
 
   return out;
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e<true>(const array<MonomerKey,4>& keys, shared_ptr<const Matrix> hAB) const {
+shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e(const array<MonomerKey,4>& keys, shared_ptr<const Matrix> hAB) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   Coupling term_type = coupling_type(keys);
@@ -191,8 +189,7 @@ shared_ptr<Matrix> ASD_base::compute_offdiagonal_1e<true>(const array<MonomerKey
 
 
 // This term will couple off-diagonal blocks since it has no delta functions involved
-template <>
-shared_ptr<Matrix> ASD_base::compute_inter_2e<true>(const array<MonomerKey,4>& keys, const bool /*not used*/subdia) const {
+shared_ptr<Matrix> ASD_base::compute_inter_2e(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   // alpha-alpha
@@ -219,8 +216,7 @@ shared_ptr<Matrix> ASD_base::compute_inter_2e<true>(const array<MonomerKey,4>& k
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_aET<true>(const array<MonomerKey,4>& keys) const {
+shared_ptr<Matrix> ASD_base::compute_aET(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
 
@@ -269,8 +265,7 @@ shared_ptr<Matrix> ASD_base::compute_aET<true>(const array<MonomerKey,4>& keys) 
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_bET<true>(const array<MonomerKey,4>& keys) const {
+shared_ptr<Matrix> ASD_base::compute_bET(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
 
@@ -322,8 +317,7 @@ shared_ptr<Matrix> ASD_base::compute_bET<true>(const array<MonomerKey,4>& keys) 
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_abFlip<true>(const array<MonomerKey,4>& keys) const {
+shared_ptr<Matrix> ASD_base::compute_abFlip(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha});
@@ -341,8 +335,7 @@ shared_ptr<Matrix> ASD_base::compute_abFlip<true>(const array<MonomerKey,4>& key
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_abET<true>(const array<MonomerKey,4>& keys) const {
+shared_ptr<Matrix> ASD_base::compute_abET(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta});
@@ -360,8 +353,7 @@ shared_ptr<Matrix> ASD_base::compute_abET<true>(const array<MonomerKey,4>& keys)
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_aaET<true>(const array<MonomerKey,4>& keys) const {
+shared_ptr<Matrix> ASD_base::compute_aaET(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
   auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
@@ -378,8 +370,7 @@ shared_ptr<Matrix> ASD_base::compute_aaET<true>(const array<MonomerKey,4>& keys)
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::compute_bbET<true>(const array<MonomerKey,4>& keys) const {
+shared_ptr<Matrix> ASD_base::compute_bbET(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   auto gamma_A = gammatensor_[0]->get_block_as_matview(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateBeta});
   auto gamma_B = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
@@ -452,8 +443,7 @@ void ASD_base::print(const double thresh) const {
 }
 
 
-template <>
-shared_ptr<Matrix> ASD_base::couple_blocks<true>(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
+shared_ptr<Matrix> ASD_base::couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const {
 
   Coupling term_type = coupling_type(AB, ApBp);
 
@@ -473,19 +463,19 @@ shared_ptr<Matrix> ASD_base::couple_blocks<true>(const DimerSubspace_base& AB, c
     case Coupling::none :
       out = nullptr; break;
     case Coupling::diagonal :
-      out = compute_inter_2e<true>(keys, /*subspace diagonal, meaningful for true=false*/false); break;
+      out = compute_inter_2e(keys); break;
     case Coupling::aET :
-      out = compute_aET<true>(keys); break;
+      out = compute_aET(keys); break;
     case Coupling::bET :
-      out = compute_bET<true>(keys); break;
+      out = compute_bET(keys); break;
     case Coupling::abFlip :
-      out = compute_abFlip<true>(keys); break;
+      out = compute_abFlip(keys); break;
     case Coupling::abET :
-      out = compute_abET<true>(keys); break;
+      out = compute_abET(keys); break;
     case Coupling::aaET :
-      out = compute_aaET<true>(keys); break;
+      out = compute_aaET(keys); break;
     case Coupling::bbET :
-      out = compute_bbET<true>(keys); break;
+      out = compute_bbET(keys); break;
     default :
       throw std::logic_error("Asking for a coupling type that has not been written.");
   }
