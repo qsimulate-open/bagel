@@ -152,19 +152,12 @@ class ASDCASSCF : public Method, public std::enable_shared_from_this<ASDCASSCF> 
     double energy() const { return energy_[istate_]; };
     double rms_grad() const { return rms_grad_; };
 
-    // TODO I need this function in CP-ASDCASSCF, but only for denominator. Should be separated.
-    void one_body_operators(std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&,
-                            std::shared_ptr<ASD_RotFile>&, const bool superci=true) const;
     std::shared_ptr<Matrix> ao_rdm1(std::shared_ptr<const RDM<1>> rdm1, const bool inactive_only = false) const;
     std::shared_ptr<const Matrix> hcore() const { return hcore_; };
 
     std::shared_ptr<const Coeff> coeff() const { return coeff_; };
     void print_natocc() const;
 };
-
-//TODO: commented as it has already defined in asdscf.h
-//static const double occup_thresh_ = 1.0e-10;
-//const double asd_occup_thresh_ = 1.0e-10;
 
 }
 

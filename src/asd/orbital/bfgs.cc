@@ -24,7 +24,7 @@
 //
 
 #include <src/scf/hf/fock.h>
-#include <src/asd/orbital/bfgs.h> 
+#include <src/asd/orbital/bfgs.h>
 #include <src/util/math/davidson.h>
 #include <src/util/math/step_restrict_bfgs.h>
 #include <src/util/math/hpw_diis.h>
@@ -55,78 +55,50 @@ void ASD_BFGS::compute() {
   //allocate unitary rotation matrix
   auto x = make_shared<Matrix>(nbasis_, nbasis_);
   x->unit();
-  shared_ptr<const Matrix> xstart;
-  vector<double> evals;
-
   auto x_large = make_shared<Matrix>(nbasis_, nbasis_);
   x_large->unit();
   auto x_small = make_shared<Matrix>(nbasis_, nbasis_);
   x_small->unit();
 
+  vector<double> evals;
+
   auto asd = construct_ASD(asdinput_, dimer_);
   rdm1_ = make_shared<RDM<1>>(nact_);
   rdm2_ = make_shared<RDM<2>>(nact_);
 
-//mute_stdcout();
+  mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
-
-//  const shared_ptr<const Coeff> cold = coeff_;
-//  const shared_ptr<const Matrix> xold = x->copy();
 
     bool large = iter%2 == 0 ? true : false;
 
     //Perform ASD
     if (iter) {
       //update coeff_ & integrals..
-      cout << "BFGS: update coeff" << endl;
-      {
-        shared_ptr<Matrix> temp = make_shared<Matrix>(nact_,nact_);
-        *temp = *coeff_->get_submatrix(nclosed_,nclosed_,nact_,nact_);
-        cout << "active coeff only : " << temp->ndim() << " x " << temp->mdim() << endl;
-        temp->print("ACTIVE ONLY", nact_);
-      }
-      coeff_->print();
       dimer_->update_coeff(coeff_);
       //build CI-space with updated coeff
       asd = construct_ASD(asdinput_, dimer_);
     }
-    cout << "BFGS: ASD.." << endl;
+
     asd->compute();
-    cout << "BFGS: ASD done.." << endl;
     //get RDM
     rdm1_ = asd->rdm1_av();
     rdm2_ = asd->rdm2_av();
     //get energy
     energy_ = asd->energy();
 
-  //{
-  //  // use state averaged energy to update trust radius
-  //  double sa_en = 0.0;
-  //  for (auto& i : fci_->energy())
-  //    sa_en += i;
-  //  sa_en /= double((fci_->energy()).size());
-  //  evals.push_back(sa_en);
-  //}
-//ONLY GROUND STATE
-    evals.push_back(energy_[0]);
-    cout << "BFGS: evals done.." << endl;
-    
-//Disable Natural orbital
-/*
-    shared_ptr<Matrix> natorb_mat = x->clone();
     {
-      // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
-      shared_ptr<const Matrix> natorb = form_natural_orbs();
-      natorb_mat->unit();
-      natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
+      // use state averaged energy to update trust radius
+      double sa_en = 0.0;
+      for (auto& i : asd->energy())
+        sa_en += i;
+      sa_en /= double((asd->energy()).size());
+      evals.push_back(sa_en);
     }
-    cout << "BFGS: natural orbital done.." << endl;
-*/
+
 //but get half_
     const MatView cdata = coeff_->slice(nclosed_, nclosed_+nact_);
     half_ = geom_->df()->compute_half_transform(cdata);
-//END
-  
+
     shared_ptr<ASD_RotFile> sigma;
     shared_ptr<RotFile> sigma_large;
     shared_ptr<ASD_ActiveRotFile> sigma_small;
@@ -147,16 +119,10 @@ void ASD_BFGS::compute() {
     // compute one-body operators
     // * preparation
     const MatView ccoeff = coeff_->slice(0, nclosed_);
-    cout << "BFGS: 1.." << endl;
-
-
 
     // * core Fock operator
     shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
-    cout << "BFGS: 2.." << endl;
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
-    cout << "BFGS: Fock(closed) done..: size = " << cfock->ndim() << " x " << cfock->mdim() << endl;
-
 
     // * active Fock operator
     // first make a weighted coefficient
@@ -168,34 +134,19 @@ void ASD_BFGS::compute() {
     rdm1_scaled->delocalize();
     auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_scaled); // such that C' * (1/2 D) C will be obtained.
 
-//  for (int i = 0; i != nact_; ++i)
-//    blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
     // then make a AO density matrix
     shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeffw, /*store*/false, /*rhf*/true);
     shared_ptr<const Matrix> afock = make_shared<Matrix>(*coeff_ % *afockao * *coeff_);
-    cout << "BFGS: Fock(active) done..: size = " << afock->ndim() << " x " << afock->mdim() << endl;
-
-
 
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
 //  auto qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
 //ADDED
     auto qxr = Qvec(coeff_->mdim(), nact_, coeff_, nclosed_); //uses internal rdm1_ and rdm2_
-    cout << "BFGS: Qvec done.." << endl;
-
 
     //mcfock(nact_,nact_)
     shared_ptr<Matrix> mcfock = make_shared<Matrix>(*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat
                                                     + *qxr->get_submatrix(nclosed_, 0, nact_, nact_) );
     cout << "MC Fock Matrix: symmetric check:" << check_symmetric(mcfock) << endl;
-    {
-      shared_ptr<Matrix> p = make_shared<Matrix>(*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat );
-      shared_ptr<Matrix> q = make_shared<Matrix>( *qxr->get_submatrix(nclosed_, 0, nact_, nact_) );
-      cout << "TEST P Matrix: symmetric check:" << check_symmetric(p) << endl;
-      cout << "TEST Q Matrix: symmetric check:" << check_symmetric(q) << endl;
-    }
-  
-
 
     if (together) {
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
@@ -217,11 +168,7 @@ void ASD_BFGS::compute() {
     }
 
     // if this is the first time, set up the BFGS solver
-//  if (iter == 0) {
-//    // BFGS and DIIS should start at the same time
-//    shared_ptr<const ASD_RotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock);
-//    bfgs = make_shared<SRBFGS<ASD_RotFile>>(denom);
-//  }
+    // BFGS and DIIS should start at the same time
     if (iter == 0) {
       shared_ptr<const RotFile> denom_large = compute_denom_large(cfock, afock, qxr, rdm1_mat);
       bfgs_large = make_shared<SRBFGS<RotFile>>(denom_large);
@@ -241,10 +188,9 @@ void ASD_BFGS::compute() {
     shared_ptr<RotFile> a;
     shared_ptr<ASD_ActiveRotFile> b;
     shared_ptr<ASD_RotFile> c;
-//  cout << " " << endl;
     if (together) {
+      cout << " " << endl;
       cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
-////*x *= *natorb_mat;
       auto xcopy = x->log(8);
       auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, nactA_, nactB_ );
       bfgs->check_step(evals, sigma, xlog);
@@ -252,6 +198,7 @@ void ASD_BFGS::compute() {
       cout << " ---------------------------------------------------- " << endl << endl;
     } else {
       if (large) {
+        cout << " " << endl;
         cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
         auto xcopy = x_large->log(8);
         auto xlog  = make_shared<RotFile>(xcopy, nclosed_, nact_, nvirt_);
@@ -262,6 +209,7 @@ void ASD_BFGS::compute() {
         cout << " " << endl;
       } else {
         //small
+        cout << " " << endl;
         cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
         auto xcopy = x_small->log(8);
         auto xlog  = make_shared<ASD_ActiveRotFile>(xcopy, nclosed_, nact_, nvirt_, nactA_, nactB_);
@@ -309,7 +257,7 @@ void ASD_BFGS::compute() {
       gradient = iter%2 == 0 ? sigma_large->rms() : sigma_small->rms() ;
     }
 
-    if (large) 
+    if (large)
       get<0>(gpair) = gradient;
     else
       get<1>(gpair) = gradient;
@@ -321,18 +269,15 @@ void ASD_BFGS::compute() {
       }
     }
 
-    cout << "Macro gradient = " << gradient << endl;
-
-//  resume_stdcout();
-    const double cgr = gradient;
-    print_iteration(iter, 0, 0, energy_, cgr, timer.tick());
+    resume_stdcout();
+    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
 //  if (gradient < thresh_) {
     if (max(get<0>(gpair),get<1>(gpair)) < thresh_) {
       rms_grad_ = gradient;
       cout << " " << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
-//    mute_stdcout();
+      mute_stdcout();
       break;
     }
 
@@ -342,18 +287,10 @@ void ASD_BFGS::compute() {
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
       cout << "    * Max iteration reached during the quasi-Newton optimization. *     " << endl << endl;
     }
-//  mute_stdcout();
+    mute_stdcout();
   }
-  cout << "BFGS macro end" << endl;
-//resume_stdcout();
+  resume_stdcout();
   // ============================
   // macro iteration to here
   // ============================
-
-  // this is not needed for energy, but for consistency we want to have this...
-  // update construct Jop from scratch
-//SKIPPED
-//fci_->update(coeff_);
-//fci_->compute();
-//fci_->compute_rdm12();
 }
