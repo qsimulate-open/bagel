@@ -55,8 +55,6 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   timer.tick_print("Reference calculation");
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
-  if (geom->df() == nullptr)
-    throw logic_error("CASPT2Grad is only implemented with DF");
 }
 
 

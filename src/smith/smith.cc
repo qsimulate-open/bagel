@@ -34,13 +34,15 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
-  string method = idata_->get<string>("method", "mp2");
+  const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
   // make a smith_info class
   auto info = make_shared<SMITH_Info>(r, idata);
 
 #ifdef COMPILE_SMITH
   if (method == "caspt2") {
+    algo_ = make_shared<CASPT2::CASPT2>(info);
+  } else if (method == "mrci") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
   } else {
 #else
