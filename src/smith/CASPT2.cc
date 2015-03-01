@@ -66,7 +66,11 @@ void CASPT2::CASPT2::solve() {
   }
   this->print_iteration(iter == ref_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
+}
 
+
+void CASPT2::CASPT2::solve_deriv() {
+  Timer timer;
   shared_ptr<Queue> corrq = make_corrq();
   correlated_norm_ = accumulate(corrq);
   timer.tick_print("T1 norm evaluation");
@@ -87,7 +91,6 @@ void CASPT2::CASPT2::solve() {
     dec->next_compute();
   timer.tick_print("CI derivative evaluation");
   cout << endl;
-
 }
 
 

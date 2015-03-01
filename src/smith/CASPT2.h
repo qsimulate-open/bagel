@@ -156,6 +156,7 @@ class CASPT2 : public SpinFreeMethod {
     ~CASPT2() {}
 
     void solve();
+    void solve_deriv();
 
     double accumulate(std::shared_ptr<Queue> queue) {
       double sum = 0.0;

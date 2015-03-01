@@ -64,7 +64,8 @@ void CASPT2Grad::compute() {
   const int nact = ref_->nact();
   {
     // construct SMITH here
-    shared_ptr<const PTree> smithinput = idata_->get_child("smith");
+    shared_ptr<PTree> smithinput = idata_->get_child("smith");
+    smithinput->put<bool>("grad", true); 
     auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
     smith->compute();
 

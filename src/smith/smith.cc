@@ -57,9 +57,12 @@ void Smith::compute() {
   algo_->solve();
 
 #ifdef COMPILE_SMITH
-  // TODO toggle by something better than this.
-  auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
-  if (algop) {
+  const bool grad = idata_->get<bool>("grad", false);
+  if (grad) {
+    auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
+    assert(algop);
+
+    algop->solve_deriv();
     dm1_ = algop->rdm12();
     dm11_ = algop->rdm11();
     dm2_ = algop->rdm21();
