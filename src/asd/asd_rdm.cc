@@ -141,8 +141,8 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::couple_blocks(const Dime
 
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const array<MonomerKey,4>& keys, const int istate, const bool subdia) const {
 
-  auto& A  = keys[0]; auto& B  = keys[1];
-  auto& Ap = keys[2]; auto& Bp = keys[3];
+  auto& B  = keys[1];
+  auto& Bp = keys[3];
 
   const int nactA = dimer_->embedded_refs().first->nact();
   const int nactB = dimer_->embedded_refs().second->nact();
@@ -196,108 +196,81 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const a
     copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
 
-  if (B == Bp && subdia) { //Monomer A
-    cout << "A" << endl;
-    const int n = B.nstates();
-    Matrix delta(n,n);
-    delta.unit();
-    btas::CRange<2> range(n*n, 1);
-    const MatView gamma_B(btas::make_view(range, delta.storage()), /*localized*/true);
-    //1RDM
-    {
-      auto rdmA = make_shared<Matrix>(*gamma_AA_alpha % gamma_B);
-      auto rdmB = make_shared<Matrix>(*gamma_AA_beta  % gamma_B);
-      auto rdmt = rdmA->clone();
-      sort_indices<0,1, 0,1, 1,1>(rdmA->data(), rdmt->data(), nactA, nactA); //a'a
-      sort_indices<0,1, 1,1, 1,1>(rdmB->data(), rdmt->data(), nactA, nactA); //b'b
-      if (!subdia) {
-        sort_indices<1,0, 1,1, 1,1>(rdmA->data(), rdmt->data(), nactA, nactA); //a'a
-        sort_indices<1,0, 1,1, 1,1>(rdmB->data(), rdmt->data(), nactA, nactA); //b'b
+  if (subdia) {
+    {//Monomer A
+      const int n = B.nstates();
+      Matrix delta(n,n);
+      delta.unit();
+      btas::CRange<2> range(n*n, 1);
+      const MatView gamma_B(btas::make_view(range, delta.storage()), /*localized*/true);
+      {//1RDM
+        auto rdmA = make_shared<Matrix>(*gamma_AA_alpha % gamma_B);
+        auto rdmB = make_shared<Matrix>(*gamma_AA_beta  % gamma_B);
+        auto rdmt = rdmA->clone();
+        sort_indices<0,1, 0,1, 1,1>(rdmA->data(), rdmt->data(), nactA, nactA); //a'a
+        sort_indices<0,1, 1,1, 1,1>(rdmB->data(), rdmt->data(), nactA, nactA); //b'b
+        auto TEMP = make_shared<RDM<1>>(nactA+nactB);
+        auto low = {    0,     0};
+        auto up  = {nactA, nactA};
+        auto outv = make_rwview(TEMP->range().slice(low, up), TEMP->storage());
+        copy(rdmt->begin(), rdmt->end(), outv.begin());
+        *trdm1_ += *TEMP;
       }
-      auto TEMP = make_shared<RDM<1>>(nactA+nactB);
-      auto low = {    0,     0};
-      auto up  = {nactA, nactA};
-      auto outv = make_rwview(TEMP->range().slice(low, up), TEMP->storage());
-      copy(rdmt->begin(), rdmt->end(), outv.begin());
-      *trdm1_ += *TEMP;
-    }
-    //2RDM
-    {
-      auto gamma_A_aaaa = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
-      auto gamma_A_bbbb = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}, statetensor_, istate);
-      auto gamma_A_abba = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
-      auto rdm_alpha = make_shared<Matrix>(*gamma_A_aaaa % gamma_B);
-      auto rdm_beta  = make_shared<Matrix>(*gamma_A_bbbb % gamma_B);
-      auto rdm_mix   = make_shared<Matrix>(*gamma_A_abba % gamma_B);
-      auto rdm_temp  = rdm_alpha->clone();
-      sort_indices<0,3,1,2, 0,1, 1,1>(rdm_alpha->data(), rdm_temp->data(), nactA, nactA, nactA, nactA); //p'q'rs => d_psqr == 0312
-      sort_indices<0,3,1,2, 1,1, 1,1>(rdm_beta->data(), rdm_temp->data(), nactA, nactA, nactA, nactA);
-      sort_indices<0,3,1,2, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactA, nactA, nactA, nactA);
-      sort_indices<1,2,0,3, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactA, nactA, nactA, nactA); //q'p'sr => d_qrps == 1203
-      if (!subdia) {
-        sort_indices<1,3,2,0, 1,1, 1,1>(rdm_alpha->data(), rdm_temp->data(), nactA, nactA, nactA, nactA); 
-        sort_indices<1,3,2,0, 1,1, 1,1>(rdm_beta->data(), rdm_temp->data(), nactA, nactA, nactA, nactA);
-        sort_indices<1,3,2,0, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactA, nactA, nactA, nactA);
-        sort_indices<3,1,0,2, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactA, nactA, nactA, nactA);
+      {//2RDM
+        auto gamma_A_aaaa = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
+        auto gamma_A_bbbb = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}, statetensor_, istate);
+        auto gamma_A_abba = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
+        auto rdm_alpha = make_shared<Matrix>(*gamma_A_aaaa % gamma_B);
+        auto rdm_beta  = make_shared<Matrix>(*gamma_A_bbbb % gamma_B);
+        auto rdm_mix   = make_shared<Matrix>(*gamma_A_abba % gamma_B);
+        auto rdm_temp  = rdm_alpha->clone();
+        sort_indices<0,3,1,2, 0,1, 1,1>(rdm_alpha->data(), rdm_temp->data(), nactA, nactA, nactA, nactA); //p'q'rs => d_psqr == 0312
+        sort_indices<0,3,1,2, 1,1, 1,1>(rdm_beta->data(), rdm_temp->data(), nactA, nactA, nactA, nactA);
+        sort_indices<0,3,1,2, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactA, nactA, nactA, nactA);
+        sort_indices<1,2,0,3, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactA, nactA, nactA, nactA); //q'p'sr => d_qrps == 1203
+        auto TEMP2 = make_shared<RDM<2>>(nactA+nactB);
+        auto low = {    0,     0,     0,     0};
+        auto up  = {nactA, nactA, nactA, nactA};
+        auto outv = make_rwview(TEMP2->range().slice(low, up), TEMP2->storage());
+        copy(rdm_temp->begin(), rdm_temp->end(), outv.begin());
+        *trdm2_ += *TEMP2;
       }
-      auto TEMP2 = make_shared<RDM<2>>(nactA+nactB);
-      auto low = {    0,     0,     0,     0};
-      auto up  = {nactA, nactA, nactA, nactA};
-      auto outv = make_rwview(TEMP2->range().slice(low, up), TEMP2->storage());
-      copy(rdm_temp->begin(), rdm_temp->end(), outv.begin());
-      *trdm2_ += *TEMP2;
     }
-    cout << "A*" << endl;
-  }
-
-  if (A == Ap) { //Monomer B
-    cout << "B" << endl;
-    auto gamma_A = statetensor_->contract_statetensor(keys, istate);
-    //1RDM
-    {
-      auto rdmA = make_shared<Matrix>(*gamma_A % gamma_BB_alpha);
-      auto rdmB = make_shared<Matrix>(*gamma_A % gamma_BB_beta);
-      auto rdmt = rdmA->clone();
-      sort_indices<0,1, 0,1, 1,1>(rdmA->data(), rdmt->data(), nactB, nactB); //a'a
-      sort_indices<0,1, 1,1, 1,1>(rdmB->data(), rdmt->data(), nactB, nactB); //b'b
-      if (!subdia) {
-        sort_indices<1,0, 1,1, 1,1>(rdmA->data(), rdmt->data(), nactB, nactB); //a'a
-        sort_indices<1,0, 1,1, 1,1>(rdmB->data(), rdmt->data(), nactB, nactB); //b'b
+    {//Monomer B
+      auto gamma_A = statetensor_->contract_statetensor(keys, istate);
+      {//1RDM
+        auto rdmA = make_shared<Matrix>(*gamma_A % gamma_BB_alpha);
+        auto rdmB = make_shared<Matrix>(*gamma_A % gamma_BB_beta);
+        auto rdmt = rdmA->clone();
+        sort_indices<0,1, 0,1, 1,1>(rdmA->data(), rdmt->data(), nactB, nactB);
+        sort_indices<0,1, 1,1, 1,1>(rdmB->data(), rdmt->data(), nactB, nactB);
+        auto TEMP = make_shared<RDM<1>>(nactA+nactB);
+        auto low = {nactA, nactA};
+        auto up  = {nactT, nactT};
+        auto outv = make_rwview(TEMP->range().slice(low, up), TEMP->storage());
+        copy(rdmt->begin(), rdmt->end(), outv.begin());
+        *trdm1_ += *TEMP;
       }
-      auto TEMP = make_shared<RDM<1>>(nactA+nactB);
-      auto low = {nactA, nactA};
-      auto up  = {nactT, nactT};
-      auto outv = make_rwview(TEMP->range().slice(low, up), TEMP->storage());
-      copy(rdmt->begin(), rdmt->end(), outv.begin());
-      *trdm1_ += *TEMP;
-    }
-    //2RDM
-    {
-      auto gamma_B_aaaa = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
-      auto gamma_B_bbbb = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
-      auto gamma_B_abba = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
-      auto rdm_alpha = make_shared<Matrix>(*gamma_A % gamma_B_aaaa);
-      auto rdm_beta  = make_shared<Matrix>(*gamma_A % gamma_B_bbbb);
-      auto rdm_mix   = make_shared<Matrix>(*gamma_A % gamma_B_abba);
-      auto rdm_temp  = rdm_alpha->clone();
-      sort_indices<0,1,2,3, 0,1, 1,1>(rdm_alpha->data(), rdm_temp->data(), nactB, nactB, nactB, nactB); //p'r'sq = d_pqrs
-      sort_indices<0,1,2,3, 1,1, 1,1>(rdm_beta->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
-      sort_indices<0,1,2,3, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
-      sort_indices<2,3,0,1, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactB, nactB, nactB, nactB); //r'p'qs = d_rspq
-      if (!subdia) {
-        sort_indices<1,0,3,2, 1,1, 1,1>(rdm_alpha->data(), rdm_temp->data(), nactB, nactB, nactB, nactB); //q's'rp = d_qpsr
-        sort_indices<1,0,3,2, 1,1, 1,1>(rdm_beta->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
-        sort_indices<1,0,3,2, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
-        sort_indices<3,2,1,0, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactB, nactB, nactB, nactB); //s'q'pr = d_srqp
+      {//2RDM
+        auto gamma_B_aaaa = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
+        auto gamma_B_bbbb = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
+        auto gamma_B_abba = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
+        auto rdm_alpha = make_shared<Matrix>(*gamma_A % gamma_B_aaaa);
+        auto rdm_beta  = make_shared<Matrix>(*gamma_A % gamma_B_bbbb);
+        auto rdm_mix   = make_shared<Matrix>(*gamma_A % gamma_B_abba);
+        auto rdm_temp  = rdm_alpha->clone();
+        sort_indices<0,3,1,2, 0,1, 1,1>(rdm_alpha->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
+        sort_indices<0,3,1,2, 1,1, 1,1>(rdm_beta->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
+        sort_indices<0,3,1,2, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
+        sort_indices<1,2,0,3, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
+        auto TEMP2 = make_shared<RDM<2>>(nactA+nactB);
+        auto low = {nactA, nactA, nactA, nactA};
+        auto up  = {nactT, nactT, nactT, nactT};
+        auto outv = make_rwview(TEMP2->range().slice(low, up), TEMP2->storage());
+        copy(rdm_temp->begin(), rdm_temp->end(), outv.begin());
+        *trdm2_ += *TEMP2;
       }
-      auto TEMP2 = make_shared<RDM<2>>(nactA+nactB);
-      auto low = {nactA, nactA, nactA, nactA};
-      auto up  = {nactT, nactT, nactT, nactT};
-      auto outv = make_rwview(TEMP2->range().slice(low, up), TEMP2->storage());
-      copy(rdm_temp->begin(), rdm_temp->end(), outv.begin());
-      *trdm2_ += *TEMP2;
     }
-    cout << "B" << endl;
   }
 
   return make_tuple(nullptr, out);
@@ -636,6 +609,46 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage());
     copy(view.begin(), view.end(), rdm2B->begin());
   }
+
+  //TEST
+  {
+    cout << "DEBUG 1A" << endl;
+    auto debug = make_shared<RDM<1>>(*rdm1A);
+    for (int i = 0; i != nactA; ++i)
+      for (int j = 0; j != nactA; ++j)
+      debug->element(i,j) -= trdm1_->element(i,j);
+    debug->print(1.0e-10);
+  }
+  {
+    cout << "DEBUG 1B" << endl;
+    auto debug = make_shared<RDM<1>>(*rdm1B);
+    for (int i = 0; i != nactB; ++i)
+      for (int j = 0; j != nactB; ++j)
+      debug->element(i,j) -= trdm1_->element(i+nactA,j+nactA);
+    debug->print(1.0e-10);
+  }
+  {
+    cout << "DEBUG 2A" << endl;
+    auto debug = make_shared<RDM<2>>(*rdm2A);
+    for (int i = 0; i != nactA; ++i)
+      for (int j = 0; j != nactA; ++j)
+        for (int k = 0; k != nactA; ++k)
+          for (int l = 0; l != nactA; ++l)
+            debug->element(i,j,k,l) -= trdm2_->element(i,j,k,l);
+    debug->print(1.0e-10);
+  }
+  {
+    cout << "DEBUG 2B" << endl;
+    auto debug = make_shared<RDM<2>>(*rdm2B);
+    for (int i = 0; i != nactB; ++i)
+      for (int j = 0; j != nactB; ++j)
+        for (int k = 0; k != nactB; ++k)
+          for (int l = 0; l != nactB; ++l)
+            debug->element(i,j,k,l) -= trdm2_->element(i+nactA,j+nactA,k+nactA,l+nactA);
+    debug->print(1.0e-10);
+  }
+
+
 
 /*
   auto rdm3A = make_shared<RDM<3>>(nactA);
