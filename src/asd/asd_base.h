@@ -72,6 +72,9 @@ class ASD_base {
     std::shared_ptr<RDM<1>> rdm1_av_;
     std::shared_ptr<RDM<2>> rdm2_av_;
 
+    std::shared_ptr<RDM<1>> trdm1_;
+    std::shared_ptr<RDM<2>> trdm2_;
+
     // Total system quantities
     int dimerstates_; ///< Total size of dimer Hamiltonian. Counted up during initialization
 
