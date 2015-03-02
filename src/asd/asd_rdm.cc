@@ -220,6 +220,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const a
         auto gamma_A_aaaa = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
         auto gamma_A_bbbb = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}, statetensor_, istate);
         auto gamma_A_abba = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
+        gamma_A_aaaa->print("TEST_a",36);
+        gamma_A_bbbb->print("TEST_b",36);
+        gamma_A_abba->print("TEST_c",36);
         auto rdm_alpha = make_shared<Matrix>(*gamma_A_aaaa % gamma_B);
         auto rdm_beta  = make_shared<Matrix>(*gamma_A_bbbb % gamma_B);
         auto rdm_mix   = make_shared<Matrix>(*gamma_A_abba % gamma_B);
@@ -628,6 +631,12 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
     debug->print(1.0e-10);
   }
   {
+    cout << "print TRDM2" << endl;
+    trdm2_->print(1.0e-1);
+    cout << "print 2RDM(A)" << endl;
+    rdm2A->print(1.0e-1);
+  }
+  {
     cout << "DEBUG 2A" << endl;
     auto debug = make_shared<RDM<2>>(*rdm2A);
     for (int i = 0; i != nactA; ++i)
@@ -636,6 +645,11 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
           for (int l = 0; l != nactA; ++l)
             debug->element(i,j,k,l) -= trdm2_->element(i,j,k,l);
     debug->print(1.0e-10);
+    double sum = 0.0;
+    for (int i = 0; i != nactA; ++i)
+      for (int j = 0; j != nactA; ++j)
+        sum += trdm2_->element(i,i,j,j);
+    cout << "2A Trace = " <<  sum << endl;
   }
   {
     cout << "DEBUG 2B" << endl;
@@ -646,6 +660,11 @@ void ASD_base::debug_RDM(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2) con
           for (int l = 0; l != nactB; ++l)
             debug->element(i,j,k,l) -= trdm2_->element(i+nactA,j+nactA,k+nactA,l+nactA);
     debug->print(1.0e-10);
+    double sum = 0.0;
+    for (int i = 0; i != nactB; ++i)
+      for (int j = 0; j != nactB; ++j)
+        sum += trdm2_->element(i+nactA,i+nactA,j+nactA,j+nactA);
+    cout << "2B Trace = " <<  sum << endl;
   }
 
 

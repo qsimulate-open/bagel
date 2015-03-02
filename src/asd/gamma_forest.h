@@ -467,6 +467,7 @@ class RASTask {
       for (int i = 0; i < 6; ++i)
         if (info[i] < 0 || info[i] > ras[i/2]) return nullptr;
 
+/*
       // is it out of space?
       const int nholes = 2*ras[0] - (info[0] + info[1]);
       const int nparts = info[4] + info[5];
@@ -514,6 +515,7 @@ class RASTask {
         if (!branch->if_contributes(needed))
           return nullptr;
       }
+*/
 
       std::shared_ptr<const RASString> ta = spin ? stringspace(info[0], ras[0], info[2], ras[1], info[4], ras[2]) : sa;
       std::shared_ptr<const RASString> tb = spin ? sb : stringspace(info[1], ras[0], info[3], ras[1], info[5], ras[2]);
@@ -588,6 +590,21 @@ class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
                   if (!cblock) continue;
                   for (auto& kbra : third->bras())
                     dot_product(kbra.second, cblock, third->gammas().find(kbra.first)->second->element_ptr(iket*kbra.second->ij(), a_*norb*norb + b*norb + c));
+
+                  //Monomer
+                  for (int l = 0; l < nops; ++l) {
+                    std::shared_ptr<GammaBranch<RASDvec>> fourth = third->branch(l);
+                    if (!fourth->active()) continue;
+
+                    for (int d = 0; d < norb; ++d) {
+                      if(c==d && l==k) continue;
+                      std::shared_ptr<const RASBlock<double>> dblock = next_block(fourth, cblock, d, action(l), spin(l));
+                      if (!dblock) continue;
+                      for (auto& lbra : fourth->bras())
+                        dot_product(lbra.second, dblock, fourth->gammas().find(lbra.first)->second->element_ptr(iket*lbra.second->ij(), a_*norb*norb*norb + b*norb*norb + c*norb + d));
+                    }
+                  }
+
                 }
               }
             }
