@@ -42,8 +42,6 @@ class Vertex {
     std::shared_ptr<const Atom> atom_;
     std::array<double, 3> position_;
 
-    void compute_multipoles();
-
   public:
     Vertex(std::bitset<64> key, std::shared_ptr<const Atom> atom) : key_(key), atom_(atom) {
       position_ = atom->position();

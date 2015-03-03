@@ -32,19 +32,18 @@ using namespace std;
 
 Tree::Tree(shared_ptr<const Molecule> mol, const int maxht) : mol_(mol), max_height_(maxht) {
 
-  nvertex_ = mol->natom();
-  position_ = mol->charge_center();
-  cout << "Charge centre: " << position_[0] << "  " << position_[1] << "  " << position_[2] << endl;
-  coordinates_.resize(nvertex_);
-  for (int i = 0; i != nvertex_; ++i)
-    coordinates_[i] = mol->atoms(i)->position();
-
   init();
-  build_tree();
 }
 
 
 void Tree::init() {
+
+  nvertex_ = mol_->natom();
+  position_ = mol_->charge_center();
+  //cout << "Charge centre: " << position_[0] << "  " << position_[1] << "  " << position_[2] << endl;
+  coordinates_.resize(nvertex_);
+  for (int i = 0; i != nvertex_; ++i)
+    coordinates_[i] = mol_->atoms(i)->position();
 
   for (int i = 0; i != nvertex_; ++i) {
     coordinates_[i][0] -= position_[0];
@@ -59,6 +58,7 @@ void Tree::init() {
   keysort();
 //  for (int i = 0; i != nvertex_; ++i)
 //    cout << particle_keys_[i] << endl;
+  build_tree();
 }
 
 
@@ -194,12 +194,6 @@ void Tree::keysort() {
     auto leaf = make_shared<Vertex>(particle_keys_[n], mol_->atoms(id[n]));
     leaves_[n] = leaf;
   }
-}
-
-
-void Tree::compute_multipoles(shared_ptr<const Node> node, const int lmax, shared_ptr<const Matrix> density) {
-
-  assert(node->is_leaf());
 }
 
 

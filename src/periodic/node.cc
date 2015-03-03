@@ -25,6 +25,8 @@
 
 
 #include <src/periodic/node.h>
+#include <src/periodic/multipolebatch.h>
+#include <src/periodic/localexpansion.h>
 
 using namespace bagel;
 using namespace std;
@@ -72,12 +74,14 @@ void Node::init() {
   if (nchild_ == 0) is_leaf_ = true;
 
   position_ = {{0.0, 0.0, 0.0}};
+  nbasis_ = 0;
   double sum = 0.0;
   for (auto& body : bodies_) {
     position_[0] += body->atom()->atom_charge() * body->position(0);
     position_[1] += body->atom()->atom_charge() * body->position(1);
     position_[2] += body->atom()->atom_charge() * body->position(2);
     sum += body->atom()->atom_charge();
+    nbasis_ += body->atom()->nbasis();
   }
   position_[0] /= sum;
   position_[1] /= sum;
@@ -142,5 +146,78 @@ void Node::insert_neighbour(shared_ptr<const Node> neigh, const bool is_neighbou
     neighbour_.resize(nneighbour_ + 1);
     neighbour_[nneighbour_] = neigh;
     ++nneighbour_;
+  }
+}
+
+
+void Node::compute_multipoles(const int lmax) {
+
+  assert(is_leaf_);
+
+  const int nmultipole = (lmax + 1) * (lmax + 1);
+  multipoles_.resize(nmultipole);
+  vector<ZMatrix> multipoles(nmultipole);
+  for (int i = 0; i != nmultipole; ++i) {
+    ZMatrix tmp(nbasis_, nbasis_);
+    tmp.zero();
+    multipoles[i] = tmp;
+  }
+
+  size_t oa0 = 0;
+  size_t oa1 = 0;
+  for (auto a0 = bodies_.begin(); a0 != bodies_.end(); ++a0) {
+    for (auto a1 = bodies_.begin(); a1 != bodies_.end(); ++a1) {
+      size_t ob0 = oa0;
+      size_t ob1 = oa1;
+      for (auto& b0 : (*a0)->atom()->shells()) {
+        for (auto& b1 : (*a1)->atom()->shells()) {
+          MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
+          mpole.compute();
+          for (int i = 0; i != nmultipole; ++i)
+            multipoles[i].add_block(1.0, ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+
+          ob1 += b1->nbasis();
+        }
+        ob0 += b0->nbasis();
+      }
+
+      oa1 += (*a1)->atom()->nbasis();
+    }
+    oa0 += (*a0)->atom()->nbasis();
+  }
+
+  for (int i = 0; i != nmultipole; ++i)
+    multipoles_[i] = make_shared<const ZMatrix>(multipoles[i]);
+}
+
+
+void Node::shift_multipoles(const int lmax) { //from multipoles of the children
+
+  assert(!is_leaf_);
+
+  const int nmultipole = (lmax + 1) * (lmax + 1);
+  multipoles_.resize(nmultipole);
+  vector<ZMatrix> multipoles(nmultipole);
+  for (int i = 0; i != nmultipole; ++i) {
+    ZMatrix tmp(nbasis_, nbasis_);
+    tmp.zero();
+    multipoles[i] = tmp;
+  }
+
+  int offset = 0;
+  for (int n = 0; n != nchild_; ++n) {
+    shared_ptr<const Node> child = children_[n].lock();
+    array<double, 3> r12;
+    r12[0] = position_[0] - child->position(0);
+    r12[1] = position_[1] - child->position(1);
+    r12[2] = position_[2] - child->position(2);
+    assert(nmultipole == child->multipoles().size());
+    LocalExpansion shift(r12, child->multipoles(), lmax);
+    vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_moments();
+
+    for (int i = 0; i != nmultipole; ++i)
+      multipoles[i].add_block(1.0, offset, offset, child->nbasis(), child->nbasis(), moment[i]->data());
+
+    offset += child->nbasis();
   }
 }
