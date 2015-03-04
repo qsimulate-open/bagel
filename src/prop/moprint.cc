@@ -61,12 +61,30 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
   norb_ = orbitals_.size();
 
 
-  // Determine coordinates where current will be computed
+  // Determine gridpoints where density will be computed
   const bool angstrom = idata->get<bool>("angstrom", false);
-  array<double,3> start_pos = idata->get_array<double,3>("start_pos", {{-10.0, -10.0, -10.0}});
-  inc_size_ = idata->get_array<double,3>("inc_size", {{0.25, 0.25, 0.25}});
-  ngrid_dim_ = idata->get_array<size_t,3>("ngrid", {{80, 80, 80}});
+  ngrid_dim_ = idata->get_array<size_t,3>("ngrid", {{61, 61, 61}});
   ngrid_ = ngrid_dim_[0]*ngrid_dim_[1]*ngrid_dim_[2];
+  array<double,3> start_pos = idata->get_array<double,3>("start_pos", {{-99.0, -99.0, -99.0}});
+  inc_size_ = idata->get_array<double,3>("inc_size", {{0.25, 0.25, 0.25}});
+
+  // By default, assign positions covering the molecule + 4.0 Bohr on each side
+  if (start_pos == array<double,3>({{-99.0, -99.0, -99.0}})) {
+    array<double,3> max_pos = geom_->atoms(0)->position();
+    array<double,3> min_pos = geom_->atoms(0)->position();
+    for (auto& i : geom_->atoms()) {
+      for (int j=0; j!=3; ++j) {
+        if (i->position(j) > max_pos[j])
+          max_pos[j] = i->position(j);
+        if (i->position(j) < min_pos[j])
+          min_pos[j] = i->position(j);
+      }
+    }
+    for (int i=0; i!=3; ++i) {
+      start_pos[i] = min_pos[i] - 4.0;
+      inc_size_[i] = (max_pos[i] - min_pos[i] + 8.0) / (ngrid_dim_[i] - 1);
+    }
+  }
 
   if (angstrom) {
     for (int i=0; i!=3; ++i) {
@@ -183,7 +201,7 @@ void MOPrint::computepoint(const size_t pos) {
     }
   }
 
-  // First build the current matrix in AO basis
+  // First build the overlap matrix in AO basis
   if (!relativistic_) {
     ao_density = input_ovlp;
   } else {
