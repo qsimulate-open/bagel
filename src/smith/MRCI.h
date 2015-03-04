@@ -44,6 +44,7 @@ namespace MRCI{
 class MRCI : public SpinFreeMethod {
   protected:
     using SpinFreeMethod::ref_;
+    using SpinFreeMethod::e0_;
     using SpinFreeMethod::closed_;
     using SpinFreeMethod::active_;
     using SpinFreeMethod::virt_;
@@ -67,7 +68,6 @@ class MRCI : public SpinFreeMethod {
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> s;
-    double e0_;
     std::shared_ptr<Tensor> den1;
     std::shared_ptr<Tensor> den2;
     std::shared_ptr<Tensor> Den1;

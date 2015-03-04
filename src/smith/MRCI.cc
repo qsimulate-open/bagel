@@ -36,7 +36,6 @@ using namespace bagel::SMITH;
 MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
   this->eig_ = f1_->diag();
   t2 = init_amplitude();
-  e0_ = this->e0();
   r = t2->clone();
   s = t2->clone();
   den1 = h1_->clone();
@@ -53,6 +52,7 @@ void MRCI::MRCI::solve() {
   while (!sq->done())
     sq->next_compute();
   const double ee = e0_;
+  const double refen = ref_->ciwfn()->energy(ref_->target()) - this->core_energy_ - ref_->geom()->nuclear_repulsion();
 
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
@@ -61,7 +61,7 @@ void MRCI::MRCI::solve() {
     while (!queue->done())
       queue->next_compute();
     r->ax_plus_y(2.0, s);
-    this->energy_ = dot_product_transpose(r, t2)  -25.09598770 - 2;//TODO <0|H|0>
+    this->energy_ = dot_product_transpose(r, t2) + refen;
 
     // norm
     shared_ptr<Queue> corrq = make_corrq();
@@ -75,6 +75,7 @@ void MRCI::MRCI::solve() {
     r->ax_plus_y(1.0, s);
 
     const double err = r->rms();
+    this->energy_ += this->core_energy_ + ref_->geom()->nuclear_repulsion();
     this->print_iteration(iter, this->energy_, err);
 
     e0_ = ee;

@@ -74,6 +74,8 @@ class MOFock {
     std::shared_ptr<Tensor> data_;
     std::shared_ptr<Tensor> h1_;
 
+    double core_energy_;
+
   public:
     MOFock(std::shared_ptr<const SMITH_Info> r, std::vector<IndexRange> b);
     ~MOFock() {}
@@ -86,6 +88,8 @@ class MOFock {
     std::shared_ptr<Tensor> h1() { return h1_; }
 
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+
+    double core_energy() const { return core_energy_; }
 };
 
 

@@ -56,6 +56,7 @@ class SpinFreeMethod {
     std::shared_ptr<const Coeff> coeff_;
     std::shared_ptr<const Civec> civec_;
     double e0_;
+    double core_energy_;
     double energy_;
 
     std::shared_ptr<Tensor> v2_;

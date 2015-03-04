@@ -120,8 +120,12 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
 
   // cfock
   shared_ptr<Matrix> cfock = ref_->hcore()->copy();
-  if (ncore+nclosed)
+  core_energy_ = 0.0;
+  if (ncore+nclosed) {
     cfock = make_shared<Fock<1>>(r->geom(), ref_->hcore(), nullptr, coeff_->slice(0, ncore+nclosed), false, true);
+    shared_ptr<const Matrix> den = coeff_->form_density_rhf(ncore+nclosed);
+    core_energy_ = (*den * (*ref_->hcore()+*cfock)).trace() * 0.5;
+  }
 
   shared_ptr<const Matrix> fock1;
   if (nact) {

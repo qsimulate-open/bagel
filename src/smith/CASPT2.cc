@@ -36,7 +36,6 @@ using namespace bagel::SMITH;
 CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
   this->eig_ = f1_->diag();
   t2 = init_amplitude();
-  e0_ = this->e0();
   r = t2->clone();
   den1 = h1_->clone();
   den2 = h1_->clone();

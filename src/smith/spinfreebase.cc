@@ -114,6 +114,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     MOFock fock(ref_, o);
     f1_ = fock.tensor();
     h1_ = fock.h1();
+    core_energy_ = fock.core_energy();
     // canonical orbitals within closed and virtual subspaces
     coeff_ = fock.coeff();
   }
