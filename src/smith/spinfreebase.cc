@@ -273,7 +273,6 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Ten
           const unique_ptr<double[]> data1 = r->get_block(i0, i3, i2, i1);
 
           // this is an inverse of the overlap.
-          // prefactor of 0.25 included here
           sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
           size_t iall = 0;
           for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)

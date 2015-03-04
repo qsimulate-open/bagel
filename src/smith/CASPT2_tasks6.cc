@@ -891,12 +891,12 @@ void Task288::Task_local::compute() {
   {
     // tensor label: v2
     std::unique_ptr<double[]> i2data = in(1)->get_block(x1, a3, c2, a1);
-    sort_indices<2,0,1,3,1,1,-2,1>(i2data, odata, x1.size(), a3.size(), c2.size(), a1.size());
+    sort_indices<2,0,1,3,1,1,-1,1>(i2data, odata, x1.size(), a3.size(), c2.size(), a1.size());
   }
   {
     // tensor label: v2
     std::unique_ptr<double[]> i3data = in(1)->get_block(x1, a1, c2, a3);
-    sort_indices<2,0,3,1,1,1,4,1>(i3data, odata, x1.size(), a1.size(), c2.size(), a3.size());
+    sort_indices<2,0,3,1,1,1,2,1>(i3data, odata, x1.size(), a1.size(), c2.size(), a3.size());
   }
   out()->put_block(odata, c2, x1, a3, a1);
 }

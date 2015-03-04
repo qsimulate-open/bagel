@@ -38,6 +38,7 @@ MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
   t2 = init_amplitude();
   e0_ = this->e0();
   r = t2->clone();
+  s = t2->clone();
   den1 = h1_->clone();
   den2 = h1_->clone();
   Den1 = v2_->clone();
@@ -48,11 +49,29 @@ MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
 void MRCI::MRCI::solve() {
   Timer timer;
   this->print_iteration();
+  shared_ptr<Queue> sq = make_sourceq();
+  while (!sq->done())
+    sq->next_compute();
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
+e0_ = 0.0;
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
+    r->ax_plus_y(2.0, s);
+    this->energy_ = dot_product_transpose(r, t2);
+
+    // norm
+    shared_ptr<Queue> corrq = make_corrq();
+    this->energy_ /= (1.0+accumulate(corrq));
+
+    // compute residual
+e0_ = this->energy_;
+    queue = make_residualq();
+    while (!queue->done())
+      queue->next_compute();
+    r->ax_plus_y(1.0, s);
+
     const double err = r->rms();
     this->print_iteration(iter, this->energy_, err);
 

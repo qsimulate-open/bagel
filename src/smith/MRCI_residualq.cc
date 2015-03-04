@@ -42,22 +42,22 @@ shared_ptr<Queue> MRCI::MRCI::make_residualq() {
   auto task7 = make_shared<Task7>(tensor7);
   residualq->add_task(task7);
 
-  vector<IndexRange> I0_index = {virt_, virt_, active_, active_};
+  vector<IndexRange> I0_index = {active_, active_, virt_, virt_};
   auto I0 = make_shared<Tensor>(I0_index);
   vector<shared_ptr<Tensor>> tensor8 = {r, I0};
   auto task8 = make_shared<Task8>(tensor8, pindex);
   task8->add_dep(task7);
   residualq->add_task(task8);
 
-  vector<IndexRange> I1_index = {active_, virt_, active_, virt_};
+  vector<IndexRange> I1_index = {active_, active_, active_, active_};
   auto I1 = make_shared<Tensor>(I1_index);
-  vector<shared_ptr<Tensor>> tensor9 = {I0, Gamma0_(), I1};
+  vector<shared_ptr<Tensor>> tensor9 = {I0, t2, I1};
   auto task9 = make_shared<Task9>(tensor9, pindex);
   task8->add_dep(task9);
   task9->add_dep(task7);
   residualq->add_task(task9);
 
-  vector<shared_ptr<Tensor>> tensor10 = {I1, t2};
+  vector<shared_ptr<Tensor>> tensor10 = {I1, Gamma0_()};
   auto task10 = make_shared<Task10>(tensor10, pindex);
   task9->add_dep(task10);
   task10->add_dep(task7);
@@ -142,23 +142,23 @@ shared_ptr<Queue> MRCI::MRCI::make_residualq() {
   task21->add_dep(task7);
   residualq->add_task(task21);
 
-  vector<IndexRange> I8_index = {virt_, active_, active_, active_, virt_, active_};
+  vector<IndexRange> I8_index = {virt_, virt_, active_, active_, active_, active_};
   auto I8 = make_shared<Tensor>(I8_index);
-  vector<shared_ptr<Tensor>> tensor22 = {I2, Gamma3_(), I8};
+  vector<shared_ptr<Tensor>> tensor22 = {I2, v2_, I8};
   auto task22 = make_shared<Task22>(tensor22, pindex);
   task18->add_dep(task22);
   task22->add_dep(task7);
   residualq->add_task(task22);
 
-  vector<IndexRange> I9_index = {virt_, virt_, active_, active_};
+  vector<IndexRange> I9_index = {active_, virt_, active_, virt_};
   auto I9 = make_shared<Tensor>(I9_index);
-  vector<shared_ptr<Tensor>> tensor23 = {I8, t2, I9};
+  vector<shared_ptr<Tensor>> tensor23 = {I8, Gamma3_(), I9};
   auto task23 = make_shared<Task23>(tensor23, pindex);
   task22->add_dep(task23);
   task23->add_dep(task7);
   residualq->add_task(task23);
 
-  vector<shared_ptr<Tensor>> tensor24 = {I9, v2_};
+  vector<shared_ptr<Tensor>> tensor24 = {I9, t2};
   auto task24 = make_shared<Task24>(tensor24, pindex);
   task23->add_dep(task24);
   task24->add_dep(task7);
@@ -207,6 +207,28 @@ shared_ptr<Queue> MRCI::MRCI::make_residualq() {
   task29->add_dep(task30);
   task30->add_dep(task7);
   residualq->add_task(task30);
+
+  vector<IndexRange> I17_index = {active_, active_, virt_, active_, virt_, active_};
+  auto I17 = make_shared<Tensor>(I17_index);
+  vector<shared_ptr<Tensor>> tensor31 = {I2, Gamma3_(), I17};
+  auto task31 = make_shared<Task31>(tensor31, pindex);
+  task18->add_dep(task31);
+  task31->add_dep(task7);
+  residualq->add_task(task31);
+
+  vector<IndexRange> I18_index = {active_, active_, virt_, virt_};
+  auto I18 = make_shared<Tensor>(I18_index);
+  vector<shared_ptr<Tensor>> tensor32 = {I17, t2, I18};
+  auto task32 = make_shared<Task32>(tensor32, pindex);
+  task31->add_dep(task32);
+  task32->add_dep(task7);
+  residualq->add_task(task32);
+
+  vector<shared_ptr<Tensor>> tensor33 = {I18, v2_};
+  auto task33 = make_shared<Task33>(tensor33, pindex);
+  task32->add_dep(task33);
+  task33->add_dep(task7);
+  residualq->add_task(task33);
 
   return residualq;
 }
