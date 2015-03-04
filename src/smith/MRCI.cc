@@ -52,21 +52,23 @@ void MRCI::MRCI::solve() {
   shared_ptr<Queue> sq = make_sourceq();
   while (!sq->done())
     sq->next_compute();
+  const double ee = e0_;
+
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
-e0_ = 0.0;
+    e0_ = 0.0;
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
     r->ax_plus_y(2.0, s);
-    this->energy_ = dot_product_transpose(r, t2);
+    this->energy_ = dot_product_transpose(r, t2)  -25.09598770 - 2;//TODO <0|H|0>
 
     // norm
     shared_ptr<Queue> corrq = make_corrq();
     this->energy_ /= (1.0+accumulate(corrq));
 
     // compute residual
-e0_ = this->energy_;
+    e0_ = this->energy_;
     queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
@@ -75,6 +77,7 @@ e0_ = this->energy_;
     const double err = r->rms();
     this->print_iteration(iter, this->energy_, err);
 
+    e0_ = ee;
     this->update_amplitude(t2, r);
     r->zero();
     if (err < ref_->thresh()) break;
