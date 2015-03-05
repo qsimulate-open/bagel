@@ -111,7 +111,6 @@ class SpinFreeMethod {
     const double& denom_x(const size_t i) const { return denom_->denom_x(i); }
 
     std::shared_ptr<Tensor> init_amplitude() const;
-    double dot_product_transpose(std::shared_ptr<const Tensor> r, std::shared_ptr<const Tensor> t2) const;
     void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r) const;
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
 
@@ -137,6 +136,8 @@ class SpinFreeMethod {
     std::shared_ptr<const Civec> rdm0deriv() const {
       return rdm0deriv_->civec(det_);
     }
+
+    double dot_product_transpose(std::shared_ptr<const Tensor> r, std::shared_ptr<const Tensor> t2) const;
 };
 
 }

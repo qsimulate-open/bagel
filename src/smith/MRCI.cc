@@ -27,6 +27,8 @@
 #ifdef COMPILE_SMITH
 
 
+#include <src/util/math/davidson.h>
+#include <src/smith/extrap.h>
 #include <src/smith/MRCI.h>
 
 using namespace std;
@@ -53,6 +55,11 @@ void MRCI::MRCI::solve() {
     sq->next_compute();
   const double ee = e0_;
   const double refen = ref_->ciwfn()->energy(ref_->target()) - this->core_energy_ - ref_->geom()->nuclear_repulsion();
+
+  DavidsonDiag_<Amplitude, Residual> davidson;
+  auto a0 = make_shared<Amplitude>(1.0, t2, t2, this);
+  auto r0 = make_shared<Residual>(refen, s, this);
+  cout << davidson.compute(a0, r0) << endl;
 
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
