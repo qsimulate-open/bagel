@@ -70,11 +70,15 @@ void MRCI::MRCI::solve() {
 
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
-    queue = make_residualq();
+    queue = make_normq();
     while (!queue->done())
       queue->next_compute();
 
-    queue = make_normq();
+    const double scal = 1.0 / sqrt(dot_product_transpose(n, t2));
+    n->scale(scal);
+    t2->scale(scal);
+
+    queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
 
