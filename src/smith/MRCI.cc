@@ -59,9 +59,10 @@ void MRCI::MRCI::solve() {
   while (!queue->done())
     queue->next_compute();
 
-  DavidsonDiag_<Amplitude, Residual> davidson(1, 100);
+  DavidsonDiag_<Amplitude, Residual> davidson(1, 10);
 
-  const double refen = ref_->ciwfn()->energy(ref_->target()) - this->core_energy_ - ref_->geom()->nuclear_repulsion();
+  const double core_nuc = this->core_energy_ + ref_->geom()->nuclear_repulsion();
+  const double refen = ref_->ciwfn()->energy(ref_->target()) - core_nuc; 
   auto a0 = make_shared<Amplitude>(1.0, t2, n, this);
   auto r0 = make_shared<Residual>(refen, s, this);
   davidson.compute(a0, r0);
@@ -88,7 +89,7 @@ void MRCI::MRCI::solve() {
     this->energy_ = davidson.compute(a0, r0);
     r = davidson.residual()[0]->tensor();
     const double err = r->rms();
-    this->print_iteration(iter, this->energy_, err);
+    this->print_iteration(iter, this->energy_+core_nuc, err);
 
     t2->zero();
     this->update_amplitude(t2, r);
