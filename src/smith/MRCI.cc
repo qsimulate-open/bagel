@@ -40,6 +40,7 @@ MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
   t2 = init_amplitude();
   r = t2->clone();
   s = t2->clone();
+  n = t2->clone();
   den1 = h1_->clone();
   den2 = h1_->clone();
   Den1 = v2_->clone();
@@ -50,44 +51,44 @@ MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
 void MRCI::MRCI::solve() {
   Timer timer;
   this->print_iteration();
-  shared_ptr<Queue> sq = make_sourceq();
-  while (!sq->done())
-    sq->next_compute();
-  const double ee = e0_;
-  const double refen = ref_->ciwfn()->energy(ref_->target()) - this->core_energy_ - ref_->geom()->nuclear_repulsion();
 
-  DavidsonDiag_<Amplitude, Residual> davidson;
-  auto a0 = make_shared<Amplitude>(1.0, t2, t2, this);
+  auto queue = make_sourceq();
+  while (!queue->done())
+    queue->next_compute();
+  queue = make_normq();
+  while (!queue->done())
+    queue->next_compute();
+
+  DavidsonDiag_<Amplitude, Residual> davidson(1, 100);
+
+  const double refen = ref_->ciwfn()->energy(ref_->target()) - this->core_energy_ - ref_->geom()->nuclear_repulsion();
+  auto a0 = make_shared<Amplitude>(1.0, t2, n, this);
   auto r0 = make_shared<Residual>(refen, s, this);
-  cout << davidson.compute(a0, r0) << endl;
+  davidson.compute(a0, r0);
+  r = davidson.residual().front()->tensor();
+  this->update_amplitude(t2, r);
 
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
-    e0_ = 0.0;
-    shared_ptr<Queue> queue = make_residualq();
-    while (!queue->done())
-      queue->next_compute();
-    r->ax_plus_y(2.0, s);
-    this->energy_ = dot_product_transpose(r, t2) + refen;
-
-    // norm
-    shared_ptr<Queue> corrq = make_corrq();
-    this->energy_ /= (1.0+accumulate(corrq));
-
-    // compute residual
-    e0_ = this->energy_;
     queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
-    r->ax_plus_y(1.0, s);
 
+    queue = make_normq();
+    while (!queue->done())
+      queue->next_compute();
+
+    a0 = make_shared<Amplitude>(0.0, t2, n, this);
+    r0 = make_shared<Residual>(dot_product_transpose(s, t2), r, this);
+
+    this->energy_ = davidson.compute(a0, r0);
+    r = davidson.residual()[0]->tensor();
     const double err = r->rms();
-    this->energy_ += this->core_energy_ + ref_->geom()->nuclear_repulsion();
     this->print_iteration(iter, this->energy_, err);
 
-    e0_ = ee;
+    t2->zero();
     this->update_amplitude(t2, r);
-    r->zero();
+
     if (err < ref_->thresh()) break;
   }
   this->print_iteration(iter == ref_->maxiter());

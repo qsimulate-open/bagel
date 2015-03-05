@@ -60,13 +60,13 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma7_() {
   return make_shared<FutureTensor>(*Gamma7, task2);
 }
 
-shared_ptr<FutureTensor> MRCI::MRCI::Gamma8_() {
-  vector<IndexRange> Gamma8_index = {active_, active_, active_, active_};
-  auto Gamma8 = make_shared<Tensor>(Gamma8_index);
+shared_ptr<FutureTensor> MRCI::MRCI::Gamma1_() {
+  vector<IndexRange> Gamma1_index = {active_, active_, active_, active_};
+  auto Gamma1 = make_shared<Tensor>(Gamma1_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor3 = {Gamma8, rdm2_};
+  vector<shared_ptr<Tensor>> tensor3 = {Gamma1, rdm2_};
   auto task3 = make_shared<Task3>(tensor3, pindex);
-  return make_shared<FutureTensor>(*Gamma8, task3);
+  return make_shared<FutureTensor>(*Gamma1, task3);
 }
 
 shared_ptr<FutureTensor> MRCI::MRCI::Gamma3_() {

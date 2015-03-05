@@ -68,6 +68,7 @@ class MRCI : public SpinFreeMethod {
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> s;
+    std::shared_ptr<Tensor> n;
     std::shared_ptr<Tensor> den1;
     std::shared_ptr<Tensor> den2;
     std::shared_ptr<Tensor> Den1;
@@ -78,13 +79,13 @@ class MRCI : public SpinFreeMethod {
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma2_();
     std::shared_ptr<FutureTensor> Gamma7_();
-    std::shared_ptr<FutureTensor> Gamma8_();
+    std::shared_ptr<FutureTensor> Gamma1_();
     std::shared_ptr<FutureTensor> Gamma3_();
     std::shared_ptr<FutureTensor> Gamma4_();
     std::shared_ptr<FutureTensor> Gamma5_();
     std::shared_ptr<Queue> make_residualq();
     std::shared_ptr<Queue> make_sourceq();
-    std::shared_ptr<Queue> make_corrq();
+    std::shared_ptr<Queue> make_normq();
 
   public:
     MRCI(std::shared_ptr<const SMITH_Info> ref);
