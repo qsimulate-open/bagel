@@ -1,10 +1,10 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/orbital/rotfile.h
+// Filename: asd/orbital/rasrotfile.h
 // Copyright (C) 2015 Toru Shiozaki
 //
-// Author: Inkoo Kim <inkoo.kim@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Inkoo Kim: <inkoo.kim@northwestern.edu>
+// Maintainer: Shiozaki Group
 //
 // This file is part of the BAGEL package.
 //
@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_ASD_LARGEROTFILE_H
-#define __BAGEL_ASD_LARGEROTFILE_H
+#ifndef __BAGEL_ASD_ROTFILE_H
+#define __BAGEL_ASD_ROTFILE_H
 
 #include <src/util/math/matrix.h>
 
@@ -39,50 +39,82 @@ class ASD_RotationMatrix {
     const int nclosed_;
     const int nact_;
     const int nvirt_;
+    std::array<int,3> rasA_;
+    std::array<int,3> rasB_;
     const int nactA_;
     const int nactB_;
+    const bool inter_;
+    const bool intra_;
     const int size_;
     std::unique_ptr<DataType[]> data_;
 
+
   public:
-    ASD_RotationMatrix(const int iclos, const int iact, const int ivirt, const int iactA, const int iactB)
-     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), nactA_(iactA), nactB_(iactB), size_(iclos*iact+iclos*ivirt+iact*ivirt+iactA*iactB), data_(new DataType[size_]) {
+    ASD_RotationMatrix(const int iclos, const int iact, const int ivirt, std::array<int,3> rasA, std::array<int,3> rasB, const bool inter, const bool intra)
+     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), rasA_(rasA), rasB_(rasB), nactA_(rasA[0]+rasA[1]+rasA[2]), nactB_(rasB[0]+rasB[1]+rasB[2]), inter_(inter), intra_(intra),
+       size_((inter_ ? iclos*iact + iclos*ivirt + iact*ivirt : 0) + (intra_ ? nactA_*nactB_ + rasA[0]*rasA[1] + rasA[0]*rasA[2] + rasA[1]*rasA[2] + rasB[0]*rasB[1] + rasB[0]*rasB[2] + rasB[1]*rasB[2] : 0)), data_(new DataType[size_]) {
+      assert(!(!inter_ && !intra_));
+      assert(nact_ == rasA[0]+rasA[1]+rasA[2]+rasB[0]+rasB[1]+rasB[2]);
+      assert(nact_ == nactA_ + nactB_);
       zero();
     }
-    ASD_RotationMatrix(const ASD_RotationMatrix& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), nactA_(o.nactA_), nactB_(o.nactB_),  size_(o.size_), data_(new DataType[o.size_]) {
+    ASD_RotationMatrix(const ASD_RotationMatrix& o)
+      : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), rasA_(o.rasA_), rasB_(o.rasB_), nactA_(o.nactA_), nactB_(o.nactB_), inter_(o.inter_), intra_(o.intra_), size_(o.size_), data_(new DataType[o.size_]) {
       *this = o;
     }
     ASD_RotationMatrix(std::shared_ptr<const ASD_RotationMatrix> o)
-      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), nactA_(o->nactA_), nactB_(o->nactB_), size_(o->size_), data_(new DataType[o->size_]) {
+      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), rasA_(o->rasA_), rasB_(o->rasB_), nactA_(o->nactA_), nactB_(o->nactB_), inter_(o->inter_), intra_(o->intra_), size_(o->size_), data_(new DataType[o->size_]) {
       *this = *o;
     }
     //Matrix to ASDRotationMatrix conversion
-    ASD_RotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt, const int iactA, const int iactB)
-      : nclosed_(iclos), nact_(iact), nvirt_(ivirt), nactA_(iactA), nactB_(iactB), size_(iclos*iact+iclos*ivirt+iact*ivirt+iactA*iactB), data_(new DataType[size_]) {
+    ASD_RotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt, std::array<int,3> rasA, std::array<int,3> rasB, const bool inter, const bool intra)
+      : nclosed_(iclos), nact_(iact), nvirt_(ivirt), rasA_(rasA), rasB_(rasB), nactA_(rasA[0]+rasA[1]+rasA[2]), nactB_(rasB[0]+rasB[1]+rasB[2]), inter_(inter), intra_(intra),
+        size_((inter_ ? iclos*iact + iclos*ivirt + iact*ivirt : 0) + (intra_ ? nactA_*nactB_ + rasA[0]*rasA[1] + rasA[0]*rasA[2] + rasA[1]*rasA[2] + rasB[0]*rasB[1] + rasB[0]*rasB[2] + rasB[1]*rasB[2] : 0)), data_(new DataType[size_]) {
+      assert(!(!inter_ && !intra_));
+      assert(nact_ == rasA[0]+rasA[1]+rasA[2]+rasB[0]+rasB[1]+rasB[2]);
+      assert(nact_ == nactA_ + nactB_);
       const int nocc = nclosed_ + nact_;
-      assert(iact == iactA+iactB);
-      for (int i = 0; i != nact_; ++i) {
-        for (int j = 0; j != nvirt_;   ++j) {
-          ele_va(j, i) = o->element(j+nocc, i+nclosed_);
+      if (inter_) {
+        for (int i = 0; i != nact_; ++i) {
+          for (int j = 0; j != nvirt_;   ++j)
+            ele_va(j, i) = o->element(j+nocc, i+nclosed_);
+          for (int j = 0; j != nclosed_; ++j)
+            ele_ca(j, i) = o->element(i+nclosed_, j);
         }
-        for (int j = 0; j != nclosed_; ++j) {
-          ele_ca(j, i) = o->element(i+nclosed_, j);
-        }
+        for (int i = 0; i != nclosed_; ++i)
+          for (int j = 0; j != nvirt_;   ++j)
+            ele_vc(j, i) = o->element(j+nocc, i);
       }
-      for (int i = 0; i != nclosed_; ++i) {
-        for (int j = 0; j != nvirt_;   ++j) {
-          ele_vc(j, i) = o->element(j+nocc, i);
-        }
-      }
-      for (int i = 0; i != nactA_; ++i) {
-        for (int j = 0; j != nactB_; ++j) {
-          ele_aa(j, i) = o->element(j+nclosed_+nactA_,i+nclosed_);
-        }
+
+      if (intra_) {
+        for (int i = 0; i != nactA_; ++i)
+          for (int j = 0; j != nactB_; ++j)
+            ele_aa(j, i) = o->element(j+nclosed_+nactA_,i+nclosed_);
+        //A
+        for (int i = 0; i != rasA_[0]; ++i)
+          for (int j = 0; j != rasA_[1]; ++ j)
+            ele_aa21A(j, i) = o->element(j+nclosed_+rasA_[0], i+nclosed_);
+        for (int i = 0; i != rasA_[0]; ++i)
+          for (int j = 0; j != rasA_[2]; ++ j)
+            ele_aa31A(j, i) = o->element(j+nclosed_+rasA_[0]+rasA_[1], i+nclosed_);
+        for (int i = 0; i != rasA_[1]; ++i)
+          for (int j = 0; j != rasA_[2]; ++ j)
+            ele_aa32A(j, i) = o->element(j+nclosed_+rasA_[0]+rasA_[1], i+nclosed_+rasA_[0]);
+        //B
+        for (int i = 0; i != rasB_[0]; ++i)
+          for (int j = 0; j != rasB_[1]; ++ j)
+            ele_aa21B(j, i) = o->element(j+nclosed_+nactA_+rasB_[0], i+nclosed_+nactA_);
+        for (int i = 0; i != rasB_[0]; ++i)
+          for (int j = 0; j != rasB_[2]; ++ j)
+            ele_aa31B(j, i) = o->element(j+nclosed_+nactA_+rasB_[0]+rasB_[1], i+nclosed_+nactA_);
+        for (int i = 0; i != rasB_[1]; ++i)
+          for (int j = 0; j != rasB_[2]; ++ j)
+            ele_aa32B(j, i) = o->element(j+nclosed_+nactA_+rasB_[0]+rasB_[1], i+nclosed_+nactA_+rasB_[0]);
       }
     }
 
     std::shared_ptr<ASD_RotationMatrix<DataType>> clone() const {
-      return std::make_shared<ASD_RotationMatrix<DataType>>(nclosed_, nact_, nvirt_, nactA_, nactB_);
+      return std::make_shared<ASD_RotationMatrix<DataType>>(nclosed_, nact_, nvirt_, rasA_, rasB_, inter_, intra_);
     }
     std::shared_ptr<ASD_RotationMatrix<DataType>> copy() const {
       return std::make_shared<ASD_RotationMatrix<DataType>>(*this);
@@ -137,6 +169,9 @@ class ASD_RotationMatrix {
 #endif
     }
 
+    bool is_inter() const { return inter_; }
+    bool is_intra() const { return intra_; }
+
     // return data_
     DataType* data() { return data_.get(); }
     const DataType* data() const { return data_.get(); }
@@ -147,35 +182,59 @@ class ASD_RotationMatrix {
     // return data_
     DataType* end() { return data()+size_; }
 
-    // ROTATION MATRIX (Note: transpose below)
-    //   C   A   V        A(A) A(B)   ORDERED AS:
-    // C .  ca  cv    A(A)  .  [aa]   ca -> va -> vc -> aa
-    // A . [aa] av    A(B)  .    .
-    // V .   .   .
-
     // closed-active block. closed runs first
-    DataType* ptr_ca() { return data(); }
-    DataType& ele_ca(const int ic, const int ia) { return data_[ic + ia*nclosed_]; }
+    DataType* ptr_ca() { assert(inter_); return data(); }
+    DataType& ele_ca(const int ic, const int ia) { assert(inter_); return data_[ic + ia*nclosed_]; }
     // active-virtual block. virtual runs first
-    DataType* ptr_va() { return data() + nclosed_*nact_; }
-    DataType& ele_va(const int iv, const int ia) { return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
+    DataType* ptr_va() { assert(inter_); return data() + nclosed_*nact_; }
+    DataType& ele_va(const int iv, const int ia) { assert(inter_); return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
     // closed-virtual block. virtual runs first
-    DataType* ptr_vc() { return data() + (nclosed_+nvirt_)*nact_; }
-    DataType& ele_vc(const int iv, const int ic) { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
+    DataType* ptr_vc() { assert(inter_); return data() + (nclosed_+nvirt_)*nact_; }
+    DataType& ele_vc(const int iv, const int ic) { assert(inter_); return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
+
     // active-active block. B index runs first
-    DataType* ptr_aa() { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_; }
-    DataType& ele_aa(const int ib, const int ia) { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ib + ia*nactB_]; }
+    DataType* ptr_aa() { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0); }
+    DataType& ele_aa(const int ib, const int ia) { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + ib + ia*nactB_]; }
+    // RAS A
+    DataType* ptr_aa21A() { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_; }
+    DataType* ptr_aa31A() { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1]; }
+    DataType* ptr_aa32A() { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2]; }
 
-    // const references and pointers
-    const DataType& ele_ca(const int ic, const int ia) const { return data_[ic + ia*nclosed_]; }
-    const DataType& ele_va(const int iv, const int ia) const { return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
-    const DataType& ele_vc(const int iv, const int ic) const { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
-    const DataType& ele_aa(const int ib, const int ia) const { return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ib + ia*nactB_]; }
+    DataType& ele_aa21A(const int i2, const int i1) { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + i2 + i1*rasA_[1]]; }
+    DataType& ele_aa31A(const int i3, const int i1) { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + i3 + i1*rasA_[2]]; }
+    DataType& ele_aa32A(const int i3, const int i2) { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + i3 + i2*rasA_[2]]; }
+    // RASB
+    DataType* ptr_aa21B() { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2]; }
+    DataType* ptr_aa31B() { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1]; }
+    DataType* ptr_aa32B() { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1] + rasB_[0]*rasB_[2]; }
 
-    const DataType* ptr_ca() const { return data(); }
-    const DataType* ptr_va() const { return data() + nclosed_*nact_; }
-    const DataType* ptr_vc() const { return data() + (nclosed_+nvirt_)*nact_; }
-    const DataType* ptr_aa() const { return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_; }
+    DataType& ele_aa21B(const int i2, const int i1) { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + i2 + i1*rasB_[1]]; }
+    DataType& ele_aa31B(const int i3, const int i1) { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1] + i3 + i1*rasB_[2]]; }
+    DataType& ele_aa32B(const int i3, const int i2) { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1] + rasB_[0]*rasB_[2] + i3 + i2*rasB_[2]]; }
+
+    // const references and pointer_s
+    const DataType& ele_ca(const int ic, const int ia) const { assert(inter_); return data_[ic + ia*nclosed_]; }
+    const DataType& ele_va(const int iv, const int ia) const { assert(inter_); return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
+    const DataType& ele_vc(const int iv, const int ic) const { assert(inter_); return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
+
+    const DataType& ele_aa(const int ib, const int ia) const { assert(intra_); return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ib + ia*nactB_]; }
+    const DataType& ele_aa21A(const int i2, const int i1) const { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + i2 + i1*rasA_[1]]; }
+    const DataType& ele_aa31A(const int i3, const int i1) const { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + i3 + i1*rasA_[2]]; }
+    const DataType& ele_aa32A(const int i3, const int i2) const { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + i3 + i2*rasA_[2]]; }
+    const DataType& ele_aa21B(const int i2, const int i1) const { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + i2 + i1*rasB_[1]]; }
+    const DataType& ele_aa31B(const int i3, const int i1) const { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1] + i3 + i1*rasB_[2]]; }
+    const DataType& ele_aa32B(const int i3, const int i2) const { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1] + rasB_[0]*rasB_[2] + i3 + i2*rasB_[2]]; }
+
+    const DataType* ptr_ca() const { assert(inter_); return data(); }
+    const DataType* ptr_va() const { assert(inter_); return data() + nclosed_*nact_; }
+    const DataType* ptr_vc() const { assert(inter_); return data() + (nclosed_+nvirt_)*nact_; }
+    const DataType* ptr_aa() const { assert(intra_); return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_; }
+    const DataType* ptr_aa21A() const { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_; }
+    const DataType* ptr_aa31A() const { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1]; }
+    const DataType* ptr_aa32A() const { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2]; }
+    const DataType* ptr_aa21B() const { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2]; }
+    const DataType* ptr_aa31B() const { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1]; }
+    const DataType* ptr_aa32B() const { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + rasA_[1]*rasA_[2] + rasB_[0]*rasB_[1] + rasB_[0]*rasB_[2]; }
 
     // unpack to Matrix
     template<class MatType>
@@ -185,34 +244,48 @@ class ASD_RotationMatrix {
       auto out = std::make_shared<MatType>(nbasis, nbasis);
       std::fill_n(out->data(), out->size(), a);
 
-      for (int i = 0; i != nact_; ++i) {
-        //Virtual-Active
-        for (int j = 0; j != nvirt_;   ++j) {
-          out->element(j+nocc, i+nclosed_) = ele_va(j, i);
+      if (inter_) {
+        for (int i = 0; i != nact_; ++i) {
+          for (int j = 0; j != nvirt_;   ++j)
+            out->element(j+nocc, i+nclosed_) = ele_va(j, i); //Virtual-Active
+          for (int j = 0; j != nclosed_; ++j)
+            out->element(i+nclosed_, j) = ele_ca(j, i); //Active-Closed
         }
-        //Active-Closed
-        for (int j = 0; j != nclosed_; ++j) {
-          out->element(i+nclosed_, j) = ele_ca(j, i);
-        }
+        for (int i = 0; i != nclosed_; ++i)
+          for (int j = 0; j != nvirt_;   ++j)
+            out->element(j+nocc, i) = ele_vc(j, i); //Virtual-Closed
       }
-      //Virtual-Closed
-      for (int i = 0; i != nclosed_; ++i) {
-        for (int j = 0; j != nvirt_;   ++j) {
-          out->element(j+nocc, i) = ele_vc(j, i);
-        }
+
+      if (intra_) {
+        for (int i = 0; i != nactA_; ++i)
+          for (int j = 0; j != nactB_; ++j)
+            out->element(j+nclosed_+nactA_,i+nclosed_) = ele_aa(j,i); //Active-Active
+        //RAS A
+        for (int i = 0; i != rasA_[0]; ++i)
+          for (int j = 0; j != rasA_[1]; ++j)
+            out->element(j+nclosed_+rasA_[0],i+nclosed_) = ele_aa21A(j,i);
+        for (int i = 0; i != rasA_[0]; ++i)
+          for (int j = 0; j != rasA_[2]; ++j)
+            out->element(j+nclosed_+rasA_[0]+rasA_[1],i+nclosed_) = ele_aa31A(j,i);
+        for (int i = 0; i != rasA_[1]; ++i)
+          for (int j = 0; j != rasA_[2]; ++j)
+            out->element(j+nclosed_+rasA_[0]+rasA_[1],i+nclosed_+rasA_[0]) = ele_aa32A(j,i);
+        //RAS B
+        for (int i = 0; i != rasB_[0]; ++i)
+          for (int j = 0; j != rasB_[1]; ++j)
+            out->element(j+nclosed_+nactA_+rasB_[0],i+nclosed_+nactA_) = ele_aa21B(j,i);
+        for (int i = 0; i != rasB_[0]; ++i)
+          for (int j = 0; j != rasB_[2]; ++j)
+            out->element(j+nclosed_+nactA_+rasB_[0]+rasB_[1],i+nclosed_+nactA_) = ele_aa31B(j,i);
+        for (int i = 0; i != rasB_[1]; ++i)
+          for (int j = 0; j != rasB_[2]; ++j)
+            out->element(j+nclosed_+nactA_+rasB_[0]+rasB_[1],i+nclosed_+nactA_+rasB_[0]) = ele_aa32B(j,i);
       }
-      //Active-Active 
-      for (int i = 0; i != nactA_; ++i) {
-        for (int j = 0; j != nactB_; ++j) {
-          out->element(j+nclosed_+nactA_,i+nclosed_) = ele_aa(j,i);
-        }
-      }
+
       //Anti-symmetric
-      for (int i = 0; i != nbasis; ++i) {
-        for (int j = 0; j <= i; ++j) {
+      for (int i = 0; i != nbasis; ++i)
+        for (int j = 0; j <= i; ++j)
           out->element(j, i) = - detail::conj(out->element(i, j));
-        }
-      }
 
       return out;
     }
@@ -256,7 +329,46 @@ class ASD_RotationMatrix {
           std::cout << std::endl;
         }
       }
-
+      if (nactA_ && nactB_) {
+        std::cout << " printing RAS(A) blocks" << std::endl;
+        std::cout << "          RAS1-RAS2 blocks" << std::endl;
+        for (int i = 0; i != rasA_[0]; ++i)
+          for (int j = 0; j != rasA_[1]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa21A(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << "          RAS1-RAS3 blocks" << std::endl;
+        for (int i = 0; i != rasA_[0]; ++i)
+          for (int j = 0; j != rasA_[2]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa31A(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << "          RAS2-RAS3 blocks" << std::endl;
+        for (int i = 0; i != rasA_[1]; ++i)
+          for (int j = 0; j != rasA_[2]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa32A(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << " printing RAS(B) blocks" << std::endl;
+        std::cout << "          RAS1-RAS2 blocks" << std::endl;
+        for (int i = 0; i != rasB_[0]; ++i)
+          for (int j = 0; j != rasB_[1]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa21B(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << "          RAS1-RAS3 blocks" << std::endl;
+        for (int i = 0; i != rasB_[0]; ++i)
+          for (int j = 0; j != rasB_[2]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa31B(j,i);
+          }
+        std::cout << std::endl;
+        std::cout << "          RAS2-RAS3 blocks" << std::endl;
+        for (int i = 0; i != rasB_[1]; ++i)
+          for (int j = 0; j != rasB_[2]; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_aa32B(j,i);
+          }
+        std::cout << std::endl;
+      }
     }
 };
 

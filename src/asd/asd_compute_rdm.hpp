@@ -44,7 +44,7 @@ void ASD<VecType>::compute_rdm12() {
 
   compute_rdm12_dimer(); //allocation takes place
 
-  compute_rdm12_monomer();
+//compute_rdm12_monomer(); TODO: disabled temporarily, monomer RDM calculated from extra set of gamma tensors.
 
   //State-average RDM
   if (nstates_ != 1) {

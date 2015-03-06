@@ -275,7 +275,9 @@ class DimerCISpace_base {
         std::tie(qa, qb) = detkey<0>(imap.first);
 
         add_det<0>(qa+1, qb);
+        add_det<0>(qa+2, qb);
         add_det<0>(qa, qb+1);
+        add_det<0>(qa, qb+2);
         add_det<0>(qa+1, qb+1);
       }
 
@@ -284,7 +286,9 @@ class DimerCISpace_base {
         std::tie(qa, qb) = detkey<1>(imap.first);
 
         add_det<1>(qa+1, qb);
+        add_det<1>(qa+2, qb);
         add_det<1>(qa, qb+1);
+        add_det<1>(qa, qb+2);
         add_det<1>(qa+1, qb+1);
       }
     }

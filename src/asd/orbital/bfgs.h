@@ -23,14 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_ASD_BFGS_H
-#define __BAGEL_ASD_BFGS_H
+#ifndef __ASD_BFGS_H
+#define __ASD_BFGS_H
 
-#include <src/asd/orbital/casscf.h>
+#include <src/asd/orbital/oo.h>
 
 namespace bagel {
 
-class ASD_BFGS : public ASDCASSCF {
+class ASD_BFGS : public ASD_OO {
 
   protected:
     void common_init() {
@@ -43,22 +43,12 @@ class ASD_BFGS : public ASDCASSCF {
     void grad_ca(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<Matrix> rdm1, std::shared_ptr<ASD_RotFile> sigma) const;
     void grad_aa(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RotFile> sigma) const;
 
-
-    void grad_vc_large(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<RotFile> sigma) const;
-    void grad_va_large(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> qxr,   std::shared_ptr<Matrix> rdm1, std::shared_ptr<RotFile> sigma) const;
-    void grad_ca_large(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<Matrix> rdm1, std::shared_ptr<RotFile> sigma) const;
-    void grad_aa_small(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_ActiveRotFile> sigma) const;
-
     // compute diagonal denominators
-    std::shared_ptr<const ASD_RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock) const;
+    std::shared_ptr<const ASD_RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock, const bool inter, const bool intra) const;
 
-    std::shared_ptr<const RotFile> compute_denom_large(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1) const;
-    std::shared_ptr<const ASD_ActiveRotFile> compute_denom_small(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock) const;
   public:
-    ASD_BFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
-      : ASDCASSCF(idat, geom, ref) { 
-      std::cout << "ASD_BFGS(active-active) constructor" << std::endl; 
-      common_init(); 
+    ASD_BFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<Dimer> dimer) : ASD_OO(idat, dimer) {
+      common_init();
     }
 
     void compute() override;
