@@ -35,7 +35,6 @@ ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dime
   Timer timer;
 
   cispace_->complete();
-//cispace_->super_complete();
   std::cout << "  o completing CI spin space: " << timer.tick() << std::endl;
 
   // Organize subspaces

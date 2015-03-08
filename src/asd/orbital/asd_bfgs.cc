@@ -169,21 +169,21 @@ void ASD_BFGS::compute() {
       auto xcopy = x->log(8);
       auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, true, true);
       bfgs->check_step(evals, grad, xlog);
-      a = bfgs->more_sorensen_extrapolate(grad, xlog);
-//    a = bfgs->extrapolate(grad, xlog);
+//    a = bfgs->more_sorensen_extrapolate(grad, xlog);
+      a = bfgs->extrapolate(grad, xlog);
     } else {
       if (inter) {
         auto xcopy = inter_x->log(8);
         auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, true, false);
         inter_bfgs->check_step(evals, grad, xlog); //, /*tight*/false, limited_memory);
-        a = inter_bfgs->more_sorensen_extrapolate(grad, xlog);
-//      a = inter_bfgs->extrapolate(grad, xlog);
+//      a = inter_bfgs->more_sorensen_extrapolate(grad, xlog);
+        a = inter_bfgs->extrapolate(grad, xlog);
       } else {
         auto xcopy = intra_x->log(8);
         auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, false, true);
         intra_bfgs->check_step(evals, grad, xlog); //, /*tight*/false, limited_memory);
-        a = intra_bfgs->more_sorensen_extrapolate(grad, xlog);
-//      a = intra_bfgs->extrapolate(grad, xlog);
+//      a = intra_bfgs->more_sorensen_extrapolate(grad, xlog);
+        a = intra_bfgs->extrapolate(grad, xlog);
       }
     }
     cout << " ---------------------------------------------------- " << endl;
@@ -191,7 +191,7 @@ void ASD_BFGS::compute() {
     cout << " " << endl;
 
 //  *a *= -1.0;
-    a->print("ROTATION");
+//  a->print("Orbital rotation parameters");
 
     // restore the matrix from ASD_RotFile
     shared_ptr<const Matrix> amat = a->unpack<Matrix>();
@@ -222,12 +222,9 @@ void ASD_BFGS::compute() {
     //energy difference
     double delta_energy = 0.0;
     for (int i = 0; i != nstate_; ++i) {
-      cout << "X" << i << endl;
       delta_energy = max(delta_energy, fabs(previous_energy[i] - energy_[i]));
     }
-    cout << "Y" << endl;
     copy(energy_.begin(), energy_.end(), previous_energy.begin() );
-    cout << "Z" << endl;
 
     resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, max_rotation, delta_energy, timer.tick(), full ? 2 : static_cast<int>(inter));
@@ -250,7 +247,7 @@ void ASD_BFGS::compute() {
         x->unit();
       }
     }
-
+/*
     if (full && iter == 9) {
       if (gradient > 1.0e-4) {
         gradient_pair = make_pair(1.0,1.0);
@@ -265,6 +262,7 @@ void ASD_BFGS::compute() {
         x->unit();
       }
     }
+*/
 
     if (iter == max_iter_-1) {
       rms_grad_ = gradient;

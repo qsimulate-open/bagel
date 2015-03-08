@@ -68,14 +68,12 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
     Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B); ///< Conjoins the provided Reference objects
     Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a); ///< Duplicates provided Reference according to translation vector specified in input
 
-//ADDED
     void update_coeff(std::shared_ptr<const Matrix> matrix) {
       std::shared_ptr<Reference> temp;
       temp = std::make_shared<Reference>(*sref_);
       temp->set_coeff(matrix);
       sref_ = temp;
     } 
-//END ADDED
 
     // Return functions
     std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
@@ -166,7 +164,6 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
 
   auto run_calculations = [this, &fcidata, &castime]
     (std::vector<std::vector<int>> spaces, std::shared_ptr<const Reference> eref, std::shared_ptr<const Reference> aref, std::string label) {
-    std::cout << "run_calculations: " << std::endl;
     std::cout << "    Starting embedded CAS-CI calculations on monomer " << label << std::endl;
     std::vector<std::shared_ptr<const VecType>> results;
     for (auto& ispace : spaces) {
@@ -180,7 +177,7 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
       std::set<std::string> hz_options = {"hz", "harrison", "zarrabian"};
       std::set<std::string> dist_options = {"dist", "parallel"};
 
-      if ( std::find(kh_options.begin(), kh_options.end(), method) != kh_options.end() ) {
+      if (std::find(kh_options.begin(), kh_options.end(), method) != kh_options.end()) {
         using CiType = typename VecType::Ci;
         std::vector<std::shared_ptr<CiType>> tmp;
         std::shared_ptr<const Dvec> vecs = embedded_ci<KnowlesHandy, Dvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label);
@@ -188,7 +185,7 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
           tmp.push_back(std::make_shared<CiType>(*i));
         results.push_back(std::make_shared<VecType>(tmp));
       }
-      else if ( std::find(hz_options.begin(), hz_options.end(), method) != hz_options.end() ) {
+      else if (std::find(hz_options.begin(), hz_options.end(), method) != hz_options.end()) {
         using CiType = typename VecType::Ci;
         std::vector<std::shared_ptr<CiType>> tmp;
         std::shared_ptr<const Dvec> vecs = embedded_ci<HarrisonZarrabian, Dvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label);
@@ -196,8 +193,11 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
           tmp.push_back(std::make_shared<CiType>(*i));
         results.push_back(std::make_shared<VecType>(tmp));
       }
-      else if ( std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end() )
+#if 0
+      // TODO this block does not compile
+      else if (std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end())
         results.push_back(std::make_shared<VecType>(embedded_ci<DistFCI, DistDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
+#endif
       else
         throw std::runtime_error("Unrecognized FCI type algorithm");
 
@@ -207,10 +207,8 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
     return results;
   };
 
-  for (auto& i : run_calculations(spaces_A, embedded_refs_.first, active_refs_.first, "A")) {
-    std::cout << "dimer: run_calculations (A).. inserting.." << std::endl;
+  for (auto& i : run_calculations(spaces_A, embedded_refs_.first, active_refs_.first, "A"))
     out->template insert<0>(i);
-  }
 
   for (auto& i : run_calculations(spaces_B, embedded_refs_.second, active_refs_.second, "B"))
     out->template insert<1>(i);

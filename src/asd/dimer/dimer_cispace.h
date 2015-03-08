@@ -125,7 +125,6 @@ class DimerCISpace_base {
     }
 
     template<int unit, class T> void insert(std::shared_ptr<const T> civec, const int spin = -1) {
-      std::cout << "  DimerCISpace_base: insert .. for " << unit << std::endl;
       auto new_civec = std::make_shared<VecType>(civec);
 
       const int nelea = civec->det()->nelea();
@@ -141,7 +140,6 @@ class DimerCISpace_base {
 
       SpaceMap& cispace = (unit == 0 ? cispaceA_ : cispaceB_);
       cispace.emplace(SpaceKey(S,m_s,Q), new_civec);
-      std::cout << "    cispace emplacing.. S = " << S << ", m_s = " << m_s << ", Q= " << Q << std::endl;
 
       const int ij = new_civec->ij();
       ((unit == 0) ? nstates_.first : nstates_.second) += ij;
@@ -152,41 +150,26 @@ class DimerCISpace_base {
 
       typename DMap::iterator idet = detspace.find({qa,qb});
       if ( idet != detspace.end()) {
-        std::cout << "add_det: det found.. return.." << std::endl;
         return idet->second;
       }
       else {
         int nelea, neleb;
         std::tie(nelea, neleb) = detunkey<unit>(qa,qb);
-        std::cout << "add_det: det NOT found.. nelea, neleb = " << nelea << " " << neleb << " by  qa, qb =" << qa << ", " << qb << std::endl;
         std::shared_ptr<DetType> det = bdet<unit>()->clone(nelea, neleb);
 
         detspace.emplace(std::make_pair(qa,qb), det);
 
-        std::cout << "   qa = " << qa << ", qb = " << qb << " emplaced.." << std::endl;
         idet = detspace.find({qa+1,qb});
-        if (idet != detspace.end()) {
-          std::cout << "       (" << qa+1 << " " << qb << ") found.. linking.." << std::endl;
-          det->template link<0>(idet->second);
-        }
+        if (idet != detspace.end()) det->template link<0>(idet->second);
 
         idet = detspace.find({qa-1,qb});
-        if (idet != detspace.end()) { 
-          std::cout << "       (" << qa-1 << " " << qb << ") found.. linking.." << std::endl;
-          det->template link<0>(idet->second);
-        }
+        if (idet != detspace.end()) det->template link<0>(idet->second);
 
         idet = detspace.find({qa,qb+1});
-        if (idet != detspace.end()) {
-          std::cout << "       (" << qa << " " << qb+1 << ") found.. linking.." << std::endl;
-          det->template link<1>(idet->second);
-        }
+        if (idet != detspace.end()) det->template link<1>(idet->second);
 
         idet = detspace.find({qa,qb-1});
-        if (idet != detspace.end()) {
-          std::cout << "       (" << qa << " " << qb-1 << ") found.. linking.." << std::endl;
-          det->template link<1>(idet->second);
-        }
+        if (idet != detspace.end()) det->template link<1>(idet->second);
 
         return det;
       }
@@ -201,24 +184,20 @@ class DimerCISpace_base {
       {
         std::vector<SpaceKey> references;
         for (auto& imap : cispaceA_) { references.push_back(imap.first); }
-        std::cout << "#of elements in references (A) = " << references.size() << std::endl;
         // These spaces are assumed to be high-spin
         for (auto& ispace : references) {
           if (ispace.S > 0) {
             const int S = ispace.S;
-            std::cout << "COMPLETE: S = " << S << ", m_s = " << ispace.m_s  << ", q = " << ispace.q << std::endl;
 
             std::shared_ptr<VecType> ref_state = ccvec<0>(ispace);
 
             int ref_qa, ref_qb;
             std::tie(ref_qa, ref_qb) = detkey<0>(ispace);
-            std::cout << "          ref_qa= " << ref_qa << ", ref_qb = " << ref_qb << std::endl;
             const int mult = S + 1;
 
             for (int i = 1; i < mult; ++i) {
               const int nqa = ref_qa + i;
               const int nqb = ref_qb - i;
-              std::cout << "   iter#" << i << ": nqa = " << nqa << ", nqb = " << nqb << std::endl;
 
               std::shared_ptr<DetType> det = add_det<0>(nqa, nqb);
 
@@ -293,39 +272,6 @@ class DimerCISpace_base {
       }
     }
 
-    void super_complete() {
-      for (auto& imap : cispaceA_) {
-        int qa, qb;
-        std::tie(qa, qb) = detkey<0>(imap.first);
-
-        for (int n = 1; n < 3; ++n) {
-          add_det<0>(qa+n, qb);
-          add_det<0>(qa, qb+n);
-          add_det<0>(qa+n, qb+n);
-        }
-        for (int n = 1; n < 3; ++n) {
-          add_det<0>(qa-n, qb);
-          add_det<0>(qa, qb-n);
-          add_det<0>(qa-n, qb-n);
-        }
-      }
-
-      for (auto& imap : cispaceB_) {
-        int qa, qb;
-        std::tie(qa, qb) = detkey<1>(imap.first);
-
-        for (int n = 1; n < 3; ++n) {
-          add_det<1>(qa+n, qb);
-          add_det<1>(qa, qb+n);
-          add_det<1>(qa+n, qb+n);
-        }
-        for (int n = 1; n < 3; ++n) {
-          add_det<1>(qa-n, qb);
-          add_det<1>(qa, qb-n);
-          add_det<1>(qa-n, qb-n);
-        }
-      }
-    }
   private:
     template<int unit> std::pair<int, int> detkey(const SpaceKey key) { return detkey<unit>(key.S, key.m_s, key.q); }
     template<int unit> std::pair<int, int> detkey(const int S, const int m_s, const int q) {

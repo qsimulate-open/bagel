@@ -57,11 +57,6 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
   isolated_refs_ = {A, tmpref};
   shared_ptr<const Matrix> coeff = construct_coeff();
 
-  cout << "Decompose dimer MO space.." << endl;
-  cout << "Closed : " << A->nclosed() << " " << A->nclosed() << endl;
-  cout << "Active : " << A->nact() << " " << A->nact() << endl;
-  cout << "Virtual: " << A->nvirt() << " " << A->nvirt() << endl;
-
   nvirt_ = {A->nvirt(), A->nvirt()};
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), 2*A->nclosed(), 2*A->nact(), 2*A->nvirt());
 }
@@ -72,11 +67,6 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, share
 
   isolated_refs_ = {A, B};
   shared_ptr<const Matrix> coeff = construct_coeff();
-
-  cout << "Decompose dimer MO space.." << endl;
-  cout << "Closed : " << A->nclosed() << " " << B->nclosed() << endl;
-  cout << "Active : " << A->nact() << " " << B->nact() << endl;
-  cout << "Virtual: " << A->nvirt() << " " << B->nvirt() << endl;
 
   nvirt_ = {A->nvirt(), B->nvirt()};
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed()+B->nclosed(), A->nact()+B->nact(), A->nvirt()+B->nvirt());
@@ -170,9 +160,6 @@ void Dimer::embed_refs() {
   const int nactB = active_refs_.second->nact();
 
   shared_ptr<const Matrix> scoeff = sref_->coeff();
-
-  cout << "Super Coefficients : " << scoeff->ndim() << " x " << scoeff->mdim() << endl;
-  scoeff->print("C",scoeff->ndim());
 
   const int dimerbasis = sgeom_->nbasis();
 

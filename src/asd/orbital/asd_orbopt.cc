@@ -133,7 +133,7 @@ void ASD_OrbOpt::print_iteration(int iter, int miter, int tcount, const vector<d
                  << setw(10) << scientific << setprecision(2) << (i==0 ? max_r : 0.0)
                  << setw(10) << scientific << setprecision(2) << (i==0 ? delta_e : 0.0)
                  << fixed << setw(10) << setprecision(2)
-                 << time << print_iteration_type(itype) << endl;
+                 << time << setw(10) << print_iteration_type(itype) << endl;
     ++i;
   }
 }

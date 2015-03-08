@@ -1,1 +1,1 @@
-SUBDIRS = casscf zcasscf rasscf
+SUBDIRS = casscf zcasscf
