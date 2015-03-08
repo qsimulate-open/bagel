@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/orbital/construct_asd_oo.cc
+// Filename: asd/orbital/construct_asd_orbopt.cc
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
@@ -23,19 +23,19 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/asd/orbital/construct_asd_oo.h>
-#include <src/asd/orbital/bfgs.h>
+#include <src/asd/orbital/construct_asd_orbopt.h>
+#include <src/asd/orbital/asd_bfgs.h>
 
 using namespace std;
 using namespace bagel;
 
 namespace bagel {
 
-shared_ptr<ASD_OO> construct_ASD_OO(shared_ptr<const PTree> itree, shared_ptr<Dimer> dimer) {
+shared_ptr<ASD_OrbOpt> construct_ASD_OrbOpt(shared_ptr<const PTree> itree, shared_ptr<Dimer> dimer) {
   string algorithm = itree->get<string>("algorithm", "");
   string method = itree->get_child_optional("asd")->get<string>("method");
 
-  shared_ptr<ASD_OO> out;
+  shared_ptr<ASD_OrbOpt> out;
 
   if (method == "cas" && algorithm == "bfgs") {
    out = make_shared<ASD_BFGS>(itree, dimer);

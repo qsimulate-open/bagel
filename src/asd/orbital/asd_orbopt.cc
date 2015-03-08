@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/orbital/casscf.cc
+// Filename: asd/orbital/asd_orbopt.cc
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
@@ -26,20 +26,20 @@
 
 #include <fstream>
 #include <src/scf/hf/fock.h>
-#include <src/asd/orbital/oo.h>
+#include <src/asd/orbital/asd_orbopt.h>
 
 #include <src/wfn/construct_method.h>
 
 using namespace std;
 using namespace bagel;
 
-ASD_OO::ASD_OO(shared_ptr<const PTree> idat, shared_ptr<Dimer> dimer)
+ASD_OrbOpt::ASD_OrbOpt(shared_ptr<const PTree> idat, shared_ptr<Dimer> dimer)
   : Method(idat, dimer->sgeom(), dimer->sref()), dimer_(dimer), hcore_(make_shared<Hcore>(dimer->sgeom())) {
   common_init();
 }
 
 
-void ASD_OO::common_init() {
+void ASD_OrbOpt::common_init() {
   print_header();
 
   // first set coefficient
@@ -49,10 +49,10 @@ void ASD_OO::common_init() {
   max_iter_ = idata_->get<int>("maxiter", 50);
   // get nstate from the ASD input
   nstate_ = idata_->get_child_optional("asd")->get<int>("nstates", 1);
-  // get thresh (for macro iteration) from the input
-  thresh_ = idata_->get<double>("thresh", 1.0e-8);
-  // get thresh
-  precond_ = idata_->get<double>("precondition", 5.0e-4);
+  // get thresholds
+  gradient_thresh_ = idata_->get<double>("gradient_thresh", 1.0e-4);
+  rotation_thresh_ = idata_->get<double>("rotation_thresh", 1.0e-4);
+  energy_thresh_ = idata_->get<double>("energy_thresh", 1.0e-6);
 
   // active space
   nact_ = ref_->nact();
@@ -60,8 +60,20 @@ void ASD_OO::common_init() {
   nactB_ = dimer_->active_refs().second->nact();
   rasA_ = {0, nactA_, 0};
   rasB_ = {0, nactB_, 0};
-  if (idata_->get_child_optional("asd")->get<string>("method") == "ras") {
-    //TODO
+  if (idata_->get_child("asd")->get<string>("method") == "ras") {
+    auto restrictions = idata_->get_child("asd")->get_child("restricted");
+    auto get_restricted_data = [] (shared_ptr<const PTree> i) { return i->get_array<int, 3>("orbitals"); };
+
+    if (restrictions->size() == 1) {
+      rasA_ = get_restricted_data(*restrictions->begin());
+      rasB_ = rasA_;
+    } else if (restrictions->size() == 2) {
+      auto iter = restrictions->begin();
+      rasA_ = get_restricted_data(*iter++);
+      rasB_ = get_restricted_data(*iter);
+    } else {
+      throw logic_error("One or two sets of restrictions must be provided.");
+    }
   }
 
   assert(nactA_ + nactB_ == nact_);
@@ -77,8 +89,8 @@ void ASD_OO::common_init() {
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
   cout << "    * nact     : " << setw(6) << nact_ << endl;
-  cout << "    *  unit A  : " << setw(6) << nactA_ << endl;
-  cout << "    *  unit B  : " << setw(6) << nactB_ << endl;
+  cout << "    *  unit A  : " << setw(6) << nactA_ << " (" << rasA_[0] << "," << rasA_[1] << "," << rasA_[2] << ")" << endl;
+  cout << "    *  unit B  : " << setw(6) << nactB_ << " (" << rasB_[0] << "," << rasB_[1] << "," << rasB_[2] << ")" << endl;
   cout << "    * nocc     : " << setw(6) << nocc_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
 
@@ -91,26 +103,37 @@ void ASD_OO::common_init() {
 }
 
 
-ASD_OO::~ASD_OO() {
+ASD_OrbOpt::~ASD_OrbOpt() {
 
 }
 
 
-void ASD_OO::print_header() const {
+void ASD_OrbOpt::print_header() const {
   cout << "  --------------------------------------------" << endl;
   cout << "      ASD Orbital Optimization calculation    " << endl;
   cout << "  --------------------------------------------" << endl << endl;
 }
 
-void ASD_OO::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, const double time) const {
+void ASD_OrbOpt::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, double max_r, double delta_e, const double time, const int itype) const {
+  auto print_iteration_type = [] (const int i) {
+    string out;
+    if (i == 0) out = "intra";
+    else if (i == 1) out = "inter";
+    else out = "full";
+    return out;
+  };
+
   if (energy.size() != 1 && iter) cout << endl;
 
   int i = 0;
   for (auto& e : energy) {
     cout << "  " << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
                  << setw(20) << fixed << setprecision(12) << e << "   "
-                 << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
-                 << time << endl;
+                 << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0)
+                 << setw(10) << scientific << setprecision(2) << (i==0 ? max_r : 0.0)
+                 << setw(10) << scientific << setprecision(2) << (i==0 ? delta_e : 0.0)
+                 << fixed << setw(10) << setprecision(2)
+                 << time << print_iteration_type(itype) << endl;
     ++i;
   }
 }
@@ -120,23 +143,23 @@ static streambuf* backup_stream_;
 static ofstream* ofs_;
 
 
-void ASD_OO::mute_stdcout() {
+void ASD_OrbOpt::mute_stdcout() {
   ofstream* ofs(new ofstream("asd_casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
   ofs_ = ofs;
   backup_stream_ = cout.rdbuf(ofs->rdbuf());
 }
 
 
-void ASD_OO::resume_stdcout() {
+void ASD_OrbOpt::resume_stdcout() {
   cout.rdbuf(backup_stream_);
   delete ofs_;
 }
 
 
-shared_ptr<Matrix> ASD_OO::Qvec(const int n, const int m, shared_ptr<const Matrix> coeff, const size_t nclosed) const {
+shared_ptr<Matrix> ASD_OrbOpt::Qvec(const int n, const int m, shared_ptr<const Matrix> coeff, const size_t nclosed) const {
   assert(n == coeff->mdim());
 
-  std::shared_ptr<DFHalfDist> half;
+  shared_ptr<DFHalfDist> half;
   const MatView cdata = coeff_->slice(nclosed_, nclosed_+nact_);
   half = geom_->df()->compute_half_transform(cdata);
 
@@ -163,7 +186,7 @@ shared_ptr<Matrix> ASD_OO::Qvec(const int n, const int m, shared_ptr<const Matri
 }
 
 
-double ASD_OO::check_symmetric(std::shared_ptr<Matrix>& mat) const {
+double ASD_OrbOpt::check_symmetric(shared_ptr<Matrix>& mat) const {
   int n = mat->ndim();
   assert(n == mat->mdim());
   auto tran = make_shared<Matrix>(n,n);
@@ -174,7 +197,7 @@ double ASD_OO::check_symmetric(std::shared_ptr<Matrix>& mat) const {
 }
 
 
-shared_ptr<const Coeff> ASD_OO::update_coeff(const shared_ptr<const Matrix> cold, shared_ptr<const Matrix> mat) const {
+shared_ptr<const Coeff> ASD_OrbOpt::update_coeff(const shared_ptr<const Matrix> cold, shared_ptr<const Matrix> mat) const {
   auto cnew = make_shared<Coeff>(*cold);
   int nbas = cold->ndim();
   assert(nbas == geom_->nbasis());
@@ -184,8 +207,8 @@ shared_ptr<const Coeff> ASD_OO::update_coeff(const shared_ptr<const Matrix> cold
 }
 
 
-shared_ptr<const Reference> ASD_OO::conv_to_ref() const {
-  cout << "ASD_OO: conv_to_ref: not yet implemented" << endl;
+shared_ptr<const Reference> ASD_OrbOpt::conv_to_ref() const {
+  cout << "ASD_OrbOpt: conv_to_ref: not yet implemented" << endl;
   //TODO
   assert(false);
 }

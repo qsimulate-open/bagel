@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/orbital/oo.h
+// Filename: asd/orbital/asd_orbopt.h
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
@@ -23,17 +23,17 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_ASD_OO_H
-#define __BAGEL_ASD_OO_H
+#ifndef __BAGEL_ASD_ORBOPT_H
+#define __BAGEL_ASD_ORBOPT_H
 
 #include <src/wfn/reference.h>
 #include <src/asd/dimer/dimer.h>
-#include <src/asd/orbital/rotfile.h>
+#include <src/asd/orbital/asd_rotfile.h>
 #include <src/df/dfblock.h>
 
 namespace bagel {
 
-class ASD_OO : public Method, public std::enable_shared_from_this<ASD_OO> {
+class ASD_OrbOpt : public Method, public std::enable_shared_from_this<ASD_OrbOpt> {
 
   protected:
     // some internal information
@@ -44,8 +44,9 @@ class ASD_OO : public Method, public std::enable_shared_from_this<ASD_OO> {
     int nbasis_; // number of MO orbitals
     int nstate_;
     int max_iter_;
-    double thresh_;
-    double precond_;
+    double gradient_thresh_;
+    double rotation_thresh_;
+    double energy_thresh_;
 
     int nactA_;
     int nactB_;
@@ -61,7 +62,7 @@ class ASD_OO : public Method, public std::enable_shared_from_this<ASD_OO> {
     std::shared_ptr<const Coeff> coeff_;
 
     void print_header() const;
-    void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
+    void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, double max_r, double delta_e, const double time, const int type) const;
     void common_init();
 
     void mute_stdcout();
@@ -79,9 +80,9 @@ class ASD_OO : public Method, public std::enable_shared_from_this<ASD_OO> {
     double check_symmetric(std::shared_ptr<Matrix>& mat) const;
 
   public:
-    ASD_OO(std::shared_ptr<const PTree> idat, std::shared_ptr<Dimer> dimer);
+    ASD_OrbOpt(std::shared_ptr<const PTree> idat, std::shared_ptr<Dimer> dimer);
 
-    virtual ~ASD_OO();
+    virtual ~ASD_OrbOpt();
 
     virtual void compute() override = 0;
 
@@ -102,7 +103,7 @@ class ASD_OO : public Method, public std::enable_shared_from_this<ASD_OO> {
     int nbasis() const { return nbasis_; }
     int nstate() const { return nstate_; }
     int max_iter() const { return max_iter_; }
-    double thresh() const { return thresh_; }
+    double thresh() const { return gradient_thresh_; }
 
     double energy(const int i) const { return energy_[i]; };
     double rms_grad() const { return rms_grad_; };

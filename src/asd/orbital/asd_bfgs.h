@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/orbital/bfgs.h
+// Filename: asd/orbital/asd_bfgs.h
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
@@ -26,13 +26,17 @@
 #ifndef __ASD_BFGS_H
 #define __ASD_BFGS_H
 
-#include <src/asd/orbital/oo.h>
+#include <src/asd/orbital/asd_orbopt.h>
 
 namespace bagel {
 
-class ASD_BFGS : public ASD_OO {
+class ASD_BFGS : public ASD_OrbOpt {
 
   protected:
+    double thresh_inter_;
+    double thresh_intra_;
+    bool single_bfgs_;
+
     void common_init() {
       std::cout << "    * Using the Quasi 2nd-order algorithm as noted in Chaban et al. TCA (1997)" << std::endl << std::endl;
     }
@@ -47,7 +51,7 @@ class ASD_BFGS : public ASD_OO {
     std::shared_ptr<const ASD_RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock, const bool inter, const bool intra) const;
 
   public:
-    ASD_BFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<Dimer> dimer) : ASD_OO(idat, dimer) {
+    ASD_BFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<Dimer> dimer) : ASD_OrbOpt(idat, dimer) {
       common_init();
     }
 

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/orbital/bfgs_grad.hpp
+// Filename: asd/orbital/asd_bfgs_grad.hpp
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/asd/orbital/bfgs.h>
+#include <src/asd/orbital/asd_bfgs.h>
 
 using namespace std;
 using namespace bagel;

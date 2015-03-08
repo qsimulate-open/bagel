@@ -29,7 +29,7 @@
 #include <src/opt/optimize.h>
 #include <src/wfn/localization.h>
 #include <src/asd/construct_asd.h>
-#include <src/asd/orbital/construct_asd_oo.h>
+#include <src/asd/orbital/construct_asd_orbopt.h>
 #include <src/asd/dmrg/rasd.h>
 #include <src/asd/multisite/multisite.h>
 #include <src/util/archive.h>
@@ -164,8 +164,8 @@ int main(int argc, char** argv) {
       } else if (title == "asd") {
           auto asd = construct_ASD(itree, dimer);
           asd->compute();
-      } else if (title == "asd_orbitaloptimize" || title == "asd_oo") {
-          auto asd = construct_ASD_OO(itree, dimer);
+      } else if (title == "asd_orbitaloptimize" || title == "asd_orbopt") {
+          auto asd = construct_ASD_OrbOpt(itree, dimer);
           asd->compute();
       } else if (title == "multisite") {
           vector<shared_ptr<const Reference>> site_refs;

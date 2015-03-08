@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/orbital/bfgs.cc
+// Filename: asd/orbital/asd_bfgs.cc
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
@@ -24,24 +24,37 @@
 //
 
 #include <src/scf/hf/fock.h>
-#include <src/asd/orbital/bfgs.h>
+#include <src/asd/orbital/asd_bfgs.h>
 #include <src/asd/construct_asd.h>
 #include <src/util/math/davidson.h>
 #include <src/util/math/step_restrict_bfgs.h>
 #include <src/util/math/hpw_diis.h>
+//#include <src/util/math/bfgs.h>
 
 using namespace std;
 using namespace bagel;
 
 void ASD_BFGS::compute() {
+
+  //BFGS parameters
+  thresh_inter_ = idata_->get<double>("thresh_inter", 5.0e-4);
+  thresh_intra_ = idata_->get<double>("thresh_intra", 5.0e-4);
+  single_bfgs_ = idata_->get<bool>("single_bfgs", false);
+
+  vector<double> previous_energy(nstate_,0.0);
+
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
   shared_ptr<SRBFGS<ASD_RotFile>> bfgs;
+//shared_ptr<BFGS<ASD_RotFile>> bfgs;
   shared_ptr<SRBFGS<ASD_RotFile>> intra_bfgs; //cloased-active, closed-virtual, active-virtual only
   shared_ptr<SRBFGS<ASD_RotFile>> inter_bfgs; //active-active only
-
-  pair<double,double> gradient_pair;
-  bool full = false;
-  bool first_iteration = false;
+  //shared_ptr<BFGS<ASD_RotFile>> intra_bfgs; //cloased-active, closed-virtual, active-virtual only
+  //shared_ptr<BFGS<ASD_RotFile>> inter_bfgs; //active-active only
+  pair<double,double> gradient_pair = make_pair(1.0,1.0);
+  bool full = single_bfgs_ ? true : false;
+  bool first_iteration = single_bfgs_ ? true : false;
+  bool inter_first = single_bfgs_ ? false : true;
+  bool intra_first = single_bfgs_ ? false : true;
 
   // ============================
   // macro iteration from here
@@ -126,17 +139,24 @@ void ASD_BFGS::compute() {
 
     // if this is the first time, set up the BFGS solver
     // BFGS and DIIS should start at the same time
-    if (iter == 0) {
-      shared_ptr<const ASD_RotFile> inter_denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock, true, false);
-      inter_bfgs = make_shared<SRBFGS<ASD_RotFile>>(inter_denom);
-    } else if (iter == 1) {
-      shared_ptr<const ASD_RotFile> intra_denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock, false, true);
-      intra_bfgs = make_shared<SRBFGS<ASD_RotFile>>(intra_denom);
+    if (!single_bfgs_) {
+      if (inter_first) { //if (iter == 0) {
+        shared_ptr<const ASD_RotFile> inter_denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock, true, false);
+        inter_bfgs = make_shared<SRBFGS<ASD_RotFile>>(inter_denom);
+//      inter_bfgs = make_shared<BFGS<ASD_RotFile>>(inter_denom);
+        inter_first = false;
+      } else if (intra_first) { // (iter == 1) {
+        shared_ptr<const ASD_RotFile> intra_denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock, false, true);
+        intra_bfgs = make_shared<SRBFGS<ASD_RotFile>>(intra_denom);
+//      intra_bfgs = make_shared<BFGS<ASD_RotFile>>(intra_denom);
+        intra_first = false;
+      }
     }
 
     if (full && first_iteration) {
       shared_ptr<const ASD_RotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock, true, true);
       bfgs = make_shared<SRBFGS<ASD_RotFile>>(denom);
+//    bfgs = make_shared<BFGS<ASD_RotFile>>(denom);
       first_iteration = false;
     }
 
@@ -150,25 +170,36 @@ void ASD_BFGS::compute() {
       auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, true, true);
       bfgs->check_step(evals, grad, xlog);
       a = bfgs->more_sorensen_extrapolate(grad, xlog);
+//    a = bfgs->extrapolate(grad, xlog);
     } else {
       if (inter) {
         auto xcopy = inter_x->log(8);
         auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, true, false);
         inter_bfgs->check_step(evals, grad, xlog); //, /*tight*/false, limited_memory);
         a = inter_bfgs->more_sorensen_extrapolate(grad, xlog);
+//      a = inter_bfgs->extrapolate(grad, xlog);
       } else {
         auto xcopy = intra_x->log(8);
         auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, false, true);
         intra_bfgs->check_step(evals, grad, xlog); //, /*tight*/false, limited_memory);
         a = intra_bfgs->more_sorensen_extrapolate(grad, xlog);
+//      a = intra_bfgs->extrapolate(grad, xlog);
       }
     }
     cout << " ---------------------------------------------------- " << endl;
     extrap.tick_print("More-Sorensen/Hebden extrapolation");
     cout << " " << endl;
 
+//  *a *= -1.0;
+    a->print("ROTATION");
+
     // restore the matrix from ASD_RotFile
     shared_ptr<const Matrix> amat = a->unpack<Matrix>();
+
+    double max_rotation = 0.0;
+    for (int i = 1; i != nbasis_; ++i)
+      for (int j = 1; j != i; ++j)
+        max_rotation = max(max_rotation, fabs(amat->element(j,i)));
 
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
@@ -188,20 +219,20 @@ void ASD_BFGS::compute() {
     // setting error of macro iteration
     const double gradient = grad->rms();
 
-    if (!full && inter) get<0>(gradient_pair) = gradient;
-    else if (!full && !inter) get<1>(gradient_pair) = gradient;
-
-    if (!full) {
-      if (get<0>(gradient_pair) < precond_ && get<1>(gradient_pair) < precond_) {
-        full = true;
-        first_iteration = true;
-      }
+    //energy difference
+    double delta_energy = 0.0;
+    for (int i = 0; i != nstate_; ++i) {
+      cout << "X" << i << endl;
+      delta_energy = max(delta_energy, fabs(previous_energy[i] - energy_[i]));
     }
+    cout << "Y" << endl;
+    copy(energy_.begin(), energy_.end(), previous_energy.begin() );
+    cout << "Z" << endl;
 
     resume_stdcout();
-    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+    print_iteration(iter, 0, 0, energy_, gradient, max_rotation, delta_energy, timer.tick(), full ? 2 : static_cast<int>(inter));
 
-    if (full && gradient < thresh_) {
+    if (full && gradient < gradient_thresh_ && max_rotation < rotation_thresh_ && delta_energy < energy_thresh_) {
       rms_grad_ = gradient;
       cout << " " << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
@@ -209,10 +240,36 @@ void ASD_BFGS::compute() {
       break;
     }
 
+    if (!full && inter) get<0>(gradient_pair) = gradient;
+    else if (!full && !inter) get<1>(gradient_pair) = gradient;
+
+    if (!full) {
+      if (get<0>(gradient_pair) < thresh_inter_ && get<1>(gradient_pair) < thresh_intra_) {
+        full = true;
+        first_iteration = true;
+        x->unit();
+      }
+    }
+
+    if (full && iter == 9) {
+      if (gradient > 1.0e-4) {
+        gradient_pair = make_pair(1.0,1.0);
+        full = false;
+        first_iteration = false;
+        inter_first = true;
+        intra_first = true;
+        inter_x->unit();
+        intra_x->unit();
+      } else {
+        first_iteration = true;
+        x->unit();
+      }
+    }
+
     if (iter == max_iter_-1) {
       rms_grad_ = gradient;
       cout << " " << endl;
-      if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
+      if (rms_grad_ > gradient_thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
       cout << "    * Max iteration reached during the quasi-Newton optimization. *     " << endl << endl;
     }
     mute_stdcout();

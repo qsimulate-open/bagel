@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/orbital/rasrotfile.h
+// Filename: asd/orbital/asd_rotfile.h
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Inkoo Kim: <inkoo.kim@northwestern.edu>
@@ -217,7 +217,7 @@ class ASD_RotationMatrix {
     const DataType& ele_va(const int iv, const int ia) const { assert(inter_); return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
     const DataType& ele_vc(const int iv, const int ic) const { assert(inter_); return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
 
-    const DataType& ele_aa(const int ib, const int ia) const { assert(intra_); return data_[(nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ + ib + ia*nactB_]; }
+    const DataType& ele_aa   (const int ib, const int ia) const { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + ib + ia*nactB_]; }
     const DataType& ele_aa21A(const int i2, const int i1) const { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + i2 + i1*rasA_[1]]; }
     const DataType& ele_aa31A(const int i3, const int i1) const { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + i3 + i1*rasA_[2]]; }
     const DataType& ele_aa32A(const int i3, const int i2) const { assert(intra_); return data_[(inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2] + i3 + i2*rasA_[2]]; }
@@ -228,7 +228,8 @@ class ASD_RotationMatrix {
     const DataType* ptr_ca() const { assert(inter_); return data(); }
     const DataType* ptr_va() const { assert(inter_); return data() + nclosed_*nact_; }
     const DataType* ptr_vc() const { assert(inter_); return data() + (nclosed_+nvirt_)*nact_; }
-    const DataType* ptr_aa() const { assert(intra_); return data() + (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_; }
+
+    const DataType* ptr_aa()    const { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0); }
     const DataType* ptr_aa21A() const { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_; }
     const DataType* ptr_aa31A() const { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1]; }
     const DataType* ptr_aa32A() const { assert(intra_); return data() + (inter_ ? (nclosed_+nvirt_)*nact_ + nclosed_*nvirt_ : 0) + nactA_*nactB_ + rasA_[0]*rasA_[1] + rasA_[0]*rasA_[2]; }
@@ -293,82 +294,88 @@ class ASD_RotationMatrix {
     // print matrix
     void print(const std::string in = "") const {
       std::cout << "++++ " + in + " ++++" << std::endl;
-      if (nact_ && nclosed_) {
-        std::cout << " printing closed-active block" << std::endl;
-        for (int i = 0; i != nact_; ++i) {
-          for (int j = 0; j != nclosed_; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_ca(j,i);
+      if (inter_) {
+        if (nact_ && nclosed_) {
+          std::cout << " printing closed-active block" << std::endl;
+          for (int i = 0; i != nact_; ++i) {
+            for (int j = 0; j != nclosed_; ++j) {
+              std::cout << std::setw(10) << std::setprecision(6) << ele_ca(j,i);
+            }
+            std::cout << std::endl;
           }
+        }
+        if (nact_ && nvirt_) {
+          std::cout << " printing virtual-active block" << std::endl;
+          for (int i = 0; i != nact_; ++i) {
+            for (int j = 0; j != nvirt_; ++j) {
+              std::cout << std::setw(10) << std::setprecision(6) << ele_va(j,i);
+            }
+            std::cout << std::endl;
+          }
+        }
+        if (nclosed_ && nvirt_) {
+          std::cout << " printing virtual-closed block" << std::endl;
+          for (int i = 0; i != nclosed_; ++i) {
+            for (int j = 0; j != nvirt_; ++j) {
+              std::cout << std::setw(10) << std::setprecision(6) << ele_vc(j,i);
+            }
+            std::cout << std::endl;
+          }
+        }
+      }
+
+      if (intra_) {
+        if (nactA_ && nactB_) {
+          std::cout << " printing active(B)-active(A) block" << std::endl;
+          for (int i = 0; i != nactA_; ++i) {
+            for (int j = 0; j != nactB_; ++j) {
+              std::cout << std::setw(10) << std::setprecision(6) << ele_aa(j,i);
+            }
+            std::cout << std::endl;
+          }
+        }
+        if (nactA_ && nactB_) {
+          std::cout << " printing RAS(A) blocks" << std::endl;
+          std::cout << "          RAS1-RAS2 blocks" << std::endl;
+          for (int i = 0; i != rasA_[0]; ++i)
+            for (int j = 0; j != rasA_[1]; ++j) {
+              std::cout << std::setw(10) << std::setprecision(6) << ele_aa21A(j,i);
+            }
+          std::cout << std::endl;
+          std::cout << "          RAS1-RAS3 blocks" << std::endl;
+          for (int i = 0; i != rasA_[0]; ++i)
+            for (int j = 0; j != rasA_[2]; ++j) {
+              std::cout << std::setw(10) << std::setprecision(6) << ele_aa31A(j,i);
+            }
+          std::cout << std::endl;
+          std::cout << "          RAS2-RAS3 blocks" << std::endl;
+          for (int i = 0; i != rasA_[1]; ++i)
+            for (int j = 0; j != rasA_[2]; ++j) {
+              std::cout << std::setw(10) << std::setprecision(6) << ele_aa32A(j,i);
+            }
+          std::cout << std::endl;
+          std::cout << " printing RAS(B) blocks" << std::endl;
+          std::cout << "          RAS1-RAS2 blocks" << std::endl;
+          for (int i = 0; i != rasB_[0]; ++i)
+            for (int j = 0; j != rasB_[1]; ++j) {
+              std::cout << std::setw(10) << std::setprecision(6) << ele_aa21B(j,i);
+            }
+          std::cout << std::endl;
+          std::cout << "          RAS1-RAS3 blocks" << std::endl;
+          for (int i = 0; i != rasB_[0]; ++i)
+            for (int j = 0; j != rasB_[2]; ++j) {
+              std::cout << std::setw(10) << std::setprecision(6) << ele_aa31B(j,i);
+            }
+          std::cout << std::endl;
+          std::cout << "          RAS2-RAS3 blocks" << std::endl;
+          for (int i = 0; i != rasB_[1]; ++i)
+            for (int j = 0; j != rasB_[2]; ++j) {
+              std::cout << std::setw(10) << std::setprecision(6) << ele_aa32B(j,i);
+            }
           std::cout << std::endl;
         }
       }
-      if (nact_ && nvirt_) {
-        std::cout << " printing virtual-active block" << std::endl;
-        for (int i = 0; i != nact_; ++i) {
-          for (int j = 0; j != nvirt_; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_va(j,i);
-          }
-          std::cout << std::endl;
-        }
-      }
-      if (nclosed_ && nvirt_) {
-        std::cout << " printing virtual-closed block" << std::endl;
-        for (int i = 0; i != nclosed_; ++i) {
-          for (int j = 0; j != nvirt_; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_vc(j,i);
-          }
-          std::cout << std::endl;
-        }
-      }
-      if (nactA_ && nactB_) {
-        std::cout << " printing active(B)-active(A) block" << std::endl;
-        for (int i = 0; i != nactA_; ++i) {
-          for (int j = 0; j != nactB_; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa(j,i);
-          }
-          std::cout << std::endl;
-        }
-      }
-      if (nactA_ && nactB_) {
-        std::cout << " printing RAS(A) blocks" << std::endl;
-        std::cout << "          RAS1-RAS2 blocks" << std::endl;
-        for (int i = 0; i != rasA_[0]; ++i)
-          for (int j = 0; j != rasA_[1]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa21A(j,i);
-          }
-        std::cout << std::endl;
-        std::cout << "          RAS1-RAS3 blocks" << std::endl;
-        for (int i = 0; i != rasA_[0]; ++i)
-          for (int j = 0; j != rasA_[2]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa31A(j,i);
-          }
-        std::cout << std::endl;
-        std::cout << "          RAS2-RAS3 blocks" << std::endl;
-        for (int i = 0; i != rasA_[1]; ++i)
-          for (int j = 0; j != rasA_[2]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa32A(j,i);
-          }
-        std::cout << std::endl;
-        std::cout << " printing RAS(B) blocks" << std::endl;
-        std::cout << "          RAS1-RAS2 blocks" << std::endl;
-        for (int i = 0; i != rasB_[0]; ++i)
-          for (int j = 0; j != rasB_[1]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa21B(j,i);
-          }
-        std::cout << std::endl;
-        std::cout << "          RAS1-RAS3 blocks" << std::endl;
-        for (int i = 0; i != rasB_[0]; ++i)
-          for (int j = 0; j != rasB_[2]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa31B(j,i);
-          }
-        std::cout << std::endl;
-        std::cout << "          RAS2-RAS3 blocks" << std::endl;
-        for (int i = 0; i != rasB_[1]; ++i)
-          for (int j = 0; j != rasB_[2]; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_aa32B(j,i);
-          }
-        std::cout << std::endl;
-      }
+
     }
 };
 
