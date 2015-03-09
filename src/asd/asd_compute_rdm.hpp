@@ -58,11 +58,9 @@ void ASD<VecType>::compute_rdm12() {
   }
  
   //debug
-  std::cout << "DEBUG RDM.." << std::endl;
   for (int i = 0; i != nstates_; ++i) {
-    std::cout << "STATE : " << i << std::endl;
-    debug_RDM(rdm1_[i], rdm2_[i]);
-    debug_energy(rdm1_[i], rdm2_[i]);
+    debug_rdm(rdm1_[i], rdm2_[i], i, /*mute*/false);
+    debug_energy(rdm1_[i], rdm2_[i], i, /*mute*/false);
   }
 
 }

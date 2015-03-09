@@ -144,7 +144,7 @@ static ofstream* ofs_;
 
 
 void ASD_OrbOpt::mute_stdcout() {
-  ofstream* ofs(new ofstream("asd_casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
+  ofstream* ofs(new ofstream("asd_orbopt.log",(backup_stream_ ? ios::app : ios::trunc)));
   ofs_ = ofs;
   backup_stream_ = cout.rdbuf(ofs->rdbuf());
 }

@@ -101,7 +101,7 @@ void ASD<VecType>::compute() {
 
   adiabats_ = cc->copy();
 
-  adiabats_->print("ADIABATS", adiabats_->ndim());
+//adiabats_->print("ADIABATS", adiabats_->ndim());
 
   compute_rdm12();
 

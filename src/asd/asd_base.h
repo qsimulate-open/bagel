@@ -128,8 +128,8 @@ class ASD_base {
     void compute_rdm12_dimer();
 
     //RDM debug functions
-    void debug_RDM(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&) const;
-    void debug_energy(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&) const;
+    void debug_rdm(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&, const int istate, const bool mute) const;
+    void debug_energy(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&, const int istate, const bool mute) const;
 
   public:
     ASD_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer);
