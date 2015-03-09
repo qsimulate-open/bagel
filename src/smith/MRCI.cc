@@ -82,6 +82,7 @@ void MRCI::MRCI::solve() {
     queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
+    r->ax_plus_y(refen, n);
 
     a0 = make_shared<Amplitude>(0.0, t2, n, this);
     r0 = make_shared<Residual>(dot_product_transpose(s, t2), r, this);

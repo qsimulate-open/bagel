@@ -97,7 +97,8 @@ class Amplitude {
     double dot_product(const Residual& o) const { return refcoeff_*o.refcoeff_ + me_->dot_product_transpose(o.res_, amp_); }
     double dot_product(std::shared_ptr<const Residual> o) const { return dot_product(*o); }
 
-    std::shared_ptr<Tensor> tensor() { return amp_; }
+    std::shared_ptr<const Tensor> tensor() const { return amp_; }
+    std::shared_ptr<const Tensor> left() const { return left_; }
 };
 
 void Residual::ax_plus_y(const double a, const Amplitude& o) { refcoeff_ += a*o.refcoeff_; res_->ax_plus_y(a, o.left_); }

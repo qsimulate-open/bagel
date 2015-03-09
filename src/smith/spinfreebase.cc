@@ -281,7 +281,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Ten
               for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                 for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                   // note that e0 is cancelled by another term
-                  data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
+                  data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1];
           t->add_block(data0, i0, i1, i2, i3);
         }
       }

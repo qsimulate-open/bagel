@@ -30,6 +30,34 @@
 #define __SRC_SMITH_MRCI_TASKS_H
 
 #include <src/smith/MRCI_tasks1.h>
+#include <src/smith/MRCI_tasks2.h>
+#include <src/smith/MRCI_tasks3.h>
+#include <src/smith/MRCI_tasks4.h>
+#include <src/smith/MRCI_tasks5.h>
+#include <src/smith/MRCI_tasks6.h>
+#include <src/smith/MRCI_tasks7.h>
+#include <src/smith/MRCI_tasks8.h>
+#include <src/smith/MRCI_tasks9.h>
+#include <src/smith/MRCI_tasks10.h>
+#include <src/smith/MRCI_tasks11.h>
+#include <src/smith/MRCI_tasks12.h>
+#include <src/smith/MRCI_tasks13.h>
+#include <src/smith/MRCI_tasks14.h>
+#include <src/smith/MRCI_tasks15.h>
+#include <src/smith/MRCI_tasks16.h>
+#include <src/smith/MRCI_tasks17.h>
+#include <src/smith/MRCI_tasks18.h>
+#include <src/smith/MRCI_tasks19.h>
+#include <src/smith/MRCI_tasks20.h>
+#include <src/smith/MRCI_tasks21.h>
+#include <src/smith/MRCI_tasks22.h>
+#include <src/smith/MRCI_tasks23.h>
+#include <src/smith/MRCI_tasks24.h>
+#include <src/smith/MRCI_tasks25.h>
+#include <src/smith/MRCI_tasks26.h>
+#include <src/smith/MRCI_tasks27.h>
+#include <src/smith/MRCI_tasks28.h>
+#include <src/smith/MRCI_tasks29.h>
 
 #endif
 #endif
