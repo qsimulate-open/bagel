@@ -66,7 +66,7 @@ void MRCI::MRCI::solve() {
   auto a0 = make_shared<Amplitude>(1.0, t2, n, this);
   auto r0 = make_shared<Residual>(refen, s, this);
   davidson.compute(a0, r0);
-  r = davidson.residual().front()->tensor();
+  r = davidson.residual()[0]->tensor()[0];
   this->update_amplitude(t2, r);
 
   int iter = 0;
@@ -88,7 +88,7 @@ void MRCI::MRCI::solve() {
     r0 = make_shared<Residual>(dot_product_transpose(s, t2), r, this);
 
     this->energy_ = davidson.compute(a0, r0);
-    r = davidson.residual()[0]->tensor();
+    r = davidson.residual()[0]->tensor()[0];
     const double err = r->rms();
     this->print_iteration(iter, this->energy_+core_nuc, err);
 
