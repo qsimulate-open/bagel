@@ -49,11 +49,7 @@ class Residual {
       assert(res_.size() == refcoeff_.size());
     }
 
-    void check_consistency(const Amplitude& o) const {
-      assert(res_.size() == refcoeff_.size());
-      assert(refcoeff_.size() == o.refcoeff_.size());
-      assert(res_.size() == o.amp_.size());
-    }
+    void check_consistency(const Amplitude& o) const;
 
   public:
     Residual(const double c, std::shared_ptr<const Tensor> r, SpinFreeMethod* m) : refcoeff_{c}, res_{r->copy()}, me_(m) { }
@@ -195,7 +191,9 @@ void Residual::ax_plus_y(const double a, const Amplitude& o) {
   for (auto& i : res_)
     i->ax_plus_y(a, *n++);
 }
+
 void Residual::ax_plus_y(const double a, std::shared_ptr<const Amplitude> o) { ax_plus_y(a, *o); }
+
 double Residual::dot_product(const Amplitude& o) const {
   check_consistency(o);
   double out = blas::dot_product(refcoeff_.data(), refcoeff_.size(), o.refcoeff_.data());
@@ -204,7 +202,14 @@ double Residual::dot_product(const Amplitude& o) const {
     out += me_->dot_product_transpose(i, *j++);
   return out;
 }
+
 double Residual::dot_product(std::shared_ptr<const Amplitude> o) const { return dot_product(*o); }
+
+void Residual::check_consistency(const Amplitude& o) const {
+  assert(res_.size() == refcoeff_.size());
+  assert(refcoeff_.size() == o.refcoeff_.size());
+  assert(res_.size() == o.amp_.size());
+}
 
 }
 }
