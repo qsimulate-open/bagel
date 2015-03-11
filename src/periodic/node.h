@@ -44,7 +44,7 @@ class Node {
     std::array<double, 3> position_;
     bool is_complete_;
     bool is_leaf_;
-    int nbody_, nchild_, nneighbour_;
+    int nbody_, nchild_, nneighbour_, ninter_;
     double extent_;
     std::vector<std::shared_ptr<const Vertex>> bodies_;
     std::vector<std::shared_ptr<const Node>> interaction_list_;
@@ -57,11 +57,13 @@ class Node {
     void compute_position();
     void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
     void insert_neighbour(std::shared_ptr<const Node> neigh, const bool is_neighbour = false, const int ws = 2);
+    void make_interaction_list(const int ws = 2);
 
     int nbasis_;
     std::vector<std::shared_ptr<const ZMatrix>> multipoles_;
+    std::shared_ptr<const ZMatrix> local_expansion_;
     void compute_multipoles(const int lmax = ANG_HRR_END);
-    void shift_multipoles(const int lmax = ANG_HRR_END);
+    void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offset);
 
   public:
     Node(const std::bitset<nbit__> key = 0, const int depth = 0, std::shared_ptr<const Node> parent = NULL);
@@ -90,6 +92,7 @@ class Node {
     std::vector<std::shared_ptr<const Node>> interaction_list() const { return interaction_list_; }
 
     std::vector<std::shared_ptr<const ZMatrix>> multipoles() const { return multipoles_; }
+    std::shared_ptr<const ZMatrix> local_expansion() const { return local_expansion_; }
 };
 
 }

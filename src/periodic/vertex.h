@@ -41,9 +41,11 @@ class Vertex {
     std::bitset<64> key_;
     std::shared_ptr<const Atom> atom_;
     std::array<double, 3> position_;
+    int index_, ibasis_;
 
   public:
-    Vertex(std::bitset<64> key, std::shared_ptr<const Atom> atom) : key_(key), atom_(atom) {
+    Vertex(std::bitset<64> key, std::shared_ptr<const Atom> atom, const int id, const int ib)
+     : key_(key), atom_(atom), index_(id), ibasis_(ib) {
       position_ = atom->position();
     }
     ~Vertex() { }
@@ -61,6 +63,9 @@ class Vertex {
     double position(const int i) const { return position_[i]; }
 
     std::shared_ptr<const Atom> atom() const { return atom_; }
+    int index() const { return index_; }
+    int ibasis() const { return ibasis_; }
+    int nbasis() const { return atom_->nbasis(); }
 };
 
 }

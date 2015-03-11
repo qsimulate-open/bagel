@@ -101,13 +101,15 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_moments() {
 
           const int a = l - j;
           const int b = m - l - k + j;
-          const double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta) / f(a + abs(b));
-          const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
-          const double imag = prefactor * sin(abs(b) * phi);
-          const complex<double> coeff(real, imag);
+          if (abs(b) <= a) {
+            const double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta) / f(a + abs(b));
+            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
+            const double imag = prefactor * sin(abs(b) * phi);
+            const complex<double> coeff(real, imag);
 
-          if (abs(coeff) > 1e-15)
-            zaxpy_(nbasis0_ * nbasis1_, coeff, moments_[i2]->data(), 1, shifted.data(), 1);
+            if (abs(coeff) > 1e-15)
+              zaxpy_(nbasis0_ * nbasis1_, coeff, moments_[i2]->data(), 1, shifted.data(), 1);
+          }
         }
       }
       assert(i2 == num_multipoles_);

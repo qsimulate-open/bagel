@@ -28,7 +28,7 @@
 #define __SRC_PERIODIC_TREE_H
 
 #include <vector>
-#include <src/molecule/molecule.h>
+#include <src/wfn/geometry.h>
 #include <src/periodic/node.h>
 #include <src/periodic/vertex.h>
 
@@ -37,7 +37,7 @@ namespace bagel {
 class Node;
 class Tree {
   protected:
-    std::shared_ptr<const Molecule> mol_;
+    std::shared_ptr<const Geometry>geom_;
     int max_height_;
     int nvertex_;
     std::vector<std::array<double, 3>> coordinates_;
@@ -46,6 +46,7 @@ class Tree {
     double box_length_;
     std::vector<std::bitset<nbit__>> particle_keys_;
     std::vector<std::shared_ptr<const Vertex>> leaves_;
+    std::vector<int> ordering_, basisindex_;
     int nnode_;
     std::vector<std::shared_ptr<Node>> nodes_;
     int height_;
@@ -57,8 +58,10 @@ class Tree {
     void keysort();
 
   public:
-    Tree(std::shared_ptr<const Molecule> mol, const int max_height = (nbit__ - 1)/3);
+    Tree(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3);
     ~Tree() { }
+
+    void fmm(const int lmax, std::shared_ptr<const Matrix> density);
 
     void print_tree_xyz() const;
 };

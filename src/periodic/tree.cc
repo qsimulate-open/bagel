@@ -30,7 +30,7 @@
 using namespace bagel;
 using namespace std;
 
-Tree::Tree(shared_ptr<const Molecule> mol, const int maxht) : mol_(mol), max_height_(maxht) {
+Tree::Tree(shared_ptr<const Geometry> geom, const int maxht) : geom_(geom), max_height_(maxht) {
 
   init();
 }
@@ -38,18 +38,26 @@ Tree::Tree(shared_ptr<const Molecule> mol, const int maxht) : mol_(mol), max_hei
 
 void Tree::init() {
 
-  nvertex_ = mol_->natom();
-  position_ = mol_->charge_center();
+  nvertex_ = geom_->natom();
+  position_ = geom_->charge_center();
   //cout << "Charge centre: " << position_[0] << "  " << position_[1] << "  " << position_[2] << endl;
   coordinates_.resize(nvertex_);
   for (int i = 0; i != nvertex_; ++i)
-    coordinates_[i] = mol_->atoms(i)->position();
+    coordinates_[i] = geom_->atoms(i)->position();
 
   for (int i = 0; i != nvertex_; ++i) {
     coordinates_[i][0] -= position_[0];
     coordinates_[i][1] -= position_[1];
     coordinates_[i][2] -= position_[2];
   }
+
+  ordering_.resize(nvertex_);
+  iota(ordering_.begin(), ordering_.begin()+nvertex_, 0);
+
+  basisindex_.resize(nvertex_);
+  basisindex_[0] = 0;
+  for (int i = 1; i != nvertex_; ++i)
+    basisindex_[i] = basisindex_[i - 1] + geom_->atoms(i - 1)->nshell();
 
   get_particle_key();
 //  for (int i = 0; i != nvertex_; ++i)
@@ -58,6 +66,7 @@ void Tree::init() {
   keysort();
 //  for (int i = 0; i != nvertex_; ++i)
 //    cout << particle_keys_[i] << endl;
+
   build_tree();
 }
 
@@ -98,6 +107,10 @@ void Tree::build_tree() {
               (nodes_[nnode_])->insert_vertex(leaves_[n]);
               parent_found = true;
               nodes_[j]->insert_child(nodes_[nnode_]);
+              //DEBUG
+              //for (int k = 0; k != nodes_[j]->nchild(); ++k)
+              //  cout << nodes_[j]->children(k)->position(0) << "  " << nodes_[j]->children(k)->position(1) << "  "
+              //       << nodes_[j]->children(k)->position(2) << endl;
             }
           }
 
@@ -119,10 +132,11 @@ void Tree::build_tree() {
 
   print_tree_xyz();
   for (int i = 1; i != nnode_; ++i) {
+  //for (int i = nnode_ - 1; i >= 0; ++i) {
     nodes_[i]->init();
     //cout << i << "  " << nodes_[i]->position(0) << "  " << nodes_[i]->position(1) << "   " << nodes_[i]->position(2) << endl;
     //cout << "Node " << i << "   has    " << nodes_[i]->nchild() << " children and is_leaf_ is " << nodes_[i]->is_leaf() << endl;
-    for (int j = 1; j !=nnode_; ++j) {
+    for (int j = 1; j != nnode_; ++j) {
       if (nodes_[j]->depth() == nodes_[i]->depth()) {
         nodes_[i]->insert_neighbour(nodes_[j], false, 1);
       } else if (nodes_[j]->depth() > nodes_[i]->depth()) {
@@ -132,6 +146,26 @@ void Tree::build_tree() {
     cout << "Node " << i << " at level " << nodes_[i]->depth() << " has extent = " << setprecision(5) << nodes_[i]->extent()
                          << " and " << nodes_[i]->nneighbour() << " neighbours" << endl;
   }
+}
+
+
+void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
+
+  for (int i = 1; i != nnode_; ++i)
+    nodes_[i]->make_interaction_list();
+  for (int i = nnode_ - 1; i > 0; --i) {
+    cout << " i = " << i << " is leaf = " << nodes_[i]->is_leaf() << endl;
+    nodes_[i]->compute_multipoles(lmax);
+  }
+
+  vector<int> offset;
+  for (int n = 0; n != nvertex_; ++n) {
+    const vector<int> tmpoff = geom_->offset(ordering_[n]);
+    offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());
+  }
+
+  for (int i = 2; i != nnode_; ++i)
+    nodes_[i]->compute_local_expansions(density, lmax, offset);
 }
 
 
@@ -167,31 +201,31 @@ void Tree::get_particle_key() {
 
 void Tree::keysort() {
 
-  vector<int> id(nvertex_), id0(nvertex_), id1(nvertex_);
-  iota(id.begin(), id.begin()+nvertex_, 0);
+  vector<int> id0(nvertex_), id1(nvertex_);
 
   for (int i = 0; i != nbit__ - 1; ++i) { // Morton order
     vector<bitset<nbit__>> key0(nvertex_), key1(nvertex_);
     int n0 = 0, n1 = 0;
     for (int n = 0; n != nvertex_; ++n) {
       if (particle_keys_[n][i] == 0) {
-        id0[n0] = id[n];
+        id0[n0] = ordering_[n];
         key0[n0++] = particle_keys_[n];
       } else {
-        id1[n1] = id[n];
+        id1[n1] = ordering_[n];
         key1[n1++] = particle_keys_[n];
       }
     }
     assert(n0 + n1 == nvertex_);
     move(key0.begin(), key0.begin()+n0, particle_keys_.begin());
     move(key1.begin(), key1.begin()+n1, particle_keys_.begin()+n0);
-    move(id0.begin(), id0.begin()+n0, id.begin());
-    move(id1.begin(), id1.begin()+n1, id.begin()+n0);
+    move(id0.begin(), id0.begin()+n0, ordering_.begin());
+    move(id1.begin(), id1.begin()+n1, ordering_.begin()+n0);
   }
 
   leaves_.resize(nvertex_);
   for (int n = 0; n != nvertex_; ++n) {
-    auto leaf = make_shared<Vertex>(particle_keys_[n], mol_->atoms(id[n]));
+    const int pos = ordering_[n];
+    auto leaf = make_shared<Vertex>(particle_keys_[n], geom_->atoms(pos), pos, basisindex_[pos]);
     leaves_[n] = leaf;
   }
 }
@@ -205,7 +239,7 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
     if (nodes_[i]->depth() != current_level) {
       ++current_level;
       cout << endl;
-      cout << mol_->natom() << endl;
+      cout << geom_->natom() << endl;
       cout << "Level " << current_level << endl;
       node = 0;
     }

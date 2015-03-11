@@ -51,15 +51,14 @@ void Node::insert_vertex(shared_ptr<const Vertex> p) {
   assert(!is_complete_);
   bodies_.resize(nbody_ + 1);
   bodies_[nbody_] = p;
+
   ++nbody_;
 }
 
 
 void Node::insert_child(shared_ptr<const Node> child) {
 
-  if (child = NULL) {
-    is_leaf_ = false;
-  } else {
+  if (child) {
     assert(!is_leaf_);
     children_.resize(nchild_ + 1);
     children_[nchild_] = child;
@@ -150,9 +149,28 @@ void Node::insert_neighbour(shared_ptr<const Node> neigh, const bool is_neighbou
 }
 
 
-void Node::compute_multipoles(const int lmax) {
+void Node::make_interaction_list(const int ws) {
 
-  assert(is_leaf_);
+  ninter_ = 0;
+  for (auto& pneighbour : parent_->neighbour()) {
+    for (int n = 0; n != pneighbour->nchild(); ++n) {
+      shared_ptr<const Node> child = pneighbour->children(n);
+      array<double, 3> r12;
+      r12[0] = position_[0] - child->position(0);
+      r12[1] = position_[1] - child->position(1);
+      r12[2] = position_[2] - child->position(2);
+      const double r = sqrt(r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2]);
+      if (r > (1.0 + ws) * (extent_ + child->extent())) {
+        interaction_list_.resize(ninter_ + 1);
+        interaction_list_[ninter_] = child;
+        ++ninter_;
+      }
+    }
+  }
+}
+
+
+void Node::compute_multipoles(const int lmax) {
 
   const int nmultipole = (lmax + 1) * (lmax + 1);
   multipoles_.resize(nmultipole);
@@ -163,27 +181,41 @@ void Node::compute_multipoles(const int lmax) {
     multipoles[i] = tmp;
   }
 
-  size_t oa0 = 0;
-  size_t oa1 = 0;
-  for (auto a0 = bodies_.begin(); a0 != bodies_.end(); ++a0) {
-    for (auto a1 = bodies_.begin(); a1 != bodies_.end(); ++a1) {
-      size_t ob0 = oa0;
-      size_t ob1 = oa1;
-      for (auto& b0 : (*a0)->atom()->shells()) {
-        for (auto& b1 : (*a1)->atom()->shells()) {
-          MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
-          mpole.compute();
-          for (int i = 0; i != nmultipole; ++i)
-            multipoles[i].add_block(1.0, ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+  if (is_leaf_) { //compute multipole integrals
+    size_t ob0 = 0;
+    for (auto& a0 : bodies_) {
+      for (auto& b0 : a0->atom()->shells()) {
+        size_t ob1 = 0;
+        for (auto& a1 : bodies_) {
+          for (auto& b1 : a1->atom()->shells()) {
+            MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
+            mpole.compute();
+            for (int i = 0; i != nmultipole; ++i)
+              multipoles[i].add_block(1.0, ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
 
-          ob1 += b1->nbasis();
+            ob1 += b1->nbasis();
+          }
         }
         ob0 += b0->nbasis();
       }
-
-      oa1 += (*a1)->atom()->nbasis();
     }
-    oa0 += (*a0)->atom()->nbasis();
+  } else { //shift children's multipoles
+    int offset = 0;
+    for (int n = 0; n != nchild_; ++n) {
+      shared_ptr<const Node> child = children_[n].lock();
+      array<double, 3> r12;
+      r12[0] = position_[0] - child->position(0);
+      r12[1] = position_[1] - child->position(1);
+      r12[2] = position_[2] - child->position(2);
+      assert(nmultipole == child->multipoles().size());
+      LocalExpansion shift(r12, child->multipoles(), lmax);
+      vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_moments();
+
+      for (int i = 0; i != nmultipole; ++i)
+        multipoles[i].add_block(1.0, offset, offset, child->nbasis(), child->nbasis(), moment[i]->data());
+
+      offset += child->nbasis();
+    }
   }
 
   for (int i = 0; i != nmultipole; ++i)
@@ -191,33 +223,47 @@ void Node::compute_multipoles(const int lmax) {
 }
 
 
-void Node::shift_multipoles(const int lmax) { //from multipoles of the children
+void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int lmax, vector<int> offset) {
 
-  assert(!is_leaf_);
+  ZMatrix out(nbasis_, nbasis_);
+  out.zero();
 
-  const int nmultipole = (lmax + 1) * (lmax + 1);
-  multipoles_.resize(nmultipole);
-  vector<ZMatrix> multipoles(nmultipole);
-  for (int i = 0; i != nmultipole; ++i) {
-    ZMatrix tmp(nbasis_, nbasis_);
-    tmp.zero();
-    multipoles[i] = tmp;
-  }
-
-  int offset = 0;
-  for (int n = 0; n != nchild_; ++n) {
-    shared_ptr<const Node> child = children_[n].lock();
+  for (auto& distant_node : interaction_list_) {
     array<double, 3> r12;
-    r12[0] = position_[0] - child->position(0);
-    r12[1] = position_[1] - child->position(1);
-    r12[2] = position_[2] - child->position(2);
-    assert(nmultipole == child->multipoles().size());
-    LocalExpansion shift(r12, child->multipoles(), lmax);
-    vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_moments();
+    r12[0] = distant_node->position(0) - position_[0];
+    r12[1] = distant_node->position(1) - position_[1];
+    r12[2] = distant_node->position(2) - position_[2];
+    LocalExpansion lx(r12, distant_node->multipoles(), lmax);
+    vector<shared_ptr<const ZMatrix>> lmoments = lx.local_moments();
 
-    for (int i = 0; i != nmultipole; ++i)
-      multipoles[i].add_block(1.0, offset, offset, child->nbasis(), child->nbasis(), moment[i]->data());
+    const int dimb = distant_node->nbasis();
+    // need to get a sub-density matrix corresponding to distant_node
+    Matrix subden(dimb, dimb);
+    subden.zero();
+    size_t ob0 = 0;
+    for (auto& body0 : distant_node->bodies()) {
+      const int offset0 = offset[body0->ibasis()];
+      const size_t size0 = body0->nbasis();
+      size_t ob1 = 0;
+      for (auto& body1 : distant_node->bodies()) {
+        const int offset1 = offset[body1->ibasis()];
+        const size_t size1 = body1->nbasis();
+        shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
+        subden.copy_block(ob1, ob0, size1, size0, tmp);
+        ob1 += size1;
+      }
+      ob0 += size0;
+    }
 
-    offset += child->nbasis();
+    const int nmultipole = (lmax + 1) * (lmax + 1);
+    for (int i = 0; i != nmultipole; ++i) {
+      complex<double> contract = 0.0;
+      for (int j = 0; j != dimb; ++j)
+        for (int k = 0; k != dimb; ++k)
+          contract += lmoments[i]->element(k, j) * subden.element(k, j);
+      out += contract * *multipoles_[i];
+    }
   }
+
+  local_expansion_ = make_shared<const ZMatrix>(out);
 }
