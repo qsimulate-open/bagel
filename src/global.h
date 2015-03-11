@@ -31,8 +31,7 @@
 #include <fstream>
 #include <cassert>
 #include <stdexcept>
-#include <stdlib.h>
-#include <boost/regex.hpp>
+#include <cstdlib>
 
 namespace bagel {
 
@@ -57,14 +56,14 @@ static void print_footer() {
 
 template<typename T>
 std::string getenv_multiple(const T& head) {
-  char const* val = getenv(head);
+  char const* val = std::getenv(head);
   return val ? std::string(val) : "";
 }
 
 
 template<typename T, typename ...args>
 std::string getenv_multiple(const T& head, const args&... tail) {
-  char const* val = getenv(head);
+  char const* val = std::getenv(head);
   return val ? std::string(val) : getenv_multiple(tail...);
 }
 
