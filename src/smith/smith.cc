@@ -58,8 +58,7 @@ void Smith::compute() {
   algo_->solve();
 
 #ifdef COMPILE_SMITH
-  const bool grad = idata_->get<bool>("grad", false);
-  if (grad) {
+  if (algo_->ref()->grad()) {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
     assert(algop);
 

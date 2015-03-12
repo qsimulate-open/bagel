@@ -30,7 +30,7 @@
 #include <chrono>
 #include <src/ci/fci/civec.h>
 #include <src/smith/denom.h>
-#include <src/smith/tensor.h>
+#include <src/smith/multitensor.h>
 #include <src/smith/smith_info.h>
 
 namespace bagel {
@@ -138,6 +138,7 @@ class SpinFreeMethod {
     }
 
     double dot_product_transpose(std::shared_ptr<const Tensor> r, std::shared_ptr<const Tensor> t2) const;
+    double dot_product_transpose(std::shared_ptr<const MultiTensor> r, std::shared_ptr<const MultiTensor> t2) const;
 };
 
 }

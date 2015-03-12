@@ -35,6 +35,7 @@
 #include <src/scf/hf/fock.h>
 #include <src/util/f77.h>
 #include <src/smith/queue.h>
+#include <src/smith/multitensor.h>
 #include <src/smith/smith_info.h>
 
 namespace bagel {
@@ -69,12 +70,14 @@ class MRCI : public SpinFreeMethod {
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> s;
     std::shared_ptr<Tensor> n;
-    std::shared_ptr<Tensor> den1;
-    std::shared_ptr<Tensor> den2;
-    std::shared_ptr<Tensor> Den1;
-    double correlated_norm_;
-    std::shared_ptr<Tensor> deci;
 
+    int nstates_;
+    std::vector<double> energy_;
+
+    std::vector<std::shared_ptr<MultiTensor>> t2all_; 
+    std::vector<std::shared_ptr<MultiTensor>> rall_; 
+    std::vector<std::shared_ptr<MultiTensor>> sall_; 
+    std::vector<std::shared_ptr<MultiTensor>> nall_; 
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma1_();
@@ -201,14 +204,6 @@ class MRCI : public SpinFreeMethod {
         sum += queue->next_compute()->target();
       return sum;
     }
-
-    std::shared_ptr<const Matrix> rdm11() const { return den1->matrix(); }
-    std::shared_ptr<const Matrix> rdm12() const { return den2->matrix(); }
-    std::shared_ptr<const Matrix> rdm21() const { return Den1->matrix2(); }
-
-    double correlated_norm() const { return correlated_norm_; }
-
-    std::shared_ptr<const Civec> ci_deriv() const { return deci->civec(this->det_); }
 
 };
 

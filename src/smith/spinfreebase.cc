@@ -147,7 +147,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   timer.tick_print("MO integral evaluation");
 
   // rdm ci derivatives.
-  if (ref_->ciwfn()) {
+  if (ref_->ciwfn() && ref_->grad()) {
     vector<IndexRange> o = {ci_};
     Ci dci(ref_, o, civec_);
     rdm0deriv_ = dci.tensor();
@@ -654,6 +654,18 @@ shared_ptr<Tensor> SpinFreeMethod::init_amplitude() const {
 }
 
 
+double SpinFreeMethod::dot_product_transpose(shared_ptr<const MultiTensor> r, shared_ptr<const MultiTensor> t2) const {
+  assert(r->size() == t2->size());
+  double out = 0.0;
+  for (int i = 0; i != r->size(); ++i)
+    out += r->fac(i) * t2->fac(i);
+  for (auto& i : *r)
+    for (auto& j : *t2)
+      out += dot_product_transpose(i, j);
+  return out;
+}
+
+
 double SpinFreeMethod::dot_product_transpose(shared_ptr<const Tensor> r, shared_ptr<const Tensor> t2) const {
   auto prod = [this, &r, &t2](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
     const size_t size = r->get_size_alloc(i2, i3, i0, i1);
@@ -713,7 +725,7 @@ double SpinFreeMethod::dot_product_transpose(shared_ptr<const Tensor> r, shared_
 
 
 void SpinFreeMethod::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) const {
-  assert(to_upper(ref_->method()) == "CASPT2");
+  assert(to_upper(ref_->method()) == "CASPT2" || to_upper(ref_->method()) == "CASPT2");
   for (auto& i3 : virt_) {
     for (auto& i2 : closed_) {
       for (auto& i1 : virt_) {

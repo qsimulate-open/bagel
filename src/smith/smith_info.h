@@ -40,6 +40,8 @@ class SMITH_Info : public Reference {
     int target_;
     int maxtile_;
 
+    bool grad_;
+
   public:
     SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata) : Reference(*o) {
       method_ = idata->get<std::string>("method");
@@ -53,6 +55,7 @@ class SMITH_Info : public Reference {
       maxiter_ = idata->get<int>("maxiter", 50);
       target_  = idata->get<int>("target",   0);
       maxtile_ = idata->get<int>("maxtile", 10);
+      grad_    = idata->get<bool>("grad", false);
     }
 
     std::string method() const { return method_; }
@@ -61,6 +64,7 @@ class SMITH_Info : public Reference {
     int maxiter() const { return maxiter_; }
     int target() const { return target_; }
     int maxtile() const { return maxtile_; }
+    bool grad() const { return grad_; }
 };
 
 }

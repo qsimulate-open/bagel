@@ -37,14 +37,17 @@ using namespace bagel::SMITH;
 
 MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
   this->eig_ = f1_->diag();
-  t2 = init_amplitude();
-  r = t2->clone();
-  s = t2->clone();
-  n = t2->clone();
-  den1 = h1_->clone();
-  den2 = h1_->clone();
-  Den1 = v2_->clone();
-  deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+  nstates_ = ref->ciwfn()->nstates();
+
+  for (int i = 0; i != nstates_; ++i) {
+    auto tmp = make_shared<MultiTensor>(nstates_);
+    for (auto& j : *tmp)
+      j = init_amplitude();
+    t2all_.push_back(tmp);
+    rall_.push_back(tmp->clone());
+    sall_.push_back(tmp->clone());
+    nall_.push_back(tmp->clone());
+  }
 }
 
 
@@ -52,48 +55,119 @@ void MRCI::MRCI::solve() {
   Timer timer;
   this->print_iteration();
 
-  auto queue = make_sourceq();
-  while (!queue->done())
-    queue->next_compute();
-  queue = make_normq();
-  while (!queue->done())
-    queue->next_compute();
+  const double core_nuc = this->core_energy_ + ref_->geom()->nuclear_repulsion();
+  const double refen = ref_->ciwfn()->energy(ref_->target()) - core_nuc; 
+
+  // target state
+  for (int istate = 0; istate != nstates_; ++istate) {
+    // takes care of ref coefficients
+    t2all_[istate]->fac(istate) = 1.0;
+    nall_[istate]->fac(istate)  = 1.0;
+    sall_[istate]->fac(istate)  = refen;
+
+    for (auto& tt : *t2all_[istate]) {
+      t2 = tt; 
+      for (auto& ss : *sall_[istate]) {
+        //TODO set appropriate RDMs here
+        s = ss; 
+        auto queue = make_sourceq();
+        while (!queue->done())
+          queue->next_compute();
+      }
+      for (auto& nn : *nall_[istate]) {
+        n = nn; 
+        auto queue = make_normq();
+        while (!queue->done())
+          queue->next_compute();
+      }
+    }
+  }
 
   DavidsonDiag_<Amplitude, Residual> davidson(1, 10);
 
-  const double core_nuc = this->core_energy_ + ref_->geom()->nuclear_repulsion();
-  const double refen = ref_->ciwfn()->energy(ref_->target()) - core_nuc; 
-  auto a0 = make_shared<Amplitude>(1.0, t2, n, this);
-  auto r0 = make_shared<Residual>(refen, s, this);
-  davidson.compute(a0, r0);
-  r = davidson.residual()[0]->tensor()[0];
+  {
+    vector<shared_ptr<const Amplitude>> a0;
+    vector<shared_ptr<const Residual>> r0;
+    for (int istate = 0; istate != nstates_; ++istate) {
+      a0.push_back(make_shared<Amplitude>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
+      r0.push_back(make_shared<Residual>(sall_[istate]->copy(), this));
+    }
+    davidson.compute(a0, r0);
+  }
+
+  // TODO ***********************************
+  {
+  r = davidson.residual()[0]->tensor()->at(0);
   this->update_amplitude(t2, r);
+  auto m = make_shared<MultiTensor>(1);
+  m->at(0) = t2;
+  t2all_[0] = m; 
+  }
+  // ****************************************
 
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
-    queue = make_normq();
-    while (!queue->done())
-      queue->next_compute();
 
-    const double scal = 1.0 / sqrt(dot_product_transpose(n, t2));
-    n->scale(scal);
-    t2->scale(scal);
+    // loop over state of interest
+    vector<shared_ptr<const Amplitude>> a0;
+    vector<shared_ptr<const Residual>> r0;
+    for (int istate = 0; istate != nstates_; ++istate) {
+      nall_[istate]->zero(); 
+      for (auto& tt : *t2all_[istate]) {
+        for (auto& nn : *nall_[istate]) {
+          // TODO set appropriate RDMs
+          t2 = tt;
+          n = nn;
+          auto queue = make_normq();
+          while (!queue->done())
+            queue->next_compute();
+        }
+      }
 
-    queue = make_residualq();
-    while (!queue->done())
-      queue->next_compute();
-    r->ax_plus_y(refen, n);
+      const double scal = 1.0 / sqrt(dot_product_transpose(nall_[istate], t2all_[istate]));
+      nall_[istate]->scale(scal);
+      t2all_[istate]->scale(scal);
 
-    a0 = make_shared<Amplitude>(0.0, t2, n, this);
-    r0 = make_shared<Residual>(dot_product_transpose(s, t2), r, this);
+      rall_[istate]->zero();
+      for (auto& tt : *t2all_[istate]) {
+        auto niter = nall_[istate]->begin();
+        for (auto& rr : *rall_[istate]) {
+          // TODO set appropriate RDMs
+          t2 = tt;
+          r = rr;
+          // TODO residual should not be zero'ed out inside the loop
+          auto queue = make_residualq();
+          while (!queue->done())
+            queue->next_compute();
+          r->ax_plus_y(refen, *niter++);
+        }
+      }
 
-    this->energy_ = davidson.compute(a0, r0);
-    r = davidson.residual()[0]->tensor()[0];
+      a0.push_back(make_shared<Amplitude>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
+
+      shared_ptr<MultiTensor> m = rall_[istate]->copy();
+      int j = 0;
+      for (auto& i : *sall_[istate]) {
+        double tmp = 0.0;
+        for (auto& j : *t2all_[istate])
+          tmp += dot_product_transpose(i, j);
+        m->fac(j++) += tmp;
+      }
+      r0.push_back(make_shared<Residual>(m, this));
+    }
+
+    energy_ = davidson.compute(a0, r0);
+    // TODO ***********************************
+    r = davidson.residual()[0]->tensor()->at(0);
     const double err = r->rms();
-    this->print_iteration(iter, this->energy_+core_nuc, err);
+    this->print_iteration(iter, this->energy_[0]+core_nuc, err);
 
     t2->zero();
     this->update_amplitude(t2, r);
+    auto m = make_shared<MultiTensor>(1);
+    m->at(0) = t2;
+    t2all_[0] = m;
+    // ****************************************
 
     if (err < ref_->thresh()) break;
   }
