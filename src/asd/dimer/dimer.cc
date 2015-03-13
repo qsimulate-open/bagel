@@ -72,6 +72,11 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, share
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed()+B->nclosed(), A->nact()+B->nact(), A->nvirt()+B->nvirt());
 }
 
+Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> geom, bool tmp) : input_(input) {
+  sgeom_ = make_shared<Geometry>(*geom);
+  cout << "NEW DIMER CONSTRUCTOR ENTERED" << endl;
+}
+
 
 void Dimer::construct_geometry() {
   cout << " ===== Constructing Dimer geometry ===== " << endl;
@@ -186,6 +191,47 @@ void Dimer::embed_refs() {
 
     // Set up variables for this fci
     const int ncore = nclosed + filled_activeA;
+    const int norb  = nactB;
+
+    embedded_refs_.second = make_shared<Reference>(sgeom_, Bcoeff, ncore, norb, 0);
+  }
+}
+
+void Dimer::embed_refs(bool tmp) {
+  Timer timer;
+  const int nclosedA = active_refs_.first->nclosed(); //this implicitly includes filled_activeB
+  const int nclosedB = active_refs_.second->nclosed();
+
+  const int nactA = active_refs_.first->nact();
+  const int nactB = active_refs_.second->nact();
+
+  const int noccA = nclosedA + nactA;
+  const int noccB = nclosedB + nactB;
+
+  shared_ptr<const Matrix> coeffA = active_refs_.first->coeff();
+  shared_ptr<const Matrix> coeffB = active_refs_.second->coeff();
+
+  const int dimerbasis = sgeom_->nbasis();
+
+  { // Move occupied orbitals of unit B to form the core orbitals
+    auto Amatrix = make_shared<Matrix>(dimerbasis, noccA);
+    Amatrix->copy_block(0, 0, dimerbasis, noccA, coeffA->slice(0, noccA)); // Total closed space + filled active B + activA
+    auto Acoeff = make_shared<Coeff>(move(*Amatrix));
+
+    // Set up variables for this fci
+    const int ncore = nclosedA;
+    const int norb  = nactA;
+
+    embedded_refs_.first = make_shared<Reference>(sgeom_, Acoeff, ncore, norb, 0);
+  }
+
+  { // Move occupied orbitals of unit A to form core of unit B
+    auto Bmatrix = make_shared<Matrix>(dimerbasis, noccB);
+    Bmatrix->copy_block(0, 0, dimerbasis, noccB, coeffB->slice(0, noccB));
+    auto Bcoeff = make_shared<Coeff>(move(*Bmatrix));
+
+    // Set up variables for this fci
+    const int ncore = nclosedA;
     const int norb  = nactB;
 
     embedded_refs_.second = make_shared<Reference>(sgeom_, Bcoeff, ncore, norb, 0);

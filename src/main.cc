@@ -156,6 +156,9 @@ int main(int argc, char** argv) {
 
           dimer = make_shared<Dimer>(itree, dimer_refs.at(0), dimer_refs.at(1));
         }
+        else if (form == "l" || form == "linked") {
+          dimer = make_shared<Dimer>(itree, geom, true);
+        }
 
         dimer->scf(itree);
 
@@ -207,6 +210,10 @@ int main(int argc, char** argv) {
           mfs << geom;
           if (orbitals) mfs << ref;
         }
+
+      } else if (title == "stop") {
+
+        return 0;
 
       } else {
         if (title != "molecule")

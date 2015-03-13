@@ -546,16 +546,23 @@ void ASD_base::debug_rdm(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, con
   const int nactT = nactA+nactB;
 
   const int neleA = 2*(dimer_->isolated_refs().first->nclosed() - dimer_->active_refs().first->nclosed());
-  const int neleB = 2*(dimer_->isolated_refs().first->nclosed() - dimer_->active_refs().first->nclosed());
-  const int nelec = neleA+neleB;
+  const int neleB = 2*(dimer_->isolated_refs().second->nclosed() - dimer_->active_refs().second->nclosed());
+  const int nelec = neleA + neleB - charge_;
 
   if (!mute) cout << "=== RDM debug output: state(" << istate << ") ===" << endl;
+
+  if (!mute) {
+    cout << "Nelectron A : " << neleA << endl;
+    cout << "Nelectron B : " << neleB << endl;
+    cout << "Charge      : " << charge_ << endl;
+    cout << "Total elec  : " << nelec << endl;
+  }
 
   {//1RDM
     double sum = 0.0;
     for (int i = 0; i != nactT; ++i)
       sum += rdm1->element(i,i);
-    if (!mute) cout << "1RDM Trace = " << sum << endl;
+    if (!mute) cout << "1RDM Trace = " << setw(20) << setprecision(15) <<sum << endl;
     assert((fabs(sum - static_cast<double>(nelec)) < 1.0e-10));
   }
 
@@ -565,8 +572,8 @@ void ASD_base::debug_rdm(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, con
     for (int i = 0; i != nactT; ++i)
       for (int j = 0; j != nactT; ++j)
       sum += rdm2->element(i,i,j,j);
-    if (!mute) cout << "2RDM Trace = " << sum << endl;
-    assert((fabs(sum - static_cast<double>(nelec*(nelec-1))) < 1.0e-10));
+    if (!mute) cout << "2RDM Trace = " << setw(20) << setprecision(15) <<sum << endl;
+    assert((fabs(sum - static_cast<double>(nelec*(nelec-1))) < 1.0e-8));
   }
 
   {//Partial trace: Gamma_ij,kk
@@ -847,8 +854,6 @@ void ASD_base::debug_energy(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, 
                     e2_abab + e2_baba + e2_abba + e2_baab;
   const double etot = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy() + e1 + e2;
 
-  assert(fabs(etot - energy(istate)) < 1.0e-10);
-
   if (!mute) {
     cout << "Nuc + Core energy   = " << dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy() << endl;
     cout << "  Nuclear repulsion = " << dimer_->sref()->geom()->nuclear_repulsion() << endl;
@@ -873,6 +878,9 @@ void ASD_base::debug_energy(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, 
     cout << "           BAAB     = " << e2_baab << endl;
     cout << "Total energy = " << etot << endl;
   }
+
+  assert(fabs(etot - energy(istate)) < 1.0e-8);
+
 }
 
 
