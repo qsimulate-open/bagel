@@ -63,6 +63,7 @@ class Residual {
     double dot_product(std::shared_ptr<const Amplitude> o) const;
 
     std::shared_ptr<MultiTensor> tensor() { return res_; }
+    std::shared_ptr<const MultiTensor> tensor() const { return res_; }
 };
 
 class Amplitude {

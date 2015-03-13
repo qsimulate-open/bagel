@@ -54,7 +54,7 @@ class MultiTensor {
     }
 
     std::shared_ptr<MultiTensor> clone() const {
-      auto out = std::make_shared<MultiTensor>(size());
+      auto out = std::make_shared<MultiTensor>(nref());
       auto oiter = out->tensors_.begin();
       for (auto& i : tensors_)
         *oiter++ = i->clone();
@@ -79,6 +79,8 @@ class MultiTensor {
 
     std::shared_ptr<Tensor>& operator[](const size_t i) { assert(i < tensors_.size()); return tensors_[i]; }
     std::shared_ptr<Tensor>& at(const size_t i) { return tensors_.at(i); }
+    std::shared_ptr<const Tensor> operator[](const size_t i) const { assert(i < tensors_.size()); return tensors_[i]; }
+    std::shared_ptr<const Tensor> at(const size_t i) const { return tensors_.at(i); }
 
     std::vector<std::shared_ptr<Tensor>>& tensors() { return tensors(); }
 
@@ -90,7 +92,19 @@ class MultiTensor {
 
     void zero() { scale(0.0); }
 
-    size_t size() const { assert(fac_.size() == tensors_.size()); return fac_.size(); } 
+    size_t nref() const { assert(fac_.size() == tensors_.size()); return fac_.size(); } 
+
+    double rms() const {
+      double out = 0.0;
+      size_t size = fac_.size();
+      for (auto& i : fac_)
+        out += i*i;
+      for (auto& i : tensors_) {
+        out += std::pow(i->norm(),2);
+        size += i->size_alloc();
+      }
+      return std::sqrt(out/size);
+    }
 
     double& fac(const int i) { return fac_[i]; }
     const double& fac(const int i) const { return fac_[i]; }

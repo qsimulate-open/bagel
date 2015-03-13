@@ -86,7 +86,7 @@ class SpinFreeMethod {
 
     // printing functions called from the solve function of a derived class
     void print_iteration() const;
-    void print_iteration(const int i, const double en, const double err) const;
+    void print_iteration(const int i, const double en, const double err, const int istate = -1) const;
     void print_iteration(const bool noconv) const;
 
 
@@ -112,6 +112,7 @@ class SpinFreeMethod {
 
     std::shared_ptr<Tensor> init_amplitude() const;
     void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r) const;
+    void update_amplitude(std::shared_ptr<MultiTensor> t, std::shared_ptr<const MultiTensor> r) const;
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
 
   public:

@@ -227,12 +227,14 @@ void SpinFreeMethod::print_iteration() const {
   time_ = chrono::high_resolution_clock::now();
 }
 
-void SpinFreeMethod::print_iteration(const int i, const double en, const double err) const {
+void SpinFreeMethod::print_iteration(const int i, const double en, const double err, const int ist) const {
   auto end = chrono::high_resolution_clock::now();
   const double tim = chrono::duration_cast<chrono::milliseconds>(end-time_).count() * 0.001;
-  cout << "     " << setw(4) << i << setw(15) << fixed << setprecision(8) << en
-                                            << setw(15) << fixed << setprecision(8) << err
-                                            << setw(10) << fixed << setprecision(2) << tim << endl;
+  cout << "     " << setw(4) << i;
+  if (ist >= 0)
+    cout << setw(4) << ist;
+  cout << setw(15) << fixed << setprecision(8) << en << setw(15) << fixed << setprecision(8) << err
+                                                     << setw(10) << fixed << setprecision(2) << tim << endl;
   time_ = end;
 }
 
@@ -256,6 +258,15 @@ double SpinFreeMethod::compute_e0() const {
   }
   cout << "    - Zeroth order energy: " << setw(20) << setprecision(10) << sum << endl;
   return sum;
+}
+
+
+void SpinFreeMethod::update_amplitude(shared_ptr<MultiTensor> t, shared_ptr<const MultiTensor> r) const {
+  // TODO this function is not yet implemented
+  assert(t->nref() == 1 && r->nref() == 1);
+  update_amplitude(t->at(0), r->at(0)); 
+  // TODO do I need to update fac_?
+  t->fac(0) = 0.0;
 }
 
 
@@ -655,9 +666,9 @@ shared_ptr<Tensor> SpinFreeMethod::init_amplitude() const {
 
 
 double SpinFreeMethod::dot_product_transpose(shared_ptr<const MultiTensor> r, shared_ptr<const MultiTensor> t2) const {
-  assert(r->size() == t2->size());
+  assert(r->nref() == t2->nref());
   double out = 0.0;
-  for (int i = 0; i != r->size(); ++i)
+  for (int i = 0; i != r->nref(); ++i)
     out += r->fac(i) * t2->fac(i);
   for (auto& i : *r)
     for (auto& j : *t2)
@@ -725,7 +736,7 @@ double SpinFreeMethod::dot_product_transpose(shared_ptr<const Tensor> r, shared_
 
 
 void SpinFreeMethod::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) const {
-  assert(to_upper(ref_->method()) == "CASPT2" || to_upper(ref_->method()) == "CASPT2");
+  assert(to_upper(ref_->method()) == "CASPT2");
   for (auto& i3 : virt_) {
     for (auto& i2 : closed_) {
       for (auto& i1 : virt_) {

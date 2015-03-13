@@ -43,28 +43,6 @@ namespace CASPT2{
 
 class CASPT2 : public SpinFreeMethod {
   protected:
-    using SpinFreeMethod::ref_;
-    using SpinFreeMethod::e0_;
-    using SpinFreeMethod::closed_;
-    using SpinFreeMethod::active_;
-    using SpinFreeMethod::virt_;
-    using SpinFreeMethod::ci_;
-    using SpinFreeMethod::rclosed_;
-    using SpinFreeMethod::ractive_;
-    using SpinFreeMethod::rvirt_;
-    using SpinFreeMethod::rci_;
-    using SpinFreeMethod::h1_;
-    using SpinFreeMethod::f1_;
-    using SpinFreeMethod::v2_;
-    using SpinFreeMethod::rdm1_;
-    using SpinFreeMethod::rdm2_;
-    using SpinFreeMethod::rdm3_;
-    using SpinFreeMethod::rdm4_;
-    using SpinFreeMethod::rdm1deriv_;
-    using SpinFreeMethod::rdm2deriv_;
-    using SpinFreeMethod::rdm3deriv_;
-    using SpinFreeMethod::rdm4deriv_;
-
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> den1;

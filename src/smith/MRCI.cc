@@ -36,7 +36,7 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
-  this->eig_ = f1_->diag();
+  eig_ = f1_->diag();
   nstates_ = ref->ciwfn()->nstates();
 
   for (int i = 0; i != nstates_; ++i) {
@@ -44,7 +44,6 @@ MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
     for (auto& j : *tmp)
       j = init_amplitude();
     t2all_.push_back(tmp);
-    rall_.push_back(tmp->clone());
     sall_.push_back(tmp->clone());
     nall_.push_back(tmp->clone());
   }
@@ -53,9 +52,9 @@ MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
 
 void MRCI::MRCI::solve() {
   Timer timer;
-  this->print_iteration();
+  print_iteration();
 
-  const double core_nuc = this->core_energy_ + ref_->geom()->nuclear_repulsion();
+  const double core_nuc = core_energy_ + ref_->geom()->nuclear_repulsion();
   const double refen = ref_->ciwfn()->energy(ref_->target()) - core_nuc; 
 
   // target state
@@ -85,6 +84,7 @@ void MRCI::MRCI::solve() {
 
   DavidsonDiag_<Amplitude, Residual> davidson(1, 10);
 
+  // first iteration is trivial
   {
     vector<shared_ptr<const Amplitude>> a0;
     vector<shared_ptr<const Residual>> r0;
@@ -95,15 +95,16 @@ void MRCI::MRCI::solve() {
     davidson.compute(a0, r0);
   }
 
-  // TODO ***********************************
+  // set the result to t2
   {
-  r = davidson.residual()[0]->tensor()->at(0);
-  this->update_amplitude(t2, r);
-  auto m = make_shared<MultiTensor>(1);
-  m->at(0) = t2;
-  t2all_[0] = m; 
+    vector<shared_ptr<Residual>> res = davidson.residual();
+    for (int i = 0; i != nstates_; ++i) {
+      t2all_[i]->zero();
+      update_amplitude(t2all_[i], res[i]->tensor());
+    }
   }
-  // ****************************************
+
+  shared_ptr<MultiTensor> rtmp = t2all_[0]->clone(); 
 
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
@@ -112,6 +113,7 @@ void MRCI::MRCI::solve() {
     vector<shared_ptr<const Amplitude>> a0;
     vector<shared_ptr<const Residual>> r0;
     for (int istate = 0; istate != nstates_; ++istate) {
+      // first calculate left-hand-side vectors of t2 (named n)
       nall_[istate]->zero(); 
       for (auto& tt : *t2all_[istate]) {
         for (auto& nn : *nall_[istate]) {
@@ -124,14 +126,17 @@ void MRCI::MRCI::solve() {
         }
       }
 
+      // normalize t2 and n 
       const double scal = 1.0 / sqrt(dot_product_transpose(nall_[istate], t2all_[istate]));
       nall_[istate]->scale(scal);
       t2all_[istate]->scale(scal);
 
-      rall_[istate]->zero();
+      a0.push_back(make_shared<Amplitude>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
+
+      // compute residuals (named r)
       for (auto& tt : *t2all_[istate]) {
         auto niter = nall_[istate]->begin();
-        for (auto& rr : *rall_[istate]) {
+        for (auto& rr : *rtmp) {
           // TODO set appropriate RDMs
           t2 = tt;
           r = rr;
@@ -142,10 +147,7 @@ void MRCI::MRCI::solve() {
           r->ax_plus_y(refen, *niter++);
         }
       }
-
-      a0.push_back(make_shared<Amplitude>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
-
-      shared_ptr<MultiTensor> m = rall_[istate]->copy();
+      shared_ptr<MultiTensor> m = rtmp->copy();
       int j = 0;
       for (auto& i : *sall_[istate]) {
         double tmp = 0.0;
@@ -157,21 +159,24 @@ void MRCI::MRCI::solve() {
     }
 
     energy_ = davidson.compute(a0, r0);
-    // TODO ***********************************
-    r = davidson.residual()[0]->tensor()->at(0);
-    const double err = r->rms();
-    this->print_iteration(iter, this->energy_[0]+core_nuc, err);
 
-    t2->zero();
-    this->update_amplitude(t2, r);
-    auto m = make_shared<MultiTensor>(1);
-    m->at(0) = t2;
-    t2all_[0] = m;
-    // ****************************************
+    // find new trial vectors
+    vector<shared_ptr<Residual>> res = davidson.residual();
+    vector<bool> conv(nstates_, false);
+    for (int i = 0; i != nstates_; ++i) {
+      const double err = res[i]->tensor()->rms();
+      print_iteration(iter, energy_[i]+core_nuc, err, i);
 
-    if (err < ref_->thresh()) break;
+      t2all_[i]->zero();
+      update_amplitude(t2all_[i], res[i]->tensor());
+
+      if (err < ref_->thresh()) conv[i] = true;
+    }
+    if (nstates_ > 1) cout << endl;
+
+    if (all_of(conv.begin(), conv.end(), [](bool i){ return i;})) break;
   }
-  this->print_iteration(iter == ref_->maxiter());
+  print_iteration(iter == ref_->maxiter());
   timer.tick_print("MRCI energy evaluation");
 }
 
