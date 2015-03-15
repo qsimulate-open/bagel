@@ -106,7 +106,6 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
   private:
     void construct_geometry(); ///< Forms super geometry (sgeom_) and optionally projects isolated geometries and supergeometry to a specified basis
     void embed_refs();         ///< Forms two references to be used in CI calculations where the inactive monomer is included as "embedding"
-    void embed_refs(bool tmp);
     /// Reads information on monomer subspaces from input
     void get_spaces(std::shared_ptr<const PTree> idata, std::vector<std::vector<int>>& spaces_A, std::vector<std::vector<int>>& spaces_B);
 
@@ -147,7 +146,7 @@ std::shared_ptr<const VecType> Dimer::embedded_ci(std::shared_ptr<const PTree> i
 
 template <class VecType>
 std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::shared_ptr<const PTree> idata) {
-  embed_refs(true);
+  embed_refs();
   std::pair<int,int> nelea {isolated_refs_.first->nclosed() - active_refs_.first->nclosed(), isolated_refs_.second->nclosed() - active_refs_.second->nclosed()};
   std::pair<int,int> neleb = nelea;
 
