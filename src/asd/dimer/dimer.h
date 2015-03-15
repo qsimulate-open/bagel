@@ -63,12 +63,10 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
   public:
     // Constructors
-    Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b); ///< Conjoins the provided Geometry objects
-    Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a); ///< Duplicates provided Geometry according to translation vector specified in input
     Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B); ///< Conjoins the provided Reference objects
     Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a); ///< Duplicates provided Reference according to translation vector specified in input
-
-    Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> AB, bool tmp);
+    Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> AB); // Linked dimer geometry
+  //Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b); ///< Conjoins the provided Geometry objects
 
     void update_coeff(std::shared_ptr<const Matrix> matrix) {
       std::shared_ptr<Reference> temp;

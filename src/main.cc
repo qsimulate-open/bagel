@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
           dimer = make_shared<Dimer>(itree, dimer_refs.at(0), dimer_refs.at(1));
         }
         else if (form == "l" || form == "linked") {
-          dimer = make_shared<Dimer>(itree, geom, true);
+          dimer = make_shared<Dimer>(itree, geom);
         }
 
         dimer->scf(itree);

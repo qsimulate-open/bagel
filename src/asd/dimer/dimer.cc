@@ -32,16 +32,6 @@ using namespace bagel;
 /************************************************************************************
  *  Single reference plus translation vector constructors                            *
  ************************************************************************************/
-Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : input_(input) {
-  array<double, 3> translation = input->get_array<double, 3>("translate");
-  if (input->get<bool>("angstrom", false))
-    for_each(translation.begin(), translation.end(), [](double& p) { p/= au2angstrom__; });
-  auto geomB = make_shared<const Geometry>((*A), translation);
-
-  geoms_ = {A, geomB};
-  construct_geometry();
-}
-
 Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : input_(input) {
   array<double, 3> translation = input->get_array<double, 3>("translate");
   if (input->get<bool>("angstrom", false))
@@ -72,9 +62,9 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, share
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed()+B->nclosed(), A->nact()+B->nact(), A->nvirt()+B->nvirt());
 }
 
-Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> geom, bool tmp) : input_(input) {
-  sgeom_ = make_shared<Geometry>(*geom);
-  cout << "NEW DIMER CONSTRUCTOR ENTERED" << endl;
+Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> AB) : input_(input) {
+  geoms_ = {AB, make_shared<Geometry>(*AB)};
+  sgeom_ = make_shared<Geometry>(*AB);
 }
 
 

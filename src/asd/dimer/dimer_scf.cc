@@ -399,10 +399,10 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize());
     sref_ = make_shared<const Reference>(*sref_, new_coeff);
 
-    shared_ptr<const PTree> print_data = idata->get_child_optional("print");
-    if (print_data) {
-      const bool orbitals = print_data->get<bool>("orbitals", false);
-      const string out_file = print_data->get<string>("file", "out.molden");
+    shared_ptr<const PTree> printAB_data = idata->get_child_optional("print_AB");
+    if (printAB_data) {
+      const bool orbitals = printAB_data->get<bool>("orbitals", true);
+      const string out_file = printAB_data->get<string>("file", "AB.molden");
 
       if (mpi__->rank() == 0) {
         MoldenOut mfs(out_file);
@@ -420,107 +420,23 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     if (Alist.empty() && Blist.empty())
       throw runtime_error("Active space of the dimer MUST be specified in some way.");
 
-//  const int hf_closed = sref_->nclosed();
-//  const int hf_virt   = sref_->nvirt();
     const int nactA = Alist.size();
     const int nactB = Blist.size();
     const int nbasis = sgeom_->nbasis();
-//  assert(nbasis == hf_closed + hf_virt);
 
     set<int> ABlist;
     if (!Alist.empty()) for (auto i : Alist) { ABlist.insert(i); }
     if (!Blist.empty()) for (auto i : Blist) { ABlist.insert(i); }
     assert(nactA+nactB == ABlist.size());
 
-/*
-    cout << "HF(closed) : " << hf_closed << endl;
-    cout << "HF(virt)   : " << hf_virt   << endl;
-    cout << "A(active)  : " << nactA << endl;
-    cout << "B(active)  : " << nactB << endl;
-    int nclosed = hf_closed;
-    int nvirt = hf_virt;
-    int neleA = 0; // active electrons
-    int neleB = 0;
-    for (int Ai : Alist) {
-      if (Ai < hf_closed) {
-        nclosed -= 1;
-        neleA += 1;
-      } else {
-        nvirt -= 1;
-      }
-    }
-    for (int Bi : Blist) {
-      if (Bi < hf_closed) {
-        nclosed -= 1;
-        neleB += 1;
-      } else {
-        nvirt -= 1;
-      }
-    }
-    cout << "closed : " << nclosed << endl;
-    cout << "virt   : " << nvirt   << endl;
-    cout << "nele(A): " << neleA   << endl;
-    cout << "nele(B): " << neleB   << endl;
-
-    auto coeff = make_shared<Matrix>(nbasis, nbasis);
-    shared_ptr<const Matrix> scoeff = sref_->coeff();
-
-    int iclosed = 0;
-    int iactA = nclosed;
-    int iactB = nclosed + nactA;
-    int ivirt = nclosed + nactA + nactB;
-
-    //closed
-    for (int i = 0; i != hf_closed; ++i) {
-      if (ABlist.find(i) != ABlist.end()) {
-        if (Alist.find(i) != Alist.end())
-          coeff->copy_block(0, iactA++, nbasis, 1, scoeff->slice(i,i+1));
-        else
-          coeff->copy_block(0, iactB++, nbasis, 1, scoeff->slice(i,i+1));
-      } else {
-        coeff->copy_block(0, iclosed++, nbasis, 1, scoeff->slice(i,i+1));
-      }
-    }
-    //virtual
-    for (int i = hf_closed; i != nbasis; ++i) {
-      if (ABlist.find(i) != ABlist.end()) {
-        if (Alist.find(i) != Alist.end())
-          coeff->copy_block(0, iactA++, nbasis, 1, scoeff->slice(i,i+1));
-        else
-          coeff->copy_block(0, iactB++, nbasis, 1, scoeff->slice(i,i+1));
-      } else {
-        coeff->copy_block(0, ivirt++, nbasis, 1, scoeff->slice(i,i+1));
-      }
-    }
-    shared_ptr<const Coeff> reordered_coeff = make_shared<const Coeff>(*coeff);
-    sref_ = make_shared<const Reference>(*sref_, reordered_coeff);
-
-    shared_ptr<const PTree> print2_data = idata->get_child_optional("print2");
-    if (print2_data) {
-      const bool orbitals = print2_data->get<bool>("orbitals", false);
-      const string out_file = print2_data->get<string>("file", "out.molden");
-
-      if (mpi__->rank() == 0) {
-        MoldenOut mfs(out_file);
-        mfs << sgeom_;
-        if (orbitals) mfs << sref_;
-      }
-    }
-*/
-
-    for (int Ai : Alist) cout << "active A : " << Ai << endl;
-    for (int Bi : Blist) cout << "active B : " << Bi << endl;
-
-    //isolated_refs
     isolated_refs_ = {make_shared<Reference>(*sref_), make_shared<Reference>(*sref_)}; //sref_: localized HF MO's, not sorted
 
-    //active_refs
     active_refs_ = {isolated_refs_.first->set_active(Alist), isolated_refs_.second->set_active(Blist)};
 
     shared_ptr<const PTree> printA_data = idata->get_child_optional("print_A");
     if (printA_data) {
-      const bool orbitals = printA_data->get<bool>("orbitals", false);
-      const string out_file = printA_data->get<string>("file", "out.molden");
+      const bool orbitals = printA_data->get<bool>("orbitals", true);
+      const string out_file = printA_data->get<string>("file", "A.molden");
 
       if (mpi__->rank() == 0) {
         MoldenOut mfs(out_file);
@@ -531,8 +447,8 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
     shared_ptr<const PTree> printB_data = idata->get_child_optional("print_B");
     if (printB_data) {
-      const bool orbitals = printB_data->get<bool>("orbitals", false);
-      const string out_file = printB_data->get<string>("file", "out.molden");
+      const bool orbitals = printB_data->get<bool>("orbitals", true);
+      const string out_file = printB_data->get<string>("file", "B.molden");
 
       if (mpi__->rank() == 0) {
         MoldenOut mfs(out_file);
