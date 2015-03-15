@@ -38,14 +38,13 @@ namespace SMITH {
 
 class SpinFreeMethod {
   protected:
-    // deprecated
     IndexRange virt_;
     IndexRange active_;
     IndexRange closed_;
     IndexRange all_;
     IndexRange ci_;
 
-    // new
+    // TODO these are redundant.
     std::shared_ptr<const IndexRange> rvirt_;
     std::shared_ptr<const IndexRange> ractive_;
     std::shared_ptr<const IndexRange> rclosed_;
@@ -90,29 +89,20 @@ class SpinFreeMethod {
     void print_iteration(const bool noconv) const;
 
 
-    // E0 is defined as Trace(f(x,x), gamma(x,x))
-    // For instance, E0 is 0 for MP2.
+    // compute e0 which is defined as Trace(f(x,x), gamma(x,x))
     double compute_e0() const;
 
-    std::shared_ptr<const Denom> denom_;
-    std::shared_ptr<const Matrix> shalf_xhh() const { return denom_->shalf_xhh(); }
-    std::shared_ptr<const Matrix> shalf_xxh() const { return denom_->shalf_xxh(); }
-    std::shared_ptr<const Matrix> shalf_xh() const { return denom_->shalf_xh(); }
-    std::shared_ptr<const Matrix> shalf_hh() const { return denom_->shalf_hh(); }
-    std::shared_ptr<const Matrix> shalf_xx() const { return denom_->shalf_xx(); }
-    std::shared_ptr<const Matrix> shalf_h() const { return denom_->shalf_h(); }
-    std::shared_ptr<const Matrix> shalf_x() const { return denom_->shalf_x(); }
-    const double& denom_xhh(const size_t i) const { return denom_->denom_xhh(i); }
-    const double& denom_xxh(const size_t i) const { return denom_->denom_xxh(i); }
-    const double& denom_xh(const size_t i) const { return denom_->denom_xh(i); }
-    const double& denom_hh(const size_t i) const { return denom_->denom_hh(i); }
-    const double& denom_xx(const size_t i) const { return denom_->denom_xx(i); }
-    const double& denom_h(const size_t i) const { return denom_->denom_h(i); }
-    const double& denom_x(const size_t i) const { return denom_->denom_x(i); }
+    // denominator objects
+    std::vector<std::shared_ptr<const Denom>> denom_;
 
-    std::shared_ptr<Tensor> init_amplitude() const;
-    void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r) const;
+    // update t from the residual and denominator (this function does not zero out).
+    void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r, std::shared_ptr<const Denom> denom = nullptr) const;
     void update_amplitude(std::shared_ptr<MultiTensor> t, std::shared_ptr<const MultiTensor> r) const;
+
+    // initialize t2 amplitude
+    std::shared_ptr<Tensor> init_amplitude() const;
+
+    // diagonal part of CASPT2 (for efficiency)
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
 
   public:
