@@ -58,7 +58,7 @@ class ASD : public ASD_base {
 
     void compute_rdm12_monomer();
     virtual std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> 
-      compute_rdm12_monomer(std::shared_ptr<const VecType> civec, const int i, std::shared_ptr<const VecType> cipvec, const int j) const = 0;
+      compute_rdm12_monomer(std::shared_ptr<const VecType> civec, const int i, const int j) const = 0;
 
     std::shared_ptr<Matrix> compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
     std::shared_ptr<Matrix> compute_diagonal_1e(const DSubSpace& subspace, const double* hAA, const double* hBB, const double diag) const;

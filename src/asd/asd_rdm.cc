@@ -142,7 +142,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const a
   const int nactB = dimer_->embedded_refs().second->nact();
   const int nactT = nactA+nactB;
 
-  auto out1 = make_shared<RDM<1>>(nactA+nactB);
   auto out  = make_shared<RDM<2>>(nactA+nactB);
 
   // alpha-alpha
@@ -191,6 +190,8 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const a
     copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
 
+#if 1
+  auto out1 = make_shared<RDM<1>>(nactA+nactB);
   //Monomer RDMs
   if (subdia) {
     {//Monomer A
@@ -260,7 +261,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const a
       }
     }
   }
+#endif
 
+//return make_tuple(nullptr, out);
   return make_tuple(out1, out);
 }
 

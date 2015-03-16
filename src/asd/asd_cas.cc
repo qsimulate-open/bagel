@@ -191,9 +191,9 @@ void ASD_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
 }
 
 
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const Dvec> civec, const int i, shared_ptr<const Dvec> cipvec, const int ip) const {
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const Dvec> civec, const int i, const int ip) const {
   shared_ptr<const Civec> cbra = civec->data(i);
-  shared_ptr<const Civec> cket = cipvec->data(ip);
+  shared_ptr<const Civec> cket = civec->data(ip);
 
   const int norb = cbra->det()->norb();
   assert(*cbra->det() == *cket->det());
@@ -220,14 +220,7 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shar
 
 
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
-
-  //ADDED
   const int norb = cibra->det()->norb();
-  //END
-
-  cout << "TEST: Civec lena = " << cibra->lena() << ", lenb = " << cibra->lenb() << endl;
-  cout << "TEST: Dvec  lena = " << dbra->lena() << ", lenb = " << dbra->lenb() << endl;
-
   const int nri = dbra->lena()*dbra->lenb();
   const int ij  = norb*norb;
 
@@ -238,6 +231,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_last_step(s
   // c^dagger <I|\hat{E}|0>
   auto rdm1 = make_shared<RDM<1>>(norb);
   dgemv_("T", nri, ij, 1.0, dket->data(0)->data(), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
+
   // 2RDM
   // \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
   auto rdm2 = make_shared<RDM<2>>(norb);
