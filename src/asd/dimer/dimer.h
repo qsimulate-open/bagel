@@ -72,7 +72,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<Reference> temp;
       temp = std::make_shared<Reference>(*sref_);
       temp->set_coeff(matrix);
-      sref_ = temp;
+      sref_ = temp->project_coeff(sgeom_, false);
     } 
 
     // Return functions

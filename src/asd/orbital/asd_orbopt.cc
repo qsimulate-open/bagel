@@ -125,6 +125,8 @@ void ASD_OrbOpt::print_iteration(int iter, int miter, int tcount, const vector<d
 
   if (energy.size() != 1 && iter) cout << endl;
 
+  if (iter == 0) cout << setw(7) << "iter" << setw(31) << "energy" << setw(13) << "gradient" << setw(10) << "rotation" << setw(10) << "delta_e" << endl;
+
   int i = 0;
   for (auto& e : energy) {
     cout << "  " << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount

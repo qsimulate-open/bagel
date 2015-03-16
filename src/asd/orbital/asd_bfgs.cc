@@ -169,21 +169,21 @@ void ASD_BFGS::compute() {
       auto xcopy = x->log(8);
       auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, true, true);
       bfgs->check_step(evals, grad, xlog);
-//    a = bfgs->more_sorensen_extrapolate(grad, xlog);
-      a = bfgs->extrapolate(grad, xlog);
+      a = bfgs->more_sorensen_extrapolate(grad, xlog);
+//    a = bfgs->extrapolate(grad, xlog);
     } else {
       if (inter) {
         auto xcopy = inter_x->log(8);
         auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, true, false);
         inter_bfgs->check_step(evals, grad, xlog); //, /*tight*/false, limited_memory);
-//      a = inter_bfgs->more_sorensen_extrapolate(grad, xlog);
-        a = inter_bfgs->extrapolate(grad, xlog);
+        a = inter_bfgs->more_sorensen_extrapolate(grad, xlog);
+//      a = inter_bfgs->extrapolate(grad, xlog);
       } else {
         auto xcopy = intra_x->log(8);
         auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, false, true);
         intra_bfgs->check_step(evals, grad, xlog); //, /*tight*/false, limited_memory);
-//      a = intra_bfgs->more_sorensen_extrapolate(grad, xlog);
-        a = intra_bfgs->extrapolate(grad, xlog);
+        a = intra_bfgs->more_sorensen_extrapolate(grad, xlog);
+//      a = intra_bfgs->extrapolate(grad, xlog);
       }
     }
     cout << " ---------------------------------------------------- " << endl;

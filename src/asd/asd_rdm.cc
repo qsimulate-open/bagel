@@ -879,7 +879,7 @@ void ASD_base::debug_energy(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, 
     cout << "Total energy = " << etot << endl;
   }
 
-  assert(fabs(etot - energy(istate)) < 1.0e-8);
+  assert(fabs(etot - energy(istate)) < 1.0e-6);
 
 }
 

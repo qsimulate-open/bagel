@@ -170,6 +170,7 @@ int main(int argc, char** argv) {
       } else if (title == "asd_orbitaloptimize" || title == "asd_orbopt") {
           auto asd = construct_ASD_OrbOpt(itree, dimer);
           asd->compute();
+          ref = dimer->sref();
       } else if (title == "multisite") {
           vector<shared_ptr<const Reference>> site_refs;
           auto sitenames = itree->get_vector<string>("refs");
