@@ -93,21 +93,6 @@ class MOFock {
 };
 
 
-class Ci {
-  protected:
-    std::shared_ptr<const SMITH_Info> ref_;
-    std::vector<IndexRange> blocks_;
-    std::size_t ci_size_;
-    std::shared_ptr<Tensor>  rdm0deriv_;
-
-
-  public:
-    Ci(std::shared_ptr<const SMITH_Info> r, std::vector<IndexRange> b, std::shared_ptr<const Civec> c);
-    ~Ci() {}
-
-    std::shared_ptr<Tensor> tensor() const { return rdm0deriv_; }
-};
-
 }
 }
 

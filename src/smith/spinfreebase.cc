@@ -148,10 +148,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 
   // rdm ci derivatives. Only for gradient computations
   if (ref_->ciwfn() && ref_->grad()) {
-    vector<IndexRange> o = {ci_};
-    Ci dci(ref_, o, civec_);
-    rdm0deriv_ = dci.tensor();
-
+    shared_ptr<Dvec> rdm0d = make_shared<Dvec>(civec_, 1);
     shared_ptr<Dvec> rdm1d = r->rdm1deriv(ref_->target());
     shared_ptr<Dvec> rdm2d = r->rdm2deriv(ref_->target());
     shared_ptr<Dvec> rdm3d, rdm4d;
@@ -159,27 +156,33 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     tie(rdm3d, rdm4d) = r->rdm34deriv(ref_->target(), fockact);
     assert(rdm3d->ij() == rdm4d->ij());
 
+    vector<IndexRange> o1 = {ci_};
     vector<IndexRange> o3 = {ci_, active_, active_};
     vector<IndexRange> o5 = {ci_, active_, active_, active_, active_};
     vector<IndexRange> o7 = {ci_, active_, active_, active_, active_, active_, active_};
+    rdm0deriv_ = make_shared<Tensor>(o1);
     rdm1deriv_ = make_shared<Tensor>(o3);
     rdm2deriv_ = make_shared<Tensor>(o5);
     rdm3deriv_ = make_shared<Tensor>(o7);
     rdm4deriv_ = make_shared<Tensor>(o7);
 
     const int nclo = ref_->nclosed();
+    vector<int> inpoff1(1,0);
     vector<int> inpoff3(2,nclo); inpoff3.push_back(0);
     vector<int> inpoff5(4,nclo); inpoff5.push_back(0);
     vector<int> inpoff7(6,nclo); inpoff7.push_back(0);
 
+    const btas::CRange<1> range1(rdm1d->extent(0)*rdm1d->extent(1));
     const btas::CRange<3> range3(rdm1d->extent(0)*rdm1d->extent(1), nact, nact);
     const btas::CRange<5> range5(rdm2d->extent(0)*rdm2d->extent(1), nact, nact, nact, nact);
     const btas::CRange<7> range7(rdm3d->extent(0)*rdm3d->extent(1), nact, nact, nact, nact, nact, nact);
 
+    rdm0d->resize(range1);
     rdm1d->resize(range3);
     rdm2d->resize(range5);
     rdm3d->resize(range7);
     rdm4d->resize(range7);
+    fill_block<1>(rdm0deriv_, rdm0d, inpoff1, vector<IndexRange>(o1.rbegin(), o1.rend())); 
     fill_block<3>(rdm1deriv_, rdm1d, inpoff3, vector<IndexRange>(o3.rbegin(), o3.rend())); 
     fill_block<5>(rdm2deriv_, rdm2d, inpoff5, vector<IndexRange>(o5.rbegin(), o5.rend())); 
     fill_block<7>(rdm3deriv_, rdm3d, inpoff7, vector<IndexRange>(o7.rbegin(), o7.rend())); 
