@@ -33,10 +33,11 @@ namespace SMITH {
 
 template<int N>
 static void fill_block(std::shared_ptr<Tensor> target, std::shared_ptr<const btas::TensorN<double,N>> input,
-                       const std::vector<int>& inpoffsets, const std::vector<IndexRange>& ranges) {
+                       const std::vector<int>& inpoffsets, const std::vector<IndexRange>& ranges_rev) {
   assert(input->range().ordinal().contiguous());
   assert(target->rank() == input->range().rank() && target->rank() > 0);
   const int rank = target->rank();
+  const std::vector<IndexRange> ranges(ranges_rev.rbegin(), ranges_rev.rend());
 
   auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
 

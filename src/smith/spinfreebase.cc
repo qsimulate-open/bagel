@@ -134,11 +134,11 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     rdm2d->resize(range5);
     rdm3d->resize(range7);
     rdm4d->resize(range7);
-    fill_block<1>(rdm0deriv_, rdm0d, inpoff1, vector<IndexRange>(o1.rbegin(), o1.rend())); 
-    fill_block<3>(rdm1deriv_, rdm1d, inpoff3, vector<IndexRange>(o3.rbegin(), o3.rend())); 
-    fill_block<5>(rdm2deriv_, rdm2d, inpoff5, vector<IndexRange>(o5.rbegin(), o5.rend())); 
-    fill_block<7>(rdm3deriv_, rdm3d, inpoff7, vector<IndexRange>(o7.rbegin(), o7.rend())); 
-    fill_block<7>(rdm4deriv_, rdm4d, inpoff7, vector<IndexRange>(o7.rbegin(), o7.rend())); 
+    fill_block<1>(rdm0deriv_, rdm0d, inpoff1, o1);
+    fill_block<3>(rdm1deriv_, rdm1d, inpoff3, o3);
+    fill_block<5>(rdm2deriv_, rdm2d, inpoff5, o5);
+    fill_block<7>(rdm3deriv_, rdm3d, inpoff7, o7);
+    fill_block<7>(rdm4deriv_, rdm4d, inpoff7, o7);
 
     timer.tick_print("RDM derivative evaluation");
   }
@@ -159,10 +159,10 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     shared_ptr<RDM<4>> rdm4;
     tie(rdm3, rdm4) = ref_->compute_rdm34(ref_->target());
 
-    fill_block<2>(rdm1_, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_)); 
-    fill_block<4>(rdm2_, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_)); 
-    fill_block<6>(rdm3_, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_)); 
-    fill_block<8>(rdm4_, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_)); 
+    fill_block<2>(rdm1_, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
+    fill_block<4>(rdm2_, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
+    fill_block<6>(rdm3_, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
+    fill_block<8>(rdm4_, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
 
     timer.tick_print("RDM evaluation");
 

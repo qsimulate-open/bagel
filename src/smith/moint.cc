@@ -116,9 +116,6 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
   const int nvirt   = ref_->nvirt();
   const int nbasis  = coeff_->ndim();
 
-  data_  = make_shared<Tensor>(blocks_);
-  h1_    = make_shared<Tensor>(blocks_);
-
   // cfock
   shared_ptr<Matrix> cfock = ref_->hcore()->copy();
   core_energy_ = 0.0;
@@ -165,6 +162,9 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
 
-  fill_block<2>(data_, f, {0,0}, blocks_); 
-  fill_block<2>(h1_, h1, {0,0}, blocks_); 
+  data_  = make_shared<Tensor>(blocks_);
+  h1_    = make_shared<Tensor>(blocks_);
+
+  fill_block<2>(data_, f, {0,0}, blocks_);
+  fill_block<2>(h1_, h1, {0,0}, blocks_);
 }
