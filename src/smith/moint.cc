@@ -130,7 +130,7 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
   shared_ptr<const Matrix> fock1;
   if (nact) {
     Matrix tmp(nact, nact);
-    copy_n(ref_->rdm1(r->target())->data(), tmp.size(), tmp.data());
+    copy_n(ref_->rdm1_av()->data(), tmp.size(), tmp.data());
     tmp.sqrt();
     tmp.scale(1.0/sqrt(2.0));
     shared_ptr<Matrix> weighted_coeff = coeff_->slice_copy(ncore+nclosed, nocc);
