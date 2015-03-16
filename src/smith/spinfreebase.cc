@@ -223,25 +223,21 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 }
 
 
-void SpinFreeMethod::print_iteration() const {
+void SpinFreeMethod::print_iteration() {
   cout << "      ---- iteration ----" << endl << endl;
-  time_ = chrono::high_resolution_clock::now();
 }
 
 
-void SpinFreeMethod::print_iteration(const int i, const double en, const double err, const int ist) const {
-  auto end = chrono::high_resolution_clock::now();
-  const double tim = chrono::duration_cast<chrono::milliseconds>(end-time_).count() * 0.001;
+void SpinFreeMethod::print_iteration(const int i, const double en, const double err, const double tim, const int ist) {
   cout << "     " << setw(4) << i;
   if (ist >= 0)
     cout << setw(4) << ist;
   cout << setw(15) << fixed << setprecision(8) << en << setw(15) << fixed << setprecision(8) << err
                                                      << setw(10) << fixed << setprecision(2) << tim << endl;
-  time_ = end;
 }
 
 
-void SpinFreeMethod::print_iteration(const bool noconv) const {
+void SpinFreeMethod::print_iteration(const bool noconv) {
   cout << endl << "      -------------------" << endl;
   if (noconv) cout << "      *** Convergence not reached ***" << endl;
   cout << endl;

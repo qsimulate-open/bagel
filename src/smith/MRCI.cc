@@ -106,6 +106,7 @@ void MRCI::MRCI::solve() {
 
   shared_ptr<MultiTensor> rtmp = t2all_[0]->clone(); 
 
+  Timer mtimer;
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
 
@@ -165,7 +166,7 @@ void MRCI::MRCI::solve() {
     vector<bool> conv(nstates_, false);
     for (int i = 0; i != nstates_; ++i) {
       const double err = res[i]->tensor()->rms();
-      print_iteration(iter, energy_[i]+core_nuc, err, i);
+      print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
 
       t2all_[i]->zero();
       update_amplitude(t2all_[i], res[i]->tensor());

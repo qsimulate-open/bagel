@@ -78,16 +78,13 @@ class SpinFreeMethod {
 
     std::shared_ptr<Tensor> sigma_;
 
-    mutable std::chrono::high_resolution_clock::time_point time_;
-
     // the diagonal denominator
     std::vector<double> eig_;
 
     // printing functions called from the solve function of a derived class
-    void print_iteration() const;
-    void print_iteration(const int i, const double en, const double err, const int istate = -1) const;
-    void print_iteration(const bool noconv) const;
-
+    static void print_iteration();
+    static void print_iteration(const int i, const double en, const double err, const double tim, const int istate = -1);
+    static void print_iteration(const bool noconv);
 
     // compute e0 which is defined as Trace(f(x,x), gamma(x,x))
     double compute_e0() const;

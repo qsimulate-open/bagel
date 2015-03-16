@@ -47,6 +47,7 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
 void CASPT2::CASPT2::solve() {
   Timer timer;
   this->print_iteration();
+  Timer mtimer;
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
     shared_ptr<Queue> energyq = make_energyq();
@@ -57,7 +58,7 @@ void CASPT2::CASPT2::solve() {
     diagonal(r, t2);
     this->energy_ += dot_product_transpose(r, t2);
     const double err = r->rms();
-    this->print_iteration(iter, this->energy_, err);
+    this->print_iteration(iter, this->energy_, err, mtimer.tick());
 
     this->update_amplitude(t2, r);
     r->zero();
