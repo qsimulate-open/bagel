@@ -25,59 +25,11 @@
 
 #include <src/smith/moint.h>
 #include <src/smith/spinfreebase.h>
+#include <src/smith/smith_util.h>
 
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
-
-
-template<int N>
-static void fill_block(shared_ptr<Tensor> target, shared_ptr<const btas::TensorN<double,N>> input,
-                       const vector<int> inpoffsets, const vector<IndexRange> ranges) {
-  assert(input->range().ordinal().contiguous());
-  assert(target->rank() == input->range().rank() && target->rank() > 0);
-  const int rank = target->rank();
-
-  auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
-
-  LoopGenerator gen(ranges);
-  vector<vector<Index>> loop = gen.block_loop();
-  for (auto& indices : loop) {
-    assert(indices.size() == rank);
-
-    const size_t buffersize = accumulate(indices.begin(), indices.end(), 1ul, prod);
-    unique_ptr<double[]> buffer(new double[buffersize]);
-    vector<size_t> stride;
-    for (auto i = indices.begin(); i != indices.end(); ++i) {
-      auto ii = i; ++ii;
-      stride.push_back(accumulate(ii, indices.end(), 1ul, prod));
-    }
-
-    vector<size_t> extent(rank);
-    auto e = extent.rbegin();
-    for (int i = 0; i != rank; ++i)
-      *e++ = input->extent(i); 
-
-    vector<size_t> stride_target;
-    for (auto i = extent.begin(); i != extent.end(); ++i) {
-      auto ii = i; ++ii;
-      stride_target.push_back(accumulate(ii, extent.end(), 1ul, multiplies<size_t>()));
-    }
-
-    const size_t backsize = indices.back().size();
-    for (size_t n = 0; n != buffersize; n += backsize) {
-      size_t offset = 0lu;
-      size_t tmp = n;
-      for (int i = 0; i != rank; ++i) {
-        offset += (tmp / stride[i] + indices[i].offset() - inpoffsets[i]) * stride_target[i]; 
-        tmp = n % stride[i];
-      }
-      copy_n(input->data()+offset, backsize, buffer.get()+n);
-    }
-
-    target->put_block(buffer, vector<Index>(indices.rbegin(), indices.rend()));
-  }
-}
 
 
 SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {

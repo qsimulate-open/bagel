@@ -24,6 +24,7 @@
 //
 
 #include <src/smith/moint.h>
+#include <src/smith/smith_util.h>
 
 using namespace std;
 using namespace bagel;
@@ -161,22 +162,9 @@ MOFock::MOFock(shared_ptr<const SMITH_Info> r, vector<IndexRange> b) : ref_(r), 
     fvirt->diagonalize(eig);
     coeff_->copy_block(0, nocc, nbasis, nvirt, coeff_->slice(nocc, nocc+nvirt) * *fvirt);
   }
-  const Matrix f = *coeff_ % *fock1 * *coeff_;
-  const Matrix h1 = *coeff_ % *cfock * *coeff_;
+  auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
+  auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
 
-  for (auto& i0 : blocks_[0]) {
-    for (auto& i1 : blocks_[1]) {
-      {
-        shared_ptr<const Matrix> target = f.get_submatrix(i1.offset(), i0.offset(), i1.size(), i0.size());
-        unique_ptr<double[]> tmp(new double[target->size()]);
-        copy_n(target->data(), target->size(), tmp.get());
-        data_->put_block(tmp, i1, i0);
-      } {
-        shared_ptr<const Matrix> target = h1.get_submatrix(i1.offset(), i0.offset(), i1.size(), i0.size());
-        unique_ptr<double[]> tmp(new double[target->size()]);
-        copy_n(target->data(), target->size(), tmp.get());
-        h1_->put_block(tmp, i1, i0);
-      }
-    }
-  }
+  fill_block<2>(data_, f, {0,0}, blocks_); 
+  fill_block<2>(h1_, h1, {0,0}, blocks_); 
 }
