@@ -70,12 +70,12 @@ class MultiTensor {
 
     void ax_plus_y(const double& a, std::shared_ptr<const MultiTensor> o) { ax_plus_y(a, *o); }
 
-    std::vector<std::shared_ptr<Tensor>>::iterator begin() { return tensors_.begin(); } 
-    std::vector<std::shared_ptr<Tensor>>::iterator end()   { return tensors_.end(); } 
-    std::vector<std::shared_ptr<Tensor>>::const_iterator begin() const { return tensors_.begin(); } 
-    std::vector<std::shared_ptr<Tensor>>::const_iterator end()   const { return tensors_.end(); } 
-    std::vector<std::shared_ptr<Tensor>>::const_iterator cbegin() const { return tensors_.cbegin(); } 
-    std::vector<std::shared_ptr<Tensor>>::const_iterator cend()   const { return tensors_.cend(); } 
+    std::vector<std::shared_ptr<Tensor>>::iterator begin() { return tensors_.begin(); }
+    std::vector<std::shared_ptr<Tensor>>::iterator end()   { return tensors_.end(); }
+    std::vector<std::shared_ptr<Tensor>>::const_iterator begin() const { return tensors_.begin(); }
+    std::vector<std::shared_ptr<Tensor>>::const_iterator end()   const { return tensors_.end(); }
+    std::vector<std::shared_ptr<Tensor>>::const_iterator cbegin() const { return tensors_.cbegin(); }
+    std::vector<std::shared_ptr<Tensor>>::const_iterator cend()   const { return tensors_.cend(); }
 
     std::shared_ptr<Tensor>& operator[](const size_t i) { assert(i < tensors_.size()); return tensors_[i]; }
     std::shared_ptr<Tensor>& at(const size_t i) { return tensors_.at(i); }
@@ -92,7 +92,7 @@ class MultiTensor {
 
     void zero() { scale(0.0); }
 
-    size_t nref() const { assert(fac_.size() == tensors_.size()); return fac_.size(); } 
+    size_t nref() const { assert(fac_.size() == tensors_.size()); return fac_.size(); }
 
     double rms() const {
       double out = 0.0;

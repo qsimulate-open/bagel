@@ -55,7 +55,7 @@ void MRCI::MRCI::solve() {
   print_iteration();
 
   const double core_nuc = core_energy_ + ref_->geom()->nuclear_repulsion();
-  const double refen = ref_->ciwfn()->energy(ref_->target()) - core_nuc; 
+  const double refen = ref_->ciwfn()->energy(ref_->target()) - core_nuc;
 
   // target state
   for (int istate = 0; istate != nstates_; ++istate) {
@@ -65,16 +65,16 @@ void MRCI::MRCI::solve() {
     sall_[istate]->fac(istate)  = refen;
 
     for (auto& tt : *t2all_[istate]) {
-      t2 = tt; 
+      t2 = tt;
       for (auto& ss : *sall_[istate]) {
         //TODO set appropriate RDMs here
-        s = ss; 
+        s = ss;
         auto queue = make_sourceq();
         while (!queue->done())
           queue->next_compute();
       }
       for (auto& nn : *nall_[istate]) {
-        n = nn; 
+        n = nn;
         auto queue = make_normq();
         while (!queue->done())
           queue->next_compute();
@@ -104,7 +104,7 @@ void MRCI::MRCI::solve() {
     }
   }
 
-  shared_ptr<MultiTensor> rtmp = t2all_[0]->clone(); 
+  shared_ptr<MultiTensor> rtmp = t2all_[0]->clone();
 
   Timer mtimer;
   int iter = 0;
@@ -115,7 +115,7 @@ void MRCI::MRCI::solve() {
     vector<shared_ptr<const Residual>> r0;
     for (int istate = 0; istate != nstates_; ++istate) {
       // first calculate left-hand-side vectors of t2 (named n)
-      nall_[istate]->zero(); 
+      nall_[istate]->zero();
       for (auto& tt : *t2all_[istate]) {
         for (auto& nn : *nall_[istate]) {
           // TODO set appropriate RDMs
@@ -127,7 +127,7 @@ void MRCI::MRCI::solve() {
         }
       }
 
-      // normalize t2 and n 
+      // normalize t2 and n
       const double scal = 1.0 / sqrt(dot_product_transpose(nall_[istate], t2all_[istate]));
       nall_[istate]->scale(scal);
       t2all_[istate]->scale(scal);

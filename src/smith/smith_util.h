@@ -57,7 +57,7 @@ static void fill_block(std::shared_ptr<Tensor> target, std::shared_ptr<const bta
     std::vector<size_t> extent(rank);
     auto e = extent.rbegin();
     for (int i = 0; i != rank; ++i)
-      *e++ = input->extent(i); 
+      *e++ = input->extent(i);
 
     std::vector<size_t> stride_target;
     for (auto i = extent.begin(); i != extent.end(); ++i) {
@@ -70,7 +70,7 @@ static void fill_block(std::shared_ptr<Tensor> target, std::shared_ptr<const bta
       size_t offset = 0lu;
       size_t tmp = n;
       for (int i = 0; i != rank; ++i) {
-        offset += (tmp / stride[i] + indices[i].offset() - inpoffsets[i]) * stride_target[i]; 
+        offset += (tmp / stride[i] + indices[i].offset() - inpoffsets[i]) * stride_target[i];
         tmp = n % stride[i];
       }
       std::copy_n(input->data()+offset, backsize, buffer.get()+n);

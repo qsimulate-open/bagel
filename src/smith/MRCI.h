@@ -52,10 +52,10 @@ class MRCI : public SpinFreeMethod {
     int nstates_;
     std::vector<double> energy_;
 
-    std::vector<std::shared_ptr<MultiTensor>> t2all_; 
-    std::vector<std::shared_ptr<MultiTensor>> rall_; 
-    std::vector<std::shared_ptr<MultiTensor>> sall_; 
-    std::vector<std::shared_ptr<MultiTensor>> nall_; 
+    std::vector<std::shared_ptr<MultiTensor>> t2all_;
+    std::vector<std::shared_ptr<MultiTensor>> rall_;
+    std::vector<std::shared_ptr<MultiTensor>> sall_;
+    std::vector<std::shared_ptr<MultiTensor>> nall_;
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma1_();

@@ -36,7 +36,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<MultiTensor> t, shared_ptr<cons
     throw logic_error("something is wrong. SpinFreeMethod::update_amplitude");
 
   for (int i = 0; i != t->nref(); ++i) {
-    update_amplitude(t->at(i), r->at(i), denom_.at(i)); 
+    update_amplitude(t->at(i), r->at(i), denom_.at(i));
     // TODO do I need to update fac_?
     t->fac(i) = 0.0;
   }
@@ -44,9 +44,9 @@ void SpinFreeMethod::update_amplitude(shared_ptr<MultiTensor> t, shared_ptr<cons
 
 
 void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Tensor> r, shared_ptr<const Denom> denom) const {
-  // for backward compatibility 
+  // for backward compatibility
   // TODO to be removed
-  if (!denom) denom = denom_[0]; 
+  if (!denom) denom = denom_[0];
 
   // ranks of t and r are assumed to be the same
 
