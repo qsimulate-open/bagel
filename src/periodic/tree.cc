@@ -151,10 +151,7 @@ void Tree::build_tree() {
 
 void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
 
-  for (int i = 1; i != nnode_; ++i)
-    nodes_[i]->make_interaction_list();
   for (int i = nnode_ - 1; i > 0; --i) {
-    cout << " i = " << i << " is leaf = " << nodes_[i]->is_leaf() << endl;
     nodes_[i]->compute_multipoles(lmax);
   }
 
@@ -165,7 +162,13 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
   }
 
   for (int i = 2; i != nnode_; ++i)
-    nodes_[i]->compute_local_expansions(density, lmax, offset);
+    if (!nodes_[i]->is_leaf()) {
+      nodes_[i]->compute_local_expansions(density, lmax, offset);
+    } else {
+      nodes_[i]->compute_Coulomb(density, lmax, offset);
+    }
+
+  // return the Coulomb matrix
 }
 
 

@@ -27,6 +27,7 @@
 #include <src/periodic/node.h>
 #include <src/periodic/multipolebatch.h>
 #include <src/periodic/localexpansion.h>
+#include <src/integral/rys/eribatch.h>
 
 using namespace bagel;
 using namespace std;
@@ -43,6 +44,7 @@ Node::Node(const std::bitset<nbit__> key, const int depth, std::shared_ptr<const
   nchild_  = 0;
   nbody_   = 0;
   nneighbour_ = 0;
+  ninter_ = 0;
 }
 
 
@@ -140,6 +142,10 @@ void Node::insert_neighbour(shared_ptr<const Node> neigh, const bool is_neighbou
       neighbour_.resize(nneighbour_ + 1);
       neighbour_[nneighbour_] = neigh;
       ++nneighbour_;
+    } else {
+      interaction_list_.resize(ninter_ + 1);
+      interaction_list_[ninter_] = neigh;
+      ++ninter_;
     }
   } else {
     neighbour_.resize(nneighbour_ + 1);
@@ -264,6 +270,124 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
       out += contract * *multipoles_[i];
     }
   }
+
+  local_expansion_ = make_shared<const ZMatrix>(out);
+}
+
+
+void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offset) {
+
+  ZMatrix out(nbasis_, nbasis_);
+  out.zero();
+
+  const int nmultipole = (lmax + 1) * (lmax + 1);
+  for (auto& distant_node : interaction_list_) {
+    array<double, 3> r12;
+    r12[0] = distant_node->position(0) - position_[0];
+    r12[1] = distant_node->position(1) - position_[1];
+    r12[2] = distant_node->position(2) - position_[2];
+    LocalExpansion local(r12, distant_node->multipoles(), lmax);
+    vector<shared_ptr<const ZMatrix>> lmoments = local.local_moments();
+
+    const int dimb = distant_node->nbasis();
+    Matrix subden(dimb, dimb);
+    subden.zero();
+    size_t ob0 = 0;
+    for (auto& body0 : distant_node->bodies()) {
+      const int offset0 = offset[body0->ibasis()];
+      const size_t size0 = body0->nbasis();
+      size_t ob1 = 0;
+      for (auto& body1 : distant_node->bodies()) {
+        const int offset1 = offset[body1->ibasis()];
+        const size_t size1 = body1->nbasis();
+        shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
+        subden.copy_block(ob1, ob0, size1, size0, tmp);
+        ob1 += size1;
+      }
+      ob0 += size0;
+    }
+
+    // translate local at box centre to particle positions
+    for (auto& body : bodies_) {
+      r12[0] = position_[0] - body->position(0);
+      r12[1] = position_[1] - body->position(1);
+      r12[2] = position_[2] - body->position(2);
+      LocalExpansion local_shift(r12, lmoments, lmax);
+      vector<shared_ptr<const ZMatrix>> new_lmoments = local_shift.compute_shifted_local_expansions();
+
+      for (int i = 0; i != nmultipole; ++i) {
+        complex<double> contract = 0.0;
+        for (int j = 0; j != dimb; ++j)
+          for (int k = 0; k != dimb; ++k)
+            contract += new_lmoments[i]->element(k, j) * subden.element(k, j);
+
+        out += contract * *multipoles_[i];
+      }
+    }
+  }
+
+  // compute near-field interactions using direct integration and add to far field
+  vector<shared_ptr<const Shell>> basis;
+  vector<int> new_offset;
+  for (auto& close_node : neighbour_) {
+    for (auto& close_body : close_node->bodies()) {
+      const vector<shared_ptr<const Shell>> tmp = close_body->atom()->shells();
+      basis.insert(basis.end(), tmp.begin(), tmp.end());
+      const int start = offset[close_body->ibasis()];
+      const int nbas = close_body->nbasis();
+      vector<int> tmpoff(nbas);
+      iota(tmpoff.begin(), tmpoff.begin() + nbas, start);
+      new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+    }
+  }
+
+  for (auto& body : bodies_) {
+    const vector<shared_ptr<const Shell>> tmp = body->atom()->shells();
+    basis.insert(basis.end(), tmp.begin(), tmp.end());
+  }
+
+#if 1
+  const size_t size = basis.size();
+  const double* density_data = density->data();
+  for (int i0 = 0; i0 != size; ++i0) {
+    const shared_ptr<const Shell>  b0 = basis[i0];
+    const int b0offset = new_offset[i0];
+    const int b0size = b0->nbasis();
+    for (int i1 = 0; i1 != size; ++i1) {
+      const shared_ptr<const Shell>  b1 = basis[i1];
+      const int b1offset = new_offset[i1];
+      const int b1size = b1->nbasis();
+      for (int i2 = 0; i2 != size; ++i2) {
+        const shared_ptr<const Shell>  b2 = basis[i2];
+        const int b2offset = new_offset[i2];
+        const int b2size = b2->nbasis();
+        for (int i3 = 0; i3 != size; ++i3) {
+          const shared_ptr<const Shell>  b3 = basis[i3];
+          const int b3offset = new_offset[i3];
+          const int b3size = b3->nbasis();
+          array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+          ERIBatch eribatch(input, 0.0);
+          eribatch.compute();
+          const double* eridata = eribatch.data();
+          for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+            const int j0n = j0 * out.ndim();
+            for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+              //const int j1n = j1 * out.ndim();
+              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                //const int j2n = j2 * out.ndim();
+                for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                  const double eri = *eridata;
+                  out.element(j3, j2) += density_data[j0n + j1] * eri;
+                }
+              }
+            }
+          }
+
+        }
+      }
+    }
+  }
+#endif
 
   local_expansion_ = make_shared<const ZMatrix>(out);
 }
