@@ -213,4 +213,5 @@ shared_ptr<const Reference> ASD_OrbOpt::conv_to_ref() const {
   cout << "ASD_OrbOpt: conv_to_ref: not yet implemented" << endl;
   //TODO
   assert(false);
+  return nullptr;
 }

@@ -1028,10 +1028,10 @@ void ASD_base::symmetrize_rdm12(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rd
       for (int k = 0; k != nactT; ++k)
         for (int j = 0; j != nactT; ++j)
           for (int i = 0; i != nactT; ++i) {
-            double ijkl = rdm2->element(i,j,k,l);
-            double klij = rdm2->element(k,l,i,j);
-            double jilk = rdm2->element(j,i,l,k);
-            double lkji = rdm2->element(l,k,j,i);
+          //double ijkl = rdm2->element(i,j,k,l);
+          //double klij = rdm2->element(k,l,i,j);
+          //double jilk = rdm2->element(j,i,l,k);
+          //double lkji = rdm2->element(l,k,j,i);
             assert(fabs(ijkl-klij) < 1.0e-10);
             assert(fabs(ijkl-jilk) < 1.0e-10);
             assert(fabs(ijkl-lkji) < 1.0e-10);

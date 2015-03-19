@@ -195,7 +195,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   double  e1 = ddot_(norb_*norb_, h1->element_ptr(0,0), 1, onerdm->element_ptr(0,0), 1);
   cout << "1E energy = " << e1 << endl;
 
-  shared_ptr<const Matrix> pint2 = jop_->mo2e()->matrix();
+  shared_ptr<const Matrix> pint2 = jop_->mo2e();
   auto int2 = make_shared<Matrix>(norb_*norb_*norb_*norb_,1);
   sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), norb_, norb_, norb_, norb_); //conver to chemist not.
 
@@ -649,7 +649,7 @@ void RASCI::update_rdms(const shared_ptr<Matrix>& coeff) {
   double  e1 = ddot_(norb_*norb_, h1->element_ptr(0,0), 1, onerdm->element_ptr(0,0), 1);
   cout << "T// 1E energy = " << e1 << endl;
 
-  shared_ptr<const Matrix> pint2 = jop_->mo2e()->matrix();
+  shared_ptr<const Matrix> pint2 = jop_->mo2e();
   auto int2 = make_shared<Matrix>(norb_*norb_*norb_*norb_,1);
   sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), norb_, norb_, norb_, norb_); //conver to chemist not.
 
