@@ -46,7 +46,7 @@ class Tree {
     double box_length_;
     std::vector<std::bitset<nbit__>> particle_keys_;
     std::vector<std::shared_ptr<const Vertex>> leaves_;
-    std::vector<int> ordering_, basisindex_;
+    std::vector<int> ordering_, shell_id_;
     int nnode_;
     std::vector<std::shared_ptr<Node>> nodes_;
     int height_;

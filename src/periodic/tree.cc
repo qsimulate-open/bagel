@@ -54,10 +54,10 @@ void Tree::init() {
   ordering_.resize(nvertex_);
   iota(ordering_.begin(), ordering_.begin()+nvertex_, 0);
 
-  basisindex_.resize(nvertex_);
-  basisindex_[0] = 0;
+  shell_id_.resize(nvertex_);
+  shell_id_[0] = 0;
   for (int i = 1; i != nvertex_; ++i)
-    basisindex_[i] = basisindex_[i - 1] + geom_->atoms(i - 1)->nshell();
+    shell_id_[i] = shell_id_[i-1] + geom_->atoms(i-1)->nshell();
 
   get_particle_key();
 //  for (int i = 0; i != nvertex_; ++i)
@@ -143,21 +143,23 @@ void Tree::build_tree() {
         break;
       }
     }
-    cout << "Node " << i << " at level " << nodes_[i]->depth() << " has extent = " << setprecision(5) << nodes_[i]->extent()
-                         << " and " << nodes_[i]->nneighbour() << " neighbours" << endl;
+//    cout << "Node " << i << " at level " << nodes_[i]->depth() << " has extent = " << setprecision(5) << nodes_[i]->extent()
+//                         << " and " << nodes_[i]->nneighbour() << " neighbours" << endl;
   }
 }
 
 
 void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
 
+  // Downward pass
   for (int i = nnode_ - 1; i > 0; --i) {
     nodes_[i]->compute_multipoles(lmax);
   }
 
+  // Upward pass
   vector<int> offset;
   for (int n = 0; n != nvertex_; ++n) {
-    const vector<int> tmpoff = geom_->offset(ordering_[n]);
+    const vector<int> tmpoff = geom_->offset(n);
     offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());
   }
 
@@ -228,10 +230,38 @@ void Tree::keysort() {
   leaves_.resize(nvertex_);
   for (int n = 0; n != nvertex_; ++n) {
     const int pos = ordering_[n];
-    auto leaf = make_shared<Vertex>(particle_keys_[n], geom_->atoms(pos), pos, basisindex_[pos]);
+    auto leaf = make_shared<Vertex>(particle_keys_[n], geom_->atoms(pos), pos, shell_id_[pos]);
     leaves_[n] = leaf;
   }
 }
+
+
+#if 0
+void compute_Coulomb() {
+
+  int offset = 0;
+  for (auto& node : nodes_) {
+    if (node->is_leaf()) {
+      for (auto& body : bodies_) {
+        // translate local at box centre to particle positions
+        array<double, 3> r12;
+        r12[0] = node->position(0) - body->position(0);
+        r12[1] = node->position(1) - body->position(1);
+        r12[2] = node->position(2) - body->position(2);
+        LocalExpansion shift(r12, node->local_expansion(), lmax);
+
+        // compute near-field interactions using direct integration
+        for (auto& neigh : node->neighbour()) {
+        }
+      }
+    }
+  }
+
+
+
+  // add near-field and far-field results together
+}
+#endif
 
 
 void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough atoms for higher level!

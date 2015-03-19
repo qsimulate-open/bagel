@@ -248,17 +248,27 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
     subden.zero();
     size_t ob0 = 0;
     for (auto& body0 : distant_node->bodies()) {
-      const int offset0 = offset[body0->ibasis()];
-      const size_t size0 = body0->nbasis();
-      size_t ob1 = 0;
-      for (auto& body1 : distant_node->bodies()) {
-        const int offset1 = offset[body1->ibasis()];
-        const size_t size1 = body1->nbasis();
-        shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
-        subden.copy_block(ob1, ob0, size1, size0, tmp);
-        ob1 += size1;
+      size_t ish0 = 0;
+      for (auto& b0 : body0->atom()->shells()) {
+        const int offset0 = offset[body0->ishell() + ish0];
+        const size_t size0 = b0->nbasis();
+        ++ish0;
+
+        size_t ob1 = 0;
+        for (auto& body1 : distant_node->bodies()) {
+          size_t ish1 = 0;
+          for (auto& b1 : body1->atom()->shells()) {
+            const int offset1 = offset[body1->ishell() + ish1];
+            const size_t size1 = b1->nbasis();
+            ++ish1;
+
+            shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
+            subden.copy_block(ob1, ob0, size1, size0, tmp);
+            ob1 += size1;
+          }
+        }
+        ob0 += size0;
       }
-      ob0 += size0;
     }
 
     const int nmultipole = (lmax + 1) * (lmax + 1);
@@ -294,17 +304,28 @@ void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vec
     subden.zero();
     size_t ob0 = 0;
     for (auto& body0 : distant_node->bodies()) {
-      const int offset0 = offset[body0->ibasis()];
-      const size_t size0 = body0->nbasis();
-      size_t ob1 = 0;
-      for (auto& body1 : distant_node->bodies()) {
-        const int offset1 = offset[body1->ibasis()];
-        const size_t size1 = body1->nbasis();
-        shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
-        subden.copy_block(ob1, ob0, size1, size0, tmp);
-        ob1 += size1;
+      size_t ish0 = 0;
+      for (auto& b0 : body0->atom()->shells()) {
+        const int offset0 = offset[body0->ishell() + ish0];
+        const size_t size0 = b0->nbasis();
+        ++ish0;
+
+        size_t ob1 = 0;
+        for (auto& body1 : distant_node->bodies()) {
+          size_t ish1 = 0;
+          for (auto& b1 : body1->atom()->shells()) {
+            const int offset1 = offset[body1->ishell() + ish1];
+            const size_t size1 = b1->nbasis();
+            ++ish1;
+
+            shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
+            subden.copy_block(ob1, ob0, size1, size0, tmp);
+
+            ob1 += size1;
+          }
+        }
+        ob0 += size0;
       }
-      ob0 += size0;
     }
 
     // translate local at box centre to particle positions
@@ -333,10 +354,11 @@ void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vec
     for (auto& close_body : close_node->bodies()) {
       const vector<shared_ptr<const Shell>> tmp = close_body->atom()->shells();
       basis.insert(basis.end(), tmp.begin(), tmp.end());
-      const int start = offset[close_body->ibasis()];
-      const int nbas = close_body->nbasis();
-      vector<int> tmpoff(nbas);
-      iota(tmpoff.begin(), tmpoff.begin() + nbas, start);
+      const int nshell = close_body->atom()->nshell();
+      vector<int> tmpoff(nshell);
+      for (int i = 0; i != nshell; ++i)
+        tmpoff[i] = offset[close_body->ishell() + i];
+
       new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
     }
   }
@@ -344,11 +366,18 @@ void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vec
   for (auto& body : bodies_) {
     const vector<shared_ptr<const Shell>> tmp = body->atom()->shells();
     basis.insert(basis.end(), tmp.begin(), tmp.end());
+    const int nshell = body->atom()->nshell();
+    vector<int> tmpoff(nshell);
+    for (int i = 0; i != nshell; ++i)
+      tmpoff[i] = offset[body->ishell() + i];
+
+    new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
   }
 
 #if 1
   const size_t size = basis.size();
   const double* density_data = density->data();
+
   for (int i0 = 0; i0 != size; ++i0) {
     const shared_ptr<const Shell>  b0 = basis[i0];
     const int b0offset = new_offset[i0];
@@ -357,32 +386,37 @@ void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vec
       const shared_ptr<const Shell>  b1 = basis[i1];
       const int b1offset = new_offset[i1];
       const int b1size = b1->nbasis();
-      for (int i2 = 0; i2 != size; ++i2) {
-        const shared_ptr<const Shell>  b2 = basis[i2];
-        const int b2offset = new_offset[i2];
-        const int b2size = b2->nbasis();
-        for (int i3 = 0; i3 != size; ++i3) {
-          const shared_ptr<const Shell>  b3 = basis[i3];
-          const int b3offset = new_offset[i3];
-          const int b3size = b3->nbasis();
-          array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
-          ERIBatch eribatch(input, 0.0);
-          eribatch.compute();
-          const double* eridata = eribatch.data();
-          for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-            const int j0n = j0 * out.ndim();
-            for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
-              //const int j1n = j1 * out.ndim();
-              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-                //const int j2n = j2 * out.ndim();
-                for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
-                  const double eri = *eridata;
-                  out.element(j3, j2) += density_data[j0n + j1] * eri;
+
+      size_t ob2 = 0;
+      for (auto& a2 : bodies_) {
+        for (auto& b2 : a2->atom()->shells()) {
+          const int b2size = b2->nbasis();
+
+          size_t ob3 = 0;
+          for (auto& a3 : bodies_) {
+            for (auto& b3 : a3->atom()->shells()) {
+              const int b3size = b3->nbasis();
+
+              array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+              ERIBatch eribatch(input, 0.0);
+              eribatch.compute();
+              const double* eridata = eribatch.data();
+              for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+                const int j0n = j0 * density->ndim();
+                for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                  for (int j2 = ob2; j2 != ob2 + b2size; ++j2) {
+                    for (int j3 = ob3; j3 != ob3 + b3size; ++j3, ++eridata) {
+                      const double eri = *eridata;
+                      out.element(j3, j2) += density_data[j0n + j1] * eri;
+                    }
+                  }
                 }
               }
+
+              ob3 += b3size;
             }
           }
-
+          ob2 += b2size;
         }
       }
     }
