@@ -199,6 +199,10 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   const int nbasisA = geoms_.first->nbasis();
   const int nbasisB = geoms_.second->nbasis();
   const int dimerbasis = sgeom_->nbasis();
+  cout << nbasisA << endl;
+  cout << nbasisB << endl;
+  cout << dimerbasis << endl;
+  assert(false);
 
   // TODO: this implementation requires specifying the number of active orbitals that are coming from each subset.
   //  This is probably fine, but it is not strictly necessary.
@@ -468,5 +472,204 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     tmpcoeff->copy_block(0, nclosed, nbasis, nactA, coeffA->slice(nclosedA,nclosedA+nactA));
     tmpcoeff->copy_block(0, nclosed+nactA, nbasis, nactB, coeffB->slice(nclosedB,nclosedB+nactB));
     sref_ = make_shared<Reference>(*tmpref, make_shared<Coeff>(move(*tmpcoeff)));
+  }
+  else if (scheme == "test") {
+    assert(idata->get<string>("form") == "covalent");
+    shared_ptr<const PTree> localize_data = idata->get_child_optional("localization");
+    if (!localize_data) localize_data = make_shared<const PTree>();
+
+    string localizemethod = localize_data->get<string>("algorithm", "pm");
+    shared_ptr<OrbitalLocalization> localization;
+    if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
+      localization = make_shared<PMLocalization>(localize_data, sref_);
+    else throw runtime_error("Unrecognized orbital localization method");
+
+    shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize());
+    sref_ = make_shared<const Reference>(*sref_, new_coeff); //new super_reference with localized orbitals
+
+#if 1
+    if (mpi__->rank() == 0) {
+      MoldenOut mfs("AB_localized_L.molden");
+      mfs << sgeom_;
+      mfs << sref_;
+    }
+#endif
+
+    set_active(idata, /*not used here*/true, /*linked*/true);
+
+  }
+}
+
+void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool localize_first, const bool linked) {
+  // TODO needs clean up
+  auto Asp = idata->get_child_optional("active_A");
+  auto Bsp = idata->get_child_optional("active_B");
+  auto isp = idata->get_child_optional("dimer_active");
+  set<int> Ai, Bi, it;
+  if (Asp) for (auto& s : *Asp) { Ai.insert(lexical_cast<int>(s->data())-1); } // TODO I think this -1 is very confusing!
+  if (Bsp) for (auto& s : *Bsp) { Bi.insert(lexical_cast<int>(s->data())-1); }
+  if (isp) for (auto& s : *isp) { it.insert(lexical_cast<int>(s->data())-1); }
+
+  set<int> Alist, Blist;
+
+  if (it.empty() && Ai.empty() && Bi.empty())
+    throw runtime_error("Active space of the dimer MUST be specified in some way.");
+  if (!it.empty()) {
+    Alist = it;
+    Blist = it;
+  }
+  if (!Ai.empty()) Alist = Ai;
+  if (!Bi.empty()) Blist = Bi;
+
+  // Make new References
+  // with large basis sets, but with projected coeffs.
+  active_refs_ = {isolated_refs_.first->set_active(Alist), isolated_refs_.second->set_active(Blist)};
+#if 1
+    if (mpi__->rank() == 0) {
+      MoldenOut mfs("A_active_L.molden");
+      mfs << active_refs_.first->geom();
+      mfs << active_refs_.first;
+    }
+    if (mpi__->rank() == 0) {
+      MoldenOut mfs("B_active_L.molden");
+      mfs << active_refs_.second->geom();
+      mfs << active_refs_.second;
+    }
+#endif
+
+  // Hold onto old occupation data
+//const int noccA = isolated_refs_.first->nclosed();
+//const int noccB = isolated_refs_.second->nclosed();
+
+//const int nexternA = nvirt_.first;
+//const int nexternB = nvirt_.second;
+
+  // Update Dimer info
+  const int nclosedA = active_refs_.first->nclosed();
+  const int nclosedB = active_refs_.second->nclosed();
+//const int nclosed = nclosedA + nclosedB;
+
+  const int nactA = active_refs_.first->nact();
+  const int nactB = active_refs_.second->nact();
+  const int nact = nactA + nactB;
+
+  const int nactvirtA = isolated_refs_.first->nvirt() - active_refs_.first->nvirt();
+  const int nactvirtB = isolated_refs_.second->nvirt() - active_refs_.second->nvirt();
+
+  const int nbasisA = geoms_.first->nbasis();
+  const int nbasisB = geoms_.second->nbasis();
+  const int dimerbasis = sgeom_->nbasis();
+  cout << nbasisA << endl;
+  cout << nbasisB << endl;
+  cout << dimerbasis << endl;
+
+  const int nclosedS = sref_->nclosed();
+  const int nclosed = nclosedS - (nclosedS - nclosedA) - (nclosedS - nclosedB);
+  const int nvirtS = sref_->nvirt();
+  assert(sref_->nact() == 0);
+  assert(dimerbasis == nclosedS + nvirtS);
+  // TODO: this implementation requires specifying the number of active orbitals that are coming from each subset.
+  //  This is probably fine, but it is not strictly necessary.
+
+  // tuple:
+  //  matrix --> reference active orbitals
+  //  pair   --> bounds on subspace that can be mixed to produce localized orbitals
+  //  int    --> number of orbitals to form
+  //  string --> name of subspace (just for pretty printing)
+  //  bool   --> closed(true)/virtual(false)
+  vector<tuple<shared_ptr<const Matrix>, pair<int, int>, int, string, bool>> svd_info;
+
+  assert(nbasisA == dimerbasis);
+  assert(nbasisA == nbasisB);
+
+  auto activeA = make_shared<Matrix>(dimerbasis, nactA);
+  activeA->copy_block(0, 0, dimerbasis, nactA, active_refs_.first->coeff()->get_submatrix(0, nclosedA, dimerbasis, nactA));
+  svd_info.emplace_back(activeA, make_pair(0, nclosedS), nclosedS - nclosedA, "A", true); //A active in closed subspace
+  svd_info.emplace_back(activeA, make_pair(nclosedS, dimerbasis), nactvirtA, "A", false); //A active in virtual subspace
+
+  auto activeB = make_shared<Matrix>(dimerbasis, nactB);
+  activeB->copy_block(0, 0, dimerbasis, nactB, active_refs_.second->coeff()->get_submatrix(0, nclosedB, dimerbasis, nactB));
+  svd_info.emplace_back(activeB, make_pair(0, nclosedS), nclosedS - nclosedB, "B", true);
+  svd_info.emplace_back(activeB, make_pair(nclosedS, dimerbasis), nactvirtB, "B", false);
+
+  Overlap S(sgeom_);
+
+  shared_ptr<Matrix> out_coeff = sref_->coeff()->copy();
+  size_t active_position = nclosed;
+
+  set<int> mask; //records what orbitals have been copied to sref_ coeff
+  for (int i = 0; i != out_coeff->mdim(); ++i) mask.insert(i);
+
+  for (auto& subset : svd_info) {
+    const Matrix& active = *get<0>(subset);
+    pair<int, int> bounds = get<1>(subset);
+    const int norb = get<2>(subset);
+    const string set_name = get<3>(subset);
+    const bool closed = get<4>(subset);
+
+    shared_ptr<Matrix> subcoeff = sref_->coeff()->slice_copy(bounds.first, bounds.second);
+
+    const Matrix overlaps( active % S * *subcoeff );
+
+    multimap<double, int> norms;
+
+    for(int i = 0; i < overlaps.mdim(); ++i) {
+      const double norm = blas::dot_product(overlaps.element_ptr(0, i), overlaps.ndim(), overlaps.element_ptr(0, i));
+      norms.emplace(norm, i);
+    }
+
+    active_thresh_ = input_->get<double>("active_thresh", 0.5);
+    cout << endl << "  o Forming dimer's active orbitals arising from " << (closed ? "closed " : "virtual ") <<  set_name << " orbitals. Threshold for inclusion in cadidate space: " << setw(6) << setprecision(3) << active_thresh_ << endl;
+
+    vector<int> active_list;
+    double max_overlap, min_overlap;
+    {
+      auto end = norms.rbegin(); advance(end, norb);
+      end = find_if(end, norms.rend(), [this] (const pair<const double, int>& p) { return p.first < active_thresh_; });
+      for_each(norms.rbegin(), end, [&active_list] (const pair<const double, int>& p) { active_list.emplace_back(p.second); });
+      auto mnmx = minmax_element(norms.rbegin(), end);
+      tie(min_overlap, max_overlap) = make_tuple(mnmx.first->first, mnmx.second->first);
+    }
+
+    const int active_size = active_list.size();
+    cout << "    - size of candidate space: " << active_size << endl;
+    cout << "    - largest overlap with monomer space: " << max_overlap << ", smallest: " << min_overlap << endl;
+
+    if (active_size != norb) {
+      assert(false);
+    }
+    else {
+      set<int> active_set(active_list.begin(), active_list.end());
+      for (size_t i = 0; i < subcoeff->mdim(); ++i) {
+        if (active_set.count(i)) {
+          const int imo = bounds.first + i;
+          assert(mask.count(imo));
+          mask.erase(imo);
+          cout << imo << " erased.." << endl;
+          copy_n(subcoeff->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, active_position++));
+        }
+      }
+    }
+  }
+
+  //fill common closed and virtual subspac
+  shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
+  size_t closed_position = 0;
+  for (int i = 0; i < nclosedS; ++i)
+    if(mask.count(i))
+      copy_n(scoeff->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, closed_position++));
+
+  size_t virt_position = nclosed + nact;
+  for (int i = nclosedS; i < dimerbasis; ++i)
+    if(mask.count(i))
+      copy_n(scoeff->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, virt_position++));
+
+  nvirt_ = {nvirtS - nactvirtA, nvirtS - nactvirtB};
+  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nvirtS - nactvirtA - nactvirtB);
+
+  if (mpi__->rank() == 0) {
+    MoldenOut mfs("AB_localized_reordered_L.molden");
+    mfs << sgeom_;
+    mfs << sref_;
   }
 }

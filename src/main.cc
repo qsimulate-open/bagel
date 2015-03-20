@@ -159,6 +159,9 @@ int main(int argc, char** argv) {
         else if (form == "l" || form == "linked") {
           dimer = make_shared<Dimer>(itree, geom);
         }
+        else if (form == "covalent") {
+          dimer = make_shared<Dimer>(itree, ref, /*dimer*/ true);
+        }
 
         dimer->scf(itree);
 

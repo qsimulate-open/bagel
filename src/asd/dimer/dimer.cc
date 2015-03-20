@@ -25,6 +25,7 @@
 
 #include <src/asd/dimer/dimer.h>
 #include <src/mat1e/overlap.h>
+#include <src/util/io/moldenout.h>
 
 using namespace std;
 using namespace bagel;
@@ -67,6 +68,33 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> AB) : inp
   sgeom_ = make_shared<Geometry>(*AB);
 }
 
+Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, bool linked) : input_(input) {
+  assert(linked);
+
+#if 1
+    if (mpi__->rank() == 0) {
+      MoldenOut mfs("AB_localized_S.molden");
+      mfs << A->geom();
+      mfs << A;
+    }
+#endif
+
+  geoms_ = {A->geom(), A->geom()}; //initialize
+  construct_geometry(linked); //geoms_ is redefined with new basis sets, sgeom_ is defined
+  isolated_refs_ = {A, A}; //initialize
+  shared_ptr<const Matrix> coeff = construct_coeff(linked); //isolated_refs_ is redifined with new basis sets, (large,small)
+#if 1
+    if (mpi__->rank() == 0) {
+      MoldenOut mfs("AB_localized_projected.molden");
+      mfs << isolated_refs_.first->geom();
+      mfs << isolated_refs_.first;
+    }
+#endif
+
+
+  nvirt_ = {A->nvirt(), A->nvirt()};
+  sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed(), /*0*/A->nact(), A->nvirt());
+}
 
 void Dimer::construct_geometry() {
   cout << " ===== Constructing Dimer geometry ===== " << endl;
@@ -78,6 +106,24 @@ void Dimer::construct_geometry() {
   }
 
   vector<shared_ptr<const Geometry>> geo_vec = { geoms_.first, geoms_.second };
+  shared_ptr<const PTree> env_data = input_->get_child_optional("environment");
+  if (env_data) {
+    Muffle hide_cout;
+    geo_vec.push_back(make_shared<Geometry>(env_data));
+  }
+  sgeom_ = make_shared<Geometry>(geo_vec);
+}
+
+void Dimer::construct_geometry(bool linked) {
+  cout << " ===== Constructing Dimer geometry (linked) ===== " << endl;
+
+  const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
+  if (mdata) {
+    Muffle hide_cout;
+    geoms_ = {make_shared<Geometry>(*geoms_.first, mdata), make_shared<Geometry>(*geoms_.second, mdata)};
+  }
+
+  vector<shared_ptr<const Geometry>> geo_vec = { geoms_.first }; //linked dimer geometry
   shared_ptr<const PTree> env_data = input_->get_child_optional("environment");
   if (env_data) {
     Muffle hide_cout;
@@ -143,89 +189,68 @@ shared_ptr<const Matrix> Dimer::construct_coeff() {
   return make_shared<Matrix>(*projected * S_invhalf);
 }
 
+shared_ptr<const Matrix> Dimer::construct_coeff(bool linked) {
+  assert(linked);
+  cout << " ===== Constructing Dimer reference (linked) =====" << endl;
+
+  const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
+  if (mdata) {
+    isolated_refs_ = {isolated_refs_.first->project_coeff(geoms_.first, false), isolated_refs_.second->project_coeff(geoms_.second, false)};
+  }
+
+  shared_ptr<const Matrix> projected = isolated_refs_.first->coeff();
+//shared_ptr<const Matrix> projected = form_projected_coeffs();
+
+  // orthonormalize the "projected" coefficients
+  Overlap S(sgeom_);
+  Matrix S_invhalf = (*projected) % S * (*projected);
+  S_invhalf.inverse_half();
+
+  return make_shared<Matrix>(*projected * S_invhalf);
+}
+
 void Dimer::embed_refs() {
   Timer timer;
-//if (geoms_.first == geoms_.second) { //linked dimer
-//  cout << "linked-dimer embed_refs" << endl;
-//  const int nclosedA = active_refs_.first->nclosed(); //this implicitly includes filled_activeB
-//  const int nclosedB = active_refs_.second->nclosed();
+  const int nclosed = sref_->nclosed();
 
-//  const int nactA = active_refs_.first->nact();
-//  const int nactB = active_refs_.second->nact();
+  // filled_active is the number of orbitals in the active space that should be filled
+  const int filled_activeA = isolated_refs_.first->nclosed() - active_refs_.first->nclosed();
+  const int filled_activeB = isolated_refs_.second->nclosed() - active_refs_.second->nclosed();
 
-//  const int noccA = nclosedA + nactA;
-//  const int noccB = nclosedB + nactB;
+  const int nactA = active_refs_.first->nact();
+  const int nactB = active_refs_.second->nact();
 
-//  shared_ptr<const Matrix> coeffA = active_refs_.first->coeff();
-//  shared_ptr<const Matrix> coeffB = active_refs_.second->coeff();
+  shared_ptr<const Matrix> scoeff = sref_->coeff();
 
-//  const int dimerbasis = sgeom_->nbasis();
+  const int dimerbasis = sgeom_->nbasis();
 
-//  { // Move occupied orbitals of unit B to form the core orbitals
-//    auto Amatrix = make_shared<Matrix>(dimerbasis, noccA);
-//    Amatrix->copy_block(0, 0, dimerbasis, noccA, coeffA->slice(0, noccA)); // Total closed space + filled active B + activA
-//    auto Acoeff = make_shared<Coeff>(move(*Amatrix));
+  { // Move occupied orbitals of unit B to form the core orbitals
+    auto Amatrix = make_shared<Matrix>(dimerbasis, nclosed + filled_activeB + nactA);
+    Amatrix->copy_block(0, 0, dimerbasis, nclosed, scoeff->slice(0, nclosed)); // Total closed space
+    Amatrix->copy_block(0, nclosed, dimerbasis, filled_activeB, scoeff->slice(nclosed+nactA, nclosed+nactA+filled_activeB)); // FilledActive B
+    Amatrix->copy_block(0, nclosed+filled_activeB, dimerbasis, nactA, scoeff->slice(nclosed, nclosed+nactA)); // Active A
+    auto Acoeff = make_shared<Coeff>(move(*Amatrix));
 
-//    // Set up variables for this fci
-//    const int ncore = nclosedA;
-//    const int norb  = nactA;
+    // Set up variables for this fci
+    const int ncore = nclosed + filled_activeB;
+    const int norb  = nactA;
 
-//    embedded_refs_.first = make_shared<Reference>(sgeom_, Acoeff, ncore, norb, 0);
-//  }
+    embedded_refs_.first = make_shared<Reference>(sgeom_, Acoeff, ncore, norb, 0);
+  }
 
-//  { // Move occupied orbitals of unit A to form core of unit B
-//    auto Bmatrix = make_shared<Matrix>(dimerbasis, noccB);
-//    Bmatrix->copy_block(0, 0, dimerbasis, noccB, coeffB->slice(0, noccB));
-//    auto Bcoeff = make_shared<Coeff>(move(*Bmatrix));
+  { // Move occupied orbitals of unit A to form core of unit B
+    auto Bmatrix = make_shared<Matrix>(dimerbasis, nclosed + filled_activeA + nactB);
+    Bmatrix->copy_block(0, 0, dimerbasis, nclosed, scoeff->slice(0, nclosed)); // Total closed space
+    Bmatrix->copy_block(0, nclosed, dimerbasis, filled_activeA, scoeff->slice(nclosed, nclosed+filled_activeA)); // FilledActive A
+    Bmatrix->copy_block(0, nclosed+filled_activeA, dimerbasis, nactB, scoeff->slice(nclosed+nactA, nclosed+nactA+nactB)); // Active B
+    auto Bcoeff = make_shared<Coeff>(move(*Bmatrix));
 
-//    // Set up variables for this fci
-//    const int ncore = nclosedA;
-//    const int norb  = nactB;
+    // Set up variables for this fci
+    const int ncore = nclosed + filled_activeA;
+    const int norb  = nactB;
 
-//    embedded_refs_.second = make_shared<Reference>(sgeom_, Bcoeff, ncore, norb, 0);
-//  }
-//} else {
-    const int nclosed = sref_->nclosed();
-
-    // filled_active is the number of orbitals in the active space that should be filled
-    const int filled_activeA = isolated_refs_.first->nclosed() - active_refs_.first->nclosed();
-    const int filled_activeB = isolated_refs_.second->nclosed() - active_refs_.second->nclosed();
-
-    const int nactA = active_refs_.first->nact();
-    const int nactB = active_refs_.second->nact();
-
-    shared_ptr<const Matrix> scoeff = sref_->coeff();
-
-    const int dimerbasis = sgeom_->nbasis();
-
-    { // Move occupied orbitals of unit B to form the core orbitals
-      auto Amatrix = make_shared<Matrix>(dimerbasis, nclosed + filled_activeB + nactA);
-      Amatrix->copy_block(0, 0, dimerbasis, nclosed, scoeff->slice(0, nclosed)); // Total closed space
-      Amatrix->copy_block(0, nclosed, dimerbasis, filled_activeB, scoeff->slice(nclosed+nactA, nclosed+nactA+filled_activeB)); // FilledActive B
-      Amatrix->copy_block(0, nclosed+filled_activeB, dimerbasis, nactA, scoeff->slice(nclosed, nclosed+nactA)); // Active A
-      auto Acoeff = make_shared<Coeff>(move(*Amatrix));
-
-      // Set up variables for this fci
-      const int ncore = nclosed + filled_activeB;
-      const int norb  = nactA;
-
-      embedded_refs_.first = make_shared<Reference>(sgeom_, Acoeff, ncore, norb, 0);
-    }
-
-    { // Move occupied orbitals of unit A to form core of unit B
-      auto Bmatrix = make_shared<Matrix>(dimerbasis, nclosed + filled_activeA + nactB);
-      Bmatrix->copy_block(0, 0, dimerbasis, nclosed, scoeff->slice(0, nclosed)); // Total closed space
-      Bmatrix->copy_block(0, nclosed, dimerbasis, filled_activeA, scoeff->slice(nclosed, nclosed+filled_activeA)); // FilledActive A
-      Bmatrix->copy_block(0, nclosed+filled_activeA, dimerbasis, nactB, scoeff->slice(nclosed+nactA, nclosed+nactA+nactB)); // Active B
-      auto Bcoeff = make_shared<Coeff>(move(*Bmatrix));
-
-      // Set up variables for this fci
-      const int ncore = nclosed + filled_activeA;
-      const int norb  = nactB;
-
-      embedded_refs_.second = make_shared<Reference>(sgeom_, Bcoeff, ncore, norb, 0);
-    }
-//}
+    embedded_refs_.second = make_shared<Reference>(sgeom_, Bcoeff, ncore, norb, 0);
+  }
 }
 
 

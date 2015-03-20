@@ -66,6 +66,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
     Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B); ///< Conjoins the provided Reference objects
     Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a); ///< Duplicates provided Reference according to translation vector specified in input
     Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> AB); // Linked dimer geometry
+    Dimer(std::shared_ptr<const PTree> input, Ref<Reference> AB, bool linked);
   //Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b); ///< Conjoins the provided Geometry objects
 
     void update_coeff(std::shared_ptr<const Matrix> matrix) {
@@ -73,7 +74,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       temp = std::make_shared<Reference>(*sref_);
       temp->set_coeff(matrix);
       sref_ = temp->project_coeff(sgeom_, false);
-    } 
+    }
 
     // Return functions
     std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
@@ -87,6 +88,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
     // Utility functions
     /// Sets active space of sref_ using overlaps with isolated_ref_ active spaces
     void set_active(std::shared_ptr<const PTree> idata, const bool localize_first);
+    void set_active(std::shared_ptr<const PTree> idata, const bool localize_first, const bool linked);
     /// Localizes active space and uses the given Fock matrix to diagonalize the subspaces
     void localize(std::shared_ptr<const PTree> idata, std::shared_ptr<const Matrix> fock, const bool localize_first);
 
@@ -105,6 +107,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
   private:
     void construct_geometry(); ///< Forms super geometry (sgeom_) and optionally projects isolated geometries and supergeometry to a specified basis
+    void construct_geometry(bool linked);
     void embed_refs();         ///< Forms two references to be used in CI calculations where the inactive monomer is included as "embedding"
     /// Reads information on monomer subspaces from input
     void get_spaces(std::shared_ptr<const PTree> idata, std::vector<std::vector<int>>& spaces_A, std::vector<std::vector<int>>& spaces_B);
@@ -115,6 +118,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
     /// Lowdin orthogonalizes the result of form_projected_coeffs
     std::shared_ptr<const Matrix> construct_coeff();
+    std::shared_ptr<const Matrix> construct_coeff(bool linked);
 
     /// Runs a single set of monomer CAS/RAS calculations as specified
     template <class CIMethod, class VecType>
