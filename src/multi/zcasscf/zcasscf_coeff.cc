@@ -104,7 +104,7 @@ void ZCASSCF::init_kramers_coeff() {
     }
   } else {//if (nele%2 == 0 && nele - 2 > 0) {
     int norb = nele;//-2;
-    auto ctmp = make_shared<ZMatrix>(coefftmp->ndim(), norb);
+    ctmp = make_shared<ZMatrix>(coefftmp->ndim(), norb);
     ctmp->copy_block(0, 0, coefftmp->ndim(), norb/2, coefftmp->slice(0, norb/2));
     ctmp->copy_block(0, norb/2, coefftmp->ndim(), norb/2, coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()/2+norb/2));
     focktmp = make_shared<DFock>(geom_, hcore_, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
