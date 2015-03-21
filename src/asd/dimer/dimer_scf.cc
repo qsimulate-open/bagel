@@ -150,6 +150,7 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
   sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
 }
 
+
 /// localize_first flag defined as in Dimer::localize
 ///  If localize_first is set, separate SVDs are done for each monomer. Otherwise, two are done (one for
 ///  closed and one for active) on the whole dimer.
@@ -323,6 +324,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nexternA+nexternB - (nclosed+nact));
 }
 
+
 // RHF and then localize
 void Dimer::scf(const shared_ptr<const PTree> idata) {
   Timer dimertime;
@@ -343,6 +345,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   //   localize_first           - fragment localizes, then picks the active space within each fragment (recommended)
   //   active_first             - picks active space from dimer orbitals first, then attempts to localize
   //   active_only              - picks active space from dimer orbitals and does not localize
+  //   linked                   - similar to localize_first, but for linked dimer only
   const string scheme = idata->get<string>("scheme", "active_first");
 
   if (scheme == "active_only" || scheme == "active_first") {
@@ -386,8 +389,8 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     scoeff->copy_block(0, nclosed, scoeff->ndim(), active_mos.mdim(), active_mos);
     sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*scoeff)));
   }
-  else if (scheme == "conventional") {
-    assert(idata->get<string>("form") == "linked");
+  else if (scheme == "legacy_mode") { //TODO: to be removed, and replaced by "linked"
+    assert(idata->get<string>("form") == "legacy_mode");
     shared_ptr<const PTree> localize_data = idata->get_child_optional("localization");
     if (!localize_data) localize_data = make_shared<const PTree>();
 
@@ -473,8 +476,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     tmpcoeff->copy_block(0, nclosed+nactA, nbasis, nactB, coeffB->slice(nclosedB,nclosedB+nactB));
     sref_ = make_shared<Reference>(*tmpref, make_shared<Coeff>(move(*tmpcoeff)));
   }
-  else if (scheme == "test") {
-    assert(idata->get<string>("form") == "covalent");
+  else if (scheme == "linked") {
     shared_ptr<const PTree> localize_data = idata->get_child_optional("localization");
     if (!localize_data) localize_data = make_shared<const PTree>();
 
@@ -500,6 +502,8 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   }
 }
 
+
+//TODO: merge
 void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool localize_first, const bool linked) {
   // TODO needs clean up
   auto Asp = idata->get_child_optional("active_A");
@@ -521,53 +525,44 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   if (!Ai.empty()) Alist = Ai;
   if (!Bi.empty()) Blist = Bi;
 
-  // Make new References
-  // with large basis sets, but with projected coeffs.
+  // Make new References, with large basis sets, but with projected coeffs, active orbitals are placed after closed orbitals
   active_refs_ = {isolated_refs_.first->set_active(Alist), isolated_refs_.second->set_active(Blist)};
+
 #if 1
-    if (mpi__->rank() == 0) {
-      MoldenOut mfs("A_active_L.molden");
-      mfs << active_refs_.first->geom();
-      mfs << active_refs_.first;
-    }
-    if (mpi__->rank() == 0) {
-      MoldenOut mfs("B_active_L.molden");
-      mfs << active_refs_.second->geom();
-      mfs << active_refs_.second;
-    }
+  if (mpi__->rank() == 0) {
+    MoldenOut mfs("A_active_L.molden");
+    mfs << active_refs_.first->geom();
+    mfs << active_refs_.first;
+  }
+  if (mpi__->rank() == 0) {
+    MoldenOut mfs("B_active_L.molden");
+    mfs << active_refs_.second->geom();
+    mfs << active_refs_.second;
+  }
 #endif
-
-  // Hold onto old occupation data
-//const int noccA = isolated_refs_.first->nclosed();
-//const int noccB = isolated_refs_.second->nclosed();
-
-//const int nexternA = nvirt_.first;
-//const int nexternB = nvirt_.second;
 
   // Update Dimer info
   const int nclosedA = active_refs_.first->nclosed();
-  const int nclosedB = active_refs_.second->nclosed();
-//const int nclosed = nclosedA + nclosedB;
+  const int nclosedB = active_refs_.second->nclosed(); //these shares common closed indices, but with different embedded active(closed part) orbtals
 
   const int nactA = active_refs_.first->nact();
   const int nactB = active_refs_.second->nact();
   const int nact = nactA + nactB;
 
   const int nactvirtA = isolated_refs_.first->nvirt() - active_refs_.first->nvirt();
-  const int nactvirtB = isolated_refs_.second->nvirt() - active_refs_.second->nvirt();
+  const int nactvirtB = isolated_refs_.second->nvirt() - active_refs_.second->nvirt(); // Number of active orbitals in virtual HF subspace
 
-  const int nbasisA = geoms_.first->nbasis();
-  const int nbasisB = geoms_.second->nbasis();
   const int dimerbasis = sgeom_->nbasis();
-  cout << nbasisA << endl;
-  cout << nbasisB << endl;
-  cout << dimerbasis << endl;
+  assert(dimerbasis == geoms_.first->nbasis());
+  assert(dimerbasis == geoms_.second->nbasis());
 
   const int nclosedS = sref_->nclosed();
-  const int nclosed = nclosedS - (nclosedS - nclosedA) - (nclosedS - nclosedB);
   const int nvirtS = sref_->nvirt();
-  assert(sref_->nact() == 0);
   assert(dimerbasis == nclosedS + nvirtS);
+  assert(sref_->nact() == 0);
+
+  const int nclosed = nclosedS - (nclosedS - nclosedA) - (nclosedS - nclosedB);
+
   // TODO: this implementation requires specifying the number of active orbitals that are coming from each subset.
   //  This is probably fine, but it is not strictly necessary.
 
@@ -578,9 +573,6 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   //  string --> name of subspace (just for pretty printing)
   //  bool   --> closed(true)/virtual(false)
   vector<tuple<shared_ptr<const Matrix>, pair<int, int>, int, string, bool>> svd_info;
-
-  assert(nbasisA == dimerbasis);
-  assert(nbasisA == nbasisB);
 
   auto activeA = make_shared<Matrix>(dimerbasis, nactA);
   activeA->copy_block(0, 0, dimerbasis, nactA, active_refs_.first->coeff()->get_submatrix(0, nclosedA, dimerbasis, nactA));
@@ -597,7 +589,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   shared_ptr<Matrix> out_coeff = sref_->coeff()->copy();
   size_t active_position = nclosed;
 
-  set<int> mask; //records what orbitals have been copied to sref_ coeff
+  set<int> mask; //records what orbitals have been copied to sref_ coeff, to be used to copy back the common closed & virtual orbitals
   for (int i = 0; i != out_coeff->mdim(); ++i) mask.insert(i);
 
   for (auto& subset : svd_info) {
@@ -609,7 +601,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
 
     shared_ptr<Matrix> subcoeff = sref_->coeff()->slice_copy(bounds.first, bounds.second);
 
-    const Matrix overlaps( active % S * *subcoeff );
+    const Matrix overlaps(active % S * *subcoeff);
 
     multimap<double, int> norms;
 
@@ -636,7 +628,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     cout << "    - largest overlap with monomer space: " << max_overlap << ", smallest: " << min_overlap << endl;
 
     if (active_size != norb) {
-      assert(false);
+      throw runtime_error("SVD is not yet implemented. Try adjust active_thresh.");
     }
     else {
       set<int> active_set(active_list.begin(), active_list.end());
@@ -645,15 +637,15 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
           const int imo = bounds.first + i;
           assert(mask.count(imo));
           mask.erase(imo);
-          cout << imo << " erased.." << endl;
           copy_n(subcoeff->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, active_position++));
         }
       }
     }
   }
 
-  //fill common closed and virtual subspac
+  //fill common closed and virtual subspace
   shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
+
   size_t closed_position = 0;
   for (int i = 0; i < nclosedS; ++i)
     if(mask.count(i))
