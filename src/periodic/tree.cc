@@ -41,9 +41,12 @@ void Tree::init() {
   nvertex_ = geom_->natom();
   position_ = geom_->charge_center();
   //cout << "Charge centre: " << position_[0] << "  " << position_[1] << "  " << position_[2] << endl;
+  nbasis_ = 0;
   coordinates_.resize(nvertex_);
-  for (int i = 0; i != nvertex_; ++i)
+  for (int i = 0; i != nvertex_; ++i) {
     coordinates_[i] = geom_->atoms(i)->position();
+    nbasis_ += geom_->atoms(i)->nbasis();
+  }
 
   for (int i = 0; i != nvertex_; ++i) {
     coordinates_[i][0] -= position_[0];
@@ -171,6 +174,26 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
     }
 
   // return the Coulomb matrix
+  cout << "# nodes = " << nnode_ << endl;
+  ZMatrix out(nbasis_, nbasis_);
+  out.zero();
+  for (int i = 0; i != nnode_; ++i)
+    if (nodes_[i]->is_leaf()) {
+      cout << "Node " << i << " is a leaf and has " << nodes_[i]->nbody() << " bodies" << endl;
+      size_t offset0 = 0;
+      for (auto& body : nodes_[i]->bodies()) {
+        const size_t nbas = body->atom()->nbasis();
+        ZMatrix sublocal = *(nodes_[i]->local_expansion()->get_submatrix(offset0, offset0, nbas, nbas));
+
+        const size_t offset1 =  offset[body->ishell()];
+        out.add_block(1.0, offset1, offset1, nbas, nbas, sublocal.data());
+
+        offset0 += nbas;
+      }
+    }
+
+  //out.print("OUT in tree.fmm()");
+  coulomb_ = make_shared<const ZMatrix>(out);
 }
 
 

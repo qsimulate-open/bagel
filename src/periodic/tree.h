@@ -40,6 +40,7 @@ class Tree {
     std::shared_ptr<const Geometry>geom_;
     int max_height_;
     int nvertex_;
+    int nbasis_;
     std::vector<std::array<double, 3>> coordinates_;
     std::array<double, 3> position_;
 
@@ -57,11 +58,14 @@ class Tree {
     void get_particle_key(); // a place holder and (nbit__-1)/3 per coordinate
     void keysort();
 
+    std::shared_ptr<const ZMatrix> coulomb_;
+
   public:
     Tree(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3);
     ~Tree() { }
 
     void fmm(const int lmax, std::shared_ptr<const Matrix> density);
+    std::shared_ptr<const ZMatrix> coulomb() { return coulomb_; }
 
     void print_tree_xyz() const;
 };
