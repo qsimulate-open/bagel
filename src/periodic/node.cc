@@ -363,18 +363,6 @@ void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vec
     }
   }
 
-  for (auto& body : bodies_) {
-    const vector<shared_ptr<const Shell>> tmp = body->atom()->shells();
-    basis.insert(basis.end(), tmp.begin(), tmp.end());
-    const int nshell = body->atom()->nshell();
-    vector<int> tmpoff(nshell);
-    for (int i = 0; i != nshell; ++i)
-      tmpoff[i] = offset[body->ishell() + i];
-
-    new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
-  }
-
-#if 1
   const size_t size = basis.size();
   const double* density_data = density->data();
 
@@ -421,7 +409,6 @@ void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vec
       }
     }
   }
-#endif
 
   local_expansion_ = make_shared<const ZMatrix>(out);
 }
