@@ -203,7 +203,13 @@ int main(int argc, char** argv) {
 
         shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize());
         ref = make_shared<const Reference>(*ref, new_coeff);
-
+#ifndef DISABLE_SERIALIZATION
+        if (itree->get<bool>("save_ref", false)) {
+          const string name = itree->get<string>("ref_out", "reference");
+          OArchive archive(name);
+          archive << ref;
+        }
+#endif
       } else if (title == "print") {
 
         const bool orbitals = itree->get<bool>("orbitals", false);
