@@ -134,8 +134,10 @@ void Tree::build_tree() {
   height_ = nodes_[nnode_-1]->depth();
 
   print_tree_xyz();
-  for (int i = 1; i != nnode_; ++i) {
+  for (int i = 1; i != nnode_; ++i)
     nodes_[i]->init();
+
+  for (int i = 1; i != nnode_; ++i) {
     for (int j = 1; j != nnode_; ++j) {
       if (nodes_[j]->depth() == nodes_[i]->depth()) {
         nodes_[i]->insert_neighbour(nodes_[j], false, 1);
