@@ -42,14 +42,14 @@ FCI_bare::FCI_bare(shared_ptr<const CIWfn> ci) {
   energy_ = ci->energies();
   cc_ = ci->civectors()->copy();
   det_ = ci->det();
-  rdm1_.resize(nstate_);
-  rdm2_.resize(nstate_);
+  rdm1_ = make_shared<VecRDM<1>>();
+  rdm2_ = make_shared<VecRDM<2>>();
 }
 
 
 void FCI::compute_rdm12() {
   // Needs initialization here because we use daxpy.
-  // For nstate_ == 1, rdm1_av_ = rdm1_[0].
+  // For nstate_ == 1, rdm1_av_ = rdm1_->at(0).
   if (rdm1_av_ == nullptr && nstate_ > 1) {
     rdm1_av_ = make_shared<RDM<1>>(norb_);
     rdm2_av_ = make_shared<RDM<2>>(norb_);
@@ -171,8 +171,8 @@ void FCI::compute_rdm12(const int ist) {
   tie(rdm1, rdm2) = compute_rdm12_from_civec(cc, cc);
 
   // setting to private members.
-  rdm1_[ist] = rdm1;
-  rdm2_[ist] = rdm2;
+  rdm1_->emplace(ist, rdm1);
+  rdm2_->emplace(ist, rdm2);
   if (nstate_ != 1) {
     rdm1_av_->ax_plus_y(weight_[ist], rdm1);
     rdm2_av_->ax_plus_y(weight_[ist], rdm2);
@@ -235,8 +235,8 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
       for (int i1 = 0; i1 != norb_; ++i1)
         for (int i2 = 0; i2 != norb_; ++i2)
           for (int i3 = 0; i3 != norb_; ++i3) {
-            blas::ax_plus_y_n(-1.0, rdm2_[ist]->element_ptr(0, i2, i1, i0), norb_, rdm3->element_ptr(0, i3, i3, i2, i1, i0));
-            blas::ax_plus_y_n(-1.0, rdm2_[ist]->element_ptr(0, i0, i3, i2), norb_, rdm3->element_ptr(0, i1, i3, i2, i1, i0));
+            blas::ax_plus_y_n(-1.0, rdm2_->at(ist)->element_ptr(0, i2, i1, i0), norb_, rdm3->element_ptr(0, i3, i3, i2, i1, i0));
+            blas::ax_plus_y_n(-1.0, rdm2_->at(ist)->element_ptr(0, i0, i3, i2), norb_, rdm3->element_ptr(0, i1, i3, i2, i1, i0));
           }
   }
 
@@ -253,8 +253,8 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
               blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,k,b,l), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,j,k,b,l));
               blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,l,b,k), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,b,k,j,l));
               for (int i = 0; i != norb_; ++i) {
-                blas::ax_plus_y_n(-1.0, rdm2_[ist]->element_ptr(0,k,b,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,j,l));
-                blas::ax_plus_y_n(-1.0, rdm2_[ist]->element_ptr(0,l,b,k), norb_, rdm4->element_ptr(0,i,b,j,j,k,i,l));
+                blas::ax_plus_y_n(-1.0, rdm2_->at(ist)->element_ptr(0,k,b,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,j,l));
+                blas::ax_plus_y_n(-1.0, rdm2_->at(ist)->element_ptr(0,l,b,k), norb_, rdm4->element_ptr(0,i,b,j,j,k,i,l));
                 for (int d = 0; d != norb_; ++d) {
                   blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,k,b,j,d,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,d,l));
                   blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,l,b,j,d,k), norb_, rdm4->element_ptr(0,i,b,j,d,k,i,l));
@@ -280,16 +280,16 @@ pair<shared_ptr<Matrix>, VectorB> FCI::natorb_convert() {
 
 
 void FCI::update_rdms(const shared_ptr<Matrix>& coeff) {
-  for (auto iter = rdm1_.begin(); iter != rdm1_.end(); ++iter)
-    (*iter)->transform(coeff);
-  for (auto iter = rdm2_.begin(); iter != rdm2_.end(); ++iter)
-    (*iter)->transform(coeff);
+  for (auto& i : *rdm1_)
+    i.second->transform(coeff);
+  for (auto& i : *rdm2_)
+    i.second->transform(coeff);
 
   // Only when #state > 1, this is needed.
   // Actually rdm1_av_ points to the same object as rdm1_ in 1 state runs. Therefore if you do twice, you get wrong.
-  if (rdm1_.size() > 1) rdm1_av_->transform(coeff);
-  if (rdm2_.size() > 1) rdm2_av_->transform(coeff);
-  assert(rdm1_.size() > 1 || rdm1_.front() == rdm1_av_);
-  assert(rdm2_.size() > 1 || rdm2_.front() == rdm2_av_);
+  if (rdm1_->size() > 1) rdm1_av_->transform(coeff);
+  if (rdm2_->size() > 1) rdm2_av_->transform(coeff);
+  assert(rdm1_->size() > 1 || rdm1_->at(0) == rdm1_av_);
+  assert(rdm2_->size() > 1 || rdm2_->at(0) == rdm2_av_);
 }
 

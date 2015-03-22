@@ -33,7 +33,7 @@
 #include <src/ci/fci/dvec.h>
 #include <src/wfn/geometry.h>
 #include <src/wfn/ciwfn.h>
-#include <src/wfn/rdm.h>
+#include <src/wfn/vecrdm.h>
 
 // all the info to construct wave functions
 
@@ -63,8 +63,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int nstate_;
 
     std::shared_ptr<const CIWfn> ciwfn_;
-    std::vector<std::shared_ptr<RDM<1>>>  rdm1_;
-    std::vector<std::shared_ptr<RDM<2>>>  rdm2_;
+    std::shared_ptr<const VecRDM<1>> rdm1_;
+    std::shared_ptr<const VecRDM<2>> rdm2_;
     std::shared_ptr<const RDM<1>> rdm1_av_;
     std::shared_ptr<const RDM<2>> rdm2_av_;
 
@@ -86,8 +86,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
               const int nclo, const int nact, const int nvirt,
               const double en = 0.0,
-              std::vector<std::shared_ptr<RDM<1>>> rdm1 = std::vector<std::shared_ptr<RDM<1>>>(),
-              std::vector<std::shared_ptr<RDM<2>>> rdm2 = std::vector<std::shared_ptr<RDM<2>>>(),
+              std::shared_ptr<const VecRDM<1>> rdm1 = std::make_shared<VecRDM<1>>(),
+              std::shared_ptr<const VecRDM<2>> rdm2 = std::make_shared<VecRDM<2>>(),
               std::shared_ptr<const RDM<1>> rdm1_av = nullptr,
               std::shared_ptr<const RDM<2>> rdm2_av = nullptr,
               std::shared_ptr<const CIWfn> ci = nullptr);
@@ -135,18 +135,18 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     std::shared_ptr<const CIWfn> ciwfn() const { return ciwfn_; }
 
-    const std::vector<std::shared_ptr<RDM<1>>>& rdm1() const { return rdm1_; }
-    const std::vector<std::shared_ptr<RDM<2>>>& rdm2() const { return rdm2_; }
+    std::shared_ptr<const VecRDM<1>> rdm1() const { return rdm1_; }
+    std::shared_ptr<const VecRDM<2>> rdm2() const { return rdm2_; }
 
-    std::shared_ptr<const RDM<1>> rdm1(const int irdm) const { return rdm1_.at(irdm); }
+    std::shared_ptr<const RDM<1>> rdm1(const int irdm) const { return rdm1_->at(irdm); }
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
 
     // returns an occ-occ sized 1RDM
     std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const RDM<1>> o) const;
-    std::shared_ptr<Matrix> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_[irdm]); }
+    std::shared_ptr<Matrix> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_->at(irdm)); }
     std::shared_ptr<Matrix> rdm1_mat() const { return rdm1_mat(rdm1_av_); }
 
-    std::shared_ptr<const RDM<2>> rdm2(const int irdm) const { return rdm2_.at(irdm); }
+    std::shared_ptr<const RDM<2>> rdm2(const int irdm) const { return rdm2_->at(irdm); }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> compute_rdm34(const int i) const;

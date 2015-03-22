@@ -65,8 +65,8 @@ class FCI : public Method {
     std::shared_ptr<Dvec> cc_;
 
     // RDMs; should be resized in constructors
-    std::vector<std::shared_ptr<RDM<1>>> rdm1_;
-    std::vector<std::shared_ptr<RDM<2>>> rdm2_;
+    std::shared_ptr<VecRDM<1>> rdm1_;
+    std::shared_ptr<VecRDM<2>> rdm2_;
     // state averaged RDM
     std::vector<double> weight_;
     std::shared_ptr<RDM<1>> rdm1_av_;
@@ -174,12 +174,12 @@ class FCI : public Method {
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Determinants> o = nullptr) const;
 
-    std::vector<std::shared_ptr<RDM<1>>> rdm1() { return rdm1_; }
-    std::vector<std::shared_ptr<RDM<2>>> rdm2() { return rdm2_; }
-    std::shared_ptr<RDM<1>> rdm1(const int i) { return rdm1_.at(i); }
-    std::shared_ptr<RDM<2>> rdm2(const int i) { return rdm2_.at(i); }
-    std::shared_ptr<const RDM<1>> rdm1(const int i) const { return rdm1_.at(i); }
-    std::shared_ptr<const RDM<2>> rdm2(const int i) const { return rdm2_.at(i); }
+    std::shared_ptr<VecRDM<1>> rdm1() { return rdm1_; }
+    std::shared_ptr<VecRDM<2>> rdm2() { return rdm2_; }
+    std::shared_ptr<RDM<1>> rdm1(const int i) { return rdm1_->at(i); }
+    std::shared_ptr<RDM<2>> rdm2(const int i) { return rdm2_->at(i); }
+    std::shared_ptr<const RDM<1>> rdm1(const int i) const { return rdm1_->at(i); }
+    std::shared_ptr<const RDM<2>> rdm2(const int i) const { return rdm2_->at(i); }
     std::shared_ptr<RDM<1>> rdm1_av() { return rdm1_av_; }
     std::shared_ptr<RDM<2>> rdm2_av() { return rdm2_av_; }
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
