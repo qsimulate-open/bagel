@@ -135,10 +135,7 @@ void Tree::build_tree() {
 
   print_tree_xyz();
   for (int i = 1; i != nnode_; ++i) {
-  //for (int i = nnode_ - 1; i >= 0; ++i) {
     nodes_[i]->init();
-    //cout << i << "  " << nodes_[i]->position(0) << "  " << nodes_[i]->position(1) << "   " << nodes_[i]->position(2) << endl;
-    //cout << "Node " << i << "   has    " << nodes_[i]->nchild() << " children and is_leaf_ is " << nodes_[i]->is_leaf() << endl;
     for (int j = 1; j != nnode_; ++j) {
       if (nodes_[j]->depth() == nodes_[i]->depth()) {
         nodes_[i]->insert_neighbour(nodes_[j], false, 1);
@@ -146,8 +143,6 @@ void Tree::build_tree() {
         break;
       }
     }
-//    cout << "Node " << i << " at level " << nodes_[i]->depth() << " has extent = " << setprecision(5) << nodes_[i]->extent()
-//                         << " and " << nodes_[i]->nneighbour() << " neighbours" << endl;
   }
 }
 
@@ -211,7 +206,6 @@ void Tree::get_particle_key() {
     bitset<nbitx> binx(pos[0]);
     bitset<nbitx> biny(pos[1]);
     bitset<nbitx> binz(pos[2]);
-    //cout << binx << " *** " << biny << " *** "  << binz << endl;
     for (int i = 0; i != 21; ++i) {
       key[i * 3 + 0] = binx[i];
       key[i * 3 + 1] = biny[i];
@@ -257,34 +251,6 @@ void Tree::keysort() {
     leaves_[n] = leaf;
   }
 }
-
-
-#if 0
-void compute_Coulomb() {
-
-  int offset = 0;
-  for (auto& node : nodes_) {
-    if (node->is_leaf()) {
-      for (auto& body : bodies_) {
-        // translate local at box centre to particle positions
-        array<double, 3> r12;
-        r12[0] = node->position(0) - body->position(0);
-        r12[1] = node->position(1) - body->position(1);
-        r12[2] = node->position(2) - body->position(2);
-        LocalExpansion shift(r12, node->local_expansion(), lmax);
-
-        // compute near-field interactions using direct integration
-        for (auto& neigh : node->neighbour()) {
-        }
-      }
-    }
-  }
-
-
-
-  // add near-field and far-field results together
-}
-#endif
 
 
 void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough atoms for higher level!
