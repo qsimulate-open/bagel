@@ -53,8 +53,7 @@ void FCI::compute_rdm12() {
   if (rdm1_av_ == nullptr && nstate_ > 1) {
     rdm1_av_ = make_shared<RDM<1>>(norb_);
     rdm2_av_ = make_shared<RDM<2>>(norb_);
-  }
-  if (nstate_ > 1) {
+  } else if (nstate_ > 1) {
     rdm1_av_->zero();
     rdm2_av_->zero();
   }
@@ -62,7 +61,20 @@ void FCI::compute_rdm12() {
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
 
-  for (int i = 0; i != nstate_; ++i) compute_rdm12(i);
+  for (int i = 0; i != nstate_; ++i)
+    compute_rdm12(i);
+
+  // calculate state averaged RDMs
+  if (nstate_ != 1) {
+    for (int ist = 0; ist != nstate_; ++ist) {
+      rdm1_av_->ax_plus_y(weight_[ist], rdm1_->at(ist));
+      rdm2_av_->ax_plus_y(weight_[ist], rdm2_->at(ist));
+    }
+  } else {
+    rdm1_av_ = rdm1_->at(0,0);
+    rdm2_av_ = rdm2_->at(0,0);
+  }
+
 
   cc_->set_det(det_);
 }
@@ -163,28 +175,22 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
 }
 
 
-void FCI::compute_rdm12(const int ist) {
-  shared_ptr<Civec> cc = cc_->data(ist);
+void FCI::compute_rdm12(const int ist, const int jst) {
+  shared_ptr<Civec> ccbra = cc_->data(ist);
+  shared_ptr<Civec> ccket = cc_->data(jst);
 
   shared_ptr<RDM<1>> rdm1;
   shared_ptr<RDM<2>> rdm2;
-  tie(rdm1, rdm2) = compute_rdm12_from_civec(cc, cc);
+  tie(rdm1, rdm2) = compute_rdm12_from_civec(ccbra, ccket);
 
   // setting to private members.
-  rdm1_->emplace(ist, rdm1);
-  rdm2_->emplace(ist, rdm2);
-  if (nstate_ != 1) {
-    rdm1_av_->ax_plus_y(weight_[ist], rdm1);
-    rdm2_av_->ax_plus_y(weight_[ist], rdm2);
-  } else {
-    rdm1_av_ = rdm1;
-    rdm2_av_ = rdm2;
-  }
-
+  rdm1_->emplace(ist, jst, rdm1);
+  rdm2_->emplace(ist, jst, rdm2);
 }
 
+
 // computes 3 and 4RDM
-tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) const {
+tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const int jst) const {
   auto rdm3 = make_shared<RDM<3>>(norb_);
   auto rdm4 = make_shared<RDM<4>>(norb_);
 
@@ -192,41 +198,57 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
   cc_->set_det(detex);
 
   shared_ptr<Civec> cbra = cc_->data(ist);
+  shared_ptr<Civec> cket = cc_->data(ist);
 
   // first make <I|E_ij|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
-  dbra->zero();
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
 
+  shared_ptr<Dvec> dket = dbra;
+  if (cbra != cket) {
+    dket = dbra->clone();
+    sigma_2a1(cket, dket);
+    sigma_2a2(cket, dket);
+  }
+
   // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
+  auto make_evec = [this](shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<Dvec> tmp) {
+    int ijkl = 0;
+    int ij = 0;
+    for (auto iter = d->dvec().begin(); iter != d->dvec().end(); ++iter, ++ij) {
+      const int j = ij/norb_;
+      const int i = ij-j*norb_;
+      tmp->zero();
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
+      int kl = 0;
+      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
+        *e->data(ijkl) = **t;
+        const int l = kl/norb_;
+        const int k = kl-l*norb_;
+        if (l == i) *e->data(ijkl) -= *d->data(k+j*norb_);
+      }
+    }
+  };
   auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
   auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
-  int ijkl = 0;
-  int ij = 0;
-  for (auto iter = dbra->dvec().begin(); iter != dbra->dvec().end(); ++iter, ++ij) {
-    const int j = ij/norb_;
-    const int i = ij-j*norb_;
-    tmp->zero();
-    sigma_2a1(*iter, tmp);
-    sigma_2a2(*iter, tmp);
-    int kl = 0;
-    for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
-      *ebra->data(ijkl) = **t;
-      const int l = kl/norb_;
-      const int k = kl-l*norb_;
-      if (l == i) *ebra->data(ijkl) -= *dbra->data(k+j*norb_);
-    }
+  make_evec(dbra, ebra, tmp);
+
+  shared_ptr<Dvec> eket = ebra;
+  if (cbra != cket) {
+    eket = ebra->clone();
+    make_evec(dket, eket, tmp);
   }
 
   // size of the RI space
   const size_t nri = ebra->lena() * ebra->lenb();
   assert(nri == dbra->lena()*dbra->lenb());
 
-  // first form <0|E_ij,kl|I><I|E_mn|0>
+  // first form <0|E_mn|I><I|E_ij,kl|0>
   {
     auto tmp3 = make_shared<RDM<3>>(norb_);
-    dgemm_("T", "N", dbra->ij(), ebra->ij(), nri, 1.0, dbra->data(), nri, ebra->data(), nri, 0.0, tmp3->data(), dbra->ij());
+    dgemm_("T", "N", dbra->ij(), eket->ij(), nri, 1.0, dbra->data(), nri, eket->data(), nri, 0.0, tmp3->data(), dbra->ij());
     sort_indices<1,0,2,0,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb_*norb_*norb_*norb_);
 
     // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
@@ -235,8 +257,8 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
       for (int i1 = 0; i1 != norb_; ++i1)
         for (int i2 = 0; i2 != norb_; ++i2)
           for (int i3 = 0; i3 != norb_; ++i3) {
-            blas::ax_plus_y_n(-1.0, rdm2_->at(ist)->element_ptr(0, i2, i1, i0), norb_, rdm3->element_ptr(0, i3, i3, i2, i1, i0));
-            blas::ax_plus_y_n(-1.0, rdm2_->at(ist)->element_ptr(0, i0, i3, i2), norb_, rdm3->element_ptr(0, i1, i3, i2, i1, i0));
+            blas::ax_plus_y_n(-1.0, rdm2_->at(ist, jst)->element_ptr(0, i2, i1, i0), norb_, rdm3->element_ptr(0, i3, i3, i2, i1, i0));
+            blas::ax_plus_y_n(-1.0, rdm2_->at(ist, jst)->element_ptr(0, i0, i3, i2), norb_, rdm3->element_ptr(0, i1, i3, i2, i1, i0));
           }
   }
 
@@ -244,7 +266,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
   {
     {
       auto tmp4 = make_shared<RDM<4>>(norb_);
-      dgemm_("T", "N", ebra->ij(), ebra->ij(), nri, 1.0, ebra->data(), nri, ebra->data(), nri, 0.0, tmp4->data(), ebra->ij());
+      dgemm_("T", "N", ebra->ij(), eket->ij(), nri, 1.0, ebra->data(), nri, eket->data(), nri, 0.0, tmp4->data(), ebra->ij());
       sort_indices<1,0,3,2,4,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_*norb_*norb_*norb_);
       for (int l = 0; l != norb_; ++l)
         for (int k = 0; k != norb_; ++k)
@@ -253,8 +275,8 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
               blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,k,b,l), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,j,k,b,l));
               blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,l,b,k), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,b,k,j,l));
               for (int i = 0; i != norb_; ++i) {
-                blas::ax_plus_y_n(-1.0, rdm2_->at(ist)->element_ptr(0,k,b,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,j,l));
-                blas::ax_plus_y_n(-1.0, rdm2_->at(ist)->element_ptr(0,l,b,k), norb_, rdm4->element_ptr(0,i,b,j,j,k,i,l));
+                blas::ax_plus_y_n(-1.0, rdm2_->at(ist, jst)->element_ptr(0,k,b,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,j,l));
+                blas::ax_plus_y_n(-1.0, rdm2_->at(ist, jst)->element_ptr(0,l,b,k), norb_, rdm4->element_ptr(0,i,b,j,j,k,i,l));
                 for (int d = 0; d != norb_; ++d) {
                   blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,k,b,j,d,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,d,l));
                   blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,l,b,j,d,k), norb_, rdm4->element_ptr(0,i,b,j,d,k,i,l));

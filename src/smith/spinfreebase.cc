@@ -147,34 +147,56 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   // rdms.
   if (ref_->ciwfn()) {
     const int nclo = ref_->nclosed();
+    const int nstates = ref_->ciwfn()->nstates();
+    rdm1all_ = make_shared<Vec<Tensor>>();
+    rdm2all_ = make_shared<Vec<Tensor>>();
+    rdm3all_ = make_shared<Vec<Tensor>>();
+    rdm4all_ = make_shared<Vec<Tensor>>();
 
-    rdm1_ = make_shared<Tensor>(vector<IndexRange>(2,active_));
-    rdm2_ = make_shared<Tensor>(vector<IndexRange>(4,active_));
-    rdm3_ = make_shared<Tensor>(vector<IndexRange>(6,active_));
-    rdm4_ = make_shared<Tensor>(vector<IndexRange>(8,active_));
+    // TODO this can be reduced to half by bra-ket symmetry
+    for (int ist = 0; ist != nstates; ++ist) {
+      for (int jst = 0; jst != nstates; ++jst) {
 
-    shared_ptr<const RDM<1>> rdm1 = ref_->rdm1(ref_->target());
-    shared_ptr<const RDM<2>> rdm2 = ref_->rdm2(ref_->target());
-    shared_ptr<RDM<3>> rdm3;
-    shared_ptr<RDM<4>> rdm4;
-    tie(rdm3, rdm4) = ref_->compute_rdm34(ref_->target());
+        auto rdm1t = make_shared<Tensor>(vector<IndexRange>(2,active_));
+        auto rdm2t = make_shared<Tensor>(vector<IndexRange>(4,active_));
+        auto rdm3t = make_shared<Tensor>(vector<IndexRange>(6,active_));
+        auto rdm4t = make_shared<Tensor>(vector<IndexRange>(8,active_));
 
-    fill_block<2>(rdm1_, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
-    fill_block<4>(rdm2_, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
-    fill_block<6>(rdm3_, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
-    fill_block<8>(rdm4_, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
+        shared_ptr<const RDM<1>> rdm1;
+        shared_ptr<const RDM<2>> rdm2;
+        shared_ptr<const RDM<3>> rdm3;
+        shared_ptr<const RDM<4>> rdm4;
+        tie(rdm1, rdm2) = ref_->rdm12(jst, ist);
+        tie(rdm3, rdm4) = ref_->rdm34(jst, ist);
 
-    timer.tick_print("RDM evaluation");
+        fill_block<2>(rdm1t, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
+        fill_block<4>(rdm2t, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
+        fill_block<6>(rdm3t, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
+        fill_block<8>(rdm4t, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
 
-    // TODO this part has to be in the state loop
-    // construct denominator
-    denom_.push_back(make_shared<Denom>(*rdm1, *rdm2, *rdm3, *rdm4, *fockact));
+        rdm1all_->emplace(jst, ist, rdm1t);
+        rdm2all_->emplace(jst, ist, rdm2t);
+        rdm3all_->emplace(jst, ist, rdm3t);
+        rdm4all_->emplace(jst, ist, rdm4t);
 
-    timer.tick_print("Denominator evaluation");
+        if (ist == jst)
+          // construct denominator
+          denom_.push_back(make_shared<Denom>(*rdm1, *rdm2, *rdm3, *rdm4, *fockact));
+      }
+    }
+    timer.tick_print("RDM + denominator evaluation");
   }
 
   // set e0
   e0_ = compute_e0();
+}
+
+
+void SpinFreeMethod::set_rdm(const int ist, const int jst) {
+  rdm1_ = rdm1all_->at(ist, jst);
+  rdm2_ = rdm2all_->at(ist, jst);
+  rdm3_ = rdm3all_->at(ist, jst);
+  rdm4_ = rdm4all_->at(ist, jst);
 }
 
 

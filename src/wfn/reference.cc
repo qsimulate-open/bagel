@@ -64,6 +64,29 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 }
 
 
+tuple<shared_ptr<const RDM<1>>,std::shared_ptr<const RDM<2>>> Reference::rdm12(const int ist, const int jst) const {
+  shared_ptr<const RDM<1>> r1;
+  shared_ptr<const RDM<2>> r2;
+  if (rdm1_->exist(ist, jst) && rdm2_->exist(ist, jst)) {
+    r1 = rdm1_->at(ist, jst);
+    r2 = rdm2_->at(ist, jst);
+  } else {
+    FCI_bare fci(ciwfn_);
+    fci.compute_rdm12(ist, jst);
+    r1 = fci.rdm1(ist, jst);
+    r2 = fci.rdm2(ist, jst);
+  }
+  return make_tuple(r1, r2);
+}
+
+
+tuple<shared_ptr<const RDM<3>>,std::shared_ptr<const RDM<4>>> Reference::rdm34(const int ist, const int jst) const {
+  FCI_bare fci(ciwfn_);
+  fci.compute_rdm12(ist, jst); // TODO stupid code
+  return fci.rdm34(ist, jst);
+}
+
+
 shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
   if (nact_)
     return active->rdm1_mat(nclosed_);
@@ -95,13 +118,6 @@ shared_ptr<Dvec> Reference::rdm2deriv(const int istate) const {
 tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> Reference::rdm34deriv(const int istate, shared_ptr<const Matrix> fock) const {
   FCI_bare fci(ciwfn_);
   return fci.rdm34deriv(istate, fock);
-}
-
-
-tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const int i) const {
-  FCI_bare fci(ciwfn_);
-  fci.compute_rdm12();
-  return fci.compute_rdm34(i);
 }
 
 

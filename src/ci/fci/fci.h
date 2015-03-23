@@ -166,8 +166,10 @@ class FCI : public Method {
 
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
-    void compute_rdm12(const int istate);
-    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> compute_rdm34(const int istate) const;
+    void compute_rdm12(const int ist) { compute_rdm12(ist, ist); }
+    void compute_rdm12(const int ist, const int jst);
+
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const;
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
@@ -176,10 +178,14 @@ class FCI : public Method {
 
     std::shared_ptr<VecRDM<1>> rdm1() { return rdm1_; }
     std::shared_ptr<VecRDM<2>> rdm2() { return rdm2_; }
-    std::shared_ptr<RDM<1>> rdm1(const int i) { return rdm1_->at(i); }
-    std::shared_ptr<RDM<2>> rdm2(const int i) { return rdm2_->at(i); }
-    std::shared_ptr<const RDM<1>> rdm1(const int i) const { return rdm1_->at(i); }
-    std::shared_ptr<const RDM<2>> rdm2(const int i) const { return rdm2_->at(i); }
+    std::shared_ptr<RDM<1>> rdm1(const int i) { return rdm1(i, i); }
+    std::shared_ptr<RDM<2>> rdm2(const int i) { return rdm2(i, i); }
+    std::shared_ptr<RDM<1>> rdm1(const int i, const int j) { return rdm1_->at(i, j); }
+    std::shared_ptr<RDM<2>> rdm2(const int i, const int j) { return rdm2_->at(i, j); }
+    std::shared_ptr<const RDM<1>> rdm1(const int i) const { return rdm1(i, i); }
+    std::shared_ptr<const RDM<2>> rdm2(const int i) const { return rdm2(i, i); }
+    std::shared_ptr<const RDM<1>> rdm1(const int i, const int j) const { return rdm1_->at(i, j); }
+    std::shared_ptr<const RDM<2>> rdm2(const int i, const int j) const { return rdm2_->at(i, j); }
     std::shared_ptr<RDM<1>> rdm1_av() { return rdm1_av_; }
     std::shared_ptr<RDM<2>> rdm2_av() { return rdm2_av_; }
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }

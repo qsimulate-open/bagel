@@ -64,21 +64,26 @@ void MRCI::MRCI::solve() {
     nall_[istate]->fac(istate)  = 1.0;
     sall_[istate]->fac(istate)  = refen;
 
+    int ist = 0;
     for (auto& tt : *t2all_[istate]) {
+      int jst = 0;
       t2 = tt;
       for (auto& ss : *sall_[istate]) {
-        //TODO set appropriate RDMs here
+        set_rdm(jst++, ist);
         s = ss;
         auto queue = make_sourceq();
         while (!queue->done())
           queue->next_compute();
       }
+      jst = 0;
       for (auto& nn : *nall_[istate]) {
+        set_rdm(jst++, ist);
         n = nn;
         auto queue = make_normq();
         while (!queue->done())
           queue->next_compute();
       }
+      ++ist;
     }
   }
 
@@ -116,15 +121,18 @@ void MRCI::MRCI::solve() {
     for (int istate = 0; istate != nstates_; ++istate) {
       // first calculate left-hand-side vectors of t2 (named n)
       nall_[istate]->zero();
+      int ist = 0;
       for (auto& tt : *t2all_[istate]) {
+        int jst = 0;
         for (auto& nn : *nall_[istate]) {
-          // TODO set appropriate RDMs
+          set_rdm(jst++, ist);
           t2 = tt;
           n = nn;
           auto queue = make_normq();
           while (!queue->done())
             queue->next_compute();
         }
+        ++ist;
       }
 
       // normalize t2 and n
@@ -135,10 +143,12 @@ void MRCI::MRCI::solve() {
       a0.push_back(make_shared<Amplitude>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
 
       // compute residuals (named r)
+      ist = 0;
       for (auto& tt : *t2all_[istate]) {
+        int jst = 0;
         auto niter = nall_[istate]->begin();
         for (auto& rr : *rtmp) {
-          // TODO set appropriate RDMs
+          set_rdm(jst++, ist);
           t2 = tt;
           r = rr;
           // TODO residual should not be zero'ed out inside the loop

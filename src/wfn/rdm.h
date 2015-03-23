@@ -28,6 +28,7 @@
 #define __BAGEL_WFN_RDM_H
 
 #include <type_traits>
+#include <src/util/vec.h>
 #include <src/wfn/geometry.h>
 
 namespace bagel {
@@ -167,6 +168,9 @@ template<> std::shared_ptr<Matrix> RDM<1,double>::rdm1_mat(const int nclosed, co
 template<> void RDM<1,double>::print(const double thresh) const;
 template<> void RDM<2,double>::print(const double thresh) const;
 template<> void RDM<3,double>::print(const double thresh) const;
+
+template<int rank>
+using VecRDM = Vec<RDM<rank, double>>;
 
 }
 

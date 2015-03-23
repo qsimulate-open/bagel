@@ -29,6 +29,7 @@
 
 #include <chrono>
 #include <src/ci/fci/civec.h>
+#include <src/util/vec.h>
 #include <src/smith/denom.h>
 #include <src/smith/multitensor.h>
 #include <src/smith/smith_info.h>
@@ -61,10 +62,20 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor> v2_;
     std::shared_ptr<Tensor> f1_;
     std::shared_ptr<Tensor> h1_;
+
+    // contains the current RDMs to be used in smith
     std::shared_ptr<Tensor> rdm1_;
     std::shared_ptr<Tensor> rdm2_;
     std::shared_ptr<Tensor> rdm3_;
     std::shared_ptr<Tensor> rdm4_;
+
+    // contains all the RDMs (for multistate runs)
+    std::shared_ptr<Vec<Tensor>> rdm1all_;
+    std::shared_ptr<Vec<Tensor>> rdm2all_;
+    std::shared_ptr<Vec<Tensor>> rdm3all_;
+    std::shared_ptr<Vec<Tensor>> rdm4all_;
+    // the function to set RDMs to rdm1_, rdm2_, etc
+    void set_rdm(const int jst, const int ist);
 
     // original determinants (for use in output)
     std::shared_ptr<const Determinants> det_;

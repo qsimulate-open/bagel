@@ -33,7 +33,8 @@
 #include <src/ci/fci/dvec.h>
 #include <src/wfn/geometry.h>
 #include <src/wfn/ciwfn.h>
-#include <src/wfn/vecrdm.h>
+#include <src/wfn/rdm.h>
+#include <src/util/vec.h>
 
 // all the info to construct wave functions
 
@@ -138,7 +139,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const VecRDM<1>> rdm1() const { return rdm1_; }
     std::shared_ptr<const VecRDM<2>> rdm2() const { return rdm2_; }
 
-    std::shared_ptr<const RDM<1>> rdm1(const int irdm) const { return rdm1_->at(irdm); }
+    std::shared_ptr<const RDM<1>> rdm1(const int ist) const { return rdm1_->at(ist); }
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
 
     // returns an occ-occ sized 1RDM
@@ -146,10 +147,11 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Matrix> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_->at(irdm)); }
     std::shared_ptr<Matrix> rdm1_mat() const { return rdm1_mat(rdm1_av_); }
 
-    std::shared_ptr<const RDM<2>> rdm2(const int irdm) const { return rdm2_->at(irdm); }
+    std::shared_ptr<const RDM<2>> rdm2(const int ist) const { return rdm2_->at(ist); }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
-    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> compute_rdm34(const int i) const;
+    std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> rdm12(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> rdm34(const int ist, const int jst) const;
 
     // function to return a CI vectors from orbital info
     std::shared_ptr<const Dvec> civectors() const;
