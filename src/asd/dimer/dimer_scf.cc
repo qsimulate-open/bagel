@@ -519,8 +519,40 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   if (it.empty() && Ai.empty() && Bi.empty())
     throw runtime_error("Active space of the dimer MUST be specified in some way.");
   if (!it.empty()) {
-    Alist = it;
-    Blist = it;
+    vector<pair<int, int>> bounds;
+    set<int> ambiguous_list;
+    //sort according to region and put into Alist & Blist
+    vector<int> sizes = idata->get_vector<int>("region_sizes");
+    int nbasis = 0;
+    int natoms = 0;
+    for (int& region : sizes) {
+      const int atomstart = natoms;
+      const int basisstart = nbasis;
+      for (int atom = atomstart; atom < atomstart + region; ++atom)
+        nbasis += sgeom_->atoms()[atom]->nbasis();
+
+      natoms += region;
+      if (basisstart != nbasis)
+        bounds.emplace_back(basisstart, nbasis);
+    }
+    if (bounds.size() != 3)
+      throw logic_error("Only 3 regions should be defined in order of A, B, and the rest");
+    if (natoms != count_if(sgeom_->atoms().begin(), sgeom_->atoms().end(), [](const shared_ptr<const Atom> a){return !a->dummy();}))
+      throw logic_error("All atoms must be assigned to regions");
+    //scan it set
+    shared_ptr<Matrix> coeff = sref_->coeff()->copy();
+    for (auto& imo : it) {
+      const double sum_A = blas::dot_product(coeff->element_ptr(bounds[0].first, imo), bounds[0].second - bounds[0].first, coeff->element_ptr(bounds[0].first, imo));
+      const double sum_B = blas::dot_product(coeff->element_ptr(bounds[1].first, imo), bounds[1].second - bounds[1].first, coeff->element_ptr(bounds[1].first, imo));
+      const double sum_rest = blas::dot_product(coeff->element_ptr(bounds[2].first, imo), bounds[2].second - bounds[2].first, coeff->element_ptr(bounds[2].first, imo));
+      cout << " orbital : "  << imo << " A(" << sum_A << "), B(" << sum_B << "), the rest(" << sum_rest << ")" << endl;
+      if (sum_A > sum_B && sum_A > sum_rest)
+        Alist.insert(imo);
+      else if (sum_B > sum_A && sum_B > sum_rest)
+        Blist.insert(imo);
+      else
+        throw runtime_error("Wrong choice of active orbitals");
+    }
   }
   if (!Ai.empty()) Alist = Ai;
   if (!Bi.empty()) Blist = Bi;
