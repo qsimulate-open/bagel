@@ -98,7 +98,7 @@ class SpinFreeMethod {
     static void print_iteration(const bool noconv);
 
     // compute e0 which is defined as Trace(f(x,x), gamma(x,x))
-    double compute_e0() const;
+    double compute_e0();
 
     // denominator objects
     std::vector<std::shared_ptr<const Denom>> denom_;

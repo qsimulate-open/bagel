@@ -75,7 +75,6 @@ void FCI::compute_rdm12() {
     rdm2_av_ = rdm2_->at(0,0);
   }
 
-
   cc_->set_det(det_);
 }
 
@@ -176,6 +175,11 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
 
 
 void FCI::compute_rdm12(const int ist, const int jst) {
+  if (det_->compress()) {
+    auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+    cc_->set_det(detex);
+  }
+
   shared_ptr<Civec> ccbra = cc_->data(ist);
   shared_ptr<Civec> ccket = cc_->data(jst);
 
@@ -186,6 +190,8 @@ void FCI::compute_rdm12(const int ist, const int jst) {
   // setting to private members.
   rdm1_->emplace(ist, jst, rdm1);
   rdm2_->emplace(ist, jst, rdm2);
+
+  cc_->set_det(det_);
 }
 
 
@@ -198,7 +204,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
   cc_->set_det(detex);
 
   shared_ptr<Civec> cbra = cc_->data(ist);
-  shared_ptr<Civec> cket = cc_->data(ist);
+  shared_ptr<Civec> cket = cc_->data(jst);
 
   // first make <I|E_ij|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);

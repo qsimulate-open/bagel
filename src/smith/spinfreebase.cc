@@ -221,18 +221,23 @@ void SpinFreeMethod::print_iteration(const bool noconv) {
 }
 
 
-double SpinFreeMethod::compute_e0() const {
-  if (ref_->nact() != 0 && !(static_cast<bool>(f1_) && static_cast<bool>(rdm1_)))
-    throw logic_error("SpinFreeMethod::compute_e0 was called before f1_ or rdm1_ was computed. Strange.");
+double SpinFreeMethod::compute_e0() {
+  assert(!!f1_);
+  const size_t nstates = ref_->ciwfn()->nstates();
   double sum = 0.0;
-  for (auto& i1 : active_) {
-    for (auto& i0 : active_) {
-      const size_t size = i0.size() * i1.size();
-      unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
-      unique_ptr<double[]> rdata = rdm1_->get_block(i0, i1);
-      sum += ddot_(size, fdata, 1, rdata, 1);
+  for (int ist = 0; ist != nstates; ++ist) {
+    set_rdm(ist, ist);
+    assert(!!rdm1_);
+    for (auto& i1 : active_) {
+      for (auto& i0 : active_) {
+        const size_t size = i0.size() * i1.size();
+        unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
+        unique_ptr<double[]> rdata = rdm1_->get_block(i0, i1);
+        sum += ddot_(size, fdata, 1, rdata, 1);
+      }
     }
   }
+  sum /= nstates;
   cout << "    - Zeroth order energy: " << setw(20) << setprecision(10) << sum << endl;
   return sum;
 }

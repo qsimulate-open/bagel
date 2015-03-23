@@ -48,6 +48,13 @@ void CASPT2::CASPT2::solve() {
   Timer timer;
   this->print_iteration();
   Timer mtimer;
+
+  if (ref_->ciwfn()->nstates() != 1)
+    throw logic_error("currently this is broken - see compute_e0");
+
+  const int target = ref_->target();
+  set_rdm(target, target);
+
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
     shared_ptr<Queue> energyq = make_energyq();
