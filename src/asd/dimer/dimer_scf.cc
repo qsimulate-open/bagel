@@ -540,18 +540,30 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     if (natoms != count_if(sgeom_->atoms().begin(), sgeom_->atoms().end(), [](const shared_ptr<const Atom> a){return !a->dummy();}))
       throw logic_error("All atoms must be assigned to regions");
     //scan it set
-    shared_ptr<Matrix> coeff = sref_->coeff()->copy();
+    cout << "  o Assigning dimer active orbitals (localized) to monomers A and B" << endl;
+    shared_ptr<Matrix> coeff = isolated_refs_.first->coeff()->copy(); //projected coeff on isolated_refs (so far, first == second respresenting dimer hf)
     for (auto& imo : it) {
       const double sum_A = blas::dot_product(coeff->element_ptr(bounds[0].first, imo), bounds[0].second - bounds[0].first, coeff->element_ptr(bounds[0].first, imo));
       const double sum_B = blas::dot_product(coeff->element_ptr(bounds[1].first, imo), bounds[1].second - bounds[1].first, coeff->element_ptr(bounds[1].first, imo));
       const double sum_rest = blas::dot_product(coeff->element_ptr(bounds[2].first, imo), bounds[2].second - bounds[2].first, coeff->element_ptr(bounds[2].first, imo));
-      cout << " orbital : "  << imo << " A(" << sum_A << "), B(" << sum_B << "), the rest(" << sum_rest << ")" << endl;
-      if (sum_A > sum_B && sum_A > sum_rest)
+      if (sum_A > sum_B && sum_A > sum_rest) {
+        cout << "    - orbital("  << imo << ") is assigned to monomer A : A(" << setw(6) << setprecision(3) << sum_A << "), B("
+                                                                              << setw(6) << setprecision(3) << sum_B << "), the rest("
+                                                                              << setw(6) << setprecision(3) << sum_rest << ")" << endl;
         Alist.insert(imo);
-      else if (sum_B > sum_A && sum_B > sum_rest)
+      }
+      else if (sum_B > sum_A && sum_B > sum_rest) {
+        cout << "    - orbital("  << imo << ") is assigned to monomer B : A(" << setw(6) << setprecision(3) << sum_A << "), B("
+                                                                              << setw(6) << setprecision(3) << sum_B << "), the rest("
+                                                                              << setw(6) << setprecision(3) << sum_rest << ")" << endl;
         Blist.insert(imo);
-      else
+      }
+      else {
+        cout << "    - orbital("  << imo << ") cannot be assigned to neither of monomers : A(" << setw(6) << setprecision(3) << sum_A << "), B("
+                                                                              << setw(6) << setprecision(3) << sum_B << "), the rest("
+                                                                              << setw(6) << setprecision(3) << sum_rest << ")" << endl;
         throw runtime_error("Wrong choice of active orbitals");
+      }
     }
   }
   if (!Ai.empty()) Alist = Ai;
