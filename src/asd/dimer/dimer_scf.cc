@@ -200,10 +200,6 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   const int nbasisA = geoms_.first->nbasis();
   const int nbasisB = geoms_.second->nbasis();
   const int dimerbasis = sgeom_->nbasis();
-  cout << nbasisA << endl;
-  cout << nbasisB << endl;
-  cout << dimerbasis << endl;
-  assert(false);
 
   // TODO: this implementation requires specifying the number of active orbitals that are coming from each subset.
   //  This is probably fine, but it is not strictly necessary.

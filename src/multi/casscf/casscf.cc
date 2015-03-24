@@ -28,6 +28,8 @@
 #include <src/scf/hf/fock.h>
 #include <src/multi/casscf/casscf.h>
 #include <src/multi/casscf/qvec.h>
+#include <src/wfn/construct_method.h>
+#include <src/wfn/localization.h>
 
 using namespace std;
 using namespace bagel;
@@ -35,6 +37,39 @@ using namespace bagel;
 
 CASSCF::CASSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
+
+  const shared_ptr<const PTree> mdata = idat->get_child_optional("molecule");
+  if (ref_ && mdata) {
+    //update geometry
+    geom_ = make_shared<Geometry>(*geom, mdata);
+    hcore_ = make_shared<Hcore>(geom_);
+    //guess reference
+    guess_ref_ = re->project_coeff(geom_, false);
+    shared_ptr<const Matrix> projected = guess_ref_->coeff();
+    // orthonormalize the "projected" coefficients
+    Overlap S(geom_);
+    Matrix S_invhalf = (*projected) % S * (*projected);
+    S_invhalf.inverse_half();
+    auto coeff = make_shared<Matrix>(*projected * S_invhalf);
+    //update reference
+    ref_ = make_shared<Reference>(geom_, make_shared<const Coeff>(move(*coeff)), guess_ref_->nclosed(), /*0*/guess_ref_->nact(), guess_ref_->nvirt());
+    //do SCF
+    auto hfdata = idat->get_child_optional("hf") ? idat->get_child_optional("hf") : make_shared<PTree>();
+    auto rhf = dynamic_pointer_cast<RHF>(construct_method("hf", hfdata, geom_, ref_));
+    rhf->compute();
+    ref_ = rhf->conv_to_ref();
+    //localization
+    shared_ptr<const PTree> localize_data = idat->get_child_optional("localization");
+    if (!localize_data) localize_data = make_shared<const PTree>();
+    string localizemethod = localize_data->get<string>("algorithm", "pm");
+    shared_ptr<OrbitalLocalization> localization;
+    if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
+      localization = make_shared<PMLocalization>(localize_data, ref_);
+    else throw runtime_error("Unrecognized orbital localization method");
+    //update reference with localized orbital
+    shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize());
+    ref_ = make_shared<const Reference>(*ref_, new_coeff);
+  }
 
   if (!ref_) {
     auto scf = make_shared<RHF>(idat, geom);
@@ -57,11 +92,95 @@ void CASSCF::common_init() {
     set<int> active_indices;
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
     for (auto& i : *iactive) active_indices.insert(lexical_cast<int>(i->data()) - 1);
-    ref_ = ref_->set_active(active_indices);
-    cout << " " << endl;
-    cout << "    ==== Active orbitals : ===== " << endl;
-    for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
-    cout << "    ============================ " << endl << endl;
+
+    if (guess_ref_) {
+      const int nbasis = geom_->nbasis();
+      //project to find active orbitals
+      const int nclosed_hf = ref_->nclosed();
+      const int nvirt_hf = ref_->nvirt();
+
+      guess_ref_ = guess_ref_->set_active(active_indices);
+      const int nclosed = guess_ref_->nclosed();
+      const int nact = guess_ref_->nact();
+      const int nvirt = nbasis - nclosed - nact;
+      cout << nclosed_hf << " " << nvirt_hf << endl;
+      cout << nclosed << " " << nact << " " << nvirt << endl;
+      cout << nbasis << endl;
+      assert(nbasis == nclosed_hf + nvirt_hf);
+      assert(nbasis == nclosed + nact + nvirt);
+
+      vector<tuple<shared_ptr<const Matrix>, pair<int, int>, int, string, bool>> svd_info;
+
+      auto active = make_shared<Matrix>(nbasis, nact);
+      active->copy_block(0, 0, nbasis, nact, guess_ref_->coeff()->get_submatrix(0, nclosed, nbasis, nact));
+      svd_info.emplace_back(active, make_pair(0, nclosed_hf), nclosed_hf - nclosed, "closed subspace", true);
+      svd_info.emplace_back(active, make_pair(nclosed_hf, nbasis), nvirt_hf - nvirt, "virtual subspace", false);
+      assert(nclosed_hf - nclosed + nvirt_hf - nvirt == nact);
+
+      Overlap S(geom_);
+
+      shared_ptr<Matrix> out_coeff = ref_->coeff()->copy();
+      size_t closed_position = 0;
+      size_t active_position = nclosed;
+      size_t virt_position = nclosed + nact;
+
+      for (auto& subset : svd_info) {
+        const Matrix& active = *get<0>(subset);
+        pair<int, int> bounds = get<1>(subset);
+        const int norb = get<2>(subset);
+        const string set_name = get<3>(subset);
+        const bool closed = get<4>(subset);
+
+        shared_ptr<Matrix> subcoeff = ref_->coeff()->slice_copy(bounds.first, bounds.second);
+
+        const Matrix overlaps(active % S * *subcoeff);
+
+        multimap<double, int> norms;
+
+        for(int i = 0; i < overlaps.mdim(); ++i) {
+          const double norm = blas::dot_product(overlaps.element_ptr(0, i), overlaps.ndim(), overlaps.element_ptr(0, i));
+          norms.emplace(norm, i);
+        }
+
+        active_thresh_ = idata_->get<double>("active_thresh", 0.5);
+        cout << endl << "  o Forming CASSCF active orbitals arising from " << (closed ? "closed " : "virtual ") << "guess orbitals. Threshold for inclusion in cadidate space: " << setw(6) << setprecision(3) << active_thresh_ << endl;
+
+        vector<int> active_list;
+        double max_overlap, min_overlap;
+        {
+          auto end = norms.rbegin(); advance(end, norb);
+          end = find_if(end, norms.rend(), [this] (const pair<const double, int>& p) { return p.first < active_thresh_; });
+          for_each(norms.rbegin(), end, [&active_list] (const pair<const double, int>& p) { active_list.emplace_back(p.second); });
+          auto mnmx = minmax_element(norms.rbegin(), end);
+          tie(min_overlap, max_overlap) = make_tuple(mnmx.first->first, mnmx.second->first);
+        }
+
+        const int active_size = active_list.size();
+        cout << "    - size of candidate space: " << active_size << endl;
+        cout << "    - largest overlap with guess space: " << max_overlap << ", smallest: " << min_overlap << endl;
+
+        if (active_size != norb) {
+          throw runtime_error("Try adjust active_thresh.");
+        }
+        else {
+          set<int> active_set(active_list.begin(), active_list.end());
+          for (size_t i = 0; i < subcoeff->mdim(); ++i)
+            if (active_set.count(i) == 0)
+              copy_n(subcoeff->element_ptr(0, i), nbasis, out_coeff->element_ptr(0, (closed ? closed_position++ : virt_position++)));
+            else
+              copy_n(subcoeff->element_ptr(0, i), nbasis, out_coeff->element_ptr(0, active_position++));
+        }
+      }
+      //Reordered reference
+      ref_ = make_shared<Reference>(geom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nvirt);
+    }
+    else {
+      ref_ = ref_->set_active(active_indices);
+      cout << " " << endl;
+      cout << "    ==== Active orbitals : ===== " << endl;
+      for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
+      cout << "    ============================ " << endl << endl;
+    }
   }
 
   // first set coefficient
