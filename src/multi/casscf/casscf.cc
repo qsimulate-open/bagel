@@ -60,15 +60,16 @@ CASSCF::CASSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometr
     ref_ = rhf->conv_to_ref();
     //localization
     shared_ptr<const PTree> localize_data = idat->get_child_optional("localization");
-    if (!localize_data) localize_data = make_shared<const PTree>();
-    string localizemethod = localize_data->get<string>("algorithm", "pm");
-    shared_ptr<OrbitalLocalization> localization;
-    if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
-      localization = make_shared<PMLocalization>(localize_data, ref_);
-    else throw runtime_error("Unrecognized orbital localization method");
-    //update reference with localized orbital
-    shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize());
-    ref_ = make_shared<const Reference>(*ref_, new_coeff);
+    if (localize_data) {
+      string localizemethod = localize_data->get<string>("algorithm", "pm");
+      shared_ptr<OrbitalLocalization> localization;
+      if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
+        localization = make_shared<PMLocalization>(localize_data, ref_);
+      else throw runtime_error("Unrecognized orbital localization method");
+      //update reference with localized orbital
+      shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize());
+      ref_ = make_shared<const Reference>(*ref_, new_coeff);
+    }
   }
 
   if (!ref_) {
