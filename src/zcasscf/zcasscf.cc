@@ -25,7 +25,7 @@
 
 #include <fstream>
 #include <src/rel/dirac.h>
-#include <src/math/quatmatrix.h>
+#include <src/util/math/quatmatrix.h>
 #include <src/zcasscf/zcasscf.h>
 
 using namespace std;

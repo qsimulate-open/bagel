@@ -29,7 +29,7 @@
 
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
-#include <src/input/input.h>
+#include <src/util/input/input.h>
 
 namespace bagel {
   extern std::shared_ptr<Method> construct_method(std::string title, std::shared_ptr<const PTree> itree,

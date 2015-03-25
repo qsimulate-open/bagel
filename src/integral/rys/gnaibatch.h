@@ -28,7 +28,7 @@
 
 #include <memory>
 #include <tuple>
-#include <src/math/xyzfile.h>
+#include <src/util/math/xyzfile.h>
 #include <src/integral/rys/coulombbatch_base.h>
 
 namespace bagel {

@@ -28,7 +28,7 @@
 #define __SRC_ASD_CONSTRUCT_ASD_H
 
 #include <src/asd/asd_base.h>
-#include <src/dimer/dimer.h>
+#include <src/asd/dimer/dimer.h>
 
 namespace bagel {
   extern std::shared_ptr<ASD_base> construct_ASD(std::shared_ptr<const PTree> itree, std::shared_ptr<Dimer> dimer);

@@ -28,7 +28,7 @@
 #define __SRC_WFN_GEOMETRY_H
 
 #include <src/df/df.h>
-#include <src/input/input.h>
+#include <src/util/input/input.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {

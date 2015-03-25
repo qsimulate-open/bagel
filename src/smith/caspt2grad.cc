@@ -29,7 +29,7 @@
 #include <src/casscf/qvec.h>
 #include <src/smith/smith.h>
 #include <src/grad/gradeval.h>
-#include <src/math/algo.h>
+#include <src/util/math/algo.h>
 
 
 using namespace std;

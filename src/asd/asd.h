@@ -27,7 +27,7 @@
 #define __ASD_ASD_H
 
 #include <src/asd/asd_base.h>
-#include <src/dimer/dimer_prop.h>
+#include <src/asd/dimer/dimer_prop.h>
 
 namespace bagel {
 

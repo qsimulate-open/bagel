@@ -30,7 +30,7 @@
 #include <src/df/df.h>
 #include <src/wfn/geometry.h>
 #include <src/integral/libint/libint.h>
-#include <src/math/zmatrix.h>
+#include <src/util/math/zmatrix.h>
 
 namespace bagel {
 

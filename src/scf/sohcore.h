@@ -27,7 +27,7 @@
 #ifndef __SRC_SCF_SOHCORE_H
 #define __SRC_SCF_SOHCORE_H
 
-#include <src/math/zmatrix.h>
+#include <src/util/math/zmatrix.h>
 #include <src/wfn/geometry.h>
 #include <src/molecule/hcore.h>
 

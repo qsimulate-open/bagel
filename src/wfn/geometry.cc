@@ -33,8 +33,8 @@
 #include <src/integral/comprys/complexsmalleribatch.h>
 #include <src/integral/comprys/complexmixederibatch.h>
 #include <src/integral/libint/libint.h>
-#include <src/io/moldenin.h>
-#include <src/math/quatern.h>
+#include <src/util/io/moldenin.h>
+#include <src/util/math/quatern.h>
 
 using namespace std;
 using namespace bagel;

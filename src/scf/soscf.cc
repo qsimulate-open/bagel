@@ -25,7 +25,7 @@
 
 #include <src/scf/soscf.h>
 #include <src/scf/sofock.h>
-#include <src/math/diis.h>
+#include <src/util/math/diis.h>
 #include <src/rel/relreference.h>
 
 using namespace std;

@@ -24,8 +24,8 @@
 //
 
 #include <src/asd/asd_cas.h>
-#include <src/fci/hztasks.h>
-#include <src/fci/prop1etask.h>
+#include <src/ci/fci/hztasks.h>
+#include <src/ci/fci/prop1etask.h>
 
 using namespace std;
 using namespace bagel;

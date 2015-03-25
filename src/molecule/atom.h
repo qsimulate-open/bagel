@@ -30,7 +30,7 @@
 #include <src/molecule/shell.h>
 #include <src/molecule/ecp.h>
 #include <src/molecule/soecp.h>
-#include <src/input/input.h>
+#include <src/util/input/input.h>
 
 namespace bagel {
 

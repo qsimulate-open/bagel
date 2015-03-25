@@ -27,7 +27,7 @@
 #ifndef __SRC_LONDON_SMALL1E_LONDON_H
 #define __SRC_LONDON_SMALL1E_LONDON_H
 
-#include <src/math/zmatrix.h>
+#include <src/util/math/zmatrix.h>
 #include <src/integral/smallints1e_london.h>
 #include <src/molecule/matrix1earray.h>
 

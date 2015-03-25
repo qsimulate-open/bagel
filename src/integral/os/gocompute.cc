@@ -26,7 +26,7 @@
 
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/goverlapbatch.h>
-#include <src/math/comb.h>
+#include <src/util/math/comb.h>
 
 using namespace std;
 using namespace bagel;

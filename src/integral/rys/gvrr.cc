@@ -25,7 +25,7 @@
 
 #include <src/integral/rys/gradbatch.h>
 #include <src/integral/rys/_gvrr_drv.h>
-#include <src/math/comb.h>
+#include <src/util/math/comb.h>
 #include <src/util/f77.h>
 
 using namespace std;
