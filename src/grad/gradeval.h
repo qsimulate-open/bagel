@@ -27,13 +27,13 @@
 #ifndef __SRC_GRAD_GRADEVAL_H
 #define __SRC_GRAD_GRADEVAL_H
 
-#include <src/scf/rohf.h>
-#include <src/ks/ks.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/ks/ks.h>
+#include <src/scf/dhf/dirac.h>
 #include <src/pt2/mp2/mp2grad.h>
+#include <src/pt2/dmp2/dmp2grad.h>
 #include <src/grad/gradeval_base.h>
-#include <src/casscf/supercigrad.h>
-#include <src/rel/dirac.h>
-#include <src/rel/dmp2grad.h>
+#include <src/multi/casscf/supercigrad.h>
 #include <src/smith/caspt2grad.h>
 
 // T should have
@@ -72,7 +72,7 @@ class GradEval : public GradEval_base {
 };
 
 // specialization
-template<> std::shared_ptr<GradFile> GradEval<SCF>::compute();
+template<> std::shared_ptr<GradFile> GradEval<RHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<UHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<KS>::compute();

@@ -24,10 +24,10 @@
 //
 
 
+#include <bagel_config.h>
 #include <src/smith/smith.h>
-#include <src/smith/MP2.h>
-#include <src/smith/CAS_all_active.h>
-#include <src/smith/CAS_test.h>
+#include <src/smith/MRCI.h>
+#include <src/smith/CASPT2.h>
 
 
 using namespace std;
@@ -35,18 +35,20 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
-  string method = idata_->get<string>("method", "mp2");
+  const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
   // make a smith_info class
   auto info = make_shared<SMITH_Info>(r, idata);
 
-  if (method == "mp2") {
-    algo_ = make_shared<MP2::MP2<Storage_Incore>>(info);
-  } else if (method == "caspt2") {
-    algo_ = make_shared<CAS_all_active::CAS_all_active<Storage_Incore>>(info);
-  } else if (method == "caspt2-test") {
-    algo_ = make_shared<CAS_test::CAS_test<Storage_Incore>>(info);
+#ifdef COMPILE_SMITH
+  if (method == "caspt2") {
+    algo_ = make_shared<CASPT2::CASPT2>(info);
+  } else if (method == "mrci") {
+    algo_ = make_shared<MRCI::MRCI>(info);
   } else {
+#else
+  {
+#endif
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());
   }
@@ -55,25 +57,24 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 void Smith::compute() {
   algo_->solve();
 
-  // TODO toggle by something better than this.
-  auto algop = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_);
-  if (algop) {
-    dm1_ = algop->rdm1();
-    dm2_ = algop->rdm2();
+#ifdef COMPILE_SMITH
+  if (algo_->ref()->grad()) {
+    auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
+    assert(algop);
 
-    // calculate unrelaxed dipole moment from correlated dm
-    correction_ = algop->rdm1_correction();
+    algop->solve_deriv();
+    dm1_ = algop->rdm12();
+    dm11_ = algop->rdm11();
+    dm2_ = algop->rdm21();
+
+    // compute <1|1>
+    wf1norm_ = algop->correlated_norm();
 
     // convert ci derivative tensor to civec
     cider_ = algop->ci_deriv();
 
     // todo check
     coeff_ = algop->coeff();
-
-#if 0
-    cout << "  * Printing ci derivative civec:" << endl;
-    cider_->print(0.1e-15);
-    cout << "  * Printing civec ci derivative * cI =     " <<  setprecision(10) << cider_->dot_product(*(algo_->rdm0deriv())) << endl;
-#endif
   }
+#endif
 }

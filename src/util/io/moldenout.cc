@@ -32,8 +32,7 @@ using namespace std;
 /************************************************************************************
 ************************************************************************************/
 
-MoldenOut::MoldenOut(string filename) : MoldenIO(filename) {
-  ofs_.open(filename);
+MoldenOut::MoldenOut(string filename) : MoldenIO(filename), ofs_(filename) {
   ofs_ << "[Molden Format]" << endl;
 }
 
@@ -118,19 +117,19 @@ void MoldenOut::write_mos() {
   const double* modata = ref_->coeff()->data();
 
   VectorB eigvec = ref_->eig();
-  if (eigvec.empty()) eigvec = VectorB(num_mos);
+  if (eigvec.empty())
+    eigvec = VectorB(num_mos);
+  assert(eigvec.size() == num_mos);
 
-  auto ieig = eigvec.begin();
+  for (auto& ieig : eigvec) {
 
-  for (int i = 0; i < num_mos; ++ieig, ++i) {
-
-    ofs_ << " Ene=" << setw(12) << setprecision(6) << fixed << *ieig << endl;
+    ofs_ << " Ene=" << setw(12) << setprecision(6) << fixed << ieig << endl;
 
     /* At the moment only thinking about RHF, so assume spin is Alpha */
     ofs_ << " Spin=" << "  Alpha" << endl;
 
     /* At the moment, assuming occupation can be 2 or 0. Should be fine for RHF */
-    string occ_string = nocc-- > 0 ? "  2.000" : "  0.000";
+    const string occ_string = nocc-- > 0 ? "  2.000" : "  0.000";
     ofs_ << " Occup=" << occ_string << endl;
 
     int j = 0;
@@ -138,7 +137,7 @@ void MoldenOut::write_mos() {
       for (auto& ishell : iatom->shells()) {
         for (int icont = 0; icont != ishell->num_contracted(); ++icont) {
           vector<int> corder = (is_spherical ? b2m_sph_.at(ishell->angular_number()) : b2m_cart_.at(ishell->angular_number()));
-          vector<double> scales = (is_spherical ? vector<double>(corder.size(), 1.0) : scaling_.at(ishell->angular_number())) ;
+          vector<double> scales = (is_spherical ? vector<double>(corder.size(), 1.0) : scaling_.at(ishell->angular_number()));
           for (auto& iorder : corder) {
              ofs_ << fixed << setw(4) << ++j << setw(22) << setprecision(16) << modata[iorder] / scales.at(iorder) << endl;
           }

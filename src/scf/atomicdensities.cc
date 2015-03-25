@@ -23,8 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/scf/rohf.h>
 #include <src/scf/atomicdensities.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/hf/fock.h>
 #include <src/util/atommap.h>
 #include <src/util/math/diis.h>
 
@@ -107,8 +108,8 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
 
   tuple<int,int,int,int> nclosed = atommap_.num_closed(ga->atoms().front()->name());
   tuple<int,int,int,int> nopen   = atommap_.num_open(ga->atoms().front()->name());
-  int nclo[4] = {get<0>(nclosed)/2, get<1>(nclosed)/2, get<2>(nclosed)/2, get<3>(nclosed)/2};
-  int nope[4] = {get<0>(nopen),     get<1>(nopen),     get<2>(nopen),     get<3>(nopen)};
+  const array<int,4> nclo {{get<0>(nclosed)/2, get<1>(nclosed)/2, get<2>(nclosed)/2, get<3>(nclosed)/2}};
+  const array<int,4> nope {{get<0>(nopen),     get<1>(nopen),     get<2>(nopen),     get<3>(nopen)}};
   const int sclosed = (!ga->atoms().front()->use_ecp_basis()) ? get<0>(nclosed)+get<1>(nclosed)+get<2>(nclosed)+get<3>(nclosed)
                     : (get<0>(nclosed)+get<1>(nclosed)+get<2>(nclosed)+get<3>(nclosed) - ga->atoms().front()->ecp_parameters()->ecp_ncore());
   const int sopen   = get<0>(nopen)  +get<1>(nopen)  +get<2>(nopen)  +get<3>(nopen);

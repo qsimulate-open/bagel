@@ -28,7 +28,7 @@
 #define __SRC_NEVPT2_NEVPT2_H
 
 #include <src/wfn/method.h>
-#include <src/casscf/casscf.h>
+#include <src/multi/casscf/casscf.h>
 
 namespace bagel {
 

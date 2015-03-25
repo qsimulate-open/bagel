@@ -27,7 +27,7 @@
 #ifndef __SRC_PERIODIC_PDATA_H
 #define __SRC_PERIODIC_PDATA_H
 
-#include <src/math/zmatrix.h>
+#include <src/util/math/zmatrix.h>
 
 namespace bagel {
 

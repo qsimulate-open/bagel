@@ -155,6 +155,32 @@ class Matrix_base : public btas::Tensor2<DataType> {
       return out;
     }
 
+    template<class T>
+    std::shared_ptr<T> swap_columns_impl(const int i, const int iblock, const int j, const int jblock) const {
+      assert(jblock >= 0 && iblock >= 0);
+      assert(i >= 0 && j + jblock <= mdim());
+      assert(i + iblock <= j);
+
+      auto low0 = {0, 0};
+      auto low1 = {0, j};
+      auto low2 = {0, i+iblock};
+      auto low3 = {0, i};
+      auto low4 = {0, j+jblock};
+      auto up0 = {ndim(), i};
+      auto up1 = {ndim(), j+jblock};
+      auto up2 = {ndim(), j};
+      auto up3 = {ndim(), i+iblock};
+      auto up4 = {ndim(), mdim()};
+      auto out = std::make_shared<T>(ndim(), mdim(), localized_);
+
+      out->copy_block(0,                   0, ndim(),                 i, btas::make_rwview(this->range().slice(low0, up0), this->storage()));
+      out->copy_block(0,                   i, ndim(),            jblock, btas::make_rwview(this->range().slice(low1, up1), this->storage()));
+      out->copy_block(0,          i + jblock, ndim(),    j - (i+iblock), btas::make_rwview(this->range().slice(low2, up2), this->storage()));
+      out->copy_block(0, j + jblock - iblock, ndim(),            iblock, btas::make_rwview(this->range().slice(low3, up3), this->storage()));
+      out->copy_block(0,          j + jblock, ndim(), mdim()-(j+jblock), btas::make_rwview(this->range().slice(low4, up4), this->storage()));
+      return out;
+    }
+
   private:
     // serialization
     friend class boost::serialization::access;
@@ -262,6 +288,8 @@ class Matrix_base : public btas::Tensor2<DataType> {
       }
     }
 
+    // Three functions to average upper and lower halves, enforcing a certain symmetry
+    // It is recommended that you assert is_symmetric() (etc.) if using these to suppress numerical noise
     void symmetrize() {
       assert(ndim() == mdim());
       const size_t n = mdim();
@@ -269,6 +297,34 @@ class Matrix_base : public btas::Tensor2<DataType> {
         for (size_t j = i+1; j != n; ++j)
           element(i, j) = element(j, i) = 0.5*(element(i, j)+element(j, i));
     }
+
+    void antisymmetrize() {
+      assert(ndim() == mdim());
+      const size_t n = mdim();
+      for (size_t i = 0; i != n; ++i) {
+        for (size_t j = i; j != n; ++j) {
+          element(i, j) = 0.5*(element(i, j)-element(j, i));
+          element(j, i) = -element(i, j);
+        }
+      }
+    }
+
+    void hermite() {
+      assert(ndim() == mdim());
+      const size_t n = mdim();
+      for (size_t i = 0; i != n; ++i) {
+        for (size_t j = i; j != n; ++j) {
+          element(i, j) = 0.5*(element(i, j)+detail::conj(element(j, i)));
+          element(j, i) = detail::conj(element(i, j));
+        }
+      }
+    }
+
+    // check the symmetry of a matrix
+    virtual bool is_symmetric(const double thresh = 1.0e-8) const = 0;
+    virtual bool is_antisymmetric(const double thresh = 1.0e-8) const = 0;
+    virtual bool is_hermitian(const double thresh = 1.0e-8) const = 0;
+    virtual bool is_identity(const double thresh = 1.0e-8) const = 0;
 
     virtual void diagonalize(VecView vec) = 0;
 
@@ -308,9 +364,11 @@ class Matrix_base : public btas::Tensor2<DataType> {
         blas::ax_plus_y_n(a, o+j*ld, nsize, element_ptr(nstart, i));
     }
 
-    DataType& element(size_t i, size_t j) { return (*this)(i, j); }
+    DataType& operator()(size_t i, size_t j) { return element(i, j); }
+    DataType& element(size_t i, size_t j) { return *element_ptr(i, j); }
     DataType* element_ptr(size_t i, size_t j) { return data()+i+j*ndim(); }
-    const DataType& element(size_t i, size_t j) const { return (*this)(i, j); }
+    const DataType& operator()(size_t i, size_t j) const { return element(i, j); }
+    const DataType& element(size_t i, size_t j) const { return *element_ptr(i, j); }
     const DataType* element_ptr(size_t i, size_t j) const { return data()+i+j*ndim(); }
 
     void ax_plus_y(const DataType a, const std::shared_ptr<const Matrix_base<DataType>> o) { ax_plus_y_impl(a, *o); }

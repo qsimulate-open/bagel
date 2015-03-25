@@ -24,20 +24,15 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_ECP_SPHHARMONICS_H
-#define __SRC_INTEGRAL_ECP_SPHHARMONICS_H
+#ifndef __BAGEL_UTIL_MATH_SPHHARMONICS_H
+#define __BAGEL_UTIL_MATH_SPHHARMONICS_H
 
 #include <vector>
 #include <complex>
 #include <cmath>
 #include <src/util/constants.h>
-<<<<<<< HEAD:src/math/sphharmonics.h
-#include <src/math/legendre.h>
-#include <src/math/comb.h>
-=======
-#include <src/util/math/factorial.h>
+#include <src/util/math/legendre.h>
 #include <src/util/math/comb.h>
->>>>>>> 70008c6d3b87339a5146ffd0b76714e2b19a468f:src/integral/ecp/sphharmonics.h
 
 namespace bagel {
 

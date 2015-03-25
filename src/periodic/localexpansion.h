@@ -29,8 +29,8 @@
 
 #include <vector>
 #include <src/util/constants.h>
-#include <src/math/legendre.h>
-#include <src/math/zmatrix.h>
+#include <src/util/math/legendre.h>
+#include <src/util/math/zmatrix.h>
 
 namespace bagel {
 

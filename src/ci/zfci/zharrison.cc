@@ -25,6 +25,8 @@
 
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/zfci/relspace.h>
+#include <src/util/math/comb.h>
+#include <src/multi/zcasscf/zcasscf.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 
@@ -36,11 +38,12 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
-  assert(rr);
+  if (!rr) throw runtime_error("ZFCI currently requires a relativistic reference object");
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
+  davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
   thresh_ = idata_->get<double>("thresh", 1.0e-10);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
@@ -51,46 +54,87 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   for (int i = 0; i != states_.size(); ++i)
     nstate_ += states_[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
 
-  gaunt_ = idata_->get<bool>("gaunt",rr->gaunt());
-  breit_ = idata_->get<bool>("breit",rr->breit());
+  // if nstate was specified on construction, it should match
+  assert(nstate == nstate_ || nstate == -1);
+
+  gaunt_ = idata_->get<bool>("gaunt", rr->gaunt());
+  breit_ = idata_->get<bool>("breit", rr->breit());
   if (gaunt_ != rr->gaunt())
     geom_ = geom_->relativistic(gaunt_);
 
-  print_header();
+  // Invoke Kramer's symmetry for any case without magnetic field
+  tsymm_ = !geom_->magnetism();
 
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (norb_  < 0)
-    norb_ = rr->relcoeff()->mdim()/2-ncore_;
-
-  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+    norb_ = idata_->get<int>("norb", (rr->relcoeff()->mdim()/2-ncore_));
 
   // additional charge
   charge_ = idata_->get<int>("charge", 0);
 
   nele_ = geom_->nele() - charge_ - ncore_*2;
 
+  if (norb_ < 0 || norb_ + ncore_ > geom_->nbasis())
+    throw runtime_error("Invalid number of active orbitals");
+  if (nele_ < 0)
+    throw runtime_error("Number of active electrons is less than zero.");
+
   energy_.resize(nstate_);
+
+  print_header();
+  cout << "    * nstate   : " << setw(6) << nstate_ << endl;
+  cout << "    * nclosed  : " << setw(6) << ncore_ << endl;
+  cout << "    * nact     : " << setw(6) << norb_ << endl;
 
   space_ = make_shared<RelSpace>(norb_, nele_);
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
 
+  // obtain the coefficient matrix in striped format
+  shared_ptr<const ZMatrix> coeff;
   if (coeff_zcas == nullptr) {
-    // coeff from ref is always in striped format
-    update(rr->relcoeff(), restricted);
+    if (restricted) throw runtime_error("Currently we should only have Kramers-adapted starting orbitals when coming from ZCASSCF");
+    // For FCI and CAS-CI, use a RelReference object
+    // Reorder as specified in the input so frontier orbitals contain the desired active space
+    const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+    if (iactive) {
+      assert(iactive->size() == norb_);
+      set<int> active_indices;
+
+      // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+      for (auto& i : *iactive)
+        active_indices.insert(lexical_cast<int>(i->data()) - 1);
+      cout << " " << endl;
+      cout << "    ==== Active orbitals : ===== " << endl;
+      for (auto& i : active_indices)
+        cout << "         Orbital " << i+1 << endl;
+      cout << "    ============================ " << endl << endl;
+      coeff = ZCASSCF::set_active(active_indices, swap_pos_neg(rr->relcoeff_full()), ncore_, geom_->nele()-charge_, norb_);
+
+      if (!tsymm_)  // TODO figure out a good way to sort spin orbitals
+        cout << "******** Assuming Kramers-paired orbitals are coming out from the reference coeff in order, but not making sure of it.  ********" << endl;
+    } else {
+      coeff = swap_pos_neg(rr->relcoeff_full());
+    }
   } else {
-    // coeff from zcas presently in striped format
-    update(coeff_zcas, restricted);
+    // For ZCASSCF, just accept the coefficients given
+    coeff = coeff_zcas;
   }
+
+  cout << "    * nvirt    : " << setw(6) << (coeff->mdim()/2-ncore_-norb_) << endl;
+  update(coeff, restricted);
+
 }
 
 
 void ZHarrison::print_header() const {
   cout << "  ----------------------------" << endl;
   cout << "  Relativistic FCI calculation" << endl;
-  cout << "  ----------------------------" << endl;
+  cout << "  ----------------------------" << endl << endl;
+  cout << "    * Correlation of " << nele_ << " active electrons in " << norb_ << " orbitals."  << endl;
+  cout << "    * Time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl;
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
-  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl << endl;
+  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
 }
 
 
@@ -98,43 +142,52 @@ void ZHarrison::print_header() const {
 void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset) {
   shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
   int ndet = nstate*10;
-  start_over:
-  vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet, nelea, neleb);
-
-  // Spin adapt detseeds
   int oindex = offset;
-  vector<bitset<nbit__>> done;
-  for (auto& it : bits) {
-    bitset<nbit__> alpha = it.second;
-    bitset<nbit__> beta = it.first;
-    bitset<nbit__> open_bit = (alpha^beta);
+  while (oindex < offset+nstate) {
+    vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet, nelea, neleb);
 
-    // make sure that we have enough unpaired alpha
-    const int unpairalpha = (alpha ^ (alpha & beta)).count();
-    const int unpairbeta  = (beta ^ (alpha & beta)).count();
-    if (unpairalpha-unpairbeta < nelea-neleb) continue;
+    // Spin adapt detseeds
+    oindex = offset;
+    vector<bitset<nbit__>> done;
+    for (auto& it : bits) {
+      bitset<nbit__> alpha = it.second;
+      bitset<nbit__> beta = it.first;
+      bitset<nbit__> open_bit = (alpha^beta);
 
-    // check if this orbital configuration is already used
-    if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
-    done.push_back(open_bit);
+      // This can happen if all possible determinants are checked without finding nstate acceptable ones.
+      if (alpha.count() + beta.count() != nele_)
+        throw logic_error("ZFCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
 
-    pair<vector<tuple<int, int, int>>, double> adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
-    const double fac = adapt.second;
-    for (auto& iter : adapt.first) {
-      out->find(nelea, neleb)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
+      // make sure that we have enough unpaired alpha
+      const int unpairalpha = (alpha ^ (alpha & beta)).count();
+      const int unpairbeta  = (beta ^ (alpha & beta)).count();
+      if (unpairalpha-unpairbeta < nelea-neleb) continue;
+
+      if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
+
+      done.push_back(open_bit);
+      pair<vector<tuple<int, int, int>>, double> adapt;
+      adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+
+      const double fac = adapt.second;
+      for (auto& iter : adapt.first) {
+        out->find(nelea, neleb)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
+      }
+      cout << "     guess " << setw(3) << oindex << ":   closed " <<
+            setw(20) << left << print_bit(alpha&beta, norb_) << " open " << setw(20) << print_bit(open_bit, norb_) << right << endl;
+
+      ++oindex;
+      if (oindex == offset+nstate) break;
     }
-    cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << print_bit(alpha&beta, norb_) << " open " << setw(20) << print_bit(open_bit, norb_) << right << endl;
 
-    ++oindex;
-    if (oindex == offset+nstate) break;
+    if (oindex < offset+nstate) {
+      for (int i = offset; i != offset+oindex; ++i) {
+        out->find(nelea, neleb)->data(i)->zero();
+      }
+      ndet *= 4;
+    }
   }
-  if (oindex < offset+nstate) {
-    for (int i = offset; i != offset+oindex; ++i)
-      out->find(nelea, neleb)->data(i)->zero();
-    ndet *= 4;
-    goto start_over;
-  }
+  assert(oindex == offset+nstate);
   cout << endl;
 }
 
@@ -174,6 +227,14 @@ void ZHarrison::compute() {
     // Creating an initial CI vector
     cc_ = make_shared<RelZDvec>(space_, nstate_); // B runs first
 
+    // TODO really we should check the number of states for each S value, rather than total number
+    const static Comb combination;
+    const size_t max_states = combination(2*norb_, nele_);
+    if (nstate_ > max_states) {
+      const string space = "(" + to_string(nele_) + "," + to_string(norb_) + ")";
+      throw runtime_error("Wrong states specified - a " + space + " active space can only produce " + to_string(max_states) + " eigenstates.");
+    }
+
     // find determinants that have small diagonal energies
     int offset = 0;
     for (int ispin = 0; ispin != states_.size(); ++ispin) {
@@ -181,13 +242,23 @@ void ZHarrison::compute() {
       for (int i = ispin; i != states_.size(); ++i)
         nstate += states_[i];
 
-      if ((geom_->nele()+ispin-charge_) % 2 == 1) {
-        if (states_[ispin] != 0) throw runtime_error("wrong states specified");
+      if (nstate == 0)
         continue;
+
+      if ((geom_->nele()+ispin-charge_) % 2 == 1) {
+        if (states_[ispin] == 0) {
+          continue;
+        } else {
+          if ((geom_->nele()-charge_) % 2 == 0) throw runtime_error("Wrong states specified - only integer spins are allowed for even electron counts.");
+          else throw runtime_error("Wrong states specified - only half-integer spins are allowed for odd electron counts.");
+        }
       }
 
       const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
       const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
+      if (neleb < 0) throw runtime_error("Wrong states specified - there are not enough active electrons for the requested spin state.");
+      if (nelea > norb_) throw runtime_error("Wrong states specified - there are not enough active orbitals for the requested spin state.");
+
       generate_guess(nelea, neleb, nstate, cc_, offset);
       offset += nstate;
       if (nelea != neleb) {
@@ -198,7 +269,7 @@ void ZHarrison::compute() {
     pdebug.tick_print("guess generation");
 
     // Davidson utility
-    davidson_ = make_shared<DavidsonDiag<RelZDvec, ZMatrix>>(nstate_, max_iter_);
+    davidson_ = make_shared<DavidsonDiag<RelZDvec, ZMatrix>>(nstate_, davidson_subspace_);
   }
 
   // nuclear energy retrieved from geometry
@@ -224,13 +295,7 @@ void ZHarrison::compute() {
     shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
-    // constructing Dvec's for Davidson
-    auto ccn = make_shared<RelZDvec>(cc_);
-    auto sigman = make_shared<RelZDvec>(sigma);
-    ccn->synchronize();
-    sigman->synchronize();
-
-    const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
+    const vector<double> energies = davidson_->compute(cc_->dvec(conv), sigma->dvec(conv));
     // get residual and new vectors
     vector<shared_ptr<RelZDvec>> errvec = davidson_->residual();
     for (auto& i : errvec)
@@ -255,7 +320,7 @@ void ZHarrison::compute() {
         for (auto& ib : space_->detmap()) {
           const int na = ib.second->nelea();
           const int nb = ib.second->neleb();
-          const size_t size = ccn->find(na, nb)->data(ist)->size();
+          const size_t size = cc_->find(na, nb)->data(ist)->size();
           complex<double>* target_array = ctmp->find(na, nb)->data();
           complex<double>* source_array = errvec[ist]->find(na, nb)->data();
           double* denom_array = denom_->find(na, nb)->data();
@@ -273,7 +338,7 @@ void ZHarrison::compute() {
     // printing out
     if (nstate_ != 1 && iter) cout << endl;
     for (int i = 0; i != nstate_; ++i) {
-      cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
+      cout << setw(7) << iter << setw(4) << i << " " << setw(2) << (conv[i] ? "*" : " ")
                               << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
                               << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
                               << fcitime.tick() << endl;
@@ -293,3 +358,15 @@ void ZHarrison::compute() {
   }
 #endif
 }
+
+
+shared_ptr<const ZMatrix> ZHarrison::swap_pos_neg(shared_ptr<const ZMatrix> coeffin) const {
+  auto out = coeffin->clone();
+  const int n = coeffin->ndim();
+  const int m = coeffin->mdim()/2;
+  assert(n % 4 == 0 && m % 2 == 0 && m * 2 == coeffin->mdim());
+  out->copy_block(0, 0, n, m, coeffin->get_submatrix(0, m, n, m));
+  out->copy_block(0, m, n, m, coeffin->get_submatrix(0, 0, n, m));
+  return out;
+}
+

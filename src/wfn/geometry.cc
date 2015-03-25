@@ -531,15 +531,17 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
   int i = 0;
   for (auto& a : atoms_) {
     const double ac = a->atom_charge();
-    for (auto& b : atoms_) {
-      if (a == b) continue;
-      const array<double,3> displ = a->displ(b);
-      const double c = b->atom_charge() * ac;
-      const double dist = a->distance(b);
-      const double dist3 = dist*dist*dist;
-      grad->element(0,i) += c*displ[0]/dist3;
-      grad->element(1,i) += c*displ[1]/dist3;
-      grad->element(2,i) += c*displ[2]/dist3;
+    if (i % mpi__->size() == mpi__->rank()) {
+      for (auto& b : atoms_) {
+        if (a == b) continue;
+        const array<double,3> displ = a->displ(b);
+        const double c = b->atom_charge() * ac;
+        const double dist = a->distance(b);
+        const double dist3 = dist*dist*dist;
+        grad->element(0,i) += c*displ[0]/dist3;
+        grad->element(1,i) += c*displ[1]/dist3;
+        grad->element(2,i) += c*displ[2]/dist3;
+      }
     }
     ++i;
   }
@@ -668,19 +670,19 @@ void Geometry::compute_integrals(const double thresh) const {
 
 void Geometry::init_magnetism() {
   magnetism_ = true;
-  if (london_ && nonzero_magnetic_field())
-    cout << "  Using London orbital basis to enforce gauge-invariance" << endl;
-  if (!london_ && nonzero_magnetic_field())
-    cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << endl;
-  if (!nonzero_magnetic_field())
-    cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << endl;
 
   if (nonzero_magnetic_field()) {
+    cout << (london_ ? "  Using London orbital basis to enforce gauge-invariance"
+                     : "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations (use a London orbital basis instead).") << endl;
+
     cout << "  Applied magnetic field:  (" << setprecision(4) << setw(7) << magnetic_field_[0] << ", "
                                                               << setw(7) << magnetic_field_[1] << ", "
                                                               << setw(7) << magnetic_field_[2] << ") a.u." << endl;
+
     const double fieldsqr = magnetic_field_[0]*magnetic_field_[0] + magnetic_field_[1]*magnetic_field_[1] + magnetic_field_[2]*magnetic_field_[2];
     cout << setprecision(0) << "  Field strength = " << au2tesla__*sqrt(fieldsqr) << " T" << endl << endl;
+  } else {
+    cout << "  Zero magnetic field - This computation would be more efficient with a standard basis." << endl;
   }
 
   const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};

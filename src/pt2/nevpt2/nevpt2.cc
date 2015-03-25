@@ -23,12 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <set>
-#include <src/smith/prim_op.h>
 #include <src/pt2/nevpt2/nevpt2.h>
+#include <src/pt2/mp2/mp2cache.h>
 #include <src/df/dfdistt.h>
-#include <src/casscf/superci.h>
-#include <src/casscf/qvec.h>
+#include <src/scf/hf/fock.h>
+#include <src/multi/casscf/superci.h>
+#include <src/multi/casscf/qvec.h>
+#include <src/util/prim_op.h>
 #include <src/util/parallel/resources.h>
 
 using namespace std;
@@ -218,7 +219,6 @@ void NEVPT2::compute() {
 
   /////////////////////////////////////////////////////////////////////////////////////
   // make a list of static distribution
-  const int myrank = mpi__->rank();
   vector<vector<tuple<int,int,int,int>>> tasks(mpi__->size());
   // distribution of closed-closed
   if (nclosed_) {
@@ -267,89 +267,14 @@ void NEVPT2::compute() {
       for (int j = 0; j != nmax-n; ++j) i.push_back(make_tuple(-1,-1,-1,-1));
     }
   }
-  const int nloop = tasks[0].size();
 
-  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  // TODO this is identical to code in mp2.cc. Isolate
+  MP2Cache cache(naux, nclosed_, nvirt_, fullvi, tasks);
 
-  // start communication (n fetch behind) - n is determined by memory size
-  // the data is stored in a map
-  map<int, shared_ptr<Matrix>> cache;
-  // pair of node and set of integers
-  vector<set<int>> cachetable(mpi__->size());
-  vector<int> sendreqs;
-
-  auto cache_block = [&](const int nadd, const int ndrop) {
-    assert(ndrop < nadd);
-    if (ndrop >= 0) {
-      for (int inode = 0; inode != mpi__->size(); ++inode) {
-        const int id = get<0>(tasks[inode][ndrop]);
-        const int jd = get<1>(tasks[inode][ndrop]);
-        // if id and jd are no longer used in the cache, delete the element
-        set<int> used;
-        for (int i = ndrop+1; i <= nadd; ++i) {
-          used.insert(get<0>(tasks[inode][i]));
-          used.insert(get<1>(tasks[inode][i]));
-        }
-        if (id >= 0 && id < nclosed_ && !used.count(id)) {
-          if (inode == myrank) cache.erase(id);
-          cachetable[inode].erase(id);
-        }
-        if (jd >= 0 && jd < nclosed_ && !used.count(jd)) {
-          if (inode == myrank) cache.erase(jd);
-          cachetable[inode].erase(jd);
-        }
-      }
-    }
-    if (nadd < nloop) {
-      // issue recv requests
-      auto request_one_ = [&](const int i, const int rank) {
-        if (i < 0 || i >= nclosed_) return -1;
-        cachetable[rank].insert(i);
-        int tag = -1;
-        if (cache.find(i) == cache.end() && myrank == rank) {
-          const int origin = fullvi->locate(0, i*nvirt_);
-          if (origin == myrank) {
-            cache[i] = fullvi->get_slice(i*nvirt_, (i+1)*nvirt_).front();
-          } else {
-            cache[i] = make_shared<Matrix>(naux, nvirt_, true);
-            tag = mpi__->request_recv(cache[i]->data(), cache[i]->size(), origin, myrank*nclosed_+i);
-          }
-        }
-        return tag;
-      };
-
-      // issue send requests
-      auto send_one_ = [&](const int i, const int dest) {
-        // see if "i" is cached at dest
-        if (i < 0 || i >= nclosed_ || cachetable[dest].count(i) || fullvi->locate(0, i*nvirt_) != myrank)
-          return -1;
-        return mpi__->request_send(fullvi->data() + (i*nvirt_-fullvi->bstart())*naux, nvirt_*naux, dest, dest*nclosed_+i);
-      };
-
-      for (int inode = 0; inode != mpi__->size(); ++inode) {
-        if (inode == myrank) {
-          // recieve data from other processes
-          get<2>(tasks[myrank][nadd]) = request_one_(get<0>(tasks[myrank][nadd]), myrank); // receive requests
-          get<3>(tasks[myrank][nadd]) = request_one_(get<1>(tasks[myrank][nadd]), myrank);
-        } else {
-          // send data to other processes
-          const int i = send_one_(get<0>(tasks[inode][nadd]), inode); // send requests
-          if (i >= 0) sendreqs.push_back(i);
-          request_one_(get<0>(tasks[inode][nadd]), inode); // update cachetable
-          const int j = send_one_(get<1>(tasks[inode][nadd]), inode); // send requests
-          if (j >= 0) sendreqs.push_back(j);
-          request_one_(get<1>(tasks[inode][nadd]), inode);
-        }
-      }
-    }
-  };
-  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
+  const int nloop = cache.nloop();
   const int ncache = min(memory_size/(nvirt_*nvirt_), size_t(20));
   cout << "    * ncache = " << ncache << endl;
   for (int n = 0; n != min(ncache, nloop); ++n)
-    cache_block(n, -1);
+    cache.block(n, -1);
 
   // loop over tasks
   const map<string, int> sect{{"(+0)", 0}, {"(+1)", 1}, {"(-1)", 2}, {"(+2)", 3}, {"(-2)", 4}, {"(+1)'", 5}, {"(-1)'", 6}, {"(+0)'", 7}};
@@ -359,21 +284,19 @@ void NEVPT2::compute() {
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
     if (n+ncache < nloop)
-      cache_block(n+ncache, n-1);
+      cache.block(n+ncache, n-1);
 
-    const int i = get<0>(tasks[myrank][n]);
-    const int j = get<1>(tasks[myrank][n]);
+    const int i = get<0>(cache.task(n));
+    const int j = get<1>(cache.task(n));
+
+    // wait till the data is available
+    cache.data_wait(n);
 
     if (i < 0 && j < 0) {
       continue;
     } else if (i < nclosed_ && j < nclosed_ && i >= 0 && j >= 0) {
-      const int ti = get<2>(tasks[myrank][n]);
-      const int tj = get<3>(tasks[myrank][n]);
-      if (ti >= 0) mpi__->wait(ti);
-      if (tj >= 0) mpi__->wait(tj);
-
-      shared_ptr<const Matrix> iblock = cache.at(i);
-      shared_ptr<const Matrix> jblock = cache.at(j);
+      shared_ptr<const Matrix> iblock = cache(i);
+      shared_ptr<const Matrix> jblock = cache(j);
       const Matrix mat(*iblock % *jblock);
 
       // active part
@@ -455,13 +378,13 @@ void NEVPT2::compute() {
       // S(-1)r sector
       shared_ptr<Matrix> ardm3_sorted = ardm3_->clone();
       shared_ptr<Matrix> ardm2_sorted = make_shared<Matrix>(nact_*nact_*nact_, nact_, true);
-      SMITH::sort_indices<1,2,0,3,    0,1,1,1>(ardm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
-      SMITH::sort_indices<1,2,0,4,3,5,0,1,1,1>(ardm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
+      sort_indices<1,2,0,3,    0,1,1,1>(ardm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
+      sort_indices<1,2,0,4,3,5,0,1,1,1>(ardm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
       const int iv = i-nclosed_-nact_;
       const MatView rblock = fullav->slice(iv*nact_, (iv+1)*nact_);
       const Matrix bac = rblock % *fullaa;
       auto abc = make_shared<VectorB>(nact_*nact_*nact_);
-      SMITH::sort_indices<1,0,2,0,1,1,1>(bac.data(), abc->data(), nact_, nact_, nact_);
+      sort_indices<1,0,2,0,1,1,1>(bac.data(), abc->data(), nact_, nact_, nact_);
       auto heff = make_shared<VectorB>(nact_);
       for (int a = 0; a != nact_; ++a)
         (*heff)(a) = (2.0*fock_p->element(a+nclosed_, i) - fock_c->element(a+nclosed_, i));
@@ -472,12 +395,13 @@ void NEVPT2::compute() {
 
     } else if (i < nclosed_ && j < 0) {
       // (g|vi) with i fixed
-      shared_ptr<const Matrix> iblock = cache.at(i);
+      shared_ptr<const Matrix> iblock = cache(i);
+
       // (g|ai) with i fixed
       const MatView iablock = fullai->slice(i*nact_, (i+1)*nact_);
       // reordered srdm
       Matrix srdm2_p(nact_*nact_, nact_*nact_);
-      SMITH::sort_indices<0,2,1,3,0,1,1,1>(srdm2_->data(), srdm2_p.data(), nact_, nact_, nact_, nact_);
+      sort_indices<0,2,1,3,0,1,1,1>(srdm2_->data(), srdm2_p.data(), nact_, nact_, nact_, nact_);
 
       for (int r = 0; r != nvirt_; ++r) {
         const MatView ibr = iblock->slice(r, r+1);
@@ -522,11 +446,11 @@ void NEVPT2::compute() {
       // S(1)i sector
       shared_ptr<Matrix> ardm3_sorted = srdm3_->clone();
       shared_ptr<Matrix> ardm2_sorted = make_shared<Matrix>(nact_*nact_*nact_, nact_, true);
-      SMITH::sort_indices<1,2,0,3,    0,1,1,1>(srdm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
-      SMITH::sort_indices<1,2,0,4,3,5,0,1,1,1>(srdm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
+      sort_indices<1,2,0,3,    0,1,1,1>(srdm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
+      sort_indices<1,2,0,4,3,5,0,1,1,1>(srdm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
       shared_ptr<const Matrix> bac = make_shared<Matrix>(iablock % *fullaa);
       shared_ptr<VectorB> abc = make_shared<VectorB>(nact_*nact_*nact_);
-      SMITH::sort_indices<1,0,2,0,1,1,1>(bac->data(), abc->data(), nact_, nact_, nact_);
+      sort_indices<1,0,2,0,1,1,1>(bac->data(), abc->data(), nact_, nact_, nact_);
       shared_ptr<VectorB> heff = make_shared<VectorB>(nact_);
       for (int a = 0; a != nact_; ++a)
         (*heff)(a) = fock_c->element(a+nclosed_, i);
@@ -537,8 +461,7 @@ void NEVPT2::compute() {
   }
 
   // just to double check that all the communition is done
-  for (auto& i : sendreqs)
-    mpi__->wait(i);
+  cache.wait();
   // allreduce energy contributions
   mpi__->allreduce(energy.data(), energy.size());
   energy_ = accumulate(energy.begin(), energy.end(), 0.0);

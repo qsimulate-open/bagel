@@ -28,7 +28,7 @@
 #define __SRC_INTEGRAL_ECP_ANGULARBATCH_H
 
 #include <src/molecule/atom.h>
-#include <src/math/sphharmonics.h>
+#include <src/util/math/sphharmonics.h>
 #include <src/integral/ecp/radial.h>
 #include <map>
 

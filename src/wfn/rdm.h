@@ -28,6 +28,7 @@
 #define __BAGEL_WFN_RDM_H
 
 #include <type_traits>
+#include <src/util/vec.h>
 #include <src/wfn/geometry.h>
 
 namespace bagel {
@@ -48,7 +49,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-// TODO
+      ar & boost::serialization::base_object<btas::TensorN<DataType,N>>(*this);
     }
 
   public:
@@ -72,6 +73,12 @@ class RDM : public btas::TensorN<DataType, rank*2> {
 
     template<typename ...args>
     const DataType& element(const args&... index) const { return (*this)(index...); }
+
+    template<typename ...args>
+    DataType* element_ptr(const args&... index) { return &(*this)(index...); }
+
+    template<typename ...args>
+    const DataType* element_ptr(const args&... index) const { return &(*this)(index...); }
 
     RDM<rank,DataType>& operator+=(const RDM<rank,DataType>& o) { this->ax_plus_y(1.0, o); return *this; }
     RDM<rank,DataType>& operator-=(const RDM<rank,DataType>& o) { this->ax_plus_y(-1.0, o); return *this; }
@@ -161,6 +168,9 @@ template<> std::shared_ptr<Matrix> RDM<1,double>::rdm1_mat(const int nclosed, co
 template<> void RDM<1,double>::print(const double thresh) const;
 template<> void RDM<2,double>::print(const double thresh) const;
 template<> void RDM<3,double>::print(const double thresh) const;
+
+template<int rank>
+using VecRDM = Vec<RDM<rank, double>>;
 
 }
 

@@ -77,17 +77,20 @@ void FCI::common_init() {
 
   // nspin is #unpaired electron 0:singlet, 1:doublet, 2:triplet, ... (i.e., Molpro convention).
   const int nspin = idata_->get<int>("nspin", 0);
-  if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
+  if ((geom_->nele()+nspin-charge) % 2 != 0)
+    throw runtime_error("Invalid nspin specified");
   nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 
   // TODO allow for zero electron (quick return)
-  if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
-  for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
+  // neleb can be = 0, so long as nelea > 0
+  if (nelea_ <= 0 || neleb_ < 0)
+    throw runtime_error("#electrons cannot be zero/negative in FCI");
+  weight_ = vector<double>(nstate_, 1.0/static_cast<double>(nstate_));
 
-  // resizing rdm vectors (with null pointers)
-  rdm1_.resize(nstate_);
-  rdm2_.resize(nstate_);
+  // initialize VecRDM
+  rdm1_ = make_shared<VecRDM<1>>();
+  rdm2_ = make_shared<VecRDM<2>>();
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
@@ -280,8 +283,8 @@ void FCI::compute() {
 #endif
 
     // constructing Dvec's for Davidson
-    auto ccn = make_shared<const Dvec>(cc_);
-    auto sigman = make_shared<const Dvec>(sigma);
+    auto ccn = make_shared<const CASDvec>(cc_->dvec());
+    auto sigman = make_shared<const CASDvec>(sigma->dvec());
     const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
 
     // get residual and new vectors
@@ -328,9 +331,9 @@ void FCI::compute() {
   }
   // main iteration ends here
 
-  auto s = make_shared<Dvec>(davidson_->civec());
-  s->print(print_thresh_);
-  cc_ = make_shared<Dvec>(s);
+  auto cc = make_shared<CASDvec>(davidson_->civec());
+  cc_ = make_shared<Dvec>(*cc);
+  cc_->print(print_thresh_);
 
   for (auto& iprop : properties_) {
     iprop->compute(cc_);

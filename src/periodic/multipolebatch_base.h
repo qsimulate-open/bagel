@@ -27,7 +27,7 @@
 #ifndef __SRC_PERIODIC_MULTIPOLEBATCH_BASE_H
 #define __SRC_PERIODIC_MULTIPOLEBATCH_BASE_H
 
-#include <src/parallel/resources.h>
+#include <src/util/parallel/resources.h>
 #include <src/molecule/atom.h>
 #include <src/integral/os/osintegral.h>
 

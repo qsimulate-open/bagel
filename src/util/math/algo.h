@@ -95,6 +95,13 @@ template<>
 void transpose(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
 
 template<typename T,
+         class = typename std::enable_if< std::is_same<double,T>::value >::type
+        >
+void transpose_add(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
+template<>
+void transpose_add(const double* a, const int b, const int c, double* d, const double fac);
+
+template<typename T,
          class = typename std::enable_if< std::is_same<std::complex<double>,T>::value >::type
         >
 void transpose_conjg(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
@@ -173,6 +180,12 @@ namespace {
   void scale_n(const double p, std::complex<double>* q, const size_t n) { zscal_(n, p, q, 1); }
   template<>
   void scale_n(const std::complex<double> p, std::complex<double>* q, const size_t n) { zscal_(n, p, q, 1); }
+
+  // average
+  template<class T>
+  auto average(const T& container) -> decltype(std::accumulate(container.begin(), container.end(), 0.0)/container.size()) {
+    return std::accumulate(container.begin(), container.end(), 0.0) / container.size();
+  }
 
 }}
 

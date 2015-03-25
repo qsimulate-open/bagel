@@ -45,6 +45,7 @@ static MPI_Interface c;
 MPI_Interface* bagel::mpi__ = &c;
 
 static double THRESH = 1.0e-8;
+static std::string location__ = "../../test/";
 
 bool compare(const double a, const double b, const double thr = THRESH) { return fabs(a-b) < thr; };
 
@@ -56,36 +57,20 @@ bool compare(const T a, const T b, const double thr = THRESH) {
  return out;
 }
 
-#include <src/scf/test_scf.cc>
-
-#include <src/ks/test_ks.cc>
-
-#include <src/rel/test_rel.cc>
-
-#include <src/prop/test_prop.cc>
-
-#include <src/pt2/mp2/test_mp2.cc>
-
-#include <src/casscf/test_casscf.cc>
-
-#include <src/ci/fci/test_fci.cc>
-
-//#include <src/ci/zfci/test_zfci.cc>
-
-//#include <src/zcasscf/test_zcasscf.cc>
-
-#include <src/ci/ras/test_ras.cc>
-
-#include <src/pt2/nevpt2/test_nevpt2.cc>
-
-#include <src/opt/test_opt.cc>
-
-#include <src/util/io/test_molden.cc>
-
-#include <src/molecule/test_localize.cc>
-
-#include <src/asd/test_asd.cc>
-
-#include <src/asd/dmrg/test_asd_dmrg.cc>
-
-#include <src/london/test_london.cc>
+#include <src/testimpl/test_scf.cc>
+#include <src/testimpl/test_molden.cc>
+#include <src/testimpl/test_prop.cc>
+#include <src/testimpl/test_ks.cc>
+#include <src/testimpl/test_rel.cc>
+#include <src/testimpl/test_mp2.cc>
+#include <src/testimpl/test_casscf.cc>
+#include <src/testimpl/test_fci.cc>
+#include <src/testimpl/test_zfci.cc>
+//#include <src/testimpl/test_zcasscf.cc>
+#include <src/testimpl/test_ras.cc>
+#include <src/testimpl/test_nevpt2.cc>
+#include <src/testimpl/test_opt.cc>
+#include <src/testimpl/test_localize.cc>
+#include <src/testimpl/test_asd.cc>
+#include <src/testimpl/test_asd_dmrg.cc>
+#include <src/testimpl/test_london.cc>

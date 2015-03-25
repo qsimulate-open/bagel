@@ -125,7 +125,7 @@ class DimerCISpace_base {
     }
 
     template<int unit, class T> void insert(std::shared_ptr<const T> civec, const int spin = -1) {
-      auto new_civec = std::make_shared<VecType>(civec);
+      auto new_civec = std::make_shared<VecType>(*civec);
 
       const int nelea = civec->det()->nelea();
       const int neleb = civec->det()->neleb();
@@ -286,7 +286,7 @@ class DimerCISpace_base {
     template<int unit> int charge(const int nea, const int neb) const { return ( (nelea<unit>() + neleb<unit>()) - (nea + neb) ); }
 };
 
-using DimerCAS = DimerCISpace_base<Dvec>;
+using DimerCAS = DimerCISpace_base<CASDvec>;
 using DimerDistCAS = DimerCISpace_base<DistDvec>;
 using DimerRAS = DimerCISpace_base<RASDvec>;
 using DimerDistRAS = DimerCISpace_base<DistRASDvec>;

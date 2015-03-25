@@ -27,7 +27,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <src/util/timer.h>
-#include <src/math/diis.h>
+#include <src/util/math/diis.h>
 #include <src/periodic/pscf.h>
 #include <src/periodic/poverlap.h>
 

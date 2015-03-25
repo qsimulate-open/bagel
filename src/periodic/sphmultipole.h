@@ -31,7 +31,7 @@
 #include <cmath>
 #include <complex>
 #include <vector>
-#include <src/math/legendre.h>
+#include <src/util/math/legendre.h>
 #include <src/util/constants.h>
 
 namespace bagel {

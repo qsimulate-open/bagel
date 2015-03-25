@@ -29,7 +29,7 @@
 #define __BAGEL_FCI_MOFILE_H
 
 #include <src/util/math/csymmatrix.h>
-#include <src/scf/scf.h>
+#include <src/scf/hf/rhf.h>
 
 namespace bagel {
 

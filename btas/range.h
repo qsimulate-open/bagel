@@ -62,7 +62,7 @@ namespace btas {
       public:
         typedef Index index_type;
         typedef index_type value_type;
-        typedef const value_type const_reference_type;
+        typedef const value_type const_reference;
 
         typedef RangeIterator<index_type, Range1d> const_iterator; ///< Index iterator
         typedef const_iterator iterator; ///< interator = const_iterator
@@ -141,12 +141,12 @@ namespace btas {
           return 1ul;
         }
 
-        const_reference_type lobound() const { return lobound_; }
+        const_reference lobound() const { return lobound_; }
         index_type front() const { return lobound_; }
-        const_reference_type upbound() const { return upbound_; }
+        const_reference upbound() const { return upbound_; }
         index_type back() const { return upbound_ - 1; }
 
-        const_reference_type stride() const { return stride_; }
+        const_reference stride() const { return stride_; }
 
         /// Size of Range1d is the number of elements encountered in iteration from begin to end.
         size_t size() const {
@@ -290,8 +290,8 @@ namespace btas {
       typedef std::size_t size_type; ///< Size type
 
       typedef index_type value_type; ///< Range can be viewed as a Container of value_type
-      typedef index_type& reference_type;
-      typedef const value_type& const_reference_type;
+      typedef index_type& reference;
+      typedef const value_type& const_reference;
 
       // index iterator
       typedef RangeIterator<index_type, _Derived>  iterator;         ///< Index iterator
@@ -468,7 +468,7 @@ namespace btas {
 
       /// \return A \c size_array that contains the lower bound of this range
       /// \throw nothing
-      const_reference_type lobound() const { return lobound_; }
+      const_reference lobound() const { return lobound_; }
 
       /// Range lobound coordinate accessor
 
@@ -480,7 +480,7 @@ namespace btas {
 
       /// \return A \c size_array that contains the upper bound of this range
       /// \throw nothing
-      const_reference_type upbound() const {
+      const_reference upbound() const {
         return upbound_;
       }
 
@@ -578,8 +578,8 @@ namespace btas {
       /// \param last The ending position in the range
       /// \return The difference between first and last, in terms of range positions
       std::ptrdiff_t distance_to(const index& first, const index& last) const {
-        TA_ASSERT(includes(first));
-        TA_ASSERT(includes(last));
+        assert(includes(first));
+        assert(includes(last));
         return ord(last) - ord(first);
       }
 #endif
@@ -671,8 +671,8 @@ namespace btas {
 
       /// Constructor defined by the upper and lower bounds
 
-      /// \tparam Index1 An array type convertible to \c index_type
-      /// \tparam Index2 An array type convertible to \c index_type
+      /// \tparam Index1 any type for which \c btas::is_index<Index1>::value is true
+      /// \tparam Index2 any type for which \c btas::is_index<Index2>::value is true
       /// \param lobound The lower bound of the N-dimensional range
       /// \param upbound The upper bound of the N-dimensional range
       template <typename Index1, typename Index2>
@@ -693,9 +693,9 @@ namespace btas {
 
       /// Constructor defined by the upper and lower bounds, and the axes strides
 
-      /// \tparam Index1 An array type convertible to \c index_type
-      /// \tparam Index2 An array type convertible to \c index_type
-      /// \tparam Extent An array type convertible to \c extent_type
+      /// \tparam Index1 any type for which \c btas::is_index<Index1>::value is true
+      /// \tparam Index2 any type for which \c btas::is_index<Index2>::value is true
+      /// \tparam Extent any type for which \c Ordinal(Index1,Index2,Extent) is a valid expression (similar to \c extent_type)
       /// \param lobound The lower bound of the N-dimensional range
       /// \param upbound The upper bound of the N-dimensional range
       /// \param stride The axes strides of the N-dimensional range
@@ -717,6 +717,20 @@ namespace btas {
         base_type(lobound, upbound), ordinal_(lobound, upbound, stride)
       {
       }
+
+      /// Constructor defined by the upper and lower bounds, and the ordinal object
+
+      /// \tparam Index1 any type for which \c btas::is_index<Index1>::value is true
+      /// \tparam Index2 any type for which \c btas::is_index<Index2>::value is true
+      /// \param lobound The lower bound of the N-dimensional range
+      /// \param upbound The upper bound of the N-dimensional range
+      template <typename Index1, typename Index2>
+      RangeNd(const Index1& lobound, const Index2& upbound, _Ordinal&& ord,
+              typename std::enable_if<btas::is_index<Index1>::value && btas::is_index<Index2>::value, Enabler>::type = Enabler()) :
+        base_type(lobound, upbound), ordinal_(ord)
+      {
+      }
+
 
       /// "Move" constructor defined by the upper and lower bounds, and the ordinal object
 
@@ -1338,19 +1352,19 @@ namespace serialization {
   template<class Archive, CBLAS_ORDER _Order,
            typename _Index, typename _Ordinal>
   void save(Archive& ar, const btas::RangeNd<_Order, _Index, _Ordinal>& t, const unsigned int version) {
-    auto lo = t.lobound();
-    auto up = t.upbound();
+    auto lobound = t.lobound();
+    auto upbound = t.upbound();
     auto ordinal = t.ordinal();
-    ar << lo << up << ordinal;
+    ar << BOOST_SERIALIZATION_NVP(lobound) << BOOST_SERIALIZATION_NVP(upbound) << BOOST_SERIALIZATION_NVP(ordinal);
   }
   template<class Archive, CBLAS_ORDER _Order,
            typename _Index, typename _Ordinal>
   void load(Archive& ar, btas::RangeNd<_Order, _Index, _Ordinal>& t, const unsigned int version) {
     typedef typename btas::BaseRangeNd<btas::RangeNd<_Order, _Index, _Ordinal>>::index_type index_type;
-    index_type lo, up;
+    index_type lobound, upbound;
     _Ordinal ordinal;
-    ar >> lo >> up >> ordinal;
-    t = btas::RangeNd<_Order, _Index, _Ordinal>(std::move(lo), std::move(up), std::move(ordinal));
+    ar >> BOOST_SERIALIZATION_NVP(lobound) >> BOOST_SERIALIZATION_NVP(upbound) >> BOOST_SERIALIZATION_NVP(ordinal);
+    t = btas::RangeNd<_Order, _Index, _Ordinal>(std::move(lobound), std::move(upbound), std::move(ordinal));
   }
 
 }

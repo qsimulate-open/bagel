@@ -33,20 +33,20 @@ using namespace std;
 
 vector<vector<Index>> LoopGenerator::block_loop() const {
   // first, make a status vector
-  std::vector<int> stat(loop_.size());
-  std::vector<int> max(loop_.size());
+  vector<int> stat(loop_.size());
+  vector<int> max(loop_.size());
   {
-    auto j = loop_.begin();
-    for (auto i = max.begin(); i != max.end(); ++i, ++j) *i = j->nblock();
+    auto j = max.begin();
+    for (auto& i : loop_) *j++ = i.nblock();
   }
 
   vector<vector<Index>> out;
 
   do {
     vector<Index> tmp;
-    auto l = loop_.begin();
-    for (auto k = stat.begin(); k != stat.end(); ++k, ++l)
-      tmp.push_back(l->range(*k));
+    auto k = stat.begin();
+    for (auto& l : loop_)
+      tmp.push_back(l.range(*k++));
     out.push_back(tmp);
 
     auto j = stat.begin();

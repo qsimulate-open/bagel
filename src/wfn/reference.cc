@@ -24,9 +24,9 @@
 //
 
 #include <src/wfn/reference.h>
-#include <src/rel/relreference.h>
+#include <src/wfn/relreference.h>
 #include <src/integral/os/overlapbatch.h>
-#include <src/molecule/mixedbasis.h>
+#include <src/mat1e/mixedbasis.h>
 #include <src/ci/fci/fci.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Reference)
@@ -37,7 +37,7 @@ using namespace bagel;
 Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      const int _nclosed, const int _nact, const int _nvirt,
                      const double en,
-                     vector<shared_ptr<RDM<1>>> _rdm1, vector<shared_ptr<RDM<2>>> _rdm2,
+                     shared_ptr<const VecRDM<1>> _rdm1, shared_ptr<const VecRDM<2>> _rdm2,
                      shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av,
                      shared_ptr<const CIWfn> ci)
  : geom_(g), noccA_(0), noccB_(0), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), ciwfn_(ci), rdm1_(_rdm1), rdm2_(_rdm2),
@@ -49,10 +49,10 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
     coeff_ = c;
   }
 
-  for (auto& i : rdm1_)
-    mpi__->broadcast(i->data(), i->size(), 0);
-  for (auto& i : rdm2_)
-    mpi__->broadcast(i->data(), i->size(), 0);
+  for (auto& i : *rdm1_)
+    mpi__->broadcast(i.second->data(), i.second->size(), 0);
+  for (auto& i : *rdm2_)
+    mpi__->broadcast(i.second->data(), i.second->size(), 0);
   if (rdm1_av_)
     mpi__->broadcast_force(rdm1_av_->data(), rdm1_av_->size(), 0);
   if (rdm2_av_)
@@ -61,6 +61,29 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
   //if (nact_ && rdm1_.empty())
   //  throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
 
+}
+
+
+tuple<shared_ptr<const RDM<1>>,std::shared_ptr<const RDM<2>>> Reference::rdm12(const int ist, const int jst) const {
+  shared_ptr<const RDM<1>> r1;
+  shared_ptr<const RDM<2>> r2;
+  if (rdm1_->exist(ist, jst) && rdm2_->exist(ist, jst)) {
+    r1 = rdm1_->at(ist, jst);
+    r2 = rdm2_->at(ist, jst);
+  } else {
+    FCI_bare fci(ciwfn_);
+    fci.compute_rdm12(ist, jst);
+    r1 = fci.rdm1(ist, jst);
+    r2 = fci.rdm2(ist, jst);
+  }
+  return make_tuple(r1, r2);
+}
+
+
+tuple<shared_ptr<const RDM<3>>,std::shared_ptr<const RDM<4>>> Reference::rdm34(const int ist, const int jst) const {
+  FCI_bare fci(ciwfn_);
+  fci.compute_rdm12(ist, jst); // TODO stupid code
+  return fci.rdm34(ist, jst);
 }
 
 
@@ -92,47 +115,68 @@ shared_ptr<Dvec> Reference::rdm2deriv(const int istate) const {
 }
 
 
-shared_ptr<Dvec> Reference::rdm3deriv(const int istate) const {
+tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> Reference::rdm34deriv(const int istate, shared_ptr<const Matrix> fock) const {
   FCI_bare fci(ciwfn_);
-  return fci.rdm3deriv(istate);
+  return fci.rdm34deriv(istate, fock);
 }
 
 
-shared_ptr<Dvec> Reference::rdm4deriv(const int istate) const {
-  FCI_bare fci(ciwfn_);
-  return fci.rdm4deriv(istate);
-}
-
-
-tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const int i) const {
-  FCI_bare fci(ciwfn_);
-  fci.compute_rdm12();
-  return fci.compute_rdm34(i);
-}
-
-
-shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
+shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin, const bool check_geom_change) const {
 
   if (geomin->magnetism())
     throw std::runtime_error("Projection from real to GIAO basis set is not implemented.   Use the GIAO code at zero-field.");
 
-  // project to a new basis
-  const Overlap snew(geomin);
-  Overlap snewinv = snew;
-  snewinv.inverse_symmetric();
-  MixedBasis<OverlapBatch> mixed(geom_, geomin);
-  auto c = make_shared<Coeff>(snewinv * mixed * *coeff_);
+  bool moved = false;
+  bool newbasis = false;
 
-  // make coefficient orthogonal (under the overlap metric)
-  Matrix unit = *c % snew * *c;
-  unit.inverse_half();
-  *c *= unit;
+  if (check_geom_change) {
+    auto j = geomin->atoms().begin();
+    for (auto& i : geom_->atoms()) {
+      moved |= i->distance(*j) > 1.0e-12;
+      newbasis |= i->basis() != (*j)->basis();
+      ++j;
+    }
+  } else {
+    newbasis = true;
+  }
 
-  auto out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
-  if (coeffA_) {
-    assert(coeffB_);
-    out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_);
-    out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_);
+  if (moved && newbasis)
+    throw runtime_error("changing geometry and basis set at the same time is not allowed");
+
+  shared_ptr<Reference> out;
+
+  if (newbasis) {
+    // project to a new basis
+    const Overlap snew(geomin);
+    Overlap snewinv = snew;
+    snewinv.inverse_symmetric();
+    MixedBasis<OverlapBatch> mixed(geom_, geomin);
+    auto c = make_shared<Coeff>(snewinv * mixed * *coeff_);
+
+    // make coefficient orthogonal (under the overlap metric)
+    Matrix unit = *c % snew * *c;
+    unit.inverse_half();
+    *c *= unit;
+
+    out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
+    if (coeffA_) {
+      assert(coeffB_);
+      out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_ * unit);
+      out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_ * unit);
+    }
+  } else {
+    Overlap snew(geomin);
+    Overlap sold(geom_);
+    snew.inverse_half();
+    sold.sqrt();
+    auto c = make_shared<Coeff>(snew * sold * *coeff_);
+
+    out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
+    if (coeffA_) {
+      assert(coeffB_);
+      out->coeffA_ = make_shared<Coeff>(snew * sold * *coeffA_);
+      out->coeffB_ = make_shared<Coeff>(snew * sold * *coeffB_);
+    }
   }
 
   return out;

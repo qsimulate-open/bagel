@@ -25,17 +25,13 @@
 
 //
 
-#ifndef __BAGEL_MATH_BESSEL_H
-#define __BAGEL_MATH_BESSEL_H
+#ifndef __BAGEL_UTIL_MATH_BESSEL_H
+#define __BAGEL_UTIL_MATH_BESSEL_H
 
-<<<<<<< HEAD:src/math/bessel.h
-#include <src/math/factorial.h>
-=======
 #include <iostream>
 #include <cmath>
 #include <vector>
 #include <src/util/math/factorial.h>
->>>>>>> 70008c6d3b87339a5146ffd0b76714e2b19a468f:src/util/math/bessel.h
 
 namespace bagel {
 

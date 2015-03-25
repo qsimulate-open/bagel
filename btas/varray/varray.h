@@ -6,6 +6,7 @@
 #include <btas/serialization.h>
 #include <boost/serialization/split_free.hpp>
 #include <boost/serialization/array.hpp>
+#include <boost/serialization/collection_size_type.hpp>
 
 namespace btas {
 
@@ -401,16 +402,19 @@ namespace boost {
   template<class Archive, typename T>
   void save (Archive& ar, const btas::varray<T>& x, const unsigned int version)
   {
-      const typename btas::varray<T>::size_type n = x.size();
-      ar << n << btas::make_array(x.data(), x.size());
+      const boost::serialization::collection_size_type count(x.size());
+      ar << BOOST_SERIALIZATION_NVP(count);
+      if (count != 0)
+        ar << boost::serialization::make_array(x.data(), count);
   }
   template<class Archive, typename T>
   void load (Archive& ar, btas::varray<T>& x, const unsigned int version)
   {
-      typename btas::varray<T>::size_type n;
-      ar >> n;
-      x.resize(n);
-      ar >> btas::make_array(x.data(), x.size());
+      boost::serialization::collection_size_type count;
+      ar >> BOOST_SERIALIZATION_NVP(count);
+      x.resize(count);
+      if (count != 0)
+        ar >> boost::serialization::make_array(x.data(), count);
   }
 
   } // namespace serialization

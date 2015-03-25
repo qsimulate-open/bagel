@@ -170,7 +170,7 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
       std::set<std::string> hz_options = {"hz", "harrison", "zarrabian"};
       std::set<std::string> dist_options = {"dist", "parallel"};
 
-      if ( std::find(kh_options.begin(), kh_options.end(), method) != kh_options.end() ) {
+      if (std::find(kh_options.begin(), kh_options.end(), method) != kh_options.end()) {
         using CiType = typename VecType::Ci;
         std::vector<std::shared_ptr<CiType>> tmp;
         std::shared_ptr<const Dvec> vecs = embedded_ci<KnowlesHandy, Dvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label);
@@ -178,7 +178,7 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
           tmp.push_back(std::make_shared<CiType>(*i));
         results.push_back(std::make_shared<VecType>(tmp));
       }
-      else if ( std::find(hz_options.begin(), hz_options.end(), method) != hz_options.end() ) {
+      else if (std::find(hz_options.begin(), hz_options.end(), method) != hz_options.end()) {
         using CiType = typename VecType::Ci;
         std::vector<std::shared_ptr<CiType>> tmp;
         std::shared_ptr<const Dvec> vecs = embedded_ci<HarrisonZarrabian, Dvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label);
@@ -186,8 +186,11 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
           tmp.push_back(std::make_shared<CiType>(*i));
         results.push_back(std::make_shared<VecType>(tmp));
       }
-      else if ( std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end() )
+#if 0
+      // TODO this block does not compile
+      else if (std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end())
         results.push_back(std::make_shared<VecType>(embedded_ci<DistFCI, DistDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
+#endif
       else
         throw std::runtime_error("Unrecognized FCI type algorithm");
 

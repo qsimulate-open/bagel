@@ -24,10 +24,10 @@
 //
 
 #include <src/ci/fci/harrison.h>
+#include <src/ci/fci/hztasks.h>
 #include <src/util/math/davidson.h>
 #include <src/util/taskqueue.h>
-#include <src/ci/fci/hztasks.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::HarrisonZarrabian)
 
@@ -100,7 +100,7 @@ void HarrisonZarrabian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> s
   }
 
   auto h2 = make_shared<Matrix>(*jop->mo2e());
-  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e()->data(), h2->data(), norb_, norb_, norb_, norb_);
+  sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e()->data(), h2->data(), norb_, norb_, norb_, norb_);
 
   TaskQueue<HZTaskAA<double>> tasks(det->lena());
 

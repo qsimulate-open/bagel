@@ -24,8 +24,8 @@
 //
 
 #include <src/asd/dimer/dimer.h>
-#include <src/scf/fock.h>
-#include <src/molecule/localization.h>
+#include <src/scf/hf/fock.h>
+#include <src/wfn/localization.h>
 
 using namespace std;
 using namespace bagel;
@@ -324,7 +324,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
   // SCF
   auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
-  shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", hfdata, sgeom_, sref_));
+  auto rhf = dynamic_pointer_cast<RHF>(construct_method("hf", hfdata, sgeom_, sref_));
   rhf->compute();
   sref_ = rhf->conv_to_ref();
   dimertime.tick_print("Dimer SCF");

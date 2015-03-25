@@ -69,21 +69,18 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix> o) const { return this->merge_impl<Matrix>(o); }
 
     MatView slice(const int mstart, const int mend) {
+      assert(mstart >= 0 && mend <= mdim());
       auto low = {0, mstart};
       auto up  = {ndim(), mend};
-      assert(mstart >= 0 && mend <= mdim());
       return MatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
     }
 
     const MatView slice(const int mstart, const int mend) const {
+      assert(mstart >= 0 && mend <= mdim());
       auto low = {0, mstart};
       auto up  = {ndim(), mend};
-      assert(mstart >= 0 && mend <= mdim());
       return MatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
     }
-
-    // antisymmetrize
-    void antisymmetrize();
 
     // diagonalize this matrix (overwritten by a coefficient matrix)
     void diagonalize(VecView vec) override;
@@ -122,6 +119,15 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     // returns transpose(*this)
     std::shared_ptr<Matrix> transpose(const double a = 1.0) const;
 
+    // for template classes which take either Matrix or ZMatrix
+    std::shared_ptr<Matrix> transpose_conjg(const double a = 1.0) const { return transpose(a); }
+    std::shared_ptr<Matrix> get_conjg() const { return copy(); }
+
+    bool is_symmetric(const double thresh = 1.0e-8) const override;
+    bool is_antisymmetric(const double thresh = 1.0e-8) const override;
+    bool is_hermitian(const double thresh = 1.0e-8) const override { return is_symmetric(thresh); }
+    bool is_identity(const double thresh = 1.0e-8) const override;
+
     using Matrix_base<double>::ax_plus_y;
     using Matrix_base<double>::dot_product;
     void ax_plus_y(const double a, const Matrix& o) { this->ax_plus_y_impl(a, o); }
@@ -151,7 +157,9 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     std::shared_ptr<const Matrix> matrix() const { return shared_from_this(); }
 #endif
     std::shared_ptr<const Matrix> form_density_rhf(const int n, const int off = 0) const;
-    std::shared_ptr<Matrix> swap_columns(const int i, const int iblock, const int j, const int jblock) const;
+    std::shared_ptr<Matrix> swap_columns(const int i, const int iblock, const int j, const int jblock) const {
+      return this->swap_columns_impl<Matrix>(i, iblock, j, jblock);
+    }
 };
 
 

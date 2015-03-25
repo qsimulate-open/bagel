@@ -238,7 +238,6 @@ class DFFullDist : public ParallelDF {
 
     // utility functions
     std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist> o, const double a) const;
-    void add_product(const std::shared_ptr<const DFFullDist>, const std::shared_ptr<const Matrix>, const int jdim, const size_t offset, const double fac = 1.0);
 
     std::shared_ptr<DFFullDist> apply_J() const { return apply_J(df_->data2()); }
     std::shared_ptr<DFFullDist> apply_JJ() const { return apply_J(std::make_shared<Matrix>(*df_->data2()**df_->data2())); }

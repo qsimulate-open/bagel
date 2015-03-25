@@ -23,30 +23,31 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/scf/rohf.h>
-#include <src/ks/ks.h>
-#include <src/scf/soscf.h>
+#include <src/scf/hf/rohf.h>
+#include <src/scf/ks/ks.h>
+#include <src/scf/sohf/soscf.h>
+#include <src/scf/dhf/dirac.h>
+#include <src/scf/giaohf/rhf_london.h>
 #include <src/ci/fci/distfci.h>
 #include <src/ci/fci/harrison.h>
 #include <src/ci/fci/knowles.h>
 #include <src/ci/ras/rasci.h>
 #include <src/ci/ras/distrasci.h>
 #include <src/ci/zfci/zharrison.h>
-#include <src/casscf/superci.h>
-#include <src/casscf/cashybrid.h>
-#include <src/casscf/casbfgs.h>
 #include <src/pt2/nevpt2/nevpt2.h>
 #include <src/pt2/mp2/mp2.h>
-#include <src/zcasscf/zcasscf.h>
-#include <src/zcasscf/zcasbfgs.h>
-#include <src/zcasscf/zcashybrid.h>
-#include <src/zcasscf/zsuperci.h>
-#include <src/rel/dirac.h>
-#include <src/rel/dmp2.h>
+#include <src/pt2/dmp2/dmp2.h>
+#include <src/multi/casscf/superci.h>
+#include <src/multi/casscf/cashybrid.h>
+#include <src/multi/casscf/casbfgs.h>
+#include <src/multi/zcasscf/zcasscf.h>
+#include <src/multi/zcasscf/zcasbfgs.h>
+#include <src/multi/zcasscf/zcashybrid.h>
+#include <src/multi/zcasscf/zsuperci.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/periodic/pscf.h>
-#include <src/london/scf_london.h>
+#include <src/prop/current.h>
 #include <src/wfn/construct_method.h>
 
 using namespace std;
@@ -59,7 +60,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
 
   shared_ptr<Method> out;
   if (!geom->magnetism()) {
-    if (title == "hf")          out = make_shared<SCF>(itree, geom, ref);
+    if (title == "hf")          out = make_shared<RHF>(itree, geom, ref);
     else if (title == "ks")     out = make_shared<KS>(itree, geom, ref);
     else if (title == "uhf")    out = make_shared<UHF>(itree, geom, ref);
     else if (title == "rohf")   out = make_shared<ROHF>(itree, geom, ref);
@@ -123,23 +124,28 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     }
+    else if (title == "current")  throw runtime_error("Charge currents are only available when using a GIAO basis set reference.");
     else if (title == "pscf") out = make_shared<PSCF>(itree, geom, ref);
+
+  // now the versions to use with magnetic fields
   } else {
-    if (title == "hf")              out = make_shared<SCF_London>(itree, geom, ref);
+    if (title == "hf")              out = make_shared<RHF_London>(itree, geom, ref);
     else if (title == "dhf")        out = make_shared<Dirac>(itree, geom, ref);
-    else if (title == "fci")        throw runtime_error("FCI method has not been implemented with an applied magnetic field.");
-    else if (title == "ks")         throw runtime_error("KS method has not been implemented with an applied magnetic field.");
-    else if (title == "uhf")        throw runtime_error("UHF method has not been implemented with an applied magnetic field.");
-    else if (title == "rohf")       throw runtime_error("ROHF method has not been implemented with an applied magnetic field.");
-    else if (title == "soscf")      throw runtime_error("SOSCF method has not been implemented with an applied magnetic field.");
-    else if (title == "mp2")        throw runtime_error("MP2 method has not been implemented with an applied magnetic field.");
-    else if (title == "dmp2")       throw runtime_error("DMP2 method has not been implemented with an applied magnetic field.");
-    else if (title == "smith")      throw runtime_error("SMITH method has not been implemented with an applied magnetic field.");
-    else if (title == "zfci")       throw runtime_error("ZFCI method has not been implemented with an applied magnetic field.");
-    else if (title == "nevpt2")     throw runtime_error("NEVPT2 method has not been implemented with an applied magnetic field.");
-    else if (title == "zcasscf")    throw runtime_error("ZCASSCF method has not been implemented with an applied magnetic field.");
-    else if (title == "caspt2grad") throw runtime_error("CASPT2grad method has not been implemented with an applied magnetic field.");
-    else if (title == "casscf")     throw runtime_error("CASSCF method has not been implemented with an applied magnetic field.");
+    else if (title == "current")    out = make_shared<Current>(itree, geom, ref);
+    else if (title == "zfci")       out = make_shared<ZHarrison>(itree, geom, ref);
+    else if (title == "zcasscf") {
+      string algorithm = itree->get<string>("algorithm", "");
+      if (algorithm == "superci" || algorithm == "")
+        out = make_shared<ZSuperCI>(itree, geom, ref);
+      else if (algorithm == "hybrid")
+        out = make_shared<ZCASHybrid>(itree, geom, ref);
+      else if (algorithm == "bfgs")
+        out = make_shared<ZCASBFGS>(itree, geom, ref);
+      else
+        cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
+    } else if (title == "molecule") {
+    } else
+      throw runtime_error(to_upper(title) + " method has not been implemented with an applied magnetic field.");
   }
   return out;
 }

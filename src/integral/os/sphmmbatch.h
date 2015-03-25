@@ -28,7 +28,7 @@
 #define __SRC_INTEGRAL_OS_SPHMMBATCH_H
 
 #include <src/integral/os/mmbatch.h>
-#include <src/parallel/resources.h>
+#include <src/util/parallel/resources.h>
 
 namespace bagel {
 

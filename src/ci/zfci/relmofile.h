@@ -29,9 +29,9 @@
 
 #include <unordered_map>
 #include <src/util/math/zmatrix.h>
-#include <src/rel/reldffull.h>
-#include <src/rel/dfock.h>
-#include <src/rel/relreference.h>
+#include <src/df/reldffull.h>
+#include <src/scf/dhf/dfock.h>
+#include <src/wfn/relreference.h>
 
 namespace bagel {
 
@@ -39,6 +39,7 @@ class RelMOFile {
   protected:
     int nocc_;
     int nbasis_;
+    int charge_;
     double core_energy_;
 
     std::shared_ptr<const Geometry> geom_;
@@ -48,6 +49,7 @@ class RelMOFile {
 
     bool gaunt_;
     bool breit_;
+    bool tsymm_;
 
     // creates integral files and returns the core energy.
     void init(const int nstart, const int nend, const bool restricted = false);
@@ -68,18 +70,19 @@ class RelMOFile {
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt_;
 
   public:
-    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, const bool gaunt, const bool breit);
+    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, const int charge, const bool gaunt, const bool breit, const bool tsymm);
 
     // static function
     static std::array<std::shared_ptr<const ZMatrix>,2> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_zquat(const int nstart, const int nfence, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> hcore);
 
+    // static function used to make the order of eigenvalues & eigenvectors of ZMatrix::diagonalize() match that given by QuatMatrix::diagonalize()
+    static void rearrange_eig(VectorB& eig, std::shared_ptr<ZMatrix> coeff, const bool includes_neg = true);
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
 
     std::shared_ptr<const ZMatrix> mo1e(const std::bitset<2>& b) const { return mo1e_.at(b); }
     std::shared_ptr<const ZMatrix> mo2e(const std::bitset<4>& b) const { return mo2e_.at(b); }
-//  const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i) const { return mo1e_.at(b)->data(i); }
     const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i, const size_t j) const { return mo1e_.at(b)->element(i,j); }
     const std::complex<double>& mo2e(const std::bitset<4>& b, const size_t i, const size_t j, const size_t k, const size_t l) const { return mo2e_.at(b)->element(i+nocc_*j, k+nocc_*l); }
     std::shared_ptr<const ZMatrix> mo1e(std::string&& b) const { return mo1e(std::bitset<2>(std::move(b))); }
@@ -116,23 +119,10 @@ class RelJop : public RelMOFile {
     std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) override;
 
   public:
-    RelJop(const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit, const bool restricted = false)
-      : RelMOFile(geo, coeff, gaunt, breit) { init(c, d, restricted); }
+    RelJop(const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff, const int charge,
+      const bool gaunt, const bool breit, const bool restricted = false, const bool tsymm = true)
+      : RelMOFile(geo, coeff, charge, gaunt, breit, tsymm) { init(c, d, restricted); }
 };
-
-
-#if 0
-class RelHtilde : public ZHtilde_Base, public RelMOFile {
-  protected:
-    std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
-    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override { return h2_tmp_; };
-  public:
-    RelHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const ZMatrix> h1, std::shared_ptr<const ZMatrix> h2)
-      : ZHtilde_Base(h1, std::move(h2)), RelMOFile(b) {
-      core_energy_ = create_Jiiii(c, d);
-    }
-};
-#endif
 
 }
 

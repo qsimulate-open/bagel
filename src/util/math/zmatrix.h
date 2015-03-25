@@ -62,20 +62,20 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix() { }
     virtual ~ZMatrix() { }
 
-    void antisymmetrize();
-    void hermite();
     std::shared_ptr<ZMatrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim()); }
     std::shared_ptr<ZMatrix> slice_copy(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim(), mend-mstart); }
     std::shared_ptr<ZMatrix> resize(const int n, const int m) const { return this->resize_impl<ZMatrix>(n, m); }
     std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix> o) const { return this->merge_impl<ZMatrix>(o); }
 
     ZMatView slice(const int mstart, const int mend) {
+      assert(mstart >= 0 && mend <= mdim());
       auto low = {0, mstart};
       auto up  = {ndim(), mend};
       return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
     }
 
     const ZMatView slice(const int mstart, const int mend) const {
+      assert(mstart >= 0 && mend <= mdim());
       auto low = {0, mstart};
       auto up  = {ndim(), mend};
       return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
@@ -122,9 +122,14 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     // returns log(*this)
     std::shared_ptr<ZMatrix> log(const int deg = 6) const;
     // returns transpose(*this)
-    std::shared_ptr<ZMatrix> transpose() const;
+    std::shared_ptr<ZMatrix> transpose(const std::complex<double> a = 1.0) const;
     // returns hermite-conjugate(*this)
-    std::shared_ptr<ZMatrix> transpose_conjg() const;
+    std::shared_ptr<ZMatrix> transpose_conjg(const std::complex<double> a = 1.0) const;
+
+    bool is_symmetric(const double thresh = 1.0e-8) const override;
+    bool is_antisymmetric(const double thresh = 1.0e-8) const override;
+    bool is_hermitian(const double thresh = 1.0e-8) const override;
+    bool is_identity(const double thresh = 1.0e-8) const override;
 
     using Matrix_base<std::complex<double>>::ax_plus_y;
     using Matrix_base<std::complex<double>>::dot_product;
@@ -156,6 +161,9 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<const ZMatrix> matrix() const { return shared_from_this(); }
 #endif
     std::shared_ptr<const ZMatrix> form_density_rhf(const int n, const int off = 0, const std::complex<double> scale = 1.0) const;
+    std::shared_ptr<ZMatrix> swap_columns(const int i, const int iblock, const int j, const int jblock) const {
+      return this->swap_columns_impl<ZMatrix>(i, iblock, j, jblock);
+    }
 };
 
 

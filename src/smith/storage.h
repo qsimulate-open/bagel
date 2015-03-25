@@ -38,37 +38,41 @@
 #include <vector>
 #include <cassert>
 #include <stdexcept>
+#include <fstream>
+#include <cstdio>
 
 namespace bagel {
 namespace SMITH {
 
+template<class BlockType>
 class Storage_base {
   protected:
-    // length of this storage
-    size_t length_;
     // this relates hash keys, block number, and block lengths (in this order).
-    std::map<size_t, std::pair<size_t, size_t>> hashtable_;
-    std::vector<bool> initialized_;
-
+    std::map<size_t, std::shared_ptr<BlockType>> hashtable_;
 
   public:
     // size contains hashkey and length (in this order)
     Storage_base(const std::map<size_t, size_t>& size, bool init) {
-      length_ = 0lu;
-      size_t cnt = 0;
-      for (auto i = size.begin(); i != size.end(); ++i, ++cnt) {
-        auto j = hashtable_.emplace(i->first, std::make_pair(cnt, i->second));
-        if (!j.second) throw std::logic_error("duplicated hash keys in Storage::Storage");
-        length_ += i->second;
-      }
-      initialized_ = std::vector<bool>(cnt, init);
+      for (auto& i : size)
+        hashtable_.emplace(i.first, std::make_shared<BlockType>(i.second, init));
     }
 
     // functions that return protected members
-    size_t length() const { return length_; }
     size_t blocksize(const size_t hash) const {
       auto a = hashtable_.find(hash);
-      return a != hashtable_.end() ? a->second.second : 0;
+      return a != hashtable_.end() ? a->second->size() : 0lu;
+    }
+    size_t blocksize_alloc(const size_t hash) const {
+      auto a = hashtable_.find(hash);
+      return a != hashtable_.end() ? a->second->size_alloc() : 0lu;
+    }
+
+    size_t size() const {
+      return std::accumulate(hashtable_.begin(), hashtable_.end(), 0lu, [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size(); });
+    }
+
+    size_t size_alloc() const {
+      return std::accumulate(hashtable_.begin(), hashtable_.end(), 0lu, [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size_alloc(); });
     }
 
     // get, move, put, and add a block from the storage and returns unique_ptr<double[]>, which is local
@@ -80,16 +84,40 @@ class Storage_base {
     virtual void zero() = 0;
     virtual void scale(const double a) = 0;
 
-    virtual void initialize() = 0;
-
-    bool initialized(const int i) const { return initialized_[i]; }
-
 };
 
-class Storage_Incore : public Storage_base {
-  protected:
-    std::vector<std::unique_ptr<double[]>> data_;
 
+class StorageBlock {
+  protected:
+    std::unique_ptr<double[]> data_;
+    size_t size_;
+    bool initialized_;
+
+    double* data() { return data_.get(); }
+    const double* data() const { return data_.get(); }
+  public:
+    StorageBlock(const size_t size, const bool init);
+
+    void zero();
+
+    size_t size() const { return size_; }
+    size_t size_alloc() const { return initialized_ ? size_ : 0lu; }
+
+    StorageBlock& operator=(const StorageBlock& o);
+
+    void put_block(std::unique_ptr<double[]>&& o);
+    void add_block(const std::unique_ptr<double[]>& o);
+
+    std::unique_ptr<double[]> get_block() const;
+    std::unique_ptr<double[]> move_block();
+
+    double dot_product(const StorageBlock& o) const;
+    void ax_plus_y(const double a, const StorageBlock& o);
+    void scale(const double a);
+};
+
+
+class Storage_Incore : public Storage_base<StorageBlock> {
   public:
     Storage_Incore(const std::map<size_t, size_t>& size, bool init);
 
@@ -106,8 +134,9 @@ class Storage_Incore : public Storage_base {
     void ax_plus_y(const double a, const std::shared_ptr<Storage_Incore> o) { ax_plus_y(a, *o); };
     double dot_product(const Storage_Incore& o) const;
 
-    void initialize();
 };
+
+using Storage = Storage_Incore;
 
 }
 }

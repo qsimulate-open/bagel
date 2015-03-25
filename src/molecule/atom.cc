@@ -479,8 +479,11 @@ void Atom::split_shells(const size_t batchsize) {
 
 
 void Atom::print_basis() const {
-  for (auto& i : shells_) cout << i->show() << endl;
-  if(ecp_parameters_) ecp_parameters_->print();
+  for (auto& i : shells_)
+    cout << i->show() << endl;
+
+  if (ecp_parameters_)
+    ecp_parameters_->print();
 }
 
 

@@ -25,8 +25,9 @@
 
 #include <src/global.h>
 #include <src/pt2/mp2/mp2grad.h>
+#include <src/grad/force.h>
 #include <src/opt/optimize.h>
-#include <src/molecule/localization.h>
+#include <src/wfn/localization.h>
 #include <src/asd/construct_asd.h>
 #include <src/asd/dmrg/rasd.h>
 #include <src/asd/multisite/multisite.h>
@@ -90,6 +91,17 @@ int main(int argc, char** argv) {
       if ((title == "smith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
 
+#ifndef DISABLE_SERIALIZATION
+      if (itree->get<bool>("load_ref", false)) {
+        const string name = itree->get<string>("ref_in", "");
+        if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
+        IArchive archive(name);
+        shared_ptr<Reference> ptr;
+        archive >> ptr;
+        ref = shared_ptr<Reference>(ptr);
+      }
+#endif
+
       // most methods are constructed here
       method = construct_method(title, itree, geom, ref);
 
@@ -106,12 +118,23 @@ int main(int argc, char** argv) {
 
         method->compute();
         ref = method->conv_to_ref();
+#ifndef DISABLE_SERIALIZATION
+        if (itree->get<bool>("save_ref", false)) {
+          const string name = itree->get<string>("ref_out", "reference");
+          OArchive archive(name);
+          archive << ref;
+        }
+#endif
 
       } else if (title == "optimize") {
 
-        auto opt = make_shared<Optimize>(itree, geom);
+        auto opt = make_shared<Optimize>(itree, geom, ref);
         opt->compute();
 
+      } else if (title == "force") {
+
+        auto opt = make_shared<Force>(itree, geom, ref);
+        opt->compute();
 
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         const string form = itree->get<string>("form", "displace");

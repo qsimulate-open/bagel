@@ -24,7 +24,7 @@
 //
 
 #include <src/asd/multisite/multisite.h>
-#include <src/molecule/overlap.h>
+#include <src/mat1e/overlap.h>
 #include <src/util/muffle.h>
 
 using namespace std;
@@ -47,7 +47,7 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, vector<shared_ptr<const Refe
 
   // build combined references
   for (auto& r : refs)
-    isolated_refs_.push_back(r->project_coeff(sgeom));
+    isolated_refs_.push_back(r->project_coeff(sgeom, false));
   const size_t norb = accumulate(isolated_refs_.begin(), isolated_refs_.end(), 0ul, [] (size_t x, shared_ptr<const Reference> r) { return x + r->coeff()->mdim(); });
   Matrix coeff(sgeom->nbasis(), norb);
 

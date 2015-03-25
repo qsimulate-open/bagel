@@ -24,8 +24,8 @@
 //
 
 #include <src/pt2/nevpt2/nevpt2.h>
-#include <src/smith/prim_op.h>
-#include <src/casscf/qvec.h>
+#include <src/util/prim_op.h>
+#include <src/multi/casscf/qvec.h>
 
 using namespace std;
 using namespace bagel;
@@ -35,7 +35,7 @@ void NEVPT2::compute_ints() {
   // integrals (ij|kl) and <ik|jl>
   shared_ptr<const Matrix> ints = full->form_4index(full, 1.0);
   auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
-  SMITH::sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact_, nact_, nact_, nact_);
+  sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact_, nact_, nact_, nact_);
   ints2_ = tmp;
 }
 
@@ -105,7 +105,7 @@ void NEVPT2::compute_abcd() {
                                                                                                     + ardm3_->element(id3(bp,ap,c),id3(d,a,e)));
               }
       shared_ptr<Matrix> tmp = amat2->copy();
-      SMITH::sort_indices<1,0,3,2,0,1,1,1>(tmp->data(), amat2->data(), nact_, nact_, nact_, nact_);
+      sort_indices<1,0,3,2,0,1,1,1>(tmp->data(), amat2->data(), nact_, nact_, nact_, nact_);
     }
     shared_ptr<Matrix> amat3 = rdm3_->clone();
     shared_ptr<Matrix> amat3t = rdm3_->clone();
@@ -244,7 +244,7 @@ void NEVPT2::compute_abcd() {
                 }
             }
     shared_ptr<Matrix> tmp = dmat2->copy();
-    SMITH::sort_indices<1,0,3,2,0,1,1,1>(tmp->data(), dmat2->data(), nact_, nact_, nact_, nact_);
+    sort_indices<1,0,3,2,0,1,1,1>(tmp->data(), dmat2->data(), nact_, nact_, nact_, nact_);
     dmat2_ = dmat2;
   }
   {

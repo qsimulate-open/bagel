@@ -26,7 +26,7 @@
 
 #include <iostream>
 #include <iomanip>
-#include <src/math/sphharmonics.h>
+#include <src/util/math/sphharmonics.h>
 
 using namespace std;
 using namespace bagel;

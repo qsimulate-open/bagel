@@ -317,7 +317,11 @@ void gemv (
    static_assert(std::is_same<typename __traits_Y::iterator_category, std::random_access_iterator_tag>::value,
                  "iterator Y must be a random access iterator");
 
-   gemv_impl<std::is_convertible<_T, value_type>::value>::call(order, transA, Msize, Nsize, alpha, itrA, LDA, itrX, incX, beta, itrY, incY);
+   typename _IteratorA::pointer A = &(*itrA);
+   typename _IteratorX::pointer X = &(*itrX);
+   typename _IteratorY::pointer Y = &(*itrY);
+   gemv_impl<std::is_convertible<_T, value_type>::value>::call(order, transA, Msize, Nsize, alpha, A, LDA, X, incX, beta, Y, incY);
+   //gemv_impl<std::is_convertible<_T, value_type>::value>::call(order, transA, Msize, Nsize, alpha, itrA, LDA, itrX, incX, beta, itrY, incY);
 }
 
 //  ================================================================================================
@@ -396,14 +400,16 @@ void gemv (
       assert(std::equal(std::begin(extentA), std::begin(extentA)+rankX, std::begin(extentX)));
    }
 
-   if(order == CblasRowMajor)
-   {
-      LDA = Nsize;
-   }
-   else
-   {
-      LDA = Msize;
-   }
+   LDA = std::accumulate(std::begin(extentA)+rankY, std::end(extentA),   1ul, std::multiplies<size_type>());
+
+   //if(order == CblasRowMajor)
+   //{
+   //   LDA = Nsize;
+   //}
+   //else
+   //{
+   //   LDA = Msize;
+   //}
 
    // resize / scale
    if (Y.empty())

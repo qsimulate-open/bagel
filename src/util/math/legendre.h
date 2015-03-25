@@ -28,7 +28,7 @@
 #ifndef __BAGEL_MATH_LEGENDRE_H
 #define __BAGEL_MATH_LEGENDRE_H
 
-#include <src/math/factorial.h>
+#include <src/util/math/factorial.h>
 
 namespace bagel {
 

@@ -1,15 +1,36 @@
 //
-// Author : Toru Shiozaki
-// Date   : May 2009
+// BAGEL - Parallel electron correlation program.
+// Filename: molden_transforms.cc
+// Copyright (C) 2012 Shane Parker
 //
-// Modified by :  Shane Parker
-// Date        :  July 2012
+// Author: Shane Parker <shane.parker@u.northwestern.edu>
+// Maintainer: NU theory
 //
-// This was originally code found in src/rysint/carsph_gen/carsph_gen.cc
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+//
+// This was originally code found in src/integral/.../carsph_gen.cc
 // but repurposed here for the molden section. At the moment, it is limited to at most
 // f functions.
 //
 
+#include <src/util/math/comb.h>
+#include <src/util/math/factorial.h>
 #include <src/util/io/moldenin.h>
 
 using namespace std;
@@ -18,25 +39,13 @@ using namespace bagel;
 #define LARGE 32
 #define LEND 5
 
+const static Comb comb;
+const static Factorial factorial;
 
 void MoldenIn::compute_transforms() {
-  struct Data {
-    vector<double> factorial;
-    Data() {
-      factorial.push_back(1.0);
-      for (int i = 1; i != LEND * 2; ++i)
-        factorial.push_back(factorial.back() * i);
-    }
-    double comb(const int i, const int j) const {
-      return factorial[i] / factorial[j] / factorial[i - j];
-    }
-  } data;
-
   const double one = 1.0;
   const double two = 2.0;
   const double quarter = 0.25;
-
-  vector<double> factorial = data.factorial;
 
   vector<pair<int, double>> s0(1, make_pair(0, one));
   vector<vector<pair<int, double>>> s1(1, s0);
@@ -65,7 +74,7 @@ void MoldenIn::compute_transforms() {
       const int absm = m > 0 ? m : -m;
       vector<pair<int, double>> tuv;
 
-      const double Nlms = one / pow(two, absm) / factorial[l] * sqrt((m == 0 ? one : two) * factorial[l + absm] * factorial[l - absm]);
+      const double Nlms = one / pow(two, absm) / factorial(l) * sqrt((m == 0 ? one : two) * factorial(l + absm) * factorial(l - absm));
       const int tmax = floor((l - absm) / 2.0);
       for (int t = 0; t <= tmax; ++t) {
         for (int u = 0; u <= t; ++u) {
@@ -73,8 +82,8 @@ void MoldenIn::compute_transforms() {
           for (int v2 = vm2; v2 <= vmax; v2 += 2) {
             assert((v2 - vm2) % 2 == 0);
             const double Clmtuv = pow(-one, t + ((v2 - vm2) / 2)) * pow(quarter, t)
-                                * data.comb(l, t) * data.comb(l - t, absm + t)
-                                * data.comb(t, u) * data.comb(absm, v2) * Nlms;
+                                * comb(l, t) * comb(l - t, absm + t)
+                                * comb(t, u) * comb(absm, v2) * Nlms;
             const int xexp = 2 * t + absm - 2 * u - v2;
             const int yexp = 2 * u + v2;
             const int zexp = l - 2 * t - absm;

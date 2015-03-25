@@ -30,10 +30,10 @@
 #define __BAGEL_ZFCI_ZHARRISON_H
 
 #include <src/wfn/method.h>
+#include <src/wfn/relreference.h>
 #include <src/ci/zfci/relmofile.h>
 #include <src/ci/zfci/reldvec.h>
 #include <src/util/math/davidson.h>
-#include <src/rel/relreference.h>
 
 namespace bagel {
 
@@ -42,6 +42,8 @@ class ZHarrison : public Method {
   protected:
     // max #iteration
     int max_iter_;
+    int davidson_subspace_;
+
     // threshold for variants
     double thresh_;
     double print_thresh_;
@@ -55,6 +57,9 @@ class ZHarrison : public Method {
     // breit and gaunt
     bool gaunt_;
     bool breit_;
+
+    // enforce time-reversal symmetry
+    bool tsymm_;
 
     // number of states
     int nstate_;
@@ -98,7 +103,7 @@ class ZHarrison : public Method {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Method>(*this);
-      ar << max_iter_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_
+      ar << max_iter_ << davidson_subspace_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_ << tsymm_
          << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
       // for jop_
       std::shared_ptr<const ZMatrix> coeff = jop_->coeff_input();
@@ -107,7 +112,7 @@ class ZHarrison : public Method {
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Method>(*this);
-      ar >> max_iter_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_
+      ar >> max_iter_ >> davidson_subspace_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_ >> tsymm_
          >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_ >> restarted_;
       std::shared_ptr<const ZMatrix> coeff;
       ar >> coeff;
@@ -125,6 +130,9 @@ class ZHarrison : public Method {
     void print_header() const;
 
     void const_denom();
+
+    // just to move negative energy states into the virtual space
+    std::shared_ptr<const ZMatrix> swap_pos_neg(std::shared_ptr<const ZMatrix> coeffin) const;
 
     // run-time functions.
     // aaaa and bbbb
@@ -161,15 +169,15 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const ZMatrix> coeff_zcas = nullptr, const bool restricted = false);
+              const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const ZMatrix> coeff_zcas = nullptr, const bool restricted = false);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
+    // "restricted" refers to whether the coefficient matrix is already Kramers-adapted
     void update(std::shared_ptr<const ZMatrix> coeff, const bool restricted = false) {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, restricted);
+      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, charge_, gaunt_, breit_, restricted, tsymm_);
 
-      // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
       const_denom();
     }

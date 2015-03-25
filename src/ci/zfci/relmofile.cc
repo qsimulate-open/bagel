@@ -24,20 +24,22 @@
 //
 
 #include <iostream>
-#include <iomanip>
 #include <algorithm>
 #include <cmath>
 #include <src/util/f77.h>
 #include <src/util/math/quatmatrix.h>
+#include <src/util/prim_op.h>
 #include <src/ci/zfci/relmofile.h>
-#include <src/rel/reloverlap.h>
-#include <src/smith/prim_op.h>
+#include <src/mat1e/rel/reloverlap.h>
+#include <src/mat1e/rel/relhcore.h>
+#include <src/mat1e/giao/reloverlap_london.h>
+#include <src/mat1e/giao/relhcore_london.h>
 
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co, const bool gaunt, const bool breit)
- : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit) {
+RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co, const int charge, const bool gaunt, const bool breit, const bool tsymm)
+ : charge_(charge), geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit), tsymm_(tsymm) {
   // density fitting is assumed
   assert(geom_->df());
 }
@@ -53,7 +55,12 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
     geom_ = geom_->relativistic(gaunt_);
 
   // calculates the core fock matrix
-  shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
+  shared_ptr<const ZMatrix> hcore;
+  if (!geom_->magnetism())
+    hcore = make_shared<RelHcore>(geom_);
+  else
+    hcore = make_shared<RelHcore_London>(geom_);
+
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
     core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
@@ -69,7 +76,12 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
   }
 
   // then compute Kramers adapated coefficient matrices
-  auto overlap = make_shared<RelOverlap>(geom_);
+  shared_ptr<const ZMatrix> overlap;
+  if (!geom_->magnetism())
+    overlap = make_shared<RelOverlap>(geom_);
+  else
+    overlap = make_shared<RelOverlap_London>(geom_);
+
   if (!restricted) {
     kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
   } else {
@@ -187,16 +199,11 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
 
 // modified from init_kramers_coeff in zcasscf_coeff.cc
 array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, const int nfence, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
-  assert(coeff->mdim() > 2 && coeff->mdim()%2 == 0); // zquatev has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
+  assert((coeff->mdim() > 2 || !tsymm_) && coeff->mdim()%2 == 0); // zquatev has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
   assert(nstart < nfence);
-  const int ndim    = coeff->ndim();
-  const int nb      = ndim/4;
+  assert(coeff->ndim() == 4*geom_->nbasis());
   const int nclosed = nstart/2;
   const int nact    = (nfence - nstart)/2;
-  const int nvnr    = nb - nact - nclosed;
-  const int nvirt   = nvnr + nb;
-  if(ndim%2 != 0 || ndim % 4 != 0)
-    throw logic_error("illegal call of RelMOFile::kramers_zquat");
   // local function to transform from kramers to quaternion format
   auto quaternion = [](shared_ptr<ZMatrix> o) {
     shared_ptr<ZMatrix> scratch = o->clone();
@@ -209,12 +216,12 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
     *o = *scratch;
   };
 
-  const int nocc    = nact + nclosed;
+  const int nocc = nact + nclosed;
 
   shared_ptr<ZMatrix> focktmp;
   shared_ptr<ZMatrix> ctmp;
   {
-    const int norb = geom_->nele();
+    const int norb = geom_->nele() - charge_;
     assert(norb <= coeff_->mdim());
     focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
   }
@@ -223,13 +230,21 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
   shared_ptr<ZMatrix> s12 = overlap->tildex(1.0e-9);
   quaternion(s12);
 
-  auto fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
+  shared_ptr<ZMatrix> fock_tilde;
+  if (tsymm_)
+    fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
+  else
+    fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
 
-  // quaternion diagonalization
+  // diagonalization - uses quaternion symmetry if applicable
   {
     VectorB eig(fock_tilde->ndim());
     fock_tilde->diagonalize(eig);
+
+    if (!tsymm_)
+      rearrange_eig(eig, fock_tilde);
   }
+
   // re-order to kramers format and move negative energy states to virtual space
   ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
   { // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
@@ -240,6 +255,11 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
     ctmp->copy_block(n,   0, n, m, scratch->get_submatrix(n, 0, n, m));
     ctmp->copy_block(n*2, 0, n, m, scratch->get_submatrix(0, 0, n, m));
   }
+
+  assert(s12->mdim() % 4 == 0);
+  const int nb = s12->mdim()/4;
+  const int nvirt = nb - nact - nclosed;
+
   // move_positronic_orbitals
   {
     auto move_one = [this, &ctmp](const int offset, const int block1, const int block2) {
@@ -249,8 +269,8 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
       ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
     };
     const int nneg2 = ctmp->mdim()/4;
-    move_one(           0, nneg2, nocc+nvnr);
-    move_one(nocc + nvirt, nneg2, nocc+nvnr);
+    move_one(                0, nneg2, nocc + nvirt);
+    move_one(nocc + nvirt + nb, nneg2, nocc + nvirt);
 
     auto tmp = coeff->clone();
     tmp->copy_block(0, 0, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(nstart/2, nstart/2+coeff->mdim()/2));
@@ -272,7 +292,7 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
   // Harrison requires <ij|kl> = (ik|jl)
   for (auto& mat : buf2e) {
     shared_ptr<ZMatrix> tmp = mat.second->clone();
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(mat.second->data(), tmp->data(), nocc_, nocc_, nocc_, nocc_);
+    sort_indices<0,2,1,3,0,1,1,1>(mat.second->data(), tmp->data(), nocc_, nocc_, nocc_, nocc_);
     bitset<4> s = mat.first;
     s[2] = mat.first[1];
     s[1] = mat.first[2];
@@ -283,16 +303,17 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
 
 unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const array<shared_ptr<const ZMatrix>,2> coeff) {
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> out;
-  // TODO : remove redundancy
-  for (size_t i = 0; i != 4; ++i)
+  const int n = tsymm_ ? 3 : 4;
+  for (size_t i = 0; i != n; ++i)
     out[bitset<2>(i)] = make_shared<ZMatrix>(*coeff[i/2] % *core_fock_ * *coeff[i%2]);
-  out[bitset<2>("11")] = out[bitset<2>("00")]->get_conjg();
+  if (tsymm_)
+    out[bitset<2>("11")] = out[bitset<2>("00")]->get_conjg();
 
   assert(out.size() == 4);
   // symmetry requirement
   assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
   // Kramers requirement
-  assert((*out[bitset<2>("11")] - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8);
+  assert((*make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]) - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8 || !tsymm_);
 
   return out;
 }
@@ -382,7 +403,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
         continue;
 
       // we will construct (1111, 1010, 1101, 0100) later
-      if (i == 15 || i == 10 || i == 13 || i == 4)
+      if ((tsymm_ && i == 15) || i == 10 || i == 13 || i == 4)
         continue;
 
       // we compute: 0000, 0010, 1001, 0101, 0011, 1011
@@ -417,19 +438,20 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
     compute(out, true, breit_);
 
   // Kramers and particle symmetry
-  out[bitset<4>("1111")] = out.at(bitset<4>("0000"))->get_conjg();
+  if (tsymm_)
+    out[bitset<4>("1111")] = out.at(bitset<4>("0000"))->get_conjg();
 
   out[bitset<4>("1010")] = out.at(bitset<4>("0101"))->clone();
   shared_ptr<ZMatrix> m1010 = out.at(bitset<4>("0101"))->get_conjg();
-  SMITH::sort_indices<1,0,3,2,0,1,1,1>(m1010->data(), out[bitset<4>("1010")]->data(), nocc_, nocc_, nocc_, nocc_);
+  sort_indices<1,0,3,2,0,1,1,1>(m1010->data(), out[bitset<4>("1010")]->data(), nocc_, nocc_, nocc_, nocc_);
 
   out[bitset<4>("1101")] = out.at(bitset<4>("1011"))->clone();
   shared_ptr<ZMatrix> m1101 = out.at(bitset<4>("1011"))->get_conjg();
-  SMITH::sort_indices<3,2,1,0,0,1,1,1>(m1101->data(), out[bitset<4>("1101")]->data(), nocc_, nocc_, nocc_, nocc_);
+  sort_indices<3,2,1,0,0,1,1,1>(m1101->data(), out[bitset<4>("1101")]->data(), nocc_, nocc_, nocc_, nocc_);
 
   out[bitset<4>("0100")] = out.at(bitset<4>("0010"))->clone();
   shared_ptr<ZMatrix> m0100 = out.at(bitset<4>("0010"))->get_conjg();
-  SMITH::sort_indices<3,2,1,0,0,1,1,1>(m0100->data(), out[bitset<4>("0100")]->data(), nocc_, nocc_, nocc_, nocc_);
+  sort_indices<3,2,1,0,0,1,1,1>(m0100->data(), out[bitset<4>("0100")]->data(), nocc_, nocc_, nocc_, nocc_);
 
 #if 0
   // for completeness we can compute the others too
@@ -439,7 +461,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
     bitset<4> sb; sb[0] = tb[1]; sb[1] = tb[0]; sb[2] = tb[3]; sb[3] = tb[2];
     assert(out.find(tb) == out.end());
     out[tb] = out.at(sb)->clone();
-    SMITH::sort_indices<1,0,3,2,0,1,1,1>(out.at(sb)->data(), out.at(tb)->data(), nocc_, nocc_, nocc_, nocc_);
+    sort_indices<1,0,3,2,0,1,1,1>(out.at(sb)->data(), out.at(tb)->data(), nocc_, nocc_, nocc_, nocc_);
     transform(out.at(tb)->data(), out.at(tb)->data()+nocc_*nocc_*nocc_*nocc_, out.at(tb)->data(), [](complex<double> a) { return conj(a); });
   }
   out[bitset<4>("1100")] = out.at(bitset<4>("0011"))->transpose();
@@ -503,3 +525,29 @@ unordered_map<bitset<2>, shared_ptr<const RelDFFull>>
   }
   return out;
 }
+
+
+void RelMOFile::rearrange_eig(VectorB& eig, shared_ptr<ZMatrix> coeff, const bool includes_neg) {
+  const int n = coeff->ndim()/2;
+  assert(2*n == coeff->ndim());  // could be triggered if Kramers + and - sets had different sizes or linear dependencies
+
+  // check that pos & neg energy eigenvalues are properly separated
+  assert(!includes_neg || *std::min_element(eig.begin()+n, eig.begin()+2*n) - *std::max_element(eig.begin(), eig.begin()+n) > c__*c__);
+
+  // need to reorder things so negative energy states don't all come at the beginning
+  // TODO there should be a more efficient way...
+  VectorB tempv(2*n);
+  shared_ptr<ZMatrix> tempm = coeff->clone();
+  for (int i = 0; i != n; ++i) {
+    tempv[  i] = eig[2*i];
+    tempv[n+i] = eig[2*i+1];
+
+    for (int j=0; j!=2*n; ++j) {
+      tempm->element(j,   i) = coeff->element(j, 2*i);
+      tempm->element(j, n+i) = coeff->element(j, 2*i+1);
+    }
+  }
+  eig = tempv;
+  *coeff = *tempm;
+}
+

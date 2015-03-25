@@ -75,11 +75,14 @@ class DFDistT {
     int bsize() const { return bsize_; }
     int bstart() const { return bstart_; }
     int nblocks() const { return data_.size(); }
+    double* data() { assert(data_.size() == 1); return data(0); }
+    double* data(const int i) { return data_[i]->data(); }
     const double* data() const { assert(data_.size() == 1); return data(0); }
     const double* data(const int i) const { return data_[i]->data(); }
 
     // returns the process that has the data
     int locate(const size_t, const size_t n) const { return std::get<0>(dist_->locate(n)); }
+    size_t offset(const size_t, const size_t n) const { return naux_*std::get<1>(dist_->locate(n)); }
 
     std::vector<std::shared_ptr<Matrix>> get_slice(const int start, const int end) const;
 

@@ -303,8 +303,8 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
         e21.normalize();
         e23.normalize();
         const double rad = theta/rad2deg__;
-        Quatern<double> st1 = (e21 * ::cos(rad) - e23) / (r21 * ::sin(rad));
-        Quatern<double> st3 = (e23 * ::cos(rad) - e21) / (r23 * ::sin(rad));
+        Quatern<double> st1 = (e21 * cos(rad) - e23) / (r21 * sin(rad));
+        Quatern<double> st3 = (e23 * cos(rad) - e21) / (r23 * sin(rad));
         Quatern<double> st2 = (st1 + st3) * (-1.0);
         vector<double> current(size);
         // see IJQC 106, 2536 (2006)
@@ -354,8 +354,8 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
           ecb.normalize();
           Quatern<double> rotabc = (eab*(-1.0)) * ebc; rotabc[0] = 0.0;
           Quatern<double> rotbcd = (edc*(-1.0)) * ecb; rotbcd[0] = 0.0;
-          const double tabc = ::atan2(rotabc.norm(), -eab.dot_product(ebc));
-          const double tbcd = ::atan2(rotbcd.norm(), -edc.dot_product(ecb));
+          const double tabc = atan2(rotabc.norm(), -eab.dot_product(ebc));
+          const double tbcd = atan2(rotbcd.norm(), -edc.dot_product(ecb));
 
           Quatern<double> sa = (eab * ebc) / (-rab*::pow(::sin(tabc), 2.0));
           Quatern<double> sd = (edc * ecb) / (-rcd*::pow(::sin(tbcd), 2.0));

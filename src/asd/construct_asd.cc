@@ -40,7 +40,7 @@ shared_ptr<ASD_base> construct_ASD(shared_ptr<const PTree> itree, shared_ptr<Dim
 
   if (method == "cas" || method == "fci") {
     if (variant == "local") {
-      shared_ptr<DimerCAS> cispace = dimer->compute_cispace<Dvec>(itree);
+      shared_ptr<DimerCAS> cispace = dimer->compute_cispace<CASDvec>(itree);
       out = make_shared<ASD_CAS>(itree, dimer, cispace);
     }
     else if (variant == "dist" || variant == "parallel") {
