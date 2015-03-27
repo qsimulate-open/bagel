@@ -231,8 +231,8 @@ void Node::compute_multipoles(const int lmax) {
 
 void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int lmax, vector<int> offset) {
 
-  ZMatrix out(nbasis_, nbasis_);
-  out.zero();
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
+  out->zero();
 
   for (auto& distant_node : interaction_list_) {
     array<double, 3> r12;
@@ -277,18 +277,18 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
       for (int j = 0; j != dimb; ++j)
         for (int k = 0; k != dimb; ++k)
           contract += lmoments[i]->element(k, j) * subden.element(k, j);
-      out += contract * *multipoles_[i];
+      *out += contract * *multipoles_[i];
     }
   }
 
-  local_expansion_ = make_shared<const ZMatrix>(out);
+  local_expansion_ = out;
 }
 
 
 void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offset) {
 
-  ZMatrix out(nbasis_, nbasis_);
-  out.zero();
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
+  out->zero();
 
   const int nmultipole = (lmax + 1) * (lmax + 1);
   for (auto& distant_node : interaction_list_) {
@@ -342,7 +342,7 @@ void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vec
           for (int k = 0; k != dimb; ++k)
             contract += new_lmoments[i]->element(k, j) * subden.element(k, j);
 
-        out += contract * *multipoles_[i];
+        *out += contract * *multipoles_[i];
       }
     }
   }
@@ -395,7 +395,7 @@ void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vec
                   for (int j2 = ob2; j2 != ob2 + b2size; ++j2) {
                     for (int j3 = ob3; j3 != ob3 + b3size; ++j3, ++eridata) {
                       const double eri = *eridata;
-                      out.element(j3, j2) += density_data[j0n + j1] * eri;
+                      out->element(j3, j2) += density_data[j0n + j1] * eri;
                     }
                   }
                 }
@@ -410,5 +410,5 @@ void Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vec
     }
   }
 
-  local_expansion_ = make_shared<const ZMatrix>(out);
+  local_expansion_ = out;
 }
