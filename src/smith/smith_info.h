@@ -51,11 +51,12 @@ class SMITH_Info : public Reference {
       if (ncore_)
         std::cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << std::endl;
 
-      thresh_ = idata->get<double>("thresh", 1.0e-8);
       maxiter_ = idata->get<int>("maxiter", 50);
       target_  = idata->get<int>("target",   0);
       maxtile_ = idata->get<int>("maxtile", 10);
       grad_    = idata->get<bool>("grad", false);
+
+      thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
     }
 
     std::string method() const { return method_; }

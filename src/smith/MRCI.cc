@@ -64,26 +64,22 @@ void MRCI::MRCI::solve() {
     nall_[istate]->fac(istate)  = 1.0;
     sall_[istate]->fac(istate)  = refen;
 
-    int ist = 0;
-    for (auto& tt : *t2all_[istate]) {
-      int jst = 0;
-      t2 = tt;
-      for (auto& ss : *sall_[istate]) {
-        set_rdm(jst++, ist);
-        s = ss;
+    for (int ist = 0; ist != nstates_; ++ist) {
+      t2 = t2all_[istate]->at(ist);
+      for (int jst = 0; jst != nstates_; ++jst) {
+        set_rdm(jst, ist);
+        s = sall_[istate]->at(jst);
         auto queue = make_sourceq(false);
         while (!queue->done())
           queue->next_compute();
       }
-      jst = 0;
-      for (auto& nn : *nall_[istate]) {
-        set_rdm(jst++, ist);
-        n = nn;
+      for (int jst = 0; jst != nstates_; ++jst) {
+        set_rdm(jst, ist);
+        n = nall_[istate]->at(jst);
         auto queue = make_normq(false);
         while (!queue->done())
           queue->next_compute();
       }
-      ++ist;
     }
   }
 
@@ -121,18 +117,15 @@ void MRCI::MRCI::solve() {
     for (int istate = 0; istate != nstates_; ++istate) {
       // first calculate left-hand-side vectors of t2 (named n)
       nall_[istate]->zero();
-      int ist = 0;
-      for (auto& tt : *t2all_[istate]) {
-        int jst = 0;
-        for (auto& nn : *nall_[istate]) {
-          set_rdm(jst++, ist);
-          t2 = tt;
-          n = nn;
+      for (int ist = 0; ist != nstates_; ++ist) {
+        for (int jst = 0; jst != nstates_; ++jst) {
+          set_rdm(jst, ist);
+          t2 = t2all_[istate]->at(ist);
+          n  = nall_[istate]->at(jst);;
           auto queue = make_normq(false);
           while (!queue->done())
             queue->next_compute();
         }
-        ++ist;
       }
 
       // normalize t2 and n
@@ -152,23 +145,39 @@ void MRCI::MRCI::solve() {
           auto queue = make_residualq(false);
           while (!queue->done())
             queue->next_compute();
+        }
+      }
 
-          // only diagonal contributes
-          if (ist == jst) {
-            const double refen = ref_->ciwfn()->energy(jst) - core_nuc;
-            r->ax_plus_y(refen, nall_[istate]->at(jst));
+      // <ab/ij| T |0_ist> Eref_ist.
+      {
+        shared_ptr<MultiTensor> m = t2all_[istate]->copy();
+        // First weighted T2 amplitude
+        for (int ist = 0; ist != nstates_; ++ist)
+          m->at(ist)->scale(ref_->ciwfn()->energy(ist) - core_nuc);
+        // then add it to residual
+        for (int ist = 0; ist != nstates_; ++ist) {
+          for (int jst = 0; jst != nstates_; ++jst) {
+            set_rdm(jst, ist);
+            t2 = m->at(ist);
+            n  = rtmp->at(jst);;
+            auto queue = make_normq(false);
+            while (!queue->done())
+              queue->next_compute();
           }
         }
       }
-      shared_ptr<MultiTensor> m = rtmp->copy();
-      int j = 0;
-      for (auto& i : *sall_[istate]) {
-        double tmp = 0.0;
-        for (auto& j : *t2all_[istate])
-          tmp += dot_product_transpose(i, j);
-        m->fac(j++) += tmp;
+
+      {
+        shared_ptr<MultiTensor> m = rtmp->copy();
+        int j = 0;
+        for (auto& i : *sall_[istate]) {
+          double tmp = 0.0;
+          for (auto& j : *t2all_[istate])
+            tmp += dot_product_transpose(i, j);
+          m->fac(j++) += tmp;
+        }
+        r0.push_back(make_shared<Residual>(m, this));
       }
-      r0.push_back(make_shared<Residual>(m, this));
     }
 
     energy_ = davidson.compute(a0, r0);
