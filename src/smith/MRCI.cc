@@ -64,15 +64,15 @@ void MRCI::MRCI::solve() {
     nall_[istate]->fac(istate)  = 1.0;
     sall_[istate]->fac(istate)  = refen;
 
+    for (int jst = 0; jst != nstates_; ++jst) {
+      set_rdm(jst, istate);
+      s = sall_[istate]->at(jst);
+      auto queue = make_sourceq(false);
+      while (!queue->done())
+        queue->next_compute();
+    }
     for (int ist = 0; ist != nstates_; ++ist) {
       t2 = t2all_[istate]->at(ist);
-      for (int jst = 0; jst != nstates_; ++jst) {
-        set_rdm(jst, ist);
-        s = sall_[istate]->at(jst);
-        auto queue = make_sourceq(false);
-        while (!queue->done())
-          queue->next_compute();
-      }
       for (int jst = 0; jst != nstates_; ++jst) {
         set_rdm(jst, ist);
         n = nall_[istate]->at(jst);
