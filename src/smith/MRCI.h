@@ -165,9 +165,9 @@ class MRCI : public SpinFreeMethod {
     std::shared_ptr<FutureTensor> Gamma560_();
     std::shared_ptr<FutureTensor> Gamma566_();
     std::shared_ptr<FutureTensor> Gamma567_();
-    std::shared_ptr<Queue> make_residualq();
-    std::shared_ptr<Queue> make_sourceq();
-    std::shared_ptr<Queue> make_normq();
+    std::shared_ptr<Queue> make_residualq(const bool reset = true);
+    std::shared_ptr<Queue> make_sourceq(const bool reset = true);
+    std::shared_ptr<Queue> make_normq(const bool reset = true);
 
   public:
     MRCI(std::shared_ptr<const SMITH_Info> ref);

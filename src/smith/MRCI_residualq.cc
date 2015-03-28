@@ -34,12 +34,12 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-shared_ptr<Queue> MRCI::MRCI::make_residualq() {
+shared_ptr<Queue> MRCI::MRCI::make_residualq(const bool reset) {
 
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
   auto residualq = make_shared<Queue>();
   vector<shared_ptr<Tensor>> tensor108 = {r};
-  auto task108 = make_shared<Task108>(tensor108);
+  auto task108 = make_shared<Task108>(tensor108, reset);
   residualq->add_task(task108);
 
   vector<IndexRange> I0_index = {closed_, active_, active_, closed_};

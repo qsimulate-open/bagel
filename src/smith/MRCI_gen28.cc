@@ -113,7 +113,7 @@ Task1357::Task1357(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRan
           subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x7, a1, x6, a2}}, in, t[0], range));
 }
 
-Task1358::Task1358(vector<shared_ptr<Tensor>> t) {
+Task1358::Task1358(vector<shared_ptr<Tensor>> t, const bool reset) : reset_(reset) {
   s_ =  t[0];
 }
 

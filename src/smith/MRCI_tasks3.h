@@ -229,11 +229,12 @@ class Task108 : public Task {
     IndexRange closed_;
     IndexRange active_;
     IndexRange virt_;
+    const bool reset_;
     void compute_() {
-      r_->zero();
+      if (reset_) r_->zero();
     }
   public:
-    Task108(std::vector<std::shared_ptr<Tensor>> t);
+    Task108(std::vector<std::shared_ptr<Tensor>> t, const bool reset);
     ~Task108() {}
 };
 

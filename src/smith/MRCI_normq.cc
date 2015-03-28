@@ -34,12 +34,12 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-shared_ptr<Queue> MRCI::MRCI::make_normq() {
+shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset) {
 
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
   auto normq = make_shared<Queue>();
   vector<shared_ptr<Tensor>> tensor1413 = {n};
-  auto task1413 = make_shared<Task1413>(tensor1413);
+  auto task1413 = make_shared<Task1413>(tensor1413, reset);
   normq->add_task(task1413);
 
   vector<IndexRange> I1778_index = {closed_, closed_, active_, active_};

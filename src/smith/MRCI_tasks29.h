@@ -344,11 +344,12 @@ class Task1413 : public Task {
     IndexRange closed_;
     IndexRange active_;
     IndexRange virt_;
+    const bool reset_;
     void compute_() {
-      n_->zero();
+      if (reset_) n_->zero();
     }
   public:
-    Task1413(std::vector<std::shared_ptr<Tensor>> t);
+    Task1413(std::vector<std::shared_ptr<Tensor>> t, const bool reset);
     ~Task1413() {}
 };
 

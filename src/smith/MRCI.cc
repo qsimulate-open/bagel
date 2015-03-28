@@ -55,10 +55,10 @@ void MRCI::MRCI::solve() {
   print_iteration();
 
   const double core_nuc = core_energy_ + ref_->geom()->nuclear_repulsion();
-  const double refen = ref_->ciwfn()->energy(ref_->target()) - core_nuc;
 
   // target state
   for (int istate = 0; istate != nstates_; ++istate) {
+    const double refen = ref_->ciwfn()->energy(istate) - core_nuc;
     // takes care of ref coefficients
     t2all_[istate]->fac(istate) = 1.0;
     nall_[istate]->fac(istate)  = 1.0;
@@ -71,7 +71,7 @@ void MRCI::MRCI::solve() {
       for (auto& ss : *sall_[istate]) {
         set_rdm(jst++, ist);
         s = ss;
-        auto queue = make_sourceq();
+        auto queue = make_sourceq(false);
         while (!queue->done())
           queue->next_compute();
       }
@@ -79,7 +79,7 @@ void MRCI::MRCI::solve() {
       for (auto& nn : *nall_[istate]) {
         set_rdm(jst++, ist);
         n = nn;
-        auto queue = make_normq();
+        auto queue = make_normq(false);
         while (!queue->done())
           queue->next_compute();
       }
@@ -87,7 +87,7 @@ void MRCI::MRCI::solve() {
     }
   }
 
-  DavidsonDiag_<Amplitude, Residual> davidson(1, 10);
+  DavidsonDiag_<Amplitude, Residual> davidson(nstates_, 10);
 
   // first iteration is trivial
   {
@@ -128,7 +128,7 @@ void MRCI::MRCI::solve() {
           set_rdm(jst++, ist);
           t2 = tt;
           n = nn;
-          auto queue = make_normq();
+          auto queue = make_normq(false);
           while (!queue->done())
             queue->next_compute();
         }
@@ -143,19 +143,21 @@ void MRCI::MRCI::solve() {
       a0.push_back(make_shared<Amplitude>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
 
       // compute residuals (named r)
-      ist = 0;
-      for (auto& tt : *t2all_[istate]) {
-        int jst = 0;
-        auto niter = nall_[istate]->begin();
-        for (auto& rr : *rtmp) {
-          set_rdm(jst++, ist);
-          t2 = tt;
-          r = rr;
-          // TODO residual should not be zero'ed out inside the loop
-          auto queue = make_residualq();
+      rtmp->zero();
+      for (int ist = 0; ist != nstates_; ++ist) { // ket sector
+        for (int jst = 0; jst != nstates_; ++jst) { // bra sector
+          set_rdm(jst, ist);
+          t2 = t2all_[istate]->at(ist);
+          r = rtmp->at(jst);
+          auto queue = make_residualq(false);
           while (!queue->done())
             queue->next_compute();
-          r->ax_plus_y(refen, *niter++);
+
+          // only diagonal contributes
+          if (ist == jst) {
+            const double refen = ref_->ciwfn()->energy(jst) - core_nuc;
+            r->ax_plus_y(refen, nall_[istate]->at(jst));
+          }
         }
       }
       shared_ptr<MultiTensor> m = rtmp->copy();
