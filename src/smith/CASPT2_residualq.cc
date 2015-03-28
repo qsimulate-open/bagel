@@ -34,12 +34,12 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-shared_ptr<Queue> CASPT2::CASPT2::make_residualq() {
+shared_ptr<Queue> CASPT2::CASPT2::make_residualq(const bool reset) {
 
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
   auto residualq = make_shared<Queue>();
   vector<shared_ptr<Tensor>> tensor69 = {r};
-  auto task69 = make_shared<Task69>(tensor69);
+  auto task69 = make_shared<Task69>(tensor69, reset);
   residualq->add_task(task69);
 
   vector<IndexRange> I0_index = {closed_, closed_, active_, active_};

@@ -264,7 +264,7 @@ Task68::Task68(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x4, x0, x3, x2, x1}}, in, t[0], range));
 }
 
-Task69::Task69(vector<shared_ptr<Tensor>> t) {
+Task69::Task69(vector<shared_ptr<Tensor>> t, const bool reset) : reset_(reset) {
   r_ =  t[0];
 }
 

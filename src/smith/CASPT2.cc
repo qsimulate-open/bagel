@@ -34,7 +34,7 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
-  this->eig_ = f1_->diag();
+  eig_ = f1_->diag();
   t2 = init_amplitude();
   r = t2->clone();
   den1 = h1_->clone();
@@ -46,32 +46,25 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
 
 void CASPT2::CASPT2::solve() {
   Timer timer;
-  this->print_iteration();
+  print_iteration();
   Timer mtimer;
-
-  if (ref_->ciwfn()->nstates() != 1)
-    throw logic_error("currently this is broken - see compute_e0");
-
-  const int target = ref_->target();
-  set_rdm(target, target);
-
   int iter = 0;
   for ( ; iter != ref_->maxiter(); ++iter) {
     shared_ptr<Queue> energyq = make_energyq();
-    this->energy_ = accumulate(energyq);
+    energy_ = accumulate(energyq);
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
     diagonal(r, t2);
-    this->energy_ += dot_product_transpose(r, t2);
+    energy_ += dot_product_transpose(r, t2);
     const double err = r->rms();
-    this->print_iteration(iter, this->energy_, err, mtimer.tick());
+    print_iteration(iter, energy_, err, mtimer.tick());
 
-    this->update_amplitude(t2, r);
+    update_amplitude(t2, r);
     r->zero();
     if (err < ref_->thresh()) break;
   }
-  this->print_iteration(iter == ref_->maxiter());
+  print_iteration(iter == ref_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
 }
 
