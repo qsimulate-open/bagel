@@ -190,7 +190,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const a
     copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
 
-#if 1
+#if 0 //Monomer
   auto out1 = make_shared<RDM<1>>(nactA+nactB);
   //Monomer RDMs
   if (subdia) {
@@ -261,10 +261,10 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const a
       }
     }
   }
+  return make_tuple(out1, out); //Monomer
 #endif
 
-//return make_tuple(nullptr, out);
-  return make_tuple(out1, out);
+  return make_tuple(nullptr, out);
 }
 
 

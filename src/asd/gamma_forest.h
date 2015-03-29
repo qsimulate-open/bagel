@@ -156,10 +156,11 @@ class GammaTree {
           base_->branch(i)->branch(j) = std::make_shared<GammaBranch<VecType>>();
           for (int k = 0; k < nops; ++k) {
             base_->branch(i)->branch(j)->branch(k) = std::make_shared<GammaBranch<VecType>>();
-            //Monomer
+            #if 0 //Monomer
             for (int l = 0; l < nops; ++l) {
               base_->branch(i)->branch(j)->branch(k)->branch(l) = std::make_shared<GammaBranch<VecType>>();
             }
+            #endif
           }
         }
       }
@@ -221,7 +222,7 @@ class GammaTask {
               for (auto& kbra : third->bras())
                 dot_product(kbra.second, cvec, third->gammas().find(kbra.first)->second->element_ptr(0, a_*norb*norb + b*norb + c));
 
-              //Monomer
+              #if 0 //Monomer
               for (int l = 0; l < nops; ++l) {
                 std::shared_ptr<GammaBranch<VecType>> fourth = third->branch(l);
                 if (!fourth->active()) continue;
@@ -233,6 +234,7 @@ class GammaTask {
                     dot_product(lbra.second, dvec, fourth->gammas().find(lbra.first)->second->element_ptr(0, a_*norb*norb*norb + b*norb*norb + c*norb + d));
                 }
               }
+              #endif
 
             }
           }
@@ -309,11 +311,12 @@ class GammaForest {
                 std::shared_ptr<GammaBranch<VecType>> third = second->branch(k);
                 if (third->active()) func(third);
 
-                //Monomer
+                #if 0 //Monomer
                 for (int l = 0; l < nops; ++l) {
                   std::shared_ptr<GammaBranch<VecType>> fourth = third->branch(l);
                   if (fourth->active()) func(fourth);
                 }
+                #endif
 
               }
             }
@@ -364,7 +367,7 @@ class GammaForest {
                   third->gammas().emplace(kbra.first, std::make_shared<Matrix>(nstates, norb * norb * norb));
                 }
 
-                //Monomer
+                #if 0 //Monomer
                 for (int l = 0; l < nops; ++l) {
                   std::shared_ptr<GammaBranch<VecType>> fourth = third->branch(l);
                   if (!fourth->active()) continue;
@@ -374,6 +377,7 @@ class GammaForest {
                     fourth->gammas().emplace(lbra.first, std::make_shared<Matrix>(nstates, norb * norb * norb * norb));
                   }
                 }
+                #endif
 
               }
             }
@@ -591,7 +595,7 @@ class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
                   for (auto& kbra : third->bras())
                     dot_product(kbra.second, cblock, third->gammas().find(kbra.first)->second->element_ptr(iket*kbra.second->ij(), a_*norb*norb + b*norb + c));
 
-                  //Monomer
+                  #if 0//Monomer
                   for (int l = 0; l < nops; ++l) {
                     std::shared_ptr<GammaBranch<RASDvec>> fourth = third->branch(l);
                     if (!fourth->active()) continue;
@@ -604,6 +608,7 @@ class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
                         dot_product(lbra.second, dblock, fourth->gammas().find(lbra.first)->second->element_ptr(iket*lbra.second->ij(), a_*norb*norb*norb + b*norb*norb + c*norb + d));
                     }
                   }
+                  #endif
 
                 }
               }
