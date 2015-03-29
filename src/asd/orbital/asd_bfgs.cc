@@ -30,6 +30,7 @@
 #include <src/util/math/step_restrict_bfgs.h>
 #include <src/util/math/hpw_diis.h>
 //#include <src/util/math/bfgs.h>
+#include <src/util/io/moldenout.h>
 
 using namespace std;
 using namespace bagel;
@@ -40,6 +41,9 @@ void ASD_BFGS::compute() {
   thresh_inter_ = idata_->get<double>("thresh_inter", 5.0e-4);
   thresh_intra_ = idata_->get<double>("thresh_intra", 5.0e-4);
   single_bfgs_ = idata_->get<bool>("single_bfgs", false);
+  bool no_active = idata_->get<bool>("no_active", false);
+  bool active_only = idata_->get<bool>("active_only", false);
+  if (no_active || active_only) single_bfgs_ = false;
 
   vector<double> previous_energy(nstate_,0.0);
 
@@ -69,15 +73,25 @@ void ASD_BFGS::compute() {
   auto inter_x = make_shared<Matrix>(nbasis_, nbasis_);
   inter_x->unit();
   vector<double> evals;
+  vector<double> inter_evals;
+  vector<double> intra_evals;
 
-  cout << "     See asd_orbital_optimization.log for further information on ASD output " << endl << endl;
+  cout << "     See asd_orbopt.log for further information on ASD output " << endl << endl;
   mute_stdcout();
-  for (int iter = 0; iter != max_iter_; ++iter) {
+  for (int iter = active_only ? 1 : 0; iter != max_iter_; ++iter) {
 
     bool inter = iter%2 == 0 ? true : false;
 
     //Perform ASD
     if (iter) dimer_->update_coeff(coeff_); //update coeff_ & integrals..
+#if 1
+    if (mpi__->rank() == 0) {
+      string out_file = "orbital_" + to_string(iter) + ".molden";
+      MoldenOut mfs(out_file);
+      mfs << dimer_->sgeom();
+      mfs << dimer_->sref();
+    }
+#endif
     Timer asd_time(0);
     auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
     asd_time.tick_print("ASD space construction");
@@ -96,7 +110,10 @@ void ASD_BFGS::compute() {
       for (auto& i : asd->energy())
         sa_en += i;
       sa_en /= double((asd->energy()).size());
-      evals.push_back(sa_en);
+      if (full) evals.push_back(sa_en);
+      else
+        if (inter) inter_evals.push_back(sa_en);
+        else       intra_evals.push_back(sa_en);
     }
 
     // compute one-body operators
@@ -145,7 +162,9 @@ void ASD_BFGS::compute() {
         inter_bfgs = make_shared<SRBFGS<ASD_RotFile>>(inter_denom);
 //      inter_bfgs = make_shared<BFGS<ASD_RotFile>>(inter_denom);
         inter_first = false;
-      } else if (intra_first) { // (iter == 1) {
+      }
+      if (intra_first) { // (iter == 1) {
+        cout << "intra_first" << endl;
         shared_ptr<const ASD_RotFile> intra_denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock, false, true);
         intra_bfgs = make_shared<SRBFGS<ASD_RotFile>>(intra_denom);
 //      intra_bfgs = make_shared<BFGS<ASD_RotFile>>(intra_denom);
@@ -175,13 +194,13 @@ void ASD_BFGS::compute() {
       if (inter) {
         auto xcopy = inter_x->log(8);
         auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, true, false);
-        inter_bfgs->check_step(evals, grad, xlog); //, /*tight*/false, limited_memory);
+        inter_bfgs->check_step(inter_evals, grad, xlog); //, /*tight*/false, limited_memory);
         a = inter_bfgs->more_sorensen_extrapolate(grad, xlog);
 //      a = inter_bfgs->extrapolate(grad, xlog);
       } else {
         auto xcopy = intra_x->log(8);
         auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, false, true);
-        intra_bfgs->check_step(evals, grad, xlog); //, /*tight*/false, limited_memory);
+        intra_bfgs->check_step(intra_evals, grad, xlog); //, /*tight*/false, limited_memory);
         a = intra_bfgs->more_sorensen_extrapolate(grad, xlog);
 //      a = intra_bfgs->extrapolate(grad, xlog);
       }
@@ -191,7 +210,7 @@ void ASD_BFGS::compute() {
     cout << " " << endl;
 
 //  *a *= -1.0;
-//  a->print("Orbital rotation parameters");
+    a->print("Orbital rotation parameters");
 
     // restore the matrix from ASD_RotFile
     shared_ptr<const Matrix> amat = a->unpack<Matrix>();
@@ -271,6 +290,7 @@ void ASD_BFGS::compute() {
       cout << "    * Max iteration reached during the quasi-Newton optimization. *     " << endl << endl;
     }
     mute_stdcout();
+    if (active_only || no_active) ++iter;
   }
   resume_stdcout();
   // ============================
