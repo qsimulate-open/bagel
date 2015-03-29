@@ -105,7 +105,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Ten
           for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
               for (int j02 = 0; j02 != nact*nact; ++j02, ++iall)
-                interm[iall] /= e0_ - (denom->denom_xx(j02) + eig_[j3] + eig_[j1]);
+                interm[iall] /= min(-0.1, e0_ - (denom->denom_xx(j02) + eig_[j3] + eig_[j1]));
 
           // move back to non-orthogonal basis
           // factor of 0.5 due to the factor in the overlap
@@ -149,7 +149,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Ten
             for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
               for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                 for (int j0 = 0; j0 != nact; ++j0, ++iall)
-                  interm[iall] /= e0_ - (denom->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]);
+                  interm[iall] /= min(-0.1, e0_ - (denom->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]));
 
           // move back to non-orthogonal basis
           dgemm_("T", "N", i0.size(), i1.size()*i2.size()*i3.size(), nact, 1.0, transp, nact, interm, nact,
@@ -190,7 +190,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Ten
             for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
               for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                 for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                  interm[iall] /= e0_ - (denom->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0]);
+                  interm[iall] /= min(-0.1, e0_ - (denom->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0]));
 
           // move back to non-orthogonal basis
           dgemm_("N", "N", i0.size()*i1.size()*i2.size(), i3.size(), nact, 1.0, interm, i0.size()*i1.size()*i2.size(), transp, nact,
@@ -231,7 +231,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Ten
           for (int j13 = 0; j13 != nact*nact; ++j13)
             for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                interm[iall] /= e0_ - (denom->denom_hh(j13) - eig_[j2] - eig_[j0]);
+                interm[iall] /= min(-0.1, e0_ - (denom->denom_hh(j13) - eig_[j2] - eig_[j0]));
 
           // move back to non-orthogonal basis
           // factor of 0.5 due to the factor in the overlap
@@ -281,7 +281,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Ten
           for (int j23 = 0; j23 != nact*nact*2; ++j23)
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                interm[iall] /= e0_ - (denom->denom_xh(j23) + eig_[j1] - eig_[j0]);
+                interm[iall] /= min(-0.1, e0_ - (denom->denom_xh(j23) + eig_[j1] - eig_[j0]));
 
           // move back to non-orthogonal basis
           dgemm_("N", "N", i0.size()*i1.size(), i2.size()*i3.size()*2, nact*nact*2, 1.0, interm, i0.size()*i1.size(), transp, nact*nact*2,
@@ -327,7 +327,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Ten
           size_t iall = 0;
           for (int j123 = 0; j123 != nact*nact*nact; ++j123)
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ++iall)
-              interm[iall] /= e0_ - (denom->denom_xhh(j123) + eig_[j1]);
+              interm[iall] /= min(-0.1, e0_ - (denom->denom_xhh(j123) + eig_[j1]));
 
           // move back to non-orthogonal basis
           dgemm_("N", "N", i1.size(), i0.size()*i2.size()*i3.size(), nact*nact*nact, 1.0, interm, i1.size(), transp, nact*nact*nact,
@@ -371,7 +371,7 @@ void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Ten
           size_t iall = 0;
           for (int j013 = 0; j013 != nact*nact*nact; ++j013)
             for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2, ++iall)
-              interm[iall] /= e0_ - (denom->denom_xxh(j013) - eig_[j2]);
+              interm[iall] /= min(-0.1, e0_ - (denom->denom_xxh(j013) - eig_[j2]));
 
           // move back to non-orthogonal basis
           dgemm_("N", "N", i2.size(), i0.size()*i1.size()*i3.size(), nact*nact*nact, 1.0, interm, i2.size(), transp, nact*nact*nact,
