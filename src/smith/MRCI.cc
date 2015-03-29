@@ -101,7 +101,7 @@ void MRCI::MRCI::solve() {
     }
   }
 
-  shared_ptr<MultiTensor> rtmp = t2all_[0]->clone();
+  shared_ptr<MultiTensor> rtmp = nall_[0]->copy();
 
   Timer mtimer;
   int iter = 0;
