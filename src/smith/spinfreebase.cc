@@ -301,10 +301,8 @@ double SpinFreeMethod::dot_product_transpose(shared_ptr<const MultiTensor> r, sh
   assert(r->nref() == t2->nref());
   double out = 0.0;
   for (int i = 0; i != r->nref(); ++i)
-    out += r->fac(i) * t2->fac(i);
-  for (auto& i : *r)
-    for (auto& j : *t2)
-      out += dot_product_transpose(i, j);
+    out += r->fac(i) * t2->fac(i)
+         + dot_product_transpose(r->at(i), t2->at(i));
   return out;
 }
 

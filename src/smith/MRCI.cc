@@ -93,7 +93,9 @@ void MRCI::MRCI::solve() {
       a0.push_back(make_shared<Amplitude>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
       r0.push_back(make_shared<Residual>(sall_[istate]->copy(), this));
     }
-    davidson.compute(a0, r0);
+    energy_ = davidson.compute(a0, r0);
+    for (int istate = 0; istate != nstates_; ++istate)
+      assert(fabs(energy_[istate]+core_nuc - ref_->ciwfn()->energy(istate)) < 1.0e-8);
   }
 
   // set the result to t2
@@ -121,7 +123,7 @@ void MRCI::MRCI::solve() {
         for (int jst = 0; jst != nstates_; ++jst) {
           set_rdm(jst, ist);
           t2 = t2all_[istate]->at(ist);
-          n  = nall_[istate]->at(jst);;
+          n  = nall_[istate]->at(jst);
           auto queue = make_normq(false);
           while (!queue->done())
             queue->next_compute();
@@ -151,15 +153,14 @@ void MRCI::MRCI::solve() {
       // <ab/ij| T |0_ist> Eref_ist.
       {
         shared_ptr<MultiTensor> m = t2all_[istate]->copy();
-        // First weighted T2 amplitude
-        for (int ist = 0; ist != nstates_; ++ist)
-          m->at(ist)->scale(ref_->ciwfn()->energy(ist) - core_nuc);
-        // then add it to residual
         for (int ist = 0; ist != nstates_; ++ist) {
+          // First weighted T2 amplitude
+          m->at(ist)->scale(ref_->ciwfn()->energy(ist) - core_nuc);
+          // then add it to residual
           for (int jst = 0; jst != nstates_; ++jst) {
             set_rdm(jst, ist);
             t2 = m->at(ist);
-            n  = rtmp->at(jst);;
+            n  = rtmp->at(jst);
             auto queue = make_normq(false);
             while (!queue->done())
               queue->next_compute();
@@ -169,13 +170,8 @@ void MRCI::MRCI::solve() {
 
       {
         shared_ptr<MultiTensor> m = rtmp->copy();
-        int j = 0;
-        for (auto& i : *sall_[istate]) {
-          double tmp = 0.0;
-          for (auto& j : *t2all_[istate])
-            tmp += dot_product_transpose(i, j);
-          m->fac(j++) += tmp;
-        }
+        for (int ist = 0; ist != nstates_; ++ist)
+          m->fac(ist) = dot_product_transpose(sall_[ist], t2all_[istate]);
         r0.push_back(make_shared<Residual>(m, this));
       }
     }
