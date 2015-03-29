@@ -34,21 +34,6 @@ using namespace bagel::SMITH;
 using namespace bagel::SMITH::MRCI;
 
 void Task1300::Task_local::compute() {
-  const Index x5 = b(0);
-  const Index a3 = b(1);
-  const Index x4 = b(2);
-  const Index x3 = b(3);
-  // tensor label: I1639
-  std::unique_ptr<double[]> odata = out()->move_block(x5, a3, x4, x3);
-  {
-    // tensor label: t2
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, a3, x4, x3);
-    sort_indices<0,1,2,3,1,1,-1,1>(i0data, odata, x5.size(), a3.size(), x4.size(), x3.size());
-  }
-  out()->put_block(odata, x5, a3, x4, x3);
-}
-
-void Task1301::Task_local::compute() {
   const Index a1 = b(0);
   const Index x0 = b(1);
   const Index x1 = b(2);
@@ -76,7 +61,7 @@ void Task1301::Task_local::compute() {
   out()->put_block(odata, a1, x0, x1, a2);
 }
 
-void Task1302::Task_local::compute() {
+void Task1301::Task_local::compute() {
   const Index c3 = b(0);
   const Index x5 = b(1);
   const Index x0 = b(2);
@@ -106,7 +91,7 @@ void Task1302::Task_local::compute() {
   out()->put_block(odata, c3, x5, x0, x1);
 }
 
-void Task1303::Task_local::compute() {
+void Task1302::Task_local::compute() {
   const Index x4 = b(0);
   const Index c3 = b(1);
   const Index x3 = b(2);
@@ -121,7 +106,7 @@ void Task1303::Task_local::compute() {
   out()->put_block(odata, x4, c3, x3, x2);
 }
 
-void Task1304::Task_local::compute() {
+void Task1303::Task_local::compute() {
   const Index c3 = b(0);
   const Index x5 = b(1);
   const Index x0 = b(2);
@@ -151,7 +136,7 @@ void Task1304::Task_local::compute() {
   out()->put_block(odata, c3, x5, x0, x1);
 }
 
-void Task1305::Task_local::compute() {
+void Task1304::Task_local::compute() {
   const Index x4 = b(0);
   const Index x3 = b(1);
   const Index x2 = b(2);
@@ -166,7 +151,7 @@ void Task1305::Task_local::compute() {
   out()->put_block(odata, x4, x3, x2, c3);
 }
 
-void Task1306::Task_local::compute() {
+void Task1305::Task_local::compute() {
   const Index a1 = b(0);
   const Index x0 = b(1);
   const Index x1 = b(2);
@@ -194,7 +179,7 @@ void Task1306::Task_local::compute() {
   out()->put_block(odata, a1, x0, x1, a2);
 }
 
-void Task1307::Task_local::compute() {
+void Task1306::Task_local::compute() {
   const Index x2 = b(0);
   const Index a2 = b(1);
   const Index x3 = b(2);
@@ -222,7 +207,7 @@ void Task1307::Task_local::compute() {
   out()->put_block(odata, x2, a2, x3, a1);
 }
 
-void Task1308::Task_local::compute() {
+void Task1307::Task_local::compute() {
   const Index x2 = b(0);
   const Index c4 = b(1);
   const Index a3 = b(2);
@@ -237,7 +222,7 @@ void Task1308::Task_local::compute() {
   out()->put_block(odata, x2, c4, a3, a2);
 }
 
-void Task1309::Task_local::compute() {
+void Task1308::Task_local::compute() {
   const Index a1 = b(0);
   const Index x0 = b(1);
   const Index x1 = b(2);
@@ -269,7 +254,7 @@ void Task1309::Task_local::compute() {
   out()->put_block(odata, a1, x0, x1, a2);
 }
 
-void Task1310::Task_local::compute() {
+void Task1309::Task_local::compute() {
   const Index a2 = b(0);
   const Index x3 = b(1);
   const Index x2 = b(2);
@@ -297,7 +282,7 @@ void Task1310::Task_local::compute() {
   out()->put_block(odata, a2, x3, x2, x5, a1, x4);
 }
 
-void Task1311::Task_local::compute() {
+void Task1310::Task_local::compute() {
   const Index a3 = b(0);
   const Index a2 = b(1);
   const Index x3 = b(2);
@@ -317,7 +302,7 @@ void Task1311::Task_local::compute() {
   out()->put_block(odata, a3, a2, x3, x2);
 }
 
-void Task1312::Task_local::compute() {
+void Task1311::Task_local::compute() {
   const Index a1 = b(0);
   const Index x0 = b(1);
   const Index x1 = b(2);
@@ -349,7 +334,7 @@ void Task1312::Task_local::compute() {
   out()->put_block(odata, a1, x0, x1, a2);
 }
 
-void Task1313::Task_local::compute() {
+void Task1312::Task_local::compute() {
   const Index x3 = b(0);
   const Index x2 = b(1);
   const Index a2 = b(2);
@@ -377,7 +362,7 @@ void Task1313::Task_local::compute() {
   out()->put_block(odata, x3, x2, a2, x5, a1, x4);
 }
 
-void Task1314::Task_local::compute() {
+void Task1313::Task_local::compute() {
   const Index a3 = b(0);
   const Index x3 = b(1);
   const Index x2 = b(2);
@@ -392,7 +377,7 @@ void Task1314::Task_local::compute() {
   out()->put_block(odata, a3, x3, x2, a2);
 }
 
-void Task1315::Task_local::compute() {
+void Task1314::Task_local::compute() {
   const Index a1 = b(0);
   const Index x0 = b(1);
   const Index x1 = b(2);
@@ -424,7 +409,7 @@ void Task1315::Task_local::compute() {
   out()->put_block(odata, a1, x0, x1, a2);
 }
 
-void Task1316::Task_local::compute() {
+void Task1315::Task_local::compute() {
   const Index x3 = b(0);
   const Index a2 = b(1);
   const Index x2 = b(2);
@@ -452,7 +437,7 @@ void Task1316::Task_local::compute() {
   out()->put_block(odata, x3, a2, x2, x5, a1, x4);
 }
 
-void Task1317::Task_local::compute() {
+void Task1316::Task_local::compute() {
   const Index x3 = b(0);
   const Index a2 = b(1);
   const Index a3 = b(2);
@@ -467,7 +452,7 @@ void Task1317::Task_local::compute() {
   out()->put_block(odata, x3, a2, a3, x2);
 }
 
-void Task1318::Task_local::compute() {
+void Task1317::Task_local::compute() {
   const Index c2 = b(0);
   const Index x1 = b(1);
   const Index c1 = b(2);
@@ -482,7 +467,7 @@ void Task1318::Task_local::compute() {
   out()->put_block(odata, c2, x1, c1, x0);
 }
 
-void Task1319::Task_local::compute() {
+void Task1318::Task_local::compute() {
   const Index c1 = b(0);
   const Index c2 = b(1);
   const Index x1 = b(2);
@@ -510,7 +495,7 @@ void Task1319::Task_local::compute() {
   out()->put_block(odata, c1, c2, x1, x0);
 }
 
-void Task1320::Task_local::compute() {
+void Task1319::Task_local::compute() {
   const Index c1 = b(0);
   const Index c2 = b(1);
   const Index x3 = b(2);
@@ -538,7 +523,7 @@ void Task1320::Task_local::compute() {
   out()->put_block(odata, c1, c2, x3, x2);
 }
 
-void Task1321::Task_local::compute() {
+void Task1320::Task_local::compute() {
   const Index c1 = b(0);
   const Index c4 = b(1);
   const Index c2 = b(2);
@@ -553,7 +538,7 @@ void Task1321::Task_local::compute() {
   out()->put_block(odata, c1, c4, c2, c3);
 }
 
-void Task1322::Task_local::compute() {
+void Task1321::Task_local::compute() {
   const Index c1 = b(0);
   const Index c2 = b(1);
   const Index x3 = b(2);
@@ -581,7 +566,7 @@ void Task1322::Task_local::compute() {
   out()->put_block(odata, c1, c2, x3, x2);
 }
 
-void Task1323::Task_local::compute() {
+void Task1322::Task_local::compute() {
   const Index a4 = b(0);
   const Index x3 = b(1);
   const Index a3 = b(2);
@@ -596,7 +581,7 @@ void Task1323::Task_local::compute() {
   out()->put_block(odata, a4, x3, a3, x2);
 }
 
-void Task1324::Task_local::compute() {
+void Task1323::Task_local::compute() {
   const Index c1 = b(0);
   const Index c2 = b(1);
   const Index x1 = b(2);
@@ -624,7 +609,7 @@ void Task1324::Task_local::compute() {
   out()->put_block(odata, c1, c2, x1, x0);
 }
 
-void Task1325::Task_local::compute() {
+void Task1324::Task_local::compute() {
   const Index c1 = b(0);
   const Index x5 = b(1);
   const Index c2 = b(2);
@@ -639,7 +624,7 @@ void Task1325::Task_local::compute() {
   out()->put_block(odata, c1, x5, c2, x4);
 }
 
-void Task1326::Task_local::compute() {
+void Task1325::Task_local::compute() {
   const Index c1 = b(0);
   const Index c2 = b(1);
   const Index x1 = b(2);
@@ -667,7 +652,7 @@ void Task1326::Task_local::compute() {
   out()->put_block(odata, c1, c2, x1, x0);
 }
 
-void Task1327::Task_local::compute() {
+void Task1326::Task_local::compute() {
   const Index c1 = b(0);
   const Index x7 = b(1);
   const Index c2 = b(2);
@@ -682,7 +667,7 @@ void Task1327::Task_local::compute() {
   out()->put_block(odata, c1, x7, c2, x6);
 }
 
-void Task1328::Task_local::compute() {
+void Task1327::Task_local::compute() {
   const Index c3 = b(0);
   const Index a4 = b(1);
   const Index c1 = b(2);
@@ -697,7 +682,7 @@ void Task1328::Task_local::compute() {
   out()->put_block(odata, c3, a4, c1, a2);
 }
 
-void Task1329::Task_local::compute() {
+void Task1328::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index a2 = b(2);
@@ -725,7 +710,7 @@ void Task1329::Task_local::compute() {
   out()->put_block(odata, c1, c3, a2, a4);
 }
 
-void Task1330::Task_local::compute() {
+void Task1329::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index x1 = b(2);
@@ -753,7 +738,7 @@ void Task1330::Task_local::compute() {
   out()->put_block(odata, c1, c3, x1, x0);
 }
 
-void Task1331::Task_local::compute() {
+void Task1330::Task_local::compute() {
   const Index c1 = b(0);
   const Index x3 = b(1);
   const Index c3 = b(2);
@@ -768,7 +753,7 @@ void Task1331::Task_local::compute() {
   out()->put_block(odata, c1, x3, c3, x2);
 }
 
-void Task1332::Task_local::compute() {
+void Task1331::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index a2 = b(2);
@@ -796,7 +781,7 @@ void Task1332::Task_local::compute() {
   out()->put_block(odata, c1, c3, a2, a4);
 }
 
-void Task1333::Task_local::compute() {
+void Task1332::Task_local::compute() {
   const Index c1 = b(0);
   const Index c6 = b(1);
   const Index c3 = b(2);
@@ -811,7 +796,7 @@ void Task1333::Task_local::compute() {
   out()->put_block(odata, c1, c6, c3, c5);
 }
 
-void Task1334::Task_local::compute() {
+void Task1333::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index a2 = b(2);
@@ -839,7 +824,7 @@ void Task1334::Task_local::compute() {
   out()->put_block(odata, c1, c3, a2, a4);
 }
 
-void Task1335::Task_local::compute() {
+void Task1334::Task_local::compute() {
   const Index c1 = b(0);
   const Index c6 = b(1);
   const Index c3 = b(2);
@@ -854,7 +839,7 @@ void Task1335::Task_local::compute() {
   out()->put_block(odata, c1, c6, c3, c5);
 }
 
-void Task1336::Task_local::compute() {
+void Task1335::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index a2 = b(2);
@@ -882,7 +867,7 @@ void Task1336::Task_local::compute() {
   out()->put_block(odata, c1, c3, a2, a4);
 }
 
-void Task1337::Task_local::compute() {
+void Task1336::Task_local::compute() {
   const Index a6 = b(0);
   const Index a2 = b(1);
   const Index a5 = b(2);
@@ -897,7 +882,7 @@ void Task1337::Task_local::compute() {
   out()->put_block(odata, a6, a2, a5, a4);
 }
 
-void Task1338::Task_local::compute() {
+void Task1337::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index a2 = b(2);
@@ -925,7 +910,7 @@ void Task1338::Task_local::compute() {
   out()->put_block(odata, c1, c3, a2, a4);
 }
 
-void Task1339::Task_local::compute() {
+void Task1338::Task_local::compute() {
   const Index a6 = b(0);
   const Index a2 = b(1);
   const Index a5 = b(2);
@@ -940,7 +925,7 @@ void Task1339::Task_local::compute() {
   out()->put_block(odata, a6, a2, a5, a4);
 }
 
-void Task1340::Task_local::compute() {
+void Task1339::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index a2 = b(2);
@@ -968,7 +953,7 @@ void Task1340::Task_local::compute() {
   out()->put_block(odata, c1, c3, a2, a4);
 }
 
-void Task1341::Task_local::compute() {
+void Task1340::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index x3 = b(2);
@@ -996,7 +981,7 @@ void Task1341::Task_local::compute() {
   out()->put_block(odata, c1, c3, x3, x2);
 }
 
-void Task1342::Task_local::compute() {
+void Task1341::Task_local::compute() {
   const Index c1 = b(0);
   const Index x1 = b(1);
   const Index c3 = b(2);
@@ -1011,7 +996,7 @@ void Task1342::Task_local::compute() {
   out()->put_block(odata, c1, x1, c3, x0);
 }
 
-void Task1343::Task_local::compute() {
+void Task1342::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index a2 = b(2);
@@ -1036,7 +1021,7 @@ void Task1343::Task_local::compute() {
   out()->put_block(odata, c1, c3, a2, a4);
 }
 
-void Task1344::Task_local::compute() {
+void Task1343::Task_local::compute() {
   const Index c1 = b(0);
   const Index a4 = b(1);
   const Index c3 = b(2);
@@ -1056,7 +1041,7 @@ void Task1344::Task_local::compute() {
   out()->put_block(odata, c1, a4, c3, a2);
 }
 
-void Task1345::Task_local::compute() {
+void Task1344::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index a2 = b(2);
@@ -1081,7 +1066,7 @@ void Task1345::Task_local::compute() {
   out()->put_block(odata, c1, c3, a2, a4);
 }
 
-void Task1346::Task_local::compute() {
+void Task1345::Task_local::compute() {
   const Index c1 = b(0);
   const Index a4 = b(1);
   const Index c3 = b(2);
@@ -1101,7 +1086,7 @@ void Task1346::Task_local::compute() {
   out()->put_block(odata, c1, a4, c3, a2);
 }
 
-void Task1347::Task_local::compute() {
+void Task1346::Task_local::compute() {
   const Index x1 = b(0);
   const Index a2 = b(1);
   const Index x0 = b(2);
@@ -1116,7 +1101,7 @@ void Task1347::Task_local::compute() {
   out()->put_block(odata, x1, a2, x0, a1);
 }
 
-void Task1348::Task_local::compute() {
+void Task1347::Task_local::compute() {
   const Index x1 = b(0);
   const Index x0 = b(1);
   const Index a1 = b(2);
@@ -1144,7 +1129,7 @@ void Task1348::Task_local::compute() {
   out()->put_block(odata, x1, x0, a1, a2);
 }
 
-void Task1349::Task_local::compute() {
+void Task1348::Task_local::compute() {
   const Index c4 = b(0);
   const Index c3 = b(1);
   const Index x1 = b(2);
@@ -1170,6 +1155,21 @@ void Task1349::Task_local::compute() {
   }
   sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, x1.size(), x0.size(), c4.size(), c3.size());
   out()->put_block(odata, c4, c3, x1, x0);
+}
+
+void Task1349::Task_local::compute() {
+  const Index x3 = b(0);
+  const Index c4 = b(1);
+  const Index x2 = b(2);
+  const Index c3 = b(3);
+  // tensor label: I1642
+  std::unique_ptr<double[]> odata = out()->move_block(x3, c4, x2, c3);
+  {
+    // tensor label: v2
+    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, c4, x2, c3);
+    sort_indices<0,1,2,3,1,1,-2,1>(i0data, odata, x3.size(), c4.size(), x2.size(), c3.size());
+  }
+  out()->put_block(odata, x3, c4, x2, c3);
 }
 
 #endif

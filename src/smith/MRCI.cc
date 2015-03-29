@@ -44,8 +44,12 @@ MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
     for (auto& j : *tmp)
       j = init_amplitude();
     t2all_.push_back(tmp);
-    sall_.push_back(tmp->clone());
-    nall_.push_back(tmp->clone());
+
+    auto tmp2 = make_shared<MultiTensor>(nstates_);
+    for (auto& j : *tmp2)
+      j = init_residual();
+    sall_.push_back(tmp2);
+    nall_.push_back(tmp2->copy());
   }
 }
 
@@ -67,19 +71,9 @@ void MRCI::MRCI::solve() {
     for (int jst = 0; jst != nstates_; ++jst) {
       set_rdm(jst, istate);
       s = sall_[istate]->at(jst);
-      auto queue = make_sourceq(false);
+      auto queue = make_sourceq(false, jst == istate);
       while (!queue->done())
         queue->next_compute();
-    }
-    for (int ist = 0; ist != nstates_; ++ist) {
-      t2 = t2all_[istate]->at(ist);
-      for (int jst = 0; jst != nstates_; ++jst) {
-        set_rdm(jst, ist);
-        n = nall_[istate]->at(jst);
-        auto queue = make_normq(false);
-        while (!queue->done())
-          queue->next_compute();
-      }
     }
   }
 
@@ -124,7 +118,7 @@ void MRCI::MRCI::solve() {
           set_rdm(jst, ist);
           t2 = t2all_[istate]->at(ist);
           n  = nall_[istate]->at(jst);
-          auto queue = make_normq(false);
+          auto queue = make_normq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
         }
@@ -144,7 +138,7 @@ void MRCI::MRCI::solve() {
           set_rdm(jst, ist);
           t2 = t2all_[istate]->at(ist);
           r = rtmp->at(jst);
-          auto queue = make_residualq(false);
+          auto queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
         }
@@ -161,7 +155,7 @@ void MRCI::MRCI::solve() {
             set_rdm(jst, ist);
             t2 = m->at(ist);
             n  = rtmp->at(jst);
-            auto queue = make_normq(false);
+            auto queue = make_normq(false, jst == ist);
             while (!queue->done())
               queue->next_compute();
           }

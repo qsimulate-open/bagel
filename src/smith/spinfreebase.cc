@@ -243,6 +243,52 @@ double SpinFreeMethod::compute_e0() {
 }
 
 
+// local function to compress the following
+void SpinFreeMethod::loop_over(std::function<void(const Index&, const Index&, const Index&, const Index&)> func) const {
+  for (auto& i3 : virt_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          func(i0, i1, i2, i3);
+  for (auto& i2 : active_)
+    for (auto& i0 : active_)
+      for (auto& i3 : virt_)
+        for (auto& i1 : virt_)
+          func(i0, i1, i2, i3);
+  for (auto& i0 : active_)
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          func(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          func(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i2 : closed_)
+        for (auto& i0 : closed_)
+          func(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_) {
+          func(i0, i1, i2, i3);
+          func(i2, i1, i0, i3);
+        }
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i0 : active_)
+        for (auto& i1 : virt_)
+          func(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i0 : active_)
+        for (auto& i2 : closed_)
+          func(i0, i1, i2, i3);
+}
+
 shared_ptr<Tensor> SpinFreeMethod::init_amplitude() const {
   shared_ptr<Tensor> out = v2_->clone();
   auto put = [this, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
@@ -251,48 +297,20 @@ shared_ptr<Tensor> SpinFreeMethod::init_amplitude() const {
     fill_n(buf.get(), size, 0.0);
     out->put_block(buf, i0, i1, i2, i3);
   };
-  for (auto& i3 : virt_)
-    for (auto& i2 : closed_)
-      for (auto& i1 : virt_)
-        for (auto& i0 : closed_)
-          put(i0, i1, i2, i3);
-  for (auto& i2 : active_)
-    for (auto& i0 : active_)
-      for (auto& i3 : virt_)
-        for (auto& i1 : virt_)
-          put(i0, i1, i2, i3);
-  for (auto& i0 : active_)
-    for (auto& i3 : virt_)
-      for (auto& i2 : closed_)
-        for (auto& i1 : virt_)
-          put(i0, i1, i2, i3);
-  for (auto& i3 : active_)
-    for (auto& i2 : closed_)
-      for (auto& i1 : virt_)
-        for (auto& i0 : closed_)
-          put(i0, i1, i2, i3);
-  for (auto& i3 : active_)
-    for (auto& i1 : active_)
-      for (auto& i2 : closed_)
-        for (auto& i0 : closed_)
-          put(i0, i1, i2, i3);
-  for (auto& i3 : active_)
-    for (auto& i2 : active_)
-      for (auto& i1 : virt_)
-        for (auto& i0 : closed_) {
-          put(i0, i1, i2, i3);
-          put(i2, i1, i0, i3);
-        }
-  for (auto& i3 : active_)
-    for (auto& i2 : active_)
-      for (auto& i0 : active_)
-        for (auto& i1 : virt_)
-          put(i0, i1, i2, i3);
-  for (auto& i3 : active_)
-    for (auto& i1 : active_)
-      for (auto& i0 : active_)
-        for (auto& i2 : closed_)
-          put(i0, i1, i2, i3);
+  loop_over(put);
+  return out;
+}
+
+
+shared_ptr<Tensor> SpinFreeMethod::init_residual() const {
+  shared_ptr<Tensor> out = v2_->clone();
+  auto put = [this, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+    const size_t size = v2_->get_size_alloc(i2, i3, i0, i1);
+    unique_ptr<double[]> buf(new double[size]);
+    fill_n(buf.get(), size, 0.0);
+    out->put_block(buf, i2, i3, i0, i1);
+  };
+  loop_over(put);
   return out;
 }
 
@@ -308,59 +326,18 @@ double SpinFreeMethod::dot_product_transpose(shared_ptr<const MultiTensor> r, sh
 
 
 double SpinFreeMethod::dot_product_transpose(shared_ptr<const Tensor> r, shared_ptr<const Tensor> t2) const {
-  auto prod = [this, &r, &t2](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
-    const size_t size = r->get_size_alloc(i2, i3, i0, i1);
-    if (size == 0) return 0.0;
-
-    unique_ptr<double[]> tmp0 = t2->get_block(i0, i1, i2, i3);
-    unique_ptr<double[]> tmp1(new double[size]);
-    sort_indices<2,3,0,1,0,1,1,1>(tmp0.get(), tmp1.get(), i0.size(), i1.size(), i2.size(), i3.size());
-
-    return blas::dot_product(tmp1.get(), size, r->get_block(i2, i3, i0, i1).get());
-  };
   double out = 0.0;
-  for (auto& i3 : virt_)
-    for (auto& i2 : closed_)
-      for (auto& i1 : virt_)
-        for (auto& i0 : closed_)
-          out += prod(i0, i1, i2, i3);
-  for (auto& i2 : active_)
-    for (auto& i0 : active_)
-      for (auto& i3 : virt_)
-        for (auto& i1 : virt_)
-          out += prod(i0, i1, i2, i3);
-  for (auto& i0 : active_)
-    for (auto& i3 : virt_)
-      for (auto& i2 : closed_)
-        for (auto& i1 : virt_)
-          out += prod(i0, i1, i2, i3);
-  for (auto& i3 : active_)
-    for (auto& i2 : closed_)
-      for (auto& i1 : virt_)
-        for (auto& i0 : closed_)
-          out += prod(i0, i1, i2, i3);
-  for (auto& i3 : active_)
-    for (auto& i1 : active_)
-      for (auto& i2 : closed_)
-        for (auto& i0 : closed_)
-          out += prod(i0, i1, i2, i3);
-  for (auto& i3 : active_)
-    for (auto& i2 : active_)
-      for (auto& i1 : virt_)
-        for (auto& i0 : closed_) {
-          out += prod(i0, i1, i2, i3);
-          out += prod(i2, i1, i0, i3);
-        }
-  for (auto& i3 : active_)
-    for (auto& i2 : active_)
-      for (auto& i0 : active_)
-        for (auto& i1 : virt_)
-          out += prod(i0, i1, i2, i3);
-  for (auto& i3 : active_)
-    for (auto& i1 : active_)
-      for (auto& i0 : active_)
-        for (auto& i2 : closed_)
-          out += prod(i0, i1, i2, i3);
+  auto prod = [this, &r, &t2, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+    const size_t size = r->get_size_alloc(i2, i3, i0, i1);
+    if (size != 0) {
+      unique_ptr<double[]> tmp0 = t2->get_block(i0, i1, i2, i3);
+      unique_ptr<double[]> tmp1(new double[size]);
+      sort_indices<2,3,0,1,0,1,1,1>(tmp0.get(), tmp1.get(), i0.size(), i1.size(), i2.size(), i3.size());
+
+      out += blas::dot_product(tmp1.get(), size, r->get_block(i2, i3, i0, i1).get());
+    }
+  };
+  loop_over(prod);
   return out;
 }
 

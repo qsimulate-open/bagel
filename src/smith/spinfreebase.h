@@ -107,8 +107,11 @@ class SpinFreeMethod {
     void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r, std::shared_ptr<const Denom> denom = nullptr) const;
     void update_amplitude(std::shared_ptr<MultiTensor> t, std::shared_ptr<const MultiTensor> r) const;
 
-    // initialize t2 amplitude
+    // utility function
+    void loop_over(std::function<void(const Index&, const Index&, const Index&, const Index&)>) const;
+    // initialize t2 and r amplitude
     std::shared_ptr<Tensor> init_amplitude() const;
+    std::shared_ptr<Tensor> init_residual() const;
 
     // diagonal part of CASPT2 (for efficiency)
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
