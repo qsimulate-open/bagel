@@ -52,7 +52,7 @@ Tensor::Tensor(vector<IndexRange> in) : range_(in), rank_(in.size()), initialize
     data_ = make_shared<Storage>(hashmap, false);
   } else {
     rank_ = 0;
-    map<size_t, size_t> hashmap {{0lu, 1lu}};
+    map<size_t, size_t> hashmap {{generate_hash_key(), 1lu}};
     data_ = make_shared<Storage>(hashmap, false);
   }
 }
