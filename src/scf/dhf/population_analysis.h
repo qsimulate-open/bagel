@@ -30,9 +30,8 @@
 // Helper function to perform population analysis on 4-component molecular orbitals
 // The "key" parameter gives information about the format of the coefficient matrix and desired output
 //    key = 0:  Treat spin-orbitals separately (e.g., for jobs with a magnetic field)
-//    key = 1:  Orbitals ordered as in the Dirac method:  1a, 1b, 2a, 2b...
-//    key = 2:  Striped format from ZCASSCF
-//    key = 3:  Block format from ZCASSCF (not implemented)
+//    key = 1:  Striped format (1a, 1b, 2a, 2b...)
+//    key = 2:  Block format   (1a, 2a... 1b, 2b...)
 // When working with spatial MOs, we average the contributions of the two spin-MOs, although they are normally identical
 
 #include <cassert>
@@ -69,9 +68,6 @@ void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView co
       case 2:
         offset = (i < nclosed) ? 0 : (i < nclosed + nact) ? nclosed : (nclosed + nact);
         blocksize = (i < nclosed) ? nclosed : (i < nclosed + nact) ? nact : coeff.mdim()/2 - nclosed - nact;
-        break;
-      case 3:
-        throw std::runtime_error("Population analysis currently assumes striped format.");
         break;
       default:
         assert(false);
