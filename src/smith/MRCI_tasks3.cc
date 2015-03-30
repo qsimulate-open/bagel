@@ -119,7 +119,7 @@ void Task102::Task_local::compute() {
   // tensor label: Gamma548
   std::unique_ptr<double[]> odata = out()->move_block(x0, x5, x1, x4);
   // associated with merged
-  std::unique_ptr<double[]> fdata = in(3)->get_block(x3, x2);
+  std::unique_ptr<double[]> fdata = in(4)->get_block(x3, x2);
   // rdm0 merged case
   if (x1 == x4 && x0 == x2 && x3 == x5) {
     for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -141,7 +141,7 @@ void Task102::Task_local::compute() {
     }
   }
   if (x0 == x2 && x3 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x5);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x5);
     for (int i5 = 0; i5 != x5.size(); ++i5) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
@@ -154,7 +154,7 @@ void Task102::Task_local::compute() {
     }
   }
   if (x0 == x2 && x3 == x5) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
@@ -177,7 +177,7 @@ void Task102::Task_local::compute() {
     }
   }
   if (x3 == x5 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i5 = 0; i5 != x5.size(); ++i5) {
@@ -200,7 +200,7 @@ void Task102::Task_local::compute() {
     }
   }
   if (x3 == x4 && x0 == x5) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -213,7 +213,7 @@ void Task102::Task_local::compute() {
     }
   }
   if (x3 == x4 && x1 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x5);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x5);
     for (int i5 = 0; i5 != x5.size(); ++i5) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -226,7 +226,7 @@ void Task102::Task_local::compute() {
     }
   }
   if (x3 == x5 && x1 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i5 = 0; i5 != x5.size(); ++i5) {
@@ -239,7 +239,7 @@ void Task102::Task_local::compute() {
     }
   }
   if (x3 == x5 && x1 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i5 = 0; i5 != x5.size(); ++i5) {
@@ -252,7 +252,7 @@ void Task102::Task_local::compute() {
     }
   }
   if (x3 == x4 && x1 == x5) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -265,7 +265,7 @@ void Task102::Task_local::compute() {
     }
   }
   if (x3 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x5, x1, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x5, x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i5 = 0; i5 != x5.size(); ++i5) {
@@ -280,7 +280,7 @@ void Task102::Task_local::compute() {
     }
   }
   if (x3 == x5) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x4, x0, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x4, x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -309,9 +309,9 @@ void Task103::Task_local::compute() {
   // tensor label: Gamma549
   std::unique_ptr<double[]> odata = out()->move_block(x0, x7, x1, x6);
   // associated with merged
-  std::unique_ptr<double[]> fdata = in(4)->get_block(x5, x4, x3, x2);
+  std::unique_ptr<double[]> fdata = in(5)->get_block(x5, x4, x3, x2);
   if (x0 == x2 && x3 == x7 && x1 == x6) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
@@ -326,7 +326,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x1 == x7 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -341,7 +341,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7 && x1 == x6 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -356,7 +356,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x1 == x7 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -371,7 +371,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7 && x1 == x2 && x0 == x6) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -386,7 +386,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7 && x1 == x4 && x0 == x6) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -401,7 +401,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7 && x0 == x6) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4, x1, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x5, x4, x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -418,7 +418,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x1 == x2 && x0 == x7) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -433,7 +433,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x1 == x4 && x0 == x7) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -448,7 +448,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x0 == x7) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4, x1, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x5, x4, x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -465,7 +465,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7 && x1 == x6) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4, x0, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x5, x4, x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -482,7 +482,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x1 == x7) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4, x0, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x5, x4, x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -511,7 +511,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x0 == x2 && x1 == x4 && x3 == x6) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x7);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x7);
     for (int i7 = 0; i7 != x7.size(); ++i7) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
@@ -538,7 +538,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x0 == x2 && x1 == x4 && x3 == x7) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x6);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x6);
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
@@ -553,7 +553,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x0 == x2 && x5 == x6 && x1 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x7);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x7);
     for (int i7 = 0; i7 != x7.size(); ++i7) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
@@ -568,7 +568,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x0 == x2 && x1 == x4 && x5 == x7) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x6);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x6);
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
@@ -595,7 +595,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x1 == x6 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -622,7 +622,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x1 == x7 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -637,7 +637,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x3 == x4 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x7);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x7);
     for (int i7 = 0; i7 != x7.size(); ++i7) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -652,7 +652,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x3 == x4 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x6);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x6);
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -667,7 +667,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x3 == x6 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -682,7 +682,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x7, x5, x4);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x7, x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -699,7 +699,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x3 == x7 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -714,7 +714,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x6, x5, x4);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x6, x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -731,7 +731,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x7, x1, x4);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x3, x7, x1, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -748,7 +748,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x0 == x2) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x6, x3, x4);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x6, x3, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -777,7 +777,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x1 == x2 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x7);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x7);
     for (int i7 = 0; i7 != x7.size(); ++i7) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -804,7 +804,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7 && x1 == x2 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x6);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x6);
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -819,7 +819,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x1 == x2 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x7);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x7);
     for (int i7 = 0; i7 != x7.size(); ++i7) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -834,7 +834,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x1 == x2 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x6);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x6);
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -849,7 +849,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x1 == x6 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -864,7 +864,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x1 == x7 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -879,7 +879,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x3 == x6 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -894,7 +894,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x7, x1, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x5, x7, x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -911,7 +911,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x3 == x7 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -926,7 +926,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x6, x5, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x6, x5, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -943,7 +943,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x7, x3, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x7, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -960,7 +960,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x0 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x6, x3, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x6, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -989,7 +989,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x1 == x2 && x0 == x6) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1004,7 +1004,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x1 == x4 && x0 == x6) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1019,7 +1019,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x3 == x4 && x0 == x6) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1034,7 +1034,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x0 == x6) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x4, x3, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x4, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -1063,7 +1063,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x1 == x2 && x0 == x7) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1078,7 +1078,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x1 == x4 && x0 == x7) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1093,7 +1093,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x3 == x4 && x0 == x7) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1108,7 +1108,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x0 == x7) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x4, x3, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x4, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -1125,7 +1125,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x3 == x4 && x1 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x7);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x7);
     for (int i7 = 0; i7 != x7.size(); ++i7) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1140,7 +1140,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x3 == x4 && x1 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x6);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x6);
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1155,7 +1155,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x3 == x6 && x1 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1170,7 +1170,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x1 == x2) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x7, x5, x4);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x7, x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1187,7 +1187,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x3 == x7 && x1 == x2) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x4);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1202,7 +1202,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7 && x1 == x2) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x6, x5, x4);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x6, x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1219,7 +1219,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x1 == x2) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x7, x3, x4);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x7, x3, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1236,7 +1236,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x1 == x2) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x6, x0, x4);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x3, x6, x0, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1253,7 +1253,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x3 == x6 && x1 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1268,7 +1268,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6 && x1 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x7, x5, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x7, x5, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1285,7 +1285,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x3 == x7 && x1 == x4) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1300,7 +1300,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7 && x1 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x6, x0, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x5, x6, x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1317,7 +1317,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x1 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x7, x3, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x7, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1334,7 +1334,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x1 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x6, x3, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x6, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1351,7 +1351,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x3 == x4 && x1 == x6) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1366,7 +1366,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x1 == x6) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x4, x3, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x4, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -1383,7 +1383,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x3 == x4 && x1 == x7) {
-    std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x2);
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1398,7 +1398,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x1 == x7) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x4, x3, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x4, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -1415,7 +1415,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x3 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x7, x1, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x7, x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
@@ -1432,7 +1432,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x3 == x4) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x6, x0, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x6, x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
@@ -1449,7 +1449,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7 && x3 == x6) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x4, x1, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x4, x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -1466,7 +1466,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x6) {
-    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x7, x5, x4, x1, x2);
+    std::unique_ptr<double[]> i0data = in(3)->get_block(x0, x7, x5, x4, x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -1485,7 +1485,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6 && x3 == x7) {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x1, x4, x0, x2);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x4, x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -1502,7 +1502,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x3 == x7) {
-    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x6, x5, x4, x0, x2);
+    std::unique_ptr<double[]> i0data = in(3)->get_block(x1, x6, x5, x4, x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -1521,7 +1521,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x6) {
-    std::unique_ptr<double[]> i0data = in(2)->get_block(x0, x7, x1, x4, x3, x2);
+    std::unique_ptr<double[]> i0data = in(3)->get_block(x0, x7, x1, x4, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -1540,7 +1540,7 @@ void Task103::Task_local::compute() {
     }
   }
   if (x5 == x7) {
-    std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x6, x0, x4, x3, x2);
+    std::unique_ptr<double[]> i0data = in(3)->get_block(x1, x6, x0, x4, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {

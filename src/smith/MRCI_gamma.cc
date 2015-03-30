@@ -37,7 +37,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma0_() {
   vector<IndexRange> Gamma0_index = {active_, active_, active_, active_};
   auto Gamma0 = make_shared<Tensor>(Gamma0_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor0 = {Gamma0, rdm1_, rdm2_};
+  vector<shared_ptr<Tensor>> tensor0 = {Gamma0, rdm0_, rdm1_, rdm2_};
   auto task0 = make_shared<Task0>(tensor0, pindex);
   return make_shared<FutureTensor>(*Gamma0, task0);
 }
@@ -55,7 +55,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma2_() {
   vector<IndexRange> Gamma2_index = {active_, active_, active_, active_};
   auto Gamma2 = make_shared<Tensor>(Gamma2_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor2 = {Gamma2, rdm1_, rdm2_};
+  vector<shared_ptr<Tensor>> tensor2 = {Gamma2, rdm0_, rdm1_, rdm2_};
   auto task2 = make_shared<Task2>(tensor2, pindex);
   return make_shared<FutureTensor>(*Gamma2, task2);
 }
@@ -64,7 +64,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma80_() {
   vector<IndexRange> Gamma80_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma80 = make_shared<Tensor>(Gamma80_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor3 = {Gamma80, rdm1_, rdm2_, rdm3_};
+  vector<shared_ptr<Tensor>> tensor3 = {Gamma80, rdm0_, rdm1_, rdm2_, rdm3_};
   auto task3 = make_shared<Task3>(tensor3, pindex);
   return make_shared<FutureTensor>(*Gamma80, task3);
 }
@@ -73,7 +73,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma81_() {
   vector<IndexRange> Gamma81_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma81 = make_shared<Tensor>(Gamma81_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor4 = {Gamma81, rdm1_, rdm2_, rdm3_};
+  vector<shared_ptr<Tensor>> tensor4 = {Gamma81, rdm0_, rdm1_, rdm2_, rdm3_};
   auto task4 = make_shared<Task4>(tensor4, pindex);
   return make_shared<FutureTensor>(*Gamma81, task4);
 }
@@ -82,7 +82,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma82_() {
   vector<IndexRange> Gamma82_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma82 = make_shared<Tensor>(Gamma82_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor5 = {Gamma82, rdm1_, rdm2_, rdm3_};
+  vector<shared_ptr<Tensor>> tensor5 = {Gamma82, rdm0_, rdm1_, rdm2_, rdm3_};
   auto task5 = make_shared<Task5>(tensor5, pindex);
   return make_shared<FutureTensor>(*Gamma82, task5);
 }
@@ -118,7 +118,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma88_() {
   vector<IndexRange> Gamma88_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma88 = make_shared<Tensor>(Gamma88_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor9 = {Gamma88, rdm1_, rdm2_, rdm3_};
+  vector<shared_ptr<Tensor>> tensor9 = {Gamma88, rdm0_, rdm1_, rdm2_, rdm3_};
   auto task9 = make_shared<Task9>(tensor9, pindex);
   return make_shared<FutureTensor>(*Gamma88, task9);
 }
@@ -127,7 +127,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma89_() {
   vector<IndexRange> Gamma89_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma89 = make_shared<Tensor>(Gamma89_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor10 = {Gamma89, rdm1_, rdm2_, rdm3_};
+  vector<shared_ptr<Tensor>> tensor10 = {Gamma89, rdm0_, rdm1_, rdm2_, rdm3_};
   auto task10 = make_shared<Task10>(tensor10, pindex);
   return make_shared<FutureTensor>(*Gamma89, task10);
 }
@@ -316,7 +316,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma12_() {
   vector<IndexRange> Gamma12_index = {active_, active_};
   auto Gamma12 = make_shared<Tensor>(Gamma12_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor31 = {Gamma12, rdm1_};
+  vector<shared_ptr<Tensor>> tensor31 = {Gamma12, rdm0_, rdm1_};
   auto task31 = make_shared<Task31>(tensor31, pindex);
   return make_shared<FutureTensor>(*Gamma12, task31);
 }
@@ -334,7 +334,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma197_() {
   vector<IndexRange> Gamma197_index = {active_, active_, active_, active_};
   auto Gamma197 = make_shared<Tensor>(Gamma197_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor33 = {Gamma197, rdm1_, rdm2_};
+  vector<shared_ptr<Tensor>> tensor33 = {Gamma197, rdm0_, rdm1_, rdm2_};
   auto task33 = make_shared<Task33>(tensor33, pindex);
   return make_shared<FutureTensor>(*Gamma197, task33);
 }
@@ -343,7 +343,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma126_() {
   vector<IndexRange> Gamma126_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma126 = make_shared<Tensor>(Gamma126_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor34 = {Gamma126, rdm1_, rdm2_, rdm3_};
+  vector<shared_ptr<Tensor>> tensor34 = {Gamma126, rdm0_, rdm1_, rdm2_, rdm3_};
   auto task34 = make_shared<Task34>(tensor34, pindex);
   return make_shared<FutureTensor>(*Gamma126, task34);
 }
@@ -370,7 +370,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma155_() {
   vector<IndexRange> Gamma155_index = {active_, active_, active_, active_};
   auto Gamma155 = make_shared<Tensor>(Gamma155_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor37 = {Gamma155, rdm1_, rdm2_};
+  vector<shared_ptr<Tensor>> tensor37 = {Gamma155, rdm0_, rdm1_, rdm2_};
   auto task37 = make_shared<Task37>(tensor37, pindex);
   return make_shared<FutureTensor>(*Gamma155, task37);
 }
@@ -415,7 +415,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma552_() {
   vector<IndexRange> Gamma552_index = {active_, active_};
   auto Gamma552 = make_shared<Tensor>(Gamma552_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor42 = {Gamma552, rdm1_, rdm2_, h1_};
+  vector<shared_ptr<Tensor>> tensor42 = {Gamma552, rdm0_, rdm1_, rdm2_, h1_};
   auto task42 = make_shared<Task42>(tensor42, pindex);
   return make_shared<FutureTensor>(*Gamma552, task42);
 }
@@ -424,7 +424,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma554_() {
   vector<IndexRange> Gamma554_index = {active_, active_};
   auto Gamma554 = make_shared<Tensor>(Gamma554_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor43 = {Gamma554, rdm1_, rdm2_, rdm3_, v2_};
+  vector<shared_ptr<Tensor>> tensor43 = {Gamma554, rdm0_, rdm1_, rdm2_, rdm3_, v2_};
   auto task43 = make_shared<Task43>(tensor43, pindex);
   return make_shared<FutureTensor>(*Gamma554, task43);
 }
@@ -955,7 +955,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma548_() {
   vector<IndexRange> Gamma548_index = {active_, active_, active_, active_};
   auto Gamma548 = make_shared<Tensor>(Gamma548_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor102 = {Gamma548, rdm1_, rdm2_, rdm3_, h1_};
+  vector<shared_ptr<Tensor>> tensor102 = {Gamma548, rdm0_, rdm1_, rdm2_, rdm3_, h1_};
   auto task102 = make_shared<Task102>(tensor102, pindex);
   return make_shared<FutureTensor>(*Gamma548, task102);
 }
@@ -964,7 +964,7 @@ shared_ptr<FutureTensor> MRCI::MRCI::Gamma549_() {
   vector<IndexRange> Gamma549_index = {active_, active_, active_, active_};
   auto Gamma549 = make_shared<Tensor>(Gamma549_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  vector<shared_ptr<Tensor>> tensor103 = {Gamma549, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
+  vector<shared_ptr<Tensor>> tensor103 = {Gamma549, rdm0_, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
   auto task103 = make_shared<Task103>(tensor103, pindex);
   return make_shared<FutureTensor>(*Gamma549, task103);
 }

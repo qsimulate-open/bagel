@@ -34,7 +34,7 @@ using namespace bagel::SMITH;
 using namespace bagel::SMITH::MRCI;
 
 Task0::Task0(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x2 : *range[1])
     for (auto& x1 : *range[1])
@@ -56,7 +56,7 @@ Task1::Task1(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3>
 }
 
 Task2::Task2(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x2 : *range[1])
     for (auto& x0 : *range[1])
@@ -66,7 +66,7 @@ Task2::Task2(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3>
 }
 
 Task3::Task3(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
+  array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x2 : *range[1])
     for (auto& x3 : *range[1])
@@ -78,7 +78,7 @@ Task3::Task3(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3>
 }
 
 Task4::Task4(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
+  array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x3 : *range[1])
     for (auto& x1 : *range[1])
@@ -90,7 +90,7 @@ Task4::Task4(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3>
 }
 
 Task5::Task5(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
+  array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x2 : *range[1])
     for (auto& x1 : *range[1])
@@ -142,7 +142,7 @@ Task8::Task8(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3>
 }
 
 Task9::Task9(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
+  array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x2 : *range[1])
     for (auto& x3 : *range[1])
@@ -154,7 +154,7 @@ Task9::Task9(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3>
 }
 
 Task10::Task10(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
+  array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x2 : *range[1])
     for (auto& x0 : *range[1])
@@ -426,7 +426,7 @@ Task30::Task30(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
 }
 
 Task31::Task31(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,1> in = {{t[1]}};
+  array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x1 : *range[1])
     for (auto& x0 : *range[1])
@@ -444,7 +444,7 @@ Task32::Task32(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
 }
 
 Task33::Task33(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x1 : *range[1])
     for (auto& x2 : *range[1])
@@ -454,7 +454,7 @@ Task33::Task33(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
 }
 
 Task34::Task34(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
+  array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x1 : *range[1])
     for (auto& x2 : *range[1])
@@ -490,7 +490,7 @@ Task36::Task36(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
 }
 
 Task37::Task37(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x1 : *range[1])
     for (auto& x0 : *range[1])
@@ -548,7 +548,7 @@ Task41::Task41(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
 }
 
 Task42::Task42(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
+  array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x3 : *range[1])
     for (auto& x0 : *range[1])
@@ -558,7 +558,7 @@ Task42::Task42(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
 }
 
 Task43::Task43(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
+  array<shared_ptr<const Tensor>,5> in = {{t[1], t[2], t[3], t[4], t[5]}};
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x5 : *range[1])
     for (auto& x0 : *range[1])

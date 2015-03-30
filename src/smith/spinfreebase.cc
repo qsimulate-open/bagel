@@ -148,6 +148,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   if (ref_->ciwfn()) {
     const int nclo = ref_->nclosed();
     const int nstates = ref_->ciwfn()->nstates();
+    rdm0all_ = make_shared<Vec<Tensor>>();
     rdm1all_ = make_shared<Vec<Tensor>>();
     rdm2all_ = make_shared<Vec<Tensor>>();
     rdm3all_ = make_shared<Vec<Tensor>>();
@@ -157,6 +158,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     for (int ist = 0; ist != nstates; ++ist) {
       for (int jst = 0; jst != nstates; ++jst) {
 
+        auto rdm0t = make_shared<Tensor>(vector<IndexRange>());
         auto rdm1t = make_shared<Tensor>(vector<IndexRange>(2,active_));
         auto rdm2t = make_shared<Tensor>(vector<IndexRange>(4,active_));
         auto rdm3t = make_shared<Tensor>(vector<IndexRange>(6,active_));
@@ -169,11 +171,15 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
         tie(rdm1, rdm2) = ref_->rdm12(jst, ist);
         tie(rdm3, rdm4) = ref_->rdm34(jst, ist);
 
+        unique_ptr<double[]> data0(new double[1]);
+        data0[0] = jst == ist ? 1.0 : 0.0;
+        rdm0t->put_block(data0);
         fill_block<2>(rdm1t, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
         fill_block<4>(rdm2t, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
         fill_block<6>(rdm3t, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
         fill_block<8>(rdm4t, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
 
+        rdm0all_->emplace(jst, ist, rdm0t);
         rdm1all_->emplace(jst, ist, rdm1t);
         rdm2all_->emplace(jst, ist, rdm2t);
         rdm3all_->emplace(jst, ist, rdm3t);
@@ -195,6 +201,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 void SpinFreeMethod::set_rdm(const int ist, const int jst) {
   // ist is bra, jst is ket.
   // CAREFUL! the following is due to SMITH's convention (i.e., index are reversed)
+  rdm0_ = rdm0all_->at(jst, ist);
   rdm1_ = rdm1all_->at(jst, ist);
   rdm2_ = rdm2all_->at(jst, ist);
   rdm3_ = rdm3all_->at(jst, ist);

@@ -64,12 +64,14 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor> h1_;
 
     // contains the current RDMs to be used in smith
+    std::shared_ptr<Tensor> rdm0_;
     std::shared_ptr<Tensor> rdm1_;
     std::shared_ptr<Tensor> rdm2_;
     std::shared_ptr<Tensor> rdm3_;
     std::shared_ptr<Tensor> rdm4_;
 
     // contains all the RDMs (for multistate runs)
+    std::shared_ptr<Vec<Tensor>> rdm0all_;
     std::shared_ptr<Vec<Tensor>> rdm1all_;
     std::shared_ptr<Vec<Tensor>> rdm2all_;
     std::shared_ptr<Vec<Tensor>> rdm3all_;
