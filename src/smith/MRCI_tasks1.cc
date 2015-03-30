@@ -15129,9 +15129,10 @@ void Task42::Task_local::compute() {
   std::unique_ptr<double[]> fdata = in(3)->get_block(x2, x1);
   // rdm0 merged case
   if (x2 == x3 && x0 == x1) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i3 = 0; i3 != x3.size(); ++i3) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
-        odata[i1+x0.size()*(i3)]  += -2.0 * fdata[i3+x2.size()*(i1)];
+        odata[i1+x0.size()*(i3)]  += -2.0 * i0data[0] * fdata[i3+x2.size()*(i1)];
       }
     }
   }
@@ -15203,10 +15204,11 @@ void Task43::Task_local::compute() {
   }
   // rdm0 merged case
   if (x0 == x1 && x4 == x5 && x2 == x3) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i1 = 0; i1 != x1.size(); ++i1) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
-          odata[i1+x0.size()*(i5)]  += -2.0 * fdata[i5+x4.size()*(i3+x3.size()*(i3+x2.size()*(i1)))];
+          odata[i1+x0.size()*(i5)]  += -2.0 * i0data[0] * fdata[i5+x4.size()*(i3+x3.size()*(i3+x2.size()*(i1)))];
         }
       }
     }

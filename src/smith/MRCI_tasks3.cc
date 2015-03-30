@@ -122,20 +122,22 @@ void Task102::Task_local::compute() {
   std::unique_ptr<double[]> fdata = in(4)->get_block(x3, x2);
   // rdm0 merged case
   if (x1 == x4 && x0 == x2 && x3 == x5) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i5 = 0; i5 != x5.size(); ++i5) {
-          odata[i2+x0.size()*(i5+x5.size()*(i4+x1.size()*(i4)))]  += -4.0 * fdata[i5+x3.size()*(i2)];
+          odata[i2+x0.size()*(i5+x5.size()*(i4+x1.size()*(i4)))]  += -4.0 * i0data[0] * fdata[i5+x3.size()*(i2)];
         }
       }
     }
   }
   // rdm0 merged case
   if (x1 == x5 && x0 == x2 && x3 == x4) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i5 = 0; i5 != x5.size(); ++i5) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
-          odata[i2+x0.size()*(i5+x5.size()*(i5+x1.size()*(i4)))]  += 2.0 * fdata[i4+x3.size()*(i2)];
+          odata[i2+x0.size()*(i5+x5.size()*(i5+x1.size()*(i4)))]  += 2.0 * i0data[0] * fdata[i4+x3.size()*(i2)];
         }
       }
     }
@@ -168,10 +170,11 @@ void Task102::Task_local::compute() {
   }
   // rdm0 merged case
   if (x0 == x4 && x1 == x2 && x3 == x5) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i5 = 0; i5 != x5.size(); ++i5) {
-          odata[i4+x0.size()*(i5+x5.size()*(i2+x1.size()*(i4)))]  += 2.0 * fdata[i5+x3.size()*(i2)];
+          odata[i4+x0.size()*(i5+x5.size()*(i2+x1.size()*(i4)))]  += 2.0 * i0data[0] * fdata[i5+x3.size()*(i2)];
         }
       }
     }
@@ -191,10 +194,11 @@ void Task102::Task_local::compute() {
   }
   // rdm0 merged case
   if (x3 == x4 && x0 == x5 && x1 == x2) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
-          odata[i5+x0.size()*(i5+x5.size()*(i2+x1.size()*(i4)))]  += -4.0 * fdata[i4+x3.size()*(i2)];
+          odata[i5+x0.size()*(i5+x5.size()*(i2+x1.size()*(i4)))]  += -4.0 * i0data[0] * fdata[i4+x3.size()*(i2)];
         }
       }
     }
@@ -500,11 +504,12 @@ void Task103::Task_local::compute() {
   }
   // rdm0 merged case
   if (x1 == x4 && x0 == x2 && x3 == x6 && x5 == x7) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
           for (int i7 = 0; i7 != x7.size(); ++i7) {
-            odata[i2+x0.size()*(i7+x7.size()*(i4+x1.size()*(i6)))]  += 2.0 * fdata[i7+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
+            odata[i2+x0.size()*(i7+x7.size()*(i4+x1.size()*(i6)))]  += 2.0 * i0data[0] * fdata[i7+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
           }
         }
       }
@@ -527,11 +532,12 @@ void Task103::Task_local::compute() {
   }
   // rdm0 merged case
   if (x0 == x2 && x3 == x7 && x1 == x4 && x5 == x6) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i7 = 0; i7 != x7.size(); ++i7) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i6 = 0; i6 != x6.size(); ++i6) {
-            odata[i2+x0.size()*(i7+x7.size()*(i4+x1.size()*(i6)))]  += -4.0 * fdata[i6+x5.size()*(i4+x4.size()*(i7+x3.size()*(i2)))];
+            odata[i2+x0.size()*(i7+x7.size()*(i4+x1.size()*(i6)))]  += -4.0 * i0data[0] * fdata[i6+x5.size()*(i4+x4.size()*(i7+x3.size()*(i2)))];
           }
         }
       }
@@ -584,11 +590,12 @@ void Task103::Task_local::compute() {
   }
   // rdm0 merged case
   if (x1 == x6 && x0 == x2 && x5 == x7 && x3 == x4) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
           for (int i4 = 0; i4 != x4.size(); ++i4) {
-            odata[i2+x0.size()*(i7+x7.size()*(i6+x1.size()*(i6)))]  += -4.0 * fdata[i7+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
+            odata[i2+x0.size()*(i7+x7.size()*(i6+x1.size()*(i6)))]  += -4.0 * i0data[0] * fdata[i7+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
           }
         }
       }
@@ -611,11 +618,12 @@ void Task103::Task_local::compute() {
   }
   // rdm0 merged case
   if (x5 == x6 && x3 == x4 && x1 == x7 && x0 == x2) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i4 = 0; i4 != x4.size(); ++i4) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
           for (int i2 = 0; i2 != x2.size(); ++i2) {
-            odata[i2+x0.size()*(i7+x7.size()*(i7+x1.size()*(i6)))]  += 2.0 * fdata[i6+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
+            odata[i2+x0.size()*(i7+x7.size()*(i7+x1.size()*(i6)))]  += 2.0 * i0data[0] * fdata[i6+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
           }
         }
       }
@@ -766,11 +774,12 @@ void Task103::Task_local::compute() {
   }
   // rdm0 merged case
   if (x5 == x7 && x3 == x6 && x1 == x2 && x0 == x4) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i7 = 0; i7 != x7.size(); ++i7) {
       for (int i6 = 0; i6 != x6.size(); ++i6) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
           for (int i4 = 0; i4 != x4.size(); ++i4) {
-            odata[i4+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]  += -4.0 * fdata[i7+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
+            odata[i4+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]  += -4.0 * i0data[0] * fdata[i7+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
           }
         }
       }
@@ -793,11 +802,12 @@ void Task103::Task_local::compute() {
   }
   // rdm0 merged case
   if (x5 == x6 && x3 == x7 && x1 == x2 && x0 == x4) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i7 = 0; i7 != x7.size(); ++i7) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
           for (int i4 = 0; i4 != x4.size(); ++i4) {
-            odata[i4+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]  += 2.0 * fdata[i6+x5.size()*(i4+x4.size()*(i7+x3.size()*(i2)))];
+            odata[i4+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]  += 2.0 * i0data[0] * fdata[i6+x5.size()*(i4+x4.size()*(i7+x3.size()*(i2)))];
           }
         }
       }
@@ -978,11 +988,12 @@ void Task103::Task_local::compute() {
   }
   // rdm0 merged case
   if (x5 == x7 && x3 == x4 && x1 == x2 && x0 == x6) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i7 = 0; i7 != x7.size(); ++i7) {
       for (int i4 = 0; i4 != x4.size(); ++i4) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
           for (int i6 = 0; i6 != x6.size(); ++i6) {
-            odata[i6+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]  += 2.0 * fdata[i7+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
+            odata[i6+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]  += 2.0 * i0data[0] * fdata[i7+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
           }
         }
       }
@@ -1052,11 +1063,12 @@ void Task103::Task_local::compute() {
   }
   // rdm0 merged case
   if (x5 == x6 && x3 == x4 && x1 == x2 && x0 == x7) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i4 = 0; i4 != x4.size(); ++i4) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
           for (int i7 = 0; i7 != x7.size(); ++i7) {
-            odata[i7+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]  += -4.0 * fdata[i6+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
+            odata[i7+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]  += -4.0 * i0data[0] * fdata[i6+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
           }
         }
       }
