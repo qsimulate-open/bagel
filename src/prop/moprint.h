@@ -37,6 +37,7 @@ class MOPrint : public Method {
 
   protected:
     bool relativistic_;
+    bool paired_;
     bool cubefile_;
     size_t ngrid_;
     size_t norb_;

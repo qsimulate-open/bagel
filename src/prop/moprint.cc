@@ -38,26 +38,31 @@ using namespace bagel;
 MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
                  const std::shared_ptr<const Reference> re) : Method(idata, geom, re) {
 
-  // For now, disable for GIAO wavefunctions
-  //assert(!geom_->magnetism());
+  // Assumes striped (or non-relativistic) coefficient matrix
   auto newref = dynamic_pointer_cast<const RelReference>(ref_);
   if (newref) {
     relativistic_ = newref->rel();
-    //assert(relativistic_);
+    paired_ = relativistic_ ? !geom->magnetism() : true;
   } else {
     relativistic_ = false;
+    paired_ = true;
   }
+  paired_ = idata_->get<bool>("paired", paired_);
+  if (paired_ && !relativistic_)
+    throw runtime_error("Individual spin-orbitals can only be visualized for 4-component methods.");
 
   // Determine which MOs to get
   const shared_ptr<const PTree> iorb = idata_->get_child_optional("orbitals");
 
-  if (iorb)
+  if (iorb) {
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
     for (auto& i : *iorb)
       orbitals_.push_back(lexical_cast<int>(i->data()) - 1);
-  else
-    for (int i=0; i!=geom_->nbasis(); ++i)
+  } else {
+    const int mult = paired_ ? 1 : 2;
+    for (int i=0; i!=mult*geom_->nbasis(); ++i)
       orbitals_.push_back(i);
+  }
   norb_ = orbitals_.size();
 
 
@@ -107,25 +112,31 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
 
   // Form density matrices
   if (newref) {
+    // GIAO or 4-component wavefunction
     const double scale = relativistic_ ? 1.0 : 2.0;
+    const int ncol = (relativistic_ && paired_) ? 2 : 1;
+
+    // TODO Fix RelReference so this is not needed
+    // Ugly patch to compensate for RelReference::nclosed() giving number of spin-orbitals after Dirac but spatial orbitals after RHF_London or ZCASSCF
+    const int patch = (newref->nact() == 0) ? 1 : 2;
+
     for (int i=0; i!=norb_; ++i) {
-      density_.push_back(newref->relcoeff()->form_density_rhf(1, orbitals_[i], scale));
+      density_.push_back(newref->relcoeff()->form_density_rhf(ncol, ncol*orbitals_[i], scale));
     }
-    density_.push_back(newref->relcoeff()->form_density_rhf(newref->nclosed(), 0, scale));
+    density_.push_back(newref->relcoeff()->form_density_rhf(patch*newref->nclosed(), 0, scale));
+
   } else {
-    // TODO Optimize - We shouldn't be storing ZMatrices with the imaginary parts all zero (let alone re-allocating them...)
+    // Conventional non-relativistic wavefunction
+    // TODO This could be optimized, since we are storing real matrices as complex.  I guess it would require templating...
     for (int i=0; i!=norb_; ++i) {
-      density_.push_back(make_shared<ZMatrix>(*ref_->coeff()->form_density_rhf(1, orbitals_[i]), 1.0));
+      density_.push_back(make_shared<const ZMatrix>(*ref_->coeff()->form_density_rhf(1, orbitals_[i]), 1.0));
     }
-    density_.push_back(make_shared<ZMatrix>(*ref_->coeff()->form_density_rhf(ref_->nclosed(), 0), 1.0));
+    density_.push_back(make_shared<const ZMatrix>(*ref_->coeff()->form_density_rhf(ref_->nclosed(), 0), 1.0));
   }
 
-
-  // TODO NONREL version, also make sure it is okay with striped vs. block coefficients...
-  // TODO Should combine the spin-up and spin-down components of relativistic MOs...
-
   const string mtype = relativistic_ ? "relativistic" : "non-relativistic";
-  cout << "Printing " << norb_+1 << " " << mtype << " MO densities at " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << ". " << endl;
+  const string stype = paired_ ? "spatial orbital" : "spin-orbital";
+  cout << "Printing " << norb_+1 << " " << mtype << " " << stype << " densities at " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << ". " << endl;
   if (relativistic_) cout << "Note that orbital printing ignores the small components of relativistic MOs."  << endl;
 
   cout << endl;
