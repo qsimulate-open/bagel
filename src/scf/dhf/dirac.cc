@@ -168,7 +168,7 @@ void Dirac::compute() {
   if (idata_->get<bool>("pop", false)) {
     cout << "    * Printing out population analysis to dhf.log" << endl;
     Muffle muf ("dhf.log");
-    population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_);
+    population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_, (geom_->magnetism() ? 0 : 1));
   }
 
 }

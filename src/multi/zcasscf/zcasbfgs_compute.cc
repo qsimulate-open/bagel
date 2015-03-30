@@ -258,7 +258,7 @@ void ZCASBFGS::compute() {
   if (idata_->get<bool>("pop", false)) {
     cout << "    * Printing out population analysis to casscf.log" << endl;
     mute_stdcout();
-    population_analysis(geom_, coeff_->slice(0, nclosed_+nact_+nvirtnr_), overlap_);
+    population_analysis(geom_, coeff_->slice(0, coeff_->mdim()), overlap_, (tsymm_ ? 2 : 0), nclosed_, nact_);
     resume_stdcout();
   }
 
