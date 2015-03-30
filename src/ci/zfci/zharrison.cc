@@ -104,15 +104,8 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
       // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
       for (auto& i : *iactive)
         active_indices.insert(lexical_cast<int>(i->data()) - 1);
-      cout << " " << endl;
-      cout << "    ==== Active orbitals : ===== " << endl;
-      for (auto& i : active_indices)
-        cout << "         Orbital " << i+1 << endl;
-      cout << "    ============================ " << endl << endl;
-      coeff = ZCASSCF::set_active(active_indices, swap_pos_neg(rr->relcoeff_full()), ncore_, geom_->nele()-charge_, norb_);
+      coeff = ZCASSCF::set_active(active_indices, swap_pos_neg(rr->relcoeff_full()), ncore_, geom_->nele()-charge_, norb_, tsymm_);
 
-      if (!tsymm_)  // TODO figure out a good way to sort spin orbitals
-        cout << "******** Assuming Kramers-paired orbitals are coming out from the reference coeff in order, but not making sure of it.  ********" << endl;
     } else {
       coeff = swap_pos_neg(rr->relcoeff_full());
     }

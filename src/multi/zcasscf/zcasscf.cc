@@ -213,14 +213,7 @@ void ZCASSCF::init() {
   if (iactive) {
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
     for (auto& i : *iactive) active_indices.insert(lexical_cast<int>(i->data()) - 1);
-    cout << " " << endl;
-    cout << "    ==== Active orbitals : ===== " << endl;
-    for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
-    cout << "    ============================ " << endl << endl;
-    coeff_ = set_active(active_indices, coeff_, nclosed_, geom_->nele()-charge_, nact_);
-
-    if (!tsymm_)  // TODO figure out a good way to sort spin orbitals
-      cout << "******** Assuming Kramers-paired orbitals are coming out from the reference coeff in order, but not making sure of it.  ********" << endl;
+    coeff_ = set_active(active_indices, coeff_, nclosed_, geom_->nele()-charge_, nact_, tsymm_);
   }
 
   // format coefficient into blocks as {c,a,v}
@@ -573,26 +566,43 @@ void ZCASSCF::print_natocc() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices, shared_ptr<const ZMatrix> coeff, const int nclosed, const int nele, const int nact) {
+shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices, shared_ptr<const ZMatrix> coeff, const int nclosed, const int nele, const int nact, const bool paired) {
   // assumes coefficient is in striped format
   const int naobasis = coeff->ndim();
-  const int nmobasis = coeff->mdim()/4;
+  const int nmo_paired = coeff->mdim()/4;
+  const int nmobasis = paired ? nmo_paired : 2*nmo_paired;
 
-  if (active_indices.size() != nact)
-    throw logic_error("ZCASSCF::set_active - Number of active indices does not match number of active orbitals");
+  cout << " " << endl;
+  if (!paired) cout << "    * Selecting individual spin-orbitals for the active space." << endl;
+  cout << "    ==== Active orbitals : ===== " << endl;
+  for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
+  cout << "    ============================ " << endl << endl;
+
+  if (active_indices.size() != (paired ? nact : 2*nact))
+    throw logic_error("ZCASSCF::set_active - Number of active indices does not match number of active orbitals.  (" + to_string(paired ? nact : 2*nact) + " expected)");
   if (any_of(active_indices.begin(), active_indices.end(), [nmobasis](int i){ return (i < 0 || i >= nmobasis); }) )
     throw runtime_error("ZCASSCF::set_active - Invalid MO index provided.  (Should be from 1 to " + to_string(nmobasis) + ")");
 
-  auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmobasis*4);
+  auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmo_paired*4);
 
   int iclosed = 0;
   int iactive = nclosed;
   int ivirt   = nclosed + nact;
   int nclosed_start = nele / 2;
 
-  auto cp   = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) {
-    copy_n(coeff->element_ptr(0,i*2), naobasis, tmp_coeff->element_ptr(0, pos*2));
-    copy_n(coeff->element_ptr(0,i*2+1), naobasis, tmp_coeff->element_ptr(0, pos*2+1));
+  if (!paired) {
+    iactive *= 2;
+    ivirt *= 2;
+    nclosed_start = nele;
+  }
+
+  auto cp   = [&tmp_coeff, &naobasis, &coeff, &paired] (const int i, int& pos) {
+    if (paired) {
+      copy_n(coeff->element_ptr(0,i*2), naobasis, tmp_coeff->element_ptr(0, pos*2));
+      copy_n(coeff->element_ptr(0,i*2+1), naobasis, tmp_coeff->element_ptr(0, pos*2+1));
+    } else {
+      copy_n(coeff->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0, pos));
+    }
     ++pos;
   };
 
@@ -608,11 +618,11 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices, shared_pt
     }
   }
 
-  if (closed_count != nclosed)
+  if (closed_count != (paired ? nclosed : 2*nclosed))
     throw runtime_error("Invalid combination of closed and active orbitals.");
 
   // copy positrons
-  tmp_coeff->copy_block(0, nmobasis*2, naobasis, nmobasis*2, coeff->slice(nmobasis*2, nmobasis*4));
+  tmp_coeff->copy_block(0, nmo_paired*2, naobasis, nmo_paired*2, coeff->slice(nmo_paired*2, nmo_paired*4));
 
   return make_shared<const ZMatrix>(*tmp_coeff);
 }
