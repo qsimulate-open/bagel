@@ -193,10 +193,12 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 
 
 void SpinFreeMethod::set_rdm(const int ist, const int jst) {
-  rdm1_ = rdm1all_->at(ist, jst);
-  rdm2_ = rdm2all_->at(ist, jst);
-  rdm3_ = rdm3all_->at(ist, jst);
-  rdm4_ = rdm4all_->at(ist, jst);
+  // ist is bra, jst is ket.
+  // CAREFUL! the following is due to SMITH's convention (i.e., index are reversed)
+  rdm1_ = rdm1all_->at(jst, ist);
+  rdm2_ = rdm2all_->at(jst, ist);
+  rdm3_ = rdm3all_->at(jst, ist);
+  rdm4_ = rdm4all_->at(jst, ist);
 }
 
 

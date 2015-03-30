@@ -102,6 +102,7 @@ void MRCI::MRCI::solve() {
   }
 
   shared_ptr<MultiTensor> rtmp = nall_[0]->copy();
+  rtmp->zero();
 
   Timer mtimer;
   int iter = 0;
