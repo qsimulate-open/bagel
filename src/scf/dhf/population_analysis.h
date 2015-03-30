@@ -28,10 +28,7 @@
 #define __SRC_SCF_DHF_POPULATION_ANALYSIS_H
 
 // Helper function to perform population analysis on 4-component molecular orbitals
-// The "key" parameter gives information about the format of the coefficient matrix and desired output
-//    key = 0:  Treat spin-orbitals separately (e.g., for jobs with a magnetic field)
-//    key = 1:  Striped format (1a, 1b, 2a, 2b...)
-//    key = 2:  Block format   (1a, 2a... 1b, 2b...)
+// When "paired" is true, we work with spatial orbitals, assuming comes in striped format (1a, 1b, 2a, 2b...)
 // When working with spatial MOs, we average the contributions of the two spin-MOs, although they are normally identical
 
 #include <cassert>
@@ -43,35 +40,20 @@ namespace bagel {
 namespace {
 
 void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView coeff, std::shared_ptr<const ZMatrix> overlap,
-                         const int key, const int nclosed = 0, const int nact = 0) {
+                         const bool paired, const int nclosed = 0, const int nact = 0) {
 
   const ZMatrix right = *overlap * coeff;
   const ZMatView left = coeff;
 
   const int nbasis = geom->nbasis();
-  const int norb = (key == 0) ? 2*geom->nbasis() : geom->nbasis();
+  const int norb = (!paired) ? 2*geom->nbasis() : geom->nbasis();
   assert(nbasis == coeff.ndim()/4);
 
 
   for (int i = 0; i < norb; ++i) {
 
-    int offset, blocksize;
-    switch (key) {
-      case 0:
-        offset = 0;
-        blocksize = 0;
-        break;
-      case 1:
-        offset = i;
-        blocksize = 1;
-        break;
-      case 2:
-        offset = (i < nclosed) ? 0 : (i < nclosed + nact) ? nclosed : (nclosed + nact);
-        blocksize = (i < nclosed) ? nclosed : (i < nclosed + nact) ? nact : coeff.mdim()/2 - nclosed - nact;
-        break;
-      default:
-        assert(false);
-    }
+    const int offset = paired ? i : 0;
+    const int blocksize = paired ? 1 : 0;
 
     double alphapart = 0.0;
     double betapart = 0.0;
@@ -87,7 +69,7 @@ void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView co
     int current_ao = 0;
     for (auto& atom : geom->atoms()) {
       std::stringstream base_name;
-      base_name << (key ? "spatial " : "spin-") << "MO " << i + 1 << " " << atom->name() << "_" << element_count[atom->name()]++;
+      base_name << (paired ? "spatial " : "spin-") << "MO " << i + 1 << " " << atom->name() << "_" << element_count[atom->name()]++;
       for (auto& shell : atom->shells()) {
         if (!shell->dummy()) {
           std::stringstream ss;
@@ -99,7 +81,7 @@ void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView co
           double val3 = blas::dot_product(left_ptr1+current_ao+2*nbasis, shell->nbasis(), right_ptr1+current_ao+2*nbasis).real();
           double val4 = blas::dot_product(left_ptr1+current_ao+3*nbasis, shell->nbasis(), right_ptr1+current_ao+3*nbasis).real();
 
-          if (key) {
+          if (paired) {
             // average the alpha and beta spin orbitals
             val1 += blas::dot_product(left_ptr2+current_ao, shell->nbasis(), right_ptr2+current_ao).real();
             val2 += blas::dot_product(left_ptr2+current_ao+nbasis, shell->nbasis(), right_ptr2+current_ao+nbasis).real();
@@ -127,12 +109,12 @@ void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView co
       }
     }
     std::cout << std::endl;
-    if (key == 0) {
-      std::cout << (key ? "spatial " : "spin-") << "MO " << i + 1 << " Alpha basis functions: " << alphapart << std::endl;
-      std::cout << (key ? "spatial " : "spin-") << "MO " << i + 1 << " Beta  basis functions: " << betapart << std::endl;
+    if (!paired) {
+      std::cout << (paired ? "spatial " : "spin-") << "MO " << i + 1 << " Alpha basis functions: " << alphapart << std::endl;
+      std::cout << (paired ? "spatial " : "spin-") << "MO " << i + 1 << " Beta  basis functions: " << betapart << std::endl;
     }
-    std::cout << (key ? "spatial " : "spin-") << "MO " << i + 1 << " Positive energy basis functions: " << pospart << std::endl;
-    std::cout << (key ? "spatial " : "spin-") << "MO " << i + 1 << " Negative energy basis functions: " << negpart << std::endl;
+    std::cout << (paired ? "spatial " : "spin-") << "MO " << i + 1 << " Positive energy basis functions: " << pospart << std::endl;
+    std::cout << (paired ? "spatial " : "spin-") << "MO " << i + 1 << " Negative energy basis functions: " << negpart << std::endl;
     std::cout << std::endl;
   }
 

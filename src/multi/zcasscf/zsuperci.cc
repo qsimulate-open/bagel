@@ -217,7 +217,7 @@ void ZSuperCI::compute() {
     cout << "    * Printing out population analysis to casscf.log" << endl;
     mute_stdcout();
     shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false);
-    population_analysis(geom_, tmp->slice(0, tmp->mdim()), overlap_, (tsymm_ ? 1 : 0), nclosed_, nact_);
+    population_analysis(geom_, tmp->slice(0, tmp->mdim()), overlap_, tsymm_, nclosed_, nact_);
     resume_stdcout();
   }
 }
