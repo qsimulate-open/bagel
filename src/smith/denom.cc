@@ -79,36 +79,43 @@ void Denom::compute() {
     shalf_x_->inverse_half(thresh_);
     Matrix tmp(*shalf_x_ % *work_x_ * *shalf_x_);
     tmp.diagonalize(denom_x_);
+    shalf_x_ = make_shared<Matrix>(tmp % *shalf_x_);
   }
   {
     shalf_h_->inverse_half(thresh_);
     Matrix tmp(*shalf_h_ % *work_h_ * *shalf_h_);
     tmp.diagonalize(denom_h_);
+    shalf_h_ = make_shared<Matrix>(tmp % *shalf_h_);
   }
   {
     shalf_xx_->inverse_half(thresh_);
     Matrix tmp(*shalf_xx_ % *work_xx_ * *shalf_xx_);
     tmp.diagonalize(denom_xx_);
+    shalf_xx_ = make_shared<Matrix>(tmp % *shalf_xx_);
   }
   {
     shalf_hh_->inverse_half(thresh_);
     Matrix tmp(*shalf_hh_ % *work_hh_ * *shalf_hh_);
     tmp.diagonalize(denom_hh_);
+    shalf_hh_ = make_shared<Matrix>(tmp % *shalf_hh_);
   }
   {
     shalf_xh_->inverse_half(thresh_);
     Matrix tmp(*shalf_xh_ % *work_xh_ * *shalf_xh_);
     tmp.diagonalize(denom_xh_);
+    shalf_xh_ = make_shared<Matrix>(tmp % *shalf_xh_);
   }
   {
     shalf_xhh_->inverse_half(thresh_);
     Matrix tmp(*shalf_xhh_ % *work_xhh_ * *shalf_xhh_);
     tmp.diagonalize(denom_xhh_);
+    shalf_xhh_ = make_shared<Matrix>(tmp % *shalf_xhh_);
   }
   {
     shalf_xxh_->inverse_half(thresh_);
     Matrix tmp(*shalf_xxh_ % *work_xxh_ * *shalf_xxh_);
     tmp.diagonalize(denom_xxh_);
+    shalf_xxh_ = make_shared<Matrix>(tmp % *shalf_xxh_);
   }
 }
 
