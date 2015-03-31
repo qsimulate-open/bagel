@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: denom.h
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -34,15 +34,24 @@ namespace SMITH {
 
 class Denom {
   protected:
+    std::shared_ptr<const Matrix> fock_;
     const double thresh_;
 
-    std::shared_ptr<const Matrix> shalf_x_;
-    std::shared_ptr<const Matrix> shalf_h_;
-    std::shared_ptr<const Matrix> shalf_xx_;
-    std::shared_ptr<const Matrix> shalf_hh_;
-    std::shared_ptr<const Matrix> shalf_xh_;
-    std::shared_ptr<const Matrix> shalf_xhh_;
-    std::shared_ptr<const Matrix> shalf_xxh_;
+    std::shared_ptr<Matrix> shalf_x_;
+    std::shared_ptr<Matrix> shalf_h_;
+    std::shared_ptr<Matrix> shalf_xx_;
+    std::shared_ptr<Matrix> shalf_hh_;
+    std::shared_ptr<Matrix> shalf_xh_;
+    std::shared_ptr<Matrix> shalf_xhh_;
+    std::shared_ptr<Matrix> shalf_xxh_;
+
+    std::shared_ptr<Matrix> work_x_;
+    std::shared_ptr<Matrix> work_h_;
+    std::shared_ptr<Matrix> work_xx_;
+    std::shared_ptr<Matrix> work_hh_;
+    std::shared_ptr<Matrix> work_xh_;
+    std::shared_ptr<Matrix> work_xhh_;
+    std::shared_ptr<Matrix> work_xxh_;
 
     VectorB denom_x_;
     VectorB denom_h_;
@@ -53,16 +62,21 @@ class Denom {
     VectorB denom_xxh_;
 
     // init functions
-    void init_x_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_h_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_xx_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_hh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_xh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_xhh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_xxh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
+    void init_x_(const int, const int, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>, std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>);
+    void init_h_(const int, const int, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>, std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>);
+    void init_xx_(const int, const int, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>, std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>);
+    void init_hh_(const int, const int, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>, std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>);
+    void init_xh_(const int, const int, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>, std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>);
+    void init_xhh_(const int, const int, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>, std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>);
+    void init_xxh_(const int, const int, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>, std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>);
 
   public:
-    Denom(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock, const double thr = 1.0e-8);
+    Denom(std::shared_ptr<const Matrix> fock, const int nstates, const double th);
+
+    // add RDMs
+    void append(const int jst, const int ist, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>, std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>);
+    // diagonalize and set to shalf and denom
+    void compute();
 
     std::shared_ptr<const Matrix> shalf_x() const { return shalf_x_; }
     std::shared_ptr<const Matrix> shalf_h() const { return shalf_h_; }

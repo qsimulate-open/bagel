@@ -185,9 +185,13 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
         rdm3all_->emplace(jst, ist, rdm3t);
         rdm4all_->emplace(jst, ist, rdm4t);
 
-        if (ist == jst)
+        if (ist == jst) {
           // construct denominator
-          denom_.push_back(make_shared<Denom>(*rdm1, *rdm2, *rdm3, *rdm4, *fockact));
+          auto denom = make_shared<Denom>(fockact, /*nstates*/1, /*thresh*/1.0e-9);
+          denom->append(0, 0, rdm1, rdm2, rdm3, rdm4);
+          denom->compute();
+          denom_.push_back(denom);
+        }
       }
     }
     timer.tick_print("RDM + denominator evaluation");
