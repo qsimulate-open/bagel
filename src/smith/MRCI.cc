@@ -106,12 +106,18 @@ void MRCI::MRCI::solve() {
 
   Timer mtimer;
   int iter = 0;
+  vector<bool> conv(nstates_, false);
   for ( ; iter != ref_->maxiter(); ++iter) {
 
     // loop over state of interest
     vector<shared_ptr<const Amplitude>> a0;
     vector<shared_ptr<const Residual>> r0;
     for (int istate = 0; istate != nstates_; ++istate) {
+      if (conv[istate]) {
+        a0.push_back(nullptr);
+        r0.push_back(nullptr);
+        continue;
+      }
       // first calculate left-hand-side vectors of t2 (named n)
       nall_[istate]->zero();
       for (int ist = 0; ist != nstates_; ++ist) {
@@ -175,15 +181,15 @@ void MRCI::MRCI::solve() {
 
     // find new trial vectors
     vector<shared_ptr<Residual>> res = davidson.residual();
-    vector<bool> conv(nstates_, false);
     for (int i = 0; i != nstates_; ++i) {
       const double err = res[i]->tensor()->rms();
       print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
 
       t2all_[i]->zero();
-      update_amplitude(t2all_[i], res[i]->tensor());
-
-      if (err < ref_->thresh()) conv[i] = true;
+      if (err < ref_->thresh())
+        conv[i] = true;
+      else
+        update_amplitude(t2all_[i], res[i]->tensor());
     }
     if (nstates_ > 1) cout << endl;
 
