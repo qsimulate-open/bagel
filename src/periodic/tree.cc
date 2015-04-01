@@ -30,7 +30,8 @@
 using namespace bagel;
 using namespace std;
 
-Tree::Tree(shared_ptr<const Geometry> geom, const int maxht) : geom_(geom), max_height_(maxht) {
+Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh)
+ : geom_(geom), max_height_(maxht), thresh_(thresh) {
 
   init();
 }
@@ -91,7 +92,7 @@ void Tree::build_tree() {
         const int depth = max_height_ - i;
 
         if (level == 1) {
-          nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[0]);
+          nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[0], thresh_);
           (nodes_[nnode_])->insert_vertex(leaves_[n]);
           nodes_[0]->insert_child(nodes_[nnode_]);
         } else {
@@ -100,7 +101,7 @@ void Tree::build_tree() {
           bool parent_found = false;
           for (int j = 0; j != nnode_; ++j) {
             if (parent_key == nodes_[j]->key()) {
-              nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[j]);
+              nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[j], thresh_);
               (nodes_[nnode_])->insert_vertex(leaves_[n]);
               parent_found = true;
               nodes_[j]->insert_child(nodes_[nnode_]);

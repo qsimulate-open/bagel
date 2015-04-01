@@ -51,6 +51,7 @@ class Tree {
     int nnode_;
     std::vector<std::shared_ptr<Node>> nodes_;
     int height_;
+    double thresh_;
 
 
     void init();
@@ -61,7 +62,8 @@ class Tree {
     std::shared_ptr<const ZMatrix> coulomb_;
 
   public:
-    Tree(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3);
+    Tree(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3,
+         const double thresh = PRIM_SCREEN_THRESH);
     ~Tree() { }
 
     void fmm(const int lmax, std::shared_ptr<const Matrix> density);

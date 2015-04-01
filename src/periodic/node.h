@@ -49,6 +49,7 @@ class Node {
     std::vector<std::shared_ptr<const Vertex>> bodies_;
     std::vector<std::shared_ptr<const Node>> interaction_list_;
     std::vector<std::shared_ptr<const Node>> neighbour_;
+    const double thresh_;
 
     void insert_vertex(std::shared_ptr<const Vertex>);
     void insert_child(std::shared_ptr<const Node> = NULL);
@@ -67,7 +68,8 @@ class Node {
     std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offset);
 
   public:
-    Node(const std::bitset<nbit__> key = 0, const int depth = 0, std::shared_ptr<const Node> parent = NULL);
+    Node(const std::bitset<nbit__> key = 0, const int depth = 0,
+         std::shared_ptr<const Node> parent = NULL, const double thresh = PRIM_SCREEN_THRESH);
 
     ~Node() { }
 
