@@ -52,7 +52,7 @@ void SphMultipole::compute_multipoles() {
 
   multipole_.resize(num_multipoles_);
 
-  int count = 0;
+  int count = 1;
   multipole_[0] = 1.0;
   for (int l = 1; l <= lmax_; ++l) {
     for (int mm = 0; mm <= 2 * l; ++mm, ++count) {
