@@ -43,7 +43,10 @@ void ASD_BFGS::compute() {
   single_bfgs_ = idata_->get<bool>("single_bfgs", false);
   bool no_active = idata_->get<bool>("no_active", false);
   bool active_only = idata_->get<bool>("active_only", false);
-  if (no_active || active_only) single_bfgs_ = false;
+  if (no_active || active_only) {
+    single_bfgs_ = false;
+    max_iter_ *= 2;
+  }
 
   vector<double> previous_energy(nstate_,0.0);
 
@@ -248,7 +251,7 @@ void ASD_BFGS::compute() {
     resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, max_rotation, delta_energy, timer.tick(), full ? 2 : static_cast<int>(inter));
 
-    if (full && gradient < gradient_thresh_ && max_rotation < rotation_thresh_ && delta_energy < energy_thresh_) {
+    if ((full || active_only || no_active) && gradient < gradient_thresh_ && max_rotation < rotation_thresh_ && delta_energy < energy_thresh_) {
       rms_grad_ = gradient;
       cout << " " << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
