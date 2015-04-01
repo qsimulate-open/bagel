@@ -103,10 +103,10 @@ class SpinFreeMethod {
     double compute_e0();
 
     // denominator objects
-    std::vector<std::shared_ptr<const Denom>> denom_;
+    std::shared_ptr<const Denom> denom_;
 
     // update t from the residual and denominator (this function does not zero out).
-    void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r, std::shared_ptr<const Denom> denom = nullptr) const;
+    void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r) const;
     void update_amplitude(std::shared_ptr<MultiTensor> t, std::shared_ptr<const MultiTensor> r) const;
 
     // utility function

@@ -33,9 +33,8 @@ using namespace SMITH;
 
 Denom::Denom(shared_ptr<const Matrix> fock, const int nstates, const double th = 1.0e-8) : fock_(fock), thresh_(th) {
   const size_t ndim = fock->mdim() * nstates;
-  const size_t ndim2 = ndim * ndim;
-  const size_t ndim3 = ndim2 * ndim;
-  assert(ndim == fock->ndim());
+  const size_t ndim2 = fock->mdim() * ndim;
+  const size_t ndim3 = fock->mdim() * ndim2;
 
   shalf_x_ = make_shared<Matrix>(ndim, ndim);
   shalf_h_ = make_shared<Matrix>(ndim, ndim);
@@ -75,6 +74,7 @@ void Denom::append(const int jst, const int ist, shared_ptr<const RDM<1>> rdm1, 
 
 
 void Denom::compute() {
+  // TODO in principle, we can use smaller dimension (i.e., use canonical orthogonalization for shalf_x_)
   {
     shalf_x_->inverse_half(thresh_);
     Matrix tmp(*shalf_x_ % *work_x_ * *shalf_x_);
@@ -138,19 +138,24 @@ void Denom::init_h_(const int jst, const int ist, shared_ptr<const RDM<1>> rdm1,
   const size_t dim  = nact;
   const size_t size = dim*dim;
   auto shalf = make_shared<Matrix>(dim, dim);
-  copy_n(rdm1->data(), size, shalf->data());
-  shalf->scale(-1.0);
-  shalf->add_diag(2.0); //.. making hole 1RDM
+  if (jst == ist) {
+    copy_n(rdm1->data(), size, shalf->data());
+    shalf->scale(-1.0);
+    shalf->add_diag(2.0); //.. making hole 1RDM
+  } else {
+    blas::transpose(rdm1->data(), dim, dim, shalf->data());
+    shalf->scale(-1.0);
+  }
   shalf_h_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
 
-  shared_ptr<RDM<2>> ovl = rdm2->copy();
-  ovl->scale(-1.0);
+  shared_ptr<RDM<2>> ovl = rdm2->clone();
+  sort_indices<1,0,2,0,1,-1,1>(rdm2->data(), ovl->data(), nact, nact, nact*nact);
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
       for (int k = 0; k != nact; ++k) {
         // see Celani eq. A7
-        ovl->element(k, i, i, j) +=       shalf->element(k,j);
-        ovl->element(i, k, j, i) += -1.0 * rdm1->element(k,j);
+        ovl->element(k, i, j, i) +=       shalf->element(k,j);
+        ovl->element(i, k, i, j) += -1.0 * rdm1->element(k,j);
         ovl->element(i, i, k, j) +=  2.0 * rdm1->element(k,j);
       }
   Matrix work2(dim, dim);
@@ -181,26 +186,26 @@ void Denom::init_hh_(const int jst, const int ist, shared_ptr<const RDM<1>> rdm1
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact;
   const size_t size = dim*dim;
-  shared_ptr<RDM<2>> ovl = rdm2->copy();
+  shared_ptr<RDM<2>> shalf = rdm2->clone();
+  sort_indices<1,3,0,2,0,1,1,1>(rdm2->data(), shalf->data(), nact, nact, nact, nact);
+  const double fac = jst == ist ? 1.0 : 0.0;
   for (int i2 = 0; i2 != nact; ++i2)
     for (int i1 = 0; i1 != nact; ++i1)
       for (int i3 = 0; i3 != nact; ++i3)
         for (int i0 = 0; i0 != nact; ++i0) {
           double a = 0.0;
-          if (i1 == i3)             a +=        rdm1->element(i0, i2);
-          if (i1 == i2)             a += -2.0 * rdm1->element(i0, i3);
-          if (i0 == i3)             a += -2.0 * rdm1->element(i1, i2);
-          if (i0 == i2)             a +=        rdm1->element(i1, i3);
-          if (i0 == i3 && i1 == i2) a +=  4.0;
-          if (i0 == i2 && i1 == i3) a += -2.0;
-          ovl->element(i0, i3, i1, i2) += a;
+          if (i1 == i3)             a +=        rdm1->element(i2, i0);
+          if (i1 == i2)             a += -2.0 * rdm1->element(i3, i0);
+          if (i0 == i3)             a += -2.0 * rdm1->element(i2, i1);
+          if (i0 == i2)             a +=        rdm1->element(i3, i1);
+          if (i0 == i3 && i1 == i2) a +=  4.0 * fac;
+          if (i0 == i2 && i1 == i3) a += -2.0 * fac;
+          shalf->element(i0, i1, i3, i2) += a;
         }
-
-  auto shalf = make_shared<Matrix>(dim, dim);
-  sort_indices<0,2,1,3,0,1,1,1>(ovl->data(), shalf->data(), nact, nact, nact, nact);
   shalf_hh_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
 
-  shared_ptr<RDM<3>> r3 = rdm3->copy();
+  shared_ptr<RDM<3>> r3 = rdm3->clone();
+  sort_indices<1,3,0,2,4,0,1,1,1>(rdm3->data(), r3->data(), nact, nact, nact, nact, nact*nact);
   for (int i2 = 0; i2 != nact; ++i2)
     for (int i3 = 0; i3 != nact; ++i3)
       for (int i4 = 0; i4 != nact; ++i4)
@@ -208,40 +213,38 @@ void Denom::init_hh_(const int jst, const int ist, shared_ptr<const RDM<1>> rdm1
           for (int i5 = 0; i5 != nact; ++i5)
             for (int i0 = 0; i0 != nact; ++i0) {
               double a = 0.0;
-              if (i3 == i5)                         a +=        rdm2->element(i1, i4, i0, i2);
-              if (i3 == i4)                         a +=        rdm2->element(i0, i5, i1, i2);
-              if (i1 == i5)                         a +=        rdm2->element(i0, i4, i3, i2);
-              if (i1 == i5 && i3 == i4)             a +=        rdm1->element(i0, i2);
-              if (i1 == i4)                         a += -2.0 * rdm2->element(i0, i5, i3, i2);
-              if (i1 == i4 && i3 == i5)             a += -2.0 * rdm1->element(i0, i2);
-              if (i1 == i2)                         a +=        rdm2->element(i0, i5, i3, i4);
-              if (i1 == i2 && i3 == i5)             a +=        rdm1->element(i0, i4);
-              if (i1 == i2 && i3 == i4)             a += -2.0 * rdm1->element(i0, i5);
-              if (i0 == i5)                         a += -2.0 * rdm2->element(i1, i4, i3, i2);
-              if (i0 == i5 && i3 == i4)             a += -2.0 * rdm1->element(i1, i2);
-              if (i1 == i2 && i0 == i5)             a += -2.0 * rdm1->element(i3, i4);
-              if (i1 == i2 && i0 == i5 && i3 == i4) a +=  4.0;
-              if (i0 == i4)                         a +=        rdm2->element(i1, i5, i3, i2);
-              if (i0 == i4 && i3 == i5)             a +=        rdm1->element(i1, i2);
-              if (i1 == i2 && i0 == i4)             a +=        rdm1->element(i3, i5);
-              if (i1 == i2 && i0 == i4 && i3 == i5) a += -2.0;
-              if (i0 == i2)                         a +=        rdm2->element(i3, i5, i1, i4);
-              if (i0 == i2 && i3 == i5)             a += -2.0 * rdm1->element(i1, i4);
-              if (i0 == i2 && i3 == i4)             a +=        rdm1->element(i1, i5);
-              if (i1 == i5 && i0 == i2)             a +=        rdm1->element(i3, i4);
-              if (i0 == i2 && i1 == i5 && i3 == i4) a += -2.0;
-              if (i0 == i2 && i1 == i4)             a += -2.0 * rdm1->element(i3, i5);
-              if (i1 == i4 && i3 == i5 && i0 == i2) a +=  4.0;
-              if (i0 == i5 && i1 == i4)             a +=  4.0 * rdm1->element(i3, i2);
-              if (i0 == i4 && i1 == i5)             a += -2.0 * rdm1->element(i3, i2);
-              r3->element(i0, i5, i1, i4, i3, i2) += a;
+              if (i3 == i5)                         a +=        rdm2->element(i4, i1, i2, i0);
+              if (i3 == i4)                         a +=        rdm2->element(i5, i0, i2, i1);
+              if (i1 == i5)                         a +=        rdm2->element(i4, i0, i2, i3);
+              if (i1 == i5 && i3 == i4)             a +=        rdm1->element(i2, i0);
+              if (i1 == i4)                         a += -2.0 * rdm2->element(i5, i0, i2, i3);
+              if (i1 == i4 && i3 == i5)             a += -2.0 * rdm1->element(i2, i0);
+              if (i1 == i2)                         a +=        rdm2->element(i5, i0, i4, i3);
+              if (i1 == i2 && i3 == i5)             a +=        rdm1->element(i4, i0);
+              if (i1 == i2 && i3 == i4)             a += -2.0 * rdm1->element(i5, i0);
+              if (i0 == i5)                         a += -2.0 * rdm2->element(i4, i1, i2, i3);
+              if (i0 == i5 && i3 == i4)             a += -2.0 * rdm1->element(i2, i1);
+              if (i1 == i2 && i0 == i5)             a += -2.0 * rdm1->element(i4, i3);
+              if (i1 == i2 && i0 == i5 && i3 == i4) a +=  4.0 * fac;
+              if (i0 == i4)                         a +=        rdm2->element(i5, i1, i2, i3);
+              if (i0 == i4 && i3 == i5)             a +=        rdm1->element(i2, i1);
+              if (i1 == i2 && i0 == i4)             a +=        rdm1->element(i5, i3);
+              if (i1 == i2 && i0 == i4 && i3 == i5) a += -2.0 * fac;
+              if (i0 == i2)                         a +=        rdm2->element(i5, i3, i4, i1);
+              if (i0 == i2 && i3 == i5)             a += -2.0 * rdm1->element(i4, i1);
+              if (i0 == i2 && i3 == i4)             a +=        rdm1->element(i5, i1);
+              if (i1 == i5 && i0 == i2)             a +=        rdm1->element(i4, i3);
+              if (i0 == i2 && i1 == i5 && i3 == i4) a += -2.0 * fac;
+              if (i0 == i2 && i1 == i4)             a += -2.0 * rdm1->element(i5, i3);
+              if (i1 == i4 && i3 == i5 && i0 == i2) a +=  4.0 * fac;
+              if (i0 == i5 && i1 == i4)             a +=  4.0 * rdm1->element(i2, i3);
+              if (i0 == i4 && i1 == i5)             a += -2.0 * rdm1->element(i2, i3);
+              r3->element(i0, i1, i5, i4, i2, i3) += a;
             }
 
   auto work2 = make_shared<Matrix>(dim, dim);
   dgemv_("N", size, nact*nact, 1.0, r3->data(), size, fock_->data(), 1, 0.0, work2->data(), 1);
-  auto work = make_shared<Matrix>(dim, dim);
-  sort_indices<0,2,1,3,0,1,1,1>(work2->data(), work->data(), nact, nact, nact, nact);
-  work_hh_->copy_block(dim*jst, dim*ist, dim, dim, work);
+  work_hh_->copy_block(dim*jst, dim*ist, dim, dim, work2);
 }
 
 
@@ -262,7 +265,7 @@ void Denom::init_xh_(const int jst, const int ist, shared_ptr<const RDM<1>> rdm1
       }
 
   Matrix work(dim, dim);
-  sort_indices<3,0,2,1,0,1,1,1>(ovl1.data(), work.data(), nact, nact, nact, nact);
+  sort_indices<2,1,3,0,0,1,1,1>(ovl1.data(), work.data(), nact, nact, nact, nact);
   shalf->add_block(1.0, dim, dim, dim, dim, work);
 
   sort_indices<0,1,3,2,0,1,2,1>(ovl4.data(), work.data(), nact, nact, nact, nact);
@@ -302,7 +305,7 @@ void Denom::init_xh_(const int jst, const int ist, shared_ptr<const RDM<1>> rdm1
   Matrix work2(dim, dim);
 
   dgemv_("N", size, nact*nact, 1.0, d0->data(), size, fock_->data(), 1, 0.0, work2.data(), 1);
-  sort_indices<3,0,2,1,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
+  sort_indices<2,1,3,0,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
   auto num = make_shared<Matrix>(dim*2, dim*2);
   num->add_block(1.0, dim, dim, dim, dim, work);
 
