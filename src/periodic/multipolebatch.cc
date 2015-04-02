@@ -150,7 +150,6 @@ void MultipoleBatch::compute() {
         } // ix
       } //iy
     } //iz
-    if (iang > asize_) cout << "iang = " << iang << " asize_ = " << asize_ << endl;
     assert(iang <= asize_);
 
   } // end loop over primitives - done (n|O|0)

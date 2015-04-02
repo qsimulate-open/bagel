@@ -68,7 +68,7 @@ void LocalExpansion::compute_local_moments() {
           const double imag = prefactor * sin(abs(b) * phi);
           const complex<double> coeff(real, imag);
 
-          if (abs(coeff) > 1e-15)
+          if (abs(coeff) > PRIM_SCREEN_THRESH)
             zaxpy_(nbasis0_ * nbasis1_, coeff, moments_[i2]->data(), 1, local.data(), 1);
         }
       }
@@ -106,7 +106,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_moments() {
             const double imag = prefactor * sin(abs(b) * phi);
             const complex<double> coeff(real, imag);
 
-            if (abs(coeff) > 1e-15)
+            if (abs(coeff) > PRIM_SCREEN_THRESH)
               zaxpy_(nbasis0_ * nbasis1_, coeff, moments_[i2]->data(), 1, shifted.data(), 1);
           }
         }
@@ -146,7 +146,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_local_expansio
             const double imag = prefactor * sin(abs(b) * phi);
             const complex<double> coeff(real, imag);
 
-            if (abs(coeff) > 1e-15)
+            if (abs(coeff) > PRIM_SCREEN_THRESH)
               zaxpy_(nbasis0_ * nbasis1_, coeff, moments_[i2]->data(), 1, shifted.data(), 1);
           }
         }

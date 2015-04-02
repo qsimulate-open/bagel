@@ -163,22 +163,6 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
     }
 
   // return the Coulomb matrix
-  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
-  out->zero();
-  for (int i = 0; i != nnode_; ++i)
-    if (nodes_[i]->is_leaf()) {
-      size_t offset0 = 0;
-      for (auto& body : nodes_[i]->bodies()) {
-        const size_t nbas = body->atom()->nbasis();
-        ZMatrix sublocal = *(nodes_[i]->local_expansion()->get_submatrix(offset0, offset0, nbas, nbas));
-
-        const size_t offset1 =  offset[body->ishell()];
-        out->add_block(1.0, offset1, offset1, nbas, nbas, sublocal.data());
-
-        offset0 += nbas;
-      }
-    }
-
   coulomb_ = out;
 }
 
