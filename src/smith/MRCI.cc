@@ -186,9 +186,8 @@ void MRCI::MRCI::solve() {
       print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
 
       t2all_[i]->zero();
-      if (err < ref_->thresh())
-        conv[i] = true;
-      else
+      conv[i] = err < ref_->thresh();
+      if (!conv[i])
         update_amplitude(t2all_[i], res[i]->tensor());
     }
     if (nstates_ > 1) cout << endl;
