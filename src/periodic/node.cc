@@ -397,42 +397,31 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         const int b2offset = new_offset[i2];
         const int b2size = b2->nbasis();
 
-        for (int i3 = 0; i3 != size; ++i3) {
-          const shared_ptr<const Shell>  b3 = basis[i3];
-          const int b3offset = new_offset[i3];
-          const int b3size = b3->nbasis();
+        for (auto& a3 : bodies_) {
+          size_t ib3 = 0;
+          for (auto& b3 : a3->atom()->shells()) {
+            const int b3size = b3->nbasis();
+            const size_t b3offset = offset[a3->ishell() + ib3];
 
-          if ((b0offset + b0size + b1offset + b1size) < (b2offset + b3offset)) continue;
-          if ((b0offset + b0size + b2offset + b2size) < (b1offset + b3offset)) continue;
+            array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+            ERIBatch eribatch(input, 0.0);
+            eribatch.compute();
+            const double* eridata = eribatch.data();
 
-          array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
-          ERIBatch eribatch(input, 0.0);
-          eribatch.compute();
-          const double* eridata = eribatch.data();
-
-          for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-            const int j0n = j0 * density->ndim();
-            for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
-              const int j1n = j1 * density->ndim();
-              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-                const int j2n = j2 * density->ndim();
-                for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
-                  const int j3n = j3 * density->ndim();
-
-                  double eri = *eridata / nneighbour_;
-                  if (j0 + j1 <  j2 + j3 || j0 + j2 <  j1 + j3) continue;
-                  if (j0 + j1 == j2 + j3) eri *= 0.5;
-                  if (j0 + j2 == j1 + j3) eri *= 0.5;
-
-                  out->element(j1, j0) += density_data[j3n + j2] * eri;
-                  out->element(j3, j2) += density_data[j1n + j0] * eri;
-                  out->element(j0, j1) += density_data[j2n + j3] * eri;
-                  out->element(j2, j3) += density_data[j0n + j1] * eri;
+            for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+              const int j0n = j0 * density->ndim();
+              for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                  for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                    const double eri = *eridata;
+                    out->element(j2, j3) += density_data[j0n + j1] * eri;
+                  }
                 }
               }
             }
-          }
+            ++ib3;
 
+          }
         }
       }
     }
