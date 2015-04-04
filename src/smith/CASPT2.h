@@ -121,13 +121,13 @@ class CASPT2 : public SpinFreeMethod {
     std::shared_ptr<FutureTensor> Gamma362_();
     std::shared_ptr<FutureTensor> Gamma377_();
     std::shared_ptr<FutureTensor> Gamma395_();
-    std::shared_ptr<Queue> make_residualq(const bool reset = true);
-    std::shared_ptr<Queue> make_energyq(const bool reset = true);
-    std::shared_ptr<Queue> make_corrq(const bool reset = true);
-    std::shared_ptr<Queue> make_densityq(const bool reset = true);
-    std::shared_ptr<Queue> make_density1q(const bool reset = true);
-    std::shared_ptr<Queue> make_density2q(const bool reset = true);
-    std::shared_ptr<Queue> make_deciq(const bool reset = true);
+    std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_energyq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_corrq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_densityq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_density1q(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_density2q(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_deciq(const bool reset = true, const bool diagonal = true);
 
   public:
     CASPT2(std::shared_ptr<const SMITH_Info> ref);

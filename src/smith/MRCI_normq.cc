@@ -49,14 +49,11 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task970->add_dep(task969);
   normq->add_task(task970);
 
-  shared_ptr<Task971> task971;
-  if (diagonal) {
-    auto tensor971 = vector<shared_ptr<Tensor>>{I1778, t2, Gamma0_()};
-    task971 = make_shared<Task971>(tensor971, pindex);
-    task970->add_dep(task971);
-    task971->add_dep(task969);
-    normq->add_task(task971);
-  }
+  auto tensor971 = vector<shared_ptr<Tensor>>{I1778, t2, Gamma0_()};
+  auto task971 = make_shared<Task971>(tensor971, pindex);
+  task970->add_dep(task971);
+  task971->add_dep(task969);
+  normq->add_task(task971);
 
   vector<IndexRange> I1780_index = {closed_, active_, active_, active_};
   auto I1780 = make_shared<Tensor>(I1780_index);
@@ -78,14 +75,11 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task974->add_dep(task969);
   normq->add_task(task974);
 
-  shared_ptr<Task975> task975;
-  if (diagonal) {
-    auto tensor975 = vector<shared_ptr<Tensor>>{I1782, t2, Gamma12_()};
-    task975 = make_shared<Task975>(tensor975, pindex);
-    task974->add_dep(task975);
-    task975->add_dep(task969);
-    normq->add_task(task975);
-  }
+  auto tensor975 = vector<shared_ptr<Tensor>>{I1782, t2, Gamma12_()};
+  auto task975 = make_shared<Task975>(tensor975, pindex);
+  task974->add_dep(task975);
+  task975->add_dep(task969);
+  normq->add_task(task975);
 
   auto tensor976 = vector<shared_ptr<Tensor>>{I1782, Gamma12_(), t2};
   auto task976 = make_shared<Task976>(tensor976, pindex);
@@ -100,23 +94,17 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task977->add_dep(task969);
   normq->add_task(task977);
 
-  shared_ptr<Task978> task978;
-  if (diagonal) {
-    auto tensor978 = vector<shared_ptr<Tensor>>{I1786, t2, Gamma27_()};
-    task978 = make_shared<Task978>(tensor978, pindex);
-    task977->add_dep(task978);
-    task978->add_dep(task969);
-    normq->add_task(task978);
-  }
+  auto tensor978 = vector<shared_ptr<Tensor>>{I1786, t2, Gamma27_()};
+  auto task978 = make_shared<Task978>(tensor978, pindex);
+  task977->add_dep(task978);
+  task978->add_dep(task969);
+  normq->add_task(task978);
 
-  shared_ptr<Task979> task979;
-  if (diagonal) {
-    auto tensor979 = vector<shared_ptr<Tensor>>{I1786, t2, Gamma29_()};
-    task979 = make_shared<Task979>(tensor979, pindex);
-    task977->add_dep(task979);
-    task979->add_dep(task969);
-    normq->add_task(task979);
-  }
+  auto tensor979 = vector<shared_ptr<Tensor>>{I1786, t2, Gamma29_()};
+  auto task979 = make_shared<Task979>(tensor979, pindex);
+  task977->add_dep(task979);
+  task979->add_dep(task969);
+  normq->add_task(task979);
 
   vector<IndexRange> I1790_index = {active_, active_, virt_, closed_};
   auto I1790 = make_shared<Tensor>(I1790_index);
@@ -125,23 +113,17 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task980->add_dep(task969);
   normq->add_task(task980);
 
-  shared_ptr<Task981> task981;
-  if (diagonal) {
-    auto tensor981 = vector<shared_ptr<Tensor>>{I1790, t2, Gamma29_()};
-    task981 = make_shared<Task981>(tensor981, pindex);
-    task980->add_dep(task981);
-    task981->add_dep(task969);
-    normq->add_task(task981);
-  }
+  auto tensor981 = vector<shared_ptr<Tensor>>{I1790, t2, Gamma29_()};
+  auto task981 = make_shared<Task981>(tensor981, pindex);
+  task980->add_dep(task981);
+  task981->add_dep(task969);
+  normq->add_task(task981);
 
-  shared_ptr<Task982> task982;
-  if (diagonal) {
-    auto tensor982 = vector<shared_ptr<Tensor>>{I1790, t2, Gamma29_()};
-    task982 = make_shared<Task982>(tensor982, pindex);
-    task980->add_dep(task982);
-    task982->add_dep(task969);
-    normq->add_task(task982);
-  }
+  auto tensor982 = vector<shared_ptr<Tensor>>{I1790, t2, Gamma29_()};
+  auto task982 = make_shared<Task982>(tensor982, pindex);
+  task980->add_dep(task982);
+  task982->add_dep(task969);
+  normq->add_task(task982);
 
   vector<IndexRange> I1794_index = {active_, active_, active_, virt_};
   auto I1794 = make_shared<Tensor>(I1794_index);
@@ -150,14 +132,11 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task983->add_dep(task969);
   normq->add_task(task983);
 
-  shared_ptr<Task984> task984;
-  if (diagonal) {
-    auto tensor984 = vector<shared_ptr<Tensor>>{I1794, t2, Gamma50_()};
-    task984 = make_shared<Task984>(tensor984, pindex);
-    task983->add_dep(task984);
-    task984->add_dep(task969);
-    normq->add_task(task984);
-  }
+  auto tensor984 = vector<shared_ptr<Tensor>>{I1794, t2, Gamma50_()};
+  auto task984 = make_shared<Task984>(tensor984, pindex);
+  task983->add_dep(task984);
+  task984->add_dep(task969);
+  normq->add_task(task984);
 
   shared_ptr<Tensor> I1796;
   if (diagonal) {
@@ -188,23 +167,17 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task987->add_dep(task969);
   normq->add_task(task987);
 
-  shared_ptr<Task988> task988;
-  if (diagonal) {
-    auto tensor988 = vector<shared_ptr<Tensor>>{I1798, t2, Gamma32_()};
-    task988 = make_shared<Task988>(tensor988, pindex);
-    task987->add_dep(task988);
-    task988->add_dep(task969);
-    normq->add_task(task988);
-  }
+  auto tensor988 = vector<shared_ptr<Tensor>>{I1798, t2, Gamma32_()};
+  auto task988 = make_shared<Task988>(tensor988, pindex);
+  task987->add_dep(task988);
+  task988->add_dep(task969);
+  normq->add_task(task988);
 
-  shared_ptr<Task989> task989;
-  if (diagonal) {
-    auto tensor989 = vector<shared_ptr<Tensor>>{I1798, t2, Gamma32_()};
-    task989 = make_shared<Task989>(tensor989, pindex);
-    task987->add_dep(task989);
-    task989->add_dep(task969);
-    normq->add_task(task989);
-  }
+  auto tensor989 = vector<shared_ptr<Tensor>>{I1798, t2, Gamma32_()};
+  auto task989 = make_shared<Task989>(tensor989, pindex);
+  task987->add_dep(task989);
+  task989->add_dep(task969);
+  normq->add_task(task989);
 
   vector<IndexRange> I1802_index = {virt_, virt_, active_, active_};
   auto I1802 = make_shared<Tensor>(I1802_index);
