@@ -47,7 +47,7 @@ SphMultipole::SphMultipole(const array<double, 3> c, const bool do_complex, cons
 void SphMultipole::compute_multipoles() {
 
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-  const double ctheta = centre_[2]/r;
+  const double ctheta = (r > numerical_zero__) ? centre_[2]/r : 0.0;
   const double phi = atan2(centre_[1], centre_[0]);
 
   multipole_.resize(num_multipoles_);
@@ -58,15 +58,12 @@ void SphMultipole::compute_multipoles() {
     for (int mm = 0; mm <= 2 * l; ++mm, ++count) {
       const int m = mm - l;
       const int am = abs(m);
-      if (r > 1e-15) {
-        const double coeff = pow(r, l) * plm.compute(l, am, ctheta) / f(l + am);
 
-        const double real = (m >=0) ? (coeff * cos(am * phi)) : (-1.0 * coeff * cos(am * phi));
-        const double imag = coeff * sin(am * phi);
-        multipole_[count] = complex<double>(real, imag);
-      } else {
-        multipole_[count] = 0.0;
-      }
+      const double coeff = pow(r, l) * plm.compute(l, am, ctheta) / f(l + am);
+
+      const double real = (m >=0) ? (coeff * cos(am * phi)) : (-1.0 * coeff * cos(am * phi));
+      const double imag = coeff * sin(am * phi);
+      multipole_[count] = complex<double>(real, imag);
 
     }
   }
