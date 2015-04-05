@@ -29,11 +29,12 @@
 #ifndef __BAGEL_ZFCI_ZHARRISON_H
 #define __BAGEL_ZFCI_ZHARRISON_H
 
+#include <src/util/kramers.h>
+#include <src/util/math/davidson.h>
 #include <src/wfn/method.h>
 #include <src/wfn/relreference.h>
 #include <src/ci/zfci/relmofile.h>
 #include <src/ci/zfci/reldvec.h>
-#include <src/util/math/davidson.h>
 
 namespace bagel {
 
@@ -82,11 +83,11 @@ class ZHarrison : public Method {
     std::shared_ptr<RelDvec> denom_;
 
     // RDMs
-    std::vector<std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>>> rdm1_;
-    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>>> rdm2_;
+    std::vector<std::shared_ptr<Kramers<2,ZRDM<1>>>> rdm1_;
+    std::vector<std::shared_ptr<Kramers<4,ZRDM<2>>>> rdm2_;
     // state averaged RDMs
-    std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>> rdm1_av_;
-    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_;
+    std::shared_ptr<Kramers<2,ZRDM<1>>> rdm1_av_;
+    std::shared_ptr<Kramers<4,ZRDM<2>>> rdm2_av_;
 
     std::shared_ptr<DavidsonDiag<RelZDvec, ZMatrix>> davidson_;
 
@@ -198,11 +199,10 @@ class ZHarrison : public Method {
     std::shared_ptr<const ZMatrix> mo2e_full() const;
     std::shared_ptr<const ZMatrix> rdm1_av() const;
     std::shared_ptr<const ZMatrix> rdm2_av() const;
-    std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(std::string&& b) const { return rdm1_av_.at(std::bitset<2>(b)); }
-    std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(std::string&& b) const { return rdm2_av_.at(std::bitset<4>(b)); }
-    std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const std::bitset<2>& b) const { return rdm1_av_.at(b); }
-    std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
-    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_kramers() { return rdm2_av_; }
+    template<typename T>
+    std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const T& b) const { KTag<2> t(b); return rdm1_av_->at(t); }
+    template<typename T>
+    std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }

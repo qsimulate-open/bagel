@@ -37,8 +37,10 @@ void ZHarrison::compute_rdm12() {
   auto space1 = make_shared<RelSpace>(norb_, nele_-1);
   rdm1_.clear();
   rdm2_.clear();
-  rdm1_.resize(nstate_);
-  rdm2_.resize(nstate_);
+  for (int istate = 0; istate != nstate_; ++istate)  {
+    rdm1_.push_back(make_shared<Kramers<2,ZRDM<1>>>());
+    rdm2_.push_back(make_shared<Kramers<4,ZRDM<2>>>());
+  }
 
   for (int istate = 0; istate != nstate_; ++istate) {
     // loop over n-2 determinant spaces
@@ -46,40 +48,30 @@ void ZHarrison::compute_rdm12() {
       const int neleb = nele_-2 - nelea;
       if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
 
-      // current intermediate determinant
-      shared_ptr<const Determinants> int_det = int_space_->finddet(nelea, neleb);
-
       // map
-      map<string, shared_ptr<ZDvec>> intermediates;
-
-      const int ij = norb_*norb_;
+      Kramers<2,ZDvec> intermediates;
 
       if (nelea+1 <= norb_ && neleb+1 <= norb_) {
         shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb+1)->data(istate);
-        auto d = make_shared<ZDvec>(int_det, ij);
+        auto d = make_shared<ZDvec>(int_space_->finddet(nelea, neleb), norb_*norb_);
         sigma_2e_annih_ab(cc, d);
-        intermediates["01"] = d;
+        intermediates.emplace({0,1}, d);
       }
       if (neleb+2 <= norb_) {
         // transpose the civec
         shared_ptr<const ZCivec> cc = cc_->find(nelea, neleb+2)->data(istate);
-        auto tmp = make_shared<ZDvec>(int_space_->finddet(neleb, nelea), ij);
-        sigma_2e_annih_aa(cc->transpose(), tmp);
+        auto d = make_shared<ZDvec>(int_space_->finddet(neleb, nelea), norb_*norb_);
+        sigma_2e_annih_aa(cc->transpose(), d);
         // transpose back
-        auto d = make_shared<ZDvec>(int_space_->finddet(nelea, neleb), ij);
-        auto jptr = tmp->dvec().begin();
-        for (auto& i : d->dvec()) {
-          *i = *(*jptr)->transpose();
-          ++jptr;
-        }
-        intermediates["11"] = d;
+        for (auto& i : d->dvec())
+          *i = *i->transpose();
+        intermediates.emplace({1,1}, d);
       }
       if (nelea+2 <= norb_) {
-        // to be implemeneted
         shared_ptr<const ZCivec> cc = cc_->find(nelea+2, neleb)->data(istate);
-        auto d = make_shared<ZDvec>(int_det, ij);
+        auto d = make_shared<ZDvec>(int_space_->finddet(nelea, neleb), norb_*norb_);
         sigma_2e_annih_aa(cc, d);
-        intermediates["00"] = d;
+        intermediates.emplace({0,0}, d);
       }
 
       for (auto& i : intermediates) {
@@ -89,13 +81,11 @@ void ZHarrison::compute_rdm12() {
             auto rdm2grouped = group(group(*rdm2, 2,4), 0,2);
             contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, rdm2grouped, {1,2}, true, false);
 
-            bitset<4> key(i.first + j.first);
-
-            if (rdm2_[istate].find(key) == rdm2_[istate].end()) {
-              rdm2_[istate][key] = rdm2;
-            } else {
-              *rdm2_[istate].at(key) += *rdm2;
-            }
+            const auto key = merge(i.first, j.first);
+            if (!rdm2_[istate]->exist(key))
+              rdm2_[istate]->emplace(key, rdm2);
+            else
+              *rdm2_[istate]->at(key) += *rdm2;
           }
         }
       }
@@ -109,7 +99,7 @@ void ZHarrison::compute_rdm12() {
       if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
 
       shared_ptr<const Determinants> int_det = space1->finddet(nelea, neleb);
-      map<string, shared_ptr<ZDvec>> intermediates;
+      Kramers<1,ZDvec> intermediates;
 
       if (nelea+1 <= norb_) {
         shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb)->data(istate);
@@ -125,7 +115,7 @@ void ZHarrison::compute_rdm12() {
             blas::ax_plus_y_n(sign, source, lenb, target);
           }
         }
-        intermediates["0"] = d;
+        intermediates.emplace({0}, d);
       }
       if (neleb+1 <= norb_) {
         shared_ptr<const ZCivec> cc = cc_->find(nelea, neleb+1)->data(istate);
@@ -144,7 +134,7 @@ void ZHarrison::compute_rdm12() {
             }
           }
         }
-        intermediates["1"] = d;
+        intermediates.emplace({1}, d);
       }
       // almost the same code as above
       for (auto& i : intermediates) {
@@ -152,74 +142,73 @@ void ZHarrison::compute_rdm12() {
           if (i.first >= j.first) {
             auto rdm1 = make_shared<ZRDM<1>>(norb_);
             contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, *rdm1, {1,2}, true, false);
-            bitset<2> key(i.first + j.first);
-            if (rdm1_[istate].find(key) == rdm1_[istate].end()) {
-              rdm1_[istate][key] = rdm1;
-            } else {
-              *rdm1_[istate].at(key) += *rdm1;
-            }
+            const auto key = merge(i.first, j.first);
+            if (!rdm1_[istate]->exist(key))
+              rdm1_[istate]->emplace(key, rdm1);
+            else
+              *rdm1_[istate]->at(key) += *rdm1;
           }
         }
       }
     }
 
     // for completeness we can compute all the blocks (2RDM), which are useful in CASSCF
-    if (rdm1_[istate].find(bitset<2>("10")) == rdm1_[istate].end()) {
-      rdm1_[istate][bitset<2>("10")] = rdm1_[istate].at(bitset<2>("00"))->clone();
-    }
+    if (!rdm1_[istate]->exist({1,0}))
+      rdm1_[istate]->at({1,0}) = rdm1_[istate]->at({0,0})->clone();
 
     for (int i = 0; i != 4; ++i) {
       for (int j = 0; j != 4; ++j) {
         bitset<4> target((j << 2) + i);
-        bitset<4> s2301((i << 2) + j);
-        bitset<4> s1032; s1032.set(0, target[1]); s1032.set(1, target[0]); s1032.set(2, target[3]); s1032.set(3, target[2]);
-        bitset<4> s3210; s3210.set(0, target[3]); s3210.set(1, target[2]); s3210.set(2, target[1]); s3210.set(3, target[0]);
-        bitset<4> s0132; s0132.set(0, target[0]); s0132.set(1, target[1]); s0132.set(2, target[3]); s0132.set(3, target[2]);
-        if (rdm2_[istate].find(target) != rdm2_[istate].end()) {
-          continue;
-        } else if (rdm2_[istate].find(s2301) != rdm2_[istate].end()) {
-          rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
-          sort_indices<2,3,0,1,0,1,1,1>(rdm2_[istate].at(s2301)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
-          transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return conj(a); });
-        } else if (rdm2_[istate].find(s1032) != rdm2_[istate].end()) {
-          rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
-          sort_indices<1,0,3,2,0,1,1,1>(rdm2_[istate].at(s1032)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
-        } else if (rdm2_[istate].find(s3210) != rdm2_[istate].end()) {
-          rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
-          sort_indices<3,2,1,0,0,1,1,1>(rdm2_[istate].at(s3210)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
-          transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return conj(a); });
-        } else if (rdm2_[istate].find(s0132) != rdm2_[istate].end()) {
-          rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
-          sort_indices<1,0,2,3,0,1,1,1>(rdm2_[istate].at(s0132)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
-          transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return -a; });
-        } else {
-          rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
+
+        if (!rdm2_[istate]->exist(target)) {
+          bitset<4> s2301((i << 2) + j);
+          bitset<4> s1032; s1032.set(0, target[1]); s1032.set(1, target[0]); s1032.set(2, target[3]); s1032.set(3, target[2]);
+          bitset<4> s3210; s3210.set(0, target[3]); s3210.set(1, target[2]); s3210.set(2, target[1]); s3210.set(3, target[0]);
+          bitset<4> s0132; s0132.set(0, target[0]); s0132.set(1, target[1]); s0132.set(2, target[3]); s0132.set(3, target[2]);
+
+          // TODO I don't know why I cannot move emplace line outside if block (if I do, assert fails)
+          if (rdm2_[istate]->exist(s2301)) {
+            rdm2_[istate]->emplace(target, make_shared<ZRDM<2>>(norb_));
+            sort_indices<2,3,0,1,0,1,1,1>(rdm2_[istate]->at(s2301)->data(), rdm2_[istate]->at(target)->data(), norb_, norb_, norb_, norb_);
+            transform(rdm2_[istate]->at(target)->data(), rdm2_[istate]->at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate]->at(target)->data(), [](complex<double> a){ return conj(a); });
+          } else if (rdm2_[istate]->exist(s1032)) {
+            rdm2_[istate]->emplace(target, make_shared<ZRDM<2>>(norb_));
+            sort_indices<1,0,3,2,0,1,1,1>(rdm2_[istate]->at(s1032)->data(), rdm2_[istate]->at(target)->data(), norb_, norb_, norb_, norb_);
+          } else if (rdm2_[istate]->exist(s3210)) {
+            rdm2_[istate]->emplace(target, make_shared<ZRDM<2>>(norb_));
+            sort_indices<3,2,1,0,0,1,1,1>(rdm2_[istate]->at(s3210)->data(), rdm2_[istate]->at(target)->data(), norb_, norb_, norb_, norb_);
+            transform(rdm2_[istate]->at(target)->data(), rdm2_[istate]->at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate]->at(target)->data(), [](complex<double> a){ return conj(a); });
+          } else if (rdm2_[istate]->exist(s0132)) {
+            rdm2_[istate]->emplace(target, make_shared<ZRDM<2>>(norb_));
+            sort_indices<1,0,2,3,0,1,1,1>(rdm2_[istate]->at(s0132)->data(), rdm2_[istate]->at(target)->data(), norb_, norb_, norb_, norb_);
+            transform(rdm2_[istate]->at(target)->data(), rdm2_[istate]->at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate]->at(target)->data(), [](complex<double> a){ return -a; });
+          } else {
+            rdm2_[istate]->emplace(target, make_shared<ZRDM<2>>(norb_));
+          }
         }
       }
     }
   }
 
-  rdm1_av_.clear();
-  rdm2_av_.clear();
+  rdm1_av_ = make_shared<Kramers<2,ZRDM<1>>>();
+  rdm2_av_ = make_shared<Kramers<4,ZRDM<2>>>();
   if (nstate_ > 1) {
     for (int istate = 0; istate != nstate_; ++istate) {
-      for (auto& i : rdm1_[istate]) {
-        if (rdm1_av_.find(i.first) == rdm1_av_.end()) {
-          rdm1_av_[i.first] = i.second->copy();
-        } else {
-          *rdm1_av_.at(i.first) += *i.second;
-        }
+      for (auto& i : *rdm1_[istate]) {
+        if (!rdm1_av_->exist(i.first))
+          rdm1_av_->emplace(i.first, i.second->copy());
+        else
+          *rdm1_av_->at(i.first) += *i.second;
       }
-      for (auto& i : rdm2_[istate]) {
-        if (rdm2_av_.find(i.first) == rdm2_av_.end()) {
-          rdm2_av_[i.first] = i.second->copy();
-        } else {
-          *rdm2_av_.at(i.first) += *i.second;
-        }
+      for (auto& i : *rdm2_[istate]) {
+        if (!rdm2_av_->exist(i.first))
+          rdm2_av_->emplace(i.first, i.second->copy());
+        else
+          *rdm2_av_->at(i.first) += *i.second;
       }
     }
-    for (auto& i : rdm1_av_) i.second->scale(1.0/nstate_);
-    for (auto& i : rdm2_av_) i.second->scale(1.0/nstate_);
+    for (auto& i : *rdm1_av_) i.second->scale(1.0/nstate_);
+    for (auto& i : *rdm2_av_) i.second->scale(1.0/nstate_);
   } else {
     rdm1_av_ = rdm1_.front();
     rdm2_av_ = rdm2_.front();
@@ -254,8 +243,8 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
   // loop over each component
   auto ikjl = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
   auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
-  for (auto& irdm : rdm2_av_) {
-    bitset<4> ib = irdm.first;
+  for (auto& irdm : *rdm2_av_) {
+    bitset<4> ib = irdm.first.tag();
     shared_ptr<const ZRDM<2>> rdm2 = irdm.second;
     // TODO to be updated once the Tensor branch comes out
     const int norb2 = norb_*norb_;
@@ -293,8 +282,8 @@ shared_ptr<const ZMatrix> ZHarrison::mo2e_full() const {
   // loop over each component
   auto ikjl = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
   auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
-  for (auto& irdm : jop()->mo2e()) {
-    bitset<4> ib = irdm.first;
+  for (auto& irdm : *jop()->mo2e()) {
+    bitset<4> ib = irdm.first.tag();
     shared_ptr<const ZMatrix> rdm2 = irdm.second;
     // TODO to be updated once the Tensor branch comes out
     const int norb2 = norb_*norb_;
