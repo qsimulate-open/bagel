@@ -29,6 +29,7 @@
 
 using namespace std;
 using namespace bagel;
+using namespace btas;
 
 void ZHarrison::compute_rdm12() {
 
@@ -52,7 +53,6 @@ void ZHarrison::compute_rdm12() {
       map<string, shared_ptr<ZDvec>> intermediates;
 
       const int ij = norb_*norb_;
-      const int nri = int_det->lena() * int_det->lenb();
 
       if (nelea+1 <= norb_ && neleb+1 <= norb_) {
         shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb+1)->data(istate);
@@ -86,7 +86,8 @@ void ZHarrison::compute_rdm12() {
         for (auto& j : intermediates) {
           if (i.first >= j.first) {
             auto rdm2 = make_shared<ZRDM<2>>(norb_);
-            zgemm3m_("c", "n", ij, ij, nri, 1.0, i.second->data(0)->data(), nri, j.second->data(0)->data(), nri, 0.0, rdm2->data(), ij);
+            auto rdm2grouped = group(group(*rdm2, 2,4), 0,2);
+            contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, rdm2grouped, {1,2}, true, false);
 
             bitset<4> key(i.first + j.first);
 
@@ -109,7 +110,6 @@ void ZHarrison::compute_rdm12() {
 
       shared_ptr<const Determinants> int_det = space1->finddet(nelea, neleb);
       map<string, shared_ptr<ZDvec>> intermediates;
-      const int nri = int_det->lena() * int_det->lenb();
 
       if (nelea+1 <= norb_) {
         shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb)->data(istate);
@@ -151,7 +151,7 @@ void ZHarrison::compute_rdm12() {
         for (auto& j : intermediates) {
           if (i.first >= j.first) {
             auto rdm1 = make_shared<ZRDM<1>>(norb_);
-            zgemm3m_("c", "n", norb_, norb_, nri, 1.0, i.second->data(0)->data(), nri, j.second->data(0)->data(), nri, 0.0, rdm1->data(), norb_);
+            contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, *rdm1, {1,2}, true, false);
             bitset<2> key(i.first + j.first);
             if (rdm1_[istate].find(key) == rdm1_[istate].end()) {
               rdm1_[istate][key] = rdm1;
@@ -193,13 +193,7 @@ void ZHarrison::compute_rdm12() {
           sort_indices<1,0,2,3,0,1,1,1>(rdm2_[istate].at(s0132)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
           transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return -a; });
         } else {
-          // This is dangerous... but RDM should be zeroed in constructor
           rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
-#if 0
-          cout << target << endl;
-          for (auto& i : rdm2_[istate]) cout << i.first << endl;
-          throw logic_error("debug .. ZHarrison::compute_rdm12()");
-#endif
         }
       }
     }
@@ -230,76 +224,6 @@ void ZHarrison::compute_rdm12() {
     rdm1_av_ = rdm1_.front();
     rdm2_av_ = rdm2_.front();
   }
-
-#if 0
-  // Check the FCI energies computed by RDMs and integrals
-  const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
-  auto tmp0101 = jop_->mo2e(bitset<4>("0101"))->copy();
-  sort_indices<1,0,2,3,1,1,-1,1>(jop_->mo2e(bitset<4>("1001"))->data(), tmp0101->data(), norb_, norb_, norb_, norb_);
-
-//  const int n = norb_;
-  auto trace1 = [this](const string st) {
-    shared_ptr<const ZMatrix> a = jop_->mo1e(bitset<2>(st));
-    shared_ptr<const ZRDM<1>> b = rdm1_av_kramers(bitset<2>(st));
-    return inner_product(a->data(), a->data()+a->size(), b->data(), complex<double>(0.0),
-                         std::plus<complex<double>>(), [](const complex<double>& i, const complex<double>& j){ return i*j; });
-  };
-  auto trace2 = [this](const string st) {
-    shared_ptr<const ZMatrix> a = jop_->mo2e(bitset<4>(st));
-    shared_ptr<const ZRDM<2>> b = rdm2_av_kramers(bitset<4>(st));
-    return inner_product(a->data(), a->data()+a->size(), b->data(), complex<double>(0.0),
-                         std::plus<complex<double>>(), [](const complex<double>& i, const complex<double>& j){ return i*j; });
-  };
-
-  const double recomp_energy =
-          (trace1("00") + trace1("10")*2.0 + trace1("11")).real() + nuc_core
-        + (trace2("0000")*0.5 + trace2("1111")*0.5
-            + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av_kramers(bitset<4>("0101"))->data(), 1)
-            + trace2("1100") + trace2("0100")*2.0 + trace2("1101")*2.0).real();
-  cout << "    *  recalculated FCI energy (state averaged)" << endl;
-  cout << setw(29) << setprecision(8) << recomp_energy << endl;
-  const double twoelectron_energy =
-          (trace2("0000")*0.5 + trace2("1111")*0.5
-            + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av_kramers(bitset<4>("0101"))->data(), 1)
-            + trace2("1100") + trace2("0100")*2.0 + trace2("1101")*2.0).real();
-  cout << "    *  recalculated FCI 2electron energy (state averaged) = " << setw(29) << setprecision(16) << twoelectron_energy << endl;
-
-  // checking against the original energies
-  const double orig_energy = accumulate(energy_.begin(), energy_.end(), 0.0) / energy_.size();
-  assert(fabs(orig_energy - recomp_energy) < 1.0e-8);
-
-#if 1
-  // check the partial trace condition for normalization
-  {
-    list<bitset<4>> bits = {bitset<4>("0000"),bitset<4>("1111"),bitset<4>("1010"),bitset<4>("0101")};
-    complex<double> norm2rdm = 0.0;
-    for (auto& i : bits) {
-      auto tmp2rdm = make_shared<ZMatrix>(norb_*norb_,norb_*norb_);
-      copy_n(rdm2_av_kramers(i)->data(), norb_*norb_*norb_*norb_, tmp2rdm->data());
-      auto tmp2rdm2 = tmp2rdm->copy();
-      sort_indices<0,2,1,3,0,1,1,1>(tmp2rdm2->data(), tmp2rdm->data(), norb_, norb_, norb_, norb_); // sorts to chemist notation
-      for (int i=0; i!=norb_; ++i) {
-        for (int j=0; j!=norb_; ++j) {
-          norm2rdm += tmp2rdm->element(j*norb_ + j, i*norb_ + i);
-        }
-      }
-    }
-      cout << setprecision(8) << " 2RDM normalization condition = " << real(norm2rdm) << endl;
-  }
-#endif
-
-#if 0
-  complex<double> recomp_energy2 = (trace1("00") + trace1("10")*2.0 + trace1("11")).real() + nuc_core;
-  for (int i = 0; i != 16; ++i) {
-    stringstream ss; ss << bitset<4>(i);
-    recomp_energy2 += trace2(ss.str())*0.5;
-  }
-  cout << "    *  recalculated FCI energy (state averaged)" << endl;
-  cout << setw(49) << setprecision(12) << recomp_energy2 << endl;
-  assert(fabs(orig_energy - recomp_energy2.real()) < 1.0e-8);
-#endif
-#endif
-
 }
 
 
@@ -310,19 +234,7 @@ shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
   rdm1_tot->copy_block(norb_, norb_, norb_, norb_, rdm1_av_kramers("11"));
   rdm1_tot->copy_block(norb_,     0, norb_, norb_, rdm1_av_kramers("10"));
   rdm1_tot->copy_block(    0, norb_, norb_, norb_, rdm1_tot->get_submatrix(norb_, 0, norb_, norb_)->transpose_conjg());
-
-#if 0
-  auto coeff_tot = coeff()->get_conjg();
-
-  // RDM transform as D_ij = (C*_ri)^+ S_rr' D_r's' S_s's C*_sj
-  // TODO compute RelOverlap only once (this is comptued also in zqvec)
-  auto overlap = make_shared<const RelOverlap>(geom_);
-  shared_ptr<const ZMatrix> ocoeff = jop_->coeff_input()->slice_copy(ncore_*2, ncore_*2+norb_*2)->get_conjg();
-  const ZMatrix co = *ocoeff % *overlap * *coeff_tot;
-  return make_shared<ZMatrix>(co * *rdm1_tot ^ co);
-#else
   return rdm1_tot;
-#endif
 }
 
 
@@ -331,18 +243,6 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
   // TODO : slot in 2RDM by hand to avoid matrix multiplication ; should be slightly cheaper
 
   unordered_map<bitset<1>, shared_ptr<const ZMatrix>> trans;
-#if 0
-  // forming transformation matrices
-  auto coeff_tot = jop_->coeff_input()->slice_copy(ncore_*2, ncore_*2+norb_*2)->get_conjg();
-  auto overlap = make_shared<const RelOverlap>(geom_);
-  for (int i = 0; i != 2; ++i) {
-    shared_ptr<const ZMatrix> ocoeff = jop_->kramers_coeff(i)->get_conjg();
-    auto co = make_shared<ZMatrix>(*coeff_tot % *overlap * *ocoeff);
-    co->get_real_part()->print("co 2rdm",co->ndim());
-    bitset<1> b(i);
-    trans.insert(make_pair(b, co));
-  }
-#else
   auto unit = make_shared<ZMatrix>(norb_*2,norb_*2);
   unit->unit();
   for (int i = 0; i != 2; ++i) {
@@ -350,7 +250,6 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
     bitset<1> b(i);
     trans.emplace(b, co);
   }
-#endif
 
   // loop over each component
   auto ikjl = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
@@ -375,21 +274,6 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
 
   // sort indices : G(ik|jl) -> G(ij|kl)
   sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
-#if 0
-// DEBUG : check normalization trace condition and symmetry requirement
-  {
-    complex<double> norm2rdm = 0.0;
-    for (int i=0; i!=2*norb_; ++i) {
-      for (int j=0; j!=2*norb_; ++j) {
-        norm2rdm += out->element(j*2*norb_ + j, i*2*norb_ + i);
-      }
-    }
-    cout << setprecision(16) << " normalization 2RDM = " << real(norm2rdm) << endl;
-    // check overall symmetry
-    cout << setprecision(16) << " symmetry requirement rms = " << (*out - *out->transpose()).rms() << endl;
-  }
-#endif
-
   return out;
 }
 
@@ -429,6 +313,5 @@ shared_ptr<const ZMatrix> ZHarrison::mo2e_full() const {
 
   // sort indices : G(ik|jl) -> G(ij|kl)
   sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
-
   return out;
 }

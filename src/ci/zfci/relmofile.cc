@@ -471,24 +471,6 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
 }
 
 
-void RelMOFile::update_kramers_coeff(shared_ptr<ZMatrix> coeff) {
-  // transform kramers coeff to natural orbital rep
-  assert(coeff->mdim() == coeff->ndim());
-  assert(coeff->mdim() == nocc_*2);
-  int ndim = kramers_coeff(0)->ndim();
-  int n    = coeff->ndim();
-  auto kcoefftmp  = make_shared<ZMatrix>(ndim, coeff->mdim());
-  auto kcoefftmp2 = kcoefftmp->clone();
-  kcoefftmp->copy_block(0,     0, ndim, nocc_, kramers_coeff(0)->data());
-  kcoefftmp->copy_block(0, nocc_, ndim, nocc_, kramers_coeff(1)->data());
-  zgemm3m_("N", "N", ndim, n, n, 1.0, kcoefftmp->data(), ndim, coeff->get_conjg()->data(), n, 0.0, kcoefftmp2->data(), ndim);
-  array<shared_ptr<const ZMatrix>,2> kctmp;
-  kctmp[0] = make_shared<const ZMatrix>(*kcoefftmp2->slice_copy(0, nocc_));
-  kctmp[1] = make_shared<const ZMatrix>(*kcoefftmp2->slice_copy(nocc_, nocc_*2));
-  kramers_coeff_ = kctmp;
-}
-
-
 unordered_map<bitset<2>, shared_ptr<const RelDFFull>>
   RelMOFile::compute_full(array<array<shared_ptr<const Matrix>,4>,2> rocoeff, array<array<shared_ptr<const Matrix>,4>,2> iocoeff,
                           array<list<shared_ptr<RelDFHalf>>,2> half, const bool appj, const bool appjj) {

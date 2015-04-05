@@ -147,15 +147,12 @@ class ZHarrison : public Method {
 
     void sigma_2e_h0101_h1001(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
 
-    template<int i, int j, int k, int l>
+    template<int i, int j, int k, int l,
+             class = typename std::enable_if<i/2 == 0 and j/2 == 0 and k/2 == 0 and l/2 == 0>::type
+            >
     void sigma_2e_h(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans, const std::complex<double> fac = 1.0) const {
-      static_assert(!((i|1)^1) && !((j|1)^1) && !((k|1)^1) && !((l|1)^1), "illegal call of sigma_2e_h");
-      const int ij = d->ij();
-      const int lenab = d->lena()*d->lenb();
-      std::stringstream ss; ss << i << j << k << l;
-      std::bitset<4> bit4(ss.str());
-      if (trans) bit4 = ~bit4;
-      zgemm3m_("n", "t", lenab, ij, ij, fac, d->data(), lenab, jop->mo2e(bit4)->data(), ij, 0.0, e->data(), lenab);
+      std::bitset<4> bit4((i<<3)+(j<<2)+(k<<1)+l);
+      btas::contract(fac, *d, {0,1,2}, *jop->mo2e(trans ? ~bit4 : bit4), {3,2}, std::complex<double>(0.0), *e, {0,1,3});
     }
 
     void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
@@ -210,9 +207,6 @@ class ZHarrison : public Method {
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return jop_->kramers_coeff(); }
-    void update_kramers_coeff(std::shared_ptr<ZMatrix> natorb_transform) {
-      jop_->update_kramers_coeff(natorb_transform);
-    }
 };
 
 }
