@@ -46,7 +46,7 @@ class RelMOFile {
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const ZMatrix> core_fock_;
     std::shared_ptr<const ZMatrix> coeff_;
-    std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff_;
+    std::shared_ptr<Kramers<2,ZMatrix>> kramers_coeff_;
 
     bool gaunt_;
     bool breit_;
@@ -63,8 +63,8 @@ class RelMOFile {
     void compress_and_set(std::shared_ptr<Kramers<2,ZMatrix>> buf1e,
                           std::shared_ptr<Kramers<4,ZMatrix>> buf2e);
 
-    virtual std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) = 0;
-    virtual std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) = 0;
+    virtual std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<2,ZMatrix>> coeff) = 0;
+    virtual std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<2,ZMatrix>> coeff) = 0;
 
     // half transformed integrals for CASSCF
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb_;
@@ -74,8 +74,8 @@ class RelMOFile {
     RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, const int charge, const bool gaunt, const bool breit, const bool tsymm);
 
     // static function
-    static std::array<std::shared_ptr<const ZMatrix>,2> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
-    std::array<std::shared_ptr<const ZMatrix>,2> kramers_zquat(const int nstart, const int nfence, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> hcore);
+    static std::shared_ptr<Kramers<2,ZMatrix>> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
+    std::shared_ptr<Kramers<2,ZMatrix>> kramers_zquat(const int nstart, const int nfence, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> hcore);
 
     // static function used to make the order of eigenvalues & eigenvectors of ZMatrix::diagonalize() match that given by QuatMatrix::diagonalize()
     static void rearrange_eig(VectorB& eig, std::shared_ptr<ZMatrix> coeff, const bool includes_neg = true);
@@ -94,12 +94,12 @@ class RelMOFile {
 
     double core_energy() const { return core_energy_; }
 
-    std::shared_ptr<const ZMatrix> kramers_coeff(const int i) const { return kramers_coeff_[i]; }
-    std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return kramers_coeff_; }
+    std::shared_ptr<const ZMatrix> kramers_coeff(const int i) const { return kramers_coeff_->at(i); }
+    std::shared_ptr<const Kramers<2,ZMatrix>> kramers_coeff() const { return kramers_coeff_; }
     std::shared_ptr<const ZMatrix> coeff() const {
-      auto coeff_tot = std::make_shared<ZMatrix>(kramers_coeff_[0]->ndim(), nocc_*2);
-      coeff_tot->copy_block(0,     0, kramers_coeff_[0]->ndim(), nocc_, kramers_coeff_[0]);
-      coeff_tot->copy_block(0, nocc_, kramers_coeff_[1]->ndim(), nocc_, kramers_coeff_[1]);
+      auto coeff_tot = std::make_shared<ZMatrix>(kramers_coeff_->at(0)->ndim(), nocc_*2);
+      coeff_tot->copy_block(0,     0, kramers_coeff_->at(0)->ndim(), nocc_, kramers_coeff_->at(0));
+      coeff_tot->copy_block(0, nocc_, kramers_coeff_->at(1)->ndim(), nocc_, kramers_coeff_->at(1));
       return coeff_tot;
     }
     std::shared_ptr<const ZMatrix> coeff_input() const { return coeff_; }
@@ -115,8 +115,8 @@ class RelMOFile {
 
 class RelJop : public RelMOFile {
   protected:
-    std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) override;
-    std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) override;
+    std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<2,ZMatrix>> coeff) override;
+    std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<2,ZMatrix>> coeff) override;
 
   public:
     RelJop(const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff, const int charge,
