@@ -44,20 +44,27 @@ void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
-  const int nbasis = lattice->primitive_cell()->nbasis();
 
   {
     KineticBatch kinetic(input);
     kinetic.compute();
+    Matrix k(dimb1, dimb0);
+    k.copy_block(0, 0, dimb1, dimb0, kinetic.data());
 
-    copy_block(offsetb1 + block * nbasis, offsetb0, dimb1, dimb0, kinetic.data());
+    pdata_[block]->copy_real_block(1.0, offsetb1, offsetb0, dimb1, dimb0, k);
   }
-  {
-    auto mol = make_shared<const Geometry>(*(lattice->primitive_cell()), lattice->lattice_vectors(block));
-    NAIBatch nai(input, mol);
-    nai.compute();
 
-    add_block(1.0, offsetb1 + block * nbasis, offsetb0, dimb1, dimb0, nai.data());
+  if (!lattice->primitive_cell()->do_periodic_df()) {
+    /** (r0 sL'|\delta_L) */
+    for (auto& gvec : lattice->lattice_vectors()) {
+      auto mol = make_shared<const Geometry>(*(lattice->primitive_cell()), gvec);
+      NAIBatch nai(input, mol);
+      nai.compute();
+      Matrix n(dimb1, dimb0);
+      n.copy_block(0, 0, dimb1, dimb0, nai.data());
+
+      pdata_[block]->add_real_block(1.0, offsetb1, offsetb0, dimb1, dimb0, n);
+    }
   }
 
 }

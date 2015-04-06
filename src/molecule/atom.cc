@@ -25,7 +25,7 @@
 
 
 #include <src/molecule/atom.h>
-#include <src/math/quatern.h>
+#include <src/util/math/quatern.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/util/atommap.h>
 
@@ -479,8 +479,11 @@ void Atom::split_shells(const size_t batchsize) {
 
 
 void Atom::print_basis() const {
-  for (auto& i : shells_) cout << i->show() << endl;
-  if(ecp_parameters_) ecp_parameters_->print();
+  for (auto& i : shells_)
+    cout << i->show() << endl;
+
+  if (ecp_parameters_)
+    ecp_parameters_->print();
 }
 
 

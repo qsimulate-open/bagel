@@ -24,7 +24,7 @@
 //
 
 
-#include <src/scf/fock.h>
+#include <src/scf/hf/fock.h>
 #include <iostream>
 #include <iomanip>
 #include <cassert>
@@ -76,7 +76,7 @@ void Fock::slater_two_electron_part() {
       for (int ii = ioffset; ii != ioffset + isize; ++ii) {
         const int iin = ii * nbasis_;
         for (int jj = joffset; jj != joffset + jsize; ++jj) {
-          cmax = max(cmax, ::fabs(density_data[iin + jj]));
+          cmax = max(cmax, fabs(density_data[iin + jj]));
         }
       }
       const int ij = i * size + j;

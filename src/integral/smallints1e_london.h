@@ -29,17 +29,18 @@
 
 #include <src/molecule/molecule.h>
 #include <src/integral/comprys/complexeribatch.h>
+#include <src/util/unpack.h>
 
-// computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data
+// computes (sigma pi)Operator(sigma pi), and returns 4 blocks of data
 
 namespace bagel {
 
-template<typename Batch>
+template<typename Batch, typename ...Args>
 class SmallInts1e_London {
   protected:
     std::array<std::shared_ptr<ZMatrix>,4*Batch::Nblocks()> data_;
 
-    const std::shared_ptr<const Molecule> mol_;
+    const std::tuple<Args...> args_;
     const std::array<std::shared_ptr<const Shell>,2> shells_;
 
     const size_t size_block_;
@@ -75,14 +76,21 @@ class SmallInts1e_London {
     }
 
   public:
-    SmallInts1e_London(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol)
-      : mol_(mol), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
+    SmallInts1e_London(std::array<std::shared_ptr<const Shell>,2> info, Args... args)
+      : args_(args...), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
 
       for (int i = 0; i != Nblocks(); ++i)
         data_[i] = std::make_shared<ZMatrix>(shells_[0]->nbasis(), shells_[1]->nbasis(), true);
     }
 
     void compute() { compute<void*>(nullptr); }
+
+    // Unpack variadic template arguments here
+    template <int ...S>
+    std::shared_ptr<Batch> get_batch(std::shared_ptr<const Shell> a0, std::shared_ptr<const Shell> a1, seq<S...>) {
+      auto out = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{a0, a1}}, std::get<S>(args_) ...);
+      return out;
+    }
 
     template<typename Value>
     void compute(const Value&) {
@@ -103,25 +111,25 @@ class SmallInts1e_London {
         unc[n] = std::make_shared<ZMatrix>(a0, a1, true);
 
       {
-        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_increment(), shells_[1]->aux_increment()}}, mol_);
+        auto uncc = get_batch(shells_[0]->aux_increment(), shells_[1]->aux_increment(), typename gens<sizeof...(Args)>::type());
         uncc->compute();
         for (int n = 0; n != N; ++n)
           unc[n]->copy_block(0, 0, a0size_inc, a1size_inc, uncc->data(n));
       }
       if (shells_[0]->aux_decrement() && shells_[1]->aux_decrement()) {
-        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_decrement(), shells_[1]->aux_decrement()}}, mol_);
+        auto uncc = get_batch(shells_[0]->aux_decrement(), shells_[1]->aux_decrement(), typename gens<sizeof...(Args)>::type());
         uncc->compute();
         for (int n = 0; n != N; ++n)
           unc[n]->copy_block(a0size_inc, a1size_inc, a0size_dec, a1size_dec, uncc->data(n));
       }
       if (shells_[0]->aux_decrement()) {
-        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_decrement(), shells_[1]->aux_increment()}}, mol_);
+        auto uncc = get_batch(shells_[0]->aux_decrement(), shells_[1]->aux_increment(), typename gens<sizeof...(Args)>::type());
         uncc->compute();
         for (int n = 0; n != N; ++n)
           unc[n]->copy_block(a0size_inc, 0, a0size_dec, a1size_inc, uncc->data(n));
       }
       if (shells_[1]->aux_decrement()) {
-        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_increment(), shells_[1]->aux_decrement()}}, mol_);
+        auto uncc = get_batch(shells_[0]->aux_increment(), shells_[1]->aux_decrement(), typename gens<sizeof...(Args)>::type());
         uncc->compute();
         for (int n = 0; n != N; ++n)
           unc[n]->copy_block(0, a1size_inc, a0size_inc, a1size_dec, uncc->data(n));
@@ -133,31 +141,31 @@ class SmallInts1e_London {
         const size_t a0size_id = a0size_inc + a0size_dec;
         const size_t a1size_id = a1size_inc + a1size_dec;
         {
-          auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_increment(), shells_[1]->aux_same()}}, mol_);
+          auto uncc = get_batch(shells_[0]->aux_increment(), shells_[1]->aux_same(), typename gens<sizeof...(Args)>::type());
           uncc->compute();
           for (int n = 0; n != N; ++n)
             unc[n]->copy_block(0, a1size_id, a0size_inc, a1size_same, uncc->data(n));
         }
         {
-          auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_same(), shells_[1]->aux_increment()}}, mol_);
+          auto uncc = get_batch(shells_[0]->aux_same(), shells_[1]->aux_increment(), typename gens<sizeof...(Args)>::type());
           uncc->compute();
           for (int n = 0; n != N; ++n)
             unc[n]->copy_block(a0size_id, 0, a0size_same, a1size_inc, uncc->data(n));
         }
         {
-          auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_same(), shells_[1]->aux_same()}}, mol_);
+          auto uncc = get_batch(shells_[0]->aux_same(), shells_[1]->aux_same(), typename gens<sizeof...(Args)>::type());
           uncc->compute();
           for (int n = 0; n != N; ++n)
             unc[n]->copy_block(a0size_id, a1size_id, a0size_same, a1size_same, uncc->data(n));
         }
         if (shells_[0]->aux_decrement()) {
-          auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_decrement(), shells_[1]->aux_same()}}, mol_);
+          auto uncc = get_batch(shells_[0]->aux_decrement(), shells_[1]->aux_same(), typename gens<sizeof...(Args)>::type());
           uncc->compute();
           for (int n = 0; n != N; ++n)
             unc[n]->copy_block(a0size_inc, a1size_id, a0size_dec, a1size_same, uncc->data(n));
         }
         if (shells_[1]->aux_decrement()) {
-          auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_same(), shells_[1]->aux_decrement()}}, mol_);
+          auto uncc = get_batch(shells_[0]->aux_same(), shells_[1]->aux_decrement(), typename gens<sizeof...(Args)>::type());
           uncc->compute();
           for (int n = 0; n != N; ++n)
             unc[n]->copy_block(a0size_id, a1size_inc, a0size_same, a1size_dec, uncc->data(n));
@@ -178,7 +186,7 @@ class SmallInts1e_London {
 // in the case of finite nucleus
 template<>
 template<typename Value>
-void SmallInts1e_London<ComplexERIBatch>::compute(const Value& nshells) {
+void SmallInts1e_London<ComplexERIBatch, std::shared_ptr<const Molecule>>::compute(const Value& nshells) {
   const int a0size_inc = shells_[0]->nbasis_aux_increment();
   const int a1size_inc = shells_[1]->nbasis_aux_increment();
   const int a0size_dec = shells_[0]->nbasis_aux_decrement();

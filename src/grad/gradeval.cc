@@ -32,7 +32,7 @@ using namespace bagel;
 #define LOCAL_TIMING
 
 template<>
-shared_ptr<GradFile> GradEval<SCF>::compute() {
+shared_ptr<GradFile> GradEval<RHF>::compute() {
   assert(task_->dodf());
   Timer timer;
 #ifdef LOCAL_TIMING

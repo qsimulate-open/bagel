@@ -32,14 +32,20 @@ namespace bagel {
 
 class SMITH_Info : public Reference {
   protected:
+    std::string method_;
+
     int ncore_;
     double thresh_;
     int maxiter_;
     int target_;
     int maxtile_;
 
+    bool grad_;
+
   public:
     SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata) : Reference(*o) {
+      method_ = idata->get<std::string>("method");
+
       const bool frozen = idata->get<bool>("frozen", true);
       ncore_ = idata->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
       if (ncore_)
@@ -49,13 +55,16 @@ class SMITH_Info : public Reference {
       maxiter_ = idata->get<int>("maxiter", 50);
       target_  = idata->get<int>("target",   0);
       maxtile_ = idata->get<int>("maxtile", 10);
+      grad_    = idata->get<bool>("grad", false);
     }
 
+    std::string method() const { return method_; }
     int ncore() const { return ncore_; }
     double thresh() const { return thresh_; }
     int maxiter() const { return maxiter_; }
     int target() const { return target_; }
     int maxtile() const { return maxtile_; }
+    bool grad() const { return grad_; }
 };
 
 }

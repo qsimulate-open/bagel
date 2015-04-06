@@ -26,7 +26,6 @@
 
 #include <src/wfn/geometry.h>
 #include <src/df/complexdf.h>
-#include <src/wfn/geometry_connect.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/rys/smalleribatch.h>
 #include <src/integral/rys/mixederibatch.h>
@@ -34,8 +33,8 @@
 #include <src/integral/comprys/complexsmalleribatch.h>
 #include <src/integral/comprys/complexmixederibatch.h>
 #include <src/integral/libint/libint.h>
-#include <src/io/moldenin.h>
-#include <src/math/quatern.h>
+#include <src/util/io/moldenin.h>
+#include <src/util/math/quatern.h>
 
 using namespace std;
 using namespace bagel;
@@ -43,7 +42,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Geometry)
 
-Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
+Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_periodic_df_(false) {
 
   // members of Molecule
   spherical_ = true;
@@ -115,6 +114,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
   /* Set up aux_atoms_ */
   auxfile_ = to_lower(geominfo->get<string>("df_basis", ""));  // default value for non-DF HF.
   if (!auxfile_.empty()) {
+    if (!primitive_vectors_.empty()) do_periodic_df_ = true;
     // read the default aux basis file
     shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
@@ -150,7 +150,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
   if (london_ || nonzero_magnetic_field()) init_magnetism();
 
-  if (!auxfile_.empty() && !nodf) {
+  if (!auxfile_.empty() && !nodf && !do_periodic_df()) {
     if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     const double scale = magnetism_ ? 2.0 : 1.0;
@@ -179,7 +179,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_), do_periodic_df_(o.do_periodic_df_) {
 
   // Members of Molecule
   spherical_ = o.spherical_;
@@ -277,7 +277,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_),
+    do_periodic_df_(o.do_periodic_df_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -305,8 +306,10 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 }
 
 
+// used when a new Geometry block is provided in input
 Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_),
+    do_periodic_df_(o.do_periodic_df_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -347,7 +350,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   const string prevbasis = basisfile_;
   basisfile_ = to_lower(geominfo->get<string>("basis", basisfile_));
   // if so, construct atoms
-  if (prevbasis != basisfile_ || atoms) {
+  if (prevbasis != basisfile_ || atoms || newfield) {
     atoms_.clear();
     shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
@@ -472,7 +475,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
 
 
 // used in SCF initial guess.
-Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const PTree> geominfo) : magnetism_(false) {
+Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const PTree> geominfo) : magnetism_(false), do_periodic_df_(false) {
 
   spherical_ = true;
   lmax_ = 0;
@@ -528,15 +531,17 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
   int i = 0;
   for (auto& a : atoms_) {
     const double ac = a->atom_charge();
-    for (auto& b : atoms_) {
-      if (a == b) continue;
-      const array<double,3> displ = a->displ(b);
-      const double c = b->atom_charge() * ac;
-      const double dist = a->distance(b);
-      const double dist3 = dist*dist*dist;
-      grad->element(0,i) += c*displ[0]/dist3;
-      grad->element(1,i) += c*displ[1]/dist3;
-      grad->element(2,i) += c*displ[2]/dist3;
+    if (i % mpi__->size() == mpi__->rank()) {
+      for (auto& b : atoms_) {
+        if (a == b) continue;
+        const array<double,3> displ = a->displ(b);
+        const double c = b->atom_charge() * ac;
+        const double dist = a->distance(b);
+        const double dist3 = dist*dist*dist;
+        grad->element(0,i) += c*displ[0]/dist3;
+        grad->element(1,i) += c*displ[1]/dist3;
+        grad->element(2,i) += c*displ[2]/dist3;
+      }
     }
     ++i;
   }
@@ -592,7 +597,7 @@ void Geometry::get_electric_field(shared_ptr<const PTree>& geominfo) {
 }
 
 
-shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
+shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt, const bool do_coulomb) const {
   cout << "  *** Geometry (Relativistic) ***" << endl;
   Timer timer;
   // basically the same
@@ -605,7 +610,9 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
     atom.push_back(!magnetism_ ? i->relativistic() : i->relativistic(magnetic_field_, london_));
 
   geom->atoms_ = atom;
-  geom->compute_relativistic_integrals(do_gaunt);
+
+  if (do_coulomb)
+    geom->compute_relativistic_integrals(do_gaunt);
 
   cout << endl;
   timer.tick_print("Geometry relativistic (total)");
@@ -662,22 +669,20 @@ void Geometry::compute_integrals(const double thresh) const {
 
 
 void Geometry::init_magnetism() {
-  Timer timer;
-
   magnetism_ = true;
-  if (london_ && nonzero_magnetic_field())
-    cout << "  Using London orbital basis to enforce gauge-invariance" << endl;
-  if (!london_ && nonzero_magnetic_field())
-    cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << endl;
-  if (!nonzero_magnetic_field())
-    cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << endl;
 
   if (nonzero_magnetic_field()) {
+    cout << (london_ ? "  Using London orbital basis to enforce gauge-invariance"
+                     : "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations (use a London orbital basis instead).") << endl;
+
     cout << "  Applied magnetic field:  (" << setprecision(4) << setw(7) << magnetic_field_[0] << ", "
                                                               << setw(7) << magnetic_field_[1] << ", "
                                                               << setw(7) << magnetic_field_[2] << ") a.u." << endl;
+
     const double fieldsqr = magnetic_field_[0]*magnetic_field_[0] + magnetic_field_[1]*magnetic_field_[1] + magnetic_field_[2]*magnetic_field_[2];
     cout << setprecision(0) << "  Field strength = " << au2tesla__*sqrt(fieldsqr) << " T" << endl << endl;
+  } else {
+    cout << "  Zero magnetic field - This computation would be more efficient with a standard basis." << endl;
   }
 
   const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
@@ -686,8 +691,4 @@ void Geometry::init_magnetism() {
   for (auto& i : atoms_)
     atom.push_back(i->apply_magnetic_field(fieldin));
   atoms_ = atom;
-
-  cout << endl;
-  timer.tick_print("Magnetic field overhead");
-  cout << endl;
 }

@@ -13,8 +13,8 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
 *** Citation ***
 
   Please cite as:
-  "BAGEL, Brilliantly Advanced General Electronic-structure Library,
-  distributed at http://www.nubakery.org under the GNU General Public License."
+  "BAGEL, Brilliantly Advanced General Electronic-structure Library.
+  http://www.nubakery.org under the GNU General Public License."
 
   See doc/papers.json for BAGEL-related publications, which are also
   listed on our website. If you contributed or used BAGEL and cited above,
@@ -31,6 +31,12 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
   BAGEL includes a modified version of the ALGLIB package (under the GPLv2+),
   for CG and L-BFGS optimizers. See http://www.alglib.net.
 
+
+*** Support ***
+
+  DOE Basic Energy Sciences (DE-FG02-13ER16398)
+  NSF CAREER Program (CHE-1351598)
+  AFOSR Young Investigator Program (FA9550-15-1-0031)
 
 *** Disclaimer ***
 

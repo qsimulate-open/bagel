@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-Optimize::Optimize(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g) : idata_(idata), geom_(g) {
+Optimize::Optimize(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : idata_(idata), geom_(g), ref_(r) {
   maxiter_ = idata->get<int>("maxiter", 100);
 
 }
@@ -46,43 +46,43 @@ void Optimize::compute() {
 
   if (method == "uhf") {
 
-    auto opt = make_shared<Opt<UHF>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<UHF>>(idata_, methodblock, geom_, ref_);
     opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "rohf") {
 
-    auto opt = make_shared<Opt<ROHF>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<ROHF>>(idata_, methodblock, geom_, ref_);
     opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "hf") {
 
-    auto opt = make_shared<Opt<SCF>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<RHF>>(idata_, methodblock, geom_, ref_);
     opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "ks") {
 
-    auto opt = make_shared<Opt<KS>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<KS>>(idata_, methodblock, geom_, ref_);
     opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "dhf") {
 
-    auto opt = make_shared<Opt<Dirac>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<Dirac>>(idata_, methodblock, geom_, ref_);
     opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "mp2") {
 
-    auto opt = make_shared<Opt<MP2Grad>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<MP2Grad>>(idata_, methodblock, geom_, ref_);
     opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "dmp2") {
 
-    auto opt = make_shared<Opt<DMP2Grad>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<DMP2Grad>>(idata_, methodblock, geom_, ref_);
     opt->compute();
     geom_ = opt->geometry();
 
@@ -91,7 +91,7 @@ void Optimize::compute() {
     // in case of SS-CASSCF
     if (lastmethod->get<int>("nstate", 1) == 1) {
       if (algorithm == "superci" || algorithm == "") {
-        auto opt = make_shared<Opt<SuperCI>>(idata_, methodblock, geom_);
+        auto opt = make_shared<Opt<SuperCI>>(idata_, methodblock, geom_, ref_);
         opt->compute();
         geom_ = opt->geometry();
       } else {
@@ -100,7 +100,7 @@ void Optimize::compute() {
     // in case of SA-CASSCF
     } else {
       if (algorithm == "superci" || algorithm == "") {
-        auto opt = make_shared<Opt<SuperCIGrad>>(idata_, methodblock, geom_);
+        auto opt = make_shared<Opt<SuperCIGrad>>(idata_, methodblock, geom_, ref_);
         opt->compute();
         geom_ = opt->geometry();
       } else {
@@ -109,7 +109,7 @@ void Optimize::compute() {
     }
   } else if (method == "caspt2") {
 
-    auto opt = make_shared<Opt<CASPT2Grad>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<CASPT2Grad>>(idata_, methodblock, geom_, ref_);
     opt->compute();
     geom_ = opt->geometry();
 

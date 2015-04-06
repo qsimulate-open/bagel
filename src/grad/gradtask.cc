@@ -31,7 +31,7 @@
 #include <src/integral/rys/gsmalleribatch.h>
 #include <src/integral/os/goverlapbatch.h>
 #include <src/integral/os/gkineticbatch.h>
-#include <src/smith/prim_op.h>
+#include <src/util/prim_op.h>
 #ifdef LIBINT_INTERFACE
   #include <src/integral/libint/glibint.h>
 #endif
@@ -58,14 +58,14 @@ void GradTask3::compute() {
 
   shared_ptr<btas::Tensor3<double>> db1 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis());
   shared_ptr<btas::Tensor3<double>> db2 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[0], shell_[3]->nbasis(), offset_[1], shell_[2]->nbasis());
-  SMITH::sort_indices<0,2,1,1,1,1,1>(db2->data(), db1->data(), shell_[1]->nbasis(), shell_[3]->nbasis(), shell_[2]->nbasis());
+  sort_indices<0,2,1,1,1,1,1>(db2->data(), db1->data(), shell_[1]->nbasis(), shell_[3]->nbasis(), shell_[2]->nbasis());
 
   for (int iatom = 0; iatom != 4; ++iatom) {
     if (jatom[iatom] < 0) continue;
     array<double,3> sum = {{0.0, 0.0, 0.0}};
     for (int icart = 0; icart != 3; ++icart) {
       const double* ppt = gradbatch.data(icart+iatom*3);
-      sum[icart] += inner_product(ppt, ppt+sblock, db1->data(), 0.0);
+      sum[icart] += blas::dot_product(ppt, sblock, db1->data());
     }
     lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
     for (int icart = 0; icart != 3; ++icart)
@@ -100,7 +100,7 @@ void GradTask1f::compute() {
     array<double,3> sum = {{0.0, 0.0, 0.0}};
     for (int icart = 0; icart != 3; ++icart) {
       const double* ppt = gradbatch.data(icart+iatom*3);
-      sum[icart] += inner_product(ppt, ppt+sblock, db1->data(), 0.0);
+      sum[icart] += blas::dot_product(ppt, sblock, db1->data());
     }
     lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
     for (int icart = 0; icart != 3; ++icart)

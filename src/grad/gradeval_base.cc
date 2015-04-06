@@ -26,8 +26,8 @@
 
 #include <src/grad/gradeval_base.h>
 #include <src/util/taskqueue.h>
-#include <src/parallel/resources.h>
-#include <src/parallel/mpi_interface.h>
+#include <src/util/parallel/resources.h>
+#include <src/util/parallel/mpi_interface.h>
 #include <array>
 
 using namespace std;
@@ -55,8 +55,7 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
   TaskQueue<shared_ptr<GradTask>> tq(move(task));
   tq.compute();
 
-  if (mpi__->rank() == 0)
-    *grad_ += *geom_->compute_grad_vnuc();
+  *grad_ += *geom_->compute_grad_vnuc();
 
   grad_->allreduce();
   return grad_;
@@ -167,6 +166,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e(const array<shared_p
       int iatom2 = 0;
       auto oa2 = cgeom->aux_offsets().begin();
       for (auto a2 = cgeom->aux_atoms().begin(); a2 != cgeom->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
+        if ((*a2)->dummy()) continue;
         // dummy shell
         auto b3 = make_shared<const Shell>((*a2)->shells().front()->spherical());
 
@@ -264,6 +264,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e(const shared_ptr<con
       int iatom2 = 0;
       auto oa2 = cgeom->aux_offsets().begin();
       for (auto a2 = cgeom->aux_atoms().begin(); a2 != cgeom->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
+        if ((*a2)->dummy()) continue;
         // dummy shell
         auto b3 = make_shared<const Shell>((*a2)->shells().front()->spherical());
 
@@ -307,6 +308,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e_2index(const shared_
     int iatom1 = iatom0;
     auto oa1 = oa0;
     for (auto a1 = a0; a1 != cgeom->aux_atoms().end(); ++a1, ++oa1, ++iatom1) {
+      if ((*a0)->dummy() || (*a1)->dummy()) continue;
 
       // dummy shell
       auto b3 = make_shared<const Shell>((*a0)->shells().front()->spherical());

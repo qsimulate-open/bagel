@@ -3,7 +3,7 @@
 {
   "title" : "molecule",
   "symmetry" : "C1",
-  "basis" : "svp",
+  "basis" : "3-21g",
   "df_basis" : "svp-jkfit",
   "basis_type" : "london",
   "tesla" : "false",
@@ -33,6 +33,7 @@
 
 {
   "title" : "dhf",
+  "thresh" : "1.0e-7",
   "gaunt" : "false",
   "breit" : "false"
 }

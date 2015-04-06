@@ -26,8 +26,8 @@
 #ifndef __SRC_SMITH_DENOM_H
 #define __SRC_SMITH_DENOM_H
 
-#include <src/math/matrix.h>
 #include <src/wfn/rdm.h>
+#include <src/util/math/matrix.h>
 
 namespace bagel {
 namespace SMITH {

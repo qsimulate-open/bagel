@@ -28,7 +28,7 @@
 #define __src_rysint_inline_h
 
 #include <cassert>
-#include <src/math/algo.h>
+#include <src/util/math/algo.h>
 
 namespace bagel {
 namespace {

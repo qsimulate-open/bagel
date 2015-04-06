@@ -49,6 +49,12 @@ fi
 AC_ARG_WITH([slater], [AS_HELP_STRING([--with-slater],[build F12 methods])], [slater=yes], [slater=no])
 AC_ARG_WITH([libxc], [AS_HELP_STRING([--with-libxc],[build DFT with libxc])], [libxc=yes], [libxc=no])
 
+#toggle for smith
+AC_ARG_ENABLE(smith, [AS_HELP_STRING([--enable-smith],[enable SMITH code.])], [compile_smith=yes], [compile_smith=no])
+if test "x${compile_smith}" != xno; then
+    AC_DEFINE([COMPILE_SMITH], [], [Compile SMITH generated code])
+fi
+
 #lapack and blas
 AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
 AC_ARG_ENABLE(scalapack, [AS_HELP_STRING([--enable-scalapack],[enable scalapack - used for parallel diagonalization])], [use_scalapack=yes], [use_scalapack=no])
@@ -137,10 +143,13 @@ fi
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/util/Makefile
-                 src/parallel/Makefile
-                 src/math/Makefile
-                 src/ciutil/Makefile
-                 src/dimer/Makefile
+                 src/util/input/Makefile
+                 src/util/io/Makefile
+                 src/util/parallel/Makefile
+                 src/util/math/Makefile
+                 src/asd/multisite/Makefile
+                 src/asd/dimer/Makefile
+                 src/asd/dmrg/Makefile
                  src/asd/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile
@@ -149,21 +158,19 @@ AC_CONFIG_FILES([Makefile
                  src/df/Makefile
                  src/prop/Makefile
                  src/smith/Makefile
-                 src/mp2/Makefile
                  src/molecule/Makefile
-                 src/input/Makefile
-                 src/io/Makefile
-                 src/fci/Makefile
-                 src/zfci/Makefile
-                 src/ras/Makefile
-                 src/casscf/Makefile
-                 src/zcasscf/Makefile
-                 src/nevpt2/Makefile
+                 src/pt2/Makefile
+                 src/ci/Makefile
+                 src/ci/ciutil/Makefile
+                 src/ci/fci/Makefile
+                 src/ci/zfci/Makefile
+                 src/ci/ras/Makefile
+                 src/multi/Makefile
+                 src/multi/casscf/Makefile
+                 src/multi/zcasscf/Makefile
+                 src/mat1e/Makefile
                  src/periodic/Makefile
-                 src/rel/Makefile
-                 src/ks/Makefile
                  src/opt/Makefile
                  src/alglib/Makefile
-                 src/london/Makefile
                  src/basis/Makefile])
 AC_OUTPUT

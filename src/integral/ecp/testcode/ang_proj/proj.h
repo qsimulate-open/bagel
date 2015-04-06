@@ -13,7 +13,7 @@
 #include <boost/math/special_functions/bessel.hpp>
 #include <complex>
 #include "mpreal.h"
-#include "src/math/comb.h"
+#include "src/util/math/comb.h"
 #include "src/integral/ecp/wigner3j_gen/wigner3j.h"
 #include "src/integral/carsphlist.h"
 

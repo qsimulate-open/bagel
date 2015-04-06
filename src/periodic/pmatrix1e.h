@@ -27,12 +27,13 @@
 #ifndef __SRC_PERIODIC_PMATRIX1E_H
 #define __SRC_PERIODIC_PMATRIX1E_H
 
+#include <src/periodic/pdata.h>
 #include <src/periodic/lattice.h>
 
 namespace bagel {
 
 // Periodic version of Matrix1e (1e integrals)
-class PMatrix1e : public Matrix {
+class PMatrix1e : public PData {
   friend class PMatrix1eTask;
   protected:
     virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Lattice>, const int) = 0;
@@ -44,15 +45,13 @@ class PMatrix1e : public Matrix {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Matrix>(*this);
+      ar & boost::serialization::base_object<PData>(*this);
     }
 
   public:
     PMatrix1e() { }
     PMatrix1e(const std::shared_ptr<const Lattice>);
-    PMatrix1e(const PMatrix1e&);
     virtual ~PMatrix1e() { }
-
 };
 
 }

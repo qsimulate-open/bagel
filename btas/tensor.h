@@ -718,7 +718,9 @@ namespace boost {
              class _Range,
              class _Storage>
     void save(Archive& ar, const btas::Tensor<_T,_Range,_Storage>& t, const unsigned int version) {
-      ar << t.range() << t.storage();
+      const auto& range = t.range();
+      const auto& storage = t.storage();
+      ar << BOOST_SERIALIZATION_NVP(range) << BOOST_SERIALIZATION_NVP(storage);
     }
     template<class Archive,
              typename _T,
@@ -727,7 +729,7 @@ namespace boost {
     void load(Archive& ar, btas::Tensor<_T,_Range,_Storage>& t, const unsigned int version) {
       _Range range;
       _Storage storage;
-      ar >> range >> storage;
+      ar >> BOOST_SERIALIZATION_NVP(range) >> BOOST_SERIALIZATION_NVP(storage);
       t = btas::Tensor<_T,_Range,_Storage>(range, storage);
     }
 

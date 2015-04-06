@@ -89,7 +89,7 @@ void svrr_driver(double* out, const double* const roots, const double* const wei
               const int offsetx = rank_ * (amax1_ * ix + jx);
               const int jposition = amap[jx + jyz];
               const int ijposition = jposition + ipos_asize;
-              out[ijposition] = std::inner_product(iyiz, iyiz+rank_, workx+offsetx, 0.0);
+              out[ijposition] = blas::dot_product_noconj(iyiz, rank_, workx+offsetx);
             }
           }
         }
@@ -153,8 +153,8 @@ void usvrr_driver(double* out, double* out2, const double* const roots, const do
               const int offsetx = rank_ * (amax1_ * ix + jx);
               const int jposition = amap[jx + jyz];
               const int ijposition = jposition + ipos_asize;
-              out[ijposition] = std::inner_product(iyiz, iyiz+rank_, workx+offsetx, 0.0);
-              out2[ijposition] = std::inner_product(iyiz, iyiz+rank_, workx2+offsetx, 0.0);
+              out[ijposition] = blas::dot_product_noconj(iyiz, rank_, workx+offsetx);
+              out2[ijposition] = blas::dot_product_noconj(iyiz, rank_, workx2+offsetx);
             }
           }
         }

@@ -32,7 +32,7 @@
 #include <tuple>
 #include <src/molecule/shell.h>
 #include <src/util/constants.h>
-#include <src/parallel/resources.h>
+#include <src/util/parallel/resources.h>
 #include <src/integral/integral.h>
 
 namespace bagel {

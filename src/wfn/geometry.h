@@ -28,7 +28,7 @@
 #define __SRC_WFN_GEOMETRY_H
 
 #include <src/df/df.h>
-#include <src/input/input.h>
+#include <src/util/input/input.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {
@@ -59,6 +59,7 @@ class Geometry : public Molecule {
 
     // Lattice parameters
     std::vector<std::array<double, 3>> primitive_vectors_;
+    bool do_periodic_df_;
 
   private:
     // serialization
@@ -66,9 +67,7 @@ class Geometry : public Molecule {
 
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<Molecule>(*this);
-      ar << spherical_ << aux_merged_ << nbasis_ << nele_ << nfrc_ << naux_ << lmax_ << aux_lmax_
-         << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_ << magnetism_ << london_;
+      ar << boost::serialization::base_object<Molecule>(*this) << schwarz_thresh_ << overlap_thresh_ << magnetism_ << london_;
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -78,9 +77,7 @@ class Geometry : public Molecule {
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> boost::serialization::base_object<Molecule>(*this);
-      ar >> spherical_ >> aux_merged_ >> nbasis_ >> nele_ >> nfrc_ >> naux_ >> lmax_ >> aux_lmax_
-         >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_ >> magnetism_ >> london_;
+      ar >> boost::serialization::base_object<Molecule>(*this) >> schwarz_thresh_ >> overlap_thresh_ >> magnetism_ >> london_;
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;
@@ -136,13 +133,14 @@ class Geometry : public Molecule {
     }
 
     // initialize relativistic components
-    std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;
+    std::shared_ptr<const Geometry> relativistic(const bool do_gaunt, const bool do_coulomb = true) const;
     void compute_relativistic_integrals(const bool do_gaunt);
     void discard_relativistic() const;
 
     // Lattice
     std::vector<std::array<double, 3>> primitive_vectors() const { return primitive_vectors_; }
     std::array<double, 3> primitive_vectors(const int i) const { return primitive_vectors_[i]; };
+    const bool do_periodic_df() const { return do_periodic_df_; }
 
 
 };

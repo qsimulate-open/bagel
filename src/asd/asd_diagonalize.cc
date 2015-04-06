@@ -63,9 +63,9 @@ void ASD_base::generate_initial_guess(shared_ptr<Matrix> cc, const vector<DimerS
     spn->diagonalize(spin_values);
     const double expected_spin = 0.25 * static_cast<double>(nspin_ * (nspin_ + 2));
     int start, end;
-    for (start = 0; start < nguess; ++start)
+    for (start = 0; start < spin_values.size(); ++start)
       if (fabs(spin_values(start) - expected_spin) < 1.0e-4) break;
-    for (end = start; end < nguess; ++end)
+    for (end = start; end < spin_values.size(); ++end)
       if (fabs(spin_values(end) - expected_spin) > 1.0e-4) break;
 
     trialsize = end - start;

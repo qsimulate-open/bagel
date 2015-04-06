@@ -121,12 +121,12 @@ void bvrr_driver(double* out, const double* const roots, const double* const wei
               const int offsetx = rank_ * (amax2 * ix + jx);
               const int jposition = amap[jx + jyz];
               const int ijposition = jposition + ipos_asize;
-              dataxx[ijposition] = std::inner_product(iyiz_nn, iyiz_nn+rank_, worksx+offsetx, 0.0);
-              dataxy[ijposition] = std::inner_product(iyiz_tn, iyiz_tn+rank_, worktx+offsetx, 0.0);
-              dataxz[ijposition] = std::inner_product(iyiz_nt, iyiz_nt+rank_, worktx+offsetx, 0.0);
-              datayy[ijposition] = std::inner_product(iyiz_sn, iyiz_sn+rank_, workx +offsetx, 0.0);
-              datayz[ijposition] = std::inner_product(iyiz_tt, iyiz_tt+rank_, workx +offsetx, 0.0);
-              datazz[ijposition] = std::inner_product(iyiz_ns, iyiz_ns+rank_, workx +offsetx, 0.0);
+              dataxx[ijposition] = blas::dot_product_noconj(iyiz_nn, rank_, worksx+offsetx);
+              dataxy[ijposition] = blas::dot_product_noconj(iyiz_tn, rank_, worktx+offsetx);
+              dataxz[ijposition] = blas::dot_product_noconj(iyiz_nt, rank_, worktx+offsetx);
+              datayy[ijposition] = blas::dot_product_noconj(iyiz_sn, rank_, workx +offsetx);
+              datayz[ijposition] = blas::dot_product_noconj(iyiz_tt, rank_, workx +offsetx);
+              datazz[ijposition] = blas::dot_product_noconj(iyiz_ns, rank_, workx +offsetx);
             }
           }
         }

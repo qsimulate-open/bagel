@@ -49,7 +49,7 @@ OSIntegral<DataType, IntType>::OSIntegral(const std::array<std::shared_ptr<const
 template <typename DataType, Int_t IntType>
 void OSIntegral<DataType, IntType>::common_init() {
   static_assert(IntType != Int_t::London || std::is_same<DataType, std::complex<double>>::value, "London-orbital integrals should be complex");
-  static_assert(IntType != Int_t::Standard || std::is_same<DataType, double>::value, "Standard Guassian-orbital integrals should be real");
+  //static_assert(IntType != Int_t::Standard || std::is_same<DataType, double>::value, "Standard Guassian-orbital integrals should be real");
 
   assert(basisinfo_.size() == 2);
 

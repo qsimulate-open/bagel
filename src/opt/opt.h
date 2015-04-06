@@ -32,9 +32,9 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
-#include <src/util/timer.h>
 #include <src/grad/gradeval.h>
-#include <src/io/moldenout.h>
+#include <src/util/timer.h>
+#include <src/util/io/moldenout.h>
 #include <src/wfn/construct_method.h>
 #include <src/alglib/optimization.h>
 
@@ -76,8 +76,8 @@ class Opt {
     using eval_type = std::function<void(const alglib::real_1d_array&, double&, alglib::real_1d_array&, void*)>;
 
   public:
-    Opt(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const PTree> inp, const std::shared_ptr<const Geometry> geom)
-      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr) {
+    Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
+      : idata_(idat), input_(inp), current_(geom), prev_ref_(ref), iter_(0), backup_stream_(nullptr) {
 
       internal_ = idat->get<bool>("internal", true);
       maxiter_ = idat->get<int>("maxiter", 100);
@@ -193,7 +193,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   // first calculate reference (if needed)
   std::shared_ptr<PTree> cinput; 
   std::shared_ptr<const Reference> ref;
-  if (iter_ == 0) {
+  if (!prev_ref_) {
     auto m = input_->begin();
     for ( ; m != --input_->end(); ++m) {
       const std::string title = to_lower((*m)->get<std::string>("title", ""));

@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/math/algo.h>
+#include <src/util/math/algo.h>
 #include <src/integral/sortlist.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/rys/gradbatch.h>

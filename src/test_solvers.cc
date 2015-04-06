@@ -84,7 +84,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     const double energy = davidson.compute(ss, rr);
     shared_ptr<Matrix> residual = davidson.residual().front();
 
-    cout << "davidson " << setw(20) << setprecision(10) << fixed << ::pow(residual->norm(),2.0) << " " << setw(20) << energy << endl;
+    cout << "davidson " << setw(20) << setprecision(10) << fixed << pow(residual->norm(),2.0) << " " << setw(20) << energy << endl;
     if (::pow(residual->norm(),2.0) < tiny) break;
 
     for (int i = 0; i != start->size(); ++i) residual->data(i) /= diag->data(i);
@@ -157,7 +157,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     const double energy = zdavidson.compute(ss, rr);
     shared_ptr<ZMatrix> residual = zdavidson.residual().front();
 
-    cout << "davidson " << setw(20) << setprecision(10) << fixed << ::pow(residual->norm(),2.0) << " " << setw(20) << energy << endl;
+    cout << "davidson " << setw(20) << setprecision(10) << fixed << pow(residual->norm(),2.0) << " " << setw(20) << energy << endl;
     if (::pow(residual->norm(),2.0) < tiny) break;
 
     for (int i = 0; i != start->size(); ++i) residual->data(i) /= diag->data(i);

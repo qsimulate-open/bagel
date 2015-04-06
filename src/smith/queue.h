@@ -34,27 +34,28 @@
 #include <cassert>
 #include <list>
 #include <memory>
+#include <algorithm>
 
 namespace bagel {
 namespace SMITH {
 
-template <typename T>
 class Queue {
   protected:
-    std::list<std::shared_ptr<Task<T>>> tasklist_;
+    std::list<std::shared_ptr<Task>> tasklist_;
 
   public:
     Queue() {}
-    Queue(std::list<std::shared_ptr<Task<T>>> d) : tasklist_(d) { std::random_shuffle(tasklist_.begin(), tasklist_.end()); }
+    Queue(const std::list<std::shared_ptr<Task>>& d) : tasklist_(d) { }
+//  Queue(const std::list<std::shared_ptr<Task>>& d) : tasklist_(d) { std::random_shuffle(tasklist_.begin(), tasklist_.end()); }
 
     // TODO parallel version to be implemented (need to WAIT!)
-    std::shared_ptr<Task<T>> next_compute() {
+    std::shared_ptr<Task> next_compute() {
       auto i = tasklist_.begin();
       for ( ; i != tasklist_.end(); ++i)
         if ((*i)->ready()) break;
 
       assert(i != tasklist_.end());
-      std::shared_ptr<Task<T>> out = *i;
+      std::shared_ptr<Task> out = *i;
       // execute
       out->compute();
       // delete dependency (to remove intermediate storages)
@@ -64,7 +65,12 @@ class Queue {
       return out;
     }
 
-    void add_task(std::shared_ptr<Task<T>> a) { tasklist_.push_back(a); }
+    void add_task(std::shared_ptr<Task> a) { tasklist_.push_back(a); }
+
+    void insert(std::shared_ptr<Queue> b) {
+      for (auto& i : b->tasklist_)
+        tasklist_.push_back(i);
+    }
 
     bool done() const { return tasklist_.empty(); }
 

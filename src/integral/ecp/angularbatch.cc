@@ -24,8 +24,8 @@
 //
 
 
-#include <src/math/bessel.h>
-#include <src/math/algo.h>
+#include <src/util/math/bessel.h>
+#include <src/util/math/algo.h>
 #include <src/integral/ecp/wigner3j.h>
 #include <src/integral/ecp/angularbatch.h>
 #include <src/integral/ecp/sphusplist.h>
@@ -38,7 +38,7 @@ const static SphUSPList sphusplist;
 const static DoubleFactorial df;
 
 AngularBatch::AngularBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
-                           const double contA, const double contC, const std::array<int, 3> angA, const std::array<int, 3> angC,
+                           const int contA, const int contC, const std::array<int, 3> angA, const std::array<int, 3> angC,
                            const bool print, const int max_iter, const double thresh_int)
  : RadialInt(1, print, max_iter, thresh_int),
    basisinfo_(_info), ecp_(_ecp), cont0_(contA), cont1_(contC), ang0_(angA), ang1_(angC) {

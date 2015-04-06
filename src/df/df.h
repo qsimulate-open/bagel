@@ -36,6 +36,7 @@ class DFFullDist;
 
 class DFDist : public ParallelDF {
   friend class DFIntTask_OLD<DFDist>;
+  friend class PDFIntTask_2index;
   protected:
     std::pair<const double*, std::shared_ptr<RysInt>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
@@ -77,7 +78,7 @@ class DFDist : public ParallelDF {
     std::shared_ptr<DFDist> clone() const;
 
     // split up smalleri integrals into 6 dfdist objects
-    std::vector<std::shared_ptr<const DFDist>> split_blocks() const {
+    virtual std::vector<std::shared_ptr<const DFDist>> split_blocks() const {
       std::vector<std::shared_ptr<const DFDist>> out;
       assert(nindex1_ == nindex2_);
       for (auto& i : block_)
@@ -237,7 +238,6 @@ class DFFullDist : public ParallelDF {
 
     // utility functions
     std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist> o, const double a) const;
-    void add_product(const std::shared_ptr<const DFFullDist>, const std::shared_ptr<const Matrix>, const int jdim, const size_t offset, const double fac = 1.0);
 
     std::shared_ptr<DFFullDist> apply_J() const { return apply_J(df_->data2()); }
     std::shared_ptr<DFFullDist> apply_JJ() const { return apply_J(std::make_shared<Matrix>(*df_->data2()**df_->data2())); }

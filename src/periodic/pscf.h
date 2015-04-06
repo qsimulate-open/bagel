@@ -26,19 +26,25 @@
 #ifndef __BAGEL_SRC_PERIODIC_PSCF_H
 #define __BAGEL_SRC_PERIODIC_PSCF_H
 
-#include <src/wfn/method.h>
+#include <src/periodic/pscf_base.h>
 #include <src/periodic/lattice.h>
 #include <src/periodic/phcore.h>
+#include <src/periodic/pfock.h>
 
 namespace bagel {
 
-class PSCF : public Method {
+class PSCF : public PSCF_base {
   protected:
-    std::shared_ptr<const Lattice> lattice_;
-    double energy_;
     bool dodf_;
 
-    const std::string indent = "  ";
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) {
+      ar << boost::serialization::base_object<PSCF_base>(*this);
+      ar << dodf_;
+    }
 
   public:
     PSCF() { }
@@ -46,13 +52,16 @@ class PSCF : public Method {
          const std::shared_ptr<const Reference> re = nullptr);
     virtual ~PSCF() { }
 
-    virtual void compute() override;
-    double energy() const { return energy_; };
+    void compute() override;
+    bool dodf() const { return dodf_; }
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::PSCF)
 
 #endif
 
