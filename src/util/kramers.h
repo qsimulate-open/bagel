@@ -33,6 +33,7 @@
 #include <sstream>
 #include <initializer_list>
 #include <cassert>
+#include <src/util/serialization.h>
 
 namespace bagel {
 
@@ -41,7 +42,15 @@ class KTag {
   protected:
     std::bitset<N> tag_;
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      ar & tag_;
+    }
+
   public:
+    KTag() {}
     KTag(const std::bitset<N>& o) : tag_(o) { }
     KTag(const std::string& o) : tag_(o) { }
     KTag(const unsigned long o) : tag_(o) { }
@@ -71,6 +80,14 @@ template<int N, class Type>
 class Kramers {
   protected:
     std::map<KTag<N>, std::shared_ptr<Type>> data_;
+
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      ar & data_;
+    }
+
   public:
     Kramers() { }
     void emplace(const KTag<N>& t, std::shared_ptr<Type> o) { assert(!exist(t)); data_.emplace(t, o); }
