@@ -109,6 +109,13 @@ class Kramers {
     typename std::map<KTag<N>, std::shared_ptr<Type>>::const_iterator cbegin() const { return data_.cbegin(); }
     typename std::map<KTag<N>, std::shared_ptr<Type>>::const_iterator cend()   const { return data_.cend(); }
 
+    void add(const KTag<N>& t, std::shared_ptr<Type> o) {
+      if (exist(t))
+        *at(t) += *o;
+      else
+        emplace(t, o);
+    }
+
 };
 
 }

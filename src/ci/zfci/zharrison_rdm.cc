@@ -31,6 +31,35 @@ using namespace std;
 using namespace bagel;
 using namespace btas;
 
+shared_ptr<Kramers<2,ZDvec>> ZHarrison::two_down_from_civec(const int nelea, const int neleb, const int istate) const {
+  auto out = make_shared<Kramers<2,ZDvec>>();
+
+  if (nelea+1 <= norb_ && neleb+1 <= norb_) {
+    shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb+1)->data(istate);
+    auto d = make_shared<ZDvec>(int_space_->finddet(nelea, neleb), norb_*norb_);
+    sigma_2e_annih_ab(cc, d);
+    out->emplace({0,1}, d);
+  }
+  if (neleb+2 <= norb_) {
+    // transpose the civec
+    shared_ptr<const ZCivec> cc = cc_->find(nelea, neleb+2)->data(istate);
+    auto d = make_shared<ZDvec>(int_space_->finddet(neleb, nelea), norb_*norb_);
+    sigma_2e_annih_aa(cc->transpose(), d);
+    // transpose back
+    for (auto& i : d->dvec())
+      *i = *i->transpose();
+    out->emplace({1,1}, d);
+  }
+  if (nelea+2 <= norb_) {
+    shared_ptr<const ZCivec> cc = cc_->find(nelea+2, neleb)->data(istate);
+    auto d = make_shared<ZDvec>(int_space_->finddet(nelea, neleb), norb_*norb_);
+    sigma_2e_annih_aa(cc, d);
+    out->emplace({0,0}, d);
+  }
+  return out;
+}
+
+
 void ZHarrison::compute_rdm12() {
 
   // for one-body RDM
@@ -49,47 +78,18 @@ void ZHarrison::compute_rdm12() {
       if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
 
       // map
-      Kramers<2,ZDvec> intermediates;
+      shared_ptr<Kramers<2,ZDvec>> interm = two_down_from_civec(nelea, neleb, istate);
 
-      if (nelea+1 <= norb_ && neleb+1 <= norb_) {
-        shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb+1)->data(istate);
-        auto d = make_shared<ZDvec>(int_space_->finddet(nelea, neleb), norb_*norb_);
-        sigma_2e_annih_ab(cc, d);
-        intermediates.emplace({0,1}, d);
-      }
-      if (neleb+2 <= norb_) {
-        // transpose the civec
-        shared_ptr<const ZCivec> cc = cc_->find(nelea, neleb+2)->data(istate);
-        auto d = make_shared<ZDvec>(int_space_->finddet(neleb, nelea), norb_*norb_);
-        sigma_2e_annih_aa(cc->transpose(), d);
-        // transpose back
-        for (auto& i : d->dvec())
-          *i = *i->transpose();
-        intermediates.emplace({1,1}, d);
-      }
-      if (nelea+2 <= norb_) {
-        shared_ptr<const ZCivec> cc = cc_->find(nelea+2, neleb)->data(istate);
-        auto d = make_shared<ZDvec>(int_space_->finddet(nelea, neleb), norb_*norb_);
-        sigma_2e_annih_aa(cc, d);
-        intermediates.emplace({0,0}, d);
-      }
-
-      for (auto& i : intermediates) {
-        for (auto& j : intermediates) {
+      for (auto& i : *interm) {
+        for (auto& j : *interm) {
           if (i.first >= j.first) {
             auto rdm2 = make_shared<ZRDM<2>>(norb_);
             auto rdm2grouped = group(group(*rdm2, 2,4), 0,2);
             contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, rdm2grouped, {1,2}, true, false);
-
-            const auto key = merge(i.first, j.first);
-            if (!rdm2_[istate]->exist(key))
-              rdm2_[istate]->emplace(key, rdm2);
-            else
-              *rdm2_[istate]->at(key) += *rdm2;
+            rdm2_[istate]->add(merge(i.first, j.first), rdm2);
           }
         }
       }
-
     }
 
     // one body RDM
@@ -142,11 +142,7 @@ void ZHarrison::compute_rdm12() {
           if (i.first >= j.first) {
             auto rdm1 = make_shared<ZRDM<1>>(norb_);
             contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, *rdm1, {1,2}, true, false);
-            const auto key = merge(i.first, j.first);
-            if (!rdm1_[istate]->exist(key))
-              rdm1_[istate]->emplace(key, rdm1);
-            else
-              *rdm1_[istate]->at(key) += *rdm1;
+            rdm1_[istate]->add(merge(i.first, j.first), rdm1);
           }
         }
       }
@@ -194,18 +190,10 @@ void ZHarrison::compute_rdm12() {
   rdm2_av_ = make_shared<Kramers<4,ZRDM<2>>>();
   if (nstate_ > 1) {
     for (int istate = 0; istate != nstate_; ++istate) {
-      for (auto& i : *rdm1_[istate]) {
-        if (!rdm1_av_->exist(i.first))
-          rdm1_av_->emplace(i.first, i.second->copy());
-        else
-          *rdm1_av_->at(i.first) += *i.second;
-      }
-      for (auto& i : *rdm2_[istate]) {
-        if (!rdm2_av_->exist(i.first))
-          rdm2_av_->emplace(i.first, i.second->copy());
-        else
-          *rdm2_av_->at(i.first) += *i.second;
-      }
+      for (auto& i : *rdm1_[istate])
+        rdm1_av_->add(i.first, i.second->copy());
+      for (auto& i : *rdm2_[istate])
+        rdm2_av_->add(i.first, i.second->copy());
     }
     for (auto& i : *rdm1_av_) i.second->scale(1.0/nstate_);
     for (auto& i : *rdm2_av_) i.second->scale(1.0/nstate_);
@@ -235,9 +223,7 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
   auto unit = make_shared<ZMatrix>(norb_*2,norb_*2);
   unit->unit();
   for (int i = 0; i != 2; ++i) {
-    auto co = make_shared<const ZMatrix>(*unit->slice_copy(i*norb_,(i+1)*norb_));
-    bitset<1> b(i);
-    trans.emplace(b, co);
+    trans.emplace(i, unit->slice_copy(i*norb_,(i+1)*norb_));
   }
 
   // loop over each component

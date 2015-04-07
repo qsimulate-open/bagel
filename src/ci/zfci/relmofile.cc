@@ -409,10 +409,7 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<2,Z
       // TODO : put in if statement for apply_J if nact*nact is much smaller than number of MPI processes
       const int b2a = i/4;
       const int b2b = i%4;
-      if (!out->exist(i))
-        (*out)[i] = full->at(b2a)->form_4index(full2->at(b2b), gscale * (breit_ ? 0.5 : 1.0));
-      else
-        *out->at(i) += *full->at(b2a)->form_4index(full2->at(b2b), gscale * (breit_ ? 0.5 : 1.0));
+      out->add(i, full->at(b2a)->form_4index(full2->at(b2b), gscale * (breit_ ? 0.5 : 1.0)));
 
       // in breit cases we explicitly symmetrize the Hamiltnian (hence the prefactor 0.5 above)
       if (breit_)

@@ -163,6 +163,9 @@ class ZHarrison : public Method {
                            const int istate, const bool diag, const bool trans) const;
 #endif
 
+    // protected functions for RDM computation. Annihilate two electrons from the reference
+    std::shared_ptr<Kramers<2,ZDvec>> two_down_from_civec(const int nelea, const int neleb, const int istate) const;
+
   public:
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
@@ -194,19 +197,20 @@ class ZHarrison : public Method {
 
     std::vector<double> energy() const { return energy_; }
 
+    std::shared_ptr<const ZMatrix> mo2e_full() const;
+    std::shared_ptr<const RelMOFile> jop() const { return jop_; }
+    std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
+    std::shared_ptr<const Kramers<2,ZMatrix>> kramers_coeff() const { return jop_->kramers_coeff(); }
+
+    // functions related to RDMs
     void compute_rdm12();
 
-    std::shared_ptr<const ZMatrix> mo2e_full() const;
     std::shared_ptr<const ZMatrix> rdm1_av() const;
     std::shared_ptr<const ZMatrix> rdm2_av() const;
     template<typename T>
     std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const T& b) const { KTag<2> t(b); return rdm1_av_->at(t); }
     template<typename T>
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
-
-    std::shared_ptr<const RelMOFile> jop() const { return jop_; }
-    std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
-    std::shared_ptr<const Kramers<2,ZMatrix>> kramers_coeff() const { return jop_->kramers_coeff(); }
 };
 
 }
