@@ -215,15 +215,108 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
   elem.emplace(array<int,4>{{3,0,1,2}}, -1.0); elem.emplace(array<int,4>{{3,0,2,1}},  1.0); elem.emplace(array<int,4>{{3,1,0,2}},  1.0);
   elem.emplace(array<int,4>{{3,1,2,0}}, -1.0); elem.emplace(array<int,4>{{3,2,0,1}}, -1.0); elem.emplace(array<int,4>{{3,2,1,0}},  1.0);
 
-  for (auto& i : elem)
+  for (auto& i : elem) {
     for (auto& j : elem) {
       array<int,8> perm;
       for (int k = 0; k != 4; ++k) {
         perm[k]   = j.first[k];
-        perm[k+4] = i.first[k];
+        perm[k+4] = i.first[k]+4;
       }
       rdm4->emplace_perm(perm, j.second*i.second);
     }
+  }
+
+
+  auto rdm3 = make_shared<Kramers<6,ZRDM<3>>>();
+  for (int i = 0; i != 256; ++i) {
+    const bitset<8> source(i);
+    if (source[3] == source[7]) {
+      shared_ptr<const ZRDM<4>> r4 = rdm4->get_data(KTag<8>(source));
+      bitset<6> target;
+      target[0] = source[0];
+      target[1] = source[1];
+      target[2] = source[2];
+      target[3] = source[4];
+      target[4] = source[5];
+      target[5] = source[6];
+
+      auto r3 = make_shared<ZRDM<3>>(norb_);
+      const size_t norb3 = norb_*norb_*norb_;
+      for (int a = 0; a != norb_; ++a)
+        for (int j = 0; j != norb3; ++j)
+          for (int k = 0; k != norb3; ++k)
+            *(r3->data()+k+norb3*j) += *(r4->data()+k+norb3*(a+norb_*(j+norb3*a)));
+      rdm3->add(KTag<6>(target), r3);
+    }
+  }
+  for (auto& i : *rdm3)
+    i.second->scale(1.0/(nele_-3));
+  map<array<int,3>,double> elem3;
+  elem3.emplace(array<int,3>{{0,1,2}},  1.0); elem3.emplace(array<int,3>{{0,2,1}}, -1.0); elem3.emplace(array<int,3>{{1,0,2}}, -1.0);
+  elem3.emplace(array<int,3>{{1,2,0}},  1.0); elem3.emplace(array<int,3>{{2,0,1}},  1.0); elem3.emplace(array<int,3>{{2,1,0}}, -1.0);
+  for (auto& i : elem) {
+    for (auto& j : elem) {
+      array<int,6> perm;
+      for (int k = 0; k != 3; ++k) {
+        perm[k]   = j.first[k];
+        perm[k+3] = i.first[k]+3;
+      }
+      rdm3->emplace_perm(perm, j.second*i.second);
+    }
+  }
+
+  auto rdm2 = make_shared<Kramers<4,ZRDM<2>>>();
+  for (int i = 0; i != 64; ++i) {
+    const bitset<6> source(i);
+    if (source[2] == source[5]) {
+      shared_ptr<const ZRDM<3>> r3 = rdm3->get_data(KTag<6>(source));
+      bitset<4> target;
+      target[0] = source[0];
+      target[1] = source[1];
+      target[2] = source[3];
+      target[3] = source[4];
+
+      auto r2 = make_shared<ZRDM<2>>(norb_);
+      const size_t norb2 = norb_*norb_;
+      for (int a = 0; a != norb_; ++a)
+        for (int j = 0; j != norb2; ++j)
+          for (int k = 0; k != norb2; ++k)
+            *(r2->data()+k+norb2*j) += *(r3->data()+k+norb2*(a+norb_*(j+norb2*a)));
+      rdm2->add(KTag<4>(target), r2);
+    }
+  }
+  for (auto& i : *rdm2)
+    i.second->scale(1.0/(nele_-2));
+  rdm2->emplace_perm({{0,1,2,3}},  1.0);
+  rdm2->emplace_perm({{0,1,3,2}}, -1.0);
+  rdm2->emplace_perm({{1,0,2,3}}, -1.0);
+  rdm2->emplace_perm({{1,0,3,2}},  1.0);
+
+  auto rdm1 = make_shared<Kramers<2,ZRDM<1>>>();
+  for (int i = 0; i != 16; ++i) {
+    const bitset<4> source(i);
+    if (source[1] == source[3]) {
+      shared_ptr<const ZRDM<2>> r2 = rdm2->get_data(KTag<4>(source));
+      bitset<2> target;
+      target[0] = source[0];
+      target[1] = source[2];
+
+      auto r1 = make_shared<ZRDM<1>>(norb_);
+      for (int a = 0; a != norb_; ++a)
+        for (int j = 0; j != norb_; ++j)
+          for (int k = 0; k != norb_; ++k)
+            *(r1->data()+k+norb_*j) += *(r2->data()+k+norb_*(a+norb_*(j+norb_*a)));
+      rdm1->add(KTag<2>(target), r1);
+    }
+  }
+  for (auto& i : *rdm1)
+    i.second->scale(1.0/(nele_-1));
+
+  for (auto& i : *rdm1) {
+    cout << i.first.tag()[0] << i.first.tag()[1] << endl;
+    i.second->print();
+  }
+
 }
 
 

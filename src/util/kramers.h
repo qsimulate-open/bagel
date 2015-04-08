@@ -124,6 +124,12 @@ class Kramers {
       else
         emplace(t, o);
     }
+    void add(const KTag<N>& t, std::shared_ptr<const Type> o) {
+      if (exist(t))
+        *at(t) += *o;
+      else
+        emplace(t, o->copy());
+    }
 
     void emplace_perm(const std::array<int,N>& o, double a) { perm_.emplace(o,a); }
 
