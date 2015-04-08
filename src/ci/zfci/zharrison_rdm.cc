@@ -185,10 +185,45 @@ shared_ptr<Kramers<4,ZDvec>> ZHarrison::four_down_from_civec(const int nelea, co
 }
 
 
-void ZHarrison::compute_rdm23() {
-  // TODO fix this
-//const int istate = 0;
+void ZHarrison::compute_rdm34(const int jst, const int ist) {
+  auto space4 = make_shared<RelSpace>(norb_, nele_-4);
+  auto rdm4 = make_shared<Kramers<8,ZRDM<4>>>();
 
+  // loop over n-4 determinant spaces
+  for (int nelea = 0; nelea <= nele_-4; ++nelea) {
+    const int neleb = nele_-4 - nelea;
+    if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
+
+    shared_ptr<Kramers<4,ZDvec>> interm = four_down_from_civec(nelea, neleb, ist, space4);
+    shared_ptr<Kramers<4,ZDvec>> interm2 = ist == jst ? interm : four_down_from_civec(nelea, neleb, jst, space4);
+    for (auto& i : *interm2)
+      for (auto& j : *interm) {
+        auto tmp = make_shared<ZRDM<4>>(norb_);
+        auto grouped = group(group(*tmp, 4,8), 0,4);
+        contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, grouped, {1,2}, true, false);
+        rdm4->add(merge(i.first, j.first), tmp);
+      }
+  }
+  // TODO how can I automate it?
+  map<array<int,4>,double> elem;
+  a.emplace(array<int,4>{{0,1,2,3}},  1.0); a.emplace(array<int,4>{{0,1,3,2}}, -1.0); a.emplace(array<int,4>{{0,2,1,3}}, -1.0);
+  a.emplace(array<int,4>{{0,2,3,1}},  1.0); a.emplace(array<int,4>{{0,3,1,2}},  1.0); a.emplace(array<int,4>{{0,3,2,1}}, -1.0);
+  a.emplace(array<int,4>{{1,0,2,3}}, -1.0); a.emplace(array<int,4>{{1,0,3,2}},  1.0); a.emplace(array<int,4>{{1,2,0,3}},  1.0);
+  a.emplace(array<int,4>{{1,2,3,0}}, -1.0); a.emplace(array<int,4>{{1,3,0,2}}, -1.0); a.emplace(array<int,4>{{1,3,2,0}},  1.0);
+  a.emplace(array<int,4>{{2,0,1,3}},  1.0); a.emplace(array<int,4>{{2,0,3,1}}, -1.0); a.emplace(array<int,4>{{2,1,0,3}}, -1.0);
+  a.emplace(array<int,4>{{2,1,3,0}},  1.0); a.emplace(array<int,4>{{2,3,0,1}},  1.0); a.emplace(array<int,4>{{2,3,1,0}}, -1.0);
+  a.emplace(array<int,4>{{3,0,1,2}}, -1.0); a.emplace(array<int,4>{{3,0,2,1}},  1.0); a.emplace(array<int,4>{{3,1,0,2}},  1.0);
+  a.emplace(array<int,4>{{3,1,2,0}}, -1.0); a.emplace(array<int,4>{{3,2,0,1}}, -1.0); a.emplace(array<int,4>{{3,2,1,0}},  1.0);
+
+  for (auto& i : elem)
+    for (auto& j : elem) {
+      array<int,8> perm;
+      for (int k = 0; k != 4; ++k) {
+        perm[k]   = j.first[k];
+        perm[k+4] = i.first[k];
+      }
+      rdm4->emplace_perm(perm, j.second*i.second);
+    }
 }
 
 

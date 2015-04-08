@@ -205,7 +205,7 @@ class ZHarrison : public Method {
 
     // functions related to RDMs
     void compute_rdm12();
-    void compute_rdm23();
+    void compute_rdm34(const int jst, const int ist);
 
     std::shared_ptr<const ZMatrix> rdm1_av() const;
     std::shared_ptr<const ZMatrix> rdm2_av() const;
