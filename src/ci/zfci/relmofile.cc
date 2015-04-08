@@ -217,7 +217,6 @@ shared_ptr<Kramers<2,ZMatrix>>
   const int nocc = nact + nclosed;
 
   shared_ptr<ZMatrix> focktmp;
-  shared_ptr<ZMatrix> ctmp;
   {
     const int norb = geom_->nele() - charge_;
     assert(norb <= coeff_->mdim());
@@ -244,7 +243,7 @@ shared_ptr<Kramers<2,ZMatrix>>
   }
 
   // re-order to kramers format and move negative energy states to virtual space
-  ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
+  auto ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
   { // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
     assert(ctmp->ndim() % 4 == 0);
     const int n = ctmp->ndim()/4;
