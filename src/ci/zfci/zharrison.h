@@ -166,6 +166,7 @@ class ZHarrison : public Method {
     // protected functions for RDM computation. Annihilate two electrons from the reference
     std::shared_ptr<Kramers<1,ZDvec>> one_down_from_civec(const int nelea, const int neleb, const int istate, std::shared_ptr<const RelSpace>) const;
     std::shared_ptr<Kramers<2,ZDvec>> two_down_from_civec(const int nelea, const int neleb, const int istate) const;
+    std::shared_ptr<Kramers<4,ZDvec>> four_down_from_civec(const int nelea, const int neleb, const int istate, std::shared_ptr<const RelSpace>) const;
 
   public:
     ZHarrison() { }
@@ -204,6 +205,7 @@ class ZHarrison : public Method {
 
     // functions related to RDMs
     void compute_rdm12();
+    void compute_rdm23();
 
     std::shared_ptr<const ZMatrix> rdm1_av() const;
     std::shared_ptr<const ZMatrix> rdm2_av() const;

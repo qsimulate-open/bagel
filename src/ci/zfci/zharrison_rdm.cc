@@ -103,6 +103,95 @@ shared_ptr<Kramers<2,ZDvec>> ZHarrison::two_down_from_civec(const int nelea, con
 }
 
 
+shared_ptr<Kramers<4,ZDvec>> ZHarrison::four_down_from_civec(const int nelea, const int neleb, const int istate, shared_ptr<const RelSpace> space4) const {
+  auto out = make_shared<Kramers<4,ZDvec>>();
+
+  // aaaa
+  if (nelea+4 <= norb_) {
+    shared_ptr<const ZCivec> cc = cc_->find(nelea+4, neleb)->data(istate);
+    auto d = make_shared<ZDvec>(int_space_->finddet(nelea+2, neleb), norb_*norb_);
+    sigma_2e_annih_aa(cc, d);
+    auto tmp = make_shared<ZDvec>(space4->finddet(nelea, neleb), norb_*norb_);
+    auto e = make_shared<ZDvec>(space4->finddet(nelea, neleb), norb_*norb_*norb_*norb_);
+    for (int i = 0; i != norb_*norb_; ++i) {
+      tmp->zero();
+      sigma_2e_annih_aa(d->data(i), tmp);
+      for (int j = 0; j != norb_*norb_; ++j)
+        *e->data(j+i*norb_*norb_) += *tmp->data(j);
+    }
+    out->emplace({0,0,0,0}, e);
+  }
+  // aaab
+  if (nelea+3 <= norb_ && neleb+1 <= norb_) {
+    shared_ptr<const ZCivec> cc = cc_->find(nelea+3, neleb+1)->data(istate);
+    auto d = make_shared<ZDvec>(int_space_->finddet(nelea+2, neleb), norb_*norb_);
+    sigma_2e_annih_ab(cc, d);
+    auto tmp = make_shared<ZDvec>(space4->finddet(nelea, neleb), norb_*norb_);
+    auto e = make_shared<ZDvec>(space4->finddet(nelea, neleb), norb_*norb_*norb_*norb_);
+    for (int i = 0; i != norb_*norb_; ++i) {
+      tmp->zero();
+      sigma_2e_annih_aa(d->data(i), tmp);
+      for (int j = 0; j != norb_*norb_; ++j)
+        *e->data(j+i*norb_*norb_) += *tmp->data(j);
+    }
+    out->emplace({0,0,0,1}, e);
+  }
+  // aabb
+  if (nelea+2 <= norb_ && neleb+2 <= norb_) {
+    shared_ptr<const ZCivec> cc = cc_->find(nelea+2, neleb+2)->data(istate);
+    auto d = make_shared<ZDvec>(int_space_->finddet(neleb, nelea+2), norb_*norb_);
+    sigma_2e_annih_aa(cc->transpose(), d);
+    auto tmp = make_shared<ZDvec>(space4->finddet(nelea, neleb), norb_*norb_);
+    auto e = make_shared<ZDvec>(space4->finddet(nelea, neleb), norb_*norb_*norb_*norb_);
+    for (int i = 0; i != norb_*norb_; ++i) {
+      tmp->zero();
+      sigma_2e_annih_aa(d->data(i)->transpose(), tmp);
+      for (int j = 0; j != norb_*norb_; ++j)
+        *e->data(j+i*norb_*norb_) += *tmp->data(j);
+    }
+    out->emplace({0,0,1,1}, e);
+  }
+  // abbb
+  if (nelea+1 <= norb_ && neleb+3 <= norb_) {
+    shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb+3)->data(istate);
+    auto d = make_shared<ZDvec>(int_space_->finddet(neleb+1, nelea+1), norb_*norb_);
+    sigma_2e_annih_aa(cc->transpose(), d);
+    auto tmp = make_shared<ZDvec>(space4->finddet(nelea, neleb), norb_*norb_);
+    auto e = make_shared<ZDvec>(space4->finddet(nelea, neleb), norb_*norb_*norb_*norb_);
+    for (int i = 0; i != norb_*norb_; ++i) {
+      tmp->zero();
+      sigma_2e_annih_ab(d->data(i)->transpose(), tmp);
+      for (int j = 0; j != norb_*norb_; ++j)
+        *e->data(j+i*norb_*norb_) += *tmp->data(j);
+    }
+    out->emplace({0,1,1,1}, e);
+  }
+  // bbbb
+  if (neleb+4 <= norb_) {
+    shared_ptr<const ZCivec> cc = cc_->find(nelea, neleb+4)->data(istate);
+    auto d = make_shared<ZDvec>(int_space_->finddet(neleb+2, nelea), norb_*norb_);
+    sigma_2e_annih_aa(cc->transpose(), d);
+    auto tmp = make_shared<ZDvec>(space4->finddet(neleb, nelea), norb_*norb_);
+    auto e = make_shared<ZDvec>(space4->finddet(nelea, neleb), norb_*norb_*norb_*norb_);
+    for (int i = 0; i != norb_*norb_; ++i) {
+      tmp->zero();
+      sigma_2e_annih_aa(d->data(i), tmp);
+      for (int j = 0; j != norb_*norb_; ++j)
+        *e->data(j+i*norb_*norb_) += *tmp->data(j)->transpose();
+    }
+    out->emplace({1,1,1,1}, e);
+  }
+  return out;
+}
+
+
+void ZHarrison::compute_rdm23() {
+  // TODO fix this
+//const int istate = 0;
+
+}
+
+
 void ZHarrison::compute_rdm12() {
 
   auto space1 = make_shared<RelSpace>(norb_, nele_-1);
