@@ -31,6 +31,49 @@ using namespace std;
 using namespace bagel;
 using namespace btas;
 
+shared_ptr<Kramers<1,ZDvec>> ZHarrison::one_down_from_civec(const int nelea, const int neleb, const int istate, shared_ptr<const RelSpace> space1) const {
+  auto out = make_shared<Kramers<1,ZDvec>>();
+
+  shared_ptr<const Determinants> int_det = space1->finddet(nelea, neleb);
+  if (nelea+1 <= norb_) {
+    shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb)->data(istate);
+    auto d = make_shared<ZDvec>(int_det, norb_);
+    const int lenb = int_det->lenb();
+    for (auto& s : int_det->string_bits_a()) {
+      for (int i = 0; i != norb_; ++i) {
+        if (s[i]) continue;
+        const double sign = int_det->sign<0>(s, i);
+        auto cs = s; cs.set(i);
+        complex<double>* target = d->data(i)->data()+int_det->lexical<0>(s)*lenb;
+        const complex<double>* source = cc->data()+cc->det()->lexical<0>(cs)*lenb;
+        blas::ax_plus_y_n(sign, source, lenb, target);
+      }
+    }
+    out->emplace({0}, d);
+  }
+  if (neleb+1 <= norb_) {
+    shared_ptr<const ZCivec> cc = cc_->find(nelea, neleb+1)->data(istate);
+    auto d = make_shared<ZDvec>(int_det, norb_);
+    const int lenbt = int_det->lenb();
+    const int lenbs = cc->det()->lenb();
+    for (size_t ia = 0; ia != int_det->lena(); ++ia) {
+      const complex<double>* source = cc->data()+ia*lenbs;
+      for (int i = 0; i != norb_; ++i) {
+        complex<double>* target = d->data(i)->data()+ia*lenbt;
+        for (auto& s : int_det->string_bits_b()) {
+          if (s[i]) continue;
+          const double sign = int_det->sign<1>(s, i);
+          auto cs = s; cs.set(i);
+          target[int_det->lexical<1>(s)] += sign*source[cc->det()->lexical<1>(cs)];
+        }
+      }
+    }
+    out->emplace({1}, d);
+  }
+  return out;
+}
+
+
 shared_ptr<Kramers<2,ZDvec>> ZHarrison::two_down_from_civec(const int nelea, const int neleb, const int istate) const {
   auto out = make_shared<Kramers<2,ZDvec>>();
 
@@ -62,8 +105,9 @@ shared_ptr<Kramers<2,ZDvec>> ZHarrison::two_down_from_civec(const int nelea, con
 
 void ZHarrison::compute_rdm12() {
 
-  // for one-body RDM
   auto space1 = make_shared<RelSpace>(norb_, nele_-1);
+
+  // for one-body RDM
   rdm1_.clear();
   rdm2_.clear();
   for (int istate = 0; istate != nstate_; ++istate)  {
@@ -77,16 +121,27 @@ void ZHarrison::compute_rdm12() {
       const int neleb = nele_-2 - nelea;
       if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
 
-      // map
       shared_ptr<Kramers<2,ZDvec>> interm = two_down_from_civec(nelea, neleb, istate);
-
-      for (auto& i : *interm) {
-        for (auto& j : *interm) {
+      for (auto& i : *interm)
+        for (auto& j : *interm)
           if (i.first >= j.first) {
             auto rdm2 = make_shared<ZRDM<2>>(norb_);
             auto rdm2grouped = group(group(*rdm2, 2,4), 0,2);
             contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, rdm2grouped, {1,2}, true, false);
             rdm2_[istate]->add(merge(i.first, j.first), rdm2);
+          }
+    }
+    // utilize bra-ket symmetry
+    for (int i = 0; i != 4; ++i) {
+      for (int j = 0; j != 4; ++j) {
+        const KTag<4> target((j << 2) + i);
+        if (!rdm2_[istate]->exist(target)) {
+          const KTag<4> s2301((i << 2) + j);
+          if (rdm2_[istate]->exist(s2301)) {
+            auto tmp = make_shared<ZRDM<2>>(norb_);
+            sort_indices<2,3,0,1,0,1,1,1>(rdm2_[istate]->at(s2301)->data(), tmp->data(), norb_, norb_, norb_, norb_);
+            transform(tmp->data(), tmp->data()+norb_*norb_*norb_*norb_, tmp->data(), [](complex<double> a){ return conj(a); });
+            rdm2_[istate]->emplace(target, tmp);
           }
         }
       }
@@ -98,92 +153,23 @@ void ZHarrison::compute_rdm12() {
       const int neleb = nele_-1 - nelea;
       if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
 
-      shared_ptr<const Determinants> int_det = space1->finddet(nelea, neleb);
-      Kramers<1,ZDvec> intermediates;
-
-      if (nelea+1 <= norb_) {
-        shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb)->data(istate);
-        auto d = make_shared<ZDvec>(int_det, norb_);
-        const int lenb = int_det->lenb();
-        for (auto& s : int_det->string_bits_a()) {
-          for (int i = 0; i != norb_; ++i) {
-            if (s[i]) continue;
-            const double sign = int_det->sign<0>(s, i);
-            auto cs = s; cs.set(i);
-            complex<double>* target = d->data(i)->data()+int_det->lexical<0>(s)*lenb;
-            const complex<double>* source = cc->data()+cc->det()->lexical<0>(cs)*lenb;
-            blas::ax_plus_y_n(sign, source, lenb, target);
-          }
-        }
-        intermediates.emplace({0}, d);
-      }
-      if (neleb+1 <= norb_) {
-        shared_ptr<const ZCivec> cc = cc_->find(nelea, neleb+1)->data(istate);
-        auto d = make_shared<ZDvec>(int_det, norb_);
-        const int lenbt = int_det->lenb();
-        const int lenbs = cc->det()->lenb();
-        for (size_t ia = 0; ia != int_det->lena(); ++ia) {
-          const complex<double>* source = cc->data()+ia*lenbs;
-          for (int i = 0; i != norb_; ++i) {
-            complex<double>* target = d->data(i)->data()+ia*lenbt;
-            for (auto& s : int_det->string_bits_b()) {
-              if (s[i]) continue;
-              const double sign = int_det->sign<1>(s, i);
-              auto cs = s; cs.set(i);
-              target[int_det->lexical<1>(s)] += sign*source[cc->det()->lexical<1>(cs)];
-            }
-          }
-        }
-        intermediates.emplace({1}, d);
-      }
-      // almost the same code as above
-      for (auto& i : intermediates) {
-        for (auto& j : intermediates) {
+      shared_ptr<Kramers<1,ZDvec>> interm = one_down_from_civec(nelea, neleb, istate, space1);
+      for (auto& i : *interm)
+        for (auto& j : *interm)
           if (i.first >= j.first) {
             auto rdm1 = make_shared<ZRDM<1>>(norb_);
             contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, *rdm1, {1,2}, true, false);
             rdm1_[istate]->add(merge(i.first, j.first), rdm1);
           }
-        }
-      }
     }
 
-    // for completeness we can compute all the blocks (2RDM), which are useful in CASSCF
     if (!rdm1_[istate]->exist({1,0}))
       rdm1_[istate]->at({1,0}) = rdm1_[istate]->at({0,0})->clone();
 
-    for (int i = 0; i != 4; ++i) {
-      for (int j = 0; j != 4; ++j) {
-        bitset<4> target((j << 2) + i);
-
-        if (!rdm2_[istate]->exist(target)) {
-          bitset<4> s2301((i << 2) + j);
-          bitset<4> s1032; s1032.set(0, target[1]); s1032.set(1, target[0]); s1032.set(2, target[3]); s1032.set(3, target[2]);
-          bitset<4> s3210; s3210.set(0, target[3]); s3210.set(1, target[2]); s3210.set(2, target[1]); s3210.set(3, target[0]);
-          bitset<4> s0132; s0132.set(0, target[0]); s0132.set(1, target[1]); s0132.set(2, target[3]); s0132.set(3, target[2]);
-
-          // TODO I don't know why I cannot move emplace line outside if block (if I do, assert fails)
-          if (rdm2_[istate]->exist(s2301)) {
-            rdm2_[istate]->emplace(target, make_shared<ZRDM<2>>(norb_));
-            sort_indices<2,3,0,1,0,1,1,1>(rdm2_[istate]->at(s2301)->data(), rdm2_[istate]->at(target)->data(), norb_, norb_, norb_, norb_);
-            transform(rdm2_[istate]->at(target)->data(), rdm2_[istate]->at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate]->at(target)->data(), [](complex<double> a){ return conj(a); });
-          } else if (rdm2_[istate]->exist(s1032)) {
-            rdm2_[istate]->emplace(target, make_shared<ZRDM<2>>(norb_));
-            sort_indices<1,0,3,2,0,1,1,1>(rdm2_[istate]->at(s1032)->data(), rdm2_[istate]->at(target)->data(), norb_, norb_, norb_, norb_);
-          } else if (rdm2_[istate]->exist(s3210)) {
-            rdm2_[istate]->emplace(target, make_shared<ZRDM<2>>(norb_));
-            sort_indices<3,2,1,0,0,1,1,1>(rdm2_[istate]->at(s3210)->data(), rdm2_[istate]->at(target)->data(), norb_, norb_, norb_, norb_);
-            transform(rdm2_[istate]->at(target)->data(), rdm2_[istate]->at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate]->at(target)->data(), [](complex<double> a){ return conj(a); });
-          } else if (rdm2_[istate]->exist(s0132)) {
-            rdm2_[istate]->emplace(target, make_shared<ZRDM<2>>(norb_));
-            sort_indices<1,0,2,3,0,1,1,1>(rdm2_[istate]->at(s0132)->data(), rdm2_[istate]->at(target)->data(), norb_, norb_, norb_, norb_);
-            transform(rdm2_[istate]->at(target)->data(), rdm2_[istate]->at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate]->at(target)->data(), [](complex<double> a){ return -a; });
-          } else {
-            rdm2_[istate]->emplace(target, make_shared<ZRDM<2>>(norb_));
-          }
-        }
-      }
-    }
+    // append permutation information
+    rdm2_[istate]->emplace_perm({{0,1,3,2}},-1);
+    rdm2_[istate]->emplace_perm({{1,0,3,2}}, 1);
+    rdm2_[istate]->emplace_perm({{1,0,2,3}},-1);
   }
 
   rdm1_av_ = make_shared<Kramers<2,ZRDM<1>>>();
@@ -201,92 +187,40 @@ void ZHarrison::compute_rdm12() {
     rdm1_av_ = rdm1_.front();
     rdm2_av_ = rdm2_.front();
   }
+  rdm2_av_->emplace_perm({{0,1,3,2}},-1);
+  rdm2_av_->emplace_perm({{1,0,3,2}}, 1);
+  rdm2_av_->emplace_perm({{1,0,2,3}},-1);
 }
 
 
 shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
   // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
-  auto rdm1_tot = make_shared<ZMatrix>(norb_*2, norb_*2);
-  rdm1_tot->copy_block(    0,     0, norb_, norb_, rdm1_av_kramers("00"));
-  rdm1_tot->copy_block(norb_, norb_, norb_, norb_, rdm1_av_kramers("11"));
-  rdm1_tot->copy_block(norb_,     0, norb_, norb_, rdm1_av_kramers("10"));
-  rdm1_tot->copy_block(    0, norb_, norb_, norb_, rdm1_tot->get_submatrix(norb_, 0, norb_, norb_)->transpose_conjg());
-  return rdm1_tot;
+  auto out = make_shared<ZMatrix>(norb_*2, norb_*2);
+  out->copy_block(    0,     0, norb_, norb_, rdm1_av_kramers("00"));
+  out->copy_block(norb_, norb_, norb_, norb_, rdm1_av_kramers("11"));
+  out->copy_block(norb_,     0, norb_, norb_, rdm1_av_kramers("10"));
+  out->copy_block(    0, norb_, norb_, norb_, out->get_submatrix(norb_, 0, norb_, norb_)->transpose_conjg());
+  return out;
 }
 
 
 shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
   // transformed 2RDM ; input format is i^+ k^+ j l ; output format is i^+ j k^+ l
-  // TODO : slot in 2RDM by hand to avoid matrix multiplication ; should be slightly cheaper
-
-  unordered_map<bitset<1>, shared_ptr<const ZMatrix>> trans;
-  auto unit = make_shared<ZMatrix>(norb_*2,norb_*2);
-  unit->unit();
-  for (int i = 0; i != 2; ++i) {
-    trans.emplace(i, unit->slice_copy(i*norb_,(i+1)*norb_));
-  }
-
   // loop over each component
   auto ikjl = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
-  auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
-  for (auto& irdm : *rdm2_av_) {
-    bitset<4> ib = irdm.first.tag();
-    shared_ptr<const ZRDM<2>> rdm2 = irdm.second;
-    // TODO to be updated once the Tensor branch comes out
-    const int norb2 = norb_*norb_;
-    const int norb3 = norb2*norb_;
-    const int norb4 = norb3*norb_;
-    unique_ptr<complex<double>[]> tmp1(new complex<double>[2*norb4]);
-    unique_ptr<complex<double>[]> tmp2(new complex<double>[4*norb4]);
-    unique_ptr<complex<double>[]> tmp3(new complex<double>[8*norb4]);
-    zgemm3m_("N", "N", 2*norb_, norb3, norb_, 1.0, trans[ib[3] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, rdm2->data(), norb_, 0.0, tmp1.get(), 2*norb_);
-    for (int i = 0; i != norb2; ++i)
-      zgemm3m_("N", "T", 2*norb_, 2*norb_, norb_, 1.0, tmp1.get()+i*2*norb2, 2*norb_, trans[ib[2] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp2.get()+i*4*norb2, 2*norb_);
-    for (int i = 0; i != norb_; ++i)
-      zgemm3m_("N", "C", 4*norb2, 2*norb_, norb_, 1.0, tmp2.get()+i*4*norb3, 4*norb2, trans[ib[1] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp3.get()+i*8*norb3, 4*norb2);
-    zgemm3m_("N", "C", 8*norb3, 2*norb_, norb_, 1.0, tmp3.get(),           8*norb3, trans[ib[0] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 1.0, ikjl->data()         , 8*norb3);
+  for (int i = 0; i != 16; ++i) {
+    array<int,4> off {{i/8, (i%8)/4, (i%4)/2, i%2}};
+    shared_ptr<const ZRDM<2>> block = rdm2_av_->get_data(i);
+    for (int a = 0, abcd = 0; a != norb_; ++a)
+      for (int b = 0; b != norb_; ++b)
+        for (int c = 0; c != norb_; ++c) {
+          copy_n(block->data() + abcd, norb_,
+                 ikjl->element_ptr(norb_*off[0]+2*norb_*(c+norb_*off[1]), b+norb_*off[2]+2*norb_*(a+norb_*off[3])));
+          abcd += norb_;
+        }
   }
-
   // sort indices : G(ik|jl) -> G(ij|kl)
-  sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
-  return out;
-}
-
-
-shared_ptr<const ZMatrix> ZHarrison::mo2e_full() const {
-  // transformed two-electron energies ; input format is i^+ k^+ j l ; output format is i^+ j k^+ l
-
-  unordered_map<bitset<1>, shared_ptr<const ZMatrix>> trans;
-  auto unit = make_shared<ZMatrix>(norb_*2,norb_*2);
-  unit->unit();
-  for (int i = 0; i != 2; ++i) {
-    auto co = make_shared<const ZMatrix>(unit->slice(i*norb_,(i+1)*norb_));
-    bitset<1> b(i);
-    trans.insert(make_pair(b, co));
-  }
-
-  // loop over each component
-  auto ikjl = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
   auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
-  for (auto& irdm : *jop()->mo2e()) {
-    bitset<4> ib = irdm.first.tag();
-    shared_ptr<const ZMatrix> rdm2 = irdm.second;
-    // TODO to be updated once the Tensor branch comes out
-    const int norb2 = norb_*norb_;
-    const int norb3 = norb2*norb_;
-    const int norb4 = norb3*norb_;
-    unique_ptr<complex<double>[]> tmp1(new complex<double>[2*norb4]);
-    unique_ptr<complex<double>[]> tmp2(new complex<double>[4*norb4]);
-    unique_ptr<complex<double>[]> tmp3(new complex<double>[8*norb4]);
-    zgemm3m_("N", "N", 2*norb_, norb3, norb_, 1.0, trans[ib[3] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, rdm2->data(), norb_, 0.0, tmp1.get(), 2*norb_);
-    for (int i = 0; i != norb2; ++i)
-      zgemm3m_("N", "T", 2*norb_, 2*norb_, norb_, 1.0, tmp1.get()+i*2*norb2, 2*norb_, trans[ib[2] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp2.get()+i*4*norb2, 2*norb_);
-    for (int i = 0; i != norb_; ++i)
-      zgemm3m_("N", "C", 4*norb2, 2*norb_, norb_, 1.0, tmp2.get()+i*4*norb3, 4*norb2, trans[ib[1] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp3.get()+i*8*norb3, 4*norb2);
-    zgemm3m_("N", "C", 8*norb3, 2*norb_, norb_, 1.0, tmp3.get(),           8*norb3, trans[ib[0] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 1.0, ikjl->data()         , 8*norb3);
-  }
-
-  // sort indices : G(ik|jl) -> G(ij|kl)
   sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
   return out;
 }

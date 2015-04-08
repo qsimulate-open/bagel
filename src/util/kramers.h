@@ -34,6 +34,7 @@
 #include <initializer_list>
 #include <cassert>
 #include <src/util/serialization.h>
+#include <src/util/prim_op_var.h>
 
 namespace bagel {
 
@@ -65,6 +66,13 @@ class KTag {
 
     std::bitset<N> tag() const { return tag_; }
 
+    KTag<N> perm(const std::array<int,N>& o) const {
+      std::bitset<N> out;
+      for (int i = 0; i != N; ++i)
+        out[o[i]] = tag_[i];
+      return KTag<N>(out);
+    }
+
     bool operator==(const KTag<N>& o) const { return tag_.to_string() == o.tag_.to_string(); }
     bool operator!=(const KTag<N>& o) const { return !(*this == o); }
     bool operator<(const KTag<N>& o) const { return tag_.to_string() < o.tag_.to_string(); }
@@ -80,12 +88,13 @@ template<int N, class Type>
 class Kramers {
   protected:
     std::map<KTag<N>, std::shared_ptr<Type>> data_;
+    std::map<std::array<int,N>, double> perm_;
 
   private:
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int file_version) {
-      ar & data_;
+      ar & data_ & perm_;
     }
 
   public:
@@ -116,6 +125,34 @@ class Kramers {
         emplace(t, o);
     }
 
+    void emplace_perm(const std::array<int,N>& o, double a) { perm_.emplace(o,a); }
+
+    // find the right permutation and sort indices
+    std::shared_ptr<const Type> get_data(const KTag<N>& tag) const {
+      if (exist(tag)) {
+        return at(tag);
+      } else {
+        std::shared_ptr<Type> out;
+        for (auto& i : perm_) {
+          bool found = false;
+          for (auto& j : data_) {
+            if (tag == j.first.perm(i.first)) {
+              found = true;
+              out = j.second->clone();
+              std::array<int,N> dim;
+              for (auto& d : dim)
+                d = std::lround(std::pow(out->size(), 1.0/N));
+              assert(std::pow(dim[0], N) == out->size());
+              sort_indices(/*sort info*/i.first, /*fac*/i.second, /*fac2*/0.0, j.second->data(), out->data(), dim);
+              break;
+            }
+          }
+          if (found) break;
+        }
+        if (!out) throw std::logic_error("could not find the copy");
+        return out;
+      }
+    }
 };
 
 }

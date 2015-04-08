@@ -164,6 +164,7 @@ class ZHarrison : public Method {
 #endif
 
     // protected functions for RDM computation. Annihilate two electrons from the reference
+    std::shared_ptr<Kramers<1,ZDvec>> one_down_from_civec(const int nelea, const int neleb, const int istate, std::shared_ptr<const RelSpace>) const;
     std::shared_ptr<Kramers<2,ZDvec>> two_down_from_civec(const int nelea, const int neleb, const int istate) const;
 
   public:
@@ -197,7 +198,6 @@ class ZHarrison : public Method {
 
     std::vector<double> energy() const { return energy_; }
 
-    std::shared_ptr<const ZMatrix> mo2e_full() const;
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
     std::shared_ptr<const Kramers<2,ZMatrix>> kramers_coeff() const { return jop_->kramers_coeff(); }
