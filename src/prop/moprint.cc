@@ -73,6 +73,13 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
   array<double,3> start_pos = idata->get_array<double,3>("start_pos", {{-99.0, -99.0, -99.0}});
   inc_size_ = idata->get_array<double,3>("inc_size", {{0.25, 0.25, 0.25}});
 
+  if (angstrom) {
+    for (int i=0; i!=3; ++i) {
+      start_pos[i] /= au2angstrom__;
+      inc_size_[i] /= au2angstrom__;
+    }
+  }
+
   // By default, assign positions covering the molecule + 4.0 Bohr on each side
   if (start_pos == array<double,3>({{-99.0, -99.0, -99.0}})) {
     array<double,3> max_pos = geom_->atoms(0)->position();
@@ -88,13 +95,6 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
     for (int i=0; i!=3; ++i) {
       start_pos[i] = min_pos[i] - 4.0;
       inc_size_[i] = (max_pos[i] - min_pos[i] + 8.0) / (ngrid_dim_[i] - 1);
-    }
-  }
-
-  if (angstrom) {
-    for (int i=0; i!=3; ++i) {
-      start_pos[i] /= au2angstrom__;
-      inc_size_[i] /= au2angstrom__;
     }
   }
 
