@@ -206,14 +206,14 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
   }
   // TODO how can I automate it?
   map<array<int,4>,double> elem;
-  a.emplace(array<int,4>{{0,1,2,3}},  1.0); a.emplace(array<int,4>{{0,1,3,2}}, -1.0); a.emplace(array<int,4>{{0,2,1,3}}, -1.0);
-  a.emplace(array<int,4>{{0,2,3,1}},  1.0); a.emplace(array<int,4>{{0,3,1,2}},  1.0); a.emplace(array<int,4>{{0,3,2,1}}, -1.0);
-  a.emplace(array<int,4>{{1,0,2,3}}, -1.0); a.emplace(array<int,4>{{1,0,3,2}},  1.0); a.emplace(array<int,4>{{1,2,0,3}},  1.0);
-  a.emplace(array<int,4>{{1,2,3,0}}, -1.0); a.emplace(array<int,4>{{1,3,0,2}}, -1.0); a.emplace(array<int,4>{{1,3,2,0}},  1.0);
-  a.emplace(array<int,4>{{2,0,1,3}},  1.0); a.emplace(array<int,4>{{2,0,3,1}}, -1.0); a.emplace(array<int,4>{{2,1,0,3}}, -1.0);
-  a.emplace(array<int,4>{{2,1,3,0}},  1.0); a.emplace(array<int,4>{{2,3,0,1}},  1.0); a.emplace(array<int,4>{{2,3,1,0}}, -1.0);
-  a.emplace(array<int,4>{{3,0,1,2}}, -1.0); a.emplace(array<int,4>{{3,0,2,1}},  1.0); a.emplace(array<int,4>{{3,1,0,2}},  1.0);
-  a.emplace(array<int,4>{{3,1,2,0}}, -1.0); a.emplace(array<int,4>{{3,2,0,1}}, -1.0); a.emplace(array<int,4>{{3,2,1,0}},  1.0);
+  elem.emplace(array<int,4>{{0,1,2,3}},  1.0); elem.emplace(array<int,4>{{0,1,3,2}}, -1.0); elem.emplace(array<int,4>{{0,2,1,3}}, -1.0);
+  elem.emplace(array<int,4>{{0,2,3,1}},  1.0); elem.emplace(array<int,4>{{0,3,1,2}},  1.0); elem.emplace(array<int,4>{{0,3,2,1}}, -1.0);
+  elem.emplace(array<int,4>{{1,0,2,3}}, -1.0); elem.emplace(array<int,4>{{1,0,3,2}},  1.0); elem.emplace(array<int,4>{{1,2,0,3}},  1.0);
+  elem.emplace(array<int,4>{{1,2,3,0}}, -1.0); elem.emplace(array<int,4>{{1,3,0,2}}, -1.0); elem.emplace(array<int,4>{{1,3,2,0}},  1.0);
+  elem.emplace(array<int,4>{{2,0,1,3}},  1.0); elem.emplace(array<int,4>{{2,0,3,1}}, -1.0); elem.emplace(array<int,4>{{2,1,0,3}}, -1.0);
+  elem.emplace(array<int,4>{{2,1,3,0}},  1.0); elem.emplace(array<int,4>{{2,3,0,1}},  1.0); elem.emplace(array<int,4>{{2,3,1,0}}, -1.0);
+  elem.emplace(array<int,4>{{3,0,1,2}}, -1.0); elem.emplace(array<int,4>{{3,0,2,1}},  1.0); elem.emplace(array<int,4>{{3,1,0,2}},  1.0);
+  elem.emplace(array<int,4>{{3,1,2,0}}, -1.0); elem.emplace(array<int,4>{{3,2,0,1}}, -1.0); elem.emplace(array<int,4>{{3,2,1,0}},  1.0);
 
   for (auto& i : elem)
     for (auto& j : elem) {
