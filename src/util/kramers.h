@@ -155,7 +155,6 @@ class Kramers {
           }
           if (found) break;
         }
-        if (!out) throw std::logic_error("could not find the copy");
         return out;
       }
     }

@@ -139,6 +139,15 @@ void RDM<1>::print(const double thresh) const {
 
 
 template<>
+void ZRDM<1>::print(const double thresh) const {
+  const std::complex<double>* ptr = data();
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
+      cout << setw(20) << setprecision(7) << *ptr++ << endl;
+}
+
+
+template<>
 void RDM<2>::print(const double thresh) const {
   const double* ptr = data();
   for (int i = 0; i != norb(); ++i)

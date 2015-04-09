@@ -153,6 +153,7 @@ shared_ptr<Kramers<4,ZDvec>> ZHarrison::four_down_from_civec(const int nelea, co
   }
   // abbb
   if (nelea+1 <= norb_ && neleb+3 <= norb_) {
+#if 0
     shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb+3)->data(istate);
     auto d = make_shared<ZDvec>(int_space_->finddet(neleb+1, nelea+1), norb_*norb_);
     sigma_2e_annih_aa(cc->transpose(), d);
@@ -165,6 +166,20 @@ shared_ptr<Kramers<4,ZDvec>> ZHarrison::four_down_from_civec(const int nelea, co
         *e->data(j+i*norb_*norb_) += *tmp->data(j);
     }
     out->emplace({0,1,1,1}, e);
+#else
+    shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb+3)->data(istate);
+    auto d = make_shared<ZDvec>(int_space_->finddet(nelea, neleb+2), norb_*norb_);
+    sigma_2e_annih_ab(cc, d);
+    auto tmp = make_shared<ZDvec>(space4->finddet(neleb, nelea), norb_*norb_);
+    auto e = make_shared<ZDvec>(space4->finddet(nelea, neleb), norb_*norb_*norb_*norb_);
+    for (int i = 0; i != norb_*norb_; ++i) {
+      tmp->zero();
+      sigma_2e_annih_aa(d->data(i)->transpose(), tmp);
+      for (int j = 0; j != norb_*norb_; ++j)
+        *e->data(j+i*norb_*norb_) += *tmp->data(j)->transpose();
+    }
+    out->emplace({1,1,0,1}, e);
+#endif
   }
   // bbbb
   if (neleb+4 <= norb_) {
@@ -232,6 +247,7 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
     const bitset<8> source(i);
     if (source[3] == source[7]) {
       shared_ptr<const ZRDM<4>> r4 = rdm4->get_data(KTag<8>(source));
+      if (!r4) continue;
       bitset<6> target;
       target[0] = source[0];
       target[1] = source[1];
@@ -270,6 +286,7 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
     const bitset<6> source(i);
     if (source[2] == source[5]) {
       shared_ptr<const ZRDM<3>> r3 = rdm3->get_data(KTag<6>(source));
+      if (!r3) continue;
       bitset<4> target;
       target[0] = source[0];
       target[1] = source[1];
@@ -297,6 +314,7 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
     const bitset<4> source(i);
     if (source[1] == source[3]) {
       shared_ptr<const ZRDM<2>> r2 = rdm2->get_data(KTag<4>(source));
+      if (!r2) continue;
       bitset<2> target;
       target[0] = source[0];
       target[1] = source[2];
