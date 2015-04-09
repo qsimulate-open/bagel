@@ -140,6 +140,9 @@ class ZHarrison : public Method {
     void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
     void sigma_1e_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
 
+    void sigma_1e_annih_a(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
+    void sigma_1e_annih_b(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
+
     void sigma_2e_annih_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
     void sigma_2e_annih_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
 
@@ -166,6 +169,7 @@ class ZHarrison : public Method {
     // protected functions for RDM computation. Annihilate two electrons from the reference
     std::shared_ptr<Kramers<1,ZDvec>> one_down_from_civec(const int nelea, const int neleb, const int istate, std::shared_ptr<const RelSpace>) const;
     std::shared_ptr<Kramers<2,ZDvec>> two_down_from_civec(const int nelea, const int neleb, const int istate) const;
+    std::shared_ptr<Kramers<3,ZDvec>> three_down_from_civec(const int nelea, const int neleb, const int istate, std::shared_ptr<const RelSpace>) const;
     std::shared_ptr<Kramers<4,ZDvec>> four_down_from_civec(const int nelea, const int neleb, const int istate, std::shared_ptr<const RelSpace>) const;
 
   public:

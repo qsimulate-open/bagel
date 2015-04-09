@@ -69,7 +69,7 @@ class KTag {
     KTag<N> perm(const std::array<int,N>& o) const {
       std::bitset<N> out;
       for (int i = 0; i != N; ++i)
-        out[i] = tag_[o[i]];
+        out[N-i-1] = tag_[N-o[i]-1];
       return KTag<N>(out);
     }
 
