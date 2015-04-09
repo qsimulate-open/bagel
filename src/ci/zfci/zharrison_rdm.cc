@@ -415,8 +415,8 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
   for (auto& i : *rdm1)
     i.second->scale(1.0/(nele_-1));
 
-  for (auto& i : *rdm2) {
-    cout << i.first.tag() << endl;
+  for (auto& i : *rdm1) {
+    cout << i.first.tag()[0] << i.first.tag()[1] << endl;
     i.second->print();
   }
 
@@ -424,7 +424,6 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
 
 
 void ZHarrison::compute_rdm12() {
-compute_rdm34(0,0);
 
   auto space1 = make_shared<RelSpace>(norb_, nele_-1);
 
@@ -511,11 +510,6 @@ compute_rdm34(0,0);
   rdm2_av_->emplace_perm({{0,1,3,2}},-1);
   rdm2_av_->emplace_perm({{1,0,3,2}}, 1);
   rdm2_av_->emplace_perm({{1,0,2,3}},-1);
-
-  for (auto& i : *rdm2_av_) {
-    cout << " correct " << i.first.tag() << endl;
-    i.second->print();
-  }
 }
 
 
