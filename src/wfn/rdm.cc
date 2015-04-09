@@ -140,7 +140,7 @@ void RDM<1>::print(const double thresh) const {
 
 template<>
 void ZRDM<1>::print(const double thresh) const {
-  const std::complex<double>* ptr = data();
+  const complex<double>* ptr = data();
   for (int i = 0; i != norb(); ++i)
     for (int j = 0; j != norb(); ++j)
       cout << setw(20) << setprecision(7) << *ptr++ << endl;
@@ -162,6 +162,20 @@ void RDM<2>::print(const double thresh) const {
 
 
 template<>
+void ZRDM<2>::print(const double thresh) const {
+  const complex<double>* ptr = data();
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
+      for (int k = 0; k != norb(); ++k)
+        for (int l = 0; l != norb(); ++l, ++ptr)
+          if (fabs(*ptr) > thresh)
+            cout << setw(3) << l << setw(3)
+                      << k << setw(3) << j << setw(3) << i
+                      << setw(20) << setprecision(7) << *ptr << endl;
+}
+
+
+template<>
 void RDM<3>::print(const double thresh) const {
   const double* ptr = data();
   for (int i = 0; i != norb(); ++i)
@@ -174,4 +188,20 @@ void RDM<3>::print(const double thresh) const {
             cout << setw(3) << n << setw(3) << m << setw(3) << l << setw(3)
                  << k << setw(3) << j << setw(3) << i
                  << setw(12) << setprecision(7) << *ptr << endl;
+}
+
+
+template<>
+void ZRDM<3>::print(const double thresh) const {
+  const complex<double>* ptr = data();
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
+      for (int k = 0; k != norb(); ++k)
+        for (int l = 0; l != norb(); ++l)
+        for (int m = 0; m != norb(); ++m)
+        for (int n = 0; n != norb(); ++n, ++ptr)
+          if (fabs(*ptr) > thresh)
+            cout << setw(3) << n << setw(3) << m << setw(3) << l << setw(3)
+                 << k << setw(3) << j << setw(3) << i
+                 << setw(20) << setprecision(7) << *ptr << endl;
 }

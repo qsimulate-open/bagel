@@ -270,8 +270,8 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
   map<array<int,3>,double> elem3;
   elem3.emplace(array<int,3>{{0,1,2}},  1.0); elem3.emplace(array<int,3>{{0,2,1}}, -1.0); elem3.emplace(array<int,3>{{1,0,2}}, -1.0);
   elem3.emplace(array<int,3>{{1,2,0}},  1.0); elem3.emplace(array<int,3>{{2,0,1}},  1.0); elem3.emplace(array<int,3>{{2,1,0}}, -1.0);
-  for (auto& i : elem) {
-    for (auto& j : elem) {
+  for (auto& i : elem3) {
+    for (auto& j : elem3) {
       array<int,6> perm;
       for (int k = 0; k != 3; ++k) {
         perm[k]   = j.first[k];
