@@ -87,11 +87,13 @@ shared_ptr<Kramers<2,ZDvec>> ZHarrison::two_down_from_civec(const int nelea, con
     // transpose the civec
     shared_ptr<const ZCivec> cc = cc_->find(nelea, neleb+2)->data(istate);
     auto d = make_shared<ZDvec>(int_space_->finddet(neleb, nelea), norb_*norb_);
+    auto d2 = make_shared<ZDvec>(int_space_->finddet(nelea, neleb), norb_*norb_);
     sigma_2e_annih_aa(cc->transpose(), d);
     // transpose back
+    auto iter = d2->dvec().begin();
     for (auto& i : d->dvec())
-      *i = *i->transpose();
-    out->emplace({1,1}, d);
+      **iter++ = *i->transpose();
+    out->emplace({1,1}, d2);
   }
   if (nelea+2 <= norb_) {
     shared_ptr<const ZCivec> cc = cc_->find(nelea+2, neleb)->data(istate);
