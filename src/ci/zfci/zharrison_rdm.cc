@@ -412,9 +412,9 @@ void ZHarrison::compute_rdm12() {
   if (nstate_ > 1) {
     for (int istate = 0; istate != nstate_; ++istate) {
       for (auto& i : *rdm1_[istate])
-        rdm1_av_->add(i.first, i.second->copy());
+        rdm1_av_->add(i.first, i.second);
       for (auto& i : *rdm2_[istate])
-        rdm2_av_->add(i.first, i.second->copy());
+        rdm2_av_->add(i.first, i.second);
     }
     for (auto& i : *rdm1_av_) i.second->scale(1.0/nstate_);
     for (auto& i : *rdm2_av_) i.second->scale(1.0/nstate_);
