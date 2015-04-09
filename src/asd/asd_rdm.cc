@@ -626,6 +626,34 @@ void ASD_base::debug_energy(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, 
 
   const double e1 = ddot_(nactT*nactT, int1->element_ptr(0,0), 1, rdm1_mat->element_ptr(0,0), 1);
 
+  double e1_aa;
+  {//AA
+    auto i = make_shared<Matrix>(*int1->get_submatrix(0, 0, nactA, nactA));
+    auto r = make_shared<Matrix>(*rdm1_mat->get_submatrix(0, 0, nactA, nactA));
+    e1_aa = ddot_(nactA*nactA, i->element_ptr(0,0), 1, r->element_ptr(0,0), 1);
+  }
+
+  double e1_bb;
+  {//BB
+    auto i = make_shared<Matrix>(*int1->get_submatrix(nactA, nactA, nactB, nactB));
+    auto r = make_shared<Matrix>(*rdm1_mat->get_submatrix(nactA, nactA, nactB, nactB));
+    e1_bb = ddot_(nactB*nactB, i->element_ptr(0,0), 1, r->element_ptr(0,0), 1);
+  }
+
+  double e1_ab;
+  {//AB
+    auto i = make_shared<Matrix>(*int1->get_submatrix(0, nactA, nactA, nactB));
+    auto r = make_shared<Matrix>(*rdm1_mat->get_submatrix(0, nactA, nactA, nactB));
+    e1_ab = ddot_(nactA*nactB, i->element_ptr(0,0), 1, r->element_ptr(0,0), 1);
+  }
+
+  double e1_ba;
+  {//BA
+    auto i = make_shared<Matrix>(*int1->get_submatrix(nactA, 0, nactB, nactA));
+    auto r = make_shared<Matrix>(*rdm1_mat->get_submatrix(nactA, 0, nactB, nactA));
+    e1_ba = ddot_(nactB*nactA, i->element_ptr(0,0), 1, r->element_ptr(0,0), 1);
+  }
+
   double e2_aaaa;
   {//AAAA
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,0,0>();
@@ -862,6 +890,10 @@ void ASD_base::debug_energy(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, 
     cout << "  Nuclear repulsion = " << dimer_->sref()->geom()->nuclear_repulsion() << endl;
     cout << "  Core energy       = " << jop_->core_energy() << endl;
     cout << "One-electron energy = " << e1 << endl;
+    cout << "  2A       AA       = " << e1_aa << endl;
+    cout << "  2B       BB       = " << e1_bb << endl;
+    cout << "  1A1B     AB       = " << e1_ab << endl;
+    cout << "           BA       = " << e1_ba << endl;
     cout << "Two-electron energy = " << e2 << endl;
     cout << "  4A       AAAA     = " << e2_aaaa << endl;
     cout << "  4B       BBBB     = " << e2_bbbb << endl;
