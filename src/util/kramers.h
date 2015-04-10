@@ -158,6 +158,13 @@ class Kramers {
         return out;
       }
     }
+
+    void print() const {
+      for (auto& i : data_) {
+        std::cout << " tag: " << i.first.tag() << std::endl;
+        i.second->print();
+      }
+    }
 };
 
 }

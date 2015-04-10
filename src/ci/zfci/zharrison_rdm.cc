@@ -266,10 +266,9 @@ shared_ptr<Kramers<4,ZDvec>> ZHarrison::four_down_from_civec(const int nelea, co
 }
 
 
-void ZHarrison::compute_rdm34(const int jst, const int ist) {
-  auto rdm4 = make_shared<Kramers<8,ZRDM<4>>>();
-
+shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::compute_rdm4(const int jst, const int ist) const {
   // loop over n-4 determinant spaces
+  auto rdm4 = make_shared<Kramers<8,ZRDM<4>>>();
   auto space4 = make_shared<RelSpace>(norb_, nele_-4);
   for (int nelea = 0; nelea <= nele_-4; ++nelea) {
     const int neleb = nele_-4 - nelea;
@@ -306,36 +305,13 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
       rdm4->emplace_perm(perm, j.second*i.second);
     }
   }
+  return rdm4;
+}
 
 
-  auto rdm3 = make_shared<Kramers<6,ZRDM<3>>>();
-#if 0
-  for (int i = 0; i != 256; ++i) {
-    const bitset<8> source(i);
-    if (source[4] == source[0]) {
-      shared_ptr<const ZRDM<4>> r4 = rdm4->get_data(KTag<8>(source));
-      if (!r4) continue;
-      bitset<6> target;
-      target[5] = source[7];
-      target[4] = source[6];
-      target[3] = source[5];
-      target[2] = source[3];
-      target[1] = source[2];
-      target[0] = source[1];
-
-      auto r3 = make_shared<ZRDM<3>>(norb_);
-      const size_t norb3 = norb_*norb_*norb_;
-      for (int a = 0; a != norb_; ++a)
-        for (int j = 0; j != norb3; ++j)
-          for (int k = 0; k != norb3; ++k)
-            *(r3->data()+k+norb3*j) += *(r4->data()+k+norb3*(a+norb_*(j+norb3*a)));
-      rdm3->add(KTag<6>(target), r3);
-    }
-  }
-  for (auto& i : *rdm3)
-    i.second->scale(1.0/(nele_-3));
-#else
+shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::compute_rdm3(const int jst, const int ist) const {
   // loop over n-3 determinant spaces
+  auto rdm3 = make_shared<Kramers<6,ZRDM<3>>>();
   auto space3 = make_shared<RelSpace>(norb_, nele_-3);
   for (int nelea = 0; nelea <= nele_-3; ++nelea) {
     const int neleb = nele_-3 - nelea;
@@ -351,7 +327,6 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
         rdm3->add(merge(i.first, j.first), tmp);
       }
   }
-#endif
   map<array<int,3>,double> elem3;
   elem3.emplace(array<int,3>{{0,1,2}},  1.0); elem3.emplace(array<int,3>{{0,2,1}}, -1.0); elem3.emplace(array<int,3>{{1,0,2}}, -1.0);
   elem3.emplace(array<int,3>{{1,2,0}},  1.0); elem3.emplace(array<int,3>{{2,0,1}},  1.0); elem3.emplace(array<int,3>{{2,1,0}}, -1.0);
@@ -365,126 +340,71 @@ void ZHarrison::compute_rdm34(const int jst, const int ist) {
       rdm3->emplace_perm(perm, j.second*i.second);
     }
   }
+  return rdm3;
+}
 
-  auto rdm2 = make_shared<Kramers<4,ZRDM<2>>>();
-  for (int i = 0; i != 64; ++i) {
-    const bitset<6> source(i);
-    if (source[3] == source[0]) {
-      shared_ptr<const ZRDM<3>> r3 = rdm3->get_data(KTag<6>(source));
-      if (!r3) continue;
-      bitset<4> target;
-      target[3] = source[5];
-      target[2] = source[4];
-      target[1] = source[2];
-      target[0] = source[1];
 
-      auto r2 = make_shared<ZRDM<2>>(norb_);
-      const size_t norb2 = norb_*norb_;
-      for (int a = 0; a != norb_; ++a)
-        for (int j = 0; j != norb2; ++j)
-          for (int k = 0; k != norb2; ++k)
-            *(r2->data()+k+norb2*j) += *(r3->data()+k+norb2*(a+norb_*(j+norb2*a)));
-      rdm2->add(KTag<4>(target), r2);
-    }
+shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::compute_rdm2(const int jst, const int ist) const {
+  auto out = make_shared<Kramers<4,ZRDM<2>>>();
+  // loop over n-2 determinant spaces
+  for (int nelea = 0; nelea <= nele_-2; ++nelea) {
+    const int neleb = nele_-2 - nelea;
+    if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
+
+    shared_ptr<Kramers<2,ZDvec>> interm = two_down_from_civec(nelea, neleb, ist);
+    shared_ptr<Kramers<2,ZDvec>> interm2 = ist == jst ? interm : two_down_from_civec(nelea, neleb, jst);
+    // TODO bra-ket symmetry is not used for jst==ist. If this takes too long in CASSCF, please implement transpose below
+    for (auto& i : *interm2)
+      for (auto& j : *interm) {
+        auto rdm2 = make_shared<ZRDM<2>>(norb_);
+        auto rdm2grouped = group(group(*rdm2, 2,4), 0,2);
+        contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, rdm2grouped, {1,2}, true, false);
+        out->add(merge(i.first, j.first), rdm2);
+      }
   }
-  for (auto& i : *rdm2)
-    i.second->scale(1.0/(nele_-2));
-  rdm2->emplace_perm({{0,1,2,3}},  1.0);
-  rdm2->emplace_perm({{0,1,3,2}}, -1.0);
-  rdm2->emplace_perm({{1,0,2,3}}, -1.0);
-  rdm2->emplace_perm({{1,0,3,2}},  1.0);
+  return out;
+}
 
-  auto rdm1 = make_shared<Kramers<2,ZRDM<1>>>();
-  for (int i = 0; i != 16; ++i) {
-    const bitset<4> source(i);
-    if (source[2] == source[0]) {
-      shared_ptr<const ZRDM<2>> r2 = rdm2->get_data(KTag<4>(source));
-      if (!r2) continue;
-      bitset<2> target;
-      target[1] = source[3];
-      target[0] = source[1];
 
-      auto r1 = make_shared<ZRDM<1>>(norb_);
-      for (int a = 0; a != norb_; ++a)
-        for (int j = 0; j != norb_; ++j)
-          for (int k = 0; k != norb_; ++k)
-            *(r1->data()+k+norb_*j) += *(r2->data()+k+norb_*(a+norb_*(j+norb_*a)));
-      rdm1->add(KTag<2>(target), r1);
-    }
+shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::compute_rdm1(const int jst, const int ist) const {
+  auto space1 = make_shared<RelSpace>(norb_, nele_-1);
+  auto out = make_shared<Kramers<2,ZRDM<1>>>();
+  // loop over n-1 determinant spaces
+  for (int nelea = 0; nelea <= nele_-1; ++nelea) {
+    const int neleb = nele_-1 - nelea;
+    if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
+
+    shared_ptr<Kramers<1,ZDvec>> interm  = one_down_from_civec(nelea, neleb, ist, space1);
+    shared_ptr<Kramers<1,ZDvec>> interm2 = jst == ist ? interm : one_down_from_civec(nelea, neleb, jst, space1);
+    // TODO bra-ket symmetry is not used for jst==ist. If this takes too long in CASSCF, please implement transpose below
+    for (auto& i : *interm2)
+      for (auto& j : *interm) {
+        auto rdm1 = make_shared<ZRDM<1>>(norb_);
+        contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, *rdm1, {1,2}, true, false);
+        out->add(merge(i.first, j.first), rdm1);
+      }
   }
-  for (auto& i : *rdm1)
-    i.second->scale(1.0/(nele_-1));
-
-  for (auto& i : *rdm1) {
-    cout << i.first.tag()[0] << i.first.tag()[1] << endl;
-    i.second->print();
-  }
-
+  return out;
 }
 
 
 void ZHarrison::compute_rdm12() {
 
-  auto space1 = make_shared<RelSpace>(norb_, nele_-1);
 
   // for one-body RDM
   rdm1_.clear();
   rdm2_.clear();
-  for (int istate = 0; istate != nstate_; ++istate)  {
-    rdm1_.push_back(make_shared<Kramers<2,ZRDM<1>>>());
-    rdm2_.push_back(make_shared<Kramers<4,ZRDM<2>>>());
-  }
+  rdm1_.resize(nstate_);
+  rdm2_.resize(nstate_);
 
   for (int istate = 0; istate != nstate_; ++istate) {
-    // loop over n-2 determinant spaces
-    for (int nelea = 0; nelea <= nele_-2; ++nelea) {
-      const int neleb = nele_-2 - nelea;
-      if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
-
-      shared_ptr<Kramers<2,ZDvec>> interm = two_down_from_civec(nelea, neleb, istate);
-      for (auto& i : *interm)
-        for (auto& j : *interm)
-          if (i.first >= j.first) {
-            auto rdm2 = make_shared<ZRDM<2>>(norb_);
-            auto rdm2grouped = group(group(*rdm2, 2,4), 0,2);
-            contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, rdm2grouped, {1,2}, true, false);
-            rdm2_[istate]->add(merge(i.first, j.first), rdm2);
-          }
-    }
-    // utilize bra-ket symmetry
-    for (int i = 0; i != 4; ++i) {
-      for (int j = 0; j != 4; ++j) {
-        const KTag<4> target((j << 2) + i);
-        if (!rdm2_[istate]->exist(target)) {
-          const KTag<4> s2301((i << 2) + j);
-          if (rdm2_[istate]->exist(s2301)) {
-            auto tmp = make_shared<ZRDM<2>>(norb_);
-            sort_indices<2,3,0,1,0,1,1,1>(rdm2_[istate]->at(s2301)->data(), tmp->data(), norb_, norb_, norb_, norb_);
-            transform(tmp->data(), tmp->data()+norb_*norb_*norb_*norb_, tmp->data(), [](complex<double> a){ return conj(a); });
-            rdm2_[istate]->emplace(target, tmp);
-          }
-        }
-      }
-    }
-
     // one body RDM
-    // loop over n-1 determinant spaces
-    for (int nelea = 0; nelea <= nele_-1; ++nelea) {
-      const int neleb = nele_-1 - nelea;
-      if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
-
-      shared_ptr<Kramers<1,ZDvec>> interm = one_down_from_civec(nelea, neleb, istate, space1);
-      for (auto& i : *interm)
-        for (auto& j : *interm)
-          if (i.first >= j.first) {
-            auto rdm1 = make_shared<ZRDM<1>>(norb_);
-            contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, *rdm1, {1,2}, true, false);
-            rdm1_[istate]->add(merge(i.first, j.first), rdm1);
-          }
-    }
-
+    rdm1_[istate] = compute_rdm1(istate, istate);
     if (!rdm1_[istate]->exist({1,0}))
       rdm1_[istate]->at({1,0}) = rdm1_[istate]->at({0,0})->clone();
+
+    // two body RDM
+    rdm2_[istate] = compute_rdm2(istate, istate);
 
     // append permutation information
     rdm2_[istate]->emplace_perm({{0,1,3,2}},-1);
@@ -492,9 +412,9 @@ void ZHarrison::compute_rdm12() {
     rdm2_[istate]->emplace_perm({{1,0,2,3}},-1);
   }
 
-  rdm1_av_ = make_shared<Kramers<2,ZRDM<1>>>();
-  rdm2_av_ = make_shared<Kramers<4,ZRDM<2>>>();
   if (nstate_ > 1) {
+    rdm1_av_ = make_shared<Kramers<2,ZRDM<1>>>();
+    rdm2_av_ = make_shared<Kramers<4,ZRDM<2>>>();
     for (int istate = 0; istate != nstate_; ++istate) {
       for (auto& i : *rdm1_[istate])
         rdm1_av_->add(i.first, i.second);
@@ -503,13 +423,13 @@ void ZHarrison::compute_rdm12() {
     }
     for (auto& i : *rdm1_av_) i.second->scale(1.0/nstate_);
     for (auto& i : *rdm2_av_) i.second->scale(1.0/nstate_);
+    rdm2_av_->emplace_perm({{0,1,3,2}},-1);
+    rdm2_av_->emplace_perm({{1,0,3,2}}, 1);
+    rdm2_av_->emplace_perm({{1,0,2,3}},-1);
   } else {
     rdm1_av_ = rdm1_.front();
     rdm2_av_ = rdm2_.front();
   }
-  rdm2_av_->emplace_perm({{0,1,3,2}},-1);
-  rdm2_av_->emplace_perm({{1,0,3,2}}, 1);
-  rdm2_av_->emplace_perm({{1,0,2,3}},-1);
 }
 
 

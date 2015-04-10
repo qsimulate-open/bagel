@@ -209,7 +209,10 @@ class ZHarrison : public Method {
 
     // functions related to RDMs
     void compute_rdm12();
-    void compute_rdm34(const int jst, const int ist);
+    std::shared_ptr<Kramers<2,ZRDM<1>>> compute_rdm1(const int jst, const int ist) const;
+    std::shared_ptr<Kramers<4,ZRDM<2>>> compute_rdm2(const int jst, const int ist) const;
+    std::shared_ptr<Kramers<6,ZRDM<3>>> compute_rdm3(const int jst, const int ist) const;
+    std::shared_ptr<Kramers<8,ZRDM<4>>> compute_rdm4(const int jst, const int ist) const;
 
     std::shared_ptr<const ZMatrix> rdm1_av() const;
     std::shared_ptr<const ZMatrix> rdm2_av() const;
