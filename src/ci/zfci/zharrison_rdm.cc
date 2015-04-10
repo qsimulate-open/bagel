@@ -269,6 +269,8 @@ shared_ptr<Kramers<4,ZDvec>> ZHarrison::four_down_from_civec(const int nelea, co
 shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::compute_rdm4(const int jst, const int ist) const {
   // loop over n-4 determinant spaces
   auto rdm4 = make_shared<Kramers<8,ZRDM<4>>>();
+  if (nele_ < 4) return rdm4;
+
   auto space4 = make_shared<RelSpace>(norb_, nele_-4);
   for (int nelea = 0; nelea <= nele_-4; ++nelea) {
     const int neleb = nele_-4 - nelea;
@@ -312,6 +314,8 @@ shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::compute_rdm4(const int jst, const int 
 shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::compute_rdm3(const int jst, const int ist) const {
   // loop over n-3 determinant spaces
   auto rdm3 = make_shared<Kramers<6,ZRDM<3>>>();
+  if (nele_ < 3) return rdm3;
+
   auto space3 = make_shared<RelSpace>(norb_, nele_-3);
   for (int nelea = 0; nelea <= nele_-3; ++nelea) {
     const int neleb = nele_-3 - nelea;
@@ -346,6 +350,8 @@ shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::compute_rdm3(const int jst, const int 
 
 shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::compute_rdm2(const int jst, const int ist) const {
   auto out = make_shared<Kramers<4,ZRDM<2>>>();
+  if (nele_ < 2) return out;
+
   // loop over n-2 determinant spaces
   for (int nelea = 0; nelea <= nele_-2; ++nelea) {
     const int neleb = nele_-2 - nelea;
@@ -367,8 +373,10 @@ shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::compute_rdm2(const int jst, const int 
 
 
 shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::compute_rdm1(const int jst, const int ist) const {
-  auto space1 = make_shared<RelSpace>(norb_, nele_-1);
   auto out = make_shared<Kramers<2,ZRDM<1>>>();
+  if (nele_ < 1) return out;
+
+  auto space1 = make_shared<RelSpace>(norb_, nele_-1);
   // loop over n-1 determinant spaces
   for (int nelea = 0; nelea <= nele_-1; ++nelea) {
     const int neleb = nele_-1 - nelea;
