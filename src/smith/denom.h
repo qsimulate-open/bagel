@@ -109,7 +109,7 @@ class Denom {
 };
 
 extern template class Denom<double>;
-//extern template class Denom<std::complex<double>>;
+extern template class Denom<std::complex<double>>;
 
 }
 }
