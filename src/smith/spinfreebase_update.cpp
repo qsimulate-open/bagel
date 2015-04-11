@@ -25,17 +25,24 @@
 
 #ifdef SPINFREEMETHOD_DETAIL
 
-void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Tensor> r) const {
-  shared_ptr<MultiTensor> tt = make_shared<MultiTensor>(vector<double>{0.0}, vector<shared_ptr<Tensor>>{t});
+template<typename DataType>
+void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<Tensor_<DataType>> t, shared_ptr<const Tensor_<DataType>> r) const {
+  shared_ptr<MultiTensor_<DataType>> tt
+    = make_shared<MultiTensor_<DataType>>(vector<DataType>{0.0}, vector<shared_ptr<Tensor_<DataType>>>{t});
 
-  auto r0 = const_pointer_cast<Tensor>(r);
-  shared_ptr<const MultiTensor> rr = make_shared<MultiTensor>(vector<double>{0.0}, vector<shared_ptr<Tensor>>{r0});
+  auto r0 = const_pointer_cast<Tensor_<DataType>>(r);
+  shared_ptr<const MultiTensor_<DataType>> rr
+    = make_shared<MultiTensor_<DataType>>(vector<DataType>{0.0}, vector<shared_ptr<Tensor_<DataType>>>{r0});
 
   update_amplitude(tt, rr);
 }
 
 
-void SpinFreeMethod::update_amplitude(shared_ptr<MultiTensor> t, shared_ptr<const MultiTensor> r) const {
+template<typename DataType>
+void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType>> t, shared_ptr<const MultiTensor_<DataType>> r) const {
+  if (!is_same<DataType,double>::value)
+    throw logic_error("SpinFreeMethod<DataType>::update_amplitude is only correct for non-rel spin-adapated cases so far");
+
   if (t->nref() != r->nref())
     throw logic_error("something is wrong. SpinFreeMethod::update_amplitude");
 

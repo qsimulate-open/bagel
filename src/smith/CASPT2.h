@@ -41,7 +41,7 @@ namespace bagel {
 namespace SMITH {
 namespace CASPT2{
 
-class CASPT2 : public SpinFreeMethod {
+class CASPT2 : public SpinFreeMethod<double> {
   protected:
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;

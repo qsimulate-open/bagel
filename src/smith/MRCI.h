@@ -42,7 +42,7 @@ namespace bagel {
 namespace SMITH {
 namespace MRCI{
 
-class MRCI : public SpinFreeMethod {
+class MRCI : public SpinFreeMethod<double> {
   protected:
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;

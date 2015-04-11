@@ -31,7 +31,11 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
+template<typename DataType>
+SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
+  static_assert(is_same<DataType,double>::value or is_same<DataType,complex<double>>::value,
+                "illegal DataType for SpinFreeMethod");
+
   Timer timer;
   const int max = r->maxtile();
   if (r->ncore() > r->nclosed())
@@ -107,11 +111,11 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     vector<IndexRange> o3 = {ci_, active_, active_};
     vector<IndexRange> o5 = {ci_, active_, active_, active_, active_};
     vector<IndexRange> o7 = {ci_, active_, active_, active_, active_, active_, active_};
-    rdm0deriv_ = make_shared<Tensor>(o1);
-    rdm1deriv_ = make_shared<Tensor>(o3);
-    rdm2deriv_ = make_shared<Tensor>(o5);
-    rdm3deriv_ = make_shared<Tensor>(o7);
-    rdm4deriv_ = make_shared<Tensor>(o7);
+    rdm0deriv_ = make_shared<Tensor_<DataType>>(o1);
+    rdm1deriv_ = make_shared<Tensor_<DataType>>(o3);
+    rdm2deriv_ = make_shared<Tensor_<DataType>>(o5);
+    rdm3deriv_ = make_shared<Tensor_<DataType>>(o7);
+    rdm4deriv_ = make_shared<Tensor_<DataType>>(o7);
 
     const int nclo = ref_->nclosed();
     vector<int> inpoff1(1,0);
@@ -143,11 +147,11 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   if (ref_->ciwfn()) {
     const int nclo = ref_->nclosed();
     const int nstates = ref_->ciwfn()->nstates();
-    rdm0all_ = make_shared<Vec<Tensor>>();
-    rdm1all_ = make_shared<Vec<Tensor>>();
-    rdm2all_ = make_shared<Vec<Tensor>>();
-    rdm3all_ = make_shared<Vec<Tensor>>();
-    rdm4all_ = make_shared<Vec<Tensor>>();
+    rdm0all_ = make_shared<Vec<Tensor_<DataType>>>();
+    rdm1all_ = make_shared<Vec<Tensor_<DataType>>>();
+    rdm2all_ = make_shared<Vec<Tensor_<DataType>>>();
+    rdm3all_ = make_shared<Vec<Tensor_<DataType>>>();
+    rdm4all_ = make_shared<Vec<Tensor_<DataType>>>();
 
     auto denom = make_shared<Denom>(fockact, nstates, /*thresh*/1.0e-9);
 
@@ -155,11 +159,11 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
     for (int ist = 0; ist != nstates; ++ist) {
       for (int jst = 0; jst != nstates; ++jst) {
 
-        auto rdm0t = make_shared<Tensor>(vector<IndexRange>());
-        auto rdm1t = make_shared<Tensor>(vector<IndexRange>(2,active_));
-        auto rdm2t = make_shared<Tensor>(vector<IndexRange>(4,active_));
-        auto rdm3t = make_shared<Tensor>(vector<IndexRange>(6,active_));
-        auto rdm4t = make_shared<Tensor>(vector<IndexRange>(8,active_));
+        auto rdm0t = make_shared<Tensor_<DataType>>(vector<IndexRange>());
+        auto rdm1t = make_shared<Tensor_<DataType>>(vector<IndexRange>(2,active_));
+        auto rdm2t = make_shared<Tensor_<DataType>>(vector<IndexRange>(4,active_));
+        auto rdm3t = make_shared<Tensor_<DataType>>(vector<IndexRange>(6,active_));
+        auto rdm4t = make_shared<Tensor_<DataType>>(vector<IndexRange>(8,active_));
 
         shared_ptr<const RDM<1>> rdm1;
         shared_ptr<const RDM<2>> rdm2;
@@ -195,9 +199,12 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 }
 
 
-void SpinFreeMethod::set_rdm(const int ist, const int jst) {
+template<typename DataType>
+void SpinFreeMethod<DataType>::set_rdm(const int ist, const int jst) {
   // ist is bra, jst is ket.
   // CAREFUL! the following is due to SMITH's convention (i.e., index are reversed)
+
+  // TODO is this OK for complex cases?
   rdm0_ = rdm0all_->at(jst, ist);
   rdm1_ = rdm1all_->at(jst, ist);
   rdm2_ = rdm2all_->at(jst, ist);
@@ -206,12 +213,14 @@ void SpinFreeMethod::set_rdm(const int ist, const int jst) {
 }
 
 
-void SpinFreeMethod::print_iteration() {
+template<typename DataType>
+void SpinFreeMethod<DataType>::print_iteration() {
   cout << "      ---- iteration ----" << endl << endl;
 }
 
 
-void SpinFreeMethod::print_iteration(const int i, const double en, const double err, const double tim, const int ist) {
+template<typename DataType>
+void SpinFreeMethod<DataType>::print_iteration(const int i, const double en, const double err, const double tim, const int ist) {
   cout << "     " << setw(4) << i;
   if (ist >= 0)
     cout << setw(4) << ist;
@@ -220,14 +229,16 @@ void SpinFreeMethod::print_iteration(const int i, const double en, const double 
 }
 
 
-void SpinFreeMethod::print_iteration(const bool noconv) {
+template<typename DataType>
+void SpinFreeMethod<DataType>::print_iteration(const bool noconv) {
   cout << endl << "      -------------------" << endl;
   if (noconv) cout << "      *** Convergence not reached ***" << endl;
   cout << endl;
 }
 
 
-double SpinFreeMethod::compute_e0() {
+template<typename DataType>
+double SpinFreeMethod<DataType>::compute_e0() {
   assert(!!f1_);
   const size_t nstates = ref_->ciwfn()->nstates();
   double sum = 0.0;
@@ -237,9 +248,9 @@ double SpinFreeMethod::compute_e0() {
     for (auto& i1 : active_) {
       for (auto& i0 : active_) {
         const size_t size = i0.size() * i1.size();
-        unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
-        unique_ptr<double[]> rdata = rdm1_->get_block(i0, i1);
-        sum += ddot_(size, fdata, 1, rdata, 1);
+        unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
+        unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
+        sum += detail::real(blas::dot_product(fdata.get(), size, rdata.get()));
       }
     }
   }
@@ -250,7 +261,8 @@ double SpinFreeMethod::compute_e0() {
 
 
 // local function to compress the following
-void SpinFreeMethod::loop_over(std::function<void(const Index&, const Index&, const Index&, const Index&)> func) const {
+template<typename DataType>
+void SpinFreeMethod<DataType>::loop_over(function<void(const Index&, const Index&, const Index&, const Index&)> func) const {
   for (auto& i3 : virt_)
     for (auto& i2 : closed_)
       for (auto& i1 : virt_)
@@ -295,11 +307,13 @@ void SpinFreeMethod::loop_over(std::function<void(const Index&, const Index&, co
           func(i0, i1, i2, i3);
 }
 
-shared_ptr<Tensor> SpinFreeMethod::init_amplitude() const {
-  shared_ptr<Tensor> out = v2_->clone();
+
+template<typename DataType>
+shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::init_amplitude() const {
+  shared_ptr<Tensor_<DataType>> out = v2_->clone();
   auto put = [this, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
     const size_t size = v2_->get_size_alloc(i0, i1, i2, i3);
-    unique_ptr<double[]> buf(new double[size]);
+    unique_ptr<DataType[]> buf(new DataType[size]);
     fill_n(buf.get(), size, 0.0);
     out->put_block(buf, i0, i1, i2, i3);
   };
@@ -308,11 +322,12 @@ shared_ptr<Tensor> SpinFreeMethod::init_amplitude() const {
 }
 
 
-shared_ptr<Tensor> SpinFreeMethod::init_residual() const {
-  shared_ptr<Tensor> out = v2_->clone();
+template<typename DataType>
+shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::init_residual() const {
+  shared_ptr<Tensor_<DataType>> out = v2_->clone();
   auto put = [this, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
     const size_t size = v2_->get_size_alloc(i2, i3, i0, i1);
-    unique_ptr<double[]> buf(new double[size]);
+    unique_ptr<DataType[]> buf(new DataType[size]);
     fill_n(buf.get(), size, 0.0);
     out->put_block(buf, i2, i3, i0, i1);
   };
@@ -321,9 +336,10 @@ shared_ptr<Tensor> SpinFreeMethod::init_residual() const {
 }
 
 
-double SpinFreeMethod::dot_product_transpose(shared_ptr<const MultiTensor> r, shared_ptr<const MultiTensor> t2) const {
+template<typename DataType>
+DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const MultiTensor_<DataType>> r, shared_ptr<const MultiTensor_<DataType>> t2) const {
   assert(r->nref() == t2->nref());
-  double out = 0.0;
+  DataType out = 0.0;
   for (int i = 0; i != r->nref(); ++i)
     out += r->fac(i) * t2->fac(i)
          + dot_product_transpose(r->at(i), t2->at(i));
@@ -331,13 +347,14 @@ double SpinFreeMethod::dot_product_transpose(shared_ptr<const MultiTensor> r, sh
 }
 
 
-double SpinFreeMethod::dot_product_transpose(shared_ptr<const Tensor> r, shared_ptr<const Tensor> t2) const {
-  double out = 0.0;
+template<typename DataType>
+DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor_<DataType>> r, shared_ptr<const Tensor_<DataType>> t2) const {
+  DataType out = 0.0;
   auto prod = [this, &r, &t2, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
     const size_t size = r->get_size_alloc(i2, i3, i0, i1);
     if (size != 0) {
-      unique_ptr<double[]> tmp0 = t2->get_block(i0, i1, i2, i3);
-      unique_ptr<double[]> tmp1(new double[size]);
+      unique_ptr<DataType[]> tmp0 = t2->get_block(i0, i1, i2, i3);
+      unique_ptr<DataType[]> tmp1(new double[size]);
       sort_indices<2,3,0,1,0,1,1,1>(tmp0.get(), tmp1.get(), i0.size(), i1.size(), i2.size(), i3.size());
 
       out += blas::dot_product(tmp1.get(), size, r->get_block(i2, i3, i0, i1).get());
@@ -348,16 +365,20 @@ double SpinFreeMethod::dot_product_transpose(shared_ptr<const Tensor> r, shared_
 }
 
 
-void SpinFreeMethod::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) const {
+template<typename DataType>
+void SpinFreeMethod<DataType>::diagonal(shared_ptr<Tensor_<DataType>> r, shared_ptr<const Tensor_<DataType>> t) const {
   assert(to_upper(ref_->method()) == "CASPT2");
+  if (!is_same<DataType,double>::value)
+    throw logic_error("SpinFreeMethod<DataType>::diagonal is only correct for non-rel spin-adapted cases ");
+
   for (auto& i3 : virt_) {
     for (auto& i2 : closed_) {
       for (auto& i1 : virt_) {
         for (auto& i0 : closed_) {
           // if this block is not included in the current wave function, skip it
           if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
-          unique_ptr<double[]>       data0 = t->get_block(i0, i1, i2, i3);
-          const unique_ptr<double[]> data1 = t->get_block(i0, i3, i2, i1);
+          unique_ptr<DataType[]>       data0 = t->get_block(i0, i1, i2, i3);
+          const unique_ptr<DataType[]> data1 = t->get_block(i0, i3, i2, i1);
 
           sort_indices<0,3,2,1,8,1,-4,1>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
           size_t iall = 0;
@@ -378,3 +399,7 @@ void SpinFreeMethod::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) 
 #include <src/smith/spinfreebase_update.cpp>
 #undef SPINFREEMETHOD_DETAIL
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// explict instantiation at the end of the file
+template class SpinFreeMethod<double>;
+//template class SpinFreeMethod<complex<double>>;
