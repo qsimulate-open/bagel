@@ -69,17 +69,11 @@ size_t generate_hash_key(const T& head, const args&... tail) {
 }
 
 
-#if 0
-template <typename DataType = double,
-          class = typename std::enable_if<std::is_same<DataType,double>::value or std::is_same<DataType,std::complex<double>>::value>::type
-         >
-#endif
-class Tensor {
+template <typename DataType>
+class Tensor_ {
   protected:
-    using DataType = double;
-
+    using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
   protected:
-
     std::vector<IndexRange> range_;
     std::shared_ptr<Storage<DataType>> data_;
     int rank_;
@@ -88,57 +82,57 @@ class Tensor {
     mutable bool initialized_;
 
   public:
-    Tensor(std::vector<IndexRange> in);
+    Tensor_(std::vector<IndexRange> in);
 
-    Tensor& operator=(const Tensor& o) {
+    Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
       *data_ = *(o.data_);
       return *this;
     }
 
-    std::shared_ptr<Tensor> clone() const {
-      return std::make_shared<Tensor>(range_);
+    std::shared_ptr<Tensor_<DataType>> clone() const {
+      return std::make_shared<Tensor_<DataType>>(range_);
     }
 
-    std::shared_ptr<Tensor> copy() const {
-      std::shared_ptr<Tensor> out = clone();
+    std::shared_ptr<Tensor_<DataType>> copy() const {
+      std::shared_ptr<Tensor_<DataType>> out = clone();
       *out = *this;
       return out;
     }
 
-    void ax_plus_y(const double a, const Tensor& o) { data_->ax_plus_y(a, o.data_); }
-    void ax_plus_y(const double a, std::shared_ptr<const Tensor> o) { data_->ax_plus_y(a, o->data_); }
+    void ax_plus_y(const DataType& a, const Tensor_<DataType>& o) { data_->ax_plus_y(a, o.data_); }
+    void ax_plus_y(const DataType& a, std::shared_ptr<const Tensor_<DataType>> o) { ax_plus_y(a, *o); }
 
-    void scale(const double a) { data_->scale(a); }
+    void scale(const DataType& a) { data_->scale(a); }
 
-    double dot_product(const Tensor& o) const { return data_->dot_product(*o.data_); }
-    double dot_product(const std::shared_ptr<Tensor>& o) const { return data_->dot_product(*o->data_); }
+    DataType dot_product(const Tensor_<DataType>& o) const { return data_->dot_product(*o.data_); }
+    DataType dot_product(std::shared_ptr<const Tensor_<DataType>> o) const { return dot_product(*o); }
 
     int rank() const { return rank_; }
     size_t size_alloc() const;
 
-    double norm() const { return std::sqrt(dot_product(*this)); }
-    double rms() const { return std::sqrt(dot_product(*this)/size_alloc()); }
+    double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
+    double rms() const { return std::sqrt(detail::real(dot_product(*this))/size_alloc()); }
 
     std::vector<IndexRange> indexrange() const { return range_; }
 
     template<typename ...args>
-    std::unique_ptr<double[]> get_block(const args& ...p) const {
+    std::unique_ptr<DataType[]> get_block(const args& ...p) const {
       if (!initialized_) init();
       return data_->get_block(generate_hash_key(p...));
     }
 
     template<typename ...args>
-    std::unique_ptr<double[]> move_block(const args& ...p) {
+    std::unique_ptr<DataType[]> move_block(const args& ...p) {
       return data_->move_block(generate_hash_key(p...));
     }
 
     template<typename ...args>
-    void put_block(std::unique_ptr<double[]>& o, const args& ...p) {
+    void put_block(std::unique_ptr<DataType[]>& o, const args& ...p) {
       data_->put_block(generate_hash_key(p...), o);
     }
 
     template<typename ...args>
-    void add_block(std::unique_ptr<double[]>& o, const args& ...p) {
+    void add_block(std::unique_ptr<DataType[]>& o, const args& ...p) {
       data_->add_block(generate_hash_key(p...), o);
     }
 
@@ -156,14 +150,12 @@ class Tensor {
       data_->zero();
     }
 
-    std::vector<double> diag() const;
+    std::vector<DataType> diag() const;
 
-    std::shared_ptr<Matrix> matrix() const;
-    std::shared_ptr<Matrix> matrix2() const;
+    std::shared_ptr<MatType> matrix() const;
+    std::shared_ptr<MatType> matrix2() const;
 
-
-    std::shared_ptr<Civec> civec(std::shared_ptr<const Determinants> det) const;
-
+    std::shared_ptr<Civector<DataType>> civec(std::shared_ptr<const Determinants> det) const;
 
     void print1(std::string label, const double thresh = 5.0e-2) const;
     void print2(std::string label, const double thresh = 5.0e-2) const;
@@ -173,6 +165,11 @@ class Tensor {
     void print6(std::string label, const double thresh = 5.0e-2) const;
     void print8(std::string label, const double thresh = 5.0e-2) const;
 };
+
+extern template class Tensor_<double>;
+extern template class Tensor_<std::complex<double>>;
+
+using Tensor = Tensor_<double>;
 
 }
 }

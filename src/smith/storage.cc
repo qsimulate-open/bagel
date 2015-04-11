@@ -230,7 +230,7 @@ DataType Storage_Incore<DataType>::dot_product(const Storage_Incore<DataType>& o
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
 template class StorageBlock<double>;
-template class StorageBlock<std::complex<double>>;
+template class StorageBlock<complex<double>>;
 template class Storage_Incore<double>;
-template class Storage_Incore<std::complex<double>>;
+template class Storage_Incore<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
