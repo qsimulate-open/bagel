@@ -71,7 +71,7 @@ void Smith::compute() {
     wf1norm_ = algop->correlated_norm();
 
     // convert ci derivative tensor to civec
-    cider_ = algop->ci_deriv();
+    cider_ = algop->ci_deriv(ref_->ciwfn()->det());
 
     // todo check
     coeff_ = algop->coeff();

@@ -54,7 +54,6 @@ class SpinFreeMethod {
     std::shared_ptr<const SMITH_Info> ref_;
 
     std::shared_ptr<const Coeff> coeff_;
-    std::shared_ptr<const Civec> civec_;
     double e0_;
     double core_energy_;
     double energy_;
@@ -78,9 +77,6 @@ class SpinFreeMethod {
     std::shared_ptr<Vec<Tensor>> rdm4all_;
     // the function to set RDMs to rdm1_, rdm2_, etc
     void set_rdm(const int jst, const int ist);
-
-    // original determinants (for use in output)
-    std::shared_ptr<const Determinants> det_;
 
     // rdm ci derivatives
     std::shared_ptr<Tensor> rdm0deriv_;
@@ -127,8 +123,6 @@ class SpinFreeMethod {
 
     std::shared_ptr<const SMITH_Info> ref() const { return ref_; }
 
-    std::shared_ptr<const Civec> civec() const { return civec_; }
-
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     double e0() const { return e0_; }
@@ -136,10 +130,6 @@ class SpinFreeMethod {
     double energy() const { return energy_; }
 
     virtual void solve() = 0;
-
-    std::shared_ptr<const Civec> rdm0deriv() const {
-      return rdm0deriv_->civec(det_);
-    }
 
     double dot_product_transpose(std::shared_ptr<const Tensor> r, std::shared_ptr<const Tensor> t2) const;
     double dot_product_transpose(std::shared_ptr<const MultiTensor> r, std::shared_ptr<const MultiTensor> t2) const;

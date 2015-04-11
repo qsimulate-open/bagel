@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: spinfreebase_denom.cc
+// Filename: spinfreebase_denom.cpp
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,12 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/smith/moint.h>
-#include <src/smith/spinfreebase.h>
-
-using namespace std;
-using namespace bagel;
-using namespace bagel::SMITH;
+#ifdef SPINFREEMETHOD_DETAIL
 
 void SpinFreeMethod::update_amplitude(shared_ptr<Tensor> t, shared_ptr<const Tensor> r) const {
   shared_ptr<MultiTensor> tt = make_shared<MultiTensor>(vector<double>{0.0}, vector<shared_ptr<Tensor>>{t});
@@ -444,3 +439,5 @@ void SpinFreeMethod::update_amplitude(shared_ptr<MultiTensor> t, shared_ptr<cons
   } // ist loop
 
 }
+
+#endif

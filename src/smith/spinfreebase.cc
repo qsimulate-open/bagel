@@ -31,7 +31,6 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-
 SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   Timer timer;
   const int max = r->maxtile();
@@ -49,11 +48,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
   ractive_ = make_shared<const IndexRange>(active_);
   rvirt_   = make_shared<const IndexRange>(virt_);
 
-  if (ref_->ciwfn()) {
-    shared_ptr<const Dvec> dci0 = r->civectors();
-    civec_ = dci0->data(ref_->target());
-    det_ = civec_->det();
-
+  if (ref_->ciwfn() && ref_->grad()) {
     // length of the ci expansion
     const size_t ci_size = r->civectors()->data(ref_->target())->size();
     ci_ = IndexRange(ci_size, max);
@@ -100,7 +95,7 @@ SpinFreeMethod::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
 
   // rdm ci derivatives. Only for gradient computations
   if (ref_->ciwfn() && ref_->grad()) {
-    shared_ptr<Dvec> rdm0d = make_shared<Dvec>(civec_, 1);
+    shared_ptr<Dvec> rdm0d = make_shared<Dvec>(r->civectors()->data(ref_->target()), 1);
     shared_ptr<Dvec> rdm1d = r->rdm1deriv(ref_->target());
     shared_ptr<Dvec> rdm2d = r->rdm2deriv(ref_->target());
     shared_ptr<Dvec> rdm3d, rdm4d;
@@ -378,3 +373,8 @@ void SpinFreeMethod::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) 
     }
   }
 }
+
+#define SPINFREEMETHOD_DETAIL
+#include <src/smith/spinfreebase_update.cpp>
+#undef SPINFREEMETHOD_DETAIL
+

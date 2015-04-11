@@ -149,7 +149,7 @@ class CASPT2 : public SpinFreeMethod {
 
     double correlated_norm() const { return correlated_norm_; }
 
-    std::shared_ptr<const Civec> ci_deriv() const { return deci->civec(det_); }
+    std::shared_ptr<const Civec> ci_deriv(std::shared_ptr<const Determinants> det) const { return deci->civec(det); }
 
 };
 
