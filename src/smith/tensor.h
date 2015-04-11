@@ -69,11 +69,19 @@ size_t generate_hash_key(const T& head, const args&... tail) {
 }
 
 
+#if 0
+template <typename DataType = double,
+          class = typename std::enable_if<std::is_same<DataType,double>::value or std::is_same<DataType,std::complex<double>>::value>::type
+         >
+#endif
 class Tensor {
+  protected:
+    using DataType = double;
+
   protected:
 
     std::vector<IndexRange> range_;
-    std::shared_ptr<Storage> data_;
+    std::shared_ptr<Storage<DataType>> data_;
     int rank_;
 
     virtual void init() const { initialized_ = true; }

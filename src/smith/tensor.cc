@@ -49,11 +49,11 @@ Tensor::Tensor(vector<IndexRange> in) : range_(in), rank_(in.size()), initialize
       off += size;
     }
 
-    data_ = make_shared<Storage>(hashmap, false);
+    data_ = make_shared<Storage<DataType>>(hashmap, false);
   } else {
     rank_ = 0;
     map<size_t, size_t> hashmap {{generate_hash_key(), 1lu}};
-    data_ = make_shared<Storage>(hashmap, false);
+    data_ = make_shared<Storage<DataType>>(hashmap, false);
   }
 }
 
