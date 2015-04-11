@@ -77,15 +77,15 @@ void MRCI::MRCI::solve() {
     }
   }
 
-  DavidsonDiag_<Amplitude, Residual> davidson(nstates_, 10);
+  DavidsonDiag_<Amplitude<double>, Residual<double>> davidson(nstates_, 10);
 
   // first iteration is trivial
   {
-    vector<shared_ptr<const Amplitude>> a0;
-    vector<shared_ptr<const Residual>> r0;
+    vector<shared_ptr<const Amplitude<double>>> a0;
+    vector<shared_ptr<const Residual<double>>> r0;
     for (int istate = 0; istate != nstates_; ++istate) {
-      a0.push_back(make_shared<Amplitude>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
-      r0.push_back(make_shared<Residual>(sall_[istate]->copy(), this));
+      a0.push_back(make_shared<Amplitude<double>>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
+      r0.push_back(make_shared<Residual<double>>(sall_[istate]->copy(), this));
     }
     energy_ = davidson.compute(a0, r0);
     for (int istate = 0; istate != nstates_; ++istate)
@@ -94,7 +94,7 @@ void MRCI::MRCI::solve() {
 
   // set the result to t2
   {
-    vector<shared_ptr<Residual>> res = davidson.residual();
+    vector<shared_ptr<Residual<double>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       t2all_[i]->zero();
       update_amplitude(t2all_[i], res[i]->tensor());
@@ -110,8 +110,8 @@ void MRCI::MRCI::solve() {
   for ( ; iter != ref_->maxiter(); ++iter) {
 
     // loop over state of interest
-    vector<shared_ptr<const Amplitude>> a0;
-    vector<shared_ptr<const Residual>> r0;
+    vector<shared_ptr<const Amplitude<double>>> a0;
+    vector<shared_ptr<const Residual<double>>> r0;
     for (int istate = 0; istate != nstates_; ++istate) {
       if (conv[istate]) {
         a0.push_back(nullptr);
@@ -136,7 +136,7 @@ void MRCI::MRCI::solve() {
       nall_[istate]->scale(scal);
       t2all_[istate]->scale(scal);
 
-      a0.push_back(make_shared<Amplitude>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
+      a0.push_back(make_shared<Amplitude<double>>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
 
       // compute residuals (named r)
       rtmp->zero();
@@ -173,14 +173,14 @@ void MRCI::MRCI::solve() {
         shared_ptr<MultiTensor> m = rtmp->copy();
         for (int ist = 0; ist != nstates_; ++ist)
           m->fac(ist) = dot_product_transpose(sall_[ist], t2all_[istate]);
-        r0.push_back(make_shared<Residual>(m, this));
+        r0.push_back(make_shared<Residual<double>>(m, this));
       }
     }
 
     energy_ = davidson.compute(a0, r0);
 
     // find new trial vectors
-    vector<shared_ptr<Residual>> res = davidson.residual();
+    vector<shared_ptr<Residual<double>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       const double err = res[i]->tensor()->rms();
       print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
