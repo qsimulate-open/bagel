@@ -30,6 +30,7 @@
 using namespace std;
 using namespace bagel;
 using namespace SMITH;
+using namespace btas;
 
 template<typename DataType>
 Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const double th) : fock_(fock), thresh_(th) {
@@ -135,7 +136,7 @@ void Denom<DataType>::init_x_(const int jst, const int ist, shared_ptr<const RDM
   MatType work2(dim, dim);
   auto rdm2v = group(group(*rdm2, 2,4),0,2);
   auto workv = group(work2, 0,2);
-  btas::contract(1.0, rdm2v, {0,1}, group(*fock_,0,2), {1}, 0.0, workv, {0});
+  contract(1.0, rdm2v, {0,1}, group(*fock_,0,2), {1}, 0.0, workv, {0});
   work_x_->copy_block(dim*jst, dim*ist, dim, dim, work2);
 }
 
