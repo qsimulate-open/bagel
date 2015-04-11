@@ -153,7 +153,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(
     rdm3all_ = make_shared<Vec<Tensor_<DataType>>>();
     rdm4all_ = make_shared<Vec<Tensor_<DataType>>>();
 
-    auto denom = make_shared<Denom>(fockact, nstates, /*thresh*/1.0e-9);
+    auto denom = make_shared<Denom<DataType>>(fockact, nstates, /*thresh*/1.0e-9);
 
     // TODO this can be reduced to half by bra-ket symmetry
     for (int ist = 0; ist != nstates; ++ist) {

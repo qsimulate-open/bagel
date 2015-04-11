@@ -102,7 +102,7 @@ class SpinFreeMethod {
     double compute_e0();
 
     // denominator objects
-    std::shared_ptr<const Denom> denom_;
+    std::shared_ptr<const Denom<DataType>> denom_;
 
     // update t from the residual and denominator (this function does not zero out).
     void update_amplitude(std::shared_ptr<Tensor_<DataType>> t, std::shared_ptr<const Tensor_<DataType>> r) const;
