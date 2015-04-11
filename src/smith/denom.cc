@@ -133,9 +133,9 @@ void Denom<DataType>::init_x_(const int jst, const int ist, shared_ptr<const RDM
   shalf_x_->copy_block(dim*jst, dim*ist, dim, dim, rdm1);
 
   MatType work2(dim, dim);
-  auto grouped = group(work2, 0,2);
-  btas::contract(1.0, group(*rdm2, 1,3), {0,1}, *fock_, {1}, 0.0, grouped, {0});
-//dgemv_("N", size, nact*nact, 1.0, rdm2->data(), size, fock_->data(), 1, 0.0, work2.data(), 1);
+  auto rdm2t = group(group(*rdm2, 2,4),0,2);
+  auto workt = group(work2, 0,2);
+  btas::contract(1.0, rdm2t, {0,1}, group(*fock_,0,2), {1}, 0.0, workt, {0});
   work_x_->copy_block(dim*jst, dim*ist, dim, dim, work2);
 }
 
