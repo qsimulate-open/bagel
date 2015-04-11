@@ -70,7 +70,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_);
+    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, kramers_);
 
   // 4-component GIAO wavefunction
   } else if (rel_ && giao) {
@@ -110,7 +110,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_);
+    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, kramers_);
 
   // Non-relativistic GIAO wavefunction
   } else if (!rel_ && giao) {
@@ -126,7 +126,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nvirt()+(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_);
+    out = make_shared<RelReference>(geomin, c, energy_, 0, nocc(), nact(), nvirt()+(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, kramers_);
     if (!geomin->magnetism())
       throw std::runtime_error("Projection from GIAO to real non-rel. basis would give complex coefficients.  Use the GIAO code at zero-field or restart.");
 
