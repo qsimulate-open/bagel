@@ -70,20 +70,15 @@ void MultipoleBatch_base::compute_ss(const double thr) {
 
       auto Mpq = make_shared<const SphMultipole>(PQ, true, lmax_);
 
-      #if 0 //debug print
-      if (!same_centre) {
-        Mpq->print_multipoles();
-        cout << "PQ = (" << setprecision(6) << PQ[0] << ", " << PQ[1] << ", " << PQ[2] << ")" << endl;
-      }
-      #endif
-
-      const double coeff1 = pisqrt__ * pi__ * sqrt(cxp_inv) * cxp_inv;
+      const double coeff = pisqrt__ * pi__ * sqrt(cxp_inv) * cxp_inv;
 
       for (int i = 0; i != num_multipoles_; ++i) {
         const double rABsq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2];
-        multipole_[iprim + i * prim0_ * prim1_] = coeff1 * Mpq->multipole(i) * exp(- *e0 * *e1 * cxp_inv * rABsq);
+        const int index = iprim + i * prim0_ * prim1_;
+        const double Sab = coeff * exp(- *e0 * *e1 * cxp_inv * rABsq);
+        multipole_[index] = Sab * Mpq->multipole(i);
         if (swap01_)
-          multipole_[iprim + i * prim0_ * prim1_] = conj(multipole_[iprim + i * prim0_ * prim1_]);
+          multipole_[index] = conj(multipole_[index]);
       }
     }
   }
