@@ -221,7 +221,8 @@ void Denom<DataType>::init_hh_(const int jst, const int ist, shared_ptr<const RD
           if (i0 == i2 && i1 == i3) a += -fac2 * fac;
           shalf->element(i0, i1, i3, i2) += a;
         }
-  shalf_hh_->copy_block(dim*jst, dim*ist, dim, dim, shalf->data());
+  auto sview = group(group(*shalf, 2,4),0,2);
+  shalf_hh_->copy_block(dim*jst, dim*ist, dim, dim, sview);
 
   shared_ptr<RDM<3,DataType>> r3 = rdm3->clone();
   sort_indices<1,3,0,2,4,0,1,1,1>(rdm3->data(), r3->data(), nact, nact, nact, nact, nact*nact);
