@@ -40,7 +40,8 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
   den1 = h1_->clone();
   den2 = h1_->clone();
   Den1 = v2_->clone();
-  deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+  if (ref_->grad())
+    deci = make_shared<Tensor>(vector<IndexRange>{ci_});
 }
 
 
