@@ -44,53 +44,60 @@ namespace SMITH {
 
 // the template parameter T specifies the storage type
 
+template<typename DataType>
 class K2ext {
   protected:
-    std::shared_ptr<const SMITH_Info> ref_;
-    std::shared_ptr<const Coeff> coeff_;
+    using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
+
+    std::shared_ptr<const SMITH_Info<DataType>> ref_;
+    std::shared_ptr<const MatType> coeff_;
     std::vector<IndexRange> blocks_;
-    std::shared_ptr<Tensor> data_;
+    std::shared_ptr<Tensor_<DataType>> data_;
 
     // some handwritten drivers
-    std::map<size_t, std::shared_ptr<DFFullDist>> generate_list();
-
-    void form_4index(const std::map<size_t, std::shared_ptr<DFFullDist>>& dflist);
+    void init() { assert(false); }
 
   public:
-    K2ext(std::shared_ptr<const SMITH_Info> r, std::shared_ptr<const Coeff> c, std::vector<IndexRange> b);
-    ~K2ext() {}
+    K2ext(std::shared_ptr<const SMITH_Info<DataType>> r, std::shared_ptr<const MatType> c, const std::vector<IndexRange>& b);
 
-    std::shared_ptr<Tensor> data() { return data_; }
-    std::shared_ptr<Tensor> tensor() { return data_; }
-
+    std::shared_ptr<Tensor_<DataType>> tensor() { return data_; }
 };
+template<> void K2ext<double>::init();
+template<> void K2ext<std::complex<double>>::init();
+extern template class K2ext<double>;
+extern template class K2ext<std::complex<double>>;
 
 
+template<typename DataType>
 class MOFock {
   protected:
-    std::shared_ptr<const SMITH_Info> ref_;
-    std::shared_ptr<Coeff> coeff_;
+    using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
+
+    std::shared_ptr<const SMITH_Info<DataType>> ref_;
+    std::shared_ptr<const MatType> coeff_;
     std::vector<IndexRange> blocks_;
-    std::shared_ptr<Tensor> data_;
-    std::shared_ptr<Tensor> h1_;
+    std::shared_ptr<Tensor_<DataType>> data_;
+    std::shared_ptr<Tensor_<DataType>> h1_;
 
     double core_energy_;
 
+    void init() { assert(false); }
+
   public:
-    MOFock(std::shared_ptr<const SMITH_Info> r, std::vector<IndexRange> b);
-    ~MOFock() {}
+    MOFock(std::shared_ptr<const SMITH_Info<DataType>> r, const std::vector<IndexRange>& b);
 
     // fock operator
-    std::shared_ptr<Tensor> data() { return data_; }
-    std::shared_ptr<Tensor> tensor() { return data_; }
-
+    std::shared_ptr<Tensor_<DataType>> tensor() { return data_; }
     // core Fock operator minus diagonal part of the two-body integrals
-    std::shared_ptr<Tensor> h1() { return h1_; }
+    std::shared_ptr<Tensor_<DataType>> h1() { return h1_; }
 
-    std::shared_ptr<const Coeff> coeff() const { return coeff_; }
-
+    std::shared_ptr<const MatType> coeff() const { return coeff_; }
     double core_energy() const { return core_energy_; }
 };
+template<> void MOFock<double>::init();
+template<> void MOFock<std::complex<double>>::init();
+extern template class MOFock<double>;
+extern template class MOFock<std::complex<double>>;
 
 
 }

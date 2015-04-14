@@ -171,7 +171,7 @@ class MRCI : public SpinFreeMethod<double> {
     std::shared_ptr<Queue> make_normq(const bool reset = true, const bool diagonal = true);
 
   public:
-    MRCI(std::shared_ptr<const SMITH_Info> ref);
+    MRCI(std::shared_ptr<const SMITH_Info<double>> ref);
     ~MRCI() {}
 
     void solve();

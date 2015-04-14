@@ -130,7 +130,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::shared_ptr<Queue> make_deciq(const bool reset = true, const bool diagonal = true);
 
   public:
-    CASPT2(std::shared_ptr<const SMITH_Info> ref);
+    CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);
     ~CASPT2() {}
 
     void solve();

@@ -33,14 +33,14 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
+CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref) {
   eig_ = f1_->diag();
   t2 = init_amplitude();
   r = t2->clone();
   den1 = h1_->clone();
   den2 = h1_->clone();
   Den1 = v2_->clone();
-  if (ref_->grad())
+  if (info_->grad())
     deci = make_shared<Tensor>(vector<IndexRange>{ci_});
 }
 
@@ -50,7 +50,7 @@ void CASPT2::CASPT2::solve() {
   print_iteration();
   Timer mtimer;
   int iter = 0;
-  for ( ; iter != ref_->maxiter(); ++iter) {
+  for ( ; iter != info_->maxiter(); ++iter) {
     shared_ptr<Queue> energyq = make_energyq();
     energy_ = accumulate(energyq);
     shared_ptr<Queue> queue = make_residualq();
@@ -63,9 +63,9 @@ void CASPT2::CASPT2::solve() {
 
     update_amplitude(t2, r);
     r->zero();
-    if (err < ref_->thresh()) break;
+    if (err < info_->thresh()) break;
   }
-  print_iteration(iter == ref_->maxiter());
+  print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
 }
 

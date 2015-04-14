@@ -32,37 +32,36 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 template<typename DataType>
-SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(r) {
+SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> inf) : info_(inf) {
   static_assert(is_same<DataType,double>::value or is_same<DataType,complex<double>>::value,
                 "illegal DataType for SpinFreeMethod");
 
   Timer timer;
-  const int max = r->maxtile();
-  if (r->ncore() > r->nclosed())
+  const int max = info_->maxtile();
+  if (info_->ncore() > info_->nclosed())
     throw runtime_error("frozen core has been specified but there are not enough closed orbitals");
-  closed_ = IndexRange(r->nclosed()-r->ncore(), max, 0, r->ncore());
-  active_ = IndexRange(r->nact(),    max, closed_.nblock(),                  r->ncore()+closed_.size());
-  virt_   = IndexRange(r->nvirt(),   max, closed_.nblock()+active_.nblock(), r->ncore()+closed_.size()+active_.size());
+  closed_ = IndexRange(info_->nclosed()-info_->ncore(), max, 0, info_->ncore());
+  active_ = IndexRange(info_->nact(),    max, closed_.nblock(),                  info_->ncore()+closed_.size());
+  virt_   = IndexRange(info_->nvirt(),   max, closed_.nblock()+active_.nblock(), info_->ncore()+closed_.size()+active_.size());
   all_    = closed_; all_.merge(active_); all_.merge(virt_);
-  assert(closed_.size() == r->nclosed() - r->ncore());
-  assert(active_.size() == r->nact());
-  assert(virt_.size() == r->nvirt());
+  assert(closed_.size() == info_->nclosed() - info_->ncore());
+  assert(active_.size() == info_->nact());
+  assert(virt_.size() == info_->nvirt());
 
   rclosed_ = make_shared<const IndexRange>(closed_);
   ractive_ = make_shared<const IndexRange>(active_);
   rvirt_   = make_shared<const IndexRange>(virt_);
 
-  if (ref_->ciwfn() && ref_->grad()) {
+  if (info_->ciwfn() && info_->grad()) {
     // length of the ci expansion
-    const size_t ci_size = r->civectors()->data(ref_->target())->size();
+    const size_t ci_size = info_->ref()->civectors()->data(info_->target())->size();
     ci_ = IndexRange(ci_size, max);
     rci_ = make_shared<const IndexRange>(ci_);
   }
 
   // f1 tensor.
   {
-    vector<IndexRange> o = {all_, all_};
-    MOFock fock(ref_, o);
+    MOFock<DataType> fock(info_, {all_, all_});
     f1_ = fock.tensor();
     h1_ = fock.h1();
     core_energy_ = fock.core_energy();
@@ -70,132 +69,143 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info> r) : ref_(
     coeff_ = fock.coeff();
   }
 
-  // for later use
-  const int nact = ref_->nact();
-  const int nclo = ref_->nclosed();
-  auto fockact = make_shared<Matrix>(nact, nact);
-  for (auto& i1 : active_)
-    for (auto& i0 : active_)
-      fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), f1_->get_block(i0, i1).get());
-
-
   // v2 tensor.
   {
     IndexRange occ(closed_);  occ.merge(active_);
     IndexRange virt(active_); virt.merge(virt_);
 
     // in the case of MRCI, we need to include all sectors
-    if (to_upper(ref_->method()) == "MRCI") {
+    if (to_upper(info_->method()) == "MRCI") {
       occ = all_;
       virt = all_;
     }
-
-    vector<IndexRange> o = {occ, virt, occ, virt};
-    K2ext v2k(ref_, coeff_, o);
+    K2ext<DataType> v2k(info_, coeff_, {occ, virt, occ, virt});
     v2_ = v2k.tensor();
   }
-
   timer.tick_print("MO integral evaluation");
 
-  // rdm ci derivatives. Only for gradient computations
-  if (ref_->ciwfn() && ref_->grad()) {
-    shared_ptr<Dvec> rdm0d = make_shared<Dvec>(r->civectors()->data(ref_->target()), 1);
-    shared_ptr<Dvec> rdm1d = r->rdm1deriv(ref_->target());
-    shared_ptr<Dvec> rdm2d = r->rdm2deriv(ref_->target());
-    shared_ptr<Dvec> rdm3d, rdm4d;
-    // RDM4 is contracted a priori by the Fock operator
-    tie(rdm3d, rdm4d) = r->rdm34deriv(ref_->target(), fockact);
-    assert(rdm3d->ij() == rdm4d->ij());
-
-    vector<IndexRange> o1 = {ci_};
-    vector<IndexRange> o3 = {ci_, active_, active_};
-    vector<IndexRange> o5 = {ci_, active_, active_, active_, active_};
-    vector<IndexRange> o7 = {ci_, active_, active_, active_, active_, active_, active_};
-    rdm0deriv_ = make_shared<Tensor_<DataType>>(o1);
-    rdm1deriv_ = make_shared<Tensor_<DataType>>(o3);
-    rdm2deriv_ = make_shared<Tensor_<DataType>>(o5);
-    rdm3deriv_ = make_shared<Tensor_<DataType>>(o7);
-    rdm4deriv_ = make_shared<Tensor_<DataType>>(o7);
-
-    const int nclo = ref_->nclosed();
-    vector<int> inpoff1(1,0);
-    vector<int> inpoff3(2,nclo); inpoff3.push_back(0);
-    vector<int> inpoff5(4,nclo); inpoff5.push_back(0);
-    vector<int> inpoff7(6,nclo); inpoff7.push_back(0);
-
-    const btas::CRange<1> range1(rdm1d->extent(0)*rdm1d->extent(1));
-    const btas::CRange<3> range3(rdm1d->extent(0)*rdm1d->extent(1), nact, nact);
-    const btas::CRange<5> range5(rdm2d->extent(0)*rdm2d->extent(1), nact, nact, nact, nact);
-    const btas::CRange<7> range7(rdm3d->extent(0)*rdm3d->extent(1), nact, nact, nact, nact, nact, nact);
-
-    rdm0d->resize(range1);
-    rdm1d->resize(range3);
-    rdm2d->resize(range5);
-    rdm3d->resize(range7);
-    rdm4d->resize(range7);
-    fill_block<1>(rdm0deriv_, rdm0d, inpoff1, o1);
-    fill_block<3>(rdm1deriv_, rdm1d, inpoff3, o3);
-    fill_block<5>(rdm2deriv_, rdm2d, inpoff5, o5);
-    fill_block<7>(rdm3deriv_, rdm3d, inpoff7, o7);
-    fill_block<7>(rdm4deriv_, rdm4d, inpoff7, o7);
-
-    timer.tick_print("RDM derivative evaluation");
-  }
-
-
   // rdms.
-  if (ref_->ciwfn()) {
-    const int nclo = ref_->nclosed();
-    const int nstates = ref_->ciwfn()->nstates();
-    rdm0all_ = make_shared<Vec<Tensor_<DataType>>>();
-    rdm1all_ = make_shared<Vec<Tensor_<DataType>>>();
-    rdm2all_ = make_shared<Vec<Tensor_<DataType>>>();
-    rdm3all_ = make_shared<Vec<Tensor_<DataType>>>();
-    rdm4all_ = make_shared<Vec<Tensor_<DataType>>>();
+  if (info_->ciwfn()) {
+    auto fockact = make_shared<MatType>(info_->nact(), info_->nact());
+    for (auto& i1 : active_)
+      for (auto& i0 : active_)
+        fockact->copy_block(i0.offset()-info_->nclosed(), i1.offset()-info_->nclosed(), i0.size(), i1.size(), f1_->get_block(i0, i1).get());
 
-    auto denom = make_shared<Denom<DataType>>(fockact, nstates, /*thresh*/1.0e-9);
-
-    // TODO this can be reduced to half by bra-ket symmetry
-    for (int ist = 0; ist != nstates; ++ist) {
-      for (int jst = 0; jst != nstates; ++jst) {
-
-        auto rdm0t = make_shared<Tensor_<DataType>>(vector<IndexRange>());
-        auto rdm1t = make_shared<Tensor_<DataType>>(vector<IndexRange>(2,active_));
-        auto rdm2t = make_shared<Tensor_<DataType>>(vector<IndexRange>(4,active_));
-        auto rdm3t = make_shared<Tensor_<DataType>>(vector<IndexRange>(6,active_));
-        auto rdm4t = make_shared<Tensor_<DataType>>(vector<IndexRange>(8,active_));
-
-        shared_ptr<const RDM<1>> rdm1;
-        shared_ptr<const RDM<2>> rdm2;
-        shared_ptr<const RDM<3>> rdm3;
-        shared_ptr<const RDM<4>> rdm4;
-        tie(rdm1, rdm2) = ref_->rdm12(jst, ist);
-        tie(rdm3, rdm4) = ref_->rdm34(jst, ist);
-
-        unique_ptr<double[]> data0(new double[1]);
-        data0[0] = jst == ist ? 1.0 : 0.0;
-        rdm0t->put_block(data0);
-        fill_block<2>(rdm1t, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
-        fill_block<4>(rdm2t, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
-        fill_block<6>(rdm3t, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
-        fill_block<8>(rdm4t, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
-
-        rdm0all_->emplace(jst, ist, rdm0t);
-        rdm1all_->emplace(jst, ist, rdm1t);
-        rdm2all_->emplace(jst, ist, rdm2t);
-        rdm3all_->emplace(jst, ist, rdm3t);
-        rdm4all_->emplace(jst, ist, rdm4t);
-
-        denom->append(jst, ist, rdm1, rdm2, rdm3, rdm4);
-      }
-    }
-    denom->compute();
-    denom_ = denom;
+    feed_rdm_denom(fockact);
     timer.tick_print("RDM + denominator evaluation");
+
+    // rdm ci derivatives. Only for gradient computations
+    if (info_->grad()) {
+      feed_rdm_deriv(fockact);
+      timer.tick_print("RDM derivative evaluation");
+    }
   }
 
   // set e0
   e0_ = compute_e0();
+}
+
+
+template<typename DataType>
+void SpinFreeMethod<DataType>::feed_rdm_denom(shared_ptr<const MatType> fockact) {
+  const int nclo = info_->nclosed();
+  const int nstates = info_->ciwfn()->nstates();
+  rdm0all_ = make_shared<Vec<Tensor_<DataType>>>();
+  rdm1all_ = make_shared<Vec<Tensor_<DataType>>>();
+  rdm2all_ = make_shared<Vec<Tensor_<DataType>>>();
+  rdm3all_ = make_shared<Vec<Tensor_<DataType>>>();
+  rdm4all_ = make_shared<Vec<Tensor_<DataType>>>();
+
+  auto denom = make_shared<Denom<DataType>>(fockact, nstates, /*thresh*/1.0e-9);
+
+  // TODO this can be reduced to half by bra-ket symmetry
+  for (int ist = 0; ist != nstates; ++ist) {
+    for (int jst = 0; jst != nstates; ++jst) {
+
+      auto rdm0t = make_shared<Tensor_<DataType>>(vector<IndexRange>());
+      auto rdm1t = make_shared<Tensor_<DataType>>(vector<IndexRange>(2,active_));
+      auto rdm2t = make_shared<Tensor_<DataType>>(vector<IndexRange>(4,active_));
+      auto rdm3t = make_shared<Tensor_<DataType>>(vector<IndexRange>(6,active_));
+      auto rdm4t = make_shared<Tensor_<DataType>>(vector<IndexRange>(8,active_));
+
+      shared_ptr<const RDM<1,DataType>> rdm1;
+      shared_ptr<const RDM<2,DataType>> rdm2;
+      shared_ptr<const RDM<3,DataType>> rdm3;
+      shared_ptr<const RDM<4,DataType>> rdm4;
+      tie(rdm1, rdm2) = info_->rdm12(jst, ist);
+      tie(rdm3, rdm4) = info_->rdm34(jst, ist);
+
+      unique_ptr<DataType[]> data0(new DataType[1]);
+      data0[0] = jst == ist ? 1.0 : 0.0;
+      rdm0t->put_block(data0);
+      fill_block<2,DataType>(rdm1t, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
+      fill_block<4,DataType>(rdm2t, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
+      fill_block<6,DataType>(rdm3t, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
+      fill_block<8,DataType>(rdm4t, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
+
+      rdm0all_->emplace(jst, ist, rdm0t);
+      rdm1all_->emplace(jst, ist, rdm1t);
+      rdm2all_->emplace(jst, ist, rdm2t);
+      rdm3all_->emplace(jst, ist, rdm3t);
+      rdm4all_->emplace(jst, ist, rdm4t);
+
+      denom->append(jst, ist, rdm1, rdm2, rdm3, rdm4);
+    }
+  }
+  denom->compute();
+  denom_ = denom;
+}
+
+
+template<>
+void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
+  using DataType = double;
+  shared_ptr<Dvec> rdm0d = make_shared<Dvec>(info_->ref()->civectors()->data(info_->target()), 1);
+  shared_ptr<Dvec> rdm1d = info_->ref()->rdm1deriv(info_->target());
+  shared_ptr<Dvec> rdm2d = info_->ref()->rdm2deriv(info_->target());
+  shared_ptr<Dvec> rdm3d, rdm4d;
+  // RDM4 is contracted a priori by the Fock operator
+  tie(rdm3d, rdm4d) = info_->ref()->rdm34deriv(info_->target(), fockact);
+  assert(rdm3d->ij() == rdm4d->ij());
+
+  vector<IndexRange> o1 = {ci_};
+  vector<IndexRange> o3 = {ci_, active_, active_};
+  vector<IndexRange> o5 = {ci_, active_, active_, active_, active_};
+  vector<IndexRange> o7 = {ci_, active_, active_, active_, active_, active_, active_};
+  rdm0deriv_ = make_shared<Tensor_<DataType>>(o1);
+  rdm1deriv_ = make_shared<Tensor_<DataType>>(o3);
+  rdm2deriv_ = make_shared<Tensor_<DataType>>(o5);
+  rdm3deriv_ = make_shared<Tensor_<DataType>>(o7);
+  rdm4deriv_ = make_shared<Tensor_<DataType>>(o7);
+
+  const int nclo = info_->nclosed();
+  vector<int> inpoff1(1,0);
+  vector<int> inpoff3(2,nclo); inpoff3.push_back(0);
+  vector<int> inpoff5(4,nclo); inpoff5.push_back(0);
+  vector<int> inpoff7(6,nclo); inpoff7.push_back(0);
+
+  const int nact = info_->nact();
+  const btas::CRange<1> range1(rdm1d->extent(0)*rdm1d->extent(1));
+  const btas::CRange<3> range3(rdm1d->extent(0)*rdm1d->extent(1), nact, nact);
+  const btas::CRange<5> range5(rdm2d->extent(0)*rdm2d->extent(1), nact, nact, nact, nact);
+  const btas::CRange<7> range7(rdm3d->extent(0)*rdm3d->extent(1), nact, nact, nact, nact, nact, nact);
+
+  rdm0d->resize(range1);
+  rdm1d->resize(range3);
+  rdm2d->resize(range5);
+  rdm3d->resize(range7);
+  rdm4d->resize(range7);
+  fill_block<1,DataType>(rdm0deriv_, rdm0d, inpoff1, o1);
+  fill_block<3,DataType>(rdm1deriv_, rdm1d, inpoff3, o3);
+  fill_block<5,DataType>(rdm2deriv_, rdm2d, inpoff5, o5);
+  fill_block<7,DataType>(rdm3deriv_, rdm3d, inpoff7, o7);
+  fill_block<7,DataType>(rdm4deriv_, rdm4d, inpoff7, o7);
+}
+
+
+template<>
+void SpinFreeMethod<complex<double>>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
+  throw logic_error("SpinFreeMethod::feed_rdm_deriv is not implemented for relativistic cases.");
 }
 
 
@@ -240,7 +250,7 @@ void SpinFreeMethod<DataType>::print_iteration(const bool noconv) {
 template<typename DataType>
 double SpinFreeMethod<DataType>::compute_e0() {
   assert(!!f1_);
-  const size_t nstates = ref_->ciwfn()->nstates();
+  const size_t nstates = info_->ciwfn()->nstates();
   double sum = 0.0;
   for (int ist = 0; ist != nstates; ++ist) {
     set_rdm(ist, ist);
@@ -354,7 +364,7 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor
     const size_t size = r->get_size_alloc(i2, i3, i0, i1);
     if (size != 0) {
       unique_ptr<DataType[]> tmp0 = t2->get_block(i0, i1, i2, i3);
-      unique_ptr<DataType[]> tmp1(new double[size]);
+      unique_ptr<DataType[]> tmp1(new DataType[size]);
       sort_indices<2,3,0,1,0,1,1,1>(tmp0.get(), tmp1.get(), i0.size(), i1.size(), i2.size(), i3.size());
 
       out += blas::dot_product(tmp1.get(), size, r->get_block(i2, i3, i0, i1).get());
@@ -367,7 +377,7 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor
 
 template<typename DataType>
 void SpinFreeMethod<DataType>::diagonal(shared_ptr<Tensor_<DataType>> r, shared_ptr<const Tensor_<DataType>> t) const {
-  assert(to_upper(ref_->method()) == "CASPT2");
+  assert(to_upper(info_->method()) == "CASPT2");
   if (!is_same<DataType,double>::value)
     throw logic_error("SpinFreeMethod<DataType>::diagonal is only correct for non-rel spin-adapted cases ");
 
@@ -402,4 +412,5 @@ void SpinFreeMethod<DataType>::diagonal(shared_ptr<Tensor_<DataType>> r, shared_
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
 template class SpinFreeMethod<double>;
-//template class SpinFreeMethod<complex<double>>;
+template class SpinFreeMethod<complex<double>>;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

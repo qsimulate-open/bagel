@@ -31,8 +31,8 @@
 namespace bagel {
 namespace SMITH {
 
-template<int N>
-static void fill_block(std::shared_ptr<Tensor> target, std::shared_ptr<const btas::TensorN<double,N>> input,
+template<int N, typename DataType>
+static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_ptr<const btas::TensorN<DataType,N>> input,
                        const std::vector<int>& inpoffsets, const std::vector<IndexRange>& ranges_rev) {
   assert(input->range().ordinal().contiguous());
   assert(target->rank() == input->range().rank() && target->rank() > 0);
@@ -47,7 +47,7 @@ static void fill_block(std::shared_ptr<Tensor> target, std::shared_ptr<const bta
     assert(indices.size() == rank);
 
     const size_t buffersize = std::accumulate(indices.begin(), indices.end(), 1ul, prod);
-    std::unique_ptr<double[]> buffer(new double[buffersize]);
+    std::unique_ptr<DataType[]> buffer(new DataType[buffersize]);
     std::vector<size_t> stride;
     for (auto i = indices.begin(); i != indices.end(); ++i) {
       auto ii = i; ++ii;

@@ -75,8 +75,8 @@ void CASPT2Grad::compute() {
     if (nact) {
       cideriv_ = smith->cideriv()->copy();
     }
-    target_ = smith->algo()->ref()->target();
-    ncore_  = smith->algo()->ref()->ncore();
+    target_ = smith->algo()->info()->target();
+    ncore_  = smith->algo()->info()->ncore();
 
     Timer timer;
 

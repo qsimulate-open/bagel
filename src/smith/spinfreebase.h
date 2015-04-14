@@ -54,9 +54,9 @@ class SpinFreeMethod {
     std::shared_ptr<const IndexRange> rclosed_;
     std::shared_ptr<const IndexRange> rci_;
 
-    std::shared_ptr<const SMITH_Info> ref_;
+    std::shared_ptr<const SMITH_Info<DataType>> info_;
 
-    std::shared_ptr<const Coeff_<MatType>> coeff_;
+    std::shared_ptr<const MatType> coeff_;
     double e0_;
     double core_energy_;
     double energy_;
@@ -93,6 +93,10 @@ class SpinFreeMethod {
     // the diagonal denominator
     std::vector<double> eig_;
 
+    // init functions
+    void feed_rdm_denom(std::shared_ptr<const MatType> fockact);
+    void feed_rdm_deriv(std::shared_ptr<const MatType> fockact);
+
     // printing functions called from the solve function of a derived class
     static void print_iteration();
     static void print_iteration(const int i, const double en, const double err, const double tim, const int istate = -1);
@@ -118,14 +122,14 @@ class SpinFreeMethod {
     void diagonal(std::shared_ptr<Tensor_<DataType>> r, std::shared_ptr<const Tensor_<DataType>> t) const;
 
   public:
-    SpinFreeMethod(std::shared_ptr<const SMITH_Info> r);
+    SpinFreeMethod(std::shared_ptr<const SMITH_Info<DataType>> r);
 
     IndexRange& virt() { return virt_; }
     IndexRange& all() { return all_; }
     IndexRange& closed() { return closed_; }
 
-    std::shared_ptr<const SMITH_Info> ref() const { return ref_; }
-    std::shared_ptr<const Coeff_<MatType>> coeff() const { return coeff_; }
+    std::shared_ptr<const SMITH_Info<DataType>> info() const { return info_; }
+    std::shared_ptr<const MatType> coeff() const { return coeff_; }
 
     double e0() const { return e0_; }
     double energy() const { return energy_; }
@@ -136,8 +140,12 @@ class SpinFreeMethod {
     DataType dot_product_transpose(std::shared_ptr<const MultiTensor_<DataType>> r, std::shared_ptr<const MultiTensor_<DataType>> t2) const;
 };
 
+template<> void SpinFreeMethod<double>::feed_rdm_deriv(std::shared_ptr<const Matrix>);
+template<> void SpinFreeMethod<double>::update_amplitude(std::shared_ptr<MultiTensor_<double>>, std::shared_ptr<const MultiTensor_<double>>) const;
+template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(std::shared_ptr<const ZMatrix>);
+template<> void SpinFreeMethod<std::complex<double>>::update_amplitude(std::shared_ptr<MultiTensor_<std::complex<double>>>, std::shared_ptr<const MultiTensor_<std::complex<double>>>) const;
 extern template class SpinFreeMethod<double>;
-//extern template class SpinFreeMethod<double>;
+extern template class SpinFreeMethod<std::complex<double>>;
 
 }
 }

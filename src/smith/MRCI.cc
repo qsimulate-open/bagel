@@ -35,7 +35,7 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
+MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref) {
   eig_ = f1_->diag();
   nstates_ = ref->ciwfn()->nstates();
 
@@ -58,11 +58,11 @@ void MRCI::MRCI::solve() {
   Timer timer;
   print_iteration();
 
-  const double core_nuc = core_energy_ + ref_->geom()->nuclear_repulsion();
+  const double core_nuc = core_energy_ + info_->geom()->nuclear_repulsion();
 
   // target state
   for (int istate = 0; istate != nstates_; ++istate) {
-    const double refen = ref_->ciwfn()->energy(istate) - core_nuc;
+    const double refen = info_->ciwfn()->energy(istate) - core_nuc;
     // takes care of ref coefficients
     t2all_[istate]->fac(istate) = 1.0;
     nall_[istate]->fac(istate)  = 1.0;
@@ -89,7 +89,7 @@ void MRCI::MRCI::solve() {
     }
     energy_ = davidson.compute(a0, r0);
     for (int istate = 0; istate != nstates_; ++istate)
-      assert(fabs(energy_[istate]+core_nuc - ref_->ciwfn()->energy(istate)) < 1.0e-8);
+      assert(fabs(energy_[istate]+core_nuc - info_->ciwfn()->energy(istate)) < 1.0e-8);
   }
 
   // set the result to t2
@@ -107,7 +107,7 @@ void MRCI::MRCI::solve() {
   Timer mtimer;
   int iter = 0;
   vector<bool> conv(nstates_, false);
-  for ( ; iter != ref_->maxiter(); ++iter) {
+  for ( ; iter != info_->maxiter(); ++iter) {
 
     // loop over state of interest
     vector<shared_ptr<const Amplitude<double>>> a0;
@@ -156,7 +156,7 @@ void MRCI::MRCI::solve() {
         shared_ptr<MultiTensor> m = t2all_[istate]->copy();
         for (int ist = 0; ist != nstates_; ++ist) {
           // First weighted T2 amplitude
-          m->at(ist)->scale(ref_->ciwfn()->energy(ist) - core_nuc);
+          m->at(ist)->scale(info_->ciwfn()->energy(ist) - core_nuc);
           // then add it to residual
           for (int jst = 0; jst != nstates_; ++jst) {
             set_rdm(jst, ist);
@@ -186,7 +186,7 @@ void MRCI::MRCI::solve() {
       print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
 
       t2all_[i]->zero();
-      conv[i] = err < ref_->thresh();
+      conv[i] = err < info_->thresh();
       if (!conv[i])
         update_amplitude(t2all_[i], res[i]->tensor());
     }
@@ -194,7 +194,7 @@ void MRCI::MRCI::solve() {
 
     if (all_of(conv.begin(), conv.end(), [](bool i){ return i;})) break;
   }
-  print_iteration(iter == ref_->maxiter());
+  print_iteration(iter == info_->maxiter());
   timer.tick_print("MRCI energy evaluation");
 }
 

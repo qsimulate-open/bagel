@@ -38,7 +38,7 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
   // make a smith_info class
-  auto info = make_shared<SMITH_Info>(r, idata);
+  auto info = make_shared<SMITH_Info<double>>(r, idata);
 
 #ifdef COMPILE_SMITH
   if (method == "caspt2") {
@@ -58,7 +58,7 @@ void Smith::compute() {
   algo_->solve();
 
 #ifdef COMPILE_SMITH
-  if (algo_->ref()->grad()) {
+  if (algo_->info()->grad()) {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
     assert(algop);
 
@@ -74,7 +74,7 @@ void Smith::compute() {
     cider_ = algop->ci_deriv(ref_->ciwfn()->det());
 
     // todo check
-    coeff_ = algop->coeff();
+    coeff_ = make_shared<Coeff>(*algop->coeff());
   }
 #endif
 }

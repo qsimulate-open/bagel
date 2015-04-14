@@ -26,12 +26,16 @@
 #ifndef __SRC_SMITH_SMITH_INFO_H
 #define __SRC_SMITH_SMITH_INFO_H
 
-#include <src/wfn/reference.h>
+#include <src/wfn/relreference.h>
 
 namespace bagel {
 
-class SMITH_Info : public Reference {
+template<typename DataType>
+class SMITH_Info {
   protected:
+    using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
+
+    std::shared_ptr<const Reference> ref_;
     std::string method_;
 
     int ncore_;
@@ -43,11 +47,11 @@ class SMITH_Info : public Reference {
     bool grad_;
 
   public:
-    SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata) : Reference(*o) {
+    SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata) : ref_(o) {
       method_ = idata->get<std::string>("method");
 
       const bool frozen = idata->get<bool>("frozen", true);
-      ncore_ = idata->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
+      ncore_ = idata->get<int>("ncore", (frozen ? ref_->geom()->num_count_ncore_only()/2 : 0));
       if (ncore_)
         std::cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << std::endl;
 
@@ -61,12 +65,48 @@ class SMITH_Info : public Reference {
 
     std::string method() const { return method_; }
     int ncore() const { return ncore_; }
+    int nclosed() const { return ref_->nclosed(); }
+    int nact() const { return ref_->nact(); }
+    int nocc() const { return ref_->nocc(); }
+    int nvirt() const { return ref_->nvirt(); }
+
+    std::shared_ptr<const MatType> hcore() const { return nullptr; }
+
+    std::shared_ptr<const RDM<1,DataType>> rdm1_av() const;
+
+    std::tuple<std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>>
+      rdm12(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>>
+      rdm34(const int ist, const int jst) const;
+
     double thresh() const { return thresh_; }
     int maxiter() const { return maxiter_; }
     int target() const { return target_; }
     int maxtile() const { return maxtile_; }
     bool grad() const { return grad_; }
+
+    std::shared_ptr<const Reference> ref() const { return ref_; }
+    std::shared_ptr<const Geometry> geom() const { return ref_->geom(); }
+    std::shared_ptr<const CIWfn> ciwfn() const { return ref_->ciwfn(); }
+
+    // this function hides coeff function in Reference and RelReference
+    std::shared_ptr<const MatType> coeff() const { assert(false); }
 };
+
+template<> std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const;
+template<> std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const;
+template<> std::tuple<std::shared_ptr<const ZRDM<1>>, std::shared_ptr<const ZRDM<2>>> SMITH_Info<std::complex<double>>::rdm12(const int ist, const int jst) const;
+template<> std::tuple<std::shared_ptr<const ZRDM<3>>, std::shared_ptr<const ZRDM<4>>> SMITH_Info<std::complex<double>>::rdm34(const int ist, const int jst) const;
+
+template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::coeff() const;
+template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::hcore() const;
+template<> std::shared_ptr<const RDM<1>>  SMITH_Info<double>::rdm1_av() const;
+template<> std::shared_ptr<const ZMatrix> SMITH_Info<std::complex<double>>::coeff() const;
+template<> std::shared_ptr<const ZMatrix> SMITH_Info<std::complex<double>>::hcore() const;
+template<> std::shared_ptr<const ZRDM<1>> SMITH_Info<std::complex<double>>::rdm1_av() const;
+
+extern template class SMITH_Info<double>;
+extern template class SMITH_Info<std::complex<double>>;
 
 }
 
