@@ -73,5 +73,22 @@ class Smith : public Method {
 
 };
 
+
+class RelSmith : public Method {
+  protected:
+    std::shared_ptr<SMITH::SpinFreeMethod<std::complex<double>>> algo_;
+    std::shared_ptr<const ZMatrix> coeff_;
+
+  public:
+    RelSmith(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
+
+    void compute() override { algo_->solve(); }
+
+    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+    std::shared_ptr<const ZMatrix> coeff() const { return coeff_; }
+
+    std::shared_ptr<const SMITH::SpinFreeMethod<std::complex<double>>> algo() const { return algo_; }
+};
+
 }
 #endif

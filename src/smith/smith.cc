@@ -27,6 +27,7 @@
 #include <bagel_config.h>
 #include <src/smith/smith.h>
 #include <src/smith/MRCI.h>
+#include <src/smith/RelMRCI.h>
 #include <src/smith/CASPT2.h>
 
 
@@ -77,4 +78,22 @@ void Smith::compute() {
     coeff_ = make_shared<Coeff>(*algop->coeff());
   }
 #endif
+}
+
+RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
+  const string method = to_lower(idata_->get<string>("method", "caspt2"));
+
+  // make a smith_info class
+  auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
+
+#ifdef COMPILE_SMITH
+  if (method == "mrci") {
+    algo_ = make_shared<RelMRCI::RelMRCI>(info);
+  } else {
+#else
+  {
+#endif
+    stringstream ss; ss << method << " method is not implemented in SMITH";
+    throw logic_error(ss.str());
+  }
 }
