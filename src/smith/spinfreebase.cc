@@ -40,13 +40,22 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   const int max = info_->maxtile();
   if (info_->ncore() > info_->nclosed())
     throw runtime_error("frozen core has been specified but there are not enough closed orbitals");
+
+  // TODO we need to update the following. Probably it is a good idea to generalize IndexRange class
+
   closed_ = IndexRange(info_->nclosed()-info_->ncore(), max, 0, info_->ncore());
-  active_ = IndexRange(info_->nact(),    max, closed_.nblock(),                  info_->ncore()+closed_.size());
-  virt_   = IndexRange(info_->nvirt(),   max, closed_.nblock()+active_.nblock(), info_->ncore()+closed_.size()+active_.size());
+  if (is_same<DataType,complex<double>>::value)
+    closed_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock(), info_->ncore()+closed_.size()));
+
+  active_ = IndexRange(info_->nact(), max, closed_.nblock(), info_->ncore()+closed_.size());
+  if (is_same<DataType,complex<double>>::value)
+    active_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock()+active_.nblock(), info_->ncore()+closed_.size()+active_.size()));
+
+  virt_ = IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock(), info_->ncore()+closed_.size()+active_.size());
+  if (is_same<DataType,complex<double>>::value)
+    virt_.merge(IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock()+virt_.nblock(), info_->ncore()+closed_.size()+active_.size()+virt_.size()));
+
   all_    = closed_; all_.merge(active_); all_.merge(virt_);
-  assert(closed_.size() == info_->nclosed() - info_->ncore());
-  assert(active_.size() == info_->nact());
-  assert(virt_.size() == info_->nvirt());
 
   rclosed_ = make_shared<const IndexRange>(closed_);
   ractive_ = make_shared<const IndexRange>(active_);

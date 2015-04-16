@@ -25,6 +25,8 @@
 
 #include <src/smith/moint.h>
 #include <src/smith/smith_util.h>
+#include <src/mat1e/rel/relhcore.h>
+#include <src/scf/dhf/dfock.h>
 
 using namespace std;
 using namespace bagel;
@@ -118,7 +120,53 @@ MOFock<DataType>::MOFock(shared_ptr<const SMITH_Info<DataType>> r, const vector<
 
 
 template<>
-void MOFock<complex<double>>::init() { assert(false); }
+void MOFock<complex<double>>::init() {
+  const int ncore   = ref_->ncore();
+  const int nclosed = ref_->nclosed() - ncore;
+  assert(nclosed >= 0);
+  const int nocc    = ref_->nocc();
+  const int nact    = ref_->nact();
+//const int nvirt   = ref_->nvirt();
+
+  auto relref = dynamic_pointer_cast<const RelReference>(ref_->ref());
+
+  // first hcore
+  auto hcore = make_shared<RelHcore>(ref_->geom());
+  shared_ptr<ZMatrix> cfock;
+  core_energy_ = 0.0;
+  if (ncore+nclosed) {
+    cfock = make_shared<DFock>(ref_->geom(), hcore, coeff_->slice_copy(0, 2*(ncore+nclosed)), /*gaunt*/false, /*breit*/false, /*store_half*/false);
+    shared_ptr<const ZMatrix> den = coeff_->form_density_rhf(2*(ncore+nclosed), 0);
+    core_energy_ = detail::real((*den * (*hcore+*cfock)).trace()) * 0.5;
+  } else {
+    cfock = hcore->copy();
+  }
+
+  // active fock
+  shared_ptr<const ZMatrix> fock1;
+  if (nact) {
+    shared_ptr<ZMatrix> tmp = relref->rdm1_av()->copy();
+    tmp->sqrt();
+    shared_ptr<ZMatrix> weighted_coeff = coeff_->slice_copy(2*(ncore+nclosed), 2*nocc);
+    *weighted_coeff *= *tmp;
+    fock1 = make_shared<DFock>(ref_->geom(), cfock, weighted_coeff, false, false, false);
+  } else {
+    fock1 = cfock;
+  }
+
+  // We substitute diagonal part of the two-body integrals.
+  // Note that E_ij,kl = E_ij E_kl - delta_jk E_il
+  // and SMITH uses E_ij E_kl type excitations throughout. j and k must be active
+  if (nact) {
+    // TODO
+  }
+
+  auto f  = make_shared<ZMatrix>(*coeff_ % *fock1 * *coeff_);
+  auto h1 = make_shared<ZMatrix>(*coeff_ % *cfock * *coeff_);
+
+  fill_block<2,complex<double>>(data_, f, {0,0}, blocks_);
+  fill_block<2,complex<double>>(h1_, h1, {0,0}, blocks_);
+}
 
 template<>
 void MOFock<double>::init() {
