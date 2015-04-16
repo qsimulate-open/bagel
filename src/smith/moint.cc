@@ -26,6 +26,7 @@
 #include <src/smith/moint.h>
 #include <src/smith/smith_util.h>
 #include <src/mat1e/rel/relhcore.h>
+#include <src/df/reldffull.h>
 #include <src/scf/dhf/dfock.h>
 
 using namespace std;
@@ -44,8 +45,84 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
   init();
 }
 
+
 template<>
-void K2ext<complex<double>>::init() { assert(false); }
+void K2ext<complex<double>>::init() {
+  // (1) make DFDists
+  vector<shared_ptr<const DFDist>> dfs = ref_->geom()->dfs()->split_blocks();
+  dfs.push_back(ref_->geom()->df());
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+  map<size_t, shared_ptr<RelDFFull>> dflist;
+
+  // (2) first-transform
+  for (auto& i0 : blocks_[0]) {
+    list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff_->slice_copy(i0.offset(), i0.offset()+i0.size()));
+    for (auto& i : half_complex)
+      i = i->apply_J();
+
+    // (3) split and factorize
+    list<shared_ptr<RelDFHalf>> half_complex_exch;
+    for (auto& i : half_complex) {
+      list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+    }
+    half_complex.clear();
+    DFock::factorize(half_complex_exch);
+
+    for (auto& i1 : blocks_[1]) {
+      // (4) compute (gamma|ia)
+      list<shared_ptr<RelDFFull>> dffull;
+      for (auto& i : half_complex_exch)
+        dffull.push_back(make_shared<RelDFFull>(i, coeff_->slice_copy(i1.offset(), i1.offset()+i1.size())));
+      DFock::factorize(dffull);
+      dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+      assert(dffull.size() == 1);
+      // adding this to dflist
+      dflist.emplace(generate_hash_key(i0, i1), dffull.front());
+    }
+  }
+
+  // form four-index integrals
+  // TODO this part should be heavily parallelized
+  for (auto& i0 : blocks_[0]) {
+    for (auto& i1 : blocks_[1]) {
+      // find three-index integrals
+      auto iter01 = dflist.find(generate_hash_key(i0, i1));
+      assert(iter01 != dflist.end());
+      shared_ptr<RelDFFull> df01 = iter01->second;
+      size_t hashkey01 = generate_hash_key(i0, i1);
+
+      for (auto& i2 : blocks_[2]) {
+        for (auto& i3 : blocks_[3]) {
+          // find three-index integrals
+          size_t hashkey23 = generate_hash_key(i2, i3);
+          if (hashkey23 > hashkey01) continue;
+
+          auto iter23 = dflist.find(generate_hash_key(i2, i3));
+          assert(iter23 != dflist.end());
+          shared_ptr<const RelDFFull> df23 = iter23->second;
+
+          // contract
+          // TODO form_4index function now generates global 4 index tensor. This should be localized.
+          // conjugating because (ai|ai) is associated with an excitation operator
+          shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0)->get_conjg();
+          unique_ptr<complex<double>[]> target(new complex<double>[tmp->size()]);
+          copy_n(tmp->data(), tmp->size(), target.get()); // unnecessary copy
+
+          // move in place
+          if (hashkey23 != hashkey01) {
+            unique_ptr<complex<double>[]> target2(new complex<double>[i0.size()*i1.size()*i2.size()*i3.size()]);
+            blas::transpose(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
+            data_->put_block(target2, i2, i3, i0, i1);
+          }
+          data_->put_block(target, i0, i1, i2, i3);
+        }
+      }
+    }
+  }
+}
+
 
 template<>
 void K2ext<double>::init() {
@@ -97,10 +174,8 @@ void K2ext<double>::init() {
           if (hashkey23 != hashkey01) {
             unique_ptr<double[]> target2(new double[i0.size()*i1.size()*i2.size()*i3.size()]);
             blas::transpose(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
-
             data_->put_block(target2, i2, i3, i0, i1);
           }
-
           data_->put_block(target, i0, i1, i2, i3);
         }
       }
@@ -158,7 +233,36 @@ void MOFock<complex<double>>::init() {
   // Note that E_ij,kl = E_ij E_kl - delta_jk E_il
   // and SMITH uses E_ij E_kl type excitations throughout. j and k must be active
   if (nact) {
-    // TODO
+    vector<shared_ptr<const DFDist>> dfs = ref_->geom()->dfs()->split_blocks();
+    dfs.push_back(ref_->geom()->df());
+    list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+    list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff_->slice_copy(2*(ncore+nclosed), 2*nocc));
+    for (auto& i : half_complex)
+      i = i->apply_J();
+
+    list<shared_ptr<RelDFHalf>> half_complex_exch;
+    for (auto& i : half_complex) {
+      list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+    }
+    half_complex.clear();
+    DFock::factorize(half_complex_exch);
+
+    for (auto& i : half_complex_exch)
+      i->set_sum_diff();
+
+    // computing K operators
+    int icnt = 0;
+    for (auto& i : half_complex_exch) {
+      int jcnt = 0;
+      for (auto& j : half_complex_exch) {
+        if (i->alpha_matches(j) && icnt <= jcnt)
+          DFock::add_Exop_block(*cfock, i, j, 1.0, icnt == jcnt);
+        ++jcnt;
+      }
+      ++icnt;
+    }
   }
 
   auto f  = make_shared<ZMatrix>(*coeff_ % *fock1 * *coeff_);
