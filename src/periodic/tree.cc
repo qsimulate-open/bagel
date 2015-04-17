@@ -30,8 +30,8 @@
 using namespace bagel;
 using namespace std;
 
-Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh)
- : geom_(geom), max_height_(maxht), thresh_(thresh) {
+Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh, const int ws)
+ : geom_(geom), max_height_(maxht), thresh_(thresh), ws_(ws) {
 
   init();
 }
@@ -39,6 +39,7 @@ Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh
 
 void Tree::init() {
 
+  assert(max_height_ <= (nbit__ - 1)/3);
   nvertex_ = geom_->natom();
   position_ = geom_->charge_center();
   nbasis_ = 0;
@@ -76,10 +77,10 @@ void Tree::build_tree() {
   nodes_[0] = make_shared<Node>();
 
   bitset<nbit__>  current_key;
-  for (int i = max_height_ - 1; i >= 0; --i) { /* top down */
+  for (int i = 1; i <= max_height_; ++i) { /* top down */
     const int level = max_height_ - i;
 
-    const unsigned int shift = i * 3;
+    const unsigned int shift = nbit__ - 1 - i * 3;
     bitset<nbit__> key;
 
     int max_nbody = 0;
@@ -89,7 +90,7 @@ void Tree::build_tree() {
       if (key != current_key) { /* insert node */
         current_key = key;
         nodes_.resize(nnode_ + 1);
-        const int depth = max_height_ - i;
+        const int depth = i;
 
         if (level == 1) {
           nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[0], thresh_);
@@ -130,7 +131,7 @@ void Tree::build_tree() {
   for (int i = 1; i != nnode_; ++i) {
     for (int j = 1; j != nnode_; ++j) {
       if (nodes_[j]->depth() == nodes_[i]->depth()) {
-        nodes_[i]->insert_neighbour(nodes_[j], false, 1);
+        nodes_[i]->insert_neighbour(nodes_[j], false, ws_);
       } else if (nodes_[j]->depth() > nodes_[i]->depth()) {
         break;
       }
@@ -160,6 +161,7 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
       shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offset);
       *out += *tmp;
     }
+  }
 
   // return the Coulomb matrix
   coulomb_ = out;
