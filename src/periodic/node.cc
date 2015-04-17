@@ -241,7 +241,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
     r12[1] = distant_node->position(1) - position_[1];
     r12[2] = distant_node->position(2) - position_[2];
     LocalExpansion lx(r12, distant_node->multipoles(), lmax);
-    vector<shared_ptr<const ZMatrix>> lmoments = lx.local_moments();
+    vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
 
     const int dimb = distant_node->nbasis();
     // need to get a sub-density matrix corresponding to distant_node
@@ -282,7 +282,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
     }
   }
 
-  local_expansion_ = out;
+  local_expansion_ = out; //********* need to add parent's local expansion to this!!!!!!!! DEBUG
 }
 
 
@@ -292,75 +292,30 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
   out->zero();
 
-  ZMatrix tmp(nbasis_, nbasis_);
-  tmp.zero();
-  const int nmultipole = (lmax + 1) * (lmax + 1);
-  for (auto& distant_node : interaction_list_) {
-    array<double, 3> r12;
-    r12[0] = distant_node->position(0) - position_[0];
-    r12[1] = distant_node->position(1) - position_[1];
-    r12[2] = distant_node->position(2) - position_[2];
-    LocalExpansion local(r12, distant_node->multipoles(), lmax);
-    vector<shared_ptr<const ZMatrix>> lmoments = local.local_moments();
-
-    const int dimb = distant_node->nbasis();
-    Matrix subden(dimb, dimb);
-    subden.zero();
-    size_t ob0 = 0;
-    for (auto& body0 : distant_node->bodies()) {
-      size_t ish0 = 0;
-      for (auto& b0 : body0->atom()->shells()) {
-        const int offset0 = offset[body0->ishell() + ish0];
-        const size_t size0 = b0->nbasis();
-        ++ish0;
-
-        size_t ob1 = 0;
-        for (auto& body1 : distant_node->bodies()) {
-          size_t ish1 = 0;
-          for (auto& b1 : body1->atom()->shells()) {
-            const int offset1 = offset[body1->ishell() + ish1];
-            const size_t size1 = b1->nbasis();
-            ++ish1;
-
-            shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
-            subden.copy_block(ob1, ob0, size1, size0, tmp);
-
-            ob1 += size1;
-          }
-        }
-        ob0 += size0;
-      }
-    }
-
-    // translate local at box centre to particle positions
-    for (auto& body : bodies_) {
-      r12[0] = position_[0] - body->position(0);
-      r12[1] = position_[1] - body->position(1);
-      r12[2] = position_[2] - body->position(2);
-      LocalExpansion local_shift(r12, lmoments, lmax);
-      vector<shared_ptr<const ZMatrix>> new_lmoments = local_shift.compute_shifted_local_expansions();
-
-      for (int i = 0; i != nmultipole; ++i) {
-        complex<double> contract = 0.0;
-        for (int j = 0; j != dimb; ++j)
-          for (int k = 0; k != dimb; ++k)
-            contract += new_lmoments[i]->element(k, j) * subden.element(k, j);
-
-        tmp += contract * *multipoles_[i];
-      }
-    }
-  }
-
   // add FF local expansions to coulomb matrix
-  size_t offset0 = 0;
-  for (auto& body : bodies_) {
-    const size_t nbas = body->atom()->nbasis();
-    ZMatrix sublocal = *(tmp.get_submatrix(offset0, offset0, nbas, nbas));
+  size_t ob0 = 0;
+  for (auto& body0 : bodies_) {
+    size_t ish0 = 0;
+    for (auto& b0 : body0->atom()->shells()) {
+      const int offset0 = offset[body0->ishell() + ish0];
+      const size_t size0 = b0->nbasis();
+      ++ish0;
 
-    const size_t offset1 =  offset[body->ishell()];
-    out->add_block(1.0, offset1, offset1, nbas, nbas, sublocal.data());
+      size_t ob1 = 0;
+      for (auto& body1 : bodies_) {
+        size_t ish1 = 0;
+        for (auto& b1 : body1->atom()->shells()) {
+          const int offset1 = offset[body1->ishell() + ish1];
+          const size_t size1 = b1->nbasis();
+          ++ish1;
 
-    offset0 += nbas;
+          ZMatrix sublocal = *(local_expansion_->get_submatrix(ob1, ob0, size1, size0));
+          out->add_block(1.0, offset1, offset0, size1, size0, sublocal.data());
+          ob1 += size1;
+        }
+      }
+      ob0 += size0;
+    }
   }
 
   // compute near-field interactions using direct integration and add to far field

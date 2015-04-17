@@ -154,10 +154,9 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
   }
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
-  for (int i = 1; i != nnode_; ++i)
-    if (!nodes_[i]->is_leaf()) {
-      nodes_[i]->compute_local_expansions(density, lmax, offset);
-    } else {
+  for (int i = 1; i != nnode_; ++i) {
+    nodes_[i]->compute_local_expansions(density, lmax, offset);
+    if (nodes_[i]->is_leaf()) {
       shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offset);
       *out += *tmp;
     }

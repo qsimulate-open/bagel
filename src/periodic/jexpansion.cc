@@ -156,7 +156,7 @@ shared_ptr<const ZMatrix> JExpansion::compute(shared_ptr<const Matrix> density) 
   }
 
   LocalExpansion local(r12_, multipoles1, lmax_);
-  vector<shared_ptr<const ZMatrix>> lmoments = local.local_moments();
+  vector<shared_ptr<const ZMatrix>> lmoments = local.compute_local_moments();
 
   ZMatrix out(dimb1, dimb0);
   for (int i = 0; i != num_multipoles_; ++i) {
