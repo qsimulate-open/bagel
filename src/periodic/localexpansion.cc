@@ -30,7 +30,6 @@ using namespace std;
 using namespace bagel;
 
 const static Legendre plm;
-const static Factorial f;
 
 LocalExpansion::LocalExpansion(const array<double, 3> c, vector<shared_ptr<const ZMatrix>> m, const int lmax)
  : centre_(c), moments_(m), lmax_(lmax) {
@@ -62,7 +61,12 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_local_moments() {
           const int a = l + j;
           const int b = m - l + k - j;
 
-          const double prefactor = f(a - abs(b)) * plm.compute(a, abs(b), ctheta) / pow(r, a + 1);
+          double prefactor = plm.compute(a, abs(b), ctheta) / pow(r, a + 1);
+          double ft = 1.0;
+          for (int i = 1; i <= a - abs(b); ++i) {
+            prefactor *= ft;
+            ++ft;
+          }
           const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
           const double imag = prefactor * sin(abs(b) * phi);
           const complex<double> coeff(real, imag);
@@ -72,6 +76,14 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_local_moments() {
         }
       }
       assert(i2 == num_multipoles_);
+//      if (local.rms() > 1e-5) {
+//        cout << "lm = " << l << m-l << endl;
+//        (local.get_real_part())->print("Local");
+//      }
+//      if (moments_[i1]->rms() > 1e-5) {
+//        cout << "lm = " << l << m-l << endl;
+//        (moments_[i1]->get_real_part())->print("MM in local");
+//      }
       out[i1] = make_shared<const ZMatrix>(local);
     }
   }
@@ -100,8 +112,12 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_moments() {
 
           const int a = l - j;
           const int b = m - l - k + j;
-            const double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta) / f(a + abs(b));
           if (abs(b) <= a && a >= 0) {
+            double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta);
+            double ft = 1.0;
+            for (int i = 1; i <= a + abs(b); ++i) {
+              prefactor /= ft;
+              ++ft;
             }
             const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
             const double imag = prefactor * sin(abs(b) * phi);
@@ -141,8 +157,12 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_local_expansio
 
           const int a = j - l;
           const int b = k - j - m + l;
-            const double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta) / f(a + abs(b));
           if (abs(b) <= a && a >= 0) {
+            double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta);
+            double ft = 1.0;
+            for (int i = 1; i <= a + abs(b); ++i) {
+              prefactor /= ft;
+              ++ft;
             }
             const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
             const double imag = prefactor * sin(abs(b) * phi);

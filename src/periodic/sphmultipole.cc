@@ -59,7 +59,12 @@ void SphMultipole::compute_multipoles() {
       const int m = mm - l;
       const int am = abs(m);
 
-      const double coeff = pow(r, l) * plm.compute(l, am, ctheta) / f(l + am);
+      double coeff = pow(r, l) * plm.compute(l, am, ctheta);
+      double ft = 1.0;
+      for (int i = 1; i <= l + am; ++i) {
+        coeff /= ft;
+        ++ft;
+      }
 
       const double real = (m >=0) ? (coeff * cos(am * phi)) : (-1.0 * coeff * cos(am * phi));
       const double imag = coeff * sin(am * phi);
