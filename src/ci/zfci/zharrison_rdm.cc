@@ -31,6 +31,21 @@ using namespace std;
 using namespace bagel;
 using namespace btas;
 
+ZFCI_bare::ZFCI_bare(shared_ptr<const RelCIWfn> ci) {
+  print_thresh_ = 1.0e-8;
+  nele_ = ci->det()->first->nele();
+  ncore_ = ci->ncore();
+  norb_  = ci->nact();
+  nstate_ = ci->nstates();
+  energy_ = ci->energies();
+  cc_ = ci->civectors()->copy();
+  space_ = ci->det()->first;
+  int_space_ = ci->det()->second;
+  rdm1_.resize(nstate_);
+  rdm2_.resize(nstate_);
+}
+
+
 void ZHarrison::sigma_1e_annih_a(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
   shared_ptr<const Determinants> int_det = d->det();
   const int lenb = int_det->lenb();
@@ -266,7 +281,7 @@ shared_ptr<Kramers<4,ZDvec>> ZHarrison::four_down_from_civec(const int nelea, co
 }
 
 
-shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::compute_rdm4(const int jst, const int ist) const {
+shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::rdm4(const int jst, const int ist) const {
   // loop over n-4 determinant spaces
   auto rdm4 = make_shared<Kramers<8,ZRDM<4>>>();
   if (nele_ < 4) return rdm4;
@@ -311,7 +326,7 @@ shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::compute_rdm4(const int jst, const int 
 }
 
 
-shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::compute_rdm3(const int jst, const int ist) const {
+shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::rdm3(const int jst, const int ist) const {
   // loop over n-3 determinant spaces
   auto rdm3 = make_shared<Kramers<6,ZRDM<3>>>();
   if (nele_ < 3) return rdm3;
@@ -348,7 +363,7 @@ shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::compute_rdm3(const int jst, const int 
 }
 
 
-shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::compute_rdm2(const int jst, const int ist) const {
+shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::rdm2(const int jst, const int ist) const {
   auto out = make_shared<Kramers<4,ZRDM<2>>>();
   if (nele_ < 2) return out;
 
@@ -372,7 +387,7 @@ shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::compute_rdm2(const int jst, const int 
 }
 
 
-shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::compute_rdm1(const int jst, const int ist) const {
+shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::rdm1(const int jst, const int ist) const {
   auto out = make_shared<Kramers<2,ZRDM<1>>>();
   if (nele_ < 1) return out;
 
@@ -397,8 +412,6 @@ shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::compute_rdm1(const int jst, const int 
 
 
 void ZHarrison::compute_rdm12() {
-
-
   // for one-body RDM
   rdm1_.clear();
   rdm2_.clear();
@@ -407,12 +420,12 @@ void ZHarrison::compute_rdm12() {
 
   for (int istate = 0; istate != nstate_; ++istate) {
     // one body RDM
-    rdm1_[istate] = compute_rdm1(istate, istate);
+    rdm1_[istate] = rdm1(istate, istate);
     if (!rdm1_[istate]->exist({1,0}))
       rdm1_[istate]->at({1,0}) = rdm1_[istate]->at({0,0})->clone();
 
     // two body RDM
-    rdm2_[istate] = compute_rdm2(istate, istate);
+    rdm2_[istate] = rdm2(istate, istate);
 
     // append permutation information
     rdm2_[istate]->emplace_perm({{0,1,3,2}},-1);

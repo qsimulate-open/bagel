@@ -36,6 +36,7 @@ class SMITH_Info {
     using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
     template<int N>
     using RDMType = typename std::conditional<std::is_same<DataType,double>::value,RDM<N>,Kramers<N*2,ZRDM<N>>>::type;
+    using CIWfnT  = typename std::conditional<std::is_same<DataType,double>::value,CIWfn,RelCIWfn>::type;
 
     std::shared_ptr<const Reference> ref_;
     std::string method_;
@@ -87,7 +88,7 @@ class SMITH_Info {
 
     std::shared_ptr<const Reference> ref() const { return ref_; }
     std::shared_ptr<const Geometry> geom() const { return ref_->geom(); }
-    std::shared_ptr<const CIWfn> ciwfn() const { return ref_->ciwfn(); }
+    std::shared_ptr<const CIWfnT> ciwfn() const;
 
     // this function hides coeff function in Reference and RelReference
     std::shared_ptr<const MatType> coeff() const { assert(false); }
@@ -100,9 +101,11 @@ template<> std::tuple<std::shared_ptr<const Kramers<2,ZRDM<1>>>, std::shared_ptr
 template<> std::tuple<std::shared_ptr<const Kramers<6,ZRDM<3>>>, std::shared_ptr<const Kramers<8,ZRDM<4>>>>
            SMITH_Info<std::complex<double>>::rdm34(const int ist, const int jst) const;
 
+template<> std::shared_ptr<const CIWfn>   SMITH_Info<double>::ciwfn() const;
 template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::coeff() const;
 template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::hcore() const;
 template<> std::shared_ptr<const RDM<1>>  SMITH_Info<double>::rdm1_av() const;
+template<> std::shared_ptr<const RelCIWfn>SMITH_Info<std::complex<double>>::ciwfn() const;
 template<> std::shared_ptr<const ZMatrix> SMITH_Info<std::complex<double>>::coeff() const;
 template<> std::shared_ptr<const ZMatrix> SMITH_Info<std::complex<double>>::hcore() const;
 template<> std::shared_ptr<const ZRDM<1>> SMITH_Info<std::complex<double>>::rdm1_av() const;

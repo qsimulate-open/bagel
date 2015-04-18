@@ -30,6 +30,8 @@
 #include <src/scf/coeff.h>
 #include <src/wfn/geometry.h>
 #include <src/ci/fci/dvec.h>
+#include <src/ci/zfci/reldvec.h>
+#include <src/ci/zfci/relspace.h>
 
 // Stores the result of some CI type wavefunction (FCI, CASSCF, etc.)
 
@@ -78,6 +80,7 @@ class CIWfn_ {
 };
 
 using CIWfn = CIWfn_<Dvec,Determinants>;
+using RelCIWfn = CIWfn_<RelZDvec,std::pair<std::shared_ptr<const RelSpace>,std::shared_ptr<const RelSpace>>>;
 
 }
 

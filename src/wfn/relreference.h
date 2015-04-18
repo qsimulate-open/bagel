@@ -46,7 +46,7 @@ class RelReference : public Reference {
     std::shared_ptr<const ZMatrix> rdm1_av_;
     std::shared_ptr<const ZMatrix> rdm2_av_;
 
-    std::shared_ptr<const CIWfn> ciwfn_;
+    std::shared_ptr<const RelCIWfn> ciwfn_;
 
   private:
     friend class boost::serialization::access;
@@ -62,10 +62,10 @@ class RelReference : public Reference {
 //               std::shared_ptr<const VecRDM<1>> rdm1 = std::make_shared<VecRDM<1>>(),
 //               std::shared_ptr<const VecRDM<2>> rdm2 = std::make_shared<VecRDM<2>>(),
                  std::shared_ptr<const ZMatrix> rdm1_av = nullptr,
-                 std::shared_ptr<const ZMatrix> rdm2_av = nullptr)
-//               std::shared_ptr<const CIWfn> ci = nullptr)
+                 std::shared_ptr<const ZMatrix> rdm2_av = nullptr,
+                 std::shared_ptr<const RelCIWfn> ci = nullptr)
      : Reference(g, nullptr, nocc, nact, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c), rel_(rel), kramers_(kram),
-                                                     rdm1_av_(rdm1_av), rdm2_av_(rdm2_av) {
+                                                     rdm1_av_(rdm1_av), rdm2_av_(rdm2_av), ciwfn_(ci) {
     }
 
     std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
@@ -79,13 +79,15 @@ class RelReference : public Reference {
     bool rel() const { return rel_; }
     bool kramers() const { return kramers_; }
 
+    std::shared_ptr<const RelCIWfn> ciwfn() const { return ciwfn_; }
+
     std::shared_ptr<const ZMatrix> rdm1_av() const { return rdm1_av_; }
     std::shared_ptr<const ZMatrix> rdm2_av() const { return rdm2_av_; }
 
-    std::shared_ptr<const Kramers<2,ZRDM<1>>> rdm1() const;
-    std::shared_ptr<const Kramers<4,ZRDM<2>>> rdm2() const;
-    std::shared_ptr<const Kramers<6,ZRDM<3>>> rdm3() const;
-    std::shared_ptr<const Kramers<8,ZRDM<4>>> rdm4() const;
+    std::shared_ptr<const Kramers<2,ZRDM<1>>> rdm1(const int ist, const int jst) const;
+    std::shared_ptr<const Kramers<4,ZRDM<2>>> rdm2(const int ist, const int jst) const;
+    std::shared_ptr<const Kramers<6,ZRDM<3>>> rdm3(const int ist, const int jst) const;
+    std::shared_ptr<const Kramers<8,ZRDM<4>>> rdm4(const int ist, const int jst) const;
 
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin, const bool check_geom_change = true) const override;
 

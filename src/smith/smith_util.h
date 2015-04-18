@@ -108,32 +108,34 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
       bit[i] = indices[i].kramers() ? 1 : 0;
     // TODO in principle there is repetition (especially when active orbitals are separated into small blocks)
     auto block = input->get_data(bit);
+    if (block) {
+      assert(block->range().ordinal().contiguous());
+      assert(target->rank() == block->range().rank() && target->rank() > 0);
 
-    assert(block->range().ordinal().contiguous());
-    assert(target->rank() == block->range().rank() && target->rank() > 0);
+      std::vector<size_t> extent(rank);
+      auto e = extent.rbegin();
+      for (int i = 0; i != rank; ++i)
+        *e++ = block->extent(i);
 
-    std::vector<size_t> extent(rank);
-    auto e = extent.rbegin();
-    for (int i = 0; i != rank; ++i)
-      *e++ = block->extent(i);
-
-    std::vector<size_t> stride_target;
-    for (auto i = extent.begin(); i != extent.end(); ++i) {
-      auto ii = i; ++ii;
-      stride_target.push_back(std::accumulate(ii, extent.end(), 1ul, std::multiplies<size_t>()));
-    }
-
-    const size_t backsize = indices.back().size();
-    for (size_t n = 0; n != buffersize; n += backsize) {
-      size_t offset = 0lu;
-      size_t tmp = n;
-      for (int i = 0; i != rank; ++i) {
-        offset += (tmp / stride[i] + indices[i].kramers_offset() - inpoffsets[i]) * stride_target[i];
-        tmp = n % stride[i];
+      std::vector<size_t> stride_target;
+      for (auto i = extent.begin(); i != extent.end(); ++i) {
+        auto ii = i; ++ii;
+        stride_target.push_back(std::accumulate(ii, extent.end(), 1ul, std::multiplies<size_t>()));
       }
-      std::copy_n(block->data()+offset, backsize, buffer.get()+n);
-    }
 
+      const size_t backsize = indices.back().size();
+      for (size_t n = 0; n != buffersize; n += backsize) {
+        size_t offset = 0lu;
+        size_t tmp = n;
+        for (int i = 0; i != rank; ++i) {
+          offset += (tmp / stride[i] + indices[i].kramers_offset() - inpoffsets[i]) * stride_target[i];
+          tmp = n % stride[i];
+        }
+        std::copy_n(block->data()+offset, backsize, buffer.get()+n);
+      }
+    } else {
+      std::fill_n(buffer.get(), buffersize, 0.0);
+    }
     target->put_block(buffer, std::vector<Index>(indices.rbegin(), indices.rend()));
   }
 }

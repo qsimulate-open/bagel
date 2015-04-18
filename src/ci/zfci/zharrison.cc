@@ -370,3 +370,8 @@ shared_ptr<const ZMatrix> ZHarrison::swap_pos_neg(shared_ptr<const ZMatrix> coef
   return out;
 }
 
+
+shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
+  using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
+  return make_shared<RelCIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, make_shared<PairType>(make_pair(space_, int_space_)));
+}

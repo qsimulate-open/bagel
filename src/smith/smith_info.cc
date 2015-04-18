@@ -46,8 +46,8 @@ tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>
   SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
 
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-  auto rdm1 = ref->rdm1();
-  auto rdm2 = ref->rdm2();
+  auto rdm1 = ref->rdm1(ist, jst);
+  auto rdm2 = ref->rdm2(ist, jst);
   return make_tuple(rdm1, rdm2);
 }
 
@@ -57,8 +57,8 @@ tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>
   SMITH_Info<complex<double>>::rdm34(const int ist, const int jst) const {
 
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-  auto rdm3 = ref->rdm3();
-  auto rdm4 = ref->rdm4();
+  auto rdm3 = ref->rdm3(ist, jst);
+  auto rdm4 = ref->rdm4(ist, jst);
   return make_tuple(rdm3, rdm4);
 }
 
@@ -72,6 +72,18 @@ shared_ptr<const RDM<1>> SMITH_Info<double>::rdm1_av() const {
 template<>
 shared_ptr<const ZRDM<1>> SMITH_Info<complex<double>>::rdm1_av() const {
   return nullptr;
+}
+
+
+template<>
+shared_ptr<const CIWfn> SMITH_Info<double>::ciwfn() const {
+  return ref_->ciwfn();
+}
+
+
+template<>
+shared_ptr<const RelCIWfn> SMITH_Info<complex<double>>::ciwfn() const {
+  return dynamic_pointer_cast<const RelReference>(ref_)->ciwfn();
 }
 
 

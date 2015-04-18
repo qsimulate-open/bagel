@@ -125,7 +125,7 @@ class ZHarrison : public Method {
     // obtain determinants for guess generation
     void generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset);
     // generate spin-adapted guess configurations
-    virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb);
+    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb);
 
     // print functions
     void print_header() const;
@@ -189,7 +189,7 @@ class ZHarrison : public Method {
       const_denom();
     }
 
-    void compute() override;
+    virtual void compute() override;
 
     // returns members
     int norb() const { return norb_; }
@@ -198,7 +198,7 @@ class ZHarrison : public Method {
 
     int nij() const { return norb_*norb_; }
 
-    // TODO
+    std::shared_ptr<const RelCIWfn> conv_to_ciwfn() const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
     std::vector<double> energy() const { return energy_; }
@@ -209,10 +209,10 @@ class ZHarrison : public Method {
 
     // functions related to RDMs
     void compute_rdm12();
-    std::shared_ptr<Kramers<2,ZRDM<1>>> compute_rdm1(const int jst, const int ist) const;
-    std::shared_ptr<Kramers<4,ZRDM<2>>> compute_rdm2(const int jst, const int ist) const;
-    std::shared_ptr<Kramers<6,ZRDM<3>>> compute_rdm3(const int jst, const int ist) const;
-    std::shared_ptr<Kramers<8,ZRDM<4>>> compute_rdm4(const int jst, const int ist) const;
+    std::shared_ptr<Kramers<2,ZRDM<1>>> rdm1(const int jst, const int ist) const;
+    std::shared_ptr<Kramers<4,ZRDM<2>>> rdm2(const int jst, const int ist) const;
+    std::shared_ptr<Kramers<6,ZRDM<3>>> rdm3(const int jst, const int ist) const;
+    std::shared_ptr<Kramers<8,ZRDM<4>>> rdm4(const int jst, const int ist) const;
 
     std::shared_ptr<const ZMatrix> rdm1_av() const;
     std::shared_ptr<const ZMatrix> rdm2_av() const;
@@ -220,6 +220,14 @@ class ZHarrison : public Method {
     std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const T& b) const { KTag<2> t(b); return rdm1_av_->at(t); }
     template<typename T>
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
+};
+
+
+// only for RDM computation.
+class ZFCI_bare : public ZHarrison {
+  public:
+    ZFCI_bare(std::shared_ptr<const RelCIWfn> ci);
+    void compute() override { assert(false); }
 };
 
 }

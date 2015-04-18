@@ -484,7 +484,7 @@ shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
   shared_ptr<const ZMatrix> coeff = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false); // transform coefficient to striped structure
 
   auto out = make_shared<RelReference>(geom_, coeff, energy_.back(), nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*rel*/true, /*kramers*/true,
-                                       fci_->rdm1_av(), fci_->rdm2_av());
+                                       fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
   return out;
 }
 

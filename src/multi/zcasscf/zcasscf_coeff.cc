@@ -326,7 +326,6 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(const bool stripes) const {
 
 
 shared_ptr<ZMatrix> ZCASSCF::format_coeff(const int nclosed, const int nact, const int nvirt, shared_ptr<const ZMatrix> coeff, const bool striped) {
-  assert(coeff->ndim() == coeff->mdim()); // TODO : generalize for when coeff is not a square ; shouldn't be too difficult
   auto ctmp2 = coeff->clone();
   if (striped) {
     // Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
