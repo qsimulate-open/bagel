@@ -45,15 +45,17 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
   closed_ = IndexRange(info_->nclosed()-info_->ncore(), max, 0, info_->ncore());
   if (is_same<DataType,complex<double>>::value)
-    closed_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock(), info_->ncore()*2+closed_.size()));
+    closed_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock(), info_->ncore()*2+closed_.size(), info_->ncore()));
 
   active_ = IndexRange(info_->nact(), min(max,10), closed_.nblock(), info_->ncore()+closed_.size());
   if (is_same<DataType,complex<double>>::value)
-    active_.merge(IndexRange(info_->nact(), min(max,10), closed_.nblock()+active_.nblock(), info_->ncore()*2+closed_.size()+active_.size()));
+    active_.merge(IndexRange(info_->nact(), min(max,10), closed_.nblock()+active_.nblock(), info_->ncore()*2+closed_.size()+active_.size(),
+                                                                                            info_->ncore()*2+closed_.size()));
 
   virt_ = IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock(), info_->ncore()*2+closed_.size()+active_.size());
   if (is_same<DataType,complex<double>>::value)
-    virt_.merge(IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock()+virt_.nblock(), info_->ncore()*2+closed_.size()+active_.size()+virt_.size()));
+    virt_.merge(IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock()+virt_.nblock(), info_->ncore()*2+closed_.size()+active_.size()+virt_.size(),
+                                                                                                  info_->ncore()*2+closed_.size()+active_.size()));
 
   all_    = closed_; all_.merge(active_); all_.merge(virt_);
 
