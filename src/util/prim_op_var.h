@@ -32,6 +32,12 @@
 namespace bagel {
 
 template<typename DataType>
+void sort_indices(const std::array<int,2>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,2>& d) {
+  throw std::logic_error("This case has not been implemented in prim_op_var.h");
+}
+
+
+template<typename DataType>
 void sort_indices(const std::array<int,4>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,4>& d) {
   if (o[0] == 0 && o[1] == 1 && o[2] == 2 && o[3] == 3 && std::abs(a-1.0) < numerical_zero__ && std::abs(b) < numerical_zero__)
     sort_indices<0,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]);

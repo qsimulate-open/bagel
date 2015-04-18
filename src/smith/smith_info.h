@@ -34,6 +34,8 @@ template<typename DataType>
 class SMITH_Info {
   protected:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
+    template<int N>
+    using RDMType = typename std::conditional<std::is_same<DataType,double>::value,RDM<N>,Kramers<N*2,ZRDM<N>>>::type;
 
     std::shared_ptr<const Reference> ref_;
     std::string method_;
@@ -74,10 +76,8 @@ class SMITH_Info {
 
     std::shared_ptr<const RDM<1,DataType>> rdm1_av() const;
 
-    std::tuple<std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>>
-      rdm12(const int ist, const int jst) const;
-    std::tuple<std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>>
-      rdm34(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<const RDMType<1>>, std::shared_ptr<const RDMType<2>>> rdm12(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<const RDMType<3>>, std::shared_ptr<const RDMType<4>>> rdm34(const int ist, const int jst) const;
 
     double thresh() const { return thresh_; }
     int maxiter() const { return maxiter_; }
@@ -95,8 +95,10 @@ class SMITH_Info {
 
 template<> std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const;
 template<> std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const;
-template<> std::tuple<std::shared_ptr<const ZRDM<1>>, std::shared_ptr<const ZRDM<2>>> SMITH_Info<std::complex<double>>::rdm12(const int ist, const int jst) const;
-template<> std::tuple<std::shared_ptr<const ZRDM<3>>, std::shared_ptr<const ZRDM<4>>> SMITH_Info<std::complex<double>>::rdm34(const int ist, const int jst) const;
+template<> std::tuple<std::shared_ptr<const Kramers<2,ZRDM<1>>>, std::shared_ptr<const Kramers<4,ZRDM<2>>>>
+           SMITH_Info<std::complex<double>>::rdm12(const int ist, const int jst) const;
+template<> std::tuple<std::shared_ptr<const Kramers<6,ZRDM<3>>>, std::shared_ptr<const Kramers<8,ZRDM<4>>>>
+           SMITH_Info<std::complex<double>>::rdm34(const int ist, const int jst) const;
 
 template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::coeff() const;
 template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::hcore() const;

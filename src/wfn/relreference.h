@@ -27,6 +27,7 @@
 #define __SRC_REL_RELREFERENCE_H
 
 #include <src/wfn/reference.h>
+#include <src/util/kramers.h>
 
 namespace bagel {
 
@@ -44,6 +45,8 @@ class RelReference : public Reference {
     // RDM things
     std::shared_ptr<const ZMatrix> rdm1_av_;
     std::shared_ptr<const ZMatrix> rdm2_av_;
+
+    std::shared_ptr<const CIWfn> ciwfn_;
 
   private:
     friend class boost::serialization::access;
@@ -78,6 +81,11 @@ class RelReference : public Reference {
 
     std::shared_ptr<const ZMatrix> rdm1_av() const { return rdm1_av_; }
     std::shared_ptr<const ZMatrix> rdm2_av() const { return rdm2_av_; }
+
+    std::shared_ptr<const Kramers<2,ZRDM<1>>> rdm1() const;
+    std::shared_ptr<const Kramers<4,ZRDM<2>>> rdm2() const;
+    std::shared_ptr<const Kramers<6,ZRDM<3>>> rdm3() const;
+    std::shared_ptr<const Kramers<8,ZRDM<4>>> rdm4() const;
 
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin, const bool check_geom_change = true) const override;
 

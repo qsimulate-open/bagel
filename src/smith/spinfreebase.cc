@@ -117,42 +117,42 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 }
 
 
-template<typename DataType>
-void SpinFreeMethod<DataType>::feed_rdm_denom(shared_ptr<const MatType> fockact) {
+template<>
+void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
   const int nclo = info_->nclosed();
   const int nstates = info_->ciwfn()->nstates();
-  rdm0all_ = make_shared<Vec<Tensor_<DataType>>>();
-  rdm1all_ = make_shared<Vec<Tensor_<DataType>>>();
-  rdm2all_ = make_shared<Vec<Tensor_<DataType>>>();
-  rdm3all_ = make_shared<Vec<Tensor_<DataType>>>();
-  rdm4all_ = make_shared<Vec<Tensor_<DataType>>>();
+  rdm0all_ = make_shared<Vec<Tensor_<double>>>();
+  rdm1all_ = make_shared<Vec<Tensor_<double>>>();
+  rdm2all_ = make_shared<Vec<Tensor_<double>>>();
+  rdm3all_ = make_shared<Vec<Tensor_<double>>>();
+  rdm4all_ = make_shared<Vec<Tensor_<double>>>();
 
-  auto denom = make_shared<Denom<DataType>>(fockact, nstates, /*thresh*/1.0e-9);
+  auto denom = make_shared<Denom<double>>(fockact, nstates, /*thresh*/1.0e-9);
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
     for (int jst = 0; jst != nstates; ++jst) {
 
-      auto rdm0t = make_shared<Tensor_<DataType>>(vector<IndexRange>());
-      auto rdm1t = make_shared<Tensor_<DataType>>(vector<IndexRange>(2,active_));
-      auto rdm2t = make_shared<Tensor_<DataType>>(vector<IndexRange>(4,active_));
-      auto rdm3t = make_shared<Tensor_<DataType>>(vector<IndexRange>(6,active_));
-      auto rdm4t = make_shared<Tensor_<DataType>>(vector<IndexRange>(8,active_));
+      auto rdm0t = make_shared<Tensor_<double>>(vector<IndexRange>());
+      auto rdm1t = make_shared<Tensor_<double>>(vector<IndexRange>(2,active_));
+      auto rdm2t = make_shared<Tensor_<double>>(vector<IndexRange>(4,active_));
+      auto rdm3t = make_shared<Tensor_<double>>(vector<IndexRange>(6,active_));
+      auto rdm4t = make_shared<Tensor_<double>>(vector<IndexRange>(8,active_));
 
-      shared_ptr<const RDM<1,DataType>> rdm1;
-      shared_ptr<const RDM<2,DataType>> rdm2;
-      shared_ptr<const RDM<3,DataType>> rdm3;
-      shared_ptr<const RDM<4,DataType>> rdm4;
+      shared_ptr<const RDM<1>> rdm1;
+      shared_ptr<const RDM<2>> rdm2;
+      shared_ptr<const RDM<3>> rdm3;
+      shared_ptr<const RDM<4>> rdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
       tie(rdm3, rdm4) = info_->rdm34(jst, ist);
 
-      unique_ptr<DataType[]> data0(new DataType[1]);
+      unique_ptr<double[]> data0(new double[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
       rdm0t->put_block(data0);
-      fill_block<2,DataType>(rdm1t, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
-      fill_block<4,DataType>(rdm2t, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
-      fill_block<6,DataType>(rdm3t, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
-      fill_block<8,DataType>(rdm4t, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
+      fill_block<2,double>(rdm1t, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
+      fill_block<4,double>(rdm2t, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
+      fill_block<6,double>(rdm3t, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
+      fill_block<8,double>(rdm4t, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
 
       rdm0all_->emplace(jst, ist, rdm0t);
       rdm1all_->emplace(jst, ist, rdm1t);
@@ -165,6 +165,57 @@ void SpinFreeMethod<DataType>::feed_rdm_denom(shared_ptr<const MatType> fockact)
   }
   denom->compute();
   denom_ = denom;
+}
+
+
+template<>
+void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> fockact) {
+  const int nclo = info_->nclosed();
+  const int nstates = info_->ciwfn()->nstates();
+  rdm0all_ = make_shared<Vec<Tensor_<complex<double>>>>();
+  rdm1all_ = make_shared<Vec<Tensor_<complex<double>>>>();
+  rdm2all_ = make_shared<Vec<Tensor_<complex<double>>>>();
+  rdm3all_ = make_shared<Vec<Tensor_<complex<double>>>>();
+  rdm4all_ = make_shared<Vec<Tensor_<complex<double>>>>();
+
+  auto denom = make_shared<Denom<complex<double>>>(fockact, nstates, /*thresh*/1.0e-9);
+
+  // TODO this can be reduced to half by bra-ket symmetry
+  for (int ist = 0; ist != nstates; ++ist) {
+    for (int jst = 0; jst != nstates; ++jst) {
+
+      auto rdm0t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>());
+      auto rdm1t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(2,active_));
+      auto rdm2t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(4,active_));
+      auto rdm3t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(6,active_));
+      auto rdm4t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(8,active_));
+
+      shared_ptr<const Kramers<2,ZRDM<1>>> rdm1;
+      shared_ptr<const Kramers<4,ZRDM<2>>> rdm2;
+      shared_ptr<const Kramers<6,ZRDM<3>>> rdm3;
+      shared_ptr<const Kramers<8,ZRDM<4>>> rdm4;
+      tie(rdm1, rdm2) = info_->rdm12(jst, ist);
+      tie(rdm3, rdm4) = info_->rdm34(jst, ist);
+
+      unique_ptr<complex<double>[]> data0(new complex<double>[1]);
+      data0[0] = jst == ist ? 1.0 : 0.0;
+      rdm0t->put_block(data0);
+      fill_block<2,complex<double>,ZRDM<1>>(rdm1t, rdm1, vector<int>(2,nclo*2), vector<IndexRange>(2,active_));
+      fill_block<4,complex<double>,ZRDM<2>>(rdm2t, rdm2, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
+      fill_block<6,complex<double>,ZRDM<3>>(rdm3t, rdm3, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
+      fill_block<8,complex<double>,ZRDM<4>>(rdm4t, rdm4, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
+
+      rdm0all_->emplace(jst, ist, rdm0t);
+      rdm1all_->emplace(jst, ist, rdm1t);
+      rdm2all_->emplace(jst, ist, rdm2t);
+      rdm3all_->emplace(jst, ist, rdm3t);
+      rdm4all_->emplace(jst, ist, rdm4t);
+
+//    denom->append(jst, ist, rdm1, rdm2, rdm3, rdm4);
+    }
+  }
+//denom->compute();
+//denom_ = denom;
 }
 
 

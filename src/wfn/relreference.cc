@@ -135,3 +135,9 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
   }
   return out;
 }
+
+
+shared_ptr<const Kramers<2,ZRDM<1>>> RelReference::rdm1() const { return nullptr; }
+shared_ptr<const Kramers<4,ZRDM<2>>> RelReference::rdm2() const { return nullptr; }
+shared_ptr<const Kramers<6,ZRDM<3>>> RelReference::rdm3() const { return nullptr; }
+shared_ptr<const Kramers<8,ZRDM<4>>> RelReference::rdm4() const { return nullptr; }

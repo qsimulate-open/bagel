@@ -42,16 +42,24 @@ tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rd
 
 
 template<>
-tuple<shared_ptr<const ZRDM<1>>, shared_ptr<const ZRDM<2>>> SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
-  assert(false);
-  return make_tuple(shared_ptr<const ZRDM<1>>(), shared_ptr<const ZRDM<2>>());
+tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>>
+  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
+
+  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
+  auto rdm1 = ref->rdm1();
+  auto rdm2 = ref->rdm2();
+  return make_tuple(rdm1, rdm2);
 }
 
 
 template<>
-tuple<shared_ptr<const ZRDM<3>>, shared_ptr<const ZRDM<4>>> SMITH_Info<complex<double>>::rdm34(const int ist, const int jst) const {
-  assert(false);
-  return make_tuple(shared_ptr<const ZRDM<3>>(), shared_ptr<const ZRDM<4>>());
+tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>>
+  SMITH_Info<complex<double>>::rdm34(const int ist, const int jst) const {
+
+  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
+  auto rdm3 = ref->rdm3();
+  auto rdm4 = ref->rdm4();
+  return make_tuple(rdm3, rdm4);
 }
 
 
