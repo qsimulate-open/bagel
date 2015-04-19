@@ -97,7 +97,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
   // rdms.
   if (info_->ciwfn()) {
-    auto fockact = make_shared<MatType>(info_->nact(), info_->nact());
+    auto fockact = make_shared<MatType>(active_.size(), active_.size());
     for (auto& i1 : active_)
       for (auto& i0 : active_)
         fockact->copy_block(i0.offset()-info_->nclosed(), i1.offset()-info_->nclosed(), i0.size(), i1.size(), f1_->get_block(i0, i1).get());
