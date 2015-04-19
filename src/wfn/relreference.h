@@ -64,7 +64,7 @@ class RelReference : public Reference {
                  std::shared_ptr<const ZMatrix> rdm1_av = nullptr,
                  std::shared_ptr<const ZMatrix> rdm2_av = nullptr,
                  std::shared_ptr<const RelCIWfn> ci = nullptr)
-     : Reference(g, nullptr, nocc, nact, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c), rel_(rel), kramers_(kram),
+     : Reference(g, nullptr, nocc, nact, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(0, c->mdim()-nneg_)), relcoeff_full_(c), rel_(rel), kramers_(kram),
                                                      rdm1_av_(rdm1_av), rdm2_av_(rdm2_av), ciwfn_(ci) {
     }
 

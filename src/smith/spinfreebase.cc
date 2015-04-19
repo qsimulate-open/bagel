@@ -41,21 +41,21 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   if (info_->ncore() > info_->nclosed())
     throw runtime_error("frozen core has been specified but there are not enough closed orbitals");
 
-  // TODO we need to update the following. Probably it is a good idea to generalize IndexRange class
+  const int ncore2 = info_->ncore()*(is_same<DataType,double>::value ? 1 : 2);
 
   closed_ = IndexRange(info_->nclosed()-info_->ncore(), max, 0, info_->ncore());
   if (is_same<DataType,complex<double>>::value)
-    closed_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock(), info_->ncore()*2+closed_.size(), info_->ncore()));
+    closed_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock(), ncore2+closed_.size(), info_->ncore()));
 
-  active_ = IndexRange(info_->nact(), min(max,10), closed_.nblock(), info_->ncore()+closed_.size());
+  active_ = IndexRange(info_->nact(), min(max,10), closed_.nblock(), ncore2+closed_.size());
   if (is_same<DataType,complex<double>>::value)
-    active_.merge(IndexRange(info_->nact(), min(max,10), closed_.nblock()+active_.nblock(), info_->ncore()*2+closed_.size()+active_.size(),
-                                                                                            info_->ncore()*2+closed_.size()));
+    active_.merge(IndexRange(info_->nact(), min(max,10), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
+                                                                                            ncore2+closed_.size()));
 
-  virt_ = IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock(), info_->ncore()*2+closed_.size()+active_.size());
+  virt_ = IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());
   if (is_same<DataType,complex<double>>::value)
-    virt_.merge(IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock()+virt_.nblock(), info_->ncore()*2+closed_.size()+active_.size()+virt_.size(),
-                                                                                                  info_->ncore()*2+closed_.size()+active_.size()));
+    virt_.merge(IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock()+virt_.nblock(), ncore2+closed_.size()+active_.size()+virt_.size(),
+                                                                                                  ncore2+closed_.size()+active_.size()));
 
   all_    = closed_; all_.merge(active_); all_.merge(virt_);
 
