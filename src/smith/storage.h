@@ -77,6 +77,11 @@ class Storage_base {
                              [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size_alloc(); });
     }
 
+    void conjugate_inplace() {
+      for (auto& i : hashtable_)
+        i.second->conjugate_inplace();
+    }
+
 /*  *** these functions should be implemented in the derived classes.
     virtual std::unique_ptr<DataType[]> get_block(const size_t& key) const = 0;
     virtual std::unique_ptr<DataType[]> move_block(const size_t& key) = 0;
@@ -118,6 +123,11 @@ class StorageBlock {
     DataType dot_product(const StorageBlock& o) const;
     void ax_plus_y(const DataType& a, const StorageBlock& o);
     void scale(const DataType& a);
+
+    void conjugate_inplace() {
+      for (size_t i = 0; i != size_alloc(); ++i)
+        data_[i] = detail::conj(data_[i]);
+    }
 };
 
 

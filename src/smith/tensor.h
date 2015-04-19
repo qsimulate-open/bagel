@@ -150,6 +150,10 @@ class Tensor_ {
       data_->zero();
     }
 
+    void conjugate_inplace() {
+      data_->conjugate_inplace();
+    }
+
     std::vector<DataType> diag() const;
 
     std::shared_ptr<MatType> matrix() const;

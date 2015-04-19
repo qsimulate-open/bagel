@@ -205,6 +205,14 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       fill_block<6,complex<double>,ZRDM<3>>(rdm3t, rdm3, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
       fill_block<8,complex<double>,ZRDM<4>>(rdm4t, rdm4, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
 
+      // due to convention we have to conjugate the tensors.
+      // TODO perhaps better to conjugate everything consistently, i.e., remove the following lines
+      //      (note that there is get_conjg in K2ext, too).
+      rdm1t->conjugate_inplace();
+      rdm2t->conjugate_inplace();
+      rdm3t->conjugate_inplace();
+      rdm4t->conjugate_inplace();
+
       rdm0all_->emplace(jst, ist, rdm0t);
       rdm1all_->emplace(jst, ist, rdm1t);
       rdm2all_->emplace(jst, ist, rdm2t);
