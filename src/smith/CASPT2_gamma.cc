@@ -32,6 +32,7 @@
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
+using namespace bagel::SMITH::CASPT2;
 
 shared_ptr<FutureTensor> CASPT2::CASPT2::Gamma0_() {
   vector<IndexRange> Gamma0_index = {active_, active_, active_, active_};

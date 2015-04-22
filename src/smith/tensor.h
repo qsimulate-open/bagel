@@ -173,7 +173,9 @@ class Tensor_ {
 extern template class Tensor_<double>;
 extern template class Tensor_<std::complex<double>>;
 
-using Tensor = Tensor_<double>;
+namespace CASPT2 { using Tensor = Tensor_<double>; }
+namespace MRCI   { using Tensor = Tensor_<double>; }
+namespace RelMRCI{ using Tensor = Tensor_<std::complex<double>>; }
 
 }
 }

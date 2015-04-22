@@ -48,7 +48,9 @@ class FutureTensor_ : public Tensor_<DataType> {
 
 };
 
-using FutureTensor = FutureTensor_<double>;
+namespace CASPT2  { using FutureTensor = FutureTensor_<double>; }
+namespace MRCI    { using FutureTensor = FutureTensor_<double>; }
+namespace RelMRCI { using FutureTensor = FutureTensor_<std::complex<double>>; }
 
 }
 }
