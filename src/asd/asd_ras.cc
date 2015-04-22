@@ -57,20 +57,24 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer(shar
   const int norb = cbra->det()->norb();
   assert(*cbra->det() == *cket->det());
 
+  Timer mtime;
   auto dket = make_shared<RASDvec>(cket->det(), norb*norb);
   for (int ij = 0; ij != norb*norb; ++ij) {
     dket->data(ij)->zero();
   }
 
-  sigma_2a1(cket, dket);
-  sigma_2a2(cket, dket);
+  sigma_2a(cket, dket);
+//sigma_2a1(cket, dket);
+//sigma_2a2(cket, dket);
 
   #if 1
   auto dbra = make_shared<RASDvec>(cbra->det(), norb*norb);
   for (int ij = 0; ij != norb*norb; ++ij)
     dbra->data(ij)->zero();
-  sigma_2a1(cbra, dbra);
-  sigma_2a2(cbra, dbra);
+  sigma_2a(cbra, dbra);
+//sigma_2a1(cbra, dbra);
+//sigma_2a2(cbra, dbra);
+  std::cout << "  o single monomer RDM - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
 
   return compute_rdm12_last_step(cbra, dbra, dket);
   #else
@@ -122,9 +126,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
       }
     }
     #endif
-    cout << "1rdm done.." << endl;
-    auto rdm1_mat = rdm1->rdm1_mat(/*nclosed*/0);
-    rdm1_mat->print("RAS 1RDM", norb);
+  //cout << "1rdm done.." << endl;
+  //auto rdm1_mat = rdm1->rdm1_mat(/*nclosed*/0);
+  //rdm1_mat->print("RAS 1RDM", norb);
   }
 
 
@@ -154,7 +158,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
           rdm2->element(j,k,k,i) -= rdm1->element(j,i);
 
 
-    cout << "2rdm done.." << endl;
+  //cout << "2rdm done.." << endl;
 
     //RDM2 symmetrize (out-of-excitation free parts are copied)
     for (int i = 0, ij = 0; i != norb; ++i)
@@ -324,6 +328,40 @@ void ASD_RAS::sigma_2a2(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) co
 
 }
 
+void ASD_RAS::sigma_2a(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
+  shared_ptr<const RASDeterminants> det = cc->det();
+
+  for (auto& block : cc->blocks()) {
+    if (block) {
+      const size_t a_offset = block->stringsa()->offset();
+      const size_t b_offset = block->stringsb()->offset();
+
+      for (size_t ia = 0, ab = 0; ia < block->stringsa()->size(); ++ia) {
+        const auto abit = block->string_bits_a(ia);
+        for (size_t jb = 0; jb < block->stringsb()->size(); ++jb, ++ab) {
+          const auto bbit = block->string_bits_b(jb);
+          double coef = block->element(ab);
+
+          for (auto& phi : det->phib(jb + b_offset)) {
+            assert(phi.target == jb + b_offset);
+            const auto sbit = det->string_bits_b(phi.source);
+            if(det->allowed(abit,sbit))
+              d->data(phi.ij)->element(sbit,abit) += static_cast<double>(phi.sign) * coef;
+          }
+
+          for (auto& phi : det->phia(ia + a_offset)) {
+            assert(phi.target == ia + a_offset);
+            const auto sbit = det->string_bits_a(phi.source);
+            if(det->allowed(sbit,bbit))
+              d->data(phi.ij)->element(bbit,sbit) += static_cast<double>(phi.sign) * coef;
+          }
+
+        }
+      }
+    }
+  }
+
+}
 
 void ASD_RAS::sigma_2a1_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
   shared_ptr<const RASDeterminants> det = cc->det();
