@@ -589,7 +589,10 @@ void ASD_base::debug_rdm(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, con
     //debug->print(1.0e-10);
     for (int i = 0; i !=nactT; ++i)
       for (int j = 0; j !=nactT; ++j)
-        assert(fabs(debug->element(j,i)) < 1.0e-10);
+        if(fabs(debug->element(j,i)) > 1.0e-10) {
+          cout << j << " " << i << " : " << debug->element(j,i) << endl;
+          throw runtime_error("Partial trace check failed");
+        }
   }
 }
 

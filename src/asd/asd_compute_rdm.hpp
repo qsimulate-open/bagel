@@ -30,6 +30,8 @@
 
 template <class VecType>
 void ASD<VecType>::compute_rdm12() {
+  Timer rdmtime;
+  std::cout << std::endl << " ===== ASD RDM Computation ==== " << std::endl;
   const int norbA = dimer_->active_refs().first->nact();
   const int norbB = dimer_->active_refs().second->nact();
 
@@ -43,11 +45,13 @@ void ASD<VecType>::compute_rdm12() {
   }
 
   compute_rdm12_dimer(); //allocation takes place
+  std::cout << "  o Dimer RDM - " << std::setw(9) << std::fixed << std::setprecision(2) << rdmtime.tick() << std::endl;
 
 #if 1 //Monomer
   //1 monomer RDM is calculated with standard algorithm
   //0 calculated with Gamma tensors (then make sure Monomer switch in other files are set to 1)
   compute_rdm12_monomer();
+  std::cout << "  o Momer RDM - " << std::setw(9) << std::fixed << std::setprecision(2) << rdmtime.tick() << std::endl;
 #endif
 
   //State-average RDM
@@ -66,7 +70,8 @@ void ASD<VecType>::compute_rdm12() {
     debug_rdm(rdm1_[i], rdm2_[i], i, /*mute*/false);
     debug_energy(rdm1_[i], rdm2_[i], i, /*mute*/false);
   }
-
+  std::cout << "  o Debug RDM - " << std::setw(9) << std::fixed << std::setprecision(2) << rdmtime.tick() << std::endl;
+  std::cout << " ============================== " << std::endl;
 }
 
 

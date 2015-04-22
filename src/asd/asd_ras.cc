@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/util/prim_op.h>
 #include <src/asd/asd_ras.h>
 #include <src/ci/ras/form_sigma.h>
 
@@ -64,6 +65,15 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer(shar
   sigma_2a1(cket, dket);
   sigma_2a2(cket, dket);
 
+  #if 1
+  auto dbra = make_shared<RASDvec>(cbra->det(), norb*norb);
+  for (int ij = 0; ij != norb*norb; ++ij)
+    dbra->data(ij)->zero();
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  return compute_rdm12_last_step(cbra, dbra, dket);
+  #else
   auto eket = make_shared<RASDvec>(cket->det(), norb*norb*norb*norb);
   for (int ij = 0; ij != norb*norb*norb*norb; ++ij) {
     eket->data(ij)->zero();
@@ -75,9 +85,100 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer(shar
   sigma_2a4_ab(cket, eket); //ab
 
   return compute_rdm12_last_step(cbra, dket, eket);
+  #endif
 }
 
+#if 1/// NEW
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(shared_ptr<const RASCivec> cibra, shared_ptr<const RASDvec> dbra, shared_ptr<const RASDvec> dket) const {
 
+  const int norb = cibra->det()->norb();
+  cout << "last-step entered.." << endl;
+
+  // 1RDM
+  // c^dagger <I|\hat{E}|0>
+  shared_ptr<const RASDeterminants> det = cibra->det();
+  auto rdm1 = make_shared<RDM<1>>(norb);
+  {
+    #if 1
+    double* target = rdm1->element_ptr(0,0);
+    for (int ij = 0; ij != norb*norb; ++ij, ++target){
+      *target = cibra->dot_product(dket->data(ij));
+    }
+    #else
+    for (int i = 0, ij = 0; i != norb; ++i){
+      for (int j = 0; j!= norb; ++j, ++ij) {
+
+        for (auto& cblock : cibra->blocks()) {
+          if (!cblock) continue;
+
+          for (size_t ca = 0, cab = 0; ca < cblock->stringsa()->size(); ++ca) {
+            for (size_t cb = 0; cb < cblock->stringsb()->size(); ++cb, ++cab) {
+              auto abit = cblock->stringsa()->strings(ca);
+              auto bbit = cblock->stringsb()->strings(cb);
+              rdm1->element(i,j) += dket->data(ij)->element(bbit,abit) * cibra->element(bbit,abit);
+            }
+          }
+        }
+      }
+    }
+    #endif
+    cout << "1rdm done.." << endl;
+    auto rdm1_mat = rdm1->rdm1_mat(/*nclosed*/0);
+    rdm1_mat->print("RAS 1RDM", norb);
+  }
+
+
+  auto rdm2 = make_shared<RDM<2>>(norb);
+  {
+    auto rdmt = rdm2->clone();
+    double* target = rdmt->element_ptr(0,0,0,0);
+    for (int kl = 0; kl != norb*norb; ++kl) // E_kl |ket>
+      for (int ij = 0; ij != norb*norb; ++ij, ++target) // <bra| E_ji = [E_ij |bra>]^+
+        *target = dbra->data(ij)->dot_product(dket->data(kl)); // (ij,kl) has E_ji*E_kl
+
+    unique_ptr<double[]> buf(new double[norb*norb]);
+    for (int i = 0; i != norb; ++i)
+      for (int k = 0; k != norb; ++k) {
+        copy_n(&rdmt->element(0,0,k,i), norb*norb, buf.get());
+        blas::transpose(buf.get(), norb, norb, &rdmt->element(0,0,k,i));
+      }
+
+    //Swap kl,ij -> ij,kl
+    sort_indices<2,3,0,1, 0,1, 1,1>(rdmt->data(), rdm2->data(), norb, norb, norb, norb);
+
+    // put in diagonal into 2RDM
+    // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
+    for (int i = 0; i != norb; ++i)
+      for (int k = 0; k != norb; ++k)
+        for (int j = 0; j != norb; ++j)
+          rdm2->element(j,k,k,i) -= rdm1->element(j,i);
+
+
+    cout << "2rdm done.." << endl;
+
+    //RDM2 symmetrize (out-of-excitation free parts are copied)
+    for (int i = 0, ij = 0; i != norb; ++i)
+      for (int j = 0; j != norb; ++j, ++ij)
+          for (int k = 0, kl = 0; k != norb; ++k)
+            for (int l = 0; l != norb; ++l, ++kl)
+              if (kl > ij) rdm2->element(i,j,k,l) = rdm2->element(k,l,i,j);
+
+  //{//2RDM symmetry
+  //  for (int l = 0; l != norb; ++l)
+  //    for (int k = 0; k != norb; ++k)
+  //      for (int j = 0; j != norb; ++j)
+  //        for (int i = 0; i != norb; ++i) {
+  //          cout << i << j << k << l << " : " << rdm2->element(i,j,k,l) << endl;
+  //          if(fabs(rdm2->element(i,j,k,l) - rdm2->element(k,l,i,j)) > 1.0e-10) cout << i << j << k << l << " Error:klij " << rdm2->element(i,j,k,l) << " " << rdm2->element(k,l,i,j) << endl;
+  //          if(fabs(rdm2->element(i,j,k,l) - rdm2->element(j,i,l,k)) > 1.0e-10) cout << i << j << k << l << " Error:jilk " << rdm2->element(i,j,k,l) << " " << rdm2->element(j,i,l,k) << endl;
+  //          if(fabs(rdm2->element(i,j,k,l) - rdm2->element(l,k,j,i)) > 1.0e-10) cout << i << j << k << l << " Error:lkji " << rdm2->element(i,j,k,l) << " " << rdm2->element(l,k,j,i) << endl;
+  //    }
+  //}
+  }
+
+  return tie(rdm1, rdm2);
+}
+#else
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(shared_ptr<const RASCivec> cibra, shared_ptr<const RASDvec> dket, shared_ptr<const RASDvec> eket) const {
 
   const int norb = cibra->det()->norb();
@@ -92,12 +193,12 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
 
       for (auto& cblock : cibra->blocks()) {
         if (!cblock) continue;
-  
+
         for (size_t ca = 0, cab = 0; ca < cblock->stringsa()->size(); ++ca) {
           for (size_t cb = 0; cb < cblock->stringsb()->size(); ++cb, ++cab) {
             auto abit = cblock->stringsa()->strings(ca);
             auto bbit = cblock->stringsb()->strings(cb);
-            rdm1->element(i,j) += dket->data(ij)->element(bbit,abit) * cibra->element(bbit,abit); 
+            rdm1->element(i,j) += dket->data(ij)->element(bbit,abit) * cibra->element(bbit,abit);
           }
         }
       }
@@ -112,10 +213,10 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
       for (int k = 0, kl = 0; k != norb; ++k){
         for (int l = 0; l != norb; ++l, ++kl, ++ijkl) {
           //fixed kl
-          
+
           for (auto& cblock : cibra->blocks()) { //just run over allowed blocks/ TODO: replace this
             if (!cblock) continue;
-    
+
             for (size_t ca = 0, cab = 0; ca < cblock->stringsa()->size(); ++ca) {
               for (size_t cb = 0; cb < cblock->stringsb()->size(); ++cb, ++cab) {
                 auto abit = cblock->stringsa()->strings(ca);
@@ -124,11 +225,11 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
                 rdm2->element(k,l,i,j) += cibra->element(bbit,abit) * eket->data(ijkl)->element(bbit,abit);
               }
             }
- 
+
           }
         }
       }
- 
+
     }
   }
 
@@ -139,24 +240,35 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
       for (int j = 0; j != norb; ++j)
         rdm2->element(j,k,k,i) -= rdm1->element(j,i);
 
+  {//2RDM symmetry
+    for (int l = 0; l != norb; ++l)
+      for (int k = 0; k != norb; ++k)
+        for (int j = 0; j != norb; ++j)
+          for (int i = 0; i != norb; ++i) {
+            cout << i << j << k << l << " : " << rdm2->element(i,j,k,l) << endl;
+            if(fabs(rdm2->element(i,j,k,l) - rdm2->element(k,l,i,j)) > 1.0e-10) cout << i << j << k << l << " Error:klij " << rdm2->element(i,j,k,l) << " " << rdm2->element(k,l,i,j) << endl;
+            if(fabs(rdm2->element(i,j,k,l) - rdm2->element(j,i,l,k)) > 1.0e-10) cout << i << j << k << l << " Error:jilk " << rdm2->element(i,j,k,l) << " " << rdm2->element(j,i,l,k) << endl;
+            if(fabs(rdm2->element(i,j,k,l) - rdm2->element(l,k,j,i)) > 1.0e-10) cout << i << j << k << l << " Error:lkji " << rdm2->element(i,j,k,l) << " " << rdm2->element(l,k,j,i) << endl;
+      }
+  }
   cout << "2rdm done.." << endl;
 
   //RDM2 symmetrize (out-of-excitation free parts are copied)
-  for (int i = 0, ij = 0; i != norb; ++i) 
-    for (int j = 0; j != norb; ++j, ++ij) 
+  for (int i = 0, ij = 0; i != norb; ++i)
+    for (int j = 0; j != norb; ++j, ++ij)
       for (int k = 0, kl = 0; k != norb; ++k)
         for (int l = 0; l != norb; ++l, ++kl)
           if (kl > ij) rdm2->element(i,j,k,l) = rdm2->element(k,l,i,j);
 
   return tie(rdm1, rdm2);
 }
-
+#endif
 
 
 void ASD_RAS::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
   shared_ptr<const RASDeterminants> det = cc->det();
 
-  for (auto& ispace : *det->stringspaceb()) { 
+  for (auto& ispace : *det->stringspaceb()) {
     for (size_t ib = 0; ib != ispace->size(); ++ib) {
       const auto bbit = ispace->strings(ib);
 
@@ -179,7 +291,7 @@ void ASD_RAS::sigma_2a1(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) co
       }
 
     }
-  } 
+  }
 
 }
 
@@ -217,13 +329,13 @@ void ASD_RAS::sigma_2a1_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
   shared_ptr<const RASDeterminants> det = cc->det();
   const int norb = cc->det()->norb();
 
-  for (auto& ispace : *det->stringspaceb()) { 
+  for (auto& ispace : *det->stringspaceb()) {
     for (size_t ib = 0; ib != ispace->size(); ++ib) {
       const bitset<nbit__> bbit = ispace->strings(ib);
 
       for (auto& jspace : *det->stringspacea()) {
         const size_t offset = jspace->offset();
-        for (size_t ja = 0; ja != jspace->size(); ++ja) { 
+        for (size_t ja = 0; ja != jspace->size(); ++ja) {
 
           for (auto& phi : det->phia(ja+offset)) {
             assert(phi.target == ja+offset);
@@ -253,13 +365,13 @@ void ASD_RAS::sigma_2a2_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
   shared_ptr<const RASDeterminants> det = cc->det();
   const int norb = cc->det()->norb();
 
-  for (auto& ispace : *det->stringspacea()) { 
+  for (auto& ispace : *det->stringspacea()) {
     for (size_t ia = 0; ia != ispace->size(); ++ia) {
       const auto abit = ispace->strings(ia);
 
       for (auto& jspace : *det->stringspaceb()) {
         const size_t offset = jspace->offset(); //scan through beta-det
-        for (size_t jb = 0; jb != jspace->size(); ++jb) { 
+        for (size_t jb = 0; jb != jspace->size(); ++jb) {
 
           for (auto& phi : det->phib(jb+offset)) { //first E
             assert(phi.target == jb+offset);
@@ -290,7 +402,7 @@ void ASD_RAS::sigma_2a3_ba(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
   shared_ptr<const RASDeterminants> det = cc->det();
   const int norb = cc->det()->norb();
 
-  for (auto& ispace : *det->stringspaceb()) { 
+  for (auto& ispace : *det->stringspaceb()) {
     const size_t boffset = ispace->offset();
     for (size_t ib = 0; ib != ispace->size(); ++ib) {
       const auto bbit = ispace->strings(ib); //bitset<nbit__>
@@ -327,7 +439,7 @@ void ASD_RAS::sigma_2a4_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
   shared_ptr<const RASDeterminants> det = cc->det();
   const int norb = cc->det()->norb();
 
-  for (auto& ispace : *det->stringspacea()) { 
+  for (auto& ispace : *det->stringspacea()) {
     const size_t aoffset = ispace->offset();
     for (size_t ia = 0; ia != ispace->size(); ++ia) {
       const bitset<nbit__> abit = ispace->strings(ia);
