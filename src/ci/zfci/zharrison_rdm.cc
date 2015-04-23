@@ -456,7 +456,7 @@ void ZHarrison::compute_rdm12() {
 
 shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
   // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
-  shared_ptr<const ZRDM<1>> tmp = expand_kramers<1,complex<double>>(rdm1_av_);
+  shared_ptr<const ZRDM<1>> tmp = expand_kramers<1,complex<double>>(rdm1_av_, norb_);
   auto out = make_shared<ZMatrix>(norb_*2, norb_*2);
   copy_n(tmp->data(), tmp->size(), out->data());
   return out;
@@ -464,7 +464,7 @@ shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
 
 
 shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
-  shared_ptr<const ZRDM<2>> ikjl = expand_kramers<2,complex<double>>(rdm2_av_);
+  shared_ptr<const ZRDM<2>> ikjl = expand_kramers<2,complex<double>>(rdm2_av_, norb_);
   // sort indices : G(ik|jl) -> G(ij|kl)
   auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
   sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);

@@ -220,11 +220,16 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       rdm3all_->emplace(jst, ist, rdm3t);
       rdm4all_->emplace(jst, ist, rdm4t);
 
-//    denom->append(jst, ist, rdm1, rdm2, rdm3, rdm4);
+      // TODO this should be replaced
+      auto rdm1ex = expand_kramers(rdm1, info_->nact());
+      auto rdm2ex = expand_kramers(rdm2, info_->nact());
+      auto rdm3ex = expand_kramers(rdm3, info_->nact());
+      auto rdm4ex = expand_kramers(rdm4, info_->nact());
+      denom->append(jst, ist, rdm1ex, rdm2ex, rdm3ex, rdm4ex);
     }
   }
-//denom->compute();
-//denom_ = denom;
+  denom->compute();
+  denom_ = denom;
 }
 
 
@@ -322,7 +327,7 @@ template<typename DataType>
 double SpinFreeMethod<DataType>::compute_e0() {
   assert(!!f1_);
   const size_t nstates = info_->ciwfn()->nstates();
-  double sum = 0.0;
+  DataType sum = 0.0;
   for (int ist = 0; ist != nstates; ++ist) {
     set_rdm(ist, ist);
     assert(!!rdm1_);
@@ -331,13 +336,13 @@ double SpinFreeMethod<DataType>::compute_e0() {
         const size_t size = i0.size() * i1.size();
         unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
         unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
-        sum += detail::real(blas::dot_product(fdata.get(), size, rdata.get()));
+        sum += blas::dot_product(fdata.get(), size, rdata.get());
       }
     }
   }
   sum /= nstates;
   cout << "    - Zeroth order energy: " << setw(20) << setprecision(10) << sum << endl;
-  return sum;
+  return detail::real(sum);
 }
 
 
