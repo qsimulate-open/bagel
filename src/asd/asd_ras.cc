@@ -95,6 +95,7 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer(shar
 #if 1/// NEW
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(shared_ptr<const RASCivec> cibra, shared_ptr<const RASDvec> dbra, shared_ptr<const RASDvec> dket) const {
 
+  Timer mtime;
   const int norb = cibra->det()->norb();
   cout << "last-step entered.." << endl;
 
@@ -108,6 +109,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
     for (int ij = 0; ij != norb*norb; ++ij, ++target){
       *target = cibra->dot_product(dket->data(ij));
     }
+    std::cout << "      o 1RDM - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
     #else
     for (int i = 0, ij = 0; i != norb; ++i){
       for (int j = 0; j!= norb; ++j, ++ij) {
@@ -140,15 +142,19 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
       for (int ij = 0; ij != norb*norb; ++ij, ++target) // <bra| E_ji = [E_ij |bra>]^+
         *target = dbra->data(ij)->dot_product(dket->data(kl)); // (ij,kl) has E_ji*E_kl
 
+    std::cout << "      o 2RDM - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
+
     unique_ptr<double[]> buf(new double[norb*norb]);
     for (int i = 0; i != norb; ++i)
       for (int k = 0; k != norb; ++k) {
         copy_n(&rdmt->element(0,0,k,i), norb*norb, buf.get());
         blas::transpose(buf.get(), norb, norb, &rdmt->element(0,0,k,i));
       }
+    std::cout << "      o tran - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
 
     //Swap kl,ij -> ij,kl
     sort_indices<2,3,0,1, 0,1, 1,1>(rdmt->data(), rdm2->data(), norb, norb, norb, norb);
+    std::cout << "      o sort - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
 
     // put in diagonal into 2RDM
     // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
@@ -156,6 +162,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
       for (int k = 0; k != norb; ++k)
         for (int j = 0; j != norb; ++j)
           rdm2->element(j,k,k,i) -= rdm1->element(j,i);
+    std::cout << "      o diag - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
 
 
   //cout << "2rdm done.." << endl;
@@ -166,6 +173,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
           for (int k = 0, kl = 0; k != norb; ++k)
             for (int l = 0; l != norb; ++l, ++kl)
               if (kl > ij) rdm2->element(i,j,k,l) = rdm2->element(k,l,i,j);
+    std::cout << "      o sym - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
 
   //{//2RDM symmetry
   //  for (int l = 0; l != norb; ++l)
@@ -507,4 +515,39 @@ void ASD_RAS::sigma_2a4_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
     }
   }
 
+}
+
+shared_ptr<RASDvec> ASD_RAS::contract_I(shared_ptr<const RASDvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  auto out = make_shared<RASDvec>(A->det(), nstB);
+  for (int ij = 0; ij != nstB; ++ij) {
+    out->data(ij)->zero();
+  }
+
+  for (int j = 0; j != nstB; ++j) {
+    for (int i = 0; i != nstA; ++i) {
+      const int ij  = i  + (j*nstA);
+      double u_ij = adiabats->element(ioff+ij,kst);
+
+      out->data(j)->ax_plus_y(u_ij, A->data(i));
+
+    }
+  }
+  return out;
+}
+shared_ptr<RASDvec> ASD_RAS::contract_J(shared_ptr<const RASDvec> B, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  auto out = make_shared<RASDvec>(B->det(), nstA);
+  for (int ij = 0; ij != nstA; ++ij) {
+    out->data(ij)->zero();
+  }
+
+  for (int i = 0; i != nstA; ++i) {
+    for (int j = 0; j != nstB; ++j) {
+      const int ij  = i  + (j*nstA);
+      double u_ij = adiabats->element(ioff+ij,kst);
+
+      out->data(i)->ax_plus_y(u_ij, B->data(j));
+
+    }
+  }
+  return out;
 }

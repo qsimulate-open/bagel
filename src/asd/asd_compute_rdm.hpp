@@ -51,7 +51,7 @@ void ASD<VecType>::compute_rdm12() {
   //1 monomer RDM is calculated with standard algorithm
   //0 calculated with Gamma tensors (then make sure Monomer switch in other files are set to 1)
   compute_rdm12_monomer();
-  std::cout << "  o Momer RDM - " << std::setw(9) << std::fixed << std::setprecision(2) << rdmtime.tick() << std::endl;
+  std::cout << "  o Monomer RDM - " << std::setw(9) << std::fixed << std::setprecision(2) << rdmtime.tick() << std::endl;
 #endif
 
   //State-average RDM
@@ -86,15 +86,33 @@ void ASD<VecType>::compute_rdm12_monomer() {
   std::vector<std::shared_ptr<RDM<2>>> rdm2B; rdm2B.resize(nstates_);
 
   for (auto& AB : subspaces_) { //diagonal dimer subspace
-    const int ioff = AB.offset();
+  //const int ioff = AB.offset();
     std::shared_ptr<const VecType> A = AB.template ci<0>();
     std::shared_ptr<const VecType> B = AB.template ci<1>();
-    const int nstA = A->ij(); //Dvec size
-    const int nstB = B->ij();
+  //const int nstA = A->ij(); //Dvec size
+  //const int nstB = B->ij();
+  //TODO: const removed temporarily
+    int ioff = AB.offset();
+    int nstA = A->ij(); //Dvec size
+    int nstB = B->ij();
     assert(nstA == AB.nstatesA());
     assert(nstB == AB.nstatesB());
 
     //MonomerA i.e. delta_JJ'
+    #if 1
+    for (int kst = 0; kst != nstates_; ++kst) {
+      std::shared_ptr<RDM<1>> rdm1;
+      std::shared_ptr<RDM<2>> rdm2;
+      auto dket = contract_I(A, adiabats_, ioff, nstA, nstB, kst);
+      for (int j = 0; j != nstB; ++j) {
+        std::tie(rdm1,rdm2) = compute_rdm12_monomer(dket, j, j);
+        if (!rdm1A[kst]) rdm1A[kst] = std::make_shared<RDM<1>>(nactA);
+        if (!rdm2A[kst]) rdm2A[kst] = std::make_shared<RDM<2>>(nactA);
+        rdm1A[kst]->ax_plus_y(1.0, rdm1);
+        rdm2A[kst]->ax_plus_y(1.0, rdm2);
+      }
+    }
+    #else
     for (int i = 0; i != nstA; ++i) { // <I|
       for (int ip = 0; ip != nstA; ++ip) { // |I'>
 
@@ -121,8 +139,23 @@ void ASD<VecType>::compute_rdm12_monomer() {
         }
       }
     }
+    #endif
 
     //MonomerB i.e. delta_II'
+    #if 1
+    for (int kst = 0; kst != nstates_; ++kst) {
+      std::shared_ptr<RDM<1>> rdm1;
+      std::shared_ptr<RDM<2>> rdm2;
+      auto dket = contract_J(B, adiabats_, ioff, nstA, nstB, kst);
+      for (int i = 0; i != nstA; ++i) {
+        std::tie(rdm1,rdm2) = compute_rdm12_monomer(dket, i, i);
+        if (!rdm1B[kst]) rdm1B[kst] = std::make_shared<RDM<1>>(nactB);
+        if (!rdm2B[kst]) rdm2B[kst] = std::make_shared<RDM<2>>(nactB);
+        rdm1B[kst]->ax_plus_y(1.0, rdm1);
+        rdm2B[kst]->ax_plus_y(1.0, rdm2);
+      }
+    }
+    #else
     for (int j = 0; j != nstB; ++j) { //<J|
       for (int jp = 0; jp != nstB; ++jp) { // |J'>
 
@@ -149,6 +182,7 @@ void ASD<VecType>::compute_rdm12_monomer() {
         }
       }
     } //B
+    #endif
   } //subspaces
 
   for (int istate = 0; istate != nstates_; ++istate) {

@@ -55,3 +55,9 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_DistRAS::compute_rdm12_monomer(
   assert(false);
   return make_tuple(nullptr,nullptr);
 }
+shared_ptr<DistRASDvec> ASD_DistRAS::contract_I(shared_ptr<const DistRASDvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  return nullptr;
+}
+shared_ptr<DistRASDvec> ASD_DistRAS::contract_J(shared_ptr<const DistRASDvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  return nullptr;
+}

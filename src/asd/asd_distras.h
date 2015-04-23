@@ -43,6 +43,9 @@ class ASD_DistRAS : public ASD<DistRASDvec> {
     void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
 
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_rdm12_monomer(std::shared_ptr<const DistRASDvec> civec, const int i, const int j) const override;
+
+    std::shared_ptr<DistRASDvec> contract_I(std::shared_ptr<const DistRASDvec> A, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const override;
+    std::shared_ptr<DistRASDvec> contract_J(std::shared_ptr<const DistRASDvec> B, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const override;
 };
 
 }

@@ -52,6 +52,8 @@ class ASD_CAS : public ASD<Dvec> {
     void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
     void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
 
+    std::shared_ptr<Dvec> contract_I(std::shared_ptr<const Dvec> A, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const override;
+    std::shared_ptr<Dvec> contract_J(std::shared_ptr<const Dvec> B, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const override;
 };
 
 }

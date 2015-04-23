@@ -53,6 +53,8 @@ class ASD_RAS : public ASD<RASDvec> {
     void sigma_2a3_ba(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
     void sigma_2a4_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
 
+    std::shared_ptr<RASDvec> contract_I(std::shared_ptr<const RASDvec> A, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const override;
+    std::shared_ptr<RASDvec> contract_J(std::shared_ptr<const RASDvec> B, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const override;
 };
 
 }

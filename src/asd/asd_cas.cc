@@ -289,3 +289,31 @@ void ASD_CAS::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
     }
   }
 }
+
+
+shared_ptr<Dvec> ASD_CAS::contract_I(shared_ptr<const Dvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  auto out = make_shared<Dvec>(A->det(), nstB);
+  for (int j = 0; j != nstB; ++j) {
+    for (int i = 0; i != nstA; ++i) {
+      const int ij  = i  + (j*nstA);
+      double u_ij = adiabats->element(ioff+ij,kst);
+
+      out->data(j)->ax_plus_y(u_ij, A->data(i));
+
+    }
+  }
+  return out;
+}
+shared_ptr<Dvec> ASD_CAS::contract_J(shared_ptr<const Dvec> B, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  auto out = make_shared<Dvec>(B->det(), nstA);
+  for (int i = 0; i != nstA; ++i) {
+    for (int j = 0; j != nstB; ++j) {
+      const int ij  = i  + (j*nstA);
+      double u_ij = adiabats->element(ioff+ij,kst);
+
+      out->data(i)->ax_plus_y(u_ij, B->data(j));
+
+    }
+  }
+  return out;
+}
