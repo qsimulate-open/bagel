@@ -456,30 +456,15 @@ void ZHarrison::compute_rdm12() {
 
 shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
   // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
+  shared_ptr<const ZRDM<1>> tmp = expand_kramers<1,complex<double>>(rdm1_av_);
   auto out = make_shared<ZMatrix>(norb_*2, norb_*2);
-  out->copy_block(    0,     0, norb_, norb_, rdm1_av_kramers("00"));
-  out->copy_block(norb_, norb_, norb_, norb_, rdm1_av_kramers("11"));
-  out->copy_block(norb_,     0, norb_, norb_, rdm1_av_kramers("10"));
-  out->copy_block(    0, norb_, norb_, norb_, out->get_submatrix(norb_, 0, norb_, norb_)->transpose_conjg());
+  copy_n(tmp->data(), tmp->size(), out->data());
   return out;
 }
 
 
 shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
-  // transformed 2RDM ; input format is i^+ k^+ j l ; output format is i^+ j k^+ l
-  // loop over each component
-  auto ikjl = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
-  for (int i = 0; i != 16; ++i) {
-    array<int,4> off {{i/8, (i%8)/4, (i%4)/2, i%2}};
-    shared_ptr<const ZRDM<2>> block = rdm2_av_->get_data(i);
-    for (int a = 0, abcd = 0; a != norb_; ++a)
-      for (int b = 0; b != norb_; ++b)
-        for (int c = 0; c != norb_; ++c) {
-          copy_n(block->data() + abcd, norb_,
-                 ikjl->element_ptr(norb_*off[0]+2*norb_*(c+norb_*off[1]), b+norb_*off[2]+2*norb_*(a+norb_*off[3])));
-          abcd += norb_;
-        }
-  }
+  shared_ptr<const ZRDM<2>> ikjl = expand_kramers<2,complex<double>>(rdm2_av_);
   // sort indices : G(ik|jl) -> G(ij|kl)
   auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
   sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
