@@ -139,14 +139,6 @@ void ZCASSCF::init() {
     }
     coeff_ = coeff;
   }
-auto ccc = coeff_->copy();
-for (int i = 0; i != ccc->mdim(); ++i) {
-  const double r = static_cast<double>(rand()) / RAND_MAX;
-  blas::scale_n(complex<double>(cos(r),sin(r)), ccc->element_ptr(0, i), ccc->ndim());
-}
-coeff_ = ccc;
-
-
 
   // get maxiter from the input
   max_iter_ = idata_->get<int>("maxiter", 100);
