@@ -332,8 +332,8 @@ void MOFock<double>::init() {
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
 
-  fill_block<2,double>(data_, f, {0,0}, blocks_);
-  fill_block<2,double>(h1_, h1, {0,0}, blocks_);
+  fill_block<2,double>(data_,  f->get_conjg(), {0,0}, blocks_);
+  fill_block<2,double>(h1_,   h1->get_conjg(), {0,0}, blocks_);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
