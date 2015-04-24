@@ -746,7 +746,6 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     size_t act_position = nclosed; //for A
     for (int i = 0; i < nactA; ++i)
       copy_n(acoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,act_position++));
-
   }
   //B
   {
@@ -776,12 +775,28 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     size_t act_position = nclosed + nactA; //for B
     for (int i = 0; i < nactB; ++i)
       copy_n(acoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,act_position++));
-
+  }
+  //Orbital picking
+  int cA = 0, vA = 0, cB = 0, vB = 0;
+  auto deact = idata->get_array<int,4>("dimer_deactivate");
+  if (!deact.empty()) {
+    cA = deact[0];
+    vA = deact[1];
+    cB = deact[2];
+    vB = deact[3];
+    cout << cA << vA << cB << vB << endl;
+    //swap cB into closed
+    *semi_coeff = *semi_coeff->swap_columns(nclosed,nactA, nclosed+nactA,cB);
+    //swap vA into virtual
+    *semi_coeff = *semi_coeff->swap_columns(nclosed+cB+nactA-vA,vA, nclosed+cB+nactA,nactB-vB);
+    //update active refs
+    active_refs_ = { make_shared<Reference>(active_refs_.first->geom(), active_refs_.first->coeff(), active_refs_.first->nclosed()+cA, active_refs_.first->nact()-cA-vA, active_refs_.first->nvirt()+vA),
+                     make_shared<Reference>(active_refs_.second->geom(), active_refs_.second->coeff(), active_refs_.first->nclosed()+cB, active_refs_.first->nact()-cB-vB, active_refs_.first->nvirt()+vB)};
   }
 
   #if 1
   //Semi canonical coeff
-  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosed, nact, nvirtS - nactvirtA - nactvirtB);
+  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosed+cA+cB, nact-cA-cB-vA-vB, nvirtS - nactvirtA - nactvirtB + vA+vB);
   #else
   //check energy invariance (HF)
   *semi_coeff = *semi_coeff->swap_columns(nclosed+nactA-nactvirtA,nactB-nactvirtB, nclosed+nactA,nactB-nactvirtB );
