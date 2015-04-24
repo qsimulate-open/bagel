@@ -699,6 +699,96 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   nvirt_ = {nvirtS - nactvirtA, nvirtS - nactvirtB};
   sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nvirtS - nactvirtA - nactvirtB);
 
+  //semi-canonicalize
+  //A
+  {
+    cout << " --- " << endl;
+    cout << "nclosed  : " << nclosed << endl;
+    cout << "nclosedA : " << nclosedA << endl;
+    cout << "nclosedB : " << nclosedB << endl;
+    cout << " --- " << endl;
+    cout << "nactA    : " << nactA << endl;
+    cout << "nactB    : " << nactB << endl;
+    cout << "nact     : " << nact << endl;
+    cout << " --- " << endl;
+    cout << "nactvirtA : " << nactvirtA << endl;
+    cout << "nactvirtB : " << nactvirtB << endl;
+    cout << " --- " << endl;
+    cout << "dimerbasis : " << dimerbasis << endl;
+    cout << "nclosedS   : " << nclosedS << endl;
+    cout << "nvirtS     : " << nvirtS << endl;
+  }
+  shared_ptr<Matrix> semi_coeff = sref_->coeff()->copy();
+  {
+    //core
+    auto acoeff = sref_->coeff()->slice_copy(nclosed, nclosed + nactA);
+    auto ccoeff = make_shared<Matrix>(dimerbasis, nclosed+nactB-nactvirtB); //nclosed : shared closed including closed activeB
+    ccoeff->copy_block(0,0, dimerbasis,nclosed, sref_->coeff()->get_submatrix(0,0, dimerbasis,nclosed)); //shared closed
+    ccoeff->copy_block(0,nclosed, dimerbasis,nactB-nactvirtB, sref_->coeff()->get_submatrix(0,nclosed+nactA, dimerbasis,nactB-nactvirtB)); //embed activeB
+    shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
+    //active
+    auto rdm1 = make_shared<Matrix>(nactA,nactA);
+    for (int i = 0; i < nactA-nactvirtA; ++i)
+      rdm1->element(i,i) = 2.0;
+    shared_ptr<Matrix> rdm1_mat = rdm1->copy();
+    rdm1_mat->sqrt();
+    rdm1_mat->delocalize();
+    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
+    auto fockao = make_shared<Fock<1>>(sgeom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
+    // MO Fock
+    VectorB eigs(nactA);
+    auto fockact = make_shared<Matrix>(*acoeff % *fockao  * *acoeff);
+    fockact->diagonalize(eigs);
+    for (int i = 0; i < nactA; ++i)
+      cout << i << "(A) = " << eigs[i] << endl;
+    *acoeff *= *fockact;
+
+    size_t act_position = nclosed; //for A
+    for (int i = 0; i < nactA; ++i)
+      copy_n(acoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,act_position++));
+
+  }
+  //B
+  {
+    //core
+    auto acoeff = sref_->coeff()->slice_copy(nclosed+nactA, nclosed+nact);
+    auto ccoeff = make_shared<Matrix>(dimerbasis, nclosed+nactA-nactvirtA); //nclosed : shared closed including closed activeA
+    ccoeff->copy_block(0,0, dimerbasis,nclosed, sref_->coeff()->get_submatrix(0,0, dimerbasis,nclosed)); //shared closed
+    ccoeff->copy_block(0,nclosed, dimerbasis,nactA-nactvirtA, sref_->coeff()->get_submatrix(0,nclosed, dimerbasis,nactA-nactvirtA)); //embed activeA
+    shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
+    //active
+    auto rdm1 = make_shared<Matrix>(nactB,nactB);
+    for (int i = 0; i < nactB-nactvirtB; ++i)
+      rdm1->element(i,i) = 2.0;
+    shared_ptr<Matrix> rdm1_mat = rdm1->copy();
+    rdm1_mat->sqrt();
+    rdm1_mat->delocalize();
+    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
+    auto fockao = make_shared<Fock<1>>(sgeom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
+    // MO Fock
+    VectorB eigs(nactB);
+    auto fockact = make_shared<Matrix>(*acoeff % *fockao  * *acoeff);
+    fockact->diagonalize(eigs);
+    for (int i = 0; i < nactB; ++i)
+      cout << i << "(B) = " << eigs[i] << endl;
+    *acoeff *= *fockact;
+
+    size_t act_position = nclosed + nactA; //for B
+    for (int i = 0; i < nactB; ++i)
+      copy_n(acoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,act_position++));
+
+  }
+
+  #if 1
+  //Semi canonical coeff
+  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosed, nact, nvirtS - nactvirtA - nactvirtB);
+  #else
+  //check energy invariance (HF)
+  *semi_coeff = *semi_coeff->swap_columns(nclosed+nactA-nactvirtA,nactB-nactvirtB, nclosed+nactA,nactB-nactvirtB );
+  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosedS, 0, nvirtS);
+  #endif
+
+
   if (mpi__->rank() == 0) {
     MoldenOut mfs("AB_localized_reordered_L.molden");
     mfs << sgeom_;
