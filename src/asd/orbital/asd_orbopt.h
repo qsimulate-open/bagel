@@ -44,8 +44,8 @@ class ASD_OrbOpt : public Method, public std::enable_shared_from_this<ASD_OrbOpt
     int nbasis_; // number of MO orbitals
     int nstate_;
     int max_iter_;
-    int neleA_;
-    int neleB_;
+    int nactcloA_;
+    int nactcloB_;
     double gradient_thresh_;
     double rotation_thresh_;
     double energy_thresh_;
