@@ -1123,13 +1123,14 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
       //swap cB into closed
       *semi_coeff = *semi_coeff->swap_columns(nclosed,nactA, nclosed+nactA,cB);
       //swap vA into virtual
-      *semi_coeff = *semi_coeff->swap_columns(nclosed+cB+nactA-vA,vA, nclosed+nact,vA);
+      *semi_coeff = *semi_coeff->swap_columns(nclosed+cB+nactA-vA,vA, nclosed+cB+nactA,nactB-cB-vB);
       //update active refs
       active_refs_ = { make_shared<Reference>(active_refs_.first->geom(), active_refs_.first->coeff(), active_refs_.first->nclosed()+cA, active_refs_.first->nact()-cA-vA, active_refs_.first->nvirt()+vA),
                        make_shared<Reference>(active_refs_.second->geom(), active_refs_.second->coeff(), active_refs_.first->nclosed()+cB, active_refs_.first->nact()-cB-vB, active_refs_.first->nvirt()+vB)};
       //Semi canonical coeff
       sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosed+cA+cB, nact-cA-cB-vA-vB, nvirtS - nactvirtA - nactvirtB + vA+vB);
     }
+
   }
 
   if (mpi__->rank() == 0) {
