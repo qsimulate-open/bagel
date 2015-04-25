@@ -299,4 +299,27 @@ void ASD_BFGS::compute() {
   // ============================
   // macro iteration to here
   // ============================
+  // semi-canonicalize active orbitals for visualization
+#if 1
+    if (mpi__->rank() == 0) {
+      string out_file = "orbital_conv_localized.molden";
+      MoldenOut mfs(out_file);
+      mfs << dimer_->sgeom();
+      mfs << dimer_->sref();
+    }
+#endif
+  coeff_ = semi_canonical_orb();
+
+  // extra iteration for consistency
+  dimer_->update_coeff(coeff_);
+  auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
+  asd->compute();
+#if 1
+    if (mpi__->rank() == 0) {
+      string out_file = "orbital_conv_semi_canonical.molden";
+      MoldenOut mfs(out_file);
+      mfs << dimer_->sgeom();
+      mfs << dimer_->sref();
+    }
+#endif
 }

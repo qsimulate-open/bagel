@@ -44,6 +44,8 @@ class ASD_OrbOpt : public Method, public std::enable_shared_from_this<ASD_OrbOpt
     int nbasis_; // number of MO orbitals
     int nstate_;
     int max_iter_;
+    int neleA_;
+    int neleB_;
     double gradient_thresh_;
     double rotation_thresh_;
     double energy_thresh_;
@@ -79,6 +81,8 @@ class ASD_OrbOpt : public Method, public std::enable_shared_from_this<ASD_OrbOpt
     std::shared_ptr<Matrix> Qvec(const int n, const int m, std::shared_ptr<const Matrix> c, const size_t nclosed) const;
     double check_symmetric(std::shared_ptr<Matrix>& mat) const;
 
+    std::shared_ptr<const Coeff> semi_canonical_orb() const;
+
   public:
     ASD_OrbOpt(std::shared_ptr<const PTree> idat, std::shared_ptr<Dimer> dimer);
 
@@ -110,6 +114,7 @@ class ASD_OrbOpt : public Method, public std::enable_shared_from_this<ASD_OrbOpt
 
     std::shared_ptr<const Matrix> hcore() const { return hcore_; };
     std::shared_ptr<const Coeff> coeff() const { return coeff_; };
+
 };
 
 }

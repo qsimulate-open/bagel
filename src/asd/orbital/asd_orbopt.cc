@@ -58,6 +58,8 @@ void ASD_OrbOpt::common_init() {
   nact_ = ref_->nact();
   nactA_ = dimer_->active_refs().first->nact();
   nactB_ = dimer_->active_refs().second->nact();
+  neleA_ = 2*(dimer_->isolated_refs().first->nclosed() - dimer_->active_refs().first->nclosed());
+  neleB_ = 2*(dimer_->isolated_refs().second->nclosed() - dimer_->active_refs().second->nclosed());
   rasA_ = {0, nactA_, 0};
   rasB_ = {0, nactB_, 0};
   if (idata_->get_child("asd")->get<string>("method") == "ras") {
@@ -214,4 +216,74 @@ shared_ptr<const Reference> ASD_OrbOpt::conv_to_ref() const {
   //TODO
   assert(false);
   return nullptr;
+}
+
+
+shared_ptr<const Coeff> ASD_OrbOpt::semi_canonical_orb() const {
+  auto rdm1mat = make_shared<Matrix>(*rdm1_->rdm1_mat(/*nclosed*/0));
+
+  auto ocoeff = coeff_->slice_copy(0, nclosed_);
+  auto acoeff = coeff_->slice_copy(nclosed_, nocc_);
+
+  shared_ptr<Matrix> semi_coeff = coeff_->copy();
+  //ncloesd_ nact_ nvirt_ nbasis_, nactA_, nactB_, neleA_, neleB_
+  cout << "Semi-canonical transformation" << endl;
+  cout << "nclosed  : " << nclosed_ << endl;
+  cout << "nact     : " << nact_    << endl;
+  cout << "nvirt    : " << nvirt_   << endl;
+  cout << "nbasis   : " << nbasis_  << endl;
+  cout << "nactA    : " << nactA_   << endl;
+  cout << "nactB    : " << nactB_   << endl;
+  cout << "neleA    : " << neleA_   << endl;
+  cout << "neleB    : " << neleB_   << endl;
+  {//Monomer A
+    //core
+    auto acoeff_A = acoeff->slice_copy(0,nactA_);
+    auto ccoeff_A = make_shared<Matrix>(nbasis_, nclosed_+neleB_); //nclosed : shared closed including closed activeB
+    ccoeff_A->copy_block(0,0, nbasis_,nclosed_, ocoeff);
+    ccoeff_A->copy_block(0,nclosed_, nbasis_,neleB_, acoeff->get_submatrix(0,nactA_, nbasis_,neleB_)); //embed activeB
+    shared_ptr<const Matrix> ofockao_A = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, ccoeff_A, /*store*/false, /*rhf*/true);
+    //active
+    auto rdm1_A = make_shared<Matrix>(*rdm1mat->get_submatrix(0,0, nactA_,nactA_));
+    rdm1_A->sqrt();
+    auto acoeffw_A = make_shared<Matrix>(*acoeff_A * (1.0/sqrt(2.0)) * *rdm1_A);
+    auto fockao_A = make_shared<Fock<1>>(geom_, ofockao_A, nullptr, acoeffw_A, /*store*/false, /*rhf*/true);
+    // MO Fock
+    VectorB eigs(nactA_);
+    auto fockact = make_shared<Matrix>(*acoeff_A % *fockao_A  * *acoeff_A);
+    fockact->diagonalize(eigs);
+    for (int i = 0; i < nactA_; ++i)
+      cout << i << "(A) = " << eigs[i] << endl;
+    *acoeff_A *= *fockact;
+
+    size_t A_position = nclosed_; //for A
+    for (int i = 0; i < nactA_; ++i)
+      copy_n(acoeff_A->element_ptr(0, i), nbasis_, semi_coeff->element_ptr(0,A_position++));
+  }
+  {//Monomer B
+    //core
+    auto acoeff_B = acoeff->slice_copy(nactA_,nact_);
+    auto ccoeff_B = make_shared<Matrix>(nbasis_, nclosed_+neleA_);
+    ccoeff_B->copy_block(0,0, nbasis_,nclosed_, ocoeff);
+    ccoeff_B->copy_block(0,nclosed_, nbasis_,neleA_, acoeff->get_submatrix(0,0, nbasis_,neleA_));
+    shared_ptr<const Matrix> ofockao_B = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, ccoeff_B, /*store*/false, /*rhf*/true);
+    //active
+    auto rdm1_B = make_shared<Matrix>(*rdm1mat->get_submatrix(nactA_,nactA_, nactB_,nactB_));
+    rdm1_B->sqrt();
+    auto acoeffw_B = make_shared<Matrix>(*acoeff_B * (1.0/sqrt(2.0)) * *rdm1_B);
+    auto fockao_B = make_shared<Fock<1>>(geom_, ofockao_B, nullptr, acoeffw_B, /*store*/false, /*rhf*/true);
+    // MO Fock
+    VectorB eigs(nactB_);
+    auto fockact = make_shared<Matrix>(*acoeff_B % *fockao_B  * *acoeff_B);
+    fockact->diagonalize(eigs);
+    for (int i = 0; i < nactB_; ++i)
+      cout << i << "(B) = " << eigs[i] << endl;
+    *acoeff_B *= *fockact;
+
+    size_t B_position = nclosed_+nactA_;
+    for (int i = 0; i < nactB_; ++i)
+      copy_n(acoeff_B->element_ptr(0, i), nbasis_, semi_coeff->element_ptr(0,B_position++));
+  }
+
+  return make_shared<Coeff>(*semi_coeff);
 }
