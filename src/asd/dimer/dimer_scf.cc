@@ -1018,7 +1018,9 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
         mfs << tref;
       }
     }
-    {//pick up the right active orbital by comparing with reference (that is partly semi-canonicalized localized orbital)
+
+    //pick up the right active orbital by comparing with reference (that is partly semi-canonicalized localized orbital)
+    {
       vector<tuple<shared_ptr<const Matrix>, pair<int, int>, int, string, bool>> svd_info;
 
       auto activeA = make_shared<Matrix>(dimerbasis, nactA);
@@ -1108,37 +1110,27 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
       sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nvirtS - nactvirtA - nactvirtB);
 
     }
-  }
 
-#if 0
-  if (false) {
-    //Orbital picking
-    int cA = 0, vA = 0, cB = 0, vB = 0;
-    auto deact = idata->get_array<int,4>("dimer_deactivate", {0,0,0,0});
-    if (!deact.empty()) {
+    //active space reduction
+    if (idata->get_child_optional("reduction")) {
+      auto deact = idata->get_array<int,4>("reduction", {0,0,0,0});
+      int cA = 0, vA = 0, cB = 0, vB = 0;
       cA = deact[0];
       vA = deact[1];
       cB = deact[2];
       vB = deact[3];
-      cout << cA << vA << cB << vB << endl;
+      cout << " o active space reduction by " << cA << vA << cB << vB << endl;
       //swap cB into closed
       *semi_coeff = *semi_coeff->swap_columns(nclosed,nactA, nclosed+nactA,cB);
       //swap vA into virtual
-      *semi_coeff = *semi_coeff->swap_columns(nclosed+cB+nactA-vA,vA, nclosed+cB+nactA,nactB-vB);
+      *semi_coeff = *semi_coeff->swap_columns(nclosed+cB+nactA-vA,vA, nclosed+nact,vA);
       //update active refs
       active_refs_ = { make_shared<Reference>(active_refs_.first->geom(), active_refs_.first->coeff(), active_refs_.first->nclosed()+cA, active_refs_.first->nact()-cA-vA, active_refs_.first->nvirt()+vA),
                        make_shared<Reference>(active_refs_.second->geom(), active_refs_.second->coeff(), active_refs_.first->nclosed()+cB, active_refs_.first->nact()-cB-vB, active_refs_.first->nvirt()+vB)};
+      //Semi canonical coeff
+      sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosed+cA+cB, nact-cA-cB-vA-vB, nvirtS - nactvirtA - nactvirtB + vA+vB);
     }
-    #if 1
-    //Semi canonical coeff
-    sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosed+cA+cB, nact-cA-cB-vA-vB, nvirtS - nactvirtA - nactvirtB + vA+vB);
-    #else
-    //check energy invariance (HF)
-    *semi_coeff = *semi_coeff->swap_columns(nclosed+nactA-nactvirtA,nactB-nactvirtB, nclosed+nactA,nactB-nactvirtB );
-    sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosedS, 0, nvirtS);
-    #endif
   }
-#endif
 
   if (mpi__->rank() == 0) {
     MoldenOut mfs("AB_localized_reordered_L.molden");
