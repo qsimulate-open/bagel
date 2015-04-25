@@ -786,7 +786,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
       }
     }
 
-    //completely semi-canonicalized
+    //completely semi-canonicalized based on fragments. [ closed | virtual]
     shared_ptr<Matrix> semi_coeff = sref_->coeff()->copy();
     {
       //sort closed & virtual
@@ -1020,6 +1020,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     }
 
     //pick up the right active orbital by comparing with reference (that is partly semi-canonicalized localized orbital)
+    //new reference is constructed
     {
       vector<tuple<shared_ptr<const Matrix>, pair<int, int>, int, string, bool>> svd_info;
 
@@ -1120,15 +1121,31 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
       cB = deact[2];
       vB = deact[3];
       cout << " o active space reduction by " << cA << vA << cB << vB << endl;
-      //swap cB into closed
-      *semi_coeff = *semi_coeff->swap_columns(nclosed,nactA, nclosed+nactA,cB);
-      //swap vA into virtual
-      *semi_coeff = *semi_coeff->swap_columns(nclosed+cB+nactA-vA,vA, nclosed+cB+nactA,nactB-cB-vB);
+      shared_ptr<Matrix> acoeff = sref_->coeff()->slice_copy(nclosed, nclosed+nact); // [nactA nactB]
+      auto closedAB = make_shared<Matrix>(dimerbasis,cA+cB);
+      auto activeAB = make_shared<Matrix>(dimerbasis,nact-cA-cB-vA-vB);
+      auto virtualAB = make_shared<Matrix>(dimerbasis,vA+vB);
+
+      //reduced to closed
+      closedAB->copy_block(0,0,  dimerbasis,cA, acoeff->get_submatrix(0,0,     dimerbasis,cA));
+      closedAB->copy_block(0,cA, dimerbasis,cB, acoeff->get_submatrix(0,nactA, dimerbasis,cB));
+      //reduced to virtual
+      virtualAB->copy_block(0,0,  dimerbasis,vA, acoeff->get_submatrix(0,nactA-vA, dimerbasis,vA));
+      virtualAB->copy_block(0,vA, dimerbasis,vB, acoeff->get_submatrix(0,nact-vB,  dimerbasis,vB));
+      //remains active
+      activeAB->copy_block(0,0,           dimerbasis,nactA-cA-vA, acoeff->get_submatrix(0,cA,       dimerbasis,nactA-cA-vA));
+      activeAB->copy_block(0,nactA-cA-vA, dimerbasis,nactB-cB-vB, acoeff->get_submatrix(0,nactA+cB, dimerbasis,nactB-cB-vB));
+
+      shared_ptr<Matrix> outcoeff = sref_->coeff()->copy();
+      outcoeff->copy_block(0,nclosed,  dimerbasis,cA+cB, closedAB);
+      outcoeff->copy_block(0,nclosed+cA+cB, dimerbasis,nact-cA-cB-vA-vB, activeAB);
+      outcoeff->copy_block(0,nclosed+nact-vA-vB, dimerbasis,vA+vB, virtualAB);
+
       //update active refs
       active_refs_ = { make_shared<Reference>(active_refs_.first->geom(), active_refs_.first->coeff(), active_refs_.first->nclosed()+cA, active_refs_.first->nact()-cA-vA, active_refs_.first->nvirt()+vA),
                        make_shared<Reference>(active_refs_.second->geom(), active_refs_.second->coeff(), active_refs_.first->nclosed()+cB, active_refs_.first->nact()-cB-vB, active_refs_.first->nvirt()+vB)};
       //Semi canonical coeff
-      sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosed+cA+cB, nact-cA-cB-vA-vB, nvirtS - nactvirtA - nactvirtB + vA+vB);
+      sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*outcoeff), nclosed+cA+cB, nact-cA-cB-vA-vB, nvirtS - nactvirtA - nactvirtB + vA+vB);
     }
 
   }
