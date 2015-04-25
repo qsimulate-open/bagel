@@ -512,6 +512,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
 
   set<int> Alist, Blist;
 
+  //sort out mixed indices into A or B fragment, if an index does not belong to any of fragments, throw error..
   if (it.empty() && Ai.empty() && Bi.empty())
     throw runtime_error("Active space of the dimer MUST be specified in some way.");
   if (!it.empty()) {
@@ -700,8 +701,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nvirtS - nactvirtA - nactvirtB);
 
   //semi-canonicalize
-  //A
-  {
+  if (idata->get<bool>("semi-canon", false)) {
     cout << " --- " << endl;
     cout << "nclosed  : " << nclosed << endl;
     cout << "nclosedA : " << nclosedA << endl;
@@ -717,92 +717,428 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     cout << "dimerbasis : " << dimerbasis << endl;
     cout << "nclosedS   : " << nclosedS << endl;
     cout << "nvirtS     : " << nvirtS << endl;
-  }
-  shared_ptr<Matrix> semi_coeff = sref_->coeff()->copy();
-  {
-    //core
-    auto acoeff = sref_->coeff()->slice_copy(nclosed, nclosed + nactA);
-    auto ccoeff = make_shared<Matrix>(dimerbasis, nclosed+nactB-nactvirtB); //nclosed : shared closed including closed activeB
-    ccoeff->copy_block(0,0, dimerbasis,nclosed, sref_->coeff()->get_submatrix(0,0, dimerbasis,nclosed)); //shared closed
-    ccoeff->copy_block(0,nclosed, dimerbasis,nactB-nactvirtB, sref_->coeff()->get_submatrix(0,nclosed+nactA, dimerbasis,nactB-nactvirtB)); //embed activeB
-    shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
-    //active
-    auto rdm1 = make_shared<Matrix>(nactA,nactA);
-    for (int i = 0; i < nactA-nactvirtA; ++i)
-      rdm1->element(i,i) = 2.0;
-    shared_ptr<Matrix> rdm1_mat = rdm1->copy();
-    rdm1_mat->sqrt();
-    rdm1_mat->delocalize();
-    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
-    auto fockao = make_shared<Fock<1>>(sgeom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
-    // MO Fock
-    VectorB eigs(nactA);
-    auto fockact = make_shared<Matrix>(*acoeff % *fockao  * *acoeff);
-    fockact->diagonalize(eigs);
-    for (int i = 0; i < nactA; ++i)
-      cout << i << "(A) = " << eigs[i] << endl;
-    *acoeff *= *fockact;
+    const int nactcloA = isolated_refs_.first->nclosed()  - active_refs_.first->nclosed();
+    const int nactcloB = isolated_refs_.second->nclosed() - active_refs_.second->nclosed();
+    assert(nactA == nactcloA + nactvirtA);
+    assert(nactB == nactcloB + nactvirtB);
+    cout << "nactcloA   : " << nactcloA << endl;
+    cout << "nactcloB   : " << nactcloB << endl;
 
-    size_t act_position = nclosed; //for A
-    for (int i = 0; i < nactA; ++i)
-      copy_n(acoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,act_position++));
-  }
-  //B
-  {
-    //core
-    auto acoeff = sref_->coeff()->slice_copy(nclosed+nactA, nclosed+nact);
-    auto ccoeff = make_shared<Matrix>(dimerbasis, nclosed+nactA-nactvirtA); //nclosed : shared closed including closed activeA
-    ccoeff->copy_block(0,0, dimerbasis,nclosed, sref_->coeff()->get_submatrix(0,0, dimerbasis,nclosed)); //shared closed
-    ccoeff->copy_block(0,nclosed, dimerbasis,nactA-nactvirtA, sref_->coeff()->get_submatrix(0,nclosed, dimerbasis,nactA-nactvirtA)); //embed activeA
-    shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
-    //active
-    auto rdm1 = make_shared<Matrix>(nactB,nactB);
-    for (int i = 0; i < nactB-nactvirtB; ++i)
-      rdm1->element(i,i) = 2.0;
-    shared_ptr<Matrix> rdm1_mat = rdm1->copy();
-    rdm1_mat->sqrt();
-    rdm1_mat->delocalize();
-    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
-    auto fockao = make_shared<Fock<1>>(sgeom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
-    // MO Fock
-    VectorB eigs(nactB);
-    auto fockact = make_shared<Matrix>(*acoeff % *fockao  * *acoeff);
-    fockact->diagonalize(eigs);
-    for (int i = 0; i < nactB; ++i)
-      cout << i << "(B) = " << eigs[i] << endl;
-    *acoeff *= *fockact;
+    //semi-canonicalise only in the active space (still the same quality as the localized orbitals)
+    //this will be used as reference to find the actual semi-canonical orbital
+    shared_ptr<Matrix> pseudo_semi_coeff = sref_->coeff()->copy();
+    {
+      {//A
+        //core
+        auto acoeff = sref_->coeff()->slice_copy(nclosed, nclosed + nactA);
+        auto ccoeff = make_shared<Matrix>(dimerbasis, nclosed+nactB-nactvirtB); //nclosed : shared closed including closed activeB
+        ccoeff->copy_block(0,0, dimerbasis,nclosed, sref_->coeff()->get_submatrix(0,0, dimerbasis,nclosed)); //shared closed
+        ccoeff->copy_block(0,nclosed, dimerbasis,nactB-nactvirtB, sref_->coeff()->get_submatrix(0,nclosed+nactA, dimerbasis,nactB-nactvirtB)); //embed activeB
+        shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
+        //active
+        auto rdm1 = make_shared<Matrix>(nactA,nactA);
+        for (int i = 0; i < nactA-nactvirtA; ++i)
+          rdm1->element(i,i) = 2.0;
+        shared_ptr<Matrix> rdm1_mat = rdm1->copy();
+        rdm1_mat->sqrt();
+        rdm1_mat->delocalize();
+        auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
+        auto fockao = make_shared<Fock<1>>(sgeom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
+        // MO Fock
+        VectorB eigs(nactA);
+        auto fockact = make_shared<Matrix>(*acoeff % *fockao  * *acoeff);
+        fockact->diagonalize(eigs);
+        for (int i = 0; i < nactA; ++i)
+          cout << i << "(A) = " << eigs[i] << endl;
+        *acoeff *= *fockact;
 
-    size_t act_position = nclosed + nactA; //for B
-    for (int i = 0; i < nactB; ++i)
-      copy_n(acoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,act_position++));
-  }
-  //Orbital picking
-  int cA = 0, vA = 0, cB = 0, vB = 0;
-  auto deact = idata->get_array<int,4>("dimer_deactivate");
-  if (!deact.empty()) {
-    cA = deact[0];
-    vA = deact[1];
-    cB = deact[2];
-    vB = deact[3];
-    cout << cA << vA << cB << vB << endl;
-    //swap cB into closed
-    *semi_coeff = *semi_coeff->swap_columns(nclosed,nactA, nclosed+nactA,cB);
-    //swap vA into virtual
-    *semi_coeff = *semi_coeff->swap_columns(nclosed+cB+nactA-vA,vA, nclosed+cB+nactA,nactB-vB);
-    //update active refs
-    active_refs_ = { make_shared<Reference>(active_refs_.first->geom(), active_refs_.first->coeff(), active_refs_.first->nclosed()+cA, active_refs_.first->nact()-cA-vA, active_refs_.first->nvirt()+vA),
-                     make_shared<Reference>(active_refs_.second->geom(), active_refs_.second->coeff(), active_refs_.first->nclosed()+cB, active_refs_.first->nact()-cB-vB, active_refs_.first->nvirt()+vB)};
+        size_t act_position = nclosed; //for A
+        for (int i = 0; i < nactA; ++i)
+        copy_n(acoeff->element_ptr(0, i), dimerbasis, pseudo_semi_coeff->element_ptr(0,act_position++));
+      }
+      {//B
+        //core
+        auto acoeff = sref_->coeff()->slice_copy(nclosed+nactA, nclosed+nact);
+        auto ccoeff = make_shared<Matrix>(dimerbasis, nclosed+nactA-nactvirtA); //nclosed : shared closed including closed activeA
+        ccoeff->copy_block(0,0, dimerbasis,nclosed, sref_->coeff()->get_submatrix(0,0, dimerbasis,nclosed)); //shared closed
+        ccoeff->copy_block(0,nclosed, dimerbasis,nactA-nactvirtA, sref_->coeff()->get_submatrix(0,nclosed, dimerbasis,nactA-nactvirtA)); //embed activeA
+        shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
+        //active
+        auto rdm1 = make_shared<Matrix>(nactB,nactB);
+        for (int i = 0; i < nactB-nactvirtB; ++i)
+          rdm1->element(i,i) = 2.0;
+        shared_ptr<Matrix> rdm1_mat = rdm1->copy();
+        rdm1_mat->sqrt();
+        rdm1_mat->delocalize();
+        auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
+        auto fockao = make_shared<Fock<1>>(sgeom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
+        // MO Fock
+        VectorB eigs(nactB);
+        auto fockact = make_shared<Matrix>(*acoeff % *fockao  * *acoeff);
+        fockact->diagonalize(eigs);
+        for (int i = 0; i < nactB; ++i)
+          cout << i << "(B) = " << eigs[i] << endl;
+        *acoeff *= *fockact;
+
+        size_t act_position = nclosed + nactA; //for B
+        for (int i = 0; i < nactB; ++i)
+          copy_n(acoeff->element_ptr(0, i), dimerbasis, pseudo_semi_coeff->element_ptr(0,act_position++));
+      }
+    }
+
+    //completely semi-canonicalized
+    shared_ptr<Matrix> semi_coeff = sref_->coeff()->copy();
+    {
+      //sort closed & virtual
+      vector<pair<int, int>> bounds;
+      set<int> ambiguous_list;
+      //sort according to region and put into Alist & Blist
+      vector<int> sizes = idata->get_vector<int>("region_sizes");
+      int nbasis = 0;
+      int natoms = 0;
+      for (int& region : sizes) {
+        const int atomstart = natoms;
+        const int basisstart = nbasis;
+        for (int atom = atomstart; atom < atomstart + region; ++atom)
+          nbasis += sgeom_->atoms()[atom]->nbasis();
+
+        natoms += region;
+        if (basisstart != nbasis)
+          bounds.emplace_back(basisstart, nbasis);
+      }
+      if (bounds.size() != 3)
+        throw logic_error("Only 3 regions should be defined in order of A, B, and the rest");
+      if (natoms != count_if(sgeom_->atoms().begin(), sgeom_->atoms().end(), [](const shared_ptr<const Atom> a){return !a->dummy();}))
+        throw logic_error("All atoms must be assigned to regions");
+      //scan it set
+      set<int> closed_Alist, closed_Blist, closed_Clist;
+      set<int> virtual_Alist, virtual_Blist, virtual_Clist;
+      shared_ptr<Matrix> coeff = semi_coeff->copy();
+
+      set<int> cset; // (0,nclosed);
+      for (int i = 0; i != nclosed; ++i) cset.insert(i);
+
+      for (auto& imo : cset) {
+        const double sum_A = blas::dot_product(coeff->element_ptr(bounds[0].first, imo), bounds[0].second - bounds[0].first, coeff->element_ptr(bounds[0].first, imo));
+        const double sum_B = blas::dot_product(coeff->element_ptr(bounds[1].first, imo), bounds[1].second - bounds[1].first, coeff->element_ptr(bounds[1].first, imo));
+        const double sum_rest = blas::dot_product(coeff->element_ptr(bounds[2].first, imo), bounds[2].second - bounds[2].first, coeff->element_ptr(bounds[2].first, imo));
+        if (sum_A > sum_B && sum_A > sum_rest) {
+          cout << "    - orbital("  << imo << ") is assigned to monomer A : A(" << setw(6) << setprecision(3) << sum_A << "), B("
+                                                                                << setw(6) << setprecision(3) << sum_B << "), the rest("
+                                                                                << setw(6) << setprecision(3) << sum_rest << ")" << endl;
+          closed_Alist.insert(imo);
+        }
+        else if (sum_B > sum_A && sum_B > sum_rest) {
+          cout << "    - orbital("  << imo << ") is assigned to monomer B : A(" << setw(6) << setprecision(3) << sum_A << "), B("
+                                                                                << setw(6) << setprecision(3) << sum_B << "), the rest("
+                                                                                << setw(6) << setprecision(3) << sum_rest << ")" << endl;
+          closed_Blist.insert(imo);
+        }
+        else {
+          cout << "    - orbital("  << imo << ") cannot be assigned to neither of monomers : A(" << setw(6) << setprecision(3) << sum_A << "), B("
+                                                                                << setw(6) << setprecision(3) << sum_B << "), the rest("
+                                                                                << setw(6) << setprecision(3) << sum_rest << ")" << endl;
+          closed_Clist.insert(imo);
+        }
+      }
+
+      set<int> vset; // (0,nclosed);
+      for (int i = nclosed+nact; i != nbasis; ++i) vset.insert(i);
+
+      cout << "  o Assigning dimer virtual orbitals (localized) to monomers A and B" << endl;
+      for (auto& imo : vset) {
+        const double sum_A = blas::dot_product(coeff->element_ptr(bounds[0].first, imo), bounds[0].second - bounds[0].first, coeff->element_ptr(bounds[0].first, imo));
+        const double sum_B = blas::dot_product(coeff->element_ptr(bounds[1].first, imo), bounds[1].second - bounds[1].first, coeff->element_ptr(bounds[1].first, imo));
+        const double sum_rest = blas::dot_product(coeff->element_ptr(bounds[2].first, imo), bounds[2].second - bounds[2].first, coeff->element_ptr(bounds[2].first, imo));
+        if (sum_A > sum_B && sum_A > sum_rest) {
+          cout << "    - orbital("  << imo << ") is assigned to monomer A : A(" << setw(6) << setprecision(3) << sum_A << "), B("
+                                                                                << setw(6) << setprecision(3) << sum_B << "), the rest("
+                                                                                << setw(6) << setprecision(3) << sum_rest << ")" << endl;
+          virtual_Alist.insert(imo);
+        }
+        else if (sum_B > sum_A && sum_B > sum_rest) {
+          cout << "    - orbital("  << imo << ") is assigned to monomer B : A(" << setw(6) << setprecision(3) << sum_A << "), B("
+                                                                                << setw(6) << setprecision(3) << sum_B << "), the rest("
+                                                                                << setw(6) << setprecision(3) << sum_rest << ")" << endl;
+          virtual_Blist.insert(imo);
+        }
+        else {
+          cout << "    - orbital("  << imo << ") cannot be assigned to neither of monomers : A(" << setw(6) << setprecision(3) << sum_A << "), B("
+                                                                                << setw(6) << setprecision(3) << sum_B << "), the rest("
+                                                                                << setw(6) << setprecision(3) << sum_rest << ")" << endl;
+          virtual_Clist.insert(imo);
+        }
+      }
+
+      auto ccoeff_A = make_shared<Matrix>(dimerbasis,nclosedS);
+      auto ccoeff_B = ccoeff_A->clone();
+      auto ccoeff_C = ccoeff_A->clone();
+
+      auto vcoeff_A = make_shared<Matrix>(dimerbasis,nvirtS);
+      auto vcoeff_B = vcoeff_A->clone();
+      auto vcoeff_C = vcoeff_A->clone();
+
+      //closed + active
+      {
+        size_t pos = 0;
+        for (auto& i : closed_Alist)
+          copy_n(coeff->element_ptr(0, i), dimerbasis, ccoeff_A->element_ptr(0,pos++));
+        for (int i = 0; i != nactcloA; ++i)
+          copy_n(coeff->element_ptr(0, nclosed+i), dimerbasis, ccoeff_A->element_ptr(0,pos++));
+      }
+      {
+        size_t pos = 0;
+        for (auto& i : closed_Blist)
+          copy_n(coeff->element_ptr(0, i), dimerbasis, ccoeff_B->element_ptr(0,pos++));
+        for (int i = 0; i != nactcloB; ++i)
+          copy_n(coeff->element_ptr(0, nclosed+nactA+i), dimerbasis, ccoeff_B->element_ptr(0,pos++));
+      }
+      {
+        size_t pos = 0;
+        for (auto& i : closed_Clist)
+          copy_n(coeff->element_ptr(0, i), dimerbasis, ccoeff_C->element_ptr(0,pos++));
+      }
+        //virtual + active
+      {
+        size_t pos = 0;
+        for (auto& i : virtual_Alist)
+          copy_n(coeff->element_ptr(0, i), dimerbasis, vcoeff_A->element_ptr(0,pos++));
+        for (int i = 0; i != nactvirtA; ++i)
+          copy_n(coeff->element_ptr(0, nclosed+nactcloA+i), dimerbasis, vcoeff_A->element_ptr(0,pos++));
+      }
+      {
+        size_t pos = 0;
+        for (auto& i : virtual_Blist)
+          copy_n(coeff->element_ptr(0, i), dimerbasis, vcoeff_B->element_ptr(0,pos++));
+        for (int i = 0; i != nactvirtB; ++i)
+          copy_n(coeff->element_ptr(0, nclosed+nactA+nactcloB+i), dimerbasis, vcoeff_B->element_ptr(0,pos++));
+      }
+      {
+        size_t pos = 0;
+        for (auto& i : virtual_Clist)
+          copy_n(coeff->element_ptr(0, i), dimerbasis, vcoeff_C->element_ptr(0,pos++));
+      }
+
+      //Fock
+      assert(nclosedS == nclosed + nactcloA + nactcloB);
+      auto ccoeff = make_shared<Matrix>(dimerbasis, nclosedS);
+      ccoeff->copy_block(0,0,                dimerbasis,nclosed,   *coeff->get_submatrix(0,0,             dimerbasis,nclosed)); //shared closed
+      ccoeff->copy_block(0,nclosed,          dimerbasis,nactcloA,  *coeff->get_submatrix(0,nclosed,       dimerbasis,nactcloA)); //embed activeA
+      ccoeff->copy_block(0,nclosed+nactcloA, dimerbasis,nactcloB,  *coeff->get_submatrix(0,nclosed+nactA, dimerbasis,nactcloB)); //embed activeB
+
+      shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
+
+      //size
+      cout << "closed  A size : " << closed_Alist.size() + nactcloA << endl;
+      cout << "closed  B size : " << closed_Blist.size() + nactcloB << endl;
+      cout << "closed  C size : " << closed_Clist.size() << endl;
+      cout << "virtual A size : " << virtual_Alist.size() + nactvirtA << endl;
+      cout << "virtual B size : " << virtual_Blist.size() + nactvirtB << endl;
+      cout << "virtual C size : " << virtual_Clist.size() << endl;
+
+      //MO fock
+      size_t pos = 0;
+      { //closed A
+        int dim = closed_Alist.size()+nactcloA;
+        VectorB eigs(dim);
+        auto mocoeff = ccoeff_A->slice_copy(0,dim);
+        auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
+        fock->diagonalize(eigs);
+        for (int i = 0; i < dim; ++i)
+          cout << i << "(closed A) = " << eigs[i] << endl;
+        *mocoeff *= *fock; //transformed
+        for (int i = 0; i < dim; ++i)
+          copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++));
+      }
+      { //closed B
+        int dim = closed_Blist.size()+nactcloB;
+        VectorB eigs(dim);
+        auto mocoeff = ccoeff_B->slice_copy(0,dim);
+        auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
+        fock->diagonalize(eigs);
+        for (int i = 0; i < dim; ++i)
+          cout << i << "(closed B) = " << eigs[i] << endl;
+        *mocoeff *= *fock; //transformed
+        for (int i = 0; i < dim; ++i)
+          copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++));
+      }
+      if (!closed_Clist.empty()) { //closed C
+        int dim = closed_Clist.size();
+        VectorB eigs(dim);
+        auto mocoeff = ccoeff_C->slice_copy(0,dim);
+        auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
+        fock->diagonalize(eigs);
+        for (int i = 0; i < dim; ++i)
+          cout << i << "(closed C) = " << eigs[i] << endl;
+        *mocoeff *= *fock; //transformed
+        for (int i = 0; i < dim; ++i)
+          copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++));
+      }
+      { //virtual A
+        int dim = virtual_Alist.size()+nactvirtA;
+        VectorB eigs(dim);
+        auto mocoeff = vcoeff_A->slice_copy(0,dim);
+        auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
+        fock->diagonalize(eigs);
+        for (int i = 0; i < dim; ++i)
+          cout << i << "(virtual A) = " << eigs[i] << endl;
+        *mocoeff *= *fock; //transformed
+        for (int i = 0; i < dim; ++i)
+          copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++));
+      }
+      { //virtual B
+        int dim = virtual_Blist.size()+nactvirtB;
+        VectorB eigs(dim);
+        auto mocoeff = vcoeff_B->slice_copy(0,dim);
+        auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
+        fock->diagonalize(eigs);
+        for (int i = 0; i < dim; ++i)
+          cout << i << "(virtual B) = " << eigs[i] << endl;
+        *mocoeff *= *fock; //transformed
+        for (int i = 0; i < dim; ++i)
+          copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++));
+      }
+      if (!virtual_Clist.empty()) { //virtual C
+        int dim = virtual_Clist.size();
+        VectorB eigs(dim);
+        auto mocoeff = vcoeff_C->slice_copy(0,dim);
+        auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
+        fock->diagonalize(eigs);
+        for (int i = 0; i < dim; ++i)
+          cout << i << "(virtual C) = " << eigs[i] << endl;
+        *mocoeff *= *fock; //transformed
+        for (int i = 0; i < dim; ++i)
+          copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++));
+      }
+      //TEST
+      auto tref = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosedS, 0, nvirtS);
+      if (mpi__->rank() == 0) {
+        MoldenOut mfs("test.molden");
+        mfs << sgeom_;
+        mfs << tref;
+      }
+    }
+    {//pick up the right active orbital by comparing with reference (that is partly semi-canonicalized localized orbital)
+      vector<tuple<shared_ptr<const Matrix>, pair<int, int>, int, string, bool>> svd_info;
+
+      auto activeA = make_shared<Matrix>(dimerbasis, nactA);
+      activeA->copy_block(0, 0, dimerbasis, nactA, pseudo_semi_coeff->get_submatrix(0, nclosed, dimerbasis, nactA));
+      svd_info.emplace_back(activeA, make_pair(0, nclosedS), nactcloA, "A", true); //A active in closed subspace
+      svd_info.emplace_back(activeA, make_pair(nclosedS, dimerbasis), nactvirtA, "A", false); //A active in virtual subspace
+
+      auto activeB = make_shared<Matrix>(dimerbasis, nactB);
+      activeB->copy_block(0, 0, dimerbasis, nactB, pseudo_semi_coeff->get_submatrix(0, nclosed+nactA, dimerbasis, nactB));
+      svd_info.emplace_back(activeB, make_pair(0, nclosedS), nactcloB, "B", true);
+      svd_info.emplace_back(activeB, make_pair(nclosedS, dimerbasis), nactvirtB, "B", false);
+
+      Overlap S(sgeom_);
+
+      shared_ptr<Matrix> out_coeff = semi_coeff->clone();
+      size_t active_position = nclosed;
+
+      set<int> mask; //records what orbitals have been copied to sref_ coeff, to be used to copy back the common closed & virtual orbitals
+      for (int i = 0; i != out_coeff->mdim(); ++i) mask.insert(i);
+
+      //this fills the active (A and B) in order of closed A - virtual A - closed B - virtual B
+      for (auto& subset : svd_info) {
+        const Matrix& active = *get<0>(subset);
+        pair<int, int> bounds = get<1>(subset);
+        const int norb = get<2>(subset);
+        const string set_name = get<3>(subset);
+        const bool closed = get<4>(subset);
+
+        shared_ptr<Matrix> subcoeff = semi_coeff->slice_copy(bounds.first, bounds.second);
+
+        const Matrix overlaps(active % S * *subcoeff);
+
+        multimap<double, int> norms;
+
+        for(int i = 0; i < overlaps.mdim(); ++i) {
+          const double norm = blas::dot_product(overlaps.element_ptr(0, i), overlaps.ndim(), overlaps.element_ptr(0, i));
+          norms.emplace(norm, i);
+        }
+
+        active_thresh_ = input_->get<double>("active_thresh", 0.5);
+        cout << endl << "  o Forming dimer's active orbitals arising from " << (closed ? "closed " : "virtual ") <<  set_name << " orbitals. Threshold for inclusion in cadidate space: " << setw(6) << setprecision(3) << active_thresh_ << endl;
+
+        vector<int> active_list;
+        double max_overlap, min_overlap;
+        {
+          auto end = norms.rbegin(); advance(end, norb);
+          end = find_if(end, norms.rend(), [this] (const pair<const double, int>& p) { return p.first < active_thresh_; });
+          for_each(norms.rbegin(), end, [&active_list] (const pair<const double, int>& p) { active_list.emplace_back(p.second); });
+          auto mnmx = minmax_element(norms.rbegin(), end);
+          tie(min_overlap, max_overlap) = make_tuple(mnmx.first->first, mnmx.second->first);
+        }
+
+        const int active_size = active_list.size();
+        cout << "    - size of candidate space: " << active_size << endl;
+        cout << "    - largest overlap with monomer space: " << max_overlap << ", smallest: " << min_overlap << endl;
+
+        if (active_size != norb) {
+          throw runtime_error("SVD is not yet implemented. Try adjust active_thresh.");
+        }
+        else {
+          set<int> active_set(active_list.begin(), active_list.end());
+          for (size_t i = 0; i < subcoeff->mdim(); ++i) {
+            if (active_set.count(i)) {
+              const int imo = bounds.first + i;
+              assert(mask.count(imo));
+              mask.erase(imo);
+              copy_n(subcoeff->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, active_position++));
+            }
+          }
+        }
+      }
+
+      //fill common closed and virtual subspace
+      shared_ptr<Matrix> scoeff = semi_coeff->copy();
+
+      size_t closed_position = 0;
+      for (int i = 0; i < nclosedS; ++i)
+        if(mask.count(i))
+          copy_n(scoeff->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, closed_position++));
+
+      size_t virt_position = nclosed + nact;
+      for (int i = nclosedS; i < dimerbasis; ++i)
+        if(mask.count(i))
+          copy_n(scoeff->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, virt_position++));
+
+      nvirt_ = {nvirtS - nactvirtA, nvirtS - nactvirtB};
+      sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nvirtS - nactvirtA - nactvirtB);
+
+    }
   }
 
-  #if 1
-  //Semi canonical coeff
-  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosed+cA+cB, nact-cA-cB-vA-vB, nvirtS - nactvirtA - nactvirtB + vA+vB);
-  #else
-  //check energy invariance (HF)
-  *semi_coeff = *semi_coeff->swap_columns(nclosed+nactA-nactvirtA,nactB-nactvirtB, nclosed+nactA,nactB-nactvirtB );
-  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosedS, 0, nvirtS);
-  #endif
-
+#if 0
+  if (false) {
+    //Orbital picking
+    int cA = 0, vA = 0, cB = 0, vB = 0;
+    auto deact = idata->get_array<int,4>("dimer_deactivate", {0,0,0,0});
+    if (!deact.empty()) {
+      cA = deact[0];
+      vA = deact[1];
+      cB = deact[2];
+      vB = deact[3];
+      cout << cA << vA << cB << vB << endl;
+      //swap cB into closed
+      *semi_coeff = *semi_coeff->swap_columns(nclosed,nactA, nclosed+nactA,cB);
+      //swap vA into virtual
+      *semi_coeff = *semi_coeff->swap_columns(nclosed+cB+nactA-vA,vA, nclosed+cB+nactA,nactB-vB);
+      //update active refs
+      active_refs_ = { make_shared<Reference>(active_refs_.first->geom(), active_refs_.first->coeff(), active_refs_.first->nclosed()+cA, active_refs_.first->nact()-cA-vA, active_refs_.first->nvirt()+vA),
+                       make_shared<Reference>(active_refs_.second->geom(), active_refs_.second->coeff(), active_refs_.first->nclosed()+cB, active_refs_.first->nact()-cB-vB, active_refs_.first->nvirt()+vB)};
+    }
+    #if 1
+    //Semi canonical coeff
+    sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosed+cA+cB, nact-cA-cB-vA-vB, nvirtS - nactvirtA - nactvirtB + vA+vB);
+    #else
+    //check energy invariance (HF)
+    *semi_coeff = *semi_coeff->swap_columns(nclosed+nactA-nactvirtA,nactB-nactvirtB, nclosed+nactA,nactB-nactvirtB );
+    sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*semi_coeff), nclosedS, 0, nvirtS);
+    #endif
+  }
+#endif
 
   if (mpi__->rank() == 0) {
     MoldenOut mfs("AB_localized_reordered_L.molden");
