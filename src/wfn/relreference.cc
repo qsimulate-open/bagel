@@ -32,6 +32,7 @@
 #include <src/integral/compos/complexoverlapbatch.h>
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/smallints1e_london.h>
+#include <src/ci/zfci/zharrison.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelReference)
 
@@ -134,4 +135,28 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     throw logic_error("Invalid RelReference formed");
   }
   return out;
+}
+
+
+shared_ptr<const Kramers<2,ZRDM<1>>> RelReference::rdm1(const int ist, const int jst) const {
+  ZFCI_bare fci(ciwfn_);
+  return fci.rdm1(ist, jst);
+}
+
+
+shared_ptr<const Kramers<4,ZRDM<2>>> RelReference::rdm2(const int ist, const int jst) const {
+  ZFCI_bare fci(ciwfn_);
+  return fci.rdm2(ist, jst);
+}
+
+
+shared_ptr<const Kramers<6,ZRDM<3>>> RelReference::rdm3(const int ist, const int jst) const {
+  ZFCI_bare fci(ciwfn_);
+  return fci.rdm3(ist, jst);
+}
+
+
+shared_ptr<const Kramers<8,ZRDM<4>>> RelReference::rdm4(const int ist, const int jst) const {
+  ZFCI_bare fci(ciwfn_);
+  return fci.rdm4(ist, jst);
 }

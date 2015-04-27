@@ -474,11 +474,10 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
 shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
   // store both pos and neg energy states, only thing saved thus far
   // TODO : modify to be more like CASSCF than dirac, will need to add FCI stuff
-  shared_ptr<ZMatrix> ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false); // transform coefficient to striped structure
-  assert(ctmp->mdim() == 2*nneg_);
-  auto coeff = make_shared<const ZMatrix>(*ctmp);
+  shared_ptr<const ZMatrix> coeff = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false); // transform coefficient to striped structure
 
-  auto out = make_shared<RelReference>(geom_, coeff, energy_.back(), 0, nclosed_, nact_, nvirt_, gaunt_, breit_, /*rel*/true, /*kramers*/true);
+  auto out = make_shared<RelReference>(geom_, coeff, energy_.back(), nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*rel*/true, /*kramers*/true,
+                                       fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
   return out;
 }
 

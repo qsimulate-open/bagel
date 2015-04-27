@@ -28,7 +28,7 @@
 #define __BAGEL_CASSCF_CASHybrid_H
 
 #include <iomanip>
-#include <src/wfn/method.h>
+#include <src/ci/fci/fci.h>
 
 namespace bagel {
 

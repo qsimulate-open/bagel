@@ -41,32 +41,10 @@ namespace bagel {
 namespace SMITH {
 namespace CASPT2{
 
-class CASPT2 : public SpinFreeMethod {
+class CASPT2 : public SpinFreeMethod<double> {
   protected:
-    using SpinFreeMethod::ref_;
-    using SpinFreeMethod::closed_;
-    using SpinFreeMethod::active_;
-    using SpinFreeMethod::virt_;
-    using SpinFreeMethod::ci_;
-    using SpinFreeMethod::rclosed_;
-    using SpinFreeMethod::ractive_;
-    using SpinFreeMethod::rvirt_;
-    using SpinFreeMethod::rci_;
-    using SpinFreeMethod::h1_;
-    using SpinFreeMethod::f1_;
-    using SpinFreeMethod::v2_;
-    using SpinFreeMethod::rdm1_;
-    using SpinFreeMethod::rdm2_;
-    using SpinFreeMethod::rdm3_;
-    using SpinFreeMethod::rdm4_;
-    using SpinFreeMethod::rdm1deriv_;
-    using SpinFreeMethod::rdm2deriv_;
-    using SpinFreeMethod::rdm3deriv_;
-    using SpinFreeMethod::rdm4deriv_;
-
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
-    double e0_;
     std::shared_ptr<Tensor> den1;
     std::shared_ptr<Tensor> den2;
     std::shared_ptr<Tensor> Den1;
@@ -143,19 +121,20 @@ class CASPT2 : public SpinFreeMethod {
     std::shared_ptr<FutureTensor> Gamma362_();
     std::shared_ptr<FutureTensor> Gamma377_();
     std::shared_ptr<FutureTensor> Gamma395_();
-    std::shared_ptr<Queue> make_residualq();
-    std::shared_ptr<Queue> make_energyq();
-    std::shared_ptr<Queue> make_corrq();
-    std::shared_ptr<Queue> make_densityq();
-    std::shared_ptr<Queue> make_density1q();
-    std::shared_ptr<Queue> make_density2q();
-    std::shared_ptr<Queue> make_deciq();
+    std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_energyq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_corrq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_densityq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_density1q(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_density2q(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_deciq(const bool reset = true, const bool diagonal = true);
 
   public:
-    CASPT2(std::shared_ptr<const SMITH_Info> ref);
+    CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);
     ~CASPT2() {}
 
     void solve();
+    void solve_deriv();
 
     double accumulate(std::shared_ptr<Queue> queue) {
       double sum = 0.0;
@@ -170,7 +149,7 @@ class CASPT2 : public SpinFreeMethod {
 
     double correlated_norm() const { return correlated_norm_; }
 
-    std::shared_ptr<const Civec> ci_deriv() const { return deci->civec(this->det_); }
+    std::shared_ptr<const Civec> ci_deriv(std::shared_ptr<const Determinants> det) const { return deci->civec(det); }
 
 };
 

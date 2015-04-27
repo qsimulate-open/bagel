@@ -85,21 +85,16 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
   if (!restricted) {
     kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
   } else {
-#if 1
-    array<shared_ptr<const ZMatrix>,2> tmp;
-    tmp[0] = make_shared<const ZMatrix>(*coeff_->slice_copy(nstart, nstart+(nfence-nstart)/2));
-    tmp[1] = make_shared<const ZMatrix>(*coeff_->slice_copy(nstart+(nfence-nstart)/2, nfence));
-    kramers_coeff_ = tmp;
-#else
-    kramers_coeff_ = kramers(coeff_->slice_copy(nstart, nfence), overlap, core_fock_);
-#endif
+    kramers_coeff_ = make_shared<Kramers<2,ZMatrix>>();
+    kramers_coeff_->emplace(0, coeff_->slice_copy(nstart, nstart+(nfence-nstart)/2));
+    kramers_coeff_->emplace(1, coeff_->slice_copy(nstart+(nfence-nstart)/2, nfence));
   }
 
   // calculate 1-e MO integrals
-  unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);
+  shared_ptr<Kramers<2,ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);
 
   // calculate 2-e MO integrals
-  unordered_map<bitset<4>, shared_ptr<const ZMatrix>> buf2e = compute_mo2e(kramers_coeff_);
+  shared_ptr<Kramers<4,ZMatrix>> buf2e = compute_mo2e(kramers_coeff_);
 
   // compress and set mo1e_ and mo2e_
   compress_and_set(buf1e, buf2e);
@@ -108,14 +103,16 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
 
 
 // this is a static function!
-array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
+shared_ptr<Kramers<2,ZMatrix>> RelMOFile::kramers(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
   const int noff = coeff->mdim()/2;
   const int ndim = coeff->ndim();
   const int mdim = coeff->mdim();
   const int nb = ndim / 4;
   unique_ptr<complex<double>[]> eig = (*coeff % *hcore * *coeff).diag();
 
-  array<shared_ptr<ZMatrix>,2> out{{make_shared<ZMatrix>(ndim, noff), make_shared<ZMatrix>(ndim, noff)}};
+  auto out = make_shared<Kramers<2,ZMatrix>>();
+  out->emplace(0, make_shared<ZMatrix>(ndim, noff));
+  out->emplace(1, make_shared<ZMatrix>(ndim, noff));
 
   if (ndim%2 != 0 || ndim%4 != 0)
     throw logic_error("illegal call of RelMOFile::kramers");
@@ -187,18 +184,19 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
 
     const int d = done.size();
     assert(d % 2 == 0);
-    out[0]->copy_block(0, d/2, ndim, n/2, cnow->element_ptr(0, 0));
-    out[1]->copy_block(0, d/2, ndim, n/2, cnow->element_ptr(0, n/2));
+    out->at(0)->copy_block(0, d/2, ndim, n/2, cnow->element_ptr(0, 0));
+    out->at(1)->copy_block(0, d/2, ndim, n/2, cnow->element_ptr(0, n/2));
 
     done.insert(done.end(), current.begin(), current.end());
   }
-
-  return array<shared_ptr<const ZMatrix>,2>{{out[0], out[1]}};
+  return out;
 }
 
 
 // modified from init_kramers_coeff in zcasscf_coeff.cc
-array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, const int nfence, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
+shared_ptr<Kramers<2,ZMatrix>>
+  RelMOFile::kramers_zquat(const int nstart, const int nfence, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
+
   assert((coeff->mdim() > 2 || !tsymm_) && coeff->mdim()%2 == 0); // zquatev has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
   assert(nstart < nfence);
   assert(coeff->ndim() == 4*geom_->nbasis());
@@ -219,7 +217,6 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
   const int nocc = nact + nclosed;
 
   shared_ptr<ZMatrix> focktmp;
-  shared_ptr<ZMatrix> ctmp;
   {
     const int norb = geom_->nele() - charge_;
     assert(norb <= coeff_->mdim());
@@ -246,7 +243,7 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
   }
 
   // re-order to kramers format and move negative energy states to virtual space
-  ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
+  auto ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
   { // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
     assert(ctmp->ndim() % 4 == 0);
     const int n = ctmp->ndim()/4;
@@ -278,50 +275,50 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
     ctmp = tmp;
   }
 
-  array<shared_ptr<const ZMatrix>,2> tmp;
-  tmp[0] = make_shared<const ZMatrix>(*ctmp->slice_copy(0, ctmp->mdim()/2));
-  tmp[1] = make_shared<const ZMatrix>(*ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()));
-
+  auto tmp = make_shared<Kramers<2,ZMatrix>>();
+  tmp->emplace(0, ctmp->slice_copy(0, ctmp->mdim()/2));
+  tmp->emplace(1, ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()));
   return tmp;
 }
 
 
-void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatrix>> buf1e, unordered_map<bitset<4>,shared_ptr<const ZMatrix>> buf2e) {
+void RelMOFile::compress_and_set(shared_ptr<Kramers<2,ZMatrix>> buf1e, shared_ptr<Kramers<4,ZMatrix>> buf2e) {
   mo1e_ = buf1e;
+  mo2e_ = make_shared<Kramers<4,ZMatrix>>();
 
   // Harrison requires <ij|kl> = (ik|jl)
-  for (auto& mat : buf2e) {
+  for (auto& mat : *buf2e) {
     shared_ptr<ZMatrix> tmp = mat.second->clone();
     sort_indices<0,2,1,3,0,1,1,1>(mat.second->data(), tmp->data(), nocc_, nocc_, nocc_, nocc_);
-    bitset<4> s = mat.first;
-    s[2] = mat.first[1];
-    s[1] = mat.first[2];
-    mo2e_.emplace(s, tmp);
+    bitset<4> s = mat.first.tag();
+    s[2] = mat.first.tag()[1];
+    s[1] = mat.first.tag()[2];
+    mo2e_->emplace(s, tmp);
   }
 }
 
 
-unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const array<shared_ptr<const ZMatrix>,2> coeff) {
-  unordered_map<bitset<2>, shared_ptr<const ZMatrix>> out;
+shared_ptr<Kramers<2,ZMatrix>> RelJop::compute_mo1e(shared_ptr<const Kramers<2,ZMatrix>> coeff) {
+  auto out = make_shared<Kramers<2,ZMatrix>>();
   const int n = tsymm_ ? 3 : 4;
   for (size_t i = 0; i != n; ++i)
-    out[bitset<2>(i)] = make_shared<ZMatrix>(*coeff[i/2] % *core_fock_ * *coeff[i%2]);
+    out->emplace(i, make_shared<ZMatrix>(*coeff->at(i/2) % *core_fock_ * *coeff->at(i%2)));
   if (tsymm_)
-    out[bitset<2>("11")] = out[bitset<2>("00")]->get_conjg();
+    out->emplace({1,1}, out->at({0,0})->get_conjg());
 
-  assert(out.size() == 4);
+  assert(out->size() == 4);
   // symmetry requirement
-  assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
+  assert((*out->at({1,0}) - *out->at({0,1})->transpose_conjg()).rms() < 1.0e-8);
   // Kramers requirement
-  assert((*make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]) - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8 || !tsymm_);
+  assert((*make_shared<ZMatrix>(*coeff->at(1) % *core_fock_ * *coeff->at(1)) - *out->at({0,0})->get_conjg()).rms() < 1.0e-8 || !tsymm_);
 
   return out;
 }
 
 
-unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const array<shared_ptr<const ZMatrix>,2> coeff) {
+shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<2,ZMatrix>> coeff) {
 
-  auto compute = [&coeff, this](unordered_map<bitset<4>, shared_ptr<ZMatrix>>& out, const bool gaunt, const bool breit) {
+  auto compute = [&coeff, this](shared_ptr<Kramers<4,ZMatrix>> out, const bool gaunt, const bool breit) {
     assert(!breit || gaunt);
     // (1) make DFDists
     vector<shared_ptr<const DFDist>> dfs;
@@ -339,8 +336,8 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
     array<array<shared_ptr<const Matrix>,4>,2> iocoeff;
     for (int k = 0; k != 2; ++k) {
       for (int i = 0; i != 4; ++i) {
-        shared_ptr<const ZMatrix> oc = coeff[k]->get_submatrix(i*nbasis_, 0, nbasis_, nocc_);
-        assert(nocc_ == coeff[k]->mdim());
+        shared_ptr<const ZMatrix> oc = coeff->at(k)->get_submatrix(i*nbasis_, 0, nbasis_, nocc_);
+        assert(nocc_ == coeff->at(k)->mdim());
         rocoeff[k][i] = oc->get_real_part();
         iocoeff[k][i] = oc->get_imag_part();
       }
@@ -392,8 +389,8 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
     }
 
     // (4) compute (gamma|ii)
-    unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full = compute_full(rocoeff, iocoeff, half_complex_exch, true);
-    unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full2 = !breit ? full : compute_full(rocoeff, iocoeff, half_complex_exch2, false);
+    shared_ptr<const Kramers<2,RelDFFull>> full = compute_full(rocoeff, iocoeff, half_complex_exch, true);
+    shared_ptr<const Kramers<2,RelDFFull>> full2 = !breit ? full : compute_full(rocoeff, iocoeff, half_complex_exch2, false);
 
     // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
     const double gscale = gaunt ? (breit ? -0.5 : -1.0) : 1.0;
@@ -409,28 +406,17 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
       // we compute: 0000, 0010, 1001, 0101, 0011, 1011
 
       // TODO : put in if statement for apply_J if nact*nact is much smaller than number of MPI processes
-      const bitset<2> b2a = bitset<2>(i/4);
-      const bitset<2> b2b = bitset<2>(i%4);
-      const bitset<4> b4 = bitset<4>(i);
-      if (!breit) {
-        if (out.find(b4) == out.end()) {
-          out[b4] = full.at(b2a)->form_4index(full2.at(b2b), gscale);
-        } else {
-          *out.at(b4) += *full.at(b2a)->form_4index(full2.at(b2b), gscale);
-        }
-      } else {
-        // in breit cases we explicitly symmetrize the Hamiltnian
-        if (out.find(b4) == out.end()) {
-          out[b4] = full.at(b2a)->form_4index(full2.at(b2b), gscale*0.5);
-        } else {
-          *out.at(b4) += *full.at(b2a)->form_4index(full2.at(b2b), gscale*0.5);
-        }
-        *out.at(b4) += *full2.at(b2a)->form_4index(full.at(b2b), gscale*0.5);
-      }
+      const int b2a = i/4;
+      const int b2b = i%4;
+      out->add(i, full->at(b2a)->form_4index(full2->at(b2b), gscale * (breit_ ? 0.5 : 1.0)));
+
+      // in breit cases we explicitly symmetrize the Hamiltnian (hence the prefactor 0.5 above)
+      if (breit_)
+        *out->at(i) += *full2->at(b2a)->form_4index(full->at(b2b), gscale*0.5);
     }
   };
 
-  unordered_map<bitset<4>, shared_ptr<ZMatrix>> out;
+  auto out = make_shared<Kramers<4,ZMatrix>>();
   // Dirac-Coulomb term
   compute(out, false, false);
 
@@ -439,19 +425,19 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
 
   // Kramers and particle symmetry
   if (tsymm_)
-    out[bitset<4>("1111")] = out.at(bitset<4>("0000"))->get_conjg();
+    (*out)[{1,1,1,1}] = out->at({0,0,0,0})->get_conjg();
 
-  out[bitset<4>("1010")] = out.at(bitset<4>("0101"))->clone();
-  shared_ptr<ZMatrix> m1010 = out.at(bitset<4>("0101"))->get_conjg();
-  sort_indices<1,0,3,2,0,1,1,1>(m1010->data(), out[bitset<4>("1010")]->data(), nocc_, nocc_, nocc_, nocc_);
+  (*out)[{1,0,1,0}] = out->at({0,1,0,1})->clone();
+  shared_ptr<ZMatrix> m1010 = out->at({0,1,0,1})->get_conjg();
+  sort_indices<1,0,3,2,0,1,1,1>(m1010->data(), out->at({1,0,1,0})->data(), nocc_, nocc_, nocc_, nocc_);
 
-  out[bitset<4>("1101")] = out.at(bitset<4>("1011"))->clone();
-  shared_ptr<ZMatrix> m1101 = out.at(bitset<4>("1011"))->get_conjg();
-  sort_indices<3,2,1,0,0,1,1,1>(m1101->data(), out[bitset<4>("1101")]->data(), nocc_, nocc_, nocc_, nocc_);
+  (*out)[{1,1,0,1}] = out->at({1,0,1,1})->clone();
+  shared_ptr<ZMatrix> m1101 = out->at({1,0,1,1})->get_conjg();
+  sort_indices<3,2,1,0,0,1,1,1>(m1101->data(), out->at({1,1,0,1})->data(), nocc_, nocc_, nocc_, nocc_);
 
-  out[bitset<4>("0100")] = out.at(bitset<4>("0010"))->clone();
-  shared_ptr<ZMatrix> m0100 = out.at(bitset<4>("0010"))->get_conjg();
-  sort_indices<3,2,1,0,0,1,1,1>(m0100->data(), out[bitset<4>("0100")]->data(), nocc_, nocc_, nocc_, nocc_);
+  (*out)[{0,1,0,0}] = out->at({0,0,1,0})->clone();
+  shared_ptr<ZMatrix> m0100 = out->at({0,0,1,0})->get_conjg();
+  sort_indices<3,2,1,0,0,1,1,1>(m0100->data(), out->at({0,1,0,0})->data(), nocc_, nocc_, nocc_, nocc_);
 
 #if 0
   // for completeness we can compute the others too
@@ -467,32 +453,14 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   out[bitset<4>("1100")] = out.at(bitset<4>("0011"))->transpose();
 #endif
 
-  return unordered_map<bitset<4>, shared_ptr<const ZMatrix>>(out.begin(), out.end());
+  return out;
 }
 
 
-void RelMOFile::update_kramers_coeff(shared_ptr<ZMatrix> coeff) {
-  // transform kramers coeff to natural orbital rep
-  assert(coeff->mdim() == coeff->ndim());
-  assert(coeff->mdim() == nocc_*2);
-  int ndim = kramers_coeff(0)->ndim();
-  int n    = coeff->ndim();
-  auto kcoefftmp  = make_shared<ZMatrix>(ndim, coeff->mdim());
-  auto kcoefftmp2 = kcoefftmp->clone();
-  kcoefftmp->copy_block(0,     0, ndim, nocc_, kramers_coeff(0)->data());
-  kcoefftmp->copy_block(0, nocc_, ndim, nocc_, kramers_coeff(1)->data());
-  zgemm3m_("N", "N", ndim, n, n, 1.0, kcoefftmp->data(), ndim, coeff->get_conjg()->data(), n, 0.0, kcoefftmp2->data(), ndim);
-  array<shared_ptr<const ZMatrix>,2> kctmp;
-  kctmp[0] = make_shared<const ZMatrix>(*kcoefftmp2->slice_copy(0, nocc_));
-  kctmp[1] = make_shared<const ZMatrix>(*kcoefftmp2->slice_copy(nocc_, nocc_*2));
-  kramers_coeff_ = kctmp;
-}
-
-
-unordered_map<bitset<2>, shared_ptr<const RelDFFull>>
+shared_ptr<const Kramers<2,RelDFFull>>
   RelMOFile::compute_full(array<array<shared_ptr<const Matrix>,4>,2> rocoeff, array<array<shared_ptr<const Matrix>,4>,2> iocoeff,
                           array<list<shared_ptr<RelDFHalf>>,2> half, const bool appj, const bool appjj) {
-  unordered_map<bitset<2>, shared_ptr<const RelDFFull>> out;
+  auto out = make_shared<Kramers<2,RelDFFull>>();
 
   // TODO remove once DFDistT class is fixed
   const bool transform_with_full = !(half[0].front()->nocc()*rocoeff[0][0]->mdim() <= mpi__->size());
@@ -514,13 +482,13 @@ unordered_map<bitset<2>, shared_ptr<const RelDFFull>>
     DFock::factorize(dffull);
     assert(dffull.size() == 1);
     dffull.front()->scale(dffull.front()->fac()); // take care of the factor
-    out[bitset<2>(t)] = dffull.front();
+    (*out)[t] = dffull.front();
 
     if (transform_with_full) {
       if (appj)
-        out.at(bitset<2>(t)) = out.at(bitset<2>(t))->apply_J();
+        out->at(t) = out->at(t)->apply_J();
       else if (appjj)
-        out.at(bitset<2>(t)) = out.at(bitset<2>(t))->apply_JJ();
+        out->at(t) = out->at(t)->apply_JJ();
     }
   }
   return out;

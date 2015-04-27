@@ -288,13 +288,7 @@ void ZHarrison::compute() {
     shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
-    // constructing Dvec's for Davidson
-    auto ccn = make_shared<RelZDvec>(cc_);
-    auto sigman = make_shared<RelZDvec>(sigma);
-    ccn->synchronize();
-    sigman->synchronize();
-
-    const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
+    const vector<double> energies = davidson_->compute(cc_->dvec(conv), sigma->dvec(conv));
     // get residual and new vectors
     vector<shared_ptr<RelZDvec>> errvec = davidson_->residual();
     for (auto& i : errvec)
@@ -319,7 +313,7 @@ void ZHarrison::compute() {
         for (auto& ib : space_->detmap()) {
           const int na = ib.second->nelea();
           const int nb = ib.second->neleb();
-          const size_t size = ccn->find(na, nb)->data(ist)->size();
+          const size_t size = cc_->find(na, nb)->data(ist)->size();
           complex<double>* target_array = ctmp->find(na, nb)->data();
           complex<double>* source_array = errvec[ist]->find(na, nb)->data();
           double* denom_array = denom_->find(na, nb)->data();
@@ -369,3 +363,8 @@ shared_ptr<const ZMatrix> ZHarrison::swap_pos_neg(shared_ptr<const ZMatrix> coef
   return out;
 }
 
+
+shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
+  using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
+  return make_shared<RelCIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, make_shared<PairType>(make_pair(space_, int_space_)));
+}

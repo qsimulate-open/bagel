@@ -66,7 +66,8 @@ void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
   auto sigma = make_shared<Dvec>(det, nstates);
 
   shared_ptr<const Determinants> det_trans = det->transpose();
-  shared_ptr<const Dvec> cc_trans = ccvec->spinflip(det_trans);
+  shared_ptr<const CASDvec> cc = make_shared<CASDvec>(ccvec->dvec());
+  shared_ptr<const CASDvec> cc_trans = cc->transpose(det_trans);
   auto sg_trans = make_shared<Dvec>(det, nstates);
 
   const int la = ccvec->lena();

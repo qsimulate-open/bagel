@@ -33,7 +33,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelSpace)
 using namespace std;
 using namespace bagel;
 
-RelSpace::RelSpace(const int norb, const int nele, const bool mute, const bool linkup) {
+RelSpace::RelSpace(const int norb, const int nele, const bool mute, const bool linkup) : nele_(nele) {
 
   using FCIStringSet = CIStringSet<FCIString>;
 

@@ -60,16 +60,17 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
 
   shared_ptr<Method> out;
   if (!geom->magnetism()) {
-    if (title == "hf")          out = make_shared<RHF>(itree, geom, ref);
-    else if (title == "ks")     out = make_shared<KS>(itree, geom, ref);
-    else if (title == "uhf")    out = make_shared<UHF>(itree, geom, ref);
-    else if (title == "rohf")   out = make_shared<ROHF>(itree, geom, ref);
-    else if (title == "soscf")  out = make_shared<SOSCF>(itree, geom, ref);
-    else if (title == "mp2")    out = make_shared<MP2>(itree, geom, ref);
-    else if (title == "dhf")    out = make_shared<Dirac>(itree, geom, ref);
-    else if (title == "dmp2")   out = make_shared<DMP2>(itree, geom, ref);
-    else if (title == "smith")  out = make_shared<Smith>(itree, geom, ref);
-    else if (title == "zfci")   out = make_shared<ZHarrison>(itree, geom, ref);
+    if (title == "hf")            out = make_shared<RHF>(itree, geom, ref);
+    else if (title == "ks")       out = make_shared<KS>(itree, geom, ref);
+    else if (title == "uhf")      out = make_shared<UHF>(itree, geom, ref);
+    else if (title == "rohf")     out = make_shared<ROHF>(itree, geom, ref);
+    else if (title == "soscf")    out = make_shared<SOSCF>(itree, geom, ref);
+    else if (title == "mp2")      out = make_shared<MP2>(itree, geom, ref);
+    else if (title == "dhf")      out = make_shared<Dirac>(itree, geom, ref);
+    else if (title == "dmp2")     out = make_shared<DMP2>(itree, geom, ref);
+    else if (title == "smith")    out = make_shared<Smith>(itree, geom, ref);
+    else if (title == "relsmith") out = make_shared<RelSmith>(itree, geom, ref);
+    else if (title == "zfci")     out = make_shared<ZHarrison>(itree, geom, ref);
     else if (title == "ras") {
       const string algorithm = itree->get<string>("algorithm", "");
       if ( algorithm == "local" || algorithm == "" ) {
