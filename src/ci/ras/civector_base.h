@@ -93,6 +93,7 @@ class RASCivector_base {
       std::vector<std::shared_ptr<BlockType>> out;
       for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
         for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
+          if (det_->remove_singles() && (ih == 1 || jp == 1)) continue;
           std::shared_ptr<BlockType> blk;
           if (spin == 0) blk = block(nh, ih, np, jp);
           else           blk = block(ih, nh, jp, np);
@@ -113,6 +114,7 @@ class RASCivector_base {
       std::vector<std::shared_ptr<const BlockType>> out;
       for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
         for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
+          if (det_->remove_singles() && (ih == 1 || jp == 1)) continue;
           std::shared_ptr<const BlockType> blk;
           if (spin == 0) blk = block(nh, ih, np, jp);
           else           blk = block(ih, nh, jp, np);

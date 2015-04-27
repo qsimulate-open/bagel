@@ -34,8 +34,8 @@ using namespace std;
 using namespace bagel;
 
 RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb,
-                                 const int max_holes, const int max_particles, const bool mute)
- : ras_{{norb1, norb2, norb3}}, max_holes_(max_holes), max_particles_(max_particles) {
+                                 const int max_holes, const int max_particles, const bool mute, const bool remove_singles)
+ : ras_{{norb1, norb2, norb3}}, max_holes_(max_holes), max_particles_(max_particles), remove_singles_(remove_singles) {
 
   if ( nelea < 0 || neleb < 0) throw runtime_error("nele < 0");
 
@@ -48,6 +48,8 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   if (!mute) cout << "   - RAS1 -> " << ras_[0] << endl;
   if (!mute) cout << "   - RAS2 -> " << ras_[1] << endl;
   if (!mute) cout << "   - RAS3 -> " << ras_[2] << endl << endl;
+  if (!mute && remove_singles_)
+             cout << " o Single excitations are removed" << endl << endl;
 
   if (!mute) cout << " o Constructing all possible strings with up to " << max_holes_ << " holes and " << max_particles_ << " particles" << endl;
   {
@@ -104,6 +106,8 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
             for (int npa = npart; npa >= 0; --npa) {
               const int npb = npart - npa;
 
+            //auto block = make_shared<const CIBlockInfo<RASString>>( (remove_singles_ && (nholes == 1 || npart == 1)) ? make_shared<const RASString>() : space<0>(nha, npa),
+            //                                                        (remove_singles_ && (nholes == 1 || npart == 1)) ? make_shared<const RASString>() : space<1>(nhb, npb), size_);
               auto block = make_shared<const CIBlockInfo<RASString>>(space<0>(nha, npa), space<1>(nhb, npb), size_);
               blockinfo_.push_back(block);
               if (!block->empty()) size_ += block->size();

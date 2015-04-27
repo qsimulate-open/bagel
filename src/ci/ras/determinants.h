@@ -40,6 +40,8 @@ class RASDeterminants : public Determinants_base<RASString>,
     const int max_holes_;
     const int max_particles_;
 
+    const bool remove_singles_;
+
     std::weak_ptr<RASDeterminants> addalpha_;
     std::weak_ptr<RASDeterminants> remalpha_;
     std::weak_ptr<RASDeterminants> addbeta_;
@@ -49,12 +51,12 @@ class RASDeterminants : public Determinants_base<RASString>,
     std::vector<std::vector<DetMapBlock>> phib_ij_;
 
   public:
-    RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false);
-    RASDeterminants(std::array<int, 3> ras, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false) :
-      RASDeterminants(ras[0], ras[1], ras[2], nelea, neleb, max_holes, max_particles, mute) {}
+    RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false, const bool remove_singles = false);
+    RASDeterminants(std::array<int, 3> ras, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false, const bool remove_singles = false) :
+      RASDeterminants(ras[0], ras[1], ras[2], nelea, neleb, max_holes, max_particles, mute, remove_singles) {}
 
     std::shared_ptr<RASDeterminants> clone(const int nelea, const int neleb) const
-      { return std::make_shared<RASDeterminants>(ras_, nelea, neleb, max_holes_, max_particles_, true); }
+      { return std::make_shared<RASDeterminants>(ras_, nelea, neleb, max_holes_, max_particles_, true, remove_singles_); }
     std::shared_ptr<RASDeterminants> transpose() const { return this->clone(neleb(), nelea()); }
 
     static const int Alpha = 0;
@@ -71,7 +73,7 @@ class RASDeterminants : public Determinants_base<RASString>,
     }
 
     bool operator==(const RASDeterminants& o) const
-      { return ( nelea() == o.nelea() && neleb() == o.neleb() && max_holes_ == o.max_holes_ && max_particles_ == o.max_particles_ && ras_ == o.ras_ ); }
+      { return ( nelea() == o.nelea() && neleb() == o.neleb() && max_holes_ == o.max_holes_ && max_particles_ == o.max_particles_ && ras_ == o.ras_ && remove_singles_ == o.remove_singles_); }
 
     const int nholes(const std::bitset<nbit__> bit) const { return ras_[0] - (bit & (~std::bitset<nbit__>(0ull) >> (nbit__ - ras_[0]))).count(); }
     const int nparticles(const std::bitset<nbit__> bit) const { return (bit & (~(~std::bitset<nbit__>(0ull) << ras_[2]) << ras_[0] + ras_[1])).count(); }
@@ -79,17 +81,18 @@ class RASDeterminants : public Determinants_base<RASString>,
     const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
 
     const bool allowed(const int nha, const int nhb, const int npa, const int npb) const
-      { return ( (nha + nhb) <= max_holes_ && (npa + npb) <= max_particles_ ); }
+      { return ( (nha + nhb) <= max_holes_ && (npa + npb) <= max_particles_ && (remove_singles_ ? ((nha + nhb) != 1 && (npa + npb) != 1) : true )); }
     const bool allowed(const std::bitset<nbit__> abit, const std::bitset<nbit__> bbit) const
-      { return (nholes(abit) + nholes(bbit)) <= max_holes_ && (nparticles(abit) + nparticles(bbit)) <= max_particles_; }
+      { return (nholes(abit) + nholes(bbit)) <= max_holes_ && (nparticles(abit) + nparticles(bbit)) <= max_particles_ && (remove_singles_ ? ((nholes(abit) + nholes(bbit)) != 1 && (nparticles(abit) + nparticles(bbit)) != 1) : true); }
     const bool allowed(const std::shared_ptr<const RASString> alpha, const std::shared_ptr<const RASString> beta) const
-      { return (beta->nholes() + alpha->nholes()) <= max_holes_ && (beta->nparticles() + alpha->nparticles()) <= max_particles_; }
+      { return (beta->nholes() + alpha->nholes()) <= max_holes_ && (beta->nparticles() + alpha->nparticles()) <= max_particles_ && (remove_singles_ ? ((beta->nholes() + alpha->nholes()) != 1 && (beta->nparticles() + alpha->nparticles()) != 1) : true); }
 
     template <int spin>
     const std::vector<std::shared_ptr<const RASString>> allowed_spaces(std::shared_ptr<const RASString> sp) const {
       std::vector<std::shared_ptr<const RASString>> out;
       for (int jp = 0; jp + sp->nparticles() <= max_particles_; ++jp) {
         for (int ih = 0; ih + sp->nholes() <= max_holes_; ++ih) {
+          if (remove_singles_ && (ih == 1 || jp == 1)) continue;
           std::shared_ptr<const RASString> sp = space<spin^1>(ih, jp);
           if (!sp->empty()) out.push_back(sp);
         }
@@ -125,6 +128,8 @@ class RASDeterminants : public Determinants_base<RASString>,
 
     const int max_holes() const { return max_holes_; }
     const int max_particles() const { return max_particles_; }
+
+    const bool remove_singles() const { return remove_singles_; }
 
     const std::vector<DetMapBlock>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
     const std::vector<DetMapBlock>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }

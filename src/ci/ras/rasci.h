@@ -58,6 +58,8 @@ class RASCI : public Method {
     int max_holes_;
     int max_particles_;
 
+    bool remove_singles_;
+
     // number of states
     int nstate_;
 
