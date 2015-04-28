@@ -33,6 +33,21 @@ namespace bagel {
 
 class QuatMatrix : public ZMatrix {
   protected:
+    // Average out errors in time-reversal symmetry
+    void t_symmetrize() {
+      assert(mdim()%2 == 0 && ndim()%2 == 0);
+      const size_t m = mdim()/2;
+      const size_t n = ndim()/2;
+      for (size_t i=0; i!=n; ++i) {
+        for (size_t j=0; j!=m; ++j) {
+          element(i, j) = 0.5*(element(i, j)+std::conj(element(n+i, m+j)));
+          element(n+i, j) = 0.5*(element(n+i, j)-std::conj(element(i, m+j)));
+          element(n+i, m+j) = std::conj(element(i, j));
+          element(i, m+j) = -std::conj(element(n+i, j));
+        }
+      }
+    }
+
     // Check that the matrix is symmetric under time-reversal
     bool is_t_symmetric(const double thresh = 1.0e-6) const {
       assert(mdim()%2 == 0 && ndim()%2 == 0);
