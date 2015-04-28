@@ -94,7 +94,7 @@ vector<std::complex<double>> SphMultipole::multipoles(const int l) {
 void SphMultipole::compute_real_multipoles() {
 
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-  const double ctheta = centre_[2]/r;
+  const double ctheta = (r > numerical_zero__) ? centre_[2]/r : 0.0;
   const double phi = atan2(centre_[1], centre_[0]);
 
   real_multipole_.resize(num_multipoles_);

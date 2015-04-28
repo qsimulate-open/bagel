@@ -44,7 +44,7 @@ LocalExpansion::LocalExpansion(const array<double, 3> c, vector<shared_ptr<const
 vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_local_moments() {
 
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-  const double ctheta = centre_[2]/r;
+  const double ctheta = (r > numerical_zero__) ? centre_[2]/r : 0.0;
   const double phi = atan2(centre_[1], centre_[0]);
 
   vector<shared_ptr<const ZMatrix>> out(num_multipoles_);
@@ -96,7 +96,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_local_moments() {
 vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_moments() {
 
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-  const double ctheta = centre_[2]/r;
+  const double ctheta = (r > numerical_zero__) ? centre_[2]/r : 0.0;
   const double phi = atan2(centre_[1], centre_[0]);
 
   vector<shared_ptr<const ZMatrix>> out(num_multipoles_);
@@ -141,7 +141,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_moments() {
 vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_local_expansions() {
 
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-  const double ctheta = centre_[2]/r;
+  const double ctheta = (r > numerical_zero__) ? centre_[2]/r : 0.0;
   const double phi = atan2(centre_[1], centre_[0]);
 
   vector<shared_ptr<const ZMatrix>> out(num_multipoles_);
