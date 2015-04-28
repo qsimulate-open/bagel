@@ -61,7 +61,10 @@ class Node {
     void make_interaction_list(const int ws = 2);
 
     int nbasis_;
+    bool is_same_as_parent_;
+    int rank_;
     std::vector<std::shared_ptr<const ZMatrix>> multipoles_;
+    std::vector<std::shared_ptr<const ZMatrix>> local_moment_;
     std::shared_ptr<const ZMatrix> local_expansion_;
     void compute_multipoles(const int lmax = ANG_HRR_END);
     void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offset);
@@ -94,7 +97,11 @@ class Node {
     std::vector<std::shared_ptr<const Node>> neighbour() const { return neighbour_; }
     std::vector<std::shared_ptr<const Node>> interaction_list() const { return interaction_list_; }
 
+    bool is_same_as_parent() const { return is_same_as_parent_; }
+    int rank() const { return rank_; }
     std::vector<std::shared_ptr<const ZMatrix>> multipoles() const { return multipoles_; }
+    std::vector<std::shared_ptr<const ZMatrix>> local_moment() const { return local_moment_; }
+    std::shared_ptr<const ZMatrix> local_moment(const int i) const { return local_moment_[i]; }
     std::shared_ptr<const ZMatrix> local_expansion() const { return local_expansion_; }
 };
 

@@ -78,27 +78,24 @@ void Tree::build_tree() {
 
   bitset<nbit__>  current_key;
   for (int i = 1; i <= max_height_; ++i) { /* top down */
-    const int level = max_height_ - i;
+    const int depth = i;
 
     const unsigned int shift = nbit__ - 1 - i * 3;
-    bitset<nbit__> key;
 
     int max_nbody = 0;
     for (int n = 0; n != nvertex_; ++n) {
-      key = (leaves_[n]->key() >> shift);
+      const bitset<nbit__> key = (leaves_[n]->key() >> shift);
 
       if (key != current_key) { /* insert node */
         current_key = key;
         nodes_.resize(nnode_ + 1);
-        const int depth = i;
 
-        if (level == 1) {
-          nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[0], thresh_);
+        if (depth == 1) {
+          nodes_[nnode_] = make_shared<Node>(key, 1, nodes_[0], thresh_);
           (nodes_[nnode_])->insert_vertex(leaves_[n]);
           nodes_[0]->insert_child(nodes_[nnode_]);
         } else {
-          bitset<nbit__> parent_key;
-          parent_key  = parent_key | (key >> 3);
+          const bitset<nbit__> parent_key = key >> 3;
           bool parent_found = false;
           for (int j = 0; j != nnode_; ++j) {
             if (parent_key == nodes_[j]->key()) {
@@ -143,9 +140,8 @@ void Tree::build_tree() {
 void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
 
   // Downward pass
-  for (int i = nnode_ - 1; i > 0; --i) {
+  for (int i = nnode_ - 1; i > 0; --i)
     nodes_[i]->compute_multipoles(lmax);
-  }
 
   // Upward pass
   vector<int> offset;
