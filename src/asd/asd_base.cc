@@ -79,6 +79,16 @@ ASD_base::ASD_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> 
 }
 
 
+void ASD_base::update_dimer(shared_ptr<const Dimer> dimer) {
+  Timer timer;
+  dimer_ = make_shared<const Dimer>(*dimer);
+  shared_ptr<const Reference> dimerref = dimer_->sref();
+  jop_ = make_shared<DimerJop>(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->active_refs().first->nact(), dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
+  cout << "  o computing integrals: " << timer.tick() << endl;
+  fixed_ci_ = true;
+}
+
+
 shared_ptr<Matrix> ASD_base::compute_intra(const DimerSubspace_base& AB, shared_ptr<const DimerJop> jop, const double diag) const {
   auto out = make_shared<Matrix>(AB.dimerstates(), AB.dimerstates());
 

@@ -89,6 +89,8 @@ class ASD_base {
     double thresh_;
     double print_thresh_;
 
+    bool fixed_ci_;
+
     virtual std::vector<DimerSubspace_base> subspaces_base() const = 0;
 
     // Gamma Tensor
@@ -151,6 +153,8 @@ class ASD_base {
     std::shared_ptr<RDM<2>> rdm2_av() { return rdm2_av_; }
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
+
+    void update_dimer(std::shared_ptr<const Dimer> dimer);
 
   private:
     // RDM

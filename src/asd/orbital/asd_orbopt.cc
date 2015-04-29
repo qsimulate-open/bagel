@@ -54,6 +54,9 @@ void ASD_OrbOpt::common_init() {
   rotation_thresh_ = idata_->get<double>("rotation_thresh", 1.0e-4);
   energy_thresh_ = idata_->get<double>("energy_thresh", 1.0e-6);
 
+  //semi_canonical orbital at convergence
+  semi_canonical_ = idata_->get<bool>("semi_canonical", false);
+
   // active space
   nact_ = ref_->nact();
   nactA_ = dimer_->active_refs().first->nact();
@@ -116,7 +119,7 @@ void ASD_OrbOpt::print_header() const {
   cout << "  --------------------------------------------" << endl << endl;
 }
 
-void ASD_OrbOpt::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, double max_r, double delta_e, const double time, const int itype) const {
+void ASD_OrbOpt::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, double max_r, double delta_e, const double time, const int itype, bool fix_ci) const {
   auto print_iteration_type = [] (const int i) {
     string out;
     if (i == 0) out = "intra";
@@ -136,8 +139,9 @@ void ASD_OrbOpt::print_iteration(int iter, int miter, int tcount, const vector<d
                  << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0)
                  << setw(10) << scientific << setprecision(2) << (i==0 ? max_r : 0.0)
                  << setw(10) << scientific << setprecision(2) << (i==0 ? delta_e : 0.0)
-                 << fixed << setw(10) << setprecision(2)
-                 << time << setw(10) << print_iteration_type(itype) << endl;
+                 << fixed << setw(10) << setprecision(2) << time
+                 << setw(10) << print_iteration_type(itype)
+                 << setw(10) << (fix_ci ? "fix" : " ") << endl;
     ++i;
   }
 }

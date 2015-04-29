@@ -37,28 +37,30 @@ void ASD<VecType>::compute() {
   std::cout << "     -  charge: " << charge_ << std::endl;
   std::cout << "     -  dimer states: " << dimerstates_ << std::endl << std::endl;
 
-  auto gammaforest = std::make_shared<GammaForest<VecType, 2>>();
-  {
-    auto spinmap = std::make_shared<ASDSpinMap<VecType>>();
-    for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
-      for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
-        gammaforest->couple_blocks(*jAB, *iAB);
-        spinmap->couple_blocks(*jAB, *iAB);
+  if(!fixed_ci_) {
+    auto gammaforest = std::make_shared<GammaForest<VecType, 2>>();
+    {
+      auto spinmap = std::make_shared<ASDSpinMap<VecType>>();
+      for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+        for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+          gammaforest->couple_blocks(*jAB, *iAB);
+          spinmap->couple_blocks(*jAB, *iAB);
+        }
+        gammaforest->couple_blocks(*iAB, *iAB);
+        spinmap->diagonal_block(*iAB);
       }
-      gammaforest->couple_blocks(*iAB, *iAB);
-      spinmap->diagonal_block(*iAB);
+      spin_ = std::make_shared<ASDSpin>(dimerstates_, *spinmap, max_spin_);
     }
-    spin_ = std::make_shared<ASDSpin>(dimerstates_, *spinmap, max_spin_);
+
+    std::cout << "  o Preparing Gamma trees and building spin operator - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
+    std::cout << "    - spin elements: " << spin_->size() << std::endl;
+
+    gammaforest->compute();
+    gammatensor_ = { std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,0>(gammaforest), subspaces_),
+                     std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,1>(gammaforest), subspaces_) };
+
+    std::cout << "  o Computing Gamma trees - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
   }
-
-  std::cout << "  o Preparing Gamma trees and building spin operator - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
-  std::cout << "    - spin elements: " << spin_->size() << std::endl;
-
-  gammaforest->compute();
-  gammatensor_ = { std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,0>(gammaforest), subspaces_),
-                   std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,1>(gammaforest), subspaces_) };
-
-  std::cout << "  o Computing Gamma trees - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
 
   if (store_matrix_) hamiltonian_ = std::make_shared<Matrix>(dimerstates_, dimerstates_);
 

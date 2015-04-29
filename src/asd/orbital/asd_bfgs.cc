@@ -40,6 +40,8 @@ void ASD_BFGS::compute() {
   //BFGS parameters
   thresh_inter_ = idata_->get<double>("thresh_inter", 5.0e-4);
   thresh_intra_ = idata_->get<double>("thresh_intra", 5.0e-4);
+  double fix_ci_begin = idata_->get<double>("fix_ci_begin", 5.0e-4);
+  double fix_ci_end   = idata_->get<double>("fix_ci_end",   1.0e-6);
   single_bfgs_ = idata_->get<bool>("single_bfgs", false);
   bool no_active = idata_->get<bool>("no_active", false);
   bool active_only = idata_->get<bool>("active_only", false);
@@ -62,7 +64,7 @@ void ASD_BFGS::compute() {
   bool first_iteration = single_bfgs_ ? true : false;
   bool inter_first = single_bfgs_ ? false : true;
   bool intra_first = single_bfgs_ ? false : true;
-
+  bool fix_ci = false;
   // ============================
   // macro iteration from here
   // ============================
@@ -79,6 +81,8 @@ void ASD_BFGS::compute() {
   vector<double> inter_evals;
   vector<double> intra_evals;
 
+  auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
+
   cout << "     See asd_orbopt.log for further information on ASD output " << endl << endl;
   mute_stdcout();
   for (int iter = active_only ? 1 : 0; iter != max_iter_; ++iter) {
@@ -86,7 +90,13 @@ void ASD_BFGS::compute() {
     bool inter = iter%2 == 0 ? true : false;
 
     //Perform ASD
-    if (iter) dimer_->update_coeff(coeff_); //update coeff_ & integrals..
+    if (iter) {
+      dimer_->update_coeff(coeff_); //update coeff_ & integrals..
+      if (full && fix_ci)
+        asd->update_dimer(dimer_); //fix ci coefficients
+      else
+        asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
+    }
 #if 1
     if (mpi__->rank() == 0) {
       string out_file = "orbital_" + to_string(iter) + ".molden";
@@ -96,7 +106,7 @@ void ASD_BFGS::compute() {
     }
 #endif
     Timer asd_time(0);
-    auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
+  //auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
     asd_time.tick_print("ASD space construction");
     asd->compute();
     asd_time.tick_print("ASD");
@@ -249,9 +259,9 @@ void ASD_BFGS::compute() {
     copy(energy_.begin(), energy_.end(), previous_energy.begin() );
 
     resume_stdcout();
-    print_iteration(iter, 0, 0, energy_, gradient, max_rotation, delta_energy, timer.tick(), full ? 2 : static_cast<int>(inter));
+    print_iteration(iter, 0, 0, energy_, gradient, max_rotation, delta_energy, timer.tick(), full ? 2 : static_cast<int>(inter), fix_ci);
 
-    if ((full || active_only || no_active) && gradient < gradient_thresh_ && max_rotation < rotation_thresh_ && delta_energy < energy_thresh_) {
+    if ((full || active_only || no_active) && gradient < gradient_thresh_ && max_rotation < rotation_thresh_ && delta_energy < energy_thresh_ && !fix_ci) {
       rms_grad_ = gradient;
       cout << " " << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
@@ -268,6 +278,15 @@ void ASD_BFGS::compute() {
         first_iteration = true;
         x->unit();
       }
+    }
+
+    //activate "fix ci coeff"
+    if (!fix_ci && full && gradient < fix_ci_begin) {
+      fix_ci = true;
+    }
+    //deactivate
+    if (fix_ci && full && gradient < fix_ci_end) {
+      fix_ci = false;
     }
 /*
     if (full && iter == 9) {
@@ -299,27 +318,26 @@ void ASD_BFGS::compute() {
   // ============================
   // macro iteration to here
   // ============================
-  // semi-canonicalize active orbitals for visualization
-#if 1
-    if (mpi__->rank() == 0) {
-      string out_file = "orbital_conv_localized.molden";
-      MoldenOut mfs(out_file);
-      mfs << dimer_->sgeom();
-      mfs << dimer_->sref();
-    }
-#endif
-  coeff_ = semi_canonical_orb();
+  if (mpi__->rank() == 0) {
+    string out_file = "orbital_conv_localized.molden";
+    MoldenOut mfs(out_file);
+    mfs << dimer_->sgeom();
+    mfs << dimer_->sref();
+  }
 
-  // extra iteration for consistency
-  dimer_->update_coeff(coeff_);
-  auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
-  asd->compute();
-#if 1
+  // semi-canonicalize active orbitals for visualization
+  if (semi_canonical_) {
+    coeff_ = semi_canonical_orb();
     if (mpi__->rank() == 0) {
       string out_file = "orbital_conv_semi_canonical.molden";
       MoldenOut mfs(out_file);
       mfs << dimer_->sgeom();
       mfs << dimer_->sref();
     }
-#endif
+    // extra iteration for consistency
+    dimer_->update_coeff(coeff_);
+    auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
+    asd->compute();
+  }
+
 }
