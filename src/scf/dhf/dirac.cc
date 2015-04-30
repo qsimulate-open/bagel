@@ -186,7 +186,7 @@ shared_ptr<const Reference> Dirac::conv_to_ref() const {
   const size_t npos = coeff_->mdim() - nneg_;
   // coeff is occ, virt, nneg
   shared_ptr<ZMatrix> c = coeff_->clone();
-  c->copy_block(0, 0, c->ndim(), npos, coeff_->slice(nneg_, npos));
+  c->copy_block(0, 0, c->ndim(), npos, coeff_->slice(nneg_, nneg_+npos));
   c->copy_block(0, npos, c->ndim(), nneg_, coeff_->slice(0, nneg_));
   auto out = make_shared<RelReference>(geom_, c, energy_, nneg_, nele_, 0, npos-nele_, gaunt_, breit_);
   vector<double> eigp(eig_.begin()+nneg_, eig_.end());
