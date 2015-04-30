@@ -32,38 +32,6 @@
 namespace bagel {
 
 class QuatMatrix : public ZMatrix {
-  protected:
-    // Average out errors in time-reversal symmetry
-    void t_symmetrize() {
-      assert(mdim()%2 == 0 && ndim()%2 == 0);
-      const size_t m = mdim()/2;
-      const size_t n = ndim()/2;
-      for (size_t i=0; i!=n; ++i) {
-        for (size_t j=0; j!=m; ++j) {
-          element(i, j) = 0.5*(element(i, j)+std::conj(element(n+i, m+j)));
-          element(n+i, j) = 0.5*(element(n+i, j)-std::conj(element(i, m+j)));
-          element(n+i, m+j) = std::conj(element(i, j));
-          element(i, m+j) = -std::conj(element(n+i, j));
-        }
-      }
-    }
-
-    // Check that the matrix is symmetric under time-reversal
-    bool is_t_symmetric(const double thresh = 1.0e-6) const {
-      assert(mdim()%2 == 0 && ndim()%2 == 0);
-      const int m = mdim()/2;
-      const int n = ndim()/2;
-
-      std::shared_ptr<ZMatrix> u = get_submatrix(0, 0, n, m);
-      std::shared_ptr<ZMatrix> v = get_submatrix(n, 0, n, m);
-
-      u->ax_plus_y(-1.0, *get_submatrix(n, m, n, m)->get_conjg());
-      v->ax_plus_y( 1.0, *get_submatrix(0, m, n, m)->get_conjg());
-
-      const double err = u->rms() + v->rms();
-      return err < thresh;
-    }
-
   public:
     QuatMatrix(const ZMatrix& o) : ZMatrix(o) { assert(is_t_symmetric()); }
     QuatMatrix(ZMatrix&& o) : ZMatrix(std::move(o)) { assert(is_t_symmetric()); }
@@ -88,6 +56,42 @@ class QuatMatrix : public ZMatrix {
 
     void synchronize() {
       mpi__->broadcast(data(), size(), 0);
+    }
+
+    // Average out errors in time-reversal symmetry
+    void t_symmetrize() {
+      assert(mdim()%2 == 0 && ndim()%2 == 0);
+      const size_t m = mdim()/2;
+      const size_t n = ndim()/2;
+      for (size_t i=0; i!=n; ++i) {
+        for (size_t j=0; j!=m; ++j) {
+          element(i, j) = 0.5*(element(i, j)+std::conj(element(n+i, m+j)));
+          element(n+i, j) = 0.5*(element(n+i, j)-std::conj(element(i, m+j)));
+          element(n+i, m+j) = std::conj(element(i, j));
+          element(i, m+j) = -std::conj(element(n+i, j));
+        }
+      }
+    }
+
+    // Check that the matrix is symmetric under time-reversal
+    bool is_t_symmetric(const double thresh = 1.0e-6) const {
+      const double err = check_t_symmetry();
+      return err < thresh;
+    }
+
+    double check_t_symmetry() const {
+      assert(mdim()%2 == 0 && ndim()%2 == 0);
+      const int m = mdim()/2;
+      const int n = ndim()/2;
+
+      std::shared_ptr<ZMatrix> u = get_submatrix(0, 0, n, m);
+      std::shared_ptr<ZMatrix> v = get_submatrix(n, 0, n, m);
+
+      u->ax_plus_y(-1.0, *get_submatrix(n, m, n, m)->get_conjg());
+      v->ax_plus_y( 1.0, *get_submatrix(0, m, n, m)->get_conjg());
+
+      const double out = u->rms() + v->rms();
+      return out;
     }
 
 };
