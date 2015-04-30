@@ -77,6 +77,12 @@ class QuatMatrix : public ZMatrix {
 
       // TODO parallelize
       zquatev_(ndim(), data(), eig.data());
+
+      // zquatev_ only gives half the eigenvalues; get the others using symmetry
+      for (int i = 0; i != ndim()/2; ++i) {
+        eig(ndim()/2+i) = eig(i);
+      }
+
       synchronize();
     }
 
