@@ -312,10 +312,15 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
 
   // input should be 1rdm in kramers format
   shared_ptr<ZMatrix> tmp;
-  if (tsymm_)
+  if (tsymm_) {
     tmp = make_shared<QuatMatrix>(*rdm1);
-  else
+#ifndef NDEBUG
+    auto quatrdm = static_pointer_cast<const QuatMatrix>(tmp);
+    assert(quatrdm->is_t_symmetric());
+#endif
+  } else {
     tmp = make_shared<ZMatrix>(*rdm1);
+  }
 
   const bool unitmat = tmp->is_identity(1.0e-14);
   shared_ptr<ZMatrix> out;
@@ -529,10 +534,15 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   quaternion(vcoeff, /*back_trans*/false);
 
   shared_ptr<ZMatrix> mofock;
-  if (tsymm_)
+  if (tsymm_) {
     mofock = make_shared<QuatMatrix>(*vcoeff % *mvofock * *vcoeff);
-  else
+#ifndef NDEBUG
+    auto quatfock = static_pointer_cast<const QuatMatrix>(mofock);
+    assert(quatfock->is_t_symmetric());
+#endif
+  } else {
     mofock = make_shared<ZMatrix>(*vcoeff % *mvofock * *vcoeff);
+  }
 
   VectorB eig(mofock->ndim());
   mofock->diagonalize(eig);

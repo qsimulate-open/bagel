@@ -228,10 +228,17 @@ shared_ptr<Kramers<2,ZMatrix>>
   quaternion(s12);
 
   shared_ptr<ZMatrix> fock_tilde;
-  if (tsymm_)
+  if (tsymm_) {
     fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
-  else
+#ifndef NDEBUG
+    auto quatfock = static_pointer_cast<const QuatMatrix>(fock_tilde);
+    const double tsymm_err = quatfock->check_t_symmetry();
+    if (tsymm_err > 1.0e-8)
+      cout << "   ** Caution:  poor Kramers symmetry in fock_tilde (ZFCI initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
+#endif
+  } else {
     fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
+  }
 
   // diagonalization - uses quaternion symmetry if applicable
   {

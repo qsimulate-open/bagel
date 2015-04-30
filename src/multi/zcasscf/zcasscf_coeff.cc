@@ -63,10 +63,17 @@ void ZCASSCF::init_kramers_coeff() {
     quaternion(s12);
 
     shared_ptr<ZMatrix> fock_tilde;
-    if (tsymm_)
+    if (tsymm_) {
       fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
-    else
+#ifndef NDEBUG
+      auto quatfock = static_pointer_cast<const QuatMatrix>(fock_tilde);
+      const double tsymm_err = quatfock->check_t_symmetry();
+      if (tsymm_err > 1.0e-8)
+        cout << "   ** Caution:  poor Kramers symmetry in fock_tilde (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
+#endif
+    } else {
       fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
+    }
 
     // quaternion diagonalization
     {
@@ -110,10 +117,17 @@ void ZCASSCF::init_kramers_coeff() {
     focktmp = make_shared<DFock>(geom_, hcore_, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
 
     shared_ptr<ZMatrix> fmo;
-    if (tsymm_)
+    if (tsymm_) {
       fmo = make_shared<QuatMatrix>(*coefftmp % (*focktmp) * *coefftmp);
-    else
+#ifndef NDEBUG
+      auto quatfmo = static_pointer_cast<const QuatMatrix>(fmo);
+      const double tsymm_err = quatfmo->check_t_symmetry();
+      if (tsymm_err > 1.0e-8)
+        cout << "   ** Caution:  poor Kramers symmetry in fmo (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
+#endif
+    } else {
       fmo = make_shared<ZMatrix>(*coefftmp % (*focktmp) * *coefftmp);
+    }
 
     // quaternion diagonalization
     {

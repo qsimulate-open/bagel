@@ -33,8 +33,8 @@ namespace bagel {
 
 class QuatMatrix : public ZMatrix {
   public:
-    QuatMatrix(const ZMatrix& o) : ZMatrix(o) { assert(is_t_symmetric()); }
-    QuatMatrix(ZMatrix&& o) : ZMatrix(std::move(o)) { assert(is_t_symmetric()); }
+    QuatMatrix(const ZMatrix& o) : ZMatrix(o) { }
+    QuatMatrix(ZMatrix&& o) : ZMatrix(std::move(o)) { }
     // TODO : implement constructor that can take "00" and "01" matrices and build the rest of the matrix
 
     void diagonalize(VecView eig) override {
@@ -74,7 +74,7 @@ class QuatMatrix : public ZMatrix {
     }
 
     // Check that the matrix is symmetric under time-reversal
-    bool is_t_symmetric(const double thresh = 1.0e-6) const {
+    bool is_t_symmetric(const double thresh = 1.0e-8) const {
       const double err = check_t_symmetry();
       return err < thresh;
     }
