@@ -40,8 +40,6 @@ void ASD_BFGS::compute() {
   //BFGS parameters
   thresh_inter_ = idata_->get<double>("thresh_inter", 5.0e-4);
   thresh_intra_ = idata_->get<double>("thresh_intra", 5.0e-4);
-  double fix_ci_begin = idata_->get<double>("fix_ci_begin", 5.0e-4);
-  double fix_ci_end   = idata_->get<double>("fix_ci_end",   1.0e-6);
   single_bfgs_ = idata_->get<bool>("single_bfgs", false);
   bool no_active = idata_->get<bool>("no_active", false);
   bool active_only = idata_->get<bool>("active_only", false);
@@ -49,6 +47,13 @@ void ASD_BFGS::compute() {
     single_bfgs_ = false;
     max_iter_ *= 2;
   }
+  //fix_ci parameters
+  double fix_ci_begin = idata_->get<double>("fix_ci_begin", 5.0e-4); //gradent
+  double fix_ci_end   = idata_->get<double>("fix_ci_end",   1.0e-4);
+  double fix_ci_begin_energy = idata_->get<double>("fix_ci_begin_energy", 5.0e-5);  //energy
+  double fix_ci_end_energy   = idata_->get<double>("fix_ci_end_energy", 1.0e-6);
+  double fix_ci_begin_rotation = idata_->get<double>("fix_ci_begin_rotation", 5.0e-3); //rotation
+  double fix_ci_end_rotation = idata_->get<double>("fix_ci_end_rotation", 5.0e-4);
 
   vector<double> previous_energy(nstate_,0.0);
 
@@ -281,11 +286,11 @@ void ASD_BFGS::compute() {
     }
 
     //activate "fix ci coeff"
-    if (!fix_ci && full && gradient < fix_ci_begin) {
+    if (!fix_ci && full && gradient < fix_ci_begin && max_rotation < fix_ci_begin_rotation && delta_energy < fix_ci_begin_energy) {
       fix_ci = true;
     }
     //deactivate
-    if (fix_ci && full && gradient < fix_ci_end) {
+    if (fix_ci && full && gradient < fix_ci_end && max_rotation < fix_ci_end_rotation && delta_energy < fix_ci_end_energy) {
       fix_ci = false;
     }
 /*
