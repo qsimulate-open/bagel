@@ -47,6 +47,7 @@
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/prop/current.h>
+#include <src/prop/moprint.h>
 #include <src/wfn/construct_method.h>
 
 using namespace std;
@@ -124,6 +125,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     } else if (title == "current")  throw runtime_error("Charge currents are only available when using a GIAO basis set reference.");
+    else if (title == "moprint") out = make_shared<MOPrint>(itree, geom, ref);
 
   // now the versions to use with magnetic fields
   } else {
@@ -141,6 +143,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<ZCASBFGS>(itree, geom, ref);
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
+    } else if (title == "moprint") { out = make_shared<MOPrint>(itree, geom, ref);
     } else if (title == "molecule") {
     } else
       throw runtime_error(to_upper(title) + " method has not been implemented with an applied magnetic field.");

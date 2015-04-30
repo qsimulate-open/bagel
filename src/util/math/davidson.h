@@ -253,7 +253,7 @@ class DavidsonDiag_ {
 };
 
 template <typename T, class MatType = Matrix>
-using DavidsonDiag = DavidsonDiag_<T, T, MatType>; 
+using DavidsonDiag = DavidsonDiag_<T, T, MatType>;
 
 }
 
