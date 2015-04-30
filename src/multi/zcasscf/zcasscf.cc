@@ -117,12 +117,15 @@ void ZCASSCF::init() {
       tmp->copy_block(0, 0, tmp->ndim(), nneg_, hctmp->slice(nneg_,hctmp->mdim()));
       coeff_ = tmp;
     } else {
+      coeff_ = relref->relcoeff_full();
+/*
       shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
       shared_ptr<ZMatrix> coeff = ctmp->clone();
       const int npos = ctmp->mdim() - nneg_;
       coeff->copy_block(0, 0, ctmp->mdim(), npos, ctmp->slice(nneg_, nneg_+npos));
       coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
       coeff_ = coeff;
+*/
     }
   } else if (kramers_coeff) {
     shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();

@@ -104,10 +104,10 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
       // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
       for (auto& i : *iactive)
         active_indices.insert(lexical_cast<int>(i->data()) - 1);
-      coeff = ZCASSCF::set_active(active_indices, swap_pos_neg(rr->relcoeff_full()), ncore_, geom_->nele()-charge_, norb_, tsymm_);
+      coeff = ZCASSCF::set_active(active_indices, rr->relcoeff_full(), ncore_, geom_->nele()-charge_, norb_, tsymm_);
 
     } else {
-      coeff = swap_pos_neg(rr->relcoeff_full());
+      coeff = rr->relcoeff_full();
     }
   } else {
     // For ZCASSCF, just accept the coefficients given
