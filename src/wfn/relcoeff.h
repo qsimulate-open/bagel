@@ -43,36 +43,38 @@ class RelCoeff_Block;
 class RelCoeff : public ZMatrix {
   protected:
     int nbasis_;
-    int nocc_;
+    int nclosed_;
     int nact_;
     int nvirt_;
     int nneg_;
 
   public:
-    RelCoeff(const ZMatrix& _coeff, const int _nocc, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
+    RelCoeff(const ZMatrix& _coeff, const int _nclo, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
 
     int nbasis_nr() const { return nbasis_; }
     int nbasis_rel() const { return 4*nbasis_; }
 
     // spatial orbitals (2 columns)
-    int nocc() const { return nocc_; }
+    int nclosed() const { return nclosed_; }
     int nact() const { return nact_; }
     int nvirt() const { return nvirt_; }
 
     // spin orbitals (1 column)
     int nneg() const { return nneg_; }
-    int npos() const { return 2*(nocc_ + nact_ + nvirt_); }
+    int npos() const { return 2*(nclosed_ + nact_ + nvirt_); }
 
     using Matrix_base<std::complex<double>>::copy_block;
 };
 
-#if 0
+#if 1
 class RelCoeff_Striped : public RelCoeff {
   protected:
 
   public:
-    RelCoeff_Striped() { }
-    //std::shared_ptr<RelCoeff_Block> block_format();
+    RelCoeff_Striped(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false)
+   : RelCoeff(_coeff, _nclosed, _nact, _nvirt, _nneg, move_neg) { }
+
+    std::shared_ptr<RelCoeff_Block> block_format() const;
 };
 
 
@@ -80,8 +82,10 @@ class RelCoeff_Block : public RelCoeff {
   protected:
 
   public:
-    RelCoeff_Block() { }
-    //std::shared_ptr<RelCoeff_Striped> striped_format();
+    RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false)
+   : RelCoeff(_coeff, _nclosed, _nact, _nvirt, _nneg, move_neg) { }
+
+    std::shared_ptr<RelCoeff_Striped> striped_format() const;
 };
 #endif
 
