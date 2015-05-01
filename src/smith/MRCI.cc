@@ -77,7 +77,7 @@ void MRCI::MRCI::solve() {
     }
   }
 
-  DavidsonDiag_<Amplitude<double>, Residual<double>> davidson(nstates_, 10);
+  DavidsonDiag_<Amplitude<double>, Residual<double>, Matrix> davidson(nstates_, 10);
 
   // first iteration is trivial
   {
@@ -132,7 +132,7 @@ void MRCI::MRCI::solve() {
       }
 
       // normalize t2 and n
-      const double scal = 1.0 / sqrt(dot_product_transpose(nall_[istate], t2all_[istate]));
+      const double scal = 1.0 / sqrt(detail::real(dot_product_transpose(nall_[istate], t2all_[istate])));
       nall_[istate]->scale(scal);
       t2all_[istate]->scale(scal);
 
