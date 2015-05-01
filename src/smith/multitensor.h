@@ -115,7 +115,9 @@ class MultiTensor_ {
     const DataType& fac(const int i) const { return fac_[i]; }
 };
 
-using MultiTensor = MultiTensor_<double>;
+namespace CASPT2 { using MultiTensor = MultiTensor_<double>; }
+namespace MRCI   { using MultiTensor = MultiTensor_<double>; }
+namespace RelMRCI{ using MultiTensor = MultiTensor_<std::complex<double>>; }
 
 }
 }
