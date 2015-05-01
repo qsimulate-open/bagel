@@ -82,8 +82,8 @@ class RelCoeff_Block : public RelCoeff {
   protected:
 
   public:
-    RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false)
-   : RelCoeff(_coeff, _nclosed, _nact, _nvirt, _nneg, move_neg) { }
+    RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
+   : RelCoeff(_coeff, _nclosed, _nact, _nvirt, _nneg) { }
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
 };
