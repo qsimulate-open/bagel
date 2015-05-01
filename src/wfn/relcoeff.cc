@@ -32,9 +32,10 @@ using namespace std;
 using namespace bagel;
 
 RelCoeff::RelCoeff(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg)
- : ZMatrix(_coeff.ndim(), _coeff.mdim(), _coeff.localized()), nbasis_(ndim()/4), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nneg_(_nneg) {
+ : ZMatrix(_coeff.ndim(), _coeff.mdim(), _coeff.localized()), nbasis_(ndim()/4), nclosed_(_nclosed), nact_(_nact), nvirt_nr_(_nvirt), nneg_(_nneg) {
   assert(ndim()%4 == 0);
-  assert(2 * (nclosed_ + nact_ + nvirt_) + nneg_ == mdim());
+  assert(nneg()%2 == 0);
+  assert(2 * (nclosed_ + nact_ + nvirt_nr_) + nneg_ == mdim());
 
   if (!move_neg) {
     // copy input matrix directly
@@ -50,7 +51,6 @@ RelCoeff::RelCoeff(const ZMatrix& _coeff, const int _nclosed, const int _nact, c
 // Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
 std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format() const {
   assert(nneg_ % 2 == 0);
-  const int nvirt2 = nvirt_ + nneg_/2;
   shared_ptr<ZMatrix> ctmp2 = clone();
   int n = ndim();
   // closed
@@ -66,18 +66,17 @@ std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format() const {
   }
   offset = (nclosed_+nact_)*2;
   // virtual (including positrons)
-  for (int j=0; j!=nvirt2; ++j) {
+  for (int j=0; j!=nvirt_rel(); ++j) {
     ctmp2->copy_block(0, offset + j,            n, 1, slice(offset + j*2,   offset + j*2+1));
-    ctmp2->copy_block(0, offset + nvirt2 + j,   n, 1, slice(offset + j*2+1, offset + j*2+2));
+    ctmp2->copy_block(0, offset + nvirt_rel() + j,   n, 1, slice(offset + j*2+1, offset + j*2+2));
   }
-  auto out = make_shared<RelCoeff_Block>(*ctmp2, nclosed_, nact_, nvirt_, nneg_);
+  auto out = make_shared<RelCoeff_Block>(*ctmp2, nclosed_, nact_, nvirt_nr_, nneg_);
   return out;
 }
 
 
 std::shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
   assert(nneg_ % 2 == 0);
-  const int nvirt2 = nvirt_ + nneg_/2;
   auto ctmp2 = clone();
   // Transforms a coefficient matrix from block format to striped format : assumes ordering is (c,a,v,positrons)
   // striped format
@@ -96,11 +95,11 @@ std::shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
   }
   offset = (nclosed_+nact_)*2;
   // vituals (including positrons)
-  for (int j=0; j!=nvirt2; ++j) {
+  for (int j=0; j!=nvirt_rel(); ++j) {
     ctmp2->copy_block(0, offset + j*2,   n, 1, slice(offset + j,          offset + j+1));
-    ctmp2->copy_block(0, offset + j*2+1, n, 1, slice(offset + nvirt2 + j, offset + nvirt2 + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, slice(offset + nvirt_rel() + j, offset + nvirt_rel() + j+1));
   }
-  auto out = make_shared<RelCoeff_Striped>(*ctmp2, nclosed_, nact_, nvirt_, nneg_);
+  auto out = make_shared<RelCoeff_Striped>(*ctmp2, nclosed_, nact_, nvirt_nr_, nneg_);
   return out;
 }
 

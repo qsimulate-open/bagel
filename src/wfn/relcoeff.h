@@ -45,7 +45,7 @@ class RelCoeff : public ZMatrix {
     int nbasis_;
     int nclosed_;
     int nact_;
-    int nvirt_;
+    int nvirt_nr_;
     int nneg_;
 
   public:
@@ -57,16 +57,16 @@ class RelCoeff : public ZMatrix {
     // spatial orbitals (2 columns)
     int nclosed() const { return nclosed_; }
     int nact() const { return nact_; }
-    int nvirt() const { return nvirt_; }
+    int nvirt_nr() const { return nvirt_nr_; }
+    int nvirt_rel() const { return nvirt_nr_ + nneg_/2; }
 
     // spin orbitals (1 column)
     int nneg() const { return nneg_; }
-    int npos() const { return 2*(nclosed_ + nact_ + nvirt_); }
+    int npos() const { return 2*(nclosed_ + nact_ + nvirt_nr_); }
 
     using Matrix_base<std::complex<double>>::copy_block;
 };
 
-#if 1
 class RelCoeff_Striped : public RelCoeff {
   protected:
 
@@ -87,7 +87,6 @@ class RelCoeff_Block : public RelCoeff {
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
 };
-#endif
 
 }
 
