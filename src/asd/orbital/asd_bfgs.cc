@@ -55,15 +55,15 @@ void ASD_BFGS::compute() {
   double fix_ci_begin_rotation = idata_->get<double>("fix_ci_begin_rotation", 5.0e-3); //rotation
   double fix_ci_end_rotation = idata_->get<double>("fix_ci_end_rotation", 5.0e-4);
 
-  vector<double> previous_energy(nstate_,0.0);
+  vector<double> previous_energy(max_iter_,0.0);
 
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
   shared_ptr<SRBFGS<ASD_RotFile>> bfgs;
-//shared_ptr<BFGS<ASD_RotFile>> bfgs;
   shared_ptr<SRBFGS<ASD_RotFile>> intra_bfgs; //cloased-active, closed-virtual, active-virtual only
   shared_ptr<SRBFGS<ASD_RotFile>> inter_bfgs; //active-active only
-  //shared_ptr<BFGS<ASD_RotFile>> intra_bfgs; //cloased-active, closed-virtual, active-virtual only
-  //shared_ptr<BFGS<ASD_RotFile>> inter_bfgs; //active-active only
+//shared_ptr<BFGS<ASD_RotFile>> bfgs;
+//shared_ptr<BFGS<ASD_RotFile>> intra_bfgs; //cloased-active, closed-virtual, active-virtual only
+//shared_ptr<BFGS<ASD_RotFile>> inter_bfgs; //active-active only
   pair<double,double> gradient_pair = make_pair(1.0,1.0);
   bool full = single_bfgs_ ? true : false;
   bool first_iteration = single_bfgs_ ? true : false;
@@ -258,10 +258,10 @@ void ASD_BFGS::compute() {
 
     //energy difference
     double delta_energy = 0.0;
-    for (int i = 0; i != nstate_; ++i) {
-      delta_energy = max(delta_energy, fabs(previous_energy[i] - energy_[i]));
-    }
-    copy(energy_.begin(), energy_.end(), previous_energy.begin() );
+    for (int i = 0; i != nstate_; ++i)
+      delta_energy += energy_[i] / static_cast<double>(nstate_);
+    previous_energy[iter] = delta_energy;
+    delta_energy -= (iter == 0 ? 0.0 : previous_energy[iter-1]);
 
     resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, max_rotation, delta_energy, timer.tick(), full ? 2 : static_cast<int>(inter), fix_ci);
@@ -288,10 +288,17 @@ void ASD_BFGS::compute() {
     //activate "fix ci coeff"
     if (!fix_ci && full && gradient < fix_ci_begin && max_rotation < fix_ci_begin_rotation && delta_energy < fix_ci_begin_energy) {
       fix_ci = true;
+      //reset BFGS
+      first_iteration = true;
+      x->unit();
+      cout << "    * CI coefficients will be fixed. *   " << endl << endl;
     }
     //deactivate
     if (fix_ci && full && gradient < fix_ci_end && max_rotation < fix_ci_end_rotation && delta_energy < fix_ci_end_energy) {
-      fix_ci = false;
+    //fix_ci = false;
+      cout << "    * ASD orbital optimization with fixed CI coefficients converged. *   " << endl << endl;
+      mute_stdcout();
+      break;
     }
 /*
     if (full && iter == 9) {
@@ -339,10 +346,11 @@ void ASD_BFGS::compute() {
       mfs << dimer_->sgeom();
       mfs << dimer_->sref();
     }
-    // extra iteration for consistency
-    dimer_->update_coeff(coeff_);
-    auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
-    asd->compute();
   }
+
+  // extra iteration for consistency
+  dimer_->update_coeff(coeff_);
+  asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
+  asd->compute();
 
 }

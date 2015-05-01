@@ -64,6 +64,8 @@ shared_ptr<const ASD_RotFile> ASD_BFGS::compute_denom(shared_ptr<const Matrix> c
     }
   }
 
+  double fac = 1.0;
+
   if (intra) {
     // tu part
     if (nact_) {
@@ -73,7 +75,9 @@ shared_ptr<const ASD_RotFile> ASD_BFGS::compute_denom(shared_ptr<const Matrix> c
           *target++ = 2.0*(- mcfock->element(j,j) - mcfock->element(i,i)
                            + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_)
                            - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
-                           + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                         //+ 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           - fac*(rdm1->element(i,j)*afock->element(j+nclosed_,i+nclosed_) + rdm1->element(j,i)*afock->element(i+nclosed_,j+nclosed_))
+                           + fac*(rdm1->element(j,j)*afock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*afock->element(j+nclosed_,j+nclosed_)));
         }
       }
     }
@@ -86,7 +90,9 @@ shared_ptr<const ASD_RotFile> ASD_BFGS::compute_denom(shared_ptr<const Matrix> c
             *target++ = 2.0*(- mcfock->element(j,j) - mcfock->element(i,i)
                              + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_)
                              - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
-                             + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           //+ 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           - fac*(rdm1->element(i,j)*afock->element(j+nclosed_,i+nclosed_) + rdm1->element(j,i)*afock->element(i+nclosed_,j+nclosed_))
+                           + fac*(rdm1->element(j,j)*afock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*afock->element(j+nclosed_,j+nclosed_)));
           }
         }
       }
@@ -97,7 +103,9 @@ shared_ptr<const ASD_RotFile> ASD_BFGS::compute_denom(shared_ptr<const Matrix> c
             *target++ = 2.0*(- mcfock->element(j,j) - mcfock->element(i,i)
                              + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_)
                              - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
-                             + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           //+ 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           - fac*(rdm1->element(i,j)*afock->element(j+nclosed_,i+nclosed_) + rdm1->element(j,i)*afock->element(i+nclosed_,j+nclosed_))
+                           + fac*(rdm1->element(j,j)*afock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*afock->element(j+nclosed_,j+nclosed_)));
           }
         }
       }
@@ -108,7 +116,9 @@ shared_ptr<const ASD_RotFile> ASD_BFGS::compute_denom(shared_ptr<const Matrix> c
             *target++ = 2.0*(- mcfock->element(j,j) - mcfock->element(i,i)
                              + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_)
                              - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
-                             + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           //+ 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           - fac*(rdm1->element(i,j)*afock->element(j+nclosed_,i+nclosed_) + rdm1->element(j,i)*afock->element(i+nclosed_,j+nclosed_))
+                           + fac*(rdm1->element(j,j)*afock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*afock->element(j+nclosed_,j+nclosed_)));
           }
         }
       }
@@ -122,7 +132,9 @@ shared_ptr<const ASD_RotFile> ASD_BFGS::compute_denom(shared_ptr<const Matrix> c
             *target++ = 2.0*(- mcfock->element(j,j) - mcfock->element(i,i)
                              + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_)
                              - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
-                             + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           //+ 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           - fac*(rdm1->element(i,j)*afock->element(j+nclosed_,i+nclosed_) + rdm1->element(j,i)*afock->element(i+nclosed_,j+nclosed_))
+                           + fac*(rdm1->element(j,j)*afock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*afock->element(j+nclosed_,j+nclosed_)));
           }
         }
       }
@@ -133,7 +145,9 @@ shared_ptr<const ASD_RotFile> ASD_BFGS::compute_denom(shared_ptr<const Matrix> c
             *target++ = 2.0*(- mcfock->element(j,j) - mcfock->element(i,i)
                              + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_)
                              - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
-                             + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           //+ 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           - fac*(rdm1->element(i,j)*afock->element(j+nclosed_,i+nclosed_) + rdm1->element(j,i)*afock->element(i+nclosed_,j+nclosed_))
+                           + fac*(rdm1->element(j,j)*afock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*afock->element(j+nclosed_,j+nclosed_)));
           }
         }
       }
@@ -144,7 +158,9 @@ shared_ptr<const ASD_RotFile> ASD_BFGS::compute_denom(shared_ptr<const Matrix> c
             *target++ = 2.0*(- mcfock->element(j,j) - mcfock->element(i,i)
                              + rdm1->element(j,j)*cfock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*cfock->element(j+nclosed_,j+nclosed_)
                              - rdm1->element(i,j)*cfock->element(j+nclosed_,i+nclosed_) - rdm1->element(j,i)*cfock->element(i+nclosed_,j+nclosed_)
-                             + 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           //+ 2.0*(afock->element(i+nclosed_,i+nclosed_) + afock->element(j+nclosed_,j+nclosed_)));
+                           - fac*(rdm1->element(i,j)*afock->element(j+nclosed_,i+nclosed_) + rdm1->element(j,i)*afock->element(i+nclosed_,j+nclosed_))
+                           + fac*(rdm1->element(j,j)*afock->element(i+nclosed_,i+nclosed_) + rdm1->element(i,i)*afock->element(j+nclosed_,j+nclosed_)));
           }
         }
       }
@@ -153,9 +169,14 @@ shared_ptr<const ASD_RotFile> ASD_BFGS::compute_denom(shared_ptr<const Matrix> c
   }
 
   const double thresh = 1.0e-8;
-  for (int i = 0; i != out->size(); ++i)
+  for (int i = 0; i != out->size(); ++i) {
+    if (out->data(i) < 0.0) {
+      cout << setw(10) << setprecision(6) << out->data(i) << endl;
+      throw runtime_error("Element of initial diagonal hessian < 0");
+    }
     if (fabs(out->data(i)) < thresh) {
       out->data(i) = 1.0e10;
     }
+  }
   return out;
 }
