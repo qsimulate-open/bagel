@@ -65,8 +65,14 @@ void Tree::init() {
 
   get_particle_key();
   keysort();
+#if 0
+  for (int i = 0; i != nvertex_; ++i)
+    cout << leaves_[i]->key() << " *** " << setprecision(9)
+         << leaves_[i]->position(0) << "  " << leaves_[i]->position(1) << "  " << leaves_[i]->position(2) << endl;
+#endif
 
   build_tree();
+//  print_tree_xyz();
 }
 
 
@@ -77,9 +83,12 @@ void Tree::build_tree() {
   nodes_[0] = make_shared<Node>();
 
   bitset<nbit__>  current_key;
+  //for (int i = max_height_ - 1; i >= 0; --i) { /* top down */
   for (int i = 1; i <= max_height_; ++i) { /* top down */
+    //const int depth = max_height_ - i;
     const int depth = i;
 
+    //const unsigned int shift = i * 3;
     const unsigned int shift = nbit__ - 1 - i * 3;
 
     int max_nbody = 0;
@@ -133,15 +142,19 @@ void Tree::build_tree() {
         break;
       }
     }
+//    nodes_[i]->make_interaction_list(ws_);
   }
 }
 
 
 void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
 
+  Timer fmmtime;
   // Downward pass
   for (int i = nnode_ - 1; i > 0; --i)
     nodes_[i]->compute_multipoles(lmax);
+
+  fmmtime.tick_print("    Downward pass");
 
   // Upward pass
   vector<int> offset;
@@ -158,6 +171,8 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
       *out += *tmp;
     }
   }
+  fmmtime.tick_print("    Upward pass");
+  cout << endl;
 
   // return the Coulomb matrix
   coulomb_ = out;
@@ -237,6 +252,7 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
       cout << "Level " << current_level << endl;
       node = 0;
     }
+//    cout << "Key = " << nodes_[i]->key() << endl;
     ++node;
     string symbol("");
     switch(node) {

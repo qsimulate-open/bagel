@@ -66,6 +66,7 @@ class Node {
     std::vector<std::shared_ptr<const ZMatrix>> multipoles_;
     std::vector<std::shared_ptr<const ZMatrix>> local_moment_;
     std::shared_ptr<const ZMatrix> local_expansion_;
+    std::vector<std::shared_ptr<const ZMatrix>> child_local_expansion_;
     void compute_multipoles(const int lmax = ANG_HRR_END);
     void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offset);
     std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offset);
@@ -102,7 +103,10 @@ class Node {
     std::vector<std::shared_ptr<const ZMatrix>> multipoles() const { return multipoles_; }
     std::vector<std::shared_ptr<const ZMatrix>> local_moment() const { return local_moment_; }
     std::shared_ptr<const ZMatrix> local_moment(const int i) const { return local_moment_[i]; }
+    std::shared_ptr<const ZMatrix> multipoles(const int i) const { return multipoles_[i]; }
     std::shared_ptr<const ZMatrix> local_expansion() const { return local_expansion_; }
+    std::vector<std::shared_ptr<const ZMatrix>> child_local_expansion() const { return child_local_expansion_; }
+    std::shared_ptr<const ZMatrix> child_local_expansion(const int i) const { return child_local_expansion_[i]; }
 };
 
 }
