@@ -31,6 +31,13 @@
 using namespace std;
 using namespace bagel;
 
+RelCoeff::RelCoeff(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
+ : ZMatrix(_ndim, 2*(_nclosed+_nact+_nvirt)+_nneg, _loc), nbasis_(ndim()/4), nclosed_(_nclosed), nact_(_nact), nvirt_nr_(_nvirt), nneg_(_nneg) {
+  assert(ndim()%4 == 0);
+  assert(nneg()%2 == 0);
+}
+
+/*
 RelCoeff::RelCoeff(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg)
  : ZMatrix(_coeff.ndim(), _coeff.mdim(), _coeff.localized()), nbasis_(ndim()/4), nclosed_(_nclosed), nact_(_nact), nvirt_nr_(_nvirt), nneg_(_nneg) {
   assert(ndim()%4 == 0);
@@ -45,6 +52,25 @@ RelCoeff::RelCoeff(const ZMatrix& _coeff, const int _nclosed, const int _nact, c
     copy_block(0, 0,      ndim(), npos(), _coeff.slice(nneg_, nneg_+npos()));
     copy_block(0, npos(), ndim(), nneg_,  _coeff.slice(0,     nneg_));
   }
+}
+*/
+
+RelCoeff_Striped::RelCoeff_Striped(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg)
+ : RelCoeff(_coeff.ndim(), _coeff.localized(), _nclosed, _nact, _nvirt, _nneg) {
+  if (!move_neg) {
+    // copy input matrix directly
+    copy_block(0, 0, ndim(), mdim(), _coeff);
+  } else {
+    // move positronic orbitals to end of virtual space
+    copy_block(0, 0,      ndim(), npos(), _coeff.slice(nneg_, nneg_+npos()));
+    copy_block(0, npos(), ndim(), nneg_,  _coeff.slice(0,     nneg_));
+  }
+}
+
+
+RelCoeff_Block::RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
+ : RelCoeff(_coeff.ndim(), _coeff.localized(), _nclosed, _nact, _nvirt, _nneg) {
+  copy_block(0, 0, ndim(), mdim(), _coeff);
 }
 
 

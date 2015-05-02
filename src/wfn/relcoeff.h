@@ -42,7 +42,7 @@ class RelCoeff_Block;
 
 class RelCoeff : public ZMatrix {
   protected:
-    RelCoeff(const ZMatrix& _coeff, const int _nclo, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
+    RelCoeff(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
 
     int nbasis_;
     int nclosed_;
@@ -68,22 +68,16 @@ class RelCoeff : public ZMatrix {
 };
 
 class RelCoeff_Striped : public RelCoeff {
-  protected:
-
   public:
-    RelCoeff_Striped(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false)
-   : RelCoeff(_coeff, _nclosed, _nact, _nvirt, _nneg, move_neg) { }
+    RelCoeff_Striped(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
 
     std::shared_ptr<RelCoeff_Block> block_format() const;
 };
 
 
 class RelCoeff_Block : public RelCoeff {
-  protected:
-
   public:
-    RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
-   : RelCoeff(_coeff, _nclosed, _nact, _nvirt, _nneg) { }
+    RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
 };
