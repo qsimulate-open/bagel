@@ -42,6 +42,8 @@ class RelCoeff_Block;
 
 class RelCoeff : public ZMatrix {
   protected:
+    RelCoeff(const ZMatrix& _coeff, const int _nclo, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
+
     int nbasis_;
     int nclosed_;
     int nact_;
@@ -49,8 +51,6 @@ class RelCoeff : public ZMatrix {
     int nneg_;
 
   public:
-    RelCoeff(const ZMatrix& _coeff, const int _nclo, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
-
     int nbasis_nr() const { return nbasis_; }
     int nbasis_rel() const { return 4*nbasis_; }
 
