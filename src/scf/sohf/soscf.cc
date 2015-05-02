@@ -26,7 +26,7 @@
 #include <src/scf/sohf/soscf.h>
 #include <src/scf/sohf/sofock.h>
 #include <src/util/math/diis.h>
-#include <src/wfn/relreference.h>
+#include <src/wfn/zreference.h>
 
 using namespace std;
 using namespace bagel;
@@ -136,7 +136,8 @@ shared_ptr<const ZMatrix> SOSCF::sooverlap() {
 }
 
 shared_ptr<const Reference> SOSCF::conv_to_ref() const {
-  auto out = make_shared<RelReference>(geom_, socoeff_, energy_, 0, 2*nocc_, 0, socoeff_->mdim()-2*nocc_, /*gaunt_*/ false, /*breit_*/ false);
+  auto c = make_shared<ZCoeff>(*socoeff_);
+  auto out = make_shared<ZReference>(geom_, c, energy_, nocc_, 0, socoeff_->mdim()/2-nocc_);
   out->set_eig(soeig_);
   return out;
 }

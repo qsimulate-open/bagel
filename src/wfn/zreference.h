@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+// Specialized Reference object for complex orbital coefficients
+// Currently used by RHF_London and SOSCF
+
 #ifndef __SRC_WFN_ZREFERENCE_H
 #define __SRC_WFN_ZREFERENCE_H
 
@@ -45,7 +48,6 @@ class ZReference : public Reference {
     ZReference() { }
     ZReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff> c, const double en, const int nocc, const int nact, const int nvirt)
      : Reference(g, nullptr, nocc, nact, nvirt, en), zcoeff_(c) {
-      assert(geom_->magnetism());  // Currently only used for GIAO wavefunctions
     }
 
     std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("ZReference::coeff() should not be called"); }
