@@ -185,10 +185,9 @@ void Dirac::print_eig() const {
 shared_ptr<const Reference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
   const size_t npos = coeff_->mdim() - nneg_;
+  assert(npos % 2 == 0);
   // coeff is occ, virt, nneg
-  shared_ptr<ZMatrix> c = coeff_->clone();
-  c->copy_block(0, 0, c->ndim(), npos, coeff_->slice(nneg_, nneg_+npos));
-  c->copy_block(0, npos, c->ndim(), nneg_, coeff_->slice(0, nneg_));
+  auto c = make_shared<RelCoeff_Striped>(*coeff_, nele_/2, 0, (npos-nele_)/2, nneg_, /*move_neg*/true);
   auto out = make_shared<RelReference>(geom_, c, energy_, nneg_, nele_, 0, npos-nele_, gaunt_, breit_);
   vector<double> eigp(eig_.begin()+nneg_, eig_.end());
   vector<double> eigm(eig_.begin(), eig_.begin()+nneg_);

@@ -43,8 +43,7 @@ class ZReference : public Reference {
 
   public:
     ZReference() { }
-    ZReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff> c, const double en,
-                 const int nocc, const int nact, const int nvirt)
+    ZReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff> c, const double en, const int nocc, const int nact, const int nvirt)
      : Reference(g, nullptr, nocc, nact, nvirt, en), zcoeff_(c) {
       assert(geom_->magnetism());  // Currently only used for GIAO wavefunctions
     }
