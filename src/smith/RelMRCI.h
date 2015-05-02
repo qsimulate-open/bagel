@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: RelMRCI.h
-// Copyright (C) 2015 Shiozaki group
+// Copyright (C) 2014 Shiozaki group
 //
 // Author: Shiozaki group <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_SMITH_RELMRCI_H
-#define __SRC_SMITH_RELMRCI_H
+#ifndef __SRC_SMITH_RelMRCI_H
+#define __SRC_SMITH_RelMRCI_H
 
 #include <iostream>
 #include <tuple>
@@ -44,16 +44,40 @@ namespace RelMRCI{
 
 class RelMRCI : public SpinFreeMethod<std::complex<double>> {
   protected:
+    std::shared_ptr<Tensor> t2;
+    std::shared_ptr<Tensor> r;
+    std::shared_ptr<Tensor> s;
+    std::shared_ptr<Tensor> n;
+
+    int nstates_;
+    std::vector<double> energy_;
+
+    std::vector<std::shared_ptr<MultiTensor>> t2all_;
+    std::vector<std::shared_ptr<MultiTensor>> rall_;
+    std::vector<std::shared_ptr<MultiTensor>> sall_;
+    std::vector<std::shared_ptr<MultiTensor>> nall_;
+
+
+    std::shared_ptr<FutureTensor> Gamma0_();
+    std::shared_ptr<FutureTensor> Gamma4_();
+    std::shared_ptr<FutureTensor> Gamma16_();
+    std::shared_ptr<FutureTensor> Gamma18_();
+    std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_normq(const bool reset = true, const bool diagonal = true);
 
   public:
-    RelMRCI(std::shared_ptr<const SMITH_Info<std::complex<double>>> ref) : SpinFreeMethod(ref) { }
+    RelMRCI(std::shared_ptr<const SMITH_Info<std::complex<double>>> ref);
     ~RelMRCI() {}
 
-    void solve() { }
-    void solve_deriv() { }
+    void solve();
+    void solve_deriv();
 
     double accumulate(std::shared_ptr<Queue> queue) {
-      return 0.0;
+      double sum = 0.0;
+      while (!queue->done())
+        sum += queue->next_compute()->target();
+      return sum;
     }
 
 };

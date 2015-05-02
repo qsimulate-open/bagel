@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: MRCI.cc
+// Filename: RelMRCI.cc
 // Copyright (C) 2014 Shiozaki group
 //
 // Author: Shiozaki group <shiozaki@northwestern.edu>
@@ -29,14 +29,17 @@
 
 #include <src/util/math/davidson.h>
 #include <src/smith/extrap.h>
-#include <src/smith/MRCI.h>
+#include <src/smith/RelMRCI.h>
 
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref) {
-  eig_ = f1_->diag();
+RelMRCI::RelMRCI::RelMRCI(shared_ptr<const SMITH_Info<std::complex<double>>> ref) : SpinFreeMethod(ref) {
+  auto eig = f1_->diag();
+  eig_.resize(eig.size());
+  for (int i = 0; i != eig.size(); ++i)
+    eig_[i] = real(eig[i]);
   nstates_ = ref->ciwfn()->nstates();
 
   for (int i = 0; i != nstates_; ++i) {
@@ -54,7 +57,7 @@ MRCI::MRCI::MRCI(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref)
 }
 
 
-void MRCI::MRCI::solve() {
+void RelMRCI::RelMRCI::solve() {
   Timer timer;
   print_iteration();
 
@@ -77,15 +80,15 @@ void MRCI::MRCI::solve() {
     }
   }
 
-  DavidsonDiag_<Amplitude<double>, Residual<double>, Matrix> davidson(nstates_, 10);
+  DavidsonDiag_<Amplitude<std::complex<double>>, Residual<std::complex<double>>, ZMatrix> davidson(nstates_, 10);
 
   // first iteration is trivial
   {
-    vector<shared_ptr<const Amplitude<double>>> a0;
-    vector<shared_ptr<const Residual<double>>> r0;
+    vector<shared_ptr<const Amplitude<std::complex<double>>>> a0;
+    vector<shared_ptr<const Residual<std::complex<double>>>> r0;
     for (int istate = 0; istate != nstates_; ++istate) {
-      a0.push_back(make_shared<Amplitude<double>>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
-      r0.push_back(make_shared<Residual<double>>(sall_[istate]->copy(), this));
+      a0.push_back(make_shared<Amplitude<std::complex<double>>>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
+      r0.push_back(make_shared<Residual<std::complex<double>>>(sall_[istate]->copy(), this));
     }
     energy_ = davidson.compute(a0, r0);
     for (int istate = 0; istate != nstates_; ++istate)
@@ -94,7 +97,7 @@ void MRCI::MRCI::solve() {
 
   // set the result to t2
   {
-    vector<shared_ptr<Residual<double>>> res = davidson.residual();
+    vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       t2all_[i]->zero();
       update_amplitude(t2all_[i], res[i]->tensor());
@@ -110,8 +113,8 @@ void MRCI::MRCI::solve() {
   for ( ; iter != info_->maxiter(); ++iter) {
 
     // loop over state of interest
-    vector<shared_ptr<const Amplitude<double>>> a0;
-    vector<shared_ptr<const Residual<double>>> r0;
+    vector<shared_ptr<const Amplitude<std::complex<double>>>> a0;
+    vector<shared_ptr<const Residual<std::complex<double>>>> r0;
     for (int istate = 0; istate != nstates_; ++istate) {
       if (conv[istate]) {
         a0.push_back(nullptr);
@@ -136,7 +139,7 @@ void MRCI::MRCI::solve() {
       nall_[istate]->scale(scal);
       t2all_[istate]->scale(scal);
 
-      a0.push_back(make_shared<Amplitude<double>>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
+      a0.push_back(make_shared<Amplitude<std::complex<double>>>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
 
       // compute residuals (named r)
       rtmp->zero();
@@ -173,14 +176,14 @@ void MRCI::MRCI::solve() {
         shared_ptr<MultiTensor> m = rtmp->copy();
         for (int ist = 0; ist != nstates_; ++ist)
           m->fac(ist) = dot_product_transpose(sall_[ist], t2all_[istate]);
-        r0.push_back(make_shared<Residual<double>>(m, this));
+        r0.push_back(make_shared<Residual<std::complex<double>>>(m, this));
       }
     }
 
     energy_ = davidson.compute(a0, r0);
 
     // find new trial vectors
-    vector<shared_ptr<Residual<double>>> res = davidson.residual();
+    vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       const double err = res[i]->tensor()->rms();
       print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
@@ -199,8 +202,8 @@ void MRCI::MRCI::solve() {
 }
 
 
-void MRCI::MRCI::solve_deriv() {
-  throw std::logic_error("Nuclear gradients not implemented for MRCI");
+void RelMRCI::RelMRCI::solve_deriv() {
+  throw std::logic_error("Nuclear gradients not implemented for RelMRCI");
 }
 
 
