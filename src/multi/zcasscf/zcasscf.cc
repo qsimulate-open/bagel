@@ -103,45 +103,19 @@ void ZCASSCF::init() {
   }
 
   // first set coefficient
-  if (coeff_ == nullptr) {
-    const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
-    if (hcore_guess) {
-      auto hctmp = hcore_->copy();
-      auto s12 = overlap_->tildex(1.0e-10);
-      *hctmp = *s12 % *hctmp * *s12;
-      VectorB eig(hctmp->ndim());
-      hctmp->diagonalize(eig);
-      *hctmp = *s12 * *hctmp;
-      auto tmp = hctmp->clone();
-      tmp->copy_block(0, nneg_, tmp->ndim(), nneg_, hctmp->slice(0,nneg_));
-      tmp->copy_block(0, 0, tmp->ndim(), nneg_, hctmp->slice(nneg_,hctmp->mdim()));
-      coeff_ = tmp;
-    } else {
-      coeff_ = relref->relcoeff_full();
-/*
-      shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
-      shared_ptr<ZMatrix> coeff = ctmp->clone();
-      const int npos = ctmp->mdim() - nneg_;
-      coeff->copy_block(0, 0, ctmp->mdim(), npos, ctmp->slice(nneg_, nneg_+npos));
-      coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
-      coeff_ = coeff;
-*/
-    }
-  } else if (kramers_coeff) {
-    shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
-    coeff_ = ctmp;
+  const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
+  if (coeff_ == nullptr && hcore_guess) {
+    auto s12 = overlap_->tildex(1.0e-10);
+    auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
+    VectorB eig(hctmp->ndim());
+    hctmp->diagonalize(eig);
+    auto hctmp2 = make_shared<ZMatrix>(*s12 * *hctmp);
+    auto tmp = hctmp2->clone();
+    tmp->copy_block(0, nneg_, tmp->ndim(), nneg_, hctmp2->slice(0,nneg_));
+    tmp->copy_block(0, 0, tmp->ndim(), nneg_, hctmp2->slice(nneg_,hctmp->mdim()));
+    coeff_ = tmp;
   } else {
-    shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
-    shared_ptr<ZMatrix> coeff = ctmp->clone();
-    //const int npos = ctmp->mdim()/2;
-    if (ctmp->mdim() != ctmp->ndim()) {
-      coeff = ctmp->copy();
-    } else {
-      //coeff->copy_block(0, 0, ctmp->ndim(), npos, ctmp->slice(npos, npos+npos));
-      //coeff->copy_block(0, npos, ctmp->ndim(), npos, ctmp->slice(0, npos));
-      coeff = ctmp->copy();
-    }
-    coeff_ = coeff;
+    coeff_ = relref->relcoeff_full();
   }
 
   // get maxiter from the input
