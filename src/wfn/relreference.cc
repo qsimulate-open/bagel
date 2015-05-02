@@ -46,7 +46,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
   const bool giao = (geomin->magnetism() || geom_->magnetism());
 
   // standard 4-component wavefunction
-  if (rel_ && !giao) {
+  if (!giao) {
     // in this case we first form overlap matrices
     RelOverlap overlap(geomin);
     RelOverlap sinv = overlap;
@@ -71,10 +71,10 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, nneg(), nocc(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, kramers_);
+    out = make_shared<RelReference>(geomin, c, energy_, nneg(), nocc(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
 
   // 4-component GIAO wavefunction
-  } else if (rel_ && giao) {
+  } else {
 
     if (!geomin->magnetism() || !geom_->magnetism())
       throw std::runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
@@ -111,28 +111,8 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, nneg(), nocc(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, kramers_);
+    out = make_shared<RelReference>(geomin, c, energy_, nneg(), nocc(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
 
-  // Non-relativistic GIAO wavefunction
-  } else if (!rel_ && giao) {
-    // project to a new basis
-    const ZOverlap overlap(geomin);
-    ZOverlap sinv = overlap;
-    sinv.inverse();
-    MixedBasis<ComplexOverlapBatch, ZMatrix> mixed(geom_, geomin);
-    auto c = make_shared<ZCoeff>(sinv * mixed * *relcoeff_full_);
-
-    // make coefficient orthogonal (under the overlap metric)
-    ZMatrix unit = *c % overlap * *c;
-    unit.inverse_half();
-    *c *= unit;
-
-    out = make_shared<RelReference>(geomin, c, energy_, nneg(), nocc(), nact(), nvirt()+(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, rel_, kramers_);
-    if (!geomin->magnetism())
-      throw std::runtime_error("Projection from GIAO to real non-rel. basis would give complex coefficients.  Use the GIAO code at zero-field or restart.");
-
-  } else {
-    throw logic_error("Invalid RelReference formed");
   }
   return out;
 }
