@@ -201,7 +201,6 @@ void MOFock<complex<double>>::init() {
   assert(nclosed >= 0);
   const int nocc    = ref_->nocc();
   const int nact    = ref_->nact();
-//const int nvirt   = ref_->nvirt();
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_->ref());
 
@@ -268,8 +267,8 @@ void MOFock<complex<double>>::init() {
   auto f  = make_shared<ZMatrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<ZMatrix>(*coeff_ % *cfock * *coeff_);
 
-  fill_block<2,complex<double>>(data_, f, {0,0}, blocks_);
-  fill_block<2,complex<double>>(h1_, h1, {0,0}, blocks_);
+  fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0}, blocks_);
+  fill_block<2,complex<double>>(h1_,  h1->get_conjg(), {0,0}, blocks_);
 }
 
 template<>
@@ -332,8 +331,8 @@ void MOFock<double>::init() {
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
 
-  fill_block<2,double>(data_,  f->get_conjg(), {0,0}, blocks_);
-  fill_block<2,double>(h1_,   h1->get_conjg(), {0,0}, blocks_);
+  fill_block<2,double>(data_,  f, {0,0}, blocks_);
+  fill_block<2,double>(h1_,   h1, {0,0}, blocks_);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

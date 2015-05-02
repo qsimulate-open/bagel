@@ -55,10 +55,14 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
             // if this block is not included in the current wave function, skip it
             if (!r->at(ist)->get_size_alloc(i0, i1, i2, i3)) continue;
             unique_ptr<DataType[]>       data0 = r->at(ist)->get_block(i0, i1, i2, i3);
-            const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i0, i3, i2, i1);
 
             // this is an inverse of the overlap.
-            sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+            if (is_same<DataType,double>::value) {
+              const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i0, i3, i2, i1);
+              sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+            } else {
+              blas::scale_n(0.25, data0.get(), r->at(ist)->get_size_alloc(i0, i1, i2, i3));
+            }
             size_t iall = 0;
             for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
               for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
