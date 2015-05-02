@@ -43,12 +43,21 @@ class RelCoeff_Block;
 class RelCoeff : public ZMatrix {
   protected:
     RelCoeff(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
+    RelCoeff() { }
 
     int nbasis_;
     int nclosed_;
     int nact_;
     int nvirt_nr_;
     int nneg_;
+
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<ZMatrix>(*this) & nbasis_ & nclosed_ & nact_ & nvirt_nr_ & nneg_;
+    }
 
   public:
     int nbasis_nr() const { return nbasis_; }
@@ -67,7 +76,15 @@ class RelCoeff : public ZMatrix {
     using Matrix_base<std::complex<double>>::copy_block;
 };
 
+
 class RelCoeff_Striped : public RelCoeff {
+  private:
+    RelCoeff_Striped() { }
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) { ar & boost::serialization::base_object<RelCoeff>(*this); }
+
   public:
     RelCoeff_Striped(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
 
@@ -78,17 +95,15 @@ class RelCoeff_Striped : public RelCoeff {
 class RelCoeff_Block : public RelCoeff {
   public:
     RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
+    RelCoeff_Block() { }
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
 };
 
 }
 
-#if 0
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::RelCoeff)
 BOOST_CLASS_EXPORT_KEY(bagel::RelCoeff_Striped)
-BOOST_CLASS_EXPORT_KEY(bagel::RelCoeff_Block)
-#endif
 
 #endif
