@@ -64,14 +64,15 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed);
     mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
 
-    auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_full_);
+    auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
 
     // make coefficient orthogonal
     ZMatrix unit = *c % overlap * *c;
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, nneg(), nocc(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
+    auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
+    out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nocc(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
 
   // 4-component GIAO wavefunction
   } else {
@@ -104,14 +105,15 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     mixed.add_block( r2, 2*nb, 3*mb, nb, mb, *smallovl.data(3));
     mixed.add_block(-r2, 3*nb, 2*mb, nb, mb, *smallovl.data(3));
 
-    auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_full_);
+    auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
 
     // make coefficient orthogonal
     ZMatrix unit = *c % overlap * *c;
     unit.inverse_half();
     *c *= unit;
 
-    out = make_shared<RelReference>(geomin, c, energy_, nneg(), nocc(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
+    auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
+    out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nocc(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
 
   }
   return out;

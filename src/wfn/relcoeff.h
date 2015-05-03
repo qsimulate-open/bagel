@@ -88,6 +88,12 @@ class RelCoeff_Striped : public RelCoeff {
   public:
     RelCoeff_Striped(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
 
+    std::shared_ptr<RelCoeff_Striped> electronic_part() const {
+      ZMatrix tmp = slice(0, npos());
+      auto out = std::make_shared<RelCoeff_Striped>(tmp, nclosed_, nact_, nvirt_nr_, 0);
+      return out;
+    }
+
     std::shared_ptr<RelCoeff_Block> block_format() const;
 };
 
