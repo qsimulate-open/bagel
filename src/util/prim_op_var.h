@@ -36,29 +36,40 @@ void sort_indices(const std::array<int,2>& o, const double a, const double b, co
   throw std::logic_error("This case has not been implemented in prim_op_var.h");
 }
 
-
 template<typename DataType>
 void sort_indices(const std::array<int,4>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,4>& d) {
-  if (o[0] == 0 && o[1] == 1 && o[2] == 2 && o[3] == 3 && std::abs(a-1.0) < numerical_zero__ && std::abs(b) < numerical_zero__)
-    sort_indices<0,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]);
-  else if (o[0] == 1 && o[1] == 0 && o[2] == 2 && o[3] == 3 && std::abs(a-1.0) < numerical_zero__ && std::abs(b) < numerical_zero__)
-    sort_indices<1,0,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]);
-  else if (o[0] == 0 && o[1] == 1 && o[2] == 3 && o[3] == 2 && std::abs(a-1.0) < numerical_zero__ && std::abs(b) < numerical_zero__)
-    sort_indices<0,1,3,2,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]);
-  else if (o[0] == 1 && o[1] == 0 && o[2] == 3 && o[3] == 2 && std::abs(a-1.0) < numerical_zero__ && std::abs(b) < numerical_zero__)
-    sort_indices<1,0,3,2,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]);
-  else if (o[0] == 0 && o[1] == 1 && o[2] == 2 && o[3] == 3 && std::abs(a+1.0) < numerical_zero__ && std::abs(b) < numerical_zero__)
-    sort_indices<0,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]);
-  else if (o[0] == 1 && o[1] == 0 && o[2] == 2 && o[3] == 3 && std::abs(a+1.0) < numerical_zero__ && std::abs(b) < numerical_zero__)
-    sort_indices<1,0,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]);
-  else if (o[0] == 0 && o[1] == 1 && o[2] == 3 && o[3] == 2 && std::abs(a+1.0) < numerical_zero__ && std::abs(b) < numerical_zero__)
-    sort_indices<0,1,3,2,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]);
-  else if (o[0] == 1 && o[1] == 0 && o[2] == 3 && o[3] == 2 && std::abs(a+1.0) < numerical_zero__ && std::abs(b) < numerical_zero__)
-    sort_indices<1,0,3,2,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]);
-  else
-    throw std::logic_error("This case has not been implemented in prim_op_var.h");
-}
+  size_t tag = 0ull;
+  for (int i = 0; i != 4; ++i)
+    tag = (tag << 4) + o[i];
 
+  if (std::abs(1.0-a) < numerical_zero__ && std::abs(b) < numerical_zero__) {
+    switch (tag) {
+        case 291ull :
+          sort_indices<0,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]);
+        case 801ull :
+          sort_indices<0,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]);
+        case 8451ull :
+          sort_indices<2,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]);
+        case 8961ull :
+          sort_indices<2,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]);
+    }
+  }
+  else if (std::abs(-1.0-a) < numerical_zero__ && std::abs(b) < numerical_zero__) {
+    switch (tag) {
+        case 291ull :
+          sort_indices<0,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]);
+        case 801ull :
+          sort_indices<0,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]);
+        case 8451ull :
+          sort_indices<2,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]);
+        case 8961ull :
+          sort_indices<2,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]);
+    }
+  }
+  else {
+    throw std::logic_error("This case has not been implemented in prim_op_var.h");
+  }
+}
 
 template<typename DataType>
 void sort_indices(const std::array<int,6>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,6>& d) {
@@ -66,2483 +77,2486 @@ void sort_indices(const std::array<int,6>& o, const double a, const double b, co
   for (int i = 0; i != 6; ++i)
     tag = (tag << 4) + o[i];
 
-  if (std::abs(a-1.0) < numerical_zero__ && std::abs(b) < numerical_zero__) {
+  if (std::abs(1.0-a) < numerical_zero__ && std::abs(b) < numerical_zero__) {
     switch (tag) {
-    case 74565ull :
-      sort_indices<0,1,2,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136005ull :
-      sort_indices<0,2,1,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1057605ull :
-      sort_indices<1,0,2,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180485ull :
-      sort_indices<1,2,0,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102085ull :
-      sort_indices<2,0,1,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2163525ull :
-      sort_indices<2,1,0,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 74580ull :
-      sort_indices<0,1,2,3,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136020ull :
-      sort_indices<0,2,1,3,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1057620ull :
-      sort_indices<1,0,2,3,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180500ull :
-      sort_indices<1,2,0,3,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102100ull :
-      sort_indices<2,0,1,3,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2163540ull :
-      sort_indices<2,1,0,3,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 74805ull :
-      sort_indices<0,1,2,4,3,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136245ull :
-      sort_indices<0,2,1,4,3,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1057845ull :
-      sort_indices<1,0,2,4,3,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180725ull :
-      sort_indices<1,2,0,4,3,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102325ull :
-      sort_indices<2,0,1,4,3,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2163765ull :
-      sort_indices<2,1,0,4,3,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 74835ull :
-      sort_indices<0,1,2,4,5,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136275ull :
-      sort_indices<0,2,1,4,5,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1057875ull :
-      sort_indices<1,0,2,4,5,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180755ull :
-      sort_indices<1,2,0,4,5,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102355ull :
-      sort_indices<2,0,1,4,5,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2163795ull :
-      sort_indices<2,1,0,4,5,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 75060ull :
-      sort_indices<0,1,2,5,3,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136500ull :
-      sort_indices<0,2,1,5,3,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1058100ull :
-      sort_indices<1,0,2,5,3,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180980ull :
-      sort_indices<1,2,0,5,3,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102580ull :
-      sort_indices<2,0,1,5,3,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2164020ull :
-      sort_indices<2,1,0,5,3,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 75075ull :
-      sort_indices<0,1,2,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136515ull :
-      sort_indices<0,2,1,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1058115ull :
-      sort_indices<1,0,2,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180995ull :
-      sort_indices<1,2,0,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102595ull :
-      sort_indices<2,0,1,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2164035ull :
-      sort_indices<2,1,0,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
+        case 74565ull :
+          sort_indices<0,1,2,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 75075ull :
+          sort_indices<0,1,2,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 205125ull :
+          sort_indices<0,3,2,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 206145ull :
+          sort_indices<0,3,2,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 336195ull :
+          sort_indices<0,5,2,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 336705ull :
+          sort_indices<0,5,2,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 82725ull :
+          sort_indices<0,1,4,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 83235ull :
+          sort_indices<0,1,4,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 213285ull :
+          sort_indices<0,3,4,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 214305ull :
+          sort_indices<0,3,4,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 344355ull :
+          sort_indices<0,5,4,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 344865ull :
+          sort_indices<0,5,4,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2163525ull :
+          sort_indices<2,1,0,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2164035ull :
+          sort_indices<2,1,0,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2294085ull :
+          sort_indices<2,3,0,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2295105ull :
+          sort_indices<2,3,0,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2425155ull :
+          sort_indices<2,5,0,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2425665ull :
+          sort_indices<2,5,0,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2179845ull :
+          sort_indices<2,1,4,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2180355ull :
+          sort_indices<2,1,4,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2310405ull :
+          sort_indices<2,3,4,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2311425ull :
+          sort_indices<2,3,4,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2441475ull :
+          sort_indices<2,5,4,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2441985ull :
+          sort_indices<2,5,4,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4260645ull :
+          sort_indices<4,1,0,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4261155ull :
+          sort_indices<4,1,0,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4391205ull :
+          sort_indices<4,3,0,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4392225ull :
+          sort_indices<4,3,0,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4522275ull :
+          sort_indices<4,5,0,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4522785ull :
+          sort_indices<4,5,0,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4268805ull :
+          sort_indices<4,1,2,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4269315ull :
+          sort_indices<4,1,2,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4399365ull :
+          sort_indices<4,3,2,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4400385ull :
+          sort_indices<4,3,2,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4530435ull :
+          sort_indices<4,5,2,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4530945ull :
+          sort_indices<4,5,2,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
     }
-  } else if (std::abs(a+1.0) < numerical_zero__ && std::abs(b) < numerical_zero__) {
+  }
+  else if (std::abs(-1.0-a) < numerical_zero__ && std::abs(b) < numerical_zero__) {
     switch (tag) {
-    case 74565ull :
-      sort_indices<0,1,2,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136005ull :
-      sort_indices<0,2,1,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1057605ull :
-      sort_indices<1,0,2,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180485ull :
-      sort_indices<1,2,0,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102085ull :
-      sort_indices<2,0,1,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2163525ull :
-      sort_indices<2,1,0,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 74580ull :
-      sort_indices<0,1,2,3,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136020ull :
-      sort_indices<0,2,1,3,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1057620ull :
-      sort_indices<1,0,2,3,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180500ull :
-      sort_indices<1,2,0,3,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102100ull :
-      sort_indices<2,0,1,3,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2163540ull :
-      sort_indices<2,1,0,3,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 74805ull :
-      sort_indices<0,1,2,4,3,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136245ull :
-      sort_indices<0,2,1,4,3,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1057845ull :
-      sort_indices<1,0,2,4,3,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180725ull :
-      sort_indices<1,2,0,4,3,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102325ull :
-      sort_indices<2,0,1,4,3,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2163765ull :
-      sort_indices<2,1,0,4,3,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 74835ull :
-      sort_indices<0,1,2,4,5,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136275ull :
-      sort_indices<0,2,1,4,5,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1057875ull :
-      sort_indices<1,0,2,4,5,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180755ull :
-      sort_indices<1,2,0,4,5,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102355ull :
-      sort_indices<2,0,1,4,5,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2163795ull :
-      sort_indices<2,1,0,4,5,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 75060ull :
-      sort_indices<0,1,2,5,3,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136500ull :
-      sort_indices<0,2,1,5,3,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1058100ull :
-      sort_indices<1,0,2,5,3,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180980ull :
-      sort_indices<1,2,0,5,3,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102580ull :
-      sort_indices<2,0,1,5,3,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2164020ull :
-      sort_indices<2,1,0,5,3,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 75075ull :
-      sort_indices<0,1,2,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 136515ull :
-      sort_indices<0,2,1,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1058115ull :
-      sort_indices<1,0,2,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 1180995ull :
-      sort_indices<1,2,0,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2102595ull :
-      sort_indices<2,0,1,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
-    case 2164035ull :
-      sort_indices<2,1,0,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]); break;
+        case 74565ull :
+          sort_indices<0,1,2,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 75075ull :
+          sort_indices<0,1,2,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 205125ull :
+          sort_indices<0,3,2,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 206145ull :
+          sort_indices<0,3,2,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 336195ull :
+          sort_indices<0,5,2,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 336705ull :
+          sort_indices<0,5,2,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 82725ull :
+          sort_indices<0,1,4,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 83235ull :
+          sort_indices<0,1,4,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 213285ull :
+          sort_indices<0,3,4,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 214305ull :
+          sort_indices<0,3,4,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 344355ull :
+          sort_indices<0,5,4,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 344865ull :
+          sort_indices<0,5,4,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2163525ull :
+          sort_indices<2,1,0,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2164035ull :
+          sort_indices<2,1,0,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2294085ull :
+          sort_indices<2,3,0,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2295105ull :
+          sort_indices<2,3,0,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2425155ull :
+          sort_indices<2,5,0,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2425665ull :
+          sort_indices<2,5,0,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2179845ull :
+          sort_indices<2,1,4,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2180355ull :
+          sort_indices<2,1,4,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2310405ull :
+          sort_indices<2,3,4,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2311425ull :
+          sort_indices<2,3,4,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2441475ull :
+          sort_indices<2,5,4,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 2441985ull :
+          sort_indices<2,5,4,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4260645ull :
+          sort_indices<4,1,0,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4261155ull :
+          sort_indices<4,1,0,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4391205ull :
+          sort_indices<4,3,0,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4392225ull :
+          sort_indices<4,3,0,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4522275ull :
+          sort_indices<4,5,0,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4522785ull :
+          sort_indices<4,5,0,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4268805ull :
+          sort_indices<4,1,2,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4269315ull :
+          sort_indices<4,1,2,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4399365ull :
+          sort_indices<4,3,2,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4400385ull :
+          sort_indices<4,3,2,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4530435ull :
+          sort_indices<4,5,2,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
+        case 4530945ull :
+          sort_indices<4,5,2,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5]);
     }
-  } else {
+  }
+  else {
     throw std::logic_error("This case has not been implemented in prim_op_var.h");
   }
 }
-
 
 template<typename DataType>
 void sort_indices(const std::array<int,8>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,8>& d) {
-  size_t tag = 0lu;
+  size_t tag = 0ull;
   for (int i = 0; i != 8; ++i)
     tag = (tag << 4) + o[i];
 
-  if (std::abs(a-1.0) < numerical_zero__ && std::abs(b) < numerical_zero__) {
+  if (std::abs(1.0-a) < numerical_zero__ && std::abs(b) < numerical_zero__) {
     switch (tag) {
-    case 19088743ull :
-      sort_indices<0,1,2,3,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20071783ull :
-      sort_indices<0,1,3,2,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817383ull :
-      sort_indices<0,2,1,3,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783463ull :
-      sort_indices<0,2,3,1,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529063ull :
-      sort_indices<0,3,1,2,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512103ull :
-      sort_indices<0,3,2,1,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270746983ull :
-      sort_indices<1,0,2,3,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730023ull :
-      sort_indices<1,0,3,2,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204263ull :
-      sort_indices<1,2,0,3,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153383ull :
-      sort_indices<1,2,3,0,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318915943ull :
-      sort_indices<1,3,0,2,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882023ull :
-      sort_indices<1,3,2,0,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538133863ull :
-      sort_indices<2,0,1,3,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540099943ull :
-      sort_indices<2,0,3,1,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553862503ull :
-      sort_indices<2,1,0,3,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556811623ull :
-      sort_indices<2,1,3,0,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587285863ull :
-      sort_indices<2,3,0,1,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588268903ull :
-      sort_indices<2,3,1,0,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806503783ull :
-      sort_indices<3,0,1,2,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807486823ull :
-      sort_indices<3,0,2,1,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232423ull :
-      sort_indices<3,1,0,2,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824198503ull :
-      sort_indices<3,1,2,0,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944103ull :
-      sort_indices<3,2,0,1,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927143ull :
-      sort_indices<3,2,1,0,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19088758ull :
-      sort_indices<0,1,2,3,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20071798ull :
-      sort_indices<0,1,3,2,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817398ull :
-      sort_indices<0,2,1,3,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783478ull :
-      sort_indices<0,2,3,1,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529078ull :
-      sort_indices<0,3,1,2,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512118ull :
-      sort_indices<0,3,2,1,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270746998ull :
-      sort_indices<1,0,2,3,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730038ull :
-      sort_indices<1,0,3,2,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204278ull :
-      sort_indices<1,2,0,3,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153398ull :
-      sort_indices<1,2,3,0,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318915958ull :
-      sort_indices<1,3,0,2,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882038ull :
-      sort_indices<1,3,2,0,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538133878ull :
-      sort_indices<2,0,1,3,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540099958ull :
-      sort_indices<2,0,3,1,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553862518ull :
-      sort_indices<2,1,0,3,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556811638ull :
-      sort_indices<2,1,3,0,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587285878ull :
-      sort_indices<2,3,0,1,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588268918ull :
-      sort_indices<2,3,1,0,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806503798ull :
-      sort_indices<3,0,1,2,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807486838ull :
-      sort_indices<3,0,2,1,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232438ull :
-      sort_indices<3,1,0,2,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824198518ull :
-      sort_indices<3,1,2,0,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944118ull :
-      sort_indices<3,2,0,1,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927158ull :
-      sort_indices<3,2,1,0,4,5,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19088983ull :
-      sort_indices<0,1,2,3,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20072023ull :
-      sort_indices<0,1,3,2,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817623ull :
-      sort_indices<0,2,1,3,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783703ull :
-      sort_indices<0,2,3,1,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529303ull :
-      sort_indices<0,3,1,2,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512343ull :
-      sort_indices<0,3,2,1,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270747223ull :
-      sort_indices<1,0,2,3,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730263ull :
-      sort_indices<1,0,3,2,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204503ull :
-      sort_indices<1,2,0,3,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153623ull :
-      sort_indices<1,2,3,0,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318916183ull :
-      sort_indices<1,3,0,2,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882263ull :
-      sort_indices<1,3,2,0,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538134103ull :
-      sort_indices<2,0,1,3,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540100183ull :
-      sort_indices<2,0,3,1,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553862743ull :
-      sort_indices<2,1,0,3,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556811863ull :
-      sort_indices<2,1,3,0,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587286103ull :
-      sort_indices<2,3,0,1,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588269143ull :
-      sort_indices<2,3,1,0,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806504023ull :
-      sort_indices<3,0,1,2,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807487063ull :
-      sort_indices<3,0,2,1,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232663ull :
-      sort_indices<3,1,0,2,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824198743ull :
-      sort_indices<3,1,2,0,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944343ull :
-      sort_indices<3,2,0,1,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927383ull :
-      sort_indices<3,2,1,0,4,6,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19089013ull :
-      sort_indices<0,1,2,3,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20072053ull :
-      sort_indices<0,1,3,2,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817653ull :
-      sort_indices<0,2,1,3,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783733ull :
-      sort_indices<0,2,3,1,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529333ull :
-      sort_indices<0,3,1,2,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512373ull :
-      sort_indices<0,3,2,1,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270747253ull :
-      sort_indices<1,0,2,3,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730293ull :
-      sort_indices<1,0,3,2,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204533ull :
-      sort_indices<1,2,0,3,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153653ull :
-      sort_indices<1,2,3,0,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318916213ull :
-      sort_indices<1,3,0,2,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882293ull :
-      sort_indices<1,3,2,0,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538134133ull :
-      sort_indices<2,0,1,3,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540100213ull :
-      sort_indices<2,0,3,1,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553862773ull :
-      sort_indices<2,1,0,3,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556811893ull :
-      sort_indices<2,1,3,0,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587286133ull :
-      sort_indices<2,3,0,1,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588269173ull :
-      sort_indices<2,3,1,0,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806504053ull :
-      sort_indices<3,0,1,2,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807487093ull :
-      sort_indices<3,0,2,1,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232693ull :
-      sort_indices<3,1,0,2,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824198773ull :
-      sort_indices<3,1,2,0,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944373ull :
-      sort_indices<3,2,0,1,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927413ull :
-      sort_indices<3,2,1,0,4,6,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19089238ull :
-      sort_indices<0,1,2,3,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20072278ull :
-      sort_indices<0,1,3,2,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817878ull :
-      sort_indices<0,2,1,3,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783958ull :
-      sort_indices<0,2,3,1,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529558ull :
-      sort_indices<0,3,1,2,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512598ull :
-      sort_indices<0,3,2,1,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270747478ull :
-      sort_indices<1,0,2,3,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730518ull :
-      sort_indices<1,0,3,2,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204758ull :
-      sort_indices<1,2,0,3,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153878ull :
-      sort_indices<1,2,3,0,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318916438ull :
-      sort_indices<1,3,0,2,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882518ull :
-      sort_indices<1,3,2,0,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538134358ull :
-      sort_indices<2,0,1,3,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540100438ull :
-      sort_indices<2,0,3,1,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553862998ull :
-      sort_indices<2,1,0,3,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556812118ull :
-      sort_indices<2,1,3,0,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587286358ull :
-      sort_indices<2,3,0,1,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588269398ull :
-      sort_indices<2,3,1,0,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806504278ull :
-      sort_indices<3,0,1,2,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807487318ull :
-      sort_indices<3,0,2,1,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232918ull :
-      sort_indices<3,1,0,2,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824198998ull :
-      sort_indices<3,1,2,0,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944598ull :
-      sort_indices<3,2,0,1,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927638ull :
-      sort_indices<3,2,1,0,4,7,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19089253ull :
-      sort_indices<0,1,2,3,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20072293ull :
-      sort_indices<0,1,3,2,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817893ull :
-      sort_indices<0,2,1,3,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783973ull :
-      sort_indices<0,2,3,1,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529573ull :
-      sort_indices<0,3,1,2,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512613ull :
-      sort_indices<0,3,2,1,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270747493ull :
-      sort_indices<1,0,2,3,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730533ull :
-      sort_indices<1,0,3,2,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204773ull :
-      sort_indices<1,2,0,3,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153893ull :
-      sort_indices<1,2,3,0,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318916453ull :
-      sort_indices<1,3,0,2,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882533ull :
-      sort_indices<1,3,2,0,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538134373ull :
-      sort_indices<2,0,1,3,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540100453ull :
-      sort_indices<2,0,3,1,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553863013ull :
-      sort_indices<2,1,0,3,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556812133ull :
-      sort_indices<2,1,3,0,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587286373ull :
-      sort_indices<2,3,0,1,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588269413ull :
-      sort_indices<2,3,1,0,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806504293ull :
-      sort_indices<3,0,1,2,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807487333ull :
-      sort_indices<3,0,2,1,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232933ull :
-      sort_indices<3,1,0,2,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824199013ull :
-      sort_indices<3,1,2,0,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944613ull :
-      sort_indices<3,2,0,1,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927653ull :
-      sort_indices<3,2,1,0,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19092583ull :
-      sort_indices<0,1,2,3,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20075623ull :
-      sort_indices<0,1,3,2,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821223ull :
-      sort_indices<0,2,1,3,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36787303ull :
-      sort_indices<0,2,3,1,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51532903ull :
-      sort_indices<0,3,1,2,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52515943ull :
-      sort_indices<0,3,2,1,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270750823ull :
-      sort_indices<1,0,2,3,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271733863ull :
-      sort_indices<1,0,3,2,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208103ull :
-      sort_indices<1,2,0,3,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157223ull :
-      sort_indices<1,2,3,0,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318919783ull :
-      sort_indices<1,3,0,2,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320885863ull :
-      sort_indices<1,3,2,0,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538137703ull :
-      sort_indices<2,0,1,3,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540103783ull :
-      sort_indices<2,0,3,1,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553866343ull :
-      sort_indices<2,1,0,3,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556815463ull :
-      sort_indices<2,1,3,0,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587289703ull :
-      sort_indices<2,3,0,1,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588272743ull :
-      sort_indices<2,3,1,0,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806507623ull :
-      sort_indices<3,0,1,2,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807490663ull :
-      sort_indices<3,0,2,1,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822236263ull :
-      sort_indices<3,1,0,2,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824202343ull :
-      sort_indices<3,1,2,0,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838947943ull :
-      sort_indices<3,2,0,1,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839930983ull :
-      sort_indices<3,2,1,0,5,4,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19092598ull :
-      sort_indices<0,1,2,3,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20075638ull :
-      sort_indices<0,1,3,2,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821238ull :
-      sort_indices<0,2,1,3,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36787318ull :
-      sort_indices<0,2,3,1,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51532918ull :
-      sort_indices<0,3,1,2,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52515958ull :
-      sort_indices<0,3,2,1,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270750838ull :
-      sort_indices<1,0,2,3,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271733878ull :
-      sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208118ull :
-      sort_indices<1,2,0,3,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157238ull :
-      sort_indices<1,2,3,0,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318919798ull :
-      sort_indices<1,3,0,2,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320885878ull :
-      sort_indices<1,3,2,0,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538137718ull :
-      sort_indices<2,0,1,3,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540103798ull :
-      sort_indices<2,0,3,1,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553866358ull :
-      sort_indices<2,1,0,3,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556815478ull :
-      sort_indices<2,1,3,0,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587289718ull :
-      sort_indices<2,3,0,1,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588272758ull :
-      sort_indices<2,3,1,0,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806507638ull :
-      sort_indices<3,0,1,2,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807490678ull :
-      sort_indices<3,0,2,1,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822236278ull :
-      sort_indices<3,1,0,2,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824202358ull :
-      sort_indices<3,1,2,0,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838947958ull :
-      sort_indices<3,2,0,1,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839930998ull :
-      sort_indices<3,2,1,0,5,4,7,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19093063ull :
-      sort_indices<0,1,2,3,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20076103ull :
-      sort_indices<0,1,3,2,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821703ull :
-      sort_indices<0,2,1,3,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36787783ull :
-      sort_indices<0,2,3,1,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51533383ull :
-      sort_indices<0,3,1,2,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52516423ull :
-      sort_indices<0,3,2,1,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270751303ull :
-      sort_indices<1,0,2,3,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271734343ull :
-      sort_indices<1,0,3,2,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208583ull :
-      sort_indices<1,2,0,3,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157703ull :
-      sort_indices<1,2,3,0,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318920263ull :
-      sort_indices<1,3,0,2,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320886343ull :
-      sort_indices<1,3,2,0,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538138183ull :
-      sort_indices<2,0,1,3,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540104263ull :
-      sort_indices<2,0,3,1,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553866823ull :
-      sort_indices<2,1,0,3,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556815943ull :
-      sort_indices<2,1,3,0,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587290183ull :
-      sort_indices<2,3,0,1,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588273223ull :
-      sort_indices<2,3,1,0,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806508103ull :
-      sort_indices<3,0,1,2,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807491143ull :
-      sort_indices<3,0,2,1,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822236743ull :
-      sort_indices<3,1,0,2,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824202823ull :
-      sort_indices<3,1,2,0,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838948423ull :
-      sort_indices<3,2,0,1,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839931463ull :
-      sort_indices<3,2,1,0,5,6,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19093108ull :
-      sort_indices<0,1,2,3,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20076148ull :
-      sort_indices<0,1,3,2,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821748ull :
-      sort_indices<0,2,1,3,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36787828ull :
-      sort_indices<0,2,3,1,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51533428ull :
-      sort_indices<0,3,1,2,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52516468ull :
-      sort_indices<0,3,2,1,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270751348ull :
-      sort_indices<1,0,2,3,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271734388ull :
-      sort_indices<1,0,3,2,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208628ull :
-      sort_indices<1,2,0,3,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157748ull :
-      sort_indices<1,2,3,0,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318920308ull :
-      sort_indices<1,3,0,2,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320886388ull :
-      sort_indices<1,3,2,0,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538138228ull :
-      sort_indices<2,0,1,3,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540104308ull :
-      sort_indices<2,0,3,1,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553866868ull :
-      sort_indices<2,1,0,3,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556815988ull :
-      sort_indices<2,1,3,0,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587290228ull :
-      sort_indices<2,3,0,1,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588273268ull :
-      sort_indices<2,3,1,0,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806508148ull :
-      sort_indices<3,0,1,2,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807491188ull :
-      sort_indices<3,0,2,1,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822236788ull :
-      sort_indices<3,1,0,2,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824202868ull :
-      sort_indices<3,1,2,0,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838948468ull :
-      sort_indices<3,2,0,1,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839931508ull :
-      sort_indices<3,2,1,0,5,6,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19093318ull :
-      sort_indices<0,1,2,3,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20076358ull :
-      sort_indices<0,1,3,2,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821958ull :
-      sort_indices<0,2,1,3,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36788038ull :
-      sort_indices<0,2,3,1,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51533638ull :
-      sort_indices<0,3,1,2,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52516678ull :
-      sort_indices<0,3,2,1,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270751558ull :
-      sort_indices<1,0,2,3,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271734598ull :
-      sort_indices<1,0,3,2,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208838ull :
-      sort_indices<1,2,0,3,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157958ull :
-      sort_indices<1,2,3,0,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318920518ull :
-      sort_indices<1,3,0,2,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320886598ull :
-      sort_indices<1,3,2,0,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538138438ull :
-      sort_indices<2,0,1,3,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540104518ull :
-      sort_indices<2,0,3,1,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553867078ull :
-      sort_indices<2,1,0,3,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556816198ull :
-      sort_indices<2,1,3,0,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587290438ull :
-      sort_indices<2,3,0,1,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588273478ull :
-      sort_indices<2,3,1,0,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806508358ull :
-      sort_indices<3,0,1,2,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807491398ull :
-      sort_indices<3,0,2,1,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822236998ull :
-      sort_indices<3,1,0,2,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824203078ull :
-      sort_indices<3,1,2,0,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838948678ull :
-      sort_indices<3,2,0,1,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839931718ull :
-      sort_indices<3,2,1,0,5,7,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19093348ull :
-      sort_indices<0,1,2,3,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20076388ull :
-      sort_indices<0,1,3,2,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821988ull :
-      sort_indices<0,2,1,3,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36788068ull :
-      sort_indices<0,2,3,1,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51533668ull :
-      sort_indices<0,3,1,2,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52516708ull :
-      sort_indices<0,3,2,1,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270751588ull :
-      sort_indices<1,0,2,3,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271734628ull :
-      sort_indices<1,0,3,2,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208868ull :
-      sort_indices<1,2,0,3,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157988ull :
-      sort_indices<1,2,3,0,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318920548ull :
-      sort_indices<1,3,0,2,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320886628ull :
-      sort_indices<1,3,2,0,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538138468ull :
-      sort_indices<2,0,1,3,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540104548ull :
-      sort_indices<2,0,3,1,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553867108ull :
-      sort_indices<2,1,0,3,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556816228ull :
-      sort_indices<2,1,3,0,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587290468ull :
-      sort_indices<2,3,0,1,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588273508ull :
-      sort_indices<2,3,1,0,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806508388ull :
-      sort_indices<3,0,1,2,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807491428ull :
-      sort_indices<3,0,2,1,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822237028ull :
-      sort_indices<3,1,0,2,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824203108ull :
-      sort_indices<3,1,2,0,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838948708ull :
-      sort_indices<3,2,0,1,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839931748ull :
-      sort_indices<3,2,1,0,5,7,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19096663ull :
-      sort_indices<0,1,2,3,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20079703ull :
-      sort_indices<0,1,3,2,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34825303ull :
-      sort_indices<0,2,1,3,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36791383ull :
-      sort_indices<0,2,3,1,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51536983ull :
-      sort_indices<0,3,1,2,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520023ull :
-      sort_indices<0,3,2,1,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270754903ull :
-      sort_indices<1,0,2,3,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271737943ull :
-      sort_indices<1,0,3,2,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212183ull :
-      sort_indices<1,2,0,3,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305161303ull :
-      sort_indices<1,2,3,0,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318923863ull :
-      sort_indices<1,3,0,2,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320889943ull :
-      sort_indices<1,3,2,0,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538141783ull :
-      sort_indices<2,0,1,3,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540107863ull :
-      sort_indices<2,0,3,1,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553870423ull :
-      sort_indices<2,1,0,3,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556819543ull :
-      sort_indices<2,1,3,0,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587293783ull :
-      sort_indices<2,3,0,1,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588276823ull :
-      sort_indices<2,3,1,0,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806511703ull :
-      sort_indices<3,0,1,2,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807494743ull :
-      sort_indices<3,0,2,1,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822240343ull :
-      sort_indices<3,1,0,2,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824206423ull :
-      sort_indices<3,1,2,0,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952023ull :
-      sort_indices<3,2,0,1,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935063ull :
-      sort_indices<3,2,1,0,6,4,5,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19096693ull :
-      sort_indices<0,1,2,3,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20079733ull :
-      sort_indices<0,1,3,2,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34825333ull :
-      sort_indices<0,2,1,3,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36791413ull :
-      sort_indices<0,2,3,1,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51537013ull :
-      sort_indices<0,3,1,2,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520053ull :
-      sort_indices<0,3,2,1,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270754933ull :
-      sort_indices<1,0,2,3,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271737973ull :
-      sort_indices<1,0,3,2,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212213ull :
-      sort_indices<1,2,0,3,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305161333ull :
-      sort_indices<1,2,3,0,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318923893ull :
-      sort_indices<1,3,0,2,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320889973ull :
-      sort_indices<1,3,2,0,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538141813ull :
-      sort_indices<2,0,1,3,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540107893ull :
-      sort_indices<2,0,3,1,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553870453ull :
-      sort_indices<2,1,0,3,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556819573ull :
-      sort_indices<2,1,3,0,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587293813ull :
-      sort_indices<2,3,0,1,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588276853ull :
-      sort_indices<2,3,1,0,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806511733ull :
-      sort_indices<3,0,1,2,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807494773ull :
-      sort_indices<3,0,2,1,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822240373ull :
-      sort_indices<3,1,0,2,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824206453ull :
-      sort_indices<3,1,2,0,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952053ull :
-      sort_indices<3,2,0,1,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935093ull :
-      sort_indices<3,2,1,0,6,4,7,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19096903ull :
-      sort_indices<0,1,2,3,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20079943ull :
-      sort_indices<0,1,3,2,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34825543ull :
-      sort_indices<0,2,1,3,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36791623ull :
-      sort_indices<0,2,3,1,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51537223ull :
-      sort_indices<0,3,1,2,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520263ull :
-      sort_indices<0,3,2,1,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270755143ull :
-      sort_indices<1,0,2,3,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271738183ull :
-      sort_indices<1,0,3,2,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212423ull :
-      sort_indices<1,2,0,3,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305161543ull :
-      sort_indices<1,2,3,0,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318924103ull :
-      sort_indices<1,3,0,2,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320890183ull :
-      sort_indices<1,3,2,0,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538142023ull :
-      sort_indices<2,0,1,3,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540108103ull :
-      sort_indices<2,0,3,1,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553870663ull :
-      sort_indices<2,1,0,3,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556819783ull :
-      sort_indices<2,1,3,0,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587294023ull :
-      sort_indices<2,3,0,1,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588277063ull :
-      sort_indices<2,3,1,0,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806511943ull :
-      sort_indices<3,0,1,2,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807494983ull :
-      sort_indices<3,0,2,1,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822240583ull :
-      sort_indices<3,1,0,2,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824206663ull :
-      sort_indices<3,1,2,0,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952263ull :
-      sort_indices<3,2,0,1,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935303ull :
-      sort_indices<3,2,1,0,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19096948ull :
-      sort_indices<0,1,2,3,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20079988ull :
-      sort_indices<0,1,3,2,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34825588ull :
-      sort_indices<0,2,1,3,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36791668ull :
-      sort_indices<0,2,3,1,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51537268ull :
-      sort_indices<0,3,1,2,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520308ull :
-      sort_indices<0,3,2,1,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270755188ull :
-      sort_indices<1,0,2,3,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271738228ull :
-      sort_indices<1,0,3,2,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212468ull :
-      sort_indices<1,2,0,3,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305161588ull :
-      sort_indices<1,2,3,0,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318924148ull :
-      sort_indices<1,3,0,2,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320890228ull :
-      sort_indices<1,3,2,0,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538142068ull :
-      sort_indices<2,0,1,3,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540108148ull :
-      sort_indices<2,0,3,1,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553870708ull :
-      sort_indices<2,1,0,3,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556819828ull :
-      sort_indices<2,1,3,0,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587294068ull :
-      sort_indices<2,3,0,1,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588277108ull :
-      sort_indices<2,3,1,0,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806511988ull :
-      sort_indices<3,0,1,2,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807495028ull :
-      sort_indices<3,0,2,1,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822240628ull :
-      sort_indices<3,1,0,2,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824206708ull :
-      sort_indices<3,1,2,0,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952308ull :
-      sort_indices<3,2,0,1,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935348ull :
-      sort_indices<3,2,1,0,6,5,7,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19097413ull :
-      sort_indices<0,1,2,3,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20080453ull :
-      sort_indices<0,1,3,2,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34826053ull :
-      sort_indices<0,2,1,3,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36792133ull :
-      sort_indices<0,2,3,1,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51537733ull :
-      sort_indices<0,3,1,2,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520773ull :
-      sort_indices<0,3,2,1,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270755653ull :
-      sort_indices<1,0,2,3,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271738693ull :
-      sort_indices<1,0,3,2,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212933ull :
-      sort_indices<1,2,0,3,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305162053ull :
-      sort_indices<1,2,3,0,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318924613ull :
-      sort_indices<1,3,0,2,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320890693ull :
-      sort_indices<1,3,2,0,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538142533ull :
-      sort_indices<2,0,1,3,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540108613ull :
-      sort_indices<2,0,3,1,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553871173ull :
-      sort_indices<2,1,0,3,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556820293ull :
-      sort_indices<2,1,3,0,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587294533ull :
-      sort_indices<2,3,0,1,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588277573ull :
-      sort_indices<2,3,1,0,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806512453ull :
-      sort_indices<3,0,1,2,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807495493ull :
-      sort_indices<3,0,2,1,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822241093ull :
-      sort_indices<3,1,0,2,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824207173ull :
-      sort_indices<3,1,2,0,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952773ull :
-      sort_indices<3,2,0,1,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935813ull :
-      sort_indices<3,2,1,0,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19097428ull :
-      sort_indices<0,1,2,3,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20080468ull :
-      sort_indices<0,1,3,2,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34826068ull :
-      sort_indices<0,2,1,3,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36792148ull :
-      sort_indices<0,2,3,1,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51537748ull :
-      sort_indices<0,3,1,2,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520788ull :
-      sort_indices<0,3,2,1,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270755668ull :
-      sort_indices<1,0,2,3,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271738708ull :
-      sort_indices<1,0,3,2,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212948ull :
-      sort_indices<1,2,0,3,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305162068ull :
-      sort_indices<1,2,3,0,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318924628ull :
-      sort_indices<1,3,0,2,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320890708ull :
-      sort_indices<1,3,2,0,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538142548ull :
-      sort_indices<2,0,1,3,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540108628ull :
-      sort_indices<2,0,3,1,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553871188ull :
-      sort_indices<2,1,0,3,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556820308ull :
-      sort_indices<2,1,3,0,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587294548ull :
-      sort_indices<2,3,0,1,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588277588ull :
-      sort_indices<2,3,1,0,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806512468ull :
-      sort_indices<3,0,1,2,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807495508ull :
-      sort_indices<3,0,2,1,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822241108ull :
-      sort_indices<3,1,0,2,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824207188ull :
-      sort_indices<3,1,2,0,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952788ull :
-      sort_indices<3,2,0,1,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935828ull :
-      sort_indices<3,2,1,0,6,7,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19100758ull :
-      sort_indices<0,1,2,3,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20083798ull :
-      sort_indices<0,1,3,2,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829398ull :
-      sort_indices<0,2,1,3,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795478ull :
-      sort_indices<0,2,3,1,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541078ull :
-      sort_indices<0,3,1,2,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524118ull :
-      sort_indices<0,3,2,1,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270758998ull :
-      sort_indices<1,0,2,3,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742038ull :
-      sort_indices<1,0,3,2,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216278ull :
-      sort_indices<1,2,0,3,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165398ull :
-      sort_indices<1,2,3,0,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318927958ull :
-      sort_indices<1,3,0,2,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894038ull :
-      sort_indices<1,3,2,0,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538145878ull :
-      sort_indices<2,0,1,3,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540111958ull :
-      sort_indices<2,0,3,1,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553874518ull :
-      sort_indices<2,1,0,3,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556823638ull :
-      sort_indices<2,1,3,0,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587297878ull :
-      sort_indices<2,3,0,1,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588280918ull :
-      sort_indices<2,3,1,0,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806515798ull :
-      sort_indices<3,0,1,2,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807498838ull :
-      sort_indices<3,0,2,1,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244438ull :
-      sort_indices<3,1,0,2,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824210518ull :
-      sort_indices<3,1,2,0,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956118ull :
-      sort_indices<3,2,0,1,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939158ull :
-      sort_indices<3,2,1,0,7,4,5,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19100773ull :
-      sort_indices<0,1,2,3,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20083813ull :
-      sort_indices<0,1,3,2,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829413ull :
-      sort_indices<0,2,1,3,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795493ull :
-      sort_indices<0,2,3,1,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541093ull :
-      sort_indices<0,3,1,2,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524133ull :
-      sort_indices<0,3,2,1,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270759013ull :
-      sort_indices<1,0,2,3,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742053ull :
-      sort_indices<1,0,3,2,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216293ull :
-      sort_indices<1,2,0,3,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165413ull :
-      sort_indices<1,2,3,0,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318927973ull :
-      sort_indices<1,3,0,2,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894053ull :
-      sort_indices<1,3,2,0,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538145893ull :
-      sort_indices<2,0,1,3,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540111973ull :
-      sort_indices<2,0,3,1,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553874533ull :
-      sort_indices<2,1,0,3,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556823653ull :
-      sort_indices<2,1,3,0,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587297893ull :
-      sort_indices<2,3,0,1,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588280933ull :
-      sort_indices<2,3,1,0,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806515813ull :
-      sort_indices<3,0,1,2,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807498853ull :
-      sort_indices<3,0,2,1,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244453ull :
-      sort_indices<3,1,0,2,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824210533ull :
-      sort_indices<3,1,2,0,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956133ull :
-      sort_indices<3,2,0,1,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939173ull :
-      sort_indices<3,2,1,0,7,4,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19100998ull :
-      sort_indices<0,1,2,3,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20084038ull :
-      sort_indices<0,1,3,2,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829638ull :
-      sort_indices<0,2,1,3,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795718ull :
-      sort_indices<0,2,3,1,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541318ull :
-      sort_indices<0,3,1,2,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524358ull :
-      sort_indices<0,3,2,1,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270759238ull :
-      sort_indices<1,0,2,3,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742278ull :
-      sort_indices<1,0,3,2,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216518ull :
-      sort_indices<1,2,0,3,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165638ull :
-      sort_indices<1,2,3,0,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318928198ull :
-      sort_indices<1,3,0,2,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894278ull :
-      sort_indices<1,3,2,0,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538146118ull :
-      sort_indices<2,0,1,3,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540112198ull :
-      sort_indices<2,0,3,1,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553874758ull :
-      sort_indices<2,1,0,3,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556823878ull :
-      sort_indices<2,1,3,0,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587298118ull :
-      sort_indices<2,3,0,1,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588281158ull :
-      sort_indices<2,3,1,0,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806516038ull :
-      sort_indices<3,0,1,2,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807499078ull :
-      sort_indices<3,0,2,1,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244678ull :
-      sort_indices<3,1,0,2,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824210758ull :
-      sort_indices<3,1,2,0,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956358ull :
-      sort_indices<3,2,0,1,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939398ull :
-      sort_indices<3,2,1,0,7,5,4,6,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19101028ull :
-      sort_indices<0,1,2,3,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20084068ull :
-      sort_indices<0,1,3,2,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829668ull :
-      sort_indices<0,2,1,3,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795748ull :
-      sort_indices<0,2,3,1,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541348ull :
-      sort_indices<0,3,1,2,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524388ull :
-      sort_indices<0,3,2,1,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270759268ull :
-      sort_indices<1,0,2,3,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742308ull :
-      sort_indices<1,0,3,2,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216548ull :
-      sort_indices<1,2,0,3,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165668ull :
-      sort_indices<1,2,3,0,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318928228ull :
-      sort_indices<1,3,0,2,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894308ull :
-      sort_indices<1,3,2,0,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538146148ull :
-      sort_indices<2,0,1,3,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540112228ull :
-      sort_indices<2,0,3,1,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553874788ull :
-      sort_indices<2,1,0,3,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556823908ull :
-      sort_indices<2,1,3,0,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587298148ull :
-      sort_indices<2,3,0,1,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588281188ull :
-      sort_indices<2,3,1,0,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806516068ull :
-      sort_indices<3,0,1,2,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807499108ull :
-      sort_indices<3,0,2,1,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244708ull :
-      sort_indices<3,1,0,2,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824210788ull :
-      sort_indices<3,1,2,0,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956388ull :
-      sort_indices<3,2,0,1,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939428ull :
-      sort_indices<3,2,1,0,7,5,6,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19101253ull :
-      sort_indices<0,1,2,3,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20084293ull :
-      sort_indices<0,1,3,2,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829893ull :
-      sort_indices<0,2,1,3,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795973ull :
-      sort_indices<0,2,3,1,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541573ull :
-      sort_indices<0,3,1,2,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524613ull :
-      sort_indices<0,3,2,1,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270759493ull :
-      sort_indices<1,0,2,3,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742533ull :
-      sort_indices<1,0,3,2,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216773ull :
-      sort_indices<1,2,0,3,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165893ull :
-      sort_indices<1,2,3,0,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318928453ull :
-      sort_indices<1,3,0,2,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894533ull :
-      sort_indices<1,3,2,0,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538146373ull :
-      sort_indices<2,0,1,3,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540112453ull :
-      sort_indices<2,0,3,1,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553875013ull :
-      sort_indices<2,1,0,3,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556824133ull :
-      sort_indices<2,1,3,0,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587298373ull :
-      sort_indices<2,3,0,1,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588281413ull :
-      sort_indices<2,3,1,0,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806516293ull :
-      sort_indices<3,0,1,2,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807499333ull :
-      sort_indices<3,0,2,1,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244933ull :
-      sort_indices<3,1,0,2,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824211013ull :
-      sort_indices<3,1,2,0,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956613ull :
-      sort_indices<3,2,0,1,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939653ull :
-      sort_indices<3,2,1,0,7,6,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19101268ull :
-      sort_indices<0,1,2,3,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20084308ull :
-      sort_indices<0,1,3,2,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829908ull :
-      sort_indices<0,2,1,3,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795988ull :
-      sort_indices<0,2,3,1,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541588ull :
-      sort_indices<0,3,1,2,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524628ull :
-      sort_indices<0,3,2,1,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270759508ull :
-      sort_indices<1,0,2,3,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742548ull :
-      sort_indices<1,0,3,2,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216788ull :
-      sort_indices<1,2,0,3,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165908ull :
-      sort_indices<1,2,3,0,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318928468ull :
-      sort_indices<1,3,0,2,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894548ull :
-      sort_indices<1,3,2,0,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538146388ull :
-      sort_indices<2,0,1,3,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540112468ull :
-      sort_indices<2,0,3,1,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553875028ull :
-      sort_indices<2,1,0,3,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556824148ull :
-      sort_indices<2,1,3,0,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587298388ull :
-      sort_indices<2,3,0,1,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588281428ull :
-      sort_indices<2,3,1,0,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806516308ull :
-      sort_indices<3,0,1,2,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807499348ull :
-      sort_indices<3,0,2,1,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244948ull :
-      sort_indices<3,1,0,2,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824211028ull :
-      sort_indices<3,1,2,0,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956628ull :
-      sort_indices<3,2,0,1,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939668ull :
-      sort_indices<3,2,1,0,7,6,5,4,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
+        case 19088743ull :
+          sort_indices<0,1,2,3,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19089253ull :
+          sort_indices<0,1,2,3,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19219303ull :
+          sort_indices<0,1,2,5,4,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19220323ull :
+          sort_indices<0,1,2,5,4,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19350373ull :
+          sort_indices<0,1,2,7,4,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19350883ull :
+          sort_indices<0,1,2,7,4,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52512103ull :
+          sort_indices<0,3,2,1,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52512613ull :
+          sort_indices<0,3,2,1,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52773223ull :
+          sort_indices<0,3,2,5,4,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52774753ull :
+          sort_indices<0,3,2,5,4,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52904293ull :
+          sort_indices<0,3,2,7,4,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52905313ull :
+          sort_indices<0,3,2,7,4,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86066023ull :
+          sort_indices<0,5,2,1,4,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86067043ull :
+          sort_indices<0,5,2,1,4,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86196583ull :
+          sort_indices<0,5,2,3,4,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86198113ull :
+          sort_indices<0,5,2,3,4,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86458723ull :
+          sort_indices<0,5,2,7,4,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86459233ull :
+          sort_indices<0,5,2,7,4,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119620453ull :
+          sort_indices<0,7,2,1,4,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119620963ull :
+          sort_indices<0,7,2,1,4,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119751013ull :
+          sort_indices<0,7,2,3,4,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119752033ull :
+          sort_indices<0,7,2,3,4,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119882083ull :
+          sort_indices<0,7,2,5,4,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119882593ull :
+          sort_indices<0,7,2,5,4,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19096903ull :
+          sort_indices<0,1,2,3,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19097413ull :
+          sort_indices<0,1,2,3,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19227463ull :
+          sort_indices<0,1,2,5,6,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19228483ull :
+          sort_indices<0,1,2,5,6,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19358533ull :
+          sort_indices<0,1,2,7,6,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19359043ull :
+          sort_indices<0,1,2,7,6,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52520263ull :
+          sort_indices<0,3,2,1,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52520773ull :
+          sort_indices<0,3,2,1,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52781383ull :
+          sort_indices<0,3,2,5,6,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52782913ull :
+          sort_indices<0,3,2,5,6,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52912453ull :
+          sort_indices<0,3,2,7,6,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52913473ull :
+          sort_indices<0,3,2,7,6,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86074183ull :
+          sort_indices<0,5,2,1,6,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86075203ull :
+          sort_indices<0,5,2,1,6,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86204743ull :
+          sort_indices<0,5,2,3,6,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86206273ull :
+          sort_indices<0,5,2,3,6,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86466883ull :
+          sort_indices<0,5,2,7,6,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86467393ull :
+          sort_indices<0,5,2,7,6,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119628613ull :
+          sort_indices<0,7,2,1,6,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119629123ull :
+          sort_indices<0,7,2,1,6,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119759173ull :
+          sort_indices<0,7,2,3,6,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119760193ull :
+          sort_indices<0,7,2,3,6,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119890243ull :
+          sort_indices<0,7,2,5,6,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119890753ull :
+          sort_indices<0,7,2,5,6,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21177703ull :
+          sort_indices<0,1,4,3,2,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21178213ull :
+          sort_indices<0,1,4,3,2,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21308263ull :
+          sort_indices<0,1,4,5,2,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21309283ull :
+          sort_indices<0,1,4,5,2,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21439333ull :
+          sort_indices<0,1,4,7,2,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21439843ull :
+          sort_indices<0,1,4,7,2,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54601063ull :
+          sort_indices<0,3,4,1,2,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54601573ull :
+          sort_indices<0,3,4,1,2,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54862183ull :
+          sort_indices<0,3,4,5,2,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54863713ull :
+          sort_indices<0,3,4,5,2,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54993253ull :
+          sort_indices<0,3,4,7,2,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54994273ull :
+          sort_indices<0,3,4,7,2,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88154983ull :
+          sort_indices<0,5,4,1,2,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88156003ull :
+          sort_indices<0,5,4,1,2,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88285543ull :
+          sort_indices<0,5,4,3,2,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88287073ull :
+          sort_indices<0,5,4,3,2,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88547683ull :
+          sort_indices<0,5,4,7,2,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88548193ull :
+          sort_indices<0,5,4,7,2,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121709413ull :
+          sort_indices<0,7,4,1,2,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121709923ull :
+          sort_indices<0,7,4,1,2,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121839973ull :
+          sort_indices<0,7,4,3,2,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121840993ull :
+          sort_indices<0,7,4,3,2,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121971043ull :
+          sort_indices<0,7,4,5,2,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121971553ull :
+          sort_indices<0,7,4,5,2,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21194023ull :
+          sort_indices<0,1,4,3,6,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21194533ull :
+          sort_indices<0,1,4,3,6,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21324583ull :
+          sort_indices<0,1,4,5,6,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21325603ull :
+          sort_indices<0,1,4,5,6,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21455653ull :
+          sort_indices<0,1,4,7,6,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21456163ull :
+          sort_indices<0,1,4,7,6,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54617383ull :
+          sort_indices<0,3,4,1,6,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54617893ull :
+          sort_indices<0,3,4,1,6,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54878503ull :
+          sort_indices<0,3,4,5,6,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54880033ull :
+          sort_indices<0,3,4,5,6,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 55009573ull :
+          sort_indices<0,3,4,7,6,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 55010593ull :
+          sort_indices<0,3,4,7,6,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88171303ull :
+          sort_indices<0,5,4,1,6,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88172323ull :
+          sort_indices<0,5,4,1,6,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88301863ull :
+          sort_indices<0,5,4,3,6,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88303393ull :
+          sort_indices<0,5,4,3,6,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88564003ull :
+          sort_indices<0,5,4,7,6,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88564513ull :
+          sort_indices<0,5,4,7,6,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121725733ull :
+          sort_indices<0,7,4,1,6,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121726243ull :
+          sort_indices<0,7,4,1,6,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121856293ull :
+          sort_indices<0,7,4,3,6,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121857313ull :
+          sort_indices<0,7,4,3,6,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121987363ull :
+          sort_indices<0,7,4,5,6,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121987873ull :
+          sort_indices<0,7,4,5,6,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23274823ull :
+          sort_indices<0,1,6,3,2,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23275333ull :
+          sort_indices<0,1,6,3,2,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23405383ull :
+          sort_indices<0,1,6,5,2,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23406403ull :
+          sort_indices<0,1,6,5,2,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23536453ull :
+          sort_indices<0,1,6,7,2,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23536963ull :
+          sort_indices<0,1,6,7,2,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56698183ull :
+          sort_indices<0,3,6,1,2,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56698693ull :
+          sort_indices<0,3,6,1,2,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56959303ull :
+          sort_indices<0,3,6,5,2,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56960833ull :
+          sort_indices<0,3,6,5,2,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 57090373ull :
+          sort_indices<0,3,6,7,2,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 57091393ull :
+          sort_indices<0,3,6,7,2,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90252103ull :
+          sort_indices<0,5,6,1,2,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90253123ull :
+          sort_indices<0,5,6,1,2,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90382663ull :
+          sort_indices<0,5,6,3,2,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90384193ull :
+          sort_indices<0,5,6,3,2,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90644803ull :
+          sort_indices<0,5,6,7,2,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90645313ull :
+          sort_indices<0,5,6,7,2,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123806533ull :
+          sort_indices<0,7,6,1,2,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123807043ull :
+          sort_indices<0,7,6,1,2,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123937093ull :
+          sort_indices<0,7,6,3,2,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123938113ull :
+          sort_indices<0,7,6,3,2,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 124068163ull :
+          sort_indices<0,7,6,5,2,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 124068673ull :
+          sort_indices<0,7,6,5,2,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23282983ull :
+          sort_indices<0,1,6,3,4,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23283493ull :
+          sort_indices<0,1,6,3,4,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23413543ull :
+          sort_indices<0,1,6,5,4,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23414563ull :
+          sort_indices<0,1,6,5,4,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23544613ull :
+          sort_indices<0,1,6,7,4,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23545123ull :
+          sort_indices<0,1,6,7,4,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56706343ull :
+          sort_indices<0,3,6,1,4,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56706853ull :
+          sort_indices<0,3,6,1,4,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56967463ull :
+          sort_indices<0,3,6,5,4,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56968993ull :
+          sort_indices<0,3,6,5,4,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 57098533ull :
+          sort_indices<0,3,6,7,4,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 57099553ull :
+          sort_indices<0,3,6,7,4,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90260263ull :
+          sort_indices<0,5,6,1,4,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90261283ull :
+          sort_indices<0,5,6,1,4,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90390823ull :
+          sort_indices<0,5,6,3,4,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90392353ull :
+          sort_indices<0,5,6,3,4,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90652963ull :
+          sort_indices<0,5,6,7,4,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90653473ull :
+          sort_indices<0,5,6,7,4,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123814693ull :
+          sort_indices<0,7,6,1,4,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123815203ull :
+          sort_indices<0,7,6,1,4,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123945253ull :
+          sort_indices<0,7,6,3,4,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123946273ull :
+          sort_indices<0,7,6,3,4,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 124076323ull :
+          sort_indices<0,7,6,5,4,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 124076833ull :
+          sort_indices<0,7,6,5,4,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553862503ull :
+          sort_indices<2,1,0,3,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553863013ull :
+          sort_indices<2,1,0,3,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553993063ull :
+          sort_indices<2,1,0,5,4,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553994083ull :
+          sort_indices<2,1,0,5,4,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554124133ull :
+          sort_indices<2,1,0,7,4,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554124643ull :
+          sort_indices<2,1,0,7,4,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587285863ull :
+          sort_indices<2,3,0,1,4,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587286373ull :
+          sort_indices<2,3,0,1,4,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587546983ull :
+          sort_indices<2,3,0,5,4,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587548513ull :
+          sort_indices<2,3,0,5,4,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587678053ull :
+          sort_indices<2,3,0,7,4,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587679073ull :
+          sort_indices<2,3,0,7,4,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620839783ull :
+          sort_indices<2,5,0,1,4,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620840803ull :
+          sort_indices<2,5,0,1,4,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620970343ull :
+          sort_indices<2,5,0,3,4,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620971873ull :
+          sort_indices<2,5,0,3,4,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 621232483ull :
+          sort_indices<2,5,0,7,4,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 621232993ull :
+          sort_indices<2,5,0,7,4,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654394213ull :
+          sort_indices<2,7,0,1,4,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654394723ull :
+          sort_indices<2,7,0,1,4,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654524773ull :
+          sort_indices<2,7,0,3,4,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654525793ull :
+          sort_indices<2,7,0,3,4,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654655843ull :
+          sort_indices<2,7,0,5,4,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654656353ull :
+          sort_indices<2,7,0,5,4,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553870663ull :
+          sort_indices<2,1,0,3,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553871173ull :
+          sort_indices<2,1,0,3,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554001223ull :
+          sort_indices<2,1,0,5,6,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554002243ull :
+          sort_indices<2,1,0,5,6,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554132293ull :
+          sort_indices<2,1,0,7,6,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554132803ull :
+          sort_indices<2,1,0,7,6,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587294023ull :
+          sort_indices<2,3,0,1,6,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587294533ull :
+          sort_indices<2,3,0,1,6,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587555143ull :
+          sort_indices<2,3,0,5,6,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587556673ull :
+          sort_indices<2,3,0,5,6,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587686213ull :
+          sort_indices<2,3,0,7,6,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587687233ull :
+          sort_indices<2,3,0,7,6,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620847943ull :
+          sort_indices<2,5,0,1,6,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620848963ull :
+          sort_indices<2,5,0,1,6,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620978503ull :
+          sort_indices<2,5,0,3,6,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620980033ull :
+          sort_indices<2,5,0,3,6,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 621240643ull :
+          sort_indices<2,5,0,7,6,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 621241153ull :
+          sort_indices<2,5,0,7,6,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654402373ull :
+          sort_indices<2,7,0,1,6,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654402883ull :
+          sort_indices<2,7,0,1,6,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654532933ull :
+          sort_indices<2,7,0,3,6,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654533953ull :
+          sort_indices<2,7,0,3,6,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654664003ull :
+          sort_indices<2,7,0,5,6,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654664513ull :
+          sort_indices<2,7,0,5,6,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558040423ull :
+          sort_indices<2,1,4,3,0,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558040933ull :
+          sort_indices<2,1,4,3,0,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558170983ull :
+          sort_indices<2,1,4,5,0,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558172003ull :
+          sort_indices<2,1,4,5,0,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558302053ull :
+          sort_indices<2,1,4,7,0,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558302563ull :
+          sort_indices<2,1,4,7,0,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591463783ull :
+          sort_indices<2,3,4,1,0,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591464293ull :
+          sort_indices<2,3,4,1,0,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591724903ull :
+          sort_indices<2,3,4,5,0,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591726433ull :
+          sort_indices<2,3,4,5,0,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591855973ull :
+          sort_indices<2,3,4,7,0,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591856993ull :
+          sort_indices<2,3,4,7,0,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625017703ull :
+          sort_indices<2,5,4,1,0,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625018723ull :
+          sort_indices<2,5,4,1,0,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625148263ull :
+          sort_indices<2,5,4,3,0,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625149793ull :
+          sort_indices<2,5,4,3,0,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625410403ull :
+          sort_indices<2,5,4,7,0,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625410913ull :
+          sort_indices<2,5,4,7,0,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658572133ull :
+          sort_indices<2,7,4,1,0,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658572643ull :
+          sort_indices<2,7,4,1,0,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658702693ull :
+          sort_indices<2,7,4,3,0,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658703713ull :
+          sort_indices<2,7,4,3,0,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658833763ull :
+          sort_indices<2,7,4,5,0,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658834273ull :
+          sort_indices<2,7,4,5,0,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558064903ull :
+          sort_indices<2,1,4,3,6,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558065413ull :
+          sort_indices<2,1,4,3,6,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558195463ull :
+          sort_indices<2,1,4,5,6,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558196483ull :
+          sort_indices<2,1,4,5,6,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558326533ull :
+          sort_indices<2,1,4,7,6,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558327043ull :
+          sort_indices<2,1,4,7,6,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591488263ull :
+          sort_indices<2,3,4,1,6,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591488773ull :
+          sort_indices<2,3,4,1,6,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591749383ull :
+          sort_indices<2,3,4,5,6,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591750913ull :
+          sort_indices<2,3,4,5,6,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591880453ull :
+          sort_indices<2,3,4,7,6,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591881473ull :
+          sort_indices<2,3,4,7,6,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625042183ull :
+          sort_indices<2,5,4,1,6,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625043203ull :
+          sort_indices<2,5,4,1,6,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625172743ull :
+          sort_indices<2,5,4,3,6,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625174273ull :
+          sort_indices<2,5,4,3,6,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625434883ull :
+          sort_indices<2,5,4,7,6,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625435393ull :
+          sort_indices<2,5,4,7,6,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658596613ull :
+          sort_indices<2,7,4,1,6,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658597123ull :
+          sort_indices<2,7,4,1,6,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658727173ull :
+          sort_indices<2,7,4,3,6,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658728193ull :
+          sort_indices<2,7,4,3,6,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658858243ull :
+          sort_indices<2,7,4,5,6,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658858753ull :
+          sort_indices<2,7,4,5,6,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560137543ull :
+          sort_indices<2,1,6,3,0,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560138053ull :
+          sort_indices<2,1,6,3,0,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560268103ull :
+          sort_indices<2,1,6,5,0,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560269123ull :
+          sort_indices<2,1,6,5,0,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560399173ull :
+          sort_indices<2,1,6,7,0,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560399683ull :
+          sort_indices<2,1,6,7,0,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593560903ull :
+          sort_indices<2,3,6,1,0,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593561413ull :
+          sort_indices<2,3,6,1,0,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593822023ull :
+          sort_indices<2,3,6,5,0,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593823553ull :
+          sort_indices<2,3,6,5,0,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593953093ull :
+          sort_indices<2,3,6,7,0,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593954113ull :
+          sort_indices<2,3,6,7,0,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627114823ull :
+          sort_indices<2,5,6,1,0,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627115843ull :
+          sort_indices<2,5,6,1,0,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627245383ull :
+          sort_indices<2,5,6,3,0,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627246913ull :
+          sort_indices<2,5,6,3,0,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627507523ull :
+          sort_indices<2,5,6,7,0,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627508033ull :
+          sort_indices<2,5,6,7,0,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660669253ull :
+          sort_indices<2,7,6,1,0,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660669763ull :
+          sort_indices<2,7,6,1,0,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660799813ull :
+          sort_indices<2,7,6,3,0,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660800833ull :
+          sort_indices<2,7,6,3,0,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660930883ull :
+          sort_indices<2,7,6,5,0,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660931393ull :
+          sort_indices<2,7,6,5,0,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560153863ull :
+          sort_indices<2,1,6,3,4,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560154373ull :
+          sort_indices<2,1,6,3,4,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560284423ull :
+          sort_indices<2,1,6,5,4,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560285443ull :
+          sort_indices<2,1,6,5,4,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560415493ull :
+          sort_indices<2,1,6,7,4,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560416003ull :
+          sort_indices<2,1,6,7,4,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593577223ull :
+          sort_indices<2,3,6,1,4,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593577733ull :
+          sort_indices<2,3,6,1,4,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593838343ull :
+          sort_indices<2,3,6,5,4,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593839873ull :
+          sort_indices<2,3,6,5,4,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593969413ull :
+          sort_indices<2,3,6,7,4,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593970433ull :
+          sort_indices<2,3,6,7,4,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627131143ull :
+          sort_indices<2,5,6,1,4,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627132163ull :
+          sort_indices<2,5,6,1,4,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627261703ull :
+          sort_indices<2,5,6,3,4,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627263233ull :
+          sort_indices<2,5,6,3,4,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627523843ull :
+          sort_indices<2,5,6,7,4,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627524353ull :
+          sort_indices<2,5,6,7,4,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660685573ull :
+          sort_indices<2,7,6,1,4,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660686083ull :
+          sort_indices<2,7,6,1,4,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660816133ull :
+          sort_indices<2,7,6,3,4,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660817153ull :
+          sort_indices<2,7,6,3,4,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660947203ull :
+          sort_indices<2,7,6,5,4,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660947713ull :
+          sort_indices<2,7,6,5,4,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090725223ull :
+          sort_indices<4,1,0,3,2,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090725733ull :
+          sort_indices<4,1,0,3,2,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090855783ull :
+          sort_indices<4,1,0,5,2,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090856803ull :
+          sort_indices<4,1,0,5,2,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090986853ull :
+          sort_indices<4,1,0,7,2,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090987363ull :
+          sort_indices<4,1,0,7,2,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124148583ull :
+          sort_indices<4,3,0,1,2,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124149093ull :
+          sort_indices<4,3,0,1,2,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124409703ull :
+          sort_indices<4,3,0,5,2,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124411233ull :
+          sort_indices<4,3,0,5,2,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124540773ull :
+          sort_indices<4,3,0,7,2,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124541793ull :
+          sort_indices<4,3,0,7,2,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157702503ull :
+          sort_indices<4,5,0,1,2,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157703523ull :
+          sort_indices<4,5,0,1,2,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157833063ull :
+          sort_indices<4,5,0,3,2,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157834593ull :
+          sort_indices<4,5,0,3,2,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1158095203ull :
+          sort_indices<4,5,0,7,2,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1158095713ull :
+          sort_indices<4,5,0,7,2,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191256933ull :
+          sort_indices<4,7,0,1,2,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191257443ull :
+          sort_indices<4,7,0,1,2,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191387493ull :
+          sort_indices<4,7,0,3,2,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191388513ull :
+          sort_indices<4,7,0,3,2,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191518563ull :
+          sort_indices<4,7,0,5,2,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191519073ull :
+          sort_indices<4,7,0,5,2,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090741543ull :
+          sort_indices<4,1,0,3,6,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090742053ull :
+          sort_indices<4,1,0,3,6,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090872103ull :
+          sort_indices<4,1,0,5,6,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090873123ull :
+          sort_indices<4,1,0,5,6,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1091003173ull :
+          sort_indices<4,1,0,7,6,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1091003683ull :
+          sort_indices<4,1,0,7,6,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124164903ull :
+          sort_indices<4,3,0,1,6,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124165413ull :
+          sort_indices<4,3,0,1,6,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124426023ull :
+          sort_indices<4,3,0,5,6,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124427553ull :
+          sort_indices<4,3,0,5,6,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124557093ull :
+          sort_indices<4,3,0,7,6,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124558113ull :
+          sort_indices<4,3,0,7,6,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157718823ull :
+          sort_indices<4,5,0,1,6,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157719843ull :
+          sort_indices<4,5,0,1,6,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157849383ull :
+          sort_indices<4,5,0,3,6,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157850913ull :
+          sort_indices<4,5,0,3,6,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1158111523ull :
+          sort_indices<4,5,0,7,6,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1158112033ull :
+          sort_indices<4,5,0,7,6,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191273253ull :
+          sort_indices<4,7,0,1,6,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191273763ull :
+          sort_indices<4,7,0,1,6,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191403813ull :
+          sort_indices<4,7,0,3,6,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191404833ull :
+          sort_indices<4,7,0,3,6,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191534883ull :
+          sort_indices<4,7,0,5,6,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191535393ull :
+          sort_indices<4,7,0,5,6,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092814183ull :
+          sort_indices<4,1,2,3,0,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092814693ull :
+          sort_indices<4,1,2,3,0,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092944743ull :
+          sort_indices<4,1,2,5,0,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092945763ull :
+          sort_indices<4,1,2,5,0,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1093075813ull :
+          sort_indices<4,1,2,7,0,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1093076323ull :
+          sort_indices<4,1,2,7,0,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126237543ull :
+          sort_indices<4,3,2,1,0,5,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126238053ull :
+          sort_indices<4,3,2,1,0,7,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126498663ull :
+          sort_indices<4,3,2,5,0,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126500193ull :
+          sort_indices<4,3,2,5,0,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126629733ull :
+          sort_indices<4,3,2,7,0,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126630753ull :
+          sort_indices<4,3,2,7,0,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159791463ull :
+          sort_indices<4,5,2,1,0,3,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159792483ull :
+          sort_indices<4,5,2,1,0,7,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159922023ull :
+          sort_indices<4,5,2,3,0,1,6,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159923553ull :
+          sort_indices<4,5,2,3,0,7,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1160184163ull :
+          sort_indices<4,5,2,7,0,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1160184673ull :
+          sort_indices<4,5,2,7,0,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193345893ull :
+          sort_indices<4,7,2,1,0,3,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193346403ull :
+          sort_indices<4,7,2,1,0,5,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193476453ull :
+          sort_indices<4,7,2,3,0,1,6,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193477473ull :
+          sort_indices<4,7,2,3,0,5,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193607523ull :
+          sort_indices<4,7,2,5,0,1,6,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193608033ull :
+          sort_indices<4,7,2,5,0,3,6,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092838663ull :
+          sort_indices<4,1,2,3,6,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092839173ull :
+          sort_indices<4,1,2,3,6,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092969223ull :
+          sort_indices<4,1,2,5,6,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092970243ull :
+          sort_indices<4,1,2,5,6,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1093100293ull :
+          sort_indices<4,1,2,7,6,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1093100803ull :
+          sort_indices<4,1,2,7,6,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126262023ull :
+          sort_indices<4,3,2,1,6,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126262533ull :
+          sort_indices<4,3,2,1,6,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126523143ull :
+          sort_indices<4,3,2,5,6,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126524673ull :
+          sort_indices<4,3,2,5,6,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126654213ull :
+          sort_indices<4,3,2,7,6,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126655233ull :
+          sort_indices<4,3,2,7,6,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159815943ull :
+          sort_indices<4,5,2,1,6,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159816963ull :
+          sort_indices<4,5,2,1,6,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159946503ull :
+          sort_indices<4,5,2,3,6,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159948033ull :
+          sort_indices<4,5,2,3,6,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1160208643ull :
+          sort_indices<4,5,2,7,6,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1160209153ull :
+          sort_indices<4,5,2,7,6,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193370373ull :
+          sort_indices<4,7,2,1,6,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193370883ull :
+          sort_indices<4,7,2,1,6,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193500933ull :
+          sort_indices<4,7,2,3,6,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193501953ull :
+          sort_indices<4,7,2,3,6,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193632003ull :
+          sort_indices<4,7,2,5,6,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193632513ull :
+          sort_indices<4,7,2,5,6,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097008423ull :
+          sort_indices<4,1,6,3,0,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097008933ull :
+          sort_indices<4,1,6,3,0,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097138983ull :
+          sort_indices<4,1,6,5,0,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097140003ull :
+          sort_indices<4,1,6,5,0,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097270053ull :
+          sort_indices<4,1,6,7,0,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097270563ull :
+          sort_indices<4,1,6,7,0,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130431783ull :
+          sort_indices<4,3,6,1,0,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130432293ull :
+          sort_indices<4,3,6,1,0,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130692903ull :
+          sort_indices<4,3,6,5,0,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130694433ull :
+          sort_indices<4,3,6,5,0,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130823973ull :
+          sort_indices<4,3,6,7,0,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130824993ull :
+          sort_indices<4,3,6,7,0,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1163985703ull :
+          sort_indices<4,5,6,1,0,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1163986723ull :
+          sort_indices<4,5,6,1,0,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164116263ull :
+          sort_indices<4,5,6,3,0,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164117793ull :
+          sort_indices<4,5,6,3,0,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164378403ull :
+          sort_indices<4,5,6,7,0,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164378913ull :
+          sort_indices<4,5,6,7,0,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197540133ull :
+          sort_indices<4,7,6,1,0,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197540643ull :
+          sort_indices<4,7,6,1,0,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197670693ull :
+          sort_indices<4,7,6,3,0,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197671713ull :
+          sort_indices<4,7,6,3,0,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197801763ull :
+          sort_indices<4,7,6,5,0,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197802273ull :
+          sort_indices<4,7,6,5,0,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097016583ull :
+          sort_indices<4,1,6,3,2,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097017093ull :
+          sort_indices<4,1,6,3,2,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097147143ull :
+          sort_indices<4,1,6,5,2,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097148163ull :
+          sort_indices<4,1,6,5,2,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097278213ull :
+          sort_indices<4,1,6,7,2,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097278723ull :
+          sort_indices<4,1,6,7,2,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130439943ull :
+          sort_indices<4,3,6,1,2,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130440453ull :
+          sort_indices<4,3,6,1,2,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130701063ull :
+          sort_indices<4,3,6,5,2,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130702593ull :
+          sort_indices<4,3,6,5,2,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130832133ull :
+          sort_indices<4,3,6,7,2,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130833153ull :
+          sort_indices<4,3,6,7,2,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1163993863ull :
+          sort_indices<4,5,6,1,2,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1163994883ull :
+          sort_indices<4,5,6,1,2,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164124423ull :
+          sort_indices<4,5,6,3,2,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164125953ull :
+          sort_indices<4,5,6,3,2,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164386563ull :
+          sort_indices<4,5,6,7,2,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164387073ull :
+          sort_indices<4,5,6,7,2,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197548293ull :
+          sort_indices<4,7,6,1,2,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197548803ull :
+          sort_indices<4,7,6,1,2,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197678853ull :
+          sort_indices<4,7,6,3,2,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197679873ull :
+          sort_indices<4,7,6,3,2,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197809923ull :
+          sort_indices<4,7,6,5,2,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197810433ull :
+          sort_indices<4,7,6,5,2,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627596103ull :
+          sort_indices<6,1,0,3,2,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627596613ull :
+          sort_indices<6,1,0,3,2,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627726663ull :
+          sort_indices<6,1,0,5,2,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627727683ull :
+          sort_indices<6,1,0,5,2,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627857733ull :
+          sort_indices<6,1,0,7,2,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627858243ull :
+          sort_indices<6,1,0,7,2,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661019463ull :
+          sort_indices<6,3,0,1,2,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661019973ull :
+          sort_indices<6,3,0,1,2,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661280583ull :
+          sort_indices<6,3,0,5,2,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661282113ull :
+          sort_indices<6,3,0,5,2,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661411653ull :
+          sort_indices<6,3,0,7,2,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661412673ull :
+          sort_indices<6,3,0,7,2,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694573383ull :
+          sort_indices<6,5,0,1,2,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694574403ull :
+          sort_indices<6,5,0,1,2,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694703943ull :
+          sort_indices<6,5,0,3,2,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694705473ull :
+          sort_indices<6,5,0,3,2,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694966083ull :
+          sort_indices<6,5,0,7,2,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694966593ull :
+          sort_indices<6,5,0,7,2,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728127813ull :
+          sort_indices<6,7,0,1,2,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728128323ull :
+          sort_indices<6,7,0,1,2,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728258373ull :
+          sort_indices<6,7,0,3,2,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728259393ull :
+          sort_indices<6,7,0,3,2,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728389443ull :
+          sort_indices<6,7,0,5,2,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728389953ull :
+          sort_indices<6,7,0,5,2,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627604263ull :
+          sort_indices<6,1,0,3,4,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627604773ull :
+          sort_indices<6,1,0,3,4,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627734823ull :
+          sort_indices<6,1,0,5,4,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627735843ull :
+          sort_indices<6,1,0,5,4,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627865893ull :
+          sort_indices<6,1,0,7,4,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627866403ull :
+          sort_indices<6,1,0,7,4,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661027623ull :
+          sort_indices<6,3,0,1,4,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661028133ull :
+          sort_indices<6,3,0,1,4,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661288743ull :
+          sort_indices<6,3,0,5,4,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661290273ull :
+          sort_indices<6,3,0,5,4,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661419813ull :
+          sort_indices<6,3,0,7,4,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661420833ull :
+          sort_indices<6,3,0,7,4,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694581543ull :
+          sort_indices<6,5,0,1,4,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694582563ull :
+          sort_indices<6,5,0,1,4,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694712103ull :
+          sort_indices<6,5,0,3,4,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694713633ull :
+          sort_indices<6,5,0,3,4,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694974243ull :
+          sort_indices<6,5,0,7,4,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694974753ull :
+          sort_indices<6,5,0,7,4,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728135973ull :
+          sort_indices<6,7,0,1,4,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728136483ull :
+          sort_indices<6,7,0,1,4,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728266533ull :
+          sort_indices<6,7,0,3,4,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728267553ull :
+          sort_indices<6,7,0,3,4,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728397603ull :
+          sort_indices<6,7,0,5,4,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728398113ull :
+          sort_indices<6,7,0,5,4,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629685063ull :
+          sort_indices<6,1,2,3,0,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629685573ull :
+          sort_indices<6,1,2,3,0,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629815623ull :
+          sort_indices<6,1,2,5,0,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629816643ull :
+          sort_indices<6,1,2,5,0,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629946693ull :
+          sort_indices<6,1,2,7,0,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629947203ull :
+          sort_indices<6,1,2,7,0,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663108423ull :
+          sort_indices<6,3,2,1,0,5,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663108933ull :
+          sort_indices<6,3,2,1,0,7,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663369543ull :
+          sort_indices<6,3,2,5,0,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663371073ull :
+          sort_indices<6,3,2,5,0,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663500613ull :
+          sort_indices<6,3,2,7,0,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663501633ull :
+          sort_indices<6,3,2,7,0,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696662343ull :
+          sort_indices<6,5,2,1,0,3,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696663363ull :
+          sort_indices<6,5,2,1,0,7,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696792903ull :
+          sort_indices<6,5,2,3,0,1,4,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696794433ull :
+          sort_indices<6,5,2,3,0,7,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1697055043ull :
+          sort_indices<6,5,2,7,0,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1697055553ull :
+          sort_indices<6,5,2,7,0,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730216773ull :
+          sort_indices<6,7,2,1,0,3,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730217283ull :
+          sort_indices<6,7,2,1,0,5,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730347333ull :
+          sort_indices<6,7,2,3,0,1,4,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730348353ull :
+          sort_indices<6,7,2,3,0,5,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730478403ull :
+          sort_indices<6,7,2,5,0,1,4,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730478913ull :
+          sort_indices<6,7,2,5,0,3,4,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629701383ull :
+          sort_indices<6,1,2,3,4,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629701893ull :
+          sort_indices<6,1,2,3,4,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629831943ull :
+          sort_indices<6,1,2,5,4,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629832963ull :
+          sort_indices<6,1,2,5,4,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629963013ull :
+          sort_indices<6,1,2,7,4,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629963523ull :
+          sort_indices<6,1,2,7,4,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663124743ull :
+          sort_indices<6,3,2,1,4,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663125253ull :
+          sort_indices<6,3,2,1,4,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663385863ull :
+          sort_indices<6,3,2,5,4,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663387393ull :
+          sort_indices<6,3,2,5,4,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663516933ull :
+          sort_indices<6,3,2,7,4,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663517953ull :
+          sort_indices<6,3,2,7,4,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696678663ull :
+          sort_indices<6,5,2,1,4,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696679683ull :
+          sort_indices<6,5,2,1,4,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696809223ull :
+          sort_indices<6,5,2,3,4,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696810753ull :
+          sort_indices<6,5,2,3,4,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1697071363ull :
+          sort_indices<6,5,2,7,4,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1697071873ull :
+          sort_indices<6,5,2,7,4,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730233093ull :
+          sort_indices<6,7,2,1,4,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730233603ull :
+          sort_indices<6,7,2,1,4,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730363653ull :
+          sort_indices<6,7,2,3,4,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730364673ull :
+          sort_indices<6,7,2,3,4,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730494723ull :
+          sort_indices<6,7,2,5,4,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730495233ull :
+          sort_indices<6,7,2,5,4,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631782183ull :
+          sort_indices<6,1,4,3,0,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631782693ull :
+          sort_indices<6,1,4,3,0,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631912743ull :
+          sort_indices<6,1,4,5,0,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631913763ull :
+          sort_indices<6,1,4,5,0,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1632043813ull :
+          sort_indices<6,1,4,7,0,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1632044323ull :
+          sort_indices<6,1,4,7,0,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665205543ull :
+          sort_indices<6,3,4,1,0,5,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665206053ull :
+          sort_indices<6,3,4,1,0,7,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665466663ull :
+          sort_indices<6,3,4,5,0,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665468193ull :
+          sort_indices<6,3,4,5,0,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665597733ull :
+          sort_indices<6,3,4,7,0,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665598753ull :
+          sort_indices<6,3,4,7,0,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698759463ull :
+          sort_indices<6,5,4,1,0,3,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698760483ull :
+          sort_indices<6,5,4,1,0,7,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698890023ull :
+          sort_indices<6,5,4,3,0,1,2,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698891553ull :
+          sort_indices<6,5,4,3,0,7,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1699152163ull :
+          sort_indices<6,5,4,7,0,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1699152673ull :
+          sort_indices<6,5,4,7,0,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732313893ull :
+          sort_indices<6,7,4,1,0,3,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732314403ull :
+          sort_indices<6,7,4,1,0,5,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732444453ull :
+          sort_indices<6,7,4,3,0,1,2,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732445473ull :
+          sort_indices<6,7,4,3,0,5,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732575523ull :
+          sort_indices<6,7,4,5,0,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732576033ull :
+          sort_indices<6,7,4,5,0,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631790343ull :
+          sort_indices<6,1,4,3,2,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631790853ull :
+          sort_indices<6,1,4,3,2,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631920903ull :
+          sort_indices<6,1,4,5,2,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631921923ull :
+          sort_indices<6,1,4,5,2,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1632051973ull :
+          sort_indices<6,1,4,7,2,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1632052483ull :
+          sort_indices<6,1,4,7,2,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665213703ull :
+          sort_indices<6,3,4,1,2,5,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665214213ull :
+          sort_indices<6,3,4,1,2,7,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665474823ull :
+          sort_indices<6,3,4,5,2,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665476353ull :
+          sort_indices<6,3,4,5,2,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665605893ull :
+          sort_indices<6,3,4,7,2,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665606913ull :
+          sort_indices<6,3,4,7,2,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698767623ull :
+          sort_indices<6,5,4,1,2,3,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698768643ull :
+          sort_indices<6,5,4,1,2,7,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698898183ull :
+          sort_indices<6,5,4,3,2,1,0,7,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698899713ull :
+          sort_indices<6,5,4,3,2,7,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1699160323ull :
+          sort_indices<6,5,4,7,2,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1699160833ull :
+          sort_indices<6,5,4,7,2,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732322053ull :
+          sort_indices<6,7,4,1,2,3,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732322563ull :
+          sort_indices<6,7,4,1,2,5,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732452613ull :
+          sort_indices<6,7,4,3,2,1,0,5,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732453633ull :
+          sort_indices<6,7,4,3,2,5,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732583683ull :
+          sort_indices<6,7,4,5,2,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732584193ull :
+          sort_indices<6,7,4,5,2,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
     }
-  } else if (std::abs(a+1.0) < numerical_zero__ && std::abs(b) < numerical_zero__) {
+  }
+  else if (std::abs(-1.0-a) < numerical_zero__ && std::abs(b) < numerical_zero__) {
     switch (tag) {
-    case 19088743ull :
-      sort_indices<0,1,2,3,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20071783ull :
-      sort_indices<0,1,3,2,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817383ull :
-      sort_indices<0,2,1,3,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783463ull :
-      sort_indices<0,2,3,1,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529063ull :
-      sort_indices<0,3,1,2,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512103ull :
-      sort_indices<0,3,2,1,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270746983ull :
-      sort_indices<1,0,2,3,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730023ull :
-      sort_indices<1,0,3,2,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204263ull :
-      sort_indices<1,2,0,3,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153383ull :
-      sort_indices<1,2,3,0,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318915943ull :
-      sort_indices<1,3,0,2,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882023ull :
-      sort_indices<1,3,2,0,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538133863ull :
-      sort_indices<2,0,1,3,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540099943ull :
-      sort_indices<2,0,3,1,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553862503ull :
-      sort_indices<2,1,0,3,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556811623ull :
-      sort_indices<2,1,3,0,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587285863ull :
-      sort_indices<2,3,0,1,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588268903ull :
-      sort_indices<2,3,1,0,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806503783ull :
-      sort_indices<3,0,1,2,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807486823ull :
-      sort_indices<3,0,2,1,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232423ull :
-      sort_indices<3,1,0,2,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824198503ull :
-      sort_indices<3,1,2,0,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944103ull :
-      sort_indices<3,2,0,1,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927143ull :
-      sort_indices<3,2,1,0,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19088758ull :
-      sort_indices<0,1,2,3,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20071798ull :
-      sort_indices<0,1,3,2,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817398ull :
-      sort_indices<0,2,1,3,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783478ull :
-      sort_indices<0,2,3,1,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529078ull :
-      sort_indices<0,3,1,2,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512118ull :
-      sort_indices<0,3,2,1,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270746998ull :
-      sort_indices<1,0,2,3,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730038ull :
-      sort_indices<1,0,3,2,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204278ull :
-      sort_indices<1,2,0,3,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153398ull :
-      sort_indices<1,2,3,0,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318915958ull :
-      sort_indices<1,3,0,2,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882038ull :
-      sort_indices<1,3,2,0,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538133878ull :
-      sort_indices<2,0,1,3,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540099958ull :
-      sort_indices<2,0,3,1,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553862518ull :
-      sort_indices<2,1,0,3,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556811638ull :
-      sort_indices<2,1,3,0,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587285878ull :
-      sort_indices<2,3,0,1,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588268918ull :
-      sort_indices<2,3,1,0,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806503798ull :
-      sort_indices<3,0,1,2,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807486838ull :
-      sort_indices<3,0,2,1,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232438ull :
-      sort_indices<3,1,0,2,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824198518ull :
-      sort_indices<3,1,2,0,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944118ull :
-      sort_indices<3,2,0,1,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927158ull :
-      sort_indices<3,2,1,0,4,5,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19088983ull :
-      sort_indices<0,1,2,3,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20072023ull :
-      sort_indices<0,1,3,2,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817623ull :
-      sort_indices<0,2,1,3,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783703ull :
-      sort_indices<0,2,3,1,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529303ull :
-      sort_indices<0,3,1,2,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512343ull :
-      sort_indices<0,3,2,1,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270747223ull :
-      sort_indices<1,0,2,3,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730263ull :
-      sort_indices<1,0,3,2,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204503ull :
-      sort_indices<1,2,0,3,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153623ull :
-      sort_indices<1,2,3,0,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318916183ull :
-      sort_indices<1,3,0,2,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882263ull :
-      sort_indices<1,3,2,0,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538134103ull :
-      sort_indices<2,0,1,3,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540100183ull :
-      sort_indices<2,0,3,1,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553862743ull :
-      sort_indices<2,1,0,3,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556811863ull :
-      sort_indices<2,1,3,0,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587286103ull :
-      sort_indices<2,3,0,1,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588269143ull :
-      sort_indices<2,3,1,0,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806504023ull :
-      sort_indices<3,0,1,2,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807487063ull :
-      sort_indices<3,0,2,1,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232663ull :
-      sort_indices<3,1,0,2,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824198743ull :
-      sort_indices<3,1,2,0,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944343ull :
-      sort_indices<3,2,0,1,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927383ull :
-      sort_indices<3,2,1,0,4,6,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19089013ull :
-      sort_indices<0,1,2,3,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20072053ull :
-      sort_indices<0,1,3,2,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817653ull :
-      sort_indices<0,2,1,3,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783733ull :
-      sort_indices<0,2,3,1,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529333ull :
-      sort_indices<0,3,1,2,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512373ull :
-      sort_indices<0,3,2,1,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270747253ull :
-      sort_indices<1,0,2,3,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730293ull :
-      sort_indices<1,0,3,2,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204533ull :
-      sort_indices<1,2,0,3,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153653ull :
-      sort_indices<1,2,3,0,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318916213ull :
-      sort_indices<1,3,0,2,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882293ull :
-      sort_indices<1,3,2,0,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538134133ull :
-      sort_indices<2,0,1,3,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540100213ull :
-      sort_indices<2,0,3,1,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553862773ull :
-      sort_indices<2,1,0,3,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556811893ull :
-      sort_indices<2,1,3,0,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587286133ull :
-      sort_indices<2,3,0,1,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588269173ull :
-      sort_indices<2,3,1,0,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806504053ull :
-      sort_indices<3,0,1,2,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807487093ull :
-      sort_indices<3,0,2,1,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232693ull :
-      sort_indices<3,1,0,2,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824198773ull :
-      sort_indices<3,1,2,0,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944373ull :
-      sort_indices<3,2,0,1,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927413ull :
-      sort_indices<3,2,1,0,4,6,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19089238ull :
-      sort_indices<0,1,2,3,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20072278ull :
-      sort_indices<0,1,3,2,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817878ull :
-      sort_indices<0,2,1,3,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783958ull :
-      sort_indices<0,2,3,1,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529558ull :
-      sort_indices<0,3,1,2,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512598ull :
-      sort_indices<0,3,2,1,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270747478ull :
-      sort_indices<1,0,2,3,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730518ull :
-      sort_indices<1,0,3,2,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204758ull :
-      sort_indices<1,2,0,3,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153878ull :
-      sort_indices<1,2,3,0,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318916438ull :
-      sort_indices<1,3,0,2,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882518ull :
-      sort_indices<1,3,2,0,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538134358ull :
-      sort_indices<2,0,1,3,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540100438ull :
-      sort_indices<2,0,3,1,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553862998ull :
-      sort_indices<2,1,0,3,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556812118ull :
-      sort_indices<2,1,3,0,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587286358ull :
-      sort_indices<2,3,0,1,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588269398ull :
-      sort_indices<2,3,1,0,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806504278ull :
-      sort_indices<3,0,1,2,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807487318ull :
-      sort_indices<3,0,2,1,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232918ull :
-      sort_indices<3,1,0,2,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824198998ull :
-      sort_indices<3,1,2,0,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944598ull :
-      sort_indices<3,2,0,1,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927638ull :
-      sort_indices<3,2,1,0,4,7,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19089253ull :
-      sort_indices<0,1,2,3,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20072293ull :
-      sort_indices<0,1,3,2,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34817893ull :
-      sort_indices<0,2,1,3,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36783973ull :
-      sort_indices<0,2,3,1,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51529573ull :
-      sort_indices<0,3,1,2,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52512613ull :
-      sort_indices<0,3,2,1,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270747493ull :
-      sort_indices<1,0,2,3,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271730533ull :
-      sort_indices<1,0,3,2,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302204773ull :
-      sort_indices<1,2,0,3,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305153893ull :
-      sort_indices<1,2,3,0,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318916453ull :
-      sort_indices<1,3,0,2,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320882533ull :
-      sort_indices<1,3,2,0,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538134373ull :
-      sort_indices<2,0,1,3,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540100453ull :
-      sort_indices<2,0,3,1,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553863013ull :
-      sort_indices<2,1,0,3,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556812133ull :
-      sort_indices<2,1,3,0,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587286373ull :
-      sort_indices<2,3,0,1,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588269413ull :
-      sort_indices<2,3,1,0,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806504293ull :
-      sort_indices<3,0,1,2,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807487333ull :
-      sort_indices<3,0,2,1,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822232933ull :
-      sort_indices<3,1,0,2,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824199013ull :
-      sort_indices<3,1,2,0,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838944613ull :
-      sort_indices<3,2,0,1,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839927653ull :
-      sort_indices<3,2,1,0,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19092583ull :
-      sort_indices<0,1,2,3,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20075623ull :
-      sort_indices<0,1,3,2,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821223ull :
-      sort_indices<0,2,1,3,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36787303ull :
-      sort_indices<0,2,3,1,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51532903ull :
-      sort_indices<0,3,1,2,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52515943ull :
-      sort_indices<0,3,2,1,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270750823ull :
-      sort_indices<1,0,2,3,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271733863ull :
-      sort_indices<1,0,3,2,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208103ull :
-      sort_indices<1,2,0,3,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157223ull :
-      sort_indices<1,2,3,0,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318919783ull :
-      sort_indices<1,3,0,2,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320885863ull :
-      sort_indices<1,3,2,0,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538137703ull :
-      sort_indices<2,0,1,3,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540103783ull :
-      sort_indices<2,0,3,1,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553866343ull :
-      sort_indices<2,1,0,3,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556815463ull :
-      sort_indices<2,1,3,0,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587289703ull :
-      sort_indices<2,3,0,1,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588272743ull :
-      sort_indices<2,3,1,0,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806507623ull :
-      sort_indices<3,0,1,2,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807490663ull :
-      sort_indices<3,0,2,1,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822236263ull :
-      sort_indices<3,1,0,2,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824202343ull :
-      sort_indices<3,1,2,0,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838947943ull :
-      sort_indices<3,2,0,1,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839930983ull :
-      sort_indices<3,2,1,0,5,4,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19092598ull :
-      sort_indices<0,1,2,3,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20075638ull :
-      sort_indices<0,1,3,2,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821238ull :
-      sort_indices<0,2,1,3,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36787318ull :
-      sort_indices<0,2,3,1,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51532918ull :
-      sort_indices<0,3,1,2,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52515958ull :
-      sort_indices<0,3,2,1,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270750838ull :
-      sort_indices<1,0,2,3,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271733878ull :
-      sort_indices<1,0,3,2,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208118ull :
-      sort_indices<1,2,0,3,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157238ull :
-      sort_indices<1,2,3,0,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318919798ull :
-      sort_indices<1,3,0,2,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320885878ull :
-      sort_indices<1,3,2,0,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538137718ull :
-      sort_indices<2,0,1,3,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540103798ull :
-      sort_indices<2,0,3,1,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553866358ull :
-      sort_indices<2,1,0,3,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556815478ull :
-      sort_indices<2,1,3,0,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587289718ull :
-      sort_indices<2,3,0,1,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588272758ull :
-      sort_indices<2,3,1,0,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806507638ull :
-      sort_indices<3,0,1,2,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807490678ull :
-      sort_indices<3,0,2,1,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822236278ull :
-      sort_indices<3,1,0,2,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824202358ull :
-      sort_indices<3,1,2,0,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838947958ull :
-      sort_indices<3,2,0,1,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839930998ull :
-      sort_indices<3,2,1,0,5,4,7,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19093063ull :
-      sort_indices<0,1,2,3,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20076103ull :
-      sort_indices<0,1,3,2,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821703ull :
-      sort_indices<0,2,1,3,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36787783ull :
-      sort_indices<0,2,3,1,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51533383ull :
-      sort_indices<0,3,1,2,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52516423ull :
-      sort_indices<0,3,2,1,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270751303ull :
-      sort_indices<1,0,2,3,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271734343ull :
-      sort_indices<1,0,3,2,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208583ull :
-      sort_indices<1,2,0,3,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157703ull :
-      sort_indices<1,2,3,0,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318920263ull :
-      sort_indices<1,3,0,2,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320886343ull :
-      sort_indices<1,3,2,0,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538138183ull :
-      sort_indices<2,0,1,3,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540104263ull :
-      sort_indices<2,0,3,1,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553866823ull :
-      sort_indices<2,1,0,3,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556815943ull :
-      sort_indices<2,1,3,0,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587290183ull :
-      sort_indices<2,3,0,1,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588273223ull :
-      sort_indices<2,3,1,0,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806508103ull :
-      sort_indices<3,0,1,2,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807491143ull :
-      sort_indices<3,0,2,1,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822236743ull :
-      sort_indices<3,1,0,2,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824202823ull :
-      sort_indices<3,1,2,0,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838948423ull :
-      sort_indices<3,2,0,1,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839931463ull :
-      sort_indices<3,2,1,0,5,6,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19093108ull :
-      sort_indices<0,1,2,3,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20076148ull :
-      sort_indices<0,1,3,2,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821748ull :
-      sort_indices<0,2,1,3,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36787828ull :
-      sort_indices<0,2,3,1,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51533428ull :
-      sort_indices<0,3,1,2,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52516468ull :
-      sort_indices<0,3,2,1,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270751348ull :
-      sort_indices<1,0,2,3,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271734388ull :
-      sort_indices<1,0,3,2,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208628ull :
-      sort_indices<1,2,0,3,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157748ull :
-      sort_indices<1,2,3,0,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318920308ull :
-      sort_indices<1,3,0,2,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320886388ull :
-      sort_indices<1,3,2,0,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538138228ull :
-      sort_indices<2,0,1,3,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540104308ull :
-      sort_indices<2,0,3,1,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553866868ull :
-      sort_indices<2,1,0,3,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556815988ull :
-      sort_indices<2,1,3,0,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587290228ull :
-      sort_indices<2,3,0,1,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588273268ull :
-      sort_indices<2,3,1,0,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806508148ull :
-      sort_indices<3,0,1,2,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807491188ull :
-      sort_indices<3,0,2,1,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822236788ull :
-      sort_indices<3,1,0,2,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824202868ull :
-      sort_indices<3,1,2,0,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838948468ull :
-      sort_indices<3,2,0,1,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839931508ull :
-      sort_indices<3,2,1,0,5,6,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19093318ull :
-      sort_indices<0,1,2,3,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20076358ull :
-      sort_indices<0,1,3,2,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821958ull :
-      sort_indices<0,2,1,3,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36788038ull :
-      sort_indices<0,2,3,1,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51533638ull :
-      sort_indices<0,3,1,2,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52516678ull :
-      sort_indices<0,3,2,1,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270751558ull :
-      sort_indices<1,0,2,3,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271734598ull :
-      sort_indices<1,0,3,2,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208838ull :
-      sort_indices<1,2,0,3,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157958ull :
-      sort_indices<1,2,3,0,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318920518ull :
-      sort_indices<1,3,0,2,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320886598ull :
-      sort_indices<1,3,2,0,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538138438ull :
-      sort_indices<2,0,1,3,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540104518ull :
-      sort_indices<2,0,3,1,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553867078ull :
-      sort_indices<2,1,0,3,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556816198ull :
-      sort_indices<2,1,3,0,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587290438ull :
-      sort_indices<2,3,0,1,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588273478ull :
-      sort_indices<2,3,1,0,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806508358ull :
-      sort_indices<3,0,1,2,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807491398ull :
-      sort_indices<3,0,2,1,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822236998ull :
-      sort_indices<3,1,0,2,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824203078ull :
-      sort_indices<3,1,2,0,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838948678ull :
-      sort_indices<3,2,0,1,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839931718ull :
-      sort_indices<3,2,1,0,5,7,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19093348ull :
-      sort_indices<0,1,2,3,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20076388ull :
-      sort_indices<0,1,3,2,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34821988ull :
-      sort_indices<0,2,1,3,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36788068ull :
-      sort_indices<0,2,3,1,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51533668ull :
-      sort_indices<0,3,1,2,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52516708ull :
-      sort_indices<0,3,2,1,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270751588ull :
-      sort_indices<1,0,2,3,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271734628ull :
-      sort_indices<1,0,3,2,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302208868ull :
-      sort_indices<1,2,0,3,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305157988ull :
-      sort_indices<1,2,3,0,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318920548ull :
-      sort_indices<1,3,0,2,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320886628ull :
-      sort_indices<1,3,2,0,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538138468ull :
-      sort_indices<2,0,1,3,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540104548ull :
-      sort_indices<2,0,3,1,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553867108ull :
-      sort_indices<2,1,0,3,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556816228ull :
-      sort_indices<2,1,3,0,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587290468ull :
-      sort_indices<2,3,0,1,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588273508ull :
-      sort_indices<2,3,1,0,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806508388ull :
-      sort_indices<3,0,1,2,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807491428ull :
-      sort_indices<3,0,2,1,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822237028ull :
-      sort_indices<3,1,0,2,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824203108ull :
-      sort_indices<3,1,2,0,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838948708ull :
-      sort_indices<3,2,0,1,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839931748ull :
-      sort_indices<3,2,1,0,5,7,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19096663ull :
-      sort_indices<0,1,2,3,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20079703ull :
-      sort_indices<0,1,3,2,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34825303ull :
-      sort_indices<0,2,1,3,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36791383ull :
-      sort_indices<0,2,3,1,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51536983ull :
-      sort_indices<0,3,1,2,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520023ull :
-      sort_indices<0,3,2,1,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270754903ull :
-      sort_indices<1,0,2,3,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271737943ull :
-      sort_indices<1,0,3,2,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212183ull :
-      sort_indices<1,2,0,3,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305161303ull :
-      sort_indices<1,2,3,0,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318923863ull :
-      sort_indices<1,3,0,2,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320889943ull :
-      sort_indices<1,3,2,0,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538141783ull :
-      sort_indices<2,0,1,3,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540107863ull :
-      sort_indices<2,0,3,1,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553870423ull :
-      sort_indices<2,1,0,3,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556819543ull :
-      sort_indices<2,1,3,0,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587293783ull :
-      sort_indices<2,3,0,1,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588276823ull :
-      sort_indices<2,3,1,0,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806511703ull :
-      sort_indices<3,0,1,2,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807494743ull :
-      sort_indices<3,0,2,1,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822240343ull :
-      sort_indices<3,1,0,2,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824206423ull :
-      sort_indices<3,1,2,0,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952023ull :
-      sort_indices<3,2,0,1,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935063ull :
-      sort_indices<3,2,1,0,6,4,5,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19096693ull :
-      sort_indices<0,1,2,3,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20079733ull :
-      sort_indices<0,1,3,2,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34825333ull :
-      sort_indices<0,2,1,3,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36791413ull :
-      sort_indices<0,2,3,1,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51537013ull :
-      sort_indices<0,3,1,2,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520053ull :
-      sort_indices<0,3,2,1,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270754933ull :
-      sort_indices<1,0,2,3,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271737973ull :
-      sort_indices<1,0,3,2,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212213ull :
-      sort_indices<1,2,0,3,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305161333ull :
-      sort_indices<1,2,3,0,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318923893ull :
-      sort_indices<1,3,0,2,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320889973ull :
-      sort_indices<1,3,2,0,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538141813ull :
-      sort_indices<2,0,1,3,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540107893ull :
-      sort_indices<2,0,3,1,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553870453ull :
-      sort_indices<2,1,0,3,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556819573ull :
-      sort_indices<2,1,3,0,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587293813ull :
-      sort_indices<2,3,0,1,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588276853ull :
-      sort_indices<2,3,1,0,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806511733ull :
-      sort_indices<3,0,1,2,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807494773ull :
-      sort_indices<3,0,2,1,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822240373ull :
-      sort_indices<3,1,0,2,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824206453ull :
-      sort_indices<3,1,2,0,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952053ull :
-      sort_indices<3,2,0,1,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935093ull :
-      sort_indices<3,2,1,0,6,4,7,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19096903ull :
-      sort_indices<0,1,2,3,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20079943ull :
-      sort_indices<0,1,3,2,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34825543ull :
-      sort_indices<0,2,1,3,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36791623ull :
-      sort_indices<0,2,3,1,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51537223ull :
-      sort_indices<0,3,1,2,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520263ull :
-      sort_indices<0,3,2,1,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270755143ull :
-      sort_indices<1,0,2,3,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271738183ull :
-      sort_indices<1,0,3,2,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212423ull :
-      sort_indices<1,2,0,3,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305161543ull :
-      sort_indices<1,2,3,0,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318924103ull :
-      sort_indices<1,3,0,2,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320890183ull :
-      sort_indices<1,3,2,0,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538142023ull :
-      sort_indices<2,0,1,3,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540108103ull :
-      sort_indices<2,0,3,1,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553870663ull :
-      sort_indices<2,1,0,3,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556819783ull :
-      sort_indices<2,1,3,0,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587294023ull :
-      sort_indices<2,3,0,1,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588277063ull :
-      sort_indices<2,3,1,0,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806511943ull :
-      sort_indices<3,0,1,2,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807494983ull :
-      sort_indices<3,0,2,1,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822240583ull :
-      sort_indices<3,1,0,2,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824206663ull :
-      sort_indices<3,1,2,0,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952263ull :
-      sort_indices<3,2,0,1,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935303ull :
-      sort_indices<3,2,1,0,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19096948ull :
-      sort_indices<0,1,2,3,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20079988ull :
-      sort_indices<0,1,3,2,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34825588ull :
-      sort_indices<0,2,1,3,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36791668ull :
-      sort_indices<0,2,3,1,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51537268ull :
-      sort_indices<0,3,1,2,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520308ull :
-      sort_indices<0,3,2,1,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270755188ull :
-      sort_indices<1,0,2,3,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271738228ull :
-      sort_indices<1,0,3,2,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212468ull :
-      sort_indices<1,2,0,3,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305161588ull :
-      sort_indices<1,2,3,0,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318924148ull :
-      sort_indices<1,3,0,2,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320890228ull :
-      sort_indices<1,3,2,0,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538142068ull :
-      sort_indices<2,0,1,3,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540108148ull :
-      sort_indices<2,0,3,1,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553870708ull :
-      sort_indices<2,1,0,3,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556819828ull :
-      sort_indices<2,1,3,0,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587294068ull :
-      sort_indices<2,3,0,1,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588277108ull :
-      sort_indices<2,3,1,0,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806511988ull :
-      sort_indices<3,0,1,2,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807495028ull :
-      sort_indices<3,0,2,1,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822240628ull :
-      sort_indices<3,1,0,2,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824206708ull :
-      sort_indices<3,1,2,0,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952308ull :
-      sort_indices<3,2,0,1,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935348ull :
-      sort_indices<3,2,1,0,6,5,7,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19097413ull :
-      sort_indices<0,1,2,3,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20080453ull :
-      sort_indices<0,1,3,2,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34826053ull :
-      sort_indices<0,2,1,3,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36792133ull :
-      sort_indices<0,2,3,1,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51537733ull :
-      sort_indices<0,3,1,2,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520773ull :
-      sort_indices<0,3,2,1,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270755653ull :
-      sort_indices<1,0,2,3,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271738693ull :
-      sort_indices<1,0,3,2,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212933ull :
-      sort_indices<1,2,0,3,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305162053ull :
-      sort_indices<1,2,3,0,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318924613ull :
-      sort_indices<1,3,0,2,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320890693ull :
-      sort_indices<1,3,2,0,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538142533ull :
-      sort_indices<2,0,1,3,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540108613ull :
-      sort_indices<2,0,3,1,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553871173ull :
-      sort_indices<2,1,0,3,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556820293ull :
-      sort_indices<2,1,3,0,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587294533ull :
-      sort_indices<2,3,0,1,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588277573ull :
-      sort_indices<2,3,1,0,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806512453ull :
-      sort_indices<3,0,1,2,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807495493ull :
-      sort_indices<3,0,2,1,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822241093ull :
-      sort_indices<3,1,0,2,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824207173ull :
-      sort_indices<3,1,2,0,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952773ull :
-      sort_indices<3,2,0,1,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935813ull :
-      sort_indices<3,2,1,0,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19097428ull :
-      sort_indices<0,1,2,3,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20080468ull :
-      sort_indices<0,1,3,2,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34826068ull :
-      sort_indices<0,2,1,3,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36792148ull :
-      sort_indices<0,2,3,1,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51537748ull :
-      sort_indices<0,3,1,2,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52520788ull :
-      sort_indices<0,3,2,1,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270755668ull :
-      sort_indices<1,0,2,3,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271738708ull :
-      sort_indices<1,0,3,2,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302212948ull :
-      sort_indices<1,2,0,3,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305162068ull :
-      sort_indices<1,2,3,0,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318924628ull :
-      sort_indices<1,3,0,2,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320890708ull :
-      sort_indices<1,3,2,0,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538142548ull :
-      sort_indices<2,0,1,3,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540108628ull :
-      sort_indices<2,0,3,1,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553871188ull :
-      sort_indices<2,1,0,3,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556820308ull :
-      sort_indices<2,1,3,0,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587294548ull :
-      sort_indices<2,3,0,1,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588277588ull :
-      sort_indices<2,3,1,0,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806512468ull :
-      sort_indices<3,0,1,2,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807495508ull :
-      sort_indices<3,0,2,1,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822241108ull :
-      sort_indices<3,1,0,2,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824207188ull :
-      sort_indices<3,1,2,0,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838952788ull :
-      sort_indices<3,2,0,1,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839935828ull :
-      sort_indices<3,2,1,0,6,7,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19100758ull :
-      sort_indices<0,1,2,3,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20083798ull :
-      sort_indices<0,1,3,2,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829398ull :
-      sort_indices<0,2,1,3,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795478ull :
-      sort_indices<0,2,3,1,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541078ull :
-      sort_indices<0,3,1,2,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524118ull :
-      sort_indices<0,3,2,1,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270758998ull :
-      sort_indices<1,0,2,3,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742038ull :
-      sort_indices<1,0,3,2,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216278ull :
-      sort_indices<1,2,0,3,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165398ull :
-      sort_indices<1,2,3,0,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318927958ull :
-      sort_indices<1,3,0,2,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894038ull :
-      sort_indices<1,3,2,0,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538145878ull :
-      sort_indices<2,0,1,3,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540111958ull :
-      sort_indices<2,0,3,1,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553874518ull :
-      sort_indices<2,1,0,3,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556823638ull :
-      sort_indices<2,1,3,0,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587297878ull :
-      sort_indices<2,3,0,1,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588280918ull :
-      sort_indices<2,3,1,0,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806515798ull :
-      sort_indices<3,0,1,2,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807498838ull :
-      sort_indices<3,0,2,1,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244438ull :
-      sort_indices<3,1,0,2,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824210518ull :
-      sort_indices<3,1,2,0,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956118ull :
-      sort_indices<3,2,0,1,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939158ull :
-      sort_indices<3,2,1,0,7,4,5,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19100773ull :
-      sort_indices<0,1,2,3,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20083813ull :
-      sort_indices<0,1,3,2,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829413ull :
-      sort_indices<0,2,1,3,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795493ull :
-      sort_indices<0,2,3,1,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541093ull :
-      sort_indices<0,3,1,2,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524133ull :
-      sort_indices<0,3,2,1,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270759013ull :
-      sort_indices<1,0,2,3,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742053ull :
-      sort_indices<1,0,3,2,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216293ull :
-      sort_indices<1,2,0,3,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165413ull :
-      sort_indices<1,2,3,0,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318927973ull :
-      sort_indices<1,3,0,2,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894053ull :
-      sort_indices<1,3,2,0,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538145893ull :
-      sort_indices<2,0,1,3,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540111973ull :
-      sort_indices<2,0,3,1,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553874533ull :
-      sort_indices<2,1,0,3,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556823653ull :
-      sort_indices<2,1,3,0,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587297893ull :
-      sort_indices<2,3,0,1,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588280933ull :
-      sort_indices<2,3,1,0,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806515813ull :
-      sort_indices<3,0,1,2,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807498853ull :
-      sort_indices<3,0,2,1,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244453ull :
-      sort_indices<3,1,0,2,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824210533ull :
-      sort_indices<3,1,2,0,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956133ull :
-      sort_indices<3,2,0,1,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939173ull :
-      sort_indices<3,2,1,0,7,4,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19100998ull :
-      sort_indices<0,1,2,3,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20084038ull :
-      sort_indices<0,1,3,2,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829638ull :
-      sort_indices<0,2,1,3,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795718ull :
-      sort_indices<0,2,3,1,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541318ull :
-      sort_indices<0,3,1,2,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524358ull :
-      sort_indices<0,3,2,1,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270759238ull :
-      sort_indices<1,0,2,3,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742278ull :
-      sort_indices<1,0,3,2,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216518ull :
-      sort_indices<1,2,0,3,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165638ull :
-      sort_indices<1,2,3,0,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318928198ull :
-      sort_indices<1,3,0,2,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894278ull :
-      sort_indices<1,3,2,0,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538146118ull :
-      sort_indices<2,0,1,3,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540112198ull :
-      sort_indices<2,0,3,1,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553874758ull :
-      sort_indices<2,1,0,3,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556823878ull :
-      sort_indices<2,1,3,0,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587298118ull :
-      sort_indices<2,3,0,1,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588281158ull :
-      sort_indices<2,3,1,0,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806516038ull :
-      sort_indices<3,0,1,2,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807499078ull :
-      sort_indices<3,0,2,1,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244678ull :
-      sort_indices<3,1,0,2,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824210758ull :
-      sort_indices<3,1,2,0,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956358ull :
-      sort_indices<3,2,0,1,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939398ull :
-      sort_indices<3,2,1,0,7,5,4,6,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19101028ull :
-      sort_indices<0,1,2,3,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20084068ull :
-      sort_indices<0,1,3,2,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829668ull :
-      sort_indices<0,2,1,3,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795748ull :
-      sort_indices<0,2,3,1,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541348ull :
-      sort_indices<0,3,1,2,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524388ull :
-      sort_indices<0,3,2,1,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270759268ull :
-      sort_indices<1,0,2,3,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742308ull :
-      sort_indices<1,0,3,2,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216548ull :
-      sort_indices<1,2,0,3,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165668ull :
-      sort_indices<1,2,3,0,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318928228ull :
-      sort_indices<1,3,0,2,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894308ull :
-      sort_indices<1,3,2,0,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538146148ull :
-      sort_indices<2,0,1,3,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540112228ull :
-      sort_indices<2,0,3,1,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553874788ull :
-      sort_indices<2,1,0,3,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556823908ull :
-      sort_indices<2,1,3,0,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587298148ull :
-      sort_indices<2,3,0,1,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588281188ull :
-      sort_indices<2,3,1,0,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806516068ull :
-      sort_indices<3,0,1,2,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807499108ull :
-      sort_indices<3,0,2,1,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244708ull :
-      sort_indices<3,1,0,2,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824210788ull :
-      sort_indices<3,1,2,0,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956388ull :
-      sort_indices<3,2,0,1,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939428ull :
-      sort_indices<3,2,1,0,7,5,6,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19101253ull :
-      sort_indices<0,1,2,3,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20084293ull :
-      sort_indices<0,1,3,2,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829893ull :
-      sort_indices<0,2,1,3,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795973ull :
-      sort_indices<0,2,3,1,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541573ull :
-      sort_indices<0,3,1,2,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524613ull :
-      sort_indices<0,3,2,1,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270759493ull :
-      sort_indices<1,0,2,3,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742533ull :
-      sort_indices<1,0,3,2,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216773ull :
-      sort_indices<1,2,0,3,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165893ull :
-      sort_indices<1,2,3,0,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318928453ull :
-      sort_indices<1,3,0,2,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894533ull :
-      sort_indices<1,3,2,0,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538146373ull :
-      sort_indices<2,0,1,3,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540112453ull :
-      sort_indices<2,0,3,1,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553875013ull :
-      sort_indices<2,1,0,3,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556824133ull :
-      sort_indices<2,1,3,0,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587298373ull :
-      sort_indices<2,3,0,1,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588281413ull :
-      sort_indices<2,3,1,0,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806516293ull :
-      sort_indices<3,0,1,2,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807499333ull :
-      sort_indices<3,0,2,1,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244933ull :
-      sort_indices<3,1,0,2,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824211013ull :
-      sort_indices<3,1,2,0,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956613ull :
-      sort_indices<3,2,0,1,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939653ull :
-      sort_indices<3,2,1,0,7,6,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 19101268ull :
-      sort_indices<0,1,2,3,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 20084308ull :
-      sort_indices<0,1,3,2,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 34829908ull :
-      sort_indices<0,2,1,3,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 36795988ull :
-      sort_indices<0,2,3,1,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 51541588ull :
-      sort_indices<0,3,1,2,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 52524628ull :
-      sort_indices<0,3,2,1,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 270759508ull :
-      sort_indices<1,0,2,3,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 271742548ull :
-      sort_indices<1,0,3,2,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 302216788ull :
-      sort_indices<1,2,0,3,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 305165908ull :
-      sort_indices<1,2,3,0,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 318928468ull :
-      sort_indices<1,3,0,2,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 320894548ull :
-      sort_indices<1,3,2,0,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 538146388ull :
-      sort_indices<2,0,1,3,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 540112468ull :
-      sort_indices<2,0,3,1,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 553875028ull :
-      sort_indices<2,1,0,3,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 556824148ull :
-      sort_indices<2,1,3,0,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 587298388ull :
-      sort_indices<2,3,0,1,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 588281428ull :
-      sort_indices<2,3,1,0,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 806516308ull :
-      sort_indices<3,0,1,2,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 807499348ull :
-      sort_indices<3,0,2,1,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 822244948ull :
-      sort_indices<3,1,0,2,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 824211028ull :
-      sort_indices<3,1,2,0,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 838956628ull :
-      sort_indices<3,2,0,1,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
-    case 839939668ull :
-      sort_indices<3,2,1,0,7,6,5,4,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); break;
+        case 19088743ull :
+          sort_indices<0,1,2,3,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19089253ull :
+          sort_indices<0,1,2,3,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19219303ull :
+          sort_indices<0,1,2,5,4,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19220323ull :
+          sort_indices<0,1,2,5,4,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19350373ull :
+          sort_indices<0,1,2,7,4,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19350883ull :
+          sort_indices<0,1,2,7,4,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52512103ull :
+          sort_indices<0,3,2,1,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52512613ull :
+          sort_indices<0,3,2,1,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52773223ull :
+          sort_indices<0,3,2,5,4,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52774753ull :
+          sort_indices<0,3,2,5,4,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52904293ull :
+          sort_indices<0,3,2,7,4,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52905313ull :
+          sort_indices<0,3,2,7,4,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86066023ull :
+          sort_indices<0,5,2,1,4,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86067043ull :
+          sort_indices<0,5,2,1,4,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86196583ull :
+          sort_indices<0,5,2,3,4,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86198113ull :
+          sort_indices<0,5,2,3,4,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86458723ull :
+          sort_indices<0,5,2,7,4,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86459233ull :
+          sort_indices<0,5,2,7,4,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119620453ull :
+          sort_indices<0,7,2,1,4,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119620963ull :
+          sort_indices<0,7,2,1,4,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119751013ull :
+          sort_indices<0,7,2,3,4,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119752033ull :
+          sort_indices<0,7,2,3,4,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119882083ull :
+          sort_indices<0,7,2,5,4,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119882593ull :
+          sort_indices<0,7,2,5,4,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19096903ull :
+          sort_indices<0,1,2,3,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19097413ull :
+          sort_indices<0,1,2,3,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19227463ull :
+          sort_indices<0,1,2,5,6,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19228483ull :
+          sort_indices<0,1,2,5,6,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19358533ull :
+          sort_indices<0,1,2,7,6,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 19359043ull :
+          sort_indices<0,1,2,7,6,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52520263ull :
+          sort_indices<0,3,2,1,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52520773ull :
+          sort_indices<0,3,2,1,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52781383ull :
+          sort_indices<0,3,2,5,6,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52782913ull :
+          sort_indices<0,3,2,5,6,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52912453ull :
+          sort_indices<0,3,2,7,6,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 52913473ull :
+          sort_indices<0,3,2,7,6,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86074183ull :
+          sort_indices<0,5,2,1,6,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86075203ull :
+          sort_indices<0,5,2,1,6,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86204743ull :
+          sort_indices<0,5,2,3,6,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86206273ull :
+          sort_indices<0,5,2,3,6,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86466883ull :
+          sort_indices<0,5,2,7,6,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 86467393ull :
+          sort_indices<0,5,2,7,6,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119628613ull :
+          sort_indices<0,7,2,1,6,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119629123ull :
+          sort_indices<0,7,2,1,6,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119759173ull :
+          sort_indices<0,7,2,3,6,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119760193ull :
+          sort_indices<0,7,2,3,6,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119890243ull :
+          sort_indices<0,7,2,5,6,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 119890753ull :
+          sort_indices<0,7,2,5,6,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21177703ull :
+          sort_indices<0,1,4,3,2,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21178213ull :
+          sort_indices<0,1,4,3,2,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21308263ull :
+          sort_indices<0,1,4,5,2,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21309283ull :
+          sort_indices<0,1,4,5,2,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21439333ull :
+          sort_indices<0,1,4,7,2,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21439843ull :
+          sort_indices<0,1,4,7,2,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54601063ull :
+          sort_indices<0,3,4,1,2,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54601573ull :
+          sort_indices<0,3,4,1,2,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54862183ull :
+          sort_indices<0,3,4,5,2,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54863713ull :
+          sort_indices<0,3,4,5,2,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54993253ull :
+          sort_indices<0,3,4,7,2,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54994273ull :
+          sort_indices<0,3,4,7,2,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88154983ull :
+          sort_indices<0,5,4,1,2,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88156003ull :
+          sort_indices<0,5,4,1,2,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88285543ull :
+          sort_indices<0,5,4,3,2,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88287073ull :
+          sort_indices<0,5,4,3,2,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88547683ull :
+          sort_indices<0,5,4,7,2,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88548193ull :
+          sort_indices<0,5,4,7,2,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121709413ull :
+          sort_indices<0,7,4,1,2,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121709923ull :
+          sort_indices<0,7,4,1,2,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121839973ull :
+          sort_indices<0,7,4,3,2,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121840993ull :
+          sort_indices<0,7,4,3,2,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121971043ull :
+          sort_indices<0,7,4,5,2,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121971553ull :
+          sort_indices<0,7,4,5,2,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21194023ull :
+          sort_indices<0,1,4,3,6,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21194533ull :
+          sort_indices<0,1,4,3,6,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21324583ull :
+          sort_indices<0,1,4,5,6,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21325603ull :
+          sort_indices<0,1,4,5,6,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21455653ull :
+          sort_indices<0,1,4,7,6,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 21456163ull :
+          sort_indices<0,1,4,7,6,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54617383ull :
+          sort_indices<0,3,4,1,6,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54617893ull :
+          sort_indices<0,3,4,1,6,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54878503ull :
+          sort_indices<0,3,4,5,6,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 54880033ull :
+          sort_indices<0,3,4,5,6,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 55009573ull :
+          sort_indices<0,3,4,7,6,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 55010593ull :
+          sort_indices<0,3,4,7,6,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88171303ull :
+          sort_indices<0,5,4,1,6,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88172323ull :
+          sort_indices<0,5,4,1,6,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88301863ull :
+          sort_indices<0,5,4,3,6,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88303393ull :
+          sort_indices<0,5,4,3,6,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88564003ull :
+          sort_indices<0,5,4,7,6,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 88564513ull :
+          sort_indices<0,5,4,7,6,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121725733ull :
+          sort_indices<0,7,4,1,6,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121726243ull :
+          sort_indices<0,7,4,1,6,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121856293ull :
+          sort_indices<0,7,4,3,6,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121857313ull :
+          sort_indices<0,7,4,3,6,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121987363ull :
+          sort_indices<0,7,4,5,6,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 121987873ull :
+          sort_indices<0,7,4,5,6,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23274823ull :
+          sort_indices<0,1,6,3,2,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23275333ull :
+          sort_indices<0,1,6,3,2,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23405383ull :
+          sort_indices<0,1,6,5,2,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23406403ull :
+          sort_indices<0,1,6,5,2,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23536453ull :
+          sort_indices<0,1,6,7,2,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23536963ull :
+          sort_indices<0,1,6,7,2,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56698183ull :
+          sort_indices<0,3,6,1,2,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56698693ull :
+          sort_indices<0,3,6,1,2,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56959303ull :
+          sort_indices<0,3,6,5,2,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56960833ull :
+          sort_indices<0,3,6,5,2,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 57090373ull :
+          sort_indices<0,3,6,7,2,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 57091393ull :
+          sort_indices<0,3,6,7,2,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90252103ull :
+          sort_indices<0,5,6,1,2,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90253123ull :
+          sort_indices<0,5,6,1,2,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90382663ull :
+          sort_indices<0,5,6,3,2,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90384193ull :
+          sort_indices<0,5,6,3,2,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90644803ull :
+          sort_indices<0,5,6,7,2,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90645313ull :
+          sort_indices<0,5,6,7,2,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123806533ull :
+          sort_indices<0,7,6,1,2,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123807043ull :
+          sort_indices<0,7,6,1,2,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123937093ull :
+          sort_indices<0,7,6,3,2,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123938113ull :
+          sort_indices<0,7,6,3,2,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 124068163ull :
+          sort_indices<0,7,6,5,2,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 124068673ull :
+          sort_indices<0,7,6,5,2,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23282983ull :
+          sort_indices<0,1,6,3,4,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23283493ull :
+          sort_indices<0,1,6,3,4,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23413543ull :
+          sort_indices<0,1,6,5,4,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23414563ull :
+          sort_indices<0,1,6,5,4,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23544613ull :
+          sort_indices<0,1,6,7,4,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 23545123ull :
+          sort_indices<0,1,6,7,4,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56706343ull :
+          sort_indices<0,3,6,1,4,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56706853ull :
+          sort_indices<0,3,6,1,4,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56967463ull :
+          sort_indices<0,3,6,5,4,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 56968993ull :
+          sort_indices<0,3,6,5,4,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 57098533ull :
+          sort_indices<0,3,6,7,4,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 57099553ull :
+          sort_indices<0,3,6,7,4,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90260263ull :
+          sort_indices<0,5,6,1,4,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90261283ull :
+          sort_indices<0,5,6,1,4,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90390823ull :
+          sort_indices<0,5,6,3,4,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90392353ull :
+          sort_indices<0,5,6,3,4,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90652963ull :
+          sort_indices<0,5,6,7,4,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 90653473ull :
+          sort_indices<0,5,6,7,4,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123814693ull :
+          sort_indices<0,7,6,1,4,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123815203ull :
+          sort_indices<0,7,6,1,4,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123945253ull :
+          sort_indices<0,7,6,3,4,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 123946273ull :
+          sort_indices<0,7,6,3,4,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 124076323ull :
+          sort_indices<0,7,6,5,4,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 124076833ull :
+          sort_indices<0,7,6,5,4,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553862503ull :
+          sort_indices<2,1,0,3,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553863013ull :
+          sort_indices<2,1,0,3,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553993063ull :
+          sort_indices<2,1,0,5,4,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553994083ull :
+          sort_indices<2,1,0,5,4,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554124133ull :
+          sort_indices<2,1,0,7,4,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554124643ull :
+          sort_indices<2,1,0,7,4,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587285863ull :
+          sort_indices<2,3,0,1,4,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587286373ull :
+          sort_indices<2,3,0,1,4,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587546983ull :
+          sort_indices<2,3,0,5,4,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587548513ull :
+          sort_indices<2,3,0,5,4,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587678053ull :
+          sort_indices<2,3,0,7,4,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587679073ull :
+          sort_indices<2,3,0,7,4,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620839783ull :
+          sort_indices<2,5,0,1,4,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620840803ull :
+          sort_indices<2,5,0,1,4,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620970343ull :
+          sort_indices<2,5,0,3,4,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620971873ull :
+          sort_indices<2,5,0,3,4,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 621232483ull :
+          sort_indices<2,5,0,7,4,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 621232993ull :
+          sort_indices<2,5,0,7,4,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654394213ull :
+          sort_indices<2,7,0,1,4,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654394723ull :
+          sort_indices<2,7,0,1,4,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654524773ull :
+          sort_indices<2,7,0,3,4,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654525793ull :
+          sort_indices<2,7,0,3,4,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654655843ull :
+          sort_indices<2,7,0,5,4,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654656353ull :
+          sort_indices<2,7,0,5,4,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553870663ull :
+          sort_indices<2,1,0,3,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 553871173ull :
+          sort_indices<2,1,0,3,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554001223ull :
+          sort_indices<2,1,0,5,6,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554002243ull :
+          sort_indices<2,1,0,5,6,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554132293ull :
+          sort_indices<2,1,0,7,6,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 554132803ull :
+          sort_indices<2,1,0,7,6,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587294023ull :
+          sort_indices<2,3,0,1,6,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587294533ull :
+          sort_indices<2,3,0,1,6,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587555143ull :
+          sort_indices<2,3,0,5,6,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587556673ull :
+          sort_indices<2,3,0,5,6,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587686213ull :
+          sort_indices<2,3,0,7,6,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 587687233ull :
+          sort_indices<2,3,0,7,6,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620847943ull :
+          sort_indices<2,5,0,1,6,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620848963ull :
+          sort_indices<2,5,0,1,6,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620978503ull :
+          sort_indices<2,5,0,3,6,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 620980033ull :
+          sort_indices<2,5,0,3,6,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 621240643ull :
+          sort_indices<2,5,0,7,6,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 621241153ull :
+          sort_indices<2,5,0,7,6,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654402373ull :
+          sort_indices<2,7,0,1,6,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654402883ull :
+          sort_indices<2,7,0,1,6,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654532933ull :
+          sort_indices<2,7,0,3,6,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654533953ull :
+          sort_indices<2,7,0,3,6,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654664003ull :
+          sort_indices<2,7,0,5,6,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 654664513ull :
+          sort_indices<2,7,0,5,6,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558040423ull :
+          sort_indices<2,1,4,3,0,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558040933ull :
+          sort_indices<2,1,4,3,0,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558170983ull :
+          sort_indices<2,1,4,5,0,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558172003ull :
+          sort_indices<2,1,4,5,0,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558302053ull :
+          sort_indices<2,1,4,7,0,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558302563ull :
+          sort_indices<2,1,4,7,0,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591463783ull :
+          sort_indices<2,3,4,1,0,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591464293ull :
+          sort_indices<2,3,4,1,0,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591724903ull :
+          sort_indices<2,3,4,5,0,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591726433ull :
+          sort_indices<2,3,4,5,0,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591855973ull :
+          sort_indices<2,3,4,7,0,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591856993ull :
+          sort_indices<2,3,4,7,0,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625017703ull :
+          sort_indices<2,5,4,1,0,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625018723ull :
+          sort_indices<2,5,4,1,0,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625148263ull :
+          sort_indices<2,5,4,3,0,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625149793ull :
+          sort_indices<2,5,4,3,0,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625410403ull :
+          sort_indices<2,5,4,7,0,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625410913ull :
+          sort_indices<2,5,4,7,0,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658572133ull :
+          sort_indices<2,7,4,1,0,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658572643ull :
+          sort_indices<2,7,4,1,0,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658702693ull :
+          sort_indices<2,7,4,3,0,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658703713ull :
+          sort_indices<2,7,4,3,0,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658833763ull :
+          sort_indices<2,7,4,5,0,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658834273ull :
+          sort_indices<2,7,4,5,0,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558064903ull :
+          sort_indices<2,1,4,3,6,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558065413ull :
+          sort_indices<2,1,4,3,6,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558195463ull :
+          sort_indices<2,1,4,5,6,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558196483ull :
+          sort_indices<2,1,4,5,6,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558326533ull :
+          sort_indices<2,1,4,7,6,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 558327043ull :
+          sort_indices<2,1,4,7,6,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591488263ull :
+          sort_indices<2,3,4,1,6,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591488773ull :
+          sort_indices<2,3,4,1,6,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591749383ull :
+          sort_indices<2,3,4,5,6,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591750913ull :
+          sort_indices<2,3,4,5,6,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591880453ull :
+          sort_indices<2,3,4,7,6,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 591881473ull :
+          sort_indices<2,3,4,7,6,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625042183ull :
+          sort_indices<2,5,4,1,6,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625043203ull :
+          sort_indices<2,5,4,1,6,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625172743ull :
+          sort_indices<2,5,4,3,6,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625174273ull :
+          sort_indices<2,5,4,3,6,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625434883ull :
+          sort_indices<2,5,4,7,6,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 625435393ull :
+          sort_indices<2,5,4,7,6,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658596613ull :
+          sort_indices<2,7,4,1,6,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658597123ull :
+          sort_indices<2,7,4,1,6,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658727173ull :
+          sort_indices<2,7,4,3,6,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658728193ull :
+          sort_indices<2,7,4,3,6,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658858243ull :
+          sort_indices<2,7,4,5,6,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 658858753ull :
+          sort_indices<2,7,4,5,6,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560137543ull :
+          sort_indices<2,1,6,3,0,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560138053ull :
+          sort_indices<2,1,6,3,0,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560268103ull :
+          sort_indices<2,1,6,5,0,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560269123ull :
+          sort_indices<2,1,6,5,0,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560399173ull :
+          sort_indices<2,1,6,7,0,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560399683ull :
+          sort_indices<2,1,6,7,0,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593560903ull :
+          sort_indices<2,3,6,1,0,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593561413ull :
+          sort_indices<2,3,6,1,0,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593822023ull :
+          sort_indices<2,3,6,5,0,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593823553ull :
+          sort_indices<2,3,6,5,0,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593953093ull :
+          sort_indices<2,3,6,7,0,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593954113ull :
+          sort_indices<2,3,6,7,0,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627114823ull :
+          sort_indices<2,5,6,1,0,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627115843ull :
+          sort_indices<2,5,6,1,0,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627245383ull :
+          sort_indices<2,5,6,3,0,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627246913ull :
+          sort_indices<2,5,6,3,0,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627507523ull :
+          sort_indices<2,5,6,7,0,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627508033ull :
+          sort_indices<2,5,6,7,0,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660669253ull :
+          sort_indices<2,7,6,1,0,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660669763ull :
+          sort_indices<2,7,6,1,0,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660799813ull :
+          sort_indices<2,7,6,3,0,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660800833ull :
+          sort_indices<2,7,6,3,0,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660930883ull :
+          sort_indices<2,7,6,5,0,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660931393ull :
+          sort_indices<2,7,6,5,0,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560153863ull :
+          sort_indices<2,1,6,3,4,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560154373ull :
+          sort_indices<2,1,6,3,4,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560284423ull :
+          sort_indices<2,1,6,5,4,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560285443ull :
+          sort_indices<2,1,6,5,4,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560415493ull :
+          sort_indices<2,1,6,7,4,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 560416003ull :
+          sort_indices<2,1,6,7,4,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593577223ull :
+          sort_indices<2,3,6,1,4,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593577733ull :
+          sort_indices<2,3,6,1,4,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593838343ull :
+          sort_indices<2,3,6,5,4,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593839873ull :
+          sort_indices<2,3,6,5,4,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593969413ull :
+          sort_indices<2,3,6,7,4,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 593970433ull :
+          sort_indices<2,3,6,7,4,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627131143ull :
+          sort_indices<2,5,6,1,4,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627132163ull :
+          sort_indices<2,5,6,1,4,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627261703ull :
+          sort_indices<2,5,6,3,4,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627263233ull :
+          sort_indices<2,5,6,3,4,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627523843ull :
+          sort_indices<2,5,6,7,4,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 627524353ull :
+          sort_indices<2,5,6,7,4,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660685573ull :
+          sort_indices<2,7,6,1,4,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660686083ull :
+          sort_indices<2,7,6,1,4,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660816133ull :
+          sort_indices<2,7,6,3,4,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660817153ull :
+          sort_indices<2,7,6,3,4,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660947203ull :
+          sort_indices<2,7,6,5,4,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 660947713ull :
+          sort_indices<2,7,6,5,4,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090725223ull :
+          sort_indices<4,1,0,3,2,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090725733ull :
+          sort_indices<4,1,0,3,2,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090855783ull :
+          sort_indices<4,1,0,5,2,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090856803ull :
+          sort_indices<4,1,0,5,2,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090986853ull :
+          sort_indices<4,1,0,7,2,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090987363ull :
+          sort_indices<4,1,0,7,2,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124148583ull :
+          sort_indices<4,3,0,1,2,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124149093ull :
+          sort_indices<4,3,0,1,2,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124409703ull :
+          sort_indices<4,3,0,5,2,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124411233ull :
+          sort_indices<4,3,0,5,2,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124540773ull :
+          sort_indices<4,3,0,7,2,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124541793ull :
+          sort_indices<4,3,0,7,2,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157702503ull :
+          sort_indices<4,5,0,1,2,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157703523ull :
+          sort_indices<4,5,0,1,2,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157833063ull :
+          sort_indices<4,5,0,3,2,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157834593ull :
+          sort_indices<4,5,0,3,2,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1158095203ull :
+          sort_indices<4,5,0,7,2,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1158095713ull :
+          sort_indices<4,5,0,7,2,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191256933ull :
+          sort_indices<4,7,0,1,2,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191257443ull :
+          sort_indices<4,7,0,1,2,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191387493ull :
+          sort_indices<4,7,0,3,2,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191388513ull :
+          sort_indices<4,7,0,3,2,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191518563ull :
+          sort_indices<4,7,0,5,2,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191519073ull :
+          sort_indices<4,7,0,5,2,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090741543ull :
+          sort_indices<4,1,0,3,6,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090742053ull :
+          sort_indices<4,1,0,3,6,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090872103ull :
+          sort_indices<4,1,0,5,6,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1090873123ull :
+          sort_indices<4,1,0,5,6,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1091003173ull :
+          sort_indices<4,1,0,7,6,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1091003683ull :
+          sort_indices<4,1,0,7,6,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124164903ull :
+          sort_indices<4,3,0,1,6,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124165413ull :
+          sort_indices<4,3,0,1,6,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124426023ull :
+          sort_indices<4,3,0,5,6,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124427553ull :
+          sort_indices<4,3,0,5,6,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124557093ull :
+          sort_indices<4,3,0,7,6,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1124558113ull :
+          sort_indices<4,3,0,7,6,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157718823ull :
+          sort_indices<4,5,0,1,6,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157719843ull :
+          sort_indices<4,5,0,1,6,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157849383ull :
+          sort_indices<4,5,0,3,6,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1157850913ull :
+          sort_indices<4,5,0,3,6,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1158111523ull :
+          sort_indices<4,5,0,7,6,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1158112033ull :
+          sort_indices<4,5,0,7,6,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191273253ull :
+          sort_indices<4,7,0,1,6,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191273763ull :
+          sort_indices<4,7,0,1,6,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191403813ull :
+          sort_indices<4,7,0,3,6,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191404833ull :
+          sort_indices<4,7,0,3,6,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191534883ull :
+          sort_indices<4,7,0,5,6,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1191535393ull :
+          sort_indices<4,7,0,5,6,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092814183ull :
+          sort_indices<4,1,2,3,0,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092814693ull :
+          sort_indices<4,1,2,3,0,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092944743ull :
+          sort_indices<4,1,2,5,0,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092945763ull :
+          sort_indices<4,1,2,5,0,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1093075813ull :
+          sort_indices<4,1,2,7,0,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1093076323ull :
+          sort_indices<4,1,2,7,0,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126237543ull :
+          sort_indices<4,3,2,1,0,5,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126238053ull :
+          sort_indices<4,3,2,1,0,7,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126498663ull :
+          sort_indices<4,3,2,5,0,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126500193ull :
+          sort_indices<4,3,2,5,0,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126629733ull :
+          sort_indices<4,3,2,7,0,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126630753ull :
+          sort_indices<4,3,2,7,0,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159791463ull :
+          sort_indices<4,5,2,1,0,3,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159792483ull :
+          sort_indices<4,5,2,1,0,7,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159922023ull :
+          sort_indices<4,5,2,3,0,1,6,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159923553ull :
+          sort_indices<4,5,2,3,0,7,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1160184163ull :
+          sort_indices<4,5,2,7,0,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1160184673ull :
+          sort_indices<4,5,2,7,0,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193345893ull :
+          sort_indices<4,7,2,1,0,3,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193346403ull :
+          sort_indices<4,7,2,1,0,5,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193476453ull :
+          sort_indices<4,7,2,3,0,1,6,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193477473ull :
+          sort_indices<4,7,2,3,0,5,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193607523ull :
+          sort_indices<4,7,2,5,0,1,6,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193608033ull :
+          sort_indices<4,7,2,5,0,3,6,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092838663ull :
+          sort_indices<4,1,2,3,6,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092839173ull :
+          sort_indices<4,1,2,3,6,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092969223ull :
+          sort_indices<4,1,2,5,6,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1092970243ull :
+          sort_indices<4,1,2,5,6,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1093100293ull :
+          sort_indices<4,1,2,7,6,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1093100803ull :
+          sort_indices<4,1,2,7,6,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126262023ull :
+          sort_indices<4,3,2,1,6,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126262533ull :
+          sort_indices<4,3,2,1,6,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126523143ull :
+          sort_indices<4,3,2,5,6,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126524673ull :
+          sort_indices<4,3,2,5,6,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126654213ull :
+          sort_indices<4,3,2,7,6,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1126655233ull :
+          sort_indices<4,3,2,7,6,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159815943ull :
+          sort_indices<4,5,2,1,6,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159816963ull :
+          sort_indices<4,5,2,1,6,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159946503ull :
+          sort_indices<4,5,2,3,6,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1159948033ull :
+          sort_indices<4,5,2,3,6,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1160208643ull :
+          sort_indices<4,5,2,7,6,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1160209153ull :
+          sort_indices<4,5,2,7,6,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193370373ull :
+          sort_indices<4,7,2,1,6,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193370883ull :
+          sort_indices<4,7,2,1,6,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193500933ull :
+          sort_indices<4,7,2,3,6,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193501953ull :
+          sort_indices<4,7,2,3,6,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193632003ull :
+          sort_indices<4,7,2,5,6,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1193632513ull :
+          sort_indices<4,7,2,5,6,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097008423ull :
+          sort_indices<4,1,6,3,0,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097008933ull :
+          sort_indices<4,1,6,3,0,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097138983ull :
+          sort_indices<4,1,6,5,0,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097140003ull :
+          sort_indices<4,1,6,5,0,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097270053ull :
+          sort_indices<4,1,6,7,0,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097270563ull :
+          sort_indices<4,1,6,7,0,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130431783ull :
+          sort_indices<4,3,6,1,0,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130432293ull :
+          sort_indices<4,3,6,1,0,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130692903ull :
+          sort_indices<4,3,6,5,0,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130694433ull :
+          sort_indices<4,3,6,5,0,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130823973ull :
+          sort_indices<4,3,6,7,0,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130824993ull :
+          sort_indices<4,3,6,7,0,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1163985703ull :
+          sort_indices<4,5,6,1,0,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1163986723ull :
+          sort_indices<4,5,6,1,0,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164116263ull :
+          sort_indices<4,5,6,3,0,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164117793ull :
+          sort_indices<4,5,6,3,0,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164378403ull :
+          sort_indices<4,5,6,7,0,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164378913ull :
+          sort_indices<4,5,6,7,0,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197540133ull :
+          sort_indices<4,7,6,1,0,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197540643ull :
+          sort_indices<4,7,6,1,0,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197670693ull :
+          sort_indices<4,7,6,3,0,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197671713ull :
+          sort_indices<4,7,6,3,0,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197801763ull :
+          sort_indices<4,7,6,5,0,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197802273ull :
+          sort_indices<4,7,6,5,0,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097016583ull :
+          sort_indices<4,1,6,3,2,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097017093ull :
+          sort_indices<4,1,6,3,2,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097147143ull :
+          sort_indices<4,1,6,5,2,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097148163ull :
+          sort_indices<4,1,6,5,2,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097278213ull :
+          sort_indices<4,1,6,7,2,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1097278723ull :
+          sort_indices<4,1,6,7,2,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130439943ull :
+          sort_indices<4,3,6,1,2,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130440453ull :
+          sort_indices<4,3,6,1,2,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130701063ull :
+          sort_indices<4,3,6,5,2,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130702593ull :
+          sort_indices<4,3,6,5,2,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130832133ull :
+          sort_indices<4,3,6,7,2,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1130833153ull :
+          sort_indices<4,3,6,7,2,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1163993863ull :
+          sort_indices<4,5,6,1,2,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1163994883ull :
+          sort_indices<4,5,6,1,2,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164124423ull :
+          sort_indices<4,5,6,3,2,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164125953ull :
+          sort_indices<4,5,6,3,2,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164386563ull :
+          sort_indices<4,5,6,7,2,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1164387073ull :
+          sort_indices<4,5,6,7,2,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197548293ull :
+          sort_indices<4,7,6,1,2,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197548803ull :
+          sort_indices<4,7,6,1,2,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197678853ull :
+          sort_indices<4,7,6,3,2,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197679873ull :
+          sort_indices<4,7,6,3,2,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197809923ull :
+          sort_indices<4,7,6,5,2,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1197810433ull :
+          sort_indices<4,7,6,5,2,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627596103ull :
+          sort_indices<6,1,0,3,2,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627596613ull :
+          sort_indices<6,1,0,3,2,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627726663ull :
+          sort_indices<6,1,0,5,2,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627727683ull :
+          sort_indices<6,1,0,5,2,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627857733ull :
+          sort_indices<6,1,0,7,2,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627858243ull :
+          sort_indices<6,1,0,7,2,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661019463ull :
+          sort_indices<6,3,0,1,2,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661019973ull :
+          sort_indices<6,3,0,1,2,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661280583ull :
+          sort_indices<6,3,0,5,2,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661282113ull :
+          sort_indices<6,3,0,5,2,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661411653ull :
+          sort_indices<6,3,0,7,2,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661412673ull :
+          sort_indices<6,3,0,7,2,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694573383ull :
+          sort_indices<6,5,0,1,2,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694574403ull :
+          sort_indices<6,5,0,1,2,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694703943ull :
+          sort_indices<6,5,0,3,2,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694705473ull :
+          sort_indices<6,5,0,3,2,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694966083ull :
+          sort_indices<6,5,0,7,2,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694966593ull :
+          sort_indices<6,5,0,7,2,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728127813ull :
+          sort_indices<6,7,0,1,2,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728128323ull :
+          sort_indices<6,7,0,1,2,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728258373ull :
+          sort_indices<6,7,0,3,2,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728259393ull :
+          sort_indices<6,7,0,3,2,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728389443ull :
+          sort_indices<6,7,0,5,2,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728389953ull :
+          sort_indices<6,7,0,5,2,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627604263ull :
+          sort_indices<6,1,0,3,4,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627604773ull :
+          sort_indices<6,1,0,3,4,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627734823ull :
+          sort_indices<6,1,0,5,4,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627735843ull :
+          sort_indices<6,1,0,5,4,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627865893ull :
+          sort_indices<6,1,0,7,4,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1627866403ull :
+          sort_indices<6,1,0,7,4,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661027623ull :
+          sort_indices<6,3,0,1,4,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661028133ull :
+          sort_indices<6,3,0,1,4,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661288743ull :
+          sort_indices<6,3,0,5,4,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661290273ull :
+          sort_indices<6,3,0,5,4,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661419813ull :
+          sort_indices<6,3,0,7,4,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1661420833ull :
+          sort_indices<6,3,0,7,4,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694581543ull :
+          sort_indices<6,5,0,1,4,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694582563ull :
+          sort_indices<6,5,0,1,4,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694712103ull :
+          sort_indices<6,5,0,3,4,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694713633ull :
+          sort_indices<6,5,0,3,4,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694974243ull :
+          sort_indices<6,5,0,7,4,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1694974753ull :
+          sort_indices<6,5,0,7,4,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728135973ull :
+          sort_indices<6,7,0,1,4,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728136483ull :
+          sort_indices<6,7,0,1,4,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728266533ull :
+          sort_indices<6,7,0,3,4,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728267553ull :
+          sort_indices<6,7,0,3,4,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728397603ull :
+          sort_indices<6,7,0,5,4,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1728398113ull :
+          sort_indices<6,7,0,5,4,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629685063ull :
+          sort_indices<6,1,2,3,0,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629685573ull :
+          sort_indices<6,1,2,3,0,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629815623ull :
+          sort_indices<6,1,2,5,0,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629816643ull :
+          sort_indices<6,1,2,5,0,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629946693ull :
+          sort_indices<6,1,2,7,0,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629947203ull :
+          sort_indices<6,1,2,7,0,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663108423ull :
+          sort_indices<6,3,2,1,0,5,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663108933ull :
+          sort_indices<6,3,2,1,0,7,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663369543ull :
+          sort_indices<6,3,2,5,0,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663371073ull :
+          sort_indices<6,3,2,5,0,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663500613ull :
+          sort_indices<6,3,2,7,0,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663501633ull :
+          sort_indices<6,3,2,7,0,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696662343ull :
+          sort_indices<6,5,2,1,0,3,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696663363ull :
+          sort_indices<6,5,2,1,0,7,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696792903ull :
+          sort_indices<6,5,2,3,0,1,4,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696794433ull :
+          sort_indices<6,5,2,3,0,7,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1697055043ull :
+          sort_indices<6,5,2,7,0,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1697055553ull :
+          sort_indices<6,5,2,7,0,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730216773ull :
+          sort_indices<6,7,2,1,0,3,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730217283ull :
+          sort_indices<6,7,2,1,0,5,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730347333ull :
+          sort_indices<6,7,2,3,0,1,4,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730348353ull :
+          sort_indices<6,7,2,3,0,5,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730478403ull :
+          sort_indices<6,7,2,5,0,1,4,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730478913ull :
+          sort_indices<6,7,2,5,0,3,4,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629701383ull :
+          sort_indices<6,1,2,3,4,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629701893ull :
+          sort_indices<6,1,2,3,4,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629831943ull :
+          sort_indices<6,1,2,5,4,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629832963ull :
+          sort_indices<6,1,2,5,4,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629963013ull :
+          sort_indices<6,1,2,7,4,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1629963523ull :
+          sort_indices<6,1,2,7,4,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663124743ull :
+          sort_indices<6,3,2,1,4,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663125253ull :
+          sort_indices<6,3,2,1,4,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663385863ull :
+          sort_indices<6,3,2,5,4,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663387393ull :
+          sort_indices<6,3,2,5,4,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663516933ull :
+          sort_indices<6,3,2,7,4,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1663517953ull :
+          sort_indices<6,3,2,7,4,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696678663ull :
+          sort_indices<6,5,2,1,4,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696679683ull :
+          sort_indices<6,5,2,1,4,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696809223ull :
+          sort_indices<6,5,2,3,4,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1696810753ull :
+          sort_indices<6,5,2,3,4,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1697071363ull :
+          sort_indices<6,5,2,7,4,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1697071873ull :
+          sort_indices<6,5,2,7,4,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730233093ull :
+          sort_indices<6,7,2,1,4,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730233603ull :
+          sort_indices<6,7,2,1,4,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730363653ull :
+          sort_indices<6,7,2,3,4,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730364673ull :
+          sort_indices<6,7,2,3,4,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730494723ull :
+          sort_indices<6,7,2,5,4,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1730495233ull :
+          sort_indices<6,7,2,5,4,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631782183ull :
+          sort_indices<6,1,4,3,0,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631782693ull :
+          sort_indices<6,1,4,3,0,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631912743ull :
+          sort_indices<6,1,4,5,0,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631913763ull :
+          sort_indices<6,1,4,5,0,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1632043813ull :
+          sort_indices<6,1,4,7,0,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1632044323ull :
+          sort_indices<6,1,4,7,0,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665205543ull :
+          sort_indices<6,3,4,1,0,5,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665206053ull :
+          sort_indices<6,3,4,1,0,7,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665466663ull :
+          sort_indices<6,3,4,5,0,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665468193ull :
+          sort_indices<6,3,4,5,0,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665597733ull :
+          sort_indices<6,3,4,7,0,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665598753ull :
+          sort_indices<6,3,4,7,0,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698759463ull :
+          sort_indices<6,5,4,1,0,3,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698760483ull :
+          sort_indices<6,5,4,1,0,7,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698890023ull :
+          sort_indices<6,5,4,3,0,1,2,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698891553ull :
+          sort_indices<6,5,4,3,0,7,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1699152163ull :
+          sort_indices<6,5,4,7,0,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1699152673ull :
+          sort_indices<6,5,4,7,0,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732313893ull :
+          sort_indices<6,7,4,1,0,3,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732314403ull :
+          sort_indices<6,7,4,1,0,5,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732444453ull :
+          sort_indices<6,7,4,3,0,1,2,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732445473ull :
+          sort_indices<6,7,4,3,0,5,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732575523ull :
+          sort_indices<6,7,4,5,0,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732576033ull :
+          sort_indices<6,7,4,5,0,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631790343ull :
+          sort_indices<6,1,4,3,2,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631790853ull :
+          sort_indices<6,1,4,3,2,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631920903ull :
+          sort_indices<6,1,4,5,2,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1631921923ull :
+          sort_indices<6,1,4,5,2,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1632051973ull :
+          sort_indices<6,1,4,7,2,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1632052483ull :
+          sort_indices<6,1,4,7,2,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665213703ull :
+          sort_indices<6,3,4,1,2,5,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665214213ull :
+          sort_indices<6,3,4,1,2,7,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665474823ull :
+          sort_indices<6,3,4,5,2,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665476353ull :
+          sort_indices<6,3,4,5,2,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665605893ull :
+          sort_indices<6,3,4,7,2,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1665606913ull :
+          sort_indices<6,3,4,7,2,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698767623ull :
+          sort_indices<6,5,4,1,2,3,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698768643ull :
+          sort_indices<6,5,4,1,2,7,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698898183ull :
+          sort_indices<6,5,4,3,2,1,0,7,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1698899713ull :
+          sort_indices<6,5,4,3,2,7,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1699160323ull :
+          sort_indices<6,5,4,7,2,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1699160833ull :
+          sort_indices<6,5,4,7,2,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732322053ull :
+          sort_indices<6,7,4,1,2,3,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732322563ull :
+          sort_indices<6,7,4,1,2,5,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732452613ull :
+          sort_indices<6,7,4,3,2,1,0,5,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732453633ull :
+          sort_indices<6,7,4,3,2,5,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732583683ull :
+          sort_indices<6,7,4,5,2,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+        case 1732584193ull :
+          sort_indices<6,7,4,5,2,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
     }
-  } else {
+  }
+  else {
     throw std::logic_error("This case has not been implemented in prim_op_var.h");
   }
 }
 
 }
-
 #endif
+
