@@ -383,6 +383,10 @@ shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::rdm2(const int jst, const int ist) con
         out->add(merge(i.first, j.first), rdm2);
       }
   }
+  out->emplace_perm({0,1,2,3},  1.0);
+  out->emplace_perm({0,1,3,2}, -1.0);
+  out->emplace_perm({1,0,2,3}, -1.0);
+  out->emplace_perm({1,0,3,2},  1.0);
   return out;
 }
 
