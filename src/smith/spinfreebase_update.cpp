@@ -45,6 +45,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
     throw logic_error("something is wrong. SpinFreeMethod::update_amplitude");
 
   const int nst = t->nref();
+  const int fac2 = is_same<DataType,double>::value ? 1.0 : 2.0;
 
   for (int ist = 0; ist != nst; ++ist) {
     t->fac(ist) = 0.0;
@@ -61,6 +62,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i0, i3, i2, i1);
               sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
             } else {
+// TODO not sure about the prefactor...
               blas::scale_n(0.25, data0.get(), r->at(ist)->get_size_alloc(i0, i1, i2, i3));
             }
             size_t iall = 0;
@@ -84,8 +86,8 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           // trans is the transformation matrix
           assert(denom_->shalf_xx());
           const size_t interm_size = denom_->shalf_xx()->ndim();
-          const int nact = info_->nact();
-          const int nclo = info_->nclosed();
+          const int nact = info_->nact() * fac2;
+          const int nclo = info_->nclosed() * fac2;
           auto create_transp = [&,this](const int i) {
             unique_ptr<DataType[]> out(new DataType[i0.size()*i2.size()*interm_size]);
             for (int j2 = i2.offset(), k = 0; j2 != i2.offset()+i2.size(); ++j2)
@@ -137,8 +139,8 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         // trans is the transformation matrix
         assert(denom_->shalf_x());
         const size_t interm_size = denom_->shalf_x()->ndim();
-        const int nact = info_->nact();
-        const int nclo = info_->nclosed();
+        const int nact = info_->nact() * fac2;
+        const int nclo = info_->nclosed() * fac2;
         auto create_transp = [&,this](const int i) {
           unique_ptr<DataType[]> out(new DataType[i0.size()*interm_size]);
           for (int j0 = i0.offset(), k = 0; j0 != i0.offset()+i0.size(); ++j0, ++k)
@@ -154,11 +156,15 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               if (!r->at(ist)->get_size_alloc(i2, i3, i0, i1)) continue;
               assert(r->at(ist)->get_size_alloc(i2, i1, i0, i3));
               unique_ptr<DataType[]>       data0 = r->at(ist)->get_block(i2, i3, i0, i1);
-              const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i2, i1, i0, i3);
               unique_ptr<DataType[]> data2(new DataType[r->at(ist)->get_size(i2, i3, i0, i1)]);
-              // TODO these formulas are probably wrong for complex
               sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
-              sort_indices<2,1,0,3,2,3,1,3>(data1, data2, i2.size(), i1.size(), i0.size(), i3.size());
+              if (is_same<DataType,double>::value) {
+                const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i2, i1, i0, i3);
+                sort_indices<2,1,0,3,2,3,1,3>(data1, data2, i2.size(), i1.size(), i0.size(), i3.size());
+              } else {
+// TODO not sure about the prefactor...
+//              blas::scale_n(1.0, data2.get(), r->at(ist)->get_size(i2, i3, i0, i1));
+              }
 
               // move to orthogonal basis
               unique_ptr<DataType[]> interm(new DataType[i1.size()*i2.size()*i3.size()*interm_size]);
@@ -186,8 +192,8 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         // trans is the transformation matrix
         assert(denom_->shalf_h());
         const size_t interm_size = denom_->shalf_x()->ndim();
-        const int nact = info_->nact();
-        const int nclo = info_->nclosed();
+        const int nact = info_->nact() * fac2;
+        const int nclo = info_->nclosed() * fac2;
         auto create_transp = [&,this](const int i) {
           unique_ptr<DataType[]> out(new DataType[i3.size()*interm_size]);
           for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3, ++k)
@@ -234,8 +240,8 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         for (auto& i1 : active_) {
           assert(denom_->shalf_hh());
           const size_t interm_size = denom_->shalf_hh()->ndim();
-          const int nact = info_->nact();
-          const int nclo = info_->nclosed();
+          const int nact = info_->nact() * fac2;
+          const int nclo = info_->nclosed() * fac2;
           auto create_transp = [&,this](const int i) {
             unique_ptr<DataType[]> out(new DataType[i1.size()*i3.size()*interm_size]);
             for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3)
@@ -286,8 +292,8 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         for (auto& i2 : active_) {
           assert(denom_->shalf_xh());
           const size_t interm_size = denom_->shalf_xh()->ndim();
-          const int nact = info_->nact();
-          const int nclo = info_->nclosed();
+          const int nact = info_->nact() * fac2;
+          const int nclo = info_->nclosed() * fac2;
           auto create_transp = [&,this](const int i) {
             unique_ptr<DataType[]> out(new DataType[i2.size()*i3.size()*interm_size*2]);
             for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3)
@@ -347,8 +353,8 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i0 : active_) {
             assert(denom_->shalf_xhh());
             const size_t interm_size = denom_->shalf_xhh()->ndim();
-            const int nact = info_->nact();
-            const int nclo = info_->nclosed();
+            const int nact = info_->nact() * fac2;
+            const int nclo = info_->nclosed() * fac2;
             auto create_transp = [&,this](const int i) {
               unique_ptr<DataType[]> out(new DataType[i0.size()*i2.size()*i3.size()*interm_size]);
               for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3)
@@ -399,8 +405,8 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i0 : active_) {
             assert(denom_->shalf_xxh());
             const size_t interm_size = denom_->shalf_xxh()->ndim();
-            const int nact = info_->nact();
-            const int nclo = info_->nclosed();
+            const int nact = info_->nact() * fac2;
+            const int nclo = info_->nclosed() * fac2;
             auto create_transp = [&,this](const int i) {
               unique_ptr<DataType[]> out(new DataType[i0.size()*i1.size()*i3.size()*interm_size]);
               for (int j3 = i3.offset(), k = 0; j3 != i3.offset()+i3.size(); ++j3)

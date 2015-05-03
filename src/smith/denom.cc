@@ -184,8 +184,7 @@ void Denom<DataType>::init_xx_(const int jst, const int ist, shared_ptr<const RD
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact;
   auto shalf = make_shared<MatType>(dim, dim);
-  shared_ptr<RDM<2,DataType>> tmp = rdm2->copy();
-  sort_indices<0,2,1,3,0,1,1,1>(tmp->data(), shalf->data(), nact, nact, nact, nact);
+  sort_indices<0,2,1,3,0,1,1,1>(rdm2->data(), shalf->data(), nact, nact, nact, nact);
   shalf_xx_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
 
   auto work2 = make_shared<MatType>(dim, dim);
