@@ -50,7 +50,8 @@ class ZReference : public Reference {
      : Reference(g, nullptr, nocc, nact, nvirt, en), zcoeff_(c) {
     }
 
-    std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("ZReference::coeff() should not be called"); }
+    std::shared_ptr<const Coeff> coeff() const override { return nullptr; }
+    //std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("ZReference::coeff() should not be called"); }
     std::shared_ptr<const ZCoeff> zcoeff() const { return zcoeff_; }
 
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin, const bool check_geom_change = true) const override;
