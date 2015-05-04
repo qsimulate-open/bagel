@@ -28,6 +28,7 @@
 #include <src/mat1e/rel/relhcore.h>
 #include <src/df/reldffull.h>
 #include <src/scf/dhf/dfock.h>
+#include <src/util/math/quatmatrix.h>
 
 using namespace std;
 using namespace bagel;
@@ -264,17 +265,18 @@ void MOFock<complex<double>>::init() {
       ++icnt;
     }
   }
+
   // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
   const ZMatrix forig = *coeff_ % *fock1 * *coeff_;
   VectorB eig(forig.ndim());
   auto newcoeff = coeff_->copy();
   if (nclosed > 1) {
-    shared_ptr<ZMatrix> fcl = forig.get_submatrix(ncore*2, ncore*2, nclosed*2, nclosed*2);
+    auto fcl = make_shared<QuatMatrix>(*forig.get_submatrix(0, 0, (ncore+nclosed)*2, (ncore+nclosed)*2));
     fcl->diagonalize(eig);
-    newcoeff->copy_block(0, ncore*2, newcoeff->ndim(), nclosed*2, newcoeff->slice(ncore*2, (ncore+nclosed)*2) * *fcl);
+    newcoeff->copy_block(0, 0, newcoeff->ndim(), (ncore+nclosed)*2, newcoeff->slice(0, (ncore+nclosed)*2) * *fcl);
   }
   if (nvirt > 1) {
-    shared_ptr<ZMatrix> fvirt = forig.get_submatrix(nocc*2, nocc*2, nvirt*2, nvirt*2);
+    auto fvirt = make_shared<QuatMatrix>(*forig.get_submatrix(nocc*2, nocc*2, nvirt*2, nvirt*2));
     fvirt->diagonalize(eig);
     newcoeff->copy_block(0, nocc*2, newcoeff->ndim(), nvirt*2, newcoeff->slice(nocc*2, (nocc+nvirt)*2) * *fvirt);
   }
@@ -337,9 +339,9 @@ void MOFock<double>::init() {
   VectorB eig(nbasis);
   auto newcoeff = coeff_->copy();
   if (nclosed > 1) {
-    shared_ptr<Matrix> fcl = forig.get_submatrix(ncore, ncore, nclosed, nclosed);
+    shared_ptr<Matrix> fcl = forig.get_submatrix(0, 0, ncore+nclosed, ncore+nclosed);
     fcl->diagonalize(eig);
-    newcoeff->copy_block(0, ncore, nbasis, nclosed, newcoeff->slice(ncore, ncore+nclosed) * *fcl);
+    newcoeff->copy_block(0, 0, nbasis, ncore+nclosed, newcoeff->slice(0, ncore+nclosed) * *fcl);
   }
   if (nvirt > 1) {
     shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirt, nvirt);
