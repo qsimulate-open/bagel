@@ -99,7 +99,18 @@ class Kramers {
 
   public:
     Kramers() { }
+    Kramers(const Kramers<N,Type>& o) : perm_(o.perm_) {
+      for (auto& i : o.data_)
+        data_.emplace(i.first, i.second->copy());
+    }
     void emplace(const KTag<N>& t, std::shared_ptr<Type> o) { assert(!exist(t)); data_.emplace(t, o); }
+
+    void zero() {
+      for (auto& i : data_)
+        i.second->zero();
+    }
+
+    std::shared_ptr<Kramers<N,Type>> copy() const { return std::make_shared<Kramers<N,Type>>(*this); }
 
     size_t size() const { return data_.size(); }
 

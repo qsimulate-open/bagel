@@ -337,10 +337,11 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
 
   auto d3v = group(group(*d3, 4,6),0,4);
   contract(1.0, d3v, {0,1}, group(*fock_,0,2), {1}, 0.0, work2v, {0});
-  sort_indices<0,1,3,2,0,1,2,1>(work2.data(), work.data(), nact, nact, nact, nact);
-  num->add_block(1.0, 0, 0, dim, dim, work);
-  num->add_block(-0.5, dim, 0, dim, dim, work);
-  num->add_block(-0.5, 0, dim, dim, dim, work);
+  sort_indices<0,1,3,2,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
+  num->add_block(fac2, 0, 0, dim, dim, work);
+
+  num->add_block(-1.0, dim, 0, dim, dim, work);
+  num->add_block(-1.0, 0, dim, dim, dim, work);
 
   work_xh_->copy_block(dim*jst*2, dim*ist*2, dim*2, dim*2, num);
 }

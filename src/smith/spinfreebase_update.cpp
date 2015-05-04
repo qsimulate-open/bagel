@@ -316,6 +316,10 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           unique_ptr<DataType[]> transp = create_transp(ist);
           unique_ptr<DataType[]> transp2 = create_transp(jst);
 
+          if (is_same<DataType,complex<double>>::value)
+            for (size_t i = 0; i != i2.size()*i3.size()*interm_size*2; ++i)
+              transp2[i] = detail::conj(transp2[i]);
+
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
               // if this block is not included in the current wave function, skip it
@@ -327,13 +331,18 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
               unique_ptr<DataType[]> data2(new DataType[blocksize*2]);
               // sort. Active indices run slower
-              sort_indices<2,3,0,1,0,1,1,1>(data0.get(), data2.get()          , i2.size(), i3.size(), i0.size(), i1.size());
-              sort_indices<0,3,2,1,0,1,1,1>(data1.get(), data2.get()+blocksize, i0.size(), i3.size(), i2.size(), i1.size());
+              if (is_same<DataType,double>::value) {
+                sort_indices<2,3,0,1,0,1,1,1>(data0.get(), data2.get()          , i2.size(), i3.size(), i0.size(), i1.size());
+                sort_indices<0,3,2,1,0,1,1,1>(data1.get(), data2.get()+blocksize, i0.size(), i3.size(), i2.size(), i1.size());
+              } else {
+                sort_indices<2,3,0,1,0,1,1,1>(data0.get(), data2.get()          , i2.size(), i3.size(), i0.size(), i1.size());
+                sort_indices<0,3,2,1,0,1,1,1>(data1.get(), data2.get()+blocksize, i0.size(), i3.size(), i2.size(), i1.size());
+              }
               // intermediate area
               unique_ptr<DataType[]> interm(new DataType[i0.size()*i1.size()*interm_size]);
 
               // move to orthogonal basis
-              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasConjTrans, i0.size()*i1.size(), interm_size, i2.size()*i3.size()*2,
+              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i0.size()*i1.size(), interm_size, i2.size()*i3.size()*2,
                                           1.0, data2.get(), i0.size()*i1.size(), transp.get(), interm_size, 0.0, interm.get(), i0.size()*i1.size());
 
               size_t iall = 0;
@@ -427,6 +436,10 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
             unique_ptr<DataType[]> transp = create_transp(ist);
             unique_ptr<DataType[]> transp2 = create_transp(jst);
 
+            if (is_same<DataType,complex<double>>::value)
+              for (size_t i = 0; i != i0.size()*i1.size()*i3.size()*interm_size; ++i)
+                transp2[i] = detail::conj(transp2[i]);
+
             for (auto& i2 : closed_) {
               // if this block is not included in the current wave function, skip it
               const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
@@ -435,12 +448,15 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i2, i3, i0, i1);
               unique_ptr<DataType[]> data1(new DataType[blocksize]);
               // sort. Active indices run slower
-              sort_indices<0,2,3,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
+              if (is_same<DataType,double>::value)
+                sort_indices<0,2,3,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
+              else
+                sort_indices<0,2,3,1,0,1,2,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
               // intermediate area
               unique_ptr<DataType[]> interm(new DataType[i2.size()*interm_size]);
 
               // move to orthogonal basis
-              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasConjTrans, i2.size(), interm_size, i0.size()*i1.size()*i3.size(),
+              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i2.size(), interm_size, i0.size()*i1.size()*i3.size(),
                                           1.0, data1.get(), i2.size(), transp.get(), interm_size, 0.0, interm.get(), i2.size());
 
               size_t iall = 0;
