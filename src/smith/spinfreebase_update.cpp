@@ -62,7 +62,6 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i0, i3, i2, i1);
               sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
             } else {
-// TODO not sure about the prefactor...
               blas::scale_n(0.25, data0.get(), r->at(ist)->get_size_alloc(i0, i1, i2, i3));
             }
             size_t iall = 0;
@@ -107,7 +106,10 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i0, i1, i2, i3);
               unique_ptr<DataType[]> data1(new DataType[r->at(ist)->get_size(i0, i1, i2, i3)]);
               // sort. Active indices run faster
-              sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
+              if (is_same<DataType,double>::value)
+                sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
+              else
+                sort_indices<0,2,1,3,0,1,2,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
               // intermediate area
               unique_ptr<DataType[]> interm(new DataType[i1.size()*i3.size()*interm_size]);
 
@@ -154,16 +156,15 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i2 : closed_) {
             for (auto& i1 : virt_) {
               if (!r->at(ist)->get_size_alloc(i2, i3, i0, i1)) continue;
-              assert(r->at(ist)->get_size_alloc(i2, i1, i0, i3));
               unique_ptr<DataType[]>       data0 = r->at(ist)->get_block(i2, i3, i0, i1);
               unique_ptr<DataType[]> data2(new DataType[r->at(ist)->get_size(i2, i3, i0, i1)]);
               sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
               if (is_same<DataType,double>::value) {
+                assert(r->at(ist)->get_size_alloc(i2, i1, i0, i3));
                 const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i2, i1, i0, i3);
                 sort_indices<2,1,0,3,2,3,1,3>(data1, data2, i2.size(), i1.size(), i0.size(), i3.size());
               } else {
-// TODO not sure about the prefactor...
-//              blas::scale_n(1.0, data2.get(), r->at(ist)->get_size(i2, i3, i0, i1));
+                blas::scale_n(0.5, data2.get(), r->at(ist)->get_size(i2, i3, i0, i1));
               }
 
               // move to orthogonal basis

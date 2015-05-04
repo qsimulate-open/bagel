@@ -201,6 +201,7 @@ void MOFock<complex<double>>::init() {
   assert(nclosed >= 0);
   const int nocc    = ref_->nocc();
   const int nact    = ref_->nact();
+  const int nvirt   = ref_->nvirt();
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_->ref());
 
@@ -263,9 +264,28 @@ void MOFock<complex<double>>::init() {
       ++icnt;
     }
   }
+  // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
+  const ZMatrix forig = *coeff_ % *fock1 * *coeff_;
+  VectorB eig(forig.ndim());
+  auto newcoeff = coeff_->copy();
+  if (nclosed > 1) {
+    shared_ptr<ZMatrix> fcl = forig.get_submatrix(ncore*2, ncore*2, nclosed*2, nclosed*2);
+    fcl->diagonalize(eig);
+    newcoeff->copy_block(0, ncore*2, newcoeff->ndim(), nclosed*2, newcoeff->slice(ncore*2, (ncore+nclosed)*2) * *fcl);
+  }
+  if (nvirt > 1) {
+    shared_ptr<ZMatrix> fvirt = forig.get_submatrix(nocc*2, nocc*2, nvirt*2, nvirt*2);
+    fvirt->diagonalize(eig);
+    newcoeff->copy_block(0, nocc*2, newcoeff->ndim(), nvirt*2, newcoeff->slice(nocc*2, (nocc+nvirt)*2) * *fvirt);
+  }
+  // **** CAUTION **** updating the coefficient
+  coeff_ = newcoeff;
 
   auto f  = make_shared<ZMatrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<ZMatrix>(*coeff_ % *cfock * *coeff_);
+
+  if (!f->is_hermitian()) throw logic_error("Fock is not Hermitian");
+  if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
 
   fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0}, blocks_);
   fill_block<2,complex<double>>(h1_,  h1->get_conjg(), {0,0}, blocks_);

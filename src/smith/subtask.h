@@ -58,9 +58,10 @@ class SubTask_ {
     const std::shared_ptr<Tensor_<DataType>>& out_tensor() const { return out_; }
 };
 
-namespace CASPT2  { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
-namespace MRCI    { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
-namespace RelMRCI { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
+namespace CASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
+namespace MRCI   { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
+namespace RelCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
+namespace RelMRCI   { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
 
 extern template class SubTask_<1,1,double>;
 extern template class SubTask_<1,2,double>;
