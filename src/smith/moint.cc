@@ -289,8 +289,8 @@ void MOFock<complex<double>>::init() {
   if (!f->is_hermitian()) throw logic_error("Fock is not Hermitian");
   if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
 
-  fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0}, blocks_);
-  fill_block<2,complex<double>>(h1_,  h1->get_conjg(), {0,0}, blocks_);
+  fill_block<2,complex<double>>(data_, f, {0,0}, blocks_);
+  fill_block<2,complex<double>>(h1_,  h1, {0,0}, blocks_);
 }
 
 template<>
