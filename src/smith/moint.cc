@@ -221,7 +221,7 @@ void MOFock<complex<double>>::init() {
   // active fock
   shared_ptr<const ZMatrix> fock1;
   if (nact) {
-    shared_ptr<ZMatrix> tmp = relref->rdm1_av()->copy();
+    shared_ptr<ZMatrix> tmp = relref->rdm1_av()->get_conjg();
     tmp->sqrt();
     shared_ptr<ZMatrix> weighted_coeff = coeff_->slice_copy(2*(ncore+nclosed), 2*nocc);
     *weighted_coeff *= *tmp;
