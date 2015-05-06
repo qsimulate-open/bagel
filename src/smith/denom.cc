@@ -150,6 +150,8 @@ void Denom<DataType>::init_h_(const int jst, const int ist, shared_ptr<const RDM
   const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
   if (jst == ist) {
     copy_n(rdm1->data(), rdm1->size(), shalf->data());
+    if (is_same<DataType,complex<double>>::value)
+      shalf = shalf->get_conjg();
     shalf->scale(-1.0);
     shalf->add_diag(fac2); //.. making hole 1RDM
   } else {

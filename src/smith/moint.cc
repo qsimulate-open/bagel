@@ -107,7 +107,7 @@ void K2ext<complex<double>>::init() {
           // contract
           // TODO form_4index function now generates global 4 index tensor. This should be localized.
           // conjugating because (ai|ai) is associated with an excitation operator
-          shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0)->get_conjg();
+          shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0);
           unique_ptr<complex<double>[]> target(new complex<double>[tmp->size()]);
           copy_n(tmp->data(), tmp->size(), target.get()); // unnecessary copy
 
