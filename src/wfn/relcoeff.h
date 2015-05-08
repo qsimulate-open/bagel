@@ -73,6 +73,8 @@ class RelCoeff : public ZMatrix {
     int nneg() const { return nneg_; }
     int npos() const { return 2*(nclosed_ + nact_ + nvirt_nr_); }
 
+    void print_info() const;
+
     using Matrix_base<std::complex<double>>::copy_block;
 };
 
@@ -101,7 +103,6 @@ class RelCoeff_Striped : public RelCoeff {
 class RelCoeff_Block : public RelCoeff {
   public:
     RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
-    RelCoeff_Block() { }
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
 };

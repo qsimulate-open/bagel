@@ -37,23 +37,14 @@ RelCoeff::RelCoeff(const int _ndim, const bool _loc, const int _nclosed, const i
   assert(nneg()%2 == 0);
 }
 
-/*
-RelCoeff::RelCoeff(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg)
- : ZMatrix(_coeff.ndim(), _coeff.mdim(), _coeff.localized()), nbasis_(ndim()/4), nclosed_(_nclosed), nact_(_nact), nvirt_nr_(_nvirt), nneg_(_nneg) {
-  assert(ndim()%4 == 0);
-  assert(nneg()%2 == 0);
-  assert(2 * (nclosed_ + nact_ + nvirt_nr_) + nneg_ == mdim());
-
-  if (!move_neg) {
-    // copy input matrix directly
-    copy_block(0, 0, ndim(), mdim(), _coeff);
-  } else {
-    // move positronic orbitals to end of virtual space
-    copy_block(0, 0,      ndim(), npos(), _coeff.slice(nneg_, nneg_+npos()));
-    copy_block(0, npos(), ndim(), nneg_,  _coeff.slice(0,     nneg_));
-  }
+void RelCoeff::print_info() const {
+  cout << "    * nbasis   :  4 x " << nbasis_nr() << " = " << nbasis_rel() << endl;
+  cout << "    * nclosed  : " << setw(6) << nclosed() << endl;
+  cout << "    * nact     : " << setw(6) << nact() << endl;
+  cout << "    * nvirt_nr : " << setw(6) << nvirt_nr() << endl;
+  cout << "    * nneg     : " << setw(6) << nneg() << endl;
 }
-*/
+
 
 RelCoeff_Striped::RelCoeff_Striped(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg)
  : RelCoeff(_coeff.ndim(), _coeff.localized(), _nclosed, _nact, _nvirt, _nneg) {
