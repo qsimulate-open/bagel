@@ -102,43 +102,6 @@ void ZCASSCF::init() {
     overlap_ = make_shared<RelOverlap_London>(geom_);
   }
 
-  // first set coefficient
-  const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
-  if (coeff_ == nullptr && hcore_guess) {
-    auto s12 = overlap_->tildex(1.0e-10);
-    auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
-    VectorB eig(hctmp->ndim());
-    hctmp->diagonalize(eig);
-    auto hctmp2 = make_shared<ZMatrix>(*s12 * *hctmp);
-    auto tmp = hctmp2->clone();
-    tmp->copy_block(0, nneg_, tmp->ndim(), nneg_, hctmp2->slice(0,nneg_));
-    tmp->copy_block(0, 0, tmp->ndim(), nneg_, hctmp2->slice(nneg_,hctmp->mdim()));
-    coeff_ = tmp;
-  } else {
-    coeff_ = relref->relcoeff_full();
-  }
-
-  // get maxiter from the input
-  max_iter_ = idata_->get<int>("maxiter", 100);
-  // get maxiter from the input
-  max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
-
-  { // TODO This is repeated in ZFCI; can reduce redundancy
-    vector<int> states = idata_->get_vector<int>("state", 0);
-    nstate_ = 0;
-    for (int i = 0; i != states.size(); ++i)
-      nstate_ += states[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
-  }
-
-#if 0
-  // get istate from the input (for geometry optimization)
-  istate_ = idata_->get<int>("istate", 0);
-#endif
-  // get thresh (for macro iteration) from the input
-  thresh_ = idata_->get<double>("thresh", 1.0e-8);
-  // get thresh (for micro iteration) from the input
-  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
-
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
   nact_ = idata_->get<int>("nact_cas", nact_);
@@ -165,6 +128,44 @@ void ZCASSCF::init() {
   if (nclosed_*2 > geom_->nele() - charge_)
     throw runtime_error("two many closed orbitals in the input");
 
+  // set coefficient
+  const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
+  shared_ptr<const RelCoeff_Striped> scoeff;
+  if (coeff_ == nullptr && hcore_guess) {
+    auto s12 = overlap_->tildex(1.0e-10);
+    auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
+    VectorB eig(hctmp->ndim());
+    hctmp->diagonalize(eig);
+    auto hctmp2 = make_shared<ZMatrix>(*s12 * *hctmp);
+    auto tmp = hctmp2->clone();
+    tmp->copy_block(0, nneg_, tmp->ndim(), nneg_, hctmp2->slice(0,nneg_));
+    tmp->copy_block(0, 0, tmp->ndim(), nneg_, hctmp2->slice(nneg_,hctmp->mdim()));
+    scoeff = make_shared<RelCoeff_Striped>(*tmp, nclosed_, nact_, nvirtnr_, nneg_);
+  } else {
+    scoeff = relref->relcoeff_full();
+  }
+
+  // get maxiter from the input
+  max_iter_ = idata_->get<int>("maxiter", 100);
+  // get maxiter from the input
+  max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
+
+  { // TODO This is repeated in ZFCI; can reduce redundancy
+    vector<int> states = idata_->get_vector<int>("state", 0);
+    nstate_ = 0;
+    for (int i = 0; i != states.size(); ++i)
+      nstate_ += states[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
+  }
+
+#if 0
+  // get istate from the input (for geometry optimization)
+  istate_ = idata_->get<int>("istate", 0);
+#endif
+  // get thresh (for macro iteration) from the input
+  thresh_ = idata_->get<double>("thresh", 1.0e-8);
+  // get thresh (for micro iteration) from the input
+  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
+
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
   cout << "    * nact     : " << setw(6) << nact_ << endl;
@@ -180,22 +181,34 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
+  //shared_ptr<const ZMatrix> aodensity1 = coeff_->form_density_rhf(geom_->nele() - charge_);
+  coeff_ = scoeff;
   if (!kramers_coeff)
     init_kramers_coeff();
+  scoeff = make_shared<RelCoeff_Striped>(*coeff_, scoeff->nclosed(), scoeff->nact(), scoeff->nvirt_nr(), scoeff->nneg());
+  //shared_ptr<const ZMatrix> aodensity2 = coeff_->form_density_rhf(geom_->nele() - charge_);
+  //auto aodensitychange = make_shared<const ZMatrix>(*aodensity1 - *aodensity2);
+  //cout << " **** Overall change in the density matrix upon Kramers-adpatation = " << setprecision(4) << scientific << aodensitychange->rms() << endl;
 
-  if (mvo) coeff_ = generate_mvo(ncore_mvo, hcore_mvo);
+  // TODO make generate_mvo use and return a RelCoeff_Striped directly
+  if (mvo) scoeff = make_shared<RelCoeff_Striped>(*generate_mvo(ncore_mvo, hcore_mvo), nclosed_, nact_, nvirtnr_, nneg_);
 
   // specify active orbitals and move into the active space
   set<int> active_indices;
+  vector<int> active2 = {};
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) {
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-    for (auto& i : *iactive) active_indices.insert(lexical_cast<int>(i->data()) - 1);
-    coeff_ = set_active(active_indices, coeff_, nclosed_, geom_->nele()-charge_, nact_, tsymm_);
+    for (auto& i : *iactive) {
+      active2.push_back(lexical_cast<int>(i->data()) - 1);
+      active_indices.insert(lexical_cast<int>(i->data()) - 1);
+    }
+    //coeff_ = set_active(active_indices, active2, coeff_, nclosed_, geom_->nele()-charge_, nact_, tsymm_);
+    scoeff = set_active(active_indices, scoeff, nclosed_, geom_->nele()-charge_, nact_, tsymm_);
   }
 
   // format coefficient into blocks as {c,a,v}
-  shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
+  shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, scoeff, /*striped*/true);
   coeff_ = make_shared<const ZMatrix>(*tmp);
 
   mute_stdcout();
@@ -554,7 +567,9 @@ void ZCASSCF::print_natocc() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices, shared_ptr<const ZMatrix> coeff, const int nclosed, const int nele, const int nact, const bool paired) {
+//shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices, vector<int> active, shared_ptr<const ZMatrix> coeff, const int nclosed, const int nele, const int nact, const bool paired) {
+shared_ptr<const RelCoeff_Striped> ZCASSCF::set_active(set<int> active_indices, shared_ptr<const RelCoeff_Striped> coeff,
+                                                       const int nclosed, const int nele, const int nact, const bool paired) {
   // assumes coefficient is in striped format
   const int naobasis = coeff->ndim();
   const int nmo_paired = coeff->mdim()/4;
@@ -606,13 +621,17 @@ shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices, shared_pt
     }
   }
 
+//  for (int i=0; i!=active_indices.size(); ++i) {
+//    cp(active[i], iactive);
+//  }
+
   if (closed_count != (paired ? nclosed : 2*nclosed))
     throw runtime_error("Invalid combination of closed and active orbitals.");
 
   // copy positrons
   tmp_coeff->copy_block(0, nmo_paired*2, naobasis, nmo_paired*2, coeff->slice(nmo_paired*2, nmo_paired*4));
 
-  return make_shared<const ZMatrix>(*tmp_coeff);
+  return make_shared<const RelCoeff_Striped>(*tmp_coeff, nclosed, nact, coeff->mdim()/4-nclosed-nact, nmo_paired*2);
 }
 
 

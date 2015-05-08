@@ -91,7 +91,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
 
   // obtain the coefficient matrix in striped format
-  shared_ptr<const ZMatrix> coeff;
+  shared_ptr<const RelCoeff_Striped> coeff;
   if (coeff_zcas == nullptr) {
     if (restricted) throw runtime_error("Currently we should only have Kramers-adapted starting orbitals when coming from ZCASSCF");
     // For FCI and CAS-CI, use a RelReference object
@@ -111,7 +111,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
     }
   } else {
     // For ZCASSCF, just accept the coefficients given
-    coeff = coeff_zcas;
+    coeff = make_shared<RelCoeff_Striped>(*coeff_zcas, ncore_, norb_, coeff_zcas->mdim()/4-ncore_-norb_, coeff_zcas->mdim()/2);
   }
 
   cout << "    * nvirt    : " << setw(6) << (coeff->mdim()/2-ncore_-norb_) << endl;

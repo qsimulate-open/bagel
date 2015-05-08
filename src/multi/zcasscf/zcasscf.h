@@ -124,8 +124,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     // rearrange coefficient to {c,a,v} by selecting active columns from input coefficient
     // -- static so it can also be used by ZFCI
-    static std::shared_ptr<const ZMatrix> set_active(std::set<int> active_indices, std::shared_ptr<const ZMatrix> coeff,
-                                                     const int nclosed, const int nele, const int nact, const bool paired);
+    static std::shared_ptr<const RelCoeff_Striped> set_active(std::set<int> active_indices, std::shared_ptr<const RelCoeff_Striped> coeff,
+                                                              const int nclosed, const int nele, const int nact, const bool paired);
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
