@@ -30,10 +30,17 @@ using namespace std;
 using namespace bagel;
 
 
-shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_dirac() {
-  mute_stdcout();
-  // Kramers-adapted coefficient via quaternion diagonalization
-  const int nele = geom_->nele()-charge_;
+// Kramers-adapted coefficient via quaternion diagonalization, assuming guess orbitals from Dirac--Hartree--Fock
+shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_dirac(shared_ptr<const ZMatrix> coeff, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
+                    shared_ptr<const ZMatrix> hcore, const int nclosed, const int nact, const int nele, const bool tsymm, const bool gaunt, const bool breit) {
+
+  assert((nact > 1 || !tsymm)); // zquatev has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
+  assert(coeff->ndim() == 4*geom->nbasis());
+
+  const int nocc = nclosed + nact;
+  const int nneg2 = coeff->mdim()/4;
+  const int nvirt_rel = coeff->mdim()/2 - nocc;
+  const int nvirt_nr = nvirt_rel - nneg2;
 
   // transformation from the standard format to the quaternion format
   auto quaternion = [](shared_ptr<ZMatrix> o) {
@@ -51,15 +58,15 @@ shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_dirac() {
   shared_ptr<ZMatrix> focktmp;
   shared_ptr<ZMatrix> ctmp;
   // quaternion diagonalize a fock matrix
-  int norb = nele;// - 2 > 0 ? nele-2 : nele;
-  focktmp = make_shared<DFock>(geom_, hcore_, coeff_->slice_copy(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+  focktmp = make_shared<DFock>(geom, hcore, coeff->slice_copy(0, nele), gaunt, breit, /*store_half*/false, /*robust*/false);
   quaternion(focktmp);
 
-  shared_ptr<ZMatrix> s12 = overlap_->tildex(1.0e-9);
+
+  shared_ptr<ZMatrix> s12 = overlap->tildex(1.0e-9);
   quaternion(s12);
 
   shared_ptr<ZMatrix> fock_tilde;
-  if (tsymm_) {
+  if (tsymm) {
     fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
 #ifndef NDEBUG
     auto quatfock = static_pointer_cast<const QuatMatrix>(fock_tilde);
@@ -76,7 +83,7 @@ shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_dirac() {
     VectorB eig(fock_tilde->ndim());
     fock_tilde->diagonalize(eig);
 
-    if (!tsymm_)
+    if (!tsymm)
       RelMOFile::rearrange_eig(eig, fock_tilde);
 
   }
@@ -95,15 +102,14 @@ shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_dirac() {
   }
   // move_positronic_orbitals;
   {
-    auto move_one = [this, &ctmp](const int offset, const int block1, const int block2) {
+    auto move_one = [&ctmp](const int offset, const int block1, const int block2) {
       shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ctmp->ndim(), block1+block2);
       scratch->copy_block(0,      0, ctmp->ndim(), block2, ctmp->slice(offset+block1, offset+block1+block2));
       scratch->copy_block(0, block2, ctmp->ndim(), block1, ctmp->slice(offset,        offset+block1));
       ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
     };
-    const int nneg2 = nneg_/2;
-    move_one(           0, nneg2, nocc_+nvirt_-nneg2);
-    move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
+    move_one(             0, nneg2, nocc+nvirt_rel-nneg2);
+    move_one(nocc+nvirt_rel, nneg2, nocc+nvirt_rel-nneg2);
   }
 
   array<shared_ptr<const ZMatrix>,2> tmp;
@@ -114,40 +120,39 @@ shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_dirac() {
 #if 0
   // blocked format
   int i = 0;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nact_, tmp[0]->slice(nclosed_, nocc_)); i += nact_;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nact_, tmp[1]->slice(nclosed_, nocc_)); i += nact_;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[0]->slice(nocc_, nocc_+nvirt_)); i += nvirt_;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[1]->slice(nocc_, nocc_+nvirt_));
+  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed, tmp[0]->slice(0,nclosed)); i += nclosed;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed, tmp[1]->slice(0,nclosed)); i += nclosed;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nact, tmp[0]->slice(nclosed, nocc)); i += nact;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nact, tmp[1]->slice(nclosed, nocc)); i += nact;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_rel, tmp[0]->slice(nocc, nocc+nvirt_rel)); i += nvirt_rel;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_rel, tmp[1]->slice(nocc, nocc+nvirt_rel));
 #else
   // striped format
-  int n = coeff_->ndim();
+  int n = coeff->ndim();
   // closed
-  for (int j=0; j!=nclosed_; ++j) {
+  for (int j=0; j!=nclosed; ++j) {
     ctmp2->copy_block(0, j*2,   n, 1, tmp[0]->slice(j, j+1));
     ctmp2->copy_block(0, j*2+1, n, 1, tmp[1]->slice(j, j+1));
   }
-  int offset = nclosed_*2;
+  int offset = nclosed*2;
   // active
-  for (int j=0; j!=nact_; ++j) {
+  for (int j=0; j!=nact; ++j) {
     ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
     ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
   }
-  offset = nocc_*2;
+  offset = nocc*2;
   // virtual
-  for (int j=0; j!=nvirtnr_; ++j) {
+  for (int j=0; j!=nvirt_nr; ++j) {
     ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
     ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
   }
   offset = ctmp2->mdim()/2;
   // positrons
-  for (int j=0; j!=nneg_/2; ++j) {
-    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
-    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
+  for (int j=0; j!=nneg2; ++j) {
+    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc+nvirt_nr + j, nocc+nvirt_nr + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc+nvirt_nr + j, nocc+nvirt_nr + j+1));
   }
 #endif
-  resume_stdcout();
   return ctmp2;
 }
 
