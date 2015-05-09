@@ -74,8 +74,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
 
     void init();
-    void init_kramers_coeff_dirac();
-    void init_kramers_coeff_nonrel();
+    std::shared_ptr<ZMatrix> init_kramers_coeff_dirac();
+    std::shared_ptr<ZMatrix> init_kramers_coeff_nonrel();
 
     void mute_stdcout() const;
     void resume_stdcout() const;

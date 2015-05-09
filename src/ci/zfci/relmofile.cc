@@ -83,7 +83,12 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
     overlap = make_shared<RelOverlap_London>(geom_);
 
   if (!restricted) {
-    kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
+    shared_ptr<ZMatrix> kcoeff = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
+    auto kscoeff = make_shared<RelCoeff_Striped>(*kcoeff, nstart/2, (nfence-nstart)/2, (kcoeff->mdim()/2-nfence)/2, kcoeff->mdim()/2);
+    shared_ptr<RelCoeff_Block> kbcoeff = kscoeff->block_format();
+    kramers_coeff_ = make_shared<Kramers<2,ZMatrix>>();
+    kramers_coeff_->emplace(0, kbcoeff->slice_copy(nstart, nstart+(nfence-nstart)/2));
+    kramers_coeff_->emplace(1, kbcoeff->slice_copy(nstart+(nfence-nstart)/2, nfence));
   } else {
     kramers_coeff_ = make_shared<Kramers<2,ZMatrix>>();
     kramers_coeff_->emplace(0, coeff_->slice_copy(nstart, nstart+(nfence-nstart)/2));
@@ -194,7 +199,7 @@ shared_ptr<Kramers<2,ZMatrix>> RelMOFile::kramers(shared_ptr<const ZMatrix> coef
 
 
 // modified from init_kramers_coeff in zcasscf_coeff.cc
-shared_ptr<Kramers<2,ZMatrix>>
+shared_ptr<ZMatrix>
   RelMOFile::kramers_zquat(const int nstart, const int nfence, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
 
   assert((coeff->mdim() > 2 || !tsymm_) && coeff->mdim()%2 == 0); // zquatev has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
@@ -265,27 +270,54 @@ shared_ptr<Kramers<2,ZMatrix>>
   const int nvirt = nb - nact - nclosed;
 
   // move_positronic_orbitals
-  {
-    auto move_one = [this, &ctmp](const int offset, const int block1, const int block2) {
-      shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ctmp->ndim(), block1+block2);
-      scratch->copy_block(0,      0, ctmp->ndim(), block2, ctmp->slice(offset+block1, offset+block1+block2));
-      scratch->copy_block(0, block2, ctmp->ndim(), block1, ctmp->slice(offset,        offset+block1));
-      ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
-    };
-    const int nneg2 = ctmp->mdim()/4;
-    move_one(                0, nneg2, nocc + nvirt);
-    move_one(nocc + nvirt + nb, nneg2, nocc + nvirt);
+  auto move_one = [this, &ctmp](const int offset, const int block1, const int block2) {
+    shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ctmp->ndim(), block1+block2);
+    scratch->copy_block(0,      0, ctmp->ndim(), block2, ctmp->slice(offset+block1, offset+block1+block2));
+    scratch->copy_block(0, block2, ctmp->ndim(), block1, ctmp->slice(offset,        offset+block1));
+    ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
+  };
+  const int nneg2 = ctmp->mdim()/4;
+  move_one(                0, nneg2, nocc + nvirt);
+  move_one(nocc + nvirt + nb, nneg2, nocc + nvirt);
 
-    auto tmp = coeff->clone();
-    tmp->copy_block(0, 0, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(nstart/2, nstart/2+coeff->mdim()/2));
-    tmp->copy_block(0, coeff->mdim()/2, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(ctmp->mdim()/2 + nstart/2, ctmp->mdim()/2 + nstart/2+coeff->mdim()/2));
-    ctmp = tmp;
+  //auto tmp = coeff->clone();
+  //tmp->copy_block(0, 0, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(nstart/2, nstart/2+coeff->mdim()/2));
+  //tmp->copy_block(0, coeff->mdim()/2, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(ctmp->mdim()/2 + nstart/2, ctmp->mdim()/2 + nstart/2+coeff->mdim()/2));
+  array<shared_ptr<const ZMatrix>,2> tmp;
+  tmp = {{ ctmp->slice_copy(0, ctmp->mdim()/2), ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()) }};
+  shared_ptr<ZMatrix> ctmp2 = ctmp->clone();
+
+  // striped format
+  int n = coeff_->ndim();
+  // closed
+  for (int j=0; j!=nclosed; ++j) {
+    ctmp2->copy_block(0, j*2,   n, 1, tmp[0]->slice(j, j+1));
+    ctmp2->copy_block(0, j*2+1, n, 1, tmp[1]->slice(j, j+1));
+  }
+  int offset = nclosed*2;
+  // active
+  for (int j=0; j!=nact; ++j) {
+    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
+  }
+  offset = nocc*2;
+  // virtual
+  for (int j=0; j!=nvirt; ++j) {
+    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
+  }
+  offset = ctmp2->mdim()/2;
+  // positrons
+  for (int j=0; j!=nneg2; ++j) {
+    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc+nvirt + j, nocc+nvirt + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc+nvirt + j, nocc+nvirt + j+1));
   }
 
-  auto tmp = make_shared<Kramers<2,ZMatrix>>();
-  tmp->emplace(0, ctmp->slice_copy(0, ctmp->mdim()/2));
-  tmp->emplace(1, ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()));
-  return tmp;
+  return ctmp2;
+  //auto tmp = make_shared<Kramers<2,ZMatrix>>();
+  //tmp->emplace(0, ctmp->slice_copy(0, ctmp->mdim()/2));
+  //tmp->emplace(1, ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()));
+  //return tmp;
 }
 
 

@@ -30,7 +30,7 @@ using namespace std;
 using namespace bagel;
 
 
-void ZCASSCF::init_kramers_coeff_dirac() {
+shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_dirac() {
   mute_stdcout();
   // Kramers-adapted coefficient via quaternion diagonalization
   const int nele = geom_->nele()-charge_;
@@ -148,12 +148,12 @@ void ZCASSCF::init_kramers_coeff_dirac() {
   }
 #endif
   resume_stdcout();
-  coeff_ = ctmp2;
+  return ctmp2;
 }
 
 
 // TODO This function uses QuatMatrix::diagonalize() - make sure the matrix is in the correct format
-void ZCASSCF::init_kramers_coeff_nonrel() {
+shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_nonrel() {
   mute_stdcout();
   // Kramers-adapted coefficient via quaternion diagonalization
   const int nele = geom_->nele()-charge_;
@@ -247,7 +247,7 @@ void ZCASSCF::init_kramers_coeff_nonrel() {
   }
 #endif
   resume_stdcout();
-  coeff_ = ctmp2;
+  return ctmp2;
 }
 
 

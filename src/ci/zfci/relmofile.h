@@ -75,7 +75,7 @@ class RelMOFile {
 
     // static function
     static std::shared_ptr<Kramers<2,ZMatrix>> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
-    std::shared_ptr<Kramers<2,ZMatrix>> kramers_zquat(const int nstart, const int nfence, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> hcore);
+    std::shared_ptr<ZMatrix> kramers_zquat(const int nstart, const int nfence, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> hcore);
 
     // static function used to make the order of eigenvalues & eigenvectors of ZMatrix::diagonalize() match that given by QuatMatrix::diagonalize()
     static void rearrange_eig(VectorB& eig, std::shared_ptr<ZMatrix> coeff, const bool includes_neg = true);

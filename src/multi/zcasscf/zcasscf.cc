@@ -185,9 +185,9 @@ void ZCASSCF::init() {
   coeff_ = scoeff;
   if (!kramers_coeff) {
     if (nr_coeff_ == nullptr)
-      init_kramers_coeff_dirac();
+      coeff_ = init_kramers_coeff_dirac();
     else
-      init_kramers_coeff_nonrel();
+      coeff_ = init_kramers_coeff_nonrel();
   }
   scoeff = make_shared<RelCoeff_Striped>(*coeff_, scoeff->nclosed(), scoeff->nact(), scoeff->nvirt_nr(), scoeff->nneg());
   //shared_ptr<const ZMatrix> aodensity2 = coeff_->form_density_rhf(geom_->nele() - charge_);
