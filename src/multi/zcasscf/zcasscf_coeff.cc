@@ -30,7 +30,7 @@ using namespace std;
 using namespace bagel;
 
 
-void ZCASSCF::init_kramers_coeff() {
+void ZCASSCF::init_kramers_coeff_dirac() {
   mute_stdcout();
   // Kramers-adapted coefficient via quaternion diagonalization
   const int nele = geom_->nele()-charge_;
@@ -48,123 +48,68 @@ void ZCASSCF::init_kramers_coeff() {
   };
 
   shared_ptr<ZMatrix> coefftmp;
-  if (nr_coeff_ != nullptr)
-    coefftmp = nonrel_to_relcoeff(false);
-
   shared_ptr<ZMatrix> focktmp;
   shared_ptr<ZMatrix> ctmp;
   // quaternion diagonalize a fock matrix
-  if (nr_coeff_ == nullptr) {
-    int norb = nele;// - 2 > 0 ? nele-2 : nele;
-    focktmp = make_shared<DFock>(geom_, hcore_, coeff_->slice_copy(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
-    quaternion(focktmp);
+  int norb = nele;// - 2 > 0 ? nele-2 : nele;
+  focktmp = make_shared<DFock>(geom_, hcore_, coeff_->slice_copy(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+  quaternion(focktmp);
 
-    shared_ptr<ZMatrix> s12 = overlap_->tildex(1.0e-9);
-    quaternion(s12);
+  shared_ptr<ZMatrix> s12 = overlap_->tildex(1.0e-9);
+  quaternion(s12);
 
-    shared_ptr<ZMatrix> fock_tilde;
-    if (tsymm_) {
-      fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
+  shared_ptr<ZMatrix> fock_tilde;
+  if (tsymm_) {
+    fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
 #ifndef NDEBUG
-      auto quatfock = static_pointer_cast<const QuatMatrix>(fock_tilde);
-      const double tsymm_err = quatfock->check_t_symmetry();
-      if (tsymm_err > 1.0e-8)
-        cout << "   ** Caution:  poor Kramers symmetry in fock_tilde (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
+    auto quatfock = static_pointer_cast<const QuatMatrix>(fock_tilde);
+    const double tsymm_err = quatfock->check_t_symmetry();
+    if (tsymm_err > 1.0e-8)
+      cout << "   ** Caution:  poor Kramers symmetry in fock_tilde (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
 #endif
-    } else {
-      fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
-    }
+  } else {
+    fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
+  }
 
-    // quaternion diagonalization
-    {
-      VectorB eig(fock_tilde->ndim());
-      fock_tilde->diagonalize(eig);
+  // quaternion diagonalization
+  {
+    VectorB eig(fock_tilde->ndim());
+    fock_tilde->diagonalize(eig);
 
-      if (!tsymm_)
-        RelMOFile::rearrange_eig(eig, fock_tilde);
+    if (!tsymm_)
+      RelMOFile::rearrange_eig(eig, fock_tilde);
 
-    }
+  }
 
-    // re-order to kramers format and move negative energy states to virtual space
-    ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
+  // re-order to kramers format and move negative energy states to virtual space
+  ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
 
-    // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
-    {
-      assert(ctmp->ndim() % 4 == 0);
-      const int n = ctmp->ndim()/4;
-      const int m = ctmp->mdim();
-      shared_ptr<ZMatrix> scratch = ctmp->get_submatrix(n, 0, n*2, m);
-      ctmp->copy_block(n,   0, n, m, scratch->get_submatrix(n, 0, n, m));
-      ctmp->copy_block(n*2, 0, n, m, scratch->get_submatrix(0, 0, n, m));
-    }
-    // move_positronic_orbitals;
-    {
-      auto move_one = [this, &ctmp](const int offset, const int block1, const int block2) {
-        shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ctmp->ndim(), block1+block2);
-        scratch->copy_block(0,      0, ctmp->ndim(), block2, ctmp->slice(offset+block1, offset+block1+block2));
-        scratch->copy_block(0, block2, ctmp->ndim(), block1, ctmp->slice(offset,        offset+block1));
-        ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
-      };
-      const int nneg2 = nneg_/2;
-      move_one(           0, nneg2, nocc_+nvirt_-nneg2);
-      move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
-    }
-  } else {//if (nele%2 == 0 && nele - 2 > 0) {
-    int norb = nele;//-2;
-    ctmp = make_shared<ZMatrix>(coefftmp->ndim(), norb);
-    ctmp->copy_block(0, 0, coefftmp->ndim(), norb/2, coefftmp->slice(0, norb/2));
-    ctmp->copy_block(0, norb/2, coefftmp->ndim(), norb/2, coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()/2+norb/2));
-    focktmp = make_shared<DFock>(geom_, hcore_, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
-
-    shared_ptr<ZMatrix> fmo;
-    if (tsymm_) {
-      fmo = make_shared<QuatMatrix>(*coefftmp % (*focktmp) * *coefftmp);
-#ifndef NDEBUG
-      auto quatfmo = static_pointer_cast<const QuatMatrix>(fmo);
-      const double tsymm_err = quatfmo->check_t_symmetry();
-      if (tsymm_err > 1.0e-8)
-        cout << "   ** Caution:  poor Kramers symmetry in fmo (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
-#endif
-    } else {
-      fmo = make_shared<ZMatrix>(*coefftmp % (*focktmp) * *coefftmp);
-    }
-
-    // quaternion diagonalization
-    {
-      VectorB eig(fmo->ndim());
-      fmo->diagonalize(eig);
-
-      if (!tsymm_)
-        RelMOFile::rearrange_eig(eig, fmo);
-
-      // move_positronic_orbitals;
-      {
-        auto move_one = [this, &fmo](const int offset, const int block1, const int block2) {
-          shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(fmo->ndim(), block1+block2);
-          scratch->copy_block(0,      0, fmo->ndim(), block2, fmo->slice(offset+block1, offset+block1+block2));
-          scratch->copy_block(0, block2, fmo->ndim(), block1, fmo->slice(offset,        offset+block1));
-          fmo->copy_block(0, offset, fmo->ndim(), block1+block2, scratch);
-        };
-        const int nneg2 = nneg_/2;
-        move_one(           0, nneg2, nocc_+nvirt_-nneg2);
-        move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
-      }
-      coefftmp = make_shared<ZMatrix>(*coefftmp * *fmo);
-    }
+  // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
+  {
+    assert(ctmp->ndim() % 4 == 0);
+    const int n = ctmp->ndim()/4;
+    const int m = ctmp->mdim();
+    shared_ptr<ZMatrix> scratch = ctmp->get_submatrix(n, 0, n*2, m);
+    ctmp->copy_block(n,   0, n, m, scratch->get_submatrix(n, 0, n, m));
+    ctmp->copy_block(n*2, 0, n, m, scratch->get_submatrix(0, 0, n, m));
+  }
+  // move_positronic_orbitals;
+  {
+    auto move_one = [this, &ctmp](const int offset, const int block1, const int block2) {
+      shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ctmp->ndim(), block1+block2);
+      scratch->copy_block(0,      0, ctmp->ndim(), block2, ctmp->slice(offset+block1, offset+block1+block2));
+      scratch->copy_block(0, block2, ctmp->ndim(), block1, ctmp->slice(offset,        offset+block1));
+      ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
+    };
+    const int nneg2 = nneg_/2;
+    move_one(           0, nneg2, nocc_+nvirt_-nneg2);
+    move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
   }
 
   array<shared_ptr<const ZMatrix>,2> tmp;
-  if (nr_coeff_ == nullptr) {
-    tmp = {{ ctmp->slice_copy(0, ctmp->mdim()/2), ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()) }};
-  } else{
-    tmp = {{ coefftmp->slice_copy(0, coefftmp->mdim()/2), coefftmp->slice_copy(coefftmp->mdim()/2, coefftmp->mdim()) }};
-    coeff_ = coefftmp->clone();
-  }
+  tmp = {{ ctmp->slice_copy(0, ctmp->mdim()/2), ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()) }};
   shared_ptr<ZMatrix> ctmp2;
-  if (nr_coeff_ != nullptr)
-    ctmp2 = coefftmp->clone();
-  else
-    ctmp2 = ctmp->clone();
+  ctmp2 = ctmp->clone();
 
 #if 0
   // blocked format
@@ -177,30 +122,129 @@ void ZCASSCF::init_kramers_coeff() {
   ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[1]->slice(nocc_, nocc_+nvirt_));
 #else
   // striped format
-    int n = coeff_->ndim();
-    // closed
-    for (int j=0; j!=nclosed_; ++j) {
-      ctmp2->copy_block(0, j*2,   n, 1, tmp[0]->slice(j, j+1));
-      ctmp2->copy_block(0, j*2+1, n, 1, tmp[1]->slice(j, j+1));
+  int n = coeff_->ndim();
+  // closed
+  for (int j=0; j!=nclosed_; ++j) {
+    ctmp2->copy_block(0, j*2,   n, 1, tmp[0]->slice(j, j+1));
+    ctmp2->copy_block(0, j*2+1, n, 1, tmp[1]->slice(j, j+1));
+  }
+  int offset = nclosed_*2;
+  // active
+  for (int j=0; j!=nact_; ++j) {
+    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
+  }
+  offset = nocc_*2;
+  // virtual
+  for (int j=0; j!=nvirtnr_; ++j) {
+    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
+  }
+  offset = ctmp2->mdim()/2;
+  // positrons
+  for (int j=0; j!=nneg_/2; ++j) {
+    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
+  }
+#endif
+  resume_stdcout();
+  coeff_ = ctmp2;
+}
+
+
+// TODO This function uses QuatMatrix::diagonalize() - make sure the matrix is in the correct format
+void ZCASSCF::init_kramers_coeff_nonrel() {
+  mute_stdcout();
+  // Kramers-adapted coefficient via quaternion diagonalization
+  const int nele = geom_->nele()-charge_;
+
+  shared_ptr<ZMatrix> coefftmp = nonrel_to_relcoeff(false);
+
+  shared_ptr<ZMatrix> focktmp;
+  shared_ptr<ZMatrix> ctmp;
+  int norb = nele;//-2;
+  ctmp = make_shared<ZMatrix>(coefftmp->ndim(), norb);
+  ctmp->copy_block(0, 0, coefftmp->ndim(), norb/2, coefftmp->slice(0, norb/2));
+  ctmp->copy_block(0, norb/2, coefftmp->ndim(), norb/2, coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()/2+norb/2));
+  focktmp = make_shared<DFock>(geom_, hcore_, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
+
+  shared_ptr<ZMatrix> fmo;
+  if (tsymm_) {
+    fmo = make_shared<QuatMatrix>(*coefftmp % (*focktmp) * *coefftmp);
+#ifndef NDEBUG
+    auto quatfmo = static_pointer_cast<const QuatMatrix>(fmo);
+    const double tsymm_err = quatfmo->check_t_symmetry();
+    if (tsymm_err > 1.0e-8)
+      cout << "   ** Caution:  poor Kramers symmetry in fmo (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
+#endif
+  } else {
+    fmo = make_shared<ZMatrix>(*coefftmp % (*focktmp) * *coefftmp);
+  }
+
+  // quaternion diagonalization
+  {
+    VectorB eig(fmo->ndim());
+    fmo->diagonalize(eig);
+
+    if (!tsymm_)
+      RelMOFile::rearrange_eig(eig, fmo);
+
+    // move_positronic_orbitals;
+    {
+      auto move_one = [this, &fmo](const int offset, const int block1, const int block2) {
+        shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(fmo->ndim(), block1+block2);
+        scratch->copy_block(0,      0, fmo->ndim(), block2, fmo->slice(offset+block1, offset+block1+block2));
+        scratch->copy_block(0, block2, fmo->ndim(), block1, fmo->slice(offset,        offset+block1));
+        fmo->copy_block(0, offset, fmo->ndim(), block1+block2, scratch);
+      };
+      const int nneg2 = nneg_/2;
+      move_one(           0, nneg2, nocc_+nvirt_-nneg2);
+      move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
     }
-    int offset = nclosed_*2;
-    // active
-    for (int j=0; j!=nact_; ++j) {
-      ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
-      ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
-    }
-    offset = nocc_*2;
-    // virtual
-    for (int j=0; j!=nvirtnr_; ++j) {
-      ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
-      ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
-    }
-    offset = ctmp2->mdim()/2;
-    // positrons
-    for (int j=0; j!=nneg_/2; ++j) {
-      ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
-      ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
-    }
+    coefftmp = make_shared<ZMatrix>(*coefftmp * *fmo);
+  }
+
+  array<shared_ptr<const ZMatrix>,2> tmp;
+  tmp = {{ coefftmp->slice_copy(0, coefftmp->mdim()/2), coefftmp->slice_copy(coefftmp->mdim()/2, coefftmp->mdim()) }};
+  coeff_ = coefftmp->clone();
+  shared_ptr<ZMatrix> ctmp2;
+  ctmp2 = coefftmp->clone();
+
+#if 0
+  // blocked format
+  int i = 0;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nact_, tmp[0]->slice(nclosed_, nocc_)); i += nact_;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nact_, tmp[1]->slice(nclosed_, nocc_)); i += nact_;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[0]->slice(nocc_, nocc_+nvirt_)); i += nvirt_;
+  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[1]->slice(nocc_, nocc_+nvirt_));
+#else
+  // striped format
+  int n = coeff_->ndim();
+  // closed
+  for (int j=0; j!=nclosed_; ++j) {
+    ctmp2->copy_block(0, j*2,   n, 1, tmp[0]->slice(j, j+1));
+    ctmp2->copy_block(0, j*2+1, n, 1, tmp[1]->slice(j, j+1));
+  }
+  int offset = nclosed_*2;
+  // active
+  for (int j=0; j!=nact_; ++j) {
+    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
+  }
+  offset = nocc_*2;
+  // virtual
+  for (int j=0; j!=nvirtnr_; ++j) {
+    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
+  }
+  offset = ctmp2->mdim()/2;
+  // positrons
+  for (int j=0; j!=nneg_/2; ++j) {
+    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
+    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
+  }
 #endif
   resume_stdcout();
   coeff_ = ctmp2;

@@ -183,8 +183,12 @@ void ZCASSCF::init() {
   // initialize coefficient to enforce kramers symmetry
   //shared_ptr<const ZMatrix> aodensity1 = coeff_->form_density_rhf(geom_->nele() - charge_);
   coeff_ = scoeff;
-  if (!kramers_coeff)
-    init_kramers_coeff();
+  if (!kramers_coeff) {
+    if (nr_coeff_ == nullptr)
+      init_kramers_coeff_dirac();
+    else
+      init_kramers_coeff_nonrel();
+  }
   scoeff = make_shared<RelCoeff_Striped>(*coeff_, scoeff->nclosed(), scoeff->nact(), scoeff->nvirt_nr(), scoeff->nneg());
   //shared_ptr<const ZMatrix> aodensity2 = coeff_->form_density_rhf(geom_->nele() - charge_);
   //auto aodensitychange = make_shared<const ZMatrix>(*aodensity1 - *aodensity2);
