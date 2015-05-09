@@ -31,7 +31,7 @@ using namespace bagel;
 
 
 // Kramers-adapted coefficient via quaternion diagonalization, assuming guess orbitals from Dirac--Hartree--Fock
-shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_dirac(shared_ptr<const ZMatrix> coeff, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
+shared_ptr<RelCoeff_Striped> ZCASSCF::init_kramers_coeff_dirac(shared_ptr<const RelCoeff_Striped> coeff, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
                     shared_ptr<const ZMatrix> hcore, const int nclosed, const int nact, const int nele, const bool tsymm, const bool gaunt, const bool breit) {
 
   assert((nact > 1 || !tsymm)); // zquatev has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
@@ -153,12 +153,13 @@ shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_dirac(shared_ptr<const ZMatrix> 
     ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc+nvirt_nr + j, nocc+nvirt_nr + j+1));
   }
 #endif
-  return ctmp2;
+  auto out = make_shared<RelCoeff_Striped>(*ctmp2, nclosed, nact, nvirt_nr, 2*nneg2);
+  return out;
 }
 
 
 // TODO This function uses QuatMatrix::diagonalize() - make sure the matrix is in the correct format
-shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_nonrel() {
+shared_ptr<RelCoeff_Striped> ZCASSCF::init_kramers_coeff_nonrel() {
   mute_stdcout();
   // Kramers-adapted coefficient via quaternion diagonalization
   const int nele = geom_->nele()-charge_;
@@ -252,7 +253,8 @@ shared_ptr<ZMatrix> ZCASSCF::init_kramers_coeff_nonrel() {
   }
 #endif
   resume_stdcout();
-  return ctmp2;
+  auto out = make_shared<RelCoeff_Striped>(*ctmp2, nclosed_, nact_, nvirtnr_, nneg_);
+  return out;
 }
 
 

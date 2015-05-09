@@ -101,6 +101,13 @@ class RelCoeff_Striped : public RelCoeff {
 
 
 class RelCoeff_Block : public RelCoeff {
+  private:
+    RelCoeff_Block() { }
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) { ar & boost::serialization::base_object<RelCoeff>(*this); }
+
   public:
     RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
 
@@ -112,5 +119,6 @@ class RelCoeff_Block : public RelCoeff {
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::RelCoeff)
 BOOST_CLASS_EXPORT_KEY(bagel::RelCoeff_Striped)
+BOOST_CLASS_EXPORT_KEY(bagel::RelCoeff_Block)
 
 #endif

@@ -124,3 +124,4 @@ std::shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
 
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff)
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff_Striped)
+BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff_Block)

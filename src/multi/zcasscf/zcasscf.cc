@@ -142,7 +142,7 @@ void ZCASSCF::init() {
     tmp->copy_block(0, 0, tmp->ndim(), nneg_, hctmp2->slice(nneg_,hctmp->mdim()));
     scoeff = make_shared<RelCoeff_Striped>(*tmp, nclosed_, nact_, nvirtnr_, nneg_);
   } else {
-    scoeff = relref->relcoeff_full();
+    scoeff = make_shared<RelCoeff_Striped>(*relref->relcoeff_full(), nclosed_, nact_, nvirtnr_, nneg_);
   }
 
   // get maxiter from the input
@@ -185,7 +185,7 @@ void ZCASSCF::init() {
   coeff_ = scoeff;
   if (!kramers_coeff) {
     if (nr_coeff_ == nullptr)
-      coeff_ = init_kramers_coeff_dirac(coeff_, geom_, overlap_, hcore_, nclosed_, nact_, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
+      coeff_ = init_kramers_coeff_dirac(scoeff, geom_, overlap_, hcore_, nclosed_, nact_, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
     else
       coeff_ = init_kramers_coeff_nonrel();
   }
@@ -216,10 +216,14 @@ void ZCASSCF::init() {
   shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, scoeff, /*striped*/true);
   coeff_ = make_shared<const ZMatrix>(*tmp);
 
+  // TODO clean up (remove this)
+  shared_ptr<RelCoeff_Block> bcoeff = scoeff->block_format();
+  assert((*bcoeff-*coeff_).rms() < 1.0e-10);
+
   mute_stdcout();
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
-    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_, /*restricted*/true);
+    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, bcoeff, /*restricted*/true);
   }
   resume_stdcout();
 

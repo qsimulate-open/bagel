@@ -73,7 +73,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
 
     void init();
-    std::shared_ptr<ZMatrix> init_kramers_coeff_nonrel();
+    std::shared_ptr<RelCoeff_Striped> init_kramers_coeff_nonrel();
 
     void mute_stdcout() const;
     void resume_stdcout() const;
@@ -126,7 +126,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     static std::shared_ptr<const RelCoeff_Striped> set_active(std::set<int> active_indices, std::shared_ptr<const RelCoeff_Striped> coeff,
                                                               const int nclosed, const int nele, const int nact, const bool paired);
     // get Kramers-adapted coefficient via quaternion diagonalization
-    static std::shared_ptr<ZMatrix> init_kramers_coeff_dirac(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const Geometry> geom,
+    static std::shared_ptr<RelCoeff_Striped> init_kramers_coeff_dirac(std::shared_ptr<const RelCoeff_Striped> coeff, std::shared_ptr<const Geometry> geom,
                                     std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> hcore, const int nclosed,
                                     const int nact, const int nele, const bool tsymm, const bool gaunt, const bool breit);
 

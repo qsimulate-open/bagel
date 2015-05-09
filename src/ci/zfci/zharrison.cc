@@ -33,7 +33,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 using namespace std;
 using namespace bagel;
 
-ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, std::shared_ptr<const ZMatrix> coeff_zcas, const bool restricted)
+ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, std::shared_ptr<const RelCoeff_Block> coeff_zcas, const bool restricted)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
@@ -100,22 +100,34 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
     if (iactive) {
       assert(iactive->size() == norb_);
       set<int> active_indices;
+      vector<int> active2 = {};
 
       // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-      for (auto& i : *iactive)
+      for (auto& i : *iactive) {
         active_indices.insert(lexical_cast<int>(i->data()) - 1);
+        active2.push_back(lexical_cast<int>(i->data()) - 1);
+      }
+      //shared_ptr<const ZMatrix> tmpcoeff = ZCASSCF::set_active(active_indices, active2, rr->relcoeff_full(), ncore_, geom_->nele()-charge_, norb_, tsymm_);
       coeff = ZCASSCF::set_active(active_indices, rr->relcoeff_full(), ncore_, geom_->nele()-charge_, norb_, tsymm_);
+      assert(ncore_ == coeff->nclosed());
+      assert(norb_ == coeff->nact());
+      assert(coeff->mdim()/4-ncore_-norb_ == coeff->nvirt_nr());
+      assert(coeff->mdim()/2 == coeff->nneg());
 
     } else {
-      coeff = rr->relcoeff_full();
+      coeff = make_shared<RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
     }
   } else {
     // For ZCASSCF, just accept the coefficients given
-    coeff = make_shared<RelCoeff_Striped>(*coeff_zcas, ncore_, norb_, coeff_zcas->mdim()/4-ncore_-norb_, coeff_zcas->mdim()/2);
+    coeff = coeff_zcas->striped_format();
+    assert(coeff->nclosed() == ncore_);
+    assert(coeff->nact() == norb_);
+    assert(coeff->nvirt_nr() == coeff_zcas->mdim()/4-ncore_-norb_);
+    assert(coeff->nneg() == coeff_zcas->mdim()/2);
   }
 
   cout << "    * nvirt    : " << setw(6) << (coeff->mdim()/2-ncore_-norb_) << endl;
-  update(coeff, restricted);
+  update(coeff->block_format(), restricted);
 
 }
 

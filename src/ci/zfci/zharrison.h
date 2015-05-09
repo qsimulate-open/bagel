@@ -107,7 +107,7 @@ class ZHarrison : public Method {
       ar << max_iter_ << davidson_subspace_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_ << tsymm_
          << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
       // for jop_
-      std::shared_ptr<const ZMatrix> coeff = jop_->coeff_input();
+      std::shared_ptr<const RelCoeff_Block> coeff = jop_->coeff_input();
       ar << coeff;
     }
     template<class Archive>
@@ -115,7 +115,7 @@ class ZHarrison : public Method {
       ar >> boost::serialization::base_object<Method>(*this);
       ar >> max_iter_ >> davidson_subspace_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_ >> tsymm_
          >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_ >> restarted_;
-      std::shared_ptr<const ZMatrix> coeff;
+      std::shared_ptr<const RelCoeff_Block> coeff;
       ar >> coeff;
       update(coeff);
       restarted_ = true;
@@ -176,12 +176,12 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-              const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const ZMatrix> coeff_zcas = nullptr, const bool restricted = false);
+              const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const RelCoeff_Block> coeff_zcas = nullptr, const bool restricted = false);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
     // "restricted" refers to whether the coefficient matrix is already Kramers-adapted
-    void update(std::shared_ptr<const ZMatrix> coeff, const bool restricted = false) {
+    void update(std::shared_ptr<const RelCoeff_Block> coeff, const bool restricted = false) {
       Timer timer;
       jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, charge_, gaunt_, breit_, restricted, tsymm_);
 

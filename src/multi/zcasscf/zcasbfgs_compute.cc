@@ -71,7 +71,10 @@ void ZCASBFGS::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      if (iter) fci_->update(coeff_, /*restricted*/true);
+      if (iter) {
+        auto tmp = make_shared<RelCoeff_Block>(*coeff_, nclosed_, nact_, nvirtnr_, nneg_);
+        fci_->update(tmp, /*restricted*/true);
+      }
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       Timer fci_time(0);
       fci_->compute();
@@ -249,7 +252,8 @@ void ZCASBFGS::compute() {
   // update construct Jop from scratch
   resume_stdcout();
   if (nact_) {
-    fci_->update(coeff_, /*restricted*/true);
+    auto tmp = make_shared<RelCoeff_Block>(*coeff_, nclosed_, nact_, nvirtnr_, nneg_);
+    fci_->update(tmp, /*restricted*/true);
     fci_->compute();
     fci_->compute_rdm12();
   }

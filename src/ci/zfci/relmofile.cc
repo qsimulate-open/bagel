@@ -39,7 +39,7 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co, const int charge, const bool gaunt, const bool breit, const bool tsymm)
+RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const RelCoeff_Block> co, const int charge, const bool gaunt, const bool breit, const bool tsymm)
  : charge_(charge), geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit), tsymm_(tsymm) {
   // density fitting is assumed
   assert(geom_->df());
@@ -84,9 +84,8 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
     overlap = make_shared<RelOverlap_London>(geom_);
 
   if (!restricted) {
-    shared_ptr<ZMatrix> kcoeff = ZCASSCF::init_kramers_coeff_dirac(coeff_, geom_, overlap, hcore, nstart/2, (nfence-nstart)/2, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
-    auto kscoeff = make_shared<RelCoeff_Striped>(*kcoeff, nstart/2, (nfence-nstart)/2, (kcoeff->mdim()/2-nfence)/2, kcoeff->mdim()/2);
-    shared_ptr<RelCoeff_Block> kbcoeff = kscoeff->block_format();
+    shared_ptr<RelCoeff_Striped> kcoeff = ZCASSCF::init_kramers_coeff_dirac(coeff_->striped_format(), geom_, overlap, hcore, nstart/2, (nfence-nstart)/2, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
+    shared_ptr<RelCoeff_Block> kbcoeff = kcoeff->block_format();
     kramers_coeff_ = make_shared<Kramers<2,ZMatrix>>();
     kramers_coeff_->emplace(0, kbcoeff->slice_copy(nstart, nstart+(nfence-nstart)/2));
     kramers_coeff_->emplace(1, kbcoeff->slice_copy(nstart+(nfence-nstart)/2, nfence));
