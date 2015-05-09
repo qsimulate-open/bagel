@@ -35,6 +35,7 @@ RelCoeff::RelCoeff(const int _ndim, const bool _loc, const int _nclosed, const i
  : ZMatrix(_ndim, 2*(_nclosed+_nact+_nvirt)+_nneg, _loc), nbasis_(ndim()/4), nclosed_(_nclosed), nact_(_nact), nvirt_nr_(_nvirt), nneg_(_nneg) {
   assert(ndim()%4 == 0);
   assert(nneg()%2 == 0);
+  assert(npos() == nneg() || nneg() == 0);
 }
 
 void RelCoeff::print_info() const {
