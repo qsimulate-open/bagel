@@ -91,69 +91,8 @@ shared_ptr<RelCoeff_Striped> ZCASSCF::init_kramers_coeff_dirac(shared_ptr<const 
   // re-order to kramers format and move negative energy states to virtual space
   ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
 
-  // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
-  {
-    assert(ctmp->ndim() % 4 == 0);
-    const int n = ctmp->ndim()/4;
-    const int m = ctmp->mdim();
-    shared_ptr<ZMatrix> scratch = ctmp->get_submatrix(n, 0, n*2, m);
-    ctmp->copy_block(n,   0, n, m, scratch->get_submatrix(n, 0, n, m));
-    ctmp->copy_block(n*2, 0, n, m, scratch->get_submatrix(0, 0, n, m));
-  }
-  // move_positronic_orbitals;
-  {
-    auto move_one = [&ctmp](const int offset, const int block1, const int block2) {
-      shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ctmp->ndim(), block1+block2);
-      scratch->copy_block(0,      0, ctmp->ndim(), block2, ctmp->slice(offset+block1, offset+block1+block2));
-      scratch->copy_block(0, block2, ctmp->ndim(), block1, ctmp->slice(offset,        offset+block1));
-      ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
-    };
-    move_one(             0, nneg2, nocc+nvirt_rel-nneg2);
-    move_one(nocc+nvirt_rel, nneg2, nocc+nvirt_rel-nneg2);
-  }
-
-  array<shared_ptr<const ZMatrix>,2> tmp;
-  tmp = {{ ctmp->slice_copy(0, ctmp->mdim()/2), ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()) }};
-  shared_ptr<ZMatrix> ctmp2;
-  ctmp2 = ctmp->clone();
-
-#if 0
-  // blocked format
-  int i = 0;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed, tmp[0]->slice(0,nclosed)); i += nclosed;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed, tmp[1]->slice(0,nclosed)); i += nclosed;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nact, tmp[0]->slice(nclosed, nocc)); i += nact;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nact, tmp[1]->slice(nclosed, nocc)); i += nact;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_rel, tmp[0]->slice(nocc, nocc+nvirt_rel)); i += nvirt_rel;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_rel, tmp[1]->slice(nocc, nocc+nvirt_rel));
-#else
-  // striped format
-  int n = coeff->ndim();
-  // closed
-  for (int j=0; j!=nclosed; ++j) {
-    ctmp2->copy_block(0, j*2,   n, 1, tmp[0]->slice(j, j+1));
-    ctmp2->copy_block(0, j*2+1, n, 1, tmp[1]->slice(j, j+1));
-  }
-  int offset = nclosed*2;
-  // active
-  for (int j=0; j!=nact; ++j) {
-    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
-    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
-  }
-  offset = nocc*2;
-  // virtual
-  for (int j=0; j!=nvirt_nr; ++j) {
-    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
-    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
-  }
-  offset = ctmp2->mdim()/2;
-  // positrons
-  for (int j=0; j!=nneg2; ++j) {
-    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc+nvirt_nr + j, nocc+nvirt_nr + j+1));
-    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc+nvirt_nr + j, nocc+nvirt_nr + j+1));
-  }
-#endif
-  auto out = make_shared<RelCoeff_Striped>(*ctmp2, nclosed, nact, nvirt_nr, 2*nneg2);
+  auto ktmp = make_shared<RelCoeff_Kramers>(*ctmp, nclosed, nact, nvirt_nr, nneg2*2);
+  auto out = ktmp->block_format()->striped_format();
   return out;
 }
 
@@ -163,6 +102,10 @@ shared_ptr<RelCoeff_Striped> ZCASSCF::init_kramers_coeff_nonrel() {
   mute_stdcout();
   // Kramers-adapted coefficient via quaternion diagonalization
   const int nele = geom_->nele()-charge_;
+  const int nocc = nclosed_ + nact_;
+  const int nneg2 = coeff_->mdim()/4;
+  const int nvirt_rel = coeff_->mdim()/2 - nocc;
+  const int nvirt_nr = nvirt_rel - nneg2;
 
   shared_ptr<ZMatrix> coefftmp = nonrel_to_relcoeff(false);
 
@@ -188,72 +131,15 @@ shared_ptr<RelCoeff_Striped> ZCASSCF::init_kramers_coeff_nonrel() {
   }
 
   // quaternion diagonalization
-  {
-    VectorB eig(fmo->ndim());
-    fmo->diagonalize(eig);
+  VectorB eig(fmo->ndim());
+  fmo->diagonalize(eig);
 
-    if (!tsymm_)
-      RelMOFile::rearrange_eig(eig, fmo);
+  if (!tsymm_)
+    RelMOFile::rearrange_eig(eig, fmo);
 
-    // move_positronic_orbitals;
-    {
-      auto move_one = [this, &fmo](const int offset, const int block1, const int block2) {
-        shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(fmo->ndim(), block1+block2);
-        scratch->copy_block(0,      0, fmo->ndim(), block2, fmo->slice(offset+block1, offset+block1+block2));
-        scratch->copy_block(0, block2, fmo->ndim(), block1, fmo->slice(offset,        offset+block1));
-        fmo->copy_block(0, offset, fmo->ndim(), block1+block2, scratch);
-      };
-      const int nneg2 = nneg_/2;
-      move_one(           0, nneg2, nocc_+nvirt_-nneg2);
-      move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
-    }
-    coefftmp = make_shared<ZMatrix>(*coefftmp * *fmo);
-  }
-
-  array<shared_ptr<const ZMatrix>,2> tmp;
-  tmp = {{ coefftmp->slice_copy(0, coefftmp->mdim()/2), coefftmp->slice_copy(coefftmp->mdim()/2, coefftmp->mdim()) }};
-  coeff_ = coefftmp->clone();
-  shared_ptr<ZMatrix> ctmp2;
-  ctmp2 = coefftmp->clone();
-
-#if 0
-  // blocked format
-  int i = 0;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nact_, tmp[0]->slice(nclosed_, nocc_)); i += nact_;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nact_, tmp[1]->slice(nclosed_, nocc_)); i += nact_;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[0]->slice(nocc_, nocc_+nvirt_)); i += nvirt_;
-  ctmp2->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[1]->slice(nocc_, nocc_+nvirt_));
-#else
-  // striped format
-  int n = coeff_->ndim();
-  // closed
-  for (int j=0; j!=nclosed_; ++j) {
-    ctmp2->copy_block(0, j*2,   n, 1, tmp[0]->slice(j, j+1));
-    ctmp2->copy_block(0, j*2+1, n, 1, tmp[1]->slice(j, j+1));
-  }
-  int offset = nclosed_*2;
-  // active
-  for (int j=0; j!=nact_; ++j) {
-    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
-    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
-  }
-  offset = nocc_*2;
-  // virtual
-  for (int j=0; j!=nvirtnr_; ++j) {
-    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1));
-    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1));
-  }
-  offset = ctmp2->mdim()/2;
-  // positrons
-  for (int j=0; j!=nneg_/2; ++j) {
-    ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
-    ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(nocc_+nvirtnr_ + j, nocc_+nvirtnr_ + j+1));
-  }
-#endif
+  auto ktmp = make_shared<RelCoeff_Kramers>(*fmo, nclosed_, nact_, nvirt_nr, nneg2*2);
+  auto out = ktmp->block_format()->striped_format();
   resume_stdcout();
-  auto out = make_shared<RelCoeff_Striped>(*ctmp2, nclosed_, nact_, nvirtnr_, nneg_);
   return out;
 }
 

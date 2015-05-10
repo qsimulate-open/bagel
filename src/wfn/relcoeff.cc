@@ -66,6 +66,28 @@ RelCoeff_Block::RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const 
 }
 
 
+RelCoeff_Kramers::RelCoeff_Kramers(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
+ : RelCoeff(_coeff.ndim(), _coeff.localized(), _nclosed, _nact, _nvirt, _nneg) {
+
+  // TODO Should be a bit cheaper if we do all these moves together and get rid of scratch.
+  // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
+  copy_block(        0, 0, nbasis_, mdim(), _coeff.get_submatrix(        0, 0, nbasis_, mdim()));
+  copy_block(  nbasis_, 0, nbasis_, mdim(), _coeff.get_submatrix(2*nbasis_, 0, nbasis_, mdim()));
+  copy_block(2*nbasis_, 0, nbasis_, mdim(), _coeff.get_submatrix(  nbasis_, 0, nbasis_, mdim()));
+  copy_block(3*nbasis_, 0, nbasis_, mdim(), _coeff.get_submatrix(3*nbasis_, 0, nbasis_, mdim()));
+
+  // columns: {S+, L+, S-, L-} -> {L+, S+, L-, S-}
+  auto move_one = [this](const int offset, const int block1, const int block2) {
+    shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ndim(), block1+block2);
+    scratch->copy_block(0,      0, ndim(), block2, slice(offset+block1, offset+block1+block2));
+    scratch->copy_block(0, block2, ndim(), block1, slice(offset,        offset+block1));
+    copy_block(0, offset, ndim(), block1+block2, scratch);
+  };
+  move_one(       0, nneg()/2, npos()/2);
+  move_one(mdim()/2, nneg()/2, npos()/2);
+}
+
+
 // Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
 std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format() const {
   assert(nneg_ % 2 == 0);
@@ -121,6 +143,24 @@ std::shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
   return out;
 }
 
+
+std::shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
+
+  // TODO this could be optimized to avoid copying
+  shared_ptr<ZMatrix> work = clone();
+  array<shared_ptr<const ZMatrix>,2> tmp = {{ slice_copy(0, mdim()/2), slice_copy(mdim()/2, mdim()) }};
+
+  int i = 0;
+  work->copy_block(0, i, ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
+  work->copy_block(0, i, ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
+  work->copy_block(0, i, ndim(), nact_, tmp[0]->slice(nclosed_, nclosed_+nact_)); i += nact_;
+  work->copy_block(0, i, ndim(), nact_, tmp[1]->slice(nclosed_, nclosed_+nact_)); i += nact_;
+  work->copy_block(0, i, ndim(), nvirt_rel(), tmp[0]->slice(nclosed_+nact_, tmp[0]->mdim())); i += nvirt_rel();
+  work->copy_block(0, i, ndim(), nvirt_rel(), tmp[1]->slice(nclosed_+nact_, tmp[1]->mdim()));
+
+  auto out = make_shared<RelCoeff_Block>(*work, nclosed_, nact_, nvirt_nr_, nneg_);
+  return out;
+}
 
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff)
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff_Striped)

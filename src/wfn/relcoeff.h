@@ -25,10 +25,11 @@
 
 // 4-component coefficient matrices for use in ZFCI and ZCASSCF
 // Basis spinors (rows) are always stored in order L+, L-, S+, S-
-// Two formats for MO ordering:
+// Three formats for MO ordering:
 //     Striped format:  A+ A- B+ B- C+ C- D+ D-...
 //     Block format:    A+ B+ C+ D+ A- B- C- D-...
-//     For both formats, spaces are stored as occupied, active, virtual, positronic
+//     Kramers format:  Assumes we're coming from Quaternion Diagonalization - on construction, rearranges to block format except with all + before all -
+//     For all formats, spaces are stored as occupied, active, virtual, positronic
 
 #ifndef __SRC_WFN_RELCOEFF_H
 #define __SRC_WFN_RELCOEFF_H
@@ -112,6 +113,14 @@ class RelCoeff_Block : public RelCoeff {
     RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
+};
+
+
+class RelCoeff_Kramers : public RelCoeff {
+  public:
+    // standard constructor; copy data directly from _coeff
+    RelCoeff_Kramers(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
+    std::shared_ptr<RelCoeff_Block> block_format() const;
 };
 
 }
