@@ -84,14 +84,9 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
 
   if (!restricted) {
     shared_ptr<RelCoeff_Striped> kcoeff = coeff_->striped_format()->init_kramers_coeff_dirac(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
-    shared_ptr<RelCoeff_Block> kbcoeff = kcoeff->block_format();
-    kramers_coeff_ = make_shared<Kramers<2,ZMatrix>>();
-    kramers_coeff_->emplace(0, kbcoeff->slice_copy(nstart, nstart+(nfence-nstart)/2));
-    kramers_coeff_->emplace(1, kbcoeff->slice_copy(nstart+(nfence-nstart)/2, nfence));
+    kramers_coeff_ = kcoeff->kramers_active();
   } else {
-    kramers_coeff_ = make_shared<Kramers<2,ZMatrix>>();
-    kramers_coeff_->emplace(0, coeff_->slice_copy(nstart, nstart+(nfence-nstart)/2));
-    kramers_coeff_->emplace(1, coeff_->slice_copy(nstart+(nfence-nstart)/2, nfence));
+    kramers_coeff_ = coeff_->kramers_active();
   }
 
   // calculate 1-e MO integrals

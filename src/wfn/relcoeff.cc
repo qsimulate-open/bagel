@@ -166,6 +166,20 @@ std::shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
 }
 
 
+std::shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Striped::kramers_active() const {
+  RelCoeff_Striped active_only(slice(2*nclosed_, 2*(nclosed_+nact_)), 0, nact_, 0, 0);
+  return active_only.block_format()->kramers_active();
+}
+
+
+std::shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Block::kramers_active() const {
+  auto out = make_shared<Kramers<2,ZMatrix>>();
+  out->emplace(0, slice_copy(2*nclosed_,         2*nclosed_ + nact_));
+  out->emplace(1, slice_copy(2*nclosed_ + nact_, 2*(nclosed_+nact_)));
+  return out;
+}
+
+
 // Kramers-adapted coefficient via quaternion diagonalization, assuming guess orbitals from Dirac--Hartree--Fock
 shared_ptr<RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff_dirac(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
                     shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const {

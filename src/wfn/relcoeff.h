@@ -35,6 +35,7 @@
 #define __SRC_WFN_RELCOEFF_H
 
 #include <src/wfn/geometry.h>
+#include <src/util/kramers.h>
 
 namespace bagel {
 
@@ -103,6 +104,7 @@ class RelCoeff_Striped : public RelCoeff {
     }
 
     std::shared_ptr<RelCoeff_Block> block_format() const;
+    std::shared_ptr<Kramers<2,ZMatrix>> kramers_active() const;
 
     // get Kramers-adapted coefficient via quaternion diagonalization
     std::shared_ptr<RelCoeff_Striped> init_kramers_coeff_dirac(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> overlap,
@@ -130,6 +132,7 @@ class RelCoeff_Block : public RelCoeff {
     // : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
+    std::shared_ptr<Kramers<2,ZMatrix>> kramers_active() const;
 };
 
 
