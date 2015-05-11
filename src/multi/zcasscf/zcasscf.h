@@ -112,8 +112,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> natorb_rdm2_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm2) const;
     std::shared_ptr<const RelCoeff_Block> update_coeff(std::shared_ptr<const RelCoeff_Block> cold, std::shared_ptr<const ZMatrix> natorb) const;
     std::shared_ptr<const ZMatrix> update_qvec(std::shared_ptr<const ZMatrix> qold, std::shared_ptr<const ZMatrix> natorb) const;
-    // coeff format transformation is a static function!
-    static std::shared_ptr<ZMatrix> format_coeff(const int nclosed, const int nact, const int nvirt, std::shared_ptr<const ZMatrix> coeff, const bool striped = true);
     // kramers adapt for RotFile is a static function!
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
     // function to generate modified virtual MOs from either a Fock matrix or the one-electron Hamiltonian
