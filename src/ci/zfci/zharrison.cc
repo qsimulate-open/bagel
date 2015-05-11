@@ -126,16 +126,10 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
     // Reorder as specified in the input so frontier orbitals contain the desired active space
     const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
     if (iactive) {
-      assert(iactive->size() == norb_);
       set<int> active_indices;
-      vector<int> active2 = {};
-
       // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-      for (auto& i : *iactive) {
+      for (auto& i : *iactive)
         active_indices.insert(lexical_cast<int>(i->data()) - 1);
-        active2.push_back(lexical_cast<int>(i->data()) - 1);
-      }
-      //coeff = rr->relcoeff_full()->set_active(active_indices, active2, geom_->nele()-charge_, tsymm_);
       coeff = coeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
     }
   }

@@ -41,6 +41,7 @@ RelCoeff::RelCoeff(const int _ndim, const bool _loc, const int _nclosed, const i
   assert(npos() == nneg() || nneg() == 0);
 }
 
+
 void RelCoeff::print_info() const {
   cout << "    * nbasis   :  4 x " << nbasis_nr() << " = " << nbasis_rel() << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed() << endl;

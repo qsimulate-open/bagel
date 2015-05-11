@@ -195,14 +195,11 @@ void ZCASSCF::init() {
 
   // specify active orbitals and move into the active space
   set<int> active_indices;
-  vector<int> active2 = {};
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) {
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-    for (auto& i : *iactive) {
-      active2.push_back(lexical_cast<int>(i->data()) - 1);
+    for (auto& i : *iactive)
       active_indices.insert(lexical_cast<int>(i->data()) - 1);
-    }
     scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
   }
 
