@@ -141,9 +141,9 @@ void ZCASSCF::init() {
     auto tmp = hctmp2->clone();
     tmp->copy_block(0, nneg_, tmp->ndim(), nneg_, hctmp2->slice(0,nneg_));
     tmp->copy_block(0, 0, tmp->ndim(), nneg_, hctmp2->slice(nneg_,hctmp->mdim()));
-    scoeff = make_shared<RelCoeff_Striped>(*tmp, nclosed_, nact_, nvirtnr_, nneg_);
+    scoeff = make_shared<const RelCoeff_Striped>(*tmp, nclosed_, nact_, nvirtnr_, nneg_);
   } else {
-    scoeff = make_shared<RelCoeff_Striped>(*relref->relcoeff_full(), nclosed_, nact_, nvirtnr_, nneg_);
+    scoeff = make_shared<const RelCoeff_Striped>(*relref->relcoeff_full(), nclosed_, nact_, nvirtnr_, nneg_);
   }
 
   // get maxiter from the input
@@ -182,15 +182,18 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  coeff_ = scoeff;
   if (!kramers_coeff) {
     if (nr_coeff_ == nullptr)
-      coeff_ = scoeff->init_kramers_coeff_dirac(geom_, overlap_, hcore_, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
+      scoeff = scoeff->init_kramers_coeff_dirac(geom_, overlap_, hcore_, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
     else
-      coeff_ = init_kramers_coeff_nonrel();
+      scoeff = init_kramers_coeff_nonrel();
   }
 
-  scoeff = make_shared<RelCoeff_Striped>(*coeff_, scoeff->nclosed(), scoeff->nact(), scoeff->nvirt_nr(), scoeff->nneg());
+  assert(scoeff->nclosed() == nclosed_);
+  assert(scoeff->nact() == nact_);
+  assert(scoeff->nvirt_nr() == nvirtnr_);
+  assert(scoeff->nneg() == nneg_);
+
   if (mvo) scoeff = generate_mvo(scoeff, ncore_mvo, hcore_mvo);
 
   // specify active orbitals and move into the active space
@@ -203,13 +206,14 @@ void ZCASSCF::init() {
     scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
   }
 
-  // format coefficient into blocks as {c,a,v}
-  shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, scoeff, /*striped*/true);
-  coeff_ = make_shared<const ZMatrix>(*tmp);
+  // TODO remove bcoeff when coeff_ is explicitly a RelCoeff_Block
+  shared_ptr<const RelCoeff_Block> bcoeff = scoeff->block_format();
+  coeff_ = bcoeff;
 
   // TODO clean up (remove this)
-  shared_ptr<RelCoeff_Block> bcoeff = scoeff->block_format();
-  assert((*bcoeff-*coeff_).rms() < 1.0e-10);
+  // format coefficient into blocks as {c,a,v}
+  shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, scoeff, /*striped*/true);
+  assert((*tmp-*coeff_).rms() < 1.0e-10);
 
   mute_stdcout();
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
