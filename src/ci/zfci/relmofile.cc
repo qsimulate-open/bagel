@@ -30,10 +30,9 @@
 #include <src/util/math/quatmatrix.h>
 #include <src/util/prim_op.h>
 #include <src/ci/zfci/relmofile.h>
-#include <src/mat1e/rel/reloverlap.h>
 #include <src/mat1e/rel/relhcore.h>
-#include <src/mat1e/giao/reloverlap_london.h>
 #include <src/mat1e/giao/relhcore_london.h>
+#include <src/scf/dhf/dfock.h>
 
 using namespace std;
 using namespace bagel;
@@ -51,8 +50,7 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
   nbasis_ = geom_->nbasis();
   nocc_ = (nfence - nstart)/2;
   assert((nfence - nstart) % 2 == 0);
-  if (!geom_->dfs())
-    geom_ = geom_->relativistic(gaunt_);
+  assert(geom_->dfs());
 
   // calculates the core fock matrix
   shared_ptr<const ZMatrix> hcore;
@@ -75,19 +73,7 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
     core_energy_ = 0.0;
   }
 
-  // then compute Kramers adapated coefficient matrices
-  shared_ptr<const ZMatrix> overlap;
-  if (!geom_->magnetism())
-    overlap = make_shared<RelOverlap>(geom_);
-  else
-    overlap = make_shared<RelOverlap_London>(geom_);
-
-  if (!restricted) {
-    shared_ptr<RelCoeff_Striped> kcoeff = coeff_->striped_format()->init_kramers_coeff_dirac(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
-    kramers_coeff_ = kcoeff->kramers_active();
-  } else {
-    kramers_coeff_ = coeff_->kramers_active();
-  }
+  kramers_coeff_ = coeff_->kramers_active();
 
   // calculate 1-e MO integrals
   shared_ptr<Kramers<2,ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);

@@ -24,7 +24,7 @@
 //
 
 #include <src/multi/zcasscf/zqvec.h>
-#include <src/mat1e/rel/reloverlap.h>
+#include <src/scf/dhf/dfock.h>
 
 using namespace std;
 using namespace bagel;

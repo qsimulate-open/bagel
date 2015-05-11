@@ -31,7 +31,6 @@
 #include <src/util/kramers.h>
 #include <src/util/math/zmatrix.h>
 #include <src/df/reldffull.h>
-#include <src/scf/dhf/dfock.h>
 #include <src/wfn/relreference.h>
 
 namespace bagel {

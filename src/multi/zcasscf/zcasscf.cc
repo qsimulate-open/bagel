@@ -25,6 +25,7 @@
 
 #include <fstream>
 #include <src/scf/dhf/dirac.h>
+#include <src/scf/dhf/dfock.h>
 #include <src/util/math/quatmatrix.h>
 #include <src/multi/zcasscf/zcasscf.h>
 #include <src/mat1e/rel/relhcore.h>
