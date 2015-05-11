@@ -95,15 +95,15 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
 
   space_ = make_shared<RelSpace>(norb_, nele_);
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
+  assert((restricted && coeff_zcas) || (!restricted && !coeff_zcas));
 
   // obtain the coefficient matrix in striped format
-  shared_ptr<const RelCoeff_Striped> coeff;
+  shared_ptr<const RelCoeff_Block> coeff;
   if (coeff_zcas) {
-    coeff = coeff_zcas->striped_format();
+    coeff = coeff_zcas;
   } else {
-    coeff = make_shared<RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
+    auto scoeff = make_shared<const RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
 
-    // then compute Kramers adapated coefficient matrices
     shared_ptr<const ZMatrix> hcore, overlap;
     if (!geom_->magnetism()) {
       overlap = make_shared<RelOverlap>(geom_);
@@ -113,16 +113,9 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
       hcore = make_shared<RelHcore_London>(geom_);
     }
 
-    coeff = coeff->init_kramers_coeff_dirac(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
-  }
+    // then compute Kramers adapated coefficient matrices
+    scoeff = scoeff->init_kramers_coeff_dirac(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
 
-  assert((restricted && coeff_zcas) || (!restricted && !coeff_zcas));
-  assert(coeff->nclosed() == ncore_);
-  assert(coeff->nact() == norb_);
-  assert(coeff->nvirt_nr() == coeff->mdim()/4-ncore_-norb_);
-  assert(coeff->nneg() == coeff->mdim()/2);
-
-  if (coeff_zcas == nullptr) {
     // Reorder as specified in the input so frontier orbitals contain the desired active space
     const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
     if (iactive) {
@@ -130,12 +123,18 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
       // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
       for (auto& i : *iactive)
         active_indices.insert(lexical_cast<int>(i->data()) - 1);
-      coeff = coeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
+      scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
     }
+    coeff = scoeff->block_format();
   }
 
+  assert(coeff->nclosed() == ncore_);
+  assert(coeff->nact() == norb_);
+  assert(coeff->nvirt_nr() == coeff->mdim()/4-ncore_-norb_);
+  assert(coeff->nneg() == coeff->mdim()/2);
+
   cout << "    * nvirt    : " << setw(6) << (coeff->mdim()/2-ncore_-norb_) << endl;
-  update(coeff->block_format(), restricted);
+  update(coeff, restricted);
 
 }
 
