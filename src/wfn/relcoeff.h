@@ -89,7 +89,12 @@ class RelCoeff_Striped : public RelCoeff {
     void serialize(Archive& ar, const unsigned int) { ar & boost::serialization::base_object<RelCoeff>(*this); }
 
   public:
+    // standard constructor; copy data directly from _coeff
     RelCoeff_Striped(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
+
+    // construct a blank RelCoeff_Striped
+    //RelCoeff_Striped(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
+    // : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
 
     std::shared_ptr<RelCoeff_Striped> electronic_part() const {
       ZMatrix tmp = slice(0, npos());
@@ -98,6 +103,13 @@ class RelCoeff_Striped : public RelCoeff {
     }
 
     std::shared_ptr<RelCoeff_Block> block_format() const;
+
+    // get Kramers-adapted coefficient via quaternion diagonalization
+    std::shared_ptr<RelCoeff_Striped> init_kramers_coeff_dirac(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> overlap,
+                                           std::shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const;
+
+    // rearrange coefficient to {c,a,v} by selecting active columns from input coefficient
+    std::shared_ptr<const RelCoeff_Striped> set_active(std::set<int> active_indices, const int nele, const bool paired) const;
 };
 
 
@@ -110,7 +122,12 @@ class RelCoeff_Block : public RelCoeff {
     void serialize(Archive& ar, const unsigned int) { ar & boost::serialization::base_object<RelCoeff>(*this); }
 
   public:
+    // standard constructor; copy data directly from _coeff
     RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
+
+    // construct a blank RelCoeff_Block
+    //RelCoeff_Block(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
+    // : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
 };

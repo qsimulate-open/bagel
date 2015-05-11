@@ -34,7 +34,6 @@
 #include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/giao/reloverlap_london.h>
 #include <src/mat1e/giao/relhcore_london.h>
-#include <src/multi/zcasscf/zcasscf.h>
 
 using namespace std;
 using namespace bagel;
@@ -84,7 +83,7 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
     overlap = make_shared<RelOverlap_London>(geom_);
 
   if (!restricted) {
-    shared_ptr<RelCoeff_Striped> kcoeff = ZCASSCF::init_kramers_coeff_dirac(coeff_->striped_format(), geom_, overlap, hcore, nstart/2, (nfence-nstart)/2, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
+    shared_ptr<RelCoeff_Striped> kcoeff = coeff_->striped_format()->init_kramers_coeff_dirac(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
     shared_ptr<RelCoeff_Block> kbcoeff = kcoeff->block_format();
     kramers_coeff_ = make_shared<Kramers<2,ZMatrix>>();
     kramers_coeff_->emplace(0, kbcoeff->slice_copy(nstart, nstart+(nfence-nstart)/2));

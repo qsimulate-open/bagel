@@ -26,7 +26,6 @@
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/zfci/relspace.h>
 #include <src/util/math/comb.h>
-#include <src/multi/zcasscf/zcasscf.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 
@@ -107,8 +106,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
         active_indices.insert(lexical_cast<int>(i->data()) - 1);
         active2.push_back(lexical_cast<int>(i->data()) - 1);
       }
-      //shared_ptr<const ZMatrix> tmpcoeff = ZCASSCF::set_active(active_indices, active2, rr->relcoeff_full(), ncore_, geom_->nele()-charge_, norb_, tsymm_);
-      coeff = ZCASSCF::set_active(active_indices, rr->relcoeff_full(), ncore_, geom_->nele()-charge_, norb_, tsymm_);
+      coeff = rr->relcoeff_full()->set_active(active_indices, geom_->nele()-charge_, tsymm_);
       assert(ncore_ == coeff->nclosed());
       assert(norb_ == coeff->nact());
       assert(coeff->mdim()/4-ncore_-norb_ == coeff->nvirt_nr());

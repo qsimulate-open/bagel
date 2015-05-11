@@ -24,6 +24,9 @@
 //
 
 #include <src/wfn/relcoeff.h>
+#include <src/util/math/quatmatrix.h>
+#include <src/scf/dhf/dfock.h>
+#include <src/ci/zfci/relmofile.h>
 #include <cassert>
 #include <iostream>
 #include <iomanip>
@@ -161,6 +164,128 @@ std::shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
   auto out = make_shared<RelCoeff_Block>(*work, nclosed_, nact_, nvirt_nr_, nneg_);
   return out;
 }
+
+
+// Kramers-adapted coefficient via quaternion diagonalization, assuming guess orbitals from Dirac--Hartree--Fock
+shared_ptr<RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff_dirac(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
+                    shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const {
+
+  // quaternion diagonalization has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
+  assert((nact_ > 1 || !tsymm));
+  assert(nbasis_ == geom->nbasis());
+
+  // transformation from the standard format to the quaternion format
+  auto quaternion = [](shared_ptr<ZMatrix> o) {
+    shared_ptr<ZMatrix> scratch = o->clone();
+    const int n = o->ndim()/4;
+    const int m = o->mdim()/4;
+    map<int, int> trans {{0,0}, {1,2}, {2,1}, {3,3}};
+    for (auto& i : trans)
+      for (auto& j : trans)
+        scratch->copy_block(i.first*n, j.first*m, n, m, o->get_submatrix(i.second*n, j.second*m, n, m));
+    *o = *scratch;
+  };
+
+  shared_ptr<ZMatrix> coefftmp;
+  shared_ptr<ZMatrix> focktmp;
+  shared_ptr<ZMatrix> ctmp;
+  // quaternion diagonalize a fock matrix
+  focktmp = make_shared<DFock>(geom, hcore, slice_copy(0, nele), gaunt, breit, /*store_half*/false, /*robust*/false);
+  quaternion(focktmp);
+
+  shared_ptr<ZMatrix> s12 = overlap->tildex(1.0e-9);
+  quaternion(s12);
+
+  shared_ptr<ZMatrix> fock_tilde;
+  if (tsymm) {
+    fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
+#ifndef NDEBUG
+    auto quatfock = static_pointer_cast<const QuatMatrix>(fock_tilde);
+    const double tsymm_err = quatfock->check_t_symmetry();
+    if (tsymm_err > 1.0e-8)
+      cout << "   ** Caution:  poor Kramers symmetry in fock_tilde (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
+#endif
+  } else {
+    fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
+  }
+
+  // quaternion diagonalization
+  {
+    VectorB eig(fock_tilde->ndim());
+    fock_tilde->diagonalize(eig);
+
+    if (!tsymm)
+      RelMOFile::rearrange_eig(eig, fock_tilde);
+  }
+
+  // re-order to kramers format and move negative energy states to virtual space
+  ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
+
+  auto ktmp = make_shared<RelCoeff_Kramers>(*ctmp, nclosed_, nact_, nvirt_nr_, nneg_);
+  auto out = ktmp->block_format()->striped_format();
+  return out;
+}
+
+
+shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_indices, const int nele, const bool paired) const {
+  // assumes coefficient is in striped format
+  const int nmobasis = paired ? npos()/2 : npos();
+
+  cout << " " << endl;
+  if (!paired) cout << "    * Selecting individual spin-orbitals for the active space." << endl;
+  cout << "    ==== Active orbitals : ===== " << endl;
+  for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
+  cout << "    ============================ " << endl << endl;
+
+  if (active_indices.size() != (paired ? nact_ : 2*nact_))
+    throw logic_error("RelCoeff_Striped::set_active - Number of active indices does not match number of active orbitals.  (" + to_string(paired ? nact_ : 2*nact_) + " expected)");
+  if (any_of(active_indices.begin(), active_indices.end(), [nmobasis](int i){ return (i < 0 || i >= nmobasis); }) )
+    throw runtime_error("RelCoeff_Striped::set_active - Invalid MO index provided.  (Should be from 1 to " + to_string(nmobasis) + ")");
+
+  shared_ptr<ZMatrix> tmp_coeff = clone();
+
+  int iclosed = 0;
+  int iactive = nclosed_;
+  int ivirt   = nclosed_ + nact_;
+  int nclosed_start = nele / 2;
+
+  if (!paired) {
+    iactive *= 2;
+    ivirt *= 2;
+    nclosed_start = nele;
+  }
+
+  auto cp   = [&tmp_coeff, this, &paired] (const int i, int& pos) {
+    if (paired) {
+      copy_n(element_ptr(0,i*2), nbasis_rel(), tmp_coeff->element_ptr(0, pos*2));
+      copy_n(element_ptr(0,i*2+1), nbasis_rel(), tmp_coeff->element_ptr(0, pos*2+1));
+    } else {
+      copy_n(element_ptr(0,i), nbasis_rel(), tmp_coeff->element_ptr(0, pos));
+    }
+    ++pos;
+  };
+
+  int closed_count = 0;
+  for (int i = 0; i < nmobasis; ++i) {
+    if (active_indices.find(i) != active_indices.end()) {
+      cp(i, iactive);
+    } else if (i < nclosed_start) {
+      cp(i, iclosed);
+      closed_count++;
+    } else {
+      cp(i, ivirt);
+    }
+  }
+
+  if (closed_count != (paired ? nclosed_ : 2*nclosed_))
+    throw runtime_error("Invalid combination of closed and active orbitals.");
+
+  // copy positrons
+  tmp_coeff->copy_block(0, npos(), nbasis_rel(), nneg(), slice(npos(), mdim()));
+
+  return make_shared<const RelCoeff_Striped>(*tmp_coeff, nclosed_, nact_, mdim()/4-nclosed_-nact_, nneg());
+}
+
 
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff)
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff_Striped)
