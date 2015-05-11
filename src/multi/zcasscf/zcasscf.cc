@@ -181,7 +181,6 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  //shared_ptr<const ZMatrix> aodensity1 = coeff_->form_density_rhf(geom_->nele() - charge_);
   coeff_ = scoeff;
   if (!kramers_coeff) {
     if (nr_coeff_ == nullptr)
@@ -191,12 +190,7 @@ void ZCASSCF::init() {
   }
 
   scoeff = make_shared<RelCoeff_Striped>(*coeff_, scoeff->nclosed(), scoeff->nact(), scoeff->nvirt_nr(), scoeff->nneg());
-  //shared_ptr<const ZMatrix> aodensity2 = coeff_->form_density_rhf(geom_->nele() - charge_);
-  //auto aodensitychange = make_shared<const ZMatrix>(*aodensity1 - *aodensity2);
-  //cout << " **** Overall change in the density matrix upon Kramers-adpatation = " << setprecision(4) << scientific << aodensitychange->rms() << endl;
-
-  // TODO make generate_mvo use and return a RelCoeff_Striped directly
-  if (mvo) scoeff = make_shared<RelCoeff_Striped>(*generate_mvo(ncore_mvo, hcore_mvo), nclosed_, nact_, nvirtnr_, nneg_);
+  if (mvo) scoeff = generate_mvo(scoeff, ncore_mvo, hcore_mvo);
 
   // specify active orbitals and move into the active space
   set<int> active_indices;
@@ -487,7 +481,9 @@ shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcore_mvo) {
+// TODO Debug, verify
+// TODO Cleanup and optimize so it really makes use of the features in RelCoeff
+shared_ptr<const RelCoeff_Striped> ZCASSCF::generate_mvo(shared_ptr<const RelCoeff_Striped> coeff, const int ncore, const bool hcore_mvo) const {
   // function to compute the modified virtual orbitals, either by diagonalization of a Fock matrix or of the one-electron Hamiltonian
   // Procedures described in Jensen et al; JCP 87, 451 (1987) (hcore) and Bauschlicher; JCP 72 880 (1980) (Fock)
   // assumes coeff_ is in striped format ordered as {e-,p+}
@@ -521,13 +517,10 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
     *o = *scratch;
   };
 
-  // make a striped coeff
-  shared_ptr<ZMatrix> ecoeff = coeff_->copy();
-
-  shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom_, hcore_, ecoeff->slice_copy(0, ncore*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
+  shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom_, hcore_, coeff->slice_copy(0, ncore*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
 
   // take virtual part out and make block format
-  shared_ptr<ZMatrix> vcoeff = ecoeff->slice_copy(geom_->nele(), geom_->nele()+hfvirt*2);
+  shared_ptr<ZMatrix> vcoeff = coeff->slice_copy(geom_->nele(), geom_->nele()+hfvirt*2);
   quaternion(vcoeff, /*back_trans*/false);
 
   shared_ptr<ZMatrix> mofock;
@@ -552,6 +545,7 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   quaternion(vcoeff, /*back_trans*/true);
 
   // copy in modified virtuals
+  shared_ptr<ZMatrix> ecoeff = coeff->copy();
   ecoeff->copy_block(0, geom_->nele(), ecoeff->ndim(), hfvirt*2, vcoeff->data());
 
   {
@@ -561,7 +555,7 @@ shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcor
   }
 
   resume_stdcout();
-  return ecoeff;
+  return make_shared<const RelCoeff_Striped>(*ecoeff, nclosed_, nact_, nvirtnr_, nneg_);
 }
 
 
