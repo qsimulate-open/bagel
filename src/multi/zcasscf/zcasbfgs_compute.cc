@@ -179,7 +179,7 @@ void ZCASBFGS::compute() {
       auto ctmp2 = coeff_->copy();
       ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2 + nvirtnr_, ctmp->slice(0, nocc_*2 + nvirtnr_));
       ctmp2->copy_block(0, nocc_*2 + nvirt_, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2 + nvirtnr_, ctmp->mdim()));
-      coeff_ = make_shared<const ZMatrix>(*ctmp2);
+      coeff_ = make_shared<const RelCoeff_Block>(*ctmp2, nclosed_, nact_, nvirtnr_, nneg_);
     } else {
       // extract occupied and positronic orbitals from coefficient
       auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), coeff_->mdim()/2 + nocc_*2);
@@ -193,7 +193,7 @@ void ZCASBFGS::compute() {
       ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
       ctmp2->copy_block(0, nocc_*2 + nvirtnr_, coeff_->ndim(), nneg_/2, ctmp->slice(nocc_*2, nocc_*2 +nneg_/2));
       ctmp2->copy_block(0, nocc_*2 + nvirtnr_ + nvirt_, coeff_->ndim(), nneg_/2, ctmp->slice(nocc_*2 + nneg_/2, ctmp->mdim()));
-      coeff_ = make_shared<const ZMatrix>(*ctmp2);
+      coeff_ = make_shared<const RelCoeff_Block>(*ctmp2, nclosed_, nact_, nvirtnr_, nneg_);
     }
     // for next BFGS extrapolation
     if (optimize_electrons) {
@@ -203,7 +203,7 @@ void ZCASBFGS::compute() {
     }
 
     // synchronization
-    mpi__->broadcast(const_pointer_cast<ZMatrix>(coeff_)->data(), coeff_->size(), 0);
+    mpi__->broadcast(const_pointer_cast<RelCoeff_Block>(coeff_)->data(), coeff_->size(), 0);
 
     // print energy
     resume_stdcout();

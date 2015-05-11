@@ -39,18 +39,15 @@ using namespace bagel;
 
 ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref)
   : Method(idat, geom, ref) {
-  if ((dynamic_pointer_cast<const RelReference>(ref))) {
-      auto relref = dynamic_pointer_cast<const RelReference>(ref);
-      coeff_ = relref->relcoeff();
-      ref_ = ref;
-  } else {
+  if (!dynamic_pointer_cast<const RelReference>(ref)) {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
       nr_coeff_ = ref->coeff();
       if (geom->magnetism()) // TODO Implement nr_coeff_ for GIAO basis sets
         throw runtime_error("So far only relativistic input coefficients can be used for ZCASSCF with magnetic field");
     }
   }
-// relref needed for many things below ; TODO eliminate dependence on ref_ being a relref
+
+  // relref needed for many things below ; TODO eliminate dependence on ref_ being a relref
   if (!dynamic_pointer_cast<const RelReference>(ref)) {
     auto idata_tmp = make_shared<PTree>(*idata_);
     const int ctmp = idata_->get<int>("charge", 0);
@@ -132,7 +129,7 @@ void ZCASSCF::init() {
   // set coefficient
   const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
   shared_ptr<const RelCoeff_Striped> scoeff;
-  if (coeff_ == nullptr && hcore_guess) {
+  if (hcore_guess) {
     auto s12 = overlap_->tildex(1.0e-10);
     auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
     VectorB eig(hctmp->ndim());
@@ -189,11 +186,6 @@ void ZCASSCF::init() {
       scoeff = init_kramers_coeff_nonrel();
   }
 
-  assert(scoeff->nclosed() == nclosed_);
-  assert(scoeff->nact() == nact_);
-  assert(scoeff->nvirt_nr() == nvirtnr_);
-  assert(scoeff->nneg() == nneg_);
-
   if (mvo) scoeff = generate_mvo(scoeff, ncore_mvo, hcore_mvo);
 
   // specify active orbitals and move into the active space
@@ -206,19 +198,12 @@ void ZCASSCF::init() {
     scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
   }
 
-  // TODO remove bcoeff when coeff_ is explicitly a RelCoeff_Block
-  shared_ptr<const RelCoeff_Block> bcoeff = scoeff->block_format();
-  coeff_ = bcoeff;
-
-  // TODO clean up (remove this)
-  // format coefficient into blocks as {c,a,v}
-  shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, scoeff, /*striped*/true);
-  assert((*tmp-*coeff_).rms() < 1.0e-10);
+  coeff_ = scoeff->block_format();
 
   mute_stdcout();
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
-    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, bcoeff, /*restricted*/true);
+    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_, /*restricted*/true);
   }
   resume_stdcout();
 
@@ -446,9 +431,9 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatri
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::update_coeff(shared_ptr<const ZMatrix> cold, shared_ptr<const ZMatrix> natorb) const {
+shared_ptr<const RelCoeff_Block> ZCASSCF::update_coeff(shared_ptr<const RelCoeff_Block> cold, shared_ptr<const ZMatrix> natorb) const {
   // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
-  auto cnew = make_shared<ZMatrix>(*cold);
+  auto cnew = make_shared<RelCoeff_Block>(*cold, cold->nclosed(), cold->nact(), cold->nvirt_nr(), cold->nneg());
   int n    = natorb->ndim();
   int nbas = cold->ndim();
   zgemm3m_("N", "N", nbas, n, n, 1.0, cold->data()+nbas*nclosed_*2, nbas, natorb->get_conjg()->data(), n,
@@ -474,10 +459,7 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
 shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
   // store both pos and neg energy states, only thing saved thus far
   // TODO : modify to be more like CASSCF than dirac, will need to add FCI stuff
-  shared_ptr<const ZMatrix> coeff = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false); // transform coefficient to striped structure
-  auto c = make_shared<RelCoeff_Striped>(*coeff, nclosed_, nact_, nvirtnr_, nneg_);
-
-  auto out = make_shared<RelReference>(geom_, c, energy_.back(), nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true,
+  auto out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_.back(), nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true,
                                        fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
   return out;
 }
