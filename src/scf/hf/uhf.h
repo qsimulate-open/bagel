@@ -75,7 +75,7 @@ class UHF : public SCF_base {
 
     std::shared_ptr<const Reference> conv_to_ref() const override;
     // return the natural orbital coefficients and nclosed and nact
-    std::tuple<std::shared_ptr<Coeff>, int, std::vector<std::shared_ptr<RDM<1>>>> natural_orbitals() const;
+    std::tuple<std::shared_ptr<Coeff>, int, std::shared_ptr<VecRDM<1>>> natural_orbitals() const;
 
     std::shared_ptr<const Matrix> aodensity() const { return aodensity_; }
 };

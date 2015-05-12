@@ -186,7 +186,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
 
     void zero() { this->for_each_block( [] (std::shared_ptr<RBlock> i) { std::fill_n(i->local(), i->size(), 0.0 ); } ); }
 
-    void synchronize() { /* do nothing */ }
+    void synchronize(const int root = 0) { /* do nothing */ }
 
     std::shared_ptr<DistRASCivector<DataType>> clone() const { return std::make_shared<DistRASCivector<DataType>>(det_); }
     std::shared_ptr<DistRASCivector<DataType>> copy() const  { return std::make_shared<DistRASCivector<DataType>>(*this); }

@@ -26,9 +26,6 @@
 // T should have
 //  - double dot_product(const T&)
 //  - void ax_plus_y(double, const T&) // added to self
-//  - copy constructor (values are not used, though).
-//  - void orthog(list<shared_ptr<T>>)
-//
 
 #ifndef __BAGEL_UTIL_DAVIDSON
 #define __BAGEL_UTIL_DAVIDSON
@@ -41,15 +38,15 @@
 
 namespace bagel {
 
-template <typename T, class MatType = Matrix>
-class DavidsonDiag {
+template <typename T, typename U, class MatType = Matrix>
+class DavidsonDiag_ {
   protected:
     struct BasisPair {
       public:
         std::shared_ptr<const T> cc;
-        std::shared_ptr<const T> sigma;
+        std::shared_ptr<const U> sigma;
         BasisPair() { }
-        BasisPair(std::shared_ptr<const T> a, std::shared_ptr<const T> b) : cc(a), sigma(b) { }
+        BasisPair(std::shared_ptr<const T> a, std::shared_ptr<const U> b) : cc(a), sigma(b) { }
       private:
         // serialization
         friend class boost::serialization::access;
@@ -82,18 +79,18 @@ class DavidsonDiag {
 
   public:
     // Davidson with periodic collapse of the subspace
-    DavidsonDiag() { }
-    DavidsonDiag(int n, int max) : nstate_(n), max_((max+1)*n), size_(0), vec_(max_) {
+    DavidsonDiag_() { }
+    DavidsonDiag_(int n, int max) : nstate_(n), max_((max+1)*n), size_(0), vec_(max_) {
       if (max < 2) throw std::runtime_error("Davidson diagonalization requires at least two trial vectors per root.");
     }
 
-    double compute(std::shared_ptr<const T> cc, std::shared_ptr<const T> cs) {
+    double compute(std::shared_ptr<const T> cc, std::shared_ptr<const U> cs) {
       assert(nstate_ == 1);
       return compute(std::vector<std::shared_ptr<const T>>{cc},
-                     std::vector<std::shared_ptr<const T>>{cs}).front();
+                     std::vector<std::shared_ptr<const U>>{cs}).front();
     }
 
-    std::vector<double> compute(std::vector<std::shared_ptr<const T>> cc, std::vector<std::shared_ptr<const T>> cs) {
+    std::vector<double> compute(std::vector<std::shared_ptr<const T>> cc, std::vector<std::shared_ptr<const U>> cs) {
       // reset the convergence flags
       std::vector<bool> converged(nstate_, false);
 
@@ -146,7 +143,7 @@ class DavidsonDiag {
 
       // first basis vector is always the current best guess
       std::vector<std::shared_ptr<T>> cv = civec();
-      std::vector<std::shared_ptr<T>> sv = sigmavec();
+      std::vector<std::shared_ptr<U>> sv = sigmavec();
       for (int i = 0; i != nstate_; ++i)
         basis_[i] = std::make_shared<BasisPair>(cv[i], sv[i]);
 
@@ -204,18 +201,18 @@ class DavidsonDiag {
     }
 
     // perhaps can be cleaner.
-    std::vector<std::shared_ptr<T>> residual() {
-      std::vector<std::shared_ptr<T>> out;
+    std::vector<std::shared_ptr<U>> residual() {
+      std::vector<std::shared_ptr<U>> out;
       for (int i = 0; i != nstate_; ++i) {
-        auto tmp = basis_.front()->cc->clone();
+        auto tmp = basis_.front()->sigma->clone();
         int k = 0;
         for (auto& iv : basis_) {
-          if ( std::abs(eig_->element(k++,i)) > 1.0e-16 )
+          if (std::abs(eig_->element(k++,i)) > 1.0e-16)
             tmp->ax_plus_y(-vec_(i)*eig_->element(k-1,i), iv->cc);
         }
         k = 0;
         for (auto& iv : basis_) {
-          if (std::abs(eig_->element(k++,i)) > 1.0e-16 )
+          if (std::abs(eig_->element(k++,i)) > 1.0e-16)
             tmp->ax_plus_y(eig_->element(k-1,i), iv->sigma);
         }
         out.push_back(tmp);
@@ -239,8 +236,8 @@ class DavidsonDiag {
     }
 
     // return sigma vector
-    std::vector<std::shared_ptr<T>> sigmavec() {
-      std::vector<std::shared_ptr<T>> out;
+    std::vector<std::shared_ptr<U>> sigmavec() {
+      std::vector<std::shared_ptr<U>> out;
       for (int i = 0; i != nstate_; ++i) {
         auto tmp = basis_.front()->sigma->clone();
         int k = 0;
@@ -254,6 +251,9 @@ class DavidsonDiag {
     }
 
 };
+
+template <typename T, class MatType = Matrix>
+using DavidsonDiag = DavidsonDiag_<T, T, MatType>;
 
 }
 

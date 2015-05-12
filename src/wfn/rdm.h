@@ -28,6 +28,8 @@
 #define __BAGEL_WFN_RDM_H
 
 #include <type_traits>
+#include <src/util/vec.h>
+#include <src/util/kramers.h>
 #include <src/wfn/geometry.h>
 
 namespace bagel {
@@ -48,7 +50,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-// TODO
+      ar & boost::serialization::base_object<btas::TensorN<DataType,N>>(*this);
     }
 
   public:
@@ -167,6 +169,57 @@ template<> std::shared_ptr<Matrix> RDM<1,double>::rdm1_mat(const int nclosed, co
 template<> void RDM<1,double>::print(const double thresh) const;
 template<> void RDM<2,double>::print(const double thresh) const;
 template<> void RDM<3,double>::print(const double thresh) const;
+template<> void RDM<1,std::complex<double>>::print(const double thresh) const;
+template<> void RDM<2,std::complex<double>>::print(const double thresh) const;
+template<> void RDM<3,std::complex<double>>::print(const double thresh) const;
+
+template<int rank>
+using VecRDM = Vec<RDM<rank, double>>;
+
+namespace detail {
+
+template<int N, typename DataType, int M>
+struct fill_in {
+  fill_in() { }
+  void operator()(std::shared_ptr<RDM<N,DataType>> out, std::shared_ptr<const RDM<N,DataType>> in, const std::array<size_t,2*N>& par, const size_t& norb,
+                  const size_t offset1 = 0, const size_t offset2 = 0) {
+    for (int i = 0; i != norb; ++i) {
+      const size_t off1 = offset1*(2*norb) + par[M-1] + i;
+      const size_t off2 = offset2*norb + i;
+      fill_in<N,DataType,M-1>()(out, in, par, norb, off1, off2);
+    }
+  }
+};
+
+template<int N, typename DataType>
+struct fill_in<N,DataType,2> {
+  fill_in() { }
+  void operator()(std::shared_ptr<RDM<N,DataType>> out, std::shared_ptr<const RDM<N,DataType>> in, const std::array<size_t,2*N>& par, const size_t& norb,
+                  const size_t offset1 = 0, const size_t offset2 = 0) {
+    for (int i = 0; i != norb; ++i) {
+      const size_t off1 = offset1*(2*norb) + par[1] + i;
+      const size_t off2 = offset2*norb + i;
+      std::copy_n(in->data()+off2*norb, norb, out->data()+off1*2*norb+par[0]);
+    }
+  }
+};
+}
+
+template<int N, typename DataType>
+std::shared_ptr<RDM<N,DataType>> expand_kramers(std::shared_ptr<const Kramers<2*N,RDM<N,DataType>>> o, const size_t norb) {
+//assert(!(o->begin()->second && o->begin()->second->norb() != norb));
+  auto out = std::make_shared<RDM<N,DataType>>(2*norb);
+  for (size_t i = 0; i != (1<<(2*N)); ++i) {
+    auto data = o->get_data(i);
+    if (data) {
+      std::array<size_t,2*N> par;
+      for (int j = 0; j != 2*N; ++j)
+        par[2*N-1-j] = ((i>>j)&1)*norb;
+      detail::fill_in<N,DataType,2*N>()(out, data, par, norb);
+    }
+  }
+  return out;
+}
 
 }
 

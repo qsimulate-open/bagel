@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_SUITE(TEST_RELFCI)
 BOOST_AUTO_TEST_CASE(ZHARRISON) {
   BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_coulomb"), reference_relfci_energy()));
   BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_gaunt"), reference_relfci_energy2()));
-//  BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_breit"), reference_relfci_energy3()));
+  BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_breit"), reference_relfci_energy3()));
   BOOST_CHECK(compare(relfci_energy("i_london_relfci_coulomb"), reference_relfci_energy4()));
   BOOST_CHECK(compare(relfci_energy("h2_tzvpp_london_relfci_coulomb"), reference_relfci_energy5()));
   BOOST_CHECK(compare(relfci_energy("ca_london_relfci_coulomb"), reference_relfci_energy6()));

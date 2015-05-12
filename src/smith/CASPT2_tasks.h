@@ -46,13 +46,6 @@
 #include <src/smith/CASPT2_tasks15.h>
 #include <src/smith/CASPT2_tasks16.h>
 #include <src/smith/CASPT2_tasks17.h>
-#include <src/smith/CASPT2_tasks18.h>
-#include <src/smith/CASPT2_tasks19.h>
-#include <src/smith/CASPT2_tasks20.h>
-#include <src/smith/CASPT2_tasks21.h>
-#include <src/smith/CASPT2_tasks22.h>
-#include <src/smith/CASPT2_tasks23.h>
-#include <src/smith/CASPT2_tasks24.h>
 
 #endif
 #endif

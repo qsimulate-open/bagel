@@ -55,8 +55,6 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   timer.tick_print("Reference calculation");
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
-  if (geom->df() == nullptr)
-    throw logic_error("CASPT2Grad is only implemented with DF");
 }
 
 
@@ -66,7 +64,8 @@ void CASPT2Grad::compute() {
   const int nact = ref_->nact();
   {
     // construct SMITH here
-    shared_ptr<const PTree> smithinput = idata_->get_child("smith");
+    shared_ptr<PTree> smithinput = idata_->get_child("smith");
+    smithinput->put<bool>("grad", true);
     auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
     smith->compute();
 
@@ -76,8 +75,8 @@ void CASPT2Grad::compute() {
     if (nact) {
       cideriv_ = smith->cideriv()->copy();
     }
-    target_ = smith->algo()->ref()->target();
-    ncore_  = smith->algo()->ref()->ncore();
+    target_ = smith->algo()->info()->target();
+    ncore_  = smith->algo()->info()->ncore();
 
     Timer timer;
 

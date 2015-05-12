@@ -700,6 +700,18 @@ namespace btas {
       }
   }
 
+  /// Tensor with const number of dimensions
+  template <typename _T,
+            size_t _N,
+            CBLAS_ORDER _Order = CblasRowMajor,
+            class _Storage = btas::DEFAULT::storage<_T>,
+            class = typename std::enable_if<std::is_same<_T, typename _Storage::value_type>::value>::type
+           >
+  using TensorNd = Tensor<_T,
+                          RangeNd<_Order, std::array<long, _N>, btas::BoxOrdinal<_Order,std::array<long, _N>>>,
+                          _Storage
+                         >;
+
 } // namespace btas
 
 namespace boost {

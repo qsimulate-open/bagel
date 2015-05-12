@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
         if (dodf && !geom->df()) throw runtime_error("It seems that DF basis was not specified in molecule block");
       }
 
-      if ((title == "smith" || title == "fci") && ref == nullptr)
+      if ((title == "smith" || title == "relsmith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
 
 #ifndef DISABLE_SERIALIZATION

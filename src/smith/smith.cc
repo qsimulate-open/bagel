@@ -26,7 +26,10 @@
 
 #include <bagel_config.h>
 #include <src/smith/smith.h>
+#include <src/smith/MRCI.h>
+#include <src/smith/RelMRCI.h>
 #include <src/smith/CASPT2.h>
+#include <src/smith/RelCASPT2.h>
 
 
 using namespace std;
@@ -34,14 +37,16 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
-  string method = idata_->get<string>("method", "mp2");
+  const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
   // make a smith_info class
-  auto info = make_shared<SMITH_Info>(r, idata);
+  auto info = make_shared<SMITH_Info<double>>(r, idata);
 
 #ifdef COMPILE_SMITH
   if (method == "caspt2") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
+  } else if (method == "mrci") {
+    algo_ = make_shared<MRCI::MRCI>(info);
   } else {
 #else
   {
@@ -55,9 +60,11 @@ void Smith::compute() {
   algo_->solve();
 
 #ifdef COMPILE_SMITH
-  // TODO toggle by something better than this.
-  auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
-  if (algop) {
+  if (algo_->info()->grad()) {
+    auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
+    assert(algop);
+
+    algop->solve_deriv();
     dm1_ = algop->rdm12();
     dm11_ = algop->rdm11();
     dm2_ = algop->rdm21();
@@ -66,10 +73,30 @@ void Smith::compute() {
     wf1norm_ = algop->correlated_norm();
 
     // convert ci derivative tensor to civec
-    cider_ = algop->ci_deriv();
+    cider_ = algop->ci_deriv(ref_->ciwfn()->det());
 
     // todo check
-    coeff_ = algop->coeff();
+    coeff_ = make_shared<Coeff>(*algop->coeff());
   }
 #endif
+}
+
+RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
+  const string method = to_lower(idata_->get<string>("method", "caspt2"));
+
+  // make a smith_info class
+  auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
+
+#ifdef COMPILE_SMITH
+  if (method == "mrci") {
+    algo_ = make_shared<RelMRCI::RelMRCI>(info);
+  } else if (method == "caspt2") {
+    algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
+  } else {
+#else
+  {
+#endif
+    stringstream ss; ss << method << " method is not implemented in SMITH";
+    throw logic_error(ss.str());
+  }
 }
