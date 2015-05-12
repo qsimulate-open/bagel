@@ -262,9 +262,9 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const a
     }
   }
   return make_tuple(out1, out); //Monomer
-#endif
-
+#else
   return make_tuple(nullptr, out);
+#endif
 }
 
 

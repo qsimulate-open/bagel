@@ -46,10 +46,17 @@ class ASD_OrbOpt : public Method, public std::enable_shared_from_this<ASD_OrbOpt
     int max_iter_;
     int nactcloA_;
     int nactcloB_;
+
     double gradient_thresh_;
     double rotation_thresh_;
     double energy_thresh_;
-    bool semi_canonical_;
+    bool semi_canonicalize_;
+    bool print_orbital_;
+
+    double fix_ci_begin_;
+    double fix_ci_thresh_;
+    int fix_ci_begin_iter_;
+    bool fix_ci_finish_;
 
     int nactA_;
     int nactB_;

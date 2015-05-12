@@ -43,8 +43,8 @@ class ASD_RotationMatrix {
     std::array<int,3> rasB_;
     const int nactA_;
     const int nactB_;
-    const bool inter_;
-    const bool intra_;
+    const bool inter_; //inter subspace rotations
+    const bool intra_; //intra active space rotations
     const int size_;
     std::unique_ptr<DataType[]> data_;
 

@@ -33,10 +33,6 @@ namespace bagel {
 class ASD_BFGS : public ASD_OrbOpt {
 
   protected:
-    double thresh_inter_;
-    double thresh_intra_;
-    bool single_bfgs_;
-
     void common_init() {
       std::cout << "    * Using the Quasi 2nd-order algorithm as noted in Chaban et al. TCA (1997)" << std::endl << std::endl;
     }

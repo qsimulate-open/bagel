@@ -26,10 +26,9 @@
 #include <src/scf/hf/fock.h>
 #include <src/asd/orbital/asd_bfgs.h>
 #include <src/asd/construct_asd.h>
-#include <src/util/math/davidson.h>
+//#include <src/util/math/davidson.h>
 #include <src/util/math/step_restrict_bfgs.h>
-#include <src/util/math/hpw_diis.h>
-//#include <src/util/math/bfgs.h>
+//#include <src/util/math/hpw_diis.h>
 #include <src/util/io/moldenout.h>
 
 using namespace std;
@@ -37,39 +36,31 @@ using namespace bagel;
 
 void ASD_BFGS::compute() {
 
-  //BFGS parameters
-  thresh_inter_ = idata_->get<double>("thresh_inter", 5.0e-4);
-  thresh_intra_ = idata_->get<double>("thresh_intra", 5.0e-4);
-  single_bfgs_ = idata_->get<bool>("single_bfgs", false);
+  //BFGS extra optimization parameters
+  double thresh_inter = idata_->get<double>("thresh_inter", 5.0e-4);
+  double thresh_intra = idata_->get<double>("thresh_intra", 5.0e-4);
+  bool single_bfgs = idata_->get<bool>("single_bfgs", false);
   bool no_active = idata_->get<bool>("no_active", false);
   bool active_only = idata_->get<bool>("active_only", false);
   if (no_active || active_only) {
-    single_bfgs_ = false;
+    single_bfgs = false;
     max_iter_ *= 2;
   }
-  //fix_ci parameters
-  double fix_ci_begin = idata_->get<double>("fix_ci_begin", 5.0e-4); //gradent
-  double fix_ci_end   = idata_->get<double>("fix_ci_end",   1.0e-4);
-  double fix_ci_begin_energy = idata_->get<double>("fix_ci_begin_energy", 5.0e-5);  //energy
-  double fix_ci_end_energy   = idata_->get<double>("fix_ci_end_energy", 1.0e-6);
-  double fix_ci_begin_rotation = idata_->get<double>("fix_ci_begin_rotation", 5.0e-3); //rotation
-  double fix_ci_end_rotation = idata_->get<double>("fix_ci_end_rotation", 5.0e-4);
 
   vector<double> previous_energy(max_iter_,0.0);
 
-  // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
   shared_ptr<SRBFGS<ASD_RotFile>> bfgs;
   shared_ptr<SRBFGS<ASD_RotFile>> intra_bfgs; //cloased-active, closed-virtual, active-virtual only
   shared_ptr<SRBFGS<ASD_RotFile>> inter_bfgs; //active-active only
-//shared_ptr<BFGS<ASD_RotFile>> bfgs;
-//shared_ptr<BFGS<ASD_RotFile>> intra_bfgs; //cloased-active, closed-virtual, active-virtual only
-//shared_ptr<BFGS<ASD_RotFile>> inter_bfgs; //active-active only
   pair<double,double> gradient_pair = make_pair(1.0,1.0);
-  bool full = single_bfgs_ ? true : false;
-  bool first_iteration = single_bfgs_ ? true : false;
-  bool inter_first = single_bfgs_ ? false : true;
-  bool intra_first = single_bfgs_ ? false : true;
+  bool full = single_bfgs ? true : false;
+  bool first_iteration = single_bfgs ? true : false;
+  bool inter_first = single_bfgs ? false : true;
+  bool intra_first = single_bfgs ? false : true;
   bool fix_ci = false;
+
+  // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
+
   // ============================
   // macro iteration from here
   // ============================
@@ -86,15 +77,15 @@ void ASD_BFGS::compute() {
   vector<double> inter_evals;
   vector<double> intra_evals;
 
-  auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
-
   cout << "     See asd_orbopt.log for further information on ASD output " << endl << endl;
   mute_stdcout();
+  auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //initial ASD run
   for (int iter = active_only ? 1 : 0; iter != max_iter_; ++iter) {
 
     bool inter = iter%2 == 0 ? true : false;
 
     //Perform ASD
+    Timer asd_time(0);
     if (iter) {
       dimer_->update_coeff(coeff_); //update coeff_ & integrals..
       if (full && fix_ci)
@@ -102,28 +93,24 @@ void ASD_BFGS::compute() {
       else
         asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
     }
-#if 1
-    if (mpi__->rank() == 0) {
-      string out_file = "orbital_" + to_string(iter) + ".molden";
+    asd_time.tick_print("ASD space construction");
+    asd->compute();
+    asd_time.tick_print("ASD");
+
+    //get RDM
+    rdm1_ = asd->rdm1_av();
+    rdm2_ = asd->rdm2_av();
+    //get energy
+    energy_ = asd->energy();
+    //orbital
+    if (print_orbital_ && mpi__->rank() == 0) {
+      string out_file = "asd_orbital_" + to_string(iter) + ".molden";
       MoldenOut mfs(out_file);
       mfs << dimer_->sgeom();
       mfs << dimer_->sref();
     }
-#endif
-    Timer asd_time(0);
-  //auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
-    asd_time.tick_print("ASD space construction");
-    asd->compute();
-    asd_time.tick_print("ASD");
-    //get RDM
-    rdm1_ = asd->rdm1_av();
-    rdm2_ = asd->rdm2_av();
-    asd_time.tick_print("RDM");
-    //get energy
-    energy_ = asd->energy();
 
-    {
-      // use state averaged energy to update trust radius
+    {// use state averaged energy to update trust radius
       double sa_en = 0.0;
       for (auto& i : asd->energy())
         sa_en += i;
@@ -135,35 +122,28 @@ void ASD_BFGS::compute() {
     }
 
     // compute one-body operators
-    // * preparation
+    // preparation
     const MatView ccoeff = coeff_->slice(0, nclosed_);
-
-    // * core Fock operator
+    // core Fock operator
     shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
-
-    // * active Fock operator
+    // active Fock operator
     // first make a weighted coefficient
     shared_ptr<Matrix> acoeff = coeff_->slice_copy(nclosed_, nocc_);
     shared_ptr<Matrix> rdm1_mat = rdm1_->rdm1_mat(/*nclose*/0);
-
     shared_ptr<Matrix> rdm1_scaled = rdm1_mat->copy();
     rdm1_scaled->sqrt();
     rdm1_scaled->delocalize();
     auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_scaled); // such that C' * (1/2 D) C will be obtained.
-
     // then make a AO density matrix
     shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeffw, /*store*/false, /*rhf*/true);
     shared_ptr<const Matrix> afock = make_shared<Matrix>(*coeff_ % *afockao * *coeff_);
-
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
-    auto qxr = Qvec(coeff_->mdim(), nact_, coeff_, nclosed_); //TODO: at the moment it uses internal rdm1_ and rdm2_
-
+    auto qxr = Qvec(coeff_->mdim(), nact_, coeff_, nclosed_);
     //MCSCF Fock matrix (nact_,nact_) : active only
-    shared_ptr<Matrix> mcfock = make_shared<Matrix>(*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat
-                                                    + *qxr->get_submatrix(nclosed_, 0, nact_, nact_) );
+    shared_ptr<Matrix> mcfock = make_shared<Matrix>((*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat) + *qxr->get_submatrix(nclosed_, 0, nact_, nact_));
 
-    //gradient
+    //gradient evaluation
     auto grad = full ?  make_shared<ASD_RotFile>(nclosed_, nact_, nvirt_, rasA_, rasB_, true, true) :
                 inter ? make_shared<ASD_RotFile>(nclosed_, nact_, nvirt_, rasA_, rasB_, true, false) :
                         make_shared<ASD_RotFile>(nclosed_, nact_, nvirt_, rasA_, rasB_, false, true);
@@ -174,18 +154,15 @@ void ASD_BFGS::compute() {
 
     // if this is the first time, set up the BFGS solver
     // BFGS and DIIS should start at the same time
-    if (!single_bfgs_) {
-      if (inter_first) { //if (iter == 0) {
+    if (!single_bfgs) {
+      if (inter_first) {
         shared_ptr<const ASD_RotFile> inter_denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock, true, false);
         inter_bfgs = make_shared<SRBFGS<ASD_RotFile>>(inter_denom);
-//      inter_bfgs = make_shared<BFGS<ASD_RotFile>>(inter_denom);
         inter_first = false;
       }
-      if (intra_first) { // (iter == 1) {
-        cout << "intra_first" << endl;
+      if (intra_first) {
         shared_ptr<const ASD_RotFile> intra_denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock, false, true);
         intra_bfgs = make_shared<SRBFGS<ASD_RotFile>>(intra_denom);
-//      intra_bfgs = make_shared<BFGS<ASD_RotFile>>(intra_denom);
         intra_first = false;
       }
     }
@@ -193,7 +170,6 @@ void ASD_BFGS::compute() {
     if (full && first_iteration) {
       shared_ptr<const ASD_RotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock, true, true);
       bfgs = make_shared<SRBFGS<ASD_RotFile>>(denom);
-//    bfgs = make_shared<BFGS<ASD_RotFile>>(denom);
       first_iteration = false;
     }
 
@@ -207,28 +183,24 @@ void ASD_BFGS::compute() {
       auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, true, true);
       bfgs->check_step(evals, grad, xlog);
       a = bfgs->more_sorensen_extrapolate(grad, xlog);
-//    a = bfgs->extrapolate(grad, xlog);
     } else {
       if (inter) {
         auto xcopy = inter_x->log(8);
         auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, true, false);
         inter_bfgs->check_step(inter_evals, grad, xlog); //, /*tight*/false, limited_memory);
         a = inter_bfgs->more_sorensen_extrapolate(grad, xlog);
-//      a = inter_bfgs->extrapolate(grad, xlog);
       } else {
         auto xcopy = intra_x->log(8);
         auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_, false, true);
         intra_bfgs->check_step(intra_evals, grad, xlog); //, /*tight*/false, limited_memory);
         a = intra_bfgs->more_sorensen_extrapolate(grad, xlog);
-//      a = intra_bfgs->extrapolate(grad, xlog);
       }
     }
     cout << " ---------------------------------------------------- " << endl;
     extrap.tick_print("More-Sorensen/Hebden extrapolation");
     cout << " " << endl;
 
-//  *a *= -1.0;
-    a->print("Orbital rotation parameters");
+  //a->print("Orbital rotation parameters");
 
     // restore the matrix from ASD_RotFile
     shared_ptr<const Matrix> amat = a->unpack<Matrix>();
@@ -250,6 +222,7 @@ void ASD_BFGS::compute() {
       if (inter) *inter_x *= *expa;
       else       *intra_x *= *expa;
     }
+
     // synchronization
     mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
 
@@ -278,44 +251,31 @@ void ASD_BFGS::compute() {
     else if (!full && !inter) get<1>(gradient_pair) = gradient;
 
     if (!full) {
-      if (get<0>(gradient_pair) < thresh_inter_ && get<1>(gradient_pair) < thresh_intra_) {
+      if (get<0>(gradient_pair) < thresh_inter && get<1>(gradient_pair) < thresh_intra) {
         full = true;
         first_iteration = true;
         x->unit();
       }
     }
 
-    //activate "fix ci coeff"
-    if (!fix_ci && full && gradient < fix_ci_begin && max_rotation < fix_ci_begin_rotation && delta_energy < fix_ci_begin_energy) {
+    //activate "fix_ci"
+    if (!fix_ci && full && (gradient < fix_ci_begin_ || iter >= fix_ci_begin_iter_)) {
       fix_ci = true;
       //reset BFGS
       first_iteration = true;
       x->unit();
       cout << "    * CI coefficients will be fixed. *   " << endl << endl;
     }
-    //deactivate
-    if (fix_ci && full && gradient < fix_ci_end && max_rotation < fix_ci_end_rotation && delta_energy < fix_ci_end_energy) {
-    //fix_ci = false;
+
+    //deactivate "fix_ci"
+    if (fix_ci && full && gradient < fix_ci_thresh_) {
+      fix_ci = false;
       cout << "    * ASD orbital optimization with fixed CI coefficients converged. *   " << endl << endl;
-      mute_stdcout();
-      break;
-    }
-/*
-    if (full && iter == 9) {
-      if (gradient > 1.0e-4) {
-        gradient_pair = make_pair(1.0,1.0);
-        full = false;
-        first_iteration = false;
-        inter_first = true;
-        intra_first = true;
-        inter_x->unit();
-        intra_x->unit();
-      } else {
-        first_iteration = true;
-        x->unit();
+      if (fix_ci_finish_) {
+        mute_stdcout();
+        break;
       }
     }
-*/
 
     if (iter == max_iter_-1) {
       rms_grad_ = gradient;
@@ -330,18 +290,21 @@ void ASD_BFGS::compute() {
   // ============================
   // macro iteration to here
   // ============================
-  if (mpi__->rank() == 0) {
-    string out_file = "orbital_conv_localized.molden";
+  dimer_->update_coeff(coeff_);
+
+  if (print_orbital_ && mpi__->rank() == 0) {
+    string out_file = "asd_orbital_converged.molden";
     MoldenOut mfs(out_file);
     mfs << dimer_->sgeom();
     mfs << dimer_->sref();
   }
 
-  // semi-canonicalize active orbitals for visualization
-  if (semi_canonical_) {
+  if (semi_canonicalize_) {
+    cout << "    * Orbitals are semi-canonicalized. *     " << endl << endl;
     coeff_ = semi_canonical_orb();
-    if (mpi__->rank() == 0) {
-      string out_file = "orbital_conv_semi_canonical.molden";
+    dimer_->update_coeff(coeff_);
+    if (print_orbital_ && mpi__->rank() == 0) {
+      string out_file = "asd_orbital_semi_canonical.molden";
       MoldenOut mfs(out_file);
       mfs << dimer_->sgeom();
       mfs << dimer_->sref();
@@ -349,8 +312,7 @@ void ASD_BFGS::compute() {
   }
 
   // extra iteration for consistency
-  dimer_->update_coeff(coeff_);
-  asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
+  asd = construct_ASD(idata_->get_child_optional("asd"), dimer_);
   asd->compute();
 
 }

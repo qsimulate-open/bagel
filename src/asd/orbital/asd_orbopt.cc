@@ -53,9 +53,15 @@ void ASD_OrbOpt::common_init() {
   gradient_thresh_ = idata_->get<double>("gradient_thresh", 1.0e-4);
   rotation_thresh_ = idata_->get<double>("rotation_thresh", 1.0e-4);
   energy_thresh_ = idata_->get<double>("energy_thresh", 1.0e-6);
-
-  //semi_canonical orbital at convergence
-  semi_canonical_ = idata_->get<bool>("semi_canonical", false);
+  // fix ci coefficients when
+  fix_ci_begin_      = idata_->get<double>("fix_ci_begin", 1.0e-40); //gradent
+  fix_ci_thresh_        = idata_->get<double>("fix_ci_thresh",   5.0e-7);
+  fix_ci_begin_iter_ = idata_->get<int>("fix_ci_begin_iter", max_iter_);
+  fix_ci_finish_     = idata_->get<bool>("fix_ci_finish", false); //finish after first convergence
+  // molden output
+  print_orbital_ = idata_->get<bool>("print_orbital", false);
+  // semi_canonical orbital at convergence
+  semi_canonicalize_ = idata_->get<bool>("semi_canonicalize", false);
 
   // active space
   nact_ = ref_->nact();
@@ -118,6 +124,7 @@ void ASD_OrbOpt::print_header() const {
   cout << "      ASD Orbital Optimization calculation    " << endl;
   cout << "  --------------------------------------------" << endl << endl;
 }
+
 
 void ASD_OrbOpt::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, double max_r, double delta_e, const double time, const int itype, bool fix_ci) const {
   auto print_iteration_type = [] (const int i) {

@@ -74,61 +74,51 @@ void ASD_BFGS::grad_aa(shared_ptr<const Matrix> mcfock, shared_ptr<ASD_RotFile> 
   if (!nact_) return;
   {
     double* target = grad->ptr_aa();
-    for (int ia = 0; ia != nactA_; ++ia) { //A
-      for (int jb = nactA_; jb != nact_; ++jb, ++target) { //B
+    for (int ia = 0; ia != nactA_; ++ia)  //A
+      for (int jb = nactA_; jb != nact_; ++jb, ++target)  //B
         *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
-      }
-    }
   }
-  //Monomer A
-  {//21
-    double* target = grad->ptr_aa21A();
-    for (int ia = 0; ia != rasA_[0]; ++ia) { //1
-      for (int jb = rasA_[0]; jb != rasA_[0]+rasA_[1]; ++jb, ++target) { //2
-        *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
-      }
+  //RAS
+  if (nactA_) { //Monomer A
+    if (rasA_[0]) {//21
+      double* target = grad->ptr_aa21A();
+      for (int ia = 0; ia != rasA_[0]; ++ia)  //1
+        for (int jb = rasA_[0]; jb != rasA_[0]+rasA_[1]; ++jb, ++target)  //2
+          *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
     }
-  }
-  {//31
-    double* target = grad->ptr_aa31A();
-    for (int ia = 0; ia != rasA_[0]; ++ia) { //1
-      for (int jb = rasA_[0]+rasA_[1]; jb != nactA_; ++jb, ++target) { //3
-        *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
-      }
+    if (rasA_[0] && rasA_[2]) {//31
+      double* target = grad->ptr_aa31A();
+      for (int ia = 0; ia != rasA_[0]; ++ia)  //1
+        for (int jb = rasA_[0]+rasA_[1]; jb != nactA_; ++jb, ++target)  //3
+          *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
     }
-  }
-  {//32
-    double* target = grad->ptr_aa32A();
-    for (int ia = rasA_[0]; ia != rasA_[0]+rasA_[1]; ++ia) { //2
-      for (int jb = rasA_[0]+rasA_[1]; jb != nactA_; ++jb, ++target) { //3
-        *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
-      }
-    }
-  }
-  {//21
-    double* target = grad->ptr_aa21B();
-    for (int ia = nactA_; ia != nactA_+rasB_[0]; ++ia) { //1
-      for (int jb = nactA_+rasB_[0]; jb != nactA_+rasB_[0]+rasB_[1]; ++jb, ++target) { //2
-        *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
-      }
-    }
-  }
-  {//31
-    double* target = grad->ptr_aa31B();
-    for (int ia = nactA_; ia != nactA_+rasB_[0]; ++ia) { //1
-      for (int jb = nactA_+rasB_[0]+rasB_[1]; jb != nact_; ++jb, ++target) { //3
-        *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
-      }
-    }
-  }
-  {//32
-    double* target = grad->ptr_aa32B();
-    for (int ia = nactA_+rasB_[0]; ia != nactA_+rasB_[0]+rasB_[1]; ++ia) { //2
-      for (int jb = nactA_+rasB_[0]+rasB_[1]; jb != nact_; ++jb, ++target) { //3
-        *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
-      }
+    if (rasA_[2]) {//32
+      double* target = grad->ptr_aa32A();
+      for (int ia = rasA_[0]; ia != rasA_[0]+rasA_[1]; ++ia) //2
+        for (int jb = rasA_[0]+rasA_[1]; jb != nactA_; ++jb, ++target) //3
+          *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
     }
   }
 
+  if (nactB_) {//Monomer B :21
+    if (rasB_[0]) {
+      double* target = grad->ptr_aa21B();
+      for (int ia = nactA_; ia != nactA_+rasB_[0]; ++ia)  //1
+        for (int jb = nactA_+rasB_[0]; jb != nactA_+rasB_[0]+rasB_[1]; ++jb, ++target)  //2
+          *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+    if (rasB_[0] && rasB_[2]) {//31
+      double* target = grad->ptr_aa31B();
+      for (int ia = nactA_; ia != nactA_+rasB_[0]; ++ia)  //1
+        for (int jb = nactA_+rasB_[0]+rasB_[1]; jb != nact_; ++jb, ++target)  //3
+          *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+    if (rasB_[2]) {//32
+      double* target = grad->ptr_aa32B();
+      for (int ia = nactA_+rasB_[0]; ia != nactA_+rasB_[0]+rasB_[1]; ++ia)  //2
+        for (int jb = nactA_+rasB_[0]+rasB_[1]; jb != nact_; ++jb, ++target)  //3
+          *target = 2.0*(mcfock->element(jb,ia) - mcfock->element(ia,jb));
+    }
+  }
 }
 
