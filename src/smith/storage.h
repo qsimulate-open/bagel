@@ -68,33 +68,42 @@ class Storage_base {
     }
 
     size_t size() const {
-      return std::accumulate(hashtable_.begin(), hashtable_.end(), 0lu, [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size(); });
+      return std::accumulate(hashtable_.begin(), hashtable_.end(), 0lu,
+                             [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size(); });
     }
 
     size_t size_alloc() const {
-      return std::accumulate(hashtable_.begin(), hashtable_.end(), 0lu, [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size_alloc(); });
+      return std::accumulate(hashtable_.begin(), hashtable_.end(), 0lu,
+                             [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size_alloc(); });
     }
 
-    // get, move, put, and add a block from the storage and returns unique_ptr<double[]>, which is local
-    virtual std::unique_ptr<double[]> get_block(const size_t& key) const = 0;
-    virtual std::unique_ptr<double[]> move_block(const size_t& key) = 0;
-    virtual void put_block(const size_t& key, std::unique_ptr<double[]>& dat) = 0;
-    virtual void add_block(const size_t& key, const std::unique_ptr<double[]>& dat) = 0;
+    void conjugate_inplace() {
+      for (auto& i : hashtable_)
+        i.second->conjugate_inplace();
+    }
 
+/*  *** these functions should be implemented in the derived classes.
+    virtual std::unique_ptr<DataType[]> get_block(const size_t& key) const = 0;
+    virtual std::unique_ptr<DataType[]> move_block(const size_t& key) = 0;
+    virtual void put_block(const size_t& key, std::unique_ptr<DataType[]>& dat) = 0;
+    virtual void add_block(const size_t& key, const std::unique_ptr<DataType[]>& dat) = 0;
     virtual void zero() = 0;
     virtual void scale(const double a) = 0;
-
+*/
 };
 
 
+template<typename DataType>
 class StorageBlock {
+  public:
+    using data_type = DataType;
   protected:
-    std::unique_ptr<double[]> data_;
+    std::unique_ptr<DataType[]> data_;
     size_t size_;
     bool initialized_;
 
-    double* data() { return data_.get(); }
-    const double* data() const { return data_.get(); }
+    DataType* data() { return data_.get(); }
+    const DataType* data() const { return data_.get(); }
   public:
     StorageBlock(const size_t size, const bool init);
 
@@ -103,40 +112,53 @@ class StorageBlock {
     size_t size() const { return size_; }
     size_t size_alloc() const { return initialized_ ? size_ : 0lu; }
 
-    StorageBlock& operator=(const StorageBlock& o);
+    StorageBlock<DataType>& operator=(const StorageBlock<DataType>& o);
 
-    void put_block(std::unique_ptr<double[]>&& o);
-    void add_block(const std::unique_ptr<double[]>& o);
+    void put_block(std::unique_ptr<DataType[]>&& o);
+    void add_block(const std::unique_ptr<DataType[]>& o);
 
-    std::unique_ptr<double[]> get_block() const;
-    std::unique_ptr<double[]> move_block();
+    std::unique_ptr<DataType[]> get_block() const;
+    std::unique_ptr<DataType[]> move_block();
 
-    double dot_product(const StorageBlock& o) const;
-    void ax_plus_y(const double a, const StorageBlock& o);
-    void scale(const double a);
+    DataType dot_product(const StorageBlock& o) const;
+    void ax_plus_y(const DataType& a, const StorageBlock& o);
+    void scale(const DataType& a);
+
+    void conjugate_inplace() {
+      for (size_t i = 0; i != size_alloc(); ++i)
+        data_[i] = detail::conj(data_[i]);
+    }
 };
 
 
-class Storage_Incore : public Storage_base<StorageBlock> {
+template<typename DataType>
+class Storage_Incore : public Storage_base<StorageBlock<DataType>> {
+  protected:
+    using Storage_base<StorageBlock<DataType>>::hashtable_;
   public:
     Storage_Incore(const std::map<size_t, size_t>& size, bool init);
 
-    std::unique_ptr<double[]> get_block(const size_t& key) const;
-    std::unique_ptr<double[]> move_block(const size_t& key);
-    void put_block(const size_t& key, std::unique_ptr<double[]>& dat);
-    void add_block(const size_t& key, const std::unique_ptr<double[]>& dat);
+    std::unique_ptr<DataType[]> get_block(const size_t& key) const;
+    std::unique_ptr<DataType[]> move_block(const size_t& key);
+    void put_block(const size_t& key, std::unique_ptr<DataType[]>& dat);
+    void add_block(const size_t& key, const std::unique_ptr<DataType[]>& dat);
 
     void zero();
-    void scale(const double a);
+    void scale(const DataType& a);
 
-    Storage_Incore& operator=(const Storage_Incore& o);
-    void ax_plus_y(const double a, const Storage_Incore& o);
-    void ax_plus_y(const double a, const std::shared_ptr<Storage_Incore> o) { ax_plus_y(a, *o); };
-    double dot_product(const Storage_Incore& o) const;
-
+    Storage_Incore<DataType>& operator=(const Storage_Incore<DataType>& o);
+    void ax_plus_y(const DataType& a, const Storage_Incore<DataType>& o);
+    void ax_plus_y(const DataType& a, const std::shared_ptr<Storage_Incore<DataType>> o) { ax_plus_y(a, *o); };
+    DataType dot_product(const Storage_Incore<DataType>& o) const;
 };
 
-using Storage = Storage_Incore;
+extern template class StorageBlock<double>;
+extern template class StorageBlock<std::complex<double>>;
+extern template class Storage_Incore<double>;
+extern template class Storage_Incore<std::complex<double>>;
+
+template<typename DataType>
+using Storage = Storage_Incore<DataType>;
 
 }
 }

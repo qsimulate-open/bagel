@@ -77,7 +77,10 @@ class DFock : public ZMatrix {
             ++j;
         }
     }
+    static void add_Exop_block(ZMatrix&, std::shared_ptr<RelDFHalf>, std::shared_ptr<RelDFHalf>,
+                               const double scale, const bool diag = false, const bool robust = false);
     static std::list<std::shared_ptr<RelDF>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
+    static std::list<std::shared_ptr<RelDFHalf>> make_half_complex(std::list<std::shared_ptr<RelDF>>, std::shared_ptr<const ZMatrix>);
     static std::list<std::shared_ptr<RelDFHalf>> make_half_complex(std::list<std::shared_ptr<RelDF>>, std::array<std::shared_ptr<const Matrix>,4>,
                                                                    std::array<std::shared_ptr<const Matrix>,4>);
 

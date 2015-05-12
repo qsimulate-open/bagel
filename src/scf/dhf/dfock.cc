@@ -89,10 +89,13 @@ void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const 
 
 
 void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc2, const double scale, const bool diag) {
+  add_Exop_block(*this, dfc1, dfc2, scale, diag, robust_);
+}
+
+
+void DFock::add_Exop_block(ZMatrix& data, shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc2, const double scale, const bool diag, const bool robust) {
 
   // minus from -1 in the definition of exchange
-  const int n = geom_->nbasis();
-
   shared_ptr<Matrix> r, i;
   if (!dfc1->sum()) {
     cout << "** warning : using 4 multiplication" << endl;
@@ -114,13 +117,14 @@ void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc
   for (auto& i1 : dfc1->basis()) {
     for (auto& i2 : dfc2->basis()) {
       auto out = make_shared<ZMatrix>(*a * (conj(i1->fac(dfc1->cartesian()))*i2->fac(dfc2->cartesian())));
+      const int n = out->ndim();
 
       const int index0 = i1->basis(1);
       const int index1 = i2->basis(1);
 
-      add_block(-scale, n*index0, n*index1, n, n, out);
-      if (!robust_ && (!diagonal || *i1 != *i2)) {
-        add_block(-scale, n*index1, n*index0, n, n, out->transpose_conjg());
+      data.add_block(-scale, n*index0, n*index1, n, n, out);
+      if (!robust && (!diagonal || *i1 != *i2)) {
+        data.add_block(-scale, n*index1, n*index0, n, n, out->transpose_conjg());
       }
     }
   }
@@ -150,6 +154,21 @@ list<shared_ptr<RelDF>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> dfs
     assert(k == dfs.end());
   }
   return dfdists;
+}
+
+
+list<shared_ptr<RelDFHalf>> DFock::make_half_complex(list<shared_ptr<RelDF>> dfdists, shared_ptr<const ZMatrix> coeff) {
+  // Separate Coefficients into real and imaginary
+  array<shared_ptr<const Matrix>,4> rcoeff;
+  array<shared_ptr<const Matrix>,4> icoeff;
+  assert(coeff->ndim() % 4 == 0);
+  const size_t nbasis = coeff->ndim() / 4;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> oc = coeff->get_submatrix(i*nbasis, 0, nbasis, coeff->mdim());
+    rcoeff[i] = oc->get_real_part();
+    icoeff[i] = oc->get_imag_part();
+  }
+  return DFock::make_half_complex(dfdists, rcoeff, icoeff);
 }
 
 
@@ -258,13 +277,15 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
 
   // computing K operators
   int icnt = 0;
-  for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i, ++icnt) {
+  for (auto& i : half_complex_exch) {
     int jcnt = 0;
-    for (auto j = half_complex_exch2.begin(); j != half_complex_exch2.end(); ++j, ++jcnt) {
-      if ((*i)->alpha_matches(*j) && ((!robust_ && icnt <= jcnt) || robust_)) {
-        add_Exop_block(*i, *j, gscale*scale_exchange, icnt == jcnt);
+    for (auto& j : half_complex_exch2) {
+      if (i->alpha_matches(j) && ((!robust_ && icnt <= jcnt) || robust_)) {
+        add_Exop_block(i, j, gscale*scale_exchange, icnt == jcnt);
       }
+      ++jcnt;
     }
+    ++icnt;
   }
 
   timer.tick_print(printtag + ": K operator");

@@ -27,6 +27,8 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <src/util/taskqueue.h>
+#include <src/util/constants.h>
 #include <src/util/math/zmatrix.h>
 #include <src/util/math/matop.h>
 
@@ -240,7 +242,7 @@ void ZMatrix::purify_unitary() {
       const complex<double> a = blas::dot_product(element_ptr(0,j), ndim(), element_ptr(0,i));
       blas::ax_plus_y_n(-a, element_ptr(0,j), ndim(), element_ptr(0,i));
     }
-    const complex<double> b = 1.0/sqrt(blas::dot_product(element_ptr(0,i), ndim(), element_ptr(0,i)));
+    const complex<double> b = 1.0/std::sqrt(blas::dot_product(element_ptr(0,i), ndim(), element_ptr(0,i)));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](complex<double>& a) { a *= b; });
   }
 }
@@ -305,7 +307,7 @@ bool ZMatrix::inverse_half(const double thresh) {
   diagonalize(vec);
 
   for (int i = 0; i != n; ++i) {
-    double s = vec(i) > thresh ? 1.0/sqrt(sqrt(vec(i))) : 0.0;
+    double s = vec(i) > thresh ? 1.0/std::sqrt(std::sqrt(vec(i))) : 0.0;
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](complex<double>& a) { a *= s; });
   }
 
@@ -319,6 +321,37 @@ bool ZMatrix::inverse_half(const double thresh) {
   const bool lindep = std::any_of(vec.begin(), vec.end(), [&thresh] (const double& e) { return e < thresh; });
 
   return !lindep;
+}
+
+
+// compute Hermitian square root, S^{1/2}
+void ZMatrix::sqrt() {
+  assert(ndim() == mdim());
+  const int n = ndim();
+  VectorB vec(n);
+#ifdef HAVE_SCALAPACK
+  if (localized_) {
+#endif
+    diagonalize(vec);
+
+    for (int i = 0; i != n; ++i) {
+      if (vec(i) < -numerical_zero__) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
+      blas::scale_n(std::sqrt(std::sqrt(fabs(vec(i)))), element_ptr(0,i), n);
+    }
+
+    *this = *this ^ *this;
+#ifdef HAVE_SCALAPACK
+  }
+  else {
+    unique_ptr<double[]> scal(new double[n]);
+    shared_ptr<DistZMatrix> dist = distmatrix();
+    dist->diagonalize(vec);
+    for (int i = 0; i != n; ++i)
+      scal[i] = std::sqrt(std::sqrt(vec(i)));
+    dist->scale(scal.get());
+    *this = *(*dist ^ *dist).matrix();
+  }
+#endif
 }
 
 

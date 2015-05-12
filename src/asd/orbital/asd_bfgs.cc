@@ -37,15 +37,12 @@ using namespace bagel;
 void ASD_BFGS::compute() {
 
   //BFGS extra optimization parameters
-  double thresh_inter = idata_->get<double>("thresh_inter", 5.0e-4);
-  double thresh_intra = idata_->get<double>("thresh_intra", 5.0e-4);
-  bool single_bfgs = idata_->get<bool>("single_bfgs", false);
-  bool no_active = idata_->get<bool>("no_active", false);
-  bool active_only = idata_->get<bool>("active_only", false);
-  if (no_active || active_only) {
-    single_bfgs = false;
-    max_iter_ *= 2;
-  }
+  const double thresh_inter = idata_->get<double>("thresh_inter", 5.0e-4);
+  const double thresh_intra = idata_->get<double>("thresh_intra", 5.0e-4);
+  const bool single_bfgs = idata_->get<bool>("single_bfgs", false);
+  const bool no_active = idata_->get<bool>("no_active", false);
+  const bool active_only = idata_->get<bool>("active_only", false);
+  if (no_active || active_only) assert(!single_bfgs);
 
   vector<double> previous_energy(max_iter_,0.0);
 
@@ -53,6 +50,8 @@ void ASD_BFGS::compute() {
   shared_ptr<SRBFGS<ASD_RotFile>> intra_bfgs; //cloased-active, closed-virtual, active-virtual only
   shared_ptr<SRBFGS<ASD_RotFile>> inter_bfgs; //active-active only
   pair<double,double> gradient_pair = make_pair(1.0,1.0);
+
+  //switches
   bool full = single_bfgs ? true : false;
   bool first_iteration = single_bfgs ? true : false;
   bool inter_first = single_bfgs ? false : true;

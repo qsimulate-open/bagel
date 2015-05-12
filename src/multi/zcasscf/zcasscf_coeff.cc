@@ -63,10 +63,17 @@ void ZCASSCF::init_kramers_coeff() {
     quaternion(s12);
 
     shared_ptr<ZMatrix> fock_tilde;
-    if (tsymm_)
+    if (tsymm_) {
       fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
-    else
+#ifndef NDEBUG
+      auto quatfock = static_pointer_cast<const QuatMatrix>(fock_tilde);
+      const double tsymm_err = quatfock->check_t_symmetry();
+      if (tsymm_err > 1.0e-8)
+        cout << "   ** Caution:  poor Kramers symmetry in fock_tilde (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
+#endif
+    } else {
       fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
+    }
 
     // quaternion diagonalization
     {
@@ -104,16 +111,23 @@ void ZCASSCF::init_kramers_coeff() {
     }
   } else {//if (nele%2 == 0 && nele - 2 > 0) {
     int norb = nele;//-2;
-    auto ctmp = make_shared<ZMatrix>(coefftmp->ndim(), norb);
+    ctmp = make_shared<ZMatrix>(coefftmp->ndim(), norb);
     ctmp->copy_block(0, 0, coefftmp->ndim(), norb/2, coefftmp->slice(0, norb/2));
     ctmp->copy_block(0, norb/2, coefftmp->ndim(), norb/2, coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()/2+norb/2));
     focktmp = make_shared<DFock>(geom_, hcore_, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
 
     shared_ptr<ZMatrix> fmo;
-    if (tsymm_)
+    if (tsymm_) {
       fmo = make_shared<QuatMatrix>(*coefftmp % (*focktmp) * *coefftmp);
-    else
+#ifndef NDEBUG
+      auto quatfmo = static_pointer_cast<const QuatMatrix>(fmo);
+      const double tsymm_err = quatfmo->check_t_symmetry();
+      if (tsymm_err > 1.0e-8)
+        cout << "   ** Caution:  poor Kramers symmetry in fmo (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
+#endif
+    } else {
       fmo = make_shared<ZMatrix>(*coefftmp % (*focktmp) * *coefftmp);
+    }
 
     // quaternion diagonalization
     {
@@ -146,7 +160,11 @@ void ZCASSCF::init_kramers_coeff() {
     tmp = {{ coefftmp->slice_copy(0, coefftmp->mdim()/2), coefftmp->slice_copy(coefftmp->mdim()/2, coefftmp->mdim()) }};
     coeff_ = coefftmp->clone();
   }
-  shared_ptr<ZMatrix> ctmp2 = ctmp->clone();
+  shared_ptr<ZMatrix> ctmp2;
+  if (nr_coeff_ != nullptr)
+    ctmp2 = coefftmp->clone();
+  else
+    ctmp2 = ctmp->clone();
 
 #if 0
   // blocked format
@@ -326,7 +344,7 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(const bool stripes) const {
 
 
 shared_ptr<ZMatrix> ZCASSCF::format_coeff(const int nclosed, const int nact, const int nvirt, shared_ptr<const ZMatrix> coeff, const bool striped) {
-  assert(coeff->ndim() == coeff->mdim()); // TODO : generalize for when coeff is not a square ; shouldn't be too difficult
+//assert(coeff->ndim() == coeff->mdim()); // TODO : generalize for when coeff is not a square ; shouldn't be too difficult
   auto ctmp2 = coeff->clone();
   if (striped) {
     // Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)

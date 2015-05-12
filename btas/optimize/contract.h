@@ -24,7 +24,7 @@ void contract_211(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
 
   auto cA = notrans ? CblasNoTrans : (conjgA ? CblasConjTrans : CblasTrans);
   assert((notrans && aA[0] == aC[0]) || (aB[0] == aA[0] && aA[1] == aC[0]));
-  gemv_impl<true>::call(CblasColMajor, cA, A.extent(0), A.extent(1), 1.0, &*A.begin(), A.extent(0), &*B.begin(), 1, 0.0, &*C.begin(), 1);
+  gemv_impl<true>::call(CblasColMajor, cA, A.extent(0), A.extent(1), alpha, &*A.begin(), A.extent(0), &*B.begin(), 1, beta, &*C.begin(), 1);
 }
 
 
@@ -171,13 +171,13 @@ void contract_332(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
       assert(!conjgB);
       for (int i = 0; i != A.extent(2); ++i)
         gemm_impl<true>::call(CblasColMajor, conjgA ? CblasConjTrans : CblasTrans, CblasNoTrans, C.extent(0), C.extent(1), A.extent(0),
-                              alpha, &*A.begin()+i*ablock, A.extent(0), &*B.begin()+i*bblock, B.extent(0), 1.0, &*C.begin(), C.extent(0));
+                              alpha, &*A.begin()+i*ablock, A.extent(0), &*B.begin()+i*bblock, B.extent(0), static_cast<_T>(1.0), &*C.begin(), C.extent(0));
     } else {
       assert(A.extent(0) == B.extent(0) && A.extent(2) == B.extent(2) && B.extent(1) == C.extent(0) && A.extent(1) == C.extent(1));
       assert(!conjgA);
       for (int i = 0; i != A.extent(2); ++i)
         gemm_impl<true>::call(CblasColMajor, conjgB ? CblasConjTrans : CblasTrans, CblasNoTrans, C.extent(0), C.extent(1), A.extent(0),
-                              alpha, &*B.begin()+i*bblock, B.extent(0), &*A.begin()+i*ablock, A.extent(0), 1.0, &*C.begin(), C.extent(0));
+                              alpha, &*B.begin()+i*bblock, B.extent(0), &*A.begin()+i*ablock, A.extent(0), static_cast<_T>(1.0), &*C.begin(), C.extent(0));
     }
   } else
     throw std::logic_error("not yet implemented");
