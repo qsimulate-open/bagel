@@ -80,7 +80,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     std::shared_ptr<ZHarrison> fci_;
     // compute F^{A} matrix ; see Eq. (18) in Roos IJQC 1980
-    std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix>, const bool with_hcore = false, const bool bfgs = false);
+    std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix> transform = nullptr, const bool with_hcore = false, const bool bfgs = false) const;
     // transform RDM from bitset representation in ZFCI to CAS format
     std::shared_ptr<const ZMatrix> transform_rdm1() const;
 
@@ -106,7 +106,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const Reference> conv_to_ref() const override;
 
     // diagonalize 1RDM to obtain natural orbital transformation matrix and natural orbital occupation numbers
-    std::shared_ptr<ZMatrix> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1);
+    std::pair<std::vector<double>, std::shared_ptr<ZMatrix>> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1) const;
     // natural orbital transformations for the 1 and 2 RDMs, the coefficient, and qvec
     std::shared_ptr<const ZMatrix> natorb_rdm1_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
     std::shared_ptr<const ZMatrix> natorb_rdm2_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm2) const;

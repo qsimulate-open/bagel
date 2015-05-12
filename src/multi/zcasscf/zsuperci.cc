@@ -249,7 +249,9 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   // make natural orbitals, update coeff_ and transform rdm1
   shared_ptr<ZMatrix> natorb_coeff;
   if (nact_) {
-    natorb_coeff = make_natural_orbitals(rdm1);
+    pair<vector<double>, shared_ptr<ZMatrix>> natorb_tmp = make_natural_orbitals(rdm1);
+    occup_ = natorb_tmp.first;
+    natorb_coeff = natorb_tmp.second;
     coeff_ = update_coeff(coeff_, natorb_coeff);
     qvec = update_qvec(qvec, natorb_coeff);
     rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
@@ -273,7 +275,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
     if (nact_) {
-      shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
+      shared_ptr<const ZMatrix> afockao = active_fock();
       afock = make_shared<ZMatrix>(*coefftmp % *afockao * *coefftmp);
     } else {
       afock = cfock->clone();

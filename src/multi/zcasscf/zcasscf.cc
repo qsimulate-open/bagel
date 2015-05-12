@@ -257,14 +257,13 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore, const bool bfgs) {
+shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> transform, const bool with_hcore, const bool bfgs) const {
    // natural orbitals required
    shared_ptr<ZMatrix> natorb;
    if (!bfgs) {
      natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2));
    } else {
-     auto natorb_transform = make_natural_orbitals(rdm1)->get_conjg();
-     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2) * *natorb_transform);
+     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2) * *transform);
    }
    if (natocc_) print_natocc();
 
@@ -285,7 +284,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
+pair<vector<double>, shared_ptr<ZMatrix>> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) const {
 
   // input should be 1rdm in kramers format
   shared_ptr<ZMatrix> tmp;
@@ -392,8 +391,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
     out = tmp;
   }
 
-  occup_ = vec2;
-  return out;
+  return make_pair(vec2, out);
 }
 
 
