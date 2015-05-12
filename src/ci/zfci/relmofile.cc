@@ -391,27 +391,3 @@ shared_ptr<const Kramers<2,RelDFFull>>
 }
 
 
-void RelMOFile::rearrange_eig(VectorB& eig, shared_ptr<ZMatrix> coeff, const bool includes_neg) {
-  const int n = coeff->ndim()/2;
-  assert(2*n == coeff->ndim());  // could be triggered if Kramers + and - sets had different sizes or linear dependencies
-
-  // check that pos & neg energy eigenvalues are properly separated
-  assert(!includes_neg || *std::min_element(eig.begin()+n, eig.begin()+2*n) - *std::max_element(eig.begin(), eig.begin()+n) > c__*c__);
-
-  // need to reorder things so negative energy states don't all come at the beginning
-  // TODO there should be a more efficient way...
-  VectorB tempv(2*n);
-  shared_ptr<ZMatrix> tempm = coeff->clone();
-  for (int i = 0; i != n; ++i) {
-    tempv[  i] = eig[2*i];
-    tempv[n+i] = eig[2*i+1];
-
-    for (int j=0; j!=2*n; ++j) {
-      tempm->element(j,   i) = coeff->element(j, 2*i);
-      tempm->element(j, n+i) = coeff->element(j, 2*i+1);
-    }
-  }
-  eig = tempv;
-  *coeff = *tempm;
-}
-

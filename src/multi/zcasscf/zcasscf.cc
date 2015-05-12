@@ -307,7 +307,7 @@ pair<vector<double>, shared_ptr<ZMatrix>> ZCASSCF::make_natural_orbitals(shared_
     tmp->diagonalize(vec);
 
     if (!tsymm_)
-      RelMOFile::rearrange_eig(vec, tmp, false);
+      RelCoeff::rearrange_eig(vec, tmp, false);
 
     map<int,int> emap;
     out = tmp->clone();
@@ -520,7 +520,7 @@ shared_ptr<const RelCoeff_Striped> ZCASSCF::generate_mvo(shared_ptr<const RelCoe
   mofock->diagonalize(eig);
 
   if (!tsymm_)
-    RelMOFile::rearrange_eig(eig, mofock);
+    RelCoeff::rearrange_eig(eig, mofock);
 
   // update orbitals and back transform
   *vcoeff *= *mofock;

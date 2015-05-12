@@ -26,7 +26,6 @@
 #include <src/wfn/relcoeff.h>
 #include <src/util/math/quatmatrix.h>
 #include <src/scf/dhf/dfock.h>
-#include <src/ci/zfci/relmofile.h>
 #include <cassert>
 #include <iostream>
 #include <iomanip>
@@ -239,7 +238,7 @@ shared_ptr<RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff_dirac(shared_p
     fock_tilde->diagonalize(eig);
 
     if (!tsymm)
-      RelMOFile::rearrange_eig(eig, fock_tilde);
+      rearrange_eig(eig, fock_tilde);
   }
 
   // re-order to kramers format and move negative energy states to virtual space
@@ -308,6 +307,31 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
   tmp_coeff->copy_block(0, npos(), nbasis_rel(), nneg(), slice(npos(), mdim()));
 
   return make_shared<const RelCoeff_Striped>(*tmp_coeff, nclosed_, nact_, mdim()/4-nclosed_-nact_, nneg());
+}
+
+
+void RelCoeff::rearrange_eig(VectorB& eig, shared_ptr<ZMatrix> coeff, const bool includes_neg) {
+  const int n = coeff->ndim()/2;
+  assert(2*n == coeff->ndim());  // could be triggered if Kramers + and - sets had different sizes or linear dependencies
+
+  // check that pos & neg energy eigenvalues are properly separated
+  assert(!includes_neg || *std::min_element(eig.begin()+n, eig.begin()+2*n) - *std::max_element(eig.begin(), eig.begin()+n) > c__*c__);
+
+  // need to reorder things so negative energy states don't all come at the beginning
+  // TODO there should be a more efficient way...
+  VectorB tempv(2*n);
+  shared_ptr<ZMatrix> tempm = coeff->clone();
+  for (int i = 0; i != n; ++i) {
+    tempv[  i] = eig[2*i];
+    tempv[n+i] = eig[2*i+1];
+
+    for (int j=0; j!=2*n; ++j) {
+      tempm->element(j,   i) = coeff->element(j, 2*i);
+      tempm->element(j, n+i) = coeff->element(j, 2*i+1);
+    }
+  }
+  eig = tempv;
+  *coeff = *tempm;
 }
 
 

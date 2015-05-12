@@ -77,6 +77,9 @@ class RelCoeff : public ZMatrix {
 
     void print_info() const;
 
+    // static function used to make the order of eigenvalues & eigenvectors of ZMatrix::diagonalize() match that given by QuatMatrix::diagonalize()
+    static void rearrange_eig(VectorB& eig, std::shared_ptr<ZMatrix> coeff, const bool includes_neg = true);
+
     using Matrix_base<std::complex<double>>::copy_block;
 };
 
