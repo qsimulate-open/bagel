@@ -115,7 +115,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // kramers adapt for RotFile is a static function!
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
     // function to generate modified virtual MOs from either a Fock matrix or the one-electron Hamiltonian
-    std::shared_ptr<const RelCoeff_Striped> generate_mvo(std::shared_ptr<const RelCoeff_Striped> coeff, const int ncore, const bool hcore_mvo = false) const;
+    std::shared_ptr<const RelCoeff_Striped> generate_mvo(std::shared_ptr<const RelCoeff_Striped> coeff, const int ncore, const int nocc, const bool hcore_mvo = false) const;
     // print natural orbital occupation numbers
     void print_natocc() const;
 
