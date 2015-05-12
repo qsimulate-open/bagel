@@ -499,7 +499,7 @@ shared_ptr<const RelCoeff_Striped> ZCASSCF::generate_mvo(shared_ptr<const RelCoe
     *o = *scratch;
   };
 
-  shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom_, hcore_, coeff->slice_copy(0, ncore*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
+  shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom_, hcore_, coeff->slice_copy(0, ncore), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
 
   // take virtual part out and make block format
   shared_ptr<ZMatrix> vcoeff = coeff->slice_copy(geom_->nele(), geom_->nele()+hfvirt*2);
