@@ -191,7 +191,7 @@ void ASD_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
 }
 
 
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const Dvec> civec, const int i, const int ip) const {
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const CASDvec> civec, const int i, const int ip) const {
   shared_ptr<const Civec> cbra = civec->data(i);
   shared_ptr<const Civec> cket = civec->data(ip);
 
@@ -291,8 +291,8 @@ void ASD_CAS::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
 }
 
 
-shared_ptr<Dvec> ASD_CAS::contract_I(shared_ptr<const Dvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
-  auto out = make_shared<Dvec>(A->det(), nstB);
+shared_ptr<CASDvec> ASD_CAS::contract_I(shared_ptr<const CASDvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  auto out = make_shared<CASDvec>(A->det(), nstB);
   for (int j = 0; j != nstB; ++j) {
     for (int i = 0; i != nstA; ++i) {
       const int ij  = i  + (j*nstA);
@@ -304,8 +304,8 @@ shared_ptr<Dvec> ASD_CAS::contract_I(shared_ptr<const Dvec> A, shared_ptr<Matrix
   }
   return out;
 }
-shared_ptr<Dvec> ASD_CAS::contract_J(shared_ptr<const Dvec> B, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
-  auto out = make_shared<Dvec>(B->det(), nstA);
+shared_ptr<CASDvec> ASD_CAS::contract_J(shared_ptr<const CASDvec> B, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  auto out = make_shared<CASDvec>(B->det(), nstA);
   for (int i = 0; i != nstA; ++i) {
     for (int j = 0; j != nstB; ++j) {
       const int ij  = i  + (j*nstA);
