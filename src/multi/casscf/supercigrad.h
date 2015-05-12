@@ -48,7 +48,12 @@ class SuperCIGrad : public SuperCI {
       // in the worst case, coeff and RDMs are not consistent and coeff is not natural orbital...
       fci_->compute();
       fci_->compute_rdm12();
-      form_natural_orbs();
+
+      // form natural orbitals and update coefficients
+      const std::pair<std::shared_ptr<Matrix>, VectorB> natorb = fci_->natorb_convert();
+      coeff_ = update_coeff(coeff_, natorb.first);
+      occup_ = natorb.second;
+      if (natocc_) print_natocc();
     }
 
     int target_state() const { return target_state_; }

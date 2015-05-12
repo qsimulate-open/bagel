@@ -69,7 +69,10 @@ void SuperCI::compute() {
     energy_ = fci_->energy();
 
     // here make a natural orbitals and update the coefficients
-    shared_ptr<Matrix> natorb = form_natural_orbs();
+    const pair<shared_ptr<Matrix>, VectorB> natorb = fci_->natorb_convert();
+    coeff_ = update_coeff(coeff_, natorb.first);
+    occup_ = natorb.second;
+    if (natocc_) print_natocc();
 
     auto grad = make_shared<RotFile>(nclosed_, nact_, nvirt_);
 
@@ -119,7 +122,7 @@ void SuperCI::compute() {
     } else {
       // including natorb.first to rot so that they can be processed at once
       shared_ptr<Matrix> tmp = rot->copy();
-      dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, natorb->data(), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
+      dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, natorb.first->data(), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
                                                                           tmp->element_ptr(nclosed_, 0), nbasis_);
       shared_ptr<const Matrix> tmp2 = tailor_rotation(tmp)->copy();
       shared_ptr<const Matrix> mcc = diis->extrapolate(tmp2);
