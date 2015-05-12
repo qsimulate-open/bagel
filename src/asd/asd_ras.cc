@@ -517,6 +517,7 @@ void ASD_RAS::sigma_2a4_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d)
 
 }
 
+
 shared_ptr<RASDvec> ASD_RAS::contract_I(shared_ptr<const RASDvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
   auto out = make_shared<RASDvec>(A->det(), nstB);
   for (int ij = 0; ij != nstB; ++ij) {
@@ -534,6 +535,8 @@ shared_ptr<RASDvec> ASD_RAS::contract_I(shared_ptr<const RASDvec> A, shared_ptr<
   }
   return out;
 }
+
+
 shared_ptr<RASDvec> ASD_RAS::contract_J(shared_ptr<const RASDvec> B, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
   auto out = make_shared<RASDvec>(B->det(), nstA);
   for (int ij = 0; ij != nstA; ++ij) {
