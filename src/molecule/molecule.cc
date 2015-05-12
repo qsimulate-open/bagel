@@ -193,7 +193,11 @@ int Molecule::num_count_ncore_only() const {
     if (it->atom_number() >= 2) out += 2;
     if (it->atom_number() >= 10) out += 8;
     if (it->atom_number() >= 18) out += 8;
-    if (it->atom_number() > 36) throw logic_error("needs to modify Molecule::count_num_ncore for atoms beyond Kr"); // TODO
+    if (it->atom_number() >= 36) out += 18;
+    if (it->atom_number() >= 54) out += 18;
+    if (it->atom_number() >= 86) out += 32;
+    if (it->atom_number() >= 118) out += 32;
+    if (it->atom_number() >  118) throw logic_error("Molecule::num_count_ncore_only() thinks you are using an atom with Z > 118...");
   }
   return out;
 }
