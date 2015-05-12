@@ -103,7 +103,7 @@ class RelCoeff_Striped : public RelCoeff {
       return out;
     }
 
-    std::shared_ptr<RelCoeff_Block> block_format() const;
+    std::shared_ptr<RelCoeff_Block> block_format(int nclosed = -1, int nact = -1, int nvirt = -1, int nneg = -1) const;
     std::shared_ptr<Kramers<2,ZMatrix>> kramers_active() const;
 
     // get Kramers-adapted coefficient via quaternion diagonalization

@@ -96,7 +96,7 @@ shared_ptr<const Matrix> SMITH_Info<double>::coeff() const {
 template<>
 shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::coeff() const {
   shared_ptr<const RelCoeff_Striped> c = dynamic_pointer_cast<const RelReference>(ref_)->relcoeff();
-  return c->block_format();
+  return c->block_format(nclosed(), nact(), nvirt(), 0);
 }
 
 

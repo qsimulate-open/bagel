@@ -93,28 +93,37 @@ RelCoeff_Kramers::RelCoeff_Kramers(const ZMatrix& _coeff, const int _nclosed, co
 
 
 // Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
-std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format() const {
-  assert(nneg_ % 2 == 0);
+std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format(int nclosed, int nact, int nvirt_nr, int nneg) const {
+  if (nneg == -1) {
+    assert(nclosed == -1 && nact == -1 && nvirt_nr == -1);
+    nclosed = nclosed_;
+    nact = nact_;
+    nvirt_nr = nvirt_nr_;
+    nneg = nneg_;
+  }
+  assert(nneg % 2 == 0);
+  assert(2*(nclosed+nact+nvirt_nr) == nneg || nneg == 0);
+  assert(2*(nclosed+nact+nvirt_nr) + nneg == mdim());
   shared_ptr<ZMatrix> ctmp2 = clone();
   int n = ndim();
   // closed
-  for (int j=0; j!=nclosed_; ++j) {
+  for (int j=0; j!=nclosed; ++j) {
     ctmp2->copy_block(0,            j, n, 1, slice(j*2  , j*2+1));
-    ctmp2->copy_block(0, nclosed_ + j, n, 1, slice(j*2+1, j*2+2));
+    ctmp2->copy_block(0, nclosed + j, n, 1, slice(j*2+1, j*2+2));
   }
-  int offset = nclosed_*2;
+  int offset = nclosed*2;
   // active
-  for (int j=0; j!=nact_; ++j) {
+  for (int j=0; j!=nact; ++j) {
     ctmp2->copy_block(0, offset + j,         n, 1, slice(offset +j*2,   offset + j*2+1));
-    ctmp2->copy_block(0, offset + nact_ + j, n, 1, slice(offset +j*2+1, offset + j*2+2));
+    ctmp2->copy_block(0, offset + nact + j, n, 1, slice(offset +j*2+1, offset + j*2+2));
   }
-  offset = (nclosed_+nact_)*2;
+  offset = (nclosed+nact)*2;
   // virtual (including positrons)
-  for (int j=0; j!=nvirt_rel(); ++j) {
+  for (int j=0; j!=nvirt_nr+nneg/2; ++j) {
     ctmp2->copy_block(0, offset + j,            n, 1, slice(offset + j*2,   offset + j*2+1));
-    ctmp2->copy_block(0, offset + nvirt_rel() + j,   n, 1, slice(offset + j*2+1, offset + j*2+2));
+    ctmp2->copy_block(0, offset + nvirt_nr+nneg/2 + j,   n, 1, slice(offset + j*2+1, offset + j*2+2));
   }
-  auto out = make_shared<RelCoeff_Block>(*ctmp2, nclosed_, nact_, nvirt_nr_, nneg_);
+  auto out = make_shared<RelCoeff_Block>(*ctmp2, nclosed, nact, nvirt_nr, nneg);
   return out;
 }
 
