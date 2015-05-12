@@ -30,13 +30,13 @@
 using namespace std;
 using namespace bagel;
 
-shared_ptr<CASDvec> ASD_CAS::form_sigma(shared_ptr<const CASDvec> ccvec, shared_ptr<const MOFile> jop) const {
+shared_ptr<Dvec> ASD_CAS::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop) const {
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();
   auto int_det = det->remalpha()->rembeta();
 
-  auto sigmavec = make_shared<CASDvec>(det, nstates);
+  auto sigmavec = make_shared<Dvec>(det, nstates);
   sigmavec->zero();
 
   const int norb = det->norb();
@@ -83,18 +83,18 @@ shared_ptr<CASDvec> ASD_CAS::form_sigma(shared_ptr<const CASDvec> ccvec, shared_
   return sigmavec;
 }
 
-shared_ptr<CASDvec> ASD_CAS::form_sigma_1e(shared_ptr<const CASDvec> ccvec, const double* modata) const {
+shared_ptr<Dvec> ASD_CAS::form_sigma_1e(shared_ptr<const Dvec> ccvec, const double* modata) const {
   const int nstate = ccvec->ij();
   shared_ptr<const Determinants> det = ccvec->det();
 
   const int lbs = det->lenb();
   const int las = det->lena();
 
-  shared_ptr<const CASDvec> cc_trans = ccvec->transpose();
+  shared_ptr<const Dvec> cc_trans = ccvec->spinflip();
   shared_ptr<const Determinants> det_trans = cc_trans->det();
 
-  auto sigma = make_shared<CASDvec>(det, nstate);
-  auto sg_trans = make_shared<CASDvec>(det_trans, nstate);
+  auto sigma = make_shared<Dvec>(det, nstate);
+  auto sg_trans = make_shared<Dvec>(det_trans, nstate);
 
   TaskQueue<Prop1eTask> tasks((det->lena() + det_trans->lenb()) * nstate);
 
@@ -114,7 +114,7 @@ shared_ptr<CASDvec> ASD_CAS::form_sigma_1e(shared_ptr<const CASDvec> ccvec, cons
 
   tasks.compute();
 
-  sigma->ax_plus_y(1.0, *sg_trans->transpose());
+  sigma->ax_plus_y(1.0, *sg_trans->spinflip());
 
   return sigma;
 }
@@ -159,7 +159,7 @@ void ASD_CAS::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const 
   tasks.compute();
 }
 
-void ASD_CAS::sigma_2ab_2(shared_ptr<const Dvec> d, shared_ptr<Dvec> e, const double* mo2e_ptr) const {
+void ASD_CAS::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, const double* mo2e_ptr) const {
   const int lenab = d->lena() * d->lenb();
   const int ij = d->ij();
 
@@ -191,7 +191,7 @@ void ASD_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
 }
 
 
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const CASDvec> civec, const int i, const int ip) const {
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const Dvec> civec, const int i, const int ip) const {
   shared_ptr<const Civec> cbra = civec->data(i);
   shared_ptr<const Civec> cket = civec->data(ip);
 
@@ -291,8 +291,8 @@ void ASD_CAS::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
 }
 
 
-shared_ptr<CASDvec> ASD_CAS::contract_I(shared_ptr<const CASDvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
-  auto out = make_shared<CASDvec>(A->det(), nstB);
+shared_ptr<Dvec> ASD_CAS::contract_I(shared_ptr<const Dvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  auto out = make_shared<Dvec>(A->det(), nstB);
   for (int j = 0; j != nstB; ++j) {
     for (int i = 0; i != nstA; ++i) {
       const int ij  = i  + (j*nstA);
@@ -304,10 +304,8 @@ shared_ptr<CASDvec> ASD_CAS::contract_I(shared_ptr<const CASDvec> A, shared_ptr<
   }
   return out;
 }
-
-
-shared_ptr<CASDvec> ASD_CAS::contract_J(shared_ptr<const CASDvec> B, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
-  auto out = make_shared<CASDvec>(B->det(), nstA);
+shared_ptr<Dvec> ASD_CAS::contract_J(shared_ptr<const Dvec> B, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  auto out = make_shared<Dvec>(B->det(), nstA);
   for (int i = 0; i != nstA; ++i) {
     for (int j = 0; j != nstB; ++j) {
       const int ij  = i  + (j*nstA);
