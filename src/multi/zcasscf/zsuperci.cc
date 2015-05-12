@@ -249,9 +249,9 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   // make natural orbitals, update coeff_ and transform rdm1
   shared_ptr<ZMatrix> natorb_coeff;
   if (nact_) {
-    pair<vector<double>, shared_ptr<ZMatrix>> natorb_tmp = make_natural_orbitals(rdm1);
-    occup_ = natorb_tmp.first;
-    natorb_coeff = natorb_tmp.second;
+    pair<shared_ptr<ZMatrix>, VectorB> natorb_tmp = make_natural_orbitals(rdm1);
+    occup_ = natorb_tmp.second;
+    natorb_coeff = natorb_tmp.first;
     coeff_ = update_coeff(coeff_, natorb_coeff);
     qvec = update_qvec(qvec, natorb_coeff);
     rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);

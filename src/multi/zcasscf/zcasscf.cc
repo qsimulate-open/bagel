@@ -284,7 +284,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> transfo
 }
 
 
-pair<vector<double>, shared_ptr<ZMatrix>> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) const {
+pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) const {
 
   // input should be 1rdm in kramers format
   shared_ptr<ZMatrix> tmp;
@@ -300,7 +300,7 @@ pair<vector<double>, shared_ptr<ZMatrix>> ZCASSCF::make_natural_orbitals(shared_
 
   const bool unitmat = tmp->is_identity(1.0e-14);
   shared_ptr<ZMatrix> out;
-  vector<double> vec2(tmp->ndim());
+  VectorB vec2(tmp->ndim());
 
   if (!unitmat) {
     VectorB vec(rdm1->ndim());
@@ -391,7 +391,7 @@ pair<vector<double>, shared_ptr<ZMatrix>> ZCASSCF::make_natural_orbitals(shared_
     out = tmp;
   }
 
-  return make_pair(vec2, out);
+  return make_pair(out, vec2);
 }
 
 

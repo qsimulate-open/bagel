@@ -67,7 +67,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const Matrix>  nr_coeff_;
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const ZMatrix> overlap_;
-    std::vector<double> occup_;
+    VectorB occup_;
 
     void print_header() const;
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
@@ -106,7 +106,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const Reference> conv_to_ref() const override;
 
     // diagonalize 1RDM to obtain natural orbital transformation matrix and natural orbital occupation numbers
-    std::pair<std::vector<double>, std::shared_ptr<ZMatrix>> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1) const;
+    std::pair<std::shared_ptr<ZMatrix>, VectorB> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1) const;
     // natural orbital transformations for the 1 and 2 RDMs, the coefficient, and qvec
     std::shared_ptr<const ZMatrix> natorb_rdm1_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
     std::shared_ptr<const ZMatrix> natorb_rdm2_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm2) const;
