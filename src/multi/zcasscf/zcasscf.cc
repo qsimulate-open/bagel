@@ -478,31 +478,12 @@ shared_ptr<const RelCoeff_Striped> ZCASSCF::generate_mvo(shared_ptr<const RelCoe
   mute_stdcout();
   assert(2*nocc >= ncore);
   const int hfvirt = nvirtnr_ + nocc_ - nocc;
-
-  // TODO this lambda should be replaced with block_format() and striped_format()
-  // transformation from the striped format to the block format
-  auto quaternion = [](shared_ptr<ZMatrix> o, bool back_trans) {
-    shared_ptr<ZMatrix> scratch = o->clone();
-    const int m2 = o->mdim()/2;
-    if (!back_trans) {
-      for (int j=0; j!=m2; ++j) {
-        scratch->copy_block(0,      j, o->ndim(), 1, o->slice(j*2  , j*2+1));
-        scratch->copy_block(0, m2 + j, o->ndim(), 1, o->slice(j*2+1, j*2+2));
-      }
-    } else {
-      for (int j=0; j!=m2; ++j) {
-        scratch->copy_block(0, j*2,   o->ndim(), 1, o->slice(j, j+1));
-        scratch->copy_block(0, j*2+1, o->ndim(), 1, o->slice(m2 + j, m2 + j+1));
-      }
-    }
-    *o = *scratch;
-  };
+  assert(2*(nocc + hfvirt) + coeff->nneg() == coeff->mdim());
 
   shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom_, hcore_, coeff->slice_copy(0, ncore), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
 
   // take virtual part out and make block format
-  shared_ptr<ZMatrix> vcoeff = coeff->slice_copy(2*nocc, 2*(nocc + hfvirt));
-  quaternion(vcoeff, /*back_trans*/false);
+  shared_ptr<RelCoeff_Block> vcoeff = RelCoeff_Striped(*coeff->slice_copy(2*nocc, 2*(nocc + hfvirt)), 0, 0, hfvirt, 0).block_format();
 
   shared_ptr<ZMatrix> mofock;
   if (tsymm_) {
@@ -522,12 +503,11 @@ shared_ptr<const RelCoeff_Striped> ZCASSCF::generate_mvo(shared_ptr<const RelCoe
     RelCoeff::rearrange_eig(eig, mofock);
 
   // update orbitals and back transform
-  *vcoeff *= *mofock;
-  quaternion(vcoeff, /*back_trans*/true);
+  shared_ptr<RelCoeff_Striped> scoeff = RelCoeff_Block(*vcoeff * *mofock, 0, 0, hfvirt, 0).striped_format();
 
   // copy in modified virtuals
   shared_ptr<ZMatrix> ecoeff = coeff->copy();
-  ecoeff->copy_block(0, 2*nocc, ecoeff->ndim(), 2*hfvirt, vcoeff->data());
+  ecoeff->copy_block(0, 2*nocc, ecoeff->ndim(), 2*hfvirt, scoeff->data());
 
   {
     auto unit = ecoeff->clone(); unit->unit();
