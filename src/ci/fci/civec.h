@@ -126,7 +126,7 @@ class DistCivector {
     size_t asize() const { return aend_ - astart_; }
 
     void zero() { std::fill_n(local_.get(), size(), DataType(0.0)); }
-    void synchronize(const int root = 0) { /* do nothing */ }
+    void synchronize() { /* do nothing */ }
 
     std::shared_ptr<Civector<DataType>> civec() const { return std::make_shared<Civector<DataType>>(*this); }
     std::shared_ptr<const Determinants> det() const { return det_; }
@@ -308,7 +308,7 @@ class DistCivector {
         const size_t off = std::get<0>(outrange)*asize();
         std::copy_n(tmp.get(), out->dist_.size(i)*asize(), trans->local()+off);
         if (det_->nelea()*det_->neleb() & 1)
-          blas::scale_n(static_cast<DataType>(-1.0), trans->local()+off, out->dist_.size(i)*asize());
+          std::for_each(trans->local()+off, trans->local()+off+out->dist_.size(i)*asize(), [](DataType& a){ a = -a; });
 
         if (i != myrank) {
           out->transp_.push_back(mpi__->request_send(trans->local()+off, out->dist_.size(i)*asize(), i, myrank));
@@ -766,9 +766,9 @@ class Civector {
       return dist;
     }
 
-    void synchronize(const int root = 0) {
+    void synchronize() {
 #ifdef HAVE_MPI_H
-      mpi__->broadcast(cc_ptr_, size(), root);
+      mpi__->broadcast(cc_ptr_, size(), 0);
 #endif
     }
 };
@@ -777,8 +777,6 @@ template<> void Civector<double>::spin_decontaminate(const double thresh);
 
 using Civec = Civector<double>;
 using ZCivec = Civector<std::complex<double>>;
-
-using CASDvec = Dvector_base<Civec>;
 
 }
 

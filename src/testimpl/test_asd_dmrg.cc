@@ -48,19 +48,19 @@ double asd_dmrg_energy(std::string inp) {
       geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "hf") {
-      auto scf = std::make_shared<RHF>(itree, geom, ref);
+      auto scf = std::make_shared<RHF>(itree, geom);
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "multisite") {
-      std::vector<std::shared_ptr<const Reference>> site_refs;
-      auto sitenames = itree->get_vector<std::string>("refs");
-      for (auto& s : sitenames)
-        site_refs.push_back(saved.at(s));
-      auto ms = std::make_shared<MultiSite>(itree, site_refs);
-      ms->scf(itree);
-      multisite = ms;
-      ref = ms->conv_to_ref();
-      *geom = *ref->geom();
+        std::vector<std::shared_ptr<const Reference>> site_refs;
+        auto sitenames = itree->get_vector<std::string>("refs");
+        for (auto& s : sitenames)
+          site_refs.push_back(saved.at(s));
+        auto ms = std::make_shared<MultiSite>(itree, site_refs);
+        ms->scf(itree);
+        multisite = ms;
+        ref = ms->conv_to_ref();
+        *geom = *ref->geom();
     } else if (method == "asd_dmrg") {
         if (!multisite)
           throw std::runtime_error("multisite must be called before asd_dmrg");

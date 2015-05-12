@@ -29,28 +29,8 @@
 using namespace std;
 using namespace bagel;
 
-
-RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, shared_ptr<const ZMatrix> coeff) : RelDFBase(*df) {
-  // Separate Coefficients into real and imaginary
-  array<shared_ptr<const Matrix>,4> rcoeff;
-  array<shared_ptr<const Matrix>,4> icoeff;
-  assert(coeff->ndim() % 4 == 0);
-  const size_t nbasis = coeff->ndim() / 4;
-  for (int i = 0; i != 4; ++i) {
-    shared_ptr<const ZMatrix> oc = coeff->get_submatrix(i*nbasis, 0, nbasis, coeff->mdim());
-    rcoeff[i] = oc->get_real_part();
-    icoeff[i] = oc->get_imag_part();
-  }
-  init(df, rcoeff, icoeff);
-}
-
-
 RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) : RelDFBase(*df) {
-  init(df, rcoeff, icoeff);
-}
 
-
-void RelDFFull::init(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) {
   basis_ = df->basis();
   if (basis_.size() != 1)
     throw logic_error("RelDFFull should be called with basis_.size() == 1");

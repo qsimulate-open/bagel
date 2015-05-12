@@ -54,6 +54,9 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     double thresh_micro_;
     bool natocc_;
 
+    double active_thresh_;
+    std::shared_ptr<const Reference> guess_ref_;
+
     VectorB occup_;
     std::shared_ptr<const Coeff> coeff_;
 
@@ -65,7 +68,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     void mute_stdcout();
     void resume_stdcout();
 
-    const std::shared_ptr<const Matrix> hcore_;
+    std::shared_ptr<const Matrix> hcore_;
 
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Matrix> cold, std::shared_ptr<const Matrix> natorb) const;
     std::shared_ptr<const Coeff> semi_canonical_orb() const;

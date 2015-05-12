@@ -43,14 +43,9 @@
 namespace bagel {
 
 template <typename DataType>
-class Dvector : public btas::Tensor3<DataType> {
+class Dvector {
   public:
     using data_type = DataType;
-    using btas::Tensor3<DataType>::data;
-    using btas::Tensor3<DataType>::begin;
-    using btas::Tensor3<DataType>::cbegin;
-    using btas::Tensor3<DataType>::end;
-    using btas::Tensor3<DataType>::cend;
 
   // Useful in templates involving Dvectors
   public: using DetType = Determinants;
@@ -67,6 +62,7 @@ class Dvector : public btas::Tensor3<DataType> {
     // the size of the vector<shared_ptr<Civector<DataType>>>
     size_t ij_;
     std::vector<std::shared_ptr<Civector<DataType>>> dvec_;
+    btas::Tensor3<DataType> data_;
 
   private:
     friend class boost::serialization::access;
@@ -76,43 +72,54 @@ class Dvector : public btas::Tensor3<DataType> {
     }
     template<class Archive>
     void save(Archive& ar, const unsigned int version) const {
-      ar << boost::serialization::base_object<btas::Tensor3<DataType>>(*this) << det_ << lena_ << lenb_ << ij_;
+      // dvec_ is just an alias and therefore not serialized
+      const bool alloc = data();
+      ar << det_ << lena_ << lenb_ << ij_ << alloc;
+      if (alloc) ar << data_;
+      else       ar << dvec_;
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int version) {
-      ar >> boost::serialization::base_object<btas::Tensor3<DataType>>(*this) >> det_ >> lena_ >> lenb_ >> ij_;
-      DataType* tmp = data();
-      for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
-        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
+      bool alloc;
+      ar >> det_ >> lena_ >> lenb_ >> ij_ >> alloc;
+      if (alloc) {
+        ar >> data_;
+        DataType* tmp = data_.data();
+        for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
+          dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
+      } else {
+        ar >> dvec_;
+      }
     }
 
   public:
     Dvector() { }
 
-    Dvector(std::shared_ptr<const Determinants> det, const size_t ij) : btas::Tensor3<DataType>(det->lenb(), det->lena(), ij), det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
-      std::fill(begin(), end(), DataType(0.0));
-      DataType* tmp = data();
+    Dvector(std::shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij), data_(lenb_, lena_, ij_) {
+      std::fill(data_.begin(), data_.end(), DataType(0.0));
+      DataType* tmp = data_.data();
       for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
         dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
     }
 
-    Dvector(const Dvector<DataType>& o) : btas::Tensor3<DataType>(o), det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
-      DataType* tmp = data();
-      for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
-        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
+    Dvector(const Dvector<DataType>& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
+      if (o.data()) {
+        data_ = btas::Tensor3<DataType>(o.data_);
+        DataType* tmp = data();
+        for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
+          dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
+      } else {
+        for (auto& i : o.dvec_)
+          dvec_.push_back(std::make_shared<Civector<DataType>>(*i));
+      }
     }
 
-    Dvector(const Dvector_base<Civector<DataType>>& o)
-      : btas::Tensor3<DataType>(o.det()->lenb(), o.det()->lena(), o.ij()), det_(o.det()), lena_(o.det()->lena()), lenb_(o.det()->lenb()), ij_(o.ij()) {
-      DataType* tmp = data();
-      for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
-        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
-      auto iter = dvec_.begin();
-      for (auto& inp : o.dvec())
-        **iter++ = *inp;
+    Dvector(const Dvector_base<DistCivector<DataType>>& o) : det_(o.det()), lena_(det_->lena()), lenb_(det_->lenb()), ij_(o.ij()) {
+      for (auto& i : o.dvec())
+        dvec_.push_back(std::make_shared<Civector<DataType>>(*i));
     }
 
-    Dvector(std::shared_ptr<const Civector<DataType>> e, const size_t ij) : btas::Tensor3<DataType>(e->lenb(), e->lena(), ij), det_(e->det()), lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {
+    Dvector(std::shared_ptr<const Civector<DataType>> e, const size_t ij) : det_(e->det()), lena_(e->lena()), lenb_(e->lenb()), ij_(ij), data_(lenb_, lena_, ij_) {
       DataType* tmp = data();
       for (int i = 0; i != ij; ++i, tmp += lenb_*lena_) {
         auto c = std::make_shared<Civector<DataType>>(det_, tmp);
@@ -121,11 +128,27 @@ class Dvector : public btas::Tensor3<DataType> {
       }
     }
 
+    // I think this is very confusiong... this is done this way in order not to delete Civec when Dvector is deleted.
+    Dvector(std::shared_ptr<const Dvector<DataType>> o) : det_(o->det_), lena_(o->lena_), lenb_(o->lenb_), ij_(o->ij_) {
+      for (int i = 0; i != ij_; ++i)
+        dvec_.push_back(std::make_shared<Civector<DataType>>(*(o->data(i))));
+    }
+
+    Dvector(std::vector<std::shared_ptr<Civector<DataType>>> o) : det_(o.front()->det()), ij_(o.size()) {
+      lena_ = det_->lena();
+      lenb_ = det_->lenb();
+      for (int i = 0; i != ij_; ++i)
+        dvec_.push_back(std::make_shared<Civector<DataType>>(*(o.at(i))));
+    }
+
     std::shared_ptr<const Determinants> det() const { return det_; }
+
+    DataType* data() { return data_.data(); }
+    const DataType* data() const { return data_.data(); }
 
     std::shared_ptr<Civector<DataType>>& data(const size_t i) { return dvec_[i]; }
     std::shared_ptr<const Civector<DataType>> data(const size_t i) const { return dvec_[i]; }
-    void zero() { std::fill(begin(), end(), 0.0); }
+    void zero() { std::fill(data_.begin(), data_.end(), 0.0); }
 
     std::vector<std::shared_ptr<Civector<DataType>>>& dvec() { return dvec_; }
     const std::vector<std::shared_ptr<Civector<DataType>>>& dvec() const { return dvec_; }
@@ -134,8 +157,8 @@ class Dvector : public btas::Tensor3<DataType> {
     std::vector<std::shared_ptr<Civector<DataType>>> dvec(const std::vector<int>& conv) {
       std::vector<std::shared_ptr<Civector<DataType>>> out;
       auto c = conv.begin();
-      for (auto& i : dvec_) {
-        if (*c++ == 0) out.push_back(i);
+      for (auto& iter : dvec_) {
+        if (*c++ == 0) out.push_back(iter);
         else out.push_back(nullptr);
       }
       return out;
@@ -143,8 +166,8 @@ class Dvector : public btas::Tensor3<DataType> {
     std::vector<std::shared_ptr<const Civector<DataType>>> dvec(const std::vector<int>& conv) const {
       std::vector<std::shared_ptr<const Civector<DataType>>> out;
       auto c = conv.begin();
-      for (auto& i : dvec_) {
-        if (*c++ == 0) out.push_back(i);
+      for (auto& iter : dvec_) {
+        if (*c++ == 0) out.push_back(iter);
         else out.push_back(nullptr);
       }
       return out;
@@ -163,9 +186,6 @@ class Dvector : public btas::Tensor3<DataType> {
     // some functions for convenience
     DataType dot_product(const Dvector<DataType>& other) const {
       return std::inner_product(dvec_.begin(), dvec_.end(), other.dvec_.begin(), DataType(0.0), std::plus<DataType>(), [](CiPtr p, CiPtr q){ return p->dot_product(q); });
-    }
-    void ax_plus_y(const DataType a, std::shared_ptr<const Dvector<DataType>> other) {
-      ax_plus_y(a, *other);
     }
     void ax_plus_y(const DataType a, const Dvector<DataType>& other) {
       std::transform(other.dvec_.begin(), other.dvec_.end(), dvec_.begin(), dvec_.begin(), [&a](CiPtr p, CiPtr q){ q->ax_plus_y(a, p); return q; });
@@ -198,6 +218,18 @@ class Dvector : public btas::Tensor3<DataType> {
     std::shared_ptr<Dvector<DataType>> clone() const { return std::make_shared<Dvector<DataType>>(det_, ij_); }
     std::shared_ptr<Dvector<DataType>> copy() const { return std::make_shared<Dvector<DataType>>(*this); }
 
+    // for double versions
+    std::shared_ptr<Dvector<DataType>> spin() const { assert(false); return nullptr; }
+    std::shared_ptr<Dvector<DataType>> spinflip(std::shared_ptr<const Determinants> det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<Dvector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<Dvector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = nullptr) const { assert(false); return nullptr; }
+
+    std::shared_ptr<Dvector<DataType>> apply(const int orbital, const bool action, const int spin) const {
+      std::vector<CiPtr> out;
+      for (auto& i : dvec_) out.push_back(i->apply(orbital, action, spin));
+      return std::make_shared<Dvector<DataType>>(out);
+    }
+
     void orthog(std::shared_ptr<const Dvector<DataType>> o) {
       if (o->ij() != ij()) throw std::logic_error("Dvector<DataType>::orthog called inconsistently");
       std::transform(o->dvec_.begin(), o->dvec_.end(), dvec_.begin(), dvec_.begin(), [](CiPtr p, CiPtr q){ q->orthog(p); return q; });
@@ -225,6 +257,11 @@ class Dvector : public btas::Tensor3<DataType> {
       }
     }
 };
+
+template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin() const;
+template<> std::shared_ptr<Dvector<double>> Dvector<double>::spinflip(std::shared_ptr<const Determinants> det) const;
+template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin_lower(std::shared_ptr<const Determinants> det) const;
+template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin_raise(std::shared_ptr<const Determinants> det) const;
 
 using Dvec = Dvector<double>;
 using ZDvec = Dvector<std::complex<double>>;

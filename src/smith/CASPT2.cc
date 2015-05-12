@@ -33,45 +33,40 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref) {
-  eig_ = f1_->diag();
+CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info> ref) : SpinFreeMethod(ref) {
+  this->eig_ = f1_->diag();
   t2 = init_amplitude();
+  e0_ = this->e0();
   r = t2->clone();
   den1 = h1_->clone();
   den2 = h1_->clone();
   Den1 = v2_->clone();
-  if (info_->grad())
-    deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+  deci = make_shared<Tensor>(vector<IndexRange>{ci_});
 }
 
 
 void CASPT2::CASPT2::solve() {
   Timer timer;
-  print_iteration();
-  Timer mtimer;
+  this->print_iteration();
   int iter = 0;
-  for ( ; iter != info_->maxiter(); ++iter) {
+  for ( ; iter != ref_->maxiter(); ++iter) {
     shared_ptr<Queue> energyq = make_energyq();
-    energy_ = accumulate(energyq);
+    this->energy_ = accumulate(energyq);
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
     diagonal(r, t2);
-    energy_ += dot_product_transpose(r, t2);
+    this->energy_ += dot_product_transpose(r, t2) * 0.25;
     const double err = r->rms();
-    print_iteration(iter, energy_, err, mtimer.tick());
+    this->print_iteration(iter, this->energy_, err);
 
-    update_amplitude(t2, r);
+    this->update_amplitude(t2, r);
     r->zero();
-    if (err < info_->thresh()) break;
+    if (err < ref_->thresh()) break;
   }
-  print_iteration(iter == info_->maxiter());
+  this->print_iteration(iter == ref_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
-}
 
-
-void CASPT2::CASPT2::solve_deriv() {
-  Timer timer;
   shared_ptr<Queue> corrq = make_corrq();
   correlated_norm_ = accumulate(corrq);
   timer.tick_print("T1 norm evaluation");
@@ -92,6 +87,7 @@ void CASPT2::CASPT2::solve_deriv() {
     dec->next_compute();
   timer.tick_print("CI derivative evaluation");
   cout << endl;
+
 }
 
 

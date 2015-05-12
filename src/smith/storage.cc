@@ -36,27 +36,23 @@ using namespace bagel::SMITH;
 using namespace std;
 
 
-template<typename DataType>
-StorageBlock<DataType>::StorageBlock(const size_t size, const bool init) : size_(size), initialized_(init) {
-  static_assert(is_same<DataType, double>::value or is_same<DataType, complex<double>>::value, "illegal Type in StorageBlock");
+StorageBlock::StorageBlock(const size_t size, const bool init) : size_(size), initialized_(init) {
   if (init) {
-    data_ = unique_ptr<DataType[]>(new DataType[size_]);
+    data_ = unique_ptr<double[]>(new double[size_]);
     zero();
   }
 }
 
 
-template<typename DataType>
-void StorageBlock<DataType>::zero() {
+void StorageBlock::zero() {
   if (initialized_)
     fill_n(data(), size_, 0.0);
 }
 
 
-template<typename DataType>
-StorageBlock<DataType>& StorageBlock<DataType>::operator=(const StorageBlock<DataType>& o) {
+StorageBlock& StorageBlock::operator=(const StorageBlock& o) {
   if (o.initialized_ && !initialized_) {
-    data_ = unique_ptr<DataType[]>(new DataType[size_]);
+    data_ = unique_ptr<double[]>(new double[size_]);
     initialized_ = true;
   }
   if (o.initialized_)
@@ -65,35 +61,31 @@ StorageBlock<DataType>& StorageBlock<DataType>::operator=(const StorageBlock<Dat
 }
 
 
-template<typename DataType>
-void StorageBlock<DataType>::put_block(unique_ptr<DataType[]>&& o) {
+void StorageBlock::put_block(unique_ptr<double[]>&& o) {
   assert(!initialized_);
   initialized_ = true;
   data_ = move(o);
 }
 
 
-template<typename DataType>
-void StorageBlock<DataType>::add_block(const std::unique_ptr<DataType[]>& o) {
+void StorageBlock::add_block(const std::unique_ptr<double[]>& o) {
   assert(initialized_);
   blas::ax_plus_y_n(1.0, o.get(), size_, data());
 }
 
 
-template<typename DataType>
-unique_ptr<DataType[]> StorageBlock<DataType>::get_block() const {
+unique_ptr<double[]> StorageBlock::get_block() const {
   assert(initialized_);
-  unique_ptr<DataType[]> out(new DataType[size_]);
+  unique_ptr<double[]> out(new double[size_]);
   copy_n(data_.get(), size_, out.get());
   return move(out);
 }
 
 
-template<typename DataType>
-unique_ptr<DataType[]> StorageBlock<DataType>::move_block() {
+unique_ptr<double[]> StorageBlock::move_block() {
   if (!initialized_) {
     initialized_ = true;
-    data_ = unique_ptr<DataType[]>(new DataType[size_]);
+    data_ = unique_ptr<double[]>(new double[size_]);
     zero();
   }
   initialized_ = false;
@@ -101,37 +93,31 @@ unique_ptr<DataType[]> StorageBlock<DataType>::move_block() {
 }
 
 
-template<typename DataType>
-DataType StorageBlock<DataType>::dot_product(const StorageBlock<DataType>& o) const {
+double StorageBlock::dot_product(const StorageBlock& o) const {
   assert(size_ == o.size_ && !(initialized_ ^ o.initialized_));
-  return initialized_ ? blas::dot_product(data(), size_, o.data()) : DataType(0.0);
+  return initialized_ ? blas::dot_product(data(), size_, o.data()) : 0.0;
 }
 
 
-template<typename DataType>
-void StorageBlock<DataType>::ax_plus_y(const DataType& a, const StorageBlock<DataType>& o) {
+void StorageBlock::ax_plus_y(const double a, const StorageBlock& o) {
   assert(size_ == o.size_ && !(initialized_ ^ o.initialized_));
   if (initialized_)
     blas::ax_plus_y_n(a, o.data(), size_, data());
 }
 
 
-template<typename DataType>
-void StorageBlock<DataType>::scale(const DataType& a) {
+void StorageBlock::scale(const double a) {
   if (initialized_)
     blas::scale_n(a, data(), size_);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<typename DataType>
-Storage_Incore<DataType>::Storage_Incore(const map<size_t, size_t>& size, bool init) : Storage_base<StorageBlock<DataType>>(size, init) {
-  static_assert(is_same<DataType, double>::value or is_same<DataType, complex<double>>::value, "illegal Type in Storage_Incore");
+Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Storage_base<StorageBlock>(size, init) {
 }
 
 
-template<typename DataType>
-unique_ptr<DataType[]> Storage_Incore<DataType>::get_block(const size_t& key) const {
+unique_ptr<double[]> Storage_Incore::get_block(const size_t& key) const {
   // first find a key
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
@@ -140,8 +126,7 @@ unique_ptr<DataType[]> Storage_Incore<DataType>::get_block(const size_t& key) co
 }
 
 
-template<typename DataType>
-unique_ptr<DataType[]> Storage_Incore<DataType>::move_block(const size_t& key) {
+unique_ptr<double[]> Storage_Incore::move_block(const size_t& key) {
   // first find a key
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
@@ -150,8 +135,7 @@ unique_ptr<DataType[]> Storage_Incore<DataType>::move_block(const size_t& key) {
 }
 
 
-template<typename DataType>
-void Storage_Incore<DataType>::put_block(const size_t& key, unique_ptr<DataType[]>& dat) {
+void Storage_Incore::put_block(const size_t& key, unique_ptr<double[]>& dat) {
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
@@ -159,8 +143,7 @@ void Storage_Incore<DataType>::put_block(const size_t& key, unique_ptr<DataType[
 }
 
 
-template<typename DataType>
-void Storage_Incore<DataType>::add_block(const size_t& key, const unique_ptr<DataType[]>& dat) {
+void Storage_Incore::add_block(const size_t& key, const unique_ptr<double[]>& dat) {
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
@@ -168,22 +151,19 @@ void Storage_Incore<DataType>::add_block(const size_t& key, const unique_ptr<Dat
 }
 
 
-template<typename DataType>
-void Storage_Incore<DataType>::zero() {
+void Storage_Incore::zero() {
   for (auto& i : hashtable_)
     i.second->zero();
 }
 
 
-template<typename DataType>
-void Storage_Incore<DataType>::scale(const DataType& a) {
+void Storage_Incore::scale(const double a) {
   for (auto& i : hashtable_)
     i.second->scale(a);
 }
 
 
-template<typename DataType>
-Storage_Incore<DataType>& Storage_Incore<DataType>::operator=(const Storage_Incore<DataType>& o) {
+Storage_Incore& Storage_Incore::operator=(const Storage_Incore& o) {
   if (hashtable_.size() == o.hashtable_.size()) {
     auto i = hashtable_.begin();
     for (auto& j : o.hashtable_) {
@@ -197,8 +177,7 @@ Storage_Incore<DataType>& Storage_Incore<DataType>::operator=(const Storage_Inco
 }
 
 
-template<typename DataType>
-void Storage_Incore<DataType>::ax_plus_y(const DataType& a, const Storage_Incore<DataType>& o) {
+void Storage_Incore::ax_plus_y(const double a, const Storage_Incore& o) {
   if (hashtable_.size() == o.hashtable_.size()) {
     auto i = hashtable_.begin();
     for (auto& j : o.hashtable_) {
@@ -211,9 +190,8 @@ void Storage_Incore<DataType>::ax_plus_y(const DataType& a, const Storage_Incore
 }
 
 
-template<typename DataType>
-DataType Storage_Incore<DataType>::dot_product(const Storage_Incore<DataType>& o) const {
-  DataType out = 0.0;
+double Storage_Incore::dot_product(const Storage_Incore& o) const {
+  double out = 0.0;
   if (hashtable_.size() == o.hashtable_.size()) {
     auto i = hashtable_.begin();
     for (auto& j : o.hashtable_) {
@@ -227,10 +205,3 @@ DataType Storage_Incore<DataType>::dot_product(const Storage_Incore<DataType>& o
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// explict instantiation at the end of the file
-template class StorageBlock<double>;
-template class StorageBlock<complex<double>>;
-template class Storage_Incore<double>;
-template class Storage_Incore<complex<double>>;
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

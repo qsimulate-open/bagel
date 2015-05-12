@@ -37,7 +37,7 @@ using namespace bagel;
 Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      const int _nclosed, const int _nact, const int _nvirt,
                      const double en,
-                     shared_ptr<const VecRDM<1>> _rdm1, shared_ptr<const VecRDM<2>> _rdm2,
+                     vector<shared_ptr<RDM<1>>> _rdm1, vector<shared_ptr<RDM<2>>> _rdm2,
                      shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av,
                      shared_ptr<const CIWfn> ci)
  : geom_(g), noccA_(0), noccB_(0), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), ciwfn_(ci), rdm1_(_rdm1), rdm2_(_rdm2),
@@ -49,10 +49,10 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
     coeff_ = c;
   }
 
-  for (auto& i : *rdm1_)
-    mpi__->broadcast(i.second->data(), i.second->size(), 0);
-  for (auto& i : *rdm2_)
-    mpi__->broadcast(i.second->data(), i.second->size(), 0);
+  for (auto& i : rdm1_)
+    mpi__->broadcast(i->data(), i->size(), 0);
+  for (auto& i : rdm2_)
+    mpi__->broadcast(i->data(), i->size(), 0);
   if (rdm1_av_)
     mpi__->broadcast_force(rdm1_av_->data(), rdm1_av_->size(), 0);
   if (rdm2_av_)
@@ -61,29 +61,6 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
   //if (nact_ && rdm1_.empty())
   //  throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
 
-}
-
-
-tuple<shared_ptr<const RDM<1>>,std::shared_ptr<const RDM<2>>> Reference::rdm12(const int ist, const int jst) const {
-  shared_ptr<const RDM<1>> r1;
-  shared_ptr<const RDM<2>> r2;
-  if (rdm1_->exist(ist, jst) && rdm2_->exist(ist, jst)) {
-    r1 = rdm1_->at(ist, jst);
-    r2 = rdm2_->at(ist, jst);
-  } else {
-    FCI_bare fci(ciwfn_);
-    fci.compute_rdm12(ist, jst);
-    r1 = fci.rdm1(ist, jst);
-    r2 = fci.rdm2(ist, jst);
-  }
-  return make_tuple(r1, r2);
-}
-
-
-tuple<shared_ptr<const RDM<3>>,std::shared_ptr<const RDM<4>>> Reference::rdm34(const int ist, const int jst) const {
-  FCI_bare fci(ciwfn_);
-  fci.compute_rdm12(ist, jst); // TODO stupid code
-  return fci.rdm34(ist, jst);
 }
 
 
@@ -118,6 +95,13 @@ shared_ptr<Dvec> Reference::rdm2deriv(const int istate) const {
 tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> Reference::rdm34deriv(const int istate, shared_ptr<const Matrix> fock) const {
   FCI_bare fci(ciwfn_);
   return fci.rdm34deriv(istate, fock);
+}
+
+
+tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const int i) const {
+  FCI_bare fci(ciwfn_);
+  fci.compute_rdm12();
+  return fci.compute_rdm34(i);
 }
 
 

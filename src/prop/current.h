@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_PROP_CURRENT_H
-#define __SRC_PROP_CURRENT_H
+#ifndef __SRC_LONDON_CURRENT_H
+#define __SRC_LONDON_CURRENT_H
 
 #include <src/wfn/method.h>
 

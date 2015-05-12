@@ -160,7 +160,7 @@ void OSIntegral<DataType, IntType>::common_init() {
   for (int i = amin_; i != amax1_; ++i) asize_ += (i+1)*(i+2) / 2;
   asize_intermediate_ = (ang0_+1) * (ang0_+2) * (ang1_+1) * (ang1_+2) / 4;
 
-  // note: for relativistic cases, mixed spherical and cartesian basis is considered
+  // note: for relativistic casees, mixed spherical and cartesian basis is considered
   asize_final_ = (basisinfo_[0]->spherical() ? (2*ang0_+1) : (ang0_+1)*(ang0_+2)/2)
                * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
 

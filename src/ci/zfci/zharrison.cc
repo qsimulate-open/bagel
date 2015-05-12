@@ -104,10 +104,17 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
       // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
       for (auto& i : *iactive)
         active_indices.insert(lexical_cast<int>(i->data()) - 1);
-      coeff = ZCASSCF::set_active(active_indices, rr->relcoeff_full(), ncore_, geom_->nele()-charge_, norb_, tsymm_);
+      cout << " " << endl;
+      cout << "    ==== Active orbitals : ===== " << endl;
+      for (auto& i : active_indices)
+        cout << "         Orbital " << i+1 << endl;
+      cout << "    ============================ " << endl << endl;
+      coeff = ZCASSCF::set_active(active_indices, swap_pos_neg(rr->relcoeff_full()), ncore_, geom_->nele()-charge_, norb_);
 
+      if (!tsymm_)  // TODO figure out a good way to sort spin orbitals
+        cout << "******** Assuming Kramers-paired orbitals are coming out from the reference coeff in order, but not making sure of it.  ********" << endl;
     } else {
-      coeff = rr->relcoeff_full();
+      coeff = swap_pos_neg(rr->relcoeff_full());
     }
   } else {
     // For ZCASSCF, just accept the coefficients given
@@ -288,7 +295,13 @@ void ZHarrison::compute() {
     shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
-    const vector<double> energies = davidson_->compute(cc_->dvec(conv), sigma->dvec(conv));
+    // constructing Dvec's for Davidson
+    auto ccn = make_shared<RelZDvec>(cc_);
+    auto sigman = make_shared<RelZDvec>(sigma);
+    ccn->synchronize();
+    sigman->synchronize();
+
+    const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
     // get residual and new vectors
     vector<shared_ptr<RelZDvec>> errvec = davidson_->residual();
     for (auto& i : errvec)
@@ -313,7 +326,7 @@ void ZHarrison::compute() {
         for (auto& ib : space_->detmap()) {
           const int na = ib.second->nelea();
           const int nb = ib.second->neleb();
-          const size_t size = cc_->find(na, nb)->data(ist)->size();
+          const size_t size = ccn->find(na, nb)->data(ist)->size();
           complex<double>* target_array = ctmp->find(na, nb)->data();
           complex<double>* source_array = errvec[ist]->find(na, nb)->data();
           double* denom_array = denom_->find(na, nb)->data();
@@ -363,8 +376,3 @@ shared_ptr<const ZMatrix> ZHarrison::swap_pos_neg(shared_ptr<const ZMatrix> coef
   return out;
 }
 
-
-shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
-  using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
-  return make_shared<RelCIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, make_shared<PairType>(make_pair(space_, int_space_)));
-}

@@ -28,7 +28,6 @@
 #include <src/util/math/step_restrict_bfgs.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/mat1e/rel/reloverlap.h>
-#include <src/scf/dhf/population_analysis.h>
 
 using namespace std;
 using namespace bagel;
@@ -256,14 +255,10 @@ void ZCASBFGS::compute() {
 
   // print out orbital populations, if needed
   if (idata_->get<bool>("pop", false)) {
-    Timer pop_timer;
-    cout << " " << endl;
-    cout << "    * Printing out population analysis of BFGS optimized orbitals to casscf.log" << endl;
+    cout << "    * Printing out population analysis to casscf.log" << endl;
     mute_stdcout();
-    shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false);
-    population_analysis(geom_, tmp->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_, nclosed_, nact_);
+    population_analysis(geom_, coeff_->slice(0, nclosed_+nact_+nvirtnr_), overlap_);
     resume_stdcout();
-    pop_timer.tick_print("population analysis");
   }
 
 }

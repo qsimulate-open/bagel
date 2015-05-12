@@ -90,7 +90,9 @@ void ASD_OrbOpt::common_init() {
   assert(nactA_ + nactB_ == nact_);
 
   nclosed_ = ref_->nclosed();
+
   nocc_ = nclosed_ + nact_;
+
   nbasis_ = coeff_->mdim();
   nvirt_ = nbasis_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
@@ -113,12 +115,13 @@ void ASD_OrbOpt::common_init() {
 
 
 ASD_OrbOpt::~ASD_OrbOpt() {
+
 }
 
 
 void ASD_OrbOpt::print_header() const {
   cout << "  --------------------------------------------" << endl;
-  cout << "      ASD orbital optimization calculation    " << endl;
+  cout << "      ASD Orbital Optimization calculation    " << endl;
   cout << "  --------------------------------------------" << endl << endl;
 }
 
@@ -194,6 +197,28 @@ shared_ptr<Matrix> ASD_OrbOpt::Qvec(const int n, const int m, shared_ptr<const M
   auto out = make_shared<Matrix>(*coeff % *tmp);
   assert(n == out->ndim() && m == out->mdim());
   return out;
+
+}
+
+
+double ASD_OrbOpt::check_symmetric(shared_ptr<Matrix>& mat) const {
+  int n = mat->ndim();
+  assert(n == mat->mdim());
+  auto tran = make_shared<Matrix>(n,n);
+  tran = mat->transpose();
+  auto subt = make_shared<Matrix>(n,n);
+  *subt = *mat - *tran;
+  return subt->rms();
+}
+
+
+shared_ptr<const Coeff> ASD_OrbOpt::update_coeff(const shared_ptr<const Matrix> cold, shared_ptr<const Matrix> mat) const {
+  auto cnew = make_shared<Coeff>(*cold);
+  int nbas = cold->ndim();
+  assert(nbas == geom_->nbasis());
+  dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, mat->data(), nact_,
+                   0.0, cnew->data()+nbas*nclosed_, nbas);
+  return cnew;
 }
 
 

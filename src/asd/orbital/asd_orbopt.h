@@ -80,11 +80,14 @@ class ASD_OrbOpt : public Method, public std::enable_shared_from_this<ASD_OrbOpt
 
     std::shared_ptr<const Matrix> hcore_;
 
+    std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Matrix> cold, std::shared_ptr<const Matrix> natorb) const;
+
     // energy
     std::vector<double> energy_;
     double rms_grad_;
 
     std::shared_ptr<Matrix> Qvec(const int n, const int m, std::shared_ptr<const Matrix> c, const size_t nclosed) const;
+    double check_symmetric(std::shared_ptr<Matrix>& mat) const;
 
     std::shared_ptr<const Coeff> semi_canonical_orb() const;
 

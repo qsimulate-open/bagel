@@ -33,25 +33,16 @@
 namespace bagel {
 namespace SMITH {
 
-template<typename DataType>
-class FutureTensor_ : public Tensor_<DataType> {
-  protected:
-    using Tensor_<DataType>::initialized_;
-
+class FutureTensor : public Tensor {
   protected:
     // TODO actually not const, but this is the only way to make it compiled...
     void init() const override { init_->compute(); initialized_ = true; }
     mutable std::shared_ptr<Task> init_;
 
   public:
-    FutureTensor_(const Tensor_<DataType>& i,  std::shared_ptr<Task> j) : Tensor_<DataType>(i), init_(j) { }
+    FutureTensor(const Tensor& i,  std::shared_ptr<Task> j) : Tensor(i), init_(j) { }
 
 };
-
-namespace CASPT2 { using FutureTensor = FutureTensor_<double>; }
-namespace MRCI   { using FutureTensor = FutureTensor_<double>; }
-namespace RelCASPT2 { using FutureTensor = FutureTensor_<std::complex<double>>; }
-namespace RelMRCI   { using FutureTensor = FutureTensor_<std::complex<double>>; }
 
 }
 }

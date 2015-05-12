@@ -30,44 +30,49 @@
 #include <src/scf/coeff.h>
 #include <src/wfn/geometry.h>
 #include <src/ci/fci/dvec.h>
-#include <src/ci/zfci/reldvec.h>
-#include <src/ci/zfci/relspace.h>
 
 // Stores the result of some CI type wavefunction (FCI, CASSCF, etc.)
 
 namespace bagel {
 
-template<class CIVecClass, class DetClass>
-class CIWfn_ {
+class CIWfn {
+
   protected:
+    // Geometry which this wave function is belonging to
     std::shared_ptr<const Geometry> geom_;
+    // MO coefficients
+    std::shared_ptr<const Coeff> coeff_;
 
     int ncore_;
     int nact_;
+    int nvirt_;
 
     int nstates_;
-    std::shared_ptr<const DetClass> det_;
-    std::shared_ptr<const CIVecClass> ccvec_;
+    std::shared_ptr<const Determinants> det_;
+    std::shared_ptr<const Dvec> ccvec_;
     std::vector<double> energies_;
 
   private:
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & geom_ & ncore_ & nact_ & nstates_ & det_ & ccvec_ & energies_;
+      ar & geom_ & coeff_ & ncore_ & nact_ & nvirt_ & nstates_ & det_ & ccvec_ & energies_;
     }
 
   public:
-    CIWfn_() { }
-    CIWfn_(std::shared_ptr<const Geometry> g, const int ncore, const int nact, const int nst,
-          std::vector<double> en, std::shared_ptr<const CIVecClass> ccvec, std::shared_ptr<const DetClass> det)
-      : geom_(g), ncore_(ncore), nact_(nact), nstates_(nst),
-        det_(det), ccvec_(ccvec), energies_(en) {}
+    CIWfn() { }
+    CIWfn(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
+              const int ncore, const int nact, const int nvirt,
+              std::vector<double> en, std::shared_ptr<const Dvec> ccvec)
+      : geom_(g), coeff_(c), ncore_(ncore), nact_(nact), nvirt_(nvirt), nstates_(ccvec->ij()),
+         det_(ccvec->det()), ccvec_(ccvec), energies_(en) {}
 
     std::shared_ptr<const Geometry> geom() const { return geom_; }
+    const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     int ncore() const { return ncore_; }
     int nact() const { return nact_; }
+    int nvirt() const {return nvirt_; }
 
     int nstates() const { return nstates_; }
 
@@ -75,12 +80,9 @@ class CIWfn_ {
     double energy(int i) const {return energies_[i];}
 
     // function to return a CI vectors from orbital info
-    std::shared_ptr<const DetClass> det() const { return det_; }
-    std::shared_ptr<const CIVecClass> civectors() const { return ccvec_; }
+    std::shared_ptr<const Determinants> det() const { return det_; }
+    std::shared_ptr<const Dvec> civectors() const { return ccvec_; }
 };
-
-using CIWfn = CIWfn_<Dvec,Determinants>;
-using RelCIWfn = CIWfn_<RelZDvec,std::pair<std::shared_ptr<const RelSpace>,std::shared_ptr<const RelSpace>>>;
 
 }
 

@@ -38,10 +38,7 @@ class RelDFFull : public RelDFBase {
   protected:
     std::array<std::shared_ptr<DFFullDist>,2> dffull_;
 
-    void init(std::shared_ptr<const RelDFHalf>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
-
   public:
-    RelDFFull(std::shared_ptr<const RelDFHalf>, std::shared_ptr<const ZMatrix>);
     RelDFFull(std::shared_ptr<const RelDFHalf>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
     RelDFFull(std::array<std::shared_ptr<DFFullDist>,2> a, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> basis);
     RelDFFull(const RelDFFull& o);

@@ -36,7 +36,7 @@
 #include <src/util/math/matrix.h>
 #include <src/util/math/diis.h>
 #include <src/util/muffle.h>
-#include <src/scf/dhf/population_analysis.h>
+#include <src/multi/zcasscf/zcasscf.h>
 
 using namespace std;
 using namespace bagel;
@@ -168,7 +168,7 @@ void Dirac::compute() {
   if (idata_->get<bool>("pop", false)) {
     cout << "    * Printing out population analysis to dhf.log" << endl;
     Muffle muf ("dhf.log");
-    population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_, (geom_->magnetism() ? 0 : 1));
+    ZCASSCF::population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_);
   }
 
 }
@@ -184,11 +184,7 @@ void Dirac::print_eig() const {
 shared_ptr<const Reference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
   const size_t npos = coeff_->mdim() - nneg_;
-  // coeff is occ, virt, nneg
-  shared_ptr<ZMatrix> c = coeff_->clone();
-  c->copy_block(0, 0, c->ndim(), npos, coeff_->slice(nneg_, nneg_+npos));
-  c->copy_block(0, npos, c->ndim(), nneg_, coeff_->slice(0, nneg_));
-  auto out = make_shared<RelReference>(geom_, c, energy_, nneg_, nele_, 0, npos-nele_, gaunt_, breit_);
+  auto out = make_shared<RelReference>(geom_, coeff_, energy_, nneg_, nele_, 0, npos-nele_, gaunt_, breit_);
   vector<double> eigp(eig_.begin()+nneg_, eig_.end());
   vector<double> eigm(eig_.begin(), eig_.begin()+nneg_);
   VectorB eig(eig_.size());
@@ -270,4 +266,3 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
   }
   return coeff;
 }
-

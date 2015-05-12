@@ -36,10 +36,7 @@ namespace btas {
                >
       friend class BoxOrdinal;
 
-      BoxOrdinal() {
-        BOOST_ASSERT((contiguous_ = false) || true); // workaround for Boost serialization
-                                                     // it breaks Debug builds when reading uninitialized bools
-      }
+      BoxOrdinal() {}
 
       template <typename Index1,
                 typename Index2,

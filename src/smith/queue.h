@@ -67,11 +67,6 @@ class Queue {
 
     void add_task(std::shared_ptr<Task> a) { tasklist_.push_back(a); }
 
-    void insert(std::shared_ptr<Queue> b) {
-      for (auto& i : b->tasklist_)
-        tasklist_.push_back(i);
-    }
-
     bool done() const { return tasklist_.empty(); }
 
     void initialize() {

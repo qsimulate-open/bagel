@@ -66,6 +66,11 @@ class RelDvector {
 
     RelDvector(RelDvector<DataType>&& o) : dvecs_(o.dvecs_), space_(o.space_) { }
 
+    RelDvector(std::shared_ptr<const RelDvector<DataType>> o) : space_(o->space_) {
+      for (auto& i : o->dvecs_)
+        dvecs_.emplace(i.first, std::make_shared<Dvector<DataType>>(i.second));
+    }
+
     // combines (opposite of split())
     RelDvector(const std::vector<std::shared_ptr<RelDvector<DataType>>>& o) : space_(o.front()->space_) {
       for (auto& isp : space_->detmap())
@@ -100,13 +105,11 @@ class RelDvector {
     double variance() const { return detail::real(dot_product(*this)) / size(); }
     double rms() const { return std::sqrt(variance()); }
 
-    DataType dot_product(std::shared_ptr<const RelDvector<DataType>> o) const { return dot_product(*o); }
     DataType dot_product(const RelDvector<DataType>& o) const {
       return std::inner_product(dvecs_.begin(), dvecs_.end(), o.dvecs_.begin(), DataType(0.0), std::plus<DataType>(),
                                 [](MapType i, MapType j) { return i.second->dot_product(*j.second); });
     }
 
-    void ax_plus_y(const DataType a, std::shared_ptr<const RelDvector<DataType>> o) { ax_plus_y(a, *o); }
     void ax_plus_y(const DataType a, const RelDvector<DataType>& o) {
       auto iter = o.dvecs_.begin();
       for (auto& i : dvecs_) {

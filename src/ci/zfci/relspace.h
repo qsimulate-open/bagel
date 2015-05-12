@@ -33,9 +33,6 @@ namespace bagel {
 
 // implements spaces that contain all determinants |PQ> for a given Kramers index -N/2 to N/2
 class RelSpace : public Space_base {
-  protected:
-    int nele_;
-
   private:
     friend class boost::serialization::access;
     template<class Archive>
@@ -46,8 +43,6 @@ class RelSpace : public Space_base {
   public:
     RelSpace() { }
     RelSpace(const int norb, const int nele, const bool mute = true, const bool linkup = false);
-
-    int nele() const { return nele_; }
 };
 
 }

@@ -396,7 +396,10 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
 //////////////// functions for multiplication of the Hamiltonian ///////////////
 
 void ZHarrison::sigma_2e_h0101_h1001(shared_ptr<const ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop) const {
-  ZMatrix tmp(*jop->mo2e("0101"));
-  sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e("1001")->data(), tmp.data(), norb_, norb_, norb_, norb_);
-  contract(1.0, *d, {0,1,2}, tmp, {3,2}, 0.0, *e, {0,1,3});
+  const int ij = d->ij();
+  const int lenab = d->lena()*d->lenb();
+  ZMatrix tmp(*jop->mo2e(bitset<4>("0101")));
+  sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("1001"))->data(), tmp.data(), norb_, norb_, norb_, norb_);
+
+  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, tmp.data(), ij, 0.0, e->data(), lenab);
 }

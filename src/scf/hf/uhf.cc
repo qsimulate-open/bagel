@@ -133,7 +133,7 @@ void UHF::print_S2(const string tag) const {
 }
 
 
-tuple<shared_ptr<Coeff>, int, shared_ptr<VecRDM<1>>> UHF::natural_orbitals() const {
+tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals() const {
   auto cinv = make_shared<Matrix>(*coeff_ % *overlap_);
   auto intermediate = make_shared<Matrix>(*cinv * *aodensity_ ^ *cinv);
   *intermediate *= -1.0;
@@ -162,10 +162,7 @@ tuple<shared_ptr<Coeff>, int, shared_ptr<VecRDM<1>>> UHF::natural_orbitals() con
     }
   }
 
-  auto rdm = make_shared<VecRDM<1>>();
-  rdm->emplace(0, r);
-  rdm->emplace(1, ra);
-  rdm->emplace(2, rb);
+  vector<shared_ptr<RDM<1>>> rdm = {r, ra, rb};
 
   return make_tuple(make_shared<Coeff>(*coeff_ * *intermediate), nocc, rdm);
 }
@@ -174,7 +171,7 @@ tuple<shared_ptr<Coeff>, int, shared_ptr<VecRDM<1>>> UHF::natural_orbitals() con
 shared_ptr<const Reference> UHF::conv_to_ref() const {
   shared_ptr<Coeff> natorb;
   int nocc;
-  shared_ptr<VecRDM<1>> rdm1;
+  vector<shared_ptr<RDM<1>>> rdm1;
   tie(natorb, nocc, rdm1) = natural_orbitals();
   auto out = make_shared<Reference>(geom_, natorb, 0, nocc, coeff_->mdim()-nocc, energy(), rdm1);
 

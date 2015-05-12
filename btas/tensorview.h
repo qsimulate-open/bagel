@@ -15,7 +15,6 @@
 #include <btas/tensorview_iterator.h>
 #include <btas/defaults.h>
 #include <btas/util/functional.h>
-#include <btas/error.h>
 
 namespace btas {
 
@@ -329,8 +328,7 @@ namespace btas {
       /// \return reference to the element indexed by {\c first, \c rest}
       template<typename index0, typename... _args>
       typename std::enable_if<std::is_integral<index0>::value &&
-                              std::is_same<value_type,typename storage_type::value_type>::value &&
-                              not std::is_const<storage_type>::value,
+                               std::is_same<value_type,typename storage_type::value_type>::value,
                               value_type&
                              >::type
       operator() (const index0& first, const _args&... rest)
@@ -349,8 +347,7 @@ namespace btas {
       /// \return reference to the element indexed by \c index
       template <typename Index>
       typename std::enable_if<is_index<Index>::value &&
-                              std::is_same<value_type,typename storage_type::value_type>::value &&
-                              not std::is_const<storage_type>::value,
+                               std::is_same<value_type,typename storage_type::value_type>::value,
                               value_type&
                              >::type
       operator() (const Index& index)
@@ -382,7 +379,7 @@ namespace btas {
       /// \return value of the element indexed by \c index
       template <typename Index>
       typename std::enable_if<is_index<Index>::value &&
-                              not std::is_same<value_type,typename storage_type::value_type>::value,
+                               not std::is_same<value_type,typename storage_type::value_type>::value,
                               value_type
                              >::type
       operator() (const Index& index) const
@@ -393,9 +390,7 @@ namespace btas {
 
       /// \return element without range check
       template<typename index0, typename... _args>
-      typename std::enable_if<std::is_integral<index0>::value &&
-                              std::is_same<value_type,typename storage_type::value_type>::value,
-                              const value_type&>::type
+      typename std::enable_if<std::is_integral<index0>::value, const value_type&>::type
       at (const index0& first, const _args&... rest) const
       {
         typedef typename common_signed_type<index0, typename index_type::value_type>::type ctype;
@@ -408,9 +403,7 @@ namespace btas {
 
       /// \return element without range check (rank() == general)
       template <typename Index>
-      typename std::enable_if<is_index<Index>::value &&
-                              std::is_same<value_type,typename storage_type::value_type>::value,
-                              const value_type&>::type
+      typename std::enable_if<is_index<Index>::value, const value_type&>::type
       at (const Index& index) const
       {
         assert( range_.includes(index) );
@@ -419,10 +412,7 @@ namespace btas {
 
       /// access element without range check
       template<typename index0, typename... _args>
-      typename std::enable_if<std::is_integral<index0>::value &&
-                              std::is_same<value_type,typename storage_type::value_type>::value &&
-                              not std::is_const<storage_type>::value,
-                              value_type&>::type
+      typename std::enable_if<std::is_integral<index0>::value, value_type&>::type
       at (const index0& first, const _args&... rest)
       {
         assert_writable();
@@ -436,10 +426,7 @@ namespace btas {
 
       /// access element without range check (rank() == general)
       template <typename Index>
-      typename std::enable_if<is_index<Index>::value &&
-                              std::is_same<value_type,typename storage_type::value_type>::value &&
-                              not std::is_const<storage_type>::value,
-                              value_type&>::type
+      typename std::enable_if<is_index<Index>::value, value_type&>::type
       at (const Index& index)
       {
         assert_writable();
@@ -513,10 +500,6 @@ namespace btas {
       }
 #endif
 
-      bool writable() const {
-        return can_write_;
-      }
-
     private:
 
       range_type range_;///< range object
@@ -530,7 +513,7 @@ namespace btas {
       /// use this in non-const members to assert writability if Policy calls for runtime const check
       void assert_writable() const {
         if (_Policy::runtimeconst)
-          BTAS_ASSERT(can_write_);
+          assert(can_write_ == true);
       }
 
       /// construct from \c range and \c storage; pass \c can_write explicitly if needed
@@ -779,10 +762,10 @@ namespace btas {
             typename Storage,
             typename Policy = btas::TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
             class = typename std::enable_if<not std::is_reference<Range>::value>::type>
-  TensorView<typename Storage::value_type, Range, const Storage, Policy>
+  TensorView<typename std::add_const<typename Storage::value_type>::type, Range, const Storage, Policy>
   make_cview(const Range& range, const Storage& storage, Policy = Policy())
   {
-    return make_cview<typename Storage::value_type, Range, Storage, Policy>(range, storage);
+    return make_cview<typename std::add_const<typename Storage::value_type>::type, Range, Storage, Policy>(range, storage);
   }
 
   /// Helper function that constructs a constant TensorView, with an explicitly-specified element type of the view. Useful if need to
@@ -798,10 +781,10 @@ namespace btas {
             typename Storage,
             typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
             class = typename std::enable_if<not std::is_reference<Range>::value>::type>
-  TensorView<T, Range, const Storage, Policy>
+  TensorView<typename std::add_const<T>::type, Range, const Storage, Policy>
   make_cview(const Range& range, const Storage& storage, Policy = Policy())
   {
-    return __make_cview<T, Range, const Storage, Policy>(Range(range), storage);
+    return __make_cview<typename std::add_const<T>::type, Range, const Storage, Policy>(Range(range), storage);
   }
 
   /// Helper function that constructs a full constant TensorView of a Tensor.
@@ -812,13 +795,13 @@ namespace btas {
   template <typename Tensor,
             typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
             class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
-  TensorView<typename Tensor::value_type,
+  TensorView<typename std::add_const<typename Tensor::value_type>::type,
              typename Tensor::range_type,
              const typename Tensor::storage_type,
              Policy>
   make_cview(const Tensor& tensor)
   {
-    return TensorView<typename Tensor::value_type,
+    return TensorView<typename std::add_const<typename Tensor::value_type>::type,
                       typename Tensor::range_type,
                       const typename Tensor::storage_type,
                       Policy>(tensor);
@@ -835,13 +818,13 @@ namespace btas {
   template <typename T, typename Tensor,
             typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
             class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
-  TensorView<T,
+  TensorView<typename std::add_const<T>::type,
              typename Tensor::range_type,
              const typename Tensor::storage_type,
              Policy>
   make_cview(const Tensor& tensor)
   {
-    return TensorView<T,
+    return TensorView<typename std::add_const<T>::type,
                       typename Tensor::range_type,
                       const typename Tensor::storage_type,
                       Policy>(tensor);
@@ -1028,7 +1011,7 @@ namespace btas {
   /// TensorConstMap const-views a sequence of values as a Tensor
   template <typename _T,
             class _Range = btas::DEFAULT::range>
-  using TensorConstMap = TensorView<const _T, _Range, const btas::infinite_sequence_adaptor<const _T*>>;
+  using TensorConstMap = TensorView<_T, _Range, const btas::infinite_sequence_adaptor<const _T*>>;
 
   /// Helper function that constructs TensorMap.
   /// \tparam T the element type returned by the view

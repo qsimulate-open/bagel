@@ -41,24 +41,18 @@ namespace SMITH {
 class Index {
   protected:
     size_t offset_;
-    size_t offset2_;
     size_t size_;
     size_t key_;
   public:
-    Index(const size_t& o, const size_t& o2, const size_t& s, const size_t& i) : offset_(o), offset2_(o2), size_(s), key_(i) {}
-    Index() {}
+    Index(const size_t& o, const size_t& s, const size_t& i) : offset_(o), size_(s), key_(i) {}
+    Index() : offset_(0LU), size_(0LU), key_(0LU) {}
     ~Index() {}
     size_t offset() const { return offset_; }
     size_t size() const { return size_; }
     size_t key() const { return key_; }
 
-    // returns if this block corresponds to Kramers + or -.
-    bool kramers() const { return offset_ == offset2_; }
-    // returns the offset of corresponding Kramers+ Index
-    size_t kramers_offset() const { return offset2_; }
-
     bool operator==(const Index& o) const {
-      return offset_ == o.offset_ && offset2_ == o.offset2_ && size_ == o.size_ && key_ == o.key_;
+      return offset_ == o.offset_ && size_ == o.size_ && key_ == o.key_;
     }
 };
 
@@ -72,12 +66,9 @@ class IndexRange {
     int keyoffset_;
     int orboffset_;
 
-    // set to be an offset for the spin/Kramers counterpart if necessary
-    int orboffset2_;
-
   public:
-    IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0, const int orboff2 = -1)
-      : keyoffset_(boffset), orboffset_(orboff), orboffset2_(orboff2 < 0 ? orboff : orboff2) {
+    IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0)
+      : keyoffset_(boffset), orboffset_(orboff) {
       if (size > 0) {
         // first determine number of blocks.
         const size_t nbl = (size-1) / maxblock + 1;
@@ -89,14 +80,12 @@ class IndexRange {
         for (int k = 0; k != rem; ++iter, ++k) --*iter;
         // push back to range_
         size_t off = orboffset_;
-        size_t off2 = orboffset2_;
         // key is offsetted by the input value
         size_t cnt = boffset;
-        for (auto& i : blocksizes) {
-          Index t(off, off2, i, cnt++);
+        for (auto i = blocksizes.begin(); i != blocksizes.end(); ++i, ++cnt) {
+          Index t(off, *i, cnt);
           range_.push_back(t);
-          off += i;
-          off2 += i;
+          off += *i;
         }
         // set size_
         size_ = off - orboffset_;

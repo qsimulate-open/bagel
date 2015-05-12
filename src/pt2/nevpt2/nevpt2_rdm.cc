@@ -49,7 +49,7 @@ void NEVPT2::compute_rdm() {
     shared_ptr<Matrix> tmp4 = make_shared<Matrix>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
     shared_ptr<const RDM<3>> r3;
     shared_ptr<const RDM<4>> r4;
-    tie(r3, r4) = casscf_->fci()->rdm34(istate_, istate_);
+    tie(r3, r4) = casscf_->fci()->compute_rdm34(istate_);
     sort_indices<0,2,4,  1,3,5,  0,1,1,1>(r3->data(), tmp3->data(), nact_, nact_, nact_, nact_, nact_, nact_);
     sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), tmp4->data(), nact_, nact_, nact_, nact_, nact_, nact_, nact_, nact_);
     rdm3_ = tmp3;

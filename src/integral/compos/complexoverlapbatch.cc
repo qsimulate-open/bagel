@@ -37,7 +37,7 @@ const static CCarSphList carsphlist;
 
 void ComplexOverlapBatch::compute() {
 
-  const CSortList sort_(spherical_);
+  const CSortList sort_ (spherical_);
 
   complex<double>* const intermediate_p = stack_->get<complex<double>>(prim0_ * prim1_ * asize_);
   perform_VRR(intermediate_p);
