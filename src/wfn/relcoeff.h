@@ -143,6 +143,13 @@ class RelCoeff_Block : public RelCoeff {
 
 
 class RelCoeff_Kramers : public RelCoeff {
+  private:
+    RelCoeff_Kramers() { }
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) { ar & boost::serialization::base_object<RelCoeff>(*this); }
+
   public:
     // standard constructor; copy data directly from _coeff
     RelCoeff_Kramers(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
@@ -156,5 +163,6 @@ class RelCoeff_Kramers : public RelCoeff {
 BOOST_CLASS_EXPORT_KEY(bagel::RelCoeff)
 BOOST_CLASS_EXPORT_KEY(bagel::RelCoeff_Striped)
 BOOST_CLASS_EXPORT_KEY(bagel::RelCoeff_Block)
+BOOST_CLASS_EXPORT_KEY(bagel::RelCoeff_Kramers)
 
 #endif

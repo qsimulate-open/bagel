@@ -408,3 +408,4 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::generate_mvo(shared_ptr<con
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff)
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff_Striped)
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff_Block)
+BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff_Kramers)
