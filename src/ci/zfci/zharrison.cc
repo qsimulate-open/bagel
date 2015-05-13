@@ -116,6 +116,17 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
     // then compute Kramers adapated coefficient matrices
     scoeff = scoeff->init_kramers_coeff_dirac(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
 
+    // generate modified virtual orbitals, if requested
+    const bool mvo = idata_->get<bool>("generate_mvo", false);
+    if (mvo) {
+      const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
+      const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->num_count_ncore_only());
+      if (ncore_mvo == 2*ref_->nocc())
+        cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
+      else
+        scoeff = scoeff->generate_mvo(geom_, overlap, hcore, ncore_mvo, ref_->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
+    }
+
     // Reorder as specified in the input so frontier orbitals contain the desired active space
     const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
     if (iactive) {
