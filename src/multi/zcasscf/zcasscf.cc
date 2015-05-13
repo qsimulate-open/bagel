@@ -134,11 +134,7 @@ void ZCASSCF::init() {
     auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
     VectorB eig(hctmp->ndim());
     hctmp->diagonalize(eig);
-    auto hctmp2 = make_shared<ZMatrix>(*s12 * *hctmp);
-    auto tmp = hctmp2->clone();
-    tmp->copy_block(0, nneg_, tmp->ndim(), nneg_, hctmp2->slice(0,nneg_));
-    tmp->copy_block(0, 0, tmp->ndim(), nneg_, hctmp2->slice(nneg_,hctmp->mdim()));
-    scoeff = make_shared<const RelCoeff_Striped>(*tmp, nclosed_, nact_, nvirtnr_, nneg_);
+    scoeff = make_shared<const RelCoeff_Striped>(*s12 * *hctmp, nclosed_, nact_, nvirtnr_, nneg_, /*move_neg*/true);
   } else {
     scoeff = make_shared<const RelCoeff_Striped>(*relref->relcoeff_full(), nclosed_, nact_, nvirtnr_, nneg_);
   }
