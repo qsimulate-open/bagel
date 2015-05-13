@@ -190,8 +190,8 @@ std::shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Block::kramers_active() const {
 
 
 // Kramers-adapted coefficient via quaternion diagonalization, assuming guess orbitals from Dirac--Hartree--Fock
-shared_ptr<RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff_dirac(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
-                    shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const {
+shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff_dirac(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
+                          shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const {
 
   // quaternion diagonalization has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
   assert((nact_ > 1 || !tsymm));
@@ -244,7 +244,7 @@ shared_ptr<RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff_dirac(shared_p
   // re-order to kramers format and move negative energy states to virtual space
   ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
 
-  auto ktmp = make_shared<RelCoeff_Kramers>(*ctmp, nclosed_, nact_, nvirt_nr_, nneg_);
+  auto ktmp = make_shared<const RelCoeff_Kramers>(*ctmp, nclosed_, nact_, nvirt_nr_, nneg_);
   auto out = ktmp->block_format()->striped_format();
   return out;
 }

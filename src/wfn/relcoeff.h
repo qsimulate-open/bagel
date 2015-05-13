@@ -110,8 +110,8 @@ class RelCoeff_Striped : public RelCoeff {
     std::shared_ptr<Kramers<2,ZMatrix>> kramers_active() const;
 
     // get Kramers-adapted coefficient via quaternion diagonalization
-    std::shared_ptr<RelCoeff_Striped> init_kramers_coeff_dirac(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> overlap,
-                                           std::shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const;
+    std::shared_ptr<const RelCoeff_Striped> init_kramers_coeff_dirac(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> overlap,
+                                                 std::shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const;
 
     // rearrange coefficient to {c,a,v} by selecting active columns from input coefficient
     std::shared_ptr<const RelCoeff_Striped> set_active(std::set<int> active_indices, const int nele, const bool paired) const;
