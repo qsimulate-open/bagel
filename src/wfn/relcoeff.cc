@@ -50,20 +50,20 @@ void RelCoeff::print_info() const {
 }
 
 
-RelCoeff_Striped::RelCoeff_Striped(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg)
+RelCoeff_Striped::RelCoeff_Striped(const ZMatView& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg)
  : RelCoeff(_coeff.ndim(), _coeff.localized(), _nclosed, _nact, _nvirt, _nneg) {
   if (!move_neg) {
     // copy input matrix directly
     copy_block(0, 0, ndim(), mdim(), _coeff);
   } else {
     // move positronic orbitals to end of virtual space
-    copy_block(0, 0,      ndim(), npos(), _coeff.slice(nneg_, nneg_+npos()));
-    copy_block(0, npos(), ndim(), nneg_,  _coeff.slice(0,     nneg_));
+    copy_block(0, 0,      ndim(), npos(), _coeff.element_ptr(0, nneg_));
+    copy_block(0, npos(), ndim(), nneg_,  _coeff.element_ptr(0, 0));
   }
 }
 
 
-RelCoeff_Block::RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
+RelCoeff_Block::RelCoeff_Block(const ZMatView& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
  : RelCoeff(_coeff.ndim(), _coeff.localized(), _nclosed, _nact, _nvirt, _nneg) {
   copy_block(0, 0, ndim(), mdim(), _coeff);
 }
@@ -72,27 +72,30 @@ RelCoeff_Block::RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const 
 RelCoeff_Kramers::RelCoeff_Kramers(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
  : RelCoeff(_coeff.ndim(), _coeff.localized(), _nclosed, _nact, _nvirt, _nneg) {
 
-  // TODO Should be a bit cheaper if we do all these moves together and get rid of scratch.
-  // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
-  copy_block(        0, 0, nbasis_, mdim(), _coeff.get_submatrix(        0, 0, nbasis_, mdim()));
-  copy_block(  nbasis_, 0, nbasis_, mdim(), _coeff.get_submatrix(2*nbasis_, 0, nbasis_, mdim()));
-  copy_block(2*nbasis_, 0, nbasis_, mdim(), _coeff.get_submatrix(  nbasis_, 0, nbasis_, mdim()));
-  copy_block(3*nbasis_, 0, nbasis_, mdim(), _coeff.get_submatrix(3*nbasis_, 0, nbasis_, mdim()));
+  const int n = nbasis_nr();
+  const int m = nclosed_ + nact_ + nvirt_nr_;
+  assert(nneg_ == 0 || nneg_ == 2*m);
 
-  // columns: {S+, L+, S-, L-} -> {L+, S+, L-, S-}
-  auto move_one = [this](const int offset, const int block1, const int block2) {
-    shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ndim(), block1+block2);
-    scratch->copy_block(0,      0, ndim(), block2, slice(offset+block1, offset+block1+block2));
-    scratch->copy_block(0, block2, ndim(), block1, slice(offset,        offset+block1));
-    copy_block(0, offset, ndim(), block1+block2, scratch);
+  auto copy_swapped_blocks = [this, &_coeff, n, m](const int ao1, const int mo1, const int ao2, const int mo2) {
+    copy_block(ao1*n, mo1*m, n, m, _coeff.get_submatrix(ao2*n, mo2*m, n, m));
+    copy_block(ao2*n, mo2*m, n, m, _coeff.get_submatrix(ao1*n, mo1*m, n, m));
   };
-  move_one(       0, nneg()/2, npos()/2);
-  move_one(mdim()/2, nneg()/2, npos()/2);
+
+  //    rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
+  // columns: {S+, L+, S-, L-} -> {L+, S+, L-, S-}
+  copy_swapped_blocks(0, 0, 0, 1);
+  copy_swapped_blocks(0, 2, 0, 3);
+  copy_swapped_blocks(1, 0, 2, 1);
+  copy_swapped_blocks(1, 1, 2, 0);
+  copy_swapped_blocks(1, 2, 2, 3);
+  copy_swapped_blocks(1, 3, 2, 2);
+  copy_swapped_blocks(3, 0, 3, 1);
+  copy_swapped_blocks(3, 2, 3, 3);
 }
 
 
-// Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
 std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format(int nclosed, int nact, int nvirt_nr, int nneg) const {
+  // TODO this could be optimized to avoid copying
   if (nneg == -1) {
     assert(nclosed == -1 && nact == -1 && nvirt_nr == -1);
     nclosed = nclosed_;
@@ -128,10 +131,9 @@ std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format(int nclosed, int 
 
 
 std::shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
+  // TODO this could be optimized to avoid copying
   assert(nneg_ % 2 == 0);
   auto ctmp2 = clone();
-  // Transforms a coefficient matrix from block format to striped format : assumes ordering is (c,a,v,positrons)
-  // striped format
   int n = ndim();
   int offset = nclosed_;
   // closed
@@ -171,6 +173,21 @@ std::shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
   work->copy_block(0, i, ndim(), nvirt_rel(), tmp[1]->slice(nclosed_+nact_, tmp[1]->mdim()));
 
   auto out = make_shared<RelCoeff_Block>(*work, nclosed_, nact_, nvirt_nr_, nneg_);
+  return out;
+}
+
+
+std::shared_ptr<RelCoeff_Striped> RelCoeff_Kramers::striped_format() const {
+  // TODO this could be optimized to avoid copying
+  assert(nneg_ % 2 == 0);
+  auto ctmp2 = clone();
+  int n = ndim();
+  int offset = nclosed_ + nact_ + nvirt_nr_ + nneg_/2;
+  for (int j=0; j!=offset; ++j) {
+    ctmp2->copy_block(0, j*2,   n, 1, slice(j, j+1));
+    ctmp2->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
+  }
+  auto out = make_shared<RelCoeff_Striped>(*ctmp2, nclosed_, nact_, nvirt_nr_, nneg_);
   return out;
 }
 
@@ -245,7 +262,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff_dirac(sh
   ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
 
   auto ktmp = make_shared<const RelCoeff_Kramers>(*ctmp, nclosed_, nact_, nvirt_nr_, nneg_);
-  auto out = ktmp->block_format()->striped_format();
+  auto out = ktmp->striped_format();
   return out;
 }
 
@@ -352,7 +369,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::generate_mvo(shared_ptr<con
   shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom, hcore, slice_copy(0, ncore), gaunt, breit, /*store half*/false, /*robust*/breit) : hcore;
 
   // take virtual part out and make block format
-  shared_ptr<RelCoeff_Block> vcoeff = RelCoeff_Striped(*slice_copy(2*nocc_mvo, 2*(nocc_mvo + hfvirt)), 0, 0, hfvirt, 0).block_format();
+  shared_ptr<RelCoeff_Block> vcoeff = RelCoeff_Striped(slice(2*nocc_mvo, 2*(nocc_mvo + hfvirt)), 0, 0, hfvirt, 0).block_format();
 
   shared_ptr<ZMatrix> mofock;
   if (tsymm) {

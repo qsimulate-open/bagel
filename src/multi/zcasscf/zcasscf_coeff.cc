@@ -72,7 +72,7 @@ shared_ptr<RelCoeff_Striped> ZCASSCF::init_kramers_coeff_nonrel() {
     RelCoeff::rearrange_eig(eig, fmo);
 
   auto ktmp = make_shared<RelCoeff_Kramers>(*fmo, nclosed_, nact_, nvirt_nr, nneg2*2);
-  auto out = ktmp->block_format()->striped_format();
+  auto out = ktmp->striped_format();
   resume_stdcout();
   return out;
 }

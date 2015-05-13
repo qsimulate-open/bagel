@@ -95,16 +95,14 @@ class RelCoeff_Striped : public RelCoeff {
 
   public:
     // standard constructor; copy data directly from _coeff
-    RelCoeff_Striped(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
+    RelCoeff_Striped(const ZMatView& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
 
     // construct a blank RelCoeff_Striped
     //RelCoeff_Striped(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
     // : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
 
     std::shared_ptr<RelCoeff_Striped> electronic_part() const {
-      ZMatrix tmp = slice(0, npos());
-      auto out = std::make_shared<RelCoeff_Striped>(tmp, nclosed_, nact_, nvirt_nr_, 0);
-      return out;
+      return std::make_shared<RelCoeff_Striped>(slice(0, npos()), nclosed_, nact_, nvirt_nr_, 0);
     }
 
     std::shared_ptr<RelCoeff_Block> block_format(int nclosed = -1, int nact = -1, int nvirt = -1, int nneg = -1) const;
@@ -133,7 +131,7 @@ class RelCoeff_Block : public RelCoeff {
 
   public:
     // standard constructor; copy data directly from _coeff
-    RelCoeff_Block(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
+    RelCoeff_Block(const ZMatView& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
 
     // construct a blank RelCoeff_Block
     //RelCoeff_Block(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
@@ -149,6 +147,7 @@ class RelCoeff_Kramers : public RelCoeff {
     // standard constructor; copy data directly from _coeff
     RelCoeff_Kramers(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
     std::shared_ptr<RelCoeff_Block> block_format() const;
+    std::shared_ptr<RelCoeff_Striped> striped_format() const;
 };
 
 }
