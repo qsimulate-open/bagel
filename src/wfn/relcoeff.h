@@ -68,6 +68,7 @@ class RelCoeff : public ZMatrix {
     // spatial orbitals (2 columns)
     int nclosed() const { return nclosed_; }
     int nact() const { return nact_; }
+    int nocc() const { return nclosed_ + nact_; }
     int nvirt_nr() const { return nvirt_nr_; }
     int nvirt_rel() const { return nvirt_nr_ + nneg_/2; }
 

@@ -85,7 +85,7 @@ void ZCASSCF::init() {
   const bool kramers_coeff = idata_->get<bool>("kramers_coeff", relref->kramers());
   const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
   const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->num_count_ncore_only());
-  if (mvo && ncore_mvo == 2*ref_->nocc()) {
+  if (mvo && ncore_mvo == 2*relref->relcoeff_full()->nocc()) {
     cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
     mvo = false;
   }
@@ -186,7 +186,7 @@ void ZCASSCF::init() {
       scoeff = init_kramers_coeff_nonrel();
   }
 
-  if (mvo) scoeff = scoeff->generate_mvo(geom_, overlap_, hcore_, ncore_mvo, ref_->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
+  if (mvo) scoeff = scoeff->generate_mvo(geom_, overlap_, hcore_, ncore_mvo, relref->relcoeff_full()->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
 
   // specify active orbitals and move into the active space
   set<int> active_indices;
