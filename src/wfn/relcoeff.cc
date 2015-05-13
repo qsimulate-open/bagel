@@ -95,7 +95,6 @@ RelCoeff_Kramers::RelCoeff_Kramers(const ZMatrix& _coeff, const int _nclosed, co
 
 
 std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format(int nclosed, int nact, int nvirt_nr, int nneg) const {
-  // TODO this could be optimized to avoid copying
   if (nneg == -1) {
     assert(nclosed == -1 && nact == -1 && nvirt_nr == -1);
     nclosed = nclosed_;
@@ -106,88 +105,83 @@ std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format(int nclosed, int 
   assert(nneg % 2 == 0);
   assert(2*(nclosed+nact+nvirt_nr) == nneg || nneg == 0);
   assert(2*(nclosed+nact+nvirt_nr) + nneg == mdim());
-  shared_ptr<ZMatrix> ctmp2 = clone();
-  int n = ndim();
+
+  const int n = ndim();
+  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed, nact, nvirt_nr, nneg);
   // closed
   for (int j=0; j!=nclosed; ++j) {
-    ctmp2->copy_block(0,            j, n, 1, slice(j*2  , j*2+1));
-    ctmp2->copy_block(0, nclosed + j, n, 1, slice(j*2+1, j*2+2));
+    out->copy_block(0,           j, n, 1, slice(j*2  , j*2+1));
+    out->copy_block(0, nclosed + j, n, 1, slice(j*2+1, j*2+2));
   }
   int offset = nclosed*2;
   // active
   for (int j=0; j!=nact; ++j) {
-    ctmp2->copy_block(0, offset + j,         n, 1, slice(offset +j*2,   offset + j*2+1));
-    ctmp2->copy_block(0, offset + nact + j, n, 1, slice(offset +j*2+1, offset + j*2+2));
+    out->copy_block(0, offset + j,        n, 1, slice(offset +j*2,   offset + j*2+1));
+    out->copy_block(0, offset + nact + j, n, 1, slice(offset +j*2+1, offset + j*2+2));
   }
   offset = (nclosed+nact)*2;
   // virtual (including positrons)
   for (int j=0; j!=nvirt_nr+nneg/2; ++j) {
-    ctmp2->copy_block(0, offset + j,            n, 1, slice(offset + j*2,   offset + j*2+1));
-    ctmp2->copy_block(0, offset + nvirt_nr+nneg/2 + j,   n, 1, slice(offset + j*2+1, offset + j*2+2));
+    out->copy_block(0, offset + j,                     n, 1, slice(offset + j*2,   offset + j*2+1));
+    out->copy_block(0, offset + nvirt_nr+nneg/2 + j,   n, 1, slice(offset + j*2+1, offset + j*2+2));
   }
-  auto out = make_shared<RelCoeff_Block>(*ctmp2, nclosed, nact, nvirt_nr, nneg);
   return out;
 }
 
 
 std::shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
-  // TODO this could be optimized to avoid copying
   assert(nneg_ % 2 == 0);
-  auto ctmp2 = clone();
   int n = ndim();
   int offset = nclosed_;
+  auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
   // closed
   for (int j=0; j!=nclosed_; ++j) {
-    ctmp2->copy_block(0, j*2,   n, 1, slice(j, j+1));
-    ctmp2->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
+    out->copy_block(0, j*2,   n, 1, slice(j, j+1));
+    out->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
   }
   offset = nclosed_*2;
   // active
   for (int j=0; j!=nact_; ++j) {
-    ctmp2->copy_block(0, offset + j*2,   n, 1, slice(offset + j,         offset + j+1));
-    ctmp2->copy_block(0, offset + j*2+1, n, 1, slice(offset + nact_ + j, offset + nact_ + j+1));
+    out->copy_block(0, offset + j*2,   n, 1, slice(offset + j,         offset + j+1));
+    out->copy_block(0, offset + j*2+1, n, 1, slice(offset + nact_ + j, offset + nact_ + j+1));
   }
   offset = (nclosed_+nact_)*2;
   // vituals (including positrons)
   for (int j=0; j!=nvirt_rel(); ++j) {
-    ctmp2->copy_block(0, offset + j*2,   n, 1, slice(offset + j,          offset + j+1));
-    ctmp2->copy_block(0, offset + j*2+1, n, 1, slice(offset + nvirt_rel() + j, offset + nvirt_rel() + j+1));
+    out->copy_block(0, offset + j*2,   n, 1, slice(offset + j,          offset + j+1));
+    out->copy_block(0, offset + j*2+1, n, 1, slice(offset + nvirt_rel() + j, offset + nvirt_rel() + j+1));
   }
-  auto out = make_shared<RelCoeff_Striped>(*ctmp2, nclosed_, nact_, nvirt_nr_, nneg_);
   return out;
 }
 
 
 std::shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
 
-  // TODO this could be optimized to avoid copying
-  shared_ptr<ZMatrix> work = clone();
-  array<shared_ptr<const ZMatrix>,2> tmp = {{ slice_copy(0, mdim()/2), slice_copy(mdim()/2, mdim()) }};
-
   int i = 0;
-  work->copy_block(0, i, ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
-  work->copy_block(0, i, ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
-  work->copy_block(0, i, ndim(), nact_, tmp[0]->slice(nclosed_, nclosed_+nact_)); i += nact_;
-  work->copy_block(0, i, ndim(), nact_, tmp[1]->slice(nclosed_, nclosed_+nact_)); i += nact_;
-  work->copy_block(0, i, ndim(), nvirt_rel(), tmp[0]->slice(nclosed_+nact_, tmp[0]->mdim())); i += nvirt_rel();
-  work->copy_block(0, i, ndim(), nvirt_rel(), tmp[1]->slice(nclosed_+nact_, tmp[1]->mdim()));
+  array<shared_ptr<const ZMatrix>,2> tmp = {{ slice_copy(0, mdim()/2), slice_copy(mdim()/2, mdim()) }};
+  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
 
-  auto out = make_shared<RelCoeff_Block>(*work, nclosed_, nact_, nvirt_nr_, nneg_);
+  out->copy_block(0, i, ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
+  out->copy_block(0, i, ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
+  out->copy_block(0, i, ndim(), nact_, tmp[0]->slice(nclosed_, nclosed_+nact_)); i += nact_;
+  out->copy_block(0, i, ndim(), nact_, tmp[1]->slice(nclosed_, nclosed_+nact_)); i += nact_;
+  out->copy_block(0, i, ndim(), nvirt_rel(), tmp[0]->slice(nclosed_+nact_, tmp[0]->mdim())); i += nvirt_rel();
+  out->copy_block(0, i, ndim(), nvirt_rel(), tmp[1]->slice(nclosed_+nact_, tmp[1]->mdim()));
+
   return out;
 }
 
 
 std::shared_ptr<RelCoeff_Striped> RelCoeff_Kramers::striped_format() const {
-  // TODO this could be optimized to avoid copying
   assert(nneg_ % 2 == 0);
-  auto ctmp2 = clone();
   int n = ndim();
   int offset = nclosed_ + nact_ + nvirt_nr_ + nneg_/2;
+  auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
+
   for (int j=0; j!=offset; ++j) {
-    ctmp2->copy_block(0, j*2,   n, 1, slice(j, j+1));
-    ctmp2->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
+    out->copy_block(0, j*2,   n, 1, slice(j, j+1));
+    out->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
   }
-  auto out = make_shared<RelCoeff_Striped>(*ctmp2, nclosed_, nact_, nvirt_nr_, nneg_);
   return out;
 }
 
