@@ -222,7 +222,6 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff_dirac(sh
 
   shared_ptr<ZMatrix> coefftmp;
   shared_ptr<ZMatrix> focktmp;
-  shared_ptr<ZMatrix> ctmp;
   // quaternion diagonalize a fock matrix
   focktmp = make_shared<DFock>(geom, hcore, slice_copy(0, nele), gaunt, breit, /*store_half*/false, /*robust*/false);
   quaternion(focktmp);
@@ -253,11 +252,8 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff_dirac(sh
   }
 
   // re-order to kramers format and move negative energy states to virtual space
-  ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
-
-  auto ktmp = make_shared<const RelCoeff_Kramers>(*ctmp, nclosed_, nact_, nvirt_nr_, nneg_);
-  auto out = ktmp->striped_format();
-  return out;
+  auto out = make_shared<const RelCoeff_Kramers>(*s12 * *fock_tilde, nclosed_, nact_, nvirt_nr_, nneg_);
+  return out->striped_format();
 }
 
 
@@ -276,7 +272,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
   if (any_of(active_indices.begin(), active_indices.end(), [nmobasis](int i){ return (i < 0 || i >= nmobasis); }) )
     throw runtime_error("RelCoeff_Striped::set_active - Invalid MO index provided.  (Should be from 1 to " + to_string(nmobasis) + ")");
 
-  shared_ptr<ZMatrix> tmp_coeff = clone();
+  auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, mdim()/4-nclosed_-nact_, nneg());
 
   int iclosed = 0;
   int iactive = nclosed_;
@@ -289,12 +285,12 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
     nclosed_start = nele;
   }
 
-  auto cp   = [&tmp_coeff, this, &paired] (const int i, int& pos) {
+  auto cp   = [&out, this, &paired] (const int i, int& pos) {
     if (paired) {
-      copy_n(element_ptr(0,i*2), nbasis_rel(), tmp_coeff->element_ptr(0, pos*2));
-      copy_n(element_ptr(0,i*2+1), nbasis_rel(), tmp_coeff->element_ptr(0, pos*2+1));
+      copy_n(element_ptr(0,i*2), nbasis_rel(), out->element_ptr(0, pos*2));
+      copy_n(element_ptr(0,i*2+1), nbasis_rel(), out->element_ptr(0, pos*2+1));
     } else {
-      copy_n(element_ptr(0,i), nbasis_rel(), tmp_coeff->element_ptr(0, pos));
+      copy_n(element_ptr(0,i), nbasis_rel(), out->element_ptr(0, pos));
     }
     ++pos;
   };
@@ -315,9 +311,8 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
     throw runtime_error("Invalid combination of closed and active orbitals.");
 
   // copy positrons
-  tmp_coeff->copy_block(0, npos(), nbasis_rel(), nneg(), slice(npos(), mdim()));
-
-  return make_shared<const RelCoeff_Striped>(*tmp_coeff, nclosed_, nact_, mdim()/4-nclosed_-nact_, nneg());
+  out->copy_block(0, npos(), nbasis_rel(), nneg(), slice(npos(), mdim()));
+  return out;
 }
 
 
@@ -382,16 +377,16 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::generate_mvo(shared_ptr<con
   shared_ptr<RelCoeff_Striped> scoeff = RelCoeff_Block(*vcoeff * *mofock, 0, 0, hfvirt, 0).striped_format();
 
   // copy in modified virtuals
-  shared_ptr<ZMatrix> ecoeff = this->copy();
-  ecoeff->copy_block(0, 2*nocc_mvo, ecoeff->ndim(), 2*hfvirt, scoeff->data());
+  auto out = make_shared<RelCoeff_Striped>(*this, nclosed_, nact_, nvirt_nr_, nneg_);
+  out->copy_block(0, 2*nocc_mvo, out->ndim(), 2*hfvirt, scoeff->data());
 
   {
-    auto unit = ecoeff->clone(); unit->unit();
-    double orthonorm = ((*ecoeff % *overlap * *ecoeff) - *unit).rms();
+    auto unit = out->clone(); unit->unit();
+    double orthonorm = ((*out % *overlap * *out) - *unit).rms();
     if (orthonorm > 1.0e-12) throw logic_error("MVO Coefficient not sufficiently orthonormal");
   }
 
-  return make_shared<const RelCoeff_Striped>(*ecoeff, nclosed_, nact_, nvirt_nr_, nneg_);
+  return out;
 }
 
 
