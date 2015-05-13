@@ -329,17 +329,13 @@ void RelCoeff::rearrange_eig(VectorB& eig, shared_ptr<ZMatrix> coeff, const bool
   assert(!includes_neg || *std::min_element(eig.begin()+n, eig.begin()+2*n) - *std::max_element(eig.begin(), eig.begin()+n) > c__*c__);
 
   // need to reorder things so negative energy states don't all come at the beginning
-  // TODO there should be a more efficient way...
   VectorB tempv(2*n);
   shared_ptr<ZMatrix> tempm = coeff->clone();
   for (int i = 0; i != n; ++i) {
     tempv[  i] = eig[2*i];
     tempv[n+i] = eig[2*i+1];
-
-    for (int j=0; j!=2*n; ++j) {
-      tempm->element(j,   i) = coeff->element(j, 2*i);
-      tempm->element(j, n+i) = coeff->element(j, 2*i+1);
-    }
+    tempm->copy_block(0,   i, 2*n, 1, coeff->slice(2*i,   2*i+1));
+    tempm->copy_block(0, n+i, 2*n, 1, coeff->slice(2*i+1, 2*i+2));
   }
   eig = tempv;
   *coeff = *tempm;
