@@ -89,6 +89,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << ncore_ << endl;
   cout << "    * nact     : " << setw(6) << norb_ << endl;
+  cout << "    * nvirt    : " << setw(6) << ((coeff_zcas ? coeff_zcas->mdim() : rr->relcoeff_full()->mdim())/2-ncore_-norb_) << endl;
 
   if (!geom_->dfs())
     geom_ = geom_->relativistic(gaunt_);
@@ -144,7 +145,6 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   assert(coeff->nvirt_nr() == coeff->mdim()/4-ncore_-norb_);
   assert(coeff->nneg() == coeff->mdim()/2);
 
-  cout << "    * nvirt    : " << setw(6) << (coeff->mdim()/2-ncore_-norb_) << endl;
   update(coeff, restricted);
 
 }
