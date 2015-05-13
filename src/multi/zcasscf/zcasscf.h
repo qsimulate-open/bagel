@@ -114,8 +114,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> update_qvec(std::shared_ptr<const ZMatrix> qold, std::shared_ptr<const ZMatrix> natorb) const;
     // kramers adapt for RotFile is a static function!
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
-    // function to generate modified virtual MOs from either a Fock matrix or the one-electron Hamiltonian
-    std::shared_ptr<const RelCoeff_Striped> generate_mvo(std::shared_ptr<const RelCoeff_Striped> coeff, const int ncore, const int nocc, const bool hcore_mvo = false) const;
     // print natural orbital occupation numbers
     void print_natocc() const;
 

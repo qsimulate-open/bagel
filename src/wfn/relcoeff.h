@@ -109,6 +109,10 @@ class RelCoeff_Striped : public RelCoeff {
     std::shared_ptr<RelCoeff_Block> block_format(int nclosed = -1, int nact = -1, int nvirt = -1, int nneg = -1) const;
     std::shared_ptr<Kramers<2,ZMatrix>> kramers_active() const;
 
+    // function to generate modified virtual MOs from either a Fock matrix or the one-electron Hamiltonian
+    std::shared_ptr<const RelCoeff_Striped> generate_mvo(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> overlap,
+              std::shared_ptr<const ZMatrix> hcore, const int ncore, const int nocc_mvo, const bool hcore_mvo, const bool tsymm, const bool gaunt, const bool breit) const;
+
     // get Kramers-adapted coefficient via quaternion diagonalization
     std::shared_ptr<const RelCoeff_Striped> init_kramers_coeff_dirac(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> overlap,
                                                  std::shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const;

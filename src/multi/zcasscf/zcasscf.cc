@@ -186,7 +186,7 @@ void ZCASSCF::init() {
       scoeff = init_kramers_coeff_nonrel();
   }
 
-  if (mvo) scoeff = generate_mvo(scoeff, ncore_mvo, ref_->nocc(), hcore_mvo);
+  if (mvo) scoeff = scoeff->generate_mvo(geom_, overlap_, hcore_, ncore_mvo, ref_->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
 
   // specify active orbitals and move into the active space
   set<int> active_indices;
@@ -460,63 +460,6 @@ shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
   auto out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_.back(), nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true,
                                        fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
   return out;
-}
-
-
-// TODO Debug, verify
-// TODO Cleanup and optimize so it really makes use of the features in RelCoeff
-shared_ptr<const RelCoeff_Striped> ZCASSCF::generate_mvo(shared_ptr<const RelCoeff_Striped> coeff, const int ncore, const int nocc, const bool hcore_mvo) const {
-  // function to compute the modified virtual orbitals, either by diagonalization of a Fock matrix or of the one-electron Hamiltonian
-  // Procedures described in Jensen et al; JCP 87, 451 (1987) (hcore) and Bauschlicher; JCP 72 880 (1980) (Fock)
-  // assumes coeff_ is in striped format ordered as {e-,p+}
-  cout << " " << endl;
-  if (!hcore_mvo) {
-    cout << "   * Generating Modified Virtual Orbitals from a Fock matrix of " << ncore << " electrons " << endl << endl;
-  } else {
-    cout << "   * Generating Modified Virtual Orbitals from the 1 electron Hamiltonian of " << ncore << " electrons " << endl << endl;
-  }
-  mute_stdcout();
-  assert(2*nocc >= ncore);
-  const int hfvirt = nvirtnr_ + nocc_ - nocc;
-  assert(2*(nocc + hfvirt) + coeff->nneg() == coeff->mdim());
-
-  shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom_, hcore_, coeff->slice_copy(0, ncore), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
-
-  // take virtual part out and make block format
-  shared_ptr<RelCoeff_Block> vcoeff = RelCoeff_Striped(*coeff->slice_copy(2*nocc, 2*(nocc + hfvirt)), 0, 0, hfvirt, 0).block_format();
-
-  shared_ptr<ZMatrix> mofock;
-  if (tsymm_) {
-    mofock = make_shared<QuatMatrix>(*vcoeff % *mvofock * *vcoeff);
-#ifndef NDEBUG
-    auto quatfock = static_pointer_cast<const QuatMatrix>(mofock);
-    assert(quatfock->is_t_symmetric());
-#endif
-  } else {
-    mofock = make_shared<ZMatrix>(*vcoeff % *mvofock * *vcoeff);
-  }
-
-  VectorB eig(mofock->ndim());
-  mofock->diagonalize(eig);
-
-  if (!tsymm_)
-    RelCoeff::rearrange_eig(eig, mofock);
-
-  // update orbitals and back transform
-  shared_ptr<RelCoeff_Striped> scoeff = RelCoeff_Block(*vcoeff * *mofock, 0, 0, hfvirt, 0).striped_format();
-
-  // copy in modified virtuals
-  shared_ptr<ZMatrix> ecoeff = coeff->copy();
-  ecoeff->copy_block(0, 2*nocc, ecoeff->ndim(), 2*hfvirt, scoeff->data());
-
-  {
-    auto unit = ecoeff->clone(); unit->unit();
-    double orthonorm = ((*ecoeff % *overlap_ * *ecoeff) - *unit).rms();
-    if (orthonorm > 1.0e-12) throw logic_error("MVO Coefficient not sufficiently orthonormal");
-  }
-
-  resume_stdcout();
-  return make_shared<const RelCoeff_Striped>(*ecoeff, nclosed_, nact_, nvirtnr_, nneg_);
 }
 
 

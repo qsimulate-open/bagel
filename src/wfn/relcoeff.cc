@@ -335,6 +335,59 @@ void RelCoeff::rearrange_eig(VectorB& eig, shared_ptr<ZMatrix> coeff, const bool
 }
 
 
+// function to compute the modified virtual orbitals, either by diagonalization of a Fock matrix or of the one-electron Hamiltonian
+// Procedures described in Jensen et al; JCP 87, 451 (1987) (hcore) and Bauschlicher; JCP 72 880 (1980) (Fock)
+shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::generate_mvo(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
+        shared_ptr<const ZMatrix> hcore, const int ncore, const int nocc_mvo, const bool hcore_mvo, const bool tsymm, const bool gaunt, const bool breit) const {
+  cout << " " << endl;
+  if (!hcore_mvo) {
+    cout << "   * Generating Modified Virtual Orbitals from a Fock matrix of " << ncore << " electrons " << endl << endl;
+  } else {
+    cout << "   * Generating Modified Virtual Orbitals from the 1 electron Hamiltonian of " << ncore << " electrons " << endl << endl;
+  }
+  assert(2*nocc_mvo >= ncore);
+  const int hfvirt = nvirt_nr_ + nclosed_ + nact_ - nocc_mvo;
+  assert(2*(nocc_mvo + hfvirt) + nneg_ == mdim());
+
+  shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom, hcore, slice_copy(0, ncore), gaunt, breit, /*store half*/false, /*robust*/breit) : hcore;
+
+  // take virtual part out and make block format
+  shared_ptr<RelCoeff_Block> vcoeff = RelCoeff_Striped(*slice_copy(2*nocc_mvo, 2*(nocc_mvo + hfvirt)), 0, 0, hfvirt, 0).block_format();
+
+  shared_ptr<ZMatrix> mofock;
+  if (tsymm) {
+    mofock = make_shared<QuatMatrix>(*vcoeff % *mvofock * *vcoeff);
+#ifndef NDEBUG
+    auto quatfock = static_pointer_cast<const QuatMatrix>(mofock);
+    assert(quatfock->is_t_symmetric());
+#endif
+  } else {
+    mofock = make_shared<ZMatrix>(*vcoeff % *mvofock * *vcoeff);
+  }
+
+  VectorB eig(mofock->ndim());
+  mofock->diagonalize(eig);
+
+  if (!tsymm)
+    rearrange_eig(eig, mofock);
+
+  // update orbitals and back transform
+  shared_ptr<RelCoeff_Striped> scoeff = RelCoeff_Block(*vcoeff * *mofock, 0, 0, hfvirt, 0).striped_format();
+
+  // copy in modified virtuals
+  shared_ptr<ZMatrix> ecoeff = this->copy();
+  ecoeff->copy_block(0, 2*nocc_mvo, ecoeff->ndim(), 2*hfvirt, scoeff->data());
+
+  {
+    auto unit = ecoeff->clone(); unit->unit();
+    double orthonorm = ((*ecoeff % *overlap * *ecoeff) - *unit).rms();
+    if (orthonorm > 1.0e-12) throw logic_error("MVO Coefficient not sufficiently orthonormal");
+  }
+
+  return make_shared<const RelCoeff_Striped>(*ecoeff, nclosed_, nact_, nvirt_nr_, nneg_);
+}
+
+
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff)
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff_Striped)
 BOOST_CLASS_EXPORT_IMPLEMENT(RelCoeff_Block)
