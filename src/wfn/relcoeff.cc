@@ -37,7 +37,7 @@ RelCoeff::RelCoeff(const int _ndim, const bool _loc, const int _nclosed, const i
  : ZMatrix(_ndim, 2*(_nclosed+_nact+_nvirt)+_nneg, _loc), nbasis_(ndim()/4), nclosed_(_nclosed), nact_(_nact), nvirt_nr_(_nvirt), nneg_(_nneg) {
   assert(ndim()%4 == 0);
   assert(nneg()%2 == 0);
-  assert(npos() == nneg() || nneg() == 0);
+  assert(npos() == nneg() || nneg() == 0 || nvirt_nr_ == 0);
 }
 
 
@@ -94,7 +94,7 @@ RelCoeff_Kramers::RelCoeff_Kramers(const ZMatrix& _coeff, const int _nclosed, co
 }
 
 
-std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format(int nclosed, int nact, int nvirt_nr, int nneg) const {
+shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format(int nclosed, int nact, int nvirt_nr, int nneg) const {
   if (nneg == -1) {
     assert(nclosed == -1 && nact == -1 && nvirt_nr == -1);
     nclosed = nclosed_;
@@ -129,7 +129,52 @@ std::shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format(int nclosed, int 
 }
 
 
-std::shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
+shared_ptr<RelCoeff_Block> RelCoeff_Block::electronic_part() const {
+  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, 0);
+  out->copy_block(0, 0,                  ndim(), 2*nocc(),  slice(0,                    2*nocc()));
+  out->copy_block(0, 2*nocc(),           ndim(), nvirt_nr_, slice(2*nocc(),             2*nocc()+nvirt_nr_));
+  out->copy_block(0, 2*nocc()+nvirt_nr_, ndim(), nvirt_nr_, slice(2*nocc()+nvirt_rel(), 2*nocc()+nvirt_rel()+nvirt_nr_));
+  return out;
+}
+
+
+shared_ptr<RelCoeff_Block> RelCoeff_Block::closed_act_positronic() const {
+  const int nneg2 = nneg_/2;
+  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, 0, nneg_);
+  out->copy_block(0, 0,              ndim(), 2*nocc(), slice(0,                  2*nocc()));
+  out->copy_block(0, 2*nocc(),       ndim(),    nneg2, slice(2*nocc()+nvirt_nr_, 2*nocc()+nvirt_rel()));
+  out->copy_block(0, 2*nocc()+nneg2, ndim(),    nneg2, slice(npos()+nneg2,       npos()+nneg_));
+  return out;
+}
+
+
+shared_ptr<RelCoeff_Block> RelCoeff_Block::update_electronic(shared_ptr<const ZMatrix> newcoeff) const {
+  assert(newcoeff->ndim() == ndim() && newcoeff->mdim() == npos());
+  const int nneg2 = nneg_/2;
+  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
+  out->copy_block(0,        0,                   ndim(), 2*nocc(),  newcoeff->slice(0,                          2*nocc()));                   // closed and active
+  out->copy_block(0, 2*nocc(),                   ndim(), nvirt_nr_, newcoeff->slice(2*nocc(),                   2*nocc()+  nvirt_nr_));       // + virtuals
+  out->copy_block(0, 2*nocc()+  nvirt_nr_,       ndim(), nneg2,               slice(2*nocc()+  nvirt_nr_,       2*nocc()+  nvirt_nr_+nneg2)); // + positronic
+  out->copy_block(0, 2*nocc()+  nvirt_nr_+nneg2, ndim(), nvirt_nr_, newcoeff->slice(2*nocc()+  nvirt_nr_,       2*nocc()+2*nvirt_nr_));       // - virtuals
+  out->copy_block(0, 2*nocc()+2*nvirt_nr_+nneg2, ndim(), nneg2,               slice(2*nocc()+2*nvirt_nr_+nneg2, 2*nocc()+2*nvirt_nr_+nneg_)); // - positronic
+  return out;
+}
+
+
+shared_ptr<RelCoeff_Block> RelCoeff_Block::update_closed_act_positronic(shared_ptr<const ZMatrix> newcoeff) const {
+  assert(newcoeff->ndim() == ndim() && newcoeff->mdim() == nneg_+2*nocc());
+  const int nneg2 = nneg_/2;
+  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
+  out->copy_block(0,        0,                   ndim(), 2*nocc(),  newcoeff->slice(0,                        2*nocc()));                   // closed and active
+  out->copy_block(0, 2*nocc(),                   ndim(), nvirt_nr_,           slice(2*nocc(),                 2*nocc()+nvirt_nr_));         // + virtuals
+  out->copy_block(0, 2*nocc()+  nvirt_nr_,       ndim(), nneg2,     newcoeff->slice(2*nocc(),                 2*nocc()+nneg2));             // + positronic
+  out->copy_block(0, 2*nocc()+  nvirt_nr_+nneg2, ndim(), nvirt_nr_,           slice(2*nocc()+nvirt_nr_+nneg2, 2*nocc()+2*nvirt_nr_+nneg2)); // - virtuals
+  out->copy_block(0, 2*nocc()+2*nvirt_nr_+nneg2, ndim(), nneg2,     newcoeff->slice(2*nocc()+nneg2,           2*nocc()+nneg_));             // - positronic
+  return out;
+}
+
+
+shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
   assert(nneg_ % 2 == 0);
   int n = ndim();
   int offset = nclosed_;
@@ -155,7 +200,7 @@ std::shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
 }
 
 
-std::shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
+shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
 
   int i = 0;
   array<shared_ptr<const ZMatrix>,2> tmp = {{ slice_copy(0, mdim()/2), slice_copy(mdim()/2, mdim()) }};
@@ -172,7 +217,7 @@ std::shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
 }
 
 
-std::shared_ptr<RelCoeff_Striped> RelCoeff_Kramers::striped_format() const {
+shared_ptr<RelCoeff_Striped> RelCoeff_Kramers::striped_format() const {
   assert(nneg_ % 2 == 0);
   int n = ndim();
   int offset = nclosed_ + nact_ + nvirt_nr_ + nneg_/2;
@@ -186,13 +231,13 @@ std::shared_ptr<RelCoeff_Striped> RelCoeff_Kramers::striped_format() const {
 }
 
 
-std::shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Striped::kramers_active() const {
+shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Striped::kramers_active() const {
   RelCoeff_Striped active_only(slice(2*nclosed_, 2*(nclosed_+nact_)), 0, nact_, 0, 0);
   return active_only.block_format()->kramers_active();
 }
 
 
-std::shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Block::kramers_active() const {
+shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Block::kramers_active() const {
   auto out = make_shared<Kramers<2,ZMatrix>>();
   out->emplace(0, slice_copy(2*nclosed_,         2*nclosed_ + nact_));
   out->emplace(1, slice_copy(2*nclosed_ + nact_, 2*(nclosed_+nact_)));
