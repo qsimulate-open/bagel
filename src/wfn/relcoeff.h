@@ -141,6 +141,26 @@ class RelCoeff_Block : public RelCoeff {
     std::shared_ptr<RelCoeff_Block> closed_act_positronic() const;
     std::shared_ptr<RelCoeff_Block> update_electronic(std::shared_ptr<const ZMatrix> newcoeff) const;
     std::shared_ptr<RelCoeff_Block> update_closed_act_positronic(std::shared_ptr<const ZMatrix> newcoeff) const;
+#if 0
+    ZMatView closed_block() const { return slice(0,          2*nclosed_); }
+    ZMatView active_block() const { return slice(2*nclosed_, 2*(nclosed_+nact_)); }
+    ZMatrix virtual_block() const {
+      auto out = make_shared<ZMatrix>(ndim(), 2*nvirt_nr_, localized());
+      out->copy_block(0, 0,         ndim(), nvirt_nr_, slice(2*nocc(), 2*nocc() + nvirt_nr_));
+      out->copy_block(0, nvirt_nr_, ndim(), nvirt_nr_, slice(2*nocc() + nvirt_rel(), 2*nocc() + nvirt_rel() + nvirt_nr_));
+      assert(2*nocc() + nvirt_rel() + nvirt_nr_ + nneg_/2 == mdim());
+      return out;
+    }
+    ZMatrix positronic_block() const {
+      auto out = make_shared<ZMatrix>(ndim(), nneg_, localized());
+      const int npos2 = nclosed_+nact_+nvirt_nr_;
+      const int nneg2 = nneg_/2;
+      out->copy_block(0, 0,       ndim(), nneg_/2, slice(npos2, npos2+nneg2));
+      out->copy_block(0, nneg_/2, ndim(), nneg_/2, slice(2*npos2 + nneg2, mdim()));
+      assert(2*(npos2+nneg2) == mdim());
+      return out;
+    }
+#endif
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
     std::shared_ptr<Kramers<2,ZMatrix>> kramers_active() const;
@@ -156,8 +176,13 @@ class RelCoeff_Kramers : public RelCoeff {
     void serialize(Archive& ar, const unsigned int) { ar & boost::serialization::base_object<RelCoeff>(*this); }
 
   public:
-    // standard constructor; copy data directly from _coeff
+    // standard constructor; copy data from _coeff and rearrange
     RelCoeff_Kramers(const ZMatrix& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg);
+
+    // construct an empty RelCoeff_Block
+    RelCoeff_Kramers(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
+   : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
+
     std::shared_ptr<RelCoeff_Block> block_format() const;
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
 };
