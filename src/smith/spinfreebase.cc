@@ -336,7 +336,7 @@ double SpinFreeMethod<DataType>::compute_e0() {
         const size_t size = i0.size() * i1.size();
         unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
         unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
-        sum += blas::dot_product(fdata.get(), size, rdata.get());
+        sum += blas::dot_product_noconj(fdata.get(), size, rdata.get());
       }
     }
   }

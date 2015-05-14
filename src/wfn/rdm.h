@@ -207,7 +207,7 @@ struct fill_in<N,DataType,2> {
 
 template<int N, typename DataType>
 std::shared_ptr<RDM<N,DataType>> expand_kramers(std::shared_ptr<const Kramers<2*N,RDM<N,DataType>>> o, const size_t norb) {
-  assert(!o->begin()->second || o->begin()->second->norb() == norb);
+//assert(!(o->begin()->second && o->begin()->second->norb() != norb));
   auto out = std::make_shared<RDM<N,DataType>>(2*norb);
   for (size_t i = 0; i != (1<<(2*N)); ++i) {
     auto data = o->get_data(i);

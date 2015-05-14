@@ -29,6 +29,7 @@
 #include <src/smith/MRCI.h>
 #include <src/smith/RelMRCI.h>
 #include <src/smith/CASPT2.h>
+#include <src/smith/RelCASPT2.h>
 
 
 using namespace std;
@@ -89,6 +90,8 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
 #ifdef COMPILE_SMITH
   if (method == "mrci") {
     algo_ = make_shared<RelMRCI::RelMRCI>(info);
+  } else if (method == "caspt2") {
+    algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
   } else {
 #else
   {

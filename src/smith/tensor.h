@@ -175,7 +175,8 @@ extern template class Tensor_<std::complex<double>>;
 
 namespace CASPT2 { using Tensor = Tensor_<double>; }
 namespace MRCI   { using Tensor = Tensor_<double>; }
-namespace RelMRCI{ using Tensor = Tensor_<std::complex<double>>; }
+namespace RelCASPT2 { using Tensor = Tensor_<std::complex<double>>; }
+namespace RelMRCI   { using Tensor = Tensor_<std::complex<double>>; }
 
 }
 }

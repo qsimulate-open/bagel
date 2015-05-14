@@ -150,6 +150,8 @@ void Denom<DataType>::init_h_(const int jst, const int ist, shared_ptr<const RDM
   const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
   if (jst == ist) {
     copy_n(rdm1->data(), rdm1->size(), shalf->data());
+    if (is_same<DataType,complex<double>>::value)
+      shalf = shalf->get_conjg();
     shalf->scale(-1.0);
     shalf->add_diag(fac2); //.. making hole 1RDM
   } else {
@@ -184,8 +186,7 @@ void Denom<DataType>::init_xx_(const int jst, const int ist, shared_ptr<const RD
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact;
   auto shalf = make_shared<MatType>(dim, dim);
-  shared_ptr<RDM<2,DataType>> tmp = rdm2->copy();
-  sort_indices<0,2,1,3,0,1,1,1>(tmp->data(), shalf->data(), nact, nact, nact, nact);
+  sort_indices<0,2,1,3,0,1,1,1>(rdm2->data(), shalf->data(), nact, nact, nact, nact);
   shalf_xx_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
 
   auto work2 = make_shared<MatType>(dim, dim);
@@ -338,10 +339,11 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
 
   auto d3v = group(group(*d3, 4,6),0,4);
   contract(1.0, d3v, {0,1}, group(*fock_,0,2), {1}, 0.0, work2v, {0});
-  sort_indices<0,1,3,2,0,1,2,1>(work2.data(), work.data(), nact, nact, nact, nact);
-  num->add_block(1.0, 0, 0, dim, dim, work);
-  num->add_block(-0.5, dim, 0, dim, dim, work);
-  num->add_block(-0.5, 0, dim, dim, dim, work);
+  sort_indices<0,1,3,2,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
+  num->add_block(fac2, 0, 0, dim, dim, work);
+
+  num->add_block(-1.0, dim, 0, dim, dim, work);
+  num->add_block(-1.0, 0, dim, dim, dim, work);
 
   work_xh_->copy_block(dim*jst*2, dim*ist*2, dim*2, dim*2, num);
 }

@@ -298,9 +298,14 @@ shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::rdm4(const int jst, const int ist) con
         auto tmp = make_shared<ZRDM<4>>(norb_);
         auto grouped = group(group(*tmp, 4,8), 0,4);
         contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, grouped, {1,2}, true, false);
-        rdm4->add(merge(i.first, j.first), tmp);
+
+        auto sorted = tmp->clone();
+        sort_indices<0,4,1,5,2,6,3,7,0,1,1,1>(tmp->data(), sorted->data(), norb_, norb_, norb_, norb_, norb_, norb_, norb_, norb_);
+        auto ijtag = merge(i.first, j.first);
+        rdm4->add(ijtag.perm({{0,4,1,5,2,6,3,7}}), sorted);
       }
   }
+
   // TODO how can I automate it?
   map<array<int,4>,double> elem;
   elem.emplace(array<int,4>{{0,1,2,3}},  1.0); elem.emplace(array<int,4>{{0,1,3,2}}, -1.0); elem.emplace(array<int,4>{{0,2,1,3}}, -1.0);
@@ -316,8 +321,8 @@ shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::rdm4(const int jst, const int ist) con
     for (auto& j : elem) {
       array<int,8> perm;
       for (int k = 0; k != 4; ++k) {
-        perm[k]   = j.first[k];
-        perm[k+4] = i.first[k]+4;
+        perm[k*2]   = j.first[k]*2;
+        perm[k*2+1] = i.first[k]*2+1;
       }
       rdm4->emplace_perm(perm, j.second*i.second);
     }
@@ -343,9 +348,14 @@ shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::rdm3(const int jst, const int ist) con
         auto tmp = make_shared<ZRDM<3>>(norb_);
         auto grouped = group(group(*tmp, 3,6), 0,3);
         contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, grouped, {1,2}, true, false);
-        rdm3->add(merge(i.first, j.first), tmp);
+
+        auto sorted = tmp->clone();
+        sort_indices<0,3,1,4,2,5,0,1,1,1>(tmp->data(), sorted->data(), norb_, norb_, norb_, norb_, norb_, norb_);
+        auto ijtag = merge(i.first, j.first);
+        rdm3->add(ijtag.perm({{0,3,1,4,2,5}}), sorted);
       }
   }
+
   map<array<int,3>,double> elem3;
   elem3.emplace(array<int,3>{{0,1,2}},  1.0); elem3.emplace(array<int,3>{{0,2,1}}, -1.0); elem3.emplace(array<int,3>{{1,0,2}}, -1.0);
   elem3.emplace(array<int,3>{{1,2,0}},  1.0); elem3.emplace(array<int,3>{{2,0,1}},  1.0); elem3.emplace(array<int,3>{{2,1,0}}, -1.0);
@@ -353,8 +363,8 @@ shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::rdm3(const int jst, const int ist) con
     for (auto& j : elem3) {
       array<int,6> perm;
       for (int k = 0; k != 3; ++k) {
-        perm[k]   = j.first[k];
-        perm[k+3] = i.first[k]+3;
+        perm[k*2]   = j.first[k]*2;
+        perm[k*2+1] = i.first[k]*2+1;
       }
       rdm3->emplace_perm(perm, j.second*i.second);
     }
@@ -380,13 +390,17 @@ shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::rdm2(const int jst, const int ist) con
         auto rdm2 = make_shared<ZRDM<2>>(norb_);
         auto rdm2grouped = group(group(*rdm2, 2,4), 0,2);
         contract(1.0, group(*i.second,0,2), {0,1}, group(*j.second,0,2), {0,2}, 0.0, rdm2grouped, {1,2}, true, false);
-        out->add(merge(i.first, j.first), rdm2);
+
+        auto sorted = rdm2->clone();
+        sort_indices<0,2,1,3,0,1,1,1>(rdm2->data(), sorted->data(), norb_, norb_, norb_, norb_);
+        auto ijtag = merge(i.first, j.first);
+        out->add(ijtag.perm({{0,2,1,3}}), sorted);
       }
   }
   out->emplace_perm({0,1,2,3},  1.0);
-  out->emplace_perm({0,1,3,2}, -1.0);
-  out->emplace_perm({1,0,2,3}, -1.0);
-  out->emplace_perm({1,0,3,2},  1.0);
+  out->emplace_perm({0,3,2,1}, -1.0);
+  out->emplace_perm({2,1,0,3}, -1.0);
+  out->emplace_perm({2,3,0,1},  1.0);
   return out;
 }
 
@@ -432,9 +446,9 @@ void ZHarrison::compute_rdm12() {
     rdm2_[istate] = rdm2(istate, istate);
 
     // append permutation information
-    rdm2_[istate]->emplace_perm({{0,1,3,2}},-1);
-    rdm2_[istate]->emplace_perm({{1,0,3,2}}, 1);
-    rdm2_[istate]->emplace_perm({{1,0,2,3}},-1);
+    rdm2_[istate]->emplace_perm({{0,3,2,1}},-1);
+    rdm2_[istate]->emplace_perm({{2,3,0,1}}, 1);
+    rdm2_[istate]->emplace_perm({{2,1,0,3}},-1);
   }
 
   if (nstate_ > 1) {
@@ -448,9 +462,9 @@ void ZHarrison::compute_rdm12() {
     }
     for (auto& i : *rdm1_av_) i.second->scale(1.0/nstate_);
     for (auto& i : *rdm2_av_) i.second->scale(1.0/nstate_);
-    rdm2_av_->emplace_perm({{0,1,3,2}},-1);
-    rdm2_av_->emplace_perm({{1,0,3,2}}, 1);
-    rdm2_av_->emplace_perm({{1,0,2,3}},-1);
+    rdm2_av_->emplace_perm({{0,3,2,1}},-1);
+    rdm2_av_->emplace_perm({{2,3,0,1}}, 1);
+    rdm2_av_->emplace_perm({{2,1,0,3}},-1);
   } else {
     rdm1_av_ = rdm1_.front();
     rdm2_av_ = rdm2_.front();
@@ -468,9 +482,8 @@ shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
 
 
 shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
-  shared_ptr<const ZRDM<2>> ikjl = expand_kramers<2,complex<double>>(rdm2_av_, norb_);
-  // sort indices : G(ik|jl) -> G(ij|kl)
+  shared_ptr<const ZRDM<2>> rdm2 = expand_kramers<2,complex<double>>(rdm2_av_, norb_);
   auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
-  sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
+  copy_n(rdm2->data(), rdm2->size(), out->data());
   return out;
 }

@@ -28,6 +28,7 @@
 #include <src/mat1e/rel/relhcore.h>
 #include <src/df/reldffull.h>
 #include <src/scf/dhf/dfock.h>
+#include <src/util/math/quatmatrix.h>
 
 using namespace std;
 using namespace bagel;
@@ -106,7 +107,7 @@ void K2ext<complex<double>>::init() {
           // contract
           // TODO form_4index function now generates global 4 index tensor. This should be localized.
           // conjugating because (ai|ai) is associated with an excitation operator
-          shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0)->get_conjg();
+          shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0);
           unique_ptr<complex<double>[]> target(new complex<double>[tmp->size()]);
           copy_n(tmp->data(), tmp->size(), target.get()); // unnecessary copy
 
@@ -201,6 +202,7 @@ void MOFock<complex<double>>::init() {
   assert(nclosed >= 0);
   const int nocc    = ref_->nocc();
   const int nact    = ref_->nact();
+  const int nvirt   = ref_->nvirt();
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_->ref());
 
@@ -219,7 +221,7 @@ void MOFock<complex<double>>::init() {
   // active fock
   shared_ptr<const ZMatrix> fock1;
   if (nact) {
-    shared_ptr<ZMatrix> tmp = relref->rdm1_av()->copy();
+    shared_ptr<ZMatrix> tmp = relref->rdm1_av()->get_conjg();
     tmp->sqrt();
     shared_ptr<ZMatrix> weighted_coeff = coeff_->slice_copy(2*(ncore+nclosed), 2*nocc);
     *weighted_coeff *= *tmp;
@@ -264,11 +266,31 @@ void MOFock<complex<double>>::init() {
     }
   }
 
+  // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
+  const ZMatrix forig = *coeff_ % *fock1 * *coeff_;
+  VectorB eig(forig.ndim());
+  auto newcoeff = coeff_->copy();
+  if (nclosed > 1) {
+    auto fcl = make_shared<QuatMatrix>(*forig.get_submatrix(0, 0, (ncore+nclosed)*2, (ncore+nclosed)*2));
+    fcl->diagonalize(eig);
+    newcoeff->copy_block(0, 0, newcoeff->ndim(), (ncore+nclosed)*2, newcoeff->slice(0, (ncore+nclosed)*2) * *fcl);
+  }
+  if (nvirt > 1) {
+    auto fvirt = make_shared<QuatMatrix>(*forig.get_submatrix(nocc*2, nocc*2, nvirt*2, nvirt*2));
+    fvirt->diagonalize(eig);
+    newcoeff->copy_block(0, nocc*2, newcoeff->ndim(), nvirt*2, newcoeff->slice(nocc*2, (nocc+nvirt)*2) * *fvirt);
+  }
+  // **** CAUTION **** updating the coefficient
+  coeff_ = newcoeff;
+
   auto f  = make_shared<ZMatrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<ZMatrix>(*coeff_ % *cfock * *coeff_);
 
-  fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0}, blocks_);
-  fill_block<2,complex<double>>(h1_,  h1->get_conjg(), {0,0}, blocks_);
+  if (!f->is_hermitian()) throw logic_error("Fock is not Hermitian");
+  if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
+
+  fill_block<2,complex<double>>(data_, f, {0,0}, blocks_);
+  fill_block<2,complex<double>>(h1_,  h1, {0,0}, blocks_);
 }
 
 template<>
@@ -317,9 +339,9 @@ void MOFock<double>::init() {
   VectorB eig(nbasis);
   auto newcoeff = coeff_->copy();
   if (nclosed > 1) {
-    shared_ptr<Matrix> fcl = forig.get_submatrix(ncore, ncore, nclosed, nclosed);
+    shared_ptr<Matrix> fcl = forig.get_submatrix(0, 0, ncore+nclosed, ncore+nclosed);
     fcl->diagonalize(eig);
-    newcoeff->copy_block(0, ncore, nbasis, nclosed, newcoeff->slice(ncore, ncore+nclosed) * *fcl);
+    newcoeff->copy_block(0, 0, nbasis, ncore+nclosed, newcoeff->slice(0, ncore+nclosed) * *fcl);
   }
   if (nvirt > 1) {
     shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirt, nvirt);
