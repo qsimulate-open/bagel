@@ -55,9 +55,6 @@ ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dime
     }
   }
   max_spin_ = maxspin + 1;
-
-  //fixed CI coefficient
-  fixed_ci_ = false;
 }
 
 template <class VecType>

@@ -51,8 +51,8 @@ shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma_1e(shared_ptr<const DistRASDvec>
   return nullptr;
 }
 
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_DistRAS::compute_rdm12_monomer(shared_ptr<const DistRASDvec> civec, const int i, const int j) const {
-  assert(false);
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_DistRAS::compute_rdm12_monomer(shared_ptr<const DistRASDvec> civec, const int i) const {
+  throw logic_error("not yet implemented in ASD_DistRAS");
   return make_tuple(nullptr,nullptr);
 }
 shared_ptr<DistRASDvec> ASD_DistRAS::contract_I(shared_ptr<const DistRASDvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {

@@ -80,12 +80,21 @@ ASD_base::ASD_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> 
 
 
 void ASD_base::update_dimer(shared_ptr<const Dimer> dimer) {
+  //fix ci coefficients
+  fixed_ci_ = true;
   Timer timer;
+  //update reference & integrals
   dimer_ = make_shared<const Dimer>(*dimer);
   shared_ptr<const Reference> dimerref = dimer_->sref();
   jop_ = make_shared<DimerJop>(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->active_refs().first->nact(), dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
   cout << "  o computing integrals: " << timer.tick() << endl;
-  fixed_ci_ = true;
+  // initialize
+  energies_ = vector<double>(nstates_, 0.0);
+  rdm1_.clear();
+  rdm2_.clear();
+  // resizing rdm vectors (with null pointers)
+  rdm1_.resize(nstates_);
+  rdm2_.resize(nstates_);
 }
 
 

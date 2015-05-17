@@ -191,9 +191,9 @@ void ASD_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
 }
 
 
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const CASDvec> civec, const int i, const int ip) const {
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shared_ptr<const CASDvec> civec, const int i) const {
   shared_ptr<const Civec> cbra = civec->data(i);
-  shared_ptr<const Civec> cket = civec->data(ip);
+  shared_ptr<const Civec> cket = civec->data(i);
 
   const int norb = cbra->det()->norb();
   assert(*cbra->det() == *cket->det());
@@ -204,38 +204,24 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_monomer(shar
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
 
-  shared_ptr<Dvec> dket;
-  // if bra and ket vectors are different, we need to form Sigma for ket as well.
-  if (cbra != cket) {
-    dket = make_shared<Dvec>(cket->det(), norb*norb);
-    dket->zero();
-    sigma_2a1(cket, dket);
-    sigma_2a2(cket, dket);
-  } else {
-    dket = dbra;
-  }
-
-  return compute_rdm12_last_step(dbra, dket, cbra);
+  return compute_rdm12_last_step(cbra, dbra);
 }
 
 
-tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_last_step(shared_ptr<const Civec> cibra, shared_ptr<const Dvec> dbra) const {
   const int norb = cibra->det()->norb();
   const int nri = dbra->lena()*dbra->lenb();
   const int ij  = norb*norb;
 
-  if (nri != dket->lena()*dket->lenb())
-    throw logic_error("FCI::compute_rdm12_last_step called with inconsistent RI spaces");
-
   // 1RDM
   // c^dagger <I|\hat{E}|0>
   auto rdm1 = make_shared<RDM<1>>(norb);
-  dgemv_("T", nri, ij, 1.0, dket->data(0)->data(), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
+  dgemv_("T", nri, ij, 1.0, dbra->data(0)->data(), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
 
   // 2RDM
   // \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
   auto rdm2 = make_shared<RDM<2>>(norb);
-  dgemm_("T", "N", ij, ij, nri, 1.0, dbra->data(0)->data(), nri, dket->data(0)->data(), nri, 0.0, rdm2->data(), ij);
+  dgemm_("T", "N", ij, ij, nri, 1.0, dbra->data(0)->data(), nri, dbra->data(0)->data(), nri, 0.0, rdm2->data(), ij);
 
   // sorting... a bit stupid but cheap anyway
   // This is since we transpose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb**2).
@@ -304,6 +290,8 @@ shared_ptr<CASDvec> ASD_CAS::contract_I(shared_ptr<const CASDvec> A, shared_ptr<
   }
   return out;
 }
+
+
 shared_ptr<CASDvec> ASD_CAS::contract_J(shared_ptr<const CASDvec> B, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
   auto out = make_shared<CASDvec>(B->det(), nstA);
   for (int i = 0; i != nstA; ++i) {

@@ -342,7 +342,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   //   active_first             - picks active space from dimer orbitals first, then attempts to localize
   //   active_only              - picks active space from dimer orbitals and does not localize
   //   linked                   - similar to localize_first, but for linked dimer only
-  const string scheme = idata->get<string>("scheme", "active_first");
+  const string scheme = idata->get<string>("scheme", idata->get<string>("form") == "linked" ? "linked" : "active_first");
 
   if (scheme == "active_only" || scheme == "active_first") {
     // Set active space based on overlap
@@ -403,9 +403,10 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     set_active(idata);
 
     //semi-canonicalize
-    shared_ptr<Matrix> scoeff = form_source_coeff();
-    shared_ptr<Matrix> tcoeff = form_target_coeff(idata);
-    shared_ptr<Matrix> out_coeff = overlap_selection(scoeff, tcoeff);
+    cout << endl << "  o Forming semi-canonical orbitals" << endl;
+    shared_ptr<Matrix> scoeff = form_source_coeff(); //semi-canonicalize active space
+    shared_ptr<Matrix> tcoeff = form_target_coeff(idata); //semi-canonicalize regional(A,B,bridge) spaces
+    shared_ptr<Matrix> out_coeff = overlap_selection(scoeff, tcoeff); //select active space based on source
 
     sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
 

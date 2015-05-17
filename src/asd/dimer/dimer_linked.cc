@@ -80,7 +80,7 @@ void Dimer::set_active(shared_ptr<const PTree> idata) {
     cout << "    - orbitals are assigned as : " << Alist.size() << "(A), " << Blist.size() << "(B)." << endl;
   }
 
-  // Make new References, with large basis sets, but with projected coeffs; active orbitals are placed after closed orbitals
+  // Make new References, with large basis sets, but with projected coeffs (MO space up to smaller basis sets); active orbitals are placed after closed orbitals
   active_refs_ = {isolated_refs_.first->set_active(Alist), isolated_refs_.second->set_active(Blist)};
 
   if (print_orbital_ && mpi__->rank() == 0) {
@@ -120,6 +120,7 @@ void Dimer::set_active(shared_ptr<const PTree> idata) {
   source->copy_block(0,nactA, dimerbasis,nactB, active_refs_.second->coeff()->get_submatrix(0,nclosedB,dimerbasis,nactB));
 
   //pick active orbitals based on reference and reorder to [closed,A,B,virt]
+  cout << endl << "  o Picking up active orbitals using projected orbitals" << endl;
   shared_ptr<Matrix> out_coeff = overlap_selection(source, sref_->coeff());
   nvirt_ = {nvirt_HF - nactvirtA, nvirt_HF - nactvirtB};
   sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nvirt_HF - nactvirtA - nactvirtB);
@@ -276,7 +277,7 @@ shared_ptr<Matrix> Dimer::form_target_coeff(shared_ptr<const PTree> idata) const
       else
         virtual_Clist.insert(imo);
     }
-    cout << "    - orbitals are assigned as : " << virtual_Alist.size() << "(A), " << virtual_Blist.size() << "(B), " << virtual_Clist.size() << "(bridge) " << endl << endl;
+    cout << "    - orbitals are assigned as : " << virtual_Alist.size() << "(A), " << virtual_Blist.size() << "(B), " << virtual_Clist.size() << "(bridge) " << endl;
   }
 
   auto ccoeff_A = make_shared<Matrix>(dimerbasis,nclosed_HF);
@@ -521,9 +522,10 @@ void Dimer::reduce_active(shared_ptr<const PTree> idata) {
   assert(nactA == nactcloA + nactvirtA);
   assert(nactB == nactcloB + nactvirtB);
   const int dimerbasis = sgeom_->nbasis();
-  const int nclosed_HF = isolated_refs_.first->nclosed();
-  const int nclosed = nclosed_HF - nactcloA - nactcloB;
-  const int nvirt_HF = isolated_refs_.first->nvirt();
+  //sref has been activated; nclosed, nact, nvirt are defined
+  const int nclosed = sref_->nclosed();
+  const int nclosed_HF = nclosed + nactcloA + nactcloB;
+  const int nvirt_HF = sref_->nvirt() + nactvirtA + nactvirtB;
   assert(dimerbasis == nclosed_HF + nvirt_HF);
 
   auto deact = idata->get_array<int,4>("reduction", {0,0,0,0});
@@ -532,9 +534,9 @@ void Dimer::reduce_active(shared_ptr<const PTree> idata) {
   vA = deact[1];
   cB = deact[2];
   vB = deact[3];
-  cout << " o Active space is truncated." << endl;
-  cout << "    - monomer A : additional " << cA << " closed and " << vA << " virtual orbitals are created from active space." << endl;
-  cout << "    - monomer B : additional " << cB << " closed and " << vB << " virtual orbitals are created from active space." << endl;
+  cout << endl << " o Active space is truncated." << endl;
+  cout << "    - monomer A : " << cA << " closed and " << vA << " virtual orbitals are created from active space." << endl;
+  cout << "    - monomer B : " << cB << " closed and " << vB << " virtual orbitals are created from active space." << endl;
   shared_ptr<Matrix> acoeff = sref_->coeff()->slice_copy(nclosed, nclosed+nact); // [nactA nactB]
   auto closedAB = make_shared<Matrix>(dimerbasis,cA+cB);
   auto activeAB = make_shared<Matrix>(dimerbasis,nact-cA-cB-vA-vB);

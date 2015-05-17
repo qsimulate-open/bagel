@@ -99,90 +99,32 @@ void ASD<VecType>::compute_rdm12_monomer() {
     assert(nstB == AB.nstatesB());
 
     //MonomerA i.e. delta_JJ'
-    #if 1
     for (int kst = 0; kst != nstates_; ++kst) {
       std::shared_ptr<RDM<1>> rdm1;
       std::shared_ptr<RDM<2>> rdm2;
       auto dket = contract_I(A, adiabats_, ioff, nstA, nstB, kst);
       for (int j = 0; j != nstB; ++j) {
-        std::tie(rdm1,rdm2) = compute_rdm12_monomer(dket, j, j);
+        std::tie(rdm1,rdm2) = compute_rdm12_monomer(dket, j);
         if (!rdm1A[kst]) rdm1A[kst] = std::make_shared<RDM<1>>(nactA);
         if (!rdm2A[kst]) rdm2A[kst] = std::make_shared<RDM<2>>(nactA);
         rdm1A[kst]->ax_plus_y(1.0, rdm1);
         rdm2A[kst]->ax_plus_y(1.0, rdm2);
       }
     }
-    #else
-    for (int i = 0; i != nstA; ++i) { // <I|
-      for (int ip = 0; ip != nstA; ++ip) { // |I'>
-
-        std::shared_ptr<RDM<1>> rdm1;
-        std::shared_ptr<RDM<2>> rdm2;
-        std::tie(rdm1,rdm2) = compute_rdm12_monomer(A, i, ip); // <I'|E(op)|I>
-
-        for (int kst = 0; kst != nstates_; ++kst) {
-
-          double csum = 0.0; //coeff sum
-          for (int j = 0; j != nstB; ++j) { // delta_J'J
-            const int ij  = i  + (j*nstA);
-            const int ijp = ip + (j*nstA);
-            assert(ij < adiabats_->ndim());
-            assert(ijp < adiabats_->ndim());
-            csum += adiabats_->element(ioff+ij,kst) * adiabats_->element(ioff+ijp,kst); //cf. dimerindex()
-          }
-
-          if (!rdm1A[kst]) rdm1A[kst] = std::make_shared<RDM<1>>(nactA);
-          if (!rdm2A[kst]) rdm2A[kst] = std::make_shared<RDM<2>>(nactA);
-          rdm1A[kst]->ax_plus_y(csum, rdm1);
-          rdm2A[kst]->ax_plus_y(csum, rdm2);
-
-        }
-      }
-    }
-    #endif
 
     //MonomerB i.e. delta_II'
-    #if 1
     for (int kst = 0; kst != nstates_; ++kst) {
       std::shared_ptr<RDM<1>> rdm1;
       std::shared_ptr<RDM<2>> rdm2;
       auto dket = contract_J(B, adiabats_, ioff, nstA, nstB, kst);
       for (int i = 0; i != nstA; ++i) {
-        std::tie(rdm1,rdm2) = compute_rdm12_monomer(dket, i, i);
+        std::tie(rdm1,rdm2) = compute_rdm12_monomer(dket, i);
         if (!rdm1B[kst]) rdm1B[kst] = std::make_shared<RDM<1>>(nactB);
         if (!rdm2B[kst]) rdm2B[kst] = std::make_shared<RDM<2>>(nactB);
         rdm1B[kst]->ax_plus_y(1.0, rdm1);
         rdm2B[kst]->ax_plus_y(1.0, rdm2);
       }
     }
-    #else
-    for (int j = 0; j != nstB; ++j) { //<J|
-      for (int jp = 0; jp != nstB; ++jp) { // |J'>
-
-        std::shared_ptr<RDM<1>> rdm1;
-        std::shared_ptr<RDM<2>> rdm2;
-        std::tie(rdm1,rdm2) = compute_rdm12_monomer(B, j, jp); // <J'|E(op)|J>
-
-        for (int kst = 0; kst != nstates_; ++kst) {
-
-          double csum = 0.0;
-          for (int i = 0; i != nstA; ++i) { // delta_I'I
-            const int ij  = i + (j*nstA);
-            const int ijp = i + (jp*nstA);
-            assert(ij < adiabats_->ndim());
-            assert(ijp < adiabats_->ndim());
-            csum += adiabats_->element(ioff+ij,kst) * adiabats_->element(ioff+ijp,kst);
-          }
-
-          if (!rdm1B[kst]) rdm1B[kst] = std::make_shared<RDM<1>>(nactB);
-          if (!rdm2B[kst]) rdm2B[kst] = std::make_shared<RDM<2>>(nactB);
-          rdm1B[kst]->ax_plus_y(csum, rdm1);
-          rdm2B[kst]->ax_plus_y(csum, rdm2);
-
-        }
-      }
-    } //B
-    #endif
   } //subspaces
 
   for (int istate = 0; istate != nstates_; ++istate) {

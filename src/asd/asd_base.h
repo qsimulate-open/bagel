@@ -89,7 +89,9 @@ class ASD_base {
     double thresh_;
     double print_thresh_;
 
-    bool fixed_ci_;
+    // Orbital optimization related
+    bool fixed_ci_ = false;
+    bool orbital_optimize_ = false;
 
     virtual std::vector<DimerSubspace_base> subspaces_base() const = 0;
 
