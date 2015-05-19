@@ -42,6 +42,8 @@ shared_ptr<RelCoeff_Striped> ZCASSCF::init_kramers_coeff_nonrel() {
 
   shared_ptr<ZMatrix> focktmp;
   shared_ptr<ZMatrix> ctmp;
+
+  // Pull out the HF-occupied part of coefficient matrix and build a Fock matrix
   const int norb = nele/2;
   ctmp = make_shared<ZMatrix>(coefftmp->ndim(), nele);
   ctmp->copy_block(0, 0, coefftmp->ndim(), norb, coefftmp->slice(0, norb));
@@ -68,7 +70,7 @@ shared_ptr<RelCoeff_Striped> ZCASSCF::init_kramers_coeff_nonrel() {
   if (!tsymm_)
     RelCoeff::rearrange_eig(eig, fmo);
 
-  auto ktmp = make_shared<RelCoeff_Kramers>(*fmo, nclosed_, nact_, nvirtnr_, nneg2*2, /*move_neg*/true);
+  auto ktmp = make_shared<RelCoeff_Kramers>(*coefftmp * *fmo, nclosed_, nact_, nvirtnr_, nneg2*2, /*move_neg*/true);
   auto out = ktmp->striped_format();
   resume_stdcout();
   return out;

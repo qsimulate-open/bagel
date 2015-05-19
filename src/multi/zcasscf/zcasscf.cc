@@ -56,6 +56,11 @@ ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<
       idata_tmp->erase("charge");
       idata_tmp->put<int>("charge", ctmp - 1);
     }
+
+    // With a CASSCF initial guess, the DHF wavefunction will not be used...
+    if (nr_coeff_)
+      idata_tmp->put<double>("thresh", 1.0e-4);
+
     auto scf = make_shared<Dirac>(idata_tmp, geom_, ref);
     scf->compute();
     ref_ = scf->conv_to_ref();
