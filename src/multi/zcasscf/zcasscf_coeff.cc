@@ -98,7 +98,7 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nclosed, const int
 }
 
 
-// TODO this and similar things must be broken in the case of linear dependent basis set
+// TODO rewrite this so it can tolerate linear dependency
 shared_ptr<RelCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix> nr_coeff) const {
   // constructs a relativistic coefficient for electronic components from a non-rel coefficient
   const int n = nr_coeff->ndim();

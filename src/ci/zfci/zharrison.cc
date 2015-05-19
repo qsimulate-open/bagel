@@ -115,7 +115,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
     }
 
     // then compute Kramers adapated coefficient matrices
-    scoeff = scoeff->init_kramers_coeff_dirac(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
+    scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
 
     // generate modified virtual orbitals, if requested
     const bool mvo = idata_->get<bool>("generate_mvo", false);
