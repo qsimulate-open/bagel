@@ -73,7 +73,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
 
     void init();
-    std::shared_ptr<RelCoeff_Striped> init_kramers_coeff_nonrel();
 
     void mute_stdcout() const;
     void resume_stdcout() const;

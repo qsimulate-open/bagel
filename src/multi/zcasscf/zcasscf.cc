@@ -140,8 +140,10 @@ void ZCASSCF::init() {
     VectorB eig(hctmp->ndim());
     hctmp->diagonalize(eig);
     scoeff = make_shared<const RelCoeff_Striped>(*s12 * *hctmp, nclosed_, nact_, nvirtnr_, nneg_, /*move_neg*/true);
-  } else {
+  } else if (nr_coeff_ == nullptr) {
     scoeff = make_shared<const RelCoeff_Striped>(*relref->relcoeff_full(), nclosed_, nact_, nvirtnr_, nneg_);
+  } else {
+    scoeff = nonrel_to_relcoeff()->striped_format();
   }
 
   // get maxiter from the input
@@ -180,12 +182,8 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  if (!kramers_coeff) {
-    if (nr_coeff_ == nullptr)
-      scoeff = scoeff->init_kramers_coeff_dirac(geom_, overlap_, hcore_, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
-    else
-      scoeff = init_kramers_coeff_nonrel();
-  }
+  if (!kramers_coeff)
+    scoeff = scoeff->init_kramers_coeff_dirac(geom_, overlap_, hcore_, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
 
   if (mvo) scoeff = scoeff->generate_mvo(geom_, overlap_, hcore_, ncore_mvo, relref->relcoeff_full()->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
 

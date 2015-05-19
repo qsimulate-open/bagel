@@ -31,52 +31,6 @@ using namespace std;
 using namespace bagel;
 
 
-// TODO This function uses QuatMatrix::diagonalize() - make sure the matrix is in the correct format
-shared_ptr<RelCoeff_Striped> ZCASSCF::init_kramers_coeff_nonrel() {
-  mute_stdcout();
-  // Kramers-adapted coefficient via quaternion diagonalization
-  const int nele = geom_->nele()-charge_;
-  const int nneg2 = nneg_/2;
-
-  shared_ptr<RelCoeff_Kramers> coefftmp = nonrel_to_relcoeff();
-
-  shared_ptr<ZMatrix> focktmp;
-  shared_ptr<ZMatrix> ctmp;
-
-  // Pull out the HF-occupied part of coefficient matrix and build a Fock matrix
-  const int norb = nele/2;
-  ctmp = make_shared<ZMatrix>(coefftmp->ndim(), nele);
-  ctmp->copy_block(0, 0, coefftmp->ndim(), norb, coefftmp->slice(0, norb));
-  ctmp->copy_block(0, norb, coefftmp->ndim(), norb, coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()/2+norb));
-  focktmp = make_shared<DFock>(geom_, hcore_, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
-
-  shared_ptr<ZMatrix> fmo;
-  if (tsymm_) {
-    fmo = make_shared<QuatMatrix>(*coefftmp % (*focktmp) * *coefftmp);
-#ifndef NDEBUG
-    auto quatfmo = static_pointer_cast<const QuatMatrix>(fmo);
-    const double tsymm_err = quatfmo->check_t_symmetry();
-    if (tsymm_err > 1.0e-8)
-      cout << "   ** Caution:  poor Kramers symmetry in fmo (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
-#endif
-  } else {
-    fmo = make_shared<ZMatrix>(*coefftmp % (*focktmp) * *coefftmp);
-  }
-
-  // quaternion diagonalization
-  VectorB eig(fmo->ndim());
-  fmo->diagonalize(eig);
-
-  if (!tsymm_)
-    RelCoeff::rearrange_eig(eig, fmo);
-
-  auto ktmp = make_shared<RelCoeff_Kramers>(*coefftmp * *fmo, nclosed_, nact_, nvirtnr_, nneg2*2, /*move_neg*/true);
-  auto out = ktmp->striped_format();
-  resume_stdcout();
-  return out;
-}
-
-
 void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o, const int nvirt) const {
   // function to enforce time-reversal symmetry
   //    for a complex matrix o, that is SYMMETRIC under time reversal
