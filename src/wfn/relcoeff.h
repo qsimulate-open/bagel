@@ -41,6 +41,7 @@ namespace bagel {
 
 class RelCoeff_Striped;
 class RelCoeff_Block;
+class RelCoeff_Kramers;
 
 class RelCoeff : public ZMatrix {
   protected:
@@ -163,6 +164,7 @@ class RelCoeff_Block : public RelCoeff {
 #endif
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
+    std::shared_ptr<RelCoeff_Kramers> kramers_format() const;
     std::shared_ptr<Kramers<2,ZMatrix>> kramers_active() const;
 };
 
