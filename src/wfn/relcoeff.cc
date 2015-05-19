@@ -249,11 +249,9 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
   assert((nact_ > 1 || !tsymm));
   assert(nbasis_ == geom->nbasis());
 
-  shared_ptr<ZMatrix> coefftmp;
-  shared_ptr<ZMatrix> focktmp;
   // quaternion diagonalize a fock matrix
-  focktmp = make_shared<DFock>(geom, hcore, slice_copy(0, nele), gaunt, breit, /*store_half*/false, /*robust*/false);
-  auto s12 = make_shared<RelCoeff_Kramers>(*overlap->tildex(1.0e-9), nclosed_, nact_, nvirt_nr(), nneg_, /*move_neg*/false);
+  shared_ptr<const ZMatrix> focktmp = make_shared<DFock>(geom, hcore, slice_copy(0, nele), gaunt, breit, /*store_half*/false, /*robust*/false);
+  auto s12 = make_shared<const RelCoeff_Kramers>(*overlap->tildex(1.0e-9), nclosed_, nact_, nvirt_nr(), nneg_, /*move_neg*/false);
 
   shared_ptr<ZMatrix> fock_tilde;
   if (tsymm) {
@@ -400,11 +398,11 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::generate_mvo(shared_ptr<con
     rearrange_eig(eig, mofock);
 
   // update orbitals and back transform
-  shared_ptr<RelCoeff_Striped> scoeff = RelCoeff_Block(*vcoeff * *mofock, 0, 0, hfvirt, 0).striped_format();
+  shared_ptr<const RelCoeff_Striped> scoeff = RelCoeff_Block(*vcoeff * *mofock, 0, 0, hfvirt, 0).striped_format();
 
   // copy in modified virtuals
   auto out = make_shared<RelCoeff_Striped>(*this, nclosed_, nact_, nvirt_nr_, nneg_);
-  out->copy_block(0, 2*nocc_mvo, out->ndim(), 2*hfvirt, scoeff->data());
+  out->copy_block(0, 2*nocc_mvo, out->ndim(), 2*hfvirt, *scoeff);
 
   {
     auto unit = out->clone(); unit->unit();
