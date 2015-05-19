@@ -143,7 +143,7 @@ void ZCASSCF::init() {
   } else if (nr_coeff_ == nullptr) {
     scoeff = make_shared<const RelCoeff_Striped>(*relref->relcoeff_full(), nclosed_, nact_, nvirtnr_, nneg_);
   } else {
-    scoeff = nonrel_to_relcoeff()->striped_format();
+    scoeff = nonrel_to_relcoeff(nr_coeff_)->striped_format();
   }
 
   // get maxiter from the input

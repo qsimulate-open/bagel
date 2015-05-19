@@ -99,10 +99,10 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nclosed, const int
 
 
 // TODO this and similar things must be broken in the case of linear dependent basis set
-shared_ptr<RelCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff() const {
+shared_ptr<RelCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix> nr_coeff) const {
   // constructs a relativistic coefficient for electronic components from a non-rel coefficient
-  const int n = nr_coeff_->ndim();
-  const int m = nr_coeff_->mdim();
+  const int n = nr_coeff->ndim();
+  const int m = nr_coeff->mdim();
   assert(nvirt_ - nneg_/2 == nvirtnr_);
 
   // compute T^(-1/2)
@@ -121,15 +121,15 @@ shared_ptr<RelCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff() const {
   *shalf = *shalf ^ *shalf;
 
   // compute positronic orbital coefficients
-  auto tcoeff = make_shared<ZMatrix>(nr_coeff_->ndim(), nr_coeff_->mdim());
-  tcoeff->add_real_block(1.0, 0, 0, n, n, *nr_coeff_);
+  auto tcoeff = make_shared<ZMatrix>(n, m);
+  tcoeff->add_real_block(1.0, 0, 0, n, n, *nr_coeff);
   *tcoeff = *t12 * *shalf * *tcoeff;
 
   // build output coefficient matrix
-  auto out = make_shared<RelCoeff_Kramers>(4*n, nr_coeff_->localized(), nclosed_, nact_, nvirtnr_, nneg_);
+  auto out = make_shared<RelCoeff_Kramers>(4*n, nr_coeff->localized(), nclosed_, nact_, nvirtnr_, nneg_);
   assert(out->mdim() == 4*tcoeff->mdim());
-  out->copy_real_block(1.0, 0, 0, n, m, *nr_coeff_);
-  out->copy_real_block(1.0, n, 2*m, n, m, *nr_coeff_);
+  out->copy_real_block(1.0, 0, 0, n, m, *nr_coeff);
+  out->copy_real_block(1.0, n, 2*m, n, m, *nr_coeff);
   out->copy_block(2*n, m, n, m, *tcoeff);
   out->copy_block(3*n, 3*m, n, m, *tcoeff);
   return out;
