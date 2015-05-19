@@ -27,8 +27,8 @@
 // Basis spinors (rows) are always stored in order L+, L-, S+, S-
 // Three formats for MO ordering:
 //     Striped format:  A+ A- B+ B- C+ C- D+ D-...
-//     Block format:    A+ B+ C+ D+ A- B- C- D-...
-//     Kramers format:  Assumes we're coming from Quaternion Diagonalization - on construction, rearranges to block format except with all + before all -
+//     Block format:    A+ B+ C+ D+ A- B- C- D-... divided as closed, act, {virtual + positronic}
+//     Kramers format:  Similar to Block format, but with all + before all -; rearranges columns on construction
 //     For all formats, spaces are stored as occupied, active, virtual, positronic
 
 #ifndef __SRC_WFN_RELCOEFF_H
