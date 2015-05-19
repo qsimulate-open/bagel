@@ -159,7 +159,7 @@ class RelCoeff_Kramers : public RelCoeff {
     // standard constructor; copy data from _coeff and rearrange
     RelCoeff_Kramers(const ZMatView& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
 
-    // construct an empty RelCoeff_Block
+    // construct an empty RelCoeff_Kramers
     RelCoeff_Kramers(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
    : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
 

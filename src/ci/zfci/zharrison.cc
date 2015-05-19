@@ -140,11 +140,6 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
     coeff = scoeff->block_format();
   }
 
-  assert(coeff->nclosed() == ncore_);
-  assert(coeff->nact() == norb_);
-  assert(coeff->nvirt_nr() == coeff->mdim()/4-ncore_-norb_);
-  assert(coeff->nneg() == coeff->mdim()/2);
-
   update(coeff, restricted);
 
 }

@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <cmath>
 #include <src/util/f77.h>
-#include <src/util/math/quatmatrix.h>
 #include <src/util/prim_op.h>
 #include <src/ci/zfci/relmofile.h>
 #include <src/mat1e/rel/relhcore.h>
