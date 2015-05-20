@@ -112,6 +112,99 @@ shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format(int nclosed, int nact,
 }
 
 
+shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
+  assert(nneg_ % 2 == 0);
+  int n = ndim();
+  int offset = nclosed_;
+  auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
+  // closed
+  for (int j=0; j!=nclosed_; ++j) {
+    out->copy_block(0, j*2,   n, 1, slice(j, j+1));
+    out->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
+  }
+  offset = nclosed_*2;
+  // active
+  for (int j=0; j!=nact_; ++j) {
+    out->copy_block(0, offset + j*2,   n, 1, slice(offset + j,         offset + j+1));
+    out->copy_block(0, offset + j*2+1, n, 1, slice(offset + nact_ + j, offset + nact_ + j+1));
+  }
+  offset = (nclosed_+nact_)*2;
+  // vituals (including positrons)
+  for (int j=0; j!=nvirt_rel(); ++j) {
+    out->copy_block(0, offset + j*2,   n, 1, slice(offset + j,          offset + j+1));
+    out->copy_block(0, offset + j*2+1, n, 1, slice(offset + nvirt_rel() + j, offset + nvirt_rel() + j+1));
+  }
+  return out;
+}
+
+
+shared_ptr<RelCoeff_Striped> RelCoeff_Kramers::striped_format() const {
+  assert(nneg_ % 2 == 0);
+  int n = ndim();
+  int offset = nclosed_ + nact_ + nvirt_nr_ + nneg_/2;
+  auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
+
+  for (int j=0; j!=offset; ++j) {
+    out->copy_block(0, j*2,   n, 1, slice(j, j+1));
+    out->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
+  }
+  return out;
+}
+
+
+shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
+  int i = 0;
+  array<shared_ptr<const ZMatrix>,2> tmp = {{ slice_copy(0, mdim()/2), slice_copy(mdim()/2, mdim()) }};
+  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
+
+  out->copy_block(0, i, ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
+  out->copy_block(0, i, ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
+  out->copy_block(0, i, ndim(), nact_, tmp[0]->slice(nclosed_, nclosed_+nact_)); i += nact_;
+  out->copy_block(0, i, ndim(), nact_, tmp[1]->slice(nclosed_, nclosed_+nact_)); i += nact_;
+  out->copy_block(0, i, ndim(), nvirt_rel(), tmp[0]->slice(nclosed_+nact_, tmp[0]->mdim())); i += nvirt_rel();
+  out->copy_block(0, i, ndim(), nvirt_rel(), tmp[1]->slice(nclosed_+nact_, tmp[1]->mdim()));
+  return out;
+}
+
+
+shared_ptr<RelCoeff_Kramers> RelCoeff_Kramers::swap_central() const {
+  auto out = make_shared<RelCoeff_Kramers>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
+  const int m = nclosed_ + nact_ + nvirt_nr_;
+
+  out->copy_block(0, 0*m, ndim(), m, slice(0*m, 1*m));
+  out->copy_block(0, 1*m, ndim(), m, slice(2*m, 3*m));
+  out->copy_block(0, 2*m, ndim(), m, slice(1*m, 2*m));
+  out->copy_block(0, 3*m, ndim(), m, slice(3*m, 4*m));
+  return out;
+}
+
+
+shared_ptr<RelCoeff_Kramers> RelCoeff_Kramers::move_positronic() const {
+  auto out = make_shared<RelCoeff_Kramers>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
+  const int m = nclosed_ + nact_ + nvirt_nr_;
+
+  out->copy_block(0, 0*m, ndim(), m, slice(1*m, 2*m));
+  out->copy_block(0, 1*m, ndim(), m, slice(0*m, 1*m));
+  out->copy_block(0, 2*m, ndim(), m, slice(3*m, 4*m));
+  out->copy_block(0, 3*m, ndim(), m, slice(2*m, 3*m));
+  return out;
+}
+
+
+shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Striped::kramers_active() const {
+  RelCoeff_Striped active_only(slice(2*nclosed_, 2*(nclosed_+nact_)), 0, nact_, 0, 0);
+  return active_only.block_format()->kramers_active();
+}
+
+
+shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Block::kramers_active() const {
+  auto out = make_shared<Kramers<2,ZMatrix>>();
+  out->emplace(0, slice_copy(2*nclosed_,         2*nclosed_ + nact_));
+  out->emplace(1, slice_copy(2*nclosed_ + nact_, 2*(nclosed_+nact_)));
+  return out;
+}
+
+
 shared_ptr<RelCoeff_Block> RelCoeff_Block::electronic_part() const {
   auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, 0);
   out->copy_block(0, 0,                  ndim(), 2*nocc(),  slice(0,                    2*nocc()));
@@ -157,99 +250,6 @@ shared_ptr<RelCoeff_Block> RelCoeff_Block::update_closed_act_positronic(shared_p
 }
 
 
-shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
-  assert(nneg_ % 2 == 0);
-  int n = ndim();
-  int offset = nclosed_;
-  auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
-  // closed
-  for (int j=0; j!=nclosed_; ++j) {
-    out->copy_block(0, j*2,   n, 1, slice(j, j+1));
-    out->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
-  }
-  offset = nclosed_*2;
-  // active
-  for (int j=0; j!=nact_; ++j) {
-    out->copy_block(0, offset + j*2,   n, 1, slice(offset + j,         offset + j+1));
-    out->copy_block(0, offset + j*2+1, n, 1, slice(offset + nact_ + j, offset + nact_ + j+1));
-  }
-  offset = (nclosed_+nact_)*2;
-  // vituals (including positrons)
-  for (int j=0; j!=nvirt_rel(); ++j) {
-    out->copy_block(0, offset + j*2,   n, 1, slice(offset + j,          offset + j+1));
-    out->copy_block(0, offset + j*2+1, n, 1, slice(offset + nvirt_rel() + j, offset + nvirt_rel() + j+1));
-  }
-  return out;
-}
-
-
-shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
-
-  int i = 0;
-  array<shared_ptr<const ZMatrix>,2> tmp = {{ slice_copy(0, mdim()/2), slice_copy(mdim()/2, mdim()) }};
-  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
-
-  out->copy_block(0, i, ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
-  out->copy_block(0, i, ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
-  out->copy_block(0, i, ndim(), nact_, tmp[0]->slice(nclosed_, nclosed_+nact_)); i += nact_;
-  out->copy_block(0, i, ndim(), nact_, tmp[1]->slice(nclosed_, nclosed_+nact_)); i += nact_;
-  out->copy_block(0, i, ndim(), nvirt_rel(), tmp[0]->slice(nclosed_+nact_, tmp[0]->mdim())); i += nvirt_rel();
-  out->copy_block(0, i, ndim(), nvirt_rel(), tmp[1]->slice(nclosed_+nact_, tmp[1]->mdim()));
-  return out;
-}
-
-
-shared_ptr<RelCoeff_Kramers> RelCoeff_Kramers::swap_central() const {
-  auto out = make_shared<RelCoeff_Kramers>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
-  const int m = nclosed_ + nact_ + nvirt_nr_;
-
-  out->copy_block(0, 0*m, ndim(), m, slice(0*m, 1*m));
-  out->copy_block(0, 1*m, ndim(), m, slice(2*m, 3*m));
-  out->copy_block(0, 2*m, ndim(), m, slice(1*m, 2*m));
-  out->copy_block(0, 3*m, ndim(), m, slice(3*m, 4*m));
-  return out;
-}
-
-
-shared_ptr<RelCoeff_Kramers> RelCoeff_Kramers::move_positronic() const {
-  auto out = make_shared<RelCoeff_Kramers>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
-  const int m = nclosed_ + nact_ + nvirt_nr_;
-
-  out->copy_block(0, 0*m, ndim(), m, slice(1*m, 2*m));
-  out->copy_block(0, 1*m, ndim(), m, slice(0*m, 1*m));
-  out->copy_block(0, 2*m, ndim(), m, slice(3*m, 4*m));
-  out->copy_block(0, 3*m, ndim(), m, slice(2*m, 3*m));
-  return out;
-}
-
-shared_ptr<RelCoeff_Striped> RelCoeff_Kramers::striped_format() const {
-  assert(nneg_ % 2 == 0);
-  int n = ndim();
-  int offset = nclosed_ + nact_ + nvirt_nr_ + nneg_/2;
-  auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
-
-  for (int j=0; j!=offset; ++j) {
-    out->copy_block(0, j*2,   n, 1, slice(j, j+1));
-    out->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
-  }
-  return out;
-}
-
-
-shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Striped::kramers_active() const {
-  RelCoeff_Striped active_only(slice(2*nclosed_, 2*(nclosed_+nact_)), 0, nact_, 0, 0);
-  return active_only.block_format()->kramers_active();
-}
-
-
-shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Block::kramers_active() const {
-  auto out = make_shared<Kramers<2,ZMatrix>>();
-  out->emplace(0, slice_copy(2*nclosed_,         2*nclosed_ + nact_));
-  out->emplace(1, slice_copy(2*nclosed_ + nact_, 2*(nclosed_+nact_)));
-  return out;
-}
-
-
 // Kramers-adapted coefficient via quaternion diagonalization, assuming guess orbitals from Dirac--Hartree--Fock
 shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
                           shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const {
@@ -258,11 +258,12 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
   assert((nact_ > 1 || !tsymm));
   assert(nbasis_ == geom->nbasis());
 
-  // quaternion diagonalize a fock matrix
   shared_ptr<const ZMatrix> orthog = overlap->tildex(1.0e-9);
   shared_ptr<const ZMatrix> s12 = RelCoeff_Kramers(*orthog, nclosed_, nact_, nvirt_nr(), nneg_).swap_central();
   shared_ptr<const ZMatrix> focktmp = make_shared<DFock>(geom, hcore, slice_copy(0, nele), gaunt, breit, /*store_half*/false, /*robust*/false);
+  VectorB eig(s12->mdim());
 
+  // quaternion diagonalize a fock matrix in MO basis
   shared_ptr<ZMatrix> fock_tilde;
   if (tsymm) {
     fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
@@ -276,14 +277,8 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
     fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
   }
 
-  // quaternion diagonalization
-  {
-    VectorB eig(fock_tilde->ndim());
-    fock_tilde->diagonalize(eig);
-
-    if (!tsymm)
-      rearrange_eig(eig, fock_tilde);
-  }
+  fock_tilde->diagonalize(eig);
+  if (!tsymm) rearrange_eig(eig, fock_tilde);
 
   // move positronic orbitals to the end and transform to striped format
   auto out = make_shared<const RelCoeff_Kramers>(*s12 * *fock_tilde, nclosed_, nact_, nvirt_nr_, nneg_);
