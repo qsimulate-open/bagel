@@ -72,21 +72,8 @@ RelCoeff_Block::RelCoeff_Block(const ZMatView& _coeff, const int _nclosed, const
 RelCoeff_Kramers::RelCoeff_Kramers(const ZMatView& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg)
  : RelCoeff(_coeff.ndim(), _coeff.localized(), _nclosed, _nact, _nvirt, _nneg) {
   assert(nneg() == npos());
-
-  const int m = nclosed_ + nact_ + nvirt_nr_;
-  if (!move_neg) {
-    // columns:  L+ L- S+ S-  -->  L+ S+ L- S-
-    copy_block(0, 0*m, ndim(), m, _coeff.element_ptr(0, 0*m));
-    copy_block(0, 1*m, ndim(), m, _coeff.element_ptr(0, 2*m));
-    copy_block(0, 2*m, ndim(), m, _coeff.element_ptr(0, 1*m));
-    copy_block(0, 3*m, ndim(), m, _coeff.element_ptr(0, 3*m));
-  } else {
-    // columns:  S+ L+ S- L-  -->  L+ S+ L- S-
-    copy_block(0, 0*m, ndim(), m, _coeff.element_ptr(0, 1*m));
-    copy_block(0, 1*m, ndim(), m, _coeff.element_ptr(0, 0*m));
-    copy_block(0, 2*m, ndim(), m, _coeff.element_ptr(0, 3*m));
-    copy_block(0, 3*m, ndim(), m, _coeff.element_ptr(0, 2*m));
-  }
+  // copy input matrix directly
+  copy_block(0, 0, ndim(), mdim(), _coeff);
 }
 
 
@@ -208,10 +195,32 @@ shared_ptr<RelCoeff_Block> RelCoeff_Kramers::block_format() const {
   out->copy_block(0, i, ndim(), nact_, tmp[1]->slice(nclosed_, nclosed_+nact_)); i += nact_;
   out->copy_block(0, i, ndim(), nvirt_rel(), tmp[0]->slice(nclosed_+nact_, tmp[0]->mdim())); i += nvirt_rel();
   out->copy_block(0, i, ndim(), nvirt_rel(), tmp[1]->slice(nclosed_+nact_, tmp[1]->mdim()));
-
   return out;
 }
 
+
+shared_ptr<RelCoeff_Kramers> RelCoeff_Kramers::swap_central() const {
+  auto out = make_shared<RelCoeff_Kramers>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
+  const int m = nclosed_ + nact_ + nvirt_nr_;
+
+  out->copy_block(0, 0*m, ndim(), m, slice(0*m, 1*m));
+  out->copy_block(0, 1*m, ndim(), m, slice(2*m, 3*m));
+  out->copy_block(0, 2*m, ndim(), m, slice(1*m, 2*m));
+  out->copy_block(0, 3*m, ndim(), m, slice(3*m, 4*m));
+  return out;
+}
+
+
+shared_ptr<RelCoeff_Kramers> RelCoeff_Kramers::move_positronic() const {
+  auto out = make_shared<RelCoeff_Kramers>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
+  const int m = nclosed_ + nact_ + nvirt_nr_;
+
+  out->copy_block(0, 0*m, ndim(), m, slice(1*m, 2*m));
+  out->copy_block(0, 1*m, ndim(), m, slice(0*m, 1*m));
+  out->copy_block(0, 2*m, ndim(), m, slice(3*m, 4*m));
+  out->copy_block(0, 3*m, ndim(), m, slice(2*m, 3*m));
+  return out;
+}
 
 shared_ptr<RelCoeff_Striped> RelCoeff_Kramers::striped_format() const {
   assert(nneg_ % 2 == 0);
@@ -250,8 +259,9 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
   assert(nbasis_ == geom->nbasis());
 
   // quaternion diagonalize a fock matrix
+  shared_ptr<const ZMatrix> orthog = overlap->tildex(1.0e-9);
+  shared_ptr<const ZMatrix> s12 = RelCoeff_Kramers(*orthog, nclosed_, nact_, nvirt_nr(), nneg_).swap_central();
   shared_ptr<const ZMatrix> focktmp = make_shared<DFock>(geom, hcore, slice_copy(0, nele), gaunt, breit, /*store_half*/false, /*robust*/false);
-  auto s12 = make_shared<const RelCoeff_Kramers>(*overlap->tildex(1.0e-9), nclosed_, nact_, nvirt_nr(), nneg_, /*move_neg*/false);
 
   shared_ptr<ZMatrix> fock_tilde;
   if (tsymm) {
@@ -275,9 +285,9 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
       rearrange_eig(eig, fock_tilde);
   }
 
-  // re-order to kramers format and move negative energy states to virtual space
-  auto out = make_shared<const RelCoeff_Kramers>(*s12 * *fock_tilde, nclosed_, nact_, nvirt_nr_, nneg_, /*move_neg*/true);
-  return out->striped_format();
+  // move positronic orbitals to the end and transform to striped format
+  auto out = make_shared<const RelCoeff_Kramers>(*s12 * *fock_tilde, nclosed_, nact_, nvirt_nr_, nneg_);
+  return out->move_positronic()->striped_format();
 }
 
 

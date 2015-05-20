@@ -28,8 +28,7 @@
 // Three formats for MO ordering:
 //     Striped format:  A+ A- B+ B- C+ C- D+ D-...
 //     Block format:    A+ B+ C+ D+ A- B- C- D-... divided as closed, act, {virtual + positronic}
-//     Kramers format:  Similar to Block format, but with all + before all -; rearranges columns on construction
-//     For all formats, spaces are stored as occupied, active, virtual, positronic
+//     Kramers format:  Similar to Block format, but with all + before all -
 
 #ifndef __SRC_WFN_RELCOEFF_H
 #define __SRC_WFN_RELCOEFF_H
@@ -156,7 +155,7 @@ class RelCoeff_Kramers : public RelCoeff {
     void serialize(Archive& ar, const unsigned int) { ar & boost::serialization::base_object<RelCoeff>(*this); }
 
   public:
-    // standard constructor; copy data from _coeff and rearrange
+    // standard constructor; copy data from _coeff directly
     RelCoeff_Kramers(const ZMatView& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg = false);
 
     // construct an empty RelCoeff_Kramers
@@ -165,6 +164,12 @@ class RelCoeff_Kramers : public RelCoeff {
 
     std::shared_ptr<RelCoeff_Block> block_format() const;
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
+
+    // For converting from { L+ L- S+ S- } to { L+ S+ L- S- }
+    std::shared_ptr<RelCoeff_Kramers> swap_central() const;
+
+    // For converting from { S+ L+ S- L- } to { L+ S+ L- S- } such as after quaternion diagonalization
+    std::shared_ptr<RelCoeff_Kramers> move_positronic() const;
 };
 
 }
