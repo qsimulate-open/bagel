@@ -124,7 +124,7 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
       density_.push_back(ref_rel->relcoeff()->form_density_rhf(ncol, ncol*orbitals_[i], 1.0));
     }
     // TODO really this should use the number of electrons, but charge is not available
-    density_.push_back(ref_rel->relcoeff()->form_density_rhf(2*ref_rel->nclosed(), 0, 1.0));
+    density_.push_back(ref_rel->relcoeff()->form_density_rhf(2*ref_rel->relcoeff()->nclosed(), 0, 1.0));
 
   } else if (ref_nr) {
     // GIAO non-relativistic wavefunction
