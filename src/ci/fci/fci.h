@@ -121,7 +121,7 @@ class FCI : public Method {
     void generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec>);
     void model_guess(std::shared_ptr<Dvec>);
     // generate spin-adapted guess configurations
-    virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
+    virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet) const;
 
     /* Virtual functions -- these MUST be defined in the derived class*/
     // denominator

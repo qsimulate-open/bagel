@@ -211,7 +211,7 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
 
 
 // returns seed determinants for initial guess
-vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet, const int nelea, const int neleb) {
+vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet, const int nelea, const int neleb) const {
   shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
 
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;

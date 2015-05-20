@@ -125,7 +125,7 @@ class ZHarrison : public Method {
     // obtain determinants for guess generation
     void generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset);
     // generate spin-adapted guess configurations
-    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb);
+    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb) const;
 
     // print functions
     void print_header() const;
