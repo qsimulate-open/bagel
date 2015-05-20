@@ -120,13 +120,11 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
     // 4-component wavefunction (with or without GIAO)
     const int ncol = paired_ ? 2 : 1;
 
-    // TODO Fix RelReference so this is not needed
-    // Ugly patch to compensate for RelReference::nclosed() giving number of spin-orbitals after Dirac but spatial orbitals after RHF_London or ZCASSCF
-    const int patch = (ref_rel->nact() == 0) ? 1 : 2;
     for (int i=0; i!=norb_; ++i) {
       density_.push_back(ref_rel->relcoeff()->form_density_rhf(ncol, ncol*orbitals_[i], 1.0));
     }
-    density_.push_back(ref_rel->relcoeff()->form_density_rhf(patch*ref_rel->nclosed(), 0, 1.0));
+    // TODO really this should use the number of electrons, but charge is not available
+    density_.push_back(ref_rel->relcoeff()->form_density_rhf(2*ref_rel->nclosed(), 0, 1.0));
 
   } else if (ref_nr) {
     // GIAO non-relativistic wavefunction
