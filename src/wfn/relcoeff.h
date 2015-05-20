@@ -33,6 +33,7 @@
 #ifndef __SRC_WFN_RELCOEFF_H
 #define __SRC_WFN_RELCOEFF_H
 
+#include <set>
 #include <src/wfn/geometry.h>
 #include <src/util/kramers.h>
 
