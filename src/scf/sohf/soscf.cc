@@ -26,7 +26,7 @@
 #include <src/scf/sohf/soscf.h>
 #include <src/scf/sohf/sofock.h>
 #include <src/util/math/diis.h>
-#include <src/wfn/relreference.h>
+#include <src/wfn/zreference.h>
 
 using namespace std;
 using namespace bagel;
@@ -41,6 +41,12 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 
   soeig_ = VectorB(geom_->nbasis() * 2);
   sohcore_ = make_shared<const SOHcore>(geom_, hcore_);
+
+  if (re != nullptr) {
+    auto cref = dynamic_pointer_cast<const ZReference>(re);
+    if (!cref) throw runtime_error("SOSCF can only use a complex Reference.");
+    socoeff_ = cref->zcoeff();
+  }
 }
 
 void SOSCF::compute() {
@@ -61,8 +67,7 @@ void SOSCF::compute() {
     socoeff = make_shared<DistZMatrix>(*sotildex * *intermediate);
   } else {
     socoeff = socoeff_->distmatrix();
-    aodensity = socoeff->form_density_rhf(2*nocc_);
-    auto sofock = make_shared<const SOFock>(geom_, sohcore_, aodensity->matrix());
+    auto sofock = make_shared<const SOFock>(geom_, sohcore_, make_shared<ZMatrix>(socoeff->matrix()->slice(0, 2*nocc_)));
     shared_ptr<const DistZMatrix> distfock = sofock->distmatrix();
     auto intermediate = make_shared<DistZMatrix>(*sotildex % *distfock * *sotildex);
     intermediate->diagonalize(soeig());
@@ -80,7 +85,7 @@ void SOSCF::compute() {
   DIIS<DistZMatrix, ZMatrix> diis(diis_size_);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
-    auto sofock = make_shared<const SOFock> (geom_, sohcore_, make_shared<ZMatrix>(socoeff->matrix()->slice(0, 2*nocc_)));
+    auto sofock = make_shared<const SOFock>(geom_, sohcore_, make_shared<ZMatrix>(socoeff->matrix()->slice(0, 2*nocc_)));
     shared_ptr<const DistZMatrix> distfock = sofock->distmatrix();
     const complex<double> energy = 0.5 * ((*sohcore_ + *sofock) * *aodensity->matrix()).trace() + geom_->nuclear_repulsion();
     assert(energy.imag() < 1e-8);
@@ -136,7 +141,8 @@ shared_ptr<const ZMatrix> SOSCF::sooverlap() {
 }
 
 shared_ptr<const Reference> SOSCF::conv_to_ref() const {
-  auto out = make_shared<RelReference>(geom_, socoeff_, energy_, 0, 2*nocc_, 0, socoeff_->mdim()-2*nocc_, /*gaunt_*/ false, /*breit_*/ false);
+  auto c = make_shared<ZCoeff>(*socoeff_);
+  auto out = make_shared<ZReference>(geom_, c, energy_, nocc_, 0, socoeff_->mdim()/2-nocc_);
   out->set_eig(soeig_);
   return out;
 }

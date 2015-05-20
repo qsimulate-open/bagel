@@ -25,7 +25,7 @@
 
 
 #include <src/scf/scf_base.h>
-#include <src/wfn/relreference.h>
+#include <src/wfn/zreference.h>
 #include <src/util/timer.h>
 #include <src/util/math/diis.h>
 #include <iostream>
@@ -96,10 +96,9 @@ void SCF_base_<MatType, OvlType, HcType, Enable>::init_schwarz() {
 // Specialized for GIAO
 template <>
 void SCF_base_<ZMatrix, ZOverlap, ZHcore, enable_if<true>::type>::get_coeff(const shared_ptr<const Reference> ref) {
-  auto cref = dynamic_pointer_cast<const RelReference>(ref);
+  auto cref = dynamic_pointer_cast<const ZReference>(ref);
   assert(cref);
-  if (cref->rel()) throw runtime_error("Invalid reference provided for RHF_London");
-  coeff_ = make_shared<ZCoeff>(*cref->relcoeff());
+  coeff_ = cref->zcoeff();
 }
 
 

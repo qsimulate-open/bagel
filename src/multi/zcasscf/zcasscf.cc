@@ -25,6 +25,7 @@
 
 #include <fstream>
 #include <src/scf/dhf/dirac.h>
+#include <src/scf/dhf/dfock.h>
 #include <src/util/math/quatmatrix.h>
 #include <src/multi/zcasscf/zcasscf.h>
 #include <src/mat1e/rel/relhcore.h>
@@ -38,18 +39,15 @@ using namespace bagel;
 
 ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref)
   : Method(idat, geom, ref) {
-  if ((dynamic_pointer_cast<const RelReference>(ref))) {
-      auto relref = dynamic_pointer_cast<const RelReference>(ref);
-      coeff_ = relref->relcoeff();
-      ref_ = ref;
-  } else {
+  if (!dynamic_pointer_cast<const RelReference>(ref)) {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
       nr_coeff_ = ref->coeff();
       if (geom->magnetism()) // TODO Implement nr_coeff_ for GIAO basis sets
         throw runtime_error("So far only relativistic input coefficients can be used for ZCASSCF with magnetic field");
     }
   }
-// relref needed for many things below ; TODO eliminate dependence on ref_ being a relref
+
+  // relref needed for many things below ; TODO eliminate dependence on ref_ being a relref
   if (!dynamic_pointer_cast<const RelReference>(ref)) {
     auto idata_tmp = make_shared<PTree>(*idata_);
     const int ctmp = idata_->get<int>("charge", 0);
@@ -58,6 +56,11 @@ ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<
       idata_tmp->erase("charge");
       idata_tmp->put<int>("charge", ctmp - 1);
     }
+
+    // With a CASSCF initial guess, the DHF wavefunction will not be used...
+    if (nr_coeff_)
+      idata_tmp->put<double>("thresh", 1.0e-4);
+
     auto scf = make_shared<Dirac>(idata_tmp, geom_, ref);
     scf->compute();
     ref_ = scf->conv_to_ref();
@@ -86,8 +89,8 @@ void ZCASSCF::init() {
         bool mvo = idata_->get<bool>("generate_mvo", false);
   const bool kramers_coeff = idata_->get<bool>("kramers_coeff", relref->kramers());
   const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
-  const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->nele());
-  if (mvo && ncore_mvo == geom_->nele()) {
+  const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->num_count_ncore_only());
+  if (mvo && ncore_mvo == 2*relref->relcoeff_full()->nocc()) {
     cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
     mvo = false;
   }
@@ -101,43 +104,6 @@ void ZCASSCF::init() {
     hcore_ = make_shared<RelHcore_London>(geom_);
     overlap_ = make_shared<RelOverlap_London>(geom_);
   }
-
-  // first set coefficient
-  const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
-  if (coeff_ == nullptr && hcore_guess) {
-    auto s12 = overlap_->tildex(1.0e-10);
-    auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
-    VectorB eig(hctmp->ndim());
-    hctmp->diagonalize(eig);
-    auto hctmp2 = make_shared<ZMatrix>(*s12 * *hctmp);
-    auto tmp = hctmp2->clone();
-    tmp->copy_block(0, nneg_, tmp->ndim(), nneg_, hctmp2->slice(0,nneg_));
-    tmp->copy_block(0, 0, tmp->ndim(), nneg_, hctmp2->slice(nneg_,hctmp->mdim()));
-    coeff_ = tmp;
-  } else {
-    coeff_ = relref->relcoeff_full();
-  }
-
-  // get maxiter from the input
-  max_iter_ = idata_->get<int>("maxiter", 100);
-  // get maxiter from the input
-  max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
-
-  { // TODO This is repeated in ZFCI; can reduce redundancy
-    vector<int> states = idata_->get_vector<int>("state", 0);
-    nstate_ = 0;
-    for (int i = 0; i != states.size(); ++i)
-      nstate_ += states[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
-  }
-
-#if 0
-  // get istate from the input (for geometry optimization)
-  istate_ = idata_->get<int>("istate", 0);
-#endif
-  // get thresh (for macro iteration) from the input
-  thresh_ = idata_->get<double>("thresh", 1.0e-8);
-  // get thresh (for micro iteration) from the input
-  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
 
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
@@ -165,6 +131,42 @@ void ZCASSCF::init() {
   if (nclosed_*2 > geom_->nele() - charge_)
     throw runtime_error("two many closed orbitals in the input");
 
+  // set coefficient
+  const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
+  shared_ptr<const RelCoeff_Striped> scoeff;
+  if (hcore_guess) {
+    auto s12 = overlap_->tildex(1.0e-10);
+    auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
+    VectorB eig(hctmp->ndim());
+    hctmp->diagonalize(eig);
+    scoeff = make_shared<const RelCoeff_Striped>(*s12 * *hctmp, nclosed_, nact_, nvirtnr_, nneg_, /*move_neg*/true);
+  } else if (nr_coeff_ == nullptr) {
+    scoeff = make_shared<const RelCoeff_Striped>(*relref->relcoeff_full(), nclosed_, nact_, nvirtnr_, nneg_);
+  } else {
+    scoeff = nonrel_to_relcoeff(nr_coeff_)->striped_format();
+  }
+
+  // get maxiter from the input
+  max_iter_ = idata_->get<int>("maxiter", 100);
+  // get maxiter from the input
+  max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
+
+  { // TODO This is repeated in ZFCI; can reduce redundancy
+    vector<int> states = idata_->get_vector<int>("state", 0);
+    nstate_ = 0;
+    for (int i = 0; i != states.size(); ++i)
+      nstate_ += states[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
+  }
+
+#if 0
+  // get istate from the input (for geometry optimization)
+  istate_ = idata_->get<int>("istate", 0);
+#endif
+  // get thresh (for macro iteration) from the input
+  thresh_ = idata_->get<double>("thresh", 1.0e-8);
+  // get thresh (for micro iteration) from the input
+  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
+
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
   cout << "    * nact     : " << setw(6) << nact_ << endl;
@@ -181,22 +183,21 @@ void ZCASSCF::init() {
 
   // initialize coefficient to enforce kramers symmetry
   if (!kramers_coeff)
-    init_kramers_coeff();
+    scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
 
-  if (mvo) coeff_ = generate_mvo(ncore_mvo, hcore_mvo);
+  if (mvo) scoeff = scoeff->generate_mvo(geom_, overlap_, hcore_, ncore_mvo, relref->relcoeff_full()->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
 
   // specify active orbitals and move into the active space
   set<int> active_indices;
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) {
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-    for (auto& i : *iactive) active_indices.insert(lexical_cast<int>(i->data()) - 1);
-    coeff_ = set_active(active_indices, coeff_, nclosed_, geom_->nele()-charge_, nact_, tsymm_);
+    for (auto& i : *iactive)
+      active_indices.insert(lexical_cast<int>(i->data()) - 1);
+    scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
   }
 
-  // format coefficient into blocks as {c,a,v}
-  shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
-  coeff_ = make_shared<const ZMatrix>(*tmp);
+  coeff_ = scoeff->block_format();
 
   mute_stdcout();
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
@@ -255,14 +256,13 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore, const bool bfgs) {
+shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> transform, const bool with_hcore, const bool bfgs) const {
    // natural orbitals required
    shared_ptr<ZMatrix> natorb;
    if (!bfgs) {
      natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2));
    } else {
-     auto natorb_transform = make_natural_orbitals(rdm1)->get_conjg();
-     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2) * *natorb_transform);
+     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2) * *transform);
    }
    if (natocc_) print_natocc();
 
@@ -283,7 +283,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
+pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) const {
 
   // input should be 1rdm in kramers format
   shared_ptr<ZMatrix> tmp;
@@ -299,14 +299,14 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
 
   const bool unitmat = tmp->is_identity(1.0e-14);
   shared_ptr<ZMatrix> out;
-  vector<double> vec2(tmp->ndim());
+  VectorB vec2(tmp->ndim());
 
   if (!unitmat) {
     VectorB vec(rdm1->ndim());
     tmp->diagonalize(vec);
 
     if (!tsymm_)
-      RelMOFile::rearrange_eig(vec, tmp, false);
+      RelCoeff::rearrange_eig(vec, tmp, false);
 
     map<int,int> emap;
     out = tmp->clone();
@@ -390,8 +390,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
     out = tmp;
   }
 
-  occup_ = vec2;
-  return out;
+  return make_pair(out, vec2);
 }
 
 
@@ -429,9 +428,9 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatri
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::update_coeff(shared_ptr<const ZMatrix> cold, shared_ptr<const ZMatrix> natorb) const {
+shared_ptr<const RelCoeff_Block> ZCASSCF::update_coeff(shared_ptr<const RelCoeff_Block> cold, shared_ptr<const ZMatrix> natorb) const {
   // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
-  auto cnew = make_shared<ZMatrix>(*cold);
+  auto cnew = make_shared<RelCoeff_Block>(*cold, cold->nclosed(), cold->nact(), cold->nvirt_nr(), cold->nneg());
   int n    = natorb->ndim();
   int nbas = cold->ndim();
   zgemm3m_("N", "N", nbas, n, n, 1.0, cold->data()+nbas*nclosed_*2, nbas, natorb->get_conjg()->data(), n,
@@ -457,89 +456,9 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
 shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
   // store both pos and neg energy states, only thing saved thus far
   // TODO : modify to be more like CASSCF than dirac, will need to add FCI stuff
-  shared_ptr<const ZMatrix> coeff = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/false); // transform coefficient to striped structure
-
-  auto out = make_shared<RelReference>(geom_, coeff, energy_.back(), nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*rel*/true, /*kramers*/true,
+  auto out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_.back(), nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true,
                                        fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
   return out;
-}
-
-
-shared_ptr<const ZMatrix> ZCASSCF::generate_mvo(const int ncore, const bool hcore_mvo) {
-  // function to compute the modified virtual orbitals, either by diagonalization of a Fock matrix or of the one-electron Hamiltonian
-  // Procedures described in Jensen et al; JCP 87, 451 (1987) (hcore) and Bauschlicher; JCP 72 880 (1980) (Fock)
-  // assumes coeff_ is in striped format ordered as {e-,p+}
-  mute_stdcout();
-  cout << " " << endl;
-  if (!hcore_mvo) {
-    cout << "   * Generating Modified Virtual Orbitals from a Fock matrix of " << ncore << " electrons " << endl << endl;
-  } else {
-    cout << "   * Generating Modified Virtual Orbitals from the 1 electron Hamiltonian of " << ncore << " electrons " << endl << endl;
-  }
-  mute_stdcout();
-  assert(geom_->nele()%2 == 0);
-  assert(geom_->nele() >= ncore);
-  const int hfvirt = nocc_ + nvirtnr_ - geom_->nele()/2;
-
-  // transformation from the striped format to the block format
-  auto quaternion = [](shared_ptr<ZMatrix> o, bool back_trans) {
-    shared_ptr<ZMatrix> scratch = o->clone();
-    const int m2 = o->mdim()/2;
-    if (!back_trans) {
-      for (int j=0; j!=m2; ++j) {
-        scratch->copy_block(0,      j, o->ndim(), 1, o->slice(j*2  , j*2+1));
-        scratch->copy_block(0, m2 + j, o->ndim(), 1, o->slice(j*2+1, j*2+2));
-      }
-    } else {
-      for (int j=0; j!=m2; ++j) {
-        scratch->copy_block(0, j*2,   o->ndim(), 1, o->slice(j, j+1));
-        scratch->copy_block(0, j*2+1, o->ndim(), 1, o->slice(m2 + j, m2 + j+1));
-      }
-    }
-    *o = *scratch;
-  };
-
-  // make a striped coeff
-  shared_ptr<ZMatrix> ecoeff = coeff_->copy();
-
-  shared_ptr<const ZMatrix> mvofock = !hcore_mvo ? make_shared<const DFock>(geom_, hcore_, ecoeff->slice_copy(0, ncore*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
-
-  // take virtual part out and make block format
-  shared_ptr<ZMatrix> vcoeff = ecoeff->slice_copy(geom_->nele(), geom_->nele()+hfvirt*2);
-  quaternion(vcoeff, /*back_trans*/false);
-
-  shared_ptr<ZMatrix> mofock;
-  if (tsymm_) {
-    mofock = make_shared<QuatMatrix>(*vcoeff % *mvofock * *vcoeff);
-#ifndef NDEBUG
-    auto quatfock = static_pointer_cast<const QuatMatrix>(mofock);
-    assert(quatfock->is_t_symmetric());
-#endif
-  } else {
-    mofock = make_shared<ZMatrix>(*vcoeff % *mvofock * *vcoeff);
-  }
-
-  VectorB eig(mofock->ndim());
-  mofock->diagonalize(eig);
-
-  if (!tsymm_)
-    RelMOFile::rearrange_eig(eig, mofock);
-
-  // update orbitals and back transform
-  *vcoeff *= *mofock;
-  quaternion(vcoeff, /*back_trans*/true);
-
-  // copy in modified virtuals
-  ecoeff->copy_block(0, geom_->nele(), ecoeff->ndim(), hfvirt*2, vcoeff->data());
-
-  {
-    auto unit = ecoeff->clone(); unit->unit();
-    double orthonorm = ((*ecoeff % *overlap_ * *ecoeff) - *unit).rms();
-    if (orthonorm > 1.0e-12) throw logic_error("MVO Coefficient not sufficiently orthonormal");
-  }
-
-  resume_stdcout();
-  return ecoeff;
 }
 
 
@@ -550,68 +469,6 @@ void ZCASSCF::print_natocc() const {
   for (int i=0; i!=occup_.size()/2; ++i)
     cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
   cout << "  ============================================ " << endl;
-}
-
-
-shared_ptr<const ZMatrix> ZCASSCF::set_active(set<int> active_indices, shared_ptr<const ZMatrix> coeff, const int nclosed, const int nele, const int nact, const bool paired) {
-  // assumes coefficient is in striped format
-  const int naobasis = coeff->ndim();
-  const int nmo_paired = coeff->mdim()/4;
-  const int nmobasis = paired ? nmo_paired : 2*nmo_paired;
-
-  cout << " " << endl;
-  if (!paired) cout << "    * Selecting individual spin-orbitals for the active space." << endl;
-  cout << "    ==== Active orbitals : ===== " << endl;
-  for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
-  cout << "    ============================ " << endl << endl;
-
-  if (active_indices.size() != (paired ? nact : 2*nact))
-    throw logic_error("ZCASSCF::set_active - Number of active indices does not match number of active orbitals.  (" + to_string(paired ? nact : 2*nact) + " expected)");
-  if (any_of(active_indices.begin(), active_indices.end(), [nmobasis](int i){ return (i < 0 || i >= nmobasis); }) )
-    throw runtime_error("ZCASSCF::set_active - Invalid MO index provided.  (Should be from 1 to " + to_string(nmobasis) + ")");
-
-  auto tmp_coeff = make_shared<ZMatrix>(naobasis, nmo_paired*4);
-
-  int iclosed = 0;
-  int iactive = nclosed;
-  int ivirt   = nclosed + nact;
-  int nclosed_start = nele / 2;
-
-  if (!paired) {
-    iactive *= 2;
-    ivirt *= 2;
-    nclosed_start = nele;
-  }
-
-  auto cp   = [&tmp_coeff, &naobasis, &coeff, &paired] (const int i, int& pos) {
-    if (paired) {
-      copy_n(coeff->element_ptr(0,i*2), naobasis, tmp_coeff->element_ptr(0, pos*2));
-      copy_n(coeff->element_ptr(0,i*2+1), naobasis, tmp_coeff->element_ptr(0, pos*2+1));
-    } else {
-      copy_n(coeff->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0, pos));
-    }
-    ++pos;
-  };
-
-  int closed_count = 0;
-  for (int i = 0; i < nmobasis; ++i) {
-    if (active_indices.find(i) != active_indices.end()) {
-      cp(i, iactive);
-    } else if (i < nclosed_start) {
-      cp(i, iclosed);
-      closed_count++;
-    } else {
-      cp(i, ivirt);
-    }
-  }
-
-  if (closed_count != (paired ? nclosed : 2*nclosed))
-    throw runtime_error("Invalid combination of closed and active orbitals.");
-
-  // copy positrons
-  tmp_coeff->copy_block(0, nmo_paired*2, naobasis, nmo_paired*2, coeff->slice(nmo_paired*2, nmo_paired*4));
-
-  return make_shared<const ZMatrix>(*tmp_coeff);
 }
 
 

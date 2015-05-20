@@ -23,10 +23,11 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_REL_RELREFERENCE_H
-#define __SRC_REL_RELREFERENCE_H
+#ifndef __SRC_WFN_RELREFERENCE_H
+#define __SRC_WFN_RELREFERENCE_H
 
 #include <src/wfn/reference.h>
+#include <src/wfn/relcoeff.h>
 #include <src/util/kramers.h>
 
 namespace bagel {
@@ -36,10 +37,7 @@ class RelReference : public Reference {
     bool gaunt_;
     bool breit_;
     int nneg_;
-    std::shared_ptr<const ZMatrix> relcoeff_;
-    std::shared_ptr<const ZMatrix> relcoeff_full_;
-
-    bool rel_;  // Non-relativistic GIAO wavefunctions also use this class
+    std::shared_ptr<const RelCoeff_Striped> relcoeff_;
     bool kramers_;  // Indicates whether or not relcoeff_ has been kramers-adapted
 
     // RDM things
@@ -52,31 +50,29 @@ class RelReference : public Reference {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & relcoeff_full_ & rel_ & kramers_;
+      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & kramers_;
     }
 
   public:
     RelReference() { }
-    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en,
-                 const int nneg, const int nocc, const int nact, const int nvirt, const bool ga, const bool br, const bool rel = true, const bool kram = false,
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const RelCoeff_Striped> c, const double en,
+                 const int nneg, const int nocc, const int nact, const int nvirt, const bool ga, const bool br, const bool kram = false,
 //               std::shared_ptr<const VecRDM<1>> rdm1 = std::make_shared<VecRDM<1>>(),
 //               std::shared_ptr<const VecRDM<2>> rdm2 = std::make_shared<VecRDM<2>>(),
                  std::shared_ptr<const ZMatrix> rdm1_av = nullptr,
                  std::shared_ptr<const ZMatrix> rdm2_av = nullptr,
                  std::shared_ptr<const RelCIWfn> ci = nullptr)
-     : Reference(g, nullptr, nocc, nact, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(0, c->mdim()-nneg_)), relcoeff_full_(c), rel_(rel), kramers_(kram),
+     : Reference(g, nullptr, nocc, nact, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c), kramers_(kram),
                                                      rdm1_av_(rdm1_av), rdm2_av_(rdm2_av), ciwfn_(ci) {
     }
 
     std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
-    std::shared_ptr<const ZMatrix> relcoeff() const { return relcoeff_; }
-    std::shared_ptr<const ZMatrix> relcoeff_full() const { return relcoeff_full_; }
+    std::shared_ptr<const RelCoeff_Striped> relcoeff() const { return relcoeff_->electronic_part(); }
+    std::shared_ptr<const RelCoeff_Striped> relcoeff_full() const { return relcoeff_; }
 
     bool gaunt() const { return gaunt_; }
     bool breit() const { return breit_; }
     int nneg() const { return nneg_; }
-
-    bool rel() const { return rel_; }
     bool kramers() const { return kramers_; }
 
     std::shared_ptr<const RelCIWfn> ciwfn() const { return ciwfn_; }

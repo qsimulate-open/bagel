@@ -31,7 +31,6 @@
 #include <src/util/kramers.h>
 #include <src/util/math/zmatrix.h>
 #include <src/df/reldffull.h>
-#include <src/scf/dhf/dfock.h>
 #include <src/wfn/relreference.h>
 
 namespace bagel {
@@ -45,7 +44,7 @@ class RelMOFile {
 
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const ZMatrix> core_fock_;
-    std::shared_ptr<const ZMatrix> coeff_;
+    std::shared_ptr<const RelCoeff_Block> coeff_;
     std::shared_ptr<Kramers<2,ZMatrix>> kramers_coeff_;
 
     bool gaunt_;
@@ -53,7 +52,7 @@ class RelMOFile {
     bool tsymm_;
 
     // creates integral files and returns the core energy.
-    void init(const int nstart, const int nend, const bool restricted = false);
+    void init(const int nstart, const int nfence, const bool restricted = false);
 
     // hamiltoniam data
     std::shared_ptr<Kramers<2,ZMatrix>> mo1e_;
@@ -71,14 +70,10 @@ class RelMOFile {
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt_;
 
   public:
-    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, const int charge, const bool gaunt, const bool breit, const bool tsymm);
+    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>, const int charge, const bool gaunt, const bool breit, const bool tsymm);
 
     // static function
     static std::shared_ptr<Kramers<2,ZMatrix>> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
-    std::shared_ptr<Kramers<2,ZMatrix>> kramers_zquat(const int nstart, const int nfence, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> hcore);
-
-    // static function used to make the order of eigenvalues & eigenvectors of ZMatrix::diagonalize() match that given by QuatMatrix::diagonalize()
-    static void rearrange_eig(VectorB& eig, std::shared_ptr<ZMatrix> coeff, const bool includes_neg = true);
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
 
@@ -102,7 +97,7 @@ class RelMOFile {
       coeff_tot->copy_block(0, nocc_, kramers_coeff_->at(1)->ndim(), nocc_, kramers_coeff_->at(1));
       return coeff_tot;
     }
-    std::shared_ptr<const ZMatrix> coeff_input() const { return coeff_; }
+    std::shared_ptr<const RelCoeff_Block> coeff_input() const { return coeff_; }
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb() const { return half_complex_coulomb_; }
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt() const { return half_complex_gaunt_; }
 
@@ -119,9 +114,9 @@ class RelJop : public RelMOFile {
     std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<2,ZMatrix>> coeff) override;
 
   public:
-    RelJop(const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff, const int charge,
+    RelJop(const std::shared_ptr<const Geometry> geom, const int nstart, const int nfence, std::shared_ptr<const RelCoeff_Block> coeff, const int charge,
       const bool gaunt, const bool breit, const bool restricted = false, const bool tsymm = true)
-      : RelMOFile(geo, coeff, charge, gaunt, breit, tsymm) { init(c, d, restricted); }
+      : RelMOFile(geom, coeff, charge, gaunt, breit, tsymm) { init(nstart, nfence, restricted); }
 };
 
 }

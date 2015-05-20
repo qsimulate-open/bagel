@@ -27,6 +27,7 @@
 #include <src/prop/moprint.h>
 #include <src/util/muffle.h>
 #include <src/wfn/relreference.h>
+#include <src/wfn/zreference.h>
 #include <src/mat1e/overlap.h>
 #include <src/mat1e/giao/zoverlap.h>
 #include <src/prop/overlap_point.h>
@@ -39,16 +40,19 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
                  const std::shared_ptr<const Reference> re) : Method(idata, geom, re) {
 
   // Assumes striped (or non-relativistic) coefficient matrix
-  auto newref = dynamic_pointer_cast<const RelReference>(ref_);
-  if (newref) {
-    relativistic_ = newref->rel();
-    paired_ = relativistic_ ? !geom->magnetism() : true;
+  auto ref_rel = dynamic_pointer_cast<const RelReference>(ref_);
+  auto ref_nr  = dynamic_pointer_cast<const ZReference>(ref_);
+  assert(!ref_rel || !ref_nr);
+  if (ref_rel) {
+    relativistic_ = true;
+    paired_ = !geom->magnetism();
   } else {
     relativistic_ = false;
     paired_ = true;
   }
+
   paired_ = idata_->get<bool>("paired", paired_);
-  if (paired_ && !relativistic_)
+  if (!paired_ && !relativistic_)
     throw runtime_error("Individual spin-orbitals can only be visualized for 4-component methods.");
 
   // Determine which MOs to get
@@ -110,21 +114,24 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
 
   assert(ngrid_*3 == coords_.size());
 
+  // TODO Reduce redundancy
   // Form density matrices
-  if (newref) {
-    // GIAO or 4-component wavefunction
-    const double scale = relativistic_ ? 1.0 : 2.0;
-    const int ncol = (relativistic_ && paired_) ? 2 : 1;
-
-    // TODO Fix RelReference so this is not needed
-    // Ugly patch to compensate for RelReference::nclosed() giving number of spin-orbitals after Dirac but spatial orbitals after RHF_London or ZCASSCF
-    const int patch = (newref->nact() == 0) ? 1 : 2;
+  if (ref_rel) {
+    // 4-component wavefunction (with or without GIAO)
+    const int ncol = paired_ ? 2 : 1;
 
     for (int i=0; i!=norb_; ++i) {
-      density_.push_back(newref->relcoeff()->form_density_rhf(ncol, ncol*orbitals_[i], scale));
+      density_.push_back(ref_rel->relcoeff()->form_density_rhf(ncol, ncol*orbitals_[i], 1.0));
     }
-    density_.push_back(newref->relcoeff()->form_density_rhf(patch*newref->nclosed(), 0, scale));
+    // TODO really this should use the number of electrons, but charge is not available
+    density_.push_back(ref_rel->relcoeff()->form_density_rhf(2*ref_rel->nclosed(), 0, 1.0));
 
+  } else if (ref_nr) {
+    // GIAO non-relativistic wavefunction
+    for (int i=0; i!=norb_; ++i) {
+      density_.push_back(ref_nr->zcoeff()->form_density_rhf(1, orbitals_[i], 2.0));
+    }
+    density_.push_back(ref_nr->zcoeff()->form_density_rhf(ref_nr->nclosed(), 0, 2.0));
   } else {
     // Conventional non-relativistic wavefunction
     // TODO This could be optimized, since we are storing real matrices as complex.  I guess it would require templating...

@@ -24,7 +24,7 @@
 //
 
 #include <src/smith/smith_info.h>
-#include <src/multi/zcasscf/zcasscf.h>
+#include <src/wfn/relcoeff.h>
 
 using namespace std;
 using namespace bagel;
@@ -95,9 +95,8 @@ shared_ptr<const Matrix> SMITH_Info<double>::coeff() const {
 
 template<>
 shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::coeff() const {
-  shared_ptr<const ZMatrix> c = dynamic_pointer_cast<const RelReference>(ref_)->relcoeff();
-  // reformat so that it will be blocked
-  return ZCASSCF::format_coeff(nclosed(), nact(), nvirt(), c, true);
+  shared_ptr<const RelCoeff_Striped> c = dynamic_pointer_cast<const RelReference>(ref_)->relcoeff();
+  return c->block_format(nclosed(), nact(), nvirt(), 0);
 }
 
 
