@@ -64,8 +64,18 @@ MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr
       orbitals_.push_back(lexical_cast<int>(i->data()) - 1);
   } else {
     const int mult = paired_ ? 1 : 2;
-    for (int i=0; i!=mult*geom_->nbasis(); ++i)
-      orbitals_.push_back(i);
+    const int nclosed = !ref_rel ? ref_->nclosed() : ref_rel->relcoeff_full()->nclosed();
+
+    if (ref_->nact() == 0) {
+      // For Hartree--Fock, print frontier orbitals by default
+      const int nprint2 = 6;
+      for (int i=0; i!=mult*2*nprint2; ++i)
+        orbitals_.push_back(mult*(nclosed - nprint2) + i);
+    } else {
+      // For CASSCF, print active orbitals by default
+      for (int i=0; i!=mult*ref_->nact(); ++i)
+        orbitals_.push_back(mult*nclosed + i);
+    }
   }
   norb_ = orbitals_.size();
 
