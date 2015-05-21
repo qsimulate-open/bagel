@@ -54,6 +54,7 @@ class MOPrint : public Method {
     std::vector<double> points_;
 
     void computepoint(const size_t pos);
+    void computefull();
     void print() const;
 
   public:

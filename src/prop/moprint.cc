@@ -169,54 +169,38 @@ void MOPrint::compute() {
 
   assert(density_.size() == orbitals_.size()+1 && density_.size() == norb_+1);
   // The last Task will compute integrated total charge
-  TaskQueue<MOPrintTask> task(ngrid_+1);
+  TaskQueue<MOPrintTask> task(ngrid_);
   points_.resize((ngrid_+1)*(norb_+1), 0.0);
 
-  for (int i=0; i<=ngrid_; ++i)
+  for (int i=0; i!=ngrid_; ++i)
     if (i % mpi__->size() == mpi__->rank())
       task.emplace_back(i, this);
 
   task.compute();
-
   mpi__->allreduce(points_.data(), points_.size());
 
+  computefull();
   cout << "Orbital printout computation finished; generating output files." << endl;
-
   print();
-
 }
 
 
+// TODO Reduce redundancy between this and computefull()
 void MOPrint::computepoint(const size_t pos) {
   shared_ptr<ZMatrix> ao_density;
   shared_ptr<ZMatrix> input_ovlp;
   array<double,3> tmp;
 
   if (!geom_->london()) {
-
     // Standard basis
-    if (pos != ngrid_) {
-      // for each point in space
-      tmp = {{ coords_[3*pos], coords_[3*pos+1], coords_[3*pos+2] }};
-      auto ovlp = make_shared<Overlap_Point>(geom_, tmp);
-      input_ovlp = make_shared<ZMatrix>(*ovlp->compute(), 1.0);
-    } else {
-      // total integrated overlap is also stored
-      auto ovlp = make_shared<Overlap>(geom_);
-      input_ovlp = make_shared<ZMatrix>(*ovlp, 1.0);
-    }
+    tmp = {{ coords_[3*pos], coords_[3*pos+1], coords_[3*pos+2] }};
+    auto ovlp = make_shared<Overlap_Point>(geom_, tmp);
+    input_ovlp = make_shared<ZMatrix>(*ovlp->compute(), 1.0);
   } else {
-
     // GIAO version
-    if (pos != ngrid_) {
-      // for each point in space
-      tmp = {{ coords_[3*pos], coords_[3*pos+1], coords_[3*pos+2] }};
-      auto ovlp = make_shared<Overlap_Point_London>(geom_, tmp);
-      input_ovlp = ovlp->compute();
-    } else {
-      // total integrated overlap is also stored
-      input_ovlp = make_shared<ZOverlap>(geom_);
-    }
+    tmp = {{ coords_[3*pos], coords_[3*pos+1], coords_[3*pos+2] }};
+    auto ovlp = make_shared<Overlap_Point_London>(geom_, tmp);
+    input_ovlp = ovlp->compute();
   }
 
   // First build the overlap matrix in AO basis
@@ -238,7 +222,39 @@ void MOPrint::computepoint(const size_t pos) {
     assert(std::abs(std::imag(out)) < 1.0e-8);
     points_[(norb_+1)*pos+i] = std::real(out);
   }
+}
 
+
+void MOPrint::computefull() {
+  shared_ptr<ZMatrix> ao_density;
+  shared_ptr<ZMatrix> input_ovlp;
+
+  if (!geom_->london()) {
+    auto ovlp = make_shared<Overlap>(geom_);
+    input_ovlp = make_shared<ZMatrix>(*ovlp, 1.0);
+  } else {
+    input_ovlp = make_shared<ZOverlap>(geom_);
+  }
+
+  // First build the overlap matrix in AO basis
+  if (!relativistic_) {
+    ao_density = input_ovlp;
+  } else {
+    const int n = geom_->nbasis();
+    ao_density = make_shared<ZMatrix>(4*n, 4*n);
+
+    // Assumes RKB (or RMB) basis
+    // small component neglected, although we could compute and add in the appropriate blocks
+    ao_density->add_block(1.0, 0*n, 0*n, n, n, *input_ovlp);
+    ao_density->add_block(1.0, 1*n, 1*n, n, n, *input_ovlp);
+  }
+
+  // Now compute total MO density using AO contributions
+  for (int i=0; i!=norb_+1; ++i) {
+    const complex<double> out = density_[i]->dot_product(*ao_density);
+    assert(std::abs(std::imag(out)) < 1.0e-8);
+    points_[(norb_+1)*ngrid_+i] = std::real(out);
+  }
 }
 
 
