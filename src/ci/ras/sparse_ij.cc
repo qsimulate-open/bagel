@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <set>
 #include <src/ci/ras/sparse_ij.h>
 
 using namespace std;

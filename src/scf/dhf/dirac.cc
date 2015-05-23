@@ -30,6 +30,7 @@
 #include <src/mat1e/rel/reloverlap.h>
 #include <src/mat1e/giao/relhcore_london.h>
 #include <src/mat1e/giao/reloverlap_london.h>
+#include <src/wfn/zreference.h>
 #include <src/wfn/relreference.h>
 #include <src/util/constants.h>
 #include <src/util/math/zmatrix.h>
@@ -184,10 +185,9 @@ void Dirac::print_eig() const {
 shared_ptr<const Reference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
   const size_t npos = coeff_->mdim() - nneg_;
+  assert(npos % 2 == 0);
   // coeff is occ, virt, nneg
-  shared_ptr<ZMatrix> c = coeff_->clone();
-  c->copy_block(0, 0, c->ndim(), npos, coeff_->slice(nneg_, nneg_+npos));
-  c->copy_block(0, npos, c->ndim(), nneg_, coeff_->slice(0, nneg_));
+  auto c = make_shared<RelCoeff_Striped>(*coeff_, nele_/2, nele_%2, (npos-nele_)/2, nneg_, /*move_neg*/true);
   auto out = make_shared<RelReference>(geom_, c, energy_, nneg_, nele_, 0, npos-nele_, gaunt_, breit_);
   vector<double> eigp(eig_.begin()+nneg_, eig_.end());
   vector<double> eigm(eig_.begin(), eig_.begin()+nneg_);
@@ -211,29 +211,29 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
 
   } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
+    // Relativistic (4-component) reference
     auto relref = dynamic_pointer_cast<const RelReference>(ref_);
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
+    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
+    interm.diagonalize(eig);
+    coeff = make_shared<const DistZMatrix>(*s12 * interm);
 
-    if (relref->rel()) {
-      // Relativistic (4-component) reference
-      shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
-      DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
-      interm.diagonalize(eig);
-      coeff = make_shared<const DistZMatrix>(*s12 * interm);
-    } else {
-      // Non-relativistic, GIAO-based reference
-      const string typeinfo = geom_->london() ? "GIAO" : "(common origin)";
-      assert(geom_->magnetism());
-      const int nocc = ref_->nocc();
-      shared_ptr<ZMatrix> fock;
-      assert(nocc*2 == nele_);
-      auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
-      ocoeff->add_block(1.0, 0,    0, n, nocc, relref->relcoeff()->slice(0,nocc));
-      ocoeff->add_block(1.0, n, nocc, n, nocc, relref->relcoeff()->slice(0,nocc));
-      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
-      DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
-      interm.diagonalize(eig);
-      coeff = make_shared<const DistZMatrix>(*s12 * interm);
-    }
+  } else if (dynamic_pointer_cast<const ZReference>(ref_)) {
+    // Non-relativistic, GIAO-based reference
+    auto zref = dynamic_pointer_cast<const ZReference>(ref_);
+    const string typeinfo = geom_->london() ? "GIAO" : "(common origin)";
+    assert(geom_->magnetism());
+    const int nocc = ref_->nocc();
+    shared_ptr<ZMatrix> fock;
+    assert(nocc*2 == nele_);
+    auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
+    ocoeff->add_block(1.0, 0,    0, n, nocc, zref->zcoeff()->slice(0,nocc));
+    ocoeff->add_block(1.0, n, nocc, n, nocc, zref->zcoeff()->slice(0,nocc));
+    fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
+    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
+    interm.diagonalize(eig);
+    coeff = make_shared<const DistZMatrix>(*s12 * interm);
+
   } else if (ref_->coeff()->ndim() == n) {
     // Non-relativistic, real reference
     assert(!geom_->magnetism());

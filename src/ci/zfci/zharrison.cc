@@ -26,14 +26,17 @@
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/zfci/relspace.h>
 #include <src/util/math/comb.h>
-#include <src/multi/zcasscf/zcasscf.h>
+#include <src/mat1e/rel/relhcore.h>
+#include <src/mat1e/giao/relhcore_london.h>
+#include <src/mat1e/rel/reloverlap.h>
+#include <src/mat1e/giao/reloverlap_london.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 
 using namespace std;
 using namespace bagel;
 
-ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, std::shared_ptr<const ZMatrix> coeff_zcas, const bool restricted)
+ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, std::shared_ptr<const RelCoeff_Block> coeff_zcas, const bool restricted)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
@@ -86,35 +89,57 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << ncore_ << endl;
   cout << "    * nact     : " << setw(6) << norb_ << endl;
+  cout << "    * nvirt    : " << setw(6) << ((coeff_zcas ? coeff_zcas->mdim() : rr->relcoeff_full()->mdim())/2-ncore_-norb_) << endl;
+
+  if (!geom_->dfs())
+    geom_ = geom_->relativistic(gaunt_);
 
   space_ = make_shared<RelSpace>(norb_, nele_);
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
+  assert((restricted && coeff_zcas) || (!restricted && !coeff_zcas));
 
   // obtain the coefficient matrix in striped format
-  shared_ptr<const ZMatrix> coeff;
-  if (coeff_zcas == nullptr) {
-    if (restricted) throw runtime_error("Currently we should only have Kramers-adapted starting orbitals when coming from ZCASSCF");
-    // For FCI and CAS-CI, use a RelReference object
+  shared_ptr<const RelCoeff_Block> coeff;
+  if (coeff_zcas) {
+    coeff = coeff_zcas;
+  } else {
+    auto scoeff = make_shared<const RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
+
+    shared_ptr<const ZMatrix> hcore, overlap;
+    if (!geom_->magnetism()) {
+      overlap = make_shared<RelOverlap>(geom_);
+      hcore = make_shared<RelHcore>(geom_);
+    } else {
+      overlap = make_shared<RelOverlap_London>(geom_);
+      hcore = make_shared<RelHcore_London>(geom_);
+    }
+
+    // then compute Kramers adapated coefficient matrices
+    scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
+
+    // generate modified virtual orbitals, if requested
+    const bool mvo = idata_->get<bool>("generate_mvo", false);
+    if (mvo) {
+      const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
+      const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->num_count_ncore_only());
+      if (ncore_mvo == 2*rr->relcoeff_full()->nocc())
+        cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
+      else
+        scoeff = scoeff->generate_mvo(geom_, overlap, hcore, ncore_mvo, rr->relcoeff_full()->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
+    }
+
     // Reorder as specified in the input so frontier orbitals contain the desired active space
     const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
     if (iactive) {
-      assert(iactive->size() == norb_);
       set<int> active_indices;
-
       // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
       for (auto& i : *iactive)
         active_indices.insert(lexical_cast<int>(i->data()) - 1);
-      coeff = ZCASSCF::set_active(active_indices, rr->relcoeff_full(), ncore_, geom_->nele()-charge_, norb_, tsymm_);
-
-    } else {
-      coeff = rr->relcoeff_full();
+      scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
     }
-  } else {
-    // For ZCASSCF, just accept the coefficients given
-    coeff = coeff_zcas;
+    coeff = scoeff->block_format();
   }
 
-  cout << "    * nvirt    : " << setw(6) << (coeff->mdim()/2-ncore_-norb_) << endl;
   update(coeff, restricted);
 
 }
@@ -186,7 +211,7 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
 
 
 // returns seed determinants for initial guess
-vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet, const int nelea, const int neleb) {
+vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet, const int nelea, const int neleb) const {
   shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
 
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;

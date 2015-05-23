@@ -253,7 +253,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
   cout << endl;
 }
 
-vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) {
+vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) const {
   multimap<double, pair<size_t, size_t>> tmp;
   for (int i = 0; i != ndet; ++i)
     tmp.emplace(-1.0e10*(1+i), make_pair(0,0));

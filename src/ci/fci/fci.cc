@@ -205,7 +205,7 @@ void FCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dvec> out
 }
 
 // returns seed determinants for initial guess
-vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
+vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) const {
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
   for (int i = 0; i != ndet; ++i) tmp.emplace(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0)));
 

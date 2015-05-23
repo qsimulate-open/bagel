@@ -415,20 +415,6 @@ shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold
 }
 
 
-
-shared_ptr<Matrix> CASSCF::form_natural_orbs() {
-  // here make a natural orbitals and update the coefficients
-  // this effectively updates 1,2RDM and integrals
-  const pair<shared_ptr<Matrix>, VectorB> natorb = fci_->natorb_convert();
-  // new coefficients
-  coeff_ = update_coeff(coeff_, natorb.first);
-  // occupation number of the natural orbitals
-  occup_ = natorb.second;
-  if (natocc_) print_natocc();
-  return natorb.first;
-}
-
-
 shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   auto rdm1mat = make_shared<Matrix>(nact_, nact_);
   copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
