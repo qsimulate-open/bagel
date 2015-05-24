@@ -78,7 +78,7 @@ void ASD_BFGS::compute() {
 
   cout << "     See asd_orbopt.log for further information on ASD output " << endl << endl;
   mute_stdcout();
-  auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //initial ASD run
+  auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_, /*rdm=*/true); //initial ASD run
   for (int iter = active_only ? 1 : 0; iter != max_iter_; ++iter) {
 
     bool inter = iter%2 == 0 ? true : false;
@@ -86,11 +86,11 @@ void ASD_BFGS::compute() {
     //Perform ASD
     Timer asd_time(0);
     if (iter) {
-      dimer_->update_coeff(coeff_); //update coeff_ & integrals..
+      dimer_->update_coeff(coeff_); //update coeff_ & integrals
       if (full && fix_ci)
-        asd->update_dimer(dimer_); //fix ci coefficients
+        asd->update_dimer_and_fix_ci(dimer_); //fix ci coefficients
       else
-        asd = construct_ASD(idata_->get_child_optional("asd"), dimer_); //build CI-space with updated coeff
+        asd = construct_ASD(idata_->get_child_optional("asd"), dimer_, /*rdm=*/true); //build CI-space with updated coeff
     }
     asd_time.tick_print("ASD space construction");
     asd->compute();
@@ -167,6 +167,9 @@ void ASD_BFGS::compute() {
     }
 
     if (full && first_iteration) {
+      resume_stdcout();
+      cout << "** approx. diagonal Hessian is computed ** " << endl;
+      mute_stdcout();
       shared_ptr<const ASD_RotFile> denom = compute_denom(cfock, afock, qxr, rdm1_mat, mcfock, true, true);
       bfgs = make_shared<SRBFGS<ASD_RotFile>>(denom);
       first_iteration = false;
@@ -260,10 +263,13 @@ void ASD_BFGS::compute() {
     //activate "fix_ci"
     if (!fix_ci && full && (gradient < fix_ci_begin_ || iter >= fix_ci_begin_iter_)) {
       fix_ci = true;
-      //reset BFGS
-      first_iteration = true;
-      x->unit();
       cout << "    * CI coefficients will be fixed. *   " << endl << endl;
+      if (iter == fix_ci_begin_iter_) {
+        cout << "reset BFGS" << endl;
+        //reset BFGS
+        first_iteration = true;
+        x->unit();
+      }
     }
 
     //deactivate "fix_ci"
@@ -274,6 +280,10 @@ void ASD_BFGS::compute() {
         mute_stdcout();
         break;
       }
+      //reset BFGS
+      cout << "reset BFGS" << endl;
+      first_iteration = true;
+      x->unit();
     }
 
     if (iter == max_iter_-1) {
@@ -311,7 +321,7 @@ void ASD_BFGS::compute() {
   }
 
   // extra iteration for consistency
-  asd = construct_ASD(idata_->get_child_optional("asd"), dimer_);
+  asd = construct_ASD(idata_->get_child_optional("asd"), dimer_, /*rdm=*/true);
   asd->compute();
 
 }

@@ -32,8 +32,8 @@ namespace bagel {
 
 class ASD_CAS : public ASD<CASDvec> {
   public:
-    ASD_CAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCAS> cispace)
-      : ASD<CASDvec>(input, dimer, cispace) {
+    ASD_CAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCAS> cispace, bool rdm = false)
+      : ASD<CASDvec>(input, dimer, cispace, rdm) {
       cispace_->intermediates();
     }
 

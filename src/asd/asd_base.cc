@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/asd_base.cc
+// Filename: asd_base.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -29,8 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-ASD_base::ASD_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> dimer) : dimer_(dimer)
-{
+ASD_base::ASD_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> dimer, bool rdm) : dimer_(dimer), compute_rdm_(rdm) {
   nstates_ = input->get<int>("nstates", 10);
   max_iter_ = input->get<int>("max_iter", 50);
   davidson_subspace_ = input->get<int>("davidson_subspace", 10);
@@ -79,9 +78,7 @@ ASD_base::ASD_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> 
 }
 
 
-void ASD_base::update_dimer(shared_ptr<const Dimer> dimer) {
-  //fix ci coefficients
-  fixed_ci_ = true;
+void ASD_base::update_dimer_and_fix_ci(shared_ptr<const Dimer> dimer) {
   Timer timer;
   //update reference & integrals
   dimer_ = make_shared<const Dimer>(*dimer);
@@ -95,6 +92,8 @@ void ASD_base::update_dimer(shared_ptr<const Dimer> dimer) {
   // resizing rdm vectors (with null pointers)
   rdm1_.resize(nstates_);
   rdm2_.resize(nstates_);
+  //fix ci coefficients for subsequent asd calculations
+  fix_ci_ = true;
 }
 
 

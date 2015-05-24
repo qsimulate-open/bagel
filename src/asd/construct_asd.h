@@ -31,7 +31,7 @@
 #include <src/asd/dimer/dimer.h>
 
 namespace bagel {
-  extern std::shared_ptr<ASD_base> construct_ASD(std::shared_ptr<const PTree> itree, std::shared_ptr<Dimer> dimer);
+  extern std::shared_ptr<ASD_base> construct_ASD(std::shared_ptr<const PTree> itree, std::shared_ptr<Dimer> dimer, bool rdm = false);
 }
 
 #endif

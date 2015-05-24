@@ -85,47 +85,81 @@ void ASD<VecType>::compute_rdm12_monomer() {
   std::vector<std::shared_ptr<RDM<1>>> rdm1B; rdm1B.resize(nstates_);
   std::vector<std::shared_ptr<RDM<2>>> rdm2B; rdm2B.resize(nstates_);
 
-  for (auto& AB : subspaces_) { //diagonal dimer subspace
-  //const int ioff = AB.offset();
-    std::shared_ptr<const VecType> A = AB.template ci<0>();
+  //allocate first (filled with zero)
+  for (int kst = 0; kst != nstates_; ++kst) {
+    rdm1A[kst] = std::make_shared<RDM<1>>(nactA);
+    rdm2A[kst] = std::make_shared<RDM<2>>(nactA);
+    rdm1B[kst] = std::make_shared<RDM<1>>(nactB);
+    rdm2B[kst] = std::make_shared<RDM<2>>(nactB);
+  }
+
+  const int n = subspaces_.size() * nstates_;
+  const int numproc = mpi__->size();
+  const int myid = mpi__->rank();
+
+  std::vector<std::pair<int,int>> proc;
+  for (int i = 0; i != subspaces_.size(); ++i)
+    for (int j = 0; j != nstates_; ++j)
+      proc.emplace_back(i,j);
+  assert(proc.size() == n);
+
+  int mystart, myend;
+  if (n >= numproc) {
+    mystart = (n / numproc) * myid + ((n % numproc) < myid ? (n % numproc) : myid);
+    myend = mystart + (n / numproc) + ((n % numproc) > myid);
+  }
+  else {
+    mystart = myid < n ? myid : -1;
+    myend = myid < n ? (myid + 1) : 0;
+  }
+
+  //diagonal dimer subspace
+  for (int job = mystart; job != myend; ++job) {
+
+    if (job < 0) break; //MPI workers without allocated jobs, fill zero and wait for reduction
+
+    const int isub = proc[job].first;
+    const int kst = proc[job].second;
+
+    auto& AB = subspaces_[isub];
+    std::shared_ptr<const VecType> A = AB.template ci<0>(); //CASDvec, RASDvec
     std::shared_ptr<const VecType> B = AB.template ci<1>();
-  //const int nstA = A->ij(); //Dvec size
-  //const int nstB = B->ij();
-  //TODO: const removed temporarily
-    int ioff = AB.offset();
-    int nstA = A->ij(); //Dvec size
-    int nstB = B->ij();
+    const int ioff = AB.offset();
+    const int nstA = A->ij(); //XDvec size
+    const int nstB = B->ij();
     assert(nstA == AB.nstatesA());
     assert(nstB == AB.nstatesB());
 
-    //MonomerA i.e. delta_JJ'
-    for (int kst = 0; kst != nstates_; ++kst) {
-      std::shared_ptr<RDM<1>> rdm1;
-      std::shared_ptr<RDM<2>> rdm2;
+    std::shared_ptr<RDM<1>> rdm1;
+    std::shared_ptr<RDM<2>> rdm2;
+
+    {//MonomerA i.e. delta_JJ'
       auto dket = contract_I(A, adiabats_, ioff, nstA, nstB, kst);
       for (int j = 0; j != nstB; ++j) {
         std::tie(rdm1,rdm2) = compute_rdm12_monomer(dket, j);
-        if (!rdm1A[kst]) rdm1A[kst] = std::make_shared<RDM<1>>(nactA);
-        if (!rdm2A[kst]) rdm2A[kst] = std::make_shared<RDM<2>>(nactA);
         rdm1A[kst]->ax_plus_y(1.0, rdm1);
         rdm2A[kst]->ax_plus_y(1.0, rdm2);
       }
     }
 
-    //MonomerB i.e. delta_II'
-    for (int kst = 0; kst != nstates_; ++kst) {
-      std::shared_ptr<RDM<1>> rdm1;
-      std::shared_ptr<RDM<2>> rdm2;
+    {//MonomerB i.e. delta_II'
       auto dket = contract_J(B, adiabats_, ioff, nstA, nstB, kst);
       for (int i = 0; i != nstA; ++i) {
         std::tie(rdm1,rdm2) = compute_rdm12_monomer(dket, i);
-        if (!rdm1B[kst]) rdm1B[kst] = std::make_shared<RDM<1>>(nactB);
-        if (!rdm2B[kst]) rdm2B[kst] = std::make_shared<RDM<2>>(nactB);
         rdm1B[kst]->ax_plus_y(1.0, rdm1);
         rdm2B[kst]->ax_plus_y(1.0, rdm2);
       }
     }
   } //subspaces
+
+#ifdef HAVE_MPI_H
+  for (int kst = 0; kst != nstates_; ++kst) {
+    mpi__->allreduce(rdm1A[kst]->data(), rdm1A[kst]->size());
+    mpi__->allreduce(rdm2A[kst]->data(), rdm2A[kst]->size());
+    mpi__->allreduce(rdm1B[kst]->data(), rdm1B[kst]->size());
+    mpi__->allreduce(rdm2B[kst]->data(), rdm2B[kst]->size());
+  }
+#endif
 
   for (int istate = 0; istate != nstates_; ++istate) {
     auto rdm1 = std::make_shared<RDM<1>>(nactA+nactB);
@@ -161,7 +195,6 @@ void ASD<VecType>::compute_rdm12_monomer() {
   }
 
 }
-
 #endif
 
 #endif

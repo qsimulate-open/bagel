@@ -32,7 +32,8 @@ namespace bagel {
 
 class ASD_RAS : public ASD<RASDvec> {
   public:
-    ASD_RAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerRAS> cispace);
+    ASD_RAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerRAS> cispace, bool rdm = false)
+      : ASD<RASDvec>(input, dimer, cispace, rdm) {};
 
   private:
     std::shared_ptr<RASDvec> form_sigma(std::shared_ptr<const RASDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;

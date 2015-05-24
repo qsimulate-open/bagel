@@ -29,9 +29,6 @@
 using namespace std;
 using namespace bagel;
 
-ASD_DistRAS::ASD_DistRAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerDistRAS> cispace)
- : ASD<DistRASDvec>(input, dimer, cispace) {}
-
 
 shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma(shared_ptr<const DistRASDvec> ccvec, shared_ptr<const MOFile> jop) const {
   vector<shared_ptr<RASCivec>> tmpvec;

@@ -30,12 +30,6 @@
 using namespace std;
 using namespace bagel;
 
-ASD_RAS::ASD_RAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerRAS> cispace)
-  : ASD<RASDvec>(input, dimer, cispace) {
-
-}
-
-
 shared_ptr<RASDvec> ASD_RAS::form_sigma(shared_ptr<const RASDvec> ccvec, shared_ptr<const MOFile> jop) const {
   FormSigmaRAS form;
   vector<int> conv(ccvec->ij(), static_cast<int>(false));
@@ -61,10 +55,6 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer(shar
   dbra->zero();
   sigma_2a(cbra, dbra);
 
-  //cbra == cket
-  shared_ptr<RASDvec> dket;
-  dket = dbra;
-
   std::cout << "  o single monomer RDM - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
 
   return compute_rdm12_last_step(cbra, dbra);
@@ -82,15 +72,15 @@ void ASD_RAS::sigma_2a(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) con
         const auto abit = block->string_bits_a(ia);
         for (size_t jb = 0; jb < block->stringsb()->size(); ++jb, ++ab) {
           const auto bbit = block->string_bits_b(jb);
-          double coef = block->element(ab);
+          const double coef = block->element(ab);
 
+          if (fabs(coef) < 1.0e-14) continue;
           for (auto& phi : det->phib(jb + b_offset)) {
             assert(phi.target == jb + b_offset);
             const auto sbit = det->string_bits_b(phi.source);
             if(det->allowed(abit,sbit))
-              d->data(phi.ij)->element(sbit,abit) += static_cast<double>(phi.sign) * coef;
+              d->data(phi.ij)->element(sbit,abit) += static_cast<double>(phi.sign) * coef; // i^+ j => (j,i)
           }
-
           for (auto& phi : det->phia(ia + a_offset)) {
             assert(phi.target == ia + a_offset);
             const auto sbit = det->string_bits_a(phi.source);
@@ -106,31 +96,26 @@ void ASD_RAS::sigma_2a(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) con
 }
 
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(shared_ptr<const RASCivec> cibra, shared_ptr<const RASDvec> dbra) const {
+  const int norb = cibra->det()->norb();
+  const int nri = dbra->data(0)->size();
+  auto cimat = make_shared<Matrix>(nri,norb*norb);
+  for (int ij = 0; ij != norb*norb; ++ij)
+    copy_n(dbra->data(ij)->data(), nri, cimat->element_ptr(0,ij));
 
   Timer mtime;
-  const int norb = cibra->det()->norb();
-
   // 1RDM
-  // c^dagger <I|\hat{E}|0>
-  shared_ptr<const RASDeterminants> det = cibra->det();
   auto rdm1 = make_shared<RDM<1>>(norb);
   {
-    double* target = rdm1->element_ptr(0,0);
-    for (int ij = 0; ij != norb*norb; ++ij, ++target){
-      *target = cibra->dot_product(dbra->data(ij));
-    }
-    std::cout << "      o 1RDM - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
+    dgemv_("T", nri, norb*norb, 1.0, cimat->element_ptr(0,0), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
+    std::cout << "      o 1RDM(dgemv) - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
   }
 
+  // 2RDM
   auto rdm2 = make_shared<RDM<2>>(norb);
   {
     auto rdmt = rdm2->clone();
-    double* target = rdmt->element_ptr(0,0,0,0);
-    for (int kl = 0; kl != norb*norb; ++kl) // E_kl |ket>
-      for (int ij = 0; ij != norb*norb; ++ij, ++target) // <bra| E_ji = [E_ij |bra>]^+
-        *target = dbra->data(ij)->dot_product(dbra->data(kl)); // (ij,kl) has E_ji*E_kl
-
-    std::cout << "      o 2RDM - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
+    dgemm_("T", "N", norb*norb, norb*norb, nri, 1.0, cimat->element_ptr(0,0), nri, cimat->element_ptr(0,0), nri, 0.0, rdmt->data(), norb*norb);
+    std::cout << "      o 2RDM(dgemm) - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
 
     unique_ptr<double[]> buf(new double[norb*norb]);
     for (int i = 0; i != norb; ++i)
@@ -140,7 +125,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(s
       }
     std::cout << "      o tran - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
 
-    //Swap kl,ij -> ij,kl
     sort_indices<2,3,0,1, 0,1, 1,1>(rdmt->data(), rdm2->data(), norb, norb, norb, norb);
     std::cout << "      o sort - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
 

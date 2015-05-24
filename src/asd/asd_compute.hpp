@@ -37,7 +37,7 @@ void ASD<VecType>::compute() {
   std::cout << "     -  charge: " << charge_ << std::endl;
   std::cout << "     -  dimer states: " << dimerstates_ << std::endl << std::endl;
 
-  if(!fixed_ci_) {
+  if(!fix_ci_) {
     auto gammaforest = std::make_shared<GammaForest<VecType, 2>>();
     {
       auto spinmap = std::make_shared<ASDSpinMap<VecType>>();
@@ -105,7 +105,7 @@ void ASD<VecType>::compute() {
 
 //adiabats_->print("ADIABATS", adiabats_->ndim());
 
-  compute_rdm12();
+  if (compute_rdm_) compute_rdm12();
 
   if (dipoles_) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;

@@ -32,7 +32,8 @@ namespace bagel {
 
 class ASD_DistRAS : public ASD<DistRASDvec> {
   public:
-    ASD_DistRAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerDistRAS> cispace);
+    ASD_DistRAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerDistRAS> cispace)
+      : ASD<DistRASDvec>(input, dimer, cispace) {};
 
   private:
     std::shared_ptr<DistRASDvec> form_sigma(std::shared_ptr<const DistRASDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;

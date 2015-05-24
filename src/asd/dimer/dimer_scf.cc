@@ -342,7 +342,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   //   active_first             - picks active space from dimer orbitals first, then attempts to localize
   //   active_only              - picks active space from dimer orbitals and does not localize
   //   linked                   - similar to localize_first, but for linked dimer only
-  const string scheme = idata->get<string>("scheme", idata->get<string>("form") == "linked" ? "linked" : "active_first");
+  const string scheme = idata->get<string>("scheme", idata->get<string>("form", "displace") == "linked" ? "linked" : "active_first");
 
   if (scheme == "active_only" || scheme == "active_first") {
     // Set active space based on overlap

@@ -29,8 +29,8 @@
 #define BAGEL_ASD_INIT_H
 
 template <class VecType>
-ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace_base<VecType>> cispace)
- : ASD_base(input, dimer), cispace_(cispace) {
+ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace_base<VecType>> cispace, bool rdm)
+ : ASD_base(input, dimer, rdm), cispace_(cispace) {
 
   Timer timer;
 
@@ -55,6 +55,7 @@ ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dime
     }
   }
   max_spin_ = maxspin + 1;
+
 }
 
 template <class VecType>

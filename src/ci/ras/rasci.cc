@@ -52,8 +52,6 @@ void RASCI::common_init() {
   nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
 
-  remove_singles_ = idata_->get<bool>("remove_singles", false);
-
   // No defaults for RAS, must set "active"
   const shared_ptr<const PTree> iactive = idata_->get_child("active");
   if (iactive->size() != 3) throw runtime_error("Must specify three active spaces in RAS calculations.");
@@ -97,7 +95,7 @@ void RASCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this RASCI will be performed.
-  det_ = make_shared<const RASDeterminants>(ras_, nelea_, neleb_, max_holes_, max_particles_, /*mute*/false, remove_singles_);
+  det_ = make_shared<const RASDeterminants>(ras_, nelea_, neleb_, max_holes_, max_particles_);
 }
 
 void RASCI::model_guess(shared_ptr<RASDvec>& out) {
@@ -184,7 +182,6 @@ void RASCI::generate_guess(const int nspin, const int nstate, shared_ptr<RASDvec
     bitset<nbit__> beta = it.first;
     bitset<nbit__> open_bit = (alpha^beta);
 
-    if (!out->det()->allowed(alpha,beta)) continue;
     // make sure that we have enough unpaired alpha
     const int unpairalpha = (alpha ^ (alpha & beta)).count();
     const int unpairbeta  = (beta ^ (alpha & beta)).count();
@@ -210,7 +207,6 @@ void RASCI::generate_guess(const int nspin, const int nstate, shared_ptr<RASDvec
   if (oindex < nstate) {
     for (auto& io : out->dvec()) io->zero();
     ndet *= 4;
-    cout << " more states are needed to generate the initial guesses. starting over.." << endl;
     goto start_over;
   }
   cout << endl;

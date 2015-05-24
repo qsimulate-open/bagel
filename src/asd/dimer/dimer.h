@@ -69,13 +69,6 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
     Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B); ///< Conjoins the provided Reference objects
     Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a, const bool linked = false); ///< Duplicates provided Reference according to translation vector specified in input (false) / linked dimer (true)
 
-    void update_coeff(std::shared_ptr<const Matrix> coeff_mat) {
-      std::shared_ptr<Reference> tref;
-      tref = std::make_shared<Reference>(*sref_);
-      tref->set_coeff(coeff_mat);
-      sref_ = tref->project_coeff(sgeom_, false);
-    }
-
     // Return functions
     std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
     std::pair<Ref<Reference>, Ref<Reference>> isolated_refs() const { return isolated_refs_; }
@@ -110,6 +103,9 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
     /// Creates a Reference object for a MEH or ASD calculation
     std::shared_ptr<Reference> build_reference(const int site, const std::vector<bool> meanfield) const;
+
+    // Update
+    void update_coeff(std::shared_ptr<const Matrix> coeff);
 
   private:
     void construct_geometry(const bool linked = false); ///< Forms super geometry (sgeom_) and optionally projects isolated geometries and supergeometry to a specified basis

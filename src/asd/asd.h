@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/asd.h
+// Filename: asd.h
 // Copyright (C) 2012 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -49,7 +49,7 @@ class ASD : public ASD_base {
     }
 
   public:
-    ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace);
+    ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace, bool compute_rdm = false);
 
     void compute() override;
 
@@ -57,7 +57,7 @@ class ASD : public ASD_base {
     void compute_rdm12(); // compute all states at once + averaged rdm
 
     void compute_rdm12_monomer();
-    virtual std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> 
+    virtual std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>>
       compute_rdm12_monomer(std::shared_ptr<const VecType> civec, const int i) const = 0;
     virtual std::shared_ptr<VecType> contract_I(std::shared_ptr<const VecType> A, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const = 0;
     virtual std::shared_ptr<VecType> contract_J(std::shared_ptr<const VecType> B, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const = 0;

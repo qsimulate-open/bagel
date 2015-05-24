@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: asd/asd_base.h
+// Filename: asd_base.h
 // Copyright (C) 2014 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -90,8 +90,8 @@ class ASD_base {
     double print_thresh_;
 
     // Orbital optimization related
-    bool fixed_ci_ = false;
-    bool orbital_optimize_ = false;
+    bool compute_rdm_;
+    bool fix_ci_ = false;
 
     virtual std::vector<DimerSubspace_base> subspaces_base() const = 0;
 
@@ -136,7 +136,7 @@ class ASD_base {
     void debug_energy(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&, const int istate, const bool mute) const;
 
   public:
-    ASD_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer);
+    ASD_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer, bool rdm = false);
 
     virtual void compute() = 0;
 
@@ -156,7 +156,7 @@ class ASD_base {
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
-    void update_dimer(std::shared_ptr<const Dimer> dimer);
+    void update_dimer_and_fix_ci(std::shared_ptr<const Dimer> dimer);
 
   private:
     // RDM
@@ -176,124 +176,5 @@ class ASD_base {
 };
 
 }
-
-#endif
-
-
-
-#if 0
-    // Dimer reduced density matrices
-    std::shared_ptr<RDM<1>> onerdm_; // First-order RDM
-    std::shared_ptr<RDM<2>> twordm_; // Second-order RDM
-    std::shared_ptr<RDM<2>> approx2rdm_; // Second-order RDM
-
-    std::shared_ptr<RDM<3>> threerdm_; // Third-order RDM
-    std::map<std::string,std::shared_ptr<Matrix>> rdm3_;
-    std::shared_ptr<RDM<4>> fourrdm_; // Fourth-order RDM
-    std::map<std::string,std::shared_ptr<Matrix>> fourrdmparts_;
-
-    //3RDM
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> couple_blocks_RDM34(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_diag_RDM34(const std::array<MonomerKey,4>&, const bool) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abFlip_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbET_RDM34(const std::array<MonomerKey,4>&) const;
-
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aabET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abbET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaaET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbbET_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aETFlip_RDM34(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bETFlip_RDM34(const std::array<MonomerKey,4>&) const;
-
-    void initialize_3RDM();
-    void initialize_4RDM();
-    double element_3RDM(const int a, const int i, const int b, const int j,const int c, const int k) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_diagonal_block_RDM34(const DimerSubspace_base& AB) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_diagonal_block_RDM4(const DimerSubspace_base& AB) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> couple_blocks_4RDM(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_diag_4RDM(const std::array<MonomerKey,4>&, const bool) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abFlip_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbET_4RDM(const std::array<MonomerKey,4>&) const;
-
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aabET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abbET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaaET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbbET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aETFlip_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bETFlip_4RDM(const std::array<MonomerKey,4>&) const;
-
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaaaET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaabET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aabbET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_abbbET_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbbbET_4RDM(const std::array<MonomerKey,4>&) const;
-
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_aaETFlip_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_bbETFlip_4RDM(const std::array<MonomerKey,4>&) const;
-    std::tuple<std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> compute_doubleFlip_4RDM(const std::array<MonomerKey,4>&) const;
-
-    void symmetrize_RDM34() const;
-    void symmetrize_RDM4();
-
-
-  template<int a,  int i,  int b,  int j,  int c,  int k,  int d,  int l, // according to the sorted
-           int Xa, int Xi, int Xb, int Xj, int Xc, int Xk, int Xd, int Xl, // 0 for A, 1 for B
-           bool /*transpose*/trans >
-  void fill_RDM(std::shared_ptr<Matrix> rdmt,
-                const int n0, const int n1, const int n2, const int n3, const int n4, const int n5, const int n6, const int n7) { // according to the unsorted
-
-    const int nactA = dimer_->embedded_refs().first->nact();
-    const int nactB = dimer_->embedded_refs().second->nact();
-    const int nactT = nactA + nactB;
-
-    //                  A       B
-    int la = Xa == 0 ? 0     : nactA;
-    int li = Xi == 0 ? 0     : nactA;
-    int lb = Xb == 0 ? 0     : nactA;
-    int lj = Xj == 0 ? 0     : nactA;
-    int lc = Xc == 0 ? 0     : nactA;
-    int lk = Xk == 0 ? 0     : nactA;
-    int ld = Xd == 0 ? 0     : nactA;
-    int ll = Xl == 0 ? 0     : nactA;
-
-    int ha = Xa == 0 ? nactA : nactT;
-    int hi = Xi == 0 ? nactA : nactT;
-    int hb = Xb == 0 ? nactA : nactT;
-    int hj = Xj == 0 ? nactA : nactT;
-    int hc = Xc == 0 ? nactA : nactT;
-    int hk = Xk == 0 ? nactA : nactT;
-    int hd = Xd == 0 ? nactA : nactT;
-    int hl = Xl == 0 ? nactA : nactT;
-
-    auto mat = std::make_shared<Matrix>(n0*n1*n2*n3*n4*n5*n6*n7,1); //empty
-
-    if (trans) { //transposed
-                        //sorted                                                unsorted dim/s
-      sort_indices<i,a,j,b,k,c,l,d, 0,1, 1,1>(rdmt->data(), mat->data(), n0, n1, n2, n3, n4, n5, n6, n7);
-      auto low = {li,la,lj,lb,lk,lc,ll,ld};
-      auto up  = {hi,ha,hj,hb,hk,hc,hl,hd};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage());
-      copy(mat->begin(), mat->end(), outv.begin());
-    } else { //normal
-                        //sorted                                                unsorted dim/s
-      sort_indices<a,i,b,j,c,k,d,l, 0,1, 1,1>(rdmt->data(), mat->data(), n0, n1, n2, n3, n4, n5, n6, n7);
-      auto low = {la,li,lb,lj,lc,lk,ld,ll};
-      auto up  = {ha,hi,hb,hj,hc,hk,hd,hl};
-      auto outv = btas::make_rwview(fourrdm_->range().slice(low,up), fourrdm_->storage());
-      copy(mat->begin(), mat->end(), outv.begin());
-    }
-  }
-
-#include <src/util/prim_op.h>
-
-#include <src/wfn/reference.h>
 
 #endif

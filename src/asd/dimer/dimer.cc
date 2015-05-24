@@ -269,3 +269,11 @@ shared_ptr<Reference> Dimer::build_reference(const int site, const vector<bool> 
 
   return make_shared<Reference>(sgeom_, make_shared<Coeff>(move(*out)), nclosed, nact, 0);
 }
+
+
+void Dimer::update_coeff(shared_ptr<const Matrix> new_coeff) {
+  shared_ptr<Reference> temp_ref;
+  temp_ref = make_shared<Reference>(*sref_);
+  temp_ref->set_coeff(new_coeff);
+  sref_ = make_shared<const Reference>(*temp_ref);
+}

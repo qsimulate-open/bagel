@@ -646,7 +646,7 @@ class RASCivector : public RASCivector_impl<DataType, RASCivector<DataType>> {
       const int tholes = std::max(sdet->max_holes() - ( (ras_space == 0) ? mod : 0 ), 0);
       const int tparts = std::max(sdet->max_particles() + ( (ras_space == 2) ? mod : 0), 0);
 
-      auto tdet = std::make_shared<const RASDeterminants>(ras1, ras2, ras3, telea, teleb, tholes, tparts, true, sdet->remove_singles());
+      auto tdet = std::make_shared<const RASDeterminants>(ras1, ras2, ras3, telea, teleb, tholes, tparts, true);
       auto out = std::make_shared<RASCivector<DataType>>(tdet);
 
       for (std::shared_ptr<const RASBlock<double>> soblock : this->blocks()) {
