@@ -45,12 +45,42 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
   protected:
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
+    std::shared_ptr<Tensor> s;
 
 
     std::shared_ptr<FutureTensor> Gamma0_();
+    std::shared_ptr<FutureTensor> Gamma94_();
     std::shared_ptr<FutureTensor> Gamma2_();
+    std::shared_ptr<FutureTensor> Gamma3_();
+    std::shared_ptr<FutureTensor> Gamma4_();
+    std::shared_ptr<FutureTensor> Gamma5_();
+    std::shared_ptr<FutureTensor> Gamma6_();
+    std::shared_ptr<FutureTensor> Gamma7_();
+    std::shared_ptr<FutureTensor> Gamma9_();
+    std::shared_ptr<FutureTensor> Gamma107_();
+    std::shared_ptr<FutureTensor> Gamma12_();
+    std::shared_ptr<FutureTensor> Gamma14_();
+    std::shared_ptr<FutureTensor> Gamma16_();
+    std::shared_ptr<FutureTensor> Gamma22_();
+    std::shared_ptr<FutureTensor> Gamma28_();
+    std::shared_ptr<FutureTensor> Gamma29_();
+    std::shared_ptr<FutureTensor> Gamma31_();
+    std::shared_ptr<FutureTensor> Gamma32_();
+    std::shared_ptr<FutureTensor> Gamma34_();
+    std::shared_ptr<FutureTensor> Gamma35_();
+    std::shared_ptr<FutureTensor> Gamma37_();
+    std::shared_ptr<FutureTensor> Gamma38_();
+    std::shared_ptr<FutureTensor> Gamma51_();
+    std::shared_ptr<FutureTensor> Gamma56_();
+    std::shared_ptr<FutureTensor> Gamma57_();
+    std::shared_ptr<FutureTensor> Gamma58_();
+    std::shared_ptr<FutureTensor> Gamma59_();
+    std::shared_ptr<FutureTensor> Gamma60_();
+    std::shared_ptr<FutureTensor> Gamma69_();
+    std::shared_ptr<FutureTensor> Gamma81_();
+    std::shared_ptr<FutureTensor> Gamma92_();
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
-    std::shared_ptr<Queue> make_energyq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
 
   public:
     RelCASPT2(std::shared_ptr<const SMITH_Info<std::complex<double>>> ref);

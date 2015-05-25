@@ -259,7 +259,7 @@ void MOFock<complex<double>>::init() {
       int jcnt = 0;
       for (auto& j : half_complex_exch) {
         if (i->alpha_matches(j) && icnt <= jcnt)
-          DFock::add_Exop_block(*cfock, i, j, 1.0, icnt == jcnt);
+          DFock::add_Exop_block(*cfock, i, j, 0.5, icnt == jcnt);
         ++jcnt;
       }
       ++icnt;
