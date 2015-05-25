@@ -57,7 +57,7 @@ void CASPT2::CASPT2::solve() {
     while (!queue->done())
       queue->next_compute();
     diagonal(r, t2);
-    energy_ += dot_product_transpose(r, t2);
+    energy_ += detail::real(dot_product_transpose(r, t2));
     const double err = r->rms();
     print_iteration(iter, energy_, err, mtimer.tick());
 

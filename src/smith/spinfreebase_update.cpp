@@ -98,10 +98,6 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           unique_ptr<DataType[]> transp = create_transp(ist);
           unique_ptr<DataType[]> transp2 = create_transp(jst);
 
-          if (is_same<DataType,complex<double>>::value)
-            for (size_t i = 0; i != i0.size()*i2.size()*interm_size; ++i)
-              transp[i] = detail::conj(transp[i]);
-
           for (auto& i3 : virt_) {
             for (auto& i1 : virt_) {
               // if this block is not included in the current wave function, skip it
@@ -130,7 +126,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               // move back to non-orthogonal basis
               // factor of 0.5 due to the factor in the overlap
               // TODO check for complex cases
-              btas::gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), interm_size,
+              btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), interm_size,
                                           0.5, transp2.get(), interm_size, interm.get(), interm_size, 0.0, data0.get(), i0.size()*i2.size());
 
               // sort back to the original order
@@ -155,10 +151,6 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         };
         unique_ptr<DataType[]> transp = create_transp(ist);
         unique_ptr<DataType[]> transp2 = create_transp(jst);
-
-        if (is_same<DataType,complex<double>>::value)
-          for (size_t i = 0; i != i0.size()*interm_size; ++i)
-            transp[i] = detail::conj(transp[i]);
 
         for (auto& i3 : virt_) {
           for (auto& i2 : closed_) {
@@ -188,7 +180,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                       interm[iall] /= min(-0.1, e0_ - (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]));
 
               // move back to non-orthogonal basis
-              btas::gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, i0.size(), i1.size()*i2.size()*i3.size(), interm_size,
+              btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size(), i1.size()*i2.size()*i3.size(), interm_size,
                                           1.0, transp2.get(), interm_size, interm.get(), interm_size, 0.0, data2.get(), i0.size());
 
               t->at(jst)->add_block(data2, i0, i1, i2, i3);
@@ -212,6 +204,10 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         unique_ptr<DataType[]> transp = create_transp(ist);
         unique_ptr<DataType[]> transp2 = create_transp(jst);
 
+        if (is_same<DataType,complex<double>>::value)
+          for (size_t i = 0; i != i3.size()*interm_size; ++i)
+            transp2[i] = detail::conj(transp2[i]);
+
         for (auto& i2 : closed_) {
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
@@ -229,7 +225,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
               // move to orthogonal basis
               unique_ptr<DataType[]> interm(new DataType[i0.size()*i1.size()*i2.size()*interm_size]);
-              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasConjTrans, i0.size()*i1.size()*i2.size(), interm_size, i3.size(),
+              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i0.size()*i1.size()*i2.size(), interm_size, i3.size(),
                                           1.0, data2.get(), i0.size()*i1.size()*i2.size(), transp.get(), interm_size, 0.0, interm.get(), i0.size()*i1.size()*i2.size());
 
               size_t iall = 0;
@@ -266,6 +262,10 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           unique_ptr<DataType[]> transp = create_transp(ist);
           unique_ptr<DataType[]> transp2 = create_transp(jst);
 
+          if (is_same<DataType,complex<double>>::value)
+            for (size_t i = 0; i != i1.size()*i3.size()*interm_size; ++i)
+              transp2[i] = detail::conj(transp2[i]);
+
           for (auto& i2 : closed_) {
             for (auto& i0 : closed_) {
               // if this block is not included in the current wave function, skip it
@@ -282,7 +282,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               unique_ptr<DataType[]> interm(new DataType[i0.size()*i2.size()*interm_size]);
 
               // move to orthogonal basis
-              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasConjTrans, i0.size()*i2.size(), interm_size, i1.size()*i3.size(),
+              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i0.size()*i2.size(), interm_size, i1.size()*i3.size(),
                                           1.0, data1.get(), i0.size()*i2.size(), transp.get(), interm_size, 0.0, interm.get(), i0.size()*i2.size());
 
               size_t iall = 0;
@@ -324,10 +324,6 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           unique_ptr<DataType[]> transp = create_transp(ist);
           unique_ptr<DataType[]> transp2 = create_transp(jst);
 
-          if (is_same<DataType,complex<double>>::value)
-            for (size_t i = 0; i != i2.size()*i3.size()*interm_size*2; ++i)
-              transp2[i] = detail::conj(transp2[i]);
-
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
               // if this block is not included in the current wave function, skip it
@@ -350,7 +346,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               unique_ptr<DataType[]> interm(new DataType[i0.size()*i1.size()*interm_size]);
 
               // move to orthogonal basis
-              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i0.size()*i1.size(), interm_size, i2.size()*i3.size()*2,
+              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasConjTrans, i0.size()*i1.size(), interm_size, i2.size()*i3.size()*2,
                                           1.0, data2.get(), i0.size()*i1.size(), transp.get(), interm_size, 0.0, interm.get(), i0.size()*i1.size());
 
               size_t iall = 0;
@@ -400,7 +396,10 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i2, i3, i0, i1);
               unique_ptr<DataType[]> data1(new DataType[blocksize]);
               // sort. Active indices run slower
-              sort_indices<3,2,0,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
+              if (is_same<DataType,double>::value)
+                sort_indices<3,2,0,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
+              else
+                sort_indices<3,2,0,1,0,1,2,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
               // intermediate area
               unique_ptr<DataType[]> interm(new DataType[i1.size()*interm_size]);
 

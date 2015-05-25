@@ -107,7 +107,7 @@ void K2ext<complex<double>>::init() {
           // contract
           // TODO form_4index function now generates global 4 index tensor. This should be localized.
           // conjugating because (ai|ai) is associated with an excitation operator
-          shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0);
+          shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0)->get_conjg();
           unique_ptr<complex<double>[]> target(new complex<double>[tmp->size()]);
           copy_n(tmp->data(), tmp->size(), target.get()); // unnecessary copy
 
@@ -353,8 +353,8 @@ void MOFock<double>::init() {
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
 
-  fill_block<2,double>(data_,  f, {0,0}, blocks_);
-  fill_block<2,double>(h1_,   h1, {0,0}, blocks_);
+  fill_block<2,double>(data_,  f->get_conjg(), {0,0}, blocks_);
+  fill_block<2,double>(h1_,   h1->get_conjg(), {0,0}, blocks_);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
