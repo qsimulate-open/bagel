@@ -431,7 +431,7 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const MultiT
   assert(r->nref() == t2->nref());
   DataType out = 0.0;
   for (int i = 0; i != r->nref(); ++i)
-    out += r->fac(i) * t2->fac(i)
+    out += detail::conj(r->fac(i)) * t2->fac(i)
          + dot_product_transpose(r->at(i), t2->at(i));
   return out;
 }
@@ -447,7 +447,7 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor
       unique_ptr<DataType[]> tmp1(new DataType[size]);
       sort_indices<2,3,0,1,0,1,1,1>(tmp0.get(), tmp1.get(), i0.size(), i1.size(), i2.size(), i3.size());
 
-      out += blas::dot_product(tmp1.get(), size, r->get_block(i2, i3, i0, i1).get());
+      out += blas::dot_product(r->get_block(i2, i3, i0, i1).get(), size, tmp1.get());
     }
   };
   loop_over(prod);
