@@ -87,9 +87,9 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
     // Linked dimers
     void set_active(std::shared_ptr<const PTree> idata);
     void reduce_active(std::shared_ptr<const PTree> idata);
-    std::shared_ptr<Matrix> form_source_coeff() const;
-    std::shared_ptr<Matrix> form_target_coeff(std::shared_ptr<const PTree> idata) const;
-    std::shared_ptr<Matrix> overlap_selection(std::shared_ptr<const Matrix> source, std::shared_ptr<const Matrix>) const;
+    std::shared_ptr<Matrix> form_control_coeff() const;
+    std::shared_ptr<Matrix> form_treatment_coeff(std::shared_ptr<const PTree> idata) const;
+    std::shared_ptr<Matrix> overlap_selection(std::shared_ptr<const Matrix> control, std::shared_ptr<const Matrix> treatment) const;
 
     // Calculations
     void scf(std::shared_ptr<const PTree> idata); ///< Driver for preparation of dimer for MultiExcitonHamiltonian or CI calculation

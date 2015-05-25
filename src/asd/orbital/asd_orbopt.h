@@ -72,7 +72,7 @@ class ASD_OrbOpt : public Method, public std::enable_shared_from_this<ASD_OrbOpt
     std::shared_ptr<const Coeff> coeff_;
 
     void print_header() const;
-    void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, double max_r, double delta_e, const double time, const int type, bool fix_ci) const;
+    void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, double max_r, double delta_e, const double time) const;
     void common_init();
 
     void mute_stdcout();

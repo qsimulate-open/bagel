@@ -32,7 +32,6 @@ using namespace bagel;
 // G_(i<a)
 void ASD_BFGS::grad_vc(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<ASD_RotFile> grad) const {
   if (!nvirt_ || !nclosed_) return;
-  if (!grad->is_inter() && grad->is_intra()) return;
   double* target = grad->ptr_vc();
   for (int i = 0; i != nclosed_; ++i, target += nvirt_) {
     daxpy_(nvirt_, 4.0, cfock->element_ptr(nocc_,i), 1, target, 1);
@@ -44,7 +43,6 @@ void ASD_BFGS::grad_vc(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> 
 // G_(t<a)
 void ASD_BFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> qxr, shared_ptr<Matrix> rdm1, shared_ptr<ASD_RotFile> grad) const {
   if (!nvirt_ || !nact_) return;
-  if (!grad->is_inter() && grad->is_intra()) return;
   dgemm_("N", "T", nvirt_, nact_, nact_, 2.0, cfock->element_ptr(nocc_,nclosed_), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, grad->ptr_va(), nvirt_);
   double* target = grad->ptr_va();
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
@@ -56,7 +54,6 @@ void ASD_BFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> 
 // G_(i<t)
 void ASD_BFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<Matrix> rdm1, shared_ptr<ASD_RotFile> grad) const {
   if (!nclosed_ || !nact_) return;
-  if (!grad->is_inter() && grad->is_intra()) return;
   double* target = grad->ptr_ca();
   for (int i = 0; i != nact_; ++i, target += nclosed_) {
     daxpy_(nclosed_, 4.0, cfock->element_ptr(0,nclosed_+i), 1, target, 1);
@@ -70,7 +67,6 @@ void ASD_BFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> 
 // grad(t/t)
 // G_(t(A)<t(B))
 void ASD_BFGS::grad_aa(shared_ptr<const Matrix> mcfock, shared_ptr<ASD_RotFile> grad) const {
-  if (grad->is_inter() && !grad->is_intra()) return;
   if (!nact_) return;
   {
     double* target = grad->ptr_aa();

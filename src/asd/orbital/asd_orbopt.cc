@@ -123,29 +123,18 @@ void ASD_OrbOpt::print_header() const {
 }
 
 
-void ASD_OrbOpt::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, double max_r, double delta_e, const double time, const int itype, bool fix_ci) const {
-  auto print_iteration_type = [] (const int i) {
-    string out;
-    if (i == 0) out = "intra";
-    else if (i == 1) out = "inter";
-    else out = "full";
-    return out;
-  };
-
+void ASD_OrbOpt::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, double max_r, double delta_e, const double time) const {
   if (energy.size() != 1 && iter) cout << endl;
-
-  if (iter == 0) cout << setw(7) << "iter" << setw(31) << "energy" << setw(13) << "gradient" << setw(10) << "rotation" << setw(10) << "delta_e" << endl;
+  if (iter == 0) cout << setw(7) << "iter" << setw(31) << "energy" << setw(13) << "gradient" << setw(10) << "max. rot" << setw(10) << "delta_e" << endl;
 
   int i = 0;
   for (auto& e : energy) {
     cout << "  " << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
                  << setw(20) << fixed << setprecision(12) << e << "   "
-                 << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0)
-                 << setw(10) << scientific << setprecision(2) << (i==0 ? max_r : 0.0)
-                 << setw(10) << scientific << setprecision(2) << (i==0 ? delta_e : 0.0)
-                 << fixed << setw(10) << setprecision(2) << time
-                 << setw(10) << print_iteration_type(itype)
-                 << setw(10) << (fix_ci ? "fix" : " ") << endl;
+                 << setw(10) << scientific << setprecision(2) << (i == 0 ? error : 0.0)
+                 << setw(10) << scientific << setprecision(2) << (i == 0 ? max_r : 0.0)
+                 << setw(10) << scientific << setprecision(2) << (i == 0 ? delta_e : 0.0)
+                 << fixed << setw(10) << setprecision(2) << time << endl;
     ++i;
   }
 }

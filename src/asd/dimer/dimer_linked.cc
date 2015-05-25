@@ -115,13 +115,13 @@ void Dimer::set_active(shared_ptr<const PTree> idata) {
   const int nclosed = nclosed_HF - (nclosed_HF - nclosedA) - (nclosed_HF - nclosedB);
 
   //prepare reference active orbitals
-  auto source = make_shared<Matrix>(dimerbasis,nact);
-  source->copy_block(0,0,     dimerbasis,nactA, active_refs_.first->coeff()->get_submatrix(0,nclosedA,dimerbasis,nactA));
-  source->copy_block(0,nactA, dimerbasis,nactB, active_refs_.second->coeff()->get_submatrix(0,nclosedB,dimerbasis,nactB));
+  auto control = make_shared<Matrix>(dimerbasis,nact);
+  control->copy_block(0,0,     dimerbasis,nactA, active_refs_.first->coeff()->get_submatrix(0,nclosedA,dimerbasis,nactA));
+  control->copy_block(0,nactA, dimerbasis,nactB, active_refs_.second->coeff()->get_submatrix(0,nclosedB,dimerbasis,nactB));
 
   //pick active orbitals based on reference and reorder to [closed,A,B,virt]
   cout << endl << "  o Picking up active orbitals using projected orbitals" << endl;
-  shared_ptr<Matrix> out_coeff = overlap_selection(source, sref_->coeff());
+  shared_ptr<Matrix> out_coeff = overlap_selection(control, sref_->coeff());
   nvirt_ = {nvirt_HF - nactvirtA, nvirt_HF - nactvirtB};
   sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nvirt_HF - nactvirtA - nactvirtB);
 }
@@ -129,35 +129,31 @@ void Dimer::set_active(shared_ptr<const PTree> idata) {
 
 //semi-canonicalise only in the active space (thus, it is still the same quality as the localized orbitals)
 //this will be used as reference to find the actual semi-canonical orbital
-shared_ptr<Matrix> Dimer::form_source_coeff() const {
+shared_ptr<Matrix> Dimer::form_control_coeff() const {
   const int nactA = active_refs_.first->nact();
   const int nactB = active_refs_.second->nact();
   const int nact = nactA + nactB;
-  const int nactvirtA = isolated_refs_.first->nvirt() - active_refs_.first->nvirt();
-  const int nactvirtB = isolated_refs_.second->nvirt() - active_refs_.second->nvirt(); // Number of active orbitals in virtual HF subspace
+  const int nactcloA = isolated_refs_.first->nclosed()  - active_refs_.first->nclosed();
+  const int nactcloB = isolated_refs_.second->nclosed() - active_refs_.second->nclosed();
   const int nclosed = sref_->nclosed();
   const int dimerbasis = sgeom_->nbasis();
 
   auto active_semi_coeff = make_shared<Matrix>(dimerbasis,nact);
+
+  //closed
+  auto ccoeff = make_shared<Matrix>(dimerbasis, nclosed+nactcloA+nactcloB);
+  ccoeff->copy_block(0,0,                dimerbasis,nclosed,  sref_->coeff()->get_submatrix(0,0,             dimerbasis,nclosed)); //shared closed
+  ccoeff->copy_block(0,nclosed,          dimerbasis,nactcloA, sref_->coeff()->get_submatrix(0,nclosed,       dimerbasis,nactcloA)); //embed activeB
+  ccoeff->copy_block(0,nclosed+nactcloA, dimerbasis,nactcloB, sref_->coeff()->get_submatrix(0,nclosed+nactA, dimerbasis,nactcloB)); //embed activeB
+
+  //AO Fock
+  shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
+
   {//Monomer A
-    //core
     auto acoeff = sref_->coeff()->slice_copy(nclosed, nclosed + nactA);
-    auto ccoeff = make_shared<Matrix>(dimerbasis, nclosed+nactB-nactvirtB); //nclosed : shared closed including closed activeB
-    ccoeff->copy_block(0,0, dimerbasis,nclosed, sref_->coeff()->get_submatrix(0,0, dimerbasis,nclosed)); //shared closed
-    ccoeff->copy_block(0,nclosed, dimerbasis,nactB-nactvirtB, sref_->coeff()->get_submatrix(0,nclosed+nactA, dimerbasis,nactB-nactvirtB)); //embed activeB
-    shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
-    //active //TODO RDM=2 treat it as closed-shell
-    auto rdm1 = make_shared<Matrix>(nactA,nactA);
-    for (int i = 0; i < nactA-nactvirtA; ++i)
-      rdm1->element(i,i) = 2.0;
-    shared_ptr<Matrix> rdm1_mat = rdm1->copy();
-    rdm1_mat->sqrt();
-    rdm1_mat->delocalize();
-    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
-    auto fockao = make_shared<Fock<1>>(sgeom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
     // MO Fock
     VectorB eigs(nactA);
-    auto fockact = make_shared<Matrix>(*acoeff % *fockao  * *acoeff);
+    auto fockact = make_shared<Matrix>(*acoeff % *ofockao  * *acoeff);
     fockact->diagonalize(eigs);
     cout << endl << "  o Eigenvlues of A orbitals :" << endl;
     for (int i = 0; i < nactA; ++i) cout << setw(12) << setprecision(6) << eigs[i];
@@ -168,25 +164,12 @@ shared_ptr<Matrix> Dimer::form_source_coeff() const {
     for (int i = 0; i < nactA; ++i)
     copy_n(acoeff->element_ptr(0, i), dimerbasis, active_semi_coeff->element_ptr(0,act_position++));
   }
+
   {//Monomer B
-    //core
     auto acoeff = sref_->coeff()->slice_copy(nclosed+nactA, nclosed+nact);
-    auto ccoeff = make_shared<Matrix>(dimerbasis, nclosed+nactA-nactvirtA); //nclosed : shared closed including closed activeA
-    ccoeff->copy_block(0,0, dimerbasis,nclosed, sref_->coeff()->get_submatrix(0,0, dimerbasis,nclosed)); //shared closed
-    ccoeff->copy_block(0,nclosed, dimerbasis,nactA-nactvirtA, sref_->coeff()->get_submatrix(0,nclosed, dimerbasis,nactA-nactvirtA)); //embed activeA
-    shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
-    //active
-    auto rdm1 = make_shared<Matrix>(nactB,nactB);
-    for (int i = 0; i < nactB-nactvirtB; ++i)
-      rdm1->element(i,i) = 2.0;
-    shared_ptr<Matrix> rdm1_mat = rdm1->copy();
-    rdm1_mat->sqrt();
-    rdm1_mat->delocalize();
-    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
-    auto fockao = make_shared<Fock<1>>(sgeom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
     // MO Fock
     VectorB eigs(nactB);
-    auto fockact = make_shared<Matrix>(*acoeff % *fockao  * *acoeff);
+    auto fockact = make_shared<Matrix>(*acoeff % *ofockao  * *acoeff);
     fockact->diagonalize(eigs);
     cout << "  o Eigenvlues of B orbitals :" << endl;
     for (int i = 0; i < nactB; ++i) cout << setw(12) << setprecision(6) << eigs[i];
@@ -197,11 +180,12 @@ shared_ptr<Matrix> Dimer::form_source_coeff() const {
     for (int i = 0; i < nactB; ++i)
       copy_n(acoeff->element_ptr(0, i), dimerbasis, active_semi_coeff->element_ptr(0,act_position++));
   }
+
   return active_semi_coeff;
 }
 
 
-shared_ptr<Matrix> Dimer::form_target_coeff(shared_ptr<const PTree> idata) const {
+shared_ptr<Matrix> Dimer::form_treatment_coeff(shared_ptr<const PTree> idata) const {
   const int nactA = active_refs_.first->nact();
   const int nactB = active_refs_.second->nact();
   const int nact = nactA + nactB;
@@ -408,7 +392,7 @@ shared_ptr<Matrix> Dimer::form_target_coeff(shared_ptr<const PTree> idata) const
 }
 
 
-shared_ptr<Matrix> Dimer::overlap_selection(shared_ptr<const Matrix> source, shared_ptr<const Matrix> target) const {
+shared_ptr<Matrix> Dimer::overlap_selection(shared_ptr<const Matrix> control, shared_ptr<const Matrix> treatment) const {
   const int nactA = active_refs_.first->nact();
   const int nactB = active_refs_.second->nact();
   const int nact = nactA + nactB;
@@ -427,18 +411,18 @@ shared_ptr<Matrix> Dimer::overlap_selection(shared_ptr<const Matrix> source, sha
   vector<tuple<shared_ptr<const Matrix>, pair<int, int>, int, string, bool>> ovl_info;
 
   auto activeA = make_shared<Matrix>(dimerbasis, nactA);
-  activeA->copy_block(0, 0, dimerbasis, nactA, source->get_submatrix(0,0, dimerbasis, nactA));
+  activeA->copy_block(0, 0, dimerbasis, nactA, control->get_submatrix(0,0, dimerbasis, nactA));
   ovl_info.emplace_back(activeA, make_pair(0, nclosed_HF), nactcloA, "A", true); //A active in closed subspace
   ovl_info.emplace_back(activeA, make_pair(nclosed_HF, dimerbasis), nactvirtA, "A", false); //A active in virtual subspace
 
   auto activeB = make_shared<Matrix>(dimerbasis, nactB);
-  activeB->copy_block(0, 0, dimerbasis, nactB, source->get_submatrix(0,nactA, dimerbasis, nactB));
+  activeB->copy_block(0, 0, dimerbasis, nactB, control->get_submatrix(0,nactA, dimerbasis, nactB));
   ovl_info.emplace_back(activeB, make_pair(0, nclosed_HF), nactcloB, "B", true);
   ovl_info.emplace_back(activeB, make_pair(nclosed_HF, dimerbasis), nactvirtB, "B", false);
 
   Overlap S(sgeom_);
 
-  shared_ptr<Matrix> out_coeff = target->clone();
+  shared_ptr<Matrix> out_coeff = treatment->clone();
   size_t active_position = nclosed;
 
   set<int> mask; //records what orbitals have been copied to sref_ coeff, to be used to copy back the common closed & virtual orbitals
@@ -452,7 +436,7 @@ shared_ptr<Matrix> Dimer::overlap_selection(shared_ptr<const Matrix> source, sha
     const string set_name = get<3>(subset);
     const bool closed = get<4>(subset);
 
-    shared_ptr<Matrix> subcoeff = target->slice_copy(bounds.first, bounds.second);
+    shared_ptr<Matrix> subcoeff = treatment->slice_copy(bounds.first, bounds.second);
 
     const Matrix overlaps(active % S * *subcoeff);
 
@@ -500,12 +484,12 @@ shared_ptr<Matrix> Dimer::overlap_selection(shared_ptr<const Matrix> source, sha
   size_t closed_position = 0;
   for (int i = 0; i < nclosed_HF; ++i)
     if(mask.count(i))
-      copy_n(target->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, closed_position++)); //fill closed columns
+      copy_n(treatment->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, closed_position++)); //fill closed columns
 
   size_t virt_position = nclosed + nact;
   for (int i = nclosed_HF; i < dimerbasis; ++i)
     if(mask.count(i))
-      copy_n(target->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, virt_position++)); //fill virtual columns
+      copy_n(treatment->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, virt_position++)); //fill virtual columns
 
   return out_coeff;
 }

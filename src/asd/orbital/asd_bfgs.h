@@ -44,7 +44,7 @@ class ASD_BFGS : public ASD_OrbOpt {
     void grad_aa(std::shared_ptr<const Matrix> mcfock, std::shared_ptr<ASD_RotFile> sigma) const;
 
     // compute diagonal denominators
-    std::shared_ptr<const ASD_RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock, const bool inter, const bool intra) const;
+    std::shared_ptr<const ASD_RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> mcfock) const;
 
   public:
     ASD_BFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<Dimer> dimer) : ASD_OrbOpt(idat, dimer) {
