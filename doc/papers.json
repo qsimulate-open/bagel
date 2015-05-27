@@ -95,6 +95,15 @@
     "year" : "2015",
     "references" : [
       {
+        "author"  : "R. D. Reynolds and T. Shiozaki",
+        "journal" : "Physical Chemistry Chemical Physics",
+        "volume"  : "17",
+        "pages"   : "14280&ndash;14283",
+        "title"   : "Fully relativistic self-consistent field under a magnetic field",
+        "doi"     : "10.1039/C4CP04027A",
+        "type"    : "article"
+      },
+      {
         "author"  : "J. E. Bates and T. Shiozaki",
         "journal" : "The Journal of Chemical Physics",
         "volume"  : "142",
