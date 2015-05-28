@@ -45,10 +45,6 @@
 #include <src/smith/RelMRCI_tasks14.h>
 #include <src/smith/RelMRCI_tasks15.h>
 #include <src/smith/RelMRCI_tasks16.h>
-#include <src/smith/RelMRCI_tasks17.h>
-#include <src/smith/RelMRCI_tasks18.h>
-#include <src/smith/RelMRCI_tasks19.h>
-#include <src/smith/RelMRCI_tasks20.h>
 
 #endif
 #endif

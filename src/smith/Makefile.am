@@ -19,6 +19,6 @@ RelMRCI.cc RelMRCI_gamma.cc RelMRCI_sourceq.cc RelMRCI_residualq.cc RelMRCI_norm
 RelMRCI_gen1.cc RelMRCI_tasks1.cc RelMRCI_gen2.cc RelMRCI_tasks2.cc RelMRCI_gen3.cc RelMRCI_tasks3.cc RelMRCI_gen4.cc RelMRCI_tasks4.cc RelMRCI_gen5.cc RelMRCI_tasks5.cc \
 RelMRCI_gen6.cc RelMRCI_tasks6.cc RelMRCI_gen7.cc RelMRCI_tasks7.cc RelMRCI_gen8.cc RelMRCI_tasks8.cc RelMRCI_gen9.cc RelMRCI_tasks9.cc RelMRCI_gen10.cc RelMRCI_tasks10.cc \
 RelMRCI_gen11.cc RelMRCI_tasks11.cc RelMRCI_gen12.cc RelMRCI_tasks12.cc RelMRCI_gen13.cc RelMRCI_tasks13.cc RelMRCI_gen14.cc RelMRCI_tasks14.cc RelMRCI_gen15.cc RelMRCI_tasks15.cc \
-RelMRCI_gen16.cc RelMRCI_tasks16.cc RelMRCI_gen17.cc RelMRCI_tasks17.cc RelMRCI_gen18.cc RelMRCI_tasks18.cc RelMRCI_gen19.cc RelMRCI_tasks19.cc RelMRCI_gen20.cc RelMRCI_tasks20.cc
+RelMRCI_gen16.cc RelMRCI_tasks16.cc
 
 AM_CXXFLAGS=-I$(top_srcdir)

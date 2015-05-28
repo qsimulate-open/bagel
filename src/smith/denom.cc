@@ -37,12 +37,13 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
   const size_t ndim = fock->mdim() * nstates;
   const size_t ndim2 = fock->mdim() * ndim;
   const size_t ndim3 = fock->mdim() * ndim2;
+  const int fac2 = is_same<DataType,double>::value ? 2 : 1;
 
   shalf_x_ = make_shared<MatType>(ndim, ndim);
   shalf_h_ = make_shared<MatType>(ndim, ndim);
   shalf_xx_ = make_shared<MatType>(ndim2, ndim2);
   shalf_hh_ = make_shared<MatType>(ndim2, ndim2);
-  shalf_xh_ = make_shared<MatType>(ndim2*2, ndim2*2);
+  shalf_xh_ = make_shared<MatType>(ndim2*fac2, ndim2*fac2);
   shalf_xhh_ = make_shared<MatType>(ndim3, ndim3);
   shalf_xxh_ = make_shared<MatType>(ndim3, ndim3);
 
@@ -50,7 +51,7 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
   work_h_ = make_shared<MatType>(ndim, ndim);
   work_xx_ = make_shared<MatType>(ndim2, ndim2);
   work_hh_ = make_shared<MatType>(ndim2, ndim2);
-  work_xh_ = make_shared<MatType>(ndim2*2, ndim2*2);
+  work_xh_ = make_shared<MatType>(ndim2*fac2, ndim2*fac2);
   work_xhh_ = make_shared<MatType>(ndim3, ndim3);
   work_xxh_ = make_shared<MatType>(ndim3, ndim3);
 
@@ -58,7 +59,7 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
   denom_h_ = VectorB(ndim);
   denom_xx_ = VectorB(ndim2);
   denom_hh_ = VectorB(ndim2);
-  denom_xh_ = VectorB(ndim2*2);
+  denom_xh_ = VectorB(ndim2*fac2);
   denom_xhh_ = VectorB(ndim3);
   denom_xxh_ = VectorB(ndim3);
 }
@@ -292,18 +293,23 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
 
   MatType work(dim, dim);
   sort_indices<2,1,3,0,0,1,1,1>(ovl1.data(), work.data(), nact, nact, nact, nact);
-  shalf->add_block(1.0, dim, dim, dim, dim, work);
 
-  sort_indices<0,1,3,2,0,1,1,1>(ovl4.data(), work.data(), nact, nact, nact, nact);
-  shalf->add_block(fac2, 0, 0, dim, dim, work);
+  if (is_same<DataType,double>::value) {
+    shalf->add_block(1.0, dim, dim, dim, dim, work);
 
-  shalf->add_block(-1.0, dim, 0, dim, dim, work);
-  shalf->add_block(-1.0, 0, dim, dim, dim, work);
+    sort_indices<0,1,3,2,0,1,1,1>(ovl4.data(), work.data(), nact, nact, nact, nact);
+    shalf->add_block(fac2, 0, 0, dim, dim, work);
 
-  shalf_xh_->copy_block(dim*jst*2, dim*ist*2, dim*2, dim*2, shalf);
+    shalf->add_block(-1.0, dim, 0, dim, dim, work);
+    shalf->add_block(-1.0, 0, dim, dim, dim, work);
+
+    shalf_xh_->copy_block(dim*jst*2, dim*ist*2, dim*2, dim*2, shalf);
+  } else {
+    shalf_xh_->copy_block(dim*jst, dim*ist, dim, dim, work);
+  }
 
   shared_ptr<RDM<3,DataType>> d0 = rdm3->copy();
-  shared_ptr<RDM<3,DataType>> d3 = rdm3->copy();
+  shared_ptr<RDM<3,DataType>> d3 = is_same<DataType,double>::value ? rdm3->copy() : nullptr;
   d0->scale(-1.0);
   for (int i5 = 0; i5 != nact; ++i5)
     for (int i4 = 0; i4 != nact; ++i4)
@@ -311,14 +317,15 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
         for (int i2 = 0; i2 != nact; ++i2)
           for (int i1 = 0; i1 != nact; ++i1)
             for (int i0 = 0; i0 != nact; ++i0) {
-              {
+              if (is_same<DataType,double>::value) {
                 DataType a = 0.0;
                 if (i3 == i4)             a += rdm2->element(i0, i1, i2, i5);
                 if (i1 == i2)             a += rdm2->element(i0, i3, i4, i5);
                 if (i1 == i2 && i3 == i4) a += rdm1->element(i0, i5);
                 if (i1 == i4)             a += rdm2->element(i2, i3, i0, i5);
                 d3->element(i0, i1, i4, i5, i2, i3) += a;
-              } {
+              }
+              {
                 DataType b = 0.0;
                 if (i3 == i4)             b += -1.0  * rdm2->element(i2, i1, i0, i5);
                 if (i1 == i2)             b += -1.0  * rdm2->element(i4, i3, i0, i5);
@@ -335,17 +342,22 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
   contract(1.0, d0v, {0,1}, group(*fock_,0,2), {1}, 0.0, work2v, {0});
   sort_indices<2,1,3,0,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
   auto num = make_shared<MatType>(dim*2, dim*2);
-  num->add_block(1.0, dim, dim, dim, dim, work);
 
-  auto d3v = group(group(*d3, 4,6),0,4);
-  contract(1.0, d3v, {0,1}, group(*fock_,0,2), {1}, 0.0, work2v, {0});
-  sort_indices<0,1,3,2,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
-  num->add_block(fac2, 0, 0, dim, dim, work);
+  if (is_same<DataType,double>::value) {
+    num->add_block(1.0, dim, dim, dim, dim, work);
 
-  num->add_block(-1.0, dim, 0, dim, dim, work);
-  num->add_block(-1.0, 0, dim, dim, dim, work);
+    auto d3v = group(group(*d3, 4,6),0,4);
+    contract(1.0, d3v, {0,1}, group(*fock_,0,2), {1}, 0.0, work2v, {0});
+    sort_indices<0,1,3,2,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
+    num->add_block(fac2, 0, 0, dim, dim, work);
 
-  work_xh_->copy_block(dim*jst*2, dim*ist*2, dim*2, dim*2, num);
+    num->add_block(-1.0, dim, 0, dim, dim, work);
+    num->add_block(-1.0, 0, dim, dim, dim, work);
+
+    work_xh_->copy_block(dim*jst*2, dim*ist*2, dim*2, dim*2, num);
+  } else {
+    work_xh_->copy_block(dim*jst, dim*ist, dim, dim, work);
+  }
 }
 
 
