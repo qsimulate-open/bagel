@@ -125,7 +125,6 @@ void StorageBlock<DataType>::scale(const DataType& a) {
 
 template<typename DataType>
 void StorageBlock<DataType>::conjugate_inplace() {
-cout << "*" << size_alloc() << endl;
   blas::conj_n(data_.get(), size_alloc());
 }
 
