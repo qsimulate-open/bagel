@@ -217,10 +217,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
         for (auto& i3t : active_) {
           unique_ptr<DataType[]> transp2 = create_transp(jst, i3t);
-
-          if (is_same<DataType,complex<double>>::value)
-            for (size_t i = 0; i != i3t.size()*interm_size; ++i)
-              transp2[i] = detail::conj(transp2[i]);
+          blas::conj_n(transp2.get(), i3t.size()*interm_size);
 
           for (auto& i2 : closed_) {
             for (auto& i1 : virt_) {
@@ -283,10 +280,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         for (auto& i3t : active_) {
         for (auto& i1t : active_) {
           unique_ptr<DataType[]> transp2 = create_transp(jst, i1t, i3t);
-
-          if (is_same<DataType,complex<double>>::value)
-            for (size_t i = 0; i != i1t.size()*i3t.size()*interm_size; ++i)
-              transp2[i] = detail::conj(transp2[i]);
+          blas::conj_n(transp2.get(), i1t.size()*i3t.size()*interm_size);
 
           for (auto& i2 : closed_) {
             for (auto& i0 : closed_) {
@@ -350,10 +344,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         for (auto& i3t : active_) {
         for (auto& i2t : active_) {
           unique_ptr<DataType[]> transp2 = create_transp(jst, i2t, i3t);
-
-          if (is_same<DataType,complex<double>>::value)
-            for (size_t i = 0; i != i2t.size()*i3t.size()*interm_size*2; ++i)
-              transp2[i] = detail::conj(transp2[i]);
+          blas::conj_n(transp2.get(), i2t.size()*i3t.size()*interm_size*2);
 
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
@@ -422,10 +413,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         for (auto& i2t : active_) {
         for (auto& i0t : active_) {
           unique_ptr<DataType[]> transp2 = create_transp(jst, i0t, i2t, i3t);
-
-          if (is_same<DataType,complex<double>>::value)
-            for (size_t i = 0; i != i0t.size()*i2t.size()*i3t.size()*interm_size; ++i)
-              transp2[i] = detail::conj(transp2[i]);
+          blas::conj_n(transp2.get(), i0t.size()*i2t.size()*i3t.size()*interm_size);
 
           for (auto& i1 : virt_) {
             // if this block is not included in the current wave function, skip it
@@ -487,10 +475,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         for (auto& i1t : active_) {
         for (auto& i0t : active_) {
           unique_ptr<DataType[]> transp2 = create_transp(jst, i0t, i1t, i3t);
-
-          if (is_same<DataType,complex<double>>::value)
-            for (size_t i = 0; i != i0t.size()*i1t.size()*i3t.size()*interm_size; ++i)
-              transp2[i] = detail::conj(transp2[i]);
+          blas::conj_n(transp2.get(), i0t.size()*i1t.size()*i3t.size()*interm_size);
 
           for (auto& i2 : closed_) {
             // if this block is not included in the current wave function, skip it

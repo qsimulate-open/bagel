@@ -187,6 +187,18 @@ namespace {
     return std::accumulate(container.begin(), container.end(), 0.0) / container.size();
   }
 
+  // conjugate an array
+  template<class T,
+           class = typename std::enable_if<std::is_pointer<T>::value>::type >
+  void conj_n(T p, const size_t n) { throw std::logic_error("illegal call: blas::conj_n"); }
+  template<>
+  void conj_n(double* p, const size_t n) { /*do nothing*/ }
+  template<>
+  void conj_n(std::complex<double>* p, const size_t n) {
+    double* dp = reinterpret_cast<double*>(p) + 1;
+    for (double* i = dp; i <= dp + 2*n-2; i += 2) *i = -*i;
+  }
+
 }}
 
 }

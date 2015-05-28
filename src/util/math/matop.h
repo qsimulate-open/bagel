@@ -347,8 +347,7 @@ template <class T, class U,
          >
 typename detail::returnable<U>::type operator%(const U& b, const T& a)  {
   auto out = a % b;
-  for (auto& i : out)
-    i = detail::conj(i);
+  conj_n(out.data(), out.size());
   return out;
 }
 

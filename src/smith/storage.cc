@@ -122,6 +122,13 @@ void StorageBlock<DataType>::scale(const DataType& a) {
     blas::scale_n(a, data(), size_);
 }
 
+
+template<typename DataType>
+void StorageBlock<DataType>::conjugate_inplace() {
+cout << "*" << size_alloc() << endl;
+  blas::conj_n(data_.get(), size_alloc());
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename DataType>

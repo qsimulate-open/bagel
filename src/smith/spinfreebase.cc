@@ -215,6 +215,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       auto rdm2x = rdm2ex->clone();
       auto rdm3x = rdm3ex->clone();
       auto rdm4x = rdm4ex->clone();
+
       sort_indices<1,0,0,1,1,1>(rdm1ex->data(), rdm1x->data(), n, n);
       sort_indices<1,0,3,2,0,1,1,1>(rdm2ex->data(), rdm2x->data(), n, n, n, n);
       sort_indices<1,0,3,2,5,4,0,1,1,1>(rdm3ex->data(), rdm3x->data(), n, n, n, n, n, n);
@@ -225,11 +226,11 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       fill_block<6,complex<double>>(rdm3t, rdm3x, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
       fill_block<8,complex<double>>(rdm4t, rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
 
-      rdm0all_->emplace(jst, ist, rdm0t);
-      rdm1all_->emplace(jst, ist, rdm1t);
-      rdm2all_->emplace(jst, ist, rdm2t);
-      rdm3all_->emplace(jst, ist, rdm3t);
-      rdm4all_->emplace(jst, ist, rdm4t);
+      rdm0all_->emplace(ist, jst, rdm0t);
+      rdm1all_->emplace(ist, jst, rdm1t);
+      rdm2all_->emplace(ist, jst, rdm2t);
+      rdm3all_->emplace(ist, jst, rdm3t);
+      rdm4all_->emplace(ist, jst, rdm4t);
     }
   }
   denom->compute();

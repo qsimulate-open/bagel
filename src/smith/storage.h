@@ -124,10 +124,7 @@ class StorageBlock {
     void ax_plus_y(const DataType& a, const StorageBlock& o);
     void scale(const DataType& a);
 
-    void conjugate_inplace() {
-      for (size_t i = 0; i != size_alloc(); ++i)
-        data_[i] = detail::conj(data_[i]);
-    }
+    void conjugate_inplace();
 };
 
 
