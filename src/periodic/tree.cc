@@ -30,8 +30,8 @@
 using namespace bagel;
 using namespace std;
 
-Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh)
- : geom_(geom), max_height_(maxht), thresh_(thresh) {
+Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh, const int ws)
+ : geom_(geom), max_height_(maxht), thresh_(thresh), ws_(ws) {
 
   init();
 }
@@ -39,6 +39,7 @@ Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh
 
 void Tree::init() {
 
+  assert(max_height_ <= (nbit__ - 1)/3);
   nvertex_ = geom_->natom();
   position_ = geom_->charge_center();
   nbasis_ = 0;
@@ -64,8 +65,14 @@ void Tree::init() {
 
   get_particle_key();
   keysort();
+#if 0
+  for (int i = 0; i != nvertex_; ++i)
+    cout << leaves_[i]->key() << " *** " << setprecision(9)
+         << leaves_[i]->position(0) << "  " << leaves_[i]->position(1) << "  " << leaves_[i]->position(2) << endl;
+#endif
 
   build_tree();
+//  print_tree_xyz();
 }
 
 
@@ -76,28 +83,28 @@ void Tree::build_tree() {
   nodes_[0] = make_shared<Node>();
 
   bitset<nbit__>  current_key;
-  for (int i = max_height_ - 1; i >= 0; --i) { /* top down */
-    const int level = max_height_ - i;
+  //for (int i = max_height_ - 1; i >= 0; --i) { /* top down */
+  for (int i = 1; i <= max_height_; ++i) { /* top down */
+    //const int depth = max_height_ - i;
+    const int depth = i;
 
-    const unsigned int shift = i * 3;
-    bitset<nbit__> key;
+    //const unsigned int shift = i * 3;
+    const unsigned int shift = nbit__ - 1 - i * 3;
 
     int max_nbody = 0;
     for (int n = 0; n != nvertex_; ++n) {
-      key = (leaves_[n]->key() >> shift);
+      const bitset<nbit__> key = (leaves_[n]->key() >> shift);
 
       if (key != current_key) { /* insert node */
         current_key = key;
         nodes_.resize(nnode_ + 1);
-        const int depth = max_height_ - i;
 
-        if (level == 1) {
-          nodes_[nnode_] = make_shared<Node>(key, depth, nodes_[0], thresh_);
+        if (depth == 1) {
+          nodes_[nnode_] = make_shared<Node>(key, 1, nodes_[0], thresh_);
           (nodes_[nnode_])->insert_vertex(leaves_[n]);
           nodes_[0]->insert_child(nodes_[nnode_]);
         } else {
-          bitset<nbit__> parent_key;
-          parent_key  = parent_key | (key >> 3);
+          const bitset<nbit__> parent_key = key >> 3;
           bool parent_found = false;
           for (int j = 0; j != nnode_; ++j) {
             if (parent_key == nodes_[j]->key()) {
@@ -130,21 +137,24 @@ void Tree::build_tree() {
   for (int i = 1; i != nnode_; ++i) {
     for (int j = 1; j != nnode_; ++j) {
       if (nodes_[j]->depth() == nodes_[i]->depth()) {
-        nodes_[i]->insert_neighbour(nodes_[j], false, 1);
+        nodes_[i]->insert_neighbour(nodes_[j], false, ws_);
       } else if (nodes_[j]->depth() > nodes_[i]->depth()) {
         break;
       }
     }
+//    nodes_[i]->make_interaction_list(ws_);
   }
 }
 
 
 void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
 
+  Timer fmmtime;
   // Downward pass
-  for (int i = nnode_ - 1; i > 0; --i) {
+  for (int i = nnode_ - 1; i > 0; --i)
     nodes_[i]->compute_multipoles(lmax);
-  }
+
+  fmmtime.tick_print("    Downward pass");
 
   // Upward pass
   vector<int> offset;
@@ -154,13 +164,15 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
   }
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
-  for (int i = 1; i != nnode_; ++i)
-    if (!nodes_[i]->is_leaf()) {
-      nodes_[i]->compute_local_expansions(density, lmax, offset);
-    } else {
+  for (int i = 1; i != nnode_; ++i) {
+    nodes_[i]->compute_local_expansions(density, lmax, offset);
+    if (nodes_[i]->is_leaf()) {
       shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offset);
       *out += *tmp;
     }
+  }
+  fmmtime.tick_print("    Upward pass");
+  cout << endl;
 
   // return the Coulomb matrix
   coulomb_ = out;
@@ -240,6 +252,7 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
       cout << "Level " << current_level << endl;
       node = 0;
     }
+//    cout << "Key = " << nodes_[i]->key() << endl;
     ++node;
     string symbol("");
     switch(node) {

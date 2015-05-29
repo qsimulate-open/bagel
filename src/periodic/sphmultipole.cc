@@ -59,7 +59,12 @@ void SphMultipole::compute_multipoles() {
       const int m = mm - l;
       const int am = abs(m);
 
-      const double coeff = pow(r, l) * plm.compute(l, am, ctheta) / f(l + am);
+      double coeff = pow(r, l) * plm.compute(l, am, ctheta);
+      double ft = 1.0;
+      for (int i = 1; i <= l + am; ++i) {
+        coeff /= ft;
+        ++ft;
+      }
 
       const double real = (m >=0) ? (coeff * cos(am * phi)) : (-1.0 * coeff * cos(am * phi));
       const double imag = coeff * sin(am * phi);
@@ -89,7 +94,7 @@ vector<std::complex<double>> SphMultipole::multipoles(const int l) {
 void SphMultipole::compute_real_multipoles() {
 
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-  const double ctheta = centre_[2]/r;
+  const double ctheta = (r > numerical_zero__) ? centre_[2]/r : 0.0;
   const double phi = atan2(centre_[1], centre_[0]);
 
   real_multipole_.resize(num_multipoles_);
