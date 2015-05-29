@@ -373,6 +373,7 @@ AtomMap::AtomMap () {
 #endif
 
   // finite nuclear exponents, from L. Visscher and K. G. Dyall, At. Data Nucl. Data Tables 67, 207 (1997)
+  nuclear_exponents.emplace("q",  0.0000000000E+00);
   nuclear_exponents.emplace("h",  2.1248239171E+09);
   nuclear_exponents.emplace("he", 1.1671538870E+09);
   nuclear_exponents.emplace("li", 8.9266848806E+08);
