@@ -131,13 +131,13 @@ void StorageBlock<DataType>::conjugate_inplace() {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename DataType>
-Storage_Incore<DataType>::Storage_Incore(const map<size_t, size_t>& size, bool init) : Storage_base<StorageBlock<DataType>>(size, init) {
-  static_assert(is_same<DataType, double>::value or is_same<DataType, complex<double>>::value, "illegal Type in Storage_Incore");
+StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool init) : Storage_base<StorageBlock<DataType>>(size, init) {
+  static_assert(is_same<DataType, double>::value or is_same<DataType, complex<double>>::value, "illegal Type in StorageIncore");
 }
 
 
 template<typename DataType>
-unique_ptr<DataType[]> Storage_Incore<DataType>::get_block(const size_t& key) const {
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block_(const size_t& key) const {
   // first find a key
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
@@ -147,7 +147,7 @@ unique_ptr<DataType[]> Storage_Incore<DataType>::get_block(const size_t& key) co
 
 
 template<typename DataType>
-unique_ptr<DataType[]> Storage_Incore<DataType>::move_block(const size_t& key) {
+unique_ptr<DataType[]> StorageIncore<DataType>::move_block_(const size_t& key) {
   // first find a key
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
@@ -157,7 +157,7 @@ unique_ptr<DataType[]> Storage_Incore<DataType>::move_block(const size_t& key) {
 
 
 template<typename DataType>
-void Storage_Incore<DataType>::put_block(const size_t& key, unique_ptr<DataType[]>& dat) {
+void StorageIncore<DataType>::put_block_(unique_ptr<DataType[]>& dat, const size_t& key) {
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
@@ -166,7 +166,7 @@ void Storage_Incore<DataType>::put_block(const size_t& key, unique_ptr<DataType[
 
 
 template<typename DataType>
-void Storage_Incore<DataType>::add_block(const size_t& key, const unique_ptr<DataType[]>& dat) {
+void StorageIncore<DataType>::add_block_(const unique_ptr<DataType[]>& dat, const size_t& key) {
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
@@ -175,21 +175,226 @@ void Storage_Incore<DataType>::add_block(const size_t& key, const unique_ptr<Dat
 
 
 template<typename DataType>
-void Storage_Incore<DataType>::zero() {
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block() const {
+  return get_block_(generate_hash_key());
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0) const {
+  return get_block_(generate_hash_key(i0));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1) const {
+  return get_block_(generate_hash_key(i0, i1));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1, const Index& i2) const {
+  return get_block_(generate_hash_key(i0, i1, i2));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3) const {
+  return get_block_(generate_hash_key(i0, i1, i2, i3));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4) const {
+  return get_block_(generate_hash_key(i0, i1, i2, i3, i4));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4, const Index& i5) const {
+  return get_block_(generate_hash_key(i0, i1, i2, i3, i4, i5));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4, const Index& i5, const Index& i6) const {
+  return get_block_(generate_hash_key(i0, i1, i2, i3, i4, i5, i6));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) const {
+  return get_block_(generate_hash_key(i0, i1, i2, i3, i4, i5, i6, i7));
+}
+
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::move_block() {
+  return move_block_(generate_hash_key());
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0) {
+  return move_block_(generate_hash_key(i0));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1) {
+  return move_block_(generate_hash_key(i0, i1));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2) {
+  return move_block_(generate_hash_key(i0, i1, i2));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+  return move_block_(generate_hash_key(i0, i1, i2, i3));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4) {
+  return move_block_(generate_hash_key(i0, i1, i2, i3, i4));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4, const Index& i5) {
+  return move_block_(generate_hash_key(i0, i1, i2, i3, i4, i5));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4, const Index& i5, const Index& i6) {
+  return move_block_(generate_hash_key(i0, i1, i2, i3, i4, i5, i6));
+}
+
+template<typename DataType>
+unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) {
+  return move_block_(generate_hash_key(i0, i1, i2, i3, i4, i5, i6, i7));
+}
+
+
+template<typename DataType>
+void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat) {
+  put_block_(dat, generate_hash_key());
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0) {
+  put_block_(dat, generate_hash_key(i0));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1) {
+  put_block_(dat, generate_hash_key(i0, i1));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2) {
+  put_block_(dat, generate_hash_key(i0, i1, i2));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+  put_block_(dat, generate_hash_key(i0, i1, i2, i3));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                     const Index& i4) {
+  put_block_(dat, generate_hash_key(i0, i1, i2, i3, i4));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                     const Index& i4, const Index& i5) {
+  put_block_(dat, generate_hash_key(i0, i1, i2, i3, i4, i5));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                     const Index& i4, const Index& i5, const Index& i6) {
+  put_block_(dat, generate_hash_key(i0, i1, i2, i3, i4, i5, i6));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                     const Index& i4, const Index& i5, const Index& i6, const Index& i7) {
+  put_block_(dat, generate_hash_key(i0, i1, i2, i3, i4, i5, i6, i7));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, vector<Index> i) {
+  put_block_(dat, generate_hash_key(i));
+}
+
+
+template<typename DataType>
+void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat) {
+  add_block_(dat, generate_hash_key());
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const Index& i0) {
+  add_block_(dat, generate_hash_key(i0));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1) {
+  add_block_(dat, generate_hash_key(i0, i1));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2) {
+  add_block_(dat, generate_hash_key(i0, i1, i2));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+  add_block_(dat, generate_hash_key(i0, i1, i2, i3));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                           const Index& i4) {
+  add_block_(dat, generate_hash_key(i0, i1, i2, i3, i4));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                           const Index& i4, const Index& i5) {
+  add_block_(dat, generate_hash_key(i0, i1, i2, i3, i4, i5));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                           const Index& i4, const Index& i5, const Index& i6) {
+  add_block_(dat, generate_hash_key(i0, i1, i2, i3, i4, i5, i6));
+}
+
+template<typename DataType>
+void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) {
+  add_block_(dat, generate_hash_key(i0, i1, i2, i3, i4, i5, i6, i7));
+}
+
+
+template<typename DataType>
+void StorageIncore<DataType>::zero() {
   for (auto& i : hashtable_)
     i.second->zero();
 }
 
 
 template<typename DataType>
-void Storage_Incore<DataType>::scale(const DataType& a) {
+void StorageIncore<DataType>::scale(const DataType& a) {
   for (auto& i : hashtable_)
     i.second->scale(a);
 }
 
 
 template<typename DataType>
-Storage_Incore<DataType>& Storage_Incore<DataType>::operator=(const Storage_Incore<DataType>& o) {
+StorageIncore<DataType>& StorageIncore<DataType>::operator=(const StorageIncore<DataType>& o) {
   if (hashtable_.size() == o.hashtable_.size()) {
     auto i = hashtable_.begin();
     for (auto& j : o.hashtable_) {
@@ -197,14 +402,14 @@ Storage_Incore<DataType>& Storage_Incore<DataType>::operator=(const Storage_Inco
       ++i;
     }
   } else {
-    throw logic_error("Trying to copy something different in Storage_Incore");
+    throw logic_error("Trying to copy something different in StorageIncore");
   }
   return *this;
 }
 
 
 template<typename DataType>
-void Storage_Incore<DataType>::ax_plus_y(const DataType& a, const Storage_Incore<DataType>& o) {
+void StorageIncore<DataType>::ax_plus_y(const DataType& a, const StorageIncore<DataType>& o) {
   if (hashtable_.size() == o.hashtable_.size()) {
     auto i = hashtable_.begin();
     for (auto& j : o.hashtable_) {
@@ -212,13 +417,13 @@ void Storage_Incore<DataType>::ax_plus_y(const DataType& a, const Storage_Incore
       ++i;
     }
   } else {
-    throw logic_error("Trying to copy something different in Storage_Incore");
+    throw logic_error("Trying to copy something different in StorageIncore");
   }
 }
 
 
 template<typename DataType>
-DataType Storage_Incore<DataType>::dot_product(const Storage_Incore<DataType>& o) const {
+DataType StorageIncore<DataType>::dot_product(const StorageIncore<DataType>& o) const {
   DataType out = 0.0;
   if (hashtable_.size() == o.hashtable_.size()) {
     auto i = hashtable_.begin();
@@ -227,7 +432,7 @@ DataType Storage_Incore<DataType>::dot_product(const Storage_Incore<DataType>& o
       ++i;
     }
   } else {
-    throw logic_error("Trying to copy something different in Storage_Incore");
+    throw logic_error("Trying to copy something different in StorageIncore");
   }
   return out;
 }
@@ -237,6 +442,6 @@ DataType Storage_Incore<DataType>::dot_product(const Storage_Incore<DataType>& o
 // explict instantiation at the end of the file
 template class StorageBlock<double>;
 template class StorageBlock<complex<double>>;
-template class Storage_Incore<double>;
-template class Storage_Incore<complex<double>>;
+template class StorageIncore<double>;
+template class StorageIncore<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

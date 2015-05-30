@@ -40,9 +40,36 @@
 #include <stdexcept>
 #include <fstream>
 #include <cstdio>
+#include <algorithm>
+#include <complex>
+#include <src/smith/indexrange.h>
 
 namespace bagel {
 namespace SMITH {
+
+
+// this assumes < 256 blocks; TODO runtime determination?
+const static int shift = 8;
+
+static size_t generate_hash_key(const std::vector<size_t>& o) {
+  size_t out = 0;
+  for (auto i = o.rbegin(); i != o.rend(); ++i) { out <<= shift; out += *i; }
+  return out;
+}
+
+static size_t generate_hash_key(const std::vector<Index>& o) {
+  size_t out = 0;
+  for (auto i = o.rbegin(); i != o.rend(); ++i) { out <<= shift; out += i->key(); }
+  return out;
+}
+
+static size_t generate_hash_key() { return 0; }
+
+template<class T, typename... args>
+size_t generate_hash_key(const T& head, const args&... tail) {
+  return (generate_hash_key(tail...) << shift) + head.key();
+}
+
 
 template<class BlockType>
 class Storage_base {
@@ -58,12 +85,14 @@ class Storage_base {
     }
 
     // functions that return protected members
-    size_t blocksize(const size_t hash) const {
-      auto a = hashtable_.find(hash);
+    template<typename ...args>
+    size_t blocksize(const args& ...p) const {
+      auto a = hashtable_.find(generate_hash_key(p...));
       return a != hashtable_.end() ? a->second->size() : 0lu;
     }
-    size_t blocksize_alloc(const size_t hash) const {
-      auto a = hashtable_.find(hash);
+    template<typename ...args>
+    size_t blocksize_alloc(const args& ...p) const {
+      auto a = hashtable_.find(generate_hash_key(p...));
       return a != hashtable_.end() ? a->second->size_alloc() : 0lu;
     }
 
@@ -81,15 +110,6 @@ class Storage_base {
       for (auto& i : hashtable_)
         i.second->conjugate_inplace();
     }
-
-/*  *** these functions should be implemented in the derived classes.
-    virtual std::unique_ptr<DataType[]> get_block(const size_t& key) const = 0;
-    virtual std::unique_ptr<DataType[]> move_block(const size_t& key) = 0;
-    virtual void put_block(const size_t& key, std::unique_ptr<DataType[]>& dat) = 0;
-    virtual void add_block(const size_t& key, const std::unique_ptr<DataType[]>& dat) = 0;
-    virtual void zero() = 0;
-    virtual void scale(const double a) = 0;
-*/
 };
 
 
@@ -129,33 +149,92 @@ class StorageBlock {
 
 
 template<typename DataType>
-class Storage_Incore : public Storage_base<StorageBlock<DataType>> {
+class StorageIncore : public Storage_base<StorageBlock<DataType>> {
   protected:
     using Storage_base<StorageBlock<DataType>>::hashtable_;
-  public:
-    Storage_Incore(const std::map<size_t, size_t>& size, bool init);
 
-    std::unique_ptr<DataType[]> get_block(const size_t& key) const;
-    std::unique_ptr<DataType[]> move_block(const size_t& key);
-    void put_block(const size_t& key, std::unique_ptr<DataType[]>& dat);
-    void add_block(const size_t& key, const std::unique_ptr<DataType[]>& dat);
+    std::unique_ptr<DataType[]> get_block_(const size_t& key) const;
+    std::unique_ptr<DataType[]> move_block_(const size_t& key);
+    void put_block_(std::unique_ptr<DataType[]>& dat, const size_t& key);
+    void add_block_(const std::unique_ptr<DataType[]>& dat, const size_t& key);
+
+  public:
+    StorageIncore(const std::map<size_t, size_t>& size, bool init);
+
+    virtual std::unique_ptr<DataType[]> get_block() const;
+    virtual std::unique_ptr<DataType[]> get_block(const Index& i0) const;
+    virtual std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1) const;
+    virtual std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2) const;
+    virtual std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3) const;
+    virtual std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                  const Index& i4) const;
+    virtual std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                  const Index& i4, const Index& i5) const;
+    virtual std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                  const Index& i4, const Index& i5, const Index& i6) const;
+    virtual std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                  const Index& i4, const Index& i5, const Index& i6, const Index& i7) const;
+
+    virtual std::unique_ptr<DataType[]> move_block();
+    virtual std::unique_ptr<DataType[]> move_block(const Index& i0);
+    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1);
+    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2);
+    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3);
+    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                   const Index& i4);
+    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                   const Index& i4, const Index& i5);
+    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                   const Index& i4, const Index& i5, const Index& i6);
+    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                   const Index& i4, const Index& i5, const Index& i6, const Index& i7);
+
+    virtual void put_block(std::unique_ptr<DataType[]>& dat);
+    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0);
+    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1);
+    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2);
+    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3);
+    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                             const Index& i4);
+    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                             const Index& i4, const Index& i5);
+    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                             const Index& i4, const Index& i5, const Index& i6);
+    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                             const Index& i4, const Index& i5, const Index& i6, const Index& i7);
+            void put_block(std::unique_ptr<DataType[]>& dat, std::vector<Index> i);
+
+    virtual void add_block(const std::unique_ptr<DataType[]>& dat);
+    virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0);
+    virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1);
+    virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2);
+    virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3);
+    virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                   const Index& i4);
+    virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                   const Index& i4, const Index& i5);
+    virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                   const Index& i4, const Index& i5, const Index& i6);
+    virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                   const Index& i4, const Index& i5, const Index& i6, const Index& i7);
 
     void zero();
     void scale(const DataType& a);
 
-    Storage_Incore<DataType>& operator=(const Storage_Incore<DataType>& o);
-    void ax_plus_y(const DataType& a, const Storage_Incore<DataType>& o);
-    void ax_plus_y(const DataType& a, const std::shared_ptr<Storage_Incore<DataType>> o) { ax_plus_y(a, *o); };
-    DataType dot_product(const Storage_Incore<DataType>& o) const;
+    StorageIncore<DataType>& operator=(const StorageIncore<DataType>& o);
+    virtual void ax_plus_y(const DataType& a, const StorageIncore<DataType>& o);
+    virtual void ax_plus_y(const DataType& a, const std::shared_ptr<StorageIncore<DataType>> o) { ax_plus_y(a, *o); };
+    virtual DataType dot_product(const StorageIncore<DataType>& o) const;
 };
+
 
 extern template class StorageBlock<double>;
 extern template class StorageBlock<std::complex<double>>;
-extern template class Storage_Incore<double>;
-extern template class Storage_Incore<std::complex<double>>;
+extern template class StorageIncore<double>;
+extern template class StorageIncore<std::complex<double>>;
 
 template<typename DataType>
-using Storage = Storage_Incore<DataType>;
+using Storage = StorageIncore<DataType>;
 
 }
 }
