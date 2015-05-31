@@ -319,7 +319,7 @@ shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::rdm4(const int jst, const int ist) con
 
   for (auto& i : elem) {
     for (auto& j : elem) {
-      array<int,8> perm;
+      vector<int> perm(8);
       for (int k = 0; k != 4; ++k) {
         perm[k*2]   = j.first[k]*2;
         perm[k*2+1] = i.first[k]*2+1;
@@ -361,7 +361,7 @@ shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::rdm3(const int jst, const int ist) con
   elem3.emplace(array<int,3>{{1,2,0}},  1.0); elem3.emplace(array<int,3>{{2,0,1}},  1.0); elem3.emplace(array<int,3>{{2,1,0}}, -1.0);
   for (auto& i : elem3) {
     for (auto& j : elem3) {
-      array<int,6> perm;
+      vector<int> perm(6);
       for (int k = 0; k != 3; ++k) {
         perm[k*2]   = j.first[k]*2;
         perm[k*2+1] = i.first[k]*2+1;

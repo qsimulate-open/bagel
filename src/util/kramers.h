@@ -63,10 +63,16 @@ class KTag {
       }
       tag_ = std::bitset<N>(ss.str());
     }
+    KTag(const std::vector<bool>& o) {
+      assert(o.size() == N);
+      for (int i = 0; i != N; ++i)
+        tag_[N-1-i] = o[i];
+    }
 
     std::bitset<N> tag() const { return tag_; }
 
-    KTag<N> perm(const std::array<int,N>& o) const {
+    KTag<N> perm(const std::vector<int>& o) const {
+      assert(o.size() == N);
       std::bitset<N> out;
       for (int i = 0; i != N; ++i)
         out[N-i-1] = tag_[N-o[i]-1];
@@ -88,7 +94,7 @@ template<int N, class Type>
 class Kramers {
   protected:
     std::map<KTag<N>, std::shared_ptr<Type>> data_;
-    std::map<std::array<int,N>, double> perm_;
+    std::map<std::vector<int>, double> perm_;
 
   private:
     friend class boost::serialization::access;
@@ -113,6 +119,7 @@ class Kramers {
     std::shared_ptr<Kramers<N,Type>> copy() const { return std::make_shared<Kramers<N,Type>>(*this); }
 
     size_t size() const { return data_.size(); }
+    const std::map<std::vector<int>, double>& perm() const { return perm_; }
 
     std::shared_ptr<Type>& at(const KTag<N>& i) { return data_.at(i); }
     std::shared_ptr<const Type> at(const KTag<N>& i) const { return data_.at(i); }
@@ -142,7 +149,7 @@ class Kramers {
         emplace(t, o->copy());
     }
 
-    void emplace_perm(const std::array<int,N>& o, double a) { perm_.emplace(o,a); }
+    void emplace_perm(const std::vector<int>& o, double a) { assert(N == o.size); perm_.emplace(o,a); }
 
     // find the right permutation and sort indices
     std::shared_ptr<const Type> get_data(const KTag<N>& tag) const {
@@ -160,7 +167,9 @@ class Kramers {
               for (auto& d : dim)
                 d = std::lround(std::pow(out->size(), 1.0/N));
               assert(std::pow(dim[0], N) == out->size());
-              sort_indices(/*sort info*/i.first, /*fac*/i.second, /*fac2*/0.0, j.second->data(), out->data(), dim);
+              std::array<int,N> p;
+              std::copy(i.first.begin(), i.first.end(), p.data());
+              sort_indices(/*sort info*/p, /*fac*/i.second, /*fac2*/0.0, j.second->data(), out->data(), dim);
               break;
             }
           }

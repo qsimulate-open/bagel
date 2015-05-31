@@ -174,6 +174,7 @@ class StorageIncore : public Storage_base<StorageBlock<DataType>> {
                                                   const Index& i4, const Index& i5, const Index& i6) const;
     virtual std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                                   const Index& i4, const Index& i5, const Index& i6, const Index& i7) const;
+            std::unique_ptr<DataType[]> get_block(std::vector<Index> i);
 
     virtual std::unique_ptr<DataType[]> move_block();
     virtual std::unique_ptr<DataType[]> move_block(const Index& i0);
@@ -223,8 +224,10 @@ class StorageIncore : public Storage_base<StorageBlock<DataType>> {
 
     StorageIncore<DataType>& operator=(const StorageIncore<DataType>& o);
     virtual void ax_plus_y(const DataType& a, const StorageIncore<DataType>& o);
-    virtual void ax_plus_y(const DataType& a, const std::shared_ptr<StorageIncore<DataType>> o) { ax_plus_y(a, *o); };
+            void ax_plus_y(const DataType& a, const std::shared_ptr<StorageIncore<DataType>> o) { ax_plus_y(a, *o); };
     virtual DataType dot_product(const StorageIncore<DataType>& o) const;
+
+    virtual void set_perm(const std::map<std::vector<int>, double>& p) { }
 };
 
 

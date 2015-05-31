@@ -59,7 +59,7 @@ class Tensor_ {
     mutable bool initialized_;
 
   public:
-    Tensor_(std::vector<IndexRange> in);
+    Tensor_(std::vector<IndexRange> in, const bool kramers = false);
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
       *data_ = *(o.data_);

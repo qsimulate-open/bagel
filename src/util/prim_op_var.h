@@ -32,10 +32,29 @@
 namespace bagel {
 
 template<typename DataType>
+void sort_indices(const std::array<int,1>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,1>& d) {
+  throw std::logic_error("This case has not been implemented in prim_op_var.h");
+}
+
+template<typename DataType>
 void sort_indices(const std::array<int,2>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,2>& d) {
   throw std::logic_error("This case has not been implemented in prim_op_var.h");
 }
 
+template<typename DataType>
+void sort_indices(const std::array<int,3>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,3>& d) {
+  throw std::logic_error("This case has not been implemented in prim_op_var.h");
+}
+
+template<typename DataType>
+void sort_indices(const std::array<int,5>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,5>& d) {
+  throw std::logic_error("This case has not been implemented in prim_op_var.h");
+}
+
+template<typename DataType>
+void sort_indices(const std::array<int,7>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,7>& d) {
+  throw std::logic_error("This case has not been implemented in prim_op_var.h");
+}
 template<typename DataType>
 void sort_indices(const std::array<int,4>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,4>& d) {
   size_t tag = 0ull;

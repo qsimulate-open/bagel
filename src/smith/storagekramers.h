@@ -26,39 +26,121 @@
 #ifndef __SRC_SMITH_STORAGEKRAMERS_H
 #define __SRC_SMITH_STORAGEKRAMERS_H
 
+#include <list>
+#include <src/util/kramers.h>
 #include <src/smith/storage.h>
 
 namespace bagel {
 namespace SMITH {
 
+namespace {
+  void arg_convert_impl(std::vector<Index>& a) { }
+  template<typename... args>
+  void arg_convert_impl(std::vector<Index>& a, const Index& i, args... tail) {
+    a.push_back(i);
+    arg_convert_impl(a, tail...);
+  }
+  template<typename... args>
+  std::vector<Index> arg_convert(args... p) {
+    std::vector<Index> a;
+    arg_convert_impl(a, p...);
+    return a;
+  }
+}
+
+
 template<typename DataType>
 class StorageKramers : public StorageIncore<DataType> {
   protected:
+    std::list<std::vector<bool>> stored_sector_;
+    std::map<std::vector<int>, double> perm_;
+
     template<typename... args>
-    std::unique_ptr<DataType[]> get_block_(const args& ...key) const {
-      // TODO implement
-      return std::unique_ptr<DataType[]>();
+    std::unique_ptr<DataType[]> get_block_(args&& ...key) const {
+      constexpr const size_t N = sizeof...(key);
+      std::vector<Index> indices = arg_convert(key...);
+      std::vector<bool> kramers(N);
+      for (int i = 0; i != N; ++i)
+        kramers[i] = indices[i].kramers();
+
+      // if this block is stored return immediately
+      auto iter = std::find(stored_sector_.begin(), stored_sector_.end(), kramers);
+      if (iter != stored_sector_.end())
+        return StorageIncore<DataType>::get_block_(generate_hash_key(key...));
+
+      // if not, first find the right permutation
+      const KTag<N> tag(kramers);
+      std::pair<std::vector<int>, double> trans = std::make_pair(std::vector<int>{0}, 0.0);
+      for (auto& i : perm_) {
+        bool found = false;
+        for (auto& j : stored_sector_) {
+          const KTag<N> ctag(j);
+          if (tag == ctag.perm(i.first)) {
+            trans = i;
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+      // allocate output area
+      size_t buffersize = 1ull;
+      for (auto& i : indices)
+        buffersize *= i.size();
+      std::unique_ptr<DataType[]> out(new DataType[buffersize]);
+
+      if (trans.second != 0.0) {
+        // reorder indices so that one can find the block. And retrieve.
+        std::vector<Index> dindices;
+        for (int i = 0; i != N; ++i)
+          dindices.push_back(indices[trans.first[i]]);
+        const std::unique_ptr<DataType[]> data = StorageIncore<DataType>::get_block_(generate_hash_key(dindices));
+        if (buffersize != this->blocksize())
+          throw std::logic_error("incosistency");
+
+        // finally sort the date to the final format
+        std::array<int,N> info, dim;
+        for (int i = 0; i != N; ++i) {
+          info[i] = trans.first[i];
+          dim[i] = dindices[i].size();
+        }
+        sort_indices(info, trans.second, /*fac2*/0.0, data.get(), out.get(), dim);
+      } else {
+        std::fill_n(out.get(), buffersize, 0.0);
+      }
+      return std::move(out);
     }
 
     template<typename... args>
     std::unique_ptr<DataType[]> move_block_(const args& ...key) {
-      // TODO implement
+      throw std::logic_error("StorageKramers is designed for input tensors");
       return std::unique_ptr<DataType[]>();
     }
 
     template<typename... args>
     void put_block_(std::unique_ptr<DataType[]>& dat, const args& ...key) {
-      // TODO implement
+      StorageIncore<DataType>::put_block_(dat, generate_hash_key(key...));
+      constexpr const size_t N = sizeof...(key);
+      std::vector<Index> indices = arg_convert(key...);
+      std::vector<bool> kramers(N);
+      for (int i = 0; i != N; ++i)
+        kramers[i] = indices[i].kramers();
+      if (std::find(stored_sector_.begin(), stored_sector_.end(), kramers) == stored_sector_.end())
+        stored_sector_.push_back(kramers);
     }
 
     template<typename... args>
     void add_block_(const std::unique_ptr<DataType[]>& dat, const args& ...key) {
-      // TODO implement
+      throw std::logic_error("StorageKramers is designed for input tensors");
     }
 
   public:
     // TODO temp constructor
-    StorageKramers(const std::map<size_t, size_t>& size, bool init) : StorageIncore<DataType>(size, init) { }
+    StorageKramers(const std::map<size_t, size_t>& size, const bool init)
+      : StorageIncore<DataType>(size, init) {
+      for (auto& i : perm_)
+        perm_.emplace(std::vector<int>(i.first.begin(), i.first.end()), i.second);
+    }
 
     std::unique_ptr<DataType[]> get_block() const override;
     std::unique_ptr<DataType[]> get_block(const Index& i0) const override;
@@ -116,9 +198,15 @@ class StorageKramers : public StorageIncore<DataType> {
     void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                                            const Index& i4, const Index& i5, const Index& i6, const Index& i7) override;
 
-    void ax_plus_y(const DataType& a, const StorageIncore<DataType>& o)                 { assert(false); }
-    void ax_plus_y(const DataType& a, const std::shared_ptr<StorageIncore<DataType>> o) { assert(false); };
-    DataType dot_product(const StorageIncore<DataType>& o) const                        { assert(false); return 0.0; }
+    void ax_plus_y(const DataType& a, const StorageIncore<DataType>& o) {
+      throw std::logic_error("StorageKramers::ax_plus_y illegal call");
+    }
+    DataType dot_product(const StorageIncore<DataType>& o) const {
+      throw std::logic_error("StorageKramers::dot_product illegal call");
+      return 0.0;
+    }
+
+    void set_perm(const std::map<std::vector<int>, double>& p) override { perm_ = p; }
 };
 
 extern template class StorageKramers<double>;

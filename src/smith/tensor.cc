@@ -24,14 +24,15 @@
 //
 
 #include <src/smith/tensor.h>
+#include <src/smith/storagekramers.h>
 
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
 template <typename DataType>
-Tensor_<DataType>::Tensor_(vector<IndexRange> in) : range_(in), rank_(in.size()), initialized_(false) {
-  // make blocl list
+Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers) : range_(in), rank_(in.size()), initialized_(false) {
+  // make block list
   if (!in.empty()) {
     LoopGenerator lg(in);
     vector<vector<Index>> index = lg.block_loop();
@@ -50,7 +51,10 @@ Tensor_<DataType>::Tensor_(vector<IndexRange> in) : range_(in), rank_(in.size())
       off += size;
     }
 
-    data_ = make_shared<Storage<DataType>>(hashmap, false);
+    if (!kramers)
+      data_ = make_shared<Storage<DataType>>(hashmap, false);
+    else
+      data_ = make_shared<StorageKramers<DataType>>(hashmap, false);
   } else {
     rank_ = 0;
     map<size_t, size_t> hashmap {{generate_hash_key(), 1lu}};
