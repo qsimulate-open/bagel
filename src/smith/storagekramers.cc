@@ -181,6 +181,12 @@ void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, const Inde
   put_block_(dat, i0, i1, i2, i3, i4, i5, i6, i7);
 }
 
+template<typename DataType>
+void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, vector<Index> indices) {
+  put_block_(dat, indices);
+}
+
+
 
 template<typename DataType>
 void StorageKramers<DataType>::add_block(const unique_ptr<DataType[]>& dat) {

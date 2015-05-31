@@ -226,7 +226,7 @@ unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const
 }
 
 template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::get_block(vector<Index> i) {
+unique_ptr<DataType[]> StorageIncore<DataType>::get_block(vector<Index> i) const {
   return get_block_(generate_hash_key(i));
 }
 

@@ -27,6 +27,7 @@
 #define __SRC_SMITH_STORAGEKRAMERS_H
 
 #include <list>
+#include <sstream>
 #include <src/util/kramers.h>
 #include <src/smith/storage.h>
 
@@ -95,8 +96,10 @@ class StorageKramers : public StorageIncore<DataType> {
         for (int i = 0; i != N; ++i)
           dindices.push_back(indices[trans.first[i]]);
         const std::unique_ptr<DataType[]> data = StorageIncore<DataType>::get_block_(generate_hash_key(dindices));
-        if (buffersize != this->blocksize())
-          throw std::logic_error("incosistency");
+        if (buffersize != this->blocksize(dindices)) {
+          std::stringstream ss; ss << "incosistent : " << buffersize << " " << this->blocksize(dindices);
+          throw std::logic_error(ss.str());
+        }
 
         // finally sort the date to the final format
         std::array<int,N> info, dim;
@@ -119,11 +122,13 @@ class StorageKramers : public StorageIncore<DataType> {
 
     template<typename... args>
     void put_block_(std::unique_ptr<DataType[]>& dat, const args& ...key) {
-      StorageIncore<DataType>::put_block_(dat, generate_hash_key(key...));
-      constexpr const size_t N = sizeof...(key);
-      std::vector<Index> indices = arg_convert(key...);
-      std::vector<bool> kramers(N);
-      for (int i = 0; i != N; ++i)
+      put_block_(dat, arg_convert(key...));
+    }
+
+    void put_block_(std::unique_ptr<DataType[]>& dat, std::vector<Index> indices) {
+      StorageIncore<DataType>::put_block_(dat, generate_hash_key(indices));
+      std::vector<bool> kramers(indices.size());
+      for (int i = 0; i != indices.size(); ++i)
         kramers[i] = indices[i].kramers();
       if (std::find(stored_sector_.begin(), stored_sector_.end(), kramers) == stored_sector_.end())
         stored_sector_.push_back(kramers);
@@ -155,6 +160,7 @@ class StorageKramers : public StorageIncore<DataType> {
                                           const Index& i4, const Index& i5, const Index& i6) const override;
     std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) const override;
+    std::unique_ptr<DataType[]> get_block(std::vector<Index> i) const override { assert(false); return std::unique_ptr<DataType[]>(); }
 
     std::unique_ptr<DataType[]> move_block() override;
     std::unique_ptr<DataType[]> move_block(const Index& i0) override;
@@ -183,6 +189,7 @@ class StorageKramers : public StorageIncore<DataType> {
                                                      const Index& i4, const Index& i5, const Index& i6) override;
     void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                                      const Index& i4, const Index& i5, const Index& i6, const Index& i7) override;
+    void put_block(std::unique_ptr<DataType[]>& dat, std::vector<Index> indices);
 
     void add_block(const std::unique_ptr<DataType[]>& dat) override;
     void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0) override;

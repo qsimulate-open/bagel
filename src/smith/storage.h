@@ -174,7 +174,7 @@ class StorageIncore : public Storage_base<StorageBlock<DataType>> {
                                                   const Index& i4, const Index& i5, const Index& i6) const;
     virtual std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                                   const Index& i4, const Index& i5, const Index& i6, const Index& i7) const;
-            std::unique_ptr<DataType[]> get_block(std::vector<Index> i);
+    virtual std::unique_ptr<DataType[]> get_block(std::vector<Index> i) const;
 
     virtual std::unique_ptr<DataType[]> move_block();
     virtual std::unique_ptr<DataType[]> move_block(const Index& i0);
@@ -203,7 +203,7 @@ class StorageIncore : public Storage_base<StorageBlock<DataType>> {
                                                              const Index& i4, const Index& i5, const Index& i6);
     virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                                              const Index& i4, const Index& i5, const Index& i6, const Index& i7);
-            void put_block(std::unique_ptr<DataType[]>& dat, std::vector<Index> i);
+    virtual void put_block(std::unique_ptr<DataType[]>& dat, std::vector<Index> i);
 
     virtual void add_block(const std::unique_ptr<DataType[]>& dat);
     virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0);

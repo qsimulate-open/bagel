@@ -190,10 +190,10 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
     for (int jst = 0; jst != nstates; ++jst) {
 
       auto rdm0t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>());
-      auto rdm1t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(2,active_));
-      auto rdm2t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(4,active_));
-      auto rdm3t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(6,active_));
-      auto rdm4t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(8,active_));
+      auto rdm1t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(2,active_), true);
+      auto rdm2t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(4,active_), true);
+      auto rdm3t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(6,active_), true);
+      auto rdm4t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(8,active_), true);
 
       shared_ptr<const Kramers<2,ZRDM<1>>> rdm1;
       shared_ptr<const Kramers<4,ZRDM<2>>> rdm2;
@@ -202,10 +202,6 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
       tie(rdm3, rdm4) = info_->rdm34(jst, ist);
 
-      unique_ptr<complex<double>[]> data0(new complex<double>[1]);
-      data0[0] = jst == ist ? 1.0 : 0.0;
-      rdm0t->put_block(data0);
-
       // TODO this should be replaced
       auto rdm1ex = expand_kramers(rdm1, info_->nact());
       auto rdm2ex = expand_kramers(rdm2, info_->nact());
@@ -213,21 +209,28 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       auto rdm4ex = expand_kramers(rdm4, info_->nact());
       denom->append(jst, ist, rdm1ex, rdm2ex, rdm3ex, rdm4ex);
 
-      const int n = rdm1ex->norb();
-      auto rdm1x = rdm1ex->clone();
-      auto rdm2x = rdm2ex->clone();
-      auto rdm3x = rdm3ex->clone();
-      auto rdm4x = rdm4ex->clone();
+      unique_ptr<complex<double>[]> data0(new complex<double>[1]);
+      data0[0] = jst == ist ? 1.0 : 0.0;
+      rdm0t->put_block(data0);
 
-      sort_indices<1,0,0,1,1,1>(rdm1ex->data(), rdm1x->data(), n, n);
-      sort_indices<1,0,3,2,0,1,1,1>(rdm2ex->data(), rdm2x->data(), n, n, n, n);
-      sort_indices<1,0,3,2,5,4,0,1,1,1>(rdm3ex->data(), rdm3x->data(), n, n, n, n, n, n);
-      sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(rdm4ex->data(), rdm4x->data(), n, n, n, n, n, n, n, n);
+      const int n = info_->nact();
+      shared_ptr<Kramers<2,ZRDM<1>>> rdm1x = rdm1->copy();
+      shared_ptr<Kramers<4,ZRDM<2>>> rdm2x = rdm2->copy();
+      shared_ptr<Kramers<6,ZRDM<3>>> rdm3x = rdm3->copy();
+      shared_ptr<Kramers<8,ZRDM<4>>> rdm4x = rdm4->copy();
+      auto j1 = rdm1x->begin();
+      auto j2 = rdm2x->begin();
+      auto j3 = rdm3x->begin();
+      auto j4 = rdm4x->begin();
+      for (auto& i : *rdm1) sort_indices<1,0,0,1,1,1>            (i.second->data(), (*j1++).second->data(), n, n);
+      for (auto& i : *rdm2) sort_indices<1,0,3,2,0,1,1,1>        (i.second->data(), (*j2++).second->data(), n, n, n, n);
+      for (auto& i : *rdm3) sort_indices<1,0,3,2,5,4,0,1,1,1>    (i.second->data(), (*j3++).second->data(), n, n, n, n, n, n);
+      for (auto& i : *rdm4) sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(i.second->data(), (*j4++).second->data(), n, n, n, n, n, n, n, n);
 
-      fill_block<2,complex<double>>(rdm1t, rdm1x, vector<int>(2,nclo*2), vector<IndexRange>(2,active_));
-      fill_block<4,complex<double>>(rdm2t, rdm2x, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
-      fill_block<6,complex<double>>(rdm3t, rdm3x, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
-      fill_block<8,complex<double>>(rdm4t, rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
+      fill_block<2,complex<double>,ZRDM<1>>(rdm1t, rdm1x, vector<int>(2,nclo*2), vector<IndexRange>(2,active_));
+      fill_block<4,complex<double>,ZRDM<2>>(rdm2t, rdm2x, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
+      fill_block<6,complex<double>,ZRDM<3>>(rdm3t, rdm3x, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
+      fill_block<8,complex<double>,ZRDM<4>>(rdm4t, rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
 
       rdm0all_->emplace(ist, jst, rdm0t);
       rdm1all_->emplace(ist, jst, rdm1t);

@@ -138,6 +138,7 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
       target->put_block(buffer, std::vector<Index>(indices.rbegin(), indices.rend()));
     }
   }
+  target->set_perm(input->perm());
 }
 
 }
