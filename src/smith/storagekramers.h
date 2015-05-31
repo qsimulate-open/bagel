@@ -95,11 +95,11 @@ class StorageKramers : public StorageIncore<DataType> {
         std::vector<Index> dindices;
         for (int i = 0; i != N; ++i)
           dindices.push_back(indices[trans.first[i]]);
-        const std::unique_ptr<DataType[]> data = StorageIncore<DataType>::get_block_(generate_hash_key(dindices));
         if (buffersize != this->blocksize(dindices)) {
           std::stringstream ss; ss << "incosistent : " << buffersize << " " << this->blocksize(dindices);
           throw std::logic_error(ss.str());
         }
+        const std::unique_ptr<DataType[]> data = StorageIncore<DataType>::get_block_(generate_hash_key(dindices));
 
         // finally sort the date to the final format
         std::array<int,N> info, dim;

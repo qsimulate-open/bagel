@@ -79,6 +79,7 @@ class SMITH_Info {
 
     std::tuple<std::shared_ptr<const RDMType<1>>, std::shared_ptr<const RDMType<2>>> rdm12(const int ist, const int jst) const;
     std::tuple<std::shared_ptr<const RDMType<3>>, std::shared_ptr<const RDMType<4>>> rdm34(const int ist, const int jst) const;
+    std::shared_ptr<const RDMType<3>> frdm4(const int ist, const int jst, std::shared_ptr<const MatType> fock) const;
 
     double thresh() const { return thresh_; }
     int maxiter() const { return maxiter_; }
@@ -100,6 +101,10 @@ template<> std::tuple<std::shared_ptr<const Kramers<2,ZRDM<1>>>, std::shared_ptr
            SMITH_Info<std::complex<double>>::rdm12(const int ist, const int jst) const;
 template<> std::tuple<std::shared_ptr<const Kramers<6,ZRDM<3>>>, std::shared_ptr<const Kramers<8,ZRDM<4>>>>
            SMITH_Info<std::complex<double>>::rdm34(const int ist, const int jst) const;
+
+template<> std::shared_ptr<const RDM<3>> SMITH_Info<double>::frdm4(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const;
+template<> std::shared_ptr<const Kramers<6,ZRDM<3>>>
+           SMITH_Info<std::complex<double>>::frdm4(const int ist, const int jst, std::shared_ptr<const ZMatrix> fock) const;
 
 template<> std::shared_ptr<const CIWfn>   SMITH_Info<double>::ciwfn() const;
 template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::coeff() const;

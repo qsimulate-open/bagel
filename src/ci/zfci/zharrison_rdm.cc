@@ -331,6 +331,71 @@ shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::rdm4(const int jst, const int ist) con
 }
 
 
+shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::frdm4(const int jst, const int ist, shared_ptr<const ZMatrix> fock) const {
+  // loop over n-4 determinant spaces
+  auto frdm4 = make_shared<Kramers<6,ZRDM<3>>>();
+  if (nele_ < 4) return frdm4;
+
+  auto space4 = make_shared<RelSpace>(norb_, nele_-4);
+  for (int nelea = 0; nelea <= nele_-4; ++nelea) {
+    const int neleb = nele_-4 - nelea;
+    if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
+
+    shared_ptr<Kramers<4,ZDvec>> interm = four_down_from_civec(nelea, neleb, ist, space4);
+    shared_ptr<Kramers<4,ZDvec>> interm2 = ist == jst ? interm->copy() : four_down_from_civec(nelea, neleb, jst, space4);
+
+    const btas::CRange<3> range(space4->finddet(nelea, neleb)->size(), norb_*norb_*norb_, norb_);
+
+    // work area
+    btas::Tensor3<complex<double>> work(range);
+
+    // preparing for the fock
+    Kramers<2,ZMatrix> fockact;
+    fockact.emplace({0,0}, fock->get_submatrix(    0,     0, norb_, norb_));
+    fockact.emplace({1,0}, fock->get_submatrix(norb_,     0, norb_, norb_));
+    fockact.emplace({0,1}, fock->get_submatrix(    0, norb_, norb_, norb_));
+    fockact.emplace({1,1}, fock->get_submatrix(norb_, norb_, norb_, norb_));
+
+    // multiply fock to the first one
+    for (auto& i : *interm2)
+      for (auto& j : *interm) {
+        auto tmp = make_shared<ZRDM<3>>(norb_);
+        auto grouped = group(group(*tmp, 3,6), 0,3);
+
+        shared_ptr<btas::Tensor3<complex<double>>> itensor = i.second;
+        shared_ptr<btas::Tensor3<complex<double>>> jtensor = j.second;
+        itensor->resize(range);
+        jtensor->resize(range);
+
+        const size_t itag = i.first.tag().to_ullong();
+        const size_t jtag = j.first.tag().to_ullong();
+        shared_ptr<const ZMatrix> cfock = fockact.at((itag&1)*2 + (jtag&1));
+        contract(1.0, *jtensor, {0,1,2}, *cfock, {3,2}, 0.0, work, {0,1,3});
+        contract(1.0, *itensor, {0,1,2}, work, {0,3,2}, 0.0, grouped, {1,3}, true, false);
+
+        auto sorted = tmp->clone();
+        sort_indices<0,3,1,4,2,5,0,1,1,1>(tmp->data(), sorted->data(), norb_, norb_, norb_, norb_, norb_, norb_);
+        const KTag<6> ijtag(((itag >> 1) << 3) + (jtag >> 1));
+        frdm4->add(ijtag.perm({{0,3,1,4,2,5}}), sorted);
+      }
+  }
+
+  map<array<int,3>,double> elem3;
+  elem3.emplace(array<int,3>{{0,1,2}},  1.0); elem3.emplace(array<int,3>{{0,2,1}}, -1.0); elem3.emplace(array<int,3>{{1,0,2}}, -1.0);
+  elem3.emplace(array<int,3>{{1,2,0}},  1.0); elem3.emplace(array<int,3>{{2,0,1}},  1.0); elem3.emplace(array<int,3>{{2,1,0}}, -1.0);
+  for (auto& i : elem3) {
+    for (auto& j : elem3) {
+      vector<int> perm(6);
+      for (int k = 0; k != 3; ++k) {
+        perm[k*2]   = j.first[k]*2;
+        perm[k*2+1] = i.first[k]*2+1;
+      }
+      frdm4->emplace_perm(perm, j.second*i.second);
+    }
+  }
+  return frdm4;
+}
+
 shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::rdm3(const int jst, const int ist) const {
   // loop over n-3 determinant spaces
   auto rdm3 = make_shared<Kramers<6,ZRDM<3>>>();

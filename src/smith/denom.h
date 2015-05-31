@@ -67,24 +67,27 @@ class Denom {
 
     // init functions
     void init_x_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
-                                       std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
+                                       std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
     void init_h_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
-                                       std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
+                                       std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
     void init_xx_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
-                                        std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
+                                        std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
     void init_hh_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
-                                        std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
+                                        std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
     void init_xh_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
-                                        std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
+                                        std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
     void init_xhh_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
-                                         std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
+                                         std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
     void init_xxh_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
-                                         std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
+                                         std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
 
   public:
     Denom(std::shared_ptr<const MatType> fock, const int nstates, const double th = 1.0e-8);
 
-    // add RDMs
+    // add RDMs (using fock-multiplied 4RDM)
+    void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                              std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
+    // add RDMs (using original 4RDM)
     void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
                                               std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
     // diagonalize and set to shalf and denom

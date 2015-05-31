@@ -234,9 +234,6 @@ void Matrix::purify_idempotent(const Matrix& s) {
 void Matrix::inverse() {
   assert(ndim() == mdim());
   const int n = ndim();
-#ifndef NDEBUG
-  shared_ptr<Matrix> ref = this->copy();
-#endif
   shared_ptr<Matrix> buf = this->clone();
   buf->unit();
 
@@ -267,9 +264,6 @@ shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const 
 // compute S^{-1} using diagonalization
 bool Matrix::inverse_symmetric(const double thresh) {
   assert(ndim() == mdim());
-#ifndef NDEBUG
-  shared_ptr<Matrix> ref = this->copy();
-#endif
   const int n = ndim();
   VectorB vec(n);
   diagonalize(vec);
@@ -298,9 +292,6 @@ bool Matrix::inverse_half(const double thresh) {
   assert(ndim() == mdim());
   const int n = ndim();
   VectorB vec(n);
-#ifndef NDEBUG
-  shared_ptr<Matrix> ref = this->copy();
-#endif
 
 #ifdef HAVE_SCALAPACK
   if (localized_) {

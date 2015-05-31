@@ -149,7 +149,7 @@ class Kramers {
         emplace(t, o->copy());
     }
 
-    void emplace_perm(const std::vector<int>& o, double a) { assert(N == o.size); perm_.emplace(o,a); }
+    void emplace_perm(const std::vector<int>& o, double a) { assert(N == o.size()); perm_.emplace(o,a); }
 
     // find the right permutation and sort indices
     std::shared_ptr<const Type> get_data(const KTag<N>& tag) const {
