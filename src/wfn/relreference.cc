@@ -142,9 +142,3 @@ shared_ptr<const Kramers<8,ZRDM<4>>> RelReference::rdm4(const int ist, const int
   ZFCI_bare fci(ciwfn_);
   return fci.rdm4(ist, jst);
 }
-
-
-shared_ptr<const Kramers<6,ZRDM<3>>> RelReference::frdm4(const int ist, const int jst, shared_ptr<const ZMatrix> fock) const {
-  ZFCI_bare fci(ciwfn_);
-  return fci.frdm4(ist, jst, fock);
-}

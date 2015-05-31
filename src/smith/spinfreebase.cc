@@ -191,18 +191,15 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
 
       shared_ptr<const Kramers<2,ZRDM<1>>> rdm1;
       shared_ptr<const Kramers<4,ZRDM<2>>> rdm2;
-      shared_ptr<const Kramers<6,ZRDM<3>>> rdm3, frdm4;
+      shared_ptr<const Kramers<6,ZRDM<3>>> rdm3;
       shared_ptr<const Kramers<8,ZRDM<4>>> rdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
       tie(rdm3, rdm4) = info_->rdm34(jst, ist);
-      frdm4 = info_->frdm4(jst, ist, fockact);
 
-      // TODO this should be replaced
       auto rdm1ex  = expand_kramers(rdm1, info_->nact());
       auto rdm2ex  = expand_kramers(rdm2, info_->nact());
       auto rdm3ex  = expand_kramers(rdm3, info_->nact());
-      auto frdm4ex = expand_kramers(frdm4, info_->nact());
-      denom->append(jst, ist, rdm1ex, rdm2ex, rdm3ex, frdm4ex);
+      denom->append(jst, ist, rdm1ex, rdm2ex, rdm3ex, rdm4);
 
       auto rdm0t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>());
       unique_ptr<complex<double>[]> data0(new complex<double>[1]);

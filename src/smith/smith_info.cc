@@ -45,14 +45,6 @@ tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rd
 
 
 template<>
-shared_ptr<const RDM<3>> SMITH_Info<double>::frdm4(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
-  // TODO unimplemented
-  assert(false);
-  return nullptr;
-}
-
-
-template<>
 tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>>
   SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
 
@@ -71,15 +63,6 @@ tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>
   auto rdm3 = ref->rdm3(ist, jst);
   auto rdm4 = ref->rdm4(ist, jst);
   return make_tuple(rdm3, rdm4);
-}
-
-
-template<>
-shared_ptr<const Kramers<6,ZRDM<3>>>
-  SMITH_Info<complex<double>>::frdm4(const int ist, const int jst, shared_ptr<const ZMatrix> fock) const {
-
-  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-  return ref->frdm4(ist, jst, fock);
 }
 
 
