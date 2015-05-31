@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <src/smith/tensor.h>
 #include <src/smith/storagekramers.h>
 
@@ -179,3 +182,5 @@ shared_ptr<Civector<DataType>> Tensor_<DataType>::civec(shared_ptr<const Determi
 template class Tensor_<double>;
 template class Tensor_<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif

@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 
 #include <src/util/f77.h>
 #include <src/util/math/algo.h>
@@ -450,3 +452,5 @@ template class StorageBlock<complex<double>>;
 template class StorageIncore<double>;
 template class StorageIncore<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif

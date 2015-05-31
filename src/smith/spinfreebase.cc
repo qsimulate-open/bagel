@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <src/smith/moint.h>
 #include <src/smith/spinfreebase.h>
 #include <src/smith/smith_util.h>
@@ -495,3 +498,5 @@ void SpinFreeMethod<DataType>::diagonal(shared_ptr<Tensor_<DataType>> r, shared_
 template class SpinFreeMethod<double>;
 template class SpinFreeMethod<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif

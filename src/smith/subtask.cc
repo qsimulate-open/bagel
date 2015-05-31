@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <src/smith/subtask.h>
 
 using namespace std;
@@ -192,3 +195,5 @@ template class SubTask_<9,6,complex<double>>;
 template class SubTask_<9,7,complex<double>>;
 template class SubTask_<9,8,complex<double>>;
 template class SubTask_<9,9,complex<double>>;
+
+#endif

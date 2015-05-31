@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <src/smith/storagekramers.h>
 
 using namespace bagel::SMITH;
@@ -231,3 +234,5 @@ void StorageKramers<DataType>::add_block(const unique_ptr<DataType[]>& dat, cons
 // explicit instantiation
 template class StorageKramers<double>;
 template class StorageKramers<complex<double>>;
+
+#endif

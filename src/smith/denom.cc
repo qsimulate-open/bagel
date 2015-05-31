@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 
 #include <src/smith/denom.h>
 #include <src/util/prim_op.h>
@@ -485,3 +487,5 @@ void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const R
 template class Denom<double>;
 template class Denom<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif
