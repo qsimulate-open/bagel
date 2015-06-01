@@ -70,8 +70,6 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Matrix> cold, std::shared_ptr<const Matrix> natorb) const;
     std::shared_ptr<const Coeff> semi_canonical_orb() const;
 
-    std::vector<double> schwarz_;
-
     // energy
     std::vector<double> energy_;
     double rms_grad_;
