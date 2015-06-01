@@ -84,11 +84,9 @@ void StorageBlock<DataType>::add_block(const std::unique_ptr<DataType[]>& o) {
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageBlock<DataType>::get_block() const {
+  assert(initialized_);
   unique_ptr<DataType[]> out(new DataType[size_]);
-  if (initialized_)
-    copy_n(data_.get(), size_, out.get());
-  else
-    fill_n(out.get(), size_, 0.0);
+  copy_n(data_.get(), size_, out.get());
   return move(out);
 }
 

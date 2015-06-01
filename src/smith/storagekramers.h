@@ -92,9 +92,9 @@ class StorageKramers : public StorageIncore<DataType> {
 
       if (trans.second != 0.0) {
         // reorder indices so that one can find the block. And retrieve.
-        std::vector<Index> dindices;
+        std::vector<Index> dindices(N);
         for (int i = 0; i != N; ++i)
-          dindices.push_back(indices[trans.first[i]]);
+          dindices[trans.first[i]] = indices[i];
         if (buffersize != this->blocksize(dindices)) {
           std::stringstream ss; ss << "incosistent : " << buffersize << " " << this->blocksize(dindices);
           throw std::logic_error(ss.str());

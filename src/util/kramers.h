@@ -79,6 +79,7 @@ class KTag {
       return KTag<N>(out);
     }
 
+    KTag<N>& operator=(const KTag<N>& o) { tag_ = o.tag_; return *this; }
     bool operator==(const KTag<N>& o) const { return tag_.to_string() == o.tag_.to_string(); }
     bool operator!=(const KTag<N>& o) const { return !(*this == o); }
     bool operator<(const KTag<N>& o) const { return tag_.to_string() < o.tag_.to_string(); }
@@ -150,6 +151,7 @@ class Kramers {
     }
 
     void emplace_perm(const std::vector<int>& o, double a) { assert(N == o.size()); perm_.emplace(o,a); }
+    void set_perm(const std::map<std::vector<int>, double>& o) { perm_ = o; }
 
     // find the right permutation and sort indices
     std::shared_ptr<const Type> get_data(const KTag<N>& tag) const {

@@ -238,12 +238,24 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       fill_block<4,complex<double>,ZRDM<2>>(rdm2t, rdm2x, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
       fill_block<6,complex<double>,ZRDM<3>>(rdm3t, rdm3x, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
 #endif
-      // 4RDM is always done with Kramers
-      shared_ptr<Kramers<8,ZRDM<4>>> rdm4x = rdm4->copy();
-      auto j4 = rdm4x->begin();
-      for (auto& i : *rdm4) sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(i.second->data(), (*j4++).second->data(), n, n, n, n, n, n, n, n);
+//#define RDM4_KRAMERS
+#ifdef RDM4_KRAMERS
+      auto rdm4x = make_shared<Kramers<8,ZRDM<4>>>();
+      rdm4x->set_perm(rdm4->perm());
+      for (auto& i : *rdm4) {
+        shared_ptr<ZRDM<4>> data = i.second->clone();
+        sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(i.second->data(), data->data(), n, n, n, n, n, n, n, n);
+        rdm4x->emplace(i.first.perm({1,0,3,2,5,4,7,6}), data);
+      }
       auto rdm4t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(8,active_), true);
       fill_block<8,complex<double>,ZRDM<4>>(rdm4t, rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
+#else
+      auto rdm4ex  = expand_kramers(rdm4, info_->nact());
+      auto rdm4x = rdm4ex->clone();
+      sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(rdm4ex->data(), rdm4x->data(), 2*n, 2*n, 2*n, 2*n, 2*n, 2*n, 2*n, 2*n);
+      auto rdm4t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>(8,active_));
+      fill_block<8,complex<double>>(rdm4t, rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
+#endif
 
       rdm0all_->emplace(ist, jst, rdm0t);
       rdm1all_->emplace(ist, jst, rdm1t);
