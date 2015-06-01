@@ -40,6 +40,7 @@ RelCASPT2::RelCASPT2::RelCASPT2(shared_ptr<const SMITH_Info<std::complex<double>
     eig_[i] = real(eig[i]);
   t2 = init_amplitude();
   r = t2->clone();
+  s = t2->clone();
 }
 
 
@@ -49,8 +50,10 @@ void RelCASPT2::RelCASPT2::solve() {
   Timer mtimer;
   int iter = 0;
   for ( ; iter != info_->maxiter(); ++iter) {
-    shared_ptr<Queue> energyq = make_energyq();
-    energy_ = accumulate(energyq);
+    shared_ptr<Queue> source = make_sourceq();
+    while (!source->done())
+      source->next_compute();
+    energy_ = detail::real(dot_product_transpose(s, t2));
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();

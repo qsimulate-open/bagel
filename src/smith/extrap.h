@@ -93,10 +93,10 @@ class Amplitude {
     void ax_plus_y(const DataType& a, const Amplitude<DataType>& o) { amp_->ax_plus_y(a, o.amp_); left_->ax_plus_y(a, o.left_); }
     void ax_plus_y(const DataType& a, std::shared_ptr<const Amplitude<DataType>> o) { ax_plus_y(a, *o); }
 
-    DataType dot_product(const Amplitude<DataType>& o) const { return me_->dot_product_transpose(o.left_, amp_); }
+    DataType dot_product(const Amplitude<DataType>& o) const { return detail::conj(me_->dot_product_transpose(o.left_, amp_)); }
     DataType dot_product(std::shared_ptr<const Amplitude<DataType>> o) const { return dot_product(*o); }
 
-    DataType dot_product(const Residual<DataType>& o) const { return me_->dot_product_transpose(o.res_, amp_); }
+    DataType dot_product(const Residual<DataType>& o) const { return detail::conj(me_->dot_product_transpose(o.res_, amp_)); }
     DataType dot_product(std::shared_ptr<const Residual<DataType>> o) const { return dot_product(*o); }
 
     std::shared_ptr<const MultiTensor_<DataType>> tensor() const { return amp_; }

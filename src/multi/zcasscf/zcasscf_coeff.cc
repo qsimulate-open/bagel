@@ -105,8 +105,7 @@ shared_ptr<RelCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix
 
   // compute T^(-1/2)
   shared_ptr<ZMatrix> t12 = overlap_->get_submatrix(n*2, n*2, n, n);
-  bool nolindep = t12->inverse_half(1.0e-10);
-  assert(nolindep);
+  assert(t12->inverse_half(1.0e-10));
 
   // compute S^(1/2)
   shared_ptr<ZMatrix> shalf = overlap_->get_submatrix(0, 0, n, n);

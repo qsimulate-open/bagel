@@ -107,7 +107,7 @@ void K2ext<complex<double>>::init() {
           // contract
           // TODO form_4index function now generates global 4 index tensor. This should be localized.
           // conjugating because (ai|ai) is associated with an excitation operator
-          shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0);
+          shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0)->get_conjg();
           unique_ptr<complex<double>[]> target(new complex<double>[tmp->size()]);
           copy_n(tmp->data(), tmp->size(), target.get()); // unnecessary copy
 
@@ -259,7 +259,7 @@ void MOFock<complex<double>>::init() {
       int jcnt = 0;
       for (auto& j : half_complex_exch) {
         if (i->alpha_matches(j) && icnt <= jcnt)
-          DFock::add_Exop_block(*cfock, i, j, 1.0, icnt == jcnt);
+          DFock::add_Exop_block(*cfock, i, j, 0.5, icnt == jcnt);
         ++jcnt;
       }
       ++icnt;
@@ -289,8 +289,8 @@ void MOFock<complex<double>>::init() {
   if (!f->is_hermitian()) throw logic_error("Fock is not Hermitian");
   if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
 
-  fill_block<2,complex<double>>(data_, f, {0,0}, blocks_);
-  fill_block<2,complex<double>>(h1_,  h1, {0,0}, blocks_);
+  fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0}, blocks_);
+  fill_block<2,complex<double>>(h1_,  h1->get_conjg(), {0,0}, blocks_);
 }
 
 template<>
