@@ -328,7 +328,7 @@ shared_ptr<Matrix> Dimer::form_semi_canonical_coeff(shared_ptr<const PTree> idat
   //form MO fock
   size_t pos = 0; // order=[closed(A,B,C)|virtual(A,B,C)]
   { //closed A
-    int dim = closed_Alist.size()+nactcloA;
+    const int dim = closed_Alist.size()+nactcloA;
     VectorB eigs(dim);
     auto mocoeff = ccoeff_A->slice_copy(0,dim);
     auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
@@ -338,7 +338,7 @@ shared_ptr<Matrix> Dimer::form_semi_canonical_coeff(shared_ptr<const PTree> idat
       copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++)); //put back to right place of output matrix
   }
   { //closed B
-    int dim = closed_Blist.size()+nactcloB;
+    const int dim = closed_Blist.size()+nactcloB;
     VectorB eigs(dim);
     auto mocoeff = ccoeff_B->slice_copy(0,dim);
     auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
@@ -348,7 +348,7 @@ shared_ptr<Matrix> Dimer::form_semi_canonical_coeff(shared_ptr<const PTree> idat
       copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++));
   }
   if (!closed_Clist.empty()) { //closed C
-    int dim = closed_Clist.size();
+    const int dim = closed_Clist.size();
     VectorB eigs(dim);
     auto mocoeff = ccoeff_C->slice_copy(0,dim);
     auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
@@ -358,7 +358,7 @@ shared_ptr<Matrix> Dimer::form_semi_canonical_coeff(shared_ptr<const PTree> idat
       copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++));
   }
   { //virtual A
-    int dim = virtual_Alist.size()+nactvirtA;
+    const int dim = virtual_Alist.size()+nactvirtA;
     VectorB eigs(dim);
     auto mocoeff = vcoeff_A->slice_copy(0,dim);
     auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
@@ -368,7 +368,7 @@ shared_ptr<Matrix> Dimer::form_semi_canonical_coeff(shared_ptr<const PTree> idat
       copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++));
   }
   { //virtual B
-    int dim = virtual_Blist.size()+nactvirtB;
+    const int dim = virtual_Blist.size()+nactvirtB;
     VectorB eigs(dim);
     auto mocoeff = vcoeff_B->slice_copy(0,dim);
     auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
@@ -378,7 +378,7 @@ shared_ptr<Matrix> Dimer::form_semi_canonical_coeff(shared_ptr<const PTree> idat
       copy_n(mocoeff->element_ptr(0, i), dimerbasis, semi_coeff->element_ptr(0,pos++));
   }
   if (!virtual_Clist.empty()) { //virtual C
-    int dim = virtual_Clist.size();
+    const int dim = virtual_Clist.size();
     VectorB eigs(dim);
     auto mocoeff = vcoeff_C->slice_copy(0,dim);
     auto fock = make_shared<Matrix>(*mocoeff % *ofockao  * *mocoeff);
@@ -420,7 +420,7 @@ shared_ptr<Matrix> Dimer::overlap_selection(shared_ptr<const Matrix> control, sh
   ovl_info.emplace_back(activeB, make_pair(0, nclosed_HF), nactcloB, "B", true);
   ovl_info.emplace_back(activeB, make_pair(nclosed_HF, dimerbasis), nactvirtB, "B", false);
 
-  Overlap S(sgeom_);
+  const Overlap S(sgeom_);
 
   shared_ptr<Matrix> out_coeff = treatment->clone();
   size_t active_position = nclosed;
@@ -431,12 +431,12 @@ shared_ptr<Matrix> Dimer::overlap_selection(shared_ptr<const Matrix> control, sh
   //this fills the active (A and B) in order of closed A - virtual A - closed B - virtual B
   for (auto& subset : ovl_info) {
     const Matrix& active = *get<0>(subset);
-    pair<int, int> bounds = get<1>(subset);
+    const pair<int, int> bounds = get<1>(subset);
     const int norb = get<2>(subset);
     const string set_name = get<3>(subset);
     const bool closed = get<4>(subset);
 
-    shared_ptr<Matrix> subcoeff = treatment->slice_copy(bounds.first, bounds.second);
+    shared_ptr<const Matrix> subcoeff = treatment->slice_copy(bounds.first, bounds.second);
 
     const Matrix overlaps(active % S * *subcoeff);
 
@@ -468,7 +468,7 @@ shared_ptr<Matrix> Dimer::overlap_selection(shared_ptr<const Matrix> control, sh
       throw runtime_error("Try adjust active_thresh.");
     }
     else {
-      set<int> active_set(active_list.begin(), active_list.end());
+      const set<int> active_set(active_list.begin(), active_list.end());
       for (size_t i = 0; i < subcoeff->mdim(); ++i) {
         if (active_set.count(i)) {
           const int imo = bounds.first + i;
@@ -483,12 +483,12 @@ shared_ptr<Matrix> Dimer::overlap_selection(shared_ptr<const Matrix> control, sh
   //fill common closed and virtual subspace
   size_t closed_position = 0;
   for (int i = 0; i < nclosed_HF; ++i)
-    if(mask.count(i))
+    if (mask.count(i))
       copy_n(treatment->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, closed_position++)); //fill closed columns
 
   size_t virt_position = nclosed + nact;
   for (int i = nclosed_HF; i < dimerbasis; ++i)
-    if(mask.count(i))
+    if (mask.count(i))
       copy_n(treatment->element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, virt_position++)); //fill virtual columns
 
   return out_coeff;
@@ -513,11 +513,10 @@ void Dimer::reduce_active(shared_ptr<const PTree> idata) {
   assert(dimerbasis == nclosed_HF + nvirt_HF);
 
   auto deact = idata->get_array<int,4>("reduction", {0,0,0,0});
-  int cA = 0, vA = 0, cB = 0, vB = 0;
-  cA = deact[0];
-  vA = deact[1];
-  cB = deact[2];
-  vB = deact[3];
+  const int cA = deact[0];
+  const int vA = deact[1];
+  const int cB = deact[2];
+  const int vB = deact[3];
   cout << endl << " o Active space is truncated." << endl;
   cout << "    - monomer A : " << cA << " closed and " << vA << " virtual orbitals are created from active space." << endl;
   cout << "    - monomer B : " << cB << " closed and " << vB << " virtual orbitals are created from active space." << endl;

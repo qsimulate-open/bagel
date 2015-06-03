@@ -102,12 +102,12 @@ void ASD_BFGS::compute() {
     // preparation
     const MatView ccoeff = coeff_->slice(0, nclosed_);
     // core Fock operator
-    shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
+    shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
     // active Fock operator
     // first make a weighted coefficient
-    shared_ptr<Matrix> acoeff = coeff_->slice_copy(nclosed_, nocc_);
-    shared_ptr<Matrix> rdm1_mat = rdm1_->rdm1_mat(/*nclose*/0);
+    shared_ptr<const Matrix> acoeff = coeff_->slice_copy(nclosed_, nocc_);
+    shared_ptr<const Matrix> rdm1_mat = rdm1_->rdm1_mat(/*nclose*/0);
     shared_ptr<Matrix> rdm1_scaled = rdm1_mat->copy();
     rdm1_scaled->sqrt();
     rdm1_scaled->delocalize();
@@ -118,7 +118,7 @@ void ASD_BFGS::compute() {
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
     auto qxr = Qvec(coeff_->mdim(), nact_, coeff_, nclosed_);
     //MCSCF Fock matrix (nact_,nact_) : active only
-    shared_ptr<Matrix> mcfock = make_shared<Matrix>((*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat) + *qxr->get_submatrix(nclosed_, 0, nact_, nact_));
+    shared_ptr<const Matrix> mcfock = make_shared<Matrix>((*cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_) * *rdm1_mat) + *qxr->get_submatrix(nclosed_, 0, nact_, nact_));
 
     //gradient evaluation
     auto grad = make_shared<ASD_RotFile>(nclosed_, nact_, nvirt_, rasA_, rasB_);
@@ -141,12 +141,10 @@ void ASD_BFGS::compute() {
     auto xcopy = x->log(8);
     auto xlog  = make_shared<ASD_RotFile>(xcopy, nclosed_, nact_, nvirt_, rasA_, rasB_);
     bfgs->check_step(evals, grad, xlog);
-    shared_ptr<ASD_RotFile> a = bfgs->more_sorensen_extrapolate(grad, xlog);
+    shared_ptr<const ASD_RotFile> a = bfgs->more_sorensen_extrapolate(grad, xlog);
     cout << " ---------------------------------------------------- " << endl;
     extrap.tick_print("More-Sorensen/Hebden extrapolation");
     cout << " " << endl;
-
-  //a->print("Orbital rotation parameters");
 
     // restore the matrix from ASD_RotFile
     shared_ptr<const Matrix> amat = a->unpack<Matrix>();

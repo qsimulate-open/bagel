@@ -99,7 +99,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::couple_blocks(const Dime
   const DimerSubspace_base* space1 = &AB;
   const DimerSubspace_base* space2 = &ApBp;
 
-  bool flip = (static_cast<int>(term_type) < 0);
+  const bool flip = (static_cast<int>(term_type) < 0);
   if (flip) {
     term_type = Coupling(-1*static_cast<int>(term_type));
     swap(space1,space2);

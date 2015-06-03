@@ -468,7 +468,7 @@ shared_ptr<Matrix> ASD_base::couple_blocks(const DimerSubspace_base& AB, const D
   const DimerSubspace_base* space1 = &AB;
   const DimerSubspace_base* space2 = &ApBp;
 
-  bool flip = (static_cast<int>(term_type) < 0);
+  const bool flip = (static_cast<int>(term_type) < 0);
   if (flip) {
     term_type = Coupling(-1*static_cast<int>(term_type));
     std::swap(space1,space2);

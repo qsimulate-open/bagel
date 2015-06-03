@@ -74,7 +74,7 @@ void ASD_RAS::sigma_2a(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) con
           const auto bbit = block->string_bits_b(jb);
           const double coef = block->element(ab);
 
-          if (fabs(coef) < 1.0e-14) continue;
+          if (fabs(coef) < numerical_zero__) continue;
           for (auto& phi : det->phib(jb + b_offset)) {
             assert(phi.target == jb + b_offset);
             const auto sbit = det->string_bits_b(phi.source);

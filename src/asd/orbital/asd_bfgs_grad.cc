@@ -41,7 +41,7 @@ void ASD_BFGS::grad_vc(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> 
 
 // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
 // G_(t<a)
-void ASD_BFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> qxr, shared_ptr<Matrix> rdm1, shared_ptr<ASD_RotFile> grad) const {
+void ASD_BFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1, shared_ptr<ASD_RotFile> grad) const {
   if (!nvirt_ || !nact_) return;
   dgemm_("N", "T", nvirt_, nact_, nact_, 2.0, cfock->element_ptr(nocc_,nclosed_), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, grad->ptr_va(), nvirt_);
   double* target = grad->ptr_va();
@@ -52,7 +52,7 @@ void ASD_BFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> 
 
 // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
 // G_(i<t)
-void ASD_BFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<Matrix> rdm1, shared_ptr<ASD_RotFile> grad) const {
+void ASD_BFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<const Matrix> rdm1, shared_ptr<ASD_RotFile> grad) const {
   if (!nclosed_ || !nact_) return;
   double* target = grad->ptr_ca();
   for (int i = 0; i != nact_; ++i, target += nclosed_) {
