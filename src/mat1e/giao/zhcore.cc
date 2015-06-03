@@ -59,10 +59,19 @@ void ZHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
   {
-    ComplexNAIBatch nai(input, mol);
-    nai.compute();
-
-    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    constexpr int max_atoms = 500;
+    if (mol->natom() < max_atoms) {
+      ComplexNAIBatch nai(input, mol);
+      nai.compute();
+      add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    } else {
+      const vector<shared_ptr<const Molecule>> atom_subsets = mol->split_atoms(max_atoms);
+      for (auto& current_mol : atom_subsets) {
+        ComplexNAIBatch nai(input, current_mol);
+        nai.compute();
+        add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+      }
+    }
   }
 
   if (mol->has_finite_nucleus()) {

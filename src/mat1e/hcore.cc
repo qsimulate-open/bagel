@@ -61,10 +61,19 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
   {
-    NAIBatch nai(input, mol);
-    nai.compute();
-
-    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    constexpr int max_atoms = 500;
+    if (mol->natom() < max_atoms) {
+      NAIBatch nai(input, mol);
+      nai.compute();
+      add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    } else {
+      const vector<shared_ptr<const Molecule>> atom_subsets = mol->split_atoms(max_atoms);
+      for (auto& current_mol : atom_subsets) {
+        NAIBatch nai(input, current_mol);
+        nai.compute();
+        add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+      }
+    }
   }
 
   if (mol->atoms().front()->use_ecp_basis()) {

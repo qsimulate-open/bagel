@@ -29,6 +29,7 @@
 
 #include <src/util/math/zmatrix.h>
 #include <src/integral/smallints1e.h>
+#include <src/integral/rys/naibatch.h>
 #include <src/mat1e/matrix1earray.h>
 
 namespace bagel {
@@ -83,6 +84,7 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
     }
 };
 
+template<> void Small1e<NAIBatch>::computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule>);
 template<> void Small1e<ERIBatch>::computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule>);
 
 }
