@@ -59,7 +59,6 @@ void Tree::init() {
     contract_vertex();
   } else {
     nvertex_ = geom_->natom();
-    coordinates_.resize(nvertex_);
     for (int i = 0; i != nvertex_; ++i) {
       atomgroup_[i] = make_shared<const AtomGroup>
                       (vector<shared_ptr<const Atom>>(1, geom_->atoms(i)), vector<int>(1, i), vector<int>(1, shell_id_[i]));
@@ -82,6 +81,9 @@ void Tree::init() {
 
 void Tree::contract_vertex() {
 
+  constexpr double pm2au = 1e-10 / au2meter__;
+  constexpr double tol = 0.25;
+
   int nvertex = 0;
   set<string> svalence{"h", "li", "f", "na", "cl", "k", "br", "i"};
   vector<int> svalence_pos(geom_->natom(), -1);
@@ -92,7 +94,7 @@ void Tree::contract_vertex() {
       const bool is_singly_valent_atom = svalence.find(geom_->atoms(i)->name()) != svalence.end();
       if (is_singly_valent_atom) {
         svalence_pos[num_svalence] = i;
-        const double rad_i = atommap_.cov_radius(geom_->atoms(i)->name());
+        const double rad_i = pm2au * atommap_.cov_radius(geom_->atoms(i)->name());
         vector<shared_ptr<const Atom>> tmpatom(2);
         vector<int> tmporder(2);
         vector<int> tmpshell(2);
@@ -100,14 +102,14 @@ void Tree::contract_vertex() {
         tmporder[0] = i;
         tmpshell[0] = shell_id_[i];
 
-        for (int j = 0; j != geom_->natom(); ++j) {
+        for (int j = i + 1; j != geom_->natom(); ++j) {
           array<double, 3> v12;
           v12[0] = geom_->atoms(i)->position(0) - geom_->atoms(j)->position(0);
-          v12[1] = geom_->atoms(i)->position(0) - geom_->atoms(j)->position(1);
-          v12[2] = geom_->atoms(i)->position(0) - geom_->atoms(j)->position(2);
+          v12[1] = geom_->atoms(i)->position(1) - geom_->atoms(j)->position(1);
+          v12[2] = geom_->atoms(i)->position(2) - geom_->atoms(j)->position(2);
           const double bondlength = sqrt(v12[0]*v12[0] + v12[1]*v12[1] + v12[2]*v12[2]);
-          const double rad_j = atommap_.cov_radius(geom_->atoms(j)->name());
-          if (bondlength <= (rad_i + rad_j)) {
+          const double rad_j = pm2au * atommap_.cov_radius(geom_->atoms(j)->name());
+          if (bondlength <= (1.0 + tol) * (rad_i + rad_j)) {
             tmpatom[1] = geom_->atoms(j);
             tmporder[1] = j;
             tmpshell[1] = shell_id_[j];
@@ -121,12 +123,12 @@ void Tree::contract_vertex() {
 
         num_svalence += 2;
       } else {
-        coordinates_[nvertex][0] = geom_->atoms(i)->position(0);
-        coordinates_[nvertex][1] = geom_->atoms(i)->position(1);
-        coordinates_[nvertex][2] = geom_->atoms(i)->position(2);
         atomgroup_[nvertex] = make_shared<const AtomGroup>
                               (vector<shared_ptr<const Atom>>(1, geom_->atoms(i)), vector<int>(1, i), vector<int>(1, shell_id_[i]));
       }
+      coordinates_[nvertex][0] = atomgroup_[nvertex]->position(0);
+      coordinates_[nvertex][1] = atomgroup_[nvertex]->position(1);
+      coordinates_[nvertex][2] = atomgroup_[nvertex]->position(2);
       ++nvertex;
     }
   }
@@ -308,7 +310,6 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
       cout << "Level " << current_level << endl;
       node = 0;
     }
-//    cout << "Key = " << nodes_[i]->key() << endl;
     ++node;
     string symbol("");
     switch(node) {
