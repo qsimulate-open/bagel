@@ -42,6 +42,8 @@ static constexpr int ANG_VRR_END = 14;
 static constexpr int RYS_MAX = 13;
 static constexpr double PRIM_SCREEN_THRESH = 1.0e-12;
 
+static constexpr int nucleus_blocksize__ = 500;            // maximum number of point charges used in a single batch of nuclear attraction integrals
+
 /************************************************************
 *  Fundamental Physical/Mathematical constants              *
 ************************************************************/

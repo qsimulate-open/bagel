@@ -34,14 +34,13 @@ template<> void Small1e<NAIBatch>::computebatch(const array<shared_ptr<const She
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
 
-  constexpr int max_atoms = 500;
-  if (mol->natom() < max_atoms) {
+  if (mol->natom() < nucleus_blocksize__) {
     SmallInts1e<NAIBatch> batch(input, mol);
     batch.compute();
     for (int i = 0; i != this->Nblocks(); ++i)
       this->matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
   } else {
-    const vector<shared_ptr<const Molecule>> atom_subsets = mol->split_atoms(max_atoms);
+    const vector<shared_ptr<const Molecule>> atom_subsets = mol->split_atoms(nucleus_blocksize__);
     for (auto& current_mol : atom_subsets) {
       SmallInts1e<NAIBatch> batch(input, current_mol);
       batch.compute();
