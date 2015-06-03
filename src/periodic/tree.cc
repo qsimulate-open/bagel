@@ -30,8 +30,10 @@
 using namespace bagel;
 using namespace std;
 
-Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh, const int ws)
- : geom_(geom), max_height_(maxht), thresh_(thresh), ws_(ws) {
+static const AtomMap atommap_;
+
+Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const bool do_contract, const double thresh, const int ws)
+ : geom_(geom), max_height_(maxht), do_contraction_(do_contract), thresh_(thresh), ws_(ws) {
 
   init();
 }
@@ -40,39 +42,98 @@ Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh
 void Tree::init() {
 
   assert(max_height_ <= (nbit__ - 1)/3);
-  nvertex_ = geom_->natom();
   position_ = geom_->charge_center();
-  nbasis_ = 0;
-  coordinates_.resize(nvertex_);
-  for (int i = 0; i != nvertex_; ++i) {
-    coordinates_[i] = geom_->atoms(i)->position();
-    nbasis_ += geom_->atoms(i)->nbasis();
-  }
+  atomgroup_.resize(geom_->natom());
+  coordinates_.resize(geom_->natom());
 
-  for (int i = 0; i != nvertex_; ++i) {
-    coordinates_[i][0] -= position_[0];
-    coordinates_[i][1] -= position_[1];
-    coordinates_[i][2] -= position_[2];
+  nbasis_ = 0;
+  for (int i = 0; i != geom_->natom(); ++i)
+    nbasis_ += geom_->atoms(i)->nbasis();
+
+  shell_id_.resize(geom_->natom());
+  shell_id_[0] = 0;
+  for (int i = 1; i != geom_->natom(); ++i)
+    shell_id_[i] = shell_id_[i-1] + geom_->atoms(i-1)->nshell();
+
+  if (do_contraction_) {
+    contract_vertex();
+  } else {
+    nvertex_ = geom_->natom();
+    coordinates_.resize(nvertex_);
+    for (int i = 0; i != nvertex_; ++i) {
+      atomgroup_[i] = make_shared<const AtomGroup>
+                      (vector<shared_ptr<const Atom>>(1, geom_->atoms(i)), vector<int>(1, i), vector<int>(1, shell_id_[i]));
+      coordinates_[i][0] = geom_->atoms(i)->position(0) - position_[0];
+      coordinates_[i][1] = geom_->atoms(i)->position(1) - position_[1];
+      coordinates_[i][2] = geom_->atoms(i)->position(2) - position_[2];
+    }
   }
 
   ordering_.resize(nvertex_);
   iota(ordering_.begin(), ordering_.begin()+nvertex_, 0);
 
-  shell_id_.resize(nvertex_);
-  shell_id_[0] = 0;
-  for (int i = 1; i != nvertex_; ++i)
-    shell_id_[i] = shell_id_[i-1] + geom_->atoms(i-1)->nshell();
-
   get_particle_key();
   keysort();
-#if 0
-  for (int i = 0; i != nvertex_; ++i)
-    cout << leaves_[i]->key() << " *** " << setprecision(9)
-         << leaves_[i]->position(0) << "  " << leaves_[i]->position(1) << "  " << leaves_[i]->position(2) << endl;
-#endif
 
   build_tree();
 //  print_tree_xyz();
+}
+
+
+void Tree::contract_vertex() {
+
+  int nvertex = 0;
+  set<string> svalence{"h", "li", "f", "na", "cl", "k", "br", "i"};
+  vector<int> svalence_pos(geom_->natom(), -1);
+  int num_svalence = 0;
+  for (int i = 0; i != geom_->natom(); ++i) {
+    const bool is_in = find(svalence_pos.begin(), svalence_pos.end(), i) != svalence_pos.end();
+    if (!is_in) {
+      const bool is_singly_valent_atom = svalence.find(geom_->atoms(i)->name()) != svalence.end();
+      if (is_singly_valent_atom) {
+        svalence_pos[num_svalence] = i;
+        const double rad_i = atommap_.cov_radius(geom_->atoms(i)->name());
+        vector<shared_ptr<const Atom>> tmpatom(2);
+        vector<int> tmporder(2);
+        vector<int> tmpshell(2);
+        tmpatom[0] = geom_->atoms(i);
+        tmporder[0] = i;
+        tmpshell[0] = shell_id_[i];
+
+        for (int j = 0; j != geom_->natom(); ++j) {
+          array<double, 3> v12;
+          v12[0] = geom_->atoms(i)->position(0) - geom_->atoms(j)->position(0);
+          v12[1] = geom_->atoms(i)->position(0) - geom_->atoms(j)->position(1);
+          v12[2] = geom_->atoms(i)->position(0) - geom_->atoms(j)->position(2);
+          const double bondlength = sqrt(v12[0]*v12[0] + v12[1]*v12[1] + v12[2]*v12[2]);
+          const double rad_j = atommap_.cov_radius(geom_->atoms(j)->name());
+          if (bondlength <= (rad_i + rad_j)) {
+            tmpatom[1] = geom_->atoms(j);
+            tmporder[1] = j;
+            tmpshell[1] = shell_id_[j];
+            svalence_pos[num_svalence + 1] = j;
+          }
+        }
+        if (svalence_pos[num_svalence + 1] < 0)
+          throw runtime_error("Found a radical");
+
+        atomgroup_[nvertex] = make_shared<const AtomGroup>(tmpatom, tmporder, tmpshell);
+
+        num_svalence += 2;
+      } else {
+        coordinates_[nvertex][0] = geom_->atoms(i)->position(0);
+        coordinates_[nvertex][1] = geom_->atoms(i)->position(1);
+        coordinates_[nvertex][2] = geom_->atoms(i)->position(2);
+        atomgroup_[nvertex] = make_shared<const AtomGroup>
+                              (vector<shared_ptr<const Atom>>(1, geom_->atoms(i)), vector<int>(1, i), vector<int>(1, shell_id_[i]));
+      }
+      ++nvertex;
+    }
+  }
+
+  nvertex_ = nvertex;
+  coordinates_.resize(nvertex_);
+  atomgroup_.resize(nvertex_);
 }
 
 
@@ -182,7 +243,6 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
 void Tree::get_particle_key() {
 
   particle_keys_.resize(nvertex_);
-  box_length_ = 0.0;
 
   const unsigned int nbitx = (nbit__ - 1) / 3;
 
@@ -200,10 +260,6 @@ void Tree::get_particle_key() {
     }
     particle_keys_[iat] = key;
     ++iat;
-
-    const double tmp = max(pos[0], max(pos[1], pos[2]));
-    if (tmp > box_length_)
-      box_length_ = 2 * tmp;
   }
 }
 
@@ -234,7 +290,7 @@ void Tree::keysort() {
   leaves_.resize(nvertex_);
   for (int n = 0; n != nvertex_; ++n) {
     const int pos = ordering_[n];
-    auto leaf = make_shared<Vertex>(particle_keys_[n], geom_->atoms(pos), pos, shell_id_[pos]);
+    auto leaf = make_shared<Vertex>(particle_keys_[n], atomgroup_[pos]);
     leaves_[n] = leaf;
   }
 }
@@ -248,7 +304,7 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
     if (nodes_[i]->depth() != current_level) {
       ++current_level;
       cout << endl;
-      cout << geom_->natom() << endl;
+      cout << nvertex_ << endl;
       cout << "Level " << current_level << endl;
       node = 0;
     }
