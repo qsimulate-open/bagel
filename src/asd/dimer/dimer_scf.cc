@@ -412,5 +412,11 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
     if (idata->get_child_optional("reduction"))
       reduce_active(idata);
+
+    if (print_orbital_ && mpi__->rank() == 0) {
+      MoldenOut mfs("dimer_semi_canonical.molden");
+      mfs << sgeom_;
+      mfs << sref_;
+    }
   }
 }

@@ -37,7 +37,7 @@ void ASD<VecType>::compute() {
   std::cout << "     -  charge: " << charge_ << std::endl;
   std::cout << "     -  dimer states: " << dimerstates_ << std::endl << std::endl;
 
-  if(!fix_ci_) {
+  if (!fix_ci_) {
     auto gammaforest = std::make_shared<GammaForest<VecType, 2>>();
     {
       auto spinmap = std::make_shared<ASDSpinMap<VecType>>();

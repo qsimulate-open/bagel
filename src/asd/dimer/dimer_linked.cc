@@ -150,7 +150,7 @@ shared_ptr<Matrix> Dimer::form_control_coeff() const {
   shared_ptr<const Matrix> ofockao = make_shared<Fock<1>>(sgeom_, sref_->hcore(), nullptr, ccoeff, /*store*/false, /*rhf*/true);
 
   {//Monomer A
-    auto acoeff = sref_->coeff()->slice_copy(nclosed, nclosed + nactA);
+    auto acoeff = sref_->coeff()->slice_copy(nclosed, nclosed+nactA);
     // MO Fock
     VectorB eigs(nactA);
     auto fockact = make_shared<Matrix>(*acoeff % *ofockao  * *acoeff);
@@ -547,9 +547,4 @@ void Dimer::reduce_active(shared_ptr<const PTree> idata) {
   //semi canonical coeff
   sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*outcoeff), nclosed+cA+cB, nact-cA-cB-vA-vB, nvirt_HF - nactvirtA - nactvirtB + vA+vB);
 
-  if (print_orbital_ && mpi__->rank() == 0) {
-    MoldenOut mfs("dimer_orbital_AB_semi_canonical.molden");
-    mfs << sgeom_;
-    mfs << sref_;
-  }
 }
