@@ -30,6 +30,10 @@
 #define __SRC_SMITH_RelCASPT2_TASKS_H
 
 #include <src/smith/RelCASPT2_tasks1.h>
+#include <src/smith/RelCASPT2_tasks2.h>
+#include <src/smith/RelCASPT2_tasks3.h>
+#include <src/smith/RelCASPT2_tasks4.h>
+#include <src/smith/RelCASPT2_tasks5.h>
 
 #endif
 #endif

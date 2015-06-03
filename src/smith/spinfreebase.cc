@@ -102,6 +102,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     for (auto& i1 : active_)
       for (auto& i0 : active_)
         fockact->copy_block(i0.offset()-nclosed2, i1.offset()-nclosed2, i0.size(), i1.size(), f1_->get_block(i0, i1).get());
+    fockact = fockact->get_conjg();
 
     feed_rdm_denom(fockact);
     timer.tick_print("RDM + denominator evaluation");
@@ -201,24 +202,6 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       unique_ptr<complex<double>[]> data0(new complex<double>[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
       rdm0t->put_block(data0);
-      fill_block<2,complex<double>,ZRDM<1>>(rdm1t, rdm1, vector<int>(2,nclo*2), vector<IndexRange>(2,active_));
-      fill_block<4,complex<double>,ZRDM<2>>(rdm2t, rdm2, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
-      fill_block<6,complex<double>,ZRDM<3>>(rdm3t, rdm3, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
-      fill_block<8,complex<double>,ZRDM<4>>(rdm4t, rdm4, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
-
-      // due to convention we have to conjugate the tensors.
-      // TODO perhaps better to conjugate everything consistently, i.e., remove the following lines
-      //      (note that there is get_conjg in K2ext, too).
-      rdm1t->conjugate_inplace();
-      rdm2t->conjugate_inplace();
-      rdm3t->conjugate_inplace();
-      rdm4t->conjugate_inplace();
-
-      rdm0all_->emplace(jst, ist, rdm0t);
-      rdm1all_->emplace(jst, ist, rdm1t);
-      rdm2all_->emplace(jst, ist, rdm2t);
-      rdm3all_->emplace(jst, ist, rdm3t);
-      rdm4all_->emplace(jst, ist, rdm4t);
 
       // TODO this should be replaced
       auto rdm1ex = expand_kramers(rdm1, info_->nact());
@@ -226,6 +209,27 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       auto rdm3ex = expand_kramers(rdm3, info_->nact());
       auto rdm4ex = expand_kramers(rdm4, info_->nact());
       denom->append(jst, ist, rdm1ex, rdm2ex, rdm3ex, rdm4ex);
+
+      const int n = rdm1ex->norb();
+      auto rdm1x = rdm1ex->clone();
+      auto rdm2x = rdm2ex->clone();
+      auto rdm3x = rdm3ex->clone();
+      auto rdm4x = rdm4ex->clone();
+      sort_indices<1,0,0,1,1,1>(rdm1ex->data(), rdm1x->data(), n, n);
+      sort_indices<1,0,3,2,0,1,1,1>(rdm2ex->data(), rdm2x->data(), n, n, n, n);
+      sort_indices<1,0,3,2,5,4,0,1,1,1>(rdm3ex->data(), rdm3x->data(), n, n, n, n, n, n);
+      sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(rdm4ex->data(), rdm4x->data(), n, n, n, n, n, n, n, n);
+
+      fill_block<2,complex<double>>(rdm1t, rdm1x, vector<int>(2,nclo*2), vector<IndexRange>(2,active_));
+      fill_block<4,complex<double>>(rdm2t, rdm2x, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
+      fill_block<6,complex<double>>(rdm3t, rdm3x, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
+      fill_block<8,complex<double>>(rdm4t, rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
+
+      rdm0all_->emplace(jst, ist, rdm0t);
+      rdm1all_->emplace(jst, ist, rdm1t);
+      rdm2all_->emplace(jst, ist, rdm2t);
+      rdm3all_->emplace(jst, ist, rdm3t);
+      rdm4all_->emplace(jst, ist, rdm4t);
     }
   }
   denom->compute();
@@ -427,7 +431,7 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const MultiT
   assert(r->nref() == t2->nref());
   DataType out = 0.0;
   for (int i = 0; i != r->nref(); ++i)
-    out += r->fac(i) * t2->fac(i)
+    out += detail::conj(r->fac(i)) * t2->fac(i)
          + dot_product_transpose(r->at(i), t2->at(i));
   return out;
 }
@@ -443,7 +447,7 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor
       unique_ptr<DataType[]> tmp1(new DataType[size]);
       sort_indices<2,3,0,1,0,1,1,1>(tmp0.get(), tmp1.get(), i0.size(), i1.size(), i2.size(), i3.size());
 
-      out += blas::dot_product(tmp1.get(), size, r->get_block(i2, i3, i0, i1).get());
+      out += blas::dot_product(r->get_block(i2, i3, i0, i1).get(), size, tmp1.get());
     }
   };
   loop_over(prod);

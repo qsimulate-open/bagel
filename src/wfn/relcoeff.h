@@ -99,7 +99,13 @@ class RelCoeff_Striped : public RelCoeff {
 
     // construct an empty RelCoeff_Striped
     RelCoeff_Striped(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
-   : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
+     : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
+
+    // copy construct
+    RelCoeff_Striped(const RelCoeff_Striped& o) : RelCoeff_Striped(o, o.nclosed_, o.nact_, o.nvirt_nr_, o.nneg_) { }
+
+    std::shared_ptr<RelCoeff_Striped> copy() const { return std::make_shared<RelCoeff_Striped>(*this); }
+    std::shared_ptr<RelCoeff_Striped> clone() const { return std::make_shared<RelCoeff_Striped>(ndim(), localized_, nclosed_, nact_, nvirt_nr_, nneg_); }
 
     std::shared_ptr<RelCoeff_Striped> electronic_part() const {
       return std::make_shared<RelCoeff_Striped>(slice(0, npos()), nclosed_, nact_, nvirt_nr_, 0);
@@ -135,7 +141,13 @@ class RelCoeff_Block : public RelCoeff {
 
     // construct an empty RelCoeff_Block
     RelCoeff_Block(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
-   : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
+     : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
+
+    // copy construct
+    RelCoeff_Block(const RelCoeff_Block& o) : RelCoeff_Block(o, o.nclosed_, o.nact_, o.nvirt_nr_, o.nneg_) { }
+
+    std::shared_ptr<RelCoeff_Block> copy() const { return std::make_shared<RelCoeff_Block>(*this); }
+    std::shared_ptr<RelCoeff_Block> clone() const { return std::make_shared<RelCoeff_Block>(ndim(), localized_, nclosed_, nact_, nvirt_nr_, nneg_); }
 
     std::shared_ptr<RelCoeff_Block> electronic_part() const;
     std::shared_ptr<RelCoeff_Block> closed_act_positronic() const;
@@ -161,7 +173,13 @@ class RelCoeff_Kramers : public RelCoeff {
 
     // construct an empty RelCoeff_Kramers
     RelCoeff_Kramers(const int _ndim, const bool _loc, const int _nclosed, const int _nact, const int _nvirt, const int _nneg)
-   : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
+     : RelCoeff(_ndim, _loc, _nclosed, _nact, _nvirt, _nneg) { }
+
+    // copy construct
+    RelCoeff_Kramers(const RelCoeff_Kramers& o) : RelCoeff_Kramers(o, o.nclosed_, o.nact_, o.nvirt_nr_, o.nneg_) { }
+
+    std::shared_ptr<RelCoeff_Kramers> copy() const { return std::make_shared<RelCoeff_Kramers>(*this); }
+    std::shared_ptr<RelCoeff_Kramers> clone() const { return std::make_shared<RelCoeff_Kramers>(ndim(), localized_, nclosed_, nact_, nvirt_nr_, nneg_); }
 
     std::shared_ptr<RelCoeff_Block> block_format() const;
     std::shared_ptr<RelCoeff_Striped> striped_format() const;

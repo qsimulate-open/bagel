@@ -134,8 +134,6 @@ void CASSCF::common_init() {
   resume_stdcout();
 
 
-  schwarz_ = geom_->schwarz();
-
   cout <<  "  === CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
 }
