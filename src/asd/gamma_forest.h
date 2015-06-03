@@ -255,6 +255,9 @@ class GammaTask {
       }
 };
 
+template <>
+void GammaTask<CASDvec>::compute();
+
 
 template <typename VecType, int N>
 class GammaForest {
