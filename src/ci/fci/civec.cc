@@ -79,7 +79,7 @@ void CASDvec::apply_and_fill(shared_ptr<const CASDvec> source_dvec, const int or
         const double sign = static_cast<double>(iter.sign);
         double* target = target_base + target_lenb * iter.target;
         const double* source = source_base + source_lenb * iter.source;
-        transform(source, source + target_lenb, target, target, [&sign] (double p, double q) { return sign * p + q; });
+        blas::ax_plus_y_n(sign, source, target_lenb, target);
       }
     }
   }
