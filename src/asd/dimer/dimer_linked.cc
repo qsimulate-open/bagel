@@ -129,7 +129,7 @@ void Dimer::set_active(shared_ptr<const PTree> idata) {
 
 //semi-canonicalise only in the active space (thus, it is still the same quality as the localized orbitals)
 //this will be used as reference to find the actual semi-canonical orbital
-shared_ptr<Matrix> Dimer::form_control_coeff() const {
+shared_ptr<Matrix> Dimer::form_reference_active_coeff() const {
   const int nactA = active_refs_.first->nact();
   const int nactB = active_refs_.second->nact();
   const int nact = nactA + nactB;
@@ -185,7 +185,7 @@ shared_ptr<Matrix> Dimer::form_control_coeff() const {
 }
 
 
-shared_ptr<Matrix> Dimer::form_treatment_coeff(shared_ptr<const PTree> idata) const {
+shared_ptr<Matrix> Dimer::form_semi_canonical_coeff(shared_ptr<const PTree> idata) const {
   const int nactA = active_refs_.first->nact();
   const int nactB = active_refs_.second->nact();
   const int nact = nactA + nactB;

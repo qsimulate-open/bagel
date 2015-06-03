@@ -404,8 +404,8 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
     //semi-canonicalize
     cout << endl << "  o Forming semi-canonical orbitals" << endl;
-    shared_ptr<Matrix> con_coeff = form_control_coeff(); //semi-canonicalize active space
-    shared_ptr<Matrix> tre_coeff = form_treatment_coeff(idata); //semi-canonicalize regional(A,B,bridge) spaces
+    shared_ptr<Matrix> con_coeff = form_reference_active_coeff(); //semi-canonicalize active space
+    shared_ptr<Matrix> tre_coeff = form_semi_canonical_coeff(idata); //semi-canonicalize regional(A,B,bridge) spaces
     shared_ptr<Matrix> out_coeff = overlap_selection(con_coeff, tre_coeff); //select active space based on source
 
     sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
