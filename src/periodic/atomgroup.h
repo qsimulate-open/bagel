@@ -65,14 +65,14 @@ class AtomGroup {
     std::array<double, 3> position() const { return position_; }
     double position(const int i) const { return position_[i]; }
 
-    std::vector<std::shared_ptr<const Atom>> atoms() const { return atoms_; }
+    const std::vector<std::shared_ptr<const Atom>> atoms() const { return atoms_; }
     std::shared_ptr<const Atom> atoms(const int i) const { return atoms_[i]; }
-    std::vector<int> order_in_geom()  const { return order_in_geom_; }
+    const std::vector<int> order_in_geom()  const { return order_in_geom_; }
     int order_in_geom(const int i)  const { return order_in_geom_[i]; }
-    std::vector<int> ishell()  const { return ishell_; }
+    const std::vector<int> ishell()  const { return ishell_; }
     int ishell(const int i)  const { return ishell_[i]; }
-    int nbasis() const { return nbasis_; }
-    int natom() const { return atoms_.size(); }
+    const int nbasis() const { return nbasis_; }
+    const int natom() const { return atoms_.size(); }
 };
 
 }

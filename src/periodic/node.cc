@@ -34,7 +34,7 @@ using namespace std;
 
 static const double pisq__ = pi__ * pi__;
 
-Node::Node(const std::bitset<nbit__> key, const int depth, std::shared_ptr<const Node> parent, const double thresh)
+Node::Node(const bitset<nbit__> key, const int depth, shared_ptr<const Node> parent, const double thresh)
  : key_(key), depth_(depth), parent_(parent), thresh_(thresh) {
   if (depth == 0)
     key_[0] = 1;
@@ -114,7 +114,7 @@ void Node::init() {
 
 void Node::compute_extent(const double thresh) {
 
-  std::vector<std::shared_ptr<const Shell>> shells;
+  vector<shared_ptr<const Shell>> shells;
   for (auto& body : bodies_)
     for (auto& atom : body->atoms())
       shells.insert(shells.end(), atom->shells().begin(), atom->shells().end());

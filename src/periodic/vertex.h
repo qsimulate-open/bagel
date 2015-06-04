@@ -56,11 +56,11 @@ class Vertex {
     double position(const int i) const { return position_[i]; }
 
     std::shared_ptr<const AtomGroup> atomgroup() const { return atomgroup_; }
-    std::vector<std::shared_ptr<const Atom>> atoms() const { return atomgroup_->atoms(); }
+    const std::vector<std::shared_ptr<const Atom>> atoms() const { return atomgroup_->atoms(); }
     std::shared_ptr<const Atom> atoms(const int i) const { return atomgroup_->atoms(i); }
-    std::vector<int> order_in_geom()  const { return atomgroup_->order_in_geom(); }
+    const std::vector<int> order_in_geom()  const { return atomgroup_->order_in_geom(); }
     int order_in_geom(const int i)  const { return atomgroup_->order_in_geom(i); }
-    std::vector<int> ishell()  const { return atomgroup_->ishell(); }
+    const std::vector<int> ishell()  const { return atomgroup_->ishell(); }
     int ishell(const int i)  const { return atomgroup_->ishell(i); }
     int nbasis() const { return atomgroup_->nbasis(); }
     int natom() const { return atomgroup_->natom(); }

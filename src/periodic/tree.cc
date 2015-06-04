@@ -25,7 +25,6 @@
 
 
 #include <src/periodic/tree.h>
-#include <src/periodic/node.h>
 
 using namespace bagel;
 using namespace std;
@@ -75,67 +74,92 @@ void Tree::init() {
   keysort();
 
   build_tree();
-//  print_tree_xyz();
+  print_tree_xyz();
 }
 
 
 void Tree::contract_vertex() {
 
   constexpr double pm2au = 1e-10 / au2meter__;
-  constexpr double tol = 0.25;
+  constexpr double tol = 0.0;
+  const set<string> svalence = {"h", "li", "f", "na", "cl", "k", "br", "i"};
 
   int nvertex = 0;
-  set<string> svalence{"h", "li", "f", "na", "cl", "k", "br", "i"};
-  vector<int> svalence_pos(geom_->natom(), -1);
-  int num_svalence = 0;
+  vector<int> cont_vertex(geom_->natom(), -1);
   for (int i = 0; i != geom_->natom(); ++i) {
-    const bool is_in = find(svalence_pos.begin(), svalence_pos.end(), i) != svalence_pos.end();
-    if (!is_in) {
+    if (cont_vertex[i] < 0) {
       const bool is_singly_valent_atom = svalence.find(geom_->atoms(i)->name()) != svalence.end();
       if (is_singly_valent_atom) {
-        svalence_pos[num_svalence] = i;
         const double rad_i = pm2au * atommap_.cov_radius(geom_->atoms(i)->name());
-        vector<shared_ptr<const Atom>> tmpatom(2);
-        vector<int> tmporder(2);
-        vector<int> tmpshell(2);
-        tmpatom[0] = geom_->atoms(i);
-        tmporder[0] = i;
-        tmpshell[0] = shell_id_[i];
 
-        for (int j = i + 1; j != geom_->natom(); ++j) {
-          array<double, 3> v12;
-          v12[0] = geom_->atoms(i)->position(0) - geom_->atoms(j)->position(0);
-          v12[1] = geom_->atoms(i)->position(1) - geom_->atoms(j)->position(1);
-          v12[2] = geom_->atoms(i)->position(2) - geom_->atoms(j)->position(2);
-          const double bondlength = sqrt(v12[0]*v12[0] + v12[1]*v12[1] + v12[2]*v12[2]);
-          const double rad_j = pm2au * atommap_.cov_radius(geom_->atoms(j)->name());
-          if (bondlength <= (1.0 + tol) * (rad_i + rad_j)) {
-            tmpatom[1] = geom_->atoms(j);
-            tmporder[1] = j;
-            tmpshell[1] = shell_id_[j];
-            svalence_pos[num_svalence + 1] = j;
+        vector<shared_ptr<const Atom>> tmpatom;
+        vector<int> tmporder;
+        vector<int> tmpshell;
+        tmpatom.insert(tmpatom.end(), geom_->atoms(i));
+        tmporder.insert(tmporder.end(), i);
+        tmpshell.insert(tmpshell.end(), shell_id_[i]);
+        bool is_found = false;
+        for (int j = 0; j != geom_->natom(); ++j) {
+          if (j != i) {
+            array<double, 3> v12;
+            v12[0] = geom_->atoms(i)->position(0) - geom_->atoms(j)->position(0);
+            v12[1] = geom_->atoms(i)->position(1) - geom_->atoms(j)->position(1);
+            v12[2] = geom_->atoms(i)->position(2) - geom_->atoms(j)->position(2);
+            const double bondlength = sqrt(v12[0]*v12[0] + v12[1]*v12[1] + v12[2]*v12[2]);
+            const double rad_j = pm2au * atommap_.cov_radius(geom_->atoms(j)->name());
+            if (bondlength <= (1.0 + tol) * (rad_i + rad_j)) {
+              const int ivertex = cont_vertex[j];
+              is_found = true;
+              if (ivertex < 0) {
+                tmpatom.insert(tmpatom.end(), geom_->atoms(j));
+                tmporder.insert(tmporder.end(), j);
+                tmpshell.insert(tmpshell.end(), shell_id_[j]);
+                cont_vertex[i] = nvertex;
+                cont_vertex[j] = nvertex;
+
+                atomgroup_[nvertex] = make_shared<const AtomGroup>(tmpatom, tmporder, tmpshell);
+                ++nvertex;
+              } else {
+                cont_vertex[i] = ivertex;
+                const vector<shared_ptr<const Atom>> atom = atomgroup_[ivertex]->atoms();
+                const vector<int> order = atomgroup_[ivertex]->order_in_geom();
+                const vector<int> shell = atomgroup_[ivertex]->ishell();
+                tmpatom.insert(tmpatom.end(), atom.begin(), atom.end());
+                tmporder.insert(tmporder.end(), order.begin(), order.end());
+                tmpshell.insert(tmpshell.end(), shell.begin(), shell.end());
+
+                atomgroup_[ivertex] = make_shared<const AtomGroup>(tmpatom, tmporder, tmpshell);
+              }
+              break;
+            }
           }
         }
-        if (svalence_pos[num_svalence + 1] < 0)
+        if (!is_found)
           throw runtime_error("Found a radical");
 
-        atomgroup_[nvertex] = make_shared<const AtomGroup>(tmpatom, tmporder, tmpshell);
-
-        num_svalence += 2;
       } else {
         atomgroup_[nvertex] = make_shared<const AtomGroup>
                               (vector<shared_ptr<const Atom>>(1, geom_->atoms(i)), vector<int>(1, i), vector<int>(1, shell_id_[i]));
+        cont_vertex[i] = nvertex;
+        ++nvertex;
       }
-      coordinates_[nvertex][0] = atomgroup_[nvertex]->position(0);
-      coordinates_[nvertex][1] = atomgroup_[nvertex]->position(1);
-      coordinates_[nvertex][2] = atomgroup_[nvertex]->position(2);
-      ++nvertex;
     }
   }
 
   nvertex_ = nvertex;
-  coordinates_.resize(nvertex_);
   atomgroup_.resize(nvertex_);
+  coordinates_.resize(nvertex_);
+  for (int i = 0; i != nvertex_; ++i) {
+    coordinates_[i][0] = atomgroup_[i]->position(0);
+    coordinates_[i][1] = atomgroup_[i]->position(1);
+    coordinates_[i][2] = atomgroup_[i]->position(2);
+    int iat = 0;
+    for (auto& atom : atomgroup_[i]->atoms()) {
+      cout << atom->name() << atomgroup_[i]->order_in_geom(iat) << " ";
+      ++iat;
+    }
+    cout << endl;
+  }
 }
 
 
