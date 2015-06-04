@@ -45,7 +45,7 @@ template<> void Small1e_London<ComplexNAIBatch>::computebatch(const array<shared
       SmallInts1e_London<ComplexNAIBatch, std::shared_ptr<const Molecule>> batch(input, current_mol);
       batch.compute();
       for (int i = 0; i != this->Nblocks(); ++i)
-        this->matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
+        this->matrices_[i]->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, batch[i]);
     }
   }
 }
