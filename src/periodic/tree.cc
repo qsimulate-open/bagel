@@ -229,7 +229,6 @@ void Tree::build_tree() {
         break;
       }
     }
-//    nodes_[i]->make_interaction_list(ws_);
   }
 }
 

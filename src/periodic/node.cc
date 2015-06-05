@@ -282,25 +282,6 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
   } else {
     auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
 
-#if 0
-    if (rank_ > 1) {
-      for (int n = 0; n != parent_->nchild(); ++n) {
-        shared_ptr<const Node> child = parent_->children(n);
-        if (key_ == child->key()) {
-          assert(child->nbasis() == nbasis_);
-          *out += *(parent_->child_local_expansion(n));
-          break;
-        }
-      }
-//      out->get_real_part()->print("From parent");
-    } else {
-      for (int n = 0; n != nchild_; ++n) {
-        shared_ptr<const Node> child = children_[n].lock();
-        child_local_expansion_[n] = make_shared<const ZMatrix>(child->nbasis(), child->nbasis());
-      }
-    }
-#endif
-
     vector<shared_ptr<ZMatrix>> tmp_moment(nmultipole);
     for (int n = 0; n != nmultipole; ++n)
       tmp_moment[n] = make_shared<ZMatrix>(nbasis_, nbasis_);
@@ -367,65 +348,6 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 
     local_expansion_ = out;
   }
-
-#if 0
-  if (rank_ > 1 && !is_leaf_) { // L2L: parent to child
-    Matrix subden(nbasis_, nbasis_);
-    subden.zero();
-    size_t ob0 = 0;
-    for (auto& body0 : bodies_) {
-      size_t ish0 = 0;
-      for (auto& b0 : body0->atom()->shells()) {
-        const int offset0 = offset[body0->ishell() + ish0];
-        const size_t size0 = b0->nbasis();
-        ++ish0;
-
-        size_t ob1 = 0;
-        for (auto& body1 : bodies_) {
-          size_t ish1 = 0;
-          for (auto& b1 : body1->atom()->shells()) {
-            const int offset1 = offset[body1->ishell() + ish1];
-            const size_t size1 = b1->nbasis();
-            ++ish1;
-
-            shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
-            subden.copy_block(ob1, ob0, size1, size0, tmp);
-            ob1 += size1;
-          }
-        }
-        ob0 += size0;
-      }
-    }
-
-    for (int n = 0; n != nchild_; ++n) {
-      shared_ptr<const Node> child = children_[n].lock();
-      auto tmp = make_shared<ZMatrix>(child->nbasis(), child->nbasis());
-
-      array<double, 3> r12;
-      r12[0] = position_[0] - child->position(0);
-      r12[1] = position_[1] - child->position(1);
-      r12[2] = position_[2] - child->position(2);
-      LocalExpansion local(r12, local_moment_, lmax);
-      vector<shared_ptr<const ZMatrix>> local_child = local.compute_shifted_local_expansions();
-
-      for (int i = 0; i != nmultipole; ++i) {
-        complex<double> contract = 0.0;
-        for (int j = 0; j != nbasis_; ++j)
-          for (int k = 0; k != nbasis_; ++k)
-            contract += local_child[i]->element(k, j) * subden.element(k, j);
-
-        *tmp += contract * *(child->multipoles(i));
-      }
-
-      child_local_expansion_[n] = tmp;
-    }
-  } else {
-    for (int n = 0; n != nchild_; ++n) {
-      shared_ptr<const Node> child = children_[n].lock();
-      child_local_expansion_[n] = make_shared<const ZMatrix>(child->nbasis(), child->nbasis());
-    }
-  }
-#endif
 }
 
 
