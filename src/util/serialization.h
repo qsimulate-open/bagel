@@ -46,12 +46,14 @@
 #include <boost/serialization/array.hpp>
 #include <boost/property_tree/ptree_serialization.hpp>
 
+#if BOOST_VERSION <= 105600
+#include <boost/archive/shared_ptr_helper.hpp>
+#endif
+
 #if BOOST_VERSION >= 105600
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/weak_ptr.hpp>
 #include <boost/serialization/unordered_map.hpp>
-#else
-#include <boost/archive/shared_ptr_helper.hpp>
 #endif
 
 // to avoid duplicate serialize functions, we need to include this here
