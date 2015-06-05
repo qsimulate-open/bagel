@@ -434,7 +434,7 @@ template<typename DataType>
 shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::init_amplitude() const {
   shared_ptr<Tensor_<DataType>> out = v2_->clone();
   auto put = [this, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
-    const size_t size = v2_->get_size_alloc(i0, i1, i2, i3);
+    const size_t size = v2_->get_size(i0, i1, i2, i3);
     unique_ptr<DataType[]> buf(new DataType[size]);
     fill_n(buf.get(), size, 0.0);
     out->put_block(buf, i0, i1, i2, i3);
@@ -448,7 +448,7 @@ template<typename DataType>
 shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::init_residual() const {
   shared_ptr<Tensor_<DataType>> out = v2_->clone();
   auto put = [this, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
-    const size_t size = v2_->get_size_alloc(i2, i3, i0, i1);
+    const size_t size = v2_->get_size(i2, i3, i0, i1);
     unique_ptr<DataType[]> buf(new DataType[size]);
     fill_n(buf.get(), size, 0.0);
     out->put_block(buf, i2, i3, i0, i1);

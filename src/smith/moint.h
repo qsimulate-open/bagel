@@ -49,7 +49,7 @@ class K2ext {
   protected:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
 
-    std::shared_ptr<const SMITH_Info<DataType>> ref_;
+    std::shared_ptr<const SMITH_Info<DataType>> info_;
     std::shared_ptr<const MatType> coeff_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor_<DataType>> data_;
@@ -73,7 +73,7 @@ class MOFock {
   protected:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
 
-    std::shared_ptr<const SMITH_Info<DataType>> ref_;
+    std::shared_ptr<const SMITH_Info<DataType>> info_;
     std::shared_ptr<const MatType> coeff_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor_<DataType>> data_;

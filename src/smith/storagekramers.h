@@ -54,7 +54,7 @@ template<typename DataType>
 class StorageKramers : public StorageIncore<DataType> {
   protected:
     std::list<std::vector<bool>> stored_sector_;
-    std::map<std::vector<int>, double> perm_;
+    std::map<std::vector<int>, std::pair<double,bool>> perm_;
 
     template<typename... args>
     std::unique_ptr<DataType[]> get_block_(args&& ...key) const {
@@ -71,7 +71,8 @@ class StorageKramers : public StorageIncore<DataType> {
 
       // if not, first find the right permutation
       const KTag<N> tag(kramers);
-      std::pair<std::vector<int>, double> trans = std::make_pair(std::vector<int>{0}, 0.0);
+      std::pair<std::vector<int>, std::pair<double,bool>>
+        trans = std::make_pair(std::vector<int>{0}, std::make_pair(0.0,false));
       for (auto& i : perm_) {
         bool found = false;
         for (auto& j : stored_sector_) {
@@ -90,7 +91,7 @@ class StorageKramers : public StorageIncore<DataType> {
         buffersize *= i.size();
       std::unique_ptr<DataType[]> out(new DataType[buffersize]);
 
-      if (trans.second != 0.0) {
+      if (trans.second.first != 0.0) {
         // reorder indices so that one can find the block. And retrieve.
         std::vector<Index> dindices(N);
         for (int i = 0; i != N; ++i)
@@ -107,7 +108,9 @@ class StorageKramers : public StorageIncore<DataType> {
           info[i] = trans.first[i];
           dim[i] = dindices[i].size();
         }
-        sort_indices(info, trans.second, /*fac2*/0.0, data.get(), out.get(), dim);
+        sort_indices(info, trans.second.first, /*fac2*/0.0, data.get(), out.get(), dim);
+        if (trans.second.second)
+          blas::conj_n(out.get(), buffersize);
       } else {
         std::fill_n(out.get(), buffersize, 0.0);
       }
@@ -213,7 +216,7 @@ class StorageKramers : public StorageIncore<DataType> {
       return 0.0;
     }
 
-    void set_perm(const std::map<std::vector<int>, double>& p) override { perm_ = p; }
+    void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) override { perm_ = p; }
 };
 
 extern template class StorageKramers<double>;

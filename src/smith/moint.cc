@@ -40,12 +40,12 @@ using namespace bagel::SMITH;
 
 template<typename DataType>
 K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<const MatType> c, const vector<IndexRange>& b)
-  : ref_(r), coeff_(c), blocks_(b) {
+  : info_(r), coeff_(c), blocks_(b) {
 
   // so far MOInt can be called for 2-external K integral and all-internals.
   if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
     throw logic_error("MOInt called with wrong blocks");
-  data_ = make_shared<Tensor_<DataType>>(blocks_);
+  data_ = make_shared<Tensor_<DataType>>(blocks_, is_same<DataType,complex<double>>::value);
   init();
 }
 
@@ -53,8 +53,8 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
 template<>
 void K2ext<complex<double>>::init() {
   // (1) make DFDists
-  vector<shared_ptr<const DFDist>> dfs = ref_->geom()->dfs()->split_blocks();
-  dfs.push_back(ref_->geom()->df());
+  vector<shared_ptr<const DFDist>> dfs = info_->geom()->dfs()->split_blocks();
+  dfs.push_back(info_->geom()->df());
   list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
 
   map<size_t, shared_ptr<RelDFFull>> dflist;
@@ -87,22 +87,33 @@ void K2ext<complex<double>>::init() {
     }
   }
 
+  // bits to store
+  const bool braket = blocks_[0] == blocks_[1] && blocks_[2] == blocks_[3];
+  const vector<vector<int>> blocks = braket ?
+    vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,1,1,1}} :
+    vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,1,1}, {1,0,1,0}, {1,1,1,1}};
+
   // form four-index integrals
   // TODO this part should be heavily parallelized
   for (auto& i0 : blocks_[0]) {
     for (auto& i1 : blocks_[1]) {
       // find three-index integrals
-      auto iter01 = dflist.find(generate_hash_key(i0, i1));
+      size_t hashkey01 = generate_hash_key(i0, i1);
+      auto iter01 = dflist.find(hashkey01);
       assert(iter01 != dflist.end());
       shared_ptr<RelDFFull> df01 = iter01->second;
-      size_t hashkey01 = generate_hash_key(i0, i1);
+      const int t0 = i0.kramers() ? 1 : 0;
+      const int t1 = i1.kramers() ? 1 : 0;
 
       for (auto& i2 : blocks_[2]) {
         for (auto& i3 : blocks_[3]) {
           // find three-index integrals
-          size_t hashkey23 = generate_hash_key(i2, i3);
-          if (hashkey23 > hashkey01) continue;
+          const int t2 = i2.kramers() ? 1 : 0;
+          const int t3 = i3.kramers() ? 1 : 0;
+          if (find(blocks.begin(), blocks.end(), vector<int>{t0, t1, t2, t3}) == blocks.end())
+            continue;
 
+          size_t hashkey23 = generate_hash_key(i2, i3);
           auto iter23 = dflist.find(generate_hash_key(i2, i3));
           assert(iter23 != dflist.end());
           shared_ptr<const RelDFFull> df23 = iter23->second;
@@ -113,24 +124,23 @@ void K2ext<complex<double>>::init() {
           shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0)->get_conjg();
           unique_ptr<complex<double>[]> target(new complex<double>[tmp->size()]);
           copy_n(tmp->data(), tmp->size(), target.get()); // unnecessary copy
-
-          // move in place
-          if (hashkey23 != hashkey01) {
-            unique_ptr<complex<double>[]> target2(new complex<double>[i0.size()*i1.size()*i2.size()*i3.size()]);
-            blas::transpose(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
-            data_->put_block(target2, i2, i3, i0, i1);
-          }
           data_->put_block(target, i0, i1, i2, i3);
         }
       }
     }
   }
+  map<vector<int>, pair<double,bool>> perm{{{0,1,2,3}, {1.0, false}}, {{2,3,0,1}, {1.0, false}}};
+  if (braket) {
+    perm.emplace(vector<int>{1,0,3,2}, make_pair(1.0, true));
+    perm.emplace(vector<int>{3,2,1,0}, make_pair(1.0, true));
+  }
+  data_->set_perm(perm);
 }
 
 
 template<>
 void K2ext<double>::init() {
-  shared_ptr<const DFDist> df = ref_->geom()->df();
+  shared_ptr<const DFDist> df = info_->geom()->df();
 
   // It is the easiest to do integral transformation for each blocks.
   assert(blocks_.size() == 4);
@@ -189,7 +199,7 @@ void K2ext<double>::init() {
 
 
 template<typename DataType>
-MOFock<DataType>::MOFock(shared_ptr<const SMITH_Info<DataType>> r, const vector<IndexRange>& b) : ref_(r), coeff_(ref_->coeff()), blocks_(b) {
+MOFock<DataType>::MOFock(shared_ptr<const SMITH_Info<DataType>> r, const vector<IndexRange>& b) : info_(r), coeff_(info_->coeff()), blocks_(b) {
   assert(b.size() == 2 && b[0] == b[1]);
 
   data_  = make_shared<Tensor_<DataType>>(blocks_);
@@ -200,21 +210,20 @@ MOFock<DataType>::MOFock(shared_ptr<const SMITH_Info<DataType>> r, const vector<
 
 template<>
 void MOFock<complex<double>>::init() {
-  const int ncore   = ref_->ncore();
-  const int nclosed = ref_->nclosed() - ncore;
+  const int ncore   = info_->ncore();
+  const int nclosed = info_->nclosed() - ncore;
   assert(nclosed >= 0);
-  const int nocc    = ref_->nocc();
-  const int nact    = ref_->nact();
-  const int nvirt   = ref_->nvirt();
+  const int nocc    = info_->nocc();
+  const int nact    = info_->nact();
 
-  auto relref = dynamic_pointer_cast<const RelReference>(ref_->ref());
+  auto relref = dynamic_pointer_cast<const RelReference>(info_->ref());
 
   // first hcore
-  auto hcore = make_shared<RelHcore>(ref_->geom());
+  auto hcore = make_shared<RelHcore>(info_->geom());
   shared_ptr<ZMatrix> cfock;
   core_energy_ = 0.0;
   if (ncore+nclosed) {
-    cfock = make_shared<DFock>(ref_->geom(), hcore, coeff_->slice_copy(0, 2*(ncore+nclosed)), /*gaunt*/false, /*breit*/false, /*store_half*/false);
+    cfock = make_shared<DFock>(info_->geom(), hcore, coeff_->slice_copy(0, 2*(ncore+nclosed)), /*gaunt*/false, /*breit*/false, /*store_half*/false);
     shared_ptr<const ZMatrix> den = coeff_->form_density_rhf(2*(ncore+nclosed), 0);
     core_energy_ = detail::real((*den * (*hcore+*cfock)).trace()) * 0.5;
   } else {
@@ -228,7 +237,7 @@ void MOFock<complex<double>>::init() {
     tmp->sqrt();
     shared_ptr<ZMatrix> weighted_coeff = coeff_->slice_copy(2*(ncore+nclosed), 2*nocc);
     *weighted_coeff *= *tmp;
-    fock1 = make_shared<DFock>(ref_->geom(), cfock, weighted_coeff, false, false, false);
+    fock1 = make_shared<DFock>(info_->geom(), cfock, weighted_coeff, false, false, false);
   } else {
     fock1 = cfock;
   }
@@ -237,8 +246,8 @@ void MOFock<complex<double>>::init() {
   // Note that E_ij,kl = E_ij E_kl - delta_jk E_il
   // and SMITH uses E_ij E_kl type excitations throughout. j and k must be active
   if (nact) {
-    vector<shared_ptr<const DFDist>> dfs = ref_->geom()->dfs()->split_blocks();
-    dfs.push_back(ref_->geom()->df());
+    vector<shared_ptr<const DFDist>> dfs = info_->geom()->dfs()->split_blocks();
+    dfs.push_back(info_->geom()->df());
     list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
 
     list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff_->slice_copy(2*(ncore+nclosed), 2*nocc));
@@ -278,11 +287,20 @@ void MOFock<complex<double>>::init() {
     fcl->diagonalize(eig);
     newcoeff->copy_block(0, 0, newcoeff->ndim(), (ncore+nclosed)*2, newcoeff->slice(0, (ncore+nclosed)*2) * *fcl);
   }
-  if (nvirt > 1) {
-    auto fvirt = make_shared<QuatMatrix>(*forig.get_submatrix(nocc*2, nocc*2, nvirt*2, nvirt*2));
+  const int nvirt = info_->nvirt();
+  const int nvirtall = nvirt+info_->nfrozenvirt();
+  if (nvirtall > 1) {
+    auto fvirt = make_shared<QuatMatrix>(*forig.get_submatrix(nocc*2, nocc*2, nvirtall*2, nvirtall*2));
     fvirt->diagonalize(eig);
-    newcoeff->copy_block(0, nocc*2, newcoeff->ndim(), nvirt*2, newcoeff->slice(nocc*2, (nocc+nvirt)*2) * *fvirt);
+    const ZMatrix crot = coeff_->slice(nocc*2, (nocc+nvirtall)*2) * *fvirt;
+    newcoeff->copy_block(0, nocc*2,       newcoeff->ndim(), nvirt, crot.slice(0, nvirt));
+    newcoeff->copy_block(0, nocc*2+nvirt, newcoeff->ndim(), nvirt, crot.slice(nvirtall, nvirtall+nvirt));
+    if (info_->nfrozenvirt() > 0) {
+      cout << "       - Truncating virtual orbitals: " << setw(20) << setprecision(10) << eig[nvirt] << endl;
+      newcoeff = newcoeff->slice_copy(0, (nocc+nvirt)*2);
+    }
   }
+
   // **** CAUTION **** updating the coefficient
   coeff_ = newcoeff;
 
@@ -299,32 +317,32 @@ void MOFock<complex<double>>::init() {
 template<>
 void MOFock<double>::init() {
   // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
-  const int ncore   = ref_->ncore();
-  const int nclosed = ref_->nclosed() - ncore;
+  const int ncore   = info_->ncore();
+  const int nclosed = info_->nclosed() - ncore;
   assert(nclosed >= 0);
-  const int nocc    = ref_->nocc();
-  const int nact    = ref_->nact();
-  const int nvirt   = ref_->nvirt();
+  const int nocc    = info_->nocc();
+  const int nact    = info_->nact();
+  const int nvirt   = info_->nvirt();
   const int nbasis  = coeff_->ndim();
 
   // cfock
-  shared_ptr<Matrix> cfock = ref_->hcore()->copy();
+  shared_ptr<Matrix> cfock = info_->hcore()->copy();
   core_energy_ = 0.0;
   if (ncore+nclosed) {
-    cfock = make_shared<Fock<1>>(ref_->geom(), ref_->hcore(), nullptr, coeff_->slice(0, ncore+nclosed), false, true);
+    cfock = make_shared<Fock<1>>(info_->geom(), info_->hcore(), nullptr, coeff_->slice(0, ncore+nclosed), false, true);
     shared_ptr<const Matrix> den = coeff_->form_density_rhf(ncore+nclosed);
-    core_energy_ = (*den * (*ref_->hcore()+*cfock)).trace() * 0.5;
+    core_energy_ = (*den * (*info_->hcore()+*cfock)).trace() * 0.5;
   }
 
   shared_ptr<const Matrix> fock1;
   if (nact) {
     Matrix tmp(nact, nact);
-    copy_n(ref_->rdm1_av()->data(), tmp.size(), tmp.data());
+    copy_n(info_->rdm1_av()->data(), tmp.size(), tmp.data());
     tmp.sqrt();
     tmp.scale(1.0/sqrt(2.0));
     shared_ptr<Matrix> weighted_coeff = coeff_->slice_copy(ncore+nclosed, nocc);
     *weighted_coeff *= tmp;
-    fock1 = make_shared<Fock<1>>(ref_->geom(), cfock, nullptr, weighted_coeff, false, true);
+    fock1 = make_shared<Fock<1>>(info_->geom(), cfock, nullptr, weighted_coeff, false, true);
   } else {
     fock1 = cfock;
   }
@@ -333,7 +351,7 @@ void MOFock<double>::init() {
   // Note that E_ij,kl = E_ij E_kl - delta_jk E_il
   // and SMITH uses E_ij E_kl type excitations throughout. j and k must be active
   if (nact) {
-    shared_ptr<const DFHalfDist> half = ref_->geom()->df()->compute_half_transform(coeff_->slice(ncore+nclosed, nocc))->apply_J();
+    shared_ptr<const DFHalfDist> half = info_->geom()->df()->compute_half_transform(coeff_->slice(ncore+nclosed, nocc))->apply_J();
     *cfock -= *half->form_2index(half, 0.5);
   }
 

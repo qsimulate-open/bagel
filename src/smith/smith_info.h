@@ -42,6 +42,7 @@ class SMITH_Info {
     std::string method_;
 
     int ncore_;
+    int nfrozenvirt_;
     double thresh_;
     int maxiter_;
     int target_;
@@ -57,6 +58,9 @@ class SMITH_Info {
       ncore_ = idata->get<int>("ncore", (frozen ? ref_->geom()->num_count_ncore_only()/2 : 0));
       if (ncore_)
         std::cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << std::endl;
+      nfrozenvirt_ = idata->get<int>("nfrozenvirt", 0);
+      if (nfrozenvirt_)
+        std::cout << "    * freezing " << nfrozenvirt_ << " orbital" << (nfrozenvirt_^1 ? "s" : "") << " (virtual)" << std::endl;
 
       maxiter_ = idata->get<int>("maxiter", 50);
       target_  = idata->get<int>("target",   0);
@@ -71,7 +75,8 @@ class SMITH_Info {
     int nclosed() const { return ref_->nclosed(); }
     int nact() const { return ref_->nact(); }
     int nocc() const { return ref_->nocc(); }
-    int nvirt() const { return ref_->nvirt(); }
+    int nvirt() const { return ref_->nvirt() - nfrozenvirt_; }
+    int nfrozenvirt() const { return nfrozenvirt_; }
 
     std::shared_ptr<const MatType> hcore() const { return nullptr; }
 

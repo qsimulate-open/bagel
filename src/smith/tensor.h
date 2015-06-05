@@ -139,7 +139,7 @@ class Tensor_ {
     std::shared_ptr<Civector<DataType>> civec(std::shared_ptr<const Determinants> det) const;
 
     // for Kramers tensors (does not do anything for standard tensors)
-    void set_perm(const std::map<std::vector<int>, double>& p) { data_->set_perm(p); }
+    void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { data_->set_perm(p); }
 };
 
 extern template class Tensor_<double>;

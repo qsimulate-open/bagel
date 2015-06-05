@@ -227,7 +227,7 @@ class StorageIncore : public Storage_base<StorageBlock<DataType>> {
             void ax_plus_y(const DataType& a, const std::shared_ptr<StorageIncore<DataType>> o) { ax_plus_y(a, *o); };
     virtual DataType dot_product(const StorageIncore<DataType>& o) const;
 
-    virtual void set_perm(const std::map<std::vector<int>, double>& p) { }
+    virtual void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { }
 };
 
 

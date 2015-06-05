@@ -95,7 +95,7 @@ template<int N, class Type>
 class Kramers {
   protected:
     std::map<KTag<N>, std::shared_ptr<Type>> data_;
-    std::map<std::vector<int>, double> perm_;
+    std::map<std::vector<int>, std::pair<double,bool>> perm_;
 
   private:
     friend class boost::serialization::access;
@@ -150,8 +150,8 @@ class Kramers {
         emplace(t, o->copy());
     }
 
-    void emplace_perm(const std::vector<int>& o, double a) { assert(N == o.size()); perm_.emplace(o,a); }
-    void set_perm(const std::map<std::vector<int>, double>& o) { perm_ = o; }
+    void emplace_perm(const std::vector<int>& o, double a, bool b = false) { assert(N == o.size()); perm_.emplace(o, std::make_pair(a,b)); }
+    void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& o) { perm_ = o; }
 
     // find the right permutation and sort indices
     std::shared_ptr<const Type> get_data(const KTag<N>& tag) const {
@@ -171,11 +171,15 @@ class Kramers {
               assert(std::pow(dim[0], N) == out->size());
               std::array<int,N> p;
               std::copy(i.first.begin(), i.first.end(), p.data());
-              sort_indices(/*sort info*/p, /*fac*/i.second, /*fac2*/0.0, j.second->data(), out->data(), dim);
+              sort_indices(/*sort info*/p, /*fac*/i.second.first, /*fac2*/0.0, j.second->data(), out->data(), dim);
               break;
             }
           }
-          if (found) break;
+          if (found) {
+            if (i.second.second)
+              blas::conj_n(out->data(), out->size());
+            break;
+          }
         }
         return out;
       }
