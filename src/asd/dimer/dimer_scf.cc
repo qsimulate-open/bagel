@@ -408,6 +408,9 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     shared_ptr<Matrix> tre_coeff = form_semi_canonical_coeff(idata); //semi-canonicalize regional(A,B,bridge) spaces
     shared_ptr<Matrix> out_coeff = overlap_selection(con_coeff, tre_coeff); //select active space based on source
 
+    //synchronization
+    out_coeff->broadcast();
+
     sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
 
     if (idata->get_child_optional("reduction"))

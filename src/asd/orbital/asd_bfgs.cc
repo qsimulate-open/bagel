@@ -26,16 +26,13 @@
 #include <src/scf/hf/fock.h>
 #include <src/asd/orbital/asd_bfgs.h>
 #include <src/asd/construct_asd.h>
-//#include <src/util/math/davidson.h>
 #include <src/util/math/step_restrict_bfgs.h>
-//#include <src/util/math/hpw_diis.h>
 #include <src/util/io/moldenout.h>
 
 using namespace std;
 using namespace bagel;
 
 void ASD_BFGS::compute() {
-
 
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 

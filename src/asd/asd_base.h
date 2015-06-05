@@ -85,6 +85,7 @@ class ASD_base {
 
     bool store_matrix_;
     bool dipoles_;
+    bool print_info_;
 
     double thresh_;
     double print_thresh_;
@@ -131,9 +132,9 @@ class ASD_base {
 
     void compute_rdm12_dimer();
 
-    //RDM debug functions
-    void debug_rdm(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&, const int istate, const bool mute) const;
-    void debug_energy(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&, const int istate, const bool mute) const;
+    //RDM information print
+    void print_rdm_info(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&, const int istate) const;
+    void print_energy_info(std::shared_ptr<RDM<1>>&, std::shared_ptr<RDM<2>>&, const int istate) const;
 
   public:
     ASD_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer, bool rdm = false);

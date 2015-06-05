@@ -40,6 +40,7 @@ ASD_base::ASD_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> 
   store_matrix_ = input->get<bool>("store_matrix", false);
   charge_ = input->get<int>("charge", 0);
   nspin_ = input->get<int>("spin", 0);
+  print_info_ = input->get<bool>("print_info", false);
 
   shared_ptr<const PTree> model_input = input->get_child_optional("models");
   if (model_input) {

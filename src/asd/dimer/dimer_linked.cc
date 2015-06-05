@@ -543,6 +543,10 @@ void Dimer::reduce_active(shared_ptr<const PTree> idata) {
   //update active refs
   active_refs_ = { make_shared<Reference>(active_refs_.first->geom(), active_refs_.first->coeff(), active_refs_.first->nclosed()+cA, active_refs_.first->nact()-cA-vA, active_refs_.first->nvirt()+vA),
                    make_shared<Reference>(active_refs_.second->geom(), active_refs_.second->coeff(), active_refs_.first->nclosed()+cB, active_refs_.first->nact()-cB-vB, active_refs_.first->nvirt()+vB)};
+
+  //synchronization
+  outcoeff->broadcast();
+
   //semi canonical coeff
   sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*outcoeff), nclosed+cA+cB, nact-cA-cB-vA-vB, nvirt_HF - nactvirtA - nactvirtB + vA+vB);
 

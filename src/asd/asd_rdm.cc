@@ -34,7 +34,8 @@ using namespace btas;
 void ASD_base::compute_rdm12_dimer() {
 
   statetensor_ = make_shared<StateTensor>(adiabats_, subspaces_base());
-  statetensor_->print();
+  if (print_info_)
+    statetensor_->print();
 
   for (int i = 0; i != nstates_; ++i) {
     shared_ptr<RDM<1>> rdm1;
@@ -190,81 +191,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_inter_2e(const a
     copy(rdmt->begin(), rdmt->end(), outv.begin());
   }
 
-#if 0 //Monomer
-  auto out1 = make_shared<RDM<1>>(nactA+nactB);
-  //Monomer RDMs
-  if (subdia) {
-    {//Monomer A
-      const int n = B.nstates();
-      Matrix delta(n,n);
-      delta.unit();
-      btas::CRange<2> range(n*n, 1);
-      const MatView gamma_B(btas::make_view(range, delta.storage()), /*localized*/true);
-      {//D_aa
-        auto rdmA = make_shared<Matrix>(*gamma_AA_alpha % gamma_B);
-        auto rdmB = make_shared<Matrix>(*gamma_AA_beta  % gamma_B);
-        auto rdmt = rdmA->clone();
-        sort_indices<0,1, 0,1, 1,1>(rdmA->data(), rdmt->data(), nactA, nactA); //a'a
-        sort_indices<0,1, 1,1, 1,1>(rdmB->data(), rdmt->data(), nactA, nactA); //b'b
-        auto low = {    0,     0};
-        auto up  = {nactA, nactA};
-        auto outv = make_rwview(out1->range().slice(low, up), out1->storage());
-        copy(rdmt->begin(), rdmt->end(), outv.begin());
-      }
-      {//d_aaaa
-        auto gamma_A_aaaa = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
-        auto gamma_A_bbbb = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta}, statetensor_, istate);
-        auto gamma_A_abba = gammatensor_[0]->contract_block_with_statetensor(keys, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha}, statetensor_, istate);
-        auto rdm_alpha = make_shared<Matrix>(*gamma_A_aaaa % gamma_B);
-        auto rdm_beta  = make_shared<Matrix>(*gamma_A_bbbb % gamma_B);
-        auto rdm_mix   = make_shared<Matrix>(*gamma_A_abba % gamma_B);
-        auto rdm_temp  = rdm_alpha->clone();
-        sort_indices<0,3,1,2, 0,1, 1,1>(rdm_alpha->data(), rdm_temp->data(), nactA, nactA, nactA, nactA); //p'q'rs => d_psqr == 0312
-        sort_indices<0,3,1,2, 1,1, 1,1>(rdm_beta->data(), rdm_temp->data(), nactA, nactA, nactA, nactA);
-        sort_indices<0,3,1,2, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactA, nactA, nactA, nactA);
-        sort_indices<1,2,0,3, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactA, nactA, nactA, nactA); //q'p'sr => d_qrps == 1203
-        auto low = {    0,     0,     0,     0};
-        auto up  = {nactA, nactA, nactA, nactA};
-        auto outv = make_rwview(out->range().slice(low, up), out->storage());
-        copy(rdm_temp->begin(), rdm_temp->end(), outv.begin());
-      }
-    }
-    {//Monomer B
-      auto gamma_A = statetensor_->contract_statetensor(keys, istate);
-      {//D_BB
-        auto rdmA = make_shared<Matrix>(*gamma_A % gamma_BB_alpha);
-        auto rdmB = make_shared<Matrix>(*gamma_A % gamma_BB_beta);
-        auto rdmt = rdmA->clone();
-        sort_indices<0,1, 0,1, 1,1>(rdmA->data(), rdmt->data(), nactB, nactB);
-        sort_indices<0,1, 1,1, 1,1>(rdmB->data(), rdmt->data(), nactB, nactB);
-        auto low = {nactA, nactA};
-        auto up  = {nactT, nactT};
-        auto outv = make_rwview(out1->range().slice(low, up), out1->storage());
-        copy(rdmt->begin(), rdmt->end(), outv.begin());
-      }
-      {//d_BBBB
-        auto gamma_B_aaaa = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
-        auto gamma_B_bbbb = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
-        auto gamma_B_abba = gammatensor_[1]->get_block_as_matview(B, Bp, {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
-        auto rdm_alpha = make_shared<Matrix>(*gamma_A % gamma_B_aaaa);
-        auto rdm_beta  = make_shared<Matrix>(*gamma_A % gamma_B_bbbb);
-        auto rdm_mix   = make_shared<Matrix>(*gamma_A % gamma_B_abba);
-        auto rdm_temp  = rdm_alpha->clone();
-        sort_indices<0,3,1,2, 0,1, 1,1>(rdm_alpha->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
-        sort_indices<0,3,1,2, 1,1, 1,1>(rdm_beta->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
-        sort_indices<0,3,1,2, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
-        sort_indices<1,2,0,3, 1,1, 1,1>(rdm_mix->data(), rdm_temp->data(), nactB, nactB, nactB, nactB);
-        auto low = {nactA, nactA, nactA, nactA};
-        auto up  = {nactT, nactT, nactT, nactT};
-        auto outv = make_rwview(out->range().slice(low, up), out->storage());
-        copy(rdm_temp->begin(), rdm_temp->end(), outv.begin());
-      }
-    }
-  }
-  return make_tuple(out1, out); //Monomer
-#else
   return make_tuple(nullptr, out);
-#endif
 }
 
 
@@ -543,7 +470,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_bbET(const array
 }
 
 
-void ASD_base::debug_rdm(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, const int istate, const bool mute) const {
+void ASD_base::print_rdm_info(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, const int istate) const {
   const int nactA = dimer_->embedded_refs().first->nact();
   const int nactB = dimer_->embedded_refs().second->nact();
   const int nactT = nactA+nactB;
@@ -552,31 +479,28 @@ void ASD_base::debug_rdm(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, con
   const int neleB = 2*(dimer_->isolated_refs().second->nclosed() - dimer_->active_refs().second->nclosed());
   const int nelec = neleA + neleB - charge_;
 
-  if (!mute) cout << "=== RDM debug output: state(" << istate << ") ===" << endl;
+  cout << "=== RDM information: state(" << istate << ") ===" << endl;
 
-  if (!mute) {
-    cout << "Nelectron A : " << neleA << endl;
-    cout << "Nelectron B : " << neleB << endl;
-    cout << "Charge      : " << charge_ << endl;
-    cout << "Total elec  : " << nelec << endl;
-  }
+  cout << "Nelectron A : " << neleA << endl;
+  cout << "Nelectron B : " << neleB << endl;
+  cout << "Charge      : " << charge_ << endl;
+  cout << "Total elec  : " << nelec << endl;
 
   {//1RDM
     double sum = 0.0;
     for (int i = 0; i != nactT; ++i)
       sum += rdm1->element(i,i);
-    if (!mute) cout << "1RDM Trace = " << setw(20) << setprecision(15) <<sum << endl;
-    assert((fabs(sum - static_cast<double>(nelec)) < 1.0e-10));
+    cout << "1RDM Trace = " << setw(20) << setprecision(8) <<sum << endl;
+    assert(fabs((sum - static_cast<double>(nelec)) / static_cast<double>(nelec)) < 1.0e-8);
   }
-
 
   {//2RDM Trace: Gamma_ij,kl = <0|E_ij,kl|0> = <0|(k1)'(i2)'(j2)(l1)|0>  1,2 = spin
     double sum = 0.0;
     for (int i = 0; i != nactT; ++i)
       for (int j = 0; j != nactT; ++j)
       sum += rdm2->element(i,i,j,j);
-    if (!mute) cout << "2RDM Trace = " << setw(20) << setprecision(15) <<sum << endl;
-    assert((fabs(sum - static_cast<double>(nelec*(nelec-1))) < 1.0e-8));
+    cout << "2RDM Trace = " << setw(20) << setprecision(8) <<sum << endl;
+    assert(fabs((sum - static_cast<double>(nelec*(nelec-1))) / static_cast<double>(nelec*(nelec-1))) < 1.0e-8);
   }
 
   {//Partial trace: Gamma_ij,kk
@@ -585,11 +509,10 @@ void ASD_base::debug_rdm(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, con
       for (int j = 0; j != nactT; ++j)
         for (int k = 0; k != nactT; ++k)
           debug->element(i,j) -= 1.0/(nelec-1) * rdm2->element(i,j,k,k);
-    //cout << "2RDM(AB) Partial Trace Sum_k (i,j,k,k)" << endl;
-    //debug->print(1.0e-10);
+
     for (int i = 0; i !=nactT; ++i)
       for (int j = 0; j !=nactT; ++j)
-        if(fabs(debug->element(j,i)) > 1.0e-10) {
+        if(fabs(debug->element(j,i)) > 1.0e-8) {
           cout << j << " " << i << " : " << debug->element(j,i) << endl;
           throw runtime_error("Partial trace check failed");
         }
@@ -597,7 +520,7 @@ void ASD_base::debug_rdm(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, con
 }
 
 
-void ASD_base::debug_energy(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, const int istate, const bool mute) const {
+void ASD_base::print_energy_info(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, const int istate) const {
   const int nclosedA = dimer_->active_refs().first->nclosed();
   const int nclosedB = dimer_->active_refs().second->nclosed();
 
@@ -605,11 +528,9 @@ void ASD_base::debug_energy(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, 
   const int nactB = dimer_->embedded_refs().second->nact();
   const int nactT = nactA+nactB;
 
-  if (!mute) {
-    cout << "=== Energy calculated using RDMs: state(" << istate << ") ===" << endl;
-    cout << "Number of closed orbitals: A(" << nclosedA << "), B(" << nclosedB << ")" << endl;
-    cout << "Number of active orbitals: A(" << nactA << "), B(" << nactB << ")" << endl;
-  }
+  cout << "=== Energy calculated using RDM: state(" << istate << ") ===" << endl;
+  cout << "Number of closed orbitals: A(" << nclosedA << "), B(" << nclosedB << ")" << endl;
+  cout << "Number of active orbitals: A(" << nactA << "), B(" << nactB << ")" << endl;
 
   shared_ptr<const Matrix> ha = jop_->monomer_jop<0>()->mo1e()->matrix(); //h_AA
   shared_ptr<const Matrix> hb = jop_->monomer_jop<1>()->mo1e()->matrix(); //h_BB
@@ -888,36 +809,34 @@ void ASD_base::debug_energy(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& rdm2, 
                     e2_abab + e2_baba + e2_abba + e2_baab;
   const double etot = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy() + e1 + e2;
 
-  if (!mute) {
-    cout << "Nuc + Core energy   = " << dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy() << endl;
-    cout << "  Nuclear repulsion = " << dimer_->sref()->geom()->nuclear_repulsion() << endl;
-    cout << "  Core energy       = " << jop_->core_energy() << endl;
-    cout << "One-electron energy = " << e1 << endl;
-    cout << "  2A       AA       = " << e1_aa << endl;
-    cout << "  2B       BB       = " << e1_bb << endl;
-    cout << "  1A1B     AB       = " << e1_ab << endl;
-    cout << "           BA       = " << e1_ba << endl;
-    cout << "Two-electron energy = " << e2 << endl;
-    cout << "  4A       AAAA     = " << e2_aaaa << endl;
-    cout << "  4B       BBBB     = " << e2_bbbb << endl;
-    cout << "  3A/1B    AAAB     = " << e2_aaab << endl;
-    cout << "           AABA     = " << e2_aaba << endl;
-    cout << "           ABAA     = " << e2_abaa << endl;
-    cout << "           BAAA     = " << e2_baaa << endl;
-    cout << "  1A/3B    ABBB     = " << e2_abbb << endl;
-    cout << "           BABB     = " << e2_babb << endl;
-    cout << "           BBAB     = " << e2_bbab << endl;
-    cout << "           BBBA     = " << e2_bbba << endl;
-    cout << "  2A/2B    AABB     = " << e2_aabb << endl;
-    cout << "           BBAA     = " << e2_bbaa << endl;
-    cout << "           ABAB     = " << e2_abab << endl;
-    cout << "           BABA     = " << e2_baba << endl;
-    cout << "           ABBA     = " << e2_abba << endl;
-    cout << "           BAAB     = " << e2_baab << endl;
-    cout << "Total energy = " << etot << endl;
-  }
+  cout << "Nuc + Core energy   = " << dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy() << endl;
+  cout << "  Nuclear repulsion = " << dimer_->sref()->geom()->nuclear_repulsion() << endl;
+  cout << "  Core energy       = " << jop_->core_energy() << endl;
+  cout << "One-electron energy = " << e1 << endl;
+  cout << "  2A       AA       = " << e1_aa << endl;
+  cout << "  2B       BB       = " << e1_bb << endl;
+  cout << "  1A1B     AB       = " << e1_ab << endl;
+  cout << "           BA       = " << e1_ba << endl;
+  cout << "Two-electron energy = " << e2 << endl;
+  cout << "  4A       AAAA     = " << e2_aaaa << endl;
+  cout << "  4B       BBBB     = " << e2_bbbb << endl;
+  cout << "  3A/1B    AAAB     = " << e2_aaab << endl;
+  cout << "           AABA     = " << e2_aaba << endl;
+  cout << "           ABAA     = " << e2_abaa << endl;
+  cout << "           BAAA     = " << e2_baaa << endl;
+  cout << "  1A/3B    ABBB     = " << e2_abbb << endl;
+  cout << "           BABB     = " << e2_babb << endl;
+  cout << "           BBAB     = " << e2_bbab << endl;
+  cout << "           BBBA     = " << e2_bbba << endl;
+  cout << "  2A/2B    AABB     = " << e2_aabb << endl;
+  cout << "           BBAA     = " << e2_bbaa << endl;
+  cout << "           ABAB     = " << e2_abab << endl;
+  cout << "           BABA     = " << e2_baba << endl;
+  cout << "           ABBA     = " << e2_abba << endl;
+  cout << "           BAAB     = " << e2_baab << endl;
+  cout << "Total energy = " << etot << endl;
 
-  assert(fabs(etot - energy(istate)) < 1.0e-6);
+  assert(fabs((etot - energy(istate)) / etot) < 1.0e-10);
 
 }
 

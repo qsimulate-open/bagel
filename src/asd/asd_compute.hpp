@@ -61,6 +61,9 @@ void ASD<VecType>::compute() {
 
     std::cout << "  o Computing Gamma trees - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
   }
+  else {
+    std::cout << "  o Monomer CI coefficients are fixed. Gamma trees from previous calculation will be used." << std::endl;
+  }
 
   if (store_matrix_) hamiltonian_ = std::make_shared<Matrix>(dimerstates_, dimerstates_);
 
@@ -94,7 +97,7 @@ void ASD<VecType>::compute() {
     std::cout << "  o Computing off-diagonal blocks - time " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
   }
 
-  std::cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << std::endl;
+  std::cout << "  o Diagonalizing ASD Hamiltonian with a Davidson procedure" << std::endl;
   auto cc = std::make_shared<Matrix>(dimerstates_, nstates_);
   generate_initial_guess(cc, subspaces_base(), nstates_);
   std::cout << "    - initial guess time " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl << std::endl;

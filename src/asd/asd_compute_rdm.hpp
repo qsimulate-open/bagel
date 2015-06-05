@@ -47,12 +47,8 @@ void ASD<VecType>::compute_rdm12() {
   compute_rdm12_dimer(); //allocation takes place
   std::cout << "  o Dimer RDM - " << std::setw(9) << std::fixed << std::setprecision(2) << rdmtime.tick() << std::endl;
 
-#if 1 //Monomer
-  //1 monomer RDM is calculated with standard algorithm
-  //0 calculated with Gamma tensors (then make sure Monomer switch in other files are set to 1)
   compute_rdm12_monomer();
   std::cout << "  o Monomer RDM - " << std::setw(9) << std::fixed << std::setprecision(2) << rdmtime.tick() << std::endl;
-#endif
 
   //State-average RDM
   if (nstates_ != 1) {
@@ -65,12 +61,14 @@ void ASD<VecType>::compute_rdm12() {
     rdm2_av_ = rdm2_[0];
   }
 
-  //debug
-  for (int i = 0; i != nstates_; ++i) {
-    debug_rdm(rdm1_[i], rdm2_[i], i, /*mute*/false);
-    debug_energy(rdm1_[i], rdm2_[i], i, /*mute*/false);
+  //print information
+  if (print_info_) {
+    for (int i = 0; i != nstates_; ++i) {
+      print_rdm_info(rdm1_[i], rdm2_[i], i);
+      print_energy_info(rdm1_[i], rdm2_[i], i);
+    }
   }
-  std::cout << "  o Debug RDM - " << std::setw(9) << std::fixed << std::setprecision(2) << rdmtime.tick() << std::endl;
+
   std::cout << " ============================== " << std::endl;
 }
 
