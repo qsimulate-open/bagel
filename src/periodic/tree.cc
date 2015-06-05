@@ -150,9 +150,9 @@ void Tree::contract_vertex() {
   atomgroup_.resize(nvertex_);
   coordinates_.resize(nvertex_);
   for (int i = 0; i != nvertex_; ++i) {
-    coordinates_[i][0] = atomgroup_[i]->position(0);
-    coordinates_[i][1] = atomgroup_[i]->position(1);
-    coordinates_[i][2] = atomgroup_[i]->position(2);
+    coordinates_[i][0] = atomgroup_[i]->position(0) - position_[0];
+    coordinates_[i][1] = atomgroup_[i]->position(1) - position_[1];
+    coordinates_[i][2] = atomgroup_[i]->position(2) - position_[2];
     int iat = 0;
     for (auto& atom : atomgroup_[i]->atoms()) {
       cout << atom->name() << atomgroup_[i]->order_in_geom(iat) << " ";
@@ -244,17 +244,17 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
   fmmtime.tick_print("    Downward pass");
 
   // Upward pass
-  vector<int> offset;
-  for (int n = 0; n != nvertex_; ++n) {
+  vector<int> offsets;
+  for (int n = 0; n != geom_->natom(); ++n) {
     const vector<int> tmpoff = geom_->offset(n);
-    offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());
+    offsets.insert(offsets.end(), tmpoff.begin(), tmpoff.end());
   }
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   for (int i = 1; i != nnode_; ++i) {
-    nodes_[i]->compute_local_expansions(density, lmax, offset);
+    nodes_[i]->compute_local_expansions(density, lmax, offsets);
     if (nodes_[i]->is_leaf()) {
-      shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offset);
+      shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets);
       *out += *tmp;
     }
   }

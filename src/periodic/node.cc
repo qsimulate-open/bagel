@@ -216,12 +216,10 @@ void Node::compute_multipoles(const int lmax) {
   if (is_leaf_) { //compute multipole integrals
     size_t ob0 = 0;
     for (auto& a0 : bodies_) {
-      size_t iat0 = 0;
       for (auto& atom0 : a0->atoms()) {
         for (auto& b0 : atom0->shells()) {
           size_t ob1 = 0;
           for (auto& a1 : bodies_) {
-            size_t iat1 = 0;
             for (auto& atom1 : a1->atoms()) {
               for (auto& b1 : atom1->shells()) {
                 MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
@@ -230,12 +228,10 @@ void Node::compute_multipoles(const int lmax) {
                   multipoles[i]->add_block(1.0, ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
                 ob1 += b1->nbasis();
               }
-              ++iat1;
             }
           }
           ob0 += b0->nbasis();
         }
-        ++iat0;
       }
     }
   } else { //shift children's multipoles
@@ -243,8 +239,8 @@ void Node::compute_multipoles(const int lmax) {
     if (child->is_same_as_parent())
       skip = true;
 
-    int offset = 0;
     if (!skip) {
+      size_t offset = 0;
       for (int n = 0; n != nchild_; ++n) {
         shared_ptr<const Node> child = children_[n].lock();
         array<double, 3> r12;
@@ -274,7 +270,7 @@ void Node::compute_multipoles(const int lmax) {
 }
 
 
-void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int lmax, vector<int> offset) {
+void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int lmax, const vector<int> offsets) {
 
   const int nmultipole = (lmax + 1) * (lmax + 1);
   local_moment_.resize(nmultipole);
@@ -327,7 +323,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
         for (auto& atom0 : body0->atoms()) {
           size_t ish0 = 0;
           for (auto& b0 : atom0->shells()) {
-            const int offset0 = offset[body0->ishell(iat0) + ish0];
+            const int offset0 = offsets[body0->ishell(iat0) + ish0];
             const size_t size0 = b0->nbasis();
             ++ish0;
 
@@ -336,8 +332,8 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
               size_t iat1 = 0;
               for (auto& atom1 : body1->atoms()) {
                 size_t ish1 = 0;
-                for (auto& b1 : atom0->shells()) {
-                  const int offset1 = offset[body1->ishell(iat1) + ish1];
+                for (auto& b1 : atom1->shells()) {
+                  const int offset1 = offsets[body1->ishell(iat1) + ish1];
                   const size_t size1 = b1->nbasis();
                   ++ish1;
 
@@ -433,7 +429,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offset) {
+shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
@@ -446,7 +442,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
     for (auto& atom0 : body0->atoms()) {
       size_t ish0 = 0;
       for (auto& b0 : atom0->shells()) {
-        const int offset0 = offset[body0->ishell(iat0) + ish0];
+        const int offset0 = offsets[body0->ishell(iat0) + ish0];
         const size_t size0 = b0->nbasis();
         ++ish0;
 
@@ -456,7 +452,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
           for (auto& atom1 : body1->atoms()) {
             size_t ish1 = 0;
             for (auto& b1 : atom1->shells()) {
-              const int offset1 = offset[body1->ishell(iat1) + ish1];
+              const int offset1 = offsets[body1->ishell(iat1) + ish1];
               const size_t size1 = b1->nbasis();
               ++ish1;
 
@@ -482,10 +478,12 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
       for (auto& close_atom : close_body->atoms()) {
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
-        const int nshell = close_atom->nshell();
-        vector<int> tmpoff(nshell);
-        for (int i = 0; i != nshell; ++i)
-          tmpoff[i] = offset[close_body->ishell(iat) + i];
+        vector<int> tmpoff;
+        size_t ish = 0;
+        for (auto& shell : close_atom->shells()) {
+          tmpoff.insert(tmpoff.end(), offsets[close_body->ishell(iat) + ish]);
+          ++ish;
+        }
 
         new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
         ++iat;
@@ -514,10 +512,11 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         for (auto& a3 : bodies_) {
           size_t iat3 = 0;
           for (auto& atom3 : a3->atoms()) {
-            size_t ib3 = 0;
+            size_t ish3 = 0;
             for (auto& b3 : atom3->shells()) {
               const int b3size = b3->nbasis();
-              const size_t b3offset = offset[a3->ishell(iat3) + ib3];
+              const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
+              ++ish3;
 
               array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
               ERIBatch eribatch(input, 0.0);
@@ -535,7 +534,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
                   }
                 }
               }
-              ++ib3;
             }
             ++iat3;
           }

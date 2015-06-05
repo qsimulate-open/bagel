@@ -68,8 +68,8 @@ class Node {
     std::shared_ptr<const ZMatrix> local_expansion_;
     std::vector<std::shared_ptr<const ZMatrix>> child_local_expansion_;
     void compute_multipoles(const int lmax = ANG_HRR_END);
-    void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offset);
-    std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offset);
+    void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, const std::vector<int> offsets);
+    std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offsets);
 
   public:
     Node(const std::bitset<nbit__> key = 0, const int depth = 0,
