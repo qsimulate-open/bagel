@@ -97,7 +97,7 @@ class StateTensor {
       auto tensor = std::make_shared<btas::Tensor2<double>>(B.nstates(), Bp.nstates());
       btas::contract(1.0, sparse_.at(std::make_tuple(istate,A,B)), {0,1}, sparse_.at(std::make_tuple(istate,Ap,Bp)), {0,2}, 0.0, *tensor, {1,2});
       btas::CRange<2> range(tensor->extent(0)*tensor->extent(1), 1);
-      MatView view(btas::make_view(range, tensor->storage()), /*localized*/false);
+      MatView view(btas::make_view(range, tensor->storage()), /*localized*/true);
 
       return std::make_shared<Matrix>(view);
     }

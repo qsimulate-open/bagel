@@ -106,7 +106,6 @@ void ASD_BFGS::compute() {
     shared_ptr<const Matrix> rdm1_mat = rdm1_->rdm1_mat(/*nclose*/0);
     shared_ptr<Matrix> rdm1_scaled = rdm1_mat->copy();
     rdm1_scaled->sqrt();
-    rdm1_scaled->delocalize();
     auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_scaled); // such that C' * (1/2 D) C will be obtained.
     // then make a AO density matrix
     shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeffw, /*store*/false, /*rhf*/true);
