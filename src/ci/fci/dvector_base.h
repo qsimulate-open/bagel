@@ -124,12 +124,21 @@ class Dvector_base {
     std::shared_ptr<Dvector_base<CiType>> clone() const { return std::make_shared<Dvector_base<CiType>>(det_, ij_); }
     std::shared_ptr<Dvector_base<CiType>> copy() const { return std::make_shared<Dvector_base<CiType>>(*this); }
 
-    // for MEH
+    // for ASD
     std::shared_ptr<Dvector_base<CiType>> apply(const int orbital, const bool action, const bool spin) const {
       std::vector<std::shared_ptr<CiType>> out;
       for (auto& i : dvec_) out.push_back( i->apply(orbital, action, spin) );
       return std::make_shared<Dvector_base<CiType>>(out);
     }
+
+    std::shared_ptr<Dvector_base<CiType>> apply_and_allocate(const bool action, const bool spin) const {
+      std::shared_ptr<const DetType> source_det = this->det();
+      std::shared_ptr<const DetType> target_det = spin ? (action ? source_det->addalpha() : source_det->remalpha()) :
+                                                         (action ? source_det->addbeta() : source_det->rembeta());
+      return std::make_shared<Dvector_base<CiType>>(target_det, this->ij());
+    }
+
+    void apply_and_fill(std::shared_ptr<const Dvector_base<CiType>> source_dvec, const int orbital, const bool action, const bool spin) { assert(false); }
 
     // will fail for non-double DataTypes
     std::shared_ptr<Dvector_base<CiType>> spin() const {

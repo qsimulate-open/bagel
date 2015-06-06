@@ -778,6 +778,9 @@ template<> void Civector<double>::spin_decontaminate(const double thresh);
 using Civec = Civector<double>;
 using ZCivec = Civector<std::complex<double>>;
 
+template <>
+void Dvector_base<Civec>::apply_and_fill(std::shared_ptr<const Dvector_base<Civec>> source_dvec, const int orbital, const bool action, const bool spin);
+
 using CASDvec = Dvector_base<Civec>;
 
 }

@@ -37,28 +37,33 @@ void ASD<VecType>::compute() {
   std::cout << "     -  charge: " << charge_ << std::endl;
   std::cout << "     -  dimer states: " << dimerstates_ << std::endl << std::endl;
 
-  auto gammaforest = std::make_shared<GammaForest<VecType, 2>>();
-  {
-    auto spinmap = std::make_shared<ASDSpinMap<VecType>>();
-    for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
-      for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
-        gammaforest->couple_blocks(*jAB, *iAB);
-        spinmap->couple_blocks(*jAB, *iAB);
+  if (!fix_ci_) {
+    auto gammaforest = std::make_shared<GammaForest<VecType, 2>>();
+    {
+      auto spinmap = std::make_shared<ASDSpinMap<VecType>>();
+      for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+        for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+          gammaforest->couple_blocks(*jAB, *iAB);
+          spinmap->couple_blocks(*jAB, *iAB);
+        }
+        gammaforest->couple_blocks(*iAB, *iAB);
+        spinmap->diagonal_block(*iAB);
       }
-      gammaforest->couple_blocks(*iAB, *iAB);
-      spinmap->diagonal_block(*iAB);
+      spin_ = std::make_shared<ASDSpin>(dimerstates_, *spinmap, max_spin_);
     }
-    spin_ = std::make_shared<ASDSpin>(dimerstates_, *spinmap, max_spin_);
+
+    std::cout << "  o Preparing Gamma trees and building spin operator - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
+    std::cout << "    - spin elements: " << spin_->size() << std::endl;
+
+    gammaforest->compute();
+    gammatensor_ = { std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,0>(gammaforest), subspaces_),
+                     std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,1>(gammaforest), subspaces_) };
+
+    std::cout << "  o Computing Gamma trees - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
   }
-
-  std::cout << "  o Preparing Gamma trees and building spin operator - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
-  std::cout << "    - spin elements: " << spin_->size() << std::endl;
-
-  gammaforest->compute();
-  gammatensor_ = { std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,0>(gammaforest), subspaces_),
-                   std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,1>(gammaforest), subspaces_) };
-
-  std::cout << "  o Computing Gamma trees - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
+  else {
+    std::cout << "  o Monomer CI coefficients are fixed. Gamma trees from previous calculation will be used." << std::endl;
+  }
 
   if (store_matrix_) hamiltonian_ = std::make_shared<Matrix>(dimerstates_, dimerstates_);
 
@@ -66,7 +71,7 @@ void ASD<VecType>::compute() {
 
   for (auto& subspace : subspaces_) {
     compute_pure_terms(subspace, jop_);
-    std::shared_ptr<Matrix> block = compute_diagonal_block<true>(subspace);
+    std::shared_ptr<Matrix> block = compute_diagonal_block(subspace);
     if (store_matrix_)
       hamiltonian_->add_block(1.0, subspace.offset(), subspace.offset(), block->ndim(), block->mdim(), block);
     const int n = block->ndim();
@@ -81,7 +86,7 @@ void ASD<VecType>::compute() {
         const int joff = jAB->offset();
 
 // TODO remove this comment once the gammaforst issue has been fixed (bra and ket have been exchanged)
-        std::shared_ptr<Matrix> block = couple_blocks<true>(*jAB, *iAB);
+        std::shared_ptr<Matrix> block = couple_blocks(*jAB, *iAB);
 
         if (block) {
           hamiltonian_->add_block(1.0, joff, ioff, block->ndim(), block->mdim(), block);
@@ -92,7 +97,7 @@ void ASD<VecType>::compute() {
     std::cout << "  o Computing off-diagonal blocks - time " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
   }
 
-  std::cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << std::endl;
+  std::cout << "  o Diagonalizing ASD Hamiltonian with a Davidson procedure" << std::endl;
   auto cc = std::make_shared<Matrix>(dimerstates_, nstates_);
   generate_initial_guess(cc, subspaces_base(), nstates_);
   std::cout << "    - initial guess time " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl << std::endl;
@@ -100,6 +105,10 @@ void ASD<VecType>::compute() {
   energies_ = diagonalize(cc, subspaces_base());
 
   adiabats_ = cc->copy();
+
+//adiabats_->print("ADIABATS", adiabats_->ndim());
+
+  if (compute_rdm_) compute_rdm12();
 
   if (dipoles_) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;

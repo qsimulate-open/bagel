@@ -26,6 +26,7 @@
 #include <src/asd/dimer/dimer.h>
 #include <src/scf/hf/fock.h>
 #include <src/wfn/localization.h>
+#include <src/util/io/moldenout.h>
 
 using namespace std;
 using namespace bagel;
@@ -148,6 +149,7 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
 
   sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
 }
+
 
 /// localize_first flag defined as in Dimer::localize
 ///  If localize_first is set, separate SVDs are done for each monomer. Otherwise, two are done (one for
@@ -318,6 +320,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nexternA+nexternB - (nclosed+nact));
 }
 
+
 // RHF and then localize
 void Dimer::scf(const shared_ptr<const PTree> idata) {
   Timer dimertime;
@@ -338,7 +341,8 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   //   localize_first           - fragment localizes, then picks the active space within each fragment (recommended)
   //   active_first             - picks active space from dimer orbitals first, then attempts to localize
   //   active_only              - picks active space from dimer orbitals and does not localize
-  const string scheme = idata->get<string>("scheme", "active_first");
+  //   linked                   - similar to localize_first, but for linked dimer only
+  const string scheme = idata->get<string>("scheme", idata->get<string>("form", "displace") == "linked" ? "linked" : "active_first");
 
   if (scheme == "active_only" || scheme == "active_first") {
     // Set active space based on overlap
@@ -380,5 +384,42 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
     scoeff->copy_block(0, nclosed, scoeff->ndim(), active_mos.mdim(), active_mos);
     sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*scoeff)));
+  }
+  else if (scheme == "linked") {
+    //localize
+    shared_ptr<const PTree> localize_data = idata->get_child_optional("localization");
+    if (!localize_data) localize_data = make_shared<const PTree>();
+
+    string localizemethod = localize_data->get<string>("algorithm", "pm");
+    shared_ptr<OrbitalLocalization> localization;
+    if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
+      localization = make_shared<PMLocalization>(localize_data, sref_);
+    else throw runtime_error("Unsupported orbital localization method");
+
+    shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize());
+    sref_ = make_shared<const Reference>(*sref_, new_coeff); //new super_reference with localized orbitals
+
+    active_thresh_ = input_->get<double>("active_thresh", 0.5);
+    set_active(idata);
+
+    //semi-canonicalize
+    cout << endl << "  o Forming semi-canonical orbitals" << endl;
+    shared_ptr<Matrix> con_coeff = form_reference_active_coeff(); //semi-canonicalize active space
+    shared_ptr<Matrix> tre_coeff = form_semi_canonical_coeff(idata); //semi-canonicalize regional(A,B,bridge) spaces
+    shared_ptr<Matrix> out_coeff = overlap_selection(con_coeff, tre_coeff); //select active space based on source
+
+    //synchronization
+    out_coeff->broadcast();
+
+    sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
+
+    if (idata->get_child_optional("reduction"))
+      reduce_active(idata);
+
+    if (print_orbital_ && mpi__->rank() == 0) {
+      MoldenOut mfs("dimer_semi_canonical.molden");
+      mfs << sgeom_;
+      mfs << sref_;
+    }
   }
 }

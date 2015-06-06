@@ -23,17 +23,12 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/util/prim_op.h>
 #include <src/asd/asd_ras.h>
 #include <src/ci/ras/form_sigma.h>
 
 using namespace std;
 using namespace bagel;
-
-ASD_RAS::ASD_RAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerRAS> cispace)
-  : ASD<RASDvec>(input, dimer, cispace) {
-
-}
-
 
 shared_ptr<RASDvec> ASD_RAS::form_sigma(shared_ptr<const RASDvec> ccvec, shared_ptr<const MOFile> jop) const {
   FormSigmaRAS form;
@@ -47,4 +42,144 @@ shared_ptr<RASDvec> ASD_RAS::form_sigma_1e(shared_ptr<const RASDvec> ccvec, cons
   auto mo1e = make_shared<Matrix>(norb, norb);
   copy_n(modata, norb*norb, mo1e->data());
   return form(ccvec, mo1e, nullptr, vector<int>(ccvec->ij(), static_cast<int>(false)));
+}
+
+
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_monomer(shared_ptr<const RASDvec> civec, const int i) const {
+  shared_ptr<const RASCivec> cbra = civec->data(i);
+  const int norb = cbra->det()->norb();
+
+  Timer mtime;
+
+  auto dbra = make_shared<RASDvec>(cbra->det(), norb*norb);
+  dbra->zero();
+  sigma_2a(cbra, dbra);
+
+  std::cout << "  o single monomer RDM - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
+
+  return compute_rdm12_last_step(cbra, dbra);
+}
+
+void ASD_RAS::sigma_2a(shared_ptr<const RASCivec> cc, shared_ptr<RASDvec> d) const {
+  shared_ptr<const RASDeterminants> det = cc->det();
+
+  for (auto& block : cc->blocks()) {
+    if (block) {
+      const size_t a_offset = block->stringsa()->offset();
+      const size_t b_offset = block->stringsb()->offset();
+
+      for (size_t ia = 0, ab = 0; ia < block->stringsa()->size(); ++ia) {
+        const auto abit = block->string_bits_a(ia);
+        for (size_t jb = 0; jb < block->stringsb()->size(); ++jb, ++ab) {
+          const auto bbit = block->string_bits_b(jb);
+          const double coef = block->element(ab);
+
+          if (fabs(coef) < numerical_zero__) continue;
+          for (auto& phi : det->phib(jb + b_offset)) {
+            assert(phi.target == jb + b_offset);
+            const auto sbit = det->string_bits_b(phi.source);
+            if(det->allowed(abit,sbit))
+              d->data(phi.ij)->element(sbit,abit) += static_cast<double>(phi.sign) * coef; // i^+ j => (j,i)
+          }
+          for (auto& phi : det->phia(ia + a_offset)) {
+            assert(phi.target == ia + a_offset);
+            const auto sbit = det->string_bits_a(phi.source);
+            if(det->allowed(sbit,bbit))
+              d->data(phi.ij)->element(bbit,sbit) += static_cast<double>(phi.sign) * coef;
+          }
+
+        }
+      }
+    }
+  }
+
+}
+
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_RAS::compute_rdm12_last_step(shared_ptr<const RASCivec> cibra, shared_ptr<const RASDvec> dbra) const {
+  const int norb = cibra->det()->norb();
+  const int nri = dbra->data(0)->size();
+  auto cimat = make_shared<Matrix>(nri,norb*norb);
+  for (int ij = 0; ij != norb*norb; ++ij)
+    copy_n(dbra->data(ij)->data(), nri, cimat->element_ptr(0,ij));
+
+  Timer mtime;
+  // 1RDM
+  auto rdm1 = make_shared<RDM<1>>(norb);
+  {
+    dgemv_("T", nri, norb*norb, 1.0, cimat->element_ptr(0,0), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
+    std::cout << "      o 1RDM(dgemv) - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
+  }
+
+  // 2RDM
+  auto rdm2 = make_shared<RDM<2>>(norb);
+  {
+    auto rdmt = rdm2->clone();
+    dgemm_("T", "N", norb*norb, norb*norb, nri, 1.0, cimat->element_ptr(0,0), nri, cimat->element_ptr(0,0), nri, 0.0, rdmt->data(), norb*norb);
+    std::cout << "      o 2RDM(dgemm) - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
+
+    unique_ptr<double[]> buf(new double[norb*norb]);
+    for (int i = 0; i != norb; ++i)
+      for (int k = 0; k != norb; ++k) {
+        copy_n(&rdmt->element(0,0,k,i), norb*norb, buf.get());
+        blas::transpose(buf.get(), norb, norb, &rdmt->element(0,0,k,i));
+      }
+    std::cout << "      o tran - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
+
+    sort_indices<2,3,0,1, 0,1, 1,1>(rdmt->data(), rdm2->data(), norb, norb, norb, norb);
+    std::cout << "      o sort - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
+
+    // put in diagonal into 2RDM
+    // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
+    for (int i = 0; i != norb; ++i)
+      for (int k = 0; k != norb; ++k)
+        for (int j = 0; j != norb; ++j)
+          rdm2->element(j,k,k,i) -= rdm1->element(j,i);
+    std::cout << "      o diag - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
+
+    //RDM2 symmetrize (out-of-excitation free parts are copied)
+    for (int i = 0, ij = 0; i != norb; ++i)
+      for (int j = 0; j != norb; ++j, ++ij)
+          for (int k = 0, kl = 0; k != norb; ++k)
+            for (int l = 0; l != norb; ++l, ++kl)
+              if (kl > ij) rdm2->element(i,j,k,l) = rdm2->element(k,l,i,j);
+    std::cout << "      o sym - " << std::setw(9) << std::fixed << std::setprecision(5) << mtime.tick() << std::endl;
+  }
+
+  return tie(rdm1, rdm2);
+}
+
+shared_ptr<RASDvec> ASD_RAS::contract_I(shared_ptr<const RASDvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  auto out = make_shared<RASDvec>(A->det(), nstB);
+  for (int ij = 0; ij != nstB; ++ij) {
+    out->data(ij)->zero();
+  }
+
+  for (int j = 0; j != nstB; ++j) {
+    for (int i = 0; i != nstA; ++i) {
+      const int ij  = i  + (j*nstA);
+      double u_ij = adiabats->element(ioff+ij,kst);
+
+      out->data(j)->ax_plus_y(u_ij, A->data(i));
+
+    }
+  }
+  return out;
+}
+
+shared_ptr<RASDvec> ASD_RAS::contract_J(shared_ptr<const RASDvec> B, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  auto out = make_shared<RASDvec>(B->det(), nstA);
+  for (int ij = 0; ij != nstA; ++ij) {
+    out->data(ij)->zero();
+  }
+
+  for (int i = 0; i != nstA; ++i) {
+    for (int j = 0; j != nstB; ++j) {
+      const int ij  = i  + (j*nstA);
+      double u_ij = adiabats->element(ioff+ij,kst);
+
+      out->data(i)->ax_plus_y(u_ij, B->data(j));
+
+    }
+  }
+  return out;
 }

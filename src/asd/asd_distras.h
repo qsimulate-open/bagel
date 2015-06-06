@@ -32,7 +32,8 @@ namespace bagel {
 
 class ASD_DistRAS : public ASD<DistRASDvec> {
   public:
-    ASD_DistRAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerDistRAS> cispace);
+    ASD_DistRAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerDistRAS> cispace)
+      : ASD<DistRASDvec>(input, dimer, cispace) {};
 
   private:
     std::shared_ptr<DistRASDvec> form_sigma(std::shared_ptr<const DistRASDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
@@ -41,6 +42,11 @@ class ASD_DistRAS : public ASD<DistRASDvec> {
     void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
     void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
     void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
+
+    std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_rdm12_monomer(std::shared_ptr<const DistRASDvec> civec, const int i) const override;
+
+    std::shared_ptr<DistRASDvec> contract_I(std::shared_ptr<const DistRASDvec> A, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const override;
+    std::shared_ptr<DistRASDvec> contract_J(std::shared_ptr<const DistRASDvec> B, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const override;
 };
 
 }

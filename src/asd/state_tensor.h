@@ -86,6 +86,22 @@ class StateTensor {
       return sparse_.at(std::make_tuple(k, i, j));
     }
 
+    std::shared_ptr<Matrix> contract_statetensor(const std::array<MonomerKey,4>& keys, const int istate) const {
+      auto& A  = keys[0]; auto& B  = keys[1];
+      auto& Ap = keys[2]; auto& Bp = keys[3];
+
+      assert(A == Ap);
+      assert(exist(std::make_tuple(istate,A,B)));
+      assert(exist(std::make_tuple(istate,Ap,Bp)));
+
+      auto tensor = std::make_shared<btas::Tensor2<double>>(B.nstates(), Bp.nstates());
+      btas::contract(1.0, sparse_.at(std::make_tuple(istate,A,B)), {0,1}, sparse_.at(std::make_tuple(istate,Ap,Bp)), {0,2}, 0.0, *tensor, {1,2});
+      btas::CRange<2> range(tensor->extent(0)*tensor->extent(1), 1);
+      MatView view(btas::make_view(range, tensor->storage()), /*localized*/true);
+
+      return std::make_shared<Matrix>(view);
+    }
+
 };
 
 }

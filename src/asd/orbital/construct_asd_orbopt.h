@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: construct_asd.h
-// Copyright (C) 2014 Toru Shiozaki
+// Filename: asd/orbital/construct_asd_orbopt.h
+// Copyright (C) 2015 Toru Shiozaki
 //
-// Author: Shane Parker <shane.parker@u.northwestern.edu>
+// Author: Inkoo Kim <inkoo.kim@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,14 +24,14 @@
 //
 
 
-#ifndef __SRC_ASD_CONSTRUCT_ASD_H
-#define __SRC_ASD_CONSTRUCT_ASD_H
+#ifndef __SRC_ASD_CONSTRUCT_ORBOPT_H
+#define __SRC_ASD_CONSTRUCT_ORBOPT_H
 
-#include <src/asd/asd_base.h>
+#include <src/asd/orbital/asd_orbopt.h>
 #include <src/asd/dimer/dimer.h>
 
 namespace bagel {
-  extern std::shared_ptr<ASD_base> construct_ASD(std::shared_ptr<const PTree> itree, std::shared_ptr<Dimer> dimer, bool rdm = false);
+  extern std::shared_ptr<ASD_OrbOpt> construct_ASD_OrbOpt(std::shared_ptr<const PTree> itree, std::shared_ptr<Dimer> dimer);
 }
 
 #endif

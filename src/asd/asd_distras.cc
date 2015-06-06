@@ -29,9 +29,6 @@
 using namespace std;
 using namespace bagel;
 
-ASD_DistRAS::ASD_DistRAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerDistRAS> cispace)
- : ASD<DistRASDvec>(input, dimer, cispace) {}
-
 
 shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma(shared_ptr<const DistRASDvec> ccvec, shared_ptr<const MOFile> jop) const {
   vector<shared_ptr<RASCivec>> tmpvec;
@@ -48,5 +45,16 @@ shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma(shared_ptr<const DistRASDvec> cc
 // TODO function not yet written
 shared_ptr<DistRASDvec> ASD_DistRAS::form_sigma_1e(shared_ptr<const DistRASDvec> ccvec, const double* modata) const {
   throw logic_error("ASD_DistRAS::form_sigma_1e function not yet written");
+  return nullptr;
+}
+
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>> ASD_DistRAS::compute_rdm12_monomer(shared_ptr<const DistRASDvec> civec, const int i) const {
+  throw logic_error("not yet implemented in ASD_DistRAS");
+  return make_tuple(nullptr,nullptr);
+}
+shared_ptr<DistRASDvec> ASD_DistRAS::contract_I(shared_ptr<const DistRASDvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
+  return nullptr;
+}
+shared_ptr<DistRASDvec> ASD_DistRAS::contract_J(shared_ptr<const DistRASDvec> A, shared_ptr<Matrix> adiabats, int ioff, int nstA, int nstB, int kst) const {
   return nullptr;
 }
