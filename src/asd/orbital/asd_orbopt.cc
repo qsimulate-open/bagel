@@ -71,17 +71,23 @@ void ASD_OrbOpt::common_init() {
   nactcloB_ = dimer_->isolated_refs().second->nclosed() - dimer_->active_refs().second->nclosed();
   rasA_ = {0, nactA_, 0};
   rasB_ = {0, nactB_, 0};
+  int maxhA, maxeA, maxhB, maxeB;
+  tie(maxhA, maxeA, maxhB, maxeB) = make_tuple(-1,-1,-1,-1);
   if (idata_->get_child("asd")->get<string>("method") == "ras") {
     auto restrictions = idata_->get_child("asd")->get_child("restricted");
-    auto get_restricted_data = [] (shared_ptr<const PTree> i) { return i->get_array<int, 3>("orbitals"); };
+    auto get_restricted_data = [] (std::shared_ptr<const PTree> i) {
+      return std::make_tuple(i->get_array<int, 3>("orbitals"), i->get<int>("max_holes"), i->get<int>("max_particles"));
+    };
 
     if (restrictions->size() == 1) {
-      rasA_ = get_restricted_data(*restrictions->begin());
+      tie(rasA_, maxhA, maxeA) = get_restricted_data(*restrictions->begin());
       rasB_ = rasA_;
+      maxhB = maxhA;
+      maxeB = maxeA;
     } else if (restrictions->size() == 2) {
       auto iter = restrictions->begin();
-      rasA_ = get_restricted_data(*iter++);
-      rasB_ = get_restricted_data(*iter);
+      tie(rasA_, maxhA, maxeA) = get_restricted_data(*iter++);
+      tie(rasB_, maxhB, maxeB) = get_restricted_data(*iter);
     } else {
       throw logic_error("One or two sets of restrictions must be provided.");
     }
@@ -98,8 +104,10 @@ void ASD_OrbOpt::common_init() {
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
   cout << "    * nact     : " << setw(6) << nact_ << endl;
-  cout << "    *  unit A  : " << setw(6) << nactA_ << " (" << rasA_[0] << "," << rasA_[1] << "," << rasA_[2] << ")" << endl;
-  cout << "    *  unit B  : " << setw(6) << nactB_ << " (" << rasB_[0] << "," << rasB_[1] << "," << rasB_[2] << ")" << endl;
+  cout << "    *  unit A  : " << setw(6) << nactA_ << " (" << rasA_[0] << "," << rasA_[1] << "," << rasA_[2] << ")"
+                                                   <<  "[" << (maxhA >= 0 ? to_string(maxhA) : "*")  << "," << (maxeA >= 0 ? to_string(maxeA) : "*") << "]" << endl;
+  cout << "    *  unit B  : " << setw(6) << nactB_ << " (" << rasB_[0] << "," << rasB_[1] << "," << rasB_[2] << ")"
+                                                   <<  "[" << (maxhB >= 0 ? to_string(maxhB) : "*")  << "," << (maxeB >= 0 ? to_string(maxeB) : "*") << "]" << endl;
   cout << "    * nocc     : " << setw(6) << nocc_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
 
@@ -107,7 +115,7 @@ void ASD_OrbOpt::common_init() {
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
-  cout <<  "  === ASD Orbital Optimization iteration (" + geom_->basisfile() + ") ===" << endl << endl;
+  cout <<  endl << "  === ASD Orbital Optimization iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
 }
 
