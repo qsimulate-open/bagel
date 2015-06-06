@@ -141,7 +141,7 @@ class GammaTensor {
     MatView get_block_as_matview(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
       auto tensor = sparse_.at(std::make_tuple(std::list<GammaSQ>(o), i, j));
       btas::CRange<2> range(tensor->extent(0)*tensor->extent(1), tensor->extent(2));
-      return MatView(btas::make_view(range, tensor->storage()), /*localized*/true);
+      return MatView(btas::make_view(range, tensor->storage()), /*localized*/false);
     }
 
     std::shared_ptr<Matrix> contract_block_with_statetensor(const std::array<MonomerKey,4>& keys, const std::initializer_list<GammaSQ>& ops, const std::shared_ptr<StateTensor>& statetensor, const int istate) const {
@@ -158,7 +158,7 @@ class GammaTensor {
       auto full = std::make_shared<btas::Tensor3<double>>(B.nstates(), Bp.nstates(), half->extent(2));
       btas::contract(1.0, *half, {0,1,2}, statetensor->get_block(A,B,istate), {0,3}, 0.0, *full, {3,1,2});
       btas::CRange<2> range(full->extent(0)*full->extent(1), full->extent(2));
-      MatView view(btas::make_view(range, full->storage()), /*localized*/true);
+      MatView view(btas::make_view(range, full->storage()), /*localized*/false);
 
       return std::make_shared<Matrix>(view);
     }
