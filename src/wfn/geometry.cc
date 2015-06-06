@@ -72,7 +72,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
 
   /* Set up atoms_ */
   basisfile_ = to_lower(geominfo->get<string>("basis", ""));
-  const bool use_finite = geominfo->get<bool>("finite_nucleus", false);
+  use_finite_ = geominfo->get<bool>("finite_nucleus", false);
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
   } else if (basisfile_ == "molden") {
@@ -89,9 +89,9 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
-    const bool use_ecp_basis_ = (basisfile_.find("ecp") != string::npos) ? true : false;
+    use_ecp_basis_ = (basisfile_.find("ecp") != string::npos) ? true : false;
     for (auto& a : *atoms)
-      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, use_ecp_basis_, use_finite));
+      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, use_ecp_basis_, use_finite_));
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
   for (auto& i : atoms_)
@@ -165,7 +165,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_) {
 
   // Members of Molecule
   spherical_ = o.spherical_;
@@ -263,7 +263,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
+    london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -293,7 +294,8 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 
 // used when a new Geometry block is provided in input
 Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
+    london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -333,15 +335,17 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   auto atoms = geominfo->get_child_optional("geometry");
   const string prevbasis = basisfile_;
   basisfile_ = to_lower(geominfo->get<string>("basis", basisfile_));
+  use_finite_ = geominfo->get<bool>("finite_nucleus", use_finite_);
   // if so, construct atoms
   if (prevbasis != basisfile_ || atoms || newfield) {
+    use_ecp_basis_ = (basisfile_.find("ecp") != string::npos) ? true : false;
     atoms_.clear();
     shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
-        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem));
+        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, use_ecp_basis_, use_finite_));
     } else {
       for (auto& a : o.atoms_)
         atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem));
@@ -385,7 +389,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 *  supergeometry                                            *
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
-  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), magnetism_(false), london_(nmer.front()->london_) {
+  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), magnetism_(false), london_(nmer.front()->london_),
+  use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_) {
 
   // A member of Molecule
   spherical_ = nmer.front()->spherical_;
