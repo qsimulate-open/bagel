@@ -466,8 +466,7 @@ shared_ptr<Matrix> Dimer::overlap_selection(shared_ptr<const Matrix> control, sh
 
     if (active_size != norb) {
       throw runtime_error("Try adjust active_thresh.");
-    }
-    else {
+    } else {
       const set<int> active_set(active_list.begin(), active_list.end());
       for (size_t i = 0; i < subcoeff->mdim(); ++i) {
         if (active_set.count(i)) {

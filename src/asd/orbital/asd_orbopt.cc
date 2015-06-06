@@ -71,17 +71,23 @@ void ASD_OrbOpt::common_init() {
   nactcloB_ = dimer_->isolated_refs().second->nclosed() - dimer_->active_refs().second->nclosed();
   rasA_ = {0, nactA_, 0};
   rasB_ = {0, nactB_, 0};
+  int maxhA, maxeA, maxhB, maxeB;
+  tie(maxhA, maxeA, maxhB, maxeB) = make_tuple(-1,-1,-1,-1);
   if (idata_->get_child("asd")->get<string>("method") == "ras") {
     auto restrictions = idata_->get_child("asd")->get_child("restricted");
-    auto get_restricted_data = [] (shared_ptr<const PTree> i) { return i->get_array<int, 3>("orbitals"); };
+    auto get_restricted_data = [] (std::shared_ptr<const PTree> i) {
+      return std::make_tuple(i->get_array<int, 3>("orbitals"), i->get<int>("max_holes"), i->get<int>("max_particles"));
+    };
 
     if (restrictions->size() == 1) {
-      rasA_ = get_restricted_data(*restrictions->begin());
+      tie(rasA_, maxhA, maxeA) = get_restricted_data(*restrictions->begin());
       rasB_ = rasA_;
+      maxhB = maxhA;
+      maxeB = maxeA;
     } else if (restrictions->size() == 2) {
       auto iter = restrictions->begin();
-      rasA_ = get_restricted_data(*iter++);
-      rasB_ = get_restricted_data(*iter);
+      tie(rasA_, maxhA, maxeA) = get_restricted_data(*iter++);
+      tie(rasB_, maxhB, maxeB) = get_restricted_data(*iter);
     } else {
       throw logic_error("One or two sets of restrictions must be provided.");
     }
@@ -98,8 +104,10 @@ void ASD_OrbOpt::common_init() {
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
   cout << "    * nact     : " << setw(6) << nact_ << endl;
-  cout << "    *  unit A  : " << setw(6) << nactA_ << " (" << rasA_[0] << "," << rasA_[1] << "," << rasA_[2] << ")" << endl;
-  cout << "    *  unit B  : " << setw(6) << nactB_ << " (" << rasB_[0] << "," << rasB_[1] << "," << rasB_[2] << ")" << endl;
+  cout << "    *  unit A  : " << setw(6) << nactA_ << " (" << rasA_[0] << "," << rasA_[1] << "," << rasA_[2] << ")"
+                                                   <<  "[" << (maxhA >= 0 ? to_string(maxhA) : "*")  << "," << (maxeA >= 0 ? to_string(maxeA) : "*") << "]" << endl;
+  cout << "    *  unit B  : " << setw(6) << nactB_ << " (" << rasB_[0] << "," << rasB_[1] << "," << rasB_[2] << ")"
+                                                   <<  "[" << (maxhB >= 0 ? to_string(maxhB) : "*")  << "," << (maxeB >= 0 ? to_string(maxeB) : "*") << "]" << endl;
   cout << "    * nocc     : " << setw(6) << nocc_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
 
@@ -107,7 +115,7 @@ void ASD_OrbOpt::common_init() {
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
-  cout <<  "  === ASD Orbital Optimization iteration (" + geom_->basisfile() + ") ===" << endl << endl;
+  cout <<  endl << "  === ASD Orbital Optimization iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
 }
 
@@ -195,22 +203,13 @@ shared_ptr<const Reference> ASD_OrbOpt::conv_to_ref() const {
 
 
 shared_ptr<const Coeff> ASD_OrbOpt::semi_canonical_orb() const {
-  auto rdm1mat = make_shared<Matrix>(*rdm1_->rdm1_mat(/*nclosed*/0));
+  shared_ptr<const Matrix> rdm1mat = rdm1_->rdm1_mat(/*nclosed*/0);
 
   auto ocoeff = coeff_->slice_copy(0, nclosed_);
   auto acoeff = coeff_->slice_copy(nclosed_, nocc_);
 
   shared_ptr<Matrix> semi_coeff = coeff_->copy();
-  //ncloesd_ nact_ nvirt_ nbasis_, nactA_, nactB_, nactcloA_, nactcloB_
-  cout << "Semi-canonical transformation" << endl;
-  cout << "nclosed  : " << nclosed_ << endl;
-  cout << "nact     : " << nact_    << endl;
-  cout << "nvirt    : " << nvirt_   << endl;
-  cout << "nbasis   : " << nbasis_  << endl;
-  cout << "nactA    : " << nactA_   << endl;
-  cout << "nactB    : " << nactB_   << endl;
-  cout << "nactcloA    : " << nactcloA_   << endl;
-  cout << "nactcloB    : " << nactcloB_   << endl;
+
   {//Monomer A
     //core
     auto acoeff_A = acoeff->slice_copy(0,nactA_);
@@ -219,7 +218,7 @@ shared_ptr<const Coeff> ASD_OrbOpt::semi_canonical_orb() const {
     ccoeff_A->copy_block(0,nclosed_, nbasis_,nactcloB_, acoeff->get_submatrix(0,nactA_, nbasis_,nactcloB_)); //embed activeB
     shared_ptr<const Matrix> ofockao_A = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, ccoeff_A, /*store*/false, /*rhf*/true);
     //active
-    auto rdm1_A = make_shared<Matrix>(*rdm1mat->get_submatrix(0,0, nactA_,nactA_));
+    shared_ptr<Matrix> rdm1_A = rdm1mat->get_submatrix(0,0, nactA_,nactA_);
     rdm1_A->sqrt();
     auto acoeffw_A = make_shared<Matrix>(*acoeff_A * (1.0/sqrt(2.0)) * *rdm1_A);
     auto fockao_A = make_shared<Fock<1>>(geom_, ofockao_A, nullptr, acoeffw_A, /*store*/false, /*rhf*/true);
@@ -227,14 +226,16 @@ shared_ptr<const Coeff> ASD_OrbOpt::semi_canonical_orb() const {
     VectorB eigs(nactA_);
     auto fockact = make_shared<Matrix>(*acoeff_A % *fockao_A  * *acoeff_A);
     fockact->diagonalize(eigs);
-    for (int i = 0; i < nactA_; ++i)
-      cout << i << "(A) = " << eigs[i] << endl;
+    cout << endl << "  o Eigenvlues of A orbitals :" << endl;
+    for (int i = 0; i < nactA_; ++i) cout << setw(12) << setprecision(6) << eigs[i];
+    cout << endl << endl;
     *acoeff_A *= *fockact;
 
     size_t A_position = nclosed_; //for A
     for (int i = 0; i < nactA_; ++i)
       copy_n(acoeff_A->element_ptr(0, i), nbasis_, semi_coeff->element_ptr(0,A_position++));
   }
+
   {//Monomer B
     //core
     auto acoeff_B = acoeff->slice_copy(nactA_,nact_);
@@ -243,7 +244,7 @@ shared_ptr<const Coeff> ASD_OrbOpt::semi_canonical_orb() const {
     ccoeff_B->copy_block(0,nclosed_, nbasis_,nactcloA_, acoeff->get_submatrix(0,0, nbasis_,nactcloA_));
     shared_ptr<const Matrix> ofockao_B = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, ccoeff_B, /*store*/false, /*rhf*/true);
     //active
-    auto rdm1_B = make_shared<Matrix>(*rdm1mat->get_submatrix(nactA_,nactA_, nactB_,nactB_));
+    shared_ptr<Matrix> rdm1_B = rdm1mat->get_submatrix(nactA_,nactA_, nactB_,nactB_);
     rdm1_B->sqrt();
     auto acoeffw_B = make_shared<Matrix>(*acoeff_B * (1.0/sqrt(2.0)) * *rdm1_B);
     auto fockao_B = make_shared<Fock<1>>(geom_, ofockao_B, nullptr, acoeffw_B, /*store*/false, /*rhf*/true);
@@ -251,8 +252,9 @@ shared_ptr<const Coeff> ASD_OrbOpt::semi_canonical_orb() const {
     VectorB eigs(nactB_);
     auto fockact = make_shared<Matrix>(*acoeff_B % *fockao_B  * *acoeff_B);
     fockact->diagonalize(eigs);
-    for (int i = 0; i < nactB_; ++i)
-      cout << i << "(B) = " << eigs[i] << endl;
+    cout << endl << "  o Eigenvlues of B orbitals :" << endl;
+    for (int i = 0; i < nactB_; ++i) cout << setw(12) << setprecision(6) << eigs[i];
+    cout << endl << endl;
     *acoeff_B *= *fockact;
 
     size_t B_position = nclosed_+nactA_;

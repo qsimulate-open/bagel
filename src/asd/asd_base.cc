@@ -418,7 +418,7 @@ void ASD_base::print_states(const Matrix& cc, const vector<double>& energies, co
   for (int istate = 0; istate < nstates; ++istate) {
     cout << "   state  " << setw(3) << istate << ": "
          << setprecision(8) << setw(17) << fixed << energies.at(istate)
-         << "   <S^2> = " << setw(4) << setprecision(4) << fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, cc.element_ptr(0,istate), 1) << endl;
+         << "   <S^2> = " << setw(4) << setprecision(4) << fixed << blas::dot_product(spn->element_ptr(0,istate), dimerstates_, cc.element_ptr(0,istate)) << endl;
     const double *eigendata = cc.element_ptr(0,istate);
     double printed = 0.0;
     for (auto& subspace : subspaces_base()) {

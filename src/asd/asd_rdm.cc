@@ -217,7 +217,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_aET(const array<
     auto rdm = make_shared<Matrix>(*gamma_A % gamma_B); //a'|a
     auto rdmt = rdm->clone();
 
-    int fac = {neleA%2 == 0 ? 1 : -1};
+    const int fac = neleA%2 == 0 ? 1 : -1;
     sort_indices<0,1, 0,1, 1,1>(rdm->data(), rdmt->data(), nactA, nactB);
     rdmt->scale(fac);
 
@@ -236,7 +236,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_aET(const array<
     auto rdm2 = make_shared<Matrix>(*gamma_A % gamma_B2); //a'|b'ab
     auto rdmt = rdm1->clone();
 
-    int fac = {neleA%2 == 0 ? 1 : -1};
+    const int fac = neleA%2 == 0 ? 1 : -1;
     sort_indices<0,3,1,2, 0,1,  1,1>(rdm1->data(), rdmt->data(), nactA, nactB, nactB, nactB); //p'Q'RS => d_pSQR (0312)
     sort_indices<0,2,1,3, 1,1, -1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB); //p'Q'SR => -d_pRQS (0213)
     rdmt->scale(fac);
@@ -256,7 +256,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_aET(const array<
     auto rdm2 = make_shared<Matrix>(*gamma_A2 % gamma_B); //a'b'b|a
     auto rdmt = rdm1->clone();
 
-    int fac = {neleA%2 == 0 ? 1 : -1};
+    const int fac = neleA%2 == 0 ? 1 : -1;
     sort_indices<0,3,1,2, 0,1, 1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB); //p'q'rS => d_pSqr (0312)
     sort_indices<0,3,1,2, 1,1, 1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB);
     rdmt->scale(fac);
@@ -293,7 +293,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_bET(const array<
     auto rdm = make_shared<Matrix>(*gamma_A % gamma_B); //b'|b
     auto rdmt = rdm->clone();
 
-    int fac = {neleA%2 == 0 ? 1 : -1};
+    const int fac = neleA%2 == 0 ? 1 : -1;
     sort_indices<0,1, 0,1, 1,1>(rdm->data(), rdmt->data(), nactA, nactB);
     rdmt->scale(fac);
 
@@ -312,7 +312,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_bET(const array<
     auto rdm2 = make_shared<Matrix>(*gamma_A % gamma_B2); //b'|b'bb
     auto rdmt = rdm1->clone();
 
-    int fac = {neleA%2 == 0 ? 1 : -1};
+    const int fac = neleA%2 == 0 ? 1 : -1;
     sort_indices<0,2,1,3, 0,1, -1,1>(rdm1->data(), rdmt->data(), nactA, nactB, nactB, nactB); //see aET
     sort_indices<0,3,1,2, 1,1,  1,1>(rdm2->data(), rdmt->data(), nactA, nactB, nactB, nactB);
     rdmt->scale(fac);
@@ -332,7 +332,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_bET(const array<
     auto rdm2 = make_shared<Matrix>(*gamma_A2 % gamma_B); //b'b'b|b
     auto rdmt = rdm1->clone();
 
-    int fac = {neleA%2 == 0 ? 1 : -1};
+    const int fac = neleA%2 == 0 ? 1 : -1;
     sort_indices<0,3,1,2, 0,1, 1,1>(rdm1->data(), rdmt->data(), nactA, nactA, nactA, nactB); //see aET
     sort_indices<0,3,1,2, 1,1, 1,1>(rdm2->data(), rdmt->data(), nactA, nactA, nactA, nactB);
     rdmt->scale(fac);
@@ -546,259 +546,259 @@ void ASD_base::print_energy_info(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& r
 
   auto rdm1_mat = rdm1->rdm1_mat(/*nclosed*/0);
 
-  const double e1 = ddot_(nactT*nactT, int1->element_ptr(0,0), 1, rdm1_mat->element_ptr(0,0), 1);
+  const double e1 = blas::dot_product(int1->element_ptr(0,0), nactT*nactT, rdm1_mat->element_ptr(0,0));
 
   double e1_aa;
   {//AA
-    auto i = make_shared<Matrix>(*int1->get_submatrix(0, 0, nactA, nactA));
-    auto r = make_shared<Matrix>(*rdm1_mat->get_submatrix(0, 0, nactA, nactA));
-    e1_aa = ddot_(nactA*nactA, i->element_ptr(0,0), 1, r->element_ptr(0,0), 1);
+    shared_ptr<const Matrix> i = int1->get_submatrix(0, 0, nactA, nactA);
+    shared_ptr<const Matrix> r = rdm1_mat->get_submatrix(0, 0, nactA, nactA);
+    e1_aa = blas::dot_product(i->element_ptr(0,0), nactA*nactA, r->element_ptr(0,0));
   }
 
   double e1_bb;
   {//BB
-    auto i = make_shared<Matrix>(*int1->get_submatrix(nactA, nactA, nactB, nactB));
-    auto r = make_shared<Matrix>(*rdm1_mat->get_submatrix(nactA, nactA, nactB, nactB));
-    e1_bb = ddot_(nactB*nactB, i->element_ptr(0,0), 1, r->element_ptr(0,0), 1);
+    shared_ptr<const Matrix> i = int1->get_submatrix(nactA, nactA, nactB, nactB);
+    shared_ptr<const Matrix> r = rdm1_mat->get_submatrix(nactA, nactA, nactB, nactB);
+    e1_bb = blas::dot_product(i->element_ptr(0,0), nactB*nactB, r->element_ptr(0,0));
   }
 
   double e1_ab;
   {//AB
-    auto i = make_shared<Matrix>(*int1->get_submatrix(0, nactA, nactA, nactB));
-    auto r = make_shared<Matrix>(*rdm1_mat->get_submatrix(0, nactA, nactA, nactB));
-    e1_ab = ddot_(nactA*nactB, i->element_ptr(0,0), 1, r->element_ptr(0,0), 1);
+    shared_ptr<const Matrix> i = int1->get_submatrix(0, nactA, nactA, nactB);
+    shared_ptr<const Matrix> r = rdm1_mat->get_submatrix(0, nactA, nactA, nactB);
+    e1_ab = blas::dot_product(i->element_ptr(0,0), nactA*nactB, r->element_ptr(0,0));
   }
 
   double e1_ba;
   {//BA
-    auto i = make_shared<Matrix>(*int1->get_submatrix(nactA, 0, nactB, nactA));
-    auto r = make_shared<Matrix>(*rdm1_mat->get_submatrix(nactA, 0, nactB, nactA));
-    e1_ba = ddot_(nactB*nactA, i->element_ptr(0,0), 1, r->element_ptr(0,0), 1);
+    shared_ptr<const Matrix> i = int1->get_submatrix(nactA, 0, nactB, nactA);
+    shared_ptr<const Matrix> r = rdm1_mat->get_submatrix(nactA, 0, nactB, nactA);
+    e1_ba = blas::dot_product(i->element_ptr(0,0), nactB*nactA, r->element_ptr(0,0));
   }
 
   double e2_aaaa;
   {//AAAA
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,0,0>();
-    auto int2 = make_shared<Matrix>(nactA*nactA*nactA*nactA,1);
+    auto int2 = make_shared<VectorB>(nactA*nactA*nactA*nactA);
     sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactA); //conver to chemist not.
 
     auto low = {0,0,0,0};
     auto up  = {nactA,nactA,nactA,nactA};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_AAAA sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactA,nactA,1); //empty d_AAAA (note: the dimension specification actually do not matter)
-    copy(view.begin(), view.end(), rdm2->begin()); //d_AAAA filled
-    e2_aaaa = 0.5 * ddot_(nactA*nactA*nactA*nactA, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactA*nactA*nactA); //empty d_AAAA (note: the dimension specification actually do not matter)
+    copy(view.begin(), view.end(), rdm2->data()); //d_AAAA filled
+    e2_aaaa = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactA*nactA, rdm2->data());
   }
 
   double e2_bbbb;
   //BBBB
   {
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,1,1>();
-    auto int2 = make_shared<Matrix>(1,nactB*nactB*nactB*nactB);
+    auto int2 = make_shared<VectorB>(nactB*nactB*nactB*nactB);
     sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactB, nactB, nactB, nactB); //conver to chemist not.
 
     auto low = {nactA,nactA,nactA,nactA};
     auto up  = {nactT,nactT,nactT,nactT};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BBBB sector of d
-    auto rdm2 = make_shared<Matrix>(1,nactB*nactB*nactB*nactB); //empty d_BBBB
-    copy(view.begin(), view.end(), rdm2->begin()); //d_BBBB filled
-    e2_bbbb = 0.5 * ddot_(nactB*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactB*nactB*nactB*nactB); //empty d_BBBB
+    copy(view.begin(), view.end(), rdm2->data()); //d_BBBB filled
+    e2_bbbb = 0.5 * blas::dot_product(int2->data(), nactB*nactB*nactB*nactB, rdm2->data());
   }
 
   double e2_aaab;
   {//AAAB
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,0,1>(); // <pq|rs'> in (pqr,s') format
-    auto int2 = make_shared<Matrix>(nactA*nactA*nactA*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactA*nactA*nactB);
     sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not.
 
     auto low = {    0,    0,    0,nactA};
     auto up  = {nactA,nactA,nactA,nactT};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_AAAB sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactA*nactB,1); //empty d_AAAB
-    copy(view.begin(), view.end(), rdm2->begin()); //d_AAAB filled
-    e2_aaab = 0.5 * ddot_(nactA*nactA*nactA*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactA*nactA*nactB); //empty d_AAAB
+    copy(view.begin(), view.end(), rdm2->data()); //d_AAAB filled
+    e2_aaab = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactA*nactB, rdm2->data());
   }
 
   double e2_aaba;
   {//AABA
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,0,0>(); // <pq'|rs> in (prs,q') format
-    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactA,1);
+    auto int2 = make_shared<VectorB>(nactA*nactA*nactB*nactA);
     sort_indices<0,1,3,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not. [ij|k'l]
 
     auto low = {    0,    0,nactA,    0};
     auto up  = {nactA,nactA,nactT,nactA};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_AABA sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactA,1); //empty d_AABA
-    copy(view.begin(), view.end(), rdm2->begin()); //d_AABA filled
-    e2_aaba = 0.5 * ddot_(nactA*nactA*nactA*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactA*nactB*nactA); //empty d_AABA
+    copy(view.begin(), view.end(), rdm2->data()); //d_AABA filled
+    e2_aaba = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactA*nactB, rdm2->data());
   }
 
   double e2_abaa;
   {//ABAA
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,1,0>(); // <pq|r's> in (pqs,r') format
-    auto int2 = make_shared<Matrix>(nactA*nactB*nactA*nactA,1);
+    auto int2 = make_shared<VectorB>(nactA*nactB*nactA*nactA);
     sort_indices<0,3,1,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not. [pr'|qs]=[ij'|kl]
 
     auto low = {    0,nactA,    0,    0};
     auto up  = {nactA,nactT,nactA,nactA};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_ABAA sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactB*nactA*nactA,1); //empty d_ABAA
-    copy(view.begin(), view.end(), rdm2->begin()); //d_ABAA filled
-    e2_abaa = 0.5 * ddot_(nactA*nactA*nactA*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactB*nactA*nactA); //empty d_ABAA
+    copy(view.begin(), view.end(), rdm2->data()); //d_ABAA filled
+    e2_abaa = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactA*nactB, rdm2->data());
   }
 
   double e2_baaa;
   {//BAAA
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,0,0>(); // <p'q|rs> in (qrs,p') format
-    auto int2 = make_shared<Matrix>(nactB,nactA*nactA*nactA);
+    auto int2 = make_shared<VectorB>(nactB*nactA*nactA*nactA);
     sort_indices<3,1,0,2, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactA, nactB); //conver to chemist not.
 
     auto low = {nactA,    0,    0,    0};
     auto up  = {nactT,nactA,nactA,nactA};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BAAA sector of d
-    auto rdm2 = make_shared<Matrix>(nactB,nactA*nactA*nactA); //empty d_BAAA
-    copy(view.begin(), view.end(), rdm2->begin()); //d_BAAA filled
-    e2_baaa = 0.5 * ddot_(nactA*nactA*nactA*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactB*nactA*nactA*nactA); //empty d_BAAA
+    copy(view.begin(), view.end(), rdm2->data()); //d_BAAA filled
+    e2_baaa = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactA*nactB, rdm2->data());
   }
 
   double e2_abbb;
   {//ABBB
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,1,1>(); // <pq'|r's'> in (p,q'r's') format
-    auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactB*nactB*nactB);
     sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [pr'|q's']=[ij'|k'l']
 
     auto low = {    0,nactA,nactA,nactA};
     auto up  = {nactA,nactT,nactT,nactT};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_ABBB sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_ABBB
-    copy(view.begin(), view.end(), rdm2->begin()); //d_ABBB filled
-    e2_abbb = 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactB*nactB*nactB); //empty d_ABBB
+    copy(view.begin(), view.end(), rdm2->data()); //d_ABBB filled
+    e2_abbb = 0.5 * blas::dot_product(int2->data(), nactA*nactB*nactB*nactB, rdm2->data());
   }
 
   double e2_babb;
   {//BABB
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,0,1>(); // <p'q'|rs'> in (r,p'q's') format
-    auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactB*nactB*nactB);
     sort_indices<1,0,2,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r|q's']=[i'j|k'l']
 
     auto low = {nactA,    0,nactA,nactA};
     auto up  = {nactT,nactA,nactT,nactT};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BABB sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_BABB
-    copy(view.begin(), view.end(), rdm2->begin()); //d_ABBB filled
-    e2_babb = 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactB*nactB*nactB); //empty d_BABB
+    copy(view.begin(), view.end(), rdm2->data()); //d_ABBB filled
+    e2_babb = 0.5 * blas::dot_product(int2->data(), nactA*nactB*nactB*nactB, rdm2->data());
   }
 
   double e2_bbab;
   {//BBAB
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,1,1>(); // <p'q|r's'> in (q,p'r's') format
-    auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactB*nactB*nactB);
     sort_indices<1,2,0,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r'|qs']=[i'j'|kl']
 
     auto low = {nactA,nactA,    0,nactA};
     auto up  = {nactT,nactT,nactA,nactT};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BBAB sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_BBAB
-    copy(view.begin(), view.end(), rdm2->begin()); //d_ABBB filled
-    e2_bbab = 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactB*nactB*nactB); //empty d_BBAB
+    copy(view.begin(), view.end(), rdm2->data()); //d_ABBB filled
+    e2_bbab = 0.5 * blas::dot_product(int2->data(), nactA*nactB*nactB*nactB, rdm2->data());
   }
 
   double e2_bbba;
   {//BBBA
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,1,0>(); // <p'q'|r's> in (s,p'q'r') format
-    auto int2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactB*nactB*nactB);
     sort_indices<1,3,2,0, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactB, nactB, nactB); //conver to chemist not. [p'r'|q's]=[i'j'|k'l]
 
     auto low = {nactA,nactA,nactA,    0};
     auto up  = {nactT,nactT,nactT,nactA};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BBBA sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactB*nactB*nactB,1); //empty d_BBBA
-    copy(view.begin(), view.end(), rdm2->begin()); //d_BBBA filled
-    e2_bbba = 0.5 * ddot_(nactA*nactB*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactB*nactB*nactB); //empty d_BBBA
+    copy(view.begin(), view.end(), rdm2->data()); //d_BBBA filled
+    e2_bbba = 0.5 * blas::dot_product(int2->data(), nactA*nactB*nactB*nactB, rdm2->data());
   }
 
   double e2_aabb;
   {//AABB
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,0,1>(); // <pq'|rs'> in (pr,q's') format
-    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactA*nactB*nactB);
     sort_indices<0,1,2,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr|q's']=[ij|k'l']
 
     auto low = {    0,    0,nactA,nactA};
     auto up  = {nactA,nactA,nactT,nactT};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_AABB sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_AABB
-    copy(view.begin(), view.end(), rdm2->begin()); //d_AABB filled
-    e2_aabb = 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactA*nactB*nactB); //empty d_AABB
+    copy(view.begin(), view.end(), rdm2->data()); //d_AABB filled
+    e2_aabb = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactB*nactB, rdm2->data());
   }
 
   double e2_bbaa;
   {//BBAA
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,1,0>(); // <p'q|r's> in (qs,p'r') format
-    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactA*nactB*nactB);
     sort_indices<2,3,0,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r'|qs]=[i'j'|kl]
 
     auto low = {nactA,nactA,    0,    0};
     auto up  = {nactT,nactT,nactA,nactA};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BBAA sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_BBAA
-    copy(view.begin(), view.end(), rdm2->begin()); //d_BBAA filled
-    e2_bbaa = 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactA*nactB*nactB); //empty d_BBAA
+    copy(view.begin(), view.end(), rdm2->data()); //d_BBAA filled
+    e2_bbaa = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactB*nactB, rdm2->data());
   }
 
   double e2_abab;
   {//ABAB
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,0,1,1>(); // <pq|r's'> in (pq,r's') format
-    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactA*nactB*nactB);
     sort_indices<0,2,1,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr'|qs']=[ij'|kl']
 
     auto low = {    0,nactA,    0,nactA};
     auto up  = {nactA,nactT,nactA,nactT};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_ABAB sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_ABAB
-    copy(view.begin(), view.end(), rdm2->begin()); //d_ABAB filled
-    e2_abab = 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactA*nactB*nactB); //empty d_ABAB
+    copy(view.begin(), view.end(), rdm2->data()); //d_ABAB filled
+    e2_abab = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactB*nactB, rdm2->data());
   }
 
   double e2_baba;
   {//BABA
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,1,0,0>(); // <p'q'|rs> in (rs,p'q') format
-    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactA*nactB*nactB);
     sort_indices<2,0,3,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r|q's]=[i'j|k'l]
 
     auto low = {nactA,    0,nactA,    0};
     auto up  = {nactT,nactA,nactT,nactA};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BABA sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_BABA
-    copy(view.begin(), view.end(), rdm2->begin()); //d_BABA filled
-    e2_baba = 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactA*nactB*nactB); //empty d_BABA
+    copy(view.begin(), view.end(), rdm2->data()); //d_BABA filled
+    e2_baba = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactB*nactB, rdm2->data());
   }
 
   double e2_abba;
   {//ABBA
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<0,1,1,0>(); // <pq'|r's> in (ps,q'r') format
-    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactA*nactB*nactB);
     sort_indices<0,3,2,1, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [pr'|q's]=[ij'|k'l]
 
     auto low = {    0,nactA,nactA,    0};
     auto up  = {nactA,nactT,nactT,nactA};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_ABBA sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_ABBA
-    copy(view.begin(), view.end(), rdm2->begin()); //d_ABBA filled
-    e2_abba = 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactA*nactB*nactB); //empty d_ABBA
+    copy(view.begin(), view.end(), rdm2->data()); //d_ABBA filled
+    e2_abba = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactB*nactB, rdm2->data());
   }
 
   double e2_baab;
   {//BAAB
     shared_ptr<const Matrix> pint2 = jop_->coulomb_matrix<1,0,0,1>(); // <p'q|rs'> in (qr,p's') format
-    auto int2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1);
+    auto int2 = make_shared<VectorB>(nactA*nactA*nactB*nactB);
     sort_indices<2,1,0,3, 0,1, 1,1>(pint2->data(), int2->data(), nactA, nactA, nactB, nactB); //conver to chemist not. [p'r|qs']=[i'j|kl']
 
     auto low = {nactA,    0,    0,nactA};
     auto up  = {nactT,nactA,nactA,nactT};
     auto view = btas::make_view(rdm2->range().slice(low,up), rdm2->storage()); //d_BAAB sector of d
-    auto rdm2 = make_shared<Matrix>(nactA*nactA*nactB*nactB,1); //empty d_BAAB
-    copy(view.begin(), view.end(), rdm2->begin()); //d_BAAB filled
-    e2_baab = 0.5 * ddot_(nactA*nactA*nactB*nactB, int2->element_ptr(0,0), 1, rdm2->element_ptr(0,0), 1);
+    auto rdm2 = make_shared<VectorB>(nactA*nactA*nactB*nactB); //empty d_BAAB
+    copy(view.begin(), view.end(), rdm2->data()); //d_BAAB filled
+    e2_baab = 0.5 * blas::dot_product(int2->data(), nactA*nactA*nactB*nactB, rdm2->data());
   }
 
   const double e2 = e2_aaaa + e2_bbbb + e2_aabb + e2_bbaa +

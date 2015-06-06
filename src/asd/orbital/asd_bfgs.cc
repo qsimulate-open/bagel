@@ -49,11 +49,11 @@ void ASD_BFGS::compute() {
   double previous_energy = 0.0;
   bool macro = true;
 
-  cout << "     See asd_orbopt.log for further information on ASD output " << endl << endl;
-  mute_stdcout();
-
   auto asd = construct_ASD(idata_->get_child_optional("asd"), dimer_, /*rdm=*/true);
 
+  cout << endl << "     See asd_orbopt.log for further information on ASD output " << endl << endl;
+
+  mute_stdcout();
   int iter = 0;
   int miter = -1;
   do {
