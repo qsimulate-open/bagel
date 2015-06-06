@@ -82,8 +82,7 @@ void CASDvec::apply_and_fill(shared_ptr<const CASDvec> source_dvec, const int or
         blas::ax_plus_y_n(sign, source, target_lenb, target);
       }
     }
-  }
-  else {
+  } else {
     for (size_t ivec = 0; ivec != this->ij(); ++ivec) {
       for (int i = 0; i < target_lena; ++i) {
         double* target_base = this->data(ivec)->element_ptr(0,i);

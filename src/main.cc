@@ -144,8 +144,7 @@ int main(int argc, char** argv) {
             dimer = make_shared<Dimer>(itree, ref);
           else
             throw runtime_error("dimerize needs a reference calculation (for now)");
-        }
-        else if (form == "r" || form == "refs") {
+        } else if (form == "r" || form == "refs") {
           vector<shared_ptr<const Reference>> dimer_refs;
           auto units = itree->get_vector<string>("refs", 2);
           for (auto& ikey : units) {
@@ -155,8 +154,7 @@ int main(int argc, char** argv) {
           }
 
           dimer = make_shared<Dimer>(itree, dimer_refs.at(0), dimer_refs.at(1));
-        }
-        else if (form == "linked") {
+        } else if (form == "linked") {
           dimer = make_shared<Dimer>(itree, ref, /*linked=*/true);
         }
 

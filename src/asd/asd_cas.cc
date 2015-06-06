@@ -228,8 +228,8 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_CAS::compute_rdm12_last_step(s
   unique_ptr<double[]> buf(new double[norb*norb]);
   for (int i = 0; i != norb; ++i) {
     for (int k = 0; k != norb; ++k) {
-      copy_n(&rdm2->element(0,0,k,i), norb*norb, buf.get());
-      blas::transpose(buf.get(), norb, norb, &rdm2->element(0,0,k,i));
+      copy_n(rdm2->element_ptr(0,0,k,i), norb*norb, buf.get());
+      blas::transpose(buf.get(), norb, norb, rdm2->element_ptr(0,0,k,i));
     }
   }
 
@@ -254,7 +254,7 @@ void ASD_CAS::sigma_2a1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
     for (auto& iter : cc->det()->phia(ip)) {
       const double sign = static_cast<double>(iter.sign);
       double* const target_array = target_base + iter.source*lb;
-      daxpy_(lb, sign, source_base + iter.target*lb, 1, target_array, 1);
+      blas::ax_plus_y_n(sign, source_base + iter.target*lb, lb, target_array);
     }
   }
 }

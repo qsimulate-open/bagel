@@ -34,8 +34,8 @@ void ASD_BFGS::grad_vc(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> 
   if (!nvirt_ || !nclosed_) return;
   double* target = grad->ptr_vc();
   for (int i = 0; i != nclosed_; ++i, target += nvirt_) {
-    daxpy_(nvirt_, 4.0, cfock->element_ptr(nocc_,i), 1, target, 1);
-    daxpy_(nvirt_, 4.0, afock->element_ptr(nocc_,i), 1, target, 1);
+    blas::ax_plus_y_n(4.0, cfock->element_ptr(nocc_,i), nvirt_, target);
+    blas::ax_plus_y_n(4.0, afock->element_ptr(nocc_,i), nvirt_, target);
   }
 }
 
@@ -46,7 +46,7 @@ void ASD_BFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> 
   dgemm_("N", "T", nvirt_, nact_, nact_, 2.0, cfock->element_ptr(nocc_,nclosed_), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, grad->ptr_va(), nvirt_);
   double* target = grad->ptr_va();
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
-    daxpy_(nvirt_, 2.0, qxr->element_ptr(nocc_, i), 1, target, 1);
+    blas::ax_plus_y_n(2.0, qxr->element_ptr(nocc_, i), nvirt_, target);
   }
 }
 
@@ -56,9 +56,9 @@ void ASD_BFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> 
   if (!nclosed_ || !nact_) return;
   double* target = grad->ptr_ca();
   for (int i = 0; i != nact_; ++i, target += nclosed_) {
-    daxpy_(nclosed_, 4.0, cfock->element_ptr(0,nclosed_+i), 1, target, 1);
-    daxpy_(nclosed_, 4.0, afock->element_ptr(0,nclosed_+i), 1, target, 1);
-    daxpy_(nclosed_, -2.0, qxr->element_ptr(0, i), 1, target, 1);
+    blas::ax_plus_y_n(4.0, cfock->element_ptr(0,nclosed_+i), nclosed_, target);
+    blas::ax_plus_y_n(4.0, afock->element_ptr(0,nclosed_+i), nclosed_, target);
+    blas::ax_plus_y_n(-2.0, qxr->element_ptr(0, i), nclosed_, target);
   }
   //-2 cfock_iu * D_ur
   dgemm_("T", "N", nclosed_, nact_, nact_, -2.0, cfock->element_ptr(nclosed_,0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, grad->ptr_ca(), nclosed_);

@@ -95,7 +95,7 @@ class ASD_OrbOpt : public Method, public std::enable_shared_from_this<ASD_OrbOpt
 
     virtual void compute() override = 0;
 
-    std::shared_ptr<const Reference> ref() const { return ref_; };
+    std::shared_ptr<const Reference> ref() const { return ref_; }
     virtual std::shared_ptr<const Reference> conv_to_ref() const override;
 
     // functions to retrieve protected members
@@ -114,11 +114,11 @@ class ASD_OrbOpt : public Method, public std::enable_shared_from_this<ASD_OrbOpt
     int max_iter() const { return max_iter_; }
     double thresh() const { return gradient_thresh_; }
 
-    double energy(const int i) const { return energy_[i]; };
-    double rms_grad() const { return rms_grad_; };
+    double energy(const int i) const { return energy_[i]; }
+    double rms_grad() const { return rms_grad_; }
 
-    std::shared_ptr<const Matrix> hcore() const { return hcore_; };
-    std::shared_ptr<const Coeff> coeff() const { return coeff_; };
+    std::shared_ptr<const Matrix> hcore() const { return hcore_; }
+    std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
 };
 

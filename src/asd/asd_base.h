@@ -92,7 +92,7 @@ class ASD_base {
 
     // Orbital optimization related
     bool compute_rdm_;
-    bool fix_ci_ = false;
+    bool fix_ci_;
 
     virtual std::vector<DimerSubspace_base> subspaces_base() const = 0;
 

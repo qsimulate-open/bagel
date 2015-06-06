@@ -44,12 +44,11 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
   vector<int> sizes = { geoms_.first->natom(), geoms_.second->natom() };
   if (localizemethod == "region") {
     localization = make_shared<RegionLocalization>(input_data, sref_, sizes);
-  }
-  else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey") {
+  } else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey") {
     input_data->erase("type"); input_data->put("type", "region");
     localization = make_shared<PMLocalization>(input_data, sref_, sizes);
-  }
-  else throw std::runtime_error("Unrecognized orbital localization method");
+  } else
+    throw std::runtime_error("Unrecognized orbital localization method");
 
   shared_ptr<const Matrix> local_coeff = localization->localize();
   vector<pair<int, int>> orbital_subspaces = localization->orbital_subspaces();
@@ -222,8 +221,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     activeB->copy_block(nbasisA, 0, nbasisB, nactB, active_refs_.second->coeff()->get_submatrix(0, nclosedB, nbasisB, nactB));
     svd_info.emplace_back(activeB, make_pair(noccA, noccA+noccB), noccB - nclosedB, "B", true);
     svd_info.emplace_back(activeB, make_pair(noccA+noccB+nexternA, noccA+noccB+nexternA+nexternB), nactvirtB, "B", false);
-  }
-  else {
+  } else {
     auto active = make_shared<Matrix>(dimerbasis, nact);
 
     active->copy_block(0, 0, nbasisA, nactA, active_refs_.first->coeff()->get_submatrix(0, nclosedA, nbasisA, nactA));
@@ -305,8 +303,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
 
       for (size_t i = norb; i < active_size; ++i)
         copy_n(subspace.element_ptr(0, i), dimerbasis, out_coeff->element_ptr(0, ( closed ? closed_position++ : virt_position++ )));
-    }
-    else {
+    } else {
       set<int> active_set(active_list.begin(), active_list.end());
       for (size_t i = 0; i < subcoeff->mdim(); ++i)
         if (active_set.count(i) == 0)
@@ -361,8 +358,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
       localize(localize_data, fock, /*localize_first*/ false);
       dimertime.tick_print("Dimer localization");
     }
-  }
-  else if (scheme == "localize_first") {
+  } else if (scheme == "localize_first") {
     shared_ptr<const PTree> localize_data = idata->get_child_optional("localization");
     if (!localize_data) localize_data = make_shared<const PTree>();
 
@@ -384,8 +380,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
     scoeff->copy_block(0, nclosed, scoeff->ndim(), active_mos.mdim(), active_mos);
     sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*scoeff)));
-  }
-  else if (scheme == "linked") {
+  } else if (scheme == "linked") {
     //localize
     shared_ptr<const PTree> localize_data = idata->get_child_optional("localization");
     if (!localize_data) localize_data = make_shared<const PTree>();
