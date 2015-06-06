@@ -94,8 +94,7 @@ void ASD_BFGS::compute() {
 
     evals.push_back(average_energy);
 
-
-    // compute one-body operators
+    // compute one-body Fock operators
     // preparation
     const MatView ccoeff = coeff_->slice(0, nclosed_);
     // core Fock operator

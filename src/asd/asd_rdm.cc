@@ -543,10 +543,8 @@ void ASD_base::print_energy_info(shared_ptr<RDM<1>>& rdm1, shared_ptr<RDM<2>>& r
   int1->copy_block(nactA,nactA,hb->ndim(),hb->mdim(),hb);
   int1->copy_block(0,nactA,hc->ndim(),hc->mdim(),hc);
   int1->copy_block(nactA,0,hc->mdim(),hc->ndim(),hc->transpose());
-//int1->print("1e integral",nactT);
 
   auto rdm1_mat = rdm1->rdm1_mat(/*nclosed*/0);
-//rdm1_mat->print("1RDM",nactT);
 
   const double e1 = ddot_(nactT*nactT, int1->element_ptr(0,0), 1, rdm1_mat->element_ptr(0,0), 1);
 

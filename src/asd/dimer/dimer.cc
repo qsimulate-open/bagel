@@ -276,6 +276,4 @@ void Dimer::update_coeff(shared_ptr<const Matrix> new_coeff) {
   temp_ref = make_shared<Reference>(*sref_);
   temp_ref->set_coeff(new_coeff);
   sref_ = make_shared<const Reference>(*temp_ref);
-  //TODO: replace with below, put into header
-  //sref_ = make_shared<const Reference>(*sref_, new_coeff);
 }
