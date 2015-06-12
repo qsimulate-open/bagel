@@ -259,6 +259,7 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
   }
   fmmtime.tick_print("    Upward pass");
   cout << endl;
+  out->fill_upper_conjg();
 
   // return the Coulomb matrix
   coulomb_ = out;
