@@ -471,3 +471,85 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
 
   return out;
 }
+
+
+shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets) {
+
+  assert(is_leaf());
+  auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
+  out->zero();
+
+  vector<shared_ptr<const Shell>> basis;
+  vector<int> new_offset;
+  for (auto& distant_node : interaction_list_) {
+    for (auto& distant_body : distant_node->bodies()) {
+      size_t iat = 0;
+      for (auto& distant_atom : distant_body->atoms()) {
+        const vector<shared_ptr<const Shell>> tmp = distant_atom->shells();
+        basis.insert(basis.end(), tmp.begin(), tmp.end());
+        vector<int> tmpoff;
+        size_t ish = 0;
+        for (auto& shell : distant_atom->shells()) {
+          tmpoff.insert(tmpoff.end(), offsets[distant_body->ishell(iat) + ish]);
+          ++ish;
+        }
+
+        new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+        ++iat;
+      }
+    }
+  }
+
+  const size_t size = basis.size();
+  const double* density_data = density->data();
+
+  for (int i0 = 0; i0 != size; ++i0) {
+    const shared_ptr<const Shell>  b0 = basis[i0];
+    const int b0offset = new_offset[i0];
+    const int b0size = b0->nbasis();
+
+    for (int i1 = 0; i1 != size; ++i1) {
+      const shared_ptr<const Shell>  b1 = basis[i1];
+      const int b1offset = new_offset[i1];
+      const int b1size = b1->nbasis();
+
+      for (int i2 = 0; i2 != size; ++i2) {
+        const shared_ptr<const Shell>  b2 = basis[i2];
+        const int b2offset = new_offset[i2];
+        const int b2size = b2->nbasis();
+
+        for (auto& a3 : bodies_) {
+          size_t iat3 = 0;
+          for (auto& atom3 : a3->atoms()) {
+            size_t ish3 = 0;
+            for (auto& b3 : atom3->shells()) {
+              const int b3size = b3->nbasis();
+              const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
+              ++ish3;
+
+              array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+              ERIBatch eribatch(input, 0.0);
+              eribatch.compute();
+              const double* eridata = eribatch.data();
+
+              for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+                const int j0n = j0 * density->ndim();
+                for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                  for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                    for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                      const double eri = *eridata;
+                      out->element(j2, j3) += density_data[j0n + j1] * eri;
+                    }
+                  }
+                }
+              }
+            }
+            ++iat3;
+          }
+        }
+      }
+    }
+  }
+
+  return out;
+}
