@@ -156,22 +156,27 @@ void Node::insert_neighbour(shared_ptr<const Node> neigh, const bool is_neighbou
 
   assert(neigh->depth() == depth_);
   if (!is_neighbour) {
-    array<double, 3> r12;
-    r12[0] = position_[0] - neigh->position(0);
-    r12[1] = position_[1] - neigh->position(1);
-    r12[2] = position_[2] - neigh->position(2);
-    const double r = sqrt(r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2]);
-    if (r <= (1.0 + ws) * (extent_ + neigh->extent())) {
-      neighbour_.resize(nneighbour_ + 1);
-      neighbour_[nneighbour_] = neigh;
-      ++nneighbour_;
-    #if 1
+      array<double, 3> r12;
+      r12[0] = position_[0] - neigh->position(0);
+      r12[1] = position_[1] - neigh->position(1);
+      r12[2] = position_[2] - neigh->position(2);
+      const double r = sqrt(r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2]);
+      if (r <= (1.0 + ws) * (extent_ + neigh->extent())) {
+        neighbour_.resize(nneighbour_ + 1);
+        neighbour_[nneighbour_] = neigh;
+        ++nneighbour_;
+      } else {
+        interaction_list_.resize(ninter_ + 1);
+        interaction_list_[ninter_] = neigh;
+        ++ninter_;
+      }
+#if 0
     } else {
       interaction_list_.resize(ninter_ + 1);
       interaction_list_[ninter_] = neigh;
       ++ninter_;
-    #endif
     }
+#endif
   } else {
     neighbour_.resize(nneighbour_ + 1);
     neighbour_[nneighbour_] = neigh;
@@ -225,7 +230,7 @@ void Node::compute_multipoles(const int lmax) {
                 MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
                 mpole.compute();
                 for (int i = 0; i != nmultipole; ++i)
-                  multipoles[i]->add_block(1.0, ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+                  multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
                 ob1 += b1->nbasis();
               }
             }
@@ -252,7 +257,7 @@ void Node::compute_multipoles(const int lmax) {
         vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_moments();
 
         for (int i = 0; i != nmultipole; ++i)
-          multipoles[i]->add_block(1.0, offset, offset, child->nbasis(), child->nbasis(), moment[i]->data());
+          multipoles[i]->copy_block(offset, offset, child->nbasis(), child->nbasis(), moment[i]->data());
 
         offset += child->nbasis();
       }
@@ -379,7 +384,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
               ++ish1;
 
               ZMatrix sublocal = *(local_expansion_->get_submatrix(ob1, ob0, size1, size0));
-              out->add_block(1.0, offset1, offset0, size1, size0, sublocal.data());
+              out->copy_block(offset1, offset0, size1, size0, sublocal.data());
               ob1 += size1;
             }
             ++iat1;

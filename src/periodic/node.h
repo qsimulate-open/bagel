@@ -55,7 +55,6 @@ class Node {
     void insert_child(std::shared_ptr<const Node> = NULL);
     void init();
     void get_interaction_list();
-    void compute_position();
     void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
     void insert_neighbour(std::shared_ptr<const Node> neigh, const bool is_neighbour = false, const int ws = 2);
     void make_interaction_list(const int ws = 2);

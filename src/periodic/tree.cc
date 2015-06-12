@@ -74,7 +74,7 @@ void Tree::init() {
   keysort();
 
   build_tree();
-  print_tree_xyz();
+//  print_tree_xyz();
 }
 
 
@@ -170,12 +170,10 @@ void Tree::build_tree() {
   nodes_[0] = make_shared<Node>();
 
   bitset<nbit__>  current_key;
-  //for (int i = max_height_ - 1; i >= 0; --i) { /* top down */
-  for (int i = 1; i <= max_height_; ++i) { /* top down */
-    //const int depth = max_height_ - i;
+  const int max_height = max_height_;
+  for (int i = 1; i <= max_height; ++i) { /* top down */
     const int depth = i;
 
-    //const unsigned int shift = i * 3;
     const unsigned int shift = nbit__ - 1 - i * 3;
 
     int max_nbody = 0;
@@ -214,7 +212,10 @@ void Tree::build_tree() {
       }
 
     } // end of vertex loop
-    if (max_nbody <= 1) break;
+    if (max_nbody <= 1) {
+      max_height_ = i;
+      break;
+    }
   } // end if bit loop
   height_ = nodes_[nnode_-1]->depth();
 
@@ -253,6 +254,7 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
   for (int i = 1; i != nnode_; ++i) {
     nodes_[i]->compute_local_expansions(density, lmax, offsets);
     if (nodes_[i]->is_leaf()) {
+      //////shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_exact_Coulomb_FF(density, lmax, offsets);
       shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets);
       *out += *tmp;
     }
@@ -402,9 +404,17 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
       case 63: symbol = "Eu"; break;
       case 64: symbol = "Gd"; break;
     }
-    for (int j = 0; j != nodes_[i]->nbody(); ++j)
+    for (int j = 0; j != nodes_[i]->nbody(); ++j) {
       cout << setw(5) << symbol << setprecision(5) << setw(10) << nodes_[i]->bodies(j)->position(0) << "   "
                                                    << setw(10) << nodes_[i]->bodies(j)->position(1) << "   "
                                                    << setw(10) << nodes_[i]->bodies(j)->position(2) << endl;
+      if (nodes_[i]->depth() == max_height_) {
+        cout << "*** Neighbours: " << endl;
+        for (auto& neigh : nodes_[i]->neighbour())
+          cout << setprecision(5) << setw(10) << neigh->position(0) << "  "
+                                  << setw(10) << neigh->position(1) << "  "
+                                  << setw(10) << neigh->position(2) << endl;
+      }
+    }
   }
 }
