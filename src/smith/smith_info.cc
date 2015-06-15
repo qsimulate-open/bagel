@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <src/smith/smith_info.h>
 #include <src/wfn/relcoeff.h>
 
@@ -96,7 +99,7 @@ shared_ptr<const Matrix> SMITH_Info<double>::coeff() const {
 template<>
 shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::coeff() const {
   shared_ptr<const RelCoeff_Striped> c = dynamic_pointer_cast<const RelReference>(ref_)->relcoeff();
-  return c->block_format(nclosed(), nact(), nvirt(), 0);
+  return c->block_format(nclosed(), nact(), nvirt()+nfrozenvirt(), 0);
 }
 
 
@@ -118,3 +121,5 @@ shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::hcore() const {
 template class SMITH_Info<double>;
 template class SMITH_Info<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif

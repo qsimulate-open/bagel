@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 
 #include <src/smith/loopgenerator.h>
 #include <algorithm>
@@ -60,3 +62,5 @@ vector<vector<Index>> LoopGenerator::block_loop() const {
 
   return out;
 }
+
+#endif

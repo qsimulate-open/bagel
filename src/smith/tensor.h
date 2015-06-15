@@ -46,29 +46,6 @@
 namespace bagel {
 namespace SMITH {
 
-// this assumes < 256 blocks; TODO runtime determination?
-const static int shift = 8;
-
-static size_t generate_hash_key(const std::vector<size_t>& o) {
-  size_t out = 0;
-  for (auto i = o.rbegin(); i != o.rend(); ++i) { out <<= shift; out += *i; }
-  return out;
-}
-
-static size_t generate_hash_key(const std::vector<Index>& o) {
-  size_t out = 0;
-  for (auto i = o.rbegin(); i != o.rend(); ++i) { out <<= shift; out += i->key(); }
-  return out;
-}
-
-static size_t generate_hash_key() { return 0; }
-
-template<class T, typename... args>
-size_t generate_hash_key(const T& head, const args&... tail) {
-  return (generate_hash_key(tail...) << shift) + head.key();
-}
-
-
 template <typename DataType>
 class Tensor_ {
   protected:
@@ -82,7 +59,7 @@ class Tensor_ {
     mutable bool initialized_;
 
   public:
-    Tensor_(std::vector<IndexRange> in);
+    Tensor_(std::vector<IndexRange> in, const bool kramers = false);
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
       *data_ = *(o.data_);
@@ -116,34 +93,34 @@ class Tensor_ {
     std::vector<IndexRange> indexrange() const { return range_; }
 
     template<typename ...args>
-    std::unique_ptr<DataType[]> get_block(const args& ...p) const {
+    std::unique_ptr<DataType[]> get_block(args&& ...p) const {
       if (!initialized_) init();
-      return data_->get_block(generate_hash_key(p...));
+      return data_->get_block(std::forward<args>(p)...);
     }
 
     template<typename ...args>
-    std::unique_ptr<DataType[]> move_block(const args& ...p) {
-      return data_->move_block(generate_hash_key(p...));
+    std::unique_ptr<DataType[]> move_block(args&& ...p) {
+      return data_->move_block(std::forward<args>(p)...);
     }
 
     template<typename ...args>
-    void put_block(std::unique_ptr<DataType[]>& o, const args& ...p) {
-      data_->put_block(generate_hash_key(p...), o);
+    void put_block(std::unique_ptr<DataType[]>& o, args&& ...p) {
+      data_->put_block(o, std::forward<args>(p)...);
     }
 
     template<typename ...args>
-    void add_block(std::unique_ptr<DataType[]>& o, const args& ...p) {
-      data_->add_block(generate_hash_key(p...), o);
+    void add_block(std::unique_ptr<DataType[]>& o, args&& ...p) {
+      data_->add_block(o, std::forward<args>(p)...);
     }
 
     template<typename ...args>
-    size_t get_size(const args& ...p) const {
-      return data_->blocksize(generate_hash_key(p...));
+    size_t get_size(args&& ...p) const {
+      return data_->blocksize(std::forward<args>(p)...);
     }
 
     template<typename ...args>
-    size_t get_size_alloc(const args& ...p) const {
-      return data_->blocksize_alloc(generate_hash_key(p...));
+    size_t get_size_alloc(args&& ...p) const {
+      return data_->blocksize_alloc(std::forward<args>(p)...);
     }
 
     void zero() {
@@ -161,13 +138,8 @@ class Tensor_ {
 
     std::shared_ptr<Civector<DataType>> civec(std::shared_ptr<const Determinants> det) const;
 
-    void print1(std::string label, const double thresh = 5.0e-2) const;
-    void print2(std::string label, const double thresh = 5.0e-2) const;
-    void print3(std::string label, const double thresh = 5.0e-2) const;
-    void print4(std::string label, const double thresh = 5.0e-2) const;
-    void print5(std::string label, const double thresh = 5.0e-2) const;
-    void print6(std::string label, const double thresh = 5.0e-2) const;
-    void print8(std::string label, const double thresh = 5.0e-2) const;
+    // for Kramers tensors (does not do anything for standard tensors)
+    void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { data_->set_perm(p); }
 };
 
 extern template class Tensor_<double>;

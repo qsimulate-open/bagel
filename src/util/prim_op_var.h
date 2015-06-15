@@ -32,10 +32,29 @@
 namespace bagel {
 
 template<typename DataType>
+void sort_indices(const std::array<int,1>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,1>& d) {
+  throw std::logic_error("This case has not been implemented in prim_op_var.h");
+}
+
+template<typename DataType>
 void sort_indices(const std::array<int,2>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,2>& d) {
   throw std::logic_error("This case has not been implemented in prim_op_var.h");
 }
 
+template<typename DataType>
+void sort_indices(const std::array<int,3>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,3>& d) {
+  throw std::logic_error("This case has not been implemented in prim_op_var.h");
+}
+
+template<typename DataType>
+void sort_indices(const std::array<int,5>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,5>& d) {
+  throw std::logic_error("This case has not been implemented in prim_op_var.h");
+}
+
+template<typename DataType>
+void sort_indices(const std::array<int,7>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,7>& d) {
+  throw std::logic_error("This case has not been implemented in prim_op_var.h");
+}
 template<typename DataType>
 void sort_indices(const std::array<int,4>& o, const double a, const double b, const DataType* in, DataType* out, const std::array<int,4>& d) {
   size_t tag = 0ull;
@@ -48,10 +67,18 @@ void sort_indices(const std::array<int,4>& o, const double a, const double b, co
           sort_indices<0,1,2,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]); break;
         case 801ull :
           sort_indices<0,3,2,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]); break;
+        case 4146ull :
+          sort_indices<1,0,3,2,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]); break;
+        case 4656ull :
+          sort_indices<1,2,3,0,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]); break;
         case 8451ull :
           sort_indices<2,1,0,3,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]); break;
         case 8961ull :
           sort_indices<2,3,0,1,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]); break;
+        case 12306ull :
+          sort_indices<3,0,1,2,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]); break;
+        case 12816ull :
+          sort_indices<3,2,1,0,0,1,1,1>(in, out, d[0], d[1], d[2], d[3]); break;
         default:
           throw std::logic_error("This case has not been implemented in prim_op_var.h");
     }
@@ -62,10 +89,18 @@ void sort_indices(const std::array<int,4>& o, const double a, const double b, co
           sort_indices<0,1,2,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]); break;
         case 801ull :
           sort_indices<0,3,2,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]); break;
+        case 4146ull :
+          sort_indices<1,0,3,2,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]); break;
+        case 4656ull :
+          sort_indices<1,2,3,0,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]); break;
         case 8451ull :
           sort_indices<2,1,0,3,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]); break;
         case 8961ull :
           sort_indices<2,3,0,1,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]); break;
+        case 12306ull :
+          sort_indices<3,0,1,2,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]); break;
+        case 12816ull :
+          sort_indices<3,2,1,0,0,1,-1,1>(in, out, d[0], d[1], d[2], d[3]); break;
         default:
           throw std::logic_error("This case has not been implemented in prim_op_var.h");
     }

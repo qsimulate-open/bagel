@@ -121,6 +121,31 @@ template<>
 void sort_indices<1,0,1,1,-1,1>(const double* unsorted, double* sorted, const int b, const int a) {
   blas::transpose_add(unsorted, b, a, sorted, -1.0);
 }
+
+template<>
+void sort_indices<0,1,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int b, const int a) {
+  std::copy_n(unsorted, b*a, sorted);
+}
+template<>
+void sort_indices<0,1,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int b, const int a) {
+  blas::ax_plus_y_n(1.0, unsorted, b*a, sorted);
+}
+template<>
+void sort_indices<0,1,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int b, const int a) {
+  blas::ax_plus_y_n(-1.0, unsorted, b*a, sorted);
+}
+template<>
+void sort_indices<1,0,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int b, const int a) {
+  blas::transpose(unsorted, b, a, sorted, 1.0);
+}
+template<>
+void sort_indices<1,0,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int b, const int a) {
+  blas::transpose_add(unsorted, b, a, sorted, 1.0);
+}
+template<>
+void sort_indices<1,0,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int b, const int a) {
+  blas::transpose_add(unsorted, b, a, sorted, -1.0);
+}
 #endif
 
 
@@ -194,6 +219,43 @@ template<>
 void sort_indices<2,0,1,1,1,-1,1>(const double* unsorted, double* sorted, const int d, const int c, const int b) {
   blas::transpose_add(unsorted, d*c, b, sorted, -1.0);
 }
+
+template<>
+void sort_indices<0,1,2,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  std::copy_n(unsorted, d*c*b, sorted);
+}
+template<>
+void sort_indices<0,1,2,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  blas::ax_plus_y_n(1.0, unsorted, d*c*b, sorted);
+}
+template<>
+void sort_indices<0,1,2,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  blas::ax_plus_y_n(-1.0, unsorted, d*c*b, sorted);
+}
+template<>
+void sort_indices<1,2,0,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  blas::transpose(unsorted, d, c*b, sorted, 1.0);
+}
+template<>
+void sort_indices<1,2,0,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  blas::transpose_add(unsorted, d, c*b, sorted, 1.0);
+}
+template<>
+void sort_indices<1,2,0,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  blas::transpose_add(unsorted, d, c*b, sorted, -1.0);
+}
+template<>
+void sort_indices<2,0,1,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  blas::transpose(unsorted, d*c, b, sorted, 1.0);
+}
+template<>
+void sort_indices<2,0,1,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  blas::transpose_add(unsorted, d*c, b, sorted, 1.0);
+}
+template<>
+void sort_indices<2,0,1,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  blas::transpose_add(unsorted, d*c, b, sorted, -1.0);
+}
 #endif
 
 
@@ -237,62 +299,123 @@ void sort_indices(const T* unsorted, T* sorted,
 #ifdef USE_SPECIALIZATION_SORT_INDICES
 template<>
 void sort_indices<0,1,2,3,0,1,1,1>(const double* unsorted, double* sorted,
-                                          const int d, const int c, const int b, const int a) {
+                                   const int d, const int c, const int b, const int a) {
   std::copy_n(unsorted, static_cast<size_t>(d)*c*b*a, sorted);
 }
 template<>
 void sort_indices<0,1,2,3,1,1,1,1>(const double* unsorted, double* sorted,
-                                          const int d, const int c, const int b, const int a) {
+                                   const int d, const int c, const int b, const int a) {
   blas::ax_plus_y_n(1.0, unsorted, static_cast<size_t>(d)*c*b*a, sorted);
 }
 template<>
 void sort_indices<0,1,2,3,1,1,-1,1>(const double* unsorted, double* sorted,
-                                          const int d, const int c, const int b, const int a) {
+                                    const int d, const int c, const int b, const int a) {
   blas::ax_plus_y_n(-1.0, unsorted, static_cast<size_t>(d)*c*b*a, sorted);
 }
 template<>
 void sort_indices<1,2,3,0,0,1,1,1>(const double* unsorted, double* sorted,
-                                          const int d, const int c, const int b, const int a) {
+                                   const int d, const int c, const int b, const int a) {
   blas::transpose(unsorted, d, c*b*a, sorted, 1.0);
 }
 template<>
 void sort_indices<1,2,3,0,1,1,1,1>(const double* unsorted, double* sorted,
-                                          const int d, const int c, const int b, const int a) {
+                                   const int d, const int c, const int b, const int a) {
   blas::transpose_add(unsorted, d, c*b*a, sorted, 1.0);
 }
 template<>
 void sort_indices<1,2,3,0,1,1,-1,1>(const double* unsorted, double* sorted,
-                                           const int d, const int c, const int b, const int a) {
+                                    const int d, const int c, const int b, const int a) {
   blas::transpose_add(unsorted, d, c*b*a, sorted, -1.0);
 }
 template<>
 void sort_indices<2,3,0,1,0,1,1,1>(const double* unsorted, double* sorted,
-                                          const int d, const int c, const int b, const int a) {
+                                   const int d, const int c, const int b, const int a) {
   blas::transpose(unsorted, d*c, b*a, sorted, 1.0);
 }
 template<>
 void sort_indices<2,3,0,1,1,1,1,1>(const double* unsorted, double* sorted,
-                                          const int d, const int c, const int b, const int a) {
+                                   const int d, const int c, const int b, const int a) {
   blas::transpose_add(unsorted, d*c, b*a, sorted, 1.0);
 }
 template<>
 void sort_indices<2,3,0,1,1,1,-1,1>(const double* unsorted, double* sorted,
-                                           const int d, const int c, const int b, const int a) {
+                                    const int d, const int c, const int b, const int a) {
   blas::transpose_add(unsorted, d*c, b*a, sorted, -1.0);
 }
 template<>
 void sort_indices<3,0,1,2,0,1,1,1>(const double* unsorted, double* sorted,
-                                          const int d, const int c, const int b, const int a) {
+                                   const int d, const int c, const int b, const int a) {
   blas::transpose(unsorted, d*c*b, a, sorted, 1.0);
 }
 template<>
 void sort_indices<3,0,1,2,1,1,1,1>(const double* unsorted, double* sorted,
-                                          const int d, const int c, const int b, const int a) {
+                                   const int d, const int c, const int b, const int a) {
   blas::transpose_add(unsorted, d*c*b, a, sorted, 1.0);
 }
 template<>
 void sort_indices<3,0,1,2,1,1,-1,1>(const double* unsorted, double* sorted,
-                                           const int d, const int c, const int b, const int a) {
+                                    const int d, const int c, const int b, const int a) {
+  blas::transpose_add(unsorted, d*c*b, a, sorted, -1.0);
+}
+
+template<>
+void sort_indices<0,1,2,3,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  std::copy_n(unsorted, static_cast<size_t>(d)*c*b*a, sorted);
+}
+template<>
+void sort_indices<0,1,2,3,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  blas::ax_plus_y_n(1.0, unsorted, static_cast<size_t>(d)*c*b*a, sorted);
+}
+template<>
+void sort_indices<0,1,2,3,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  blas::ax_plus_y_n(-1.0, unsorted, static_cast<size_t>(d)*c*b*a, sorted);
+}
+template<>
+void sort_indices<1,2,3,0,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  blas::transpose(unsorted, d, c*b*a, sorted, 1.0);
+}
+template<>
+void sort_indices<1,2,3,0,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  blas::transpose_add(unsorted, d, c*b*a, sorted, 1.0);
+}
+template<>
+void sort_indices<1,2,3,0,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  blas::transpose_add(unsorted, d, c*b*a, sorted, -1.0);
+}
+template<>
+void sort_indices<2,3,0,1,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  blas::transpose(unsorted, d*c, b*a, sorted, 1.0);
+}
+template<>
+void sort_indices<2,3,0,1,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  blas::transpose_add(unsorted, d*c, b*a, sorted, 1.0);
+}
+template<>
+void sort_indices<2,3,0,1,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  blas::transpose_add(unsorted, d*c, b*a, sorted, -1.0);
+}
+template<>
+void sort_indices<3,0,1,2,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  blas::transpose(unsorted, d*c*b, a, sorted, 1.0);
+}
+template<>
+void sort_indices<3,0,1,2,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  blas::transpose_add(unsorted, d*c*b, a, sorted, 1.0);
+}
+template<>
+void sort_indices<3,0,1,2,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                    const int d, const int c, const int b, const int a) {
   blas::transpose_add(unsorted, d*c*b, a, sorted, -1.0);
 }
 #endif
@@ -429,32 +552,63 @@ void sort_indices(const T* unsorted, T* sorted,
 #ifdef USE_SPECIALIZATION_SORT_INDICES
 template<>
 void sort_indices<0,1,2,3,4,5,6,0,1,1,1>(const double* unsorted, double* sorted,
-                                                const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+                                         const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
   std::copy_n(unsorted, static_cast<size_t>(g)*f*e*d*c*b*a, sorted);
 }
 template<>
 void sort_indices<0,1,2,3,4,5,6,1,1,1,1>(const double* unsorted, double* sorted,
-                                                const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+                                         const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
   blas::ax_plus_y_n(1.0, unsorted, static_cast<size_t>(g)*f*e*d*c*b*a, sorted);
 }
 template<>
 void sort_indices<0,1,2,3,4,5,6,1,1,-1,1>(const double* unsorted, double* sorted,
-                                                const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+                                          const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
   blas::ax_plus_y_n(-1.0, unsorted, static_cast<size_t>(g)*f*e*d*c*b*a, sorted);
 }
 template<>
 void sort_indices<1,2,3,4,5,6,0,0,1,1,1>(const double* unsorted, double* sorted,
-                                                const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+                                         const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
   blas::transpose(unsorted, g, f*e*d*c*b*a, sorted, 1.0);
 }
 template<>
 void sort_indices<1,2,3,4,5,6,0,1,1,1,1>(const double* unsorted, double* sorted,
-                                                const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+                                         const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
   blas::transpose_add(unsorted, g, f*e*d*c*b*a, sorted, 1.0);
 }
 template<>
 void sort_indices<1,2,3,4,5,6,0,1,1,-1,1>(const double* unsorted, double* sorted,
-                                                const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+                                          const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+  blas::transpose_add(unsorted, g, f*e*d*c*b*a, sorted, -1.0);
+}
+
+template<>
+void sort_indices<0,1,2,3,4,5,6,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                         const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+  std::copy_n(unsorted, static_cast<size_t>(g)*f*e*d*c*b*a, sorted);
+}
+template<>
+void sort_indices<0,1,2,3,4,5,6,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                         const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+  blas::ax_plus_y_n(1.0, unsorted, static_cast<size_t>(g)*f*e*d*c*b*a, sorted);
+}
+template<>
+void sort_indices<0,1,2,3,4,5,6,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                          const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+  blas::ax_plus_y_n(-1.0, unsorted, static_cast<size_t>(g)*f*e*d*c*b*a, sorted);
+}
+template<>
+void sort_indices<1,2,3,4,5,6,0,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                         const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+  blas::transpose(unsorted, g, f*e*d*c*b*a, sorted, 1.0);
+}
+template<>
+void sort_indices<1,2,3,4,5,6,0,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                         const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+  blas::transpose_add(unsorted, g, f*e*d*c*b*a, sorted, 1.0);
+}
+template<>
+void sort_indices<1,2,3,4,5,6,0,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                          const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
   blas::transpose_add(unsorted, g, f*e*d*c*b*a, sorted, -1.0);
 }
 #endif
@@ -510,17 +664,33 @@ void sort_indices(const T* unsorted, T* sorted,
 #ifdef USE_SPECIALIZATION_SORT_INDICES
 template<>
 void sort_indices<0,1,2,3,4,5,6,7,0,1,1,1>(const double* unsorted, double* sorted,
-                                                  const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+                                           const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
   std::copy_n(unsorted, static_cast<size_t>(h)*g*f*e*d*c*b*a, sorted);
 }
 template<>
 void sort_indices<0,1,2,3,4,5,6,7,1,1,1,1>(const double* unsorted, double* sorted,
-                                                  const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+                                           const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
   blas::ax_plus_y_n(1.0, unsorted, static_cast<size_t>(h)*g*f*e*d*c*b*a, sorted);
 }
 template<>
 void sort_indices<0,1,2,3,4,5,6,7,1,1,-1,1>(const double* unsorted, double* sorted,
-                                                  const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+                                            const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+  blas::ax_plus_y_n(-1.0, unsorted, static_cast<size_t>(h)*g*f*e*d*c*b*a, sorted);
+}
+
+template<>
+void sort_indices<0,1,2,3,4,5,6,7,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                           const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+  std::copy_n(unsorted, static_cast<size_t>(h)*g*f*e*d*c*b*a, sorted);
+}
+template<>
+void sort_indices<0,1,2,3,4,5,6,7,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                           const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
+  blas::ax_plus_y_n(1.0, unsorted, static_cast<size_t>(h)*g*f*e*d*c*b*a, sorted);
+}
+template<>
+void sort_indices<0,1,2,3,4,5,6,7,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                            const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) {
   blas::ax_plus_y_n(-1.0, unsorted, static_cast<size_t>(h)*g*f*e*d*c*b*a, sorted);
 }
 #endif

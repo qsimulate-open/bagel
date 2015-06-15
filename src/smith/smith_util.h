@@ -95,20 +95,22 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
   for (auto& indices : loop) {
     assert(indices.size() == rank);
 
-    const size_t buffersize = std::accumulate(indices.begin(), indices.end(), 1ul, prod);
-    std::unique_ptr<DataType[]> buffer(new DataType[buffersize]);
-    std::vector<size_t> stride;
-    for (auto i = indices.begin(); i != indices.end(); ++i) {
-      auto ii = i; ++ii;
-      stride.push_back(std::accumulate(ii, indices.end(), 1ul, prod));
-    }
-
     std::bitset<N> bit;
     for (int i = 0; i != N; ++i)
-      bit[i] = indices[i].kramers() ? 1 : 0;
-    // TODO in principle there is repetition (especially when active orbitals are separated into small blocks)
-    auto block = input->get_data(bit);
-    if (block) {
+      bit[i] = indices[i].kramers() ? 1 : 0; // indices is reversed, so this is correct
+
+    if (input->exist(bit)) {
+      const size_t buffersize = std::accumulate(indices.begin(), indices.end(), 1ul, prod);
+      std::vector<size_t> stride;
+      for (auto i = indices.begin(); i != indices.end(); ++i) {
+        auto ii = i; ++ii;
+        stride.push_back(std::accumulate(ii, indices.end(), 1ul, prod));
+      }
+
+      std::unique_ptr<DataType[]> buffer(new DataType[buffersize]);
+
+      // in principle there is repetition (especially when active orbitals are separated into small blocks)
+      auto block = input->at(bit);
       assert(block->range().ordinal().contiguous());
       assert(target->rank() == block->range().rank() && target->rank() > 0);
 
@@ -133,11 +135,10 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
         }
         std::copy_n(block->data()+offset, backsize, buffer.get()+n);
       }
-    } else {
-      std::fill_n(buffer.get(), buffersize, 0.0);
+      target->put_block(buffer, std::vector<Index>(indices.rbegin(), indices.rend()));
     }
-    target->put_block(buffer, std::vector<Index>(indices.rbegin(), indices.rend()));
   }
+  target->set_perm(input->perm());
 }
 
 }
