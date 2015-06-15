@@ -107,6 +107,7 @@ class Node {
     std::shared_ptr<const ZMatrix> local_expansion() const { return local_expansion_; }
     std::vector<std::shared_ptr<const ZMatrix>> child_local_expansion() const { return child_local_expansion_; }
     std::shared_ptr<const ZMatrix> child_local_expansion(const int i) const { return child_local_expansion_[i]; }
+    void print_node() const;
 };
 
 }

@@ -553,3 +553,19 @@ shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix
 
   return out;
 }
+
+
+void Node::print_node() const {
+
+  cout << "*** Node at " << setprecision(5) << position_[0] << "   " << position_[1] << "   " << position_[2] << endl;
+  cout << "has " << nbody_ << " bodies: " << endl;
+  for (auto& body : bodies_)
+    cout << setw(5) << setprecision(5) << setw(10) << body->position(0) << "   "
+                                       << setw(10) << body->position(1) << "   "
+                                       << setw(10) << body->position(2) << endl;
+  cout << "and " << nneighbour_ << " neighbours" << endl;
+  for (auto& neigh : neighbour_)
+    cout << setprecision(5) << setw(10) << neigh->position(0) << "  "
+                            << setw(10) << neigh->position(1) << "  "
+                            << setw(10) << neigh->position(2) << endl;
+}
