@@ -279,68 +279,64 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 
   const int nmultipole = (lmax + 1) * (lmax + 1);
 
-//  if (is_same_as_parent_) {
-//    local_expansion_ = parent_->local_expansion();
-//  } else {
-    auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
 
-    for (auto& distant_node : interaction_list_) { // M2L
-      array<double, 3> r12;
-      r12[0] = distant_node->position(0) - position_[0];
-      r12[1] = distant_node->position(1) - position_[1];
-      r12[2] = distant_node->position(2) - position_[2];
-      LocalExpansion lx(r12, distant_node->multipoles(), lmax);
-      vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
+  for (auto& distant_node : interaction_list_) { // M2L
+    array<double, 3> r12;
+    r12[0] = distant_node->position(0) - position_[0];
+    r12[1] = distant_node->position(1) - position_[1];
+    r12[2] = distant_node->position(2) - position_[2];
+    LocalExpansion lx(r12, distant_node->multipoles(), lmax);
+    vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
 
-      const int dimb = distant_node->nbasis();
-      // need to get a sub-density matrix corresponding to distant_node
-      Matrix subden(dimb, dimb);
-      subden.zero();
-      size_t ob0 = 0;
-      for (auto& body0 : distant_node->bodies()) {
-        size_t iat0 = 0;
-        for (auto& atom0 : body0->atoms()) {
-          size_t ish0 = 0;
-          for (auto& b0 : atom0->shells()) {
-            const int offset0 = offsets[body0->ishell(iat0) + ish0];
-            const size_t size0 = b0->nbasis();
-            ++ish0;
+    const int dimb = distant_node->nbasis();
+    // need to get a sub-density matrix corresponding to distant_node
+    Matrix subden(dimb, dimb);
+    subden.zero();
+    size_t ob0 = 0;
+    for (auto& body0 : distant_node->bodies()) {
+      size_t iat0 = 0;
+      for (auto& atom0 : body0->atoms()) {
+        size_t ish0 = 0;
+        for (auto& b0 : atom0->shells()) {
+          const int offset0 = offsets[body0->ishell(iat0) + ish0];
+          const size_t size0 = b0->nbasis();
+          ++ish0;
 
-            size_t ob1 = 0;
-            for (auto& body1 : distant_node->bodies()) {
-              size_t iat1 = 0;
-              for (auto& atom1 : body1->atoms()) {
-                size_t ish1 = 0;
-                for (auto& b1 : atom1->shells()) {
-                  const int offset1 = offsets[body1->ishell(iat1) + ish1];
-                  const size_t size1 = b1->nbasis();
-                  ++ish1;
+          size_t ob1 = 0;
+          for (auto& body1 : distant_node->bodies()) {
+            size_t iat1 = 0;
+            for (auto& atom1 : body1->atoms()) {
+              size_t ish1 = 0;
+              for (auto& b1 : atom1->shells()) {
+                const int offset1 = offsets[body1->ishell(iat1) + ish1];
+                const size_t size1 = b1->nbasis();
+                ++ish1;
 
-                  shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
-                  subden.copy_block(ob1, ob0, size1, size0, tmp);
-                  ob1 += size1;
-                }
-                ++iat1;
+                shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
+                subden.copy_block(ob1, ob0, size1, size0, tmp);
+                ob1 += size1;
               }
+              ++iat1;
             }
-            ob0 += size0;
           }
-          ++iat0;
+          ob0 += size0;
         }
-      }
-
-      for (int i = 0; i != nmultipole; ++i) {
-        complex<double> contract = 0.0;
-        for (int j = 0; j != dimb; ++j)
-          for (int k = 0; k != dimb; ++k)
-            contract += lmoments[i]->element(k, j) * subden.element(k, j);
-
-        *out += contract * *multipoles_[i];
+        ++iat0;
       }
     }
 
-    local_expansion_ = out;
-//  }
+    for (int i = 0; i != nmultipole; ++i) {
+      complex<double> contract = 0.0;
+      for (int j = 0; j != dimb; ++j)
+        for (int k = 0; k != dimb; ++k)
+          contract += lmoments[i]->element(k, j) * subden.element(k, j);
+
+      *out += contract * *multipoles_[i];
+    }
+  }
+
+  local_expansion_ = out;
 }
 
 
@@ -402,6 +398,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         }
 
         new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+        ++iat;
       }
     }
   }
@@ -504,6 +501,7 @@ shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix
         }
 
         new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+        ++iat;
       }
     }
     for (auto& distant_node : interaction_list_) {
