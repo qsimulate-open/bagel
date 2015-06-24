@@ -592,19 +592,23 @@ shared_ptr<const Atom> Atom::relativistic(const array<double,3>& magnetic_field,
 }
 
 
-shared_ptr<const Atom> Atom::apply_magnetic_field(const array<double,3>& magnetic_field) const {
+shared_ptr<const Atom> Atom::apply_magnetic_field(const array<double,3>& magnetic_field, const bool london) const {
 
   auto atom = make_shared<Atom>(*this);
-  atom->vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
-  atom->vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
-  atom->vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
+  if (london) {
+    atom->vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
+    atom->vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
+    atom->vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
+  } else {
+    atom->vector_potential_ = array<double,3>{{0.0, 0.0, 0.0}};
+  }
 
   // basically the same
   // except for shells_
   vector<shared_ptr<const Shell>> mshells;
   for (auto& i : shells_) {
     auto tmp = make_shared<Shell>(*i);
-    tmp->add_phase(atom->vector_potential_);
+    tmp->add_phase(atom->vector_potential_, magnetic_field, london);
     mshells.push_back(tmp);
   }
   atom->shells_ = mshells;

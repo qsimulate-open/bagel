@@ -52,7 +52,9 @@ class Shell : public Shell_base {
 
     // whether a london phase factor is being used
     bool magnetism_;
+    bool london_;
     std::array<double,3> vector_potential_;
+    std::array<double,3> magnetic_field_;
 
     // protected members for relativistic calculations
     std::array<std::shared_ptr<const Matrix>,3> small_;
@@ -70,15 +72,21 @@ class Shell : public Shell_base {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Shell_base>(*this);
-      ar << exponents_ << contractions_ << contraction_ranges_ << dummy_ << contraction_upper_ << contraction_lower_ << nbasis_ << relativistic_ << vector_potential_;
+      ar << exponents_ << contractions_ << contraction_ranges_ << dummy_ << contraction_upper_ << contraction_lower_ << nbasis_
+         << relativistic_ << magnetism_ << london_ << vector_potential_ << magnetic_field_;
     }
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Shell_base>(*this);
-      ar >> exponents_ >> contractions_ >> contraction_ranges_ >> dummy_ >> contraction_upper_ >> contraction_lower_ >> nbasis_ >> relativistic_ >> vector_potential_;
-      if (relativistic_)
-        init_relativistic();
+      ar >> exponents_ >> contractions_ >> contraction_ranges_ >> dummy_ >> contraction_upper_ >> contraction_lower_ >> nbasis_
+         >> relativistic_ >> magnetism_ >> london_ >> vector_potential_ >> magnetic_field_;
+      if (relativistic_) {
+        if (!magnetism_)
+          init_relativistic();
+        else
+          init_relativistic(magnetic_field_, london_);
+      }
     }
 
     template<class Archive>
@@ -128,7 +136,7 @@ class Shell : public Shell_base {
     bool magnetism() const { return magnetism_; }
     double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
     const std::array<double,3>& vector_potential() const { return vector_potential_; }
-    void add_phase(const std::array<double,3>& phase_input);
+    void add_phase(const std::array<double,3>& phase_input, const std::array<double,3>& magnetic_field, const bool london);
 
     void init_relativistic();
     void init_relativistic(const std::array<double,3> magnetic_field, bool london);

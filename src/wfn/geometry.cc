@@ -669,10 +669,8 @@ void Geometry::init_magnetism() {
     cout << "  Zero magnetic field - This computation would be more efficient with a standard basis." << endl;
   }
 
-  const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
-
   vector<shared_ptr<const Atom>> atom;
   for (auto& i : atoms_)
-    atom.push_back(i->apply_magnetic_field(fieldin));
+    atom.push_back(i->apply_magnetic_field(magnetic_field_, london_));
   atoms_ = atom;
 }

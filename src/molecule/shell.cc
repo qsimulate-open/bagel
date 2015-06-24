@@ -35,8 +35,8 @@ static const CarSphList carsphlist;
 
 Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
                        const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range)
- : Shell_base(sph, _position, _ang),
-   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false), magnetism_(false), vector_potential_{{0.0, 0.0, 0.0}} {
+ : Shell_base(sph, _position, _ang), exponents_(_expo), contractions_(_contr), contraction_ranges_(_range),
+   dummy_(false), relativistic_(false), magnetism_(false), london_(false), vector_potential_{{0.0, 0.0, 0.0}}, magnetic_field_{{0.0, 0.0, 0.0}} {
 
   contraction_lower_.reserve(_range.size());
   contraction_upper_.reserve(_range.size());
@@ -53,8 +53,8 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 }
 
 
-Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}},
-                               contraction_ranges_{{0,1}}, dummy_(true), magnetism_(false), vector_potential_{{0.0,0.0,0.0}} {
+Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}}, contraction_ranges_{{0,1}},
+                               dummy_(true), magnetism_(false), london_(false), vector_potential_{{0.0, 0.0, 0.0}}, magnetic_field_{{0.0, 0.0, 0.0}} {
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }
@@ -167,21 +167,27 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
     ranges.push_back({i,i+1});
   }
   auto out = angular_number_+increment < 0 ? nullptr : make_shared<Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges);
-  if (magnetism_ && angular_number_+increment >= 0) out->add_phase(vector_potential_);
+  if (magnetism_ && angular_number_+increment >= 0) out->add_phase(vector_potential_, magnetic_field_, london_);
   return out;
 }
 
 
-void Shell::add_phase(const std::array<double,3>& phase_input) {
+void Shell::add_phase(const array<double,3>& phase_input, const array<double,3>& magnetic_field, const bool london) {
+  assert(london || (phase_input[0] == 0.0 && phase_input[1] == 0.0 && phase_input[2] == 0.0));
+
   magnetism_ = true;
+  london_ = london;
   vector_potential_ = phase_input;
+  magnetic_field_ = magnetic_field;
 }
+
 
 shared_ptr<const Shell> Shell::cartesian_shell() const {
   auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_);
-  if (magnetism_) out->add_phase(vector_potential_);
+  if (magnetism_) out->add_phase(vector_potential_, magnetic_field_, london_);
   return out;
 }
+
 
 void Shell::init_relativistic() {
   if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
