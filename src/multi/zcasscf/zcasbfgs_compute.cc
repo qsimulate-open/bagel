@@ -63,7 +63,8 @@ void ZCASBFGS::compute() {
   {
     auto unit = coeff_->clone(); unit->unit();
     orthonorm = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
-    if (orthonorm > 2.5e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
+    if (orthonorm > 2.5e-13)
+      cout << "Coefficient is not sufficiently orthnormal: " << setprecision(10) << setw(15) << orthonorm << endl;;
   }
 
   prev_energy_ = vector<double>(nstate_, 0.0);

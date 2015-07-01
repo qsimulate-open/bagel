@@ -322,7 +322,6 @@ void MOFock<double>::init() {
   assert(nclosed >= 0);
   const int nocc    = info_->nocc();
   const int nact    = info_->nact();
-  const int nvirt   = info_->nvirt();
   const int nbasis  = coeff_->ndim();
 
   // cfock
@@ -364,11 +363,18 @@ void MOFock<double>::init() {
     fcl->diagonalize(eig);
     newcoeff->copy_block(0, 0, nbasis, ncore+nclosed, newcoeff->slice(0, ncore+nclosed) * *fcl);
   }
-  if (nvirt > 1) {
-    shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirt, nvirt);
+  const int nvirt   = info_->nvirt();
+  const int nvirtall = nvirt+info_->nfrozenvirt();
+  if (nvirtall > 1) {
+    shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirtall, nvirtall);
     fvirt->diagonalize(eig);
-    newcoeff->copy_block(0, nocc, nbasis, nvirt, newcoeff->slice(nocc, nocc+nvirt) * *fvirt);
+    newcoeff->copy_block(0, nocc, nbasis, nvirtall, newcoeff->slice(nocc, nocc+nvirtall) * *fvirt);
+    if (info_->nfrozenvirt() > 0) {
+      cout << "       - Truncating virtual orbitals: " << setw(20) << setprecision(10) << eig[nvirt] << endl;
+      newcoeff = newcoeff->slice_copy(0, nocc+nvirt);
+    }
   }
+
   // **** CAUTION **** updating the coefficient
   coeff_ = newcoeff;
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
