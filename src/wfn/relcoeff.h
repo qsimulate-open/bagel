@@ -112,7 +112,7 @@ class RelCoeff_Striped : public RelCoeff {
     }
 
     std::shared_ptr<RelCoeff_Block> block_format(int nclosed = -1, int nact = -1, int nvirt = -1, int nneg = -1) const;
-    std::shared_ptr<Kramers<2,ZMatrix>> kramers_active() const;
+    std::shared_ptr<Kramers<1,ZMatrix>> kramers_active() const;
 
     // function to generate modified virtual MOs from either a Fock matrix or the one-electron Hamiltonian
     std::shared_ptr<const RelCoeff_Striped> generate_mvo(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> overlap,
@@ -155,7 +155,7 @@ class RelCoeff_Block : public RelCoeff {
     std::shared_ptr<RelCoeff_Block> update_closed_act_positronic(std::shared_ptr<const ZMatrix> newcoeff) const;
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
-    std::shared_ptr<Kramers<2,ZMatrix>> kramers_active() const;
+    std::shared_ptr<Kramers<1,ZMatrix>> kramers_active() const;
 };
 
 

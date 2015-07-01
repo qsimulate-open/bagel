@@ -205,7 +205,7 @@ class ZHarrison : public Method {
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
-    std::shared_ptr<const Kramers<2,ZMatrix>> kramers_coeff() const { return jop_->kramers_coeff(); }
+    std::shared_ptr<const Kramers<1,ZMatrix>> kramers_coeff() const { return jop_->kramers_coeff(); }
 
     // functions related to RDMs
     void compute_rdm12();
