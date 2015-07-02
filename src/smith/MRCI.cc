@@ -77,7 +77,7 @@ void MRCI::MRCI::solve() {
     }
   }
 
-  DavidsonDiag_<Amplitude<double>, Residual<double>, Matrix> davidson(nstates_, 10);
+  DavidsonDiag_<Amplitude<double>, Residual<double>, Matrix> davidson(nstates_, info_->davidson_subspace());
 
   // first iteration is trivial
   {

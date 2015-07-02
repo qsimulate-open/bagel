@@ -87,14 +87,14 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
 
 
 // this is a static function!
-shared_ptr<Kramers<2,ZMatrix>> RelMOFile::kramers(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
+shared_ptr<Kramers<1,ZMatrix>> RelMOFile::kramers(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
   const int noff = coeff->mdim()/2;
   const int ndim = coeff->ndim();
   const int mdim = coeff->mdim();
   const int nb = ndim / 4;
   unique_ptr<complex<double>[]> eig = (*coeff % *hcore * *coeff).diag();
 
-  auto out = make_shared<Kramers<2,ZMatrix>>();
+  auto out = make_shared<Kramers<1,ZMatrix>>();
   out->emplace(0, make_shared<ZMatrix>(ndim, noff));
   out->emplace(1, make_shared<ZMatrix>(ndim, noff));
 
@@ -193,7 +193,7 @@ void RelMOFile::compress_and_set(shared_ptr<Kramers<2,ZMatrix>> buf1e, shared_pt
 }
 
 
-shared_ptr<Kramers<2,ZMatrix>> RelJop::compute_mo1e(shared_ptr<const Kramers<2,ZMatrix>> coeff) {
+shared_ptr<Kramers<2,ZMatrix>> RelJop::compute_mo1e(shared_ptr<const Kramers<1,ZMatrix>> coeff) {
   auto out = make_shared<Kramers<2,ZMatrix>>();
   const int n = tsymm_ ? 3 : 4;
   for (size_t i = 0; i != n; ++i)
@@ -211,7 +211,7 @@ shared_ptr<Kramers<2,ZMatrix>> RelJop::compute_mo1e(shared_ptr<const Kramers<2,Z
 }
 
 
-shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<2,ZMatrix>> coeff) {
+shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,ZMatrix>> coeff) {
 
   auto compute = [&coeff, this](shared_ptr<Kramers<4,ZMatrix>> out, const bool gaunt, const bool breit) {
     assert(!breit || gaunt);
@@ -225,23 +225,10 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<2,Z
     }
     list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, gaunt);
 
-    // Separate Coefficients into real and imaginary
-    // correlated occupied orbitals
-    array<array<shared_ptr<const Matrix>,4>,2> rocoeff;
-    array<array<shared_ptr<const Matrix>,4>,2> iocoeff;
-    for (int k = 0; k != 2; ++k) {
-      for (int i = 0; i != 4; ++i) {
-        shared_ptr<const ZMatrix> oc = coeff->at(k)->get_submatrix(i*nbasis_, 0, nbasis_, nocc_);
-        assert(nocc_ == coeff->at(k)->mdim());
-        rocoeff[k][i] = oc->get_real_part();
-        iocoeff[k][i] = oc->get_imag_part();
-      }
-    }
-
     // (2) first-transform
     array<list<shared_ptr<RelDFHalf>>,2> half_complex;
     for (int k = 0; k != 2; ++k)
-      half_complex[k] = DFock::make_half_complex(dfdists, rocoeff[k], iocoeff[k]);
+      half_complex[k] = DFock::make_half_complex(dfdists, coeff->at(k));
 
     // (3) split and factorize
     array<list<shared_ptr<RelDFHalf>>,2> half_complex_exch, half_complex_exch2;
@@ -284,11 +271,11 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<2,Z
     }
 
     // (4) compute (gamma|ii)
-    shared_ptr<const Kramers<2,RelDFFull>> full = compute_full(rocoeff, iocoeff, half_complex_exch, true);
-    shared_ptr<const Kramers<2,RelDFFull>> full2 = !breit ? full : compute_full(rocoeff, iocoeff, half_complex_exch2, false);
+    shared_ptr<const Kramers<2,RelDFFull>> full = compute_full(coeff, half_complex_exch, true);
+    shared_ptr<const Kramers<2,RelDFFull>> full2 = !breit ? full : compute_full(coeff, half_complex_exch2, false);
 
     // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
-    const double gscale = gaunt ? (breit ? -0.5 : -1.0) : 1.0;
+    const double gscale = gaunt ? (breit ? -0.25 : -1.0) : 1.0;
     for (size_t i = 0; i != 16; ++i) {
       // we do not need (1000, 0111, 1110, 0001, 1100, 0110)
       if (i == 8 || i == 7 || i == 14 || i == 1 || i == 12 || i == 6)
@@ -303,11 +290,11 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<2,Z
       // TODO : put in if statement for apply_J if nact*nact is much smaller than number of MPI processes
       const int b2a = i/4;
       const int b2b = i%4;
-      out->add(i, full->at(b2a)->form_4index(full2->at(b2b), gscale * (breit_ ? 0.5 : 1.0)));
+      out->add(i, full->at(b2a)->form_4index(full2->at(b2b), gscale));
 
       // in breit cases we explicitly symmetrize the Hamiltnian (hence the prefactor 0.5 above)
-      if (breit_)
-        *out->at(i) += *full2->at(b2a)->form_4index(full->at(b2b), gscale*0.5);
+      if (breit)
+        *out->at(i) += *full2->at(b2a)->form_4index(full->at(b2b), gscale);
     }
   };
 
@@ -352,13 +339,13 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<2,Z
 }
 
 
-shared_ptr<const Kramers<2,RelDFFull>>
-  RelMOFile::compute_full(array<array<shared_ptr<const Matrix>,4>,2> rocoeff, array<array<shared_ptr<const Matrix>,4>,2> iocoeff,
-                          array<list<shared_ptr<RelDFHalf>>,2> half, const bool appj, const bool appjj) {
+shared_ptr<const Kramers<2,RelDFFull>> RelMOFile::compute_full(shared_ptr<const Kramers<1,ZMatrix>> coeff, array<list<shared_ptr<RelDFHalf>>,2> half,
+                                                               const bool appj, const bool appjj) {
+  assert(!appj || !appjj);
   auto out = make_shared<Kramers<2,RelDFFull>>();
 
   // TODO remove once DFDistT class is fixed
-  const bool transform_with_full = !(half[0].front()->nocc()*rocoeff[0][0]->mdim() <= mpi__->size());
+  const bool transform_with_full = !(half[0].front()->nocc()*coeff->at(0)->mdim() <= mpi__->size());
   if (!transform_with_full) {
     for (int t = 0; t != 2; ++t)
       for (auto& i : half[t])
@@ -369,11 +356,9 @@ shared_ptr<const Kramers<2,RelDFFull>>
   }
 
   for (size_t t = 0; t != 4; ++t) {
-    assert(!appj || !appjj);
-
     list<shared_ptr<RelDFFull>> dffull;
     for (auto& i : half[t/2])
-      dffull.push_back(make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
+      dffull.push_back(make_shared<RelDFFull>(i, coeff->at(t%2)));
     DFock::factorize(dffull);
     assert(dffull.size() == 1);
     dffull.front()->scale(dffull.front()->fac()); // take care of the factor

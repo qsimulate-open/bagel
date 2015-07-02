@@ -191,14 +191,14 @@ shared_ptr<RelCoeff_Kramers> RelCoeff_Kramers::move_positronic() const {
 }
 
 
-shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Striped::kramers_active() const {
+shared_ptr<Kramers<1,ZMatrix>> RelCoeff_Striped::kramers_active() const {
   RelCoeff_Striped active_only(slice(2*nclosed_, 2*(nclosed_+nact_)), 0, nact_, 0, 0);
   return active_only.block_format()->kramers_active();
 }
 
 
-shared_ptr<Kramers<2,ZMatrix>> RelCoeff_Block::kramers_active() const {
-  auto out = make_shared<Kramers<2,ZMatrix>>();
+shared_ptr<Kramers<1,ZMatrix>> RelCoeff_Block::kramers_active() const {
+  auto out = make_shared<Kramers<1,ZMatrix>>();
   out->emplace(0, slice_copy(2*nclosed_,         2*nclosed_ + nact_));
   out->emplace(1, slice_copy(2*nclosed_ + nact_, 2*(nclosed_+nact_)));
   return out;

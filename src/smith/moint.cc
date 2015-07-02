@@ -52,83 +52,133 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
 
 template<>
 void K2ext<complex<double>>::init() {
-  // (1) make DFDists
-  vector<shared_ptr<const DFDist>> dfs = info_->geom()->dfs()->split_blocks();
-  dfs.push_back(info_->geom()->df());
-  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
-
-  map<size_t, shared_ptr<RelDFFull>> dflist;
-
-  // (2) first-transform
-  for (auto& i0 : blocks_[0]) {
-    list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff_->slice_copy(i0.offset(), i0.offset()+i0.size()));
-    for (auto& i : half_complex)
-      i = i->apply_J();
-
-    // (3) split and factorize
-    list<shared_ptr<RelDFHalf>> half_complex_exch;
-    for (auto& i : half_complex) {
-      list<shared_ptr<RelDFHalf>> tmp = i->split(false);
-      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
-    }
-    half_complex.clear();
-    DFock::factorize(half_complex_exch);
-
-    for (auto& i1 : blocks_[1]) {
-      // (4) compute (gamma|ia)
-      list<shared_ptr<RelDFFull>> dffull;
-      for (auto& i : half_complex_exch)
-        dffull.push_back(make_shared<RelDFFull>(i, coeff_->slice_copy(i1.offset(), i1.offset()+i1.size())));
-      DFock::factorize(dffull);
-      dffull.front()->scale(dffull.front()->fac()); // take care of the factor
-      assert(dffull.size() == 1);
-      // adding this to dflist
-      dflist.emplace(generate_hash_key(i0, i1), dffull.front());
-    }
-  }
 
   // bits to store
   const bool braket = blocks_[0] == blocks_[1] && blocks_[2] == blocks_[3];
-  const vector<vector<int>> blocks = braket ?
+  const vector<vector<int>> cblocks = braket ?
     vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,1,1,1}} :
     vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,1,1}, {1,0,1,0}, {1,1,1,1}};
 
-  // form four-index integrals
-  // TODO this part should be heavily parallelized
-  for (auto& i0 : blocks_[0]) {
-    for (auto& i1 : blocks_[1]) {
-      // find three-index integrals
-      size_t hashkey01 = generate_hash_key(i0, i1);
-      auto iter01 = dflist.find(hashkey01);
-      assert(iter01 != dflist.end());
-      shared_ptr<RelDFFull> df01 = iter01->second;
-      const int t0 = i0.kramers() ? 1 : 0;
-      const int t1 = i1.kramers() ? 1 : 0;
+  // TODO I am not happy with this code - too much repetition with RelMOFile. Should be cleaned up later
+  auto compute = [this, &cblocks](const bool gaunt, const bool breit) {
+    // (1) make DFDists
+    vector<shared_ptr<const DFDist>> dfs;
+    if (!gaunt) {
+      dfs = info_->geom()->dfs()->split_blocks();
+      dfs.push_back(info_->geom()->df());
+    } else {
+      dfs = info_->geom()->dfsl()->split_blocks();
+    }
+    list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, gaunt);
 
-      for (auto& i2 : blocks_[2]) {
-        for (auto& i3 : blocks_[3]) {
-          // find three-index integrals
-          const int t2 = i2.kramers() ? 1 : 0;
-          const int t3 = i3.kramers() ? 1 : 0;
-          if (find(blocks.begin(), blocks.end(), vector<int>{t0, t1, t2, t3}) == blocks.end())
-            continue;
+    map<size_t, shared_ptr<RelDFFull>> dflist, dflist2;
 
-          size_t hashkey23 = generate_hash_key(i2, i3);
-          auto iter23 = dflist.find(generate_hash_key(i2, i3));
-          assert(iter23 != dflist.end());
-          shared_ptr<const RelDFFull> df23 = iter23->second;
+    // (2) first-transform
+    for (auto& i0 : blocks_[0]) {
+      list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff_->slice_copy(i0.offset(), i0.offset()+i0.size()));
 
-          // contract
-          // TODO form_4index function now generates global 4 index tensor. This should be localized.
-          // conjugating because (ai|ai) is associated with an excitation operator
-          shared_ptr<ZMatrix> tmp = df01->form_4index(df23, 1.0)->get_conjg();
-          unique_ptr<complex<double>[]> target(new complex<double>[tmp->size()]);
-          copy_n(tmp->data(), tmp->size(), target.get()); // unnecessary copy
-          data_->put_block(target, i0, i1, i2, i3);
+      // (3) split and factorize
+      list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
+      for (auto& i : half_complex) {
+        list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+        half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+      }
+      half_complex.clear();
+      DFock::factorize(half_complex_exch);
+
+      if (breit) {
+        auto breitint = make_shared<BreitInt>(info_->geom());
+        list<shared_ptr<Breit2Index>> breit_2index;
+        for (int i = 0; i != breitint->Nblocks(); ++i) {
+          breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), info_->geom()->df()->data2()));
+          if (breitint->not_diagonal(i))
+            breit_2index.push_back(breit_2index.back()->cross());
+        }
+        for (auto& i : half_complex_exch)
+          half_complex_exch2.push_back(i->apply_J());
+
+        for (auto& i : half_complex_exch)
+          for (auto& j : breit_2index)
+            if (i->alpha_matches(j)) {
+              half_complex_exch2.push_back(i->apply_J()->multiply_breit2index(j));
+              DFock::factorize(half_complex_exch2);
+            }
+      }
+
+      for (auto& i1 : blocks_[1]) {
+        // (4) compute (gamma|ia)
+        auto compute_block = [this, &i0, &i1](const list<shared_ptr<RelDFHalf>>& half, map<size_t, shared_ptr<RelDFFull>>& target, const bool appj) {
+          list<shared_ptr<RelDFFull>> dffull;
+          for (auto& i : half)
+            dffull.push_back(make_shared<RelDFFull>(i, coeff_->slice_copy(i1.offset(), i1.offset()+i1.size())));
+          DFock::factorize(dffull);
+          assert(dffull.size() == 1);
+
+          shared_ptr<RelDFFull> dff = dffull.front();
+          dff->scale(dff->fac()); // take care of the factor
+          if (appj)
+            dff = dff->apply_J();
+          // adding this to dflist
+          target.emplace(generate_hash_key(i0, i1), dff);
+        };
+        compute_block(half_complex_exch, dflist, true);
+        if (breit)
+          compute_block(half_complex_exch2, dflist2, false);
+      }
+    }
+    if (!breit)
+      dflist2 = dflist;
+
+    // form four-index integrals
+    // TODO this part should be heavily parallelized
+    const double gscale = gaunt ? (breit ? -0.25 /*we explicitly symmetrize*/ : -1.0) : 1.0;
+    for (auto& i0 : blocks_[0]) {
+      for (auto& i1 : blocks_[1]) {
+        // find three-index integrals
+        size_t hashkey01 = generate_hash_key(i0, i1);
+        assert(dflist.find(hashkey01) != dflist.end());
+        shared_ptr<const RelDFFull> df01   = dflist.find(hashkey01)->second;
+        shared_ptr<const RelDFFull> df01_2 = dflist2.find(hashkey01)->second;
+        const int t0 = i0.kramers() ? 1 : 0;
+        const int t1 = i1.kramers() ? 1 : 0;
+
+        for (auto& i2 : blocks_[2]) {
+          for (auto& i3 : blocks_[3]) {
+            // find three-index integrals
+            const int t2 = i2.kramers() ? 1 : 0;
+            const int t3 = i3.kramers() ? 1 : 0;
+            if (find(cblocks.begin(), cblocks.end(), vector<int>{t0, t1, t2, t3}) == cblocks.end())
+              continue;
+
+            size_t hashkey23 = generate_hash_key(i2, i3);
+            assert(dflist.find(hashkey23) != dflist.end());
+            shared_ptr<const RelDFFull> df23   = dflist.find(hashkey23)->second;
+            shared_ptr<const RelDFFull> df23_2 = dflist2.find(hashkey23)->second;
+
+            // contract
+            // TODO form_4index function now generates global 4 index tensor. This should be localized.
+            // conjugating because (ai|ai) is associated with an excitation operator
+            unique_ptr<complex<double>[]> target = data_->move_block(i0, i1, i2, i3);
+            {
+              shared_ptr<ZMatrix> tmp = df01->form_4index(df23_2, 1.0)->get_conjg();
+              blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
+            }
+            if (breit) {
+              shared_ptr<ZMatrix> tmp = df01_2->form_4index(df23, 1.0)->get_conjg();
+              blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
+            }
+            data_->put_block(target, i0, i1, i2, i3);
+          }
         }
       }
     }
-  }
+  };
+
+  // coulomb operator
+  compute(false, false);
+  if (info_->gaunt())
+    compute(true, info_->breit());
+
   map<vector<int>, pair<double,bool>> perm{{{0,1,2,3}, {1.0, false}}, {{2,3,0,1}, {1.0, false}}};
   if (braket) {
     perm.emplace(vector<int>{1,0,3,2}, make_pair(1.0, true));
@@ -223,7 +273,8 @@ void MOFock<complex<double>>::init() {
   shared_ptr<ZMatrix> cfock;
   core_energy_ = 0.0;
   if (ncore+nclosed) {
-    cfock = make_shared<DFock>(info_->geom(), hcore, coeff_->slice_copy(0, 2*(ncore+nclosed)), /*gaunt*/false, /*breit*/false, /*store_half*/false);
+    cfock = make_shared<DFock>(info_->geom(), hcore, coeff_->slice_copy(0, 2*(ncore+nclosed)),
+                               info_->gaunt(), info_->breit(), /*store_half*/false, info_->breit());
     shared_ptr<const ZMatrix> den = coeff_->form_density_rhf(2*(ncore+nclosed), 0);
     core_energy_ = detail::real((*den * (*hcore+*cfock)).trace()) * 0.5;
   } else {
@@ -237,7 +288,7 @@ void MOFock<complex<double>>::init() {
     tmp->sqrt();
     shared_ptr<ZMatrix> weighted_coeff = coeff_->slice_copy(2*(ncore+nclosed), 2*nocc);
     *weighted_coeff *= *tmp;
-    fock1 = make_shared<DFock>(info_->geom(), cfock, weighted_coeff, false, false, false);
+    fock1 = make_shared<DFock>(info_->geom(), cfock, weighted_coeff, info_->gaunt(), info_->breit(), false, info_->breit());
   } else {
     fock1 = cfock;
   }
@@ -246,36 +297,9 @@ void MOFock<complex<double>>::init() {
   // Note that E_ij,kl = E_ij E_kl - delta_jk E_il
   // and SMITH uses E_ij E_kl type excitations throughout. j and k must be active
   if (nact) {
-    vector<shared_ptr<const DFDist>> dfs = info_->geom()->dfs()->split_blocks();
-    dfs.push_back(info_->geom()->df());
-    list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
-
-    list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff_->slice_copy(2*(ncore+nclosed), 2*nocc));
-    for (auto& i : half_complex)
-      i = i->apply_J();
-
-    list<shared_ptr<RelDFHalf>> half_complex_exch;
-    for (auto& i : half_complex) {
-      list<shared_ptr<RelDFHalf>> tmp = i->split(false);
-      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
-    }
-    half_complex.clear();
-    DFock::factorize(half_complex_exch);
-
-    for (auto& i : half_complex_exch)
-      i->set_sum_diff();
-
-    // computing K operators
-    int icnt = 0;
-    for (auto& i : half_complex_exch) {
-      int jcnt = 0;
-      for (auto& j : half_complex_exch) {
-        if (i->alpha_matches(j) && icnt <= jcnt)
-          DFock::add_Exop_block(*cfock, i, j, 0.5, icnt == jcnt);
-        ++jcnt;
-      }
-      ++icnt;
-    }
+    cfock = make_shared<DFock>(info_->geom(), cfock, coeff_->slice_copy(2*(ncore+nclosed), 2*nocc),
+                               info_->gaunt(), info_->breit(), /*store_half*/false, /*robust*/info_->breit(),
+                               /*scale_exch*/0.5, /*scale_coulomb*/0.0);
   }
 
   // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
@@ -322,7 +346,6 @@ void MOFock<double>::init() {
   assert(nclosed >= 0);
   const int nocc    = info_->nocc();
   const int nact    = info_->nact();
-  const int nvirt   = info_->nvirt();
   const int nbasis  = coeff_->ndim();
 
   // cfock
@@ -364,11 +387,18 @@ void MOFock<double>::init() {
     fcl->diagonalize(eig);
     newcoeff->copy_block(0, 0, nbasis, ncore+nclosed, newcoeff->slice(0, ncore+nclosed) * *fcl);
   }
-  if (nvirt > 1) {
-    shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirt, nvirt);
+  const int nvirt   = info_->nvirt();
+  const int nvirtall = nvirt+info_->nfrozenvirt();
+  if (nvirtall > 1) {
+    shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirtall, nvirtall);
     fvirt->diagonalize(eig);
-    newcoeff->copy_block(0, nocc, nbasis, nvirt, newcoeff->slice(nocc, nocc+nvirt) * *fvirt);
+    newcoeff->copy_block(0, nocc, nbasis, nvirtall, newcoeff->slice(nocc, nocc+nvirtall) * *fvirt);
+    if (info_->nfrozenvirt() > 0) {
+      cout << "       - Truncating virtual orbitals: " << setw(20) << setprecision(10) << eig[nvirt] << endl;
+      newcoeff = newcoeff->slice_copy(0, nocc+nvirt);
+    }
   }
+
   // **** CAUTION **** updating the coefficient
   coeff_ = newcoeff;
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);

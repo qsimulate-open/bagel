@@ -47,6 +47,7 @@ class SMITH_Info {
     int maxiter_;
     int target_;
     int maxtile_;
+    int davidson_subspace_;
 
     bool grad_;
 
@@ -68,6 +69,7 @@ class SMITH_Info {
       grad_    = idata->get<bool>("grad", false);
 
       thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
+      davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
     }
 
     std::string method() const { return method_; }
@@ -91,6 +93,19 @@ class SMITH_Info {
     int target() const { return target_; }
     int maxtile() const { return maxtile_; }
     bool grad() const { return grad_; }
+
+    template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
+    bool gaunt() const { return relref()->gaunt(); }
+    template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
+    bool breit() const { return relref()->breit(); }
+
+    template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
+    std::shared_ptr<const RelReference> relref() const {
+      assert(std::dynamic_pointer_cast<const RelReference>(ref_));
+      return std::dynamic_pointer_cast<const RelReference>(ref_);
+    }
+
+    int davidson_subspace() const { return davidson_subspace_; }
 
     std::shared_ptr<const Reference> ref() const { return ref_; }
     std::shared_ptr<const Geometry> geom() const { return ref_->geom(); }
