@@ -94,6 +94,17 @@ class SMITH_Info {
     int maxtile() const { return maxtile_; }
     bool grad() const { return grad_; }
 
+    template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
+    bool gaunt() const { return relref()->gaunt(); }
+    template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
+    bool breit() const { return relref()->breit(); }
+
+    template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
+    std::shared_ptr<const RelReference> relref() const {
+      assert(std::dynamic_pointer_cast<const RelReference>(ref_));
+      return std::dynamic_pointer_cast<const RelReference>(ref_);
+    }
+
     int davidson_subspace() const { return davidson_subspace_; }
 
     std::shared_ptr<const Reference> ref() const { return ref_; }
