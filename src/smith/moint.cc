@@ -293,36 +293,9 @@ void MOFock<complex<double>>::init() {
   // Note that E_ij,kl = E_ij E_kl - delta_jk E_il
   // and SMITH uses E_ij E_kl type excitations throughout. j and k must be active
   if (nact) {
-    vector<shared_ptr<const DFDist>> dfs = info_->geom()->dfs()->split_blocks();
-    dfs.push_back(info_->geom()->df());
-    list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
-
-    list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff_->slice_copy(2*(ncore+nclosed), 2*nocc));
-    for (auto& i : half_complex)
-      i = i->apply_J();
-
-    list<shared_ptr<RelDFHalf>> half_complex_exch;
-    for (auto& i : half_complex) {
-      list<shared_ptr<RelDFHalf>> tmp = i->split(false);
-      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
-    }
-    half_complex.clear();
-    DFock::factorize(half_complex_exch);
-
-    for (auto& i : half_complex_exch)
-      i->set_sum_diff();
-
-    // computing K operators
-    int icnt = 0;
-    for (auto& i : half_complex_exch) {
-      int jcnt = 0;
-      for (auto& j : half_complex_exch) {
-        if (i->alpha_matches(j) && icnt <= jcnt)
-          DFock::add_Exop_block(*cfock, i, j, 0.5, icnt == jcnt);
-        ++jcnt;
-      }
-      ++icnt;
-    }
+    cfock = make_shared<DFock>(info_->geom(), cfock, coeff_->slice_copy(2*(ncore+nclosed), 2*nocc),
+                               info_->gaunt(), info_->breit(), /*store_half*/false, /*robust*/info_->breit(),
+                               /*scale_exch*/0.5, /*scale_coulomb*/0.0);
   }
 
   // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
