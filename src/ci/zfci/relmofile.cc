@@ -275,7 +275,7 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
     shared_ptr<const Kramers<2,RelDFFull>> full2 = !breit ? full : compute_full(coeff, half_complex_exch2, false);
 
     // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
-    const double gscale = gaunt ? (breit ? -0.5 : -1.0) : 1.0;
+    const double gscale = gaunt ? (breit ? -0.25 : -1.0) : 1.0;
     for (size_t i = 0; i != 16; ++i) {
       // we do not need (1000, 0111, 1110, 0001, 1100, 0110)
       if (i == 8 || i == 7 || i == 14 || i == 1 || i == 12 || i == 6)
@@ -290,11 +290,11 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
       // TODO : put in if statement for apply_J if nact*nact is much smaller than number of MPI processes
       const int b2a = i/4;
       const int b2b = i%4;
-      out->add(i, full->at(b2a)->form_4index(full2->at(b2b), gscale * (breit_ ? 0.5 : 1.0)));
+      out->add(i, full->at(b2a)->form_4index(full2->at(b2b), gscale));
 
       // in breit cases we explicitly symmetrize the Hamiltnian (hence the prefactor 0.5 above)
-      if (breit_)
-        *out->at(i) += *full2->at(b2a)->form_4index(full->at(b2b), gscale*0.5);
+      if (breit)
+        *out->at(i) += *full2->at(b2a)->form_4index(full->at(b2b), gscale);
     }
   };
 
@@ -339,8 +339,9 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
 }
 
 
-shared_ptr<const Kramers<2,RelDFFull>>
-  RelMOFile::compute_full(shared_ptr<const Kramers<1,ZMatrix>> coeff, array<list<shared_ptr<RelDFHalf>>,2> half, const bool appj, const bool appjj) {
+shared_ptr<const Kramers<2,RelDFFull>> RelMOFile::compute_full(shared_ptr<const Kramers<1,ZMatrix>> coeff, array<list<shared_ptr<RelDFHalf>>,2> half,
+                                                               const bool appj, const bool appjj) {
+  assert(!appj || !appjj);
   auto out = make_shared<Kramers<2,RelDFFull>>();
 
   // TODO remove once DFDistT class is fixed
@@ -355,8 +356,6 @@ shared_ptr<const Kramers<2,RelDFFull>>
   }
 
   for (size_t t = 0; t != 4; ++t) {
-    assert(!appj || !appjj);
-
     list<shared_ptr<RelDFFull>> dffull;
     for (auto& i : half[t/2])
       dffull.push_back(make_shared<RelDFFull>(i, coeff->at(t%2)));
