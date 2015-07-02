@@ -119,8 +119,12 @@ class StorageKramers : public StorageIncore<DataType> {
 
     template<typename... args>
     std::unique_ptr<DataType[]> move_block_(const args& ...key) {
-      throw std::logic_error("StorageKramers is designed for input tensors");
-      return std::unique_ptr<DataType[]>();
+      // Use this function with caution. It creates a block with key if it is not present.
+      return move_block_(arg_convert(key...));
+    }
+
+    std::unique_ptr<DataType[]> move_block_(std::vector<Index> indices) {
+      return StorageIncore<DataType>::move_block_(generate_hash_key(indices));
     }
 
     template<typename... args>
