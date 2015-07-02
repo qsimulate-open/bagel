@@ -270,7 +270,8 @@ void MOFock<complex<double>>::init() {
   shared_ptr<ZMatrix> cfock;
   core_energy_ = 0.0;
   if (ncore+nclosed) {
-    cfock = make_shared<DFock>(info_->geom(), hcore, coeff_->slice_copy(0, 2*(ncore+nclosed)), /*gaunt*/false, /*breit*/false, /*store_half*/false);
+    cfock = make_shared<DFock>(info_->geom(), hcore, coeff_->slice_copy(0, 2*(ncore+nclosed)),
+                               info_->gaunt(), info_->breit(), /*store_half*/false, info_->breit());
     shared_ptr<const ZMatrix> den = coeff_->form_density_rhf(2*(ncore+nclosed), 0);
     core_energy_ = detail::real((*den * (*hcore+*cfock)).trace()) * 0.5;
   } else {
@@ -284,7 +285,7 @@ void MOFock<complex<double>>::init() {
     tmp->sqrt();
     shared_ptr<ZMatrix> weighted_coeff = coeff_->slice_copy(2*(ncore+nclosed), 2*nocc);
     *weighted_coeff *= *tmp;
-    fock1 = make_shared<DFock>(info_->geom(), cfock, weighted_coeff, false, false, false);
+    fock1 = make_shared<DFock>(info_->geom(), cfock, weighted_coeff, info_->gaunt(), info_->breit(), false, info_->breit());
   } else {
     fock1 = cfock;
   }
