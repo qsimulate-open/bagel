@@ -174,7 +174,7 @@ void K2ext<complex<double>>::init() {
   // coulomb operator
   compute(false, false);
   if (info_->gaunt())
-    compute(false, info_->breit());
+    compute(true, info_->breit());
 
   map<vector<int>, pair<double,bool>> perm{{{0,1,2,3}, {1.0, false}}, {{2,3,0,1}, {1.0, false}}};
   if (braket) {
