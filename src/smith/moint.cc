@@ -75,8 +75,6 @@ void K2ext<complex<double>>::init() {
     // (2) first-transform
     for (auto& i0 : blocks_[0]) {
       list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff_->slice_copy(i0.offset(), i0.offset()+i0.size()));
-      for (auto& i : half_complex)
-        i = i->apply_J();
 
       // (3) split and factorize
       list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
@@ -108,19 +106,23 @@ void K2ext<complex<double>>::init() {
 
       for (auto& i1 : blocks_[1]) {
         // (4) compute (gamma|ia)
-        auto compute_block = [this, &i0, &i1](const list<shared_ptr<RelDFHalf>>& half, map<size_t, shared_ptr<RelDFFull>>& target) {
+        auto compute_block = [this, &i0, &i1](const list<shared_ptr<RelDFHalf>>& half, map<size_t, shared_ptr<RelDFFull>>& target, const bool appj) {
           list<shared_ptr<RelDFFull>> dffull;
           for (auto& i : half)
             dffull.push_back(make_shared<RelDFFull>(i, coeff_->slice_copy(i1.offset(), i1.offset()+i1.size())));
           DFock::factorize(dffull);
-          dffull.front()->scale(dffull.front()->fac()); // take care of the factor
           assert(dffull.size() == 1);
+
+          shared_ptr<RelDFFull> dff = dffull.front();
+          dff->scale(dff->fac()); // take care of the factor
+          if (appj)
+            dff = dff->apply_J();
           // adding this to dflist
-          target.emplace(generate_hash_key(i0, i1), dffull.front());
+          target.emplace(generate_hash_key(i0, i1), dff);
         };
-        compute_block(half_complex_exch, dflist);
+        compute_block(half_complex_exch, dflist, true);
         if (breit)
-          compute_block(half_complex_exch2, dflist2);
+          compute_block(half_complex_exch2, dflist2, false);
       }
     }
     if (!breit)
