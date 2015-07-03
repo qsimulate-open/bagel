@@ -165,7 +165,7 @@ void ZCASSCF::init() {
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
-  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
+  thresh_micro_ = idata_->get<double>("thresh_micro", 5.0e-6);
 
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;

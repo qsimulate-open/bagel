@@ -39,10 +39,10 @@ using namespace bagel::SMITH;
 Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
+#ifdef COMPILE_SMITH
   // make a smith_info class
   auto info = make_shared<SMITH_Info<double>>(r, idata);
 
-#ifdef COMPILE_SMITH
   if (method == "caspt2") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
   } else if (method == "mrci") {
@@ -57,9 +57,9 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 }
 
 void Smith::compute() {
+#ifdef COMPILE_SMITH
   algo_->solve();
 
-#ifdef COMPILE_SMITH
   if (algo_->info()->grad()) {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
     assert(algop);
@@ -84,10 +84,10 @@ void Smith::compute() {
 RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
+#ifdef COMPILE_SMITH
   // make a smith_info class
   auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
 
-#ifdef COMPILE_SMITH
   if (method == "mrci") {
     algo_ = make_shared<RelMRCI::RelMRCI>(info);
   } else if (method == "caspt2") {

@@ -80,7 +80,7 @@ void RelMRCI::RelMRCI::solve() {
     }
   }
 
-  DavidsonDiag_<Amplitude<std::complex<double>>, Residual<std::complex<double>>, ZMatrix> davidson(nstates_, 10);
+  DavidsonDiag_<Amplitude<std::complex<double>>, Residual<std::complex<double>>, ZMatrix> davidson(nstates_, info_->davidson_subspace());
 
   // first iteration is trivial
   {
@@ -199,6 +199,21 @@ void RelMRCI::RelMRCI::solve() {
   }
   print_iteration(iter == info_->maxiter());
   timer.tick_print("MRCI energy evaluation");
+
+  // Davidson corrections...
+  {
+    cout << endl;
+    vector<double> energy_q(nstates_);
+    vector<shared_ptr<Amplitude<std::complex<double>>>> ci = davidson.civec();
+    for (int i = 0; i != nstates_; ++i) {
+      const double c = norm(ci[i]->tensor()->fac(i));
+      const double eref = info_->ciwfn()->energy(i);
+      const double eq = energy_[i]+core_nuc + (energy_[i]+core_nuc-eref)*(1.0-c)/c;
+      print_iteration(0, eq, 0.0, 0.0, i);
+    }
+    cout << endl;
+  }
+  timer.tick_print("MRCI+Q energy evaluation");
 }
 
 

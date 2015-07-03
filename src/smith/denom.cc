@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 
 #include <src/smith/denom.h>
 #include <src/util/prim_op.h>
@@ -37,12 +39,13 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
   const size_t ndim = fock->mdim() * nstates;
   const size_t ndim2 = fock->mdim() * ndim;
   const size_t ndim3 = fock->mdim() * ndim2;
+  const int fac2 = is_same<DataType,double>::value ? 2 : 1;
 
   shalf_x_ = make_shared<MatType>(ndim, ndim);
   shalf_h_ = make_shared<MatType>(ndim, ndim);
   shalf_xx_ = make_shared<MatType>(ndim2, ndim2);
   shalf_hh_ = make_shared<MatType>(ndim2, ndim2);
-  shalf_xh_ = make_shared<MatType>(ndim2*2, ndim2*2);
+  shalf_xh_ = make_shared<MatType>(ndim2*fac2, ndim2*fac2);
   shalf_xhh_ = make_shared<MatType>(ndim3, ndim3);
   shalf_xxh_ = make_shared<MatType>(ndim3, ndim3);
 
@@ -50,7 +53,7 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
   work_h_ = make_shared<MatType>(ndim, ndim);
   work_xx_ = make_shared<MatType>(ndim2, ndim2);
   work_hh_ = make_shared<MatType>(ndim2, ndim2);
-  work_xh_ = make_shared<MatType>(ndim2*2, ndim2*2);
+  work_xh_ = make_shared<MatType>(ndim2*fac2, ndim2*fac2);
   work_xhh_ = make_shared<MatType>(ndim3, ndim3);
   work_xxh_ = make_shared<MatType>(ndim3, ndim3);
 
@@ -58,7 +61,7 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
   denom_h_ = VectorB(ndim);
   denom_xx_ = VectorB(ndim2);
   denom_hh_ = VectorB(ndim2);
-  denom_xh_ = VectorB(ndim2*2);
+  denom_xh_ = VectorB(ndim2*fac2);
   denom_xhh_ = VectorB(ndim3);
   denom_xxh_ = VectorB(ndim3);
 }
@@ -67,13 +70,80 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
 template<typename DataType>
 void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
-  init_x_(jst, ist, rdm1, rdm2, rdm3, rdm4);
-  init_h_(jst, ist, rdm1, rdm2, rdm3, rdm4);
-  init_xx_(jst, ist, rdm1, rdm2, rdm3, rdm4);
-  init_hh_(jst, ist, rdm1, rdm2, rdm3, rdm4);
-  init_xh_(jst, ist, rdm1, rdm2, rdm3, rdm4);
-  init_xhh_(jst, ist, rdm1, rdm2, rdm3, rdm4);
-  init_xxh_(jst, ist, rdm1, rdm2, rdm3, rdm4);
+  // computes fock-weighted 4RDM
+  shared_ptr<RDM<3,DataType>> frdm4 = rdm3->clone();
+  auto frdm4gr = group(*frdm4, 0,6);
+  auto rdm4gr = group(group(*rdm4, 6,8),0,6);
+  auto fgr = group(*fock_, 0,2);
+  btas::contract(1.0, rdm4gr, {0,1}, fgr, {1}, 0.0, frdm4gr, {0});
+  // then call the standard routine
+  append(jst, ist, rdm1, rdm2, rdm3, frdm4);
+}
+
+
+template<>
+void Denom<double>::append(const int jst, const int ist, shared_ptr<const RDM<1>> rdm1, shared_ptr<const RDM<2>> rdm2,
+                                                         shared_ptr<const RDM<3>> rdm3, shared_ptr<const Kramers<8,RDM<4>>> rdm4) {
+  throw logic_error("Denom<double>::append with Kramers should not be called");
+}
+
+
+template<>
+void Denom<complex<double>>::append(const int jst, const int ist, shared_ptr<const ZRDM<1>> rdm1, shared_ptr<const ZRDM<2>> rdm2,
+                                                                  shared_ptr<const ZRDM<3>> rdm3, shared_ptr<const Kramers<8,ZRDM<4>>> rdm4) {
+
+  shared_ptr<ZRDM<3>> frdm4 = rdm3->clone();
+
+  assert(fock_->ndim()%2 == 0);
+  const int n = fock_->ndim()/2;
+  Kramers<2,ZMatrix> fock;
+  fock.emplace({0,0}, fock_->get_submatrix(0, 0, n, n));
+  fock.emplace({1,0}, fock_->get_submatrix(n, 0, n, n));
+  fock.emplace({0,1}, fock_->get_submatrix(0, n, n, n));
+  fock.emplace({1,1}, fock_->get_submatrix(n, n, n, n));
+
+  // TODO if this step is time consuming, there are many ways to speed it up.
+  auto work = make_shared<ZRDM<3>>(n);
+  for (int i = 0; i != 64; ++i) {
+    const int aoff = ((i   )&1)*n;
+    const int boff = ((i>>1)&1)*n;
+    const int coff = ((i>>2)&1)*n;
+    const int doff = ((i>>3)&1)*n;
+    const int eoff = ((i>>4)&1)*n;
+    const int foff = ((i>>5)&1)*n;
+    for (int j = 0; j != 4; ++j) {
+      // computes fock-weighted 4RDM
+      shared_ptr<const ZMatrix> cfock = fock.at(j);
+      shared_ptr<const ZRDM<4>> crdm = rdm4->get_data((i << 2) + j);
+      if (!crdm) continue;
+
+      auto crdmgr = group(group(*crdm, 6,8),0,6);
+      auto wgr = group(*work, 0,6);
+      btas::contract(1.0, crdmgr, {0,1}, group(*cfock, 0,2), {1}, 0.0, wgr, {0});
+
+      for (int a = 0; a != n; ++a)
+        for (int b = 0; b != n; ++b)
+          for (int c = 0; c != n; ++c)
+            for (int d = 0; d != n; ++d)
+              for (int e = 0; e != n; ++e) {
+                blas::ax_plus_y_n(1.0, work->element_ptr(0, e, d, c, b, a), n, frdm4->element_ptr(foff, e+eoff, d+doff, c+coff, b+boff, a+aoff));
+              }
+    }
+  }
+  append(jst, ist, rdm1, rdm2, rdm3, frdm4);
+}
+
+
+template<typename DataType>
+void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
+                                                           shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
+  init_x_(jst, ist, rdm1, rdm2, rdm3, frdm4);
+  init_h_(jst, ist, rdm1, rdm2, rdm3, frdm4);
+  init_xx_(jst, ist, rdm1, rdm2, rdm3, frdm4);
+  init_hh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
+  init_xh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
+  init_xhh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
+  init_xxh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
 }
 
 
@@ -127,7 +197,7 @@ void Denom<DataType>::compute() {
 
 template<typename DataType>
 void Denom<DataType>::init_x_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
+                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
   const size_t nact = rdm1->norb();
   const size_t dim = nact;
 
@@ -143,7 +213,7 @@ void Denom<DataType>::init_x_(const int jst, const int ist, shared_ptr<const RDM
 
 template<typename DataType>
 void Denom<DataType>::init_h_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
+                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact;
   auto shalf = make_shared<MatType>(dim, dim);
@@ -182,7 +252,7 @@ void Denom<DataType>::init_h_(const int jst, const int ist, shared_ptr<const RDM
 
 template<typename DataType>
 void Denom<DataType>::init_xx_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
+                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact;
   auto shalf = make_shared<MatType>(dim, dim);
@@ -201,7 +271,7 @@ void Denom<DataType>::init_xx_(const int jst, const int ist, shared_ptr<const RD
 
 template<typename DataType>
 void Denom<DataType>::init_hh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
+                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact;
   shared_ptr<RDM<2,DataType>> shalf = rdm2->clone();
@@ -274,7 +344,7 @@ void Denom<DataType>::init_hh_(const int jst, const int ist, shared_ptr<const RD
 
 template<typename DataType>
 void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
+                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact;
   auto shalf = make_shared<MatType>(dim*2, dim*2);
@@ -292,18 +362,23 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
 
   MatType work(dim, dim);
   sort_indices<2,1,3,0,0,1,1,1>(ovl1.data(), work.data(), nact, nact, nact, nact);
-  shalf->add_block(1.0, dim, dim, dim, dim, work);
 
-  sort_indices<0,1,3,2,0,1,1,1>(ovl4.data(), work.data(), nact, nact, nact, nact);
-  shalf->add_block(fac2, 0, 0, dim, dim, work);
+  if (is_same<DataType,double>::value) {
+    shalf->add_block(1.0, dim, dim, dim, dim, work);
 
-  shalf->add_block(-1.0, dim, 0, dim, dim, work);
-  shalf->add_block(-1.0, 0, dim, dim, dim, work);
+    sort_indices<0,1,3,2,0,1,1,1>(ovl4.data(), work.data(), nact, nact, nact, nact);
+    shalf->add_block(fac2, 0, 0, dim, dim, work);
 
-  shalf_xh_->copy_block(dim*jst*2, dim*ist*2, dim*2, dim*2, shalf);
+    shalf->add_block(-1.0, dim, 0, dim, dim, work);
+    shalf->add_block(-1.0, 0, dim, dim, dim, work);
+
+    shalf_xh_->copy_block(dim*jst*2, dim*ist*2, dim*2, dim*2, shalf);
+  } else {
+    shalf_xh_->copy_block(dim*jst, dim*ist, dim, dim, work);
+  }
 
   shared_ptr<RDM<3,DataType>> d0 = rdm3->copy();
-  shared_ptr<RDM<3,DataType>> d3 = rdm3->copy();
+  shared_ptr<RDM<3,DataType>> d3 = is_same<DataType,double>::value ? rdm3->copy() : nullptr;
   d0->scale(-1.0);
   for (int i5 = 0; i5 != nact; ++i5)
     for (int i4 = 0; i4 != nact; ++i4)
@@ -311,14 +386,15 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
         for (int i2 = 0; i2 != nact; ++i2)
           for (int i1 = 0; i1 != nact; ++i1)
             for (int i0 = 0; i0 != nact; ++i0) {
-              {
+              if (is_same<DataType,double>::value) {
                 DataType a = 0.0;
                 if (i3 == i4)             a += rdm2->element(i0, i1, i2, i5);
                 if (i1 == i2)             a += rdm2->element(i0, i3, i4, i5);
                 if (i1 == i2 && i3 == i4) a += rdm1->element(i0, i5);
                 if (i1 == i4)             a += rdm2->element(i2, i3, i0, i5);
                 d3->element(i0, i1, i4, i5, i2, i3) += a;
-              } {
+              }
+              {
                 DataType b = 0.0;
                 if (i3 == i4)             b += -1.0  * rdm2->element(i2, i1, i0, i5);
                 if (i1 == i2)             b += -1.0  * rdm2->element(i4, i3, i0, i5);
@@ -335,23 +411,28 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
   contract(1.0, d0v, {0,1}, group(*fock_,0,2), {1}, 0.0, work2v, {0});
   sort_indices<2,1,3,0,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
   auto num = make_shared<MatType>(dim*2, dim*2);
-  num->add_block(1.0, dim, dim, dim, dim, work);
 
-  auto d3v = group(group(*d3, 4,6),0,4);
-  contract(1.0, d3v, {0,1}, group(*fock_,0,2), {1}, 0.0, work2v, {0});
-  sort_indices<0,1,3,2,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
-  num->add_block(fac2, 0, 0, dim, dim, work);
+  if (is_same<DataType,double>::value) {
+    num->add_block(1.0, dim, dim, dim, dim, work);
 
-  num->add_block(-1.0, dim, 0, dim, dim, work);
-  num->add_block(-1.0, 0, dim, dim, dim, work);
+    auto d3v = group(group(*d3, 4,6),0,4);
+    contract(1.0, d3v, {0,1}, group(*fock_,0,2), {1}, 0.0, work2v, {0});
+    sort_indices<0,1,3,2,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
+    num->add_block(fac2, 0, 0, dim, dim, work);
 
-  work_xh_->copy_block(dim*jst*2, dim*ist*2, dim*2, dim*2, num);
+    num->add_block(-1.0, dim, 0, dim, dim, work);
+    num->add_block(-1.0, 0, dim, dim, dim, work);
+
+    work_xh_->copy_block(dim*jst*2, dim*ist*2, dim*2, dim*2, num);
+  } else {
+    work_xh_->copy_block(dim*jst, dim*ist, dim, dim, work);
+  }
 }
 
 
 template<typename DataType>
 void Denom<DataType>::init_xhh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                              shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
+                                                              shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact*nact;
   shared_ptr<RDM<3,DataType>> ovl = rdm3->copy();
@@ -367,9 +448,10 @@ void Denom<DataType>::init_xhh_(const int jst, const int ist, shared_ptr<const R
   sort_indices<4,0,1,5,3,2,0,1,1,1>(ovl->data(), shalf->data(), nact, nact, nact, nact, nact, nact);
   shalf_xhh_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
 
-  shared_ptr<RDM<4,DataType>> r4 = rdm4->copy();
+  shared_ptr<RDM<3,DataType>> fr4 = frdm4->copy();
   for (int i4 = 0; i4 != nact; ++i4)
-    for (int i3 = 0; i3 != nact; ++i3)
+    for (int i3 = 0; i3 != nact; ++i3) {
+      const DataType f = fock_->element(i3, i4);
       for (int i7 = 0; i7 != nact; ++i7)
         for (int i0 = 0; i0 != nact; ++i0)
           for (int i6 = 0; i6 != nact; ++i6)
@@ -377,25 +459,22 @@ void Denom<DataType>::init_xhh_(const int jst, const int ist, shared_ptr<const R
               for (int i2 = 0; i2 != nact; ++i2)
                 for (int i1 = 0; i1 != nact; ++i1) {
                   DataType a = 0.0;
-                  if (i4 == i5)             a += 1.0 * rdm3->element(i1, i2, i3, i6, i0, i7);
-                  if (i2 == i3)             a += 1.0 * rdm3->element(i1, i4, i5, i6, i0, i7);
-                  if (i2 == i3 && i4 == i5) a += 1.0 * rdm2->element(i1, i6, i0, i7);
-                  if (i2 == i5)             a += 1.0 * rdm3->element(i3, i4, i1, i6, i0, i7);
-                  r4->element(i1, i2, i5, i6, i0, i7, i3, i4) += a;
+                  if (i4 == i5)             a += f * rdm3->element(i1, i2, i3, i6, i0, i7);
+                  if (i2 == i3)             a += f * rdm3->element(i1, i4, i5, i6, i0, i7);
+                  if (i2 == i3 && i4 == i5) a += f * rdm2->element(i1, i6, i0, i7);
+                  if (i2 == i5)             a += f * rdm3->element(i3, i4, i1, i6, i0, i7);
+                  fr4->element(i1, i2, i5, i6, i0, i7) += a;
                 }
-  MatType work2(dim, dim);
-  auto work2v = group(work2, 0,2);
-  auto r4v = group(group(*r4,6,8), 0,6);
-  contract(1.0, r4v, {0,1}, group(*fock_,0,2), {1}, 0.0, work2v, {0});
+    }
   auto fss = make_shared<MatType>(dim, dim);
-  sort_indices<4,0,1,5,3,2,0,1,1,1>(work2.data(), fss->data(), nact, nact, nact, nact, nact, nact);
+  sort_indices<4,0,1,5,3,2,0,1,1,1>(fr4->data(), fss->data(), nact, nact, nact, nact, nact, nact);
   work_xhh_->copy_block(dim*jst, dim*ist, dim, dim, fss);
 }
 
 
 template<typename DataType>
 void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                              shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
+                                                              shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact*nact;
   shared_ptr<RDM<3,DataType>> ovl = rdm3->copy();
@@ -420,10 +499,12 @@ void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const R
   sort_indices<0,1,3,5,4,2,0,1,1,1>(ovl->data(), shalf->data(), nact, nact, nact, nact, nact, nact);
   shalf_xxh_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
 
-  shared_ptr<RDM<4,DataType>> r4 = rdm4->copy();
-  r4->scale(-1.0);
+  shared_ptr<RDM<3,DataType>> fr4 = frdm4->copy();
+  fr4->scale(-1.0);
   for (int i4 = 0; i4 != nact; ++i4)
-    for (int i3 = 0; i3 != nact; ++i3)
+    for (int i3 = 0; i3 != nact; ++i3) {
+      const DataType f = fock_->element(i3, i4);
+      const DataType f2 = f * fac2;
       for (int i7 = 0; i7 != nact; ++i7)
         for (int i6 = 0; i6 != nact; ++i6)
           for (int i2 = 0; i2 != nact; ++i2)
@@ -431,40 +512,37 @@ void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const R
               for (int i1 = 0; i1 != nact; ++i1)
                 for (int i0 = 0; i0 != nact; ++i0) {
                   DataType a = 0.0;
-                  if (i4 == i6)                         a += -1.0  * rdm3->element(i0, i1, i5, i2, i3, i7);
-                  if (i4 == i5)                         a += -1.0  * rdm3->element(i0, i1, i3, i2, i6, i7);
-                  if (i2 == i6)                         a += -1.0  * rdm3->element(i0, i1, i3, i4, i5, i7);
-                  if (i2 == i6 && i4 == i5)             a += -1.0  * rdm2->element(i0, i1, i3, i7);
-                  if (i2 == i5)                         a +=  fac2 * rdm3->element(i0, i1, i3, i4, i6, i7);
-                  if (i2 == i5 && i4 == i6)             a +=  fac2 * rdm2->element(i0, i1, i3, i7);
-                  if (i2 == i3)                         a += -1.0  * rdm3->element(i0, i1, i5, i4, i6, i7);
-                  if (i2 == i3 && i4 == i6)             a += -1.0  * rdm2->element(i0, i1, i5, i7);
-                  if (i2 == i3 && i4 == i5)             a +=  fac2 * rdm2->element(i0, i1, i6, i7);
-                  if (i1 == i6)                         a += -1.0  * rdm3->element(i3, i4, i5, i2, i0, i7);
-                  if (i1 == i6 && i4 == i5)             a += -1.0  * rdm2->element(i3, i2, i0, i7);
-                  if (i1 == i6 && i2 == i3)             a += -1.0  * rdm2->element(i5, i4, i0, i7);
-                  if (i1 == i6 && i2 == i3 && i4 == i5) a +=  fac2 * rdm1->element(i0, i7);
-                  if (i1 == i5)                         a += -1.0  * rdm3->element(i0, i2, i3, i4, i6, i7);
-                  if (i1 == i5 && i4 == i6)             a += -1.0  * rdm2->element(i0, i2, i3, i7);
-                  if (i2 == i3 && i1 == i5)             a += -1.0  * rdm2->element(i0, i4, i6, i7);
-                  if (i2 == i3 && i1 == i5 && i4 == i6) a += -1.0  * rdm1->element(i0, i7);
-                  if (i1 == i3)                         a += -1.0  * rdm3->element(i0, i4, i5, i2, i6, i7);
-                  if (i1 == i3 && i4 == i6)             a += -1.0  * rdm2->element(i5, i2, i0, i7);
-                  if (i1 == i3 && i4 == i5)             a += -1.0  * rdm2->element(i0, i2, i6, i7);
-                  if (i2 == i6 && i1 == i3)             a += -1.0  * rdm2->element(i0, i4, i5, i7);
-                  if (i2 == i6 && i1 == i3 && i4 == i5) a += -1.0  * rdm1->element(i0, i7);
-                  if (i1 == i3 && i2 == i5)             a +=  fac2 * rdm2->element(i0, i4, i6, i7);
-                  if (i4 == i6 && i2 == i5 && i1 == i3) a +=  fac2 * rdm1->element(i0, i7);
-                  if (i1 == i6 && i2 == i5)             a +=  fac2 * rdm2->element(i3, i4, i0, i7);
-                  if (i1 == i5 && i2 == i6)             a += -1.0  * rdm2->element(i3, i4, i0, i7);
-                  r4->element(i0, i1, i5, i2, i6, i7, i3, i4) += a;
+                  if (i4 == i6)                         a += -f  * rdm3->element(i0, i1, i5, i2, i3, i7);
+                  if (i4 == i5)                         a += -f  * rdm3->element(i0, i1, i3, i2, i6, i7);
+                  if (i2 == i6)                         a += -f  * rdm3->element(i0, i1, i3, i4, i5, i7);
+                  if (i2 == i6 && i4 == i5)             a += -f  * rdm2->element(i0, i1, i3, i7);
+                  if (i2 == i5)                         a +=  f2 * rdm3->element(i0, i1, i3, i4, i6, i7);
+                  if (i2 == i5 && i4 == i6)             a +=  f2 * rdm2->element(i0, i1, i3, i7);
+                  if (i2 == i3)                         a += -f  * rdm3->element(i0, i1, i5, i4, i6, i7);
+                  if (i2 == i3 && i4 == i6)             a += -f  * rdm2->element(i0, i1, i5, i7);
+                  if (i2 == i3 && i4 == i5)             a +=  f2 * rdm2->element(i0, i1, i6, i7);
+                  if (i1 == i6)                         a += -f  * rdm3->element(i3, i4, i5, i2, i0, i7);
+                  if (i1 == i6 && i4 == i5)             a += -f  * rdm2->element(i3, i2, i0, i7);
+                  if (i1 == i6 && i2 == i3)             a += -f  * rdm2->element(i5, i4, i0, i7);
+                  if (i1 == i6 && i2 == i3 && i4 == i5) a +=  f2 * rdm1->element(i0, i7);
+                  if (i1 == i5)                         a += -f  * rdm3->element(i0, i2, i3, i4, i6, i7);
+                  if (i1 == i5 && i4 == i6)             a += -f  * rdm2->element(i0, i2, i3, i7);
+                  if (i2 == i3 && i1 == i5)             a += -f  * rdm2->element(i0, i4, i6, i7);
+                  if (i2 == i3 && i1 == i5 && i4 == i6) a += -f  * rdm1->element(i0, i7);
+                  if (i1 == i3)                         a += -f  * rdm3->element(i0, i4, i5, i2, i6, i7);
+                  if (i1 == i3 && i4 == i6)             a += -f  * rdm2->element(i5, i2, i0, i7);
+                  if (i1 == i3 && i4 == i5)             a += -f  * rdm2->element(i0, i2, i6, i7);
+                  if (i2 == i6 && i1 == i3)             a += -f  * rdm2->element(i0, i4, i5, i7);
+                  if (i2 == i6 && i1 == i3 && i4 == i5) a += -f  * rdm1->element(i0, i7);
+                  if (i1 == i3 && i2 == i5)             a +=  f2 * rdm2->element(i0, i4, i6, i7);
+                  if (i4 == i6 && i2 == i5 && i1 == i3) a +=  f2 * rdm1->element(i0, i7);
+                  if (i1 == i6 && i2 == i5)             a +=  f2 * rdm2->element(i3, i4, i0, i7);
+                  if (i1 == i5 && i2 == i6)             a += -f  * rdm2->element(i3, i4, i0, i7);
+                  fr4->element(i0, i1, i5, i2, i6, i7) += a;
                 }
-  MatType work2(dim, dim);
-  auto r4v = group(group(*r4, 6,8),0,6);
-  auto work2v = group(work2, 0,2);
-  contract(1.0, r4v, {0,1}, group(*fock_,0,2), {1}, 0.0, work2v, {0});
+    }
   auto fss = make_shared<MatType>(dim, dim);
-  sort_indices<0,1,3,5,4,2,0,1,1,1>(work2.data(), fss->data(), nact, nact, nact, nact, nact, nact);
+  sort_indices<0,1,3,5,4,2,0,1,1,1>(fr4->data(), fss->data(), nact, nact, nact, nact, nact, nact);
   work_xxh_->copy_block(dim*jst, dim*ist, dim, dim, fss);
 }
 
@@ -473,3 +551,5 @@ void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const R
 template class Denom<double>;
 template class Denom<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif

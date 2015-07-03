@@ -32,7 +32,8 @@ namespace bagel {
 
 class ASD_RAS : public ASD<RASDvec> {
   public:
-    ASD_RAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerRAS> cispace);
+    ASD_RAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerRAS> cispace, bool rdm = false)
+      : ASD<RASDvec>(input, dimer, cispace, rdm) {};
 
   private:
     std::shared_ptr<RASDvec> form_sigma(std::shared_ptr<const RASDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
@@ -41,6 +42,20 @@ class ASD_RAS : public ASD<RASDvec> {
     void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
     void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
     void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
+
+    std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_rdm12_monomer(std::shared_ptr<const RASDvec> civec, const int i) const override;
+
+    std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>> compute_rdm12_last_step(std::shared_ptr<const RASCivec> cbra, std::shared_ptr<const RASDvec> dbra) const;
+    void sigma_2a(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> d) const;
+    void sigma_2a1(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> d) const;
+    void sigma_2a2(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> d) const;
+    void sigma_2a1_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
+    void sigma_2a2_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
+    void sigma_2a3_ba(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
+    void sigma_2a4_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASDvec> e) const;
+
+    std::shared_ptr<RASDvec> contract_I(std::shared_ptr<const RASDvec> A, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const override;
+    std::shared_ptr<RASDvec> contract_J(std::shared_ptr<const RASDvec> B, std::shared_ptr<Matrix> coef, int offset, int nstA, int nstB, int nstates) const override;
 };
 
 }

@@ -72,7 +72,8 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 
 // constructor that uses the old atom and basis
 Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem)
- : spherical_(spherical), name_(old.name_), position_(old.position_), use_ecp_basis_(old.use_ecp_basis_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), atom_exponent_(old.atom_exponent_), basis_(bas) {
+ : spherical_(spherical), name_(old.name_), position_(old.position_), use_ecp_basis_(old.use_ecp_basis_), atom_number_(old.atom_number_),
+   atom_charge_(old.atom_charge_), atom_exponent_(old.atom_exponent_), basis_(bas) {
 
   if (basis_.find("ecp") != string::npos) use_ecp_basis_ = true;
   if (name_ == "q") {

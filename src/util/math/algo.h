@@ -85,28 +85,38 @@ namespace {
 namespace blas {
 
 // Transpose
-template<typename T,
-         class = typename std::enable_if< std::is_same<double,T>::value || std::is_same<std::complex<double>,T>::value >::type
+template<typename T, typename U = T,
+         class = typename std::enable_if< (std::is_same<double,T>::value || std::is_same<std::complex<double>,T>::value)
+                                          and  std::is_convertible<U, T>::value >::type
         >
-void transpose(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
+void transpose(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0)) { assert(false); }
 template<>
 void transpose(const double* a, const int b, const int c, double* d, const double fac);
 template<>
 void transpose(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
+template<>
+void transpose(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const double fac);
 
-template<typename T,
-         class = typename std::enable_if< std::is_same<double,T>::value >::type
+template<typename T, typename U = T,
+         class = typename std::enable_if< (std::is_same<double,T>::value || std::is_same<std::complex<double>,T>::value)
+                                          and  std::is_convertible<U, T>::value >::type
         >
-void transpose_add(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
+void transpose_add(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0)) { assert(false); }
 template<>
 void transpose_add(const double* a, const int b, const int c, double* d, const double fac);
+template<>
+void transpose_add(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
+template<>
+void transpose_add(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const double fac);
 
-template<typename T,
-         class = typename std::enable_if< std::is_same<std::complex<double>,T>::value >::type
+template<typename T, typename U = T,
+         class = typename std::enable_if< std::is_same<std::complex<double>,T>::value and std::is_convertible<U, T>::value >::type
         >
-void transpose_conjg(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
+void transpose_conjg(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0)) { assert(false); }
 template<>
 void transpose_conjg(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
+template<>
+void transpose_conjg(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const double fac);
 
 
 namespace {
@@ -185,6 +195,18 @@ namespace {
   template<class T>
   auto average(const T& container) -> decltype(std::accumulate(container.begin(), container.end(), 0.0)/container.size()) {
     return std::accumulate(container.begin(), container.end(), 0.0) / container.size();
+  }
+
+  // conjugate an array
+  template<class T,
+           class = typename std::enable_if<std::is_pointer<T>::value>::type >
+  void conj_n(T p, const size_t n) { throw std::logic_error("illegal call: blas::conj_n"); }
+  template<>
+  void conj_n(double* p, const size_t n) { /*do nothing*/ }
+  template<>
+  void conj_n(std::complex<double>* p, const size_t n) {
+    double* dp = reinterpret_cast<double*>(p) + 1;
+    for (double* i = dp; i <= dp + 2*n-2; i += 2) *i = -*i;
   }
 
 }}

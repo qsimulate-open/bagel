@@ -29,8 +29,8 @@
 #define BAGEL_ASD_INIT_H
 
 template <class VecType>
-ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace_base<VecType>> cispace)
- : ASD_base(input, dimer), cispace_(cispace) {
+ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace_base<VecType>> cispace, bool rdm)
+ : ASD_base(input, dimer, rdm), cispace_(cispace) {
 
   Timer timer;
 
@@ -56,6 +56,8 @@ ASD<VecType>::ASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dime
   }
   max_spin_ = maxspin + 1;
 
+  // Fix monomer CI coefficients,
+  fix_ci_ = false;
 }
 
 template <class VecType>
@@ -71,7 +73,7 @@ std::shared_ptr<Matrix> ASD<VecType>::compute_1e_prop(std::shared_ptr<const Matr
 // TODO remove this comment once the gammaforst issue has been fixed (bra and ket have been exchanged)
       std::array<MonomerKey,4> keys {{ jAB->template monomerkey<0>(), jAB->template monomerkey<1>(),
                                        iAB->template monomerkey<0>(), iAB->template monomerkey<1>() }};
-      std::shared_ptr<Matrix> out_block = compute_offdiagonal_1e<true>(keys, hAB);
+      std::shared_ptr<Matrix> out_block = compute_offdiagonal_1e(keys, hAB);
 
       out->add_block(1.0, joff, ioff, out_block->ndim(), out_block->mdim(), out_block);
       out->add_block(1.0, ioff, joff, out_block->mdim(), out_block->ndim(), out_block->transpose());

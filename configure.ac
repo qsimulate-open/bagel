@@ -150,6 +150,7 @@ AC_CONFIG_FILES([Makefile
                  src/asd/multisite/Makefile
                  src/asd/dimer/Makefile
                  src/asd/dmrg/Makefile
+                 src/asd/orbital/Makefile
                  src/asd/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile

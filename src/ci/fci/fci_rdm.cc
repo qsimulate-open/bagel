@@ -58,7 +58,7 @@ void FCI::compute_rdm12() {
     rdm2_av_->zero();
   }
   // we need expanded lists
-  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, /*compressed=*/false, /*mute=*/true);
   cc_->set_det(detex);
 
   for (int i = 0; i != nstate_; ++i)

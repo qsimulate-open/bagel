@@ -63,8 +63,11 @@ void ZCASBFGS::compute() {
   {
     auto unit = coeff_->clone(); unit->unit();
     orthonorm = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
-    if (orthonorm > 2.5e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
+    if (orthonorm > 2.5e-13)
+      cout << "Coefficient is not sufficiently orthnormal: " << setprecision(10) << setw(15) << orthonorm << endl;;
   }
+
+  prev_energy_ = vector<double>(nstate_, 0.0);
   cout << "     See casscf.log for further information on FCI output " << endl << endl;
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -79,6 +82,7 @@ void ZCASBFGS::compute() {
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
       fci_time.tick_print("RDMs");
+      energy_ = fci_->energy();
     }
 
     // TODO : compute one body operators only for the subspace being optimized; presently full coefficient is used to transform from AO to MO
@@ -227,6 +231,7 @@ void ZCASBFGS::compute() {
         throw logic_error("Coefficient has lost orthonormality during optimization");
     }
     mute_stdcout();
+    prev_energy_ = energy_;
   }
   if (energy_.size() == 0)
     optimize_electrons == true ? energy_.push_back(ele_energy.back()) : energy_.push_back(pos_energy.back());

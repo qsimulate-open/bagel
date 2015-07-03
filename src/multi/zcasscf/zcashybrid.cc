@@ -43,6 +43,7 @@ void ZCASHybrid::compute() {
     if (maxiter_switch_ != -1) {
       idata->erase("maxiter");
       idata->put("maxiter", maxiter_switch_);
+      idata->put("maxiter_fci", max(maxiter_switch_,50));
     }
     if (thresh_switch_ > 0.0) {
       idata->erase("thresh");

@@ -29,6 +29,7 @@
 #include <src/opt/optimize.h>
 #include <src/wfn/localization.h>
 #include <src/asd/construct_asd.h>
+#include <src/asd/orbital/construct_asd_orbopt.h>
 #include <src/asd/dmrg/rasd.h>
 #include <src/asd/multisite/multisite.h>
 #include <src/util/archive.h>
@@ -144,8 +145,7 @@ int main(int argc, char** argv) {
             dimer = make_shared<Dimer>(itree, ref);
           else
             throw runtime_error("dimerize needs a reference calculation (for now)");
-        }
-        else if (form == "r" || form == "refs") {
+        } else if (form == "r" || form == "refs") {
           vector<shared_ptr<const Reference>> dimer_refs;
           auto units = itree->get_vector<string>("refs", 2);
           for (auto& ikey : units) {
@@ -155,6 +155,8 @@ int main(int argc, char** argv) {
           }
 
           dimer = make_shared<Dimer>(itree, dimer_refs.at(0), dimer_refs.at(1));
+        } else if (form == "linked") {
+          dimer = make_shared<Dimer>(itree, ref, /*linked=*/true);
         }
 
         dimer->scf(itree);
@@ -164,6 +166,10 @@ int main(int argc, char** argv) {
       } else if (title == "asd") {
           auto asd = construct_ASD(itree, dimer);
           asd->compute();
+      } else if (title == "asd_orbitaloptimize" || title == "asd_orbopt") {
+          auto asd = construct_ASD_OrbOpt(itree, dimer);
+          asd->compute();
+          ref = dimer->sref();
       } else if (title == "multisite") {
           vector<shared_ptr<const Reference>> site_refs;
           auto sitenames = itree->get_vector<string>("refs");
