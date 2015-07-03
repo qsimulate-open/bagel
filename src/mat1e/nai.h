@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: kinetic.h
+// Filename: nai.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,14 +24,14 @@
 //
 
 
-#ifndef __SRC_MAT1E_KINETIC_H
-#define __SRC_MAT1E_KINETIC_H
+#ifndef __SRC_MAT1E_NAI_H
+#define __SRC_MAT1E_NAI_H
 
 #include <src/mat1e/matrix1e.h>
 
 namespace bagel {
 
-class Kinetic : public Matrix1e {
+class NAI : public Matrix1e {
   protected:
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
@@ -45,15 +45,15 @@ class Kinetic : public Matrix1e {
     }
 
   public:
-    Kinetic() { }
-    Kinetic(const std::shared_ptr<const Molecule>);
+    NAI() { }
+    NAI(const std::shared_ptr<const Molecule>);
 
 };
 
 }
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::Kinetic)
+BOOST_CLASS_EXPORT_KEY(bagel::NAI)
 
 #endif
 

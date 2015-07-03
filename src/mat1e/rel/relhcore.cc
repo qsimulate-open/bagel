@@ -25,6 +25,7 @@
 
 #include <src/util/constants.h>
 #include <src/mat1e/rel/relhcore.h>
+#include <src/mat1e/rel/reldipole.h>
 
 using namespace std;
 using namespace bagel;
@@ -52,13 +53,19 @@ void RelHcore::compute_() {
   zsnai.add_real_block(  w, 0, n, n, n, (*smallnai_)[3]);
   zsnai.add_real_block( -w, n, 0, n, n, (*smallnai_)[3]);
 
-  // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
-  zero();
+  // RKB hcore: T is off-diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
   copy_real_block(1.0,  0,   0, 2*n, 2*n, nai);
   copy_real_block(1.0,  0, 2*n, 2*n, 2*n, kinetic);
   copy_real_block(1.0,2*n,   0, 2*n, 2*n, kinetic);
   copy_block(2*n, 2*n, 2*n, 2*n, zsnai);
   add_real_block(-1.0, 2*n, 2*n, 2*n, 2*n, kinetic);
 
+  if (geom_->external()) {
+    RelDipole dipole(geom_);
+    array<shared_ptr<const ZMatrix>,3> mat = dipole.compute_matrices();
+    ax_plus_y(geom_->external(0), mat[0]);
+    ax_plus_y(geom_->external(1), mat[1]);
+    ax_plus_y(geom_->external(2), mat[2]);
+  }
 }
 

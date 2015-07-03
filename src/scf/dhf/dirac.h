@@ -51,6 +51,8 @@ class Dirac : public Method {
     // for Fock build
     bool robust_;
 
+    int multipole_print_;
+
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const ZMatrix> overlap_;
     std::shared_ptr<const ZMatrix> s12_;
