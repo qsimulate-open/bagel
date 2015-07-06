@@ -27,14 +27,12 @@
 #ifndef __SRC_REL_RELMP2_H
 #define __SRC_REL_RELMP2_H
 
-#include <src/scf/dhf/dirac.h>
 #include <src/wfn/method.h>
 
 namespace bagel {
 
 class DMP2 : public Method {
   protected:
-    std::shared_ptr<Dirac> scf_;
     int ncore_;
 
     std::string abasis_;
@@ -42,7 +40,7 @@ class DMP2 : public Method {
     double energy_;
 
   public:
-    DMP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>, const std::shared_ptr<const Reference> = nullptr);
+    DMP2(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference> = nullptr);
 
     virtual void compute() override;
     virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }

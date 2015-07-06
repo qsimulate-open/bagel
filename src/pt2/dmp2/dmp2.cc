@@ -41,22 +41,23 @@
 using namespace std;
 using namespace bagel;
 
-DMP2::DMP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
+DMP2::DMP2(shared_ptr<const PTree> input, shared_ptr<const Geometry> g, shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
   if (geom_->dfs() || (ref && ref->geom()->dfs())) {
     if (!geom_) geom_ = ref->geom();
   } else {
-    scf_ = make_shared<Dirac>(input, g, ref);
-    scf_->compute();
-    ref_ = scf_->conv_to_ref();
+    auto scf = make_shared<Dirac>(input, g, ref);
+    scf->compute();
+    ref_ = scf->conv_to_ref();
     geom_ = ref_->geom();
   }
+  geom_ = geom_->relativistic(/*gaunt*/false);
   assert(geom_->dfs());
 
   cout << endl << "  === Four-Component DF-MP2 calculation ===" << endl << endl;
 
   // checks for frozen core
-  const bool frozen = idata_->get<bool>("frozen", false);
+  const bool frozen = idata_->get<bool>("frozen", true);
   ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only() : 0));
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
@@ -73,28 +74,13 @@ void DMP2::compute() {
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
 
   const size_t nocc = ref_->nocc() - ncore_;
-  if (nocc < 1) throw runtime_error("no correlated electrons");
   const size_t nvirt = nbasis*2 - nocc - ncore_;
+  if (nocc < 1)  throw runtime_error("no correlated electrons");
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
-  assert(nbasis*4 == ref->relcoeff()->ndim());
-  assert(nbasis*2 == ref->relcoeff()->mdim());
-
-  // Separate Coefficients into real and imaginary
-  // correlated occupied orbitals
-  array<shared_ptr<const Matrix>, 4> rocoeff;
-  array<shared_ptr<const Matrix>, 4> iocoeff;
-  // correlated virtual orbitals
-  array<shared_ptr<const Matrix>, 4> rvcoeff;
-  array<shared_ptr<const Matrix>, 4> ivcoeff;
-  for (int i = 0; i != 4; ++i) {
-    shared_ptr<const ZMatrix> oc = ref->relcoeff()->get_submatrix(i*nbasis, ncore_, nbasis, nocc);
-    rocoeff[i] = oc->get_real_part();
-    iocoeff[i] = oc->get_imag_part();
-    shared_ptr<const ZMatrix> vc = ref->relcoeff()->get_submatrix(i*nbasis, nocc+ncore_, nbasis, nvirt);
-    rvcoeff[i] = vc->get_real_part();
-    ivcoeff[i] = vc->get_imag_part();
-  }
+  shared_ptr<const ZMatrix> coeff = ref->relcoeff();
+  assert(nbasis*4 == coeff->ndim());
+  assert(nbasis*2 == coeff->mdim());
 
   // (1) make DFDists
   shared_ptr<Geometry> cgeom;
@@ -112,7 +98,7 @@ void DMP2::compute() {
   list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
 
   // (2) first-transform
-  list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
+  list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff->slice_copy(ncore_, ncore_+nocc));
   for (auto& i : half_complex)
     i = i->apply_J();
 
@@ -128,7 +114,7 @@ void DMP2::compute() {
   // (4) compute (gamma|ia)
   list<shared_ptr<RelDFFull>> dffull;
   for (auto& i : half_complex_exch)
-    dffull.push_back(make_shared<RelDFFull>(i, rvcoeff, ivcoeff));
+    dffull.push_back(make_shared<RelDFFull>(i, coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt)));
   DFock::factorize(dffull);
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
@@ -155,10 +141,10 @@ void DMP2::compute() {
   }
 
   cout << "    * assembly done" << endl << endl;
-  cout << "      DMP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
+  cout << "      Dirac MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
 
   energy_ += ref_->energy();
-  cout << "      DMP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
+  cout << "      Dirac MP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
 }
 
