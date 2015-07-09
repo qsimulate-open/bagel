@@ -439,8 +439,10 @@ void ZHarrison::compute_rdm12() {
   for (int istate = 0; istate != nstate_; ++istate) {
     // one body RDM
     rdm1_[istate] = rdm1(istate, istate);
+
+    // if off-diagonals are zero, generate a blank RDM for completeness
     if (!rdm1_[istate]->exist({1,0}))
-      rdm1_[istate]->at({1,0}) = rdm1_[istate]->at({0,0})->clone();
+      rdm1_[istate]->add({1,0}, rdm1_[istate]->at({0,0})->clone());
 
     // two body RDM
     rdm2_[istate] = rdm2(istate, istate);
