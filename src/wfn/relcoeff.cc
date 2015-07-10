@@ -214,6 +214,18 @@ shared_ptr<RelCoeff_Block> RelCoeff_Block::electronic_part() const {
 }
 
 
+shared_ptr<RelCoeff_Block> RelCoeff_Block::closed_part() const {
+  auto out = make_shared<RelCoeff_Block>(slice(0, 2*nclosed_), nclosed_, 0, 0, 0);
+  return out;
+}
+
+
+shared_ptr<RelCoeff_Block> RelCoeff_Block::active_part() const {
+  auto out = make_shared<RelCoeff_Block>(slice(2*nclosed_, 2*nocc()), 0, nact_, 0, 0);
+  return out;
+}
+
+
 shared_ptr<RelCoeff_Block> RelCoeff_Block::closed_act_positronic() const {
   const int nneg2 = nneg_/2;
   auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, 0, nneg_);
