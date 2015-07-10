@@ -203,6 +203,10 @@ class ZHarrison : public Method {
 
     std::vector<double> energy() const { return energy_; }
 
+    // returns <s_z> for each eigenstate
+    // 1RDM must be computed before calling this
+    std::vector<double> spin_expectation_values() const;
+
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
     std::shared_ptr<const Kramers<1,ZMatrix>> kramers_coeff() const { return jop_->kramers_coeff(); }

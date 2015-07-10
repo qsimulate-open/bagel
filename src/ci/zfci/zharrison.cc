@@ -393,3 +393,34 @@ shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
   return make_shared<RelCIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, make_shared<PairType>(make_pair(space_, int_space_)));
 }
+
+
+vector<double> ZHarrison::spin_expectation_values() const {
+  assert(rdm1_.size() == nstate_);  // If this fails, you probably forgot to compute the 1RDM first
+  vector<double> out = {};
+
+  vector<shared_ptr<const ZMatrix>> rdm1_set = rdm1_matrix();
+  shared_ptr<const ZMatrix> active_coeff = jop_->coeff_input()->active_part();
+
+  // TODO Probably we can ignore the closed part, but for now include it
+  shared_ptr<const ZMatrix> closed_aodensity = jop_->coeff_input()->form_density_rhf(2*ncore_, 0, 1.0);
+
+  // TODO Create a class for computation of atomic S_z values
+  // TODO Include contributions of the small component
+  const int n = geom_->nbasis();
+  auto spinz = make_shared<ZMatrix>(4*n, 4*n);
+  auto overlap = make_shared<Overlap>(geom_);
+  spinz->add_real_block( 0.5,   0,   0, n, n, *overlap);
+  spinz->add_real_block(-0.5,   n,   n, n, n, *overlap);
+
+  for (int i=0; i!=nstate_; ++i) {
+
+    //ZMatrix aodensity = *active_coeff * *rdm1_set[i] ^ *active_coeff;
+    ZMatrix aodensity = (*active_coeff * *rdm1_set[i] ^ *active_coeff) + *closed_aodensity;
+
+    const complex<double> val = aodensity.dot_product(*spinz);
+    assert(std::abs(imag(val)) < 1.0e-8);
+    out.push_back(std::real(val));
+  }
+  return out;
+}
