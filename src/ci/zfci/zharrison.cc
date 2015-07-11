@@ -30,6 +30,10 @@
 #include <src/mat1e/giao/relhcore_london.h>
 #include <src/mat1e/rel/reloverlap.h>
 #include <src/mat1e/giao/reloverlap_london.h>
+/**/
+#include <src/mat1e/rel/general_small1e.h>
+#include <src/integral/os/overlapbatch.h>
+/**/
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 
@@ -375,6 +379,7 @@ void ZHarrison::compute() {
     iprop->print();
   }
 #endif
+
 }
 
 
@@ -406,7 +411,6 @@ vector<array<double,3>> ZHarrison::spin_expectation_values() const {
   shared_ptr<const ZMatrix> closed_aodensity = jop_->coeff_input()->form_density_rhf(2*ncore_, 0, 1.0);
 
   // TODO Create a class for computation of atomic S_z values
-  // TODO Include contributions of the small component
   const int n = geom_->nbasis();
   auto overlap = make_shared<Overlap>(geom_);
   auto spinx = make_shared<ZMatrix>(4*n, 4*n);
@@ -422,6 +426,85 @@ vector<array<double,3>> ZHarrison::spin_expectation_values() const {
 
   spinz->add_real_block( 0.5,   0,   0, n, n, *overlap);
   spinz->add_real_block(-0.5,   n,   n, n, n, *overlap);
+
+/*****/
+  // TODO Simplify this code
+  // Commented out lines should cancel at zero-field; can be replaced with field*overlap for GIAO-RMB
+  const double w = 1.0/(8.0*c__*c__);
+  auto smallints = make_shared<General_Small1e<OverlapBatch>>(geom_);
+
+  // x^x contributions
+  spinx->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[0]);
+  spinx->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[0]);
+  spiny->add_real_block( imag*w, 2*n, 3*n, n, n, (*smallints)[0]);
+  spiny->add_real_block(-imag*w, 3*n, 2*n, n, n, (*smallints)[0]);
+  spinz->add_real_block(     -w, 2*n, 2*n, n, n, (*smallints)[0]);
+  spinz->add_real_block(      w, 3*n, 3*n, n, n, (*smallints)[0]);
+
+  // y^y contributions
+  spinx->add_real_block(     -w, 2*n, 3*n, n, n, (*smallints)[1]);
+  spinx->add_real_block(     -w, 3*n, 2*n, n, n, (*smallints)[1]);
+  spiny->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[1]);
+  spiny->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[1]);
+  spinz->add_real_block(     -w, 2*n, 2*n, n, n, (*smallints)[1]);
+  spinz->add_real_block(      w, 3*n, 3*n, n, n, (*smallints)[1]);
+
+  // z^z contributions
+  spinx->add_real_block(     -w, 2*n, 3*n, n, n, (*smallints)[2]);
+  spinx->add_real_block(     -w, 3*n, 2*n, n, n, (*smallints)[2]);
+  spiny->add_real_block( imag*w, 2*n, 3*n, n, n, (*smallints)[2]);
+  spiny->add_real_block(-imag*w, 3*n, 2*n, n, n, (*smallints)[2]);
+  spinz->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[2]);
+  spinz->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[2]);
+
+  // x^y contributions
+  spinx->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[3]);
+  spinx->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[3]);
+  spiny->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[3]);
+  spiny->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[3]);
+  //spinz->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[3]);
+  //spinz->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[3]);
+
+  // y^x contributions
+  spinx->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[6]);
+  spinx->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[6]);
+  spiny->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[6]);
+  spiny->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[6]);
+  //spinz->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[6]);
+  //spinz->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[6]);
+
+  // y^z contributions
+  //spinx->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[4]);
+  //spinx->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[4]);
+  spiny->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[4]);
+  spiny->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[4]);
+  spinz->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[4]);
+  spinz->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[4]);
+
+  // z^y contributions
+  //spinx->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[7]);
+  //spinx->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[7]);
+  spiny->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[7]);
+  spiny->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[7]);
+  spinz->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[7]);
+  spinz->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[7]);
+
+  // z^x contributions
+  spinx->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[5]);
+  spinx->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[5]);
+  //spiny->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[5]);
+  //spiny->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[5]);
+  spinz->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[5]);
+  spinz->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[5]);
+
+  // x^z contributions
+  spinx->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[8]);
+  spinx->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[8]);
+  //spiny->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[8]);
+  //spiny->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[8]);
+  spinz->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[8]);
+  spinz->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[8]);
+/*****/
 
   for (int i=0; i!=nstate_; ++i) {
 
