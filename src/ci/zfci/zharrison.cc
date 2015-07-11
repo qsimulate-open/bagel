@@ -395,9 +395,9 @@ shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
 }
 
 
-vector<double> ZHarrison::spin_expectation_values() const {
+vector<array<double,3>> ZHarrison::spin_expectation_values() const {
   assert(rdm1_.size() == nstate_);  // If this fails, you probably forgot to compute the 1RDM first
-  vector<double> out = {};
+  vector<array<double,3>> out = {};
 
   vector<shared_ptr<const ZMatrix>> rdm1_set = rdm1_matrix();
   shared_ptr<const ZMatrix> active_coeff = jop_->coeff_input()->active_part();
@@ -408,8 +408,18 @@ vector<double> ZHarrison::spin_expectation_values() const {
   // TODO Create a class for computation of atomic S_z values
   // TODO Include contributions of the small component
   const int n = geom_->nbasis();
-  auto spinz = make_shared<ZMatrix>(4*n, 4*n);
   auto overlap = make_shared<Overlap>(geom_);
+  auto spinx = make_shared<ZMatrix>(4*n, 4*n);
+  auto spiny = make_shared<ZMatrix>(4*n, 4*n);
+  auto spinz = make_shared<ZMatrix>(4*n, 4*n);
+  const complex<double> imag(0.0, 1.0);
+
+  spinx->add_real_block( 0.5,   n,   0, n, n, *overlap);
+  spinx->add_real_block( 0.5,   0,   n, n, n, *overlap);
+
+  spiny->add_real_block( 0.5*imag,   n,   0, n, n, *overlap);
+  spiny->add_real_block(-0.5*imag,   0,   n, n, n, *overlap);
+
   spinz->add_real_block( 0.5,   0,   0, n, n, *overlap);
   spinz->add_real_block(-0.5,   n,   n, n, n, *overlap);
 
@@ -418,9 +428,14 @@ vector<double> ZHarrison::spin_expectation_values() const {
     //ZMatrix aodensity = *active_coeff * *rdm1_set[i] ^ *active_coeff;
     ZMatrix aodensity = (*active_coeff * *rdm1_set[i] ^ *active_coeff) + *closed_aodensity;
 
-    const complex<double> val = aodensity.dot_product(*spinz);
-    assert(std::abs(imag(val)) < 1.0e-8);
-    out.push_back(std::real(val));
+    const complex<double> valx = aodensity.dot_product(*spinx);
+    const complex<double> valy = aodensity.dot_product(*spiny);
+    const complex<double> valz = aodensity.dot_product(*spinz);
+    assert(std::abs(std::imag(valx)) < 1.0e-8);
+    assert(std::abs(std::imag(valy)) < 1.0e-8);
+    assert(std::abs(std::imag(valz)) < 1.0e-8);
+
+    out.push_back({{std::real(valx), std::real(valy), std::real(valz)}});
   }
   return out;
 }

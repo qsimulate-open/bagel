@@ -203,9 +203,9 @@ class ZHarrison : public Method {
 
     std::vector<double> energy() const { return energy_; }
 
-    // returns <s_z> for each eigenstate
+    // returns <s_x>, <s_y>, and <s_z> for each eigenstate (in that order)
     // 1RDM must be computed before calling this
-    std::vector<double> spin_expectation_values() const;
+    std::vector<std::array<double,3>> spin_expectation_values() const;
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
