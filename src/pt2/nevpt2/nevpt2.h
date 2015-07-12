@@ -28,7 +28,7 @@
 #define __SRC_NEVPT2_NEVPT2_H
 
 #include <src/wfn/method.h>
-#include <src/multi/casscf/casscf.h>
+#include <src/wfn/relreference.h>
 
 namespace bagel {
 
@@ -117,11 +117,14 @@ class NEVPT2_ : public Method {
     std::string abasis() const { return abasis_; }
 };
 
+template<> void NEVPT2_<double>::compute_rdm();
+template<> void NEVPT2_<std::complex<double>>::compute_rdm();
+
 extern template class NEVPT2_<double>;
 extern template class NEVPT2_<std::complex<double>>;
 
 using NEVPT2 = NEVPT2_<double>;
-//using ZNEVPT2 = NEVPT2_<std::complex<double>>;
+using ZNEVPT2 = NEVPT2_<std::complex<double>>;
 
 }
 

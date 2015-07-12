@@ -27,8 +27,10 @@
 #include <src/pt2/mp2/mp2cache.h>
 #include <src/df/dfdistt.h>
 #include <src/scf/hf/fock.h>
+#include <src/multi/casscf/casscf.h>
 #include <src/multi/casscf/superci.h>
 #include <src/multi/casscf/qvec.h>
+#include <src/multi/zcasscf/zcasscf.h>
 #include <src/util/prim_op.h>
 #include <src/util/parallel/resources.h>
 

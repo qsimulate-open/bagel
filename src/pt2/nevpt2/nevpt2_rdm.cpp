@@ -25,8 +25,8 @@
 
 #ifdef NEVPT2_IMPL
 
-template<typename DataType>
-void NEVPT2_<DataType>::compute_rdm() {
+template<>
+void NEVPT2_<double>::compute_rdm() {
   // rdm 1
   {
     auto tmp = ref_->rdm1(istate_)->rdm1_mat(/*nclosed_*/0, false);
@@ -50,6 +50,44 @@ void NEVPT2_<DataType>::compute_rdm() {
     sort_indices<0,2,4,  1,3,5,  0,1,1,1>(r3->data(), tmp3->data(), nact_, nact_, nact_, nact_, nact_, nact_);
     sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), tmp4->data(), nact_, nact_, nact_, nact_, nact_, nact_, nact_, nact_);
     rdm3_ = tmp3;
+    rdm4_ = tmp4;
+  }
+}
+
+template<>
+void NEVPT2_<complex<double>>::compute_rdm() {
+  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
+  // rdm 1
+  {
+    auto tmp = make_shared<MatType>(nact_, nact_, true);
+    auto rdm1k = ref->rdm1(istate_, istate_);
+    auto r1 = expand_kramers(rdm1k, nact_/2);
+    copy_n(r1->data(), nact_*nact_, tmp->data());
+    rdm1_ = tmp;
+  }
+  // rdm 2
+  {
+    auto tmp = make_shared<MatType>(nact_*nact_, nact_*nact_, true);
+    auto rdm2k = ref->rdm2(istate_, istate_);
+    auto r2 = expand_kramers(rdm2k, nact_/2);
+    sort_indices<0,2,1,3,0,1,1,1>(r2->data(), tmp->data(), nact_, nact_, nact_, nact_);
+    rdm2_ = tmp;
+  }
+  // rdm 3
+  {
+    auto tmp3 = make_shared<MatType>(nact_*nact_*nact_, nact_*nact_*nact_, true);
+    auto rdm3k = ref->rdm3(istate_, istate_);
+    auto r3 = expand_kramers(rdm3k, nact_/2);
+    sort_indices<0,2,4,1,3,5,0,1,1,1>(r3->data(), tmp3->data(), nact_, nact_, nact_, nact_, nact_, nact_);
+    rdm3_ = tmp3;
+  }
+  // TODO rdm 4 is too large to do this way - implement direct computation in ARDM3 later
+  // rdm 4
+  {
+    auto tmp4 = make_shared<MatType>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
+    auto rdm4k = ref->rdm4(istate_, istate_);
+    auto r4 = expand_kramers(rdm4k, nact_/2);
+    sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), tmp4->data(), nact_, nact_, nact_, nact_, nact_, nact_, nact_, nact_);
     rdm4_ = tmp4;
   }
 }
