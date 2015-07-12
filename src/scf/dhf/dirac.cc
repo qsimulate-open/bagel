@@ -168,7 +168,7 @@ void Dirac::compute() {
 
   coeff_ = coeff->matrix();
 
-  if (!geom_->external() && multipole_print_) {
+  if (!geom_->external() && !geom_->magnetism() && multipole_print_) {
     if (multipole_print_ > 1)
       cout << "    * Higher order multipoles are not implemented with Dirac Hartree-Fock." << endl;
     auto den = aodensity->matrix();
