@@ -322,8 +322,10 @@ void NEVPT2_<DataType>::compute() {
       const MatType mat_aa(iablock % jablock);
       MatType mat_aaR(nact_, nact_, true);
       MatType mat_aaK(nact_, nact_, true);
-      dgemv_("N", nact_*nact_, nact_*nact_, 1.0,  hrdm2_->data(), nact_*nact_, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
-      dgemv_("N", nact_*nact_, nact_*nact_, 1.0, kmatp2_->data(), nact_*nact_, mat_aa.data(), 1, 0.0, mat_aaK.data(), 1);
+      auto vmat_aaR = btas::group(mat_aaR,0,2);
+      auto vmat_aaK = btas::group(mat_aaK,0,2);
+      btas::contract(1.0, *hrdm2_,  {0,1}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaR, {0});
+      btas::contract(1.0, *kmatp2_, {0,1}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaK, {0});
       const double norm2  = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
       const double denom2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
       if (norm2 > norm_thresh_)
@@ -374,8 +376,10 @@ void NEVPT2_<DataType>::compute() {
       MatType mat_aa(iablock % jablock);
       MatType mat_aaR(nact_, nact_, true);
       MatType mat_aaK(nact_, nact_, true);
-      dgemv_("N", nact_*nact_, nact_*nact_, 1.0,  rdm2_->data(), nact_*nact_, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
-      dgemv_("T", nact_*nact_, nact_*nact_, 1.0, kmat2_->data(), nact_*nact_, mat_aa.data(), 1, 0.0, mat_aaK.data(), 1);
+      auto vmat_aaR = btas::group(mat_aaR,0,2);
+      auto vmat_aaK = btas::group(mat_aaK,0,2);
+      btas::contract(1.0, *rdm2_,  {0,1}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaR, {0});
+      btas::contract(1.0, *kmat2_, {1,0}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaK, {0});
       const double norm  = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
       const double denom = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
       if (norm > norm_thresh_)
@@ -439,8 +443,10 @@ void NEVPT2_<DataType>::compute() {
         const MatType mat1Asym(mat1A + (mat1 ^ *amat2_));
               MatType mat2Sp(nact_, nact_, true);
               MatType mat2D (nact_, nact_, true);
-        dgemv_("N", nact_*nact_, nact_*nact_, 1.0, srdm2_p.data(), nact_*nact_, mat2.data(), 1, 0.0, mat2Sp.data(), 1);
-        dgemv_("N", nact_*nact_, nact_*nact_, 1.0, dmat2_->data(), nact_*nact_, mat2.data(), 1, 0.0,  mat2D.data(), 1);
+        auto vmat2Sp = group(mat2Sp,0,2);
+        auto vmat2D  = group(mat2D ,0,2);
+        btas::contract(1.0, srdm2_p, {0,1}, btas::group(mat2,0,2), {1}, 0.0, vmat2Sp, {0});
+        btas::contract(1.0, *dmat2_, {0,1}, btas::group(mat2,0,2), {1}, 0.0, vmat2D , {0});
         const int ir = r + nclosed_ + nact_;
         const double norm = - 2.0*mat1S.dot_product(mat1) + blas::dot_product(mat1Ssym.data(), mat1Ssym.size(), mat2.data()) + mat2Sp.dot_product(mat2)
                           + 2.0*(fock->element(ir,i) - fock_c->element(ir,i))*(fock_c->element(ir,i) + fock_h->element(ir,i))
