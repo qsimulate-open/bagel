@@ -29,21 +29,21 @@ template<typename DataType>
 void NEVPT2_<DataType>::compute_rdm() {
   // rdm 1
   {
-    auto tmp = ref_->rdm1(istate_)->rdm1_mat(/*nclosed_*/0);
+    auto tmp = ref_->rdm1(istate_)->rdm1_mat(/*nclosed_*/0, false);
     tmp->localize();
     rdm1_ = tmp;
   }
   // rdm 2
   {
-    auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
+    auto tmp = make_shared<MatType>(nact_*nact_, nact_*nact_, true);
     shared_ptr<const RDM<2>> r2 = ref_->rdm2(istate_);
     sort_indices<0,2,1,3,0,1,1,1>(r2->data(), tmp->data(), nact_, nact_, nact_, nact_);
     rdm2_ = tmp;
   }
   // rdm 3 and 4
   {
-    shared_ptr<Matrix> tmp3 = make_shared<Matrix>(nact_*nact_*nact_, nact_*nact_*nact_, true);
-    shared_ptr<Matrix> tmp4 = make_shared<Matrix>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
+    auto tmp3 = make_shared<MatType>(nact_*nact_*nact_, nact_*nact_*nact_, true);
+    auto tmp4 = make_shared<MatType>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
     shared_ptr<const RDM<3>> r3;
     shared_ptr<const RDM<4>> r4;
     tie(r3, r4) = ref_->rdm34(istate_, istate_);
@@ -62,14 +62,14 @@ void NEVPT2_<DataType>::compute_asrdm() {
   auto id3 = [this](             const int j, const int k, const int l) { return         (j+nact_*(k+nact_*l)); };
   auto id4 = [this](const int i, const int j, const int k, const int l) { return i+nact_*(j+nact_*(k+nact_*l)); };
 
-  shared_ptr<Matrix> srdm2 = rdm2_->clone(); // S(a,b,c,d) = <0|a+p bp cq d+q|0>
+  shared_ptr<MatType> srdm2 = rdm2_->clone(); // S(a,b,c,d) = <0|a+p bp cq d+q|0>
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k)
         for (int l = 0; l != nact_; ++l)
           srdm2->element(l+nact_*k,j+nact_*i) = -rdm2_->element(l+nact_*i,k+nact_*j) + (i == j ? 2.0*rdm1_->element(l,k) : 0.0) - (i == k ? rdm1_->element(l,j) : 0.0);
   // <a+ a b+ b> and <a+ a b+ b c+ c>
-  shared_ptr<Matrix> ardm2 = rdm2_->clone();
+  shared_ptr<MatType> ardm2 = rdm2_->clone();
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k) {
@@ -77,8 +77,8 @@ void NEVPT2_<DataType>::compute_asrdm() {
           ardm2->element(l+nact_*k,j+nact_*i) += rdm2_->element(l+nact_*j,k+nact_*i);
         ardm2->element(k+nact_*j,j+nact_*i) += rdm1_->element(k,i);
       }
-  shared_ptr<Matrix> ardm3 = rdm3_->clone();
-  shared_ptr<Matrix> srdm3 = rdm3_->clone(); // <a+ a b b+ c+ c>
+  shared_ptr<MatType> ardm3 = rdm3_->clone();
+  shared_ptr<MatType> srdm3 = rdm3_->clone(); // <a+ a b b+ c+ c>
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k)
@@ -93,7 +93,7 @@ void NEVPT2_<DataType>::compute_asrdm() {
             srdm3->element(id3(m,l,k),id3(k,j,i)) += 2.0*ardm2->element(id2(m,l),id2(j,i));
           }
   sort_indices<0,2,1,3,1,1,-1,1>(ardm3->data(), srdm3->data(), nact_*nact_, nact_, nact_, nact_*nact_);
-  shared_ptr<Matrix> ardm4 = rdm4_->clone();
+  shared_ptr<MatType> ardm4 = rdm4_->clone();
   for (int h = 0; h != nact_; ++h)
     for (int g = 0; g != nact_; ++g)
       for (int f = 0; f != nact_; ++f)
@@ -126,9 +126,10 @@ void NEVPT2_<DataType>::compute_hrdm() {
 
   auto id3 = [this](const int j, const int k, const int l) { return j+nact_*(k+nact_*l); };
 
-  shared_ptr<Matrix> unit = rdm1_->clone(); unit->unit();
-  shared_ptr<const Matrix> hrdm1 = make_shared<Matrix>(*unit*2.0 - *rdm1_);
-  shared_ptr<Matrix> hrdm2 = rdm2_->copy();
+  shared_ptr<MatType> unit = rdm1_->clone(); unit->unit();
+  shared_ptr<MatType> hrdm2 = rdm2_->copy();
+  shared_ptr<const MatType> hrdm1 = make_shared<MatType>(*unit*2.0 - *rdm1_);
+
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nact_; ++j) {
       for (int k = 0; k != nact_; ++k) {
@@ -139,7 +140,7 @@ void NEVPT2_<DataType>::compute_hrdm() {
       }
     }
   }
-  shared_ptr<Matrix> hrdm3 = make_shared<Matrix>(*rdm3_ * (-1.0));
+  auto hrdm3 = make_shared<MatType>(*rdm3_ * (-1.0));
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k)

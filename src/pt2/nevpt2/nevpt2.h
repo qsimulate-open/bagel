@@ -35,6 +35,11 @@ namespace bagel {
 template<typename DataType>
 class NEVPT2_ : public Method {
   protected:
+    using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+    using VecType = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
+    using ViewType = typename std::conditional<std::is_same<DataType,double>::value, MatView, ZMatView>::type;
+
+  protected:
     int ncore_;
     int nclosed_;
     int nact_;
@@ -48,51 +53,51 @@ class NEVPT2_ : public Method {
 
     // density matrices to be used
     // particle RDMs
-    std::shared_ptr<const Matrix> rdm1_;
-    std::shared_ptr<const Matrix> rdm2_;
-    std::shared_ptr<const Matrix> rdm3_;
-    std::shared_ptr<const Matrix> rdm4_;
+    std::shared_ptr<const MatType> rdm1_;
+    std::shared_ptr<const MatType> rdm2_;
+    std::shared_ptr<const MatType> rdm3_;
+    std::shared_ptr<const MatType> rdm4_;
     // hole RDMs
-    std::shared_ptr<const Matrix> hrdm1_;
-    std::shared_ptr<const Matrix> hrdm2_;
-    std::shared_ptr<const Matrix> hrdm3_;
+    std::shared_ptr<const MatType> hrdm1_;
+    std::shared_ptr<const MatType> hrdm2_;
+    std::shared_ptr<const MatType> hrdm3_;
     // <a+a b+b c+c..>
-    std::shared_ptr<const Matrix> ardm2_;
-    std::shared_ptr<const Matrix> ardm3_;
-    std::shared_ptr<const Matrix> ardm4_;
+    std::shared_ptr<const MatType> ardm2_;
+    std::shared_ptr<const MatType> ardm3_;
+    std::shared_ptr<const MatType> ardm4_;
     // <a+a bb+>
-    std::shared_ptr<const Matrix> srdm2_;
+    std::shared_ptr<const MatType> srdm2_;
     // <a+a bb+ c+c>
-    std::shared_ptr<const Matrix> srdm3_;
+    std::shared_ptr<const MatType> srdm3_;
 
     // integrals in physicists notation
-    std::shared_ptr<const Matrix> ints2_;
-    std::shared_ptr<      Matrix> fockact_;
-    std::shared_ptr<      Matrix> fockact_c_;
-    std::shared_ptr<      Matrix> fockact_h_;
-    std::shared_ptr<      Matrix> fockact_p_;
+    std::shared_ptr<const MatType> ints2_;
+    std::shared_ptr<      MatType> fockact_;
+    std::shared_ptr<      MatType> fockact_c_;
+    std::shared_ptr<      MatType> fockact_h_;
+    std::shared_ptr<      MatType> fockact_p_;
 
     // K and K'mat
-    std::shared_ptr<const Matrix> qvec_;
-    std::shared_ptr<const Matrix> kmat_;
-    std::shared_ptr<const Matrix> kmatp_;
-    std::shared_ptr<const Matrix> kmat2_;
-    std::shared_ptr<const Matrix> kmatp2_;
+    std::shared_ptr<const MatType> qvec_;
+    std::shared_ptr<const MatType> kmat_;
+    std::shared_ptr<const MatType> kmatp_;
+    std::shared_ptr<const MatType> kmat2_;
+    std::shared_ptr<const MatType> kmatp2_;
 
     // A
-    std::shared_ptr<const Matrix> amat2_;
-    std::shared_ptr<const Matrix> amat3_;
-    std::shared_ptr<const Matrix> amat3t_;
+    std::shared_ptr<const MatType> amat2_;
+    std::shared_ptr<const MatType> amat3_;
+    std::shared_ptr<const MatType> amat3t_;
     // B
-    std::shared_ptr<const Matrix> bmat2_;
-    std::shared_ptr<const Matrix> bmat2t_;
+    std::shared_ptr<const MatType> bmat2_;
+    std::shared_ptr<const MatType> bmat2t_;
     // C
-    std::shared_ptr<const Matrix> cmat2_;
-    std::shared_ptr<const Matrix> cmat2t_;
+    std::shared_ptr<const MatType> cmat2_;
+    std::shared_ptr<const MatType> cmat2t_;
     // D
-    std::shared_ptr<const Matrix> dmat2_;
-    std::shared_ptr<const Matrix> dmat1_;
-    std::shared_ptr<const Matrix> dmat1t_;
+    std::shared_ptr<const MatType> dmat2_;
+    std::shared_ptr<const MatType> dmat1_;
+    std::shared_ptr<const MatType> dmat1t_;
 
     void compute_rdm();
     void compute_hrdm();
@@ -116,7 +121,7 @@ extern template class NEVPT2_<double>;
 extern template class NEVPT2_<std::complex<double>>;
 
 using NEVPT2 = NEVPT2_<double>;
-using ZNEVPT2 = NEVPT2_<std::complex<double>>;
+//using ZNEVPT2 = NEVPT2_<std::complex<double>>;
 
 }
 

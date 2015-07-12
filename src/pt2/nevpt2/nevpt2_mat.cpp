@@ -29,12 +29,12 @@ template<typename DataType>
 void NEVPT2_<DataType>::compute_kmat() {
   {
     // Eq. (27)
-    auto kmat = make_shared<Matrix>(*fockact_c_ * *rdm1_);
+    auto kmat = make_shared<MatType>(*fockact_c_ * *rdm1_);
     *kmat += *qvec_;
     kmat->localize();
 
     // Eq. (A3)
-    auto kmatp = make_shared<Matrix>(*kmat * (-1.0));
+    auto kmatp = make_shared<MatType>(*kmat * (-1.0));
     *kmatp += *fockact_ * 2.0;
     kmatp->localize();
 
@@ -42,7 +42,7 @@ void NEVPT2_<DataType>::compute_kmat() {
     kmatp_ = kmatp;
   }
   {
-    auto compute_kmat = [this](shared_ptr<const Matrix> rdm2, shared_ptr<const Matrix> rdm3, shared_ptr<const Matrix> fock, const double sign) {
+    auto compute_kmat = [this](shared_ptr<const MatType> rdm2, shared_ptr<const MatType> rdm3, shared_ptr<const MatType> fock, const double sign) {
       auto out = rdm2->clone();
       // temp area
       for (int b = 0; b != nact_; ++b)
@@ -78,7 +78,7 @@ void NEVPT2_<DataType>::compute_abcd() {
   auto id4 = [this](const int i, const int j, const int k, const int l) { return i+nact_*(j+nact_*(k+nact_*l)); };
   // A matrices
   {
-    shared_ptr<Matrix> amat2 = rdm2_->clone();
+    shared_ptr<MatType> amat2 = rdm2_->clone();
     {
       for (int b = 0; b != nact_; ++b)
         for (int a = 0; a != nact_; ++a)
@@ -93,11 +93,11 @@ void NEVPT2_<DataType>::compute_abcd() {
                                                          - 0.5 * ints2_->element(b+nact_*c,e+nact_*d) * (ardm3_->element(id3(bp,ap,a),id3(e,c,d))
                                                                                                     + ardm3_->element(id3(bp,ap,c),id3(d,a,e)));
               }
-      shared_ptr<Matrix> tmp = amat2->copy();
+      shared_ptr<MatType> tmp = amat2->copy();
       sort_indices<1,0,3,2,0,1,1,1>(tmp->data(), amat2->data(), nact_, nact_, nact_, nact_);
     }
-    shared_ptr<Matrix> amat3 = rdm3_->clone();
-    shared_ptr<Matrix> amat3t = rdm3_->clone();
+    shared_ptr<MatType> amat3 = rdm3_->clone();
+    shared_ptr<MatType> amat3t = rdm3_->clone();
     {
       for (int c = 0; c != nact_; ++c)
         for (int b = 0; b != nact_; ++b)
@@ -142,8 +142,8 @@ void NEVPT2_<DataType>::compute_abcd() {
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // B matrices
   {
-    shared_ptr<Matrix> bmat2 = make_shared<Matrix>(nact_*nact_*nact_, nact_, true);
-    shared_ptr<Matrix> bmat2t = make_shared<Matrix>(nact_*nact_*nact_, nact_, true);
+    auto bmat2 = make_shared<MatType>(nact_*nact_*nact_, nact_, true);
+    auto bmat2t = make_shared<MatType>(nact_*nact_*nact_, nact_, true);
     for (int a = 0; a != nact_; ++a)
       for (int cp = 0; cp != nact_; ++cp)
         for (int bp = 0; bp != nact_; ++bp)
@@ -163,10 +163,10 @@ void NEVPT2_<DataType>::compute_abcd() {
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // C matrices
   {
-    shared_ptr<Matrix> cmat2 = make_shared<Matrix>(nact_, nact_*nact_*nact_, true);
-    shared_ptr<Matrix> cmat2t = make_shared<Matrix>(nact_, nact_*nact_*nact_, true);
+    auto cmat2 = make_shared<MatType>(nact_, nact_*nact_*nact_, true);
+    auto cmat2t = make_shared<MatType>(nact_, nact_*nact_*nact_, true);
     // <d c+ b+ a>
-    shared_ptr<Matrix> s2rdm2 = ardm2_->clone();
+    shared_ptr<MatType> s2rdm2 = ardm2_->clone();
     for (int a = 0; a != nact_; ++a)
       for (int b = 0; b != nact_; ++b)
         for (int c = 0; c != nact_; ++c)
@@ -208,7 +208,7 @@ void NEVPT2_<DataType>::compute_abcd() {
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // D matrices
   {
-    shared_ptr<Matrix> dmat2 = rdm2_->clone();
+    shared_ptr<MatType> dmat2 = rdm2_->clone();
     for (int b = 0; b != nact_; ++b)
       for (int a = 0; a != nact_; ++a)
         for (int bp = 0; bp != nact_; ++bp)
@@ -232,13 +232,13 @@ void NEVPT2_<DataType>::compute_abcd() {
                            - (bp == e  ? 1.0 : 0.0) *((d == ap ? 2.0 : 0.0) * rdm1_->element(c,b)   - ardm2_->element(d+nact_*ap,c+nact_*b)));
                 }
             }
-    shared_ptr<Matrix> tmp = dmat2->copy();
+    shared_ptr<MatType> tmp = dmat2->copy();
     sort_indices<1,0,3,2,0,1,1,1>(tmp->data(), dmat2->data(), nact_, nact_, nact_, nact_);
     dmat2_ = dmat2;
   }
   {
-    shared_ptr<Matrix> dmat1 = rdm1_->clone();
-    shared_ptr<Matrix> dmat1t = rdm1_->clone();
+    shared_ptr<MatType> dmat1 = rdm1_->clone();
+    shared_ptr<MatType> dmat1t = rdm1_->clone();
     for (int a = 0; a != nact_; ++a)
       for (int ap = 0; ap != nact_; ++ap)
         for (int c = 0; c != nact_; ++c) {
