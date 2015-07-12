@@ -38,14 +38,8 @@ using namespace bagel;
 // Reference: C. Angeli, R. Cimiraglia, and J.-P. Malrieu, J. Chem. Phys. 117, 9138 (2002).
 // Notations closely follow that in the reference
 
-
-NEVPT2::NEVPT2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
-
-  casscf_ = make_shared<SuperCI>(input, g, ref);
-  casscf_->compute();
-  ref_ = casscf_->conv_to_ref();
-
-  cout << endl << "  === DF-NEVPT2 calculation ===" << endl << endl;
+template<typename DataType>
+NEVPT2_<DataType>::NEVPT2_(shared_ptr<const PTree> input, shared_ptr<const Geometry> g, shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
   // checks for frozen core
   const bool frozen = idata_->get<bool>("frozen", true);
@@ -57,25 +51,44 @@ NEVPT2::NEVPT2(const shared_ptr<const PTree> input, const shared_ptr<const Geome
   abasis_ = to_lower(idata_->get<string>("aux_basis", ""));
   norm_thresh_ = idata_->get<double>("norm_thresh", 1.0e-13);
 
+  // starting up
+  {
+    auto casscf = make_shared<SuperCI>(input, g, ref);
+    casscf->compute();
+    ref_ = casscf->conv_to_ref();
+
+    nclosed_ = ref_->nclosed() - ncore_;
+    nact_ = ref_->nact();
+    nvirt_ = ref_->nvirt();
+
+    if (nclosed_+nact_ < 1) throw runtime_error("no correlated orbitals");
+    if (nact_ < 1)          throw runtime_error("no active orbitals");
+    if (nvirt_ < 1)         throw runtime_error("no virtuals orbitals");
+
+    auto acoeff = ref_->coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
+    shared_ptr<const DFFullDist> full = casscf->fci()->jop()->mo2e_1ext()->compute_second_transform(acoeff)->apply_J();
+    // integrals (ij|kl) and <ik|jl>
+    shared_ptr<const Matrix> ints = full->form_4index(full, 1.0);
+    auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
+    sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact_, nact_, nact_, nact_);
+    ints2_ = tmp;
+    qvec_ = make_shared<Qvec>(nact_, nact_, acoeff, /*nclosed_*/0, casscf->fci(), ref_->rdm2(istate_));
+  }
+
+  cout << endl << "  === DF-NEVPT2 calculation ===" << endl << endl;
 }
 
 
-void NEVPT2::compute() {
-
-  nclosed_ = ref_->nclosed() - ncore_;
-  nact_ = ref_->nact();
-  nvirt_ = ref_->nvirt();
-
-  if (nclosed_+nact_ < 1) throw runtime_error("no correlated orbitals");
-  if (nact_ < 1)          throw runtime_error("no active orbitals");
-  if (nvirt_ < 1)         throw runtime_error("no virtuals orbitals");
+template<typename DataType>
+void NEVPT2_<DataType>::compute() {
 
   Timer timer;
 
   // coefficients -- will be updated later
   shared_ptr<Matrix> ccoeff = nclosed_ ? ref_->coeff()->slice_copy(ncore_, ncore_+nclosed_) : nullptr;
-  shared_ptr<Matrix> acoeff =            ref_->coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
   shared_ptr<Matrix> vcoeff = nvirt_   ? ref_->coeff()->slice_copy(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_) : nullptr;
+
+  shared_ptr<const Matrix> acoeff = ref_->coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
 
   // obtain particle RDMs
   compute_rdm();
@@ -121,7 +134,7 @@ void NEVPT2::compute() {
     }
     coeffall = make_shared<Matrix>(acoeff->ndim(), nclosed_+nact_+nvirt_);
     if (nclosed_)
-      coeffall->copy_block(0, 0             , ccoeff->ndim(), nclosed_, ccoeff);
+      coeffall->copy_block(0, 0           , ccoeff->ndim(), nclosed_, ccoeff);
     coeffall->copy_block(0, nclosed_      , acoeff->ndim(), nact_   , acoeff);
     coeffall->copy_block(0, nclosed_+nact_, vcoeff->ndim(), nvirt_  , vcoeff);
 
@@ -146,15 +159,9 @@ void NEVPT2::compute() {
     fock_h = make_shared<Matrix>(*coeffall % *fockao_h * *coeffall);
   }
 
-  // set coefficient
-  ccoeff_ = ccoeff; ccoeff.reset();
-  acoeff_ = acoeff; acoeff.reset();
-  vcoeff_ = vcoeff; vcoeff.reset();
-
   timer.tick_print("Fock computation");
 
   // implemented in nevpt2_mat.cc
-  compute_ints();
   compute_kmat();
 
   timer.tick_print("K matrices");
@@ -176,8 +183,8 @@ void NEVPT2::compute() {
     shared_ptr<DFHalfDist> half, halfa;
     if (abasis_.empty()) {
       if (nclosed_)
-        half = geom_->df()->compute_half_transform(ccoeff_);
-      halfa = geom_->df()->compute_half_transform(acoeff_);
+        half = geom_->df()->compute_half_transform(ccoeff);
+      halfa = geom_->df()->compute_half_transform(acoeff);
       // used later to determine the cache size
       memory_size = geom_->df()->block(0)->size() * 2;
       mpi__->broadcast(&memory_size, 1, 0);
@@ -185,8 +192,8 @@ void NEVPT2::compute() {
       auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
       auto cgeom = make_shared<Geometry>(*geom_, info, false);
       if (nclosed_)
-        half = cgeom->df()->compute_half_transform(ccoeff_);
-      halfa = cgeom->df()->compute_half_transform(acoeff_);
+        half = cgeom->df()->compute_half_transform(ccoeff);
+      halfa = cgeom->df()->compute_half_transform(acoeff);
       // used later to determine the cache size
       memory_size = cgeom->df()->block(0)->size();
       mpi__->broadcast(&memory_size, 1, 0);
@@ -195,7 +202,7 @@ void NEVPT2::compute() {
     // second transform for virtual index and rearrange data
     if (nclosed_) {
       // this is now (naux, nvirt_, nclosed_), distributed by nvirt_*nclosed_. Always naux*nvirt_ block is localized to one node
-      shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff_)->apply_J()->swap();
+      shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff)->apply_J()->swap();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
       fullvi = make_shared<DFDistT>(full, dist);
       fullvi->discard_df();
@@ -476,3 +483,11 @@ void NEVPT2::compute() {
   cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
 }
+
+#define NEVPT2_IMPL
+#include <src/pt2/nevpt2/nevpt2_rdm.cpp>
+#include <src/pt2/nevpt2/nevpt2_mat.cpp>
+#undef NEVPT2_IMPL
+
+template class NEVPT2_<double>;
+template class NEVPT2_<complex<double>>;

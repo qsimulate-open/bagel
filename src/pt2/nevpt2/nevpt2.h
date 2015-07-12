@@ -32,9 +32,9 @@
 
 namespace bagel {
 
-class NEVPT2 : public Method {
+template<typename DataType>
+class NEVPT2_ : public Method {
   protected:
-    std::shared_ptr<CASSCF> casscf_;
     int ncore_;
     int nclosed_;
     int nact_;
@@ -45,11 +45,6 @@ class NEVPT2 : public Method {
     std::string abasis_;
 
     double energy_;
-
-    // coefficient blocks
-    std::shared_ptr<const Matrix> ccoeff_;
-    std::shared_ptr<const Matrix> acoeff_;
-    std::shared_ptr<const Matrix> vcoeff_;
 
     // density matrices to be used
     // particle RDMs
@@ -78,6 +73,7 @@ class NEVPT2 : public Method {
     std::shared_ptr<      Matrix> fockact_p_;
 
     // K and K'mat
+    std::shared_ptr<const Matrix> qvec_;
     std::shared_ptr<const Matrix> kmat_;
     std::shared_ptr<const Matrix> kmatp_;
     std::shared_ptr<const Matrix> kmat2_;
@@ -106,7 +102,7 @@ class NEVPT2 : public Method {
     void compute_abcd();
 
   public:
-    NEVPT2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>, const std::shared_ptr<const Reference> = nullptr);
+    NEVPT2_(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference> = nullptr);
 
     virtual void compute() override;
     virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
@@ -115,6 +111,12 @@ class NEVPT2 : public Method {
     int ncore() const { return ncore_; }
     std::string abasis() const { return abasis_; }
 };
+
+extern template class NEVPT2_<double>;
+extern template class NEVPT2_<std::complex<double>>;
+
+using NEVPT2 = NEVPT2_<double>;
+using ZNEVPT2 = NEVPT2_<std::complex<double>>;
 
 }
 

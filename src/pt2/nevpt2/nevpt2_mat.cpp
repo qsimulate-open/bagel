@@ -23,29 +23,17 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/pt2/nevpt2/nevpt2.h>
-#include <src/util/prim_op.h>
-#include <src/multi/casscf/qvec.h>
+#ifdef NEVPT2_IMPL
 
-using namespace std;
-using namespace bagel;
-
-void NEVPT2::compute_ints() {
-  shared_ptr<const DFFullDist> full = casscf_->fci()->jop()->mo2e_1ext()->compute_second_transform(acoeff_)->apply_J();
-  // integrals (ij|kl) and <ik|jl>
-  shared_ptr<const Matrix> ints = full->form_4index(full, 1.0);
-  auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
-  sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact_, nact_, nact_, nact_);
-  ints2_ = tmp;
-}
-
-
-void NEVPT2::compute_kmat() {
+template<typename DataType>
+void NEVPT2_<DataType>::compute_kmat() {
   {
+    // Eq. (27)
     auto kmat = make_shared<Matrix>(*fockact_c_ * *rdm1_);
-    *kmat += Qvec(nact_, nact_, acoeff_, /*nclosed_*/0, casscf_->fci(), casscf_->fci()->rdm2(istate_));
+    *kmat += *qvec_;
     kmat->localize();
 
+    // Eq. (A3)
     auto kmatp = make_shared<Matrix>(*kmat * (-1.0));
     *kmatp += *fockact_ * 2.0;
     kmatp->localize();
@@ -83,7 +71,8 @@ void NEVPT2::compute_kmat() {
 }
 
 
-void NEVPT2::compute_abcd() {
+template<typename DataType>
+void NEVPT2_<DataType>::compute_abcd() {
   auto id2 = [this](                          const int k, const int l) { return         (        (k+nact_*l)); };
   auto id3 = [this](             const int j, const int k, const int l) { return         (j+nact_*(k+nact_*l)); };
   auto id4 = [this](const int i, const int j, const int k, const int l) { return i+nact_*(j+nact_*(k+nact_*l)); };
@@ -265,3 +254,5 @@ void NEVPT2::compute_abcd() {
     dmat1t_ = dmat1t;
   }
 }
+
+#endif

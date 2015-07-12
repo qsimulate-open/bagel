@@ -23,16 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/pt2/nevpt2/nevpt2.h>
-#include <src/util/prim_op.h>
+#ifdef NEVPT2_IMPL
 
-using namespace std;
-using namespace bagel;
-
-void NEVPT2::compute_rdm() {
+template<typename DataType>
+void NEVPT2_<DataType>::compute_rdm() {
   // rdm 1
   {
-    auto tmp = casscf_->fci()->rdm1(istate_)->rdm1_mat(/*nclosed_*/0);
+    auto tmp = ref_->rdm1(istate_)->rdm1_mat(/*nclosed_*/0);
     tmp->localize();
     rdm1_ = tmp;
   }
@@ -49,7 +46,7 @@ void NEVPT2::compute_rdm() {
     shared_ptr<Matrix> tmp4 = make_shared<Matrix>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
     shared_ptr<const RDM<3>> r3;
     shared_ptr<const RDM<4>> r4;
-    tie(r3, r4) = casscf_->fci()->rdm34(istate_, istate_);
+    tie(r3, r4) = ref_->rdm34(istate_, istate_);
     sort_indices<0,2,4,  1,3,5,  0,1,1,1>(r3->data(), tmp3->data(), nact_, nact_, nact_, nact_, nact_, nact_);
     sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), tmp4->data(), nact_, nact_, nact_, nact_, nact_, nact_, nact_, nact_);
     rdm3_ = tmp3;
@@ -58,7 +55,8 @@ void NEVPT2::compute_rdm() {
 }
 
 
-void NEVPT2::compute_asrdm() {
+template<typename DataType>
+void NEVPT2_<DataType>::compute_asrdm() {
   assert(rdm1_ && rdm2_ && rdm3_ && rdm4_);
   auto id2 = [this](                          const int k, const int l) { return         (        (k+nact_*l)); };
   auto id3 = [this](             const int j, const int k, const int l) { return         (j+nact_*(k+nact_*l)); };
@@ -122,7 +120,8 @@ void NEVPT2::compute_asrdm() {
 }
 
 
-void NEVPT2::compute_hrdm() {
+template<typename DataType>
+void NEVPT2_<DataType>::compute_hrdm() {
   assert(rdm1_ && rdm2_ && rdm3_ && srdm2_);
 
   auto id3 = [this](const int j, const int k, const int l) { return j+nact_*(k+nact_*l); };
@@ -160,3 +159,5 @@ void NEVPT2::compute_hrdm() {
   hrdm2_ = hrdm2;
   hrdm3_ = hrdm3;
 }
+
+#endif
