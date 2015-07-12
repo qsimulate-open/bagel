@@ -498,18 +498,15 @@ void Dimer::reduce_active(shared_ptr<const PTree> idata) {
   const int nactA = active_refs_.first->nact();
   const int nactB = active_refs_.second->nact();
   const int nact = nactA + nactB;
-  const int nactcloA = isolated_refs_.first->nclosed()  - active_refs_.first->nclosed();
-  const int nactcloB = isolated_refs_.second->nclosed() - active_refs_.second->nclosed();
   const int nactvirtA = isolated_refs_.first->nvirt() - active_refs_.first->nvirt();
   const int nactvirtB = isolated_refs_.second->nvirt() - active_refs_.second->nvirt(); // Number of active orbitals in virtual HF subspace
-  assert(nactA == nactcloA + nactvirtA);
-  assert(nactB == nactcloB + nactvirtB);
+  assert(nactA == isolated_refs_.first->nclosed() - active_refs_.first->nclosed() + nactvirtA);
+  assert(nactB == isolated_refs_.second->nclosed() - active_refs_.second->nclosed() + nactvirtB);
   const int dimerbasis = sgeom_->nbasis();
   //sref has been activated; nclosed, nact, nvirt are defined
   const int nclosed = sref_->nclosed();
-  const int nclosed_HF = nclosed + nactcloA + nactcloB;
   const int nvirt_HF = sref_->nvirt() + nactvirtA + nactvirtB;
-  assert(dimerbasis == nclosed_HF + nvirt_HF);
+  assert(dimerbasis == nclosed + isolated_refs_.first->nclosed()-active_refs_.first->nclosed() + isolated_refs_.second->nclosed()-active_refs_.second->nclosed() + nvirt_HF);
 
   auto deact = idata->get_array<int,4>("reduction", {0,0,0,0});
   const int cA = deact[0];
