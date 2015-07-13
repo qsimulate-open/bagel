@@ -83,8 +83,8 @@ void Lattice::init() {
   primitive_kvectors_.resize(ndim_);
 
   /* TODO: temp parameters */
-  ncell_ = 30;
-  k_parameter_ = 61;
+  ncell_ = 4;
+  k_parameter_ = 3;
   assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
 
   num_lattice_vectors_ = pow(2*ncell_+1, ndim_);
@@ -166,6 +166,7 @@ void Lattice::init() {
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
   generate_kpoints();
+  compute_extent();
 }
 
 int Lattice::find_lattice_vector(const int i, const int j) const {
@@ -364,6 +365,22 @@ array<double, 3> Lattice::cell_centre(const int icell) const {
   return out;
 }
 
+double Lattice::get_radius() {
+
+  double out = 0.0;
+  for (auto& atom : primitive_cell_->atoms()) {
+    array<double, 3> r;
+    r[0] = atom->position(0) - centre(0);
+    r[1] = atom->position(1) - centre(1);
+    r[2] = atom->position(2) - centre(2);
+    const double rsq = r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
+    if (rsq > out)
+      out = rsq;
+  }
+
+  return sqrt(out);
+}
+
 
 void Lattice::form_df(const double thresh) { /*form df object for all blocks in direct space*/
 
@@ -373,4 +390,50 @@ void Lattice::form_df(const double thresh) { /*form df object for all blocks in 
   vector<shared_ptr<const Atom>> aux_atoms = primitive_cell_->aux_atoms();
 
   df_ = make_shared<PDFDist>(lattice_vectors_, nbasis, naux, atoms0, aux_atoms, primitive_cell_, thresh);
+}
+
+
+void Lattice::compute_extent(const double thresh) { // extent at charge centre
+
+  vector<shared_ptr<const Shell>> shells;
+  for (auto& atom : primitive_cell_->atoms())
+    shells.insert(shells.end(), atom->shells().begin(), atom->shells().end());
+
+  extent_ = 0.0;
+  for (auto& ish : shells)
+    for (auto& jsh : shells) {
+      const vector<double> exp0 = ish->exponents();
+      const vector<double> exp1 = jsh->exponents();
+      array<double, 3> AB;
+      AB[0] = ish->position(0) - jsh->position(0);
+      AB[1] = ish->position(1) - jsh->position(1);
+      AB[2] = ish->position(2) - jsh->position(2);
+      const double rsq = AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2];
+      const double lnthresh = log(thresh);
+
+      for (auto& expi0 : exp0) {
+        for (auto& expi1 : exp1) {
+          const double cxp_inv = 1.0 / (expi0 + expi1);
+          const double expi01 = expi0 * expi1;
+          const double lda_kl = sqrt((- lnthresh - expi01 * rsq * cxp_inv + 0.75 * log(4.0 * expi01 / (pi__ * pi__))) * cxp_inv);
+
+          array<double, 3> tmp;
+          tmp[0] = (ish->position(0) * expi0 + jsh->position(0) * expi1) * cxp_inv - centre(0);
+          tmp[1] = (ish->position(1) * expi0 + jsh->position(1) * expi1) * cxp_inv - centre(1);
+          tmp[2] = (ish->position(2) * expi0 + jsh->position(2) * expi1) * cxp_inv - centre(2);
+
+          const double extent0 = sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + lda_kl;
+          if (extent0 > extent_) extent_ = extent0;
+        }
+      }
+    }
+}
+
+
+bool Lattice::is_in_cff(array<double, 3> L) {
+
+  const double rsq = L[0]*L[0] + L[1]*L[1] + L[2]*L[2];
+  const bool out = (rsq > 2.0 * (1 + ws_) *  extent_) ? true : false;
+
+  return out;
 }

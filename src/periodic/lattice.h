@@ -65,6 +65,14 @@ class Lattice {
     //  for density fitting calculations
     std::shared_ptr<PDFDist> df_;
 
+    // lattice sum
+    int ws_;
+    double extent_;
+    std::shared_ptr<PDFDist> S_;
+
+    void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
+    double get_radius();
+
   private:
     // serialization
     friend class boost::serialization::access;
@@ -112,6 +120,11 @@ class Lattice {
     // density fitting
     void form_df(const double thresh);
     std::shared_ptr<PDFDist> df() const { return df_; }
+
+    // lattice sum - crystal far field (cff)
+    bool is_in_cff(std::array<double, 3> lvector);
+    void form_S(const double thresh);
+    std::shared_ptr<PDFDist> S() const { return S_; }
 
     std::array<double, 3> centre() const { return primitive_cell_->charge_center(); }
     double centre(const int i) const { return primitive_cell_->charge_center()[i]; }
