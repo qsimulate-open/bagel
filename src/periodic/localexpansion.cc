@@ -71,7 +71,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_local_moments() {
           const double imag = prefactor * sin(abs(b) * phi);
           const complex<double> coeff(real, imag);
 
-          if (abs(coeff) > numerical_zero__)
+          if (abs(coeff) > numerical_zero__ && moments_[i2]->rms() > 1e-10)
             zaxpy_(nbasis0_ * nbasis1_, coeff, moments_[i2]->data(), 1, local.data(), 1);
         }
       }
