@@ -352,17 +352,12 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
 }
 
 
-shared_ptr<RelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<RelDFHalf>> half, const bool appj, const bool appjj) {
-  assert(!appj || !appjj);
-
+shared_ptr<RelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<RelDFHalf>> half, const bool appj) {
   // TODO remove once DFDistT class is fixed
   const bool transform_with_full = !(half.front()->nocc()*coeff->mdim() <= mpi__->size());
-  if (!transform_with_full) {
+  if (!transform_with_full && appj) {
     for (auto& i : half)
-      if (appj)
-        i = i->apply_J();
-      else if (appjj)
-        i = i->apply_JJ();
+      i = i->apply_J();
   }
 
   list<shared_ptr<RelDFFull>> dffull;
@@ -373,12 +368,8 @@ shared_ptr<RelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, l
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   shared_ptr<RelDFFull> out = dffull.front();
 
-  if (transform_with_full) {
-    if (appj)
-      out = out->apply_J();
-    else if (appjj)
-      out = out->apply_JJ();
-  }
+  if (transform_with_full && appj)
+    out = out->apply_J();
   return out;
 }
 
