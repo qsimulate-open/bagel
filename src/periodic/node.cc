@@ -209,6 +209,28 @@ void Node::make_interaction_list(const int ws) {
 }
 
 
+array<double, 3> Node::compute_centre(array<shared_ptr<const Shell>, 2> shells) {
+
+  const vector<double> exp0 = shells[0]->exponents();
+  const vector<double> exp1 = shells[1]->exponents();
+  array<double, 3> out = {{0.0, 0.0, 0.0}};
+  for (auto& expi0 : exp0) {
+    for (auto& expi1 : exp1) {
+      const double cxp_inv = 1.0 / (expi0 + expi1);
+      out[0] += (shells[0]->position(0) * expi0 + shells[1]->position(0) * expi1) * cxp_inv;
+      out[1] += (shells[0]->position(1) * expi0 + shells[1]->position(1) * expi1) * cxp_inv;
+      out[2] += (shells[0]->position(2) * expi0 + shells[1]->position(2) * expi1) * cxp_inv;
+    }
+  }
+  const int denom = shells[0]->exponents().size() * shells[1]->exponents().size();
+  out[0] /= denom;
+  out[1] /= denom;
+  out[2] /= denom;
+
+  return out;
+}
+
+
 void Node::compute_multipoles(const int lmax) {
 
   const int nmultipole = (lmax + 1) * (lmax + 1);
@@ -227,10 +249,13 @@ void Node::compute_multipoles(const int lmax) {
           for (auto& a1 : bodies_) {
             for (auto& atom1 : a1->atoms()) {
               for (auto& b1 : atom1->shells()) {
+                //array<double, 3> centre = compute_centre({{b1, b0}});
+                //MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, centre, lmax);
                 MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
                 mpole.compute();
                 for (int i = 0; i != nmultipole; ++i)
                   multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+
                 ob1 += b1->nbasis();
               }
             }
@@ -254,7 +279,7 @@ void Node::compute_multipoles(const int lmax) {
         r12[2] = position_[2] - child->position(2);
         assert(nmultipole == child->multipoles().size());
         LocalExpansion shift(r12, child->multipoles(), lmax);
-        vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_moments();
+        vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
 
         for (int i = 0; i != nmultipole; ++i)
           multipoles[i]->copy_block(offset, offset, child->nbasis(), child->nbasis(), moment[i]->data());
@@ -384,6 +409,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   vector<shared_ptr<const Shell>> basis;
   vector<int> new_offset;
   ////DEBUG
+#if 1
   if (ninter_ != 0) {
     for (auto& body : bodies_) {
       size_t iat = 0;
@@ -402,6 +428,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
       }
     }
   }
+#endif
   ////END OF DEBUG
 #if 0
   for (auto& close_node : neighbour_) {

@@ -93,7 +93,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_local_moments() {
 
 
 /* given O(a) and centre (b-a) compute O(b) */
-vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_moments() {
+vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_multipoles() {
 
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
   const double ctheta = (r > numerical_zero__) ? centre_[2]/r : 0.0;
@@ -138,7 +138,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_moments() {
 
 
 /* given L(a) and centre (a-b) compute L(b) */
-vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_local_expansions() {
+vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_local_moments() {
 
   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
   const double ctheta = (r > numerical_zero__) ? centre_[2]/r : 0.0;

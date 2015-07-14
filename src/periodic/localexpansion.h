@@ -57,8 +57,9 @@ class LocalExpansion {
     std::shared_ptr<const ZMatrix> moment(const int l, const int m) const { return moments_[l * l + l + m]; }
 
     std::vector<std::shared_ptr<const ZMatrix>> compute_local_moments();
-    std::vector<std::shared_ptr<const ZMatrix>> compute_shifted_moments();
-    std::vector<std::shared_ptr<const ZMatrix>> compute_shifted_local_expansions();
+    std::vector<std::shared_ptr<const ZMatrix>> compute_shifted_local_moments();
+
+    std::vector<std::shared_ptr<const ZMatrix>> compute_shifted_multipoles();
 };
 
 }
