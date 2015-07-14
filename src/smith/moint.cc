@@ -60,7 +60,6 @@ void K2ext<complex<double>>::init() {
     vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,1,1,1}} :
     vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,1,1}, {1,0,1,0}, {1,1,1,1}};
 
-  // TODO I am not happy with this code - too much repetition with RelMOFile. Should be cleaned up later
   auto compute = [this, &cblocks](const bool gaunt, const bool breit) {
 
     map<size_t, shared_ptr<RelDFFull>> dflist, dflist2;
