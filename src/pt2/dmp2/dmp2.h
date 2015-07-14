@@ -36,6 +36,8 @@ class DMP2 : public Method {
     int ncore_;
 
     std::string abasis_;
+    bool gaunt_;
+    bool breit_;
 
     double energy_;
 

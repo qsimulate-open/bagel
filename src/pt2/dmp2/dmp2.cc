@@ -34,6 +34,7 @@
 #include <src/scf/dhf/dirac.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/wfn/relreference.h>
+#include <src/ci/zfci/relmofile.h>
 #include <src/util/prim_op.h>
 #include <src/util/f77.h>
 #include <src/util/parallel/resources.h>
@@ -51,7 +52,12 @@ DMP2::DMP2(shared_ptr<const PTree> input, shared_ptr<const Geometry> g, shared_p
     ref_ = scf->conv_to_ref();
     geom_ = ref_->geom();
   }
-  geom_ = geom_->relativistic(/*gaunt*/false);
+
+  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
+  gaunt_ = relref->gaunt();
+  breit_ = relref->breit();
+
+  geom_ = geom_->relativistic(gaunt_);
   assert(geom_->dfs());
 
   cout << endl << "  === Four-Component DF-MP2 calculation ===" << endl << endl;
@@ -82,43 +88,26 @@ void DMP2::compute() {
   assert(nbasis*4 == coeff->ndim());
   assert(nbasis*2 == coeff->mdim());
 
-  // (1) make DFDists
-  shared_ptr<Geometry> cgeom;
-  vector<shared_ptr<const DFDist>> dfs;
-  if (abasis_.empty()) {
-    dfs = geom_->dfs()->split_blocks();
-    dfs.push_back(geom_->df());
-  } else {
+  shared_ptr<const Geometry> cgeom = geom_;
+  if (!abasis_.empty()) {
     auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
-    cgeom = make_shared<Geometry>(*geom_, info, false);
-    cgeom->relativistic(false /* do_gaunt */);
-    dfs = cgeom->dfs()->split_blocks();
-    dfs.push_back(cgeom->df());
+    auto tmp = make_shared<Geometry>(*geom_, info, false);
+    tmp->relativistic(gaunt_);
+    cgeom = tmp;
   }
-  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
 
-  // (2) first-transform
-  list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff->slice_copy(ncore_, ncore_+nocc));
-  for (auto& i : half_complex)
-    i = i->apply_J();
-
-  // (3) split and factorize
-  list<shared_ptr<RelDFHalf>> half_complex_exch;
-  for (auto& i : half_complex) {
-    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
-    half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+  shared_ptr<const RelDFFull> fullc, fullg, fullg2;
+  {
+    list<shared_ptr<RelDFHalf>> half_coulomb;
+    tie(half_coulomb, ignore) = RelMOFile::compute_half(cgeom, coeff->slice_copy(ncore_, ncore_+nocc), false, false);
+    fullc = RelMOFile::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_coulomb, true);
   }
-  half_complex.clear();
-  DFock::factorize(half_complex_exch);
-
-  // (4) compute (gamma|ia)
-  list<shared_ptr<RelDFFull>> dffull;
-  for (auto& i : half_complex_exch)
-    dffull.push_back(make_shared<RelDFFull>(i, coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt)));
-  DFock::factorize(dffull);
-  dffull.front()->scale(dffull.front()->fac()); // take care of the factor
-  assert(dffull.size() == 1);
-  shared_ptr<const RelDFFull> full = dffull.front();
+  if (gaunt_) {
+    list<shared_ptr<RelDFHalf>> half_gaunt, half_gaunt2;
+    tie(half_gaunt, half_gaunt2) = RelMOFile::compute_half(cgeom, coeff->slice_copy(ncore_, ncore_+nocc), gaunt_, breit_);
+    fullg = RelMOFile::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_gaunt, true);
+    fullg2 = !breit_ ? fullg : RelMOFile::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_gaunt2, false);
+  }
 
   cout << "    * 3-index integral transformation done" << endl;
 
@@ -128,7 +117,12 @@ void DMP2::compute() {
 
   energy_ = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
-    shared_ptr<ZMatrix> data = full->form_4index_1fixed(full, 1.0, i);
+    shared_ptr<ZMatrix> data = fullc->form_4index_1fixed(fullc, 1.0, i);
+    if (gaunt_) {
+      *data += *fullg->form_4index_1fixed(fullg2, (breit_ ? 0.5 : 1.0), i);
+      if (breit_)
+        *data += *fullg2->form_4index_1fixed(fullg, (breit_ ? 0.5 : 1.0), i);
+    }
     *buf = *data;
     // using a symmetrizer (src/util/prim_op.h)
     sort_indices<2,1,0,1,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);

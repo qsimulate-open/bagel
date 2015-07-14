@@ -211,68 +211,81 @@ shared_ptr<Kramers<2,ZMatrix>> RelJop::compute_mo1e(shared_ptr<const Kramers<1,Z
 }
 
 
+tuple<list<shared_ptr<RelDFHalf>>,list<shared_ptr<RelDFHalf>>>
+  RelMOFile::compute_half(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit) {
+
+  assert(!breit || gaunt);
+  // (1) make DFDists
+  vector<shared_ptr<const DFDist>> dfs;
+  if (!gaunt) {
+    dfs = geom->dfs()->split_blocks();
+    dfs.push_back(geom->df());
+  } else {
+    dfs = geom->dfsl()->split_blocks();
+  }
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, gaunt);
+
+  // (2) first-transform
+  list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff);
+
+  // (3) split and factorize
+  list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
+  for (auto& i : half_complex) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
+    half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+  }
+  half_complex.clear();
+  DFock::factorize(half_complex_exch);
+
+  if (breit) {
+    // TODO Not the best implementation -- one could avoid apply_J to half-transformed objects
+    auto breitint = make_shared<BreitInt>(geom);
+    list<shared_ptr<Breit2Index>> breit_2index;
+    for (int i = 0; i != breitint->Nblocks(); ++i) {
+      breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), geom->df()->data2()));
+      if (breitint->not_diagonal(i))
+        breit_2index.push_back(breit_2index.back()->cross());
+    }
+    for (auto& i : half_complex_exch)
+      half_complex_exch2.push_back(i->apply_J());
+
+    for (auto& i : half_complex_exch)
+      for (auto& j : breit_2index)
+        if (i->alpha_matches(j)) {
+          half_complex_exch2.push_back(i->apply_J()->multiply_breit2index(j));
+          DFock::factorize(half_complex_exch2);
+        }
+  }
+  return make_tuple(half_complex_exch, half_complex_exch2);
+}
+
+
 shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,ZMatrix>> coeff) {
 
   auto compute = [&coeff, this](shared_ptr<Kramers<4,ZMatrix>> out, const bool gaunt, const bool breit) {
-    assert(!breit || gaunt);
-    // (1) make DFDists
-    vector<shared_ptr<const DFDist>> dfs;
-    if (!gaunt) {
-      dfs = geom_->dfs()->split_blocks();
-      dfs.push_back(geom_->df());
-    } else {
-      dfs = geom_->dfsl()->split_blocks();
-    }
-    list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, gaunt);
-
-    // (2) first-transform
-    array<list<shared_ptr<RelDFHalf>>,2> half_complex;
-    for (int k = 0; k != 2; ++k)
-      half_complex[k] = DFock::make_half_complex(dfdists, coeff->at(k));
-
-    // (3) split and factorize
     array<list<shared_ptr<RelDFHalf>>,2> half_complex_exch, half_complex_exch2;
-    for (size_t k = 0; k != 2; ++k) {
-      for (auto& i : half_complex[k]) {
-        list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
-        half_complex_exch[k].insert(half_complex_exch[k].end(), tmp.begin(), tmp.end());
-      }
-      half_complex[k].clear();
-      DFock::factorize(half_complex_exch[k]);
-    }
+    for (int k = 0; k != 2; ++k)
+      tie(half_complex_exch[k], half_complex_exch2[k]) = compute_half(geom_, coeff->at(k), gaunt, breit);
 
-    // ** save 1 external integrals (to be used in CASSCF) *** //
-    if (!gaunt) {
+    if (!gaunt)
       half_complex_coulomb_ = half_complex_exch;
-    } else {
+    else
       half_complex_gaunt_ = half_complex_exch;
-    }
-
-    if (breit) {
-      // TODO Not the best implementation -- one could avoid apply_J to half-transformed objects
-      auto breitint = make_shared<BreitInt>(geom_);
-      list<shared_ptr<Breit2Index>> breit_2index;
-      for (int i = 0; i != breitint->Nblocks(); ++i) {
-        breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), geom_->df()->data2()));
-        if (breitint->not_diagonal(i))
-          breit_2index.push_back(breit_2index.back()->cross());
-      }
-      for (size_t k = 0; k != 2; ++k) {
-        for (auto& i : half_complex_exch[k])
-          half_complex_exch2[k].push_back(i->apply_J());
-
-        for (auto& i : half_complex_exch[k])
-          for (auto& j : breit_2index)
-            if (i->alpha_matches(j)) {
-              half_complex_exch2[k].push_back(i->apply_J()->multiply_breit2index(j));
-              DFock::factorize(half_complex_exch2[k]);
-            }
-      }
-    }
 
     // (4) compute (gamma|ii)
-    shared_ptr<const Kramers<2,RelDFFull>> full = compute_full(coeff, half_complex_exch, true);
-    shared_ptr<const Kramers<2,RelDFFull>> full2 = !breit ? full : compute_full(coeff, half_complex_exch2, false);
+    auto full = make_shared<Kramers<2,RelDFFull>>();
+    full->emplace({0,0}, compute_full(coeff->at(0), half_complex_exch[0], true));
+    full->emplace({1,0}, compute_full(coeff->at(0), half_complex_exch[1], true));
+    full->emplace({0,1}, compute_full(coeff->at(1), half_complex_exch[0], true));
+    full->emplace({1,1}, compute_full(coeff->at(1), half_complex_exch[1], true));
+
+    auto full2 = !breit ? full : make_shared<Kramers<2,RelDFFull>>();
+    if (breit) {
+      full2->emplace({0,0}, compute_full(coeff->at(0), half_complex_exch2[0], false));
+      full2->emplace({1,0}, compute_full(coeff->at(0), half_complex_exch2[1], false));
+      full2->emplace({0,1}, compute_full(coeff->at(1), half_complex_exch2[0], false));
+      full2->emplace({1,1}, compute_full(coeff->at(1), half_complex_exch2[1], false));
+    }
 
     // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
     const double gscale = gaunt ? (breit ? -0.25 : -1.0) : 1.0;
@@ -339,37 +352,32 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
 }
 
 
-shared_ptr<const Kramers<2,RelDFFull>> RelMOFile::compute_full(shared_ptr<const Kramers<1,ZMatrix>> coeff, array<list<shared_ptr<RelDFHalf>>,2> half,
-                                                               const bool appj, const bool appjj) {
+shared_ptr<RelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<RelDFHalf>> half, const bool appj, const bool appjj) {
   assert(!appj || !appjj);
-  auto out = make_shared<Kramers<2,RelDFFull>>();
 
   // TODO remove once DFDistT class is fixed
-  const bool transform_with_full = !(half[0].front()->nocc()*coeff->at(0)->mdim() <= mpi__->size());
+  const bool transform_with_full = !(half.front()->nocc()*coeff->mdim() <= mpi__->size());
   if (!transform_with_full) {
-    for (int t = 0; t != 2; ++t)
-      for (auto& i : half[t])
-        if (appj)
-          i = i->apply_J();
-        else if (appjj)
-          i = i->apply_JJ();
+    for (auto& i : half)
+      if (appj)
+        i = i->apply_J();
+      else if (appjj)
+        i = i->apply_JJ();
   }
 
-  for (size_t t = 0; t != 4; ++t) {
-    list<shared_ptr<RelDFFull>> dffull;
-    for (auto& i : half[t/2])
-      dffull.push_back(make_shared<RelDFFull>(i, coeff->at(t%2)));
-    DFock::factorize(dffull);
-    assert(dffull.size() == 1);
-    dffull.front()->scale(dffull.front()->fac()); // take care of the factor
-    (*out)[t] = dffull.front();
+  list<shared_ptr<RelDFFull>> dffull;
+  for (auto& i : half)
+    dffull.push_back(make_shared<RelDFFull>(i, coeff));
+  DFock::factorize(dffull);
+  assert(dffull.size() == 1);
+  dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+  shared_ptr<RelDFFull> out = dffull.front();
 
-    if (transform_with_full) {
-      if (appj)
-        out->at(t) = out->at(t)->apply_J();
-      else if (appjj)
-        out->at(t) = out->at(t)->apply_JJ();
-    }
+  if (transform_with_full) {
+    if (appj)
+      out = out->apply_J();
+    else if (appjj)
+      out = out->apply_JJ();
   }
   return out;
 }
