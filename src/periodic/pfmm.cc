@@ -29,33 +29,20 @@
 using namespace std;
 using namespace bagel;
 
-PFMM::PFMM(shared_ptr<const Lattice> lattice, const int lmax) : lattice_(lattice), lmax_(lmax) {
+PFMM::PFMM(shared_ptr<const SimulationCell> scell, const int lmax, const int ws)
+  : scell_(scell), lmax_(lmax), ws_(ws) {
 
   assert(lmax_ <= ANG_HRR_END);
   num_multipoles_ = (lmax_ + 1) * (lmax_ + 1);
 }
 
 
-vector<vector<complex<double>>> PFMM::multipoles(const shared_ptr<const PData> density) {
+bool PFMM::is_in_cff(array<double, 3> L) {
 
-  const int ncell = density->nblock();
-  const int nbasis = density->blocksize();
+  const double extent = scell_->extent();
 
-  vector<vector<complex<double>>> out(ncell);
-
-  for (int i = 0; i != ncell; ++i) {
-    auto pm = make_shared<const PMultipole>(lattice_, i, lmax_);
-
-    vector<complex<double>> olm_n(num_multipoles_);
-    for (int n = 0; n != num_multipoles_; ++n) {
-      PData olm = (*pm)[n];
-      for (int j = 0; j != nbasis; ++j) {
-        for (int k = 0; k != nbasis; ++k)
-          olm_n[n] += *(olm(i)->data()+k+j*nbasis) * *((*density)(i)->data()+j+k*nbasis);
-      }
-    }
-    out[i] = olm_n;
-  }
+  const double rsq = L[0]*L[0] + L[1]*L[1] + L[2]*L[2];
+  const bool out = (rsq > 2.0 * (1 + ws_) *  extent) ? true : false;
 
   return out;
 }

@@ -27,7 +27,7 @@
 #ifndef __BAGEL_SRC_PERIODIC_LATTICE_H
 #define __BAGEL_SRC_PERIODIC_LATTICE_H
 
-#include <src/wfn/geometry.h>
+#include <src/periodic/pfmm.h>
 #include <src/periodic/pdfdist.h>
 
 namespace bagel {
@@ -64,15 +64,8 @@ class Lattice {
 
     //  for density fitting calculations
     std::shared_ptr<PDFDist> df_;
-
-    // lattice sum
-    int ws_;
-    double extent_;
-    std::shared_ptr<PDFDist> Sn_;
-    std::vector<std::shared_ptr<const ZMatrix>> multipoles_;
-    void compute_multipoles(const int lmax);
-    void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
-    double get_radius();
+    // lattice sum - FMM
+    std::shared_ptr<const PFMM> pfmm_;
 
   private:
     // serialization
@@ -99,7 +92,8 @@ class Lattice {
     std::array<double, 3> lattice_vectors(const int i) const { return lattice_vectors_[i]; }
 
     void init();
-    void init_df(const double thresh);
+    void init_df(const double thresh = PRIM_SCREEN_THRESH);
+    void init_pfmm(const int lmax = ANG_HRR_END, const double thresh = PRIM_SCREEN_THRESH);
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     double volume() const { return volume_; }
     int nele() const { return nele_; }
@@ -117,19 +111,16 @@ class Lattice {
     void print_lattice_vectors() const;
     void print_lattice_kvectors() const;
     void print_lattice_coordinates() const; // write .XYZ file
+    std::array<double, 3> centre() const { return primitive_cell_->charge_center(); }
+    double centre(const int i) const { return primitive_cell_->charge_center()[i]; }
+    std::array<double, 3> cell_centre(const int icell) const;
 
     // density fitting
     void form_df(const double thresh);
     std::shared_ptr<PDFDist> df() const { return df_; }
-
-    // lattice sum - crystal far field (cff)
-    bool is_in_cff(std::array<double, 3> lvector);
-    void compute_Sn(const double thresh = PRIM_SCREEN_THRESH, const int max_iter = 20);
-    std::shared_ptr<PDFDist> Sn() const { return Sn_; }
-
-    std::array<double, 3> centre() const { return primitive_cell_->charge_center(); }
-    double centre(const int i) const { return primitive_cell_->charge_center()[i]; }
-    std::array<double, 3> cell_centre(const int icell) const;
+    // PFMM
+    void form_pfmm(const int lmax, const double thresh);
+    std::shared_ptr<const PFMM> pfmm() const { return pfmm_; }
 };
 
 }

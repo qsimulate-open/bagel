@@ -27,22 +27,21 @@
 #ifndef __SRC_PERIODIC_PFMM_H
 #define __SRC_PERIODIC_PFMM_H
 
-#include <src/periodic/pmultipole.h>
-#include <src/periodic/localexpansion.h>
+#include <src/periodic/simulationcell.h>
 
 namespace bagel {
 
 class PFMM {
   protected:
-    std::shared_ptr<const Lattice> lattice_;
-    int lmax_;
+    std::shared_ptr<const SimulationCell> scell_;
+    int lmax_, ws_;
     int num_multipoles_;
 
   public:
-    PFMM(std::shared_ptr<const Lattice> lattice, const int lmax = ANG_HRR_END);
+    PFMM(std::shared_ptr<const SimulationCell>, const int lmax = ANG_HRR_END, const int ws = 2);
     ~PFMM() { }
 
-    std::vector<std::vector<std::complex<double>>> multipoles(const std::shared_ptr<const PData> density);
+    bool is_in_cff(std::array<double, 3> lvector);
     void print_multipoles(std::vector<std::complex<double>> multipoles) const;
 
 };
