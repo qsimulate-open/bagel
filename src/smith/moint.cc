@@ -66,14 +66,14 @@ void K2ext<complex<double>>::init() {
 
     for (auto& i0 : blocks_[0]) {
       shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
-      list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
-      tie(half_complex_exch, half_complex_exch2) = RelMOFile::compute_half(info_->geom(), i0coeff, gaunt, breit);
+      list<shared_ptr<RelDFHalf>> half, half2;
+      tie(half, half2) = RelMOFile::compute_half(info_->geom(), i0coeff, gaunt, breit);
 
       for (auto& i1 : blocks_[1]) {
         shared_ptr<const ZMatrix> i1coeff = coeff_->slice_copy(i1.offset(), i1.offset()+i1.size());
-        dflist.emplace(generate_hash_key(i0, i1), RelMOFile::compute_full(i1coeff, half_complex_exch, true));
+        dflist.emplace(generate_hash_key(i0, i1), RelMOFile::compute_full(i1coeff, half, true));
         if (breit)
-          dflist2.emplace(generate_hash_key(i0, i1), RelMOFile::compute_full(i1coeff, half_complex_exch2, false));
+          dflist2.emplace(generate_hash_key(i0, i1), RelMOFile::compute_full(i1coeff, half2, false));
       }
     }
     if (!breit)

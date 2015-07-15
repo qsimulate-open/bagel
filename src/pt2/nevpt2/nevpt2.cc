@@ -68,12 +68,6 @@ NEVPT2_<DataType>::NEVPT2_(shared_ptr<const PTree> input, shared_ptr<const Geome
     if (nvirt_ < 1)         throw runtime_error("no virtuals orbitals");
 
     auto acoeff = ref_->coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
-    shared_ptr<const DFFullDist> full = casscf->fci()->jop()->mo2e_1ext()->compute_second_transform(acoeff)->apply_J();
-    // integrals (ij|kl) and <ik|jl>
-    shared_ptr<const MatType> ints = full->form_4index(full, 1.0);
-    auto tmp = make_shared<MatType>(nact_*nact_, nact_*nact_, true);
-    sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact_, nact_, nact_, nact_);
-    ints2_ = tmp;
     qvec_ = make_shared<Qvec>(nact_, nact_, acoeff, /*nclosed_*/0, casscf->fci(), ref_->rdm2(istate_));
   }
 
@@ -101,6 +95,7 @@ void NEVPT2_<DataType>::compute() {
 
   timer.tick_print("RDMs, hole RDMs, others ");
 
+  /////////////////////////////////////////////////////////////////////////////////////
   // make canonical orbitals in closed and virtual subspaces
   VecType veig(nvirt_);
   VecType oeig(nclosed_);
@@ -160,18 +155,9 @@ void NEVPT2_<DataType>::compute() {
     fockact_h_->localize();
     fock_h = make_shared<MatType>(*coeffall % *fockao_h * *coeffall);
   }
-
   timer.tick_print("Fock computation");
 
-  // implemented in nevpt2_mat.cc
-  compute_kmat();
-
-  timer.tick_print("K matrices");
-
-  compute_abcd();
-
-  timer.tick_print("A, B, C, and D matrices");
-
+  /////////////////////////////////////////////////////////////////////////////////////
   // compute transformed integrals
   shared_ptr<DFDistT> fullvi;
   shared_ptr<const MatType> fullav;
@@ -220,11 +206,27 @@ void NEVPT2_<DataType>::compute() {
         fullai = fullax->slice_copy(0, nact_*nclosed_);
       fullaa = fullax->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_));
       fullav = fullax->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_));
+
+      // set 4-index integrals within the active space
+      auto ints = make_shared<MatType>(*fullaa % *fullaa);
+      auto tmp = ints->clone();
+      sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact_, nact_, nact_, nact_);
+      ints2_ = tmp;
+
+      // set qvec
     }
   }
-  const size_t naux = geom_->naux();
-
   cout << "    * 3-index integral transformation done" << endl;
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  // implemented in nevpt2_mat.cc
+  compute_kmat();
+
+  timer.tick_print("K matrices");
+
+  compute_abcd();
+
+  timer.tick_print("A, B, C, and D matrices");
 
   /////////////////////////////////////////////////////////////////////////////////////
   // make a list of static distribution
@@ -277,7 +279,7 @@ void NEVPT2_<DataType>::compute() {
     }
   }
 
-  MP2Cache cache(naux, nclosed_, nvirt_, fullvi, tasks);
+  MP2Cache cache(geom_->naux(), nclosed_, nvirt_, fullvi, tasks);
 
   const int nloop = cache.nloop();
   const int ncache = min(memory_size/(nvirt_*nvirt_), size_t(20));
