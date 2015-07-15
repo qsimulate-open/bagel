@@ -99,6 +99,7 @@ class NEVPT2_ : public Method {
     std::shared_ptr<const MatType> dmat1_;
     std::shared_ptr<const MatType> dmat1t_;
 
+    void init_reference();
     void compute_rdm();
     void compute_hrdm();
     void compute_asrdm();
@@ -116,6 +117,9 @@ class NEVPT2_ : public Method {
     int ncore() const { return ncore_; }
     std::string abasis() const { return abasis_; }
 };
+
+template<> void NEVPT2_<double>::init_reference();
+template<> void NEVPT2_<std::complex<double>>::init_reference();
 
 template<> void NEVPT2_<double>::compute_rdm();
 template<> void NEVPT2_<std::complex<double>>::compute_rdm();

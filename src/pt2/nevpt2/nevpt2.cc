@@ -27,10 +27,8 @@
 #include <src/pt2/mp2/mp2cache.h>
 #include <src/df/dfdistt.h>
 #include <src/scf/hf/fock.h>
-#include <src/multi/casscf/casscf.h>
 #include <src/multi/casscf/superci.h>
-#include <src/multi/casscf/qvec.h>
-#include <src/multi/zcasscf/zcasscf.h>
+#include <src/multi/zcasscf/zcasbfgs.h>
 #include <src/util/prim_op.h>
 #include <src/util/parallel/resources.h>
 
@@ -43,10 +41,12 @@ using namespace bagel;
 template<typename DataType>
 NEVPT2_<DataType>::NEVPT2_(shared_ptr<const PTree> input, shared_ptr<const Geometry> g, shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
+  const int z2 = is_same<DataType,double>::value ? 1 : 2;
+
   // checks for frozen core
   const bool frozen = idata_->get<bool>("frozen", true);
   istate_ = idata_->get<int>("istate", 0);
-  ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
+  ncore_  = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2*z2 : 0));
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
   // if three is a aux_basis keyword, we use that basis
@@ -55,23 +55,34 @@ NEVPT2_<DataType>::NEVPT2_(shared_ptr<const PTree> input, shared_ptr<const Geome
 
   // starting up
   {
-    auto casscf = make_shared<SuperCI>(input, g, ref);
-    casscf->compute();
-    ref_ = casscf->conv_to_ref();
+    init_reference();
 
-    nclosed_ = ref_->nclosed() - ncore_;
-    nact_ = ref_->nact();
-    nvirt_ = ref_->nvirt();
+    nclosed_ = ref_->nclosed()*z2 - ncore_;
+    nact_    = ref_->nact()*z2;
+    nvirt_   = ref_->nvirt()*z2;
 
     if (nclosed_+nact_ < 1) throw runtime_error("no correlated orbitals");
     if (nact_ < 1)          throw runtime_error("no active orbitals");
     if (nvirt_ < 1)         throw runtime_error("no virtuals orbitals");
-
-    auto acoeff = ref_->coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
-    qvec_ = make_shared<Qvec>(nact_, nact_, acoeff, /*nclosed_*/0, casscf->fci(), ref_->rdm2(istate_));
   }
 
   cout << endl << "  === DF-NEVPT2 calculation ===" << endl << endl;
+}
+
+
+template<>
+void NEVPT2_<double>::init_reference() {
+  auto casscf = make_shared<SuperCI>(idata_, geom_, ref_);
+  casscf->compute();
+  ref_ = casscf->conv_to_ref();
+}
+
+
+template<>
+void NEVPT2_<complex<double>>::init_reference() {
+  auto casscf = make_shared<ZCASBFGS>(idata_, geom_, ref_);
+  casscf->compute();
+  ref_ = casscf->conv_to_ref();
 }
 
 
@@ -214,6 +225,13 @@ void NEVPT2_<DataType>::compute() {
       ints2_ = tmp;
 
       // set qvec
+      auto rdm2c = rdm2_->copy();
+      const btas::CRange<2> range(nact_, nact_*nact_*nact_);
+      auto intsv = btas::make_cview(range, ints2_->storage());
+      auto rdm2v = btas::make_cview(range, rdm2_->storage());
+      auto qvec = make_shared<MatType>(nact_, nact_);
+      btas::contract(1.0, intsv, {0,1}, rdm2v, {2,1}, 0.0, *qvec, {0,2}, false, false);
+      qvec_ = qvec;
     }
   }
   cout << "    * 3-index integral transformation done" << endl;
