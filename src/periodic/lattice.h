@@ -68,8 +68,9 @@ class Lattice {
     // lattice sum
     int ws_;
     double extent_;
-    std::shared_ptr<PDFDist> S_;
-
+    std::shared_ptr<PDFDist> Sn_;
+    std::vector<std::shared_ptr<const ZMatrix>> multipoles_;
+    void compute_multipoles(const int lmax);
     void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
     double get_radius();
 
@@ -123,8 +124,8 @@ class Lattice {
 
     // lattice sum - crystal far field (cff)
     bool is_in_cff(std::array<double, 3> lvector);
-    void form_S(const double thresh);
-    std::shared_ptr<PDFDist> S() const { return S_; }
+    void compute_Sn(const double thresh = PRIM_SCREEN_THRESH, const int max_iter = 20);
+    std::shared_ptr<PDFDist> Sn() const { return Sn_; }
 
     std::array<double, 3> centre() const { return primitive_cell_->charge_center(); }
     double centre(const int i) const { return primitive_cell_->charge_center()[i]; }

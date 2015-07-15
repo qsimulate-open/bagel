@@ -430,6 +430,38 @@ void Lattice::compute_extent(const double thresh) { // extent at charge centre
 }
 
 
+void Lattice::compute_multipoles(const int lmax) {
+
+  const int nmultipole = (lmax + 1) * (lmax + 1);
+  multipoles_.resize(nmultipole);
+  vector<shared_ptr<ZMatrix>> multipoles(nmultipole);
+  for (int i = 0; i != nmultipole; ++i)
+    multipoles[i] = make_shared<ZMatrix>(nbasis_, nbasis_);
+
+  bool skip = false;
+  size_t ob0 = 0;
+  for (auto& atom0 : primitive_cell_->atoms()) {
+    for (auto& b0 : atom0->shells()) {
+      size_t ob1 = 0;
+      for (auto& atom1 : primitive_cell_->atoms()) {
+        for (auto& b1 : atom1->shells()) {
+          MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
+          mpole.compute();
+          for (int i = 0; i != nmultipole; ++i)
+            ltipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+
+          ob1 += b1->nbasis();
+        }
+      }
+    }
+    ob0 += b0->nbasis();
+  }
+
+  for (int i = 0; i != nmultipole; ++i)
+    multipoles_[i] = multipoles[i];
+}
+
+
 bool Lattice::is_in_cff(array<double, 3> L) {
 
   const double rsq = L[0]*L[0] + L[1]*L[1] + L[2]*L[2];
