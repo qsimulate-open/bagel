@@ -92,10 +92,10 @@ void NEVPT2_<DataType>::compute() {
   Timer timer;
 
   // coefficients -- will be updated later
-  shared_ptr<MatType> ccoeff = nclosed_ ? ref_->coeff()->slice_copy(ncore_, ncore_+nclosed_) : nullptr;
-  shared_ptr<MatType> vcoeff = nvirt_   ? ref_->coeff()->slice_copy(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_) : nullptr;
+  shared_ptr<MatType> ccoeff = nclosed_ ? coeff()->slice_copy(ncore_, ncore_+nclosed_) : nullptr;
+  shared_ptr<MatType> vcoeff = nvirt_   ? coeff()->slice_copy(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_) : nullptr;
 
-  shared_ptr<const MatType> acoeff = ref_->coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
+  shared_ptr<const MatType> acoeff = coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
 
   // obtain particle RDMs
   compute_rdm();
@@ -122,7 +122,7 @@ void NEVPT2_<DataType>::compute() {
   {
     // * core Fock operator
     shared_ptr<const MatType> hcore = make_shared<Hcore>(geom_);
-    shared_ptr<const MatType> ofockao = nclosed_+ncore_ ?  make_shared<Fock<1>>(geom_, hcore, nullptr, ref_->coeff()->slice(0, ncore_+nclosed_), /*store*/false, /*rhf*/true) : hcore;
+    shared_ptr<const MatType> ofockao = nclosed_+ncore_ ?  make_shared<Fock<1>>(geom_, hcore, nullptr, coeff()->slice(0, ncore_+nclosed_), /*store*/false, /*rhf*/true) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<MatType> rdm1_mat = rdm1_->copy();

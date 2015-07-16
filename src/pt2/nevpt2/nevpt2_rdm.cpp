@@ -100,12 +100,14 @@ void NEVPT2_<DataType>::compute_asrdm() {
   auto id3 = [this](             const int j, const int k, const int l) { return         (j+nact_*(k+nact_*l)); };
   auto id4 = [this](const int i, const int j, const int k, const int l) { return i+nact_*(j+nact_*(k+nact_*l)); };
 
+  const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
+
   shared_ptr<MatType> srdm2 = rdm2_->clone(); // S(a,b,c,d) = <0|a+p bp cq d+q|0>
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k)
         for (int l = 0; l != nact_; ++l)
-          srdm2->element(l+nact_*k,j+nact_*i) = -rdm2_->element(l+nact_*i,k+nact_*j) + (i == j ? 2.0*rdm1_->element(l,k) : 0.0) - (i == k ? rdm1_->element(l,j) : 0.0);
+          srdm2->element(l+nact_*k,j+nact_*i) = -rdm2_->element(l+nact_*i,k+nact_*j) + (i == j ? fac2*rdm1_->element(l,k) : 0.0) - (i == k ? rdm1_->element(l,j) : 0.0);
   // <a+ a b+ b> and <a+ a b+ b c+ c>
   shared_ptr<MatType> ardm2 = rdm2_->clone();
   for (int i = 0; i != nact_; ++i)
@@ -128,7 +130,7 @@ void NEVPT2_<DataType>::compute_asrdm() {
             ardm3->element(id3(m,l,k),id3(j,j,i)) += rdm2_->element(m+nact_*k,l+nact_*i);
             ardm3->element(id3(m,l,k),id3(j,l,i)) += rdm2_->element(m+nact_*k,i+nact_*j);
 
-            srdm3->element(id3(m,l,k),id3(k,j,i)) += 2.0*ardm2->element(id2(m,l),id2(j,i));
+            srdm3->element(id3(m,l,k),id3(k,j,i)) += fac2*ardm2->element(id2(m,l),id2(j,i));
           }
   sort_indices<0,2,1,3,1,1,-1,1>(ardm3->data(), srdm3->data(), nact_*nact_, nact_, nact_, nact_*nact_);
   shared_ptr<MatType> ardm4 = rdm4_->clone();
@@ -164,17 +166,19 @@ void NEVPT2_<DataType>::compute_hrdm() {
 
   auto id3 = [this](const int j, const int k, const int l) { return j+nact_*(k+nact_*l); };
 
+  const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
+
   shared_ptr<MatType> unit = rdm1_->clone(); unit->unit();
   shared_ptr<MatType> hrdm2 = rdm2_->copy();
-  shared_ptr<const MatType> hrdm1 = make_shared<MatType>(*unit*2.0 - *rdm1_);
+  shared_ptr<const MatType> hrdm1 = make_shared<MatType>(*unit*fac2 - *rdm1_);
 
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nact_; ++j) {
       for (int k = 0; k != nact_; ++k) {
-        hrdm2->element(j+nact_*k, i+nact_*k) += 2.0 * hrdm1->element(j,i);
+        hrdm2->element(j+nact_*k, i+nact_*k) += fac2 * hrdm1->element(j,i);
         hrdm2->element(k+nact_*j, i+nact_*k) -= hrdm1->element(j,i);
         hrdm2->element(j+nact_*k, k+nact_*i) += rdm1_->element(i,j);
-        hrdm2->element(k+nact_*j, k+nact_*i) -= 2.0 * rdm1_->element(i,j);
+        hrdm2->element(k+nact_*j, k+nact_*i) -= fac2 * rdm1_->element(i,j);
       }
     }
   }
@@ -184,15 +188,15 @@ void NEVPT2_<DataType>::compute_hrdm() {
       for (int k = 0; k != nact_; ++k)
         for (int l = 0; l != nact_; ++l)
           for (int m = 0; m != nact_; ++m) {
-            hrdm3->element(id3(l,k,m),id3(j,i,m)) += 2.0*hrdm2->element(l+nact_*k,j+nact_*i);
-            hrdm3->element(id3(l,m,k),id3(j,i,m)) -=     hrdm2->element(l+nact_*k,j+nact_*i);
-            hrdm3->element(id3(m,l,k),id3(j,i,m)) -=     hrdm2->element(l+nact_*k,i+nact_*j);
-            hrdm3->element(id3(l,k,m),id3(j,m,i)) +=     srdm2_->element(i+nact_*k,l+nact_*j);
-            hrdm3->element(id3(l,m,k),id3(j,m,i)) -= 2.0*srdm2_->element(i+nact_*k,l+nact_*j);
-            hrdm3->element(id3(m,l,k),id3(j,m,i)) +=     srdm2_->element(i+nact_*k,l+nact_*j);
-            hrdm3->element(id3(l,k,m),id3(m,j,i)) -=     rdm2_->element(i+nact_*j,l+nact_*k);
-            hrdm3->element(id3(l,m,k),id3(m,j,i)) -=     rdm2_->element(i+nact_*j,k+nact_*l);
-            hrdm3->element(id3(m,l,k),id3(m,j,i)) += 2.0*rdm2_->element(i+nact_*j,k+nact_*l);
+            hrdm3->element(id3(l,k,m),id3(j,i,m)) += fac2*hrdm2->element(l+nact_*k,j+nact_*i);
+            hrdm3->element(id3(l,m,k),id3(j,i,m)) -=      hrdm2->element(l+nact_*k,j+nact_*i);
+            hrdm3->element(id3(m,l,k),id3(j,i,m)) -=      hrdm2->element(l+nact_*k,i+nact_*j);
+            hrdm3->element(id3(l,k,m),id3(j,m,i)) +=      srdm2_->element(i+nact_*k,l+nact_*j);
+            hrdm3->element(id3(l,m,k),id3(j,m,i)) -= fac2*srdm2_->element(i+nact_*k,l+nact_*j);
+            hrdm3->element(id3(m,l,k),id3(j,m,i)) +=      srdm2_->element(i+nact_*k,l+nact_*j);
+            hrdm3->element(id3(l,k,m),id3(m,j,i)) -=      rdm2_->element(i+nact_*j,l+nact_*k);
+            hrdm3->element(id3(l,m,k),id3(m,j,i)) -=      rdm2_->element(i+nact_*j,k+nact_*l);
+            hrdm3->element(id3(m,l,k),id3(m,j,i)) += fac2*rdm2_->element(i+nact_*j,k+nact_*l);
           }
   hrdm1_ = hrdm1;
   hrdm2_ = hrdm2;

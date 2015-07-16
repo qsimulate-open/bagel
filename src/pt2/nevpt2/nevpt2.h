@@ -107,6 +107,8 @@ class NEVPT2_ : public Method {
     void compute_kmat();
     void compute_abcd();
 
+    std::shared_ptr<const MatType> coeff();
+
   public:
     NEVPT2_(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference> = nullptr);
 
@@ -123,6 +125,9 @@ template<> void NEVPT2_<std::complex<double>>::init_reference();
 
 template<> void NEVPT2_<double>::compute_rdm();
 template<> void NEVPT2_<std::complex<double>>::compute_rdm();
+
+template<> std::shared_ptr<const Matrix> NEVPT2_<double>::coeff() { return ref_->coeff(); }
+template<> std::shared_ptr<const ZMatrix> NEVPT2_<std::complex<double>>::coeff() { return std::dynamic_pointer_cast<const RelReference>(ref_)->relcoeff()->block_format(); }
 
 extern template class NEVPT2_<double>;
 extern template class NEVPT2_<std::complex<double>>;
