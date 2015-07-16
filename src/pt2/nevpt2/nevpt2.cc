@@ -27,6 +27,8 @@
 #include <src/pt2/mp2/mp2cache.h>
 #include <src/df/dfdistt.h>
 #include <src/scf/hf/fock.h>
+#include <src/scf/dhf/dfock.h>
+#include <src/mat1e/rel/relhcore.h>
 #include <src/multi/casscf/superci.h>
 #include <src/multi/zcasscf/zcasbfgs.h>
 #include <src/util/prim_op.h>
@@ -86,10 +88,25 @@ void NEVPT2_<complex<double>>::init_reference() {
 }
 
 
+template<>
+shared_ptr<Matrix> NEVPT2_<double>::compute_fock(shared_ptr<const Matrix> hcore, const MatView coeff, const double scale_exch, const double scale_coulomb) {
+  return make_shared<Fock<1>>(geom_, hcore, nullptr, coeff, /*store_half*/false, /*rhf*/true, scale_exch, scale_coulomb);
+}
+
+
+template<>
+shared_ptr<ZMatrix> NEVPT2_<complex<double>>::compute_fock(shared_ptr<const ZMatrix> hcore, const ZMatView coeff, const double scale_exch, const double scale_coulomb) {
+  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
+  return make_shared<DFock>(geom_, hcore, coeff, ref->gaunt(), ref->breit(), /*store_half*/false, /*robust*/ref->breit(), scale_exch, scale_coulomb);
+}
+
+
 template<typename DataType>
 void NEVPT2_<DataType>::compute() {
 
   Timer timer;
+
+  const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
 
   // coefficients -- will be updated later
   shared_ptr<MatType> ccoeff = nclosed_ ? coeff()->slice_copy(ncore_, ncore_+nclosed_) : nullptr;
@@ -108,8 +125,8 @@ void NEVPT2_<DataType>::compute() {
 
   /////////////////////////////////////////////////////////////////////////////////////
   // make canonical orbitals in closed and virtual subspaces
-  VecType veig(nvirt_);
-  VecType oeig(nclosed_);
+  VectorB veig(nvirt_);
+  VectorB oeig(nclosed_);
   shared_ptr<MatType> coeffall;
   // fock
   shared_ptr<const MatType> fock;
@@ -121,15 +138,15 @@ void NEVPT2_<DataType>::compute() {
   shared_ptr<const MatType> fock_h;
   {
     // * core Fock operator
-    shared_ptr<const MatType> hcore = make_shared<Hcore>(geom_);
-    shared_ptr<const MatType> ofockao = nclosed_+ncore_ ?  make_shared<Fock<1>>(geom_, hcore, nullptr, coeff()->slice(0, ncore_+nclosed_), /*store*/false, /*rhf*/true) : hcore;
+    shared_ptr<const MatType> hcore = make_shared<typename conditional<is_same<DataType,double>::value,Hcore,RelHcore>::type>(geom_);
+    shared_ptr<const MatType> ofockao = nclosed_+ncore_ ?  compute_fock(hcore, coeff()->slice(0, ncore_+nclosed_)) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<MatType> rdm1_mat = rdm1_->copy();
     rdm1_mat->sqrt();
     rdm1_mat->delocalize();
-    auto acoeffw = make_shared<MatType>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
-    auto fockao = make_shared<Fock<1>>(geom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
+    auto acoeffw = make_shared<MatType>(*acoeff * (1.0/sqrt(fac2)) * *rdm1_mat);
+    auto fockao = compute_fock(ofockao, *acoeffw);
     // MO Fock
     if (nclosed_) {
       MatType omofock(*ccoeff % *fockao * *ccoeff);
@@ -154,20 +171,21 @@ void NEVPT2_<DataType>::compute() {
     fock   = make_shared<MatType>(*coeffall % *fockao  * *coeffall);
     fock_c = make_shared<MatType>(*coeffall % *ofockao * *coeffall);
 
-    // h'eff (only 1/2 exchange in the active space)
-    auto fockao_p = make_shared<Fock<1>>(geom_, ofockao, ofockao->clone(), *acoeff*(1.0/sqrt(2.0)), /*store*/false, /*rhf*/false);
+    // h'eff (only exchange in the active space)
+    auto fockao_p = compute_fock(ofockao, *acoeff*(1.0/sqrt(fac2)), 1.0, 0.0); // only exchange
     fockact_p_ = make_shared<MatType>(*acoeff % *fockao_p * *acoeff);
     fockact_p_->localize();
     fock_p = make_shared<MatType>(*coeffall % *fockao_p * *coeffall);
 
     // h''eff (treat active orbitals as closed)
-    auto fockao_h = make_shared<Fock<1>>(geom_, ofockao, nullptr, acoeff, /*store*/false, /*rhf*/true);
+    auto fockao_h = compute_fock(ofockao, *acoeff);
     fockact_h_ = make_shared<MatType>(*acoeff % *fockao_h * *acoeff);
     fockact_h_->localize();
     fock_h = make_shared<MatType>(*coeffall % *fockao_h * *coeffall);
   }
   timer.tick_print("Fock computation");
 
+#if 1
   /////////////////////////////////////////////////////////////////////////////////////
   // compute transformed integrals
   shared_ptr<DFDistT> fullvi;
@@ -509,6 +527,7 @@ void NEVPT2_<DataType>::compute() {
 
   energy_ += ref_->energy();
   cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
+#endif
 
 }
 

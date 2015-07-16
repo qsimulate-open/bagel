@@ -100,6 +100,7 @@ class NEVPT2_ : public Method {
     std::shared_ptr<const MatType> dmat1t_;
 
     void init_reference();
+    std::shared_ptr<MatType> compute_fock(std::shared_ptr<const MatType> hcore, const ViewType coeff, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
     void compute_rdm();
     void compute_hrdm();
     void compute_asrdm();
@@ -128,6 +129,9 @@ template<> void NEVPT2_<std::complex<double>>::compute_rdm();
 
 template<> std::shared_ptr<const Matrix> NEVPT2_<double>::coeff() { return ref_->coeff(); }
 template<> std::shared_ptr<const ZMatrix> NEVPT2_<std::complex<double>>::coeff() { return std::dynamic_pointer_cast<const RelReference>(ref_)->relcoeff()->block_format(); }
+
+template<> std::shared_ptr<Matrix> NEVPT2_<double>::compute_fock(std::shared_ptr<const Matrix> hcore, const MatView coeff, const double exch, const double coulomb);
+template<> std::shared_ptr<ZMatrix> NEVPT2_<std::complex<double>>::compute_fock(std::shared_ptr<const ZMatrix> hcore, const ZMatView coeff, const double exch, const double coulomb);
 
 extern template class NEVPT2_<double>;
 extern template class NEVPT2_<std::complex<double>>;

@@ -234,7 +234,7 @@ void Fock<DF>::fock_two_electron_part(shared_ptr<const Matrix> den_ex) {
 
 
 template<int DF>
-void Fock<DF>::fock_two_electron_part_with_coeff(const MatView ocoeff, const bool rhf, const double scale_exchange) {
+void Fock<DF>::fock_two_electron_part_with_coeff(const MatView ocoeff, const bool rhf, const double scale_exchange, const double scale_coulomb) {
   if (DF == 0) throw logic_error("Fock<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
 
   Timer pdebug(3);
@@ -253,16 +253,22 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const MatView ocoeff, const boo
 
     if (rhf) {
       Matrix oc(ocoeff);
-      auto coeff = make_shared<const Matrix>(*oc.transpose()*2.0);
+      auto coeff = make_shared<const Matrix>(*oc.transpose()*(2.0*scale_coulomb));
       *this += *df->compute_Jop(half, coeff, true);
     } else {
-      *this += *df->compute_Jop(density_);
+      shared_ptr<Matrix> jop = df->compute_Jop(density_);
+      if (scale_coulomb != 1.0)
+        jop->scale(scale_coulomb);
+      *this += *jop;
     }
     // when gradient is requested..
     if (store_half_)
       half_ = half;
   } else {
-    *this += *df->compute_Jop(density_);
+    shared_ptr<Matrix> jop = df->compute_Jop(density_);
+    if (scale_coulomb != 1.0)
+      jop->scale(scale_coulomb);
+    *this += *jop;
   }
   pdebug.tick_print("Coulomb build");
 
