@@ -31,10 +31,13 @@
 
 namespace bagel {
 
-class SimulationCell { /* same or larger than primitive cell */
+class SimulationCell { /* cubic, same or larger than primitive cell */
   protected:
     std::vector<std::shared_ptr<const Atom>> atoms_;
     int ndim_;
+    std::vector<std::array<double, 3>> primitive_vectors_; // orthogonal vectors
+    std::array<double, 3> charge_centre_;
+
     int num_jvectors_;
     std::vector<std::array<double, 3>> jvectors_;
     int nbasis_;
@@ -47,8 +50,8 @@ class SimulationCell { /* same or larger than primitive cell */
 
   public:
     SimulationCell() { }
-    SimulationCell(const std::shared_ptr<const Geometry> geom, const int ndim);
-    SimulationCell(std::shared_ptr<const Atom> atoms, const int ndim);
+    SimulationCell(const std::shared_ptr<const Geometry> geom);
+    SimulationCell(std::vector<std::shared_ptr<const Atom>> atoms, const int ndim, std::vector<std::array<double, 3>> prim_vec);
     virtual ~SimulationCell() { }
 
     int ndim() const { return ndim_; }
@@ -59,7 +62,8 @@ class SimulationCell { /* same or larger than primitive cell */
 
     std::vector<std::shared_ptr<const ZMatrix>> multipoles() const { return multipoles_; }
 
-    std::array<double, 3> charge_centre() const;
+    std::array<double, 3> centre() const { return charge_centre_; }
+    double centre(const int i) const { return charge_centre_[i]; }
     double extent() const { return extent_; }
     double radius() const { return radius_; }
 };

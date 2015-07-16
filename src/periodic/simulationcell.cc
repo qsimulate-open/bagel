@@ -25,50 +25,51 @@
 
 
 #include <src/periodic/simulationcell.h>
+#include <src/periodic/multipolebatch.h>
 
 using namespace std;
 using namespace bagel;
 
-SimulationCell::SimulationCell(const shared_ptr<const Geometry> g, const int n) : atoms_(g->atoms()), ndim_(n) { }
+SimulationCell::SimulationCell(const shared_ptr<const Geometry> g)
+ : atoms_(g->atoms()), ndim_(g->primitive_vectors().size()) {
 
-
-SimulationCell::SimulationCell(vector<shared_ptr<const Atom>> a, const int n) : atoms_(a), ndim_(n) { }
-
-
-SimulationCell::init() {
-
-  radius_ = 0.0;
-  nbasis_ = 0;
-  const array<double, 3> charge_centre = charge_centre();
-  for (auto& atom : atoms_) {
-    nbasis_ += atom->nbasis();
-    array<double, 3> r;
-    r[0] = atom->position(0) - charge_centre[0];
-    r[1] = atom->position(1) - charge_centre[1];
-    r[2] = atom->position(2) - charge_centre[2];
-    const double rsq = r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
-    if (rsq > out)
-      radius_ = rsq;
-  }
-  radius_ = sqrt(rsq);
+  primitive_vectors_.resize(ndim_);
+  for (int i = 0; i != ndim_; ++i)
+    primitive_vectors_[i] = g->primitive_vectors(i);
 }
 
 
-array<double,3> SimulationCell::charge_center() const {
+SimulationCell::SimulationCell(vector<shared_ptr<const Atom>> a, const int n, vector<array<double, 3>> pvec)
+ : atoms_(a), ndim_(n), primitive_vectors_(pvec) { }
 
-  array<double,3> out{{0.0, 0.0, 0.0}};
+
+void SimulationCell::init() {
+
+  charge_centre_ = {{0.0, 0.0, 0.0}};
   double sum = 0.0;
   for (auto& atom : atoms_) {
-    out[0] += atom->atom_charge() * atom->position(0);
-    out[1] += atom->atom_charge() * atom->position(1);
-    out[2] += atom->atom_charge() * atom->position(2);
+    charge_centre_[0] += atom->atom_charge() * atom->position(0);
+    charge_centre_[1] += atom->atom_charge() * atom->position(1);
+    charge_centre_[2] += atom->atom_charge() * atom->position(2);
     sum += atom->atom_charge();
   }
-  out[0] /= sum;
-  out[1] /= sum;
-  out[2] /= sum;
+  charge_centre_[0] /= sum;
+  charge_centre_[1] /= sum;
+  charge_centre_[2] /= sum;
 
-  return out;
+  radius_ = 0.0;
+  nbasis_ = 0;
+  for (auto& atom : atoms_) {
+    nbasis_ += atom->nbasis();
+    array<double, 3> r;
+    r[0] = atom->position(0) - centre(0);
+    r[1] = atom->position(1) - centre(1);
+    r[2] = atom->position(2) - centre(2);
+    const double rsq = r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
+    if (rsq > radius_)
+      radius_ = rsq;
+  }
+  radius_ = sqrt(radius_);
 }
 
 
@@ -117,23 +118,22 @@ void SimulationCell::compute_multipoles(const int lmax) {
   for (int i = 0; i != nmultipole; ++i)
     multipoles[i] = make_shared<ZMatrix>(nbasis_, nbasis_);
 
-  bool skip = false;
   size_t ob0 = 0;
   for (auto& atom0 : atoms_) {
     for (auto& b0 : atom0->shells()) {
       size_t ob1 = 0;
       for (auto& atom1 : atoms_) {
         for (auto& b1 : atom1->shells()) {
-          MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
+          MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, centre(), lmax);
           mpole.compute();
           for (int i = 0; i != nmultipole; ++i)
-            ltipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+            multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
 
           ob1 += b1->nbasis();
         }
       }
+      ob0 += b0->nbasis();
     }
-    ob0 += b0->nbasis();
   }
 
   for (int i = 0; i != nmultipole; ++i)

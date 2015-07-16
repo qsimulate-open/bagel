@@ -51,7 +51,7 @@ bool PFMM::is_in_cff(array<double, 3> L) {
 #if 0
 void PFMM::compute_Sn(const double thresh, const int max_iter) { // S(n+1) = U_M[S(n)] O* + M*
 
-  for (int iter = 0; i != max_iter; ++i) {
+  for (int iter = 0; iter != max_iter; ++i) {
 
     const double error = 0.0;
     if (error < thresh) {

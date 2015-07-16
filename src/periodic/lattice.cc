@@ -79,7 +79,7 @@ void Lattice::init() {
 
   ndim_ = primitive_cell_->primitive_vectors().size();
   if (ndim_ > 3)
-    cout << "  *** Warning: Dimension in P-SCF is greater than 3!" << endl;
+    throw runtime_error("  *** Warning: Dimension in P-SCF is greater than 3!");
   primitive_kvectors_.resize(ndim_);
 
   /* TODO: temp parameters */
@@ -406,7 +406,7 @@ void Lattice::form_df(const double thresh) { /*form df object for all blocks in 
 void Lattice::form_pfmm(const bool is_cubic, const int lmax, const int ws, const double thresh) {
 
   if (is_cubic) {
-    auto scell = make_shared<const SimulationCell>(primitive_cell_, ndim_);
+    auto scell = make_shared<const SimulationCell>(primitive_cell_);
     pfmm_ = make_shared<const PFMM>(scell, lmax, ws, thresh);
   } else {
     throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
