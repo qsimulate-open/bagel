@@ -28,6 +28,7 @@
 #define __SRC_PERIODIC_PFMM_H
 
 #include <src/periodic/simulationcell.h>
+#include <src/periodic/pdata.h>
 
 namespace bagel {
 
@@ -38,11 +39,12 @@ class PFMM {
     int num_multipoles_;
 
   public:
-    PFMM(std::shared_ptr<const SimulationCell>, const int lmax = ANG_HRR_END, const int ws = 2);
+    PFMM(std::shared_ptr<const SimulationCell>, const int lmax = ANG_HRR_END, const int ws = 2, const double thresh = PRIM_SCREEN_THRESH);
     ~PFMM() { }
 
     bool is_in_cff(std::array<double, 3> lvector);
-    void print_multipoles(std::vector<std::complex<double>> multipoles) const;
+    void compute_Sn(const double thresh = PRIM_SCREEN_THRESH, const int max_iter = 20);
+    std::shared_ptr<PData> compute_Jop(std::shared_ptr<const PData> density);
 
 };
 

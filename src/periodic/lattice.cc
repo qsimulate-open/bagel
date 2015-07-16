@@ -201,6 +201,32 @@ void Lattice::init_df(const double thresh) {
 }
 
 
+void Lattice::init_pfmm(const int lmax, const int ws, const double thresh) {
+
+  cout << "  Since PFMM option is specified, we will construct simulation cell." << endl;
+  Timer time;
+  bool is_cubic = true;
+  for (int i = 0; i != ndim_; ++i)
+    for (int j = 0; j != ndim_; ++j) {
+      const double dp = dot(primitive_cell_->primitive_vectors(i), primitive_cell_->primitive_vectors(j));
+      if (dp > numerical_zero__) {
+        is_cubic = false;
+        break;
+      }
+    }
+
+  if (is_cubic) {
+    cout << "  Provided unit cell is cubic, simulation cell is the same as primitive cell." << endl;
+    form_pfmm(is_cubic, lmax, ws, thresh);
+  } else {
+    cout << "  Provided unit cell is non-cubic, simulation cell is the smallest cubic cell that encloses the unit cell." << endl;
+    throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
+  }
+
+  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
+}
+
+
 double Lattice::dot(array<double, 3> b, array<double, 3> c) { return b[0] * c[0] + b[1] * c[1] + b[2] * c[2]; }
 
 
@@ -373,4 +399,16 @@ void Lattice::form_df(const double thresh) { /*form df object for all blocks in 
   vector<shared_ptr<const Atom>> aux_atoms = primitive_cell_->aux_atoms();
 
   df_ = make_shared<PDFDist>(lattice_vectors_, nbasis, naux, atoms0, aux_atoms, primitive_cell_, thresh);
+}
+
+
+
+void Lattice::form_pfmm(const bool is_cubic, const int lmax, const int ws, const double thresh) {
+
+  if (is_cubic) {
+    auto scell = make_shared<const SimulationCell>(primitive_cell_, ndim_);
+    pfmm_ = make_shared<const PFMM>(scell, lmax, ws, thresh);
+  } else {
+    throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
+  }
 }

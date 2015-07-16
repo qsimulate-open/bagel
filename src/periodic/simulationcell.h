@@ -57,8 +57,7 @@ class SimulationCell { /* same or larger than primitive cell */
     std::vector<std::array<double, 3>> jvectors() const { return jvectors_; }
     std::array<double, 3> jvectors(const int i) const { return jvectors_[i]; }
 
-    // lattice sum - crystal far field (cff)
-    void compute_Sn(const double thresh = PRIM_SCREEN_THRESH, const int max_iter = 20);
+    std::vector<std::shared_ptr<const ZMatrix>> multipoles() const { return multipoles_; }
 
     std::array<double, 3> charge_centre() const;
     double extent() const { return extent_; }

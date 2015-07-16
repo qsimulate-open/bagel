@@ -139,39 +139,3 @@ void SimulationCell::compute_multipoles(const int lmax) {
   for (int i = 0; i != nmultipole; ++i)
     multipoles_[i] = multipoles[i];
 }
-
-
-#if 0
-void SimulationCell::compute_Sn(const double thresh, const int max_iter) { // S(n+1) = U_M[S(n)] O* + M*
-
-  for (int iter = 0; i != max_iter; ++i) {
-
-
-
-
-
-
-    const double error = 0.0;
-    if (error < thresh) {
-      cout << "  * Sn converged." << endl << endl;
-      break;
-    } else if (iter == max_iter-1) {
-      cout << "  * Max iteration reached when in compute_Sn." << endl << endl;
-      break;
-    }
-  }
-}
-
-
-vector<const array<double, 3>> SimulationCell::get_intermediate_layer(const int imax) {
-
-  ws = pow(2*ncell_+1, ndim_);
-
-  vector<const array<double, 3>> out;
-
-  int cnt = 0;
-  for (auto& L : lattice_vectors_) {
-
-  }
-}
-#endif

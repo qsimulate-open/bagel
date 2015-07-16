@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-PFMM::PFMM(shared_ptr<const SimulationCell> scell, const int lmax, const int ws)
+PFMM::PFMM(shared_ptr<const SimulationCell> scell, const int lmax, const int ws, const double thresh)
   : scell_(scell), lmax_(lmax), ws_(ws) {
 
   assert(lmax_ <= ANG_HRR_END);
@@ -48,12 +48,33 @@ bool PFMM::is_in_cff(array<double, 3> L) {
 }
 
 
-void PFMM::print_multipoles(vector<complex<double>> multipoles) const {
-  cout << "LMAX = " << lmax_ << endl;
-  int cnt = 0;
-  for (int l = 0; l <= lmax_; ++l) {
-    for (int m = 0; m <= 2 * l; ++m, ++cnt)
-      cout << setprecision(5) << multipoles[cnt] << "   ";
-    cout << endl;
+#if 0
+void PFMM::compute_Sn(const double thresh, const int max_iter) { // S(n+1) = U_M[S(n)] O* + M*
+
+  for (int iter = 0; i != max_iter; ++i) {
+
+    const double error = 0.0;
+    if (error < thresh) {
+      cout << "  * Sn converged." << endl << endl;
+      break;
+    } else if (iter == max_iter-1) {
+      cout << "  * Max iteration reached when in compute_Sn." << endl << endl;
+      break;
+    }
   }
 }
+
+
+vector<const array<double, 3>> PFMM::get_intermediate_layer(const int imax) {
+
+  int cnt = 0;
+  for (auto& L : lattice_vectors_) {
+
+  }
+}
+
+
+shared_ptr<PData> PFMM::compute_Jop(shared_ptr<const PData> density) {
+
+}
+#endif

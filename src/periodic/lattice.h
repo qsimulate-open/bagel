@@ -93,7 +93,7 @@ class Lattice {
 
     void init();
     void init_df(const double thresh = PRIM_SCREEN_THRESH);
-    void init_pfmm(const int lmax = ANG_HRR_END, const double thresh = PRIM_SCREEN_THRESH);
+    void init_pfmm(const int lmax = ANG_HRR_END, const int ws = 2, const double thresh = PRIM_SCREEN_THRESH);
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     double volume() const { return volume_; }
     int nele() const { return nele_; }
@@ -119,7 +119,7 @@ class Lattice {
     void form_df(const double thresh);
     std::shared_ptr<PDFDist> df() const { return df_; }
     // PFMM
-    void form_pfmm(const int lmax, const double thresh);
+    void form_pfmm(const bool is_cubic, const int lmax, const int ws, const double thresh);
     std::shared_ptr<const PFMM> pfmm() const { return pfmm_; }
 };
 
