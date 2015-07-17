@@ -58,9 +58,9 @@ void JExpansion::init() {
   extent0_ = distribution_extent(array<shared_ptr<const Shell>, 2>{{basisinfo_[0], basisinfo_[1]}});
   extent1_ = distribution_extent(array<shared_ptr<const Shell>, 2>{{basisinfo_[2], basisinfo_[3]}});
 
-  r12_[0] = centre1_[0] - centre0_[0];
-  r12_[1] = centre1_[1] - centre0_[1];
-  r12_[2] = centre1_[2] - centre0_[2];
+  r12_[0] = centre0_[0] - centre1_[0];
+  r12_[1] = centre0_[1] - centre1_[1];
+  r12_[2] = centre0_[2] - centre1_[2];
 
   num_multipoles_ = (lmax_ + 1) * (lmax_ + 1);
 }
@@ -159,13 +159,14 @@ shared_ptr<const ZMatrix> JExpansion::compute(shared_ptr<const Matrix> density) 
   vector<shared_ptr<const ZMatrix>> lmoments = local.compute_local_moments();
 
   ZMatrix out(dimb1, dimb0);
+  map_lm_index();
   for (int i = 0; i != num_multipoles_; ++i) {
     complex<double> contract = 0.0;
     for (int j = 0; j != dimb2; ++j)
       for (int k = 0; k != dimb3; ++k)
         contract += lmoments[i]->element(k, j) * density->element(k, j);
 
-    out += contract * *multipoles0[i];
+    out += pow(-1.0, lm_map_[i].first) * contract * *multipoles0[i];
   }
   out.print("Multipole expansion approximation");
 
