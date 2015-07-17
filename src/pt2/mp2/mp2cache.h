@@ -57,7 +57,11 @@ class MP2Tag {
       return !(*this < o) && !(o < *this);
     }
     bool invalid() const { return tag_.at(0) == -1; }
-    void wait() const { for (auto& i : tag_) mpi__->wait(i); }
+    void wait() const {
+      if (!invalid())
+        for (auto& i : tag_)
+          mpi__->wait(i);
+    }
     bool test() const {
       bool out = true;
       for (auto& i : tag_) out &= mpi__->test(i);
@@ -192,8 +196,8 @@ class MP2Cache_ {
     void data_wait(const int n) const {
       const MP2Tag<DataType> ti = std::get<2>(task(n));
       const MP2Tag<DataType> tj = std::get<3>(task(n));
-      if (!ti.invalid()) ti.wait();
-      if (!tj.invalid()) tj.wait();
+      ti.wait();
+      tj.wait();
     }
 
     void wait() const {
