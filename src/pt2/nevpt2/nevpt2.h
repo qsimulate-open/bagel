@@ -130,8 +130,8 @@ template<> void NEVPT2_<std::complex<double>>::init_reference();
 template<> void NEVPT2_<double>::compute_rdm();
 template<> void NEVPT2_<std::complex<double>>::compute_rdm();
 
-template<> std::shared_ptr<const Matrix> NEVPT2_<double>::coeff() { return ref_->coeff(); }
-template<> std::shared_ptr<const ZMatrix> NEVPT2_<std::complex<double>>::coeff() { return std::dynamic_pointer_cast<const RelReference>(ref_)->relcoeff()->block_format(); }
+template<> std::shared_ptr<const Matrix> NEVPT2_<double>::coeff();
+template<> std::shared_ptr<const ZMatrix> NEVPT2_<std::complex<double>>::coeff();
 
 template<> std::shared_ptr<Matrix> NEVPT2_<double>::compute_fock(std::shared_ptr<const Matrix> hcore, const MatView coeff, const double exch, const double coulomb);
 template<> std::shared_ptr<ZMatrix> NEVPT2_<std::complex<double>>::compute_fock(std::shared_ptr<const ZMatrix> hcore, const ZMatView coeff, const double exch, const double coulomb);

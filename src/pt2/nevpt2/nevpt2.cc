@@ -100,6 +100,18 @@ shared_ptr<ZMatrix> NEVPT2_<complex<double>>::compute_fock(shared_ptr<const ZMat
 }
 
 
+template<>
+shared_ptr<const Matrix> NEVPT2_<double>::coeff() {
+  return ref_->coeff();
+}
+
+
+template<>
+shared_ptr<const ZMatrix> NEVPT2_<complex<double>>::coeff() {
+  return dynamic_pointer_cast<const RelReference>(ref_)->relcoeff()->block_format();
+}
+
+
 template<typename DataType>
 void NEVPT2_<DataType>::compute() {
 
