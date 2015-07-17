@@ -304,13 +304,19 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 
   const int nmultipole = (lmax + 1) * (lmax + 1);
 
+  vector<int> l_map(nmultipole);
+  int cnt = 0;
+  for (int l = 0; l <= lmax; ++l)
+    for (int m = 0; m <= 2 * l; ++m, ++cnt)
+      l_map[cnt] = l;
+
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
 
   for (auto& distant_node : interaction_list_) { // M2L
     array<double, 3> r12;
-    r12[0] = distant_node->position(0) - position_[0];
-    r12[1] = distant_node->position(1) - position_[1];
-    r12[2] = distant_node->position(2) - position_[2];
+    r12[0] = position_[0] - distant_node->position(0);
+    r12[1] = position_[1] - distant_node->position(1);
+    r12[2] = position_[2] - distant_node->position(2);
     LocalExpansion lx(r12, distant_node->multipoles(), lmax);
     vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
 
@@ -357,7 +363,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
         for (int k = 0; k != dimb; ++k)
           contract += lmoments[i]->element(k, j) * subden.element(k, j);
 
-      *out += contract * *multipoles_[i];
+      *out += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
     }
   }
 
