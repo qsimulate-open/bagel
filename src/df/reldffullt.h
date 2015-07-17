@@ -44,7 +44,9 @@ class RelDFFullT {
     int naux()   const { assert(dffull_[0]->naux() == dffull_[1]->naux());     return dffull_[0]->naux(); }
     int bstart() const { assert(dffull_[0]->bstart() == dffull_[1]->bstart()); return dffull_[0]->bstart(); }
     void discard_df();
+
     std::vector<std::pair<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>> get_slice(const int start, const int end) const;
+    std::shared_ptr<ZMatrix> replicate() const;
 
     int locate(const size_t i, const size_t n) const { assert(dffull_[0]->locate(i,n) == dffull_[1]->locate(i,n)); return dffull_[0]->locate(i,n); }
 

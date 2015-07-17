@@ -106,6 +106,12 @@ shared_ptr<RelDFFull> RelDFFull::clone() const {
 }
 
 
+shared_ptr<RelDFFull> RelDFFull::swap() const {
+  array<shared_ptr<DFFullDist>,2> a{{dffull_[0]->swap(), dffull_[1]->swap()}};
+  return make_shared<RelDFFull>(a, cartesian_, basis_);
+}
+
+
 void RelDFFull::ax_plus_y(complex<double> a, const RelDFFull& o) {
   if (imag(a) == 0.0) {
     const double fac = real(a);
@@ -135,7 +141,7 @@ void RelDFFull::scale(complex<double> a) {
     const double fac = imag(a);
     dffull_[0]->scale( fac);
     dffull_[1]->scale(-fac);
-    swap(dffull_[0], dffull_[1]);
+    std::swap(dffull_[0], dffull_[1]);
   } else {
     throw logic_error("should not happen..");
   }

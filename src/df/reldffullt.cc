@@ -45,3 +45,10 @@ vector<pair<shared_ptr<Matrix>,shared_ptr<Matrix>>> RelDFFullT::get_slice(const 
   assert(dffull_[0]->nblocks() == 1 && dffull_[1]->nblocks() == 1);
   return {make_pair(dffull_[0]->get_slice(start, end).at(0), dffull_[1]->get_slice(start, end).at(0))};
 }
+
+
+shared_ptr<ZMatrix> RelDFFullT::replicate() const {
+  shared_ptr<const Matrix> r = dffull_[0]->replicate();
+  shared_ptr<const Matrix> i = dffull_[1]->replicate();
+  return make_shared<ZMatrix>(*r, *i);
+}

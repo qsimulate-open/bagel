@@ -52,10 +52,14 @@ class RelDFFull : public RelDFBase {
 
     bool matches(std::shared_ptr<const RelDFFull>) const { return true; }
 
+    int nocc1() const { assert(dffull_[0]->nocc1() == dffull_[1]->nocc1()); return dffull_[0]->nocc1(); }
+    int nocc2() const { assert(dffull_[0]->nocc2() == dffull_[1]->nocc2()); return dffull_[0]->nocc2(); }
+
     std::shared_ptr<RelDFFull> copy() const { return std::make_shared<RelDFFull>(*this); }
     std::shared_ptr<RelDFFull> clone() const;
     std::shared_ptr<RelDFFull> apply_J() const;
     std::shared_ptr<RelDFFull> apply_JJ() const;
+    std::shared_ptr<RelDFFull> swap() const;
 
     // zaxpy
     void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFFull> o) { ax_plus_y(a, *o); }

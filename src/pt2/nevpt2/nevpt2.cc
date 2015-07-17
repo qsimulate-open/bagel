@@ -112,6 +112,58 @@ shared_ptr<const ZMatrix> NEVPT2_<complex<double>>::coeff() {
 }
 
 
+template<>
+tuple<shared_ptr<DFDistT>, shared_ptr<DFDistT>>
+  NEVPT2_<double>::compute_full_nevpt2(shared_ptr<const Geometry> cgeom, shared_ptr<const Matrix> ccoeff, shared_ptr<const Matrix> acoeff,
+                                       shared_ptr<const Matrix> vcoeff, shared_ptr<const Matrix> coeffall) const {
+  shared_ptr<DFDistT> fullvi, fullax;
+  if (nclosed_) {
+    // this is now (naux, nvirt_, nclosed_), distributed by nvirt_*nclosed_. Always naux*nvirt_ block is localized to one node
+    shared_ptr<const DFHalfDist> half = cgeom->df()->compute_half_transform(ccoeff);
+    shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff)->apply_J()->swap();
+    auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
+    fullvi = make_shared<DFDistT>(full, dist);
+    fullvi->discard_df();
+    assert(fullvi->nblocks() == 1);
+  }
+  {
+    shared_ptr<const DFHalfDist> halfa = cgeom->df()->compute_half_transform(acoeff);
+    shared_ptr<DFFullDist> full = halfa->compute_second_transform(coeffall)->apply_J();
+    auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
+    fullax = make_shared<DFDistT>(full, dist);
+    fullax->discard_df();
+    assert(fullax->nblocks() == 1);
+  }
+  return tie(fullvi, fullax);
+}
+
+
+template<>
+tuple<shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>>
+  NEVPT2_<complex<double>>::compute_full_nevpt2(shared_ptr<const Geometry> cgeom, shared_ptr<const ZMatrix> ccoeff, shared_ptr<const ZMatrix> acoeff,
+                                                shared_ptr<const ZMatrix> vcoeff, shared_ptr<const ZMatrix> coeffall) const {
+  shared_ptr<RelDFFullT> fullvi, fullax;
+  if (nclosed_) {
+    // this is now (naux, nvirt_, nclosed_), distributed by nvirt_*nclosed_. Always naux*nvirt_ block is localized to one node
+    list<shared_ptr<RelDFHalf>> half, half2;
+    tie(half, half2) = RelMOFile::compute_half(cgeom, ccoeff, /*gaunt*/false, /*breit*/false);
+    shared_ptr<RelDFFull> full = RelMOFile::compute_full(vcoeff, half, /*appj*/true)->swap();
+    auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
+    fullvi = make_shared<RelDFFullT>(full, dist);
+    fullvi->discard_df();
+  }
+  {
+    list<shared_ptr<RelDFHalf>> half, half2;
+    tie(half, half2) = RelMOFile::compute_half(cgeom, acoeff, /*gaunt*/false, /*breit*/false);
+    shared_ptr<RelDFFull> full = RelMOFile::compute_full(coeffall, half, /*appj*/true);
+    auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
+    fullax = make_shared<RelDFFullT>(full, dist);
+    fullax->discard_df();
+  }
+  return tie(fullvi, fullax);
+}
+
+
 template<typename DataType>
 void NEVPT2_<DataType>::compute() {
 
@@ -183,7 +235,7 @@ void NEVPT2_<DataType>::compute() {
     fock_c = make_shared<MatType>(*coeffall % *ofockao * *coeffall);
 
     // h'eff (only exchange in the active space)
-    auto fockao_p = compute_fock(ofockao, *acoeff*(1.0/sqrt(fac2)), 1.0, 0.0); // only exchange
+    auto fockao_p = compute_fock(ofockao, *acoeff*(1.0/sqrt(fac2)), 1.0, 0.0); // only exchange TODO
     fockact_p_ = make_shared<MatType>(*acoeff % *fockao_p * *acoeff);
     fockact_p_->localize();
     fock_p = make_shared<MatType>(*coeffall % *fockao_p * *coeffall);
@@ -196,63 +248,54 @@ void NEVPT2_<DataType>::compute() {
   }
   timer.tick_print("Fock computation");
 
-#if 1
   /////////////////////////////////////////////////////////////////////////////////////
   // compute transformed integrals
-  shared_ptr<DFDistT> fullvi;
+  shared_ptr<DFType> fullvi;
   shared_ptr<const MatType> fullav;
   shared_ptr<const MatType> fullai;
   // TODO probably we want to use JKFIT for this for consistency?
   shared_ptr<const MatType> fullaa;
   size_t memory_size;
-
   {
+    shared_ptr<const Geometry> cgeom;
     // first compute half transformed integrals
-    shared_ptr<DFHalfDist> half, halfa;
     if (abasis_.empty()) {
-      if (nclosed_)
-        half = geom_->df()->compute_half_transform(ccoeff);
-      halfa = geom_->df()->compute_half_transform(acoeff);
-      // used later to determine the cache size
-      memory_size = geom_->df()->block(0)->size() * 2;
-      mpi__->broadcast(&memory_size, 1, 0);
+      cgeom = geom_;
     } else {
       auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
-      auto cgeom = make_shared<Geometry>(*geom_, info, false);
-      if (nclosed_)
-        half = cgeom->df()->compute_half_transform(ccoeff);
-      halfa = cgeom->df()->compute_half_transform(acoeff);
-      // used later to determine the cache size
-      memory_size = cgeom->df()->block(0)->size();
-      mpi__->broadcast(&memory_size, 1, 0);
+      cgeom = make_shared<Geometry>(*geom_, info, false);
+      if (!is_same<DataType,double>::value) {
+        auto ref = dynamic_pointer_cast<const RelReference>(ref_);
+        cgeom = cgeom->relativistic(ref->gaunt(), ref->breit());
+      }
     }
 
-    // second transform for virtual index and rearrange data
-    if (nclosed_) {
-      // this is now (naux, nvirt_, nclosed_), distributed by nvirt_*nclosed_. Always naux*nvirt_ block is localized to one node
-      shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff)->apply_J()->swap();
-      auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
-      fullvi = make_shared<DFDistT>(full, dist);
-      fullvi->discard_df();
-      assert(fullvi->nblocks() == 1);
-    }
+    // used later to determine the cache size
+    memory_size = cgeom->df()->block(0)->size(); // TODO make it robust
+    mpi__->broadcast(&memory_size, 1, 0);
+
+    shared_ptr<DFType> fullax;
+    tie(fullvi, fullax) = compute_full_nevpt2(cgeom, ccoeff, acoeff, vcoeff, coeffall);
+
+    shared_ptr<const MatType> fullaxm = fullax->replicate();
+
+    if (nclosed_)
+      fullai = fullaxm->slice_copy(0, nact_*nclosed_);
+    fullaa = fullaxm->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_));
+    fullav = fullaxm->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_));
+  }
+
+  {
     {
-      shared_ptr<DFFullDist> full = halfa->compute_second_transform(coeffall)->apply_J();
-      auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
-      auto fullax_all = make_shared<DFDistT>(full, dist);
-      shared_ptr<const MatType> fullax = fullax_all->replicate();
-
-      if (nclosed_)
-        fullai = fullax->slice_copy(0, nact_*nclosed_);
-      fullaa = fullax->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_));
-      fullav = fullax->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_));
-
       // set 4-index integrals within the active space
-      auto ints = make_shared<MatType>(*fullaa % *fullaa);
-      auto tmp = ints->clone();
-      sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact_, nact_, nact_, nact_);
+      MatType ints(nact_*nact_, nact_*nact_, true);
+      btas::contract(1.0, *fullaa, {0,1}, *fullaa, {0,2}, 0.0, ints, {1,2}, false, false);
+      auto tmp = ints.clone();
+      sort_indices<0,2,1,3,0,1,1,1>(ints.data(), tmp->data(), nact_, nact_, nact_, nact_);
       ints2_ = tmp;
+    }
 
+    {
       // set qvec
       auto rdm2c = rdm2_->copy();
       const btas::CRange<2> range(nact_, nact_*nact_*nact_);
@@ -265,6 +308,7 @@ void NEVPT2_<DataType>::compute() {
   }
   cout << "    * 3-index integral transformation done" << endl;
 
+#if 1
   /////////////////////////////////////////////////////////////////////////////////////
   // implemented in nevpt2_mat.cc
   compute_kmat();
