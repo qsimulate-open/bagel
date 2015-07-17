@@ -25,7 +25,6 @@
 
 #include <src/pt2/nevpt2/nevpt2.h>
 #include <src/pt2/mp2/mp2cache.h>
-#include <src/df/dfdistt.h>
 #include <src/scf/hf/fock.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/mat1e/rel/relhcore.h>
@@ -266,7 +265,8 @@ void NEVPT2_<DataType>::compute() {
 
   /////////////////////////////////////////////////////////////////////////////////////
   // make a list of static distribution
-  vector<vector<tuple<int,int,int,int>>> tasks(mpi__->size());
+  vector<vector<tuple<int,int,MP2Tag<DataType>,MP2Tag<DataType>>>> tasks(mpi__->size());
+  MP2Tag<DataType> dum;
   // distribution of closed-closed
   if (nclosed_) {
     StaticDist ijdist(nclosed_*(nclosed_+1)/2, mpi__->size());
@@ -274,7 +274,7 @@ void NEVPT2_<DataType>::compute() {
       for (int i = 0, cnt = 0; i < nclosed_; ++i)
         for (int j = i; j < nclosed_; ++j, ++cnt)
           if (cnt >= ijdist.start(inode) && cnt < ijdist.start(inode) + ijdist.size(inode))
-            tasks[inode].push_back(make_tuple(j, i, /*mpitags*/-1,-1));
+            tasks[inode].push_back(make_tuple(j, i, /*mpitags*/dum,dum));
     }
   }
   // distribution of virt-virt (cheap as both involve active indices)
@@ -284,7 +284,7 @@ void NEVPT2_<DataType>::compute() {
       for (int i = 0, cnt = 0; i < nvirt_; ++i)
         for (int j = i; j < nvirt_; ++j, ++cnt)
           if (cnt >= ijdist.start(inode) && cnt < ijdist.start(inode) + ijdist.size(inode))
-            tasks[inode].push_back(make_tuple(j+nclosed_+nact_, i+nclosed_+nact_, /*mpitags*/-1,-1));
+            tasks[inode].push_back(make_tuple(j+nclosed_+nact_, i+nclosed_+nact_, /*mpitags*/dum,dum));
     }
   }
   // distribution of closed (sort of cheap)
@@ -293,7 +293,7 @@ void NEVPT2_<DataType>::compute() {
     for (int inode = 0; inode != mpi__->size(); ++inode) {
       for (int i = 0; i < nclosed_; ++i)
         if (i >= ijdist.start(inode) && i < ijdist.start(inode) + ijdist.size(inode))
-          tasks[inode].push_back(make_tuple(i, -1, /*mpitags*/-1,-1));
+          tasks[inode].push_back(make_tuple(i, -1, /*mpitags*/dum,dum));
     }
   }
   // distribution of virt for S_r(-1) (sort of cheap)
@@ -302,7 +302,7 @@ void NEVPT2_<DataType>::compute() {
     for (int inode = 0; inode != mpi__->size(); ++inode) {
       for (int i = 0; i < nvirt_; ++i)
         if (i >= ijdist.start(inode) && i < ijdist.start(inode) + ijdist.size(inode))
-          tasks[inode].push_back(make_tuple(i+nclosed_+nact_, -1, /*mpitags*/-1,-1));
+          tasks[inode].push_back(make_tuple(i+nclosed_+nact_, -1, /*mpitags*/dum,dum));
     }
   }
   {
@@ -311,7 +311,7 @@ void NEVPT2_<DataType>::compute() {
       if (nmax < i.size()) nmax = i.size();
     for (auto& i : tasks) {
       const int n = i.size();
-      for (int j = 0; j != nmax-n; ++j) i.push_back(make_tuple(-1,-1,-1,-1));
+      for (int j = 0; j != nmax-n; ++j) i.push_back(make_tuple(-1,-1,dum,dum));
     }
   }
 

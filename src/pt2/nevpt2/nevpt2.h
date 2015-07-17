@@ -28,6 +28,8 @@
 #define __SRC_NEVPT2_NEVPT2_H
 
 #include <src/wfn/method.h>
+#include <src/df/dfdistt.h>
+#include <src/df/reldffullt.h>
 #include <src/wfn/relreference.h>
 
 namespace bagel {
@@ -35,9 +37,10 @@ namespace bagel {
 template<typename DataType>
 class NEVPT2_ : public Method {
   protected:
-    using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
-    using VecType = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
+    using MatType  = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+    using VecType  = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
     using ViewType = typename std::conditional<std::is_same<DataType,double>::value, MatView, ZMatView>::type;
+    using DFType   = typename std::conditional<std::is_same<DataType,double>::value, DFDistT, RelDFFullT>::type;
 
   protected:
     int ncore_;
