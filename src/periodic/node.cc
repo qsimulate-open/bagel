@@ -415,7 +415,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   vector<shared_ptr<const Shell>> basis;
   vector<int> new_offset;
   ////DEBUG
-#if 1
+#if 0
   if (ninter_ != 0) {
     for (auto& body : bodies_) {
       size_t iat = 0;
@@ -436,7 +436,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   }
 #endif
   ////END OF DEBUG
-#if 0
+#if 1
   for (auto& close_node : neighbour_) {
     for (auto& close_body : close_node->bodies()) {
       size_t iat = 0;
