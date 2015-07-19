@@ -103,7 +103,8 @@ class NEVPT2 : public Method {
     std::shared_ptr<const MatType> dmat1t_;
 
     void init_reference();
-    std::shared_ptr<MatType> compute_fock(std::shared_ptr<const MatType> hcore, const ViewType coeff, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
+    std::shared_ptr<MatType> compute_fock(std::shared_ptr<const Geometry> cgeom, std::shared_ptr<const MatType> hcore,
+                                          const ViewType coeff, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
     std::tuple<std::shared_ptr<DFType>,std::shared_ptr<DFType>>
       compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const MatType>, std::shared_ptr<const MatType>,
                           std::shared_ptr<const MatType>, std::shared_ptr<const MatType>) const;
@@ -136,8 +137,10 @@ template<> void NEVPT2<std::complex<double>>::compute_rdm();
 template<> std::shared_ptr<const Matrix> NEVPT2<double>::coeff();
 template<> std::shared_ptr<const ZMatrix> NEVPT2<std::complex<double>>::coeff();
 
-template<> std::shared_ptr<Matrix> NEVPT2<double>::compute_fock(std::shared_ptr<const Matrix> hcore, const MatView coeff, const double exch, const double coulomb);
-template<> std::shared_ptr<ZMatrix> NEVPT2<std::complex<double>>::compute_fock(std::shared_ptr<const ZMatrix> hcore, const ZMatView coeff, const double exch, const double coulomb);
+template<> std::shared_ptr<Matrix> NEVPT2<double>::compute_fock(std::shared_ptr<const Geometry> cgeom, std::shared_ptr<const Matrix> hcore,
+                                                                const MatView coeff, const double exch, const double coulomb);
+template<> std::shared_ptr<ZMatrix> NEVPT2<std::complex<double>>::compute_fock(std::shared_ptr<const Geometry> cgeom, std::shared_ptr<const ZMatrix> hcore,
+                                                                               const ZMatView coeff, const double exch, const double coulomb);
 
 template<> std::tuple<std::shared_ptr<DFDistT>,std::shared_ptr<DFDistT>>
   NEVPT2<double>::compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,

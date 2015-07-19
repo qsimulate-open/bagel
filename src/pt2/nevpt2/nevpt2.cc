@@ -88,15 +88,17 @@ void NEVPT2<complex<double>>::init_reference() {
 
 
 template<>
-shared_ptr<Matrix> NEVPT2<double>::compute_fock(shared_ptr<const Matrix> hcore, const MatView coeff, const double scale_exch, const double scale_coulomb) {
-  return make_shared<Fock<1>>(geom_, hcore, nullptr, coeff, /*store_half*/false, /*rhf*/true, scale_exch, scale_coulomb);
+shared_ptr<Matrix> NEVPT2<double>::compute_fock(shared_ptr<const Geometry> cgeom, shared_ptr<const Matrix> hcore,
+                                                const MatView coeff, const double scale_exch, const double scale_coulomb) {
+  return make_shared<Fock<1>>(cgeom, hcore, nullptr, coeff, /*store_half*/false, /*rhf*/true, scale_exch, scale_coulomb);
 }
 
 
 template<>
-shared_ptr<ZMatrix> NEVPT2<complex<double>>::compute_fock(shared_ptr<const ZMatrix> hcore, const ZMatView coeff, const double scale_exch, const double scale_coulomb) {
+shared_ptr<ZMatrix> NEVPT2<complex<double>>::compute_fock(shared_ptr<const Geometry> cgeom, shared_ptr<const ZMatrix> hcore,
+                                                          const ZMatView coeff, const double scale_exch, const double scale_coulomb) {
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-  return make_shared<DFock>(geom_, hcore, coeff, ref->gaunt(), ref->breit(), /*store_half*/false, /*robust*/ref->breit(), scale_exch, scale_coulomb);
+  return make_shared<DFock>(cgeom, hcore, coeff, ref->gaunt(), ref->breit(), /*store_half*/false, /*robust*/ref->breit(), scale_exch, scale_coulomb);
 }
 
 
@@ -170,6 +172,18 @@ void NEVPT2<DataType>::compute() {
   Timer timer;
 
   const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
+  shared_ptr<const Geometry> cgeom;
+  // first compute half transformed integrals
+  if (abasis_.empty()) {
+    cgeom = geom_;
+  } else {
+    auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
+    cgeom = make_shared<Geometry>(*geom_, info, false);
+  }
+  if (!is_same<DataType,double>::value) {
+    auto ref = dynamic_pointer_cast<const RelReference>(ref_);
+    cgeom = cgeom->relativistic(ref->gaunt());
+  }
 
   // coefficients -- will be updated later
   shared_ptr<MatType> ccoeff = nclosed_ ? coeff()->slice_copy(ncore_, ncore_+nclosed_) : nullptr;
@@ -201,15 +215,15 @@ void NEVPT2<DataType>::compute() {
   shared_ptr<const MatType> fock_h;
   {
     // * core Fock operator
-    shared_ptr<const MatType> hcore = make_shared<typename conditional<is_same<DataType,double>::value,Hcore,RelHcore>::type>(geom_);
-    shared_ptr<const MatType> ofockao = nclosed_+ncore_ ?  compute_fock(hcore, coeff()->slice(0, ncore_+nclosed_)) : hcore;
+    shared_ptr<const MatType> hcore = make_shared<typename conditional<is_same<DataType,double>::value,Hcore,RelHcore>::type>(cgeom);
+    shared_ptr<const MatType> ofockao = nclosed_+ncore_ ?  compute_fock(cgeom, hcore, coeff()->slice(0, ncore_+nclosed_)) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<MatType> rdm1_mat = rdm1_->copy();
     rdm1_mat->sqrt();
     rdm1_mat->delocalize();
     auto acoeffw = make_shared<MatType>(*acoeff * (1.0/sqrt(fac2)) * *rdm1_mat);
-    auto fockao = compute_fock(ofockao, *acoeffw);
+    auto fockao = compute_fock(cgeom, ofockao, *acoeffw);
     // MO Fock
     if (nclosed_) {
       MatType omofock(*ccoeff % *fockao * *ccoeff);
@@ -235,13 +249,13 @@ void NEVPT2<DataType>::compute() {
     fock_c = make_shared<MatType>(*coeffall % *ofockao * *coeffall);
 
     // h'eff (only exchange in the active space)
-    auto fockao_p = compute_fock(ofockao, *acoeff*(1.0/sqrt(fac2)), 1.0, 0.0); // only exchange TODO
+    auto fockao_p = compute_fock(cgeom, ofockao, *acoeff*(1.0/sqrt(fac2)), 1.0, 0.0); // only exchange TODO
     fockact_p_ = make_shared<MatType>(*acoeff % *fockao_p * *acoeff);
     fockact_p_->localize();
     fock_p = make_shared<MatType>(*coeffall % *fockao_p * *coeffall);
 
     // h''eff (treat active orbitals as closed)
-    auto fockao_h = compute_fock(ofockao, *acoeff);
+    auto fockao_h = compute_fock(cgeom, ofockao, *acoeff);
     fockact_h_ = make_shared<MatType>(*acoeff % *fockao_h * *acoeff);
     fockact_h_->localize();
     fock_h = make_shared<MatType>(*coeffall % *fockao_h * *coeffall);
@@ -257,19 +271,6 @@ void NEVPT2<DataType>::compute() {
   shared_ptr<const MatType> fullaa;
   size_t memory_size;
   {
-    shared_ptr<const Geometry> cgeom;
-    // first compute half transformed integrals
-    if (abasis_.empty()) {
-      cgeom = geom_;
-    } else {
-      auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
-      cgeom = make_shared<Geometry>(*geom_, info, false);
-      if (!is_same<DataType,double>::value) {
-        auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-        cgeom = cgeom->relativistic(ref->gaunt(), ref->breit());
-      }
-    }
-
     // used later to determine the cache size
     memory_size = cgeom->df()->block(0)->size(); // TODO make it robust
     mpi__->broadcast(&memory_size, 1, 0);
@@ -370,7 +371,7 @@ void NEVPT2<DataType>::compute() {
     }
   }
 
-  MP2Cache_<DataType> cache(geom_->naux(), nclosed_, nvirt_, fullvi, tasks);
+  MP2Cache_<DataType> cache(cgeom->naux(), nclosed_, nvirt_, fullvi, tasks);
 
   const int nloop = cache.nloop();
   const int ncache = max(3, min(static_cast<int>(memory_size/(nvirt_*nvirt_)), 20));
