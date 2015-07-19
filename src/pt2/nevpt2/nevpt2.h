@@ -35,7 +35,7 @@
 namespace bagel {
 
 template<typename DataType>
-class NEVPT2_ : public Method {
+class NEVPT2 : public Method {
   protected:
     using MatType  = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
     using VecType  = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
@@ -117,7 +117,7 @@ class NEVPT2_ : public Method {
     std::shared_ptr<const MatType> coeff();
 
   public:
-    NEVPT2_(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference> = nullptr);
+    NEVPT2(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference> = nullptr);
 
     virtual void compute() override;
     virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
@@ -127,30 +127,27 @@ class NEVPT2_ : public Method {
     std::string abasis() const { return abasis_; }
 };
 
-template<> void NEVPT2_<double>::init_reference();
-template<> void NEVPT2_<std::complex<double>>::init_reference();
+template<> void NEVPT2<double>::init_reference();
+template<> void NEVPT2<std::complex<double>>::init_reference();
 
-template<> void NEVPT2_<double>::compute_rdm();
-template<> void NEVPT2_<std::complex<double>>::compute_rdm();
+template<> void NEVPT2<double>::compute_rdm();
+template<> void NEVPT2<std::complex<double>>::compute_rdm();
 
-template<> std::shared_ptr<const Matrix> NEVPT2_<double>::coeff();
-template<> std::shared_ptr<const ZMatrix> NEVPT2_<std::complex<double>>::coeff();
+template<> std::shared_ptr<const Matrix> NEVPT2<double>::coeff();
+template<> std::shared_ptr<const ZMatrix> NEVPT2<std::complex<double>>::coeff();
 
-template<> std::shared_ptr<Matrix> NEVPT2_<double>::compute_fock(std::shared_ptr<const Matrix> hcore, const MatView coeff, const double exch, const double coulomb);
-template<> std::shared_ptr<ZMatrix> NEVPT2_<std::complex<double>>::compute_fock(std::shared_ptr<const ZMatrix> hcore, const ZMatView coeff, const double exch, const double coulomb);
+template<> std::shared_ptr<Matrix> NEVPT2<double>::compute_fock(std::shared_ptr<const Matrix> hcore, const MatView coeff, const double exch, const double coulomb);
+template<> std::shared_ptr<ZMatrix> NEVPT2<std::complex<double>>::compute_fock(std::shared_ptr<const ZMatrix> hcore, const ZMatView coeff, const double exch, const double coulomb);
 
 template<> std::tuple<std::shared_ptr<DFDistT>,std::shared_ptr<DFDistT>>
-  NEVPT2_<double>::compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
-                                       std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>) const;
+  NEVPT2<double>::compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
+                                      std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>) const;
 template<> std::tuple<std::shared_ptr<RelDFFullT>,std::shared_ptr<RelDFFullT>>
-  NEVPT2_<std::complex<double>>::compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>,
-                                                     std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>) const;
+  NEVPT2<std::complex<double>>::compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>,
+                                                    std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>) const;
 
-extern template class NEVPT2_<double>;
-extern template class NEVPT2_<std::complex<double>>;
-
-using NEVPT2 = NEVPT2_<double>;
-using ZNEVPT2 = NEVPT2_<std::complex<double>>;
+extern template class NEVPT2<double>;
+extern template class NEVPT2<std::complex<double>>;
 
 }
 

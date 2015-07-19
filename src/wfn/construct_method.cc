@@ -113,7 +113,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       // TODO to be called from optimizer
       out = make_shared<CASPT2Grad>(itree, geom, ref);
     }
-    else if (title == "nevpt2")  out = make_shared<NEVPT2>(itree, geom, ref);
+    else if (title == "nevpt2")  out = make_shared<NEVPT2<double>>(itree, geom, ref);
+    else if (title == "dnevpt2") out = make_shared<NEVPT2<complex<double>>>(itree, geom, ref);
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
       if (algorithm == "superci" || algorithm == "")

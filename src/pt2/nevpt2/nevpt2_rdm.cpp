@@ -23,10 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifdef NEVPT2_IMPL
+#ifdef NEVPT2IMPL
 
 template<>
-void NEVPT2_<double>::compute_rdm() {
+void NEVPT2<double>::compute_rdm() {
   // rdm 1
   {
     auto tmp = ref_->rdm1(istate_)->rdm1_mat(/*nclosed_*/0, false);
@@ -55,7 +55,7 @@ void NEVPT2_<double>::compute_rdm() {
 }
 
 template<>
-void NEVPT2_<complex<double>>::compute_rdm() {
+void NEVPT2<complex<double>>::compute_rdm() {
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
   // rdm 1
   {
@@ -94,7 +94,7 @@ void NEVPT2_<complex<double>>::compute_rdm() {
 
 
 template<typename DataType>
-void NEVPT2_<DataType>::compute_asrdm() {
+void NEVPT2<DataType>::compute_asrdm() {
   assert(rdm1_ && rdm2_ && rdm3_ && rdm4_);
   auto id2 = [this](                          const int k, const int l) { return         (        (k+nact_*l)); };
   auto id3 = [this](             const int j, const int k, const int l) { return         (j+nact_*(k+nact_*l)); };
@@ -161,7 +161,7 @@ void NEVPT2_<DataType>::compute_asrdm() {
 
 
 template<typename DataType>
-void NEVPT2_<DataType>::compute_hrdm() {
+void NEVPT2<DataType>::compute_hrdm() {
   assert(rdm1_ && rdm2_ && rdm3_ && srdm2_);
 
   auto id3 = [this](const int j, const int k, const int l) { return j+nact_*(k+nact_*l); };

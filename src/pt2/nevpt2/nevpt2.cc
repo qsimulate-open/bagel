@@ -40,7 +40,7 @@ using namespace bagel;
 // Notations closely follow that in the reference
 
 template<typename DataType>
-NEVPT2_<DataType>::NEVPT2_(shared_ptr<const PTree> input, shared_ptr<const Geometry> g, shared_ptr<const Reference> ref) : Method(input, g, ref) {
+NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometry> g, shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
   const int z2 = is_same<DataType,double>::value ? 1 : 2;
 
@@ -72,7 +72,7 @@ NEVPT2_<DataType>::NEVPT2_(shared_ptr<const PTree> input, shared_ptr<const Geome
 
 
 template<>
-void NEVPT2_<double>::init_reference() {
+void NEVPT2<double>::init_reference() {
   auto casscf = make_shared<SuperCI>(idata_, geom_, ref_);
   casscf->compute();
   ref_ = casscf->conv_to_ref();
@@ -80,7 +80,7 @@ void NEVPT2_<double>::init_reference() {
 
 
 template<>
-void NEVPT2_<complex<double>>::init_reference() {
+void NEVPT2<complex<double>>::init_reference() {
   auto casscf = make_shared<ZCASBFGS>(idata_, geom_, ref_);
   casscf->compute();
   ref_ = casscf->conv_to_ref();
@@ -88,33 +88,33 @@ void NEVPT2_<complex<double>>::init_reference() {
 
 
 template<>
-shared_ptr<Matrix> NEVPT2_<double>::compute_fock(shared_ptr<const Matrix> hcore, const MatView coeff, const double scale_exch, const double scale_coulomb) {
+shared_ptr<Matrix> NEVPT2<double>::compute_fock(shared_ptr<const Matrix> hcore, const MatView coeff, const double scale_exch, const double scale_coulomb) {
   return make_shared<Fock<1>>(geom_, hcore, nullptr, coeff, /*store_half*/false, /*rhf*/true, scale_exch, scale_coulomb);
 }
 
 
 template<>
-shared_ptr<ZMatrix> NEVPT2_<complex<double>>::compute_fock(shared_ptr<const ZMatrix> hcore, const ZMatView coeff, const double scale_exch, const double scale_coulomb) {
+shared_ptr<ZMatrix> NEVPT2<complex<double>>::compute_fock(shared_ptr<const ZMatrix> hcore, const ZMatView coeff, const double scale_exch, const double scale_coulomb) {
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
   return make_shared<DFock>(geom_, hcore, coeff, ref->gaunt(), ref->breit(), /*store_half*/false, /*robust*/ref->breit(), scale_exch, scale_coulomb);
 }
 
 
 template<>
-shared_ptr<const Matrix> NEVPT2_<double>::coeff() {
+shared_ptr<const Matrix> NEVPT2<double>::coeff() {
   return ref_->coeff();
 }
 
 
 template<>
-shared_ptr<const ZMatrix> NEVPT2_<complex<double>>::coeff() {
+shared_ptr<const ZMatrix> NEVPT2<complex<double>>::coeff() {
   return dynamic_pointer_cast<const RelReference>(ref_)->relcoeff()->block_format();
 }
 
 
 template<>
 tuple<shared_ptr<DFDistT>, shared_ptr<DFDistT>>
-  NEVPT2_<double>::compute_full_nevpt2(shared_ptr<const Geometry> cgeom, shared_ptr<const Matrix> ccoeff, shared_ptr<const Matrix> acoeff,
+  NEVPT2<double>::compute_full_nevpt2(shared_ptr<const Geometry> cgeom, shared_ptr<const Matrix> ccoeff, shared_ptr<const Matrix> acoeff,
                                        shared_ptr<const Matrix> vcoeff, shared_ptr<const Matrix> coeffall) const {
   shared_ptr<DFDistT> fullvi, fullax;
   if (nclosed_) {
@@ -140,7 +140,7 @@ tuple<shared_ptr<DFDistT>, shared_ptr<DFDistT>>
 
 template<>
 tuple<shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>>
-  NEVPT2_<complex<double>>::compute_full_nevpt2(shared_ptr<const Geometry> cgeom, shared_ptr<const ZMatrix> ccoeff, shared_ptr<const ZMatrix> acoeff,
+  NEVPT2<complex<double>>::compute_full_nevpt2(shared_ptr<const Geometry> cgeom, shared_ptr<const ZMatrix> ccoeff, shared_ptr<const ZMatrix> acoeff,
                                                 shared_ptr<const ZMatrix> vcoeff, shared_ptr<const ZMatrix> coeffall) const {
   shared_ptr<RelDFFullT> fullvi, fullax;
   if (nclosed_) {
@@ -165,7 +165,7 @@ tuple<shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>>
 
 
 template<typename DataType>
-void NEVPT2_<DataType>::compute() {
+void NEVPT2<DataType>::compute() {
 
   Timer timer;
 
@@ -308,7 +308,6 @@ void NEVPT2_<DataType>::compute() {
   }
   cout << "    * 3-index integral transformation done" << endl;
 
-#if 1
   /////////////////////////////////////////////////////////////////////////////////////
   // implemented in nevpt2_mat.cc
   compute_kmat();
@@ -371,18 +370,18 @@ void NEVPT2_<DataType>::compute() {
     }
   }
 
-  MP2Cache cache(geom_->naux(), nclosed_, nvirt_, fullvi, tasks);
+  MP2Cache_<DataType> cache(geom_->naux(), nclosed_, nvirt_, fullvi, tasks);
 
   const int nloop = cache.nloop();
-  const int ncache = min(memory_size/(nvirt_*nvirt_), size_t(20));
+  const int ncache = max(3, min(static_cast<int>(memory_size/(nvirt_*nvirt_)), 20));
   cout << "    * ncache = " << ncache << endl;
   for (int n = 0; n != min(ncache, nloop); ++n)
     cache.block(n, -1);
 
   // loop over tasks
   const map<string, int> sect{{"(+0)", 0}, {"(+1)", 1}, {"(-1)", 2}, {"(+2)", 3}, {"(-2)", 4}, {"(+1)'", 5}, {"(-1)'", 6}, {"(+0)'", 7}};
-  array<double,8> energy;
-  fill(energy.begin(), energy.end(), 0.0);
+  array<DataType,8> energy;
+  fill(energy.begin(), energy.end(), static_cast<DataType>(0.0));
 
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
@@ -397,6 +396,7 @@ void NEVPT2_<DataType>::compute() {
 
     if (i < 0 && j < 0) {
       continue;
+#if 1
     } else if (i < nclosed_ && j < nclosed_ && i >= 0 && j >= 0) {
       shared_ptr<const MatType> iblock = cache(i);
       shared_ptr<const MatType> jblock = cache(j);
@@ -422,42 +422,42 @@ void NEVPT2_<DataType>::compute() {
       auto vmat_aaK = btas::group(mat_aaK,0,2);
       btas::contract(1.0, *hrdm2_,  {0,1}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaR, {0});
       btas::contract(1.0, *kmatp2_, {0,1}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaK, {0});
-      const double norm2  = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
-      const double denom2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
-      if (norm2 > norm_thresh_)
+      const DataType norm2  = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
+      const DataType denom2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
+      if (abs(norm2) > norm_thresh_)
         energy[sect.at("(+2)")] += norm2 / (-denom2/norm2 + oeig(i)+oeig(j));
 
       // TODO should thread
       // S(1)ij,r sector
-      double en1 = 0.0;
+      DataType en1 = 0.0;
       for (int v = 0; v != nvirt_; ++v) {
-        double norm = 0.0;
-        double denom = 0.0;
+        DataType norm = 0.0;
+        DataType denom = 0.0;
         for (int a = 0; a != nact_; ++a) {
-          const double va = mat_va(v, a);
-          const double av = mat_av(a, v);
-          const double vaR = mat_vaR(v, a);
-          const double avR = mat_avR(a, v);
-          const double vaK = mat_vaKp(v, a);
-          const double avK = mat_avKp(a, v);
+          const DataType va = mat_va(v, a);
+          const DataType av = mat_av(a, v);
+          const DataType vaR = mat_vaR(v, a);
+          const DataType avR = mat_avR(a, v);
+          const DataType vaK = mat_vaKp(v, a);
+          const DataType avK = mat_avKp(a, v);
           norm  += (2.0*(va*vaR + av*avR) - av*vaR - va*avR);
           denom += (2.0*(va*vaK + av*avK) - av*vaK - va*avK);
         }
-        if (norm > norm_thresh_)
+        if (abs(norm) > norm_thresh_)
           en1 += norm / (-denom/norm-veig(v)+oeig(i)+oeig(j));
       }
       if (i == j) en1 *= 0.5;
       energy[sect.at("(+1)")] += en1;
 
       // S(0)ij,rs sector
-      double en = 0.0;
+      DataType en = 0.0;
       for (int v = 0; v != nvirt_; ++v) {
         for (int u = v+1; u < nvirt_; ++u) {
-          const double vu = mat(v, u);
-          const double uv = mat(u, v);
+          const DataType vu = mat(v, u);
+          const DataType uv = mat(u, v);
           en += 2.0*(uv*uv + vu*vu - uv*vu) / (-veig(v)+oeig(i)-veig(u)+oeig(j));
         }
-        const double vv = mat(v, v);
+        const DataType vv = mat(v, v);
         en += vv*vv / (-veig(v)+oeig(i)-veig(v)+oeig(j));
       }
       if (i != j) en *= 2.0;
@@ -476,9 +476,9 @@ void NEVPT2_<DataType>::compute() {
       auto vmat_aaK = btas::group(mat_aaK,0,2);
       btas::contract(1.0, *rdm2_,  {0,1}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaR, {0});
       btas::contract(1.0, *kmat2_, {1,0}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaK, {0});
-      const double norm  = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
-      const double denom = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
-      if (norm > norm_thresh_)
+      const DataType norm  = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
+      const DataType denom = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
+      if (abs(norm) > norm_thresh_)
         energy[sect.at("(-2)")] += norm / (denom/norm - veig[iv] - veig[jv]);
 
     } else if (i >= nclosed_+nact_ && j < 0) {
@@ -495,9 +495,9 @@ void NEVPT2_<DataType>::compute() {
       VecType heff(nact_);
       for (int a = 0; a != nact_; ++a)
         heff(a) = (2.0*fock_p->element(a+nclosed_, i) - fock_c->element(a+nclosed_, i));
-      const double norm = abc % (*ardm3_sorted % abc) + heff % (2.0 * *ardm2_sorted % abc + *rdm1_ % heff);
-      const double denom = abc % (*amat3_ % abc) + heff % (*bmat2_ % abc + *cmat2_ * abc + *dmat1_ % heff);
-      if (norm > norm_thresh_)
+      const DataType norm = abc % (*ardm3_sorted % abc) + heff % (2.0 * *ardm2_sorted % abc + *rdm1_ % heff);
+      const DataType denom = abc % (*amat3_ % abc) + heff % (*bmat2_ % abc + *cmat2_ * abc + *dmat1_ % heff);
+      if (abs(norm) > norm_thresh_)
         energy[sect.at("(-1)'")] += norm / (-denom/norm - veig[iv]);
 
     } else if (i < nclosed_ && j < 0) {
@@ -524,9 +524,9 @@ void NEVPT2_<DataType>::compute() {
           const MatType mat2R(ibr % sblock * *rdm1_); // (vi|as) (i, s fixed)
           const MatType mat1K(ibs % rblock * *kmat_); // (vi|ar) (i, r fixed)
           const MatType mat2K(ibr % sblock * *kmat_); // (vi|as) (i, s fixed)
-          const double norm  = (r == s ? 1.0 : 2.0) * (mat2R.dot_product(mat2) + mat1R.dot_product(mat1) - mat2R.dot_product(mat1));
-          const double denom = (r == s ? 1.0 : 2.0) * (mat2K.dot_product(mat2) + mat1K.dot_product(mat1) - mat2K.dot_product(mat1));
-          if (norm > norm_thresh_)
+          const DataType norm  = (r == s ? 1.0 : 2.0) * (mat2R.dot_product(mat2) + mat1R.dot_product(mat1) - mat2R.dot_product(mat1));
+          const DataType denom = (r == s ? 1.0 : 2.0) * (mat2K.dot_product(mat2) + mat1K.dot_product(mat1) - mat2K.dot_product(mat1));
+          if (abs(norm) > norm_thresh_)
             energy[sect.at("(-1)")] += norm / (denom/norm + oeig(i) - veig[r] - veig[s]);
         }
 
@@ -544,11 +544,11 @@ void NEVPT2_<DataType>::compute() {
         btas::contract(1.0, srdm2_p, {0,1}, btas::group(mat2,0,2), {1}, 0.0, vmat2Sp, {0});
         btas::contract(1.0, *dmat2_, {0,1}, btas::group(mat2,0,2), {1}, 0.0, vmat2D , {0});
         const int ir = r + nclosed_ + nact_;
-        const double norm = - 2.0*mat1S.dot_product(mat1) + blas::dot_product(mat1Ssym.data(), mat1Ssym.size(), mat2.data()) + mat2Sp.dot_product(mat2)
-                          + 2.0*(fock->element(ir,i) - fock_c->element(ir,i))*(fock_c->element(ir,i) + fock_h->element(ir,i))
-                          + 2.0*fock_c->element(ir,i)*fock_c->element(ir,i);
-        const double denom = 2.0*mat1A.dot_product(mat1) - blas::dot_product(mat1Asym.data(), mat1Asym.size(), mat2.data()) + mat2D.dot_product(mat2);
-        if (norm > norm_thresh_)
+        const DataType norm = - 2.0*mat1S.dot_product(mat1) + blas::dot_product(mat1Ssym.data(), mat1Ssym.size(), mat2.data()) + mat2Sp.dot_product(mat2)
+                            + 2.0*(fock->element(ir,i) - fock_c->element(ir,i))*(fock_c->element(ir,i) + fock_h->element(ir,i))
+                            + 2.0*fock_c->element(ir,i)*fock_c->element(ir,i);
+        const DataType denom = 2.0*mat1A.dot_product(mat1) - blas::dot_product(mat1Asym.data(), mat1Asym.size(), mat2.data()) + mat2D.dot_product(mat2);
+        if (abs(norm) > norm_thresh_)
           energy[sect.at("(+0)'")] += norm / (-denom/norm + oeig(i) - veig[r]);
       }
 
@@ -563,9 +563,10 @@ void NEVPT2_<DataType>::compute() {
       VecType heff(nact_);
       for (int a = 0; a != nact_; ++a)
         heff(a) = fock_c->element(a+nclosed_, i);
-      const double norm  = abc % (*ardm3_sorted % abc) + heff % (2.0 * *ardm2_sorted % abc + *hrdm1_ % heff);
-      const double denom = abc % (*amat3t_ % abc)      + heff % (*bmat2t_ % abc + *cmat2t_ * abc + *dmat1t_ % heff);
+      const DataType norm  = abc % (*ardm3_sorted % abc) + heff % (2.0 * *ardm2_sorted % abc + *hrdm1_ % heff);
+      const DataType denom = abc % (*amat3t_ % abc)      + heff % (*bmat2t_ % abc + *cmat2t_ * abc + *dmat1t_ % heff);
       energy[sect.at("(+1)'")] += norm / (-denom/norm + oeig(i));
+#endif
     }
   }
 
@@ -573,7 +574,7 @@ void NEVPT2_<DataType>::compute() {
   cache.wait();
   // allreduce energy contributions
   mpi__->allreduce(energy.data(), energy.size());
-  energy_ = accumulate(energy.begin(), energy.end(), 0.0);
+  energy_ = detail::real(accumulate(energy.begin(), energy.end(), static_cast<DataType>(0.0)));
 
   cout << "    * assembly done" << endl << endl;
   cout << "      NEVPT2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
@@ -583,14 +584,13 @@ void NEVPT2_<DataType>::compute() {
 
   energy_ += ref_->energy();
   cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
-#endif
 
 }
 
-#define NEVPT2_IMPL
+#define NEVPT2IMPL
 #include <src/pt2/nevpt2/nevpt2_rdm.cpp>
 #include <src/pt2/nevpt2/nevpt2_mat.cpp>
-#undef NEVPT2_IMPL
+#undef NEVPT2IMPL
 
-template class NEVPT2_<double>;
-//template class NEVPT2_<complex<double>>;
+template class NEVPT2<double>;
+template class NEVPT2<complex<double>>;

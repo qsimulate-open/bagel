@@ -23,10 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifdef NEVPT2_IMPL
+#ifdef NEVPT2IMPL
 
 template<typename DataType>
-void NEVPT2_<DataType>::compute_kmat() {
+void NEVPT2<DataType>::compute_kmat() {
   {
     // Eq. (27)
     auto kmat = make_shared<MatType>(*fockact_c_ * *rdm1_);
@@ -72,7 +72,7 @@ void NEVPT2_<DataType>::compute_kmat() {
 
 
 template<typename DataType>
-void NEVPT2_<DataType>::compute_abcd() {
+void NEVPT2<DataType>::compute_abcd() {
   auto id2 = [this](                          const int k, const int l) { return         (        (k+nact_*l)); };
   auto id3 = [this](             const int j, const int k, const int l) { return         (j+nact_*(k+nact_*l)); };
   auto id4 = [this](const int i, const int j, const int k, const int l) { return i+nact_*(j+nact_*(k+nact_*l)); };
