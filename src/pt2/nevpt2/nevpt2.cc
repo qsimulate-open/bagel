@@ -103,14 +103,31 @@ shared_ptr<ZMatrix> NEVPT2<complex<double>>::compute_fock(shared_ptr<const Geome
 
 
 template<>
-shared_ptr<const Matrix> NEVPT2<double>::coeff() {
+shared_ptr<const Matrix> NEVPT2<double>::coeff() const {
   return ref_->coeff();
 }
 
 
 template<>
-shared_ptr<const ZMatrix> NEVPT2<complex<double>>::coeff() {
+shared_ptr<const ZMatrix> NEVPT2<complex<double>>::coeff() const {
   return dynamic_pointer_cast<const RelReference>(ref_)->relcoeff()->block_format();
+}
+
+
+template<>
+shared_ptr<Matrix> NEVPT2<double>::remove_core(shared_ptr<const Matrix> in) const {
+  return in->slice_copy(ncore_, in->mdim());
+}
+
+
+template<>
+shared_ptr<ZMatrix> NEVPT2<complex<double>>::remove_core(shared_ptr<const ZMatrix> in) const {
+  assert(in->mdim()%2 == 0 && ncore_%2 == 0);
+  const int n = (in->mdim()-ncore_)/2;
+  auto out = make_shared<ZMatrix>(in->ndim(), in->mdim()-ncore_, in->localized());
+  out->copy_block(0, 0, in->ndim(), n, in->slice(ncore_/2, ncore_/2 + n));
+  out->copy_block(0, n, in->ndim(), n, in->slice(ncore_+n, ncore_ + 2*n));
+  return out;
 }
 
 
@@ -186,7 +203,7 @@ void NEVPT2<DataType>::compute() {
   }
 
   // coefficients -- will be updated later
-  shared_ptr<MatType> ccoeff = nclosed_ ? coeff()->slice_copy(ncore_, ncore_+nclosed_) : nullptr;
+  shared_ptr<MatType> ccoeff = nclosed_ ? remove_core(coeff()->slice_copy(0, ncore_+nclosed_)) : nullptr;
   shared_ptr<MatType> vcoeff = nvirt_   ? coeff()->slice_copy(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_) : nullptr;
 
   shared_ptr<const MatType> acoeff = coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
@@ -401,7 +418,7 @@ void NEVPT2<DataType>::compute() {
     } else if (i < nclosed_ && j < nclosed_ && i >= 0 && j >= 0) {
       shared_ptr<const MatType> iblock = cache(i);
       shared_ptr<const MatType> jblock = cache(j);
-      MatType mat(iblock->mdim(), jblock->mdim());
+      MatType mat(iblock->mdim(), jblock->mdim(), true);
       btas::contract(1.0, *iblock, {0,1}, *jblock, {0,2}, 0.0, mat, {1,2});
 
       // active part
@@ -459,11 +476,13 @@ void NEVPT2<DataType>::compute() {
           const DataType uv = mat(u, v);
           en += (fac2*(detail::conj(uv)*uv + detail::conj(vu)*vu) - 2.0*detail::real(detail::conj(uv)*vu)) / (-veig(v)+oeig(i)-veig(u)+oeig(j));
         }
-        const DataType vv = mat(v, v);
-        en += detail::conj(vv)*vv / (-veig(v)+oeig(i)-veig(v)+oeig(j));
+        if (is_same<DataType,double>::value) {
+          const DataType vv = mat(v, v);
+          en += detail::conj(vv)*vv / (-veig(v)+oeig(i)-veig(v)+oeig(j));
+        }
       }
       if (i != j) en *= 2.0;
-      energy[sect.at("(+0)")] += en;
+      energy[sect.at("(+0)")] += en * (fac2*0.5); // 0.5 when relativistic
 
     } else if (i >= nclosed_+nact_ && j >= nclosed_+nact_) {
       // S(-2)rs sector
