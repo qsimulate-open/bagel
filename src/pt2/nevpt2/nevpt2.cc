@@ -115,19 +115,28 @@ shared_ptr<const ZMatrix> NEVPT2<complex<double>>::coeff() const {
 
 
 template<>
-shared_ptr<Matrix> NEVPT2<double>::remove_core(shared_ptr<const Matrix> in) const {
-  return in->slice_copy(ncore_, in->mdim());
+tuple<shared_ptr<Matrix>,VectorB> NEVPT2<double>::remove_core(shared_ptr<const Matrix> in, const VectorB& o) const {
+  shared_ptr<Matrix> out = in->slice_copy(ncore_, in->mdim());
+  VectorB ov(in->mdim()-ncore_);
+  copy(o.begin()+ncore_, o.end(), ov.begin());
+  return tie(out, ov);
 }
 
 
 template<>
-shared_ptr<ZMatrix> NEVPT2<complex<double>>::remove_core(shared_ptr<const ZMatrix> in) const {
+tuple<shared_ptr<ZMatrix>,VectorB> NEVPT2<complex<double>>::remove_core(shared_ptr<const ZMatrix> in, const VectorB& o) const {
   assert(in->mdim()%2 == 0 && ncore_%2 == 0);
   const int n = (in->mdim()-ncore_)/2;
   auto out = make_shared<ZMatrix>(in->ndim(), in->mdim()-ncore_, in->localized());
   out->copy_block(0, 0, in->ndim(), n, in->slice(ncore_/2, ncore_/2 + n));
   out->copy_block(0, n, in->ndim(), n, in->slice(ncore_+n, ncore_ + 2*n));
-  return out;
+
+  VectorB ov(n*2);
+  for (int i = 0; i != n; ++i) {
+    ov(i) = o(i+ncore_/2);
+    ov(i+n) = o(i+ncore_+n);
+  }
+  return tie(out, ov);
 }
 
 
@@ -203,7 +212,7 @@ void NEVPT2<DataType>::compute() {
   }
 
   // coefficients -- will be updated later
-  shared_ptr<MatType> ccoeff = nclosed_ ? remove_core(coeff()->slice_copy(0, ncore_+nclosed_)) : nullptr;
+  shared_ptr<MatType> ccoeff = nclosed_ ? coeff()->slice_copy(0, ncore_+nclosed_) : nullptr;
   shared_ptr<MatType> vcoeff = nvirt_   ? coeff()->slice_copy(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_) : nullptr;
 
   shared_ptr<const MatType> acoeff = coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
@@ -220,7 +229,7 @@ void NEVPT2<DataType>::compute() {
   /////////////////////////////////////////////////////////////////////////////////////
   // make canonical orbitals in closed and virtual subspaces
   VectorB veig(nvirt_);
-  VectorB oeig(nclosed_);
+  VectorB oeig(ncore_+nclosed_);
   shared_ptr<MatType> coeffall;
   // fock
   shared_ptr<const MatType> fock;
@@ -243,11 +252,15 @@ void NEVPT2<DataType>::compute() {
     auto fockao = compute_fock(cgeom, ofockao, *acoeffw);
     // MO Fock
     if (nclosed_) {
-      MatType omofock(*ccoeff % *fockao * *ccoeff);
+      DiagType omofock(*ccoeff % *fockao * *ccoeff);
       omofock.diagonalize(oeig);
       *ccoeff *= omofock;
+      // invoking frozen core
+      if (ncore_) {
+        tie(ccoeff, oeig) = remove_core(ccoeff, oeig);
+      }
     } {
-      MatType vmofock(*vcoeff % *fockao * *vcoeff);
+      DiagType vmofock(*vcoeff % *fockao * *vcoeff);
       vmofock.diagonalize(veig);
       *vcoeff *= vmofock;
     }

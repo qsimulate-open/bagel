@@ -30,6 +30,7 @@
 #include <src/wfn/method.h>
 #include <src/df/dfdistt.h>
 #include <src/df/reldffullt.h>
+#include <src/util/math/quatmatrix.h>
 #include <src/wfn/relreference.h>
 
 namespace bagel {
@@ -38,6 +39,7 @@ template<typename DataType>
 class NEVPT2 : public Method {
   protected:
     using MatType  = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+    using DiagType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, QuatMatrix>::type;
     using VecType  = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
     using ViewType = typename std::conditional<std::is_same<DataType,double>::value, MatView, ZMatView>::type;
     using DFType   = typename std::conditional<std::is_same<DataType,double>::value, DFDistT, RelDFFullT>::type;
@@ -116,7 +118,7 @@ class NEVPT2 : public Method {
     void compute_abcd();
 
     std::shared_ptr<const MatType> coeff() const;
-    std::shared_ptr<MatType> remove_core(std::shared_ptr<const MatType> in) const;
+    std::tuple<std::shared_ptr<MatType>,VectorB> remove_core(std::shared_ptr<const MatType> in, const VectorB& eig) const;
 
   public:
     NEVPT2(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference> = nullptr);
@@ -137,8 +139,8 @@ template<> void NEVPT2<std::complex<double>>::compute_rdm();
 
 template<> std::shared_ptr<const Matrix> NEVPT2<double>::coeff() const;
 template<> std::shared_ptr<const ZMatrix> NEVPT2<std::complex<double>>::coeff() const;
-template<> std::shared_ptr<Matrix> NEVPT2<double>::remove_core(std::shared_ptr<const Matrix>) const;
-template<> std::shared_ptr<ZMatrix> NEVPT2<std::complex<double>>::remove_core(std::shared_ptr<const ZMatrix>) const;
+template<> std::tuple<std::shared_ptr<Matrix>,VectorB> NEVPT2<double>::remove_core(std::shared_ptr<const Matrix>, const VectorB&) const;
+template<> std::tuple<std::shared_ptr<ZMatrix>,VectorB> NEVPT2<std::complex<double>>::remove_core(std::shared_ptr<const ZMatrix>, const VectorB&) const;
 
 template<> std::shared_ptr<Matrix> NEVPT2<double>::compute_fock(std::shared_ptr<const Geometry> cgeom, std::shared_ptr<const Matrix> hcore,
                                                                 const MatView coeff, const double exch, const double coulomb);
