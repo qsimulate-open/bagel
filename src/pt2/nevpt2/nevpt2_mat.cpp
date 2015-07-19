@@ -33,9 +33,9 @@ void NEVPT2<DataType>::compute_kmat() {
     *kmat += *qvec_;
     kmat->localize();
 
-    // Eq. (A3)
+    // Eq. (A4)
     auto kmatp = make_shared<MatType>(*kmat * (-1.0));
-    *kmatp += *fockact_ * 2.0;
+    *kmatp += *fockact_ * (is_same<DataType,double>::value ? 2.0 : 1.0);
     kmatp->localize();
 
     kmat_ = kmat;

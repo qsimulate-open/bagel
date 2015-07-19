@@ -245,20 +245,19 @@ void NEVPT2<DataType>::compute() {
     shared_ptr<const MatType> ofockao = nclosed_+ncore_ ?  compute_fock(cgeom, hcore, coeff()->slice(0, ncore_+nclosed_)) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
-    shared_ptr<MatType> rdm1_mat = rdm1_->copy();
-    rdm1_mat->sqrt();
-    rdm1_mat->delocalize();
-    auto acoeffw = make_shared<MatType>(*acoeff * (1.0/sqrt(fac2)) * *rdm1_mat);
-    auto fockao = compute_fock(cgeom, ofockao, *acoeffw);
+    MatType rdm1_mat(*rdm1_->get_conjg());
+    rdm1_mat.sqrt();
+    rdm1_mat.delocalize();
+    const MatType acoeffw(*acoeff * (1.0/sqrt(fac2)) * rdm1_mat);
+    auto fockao = compute_fock(cgeom, ofockao, acoeffw);
     // MO Fock
     if (nclosed_) {
       DiagType omofock(*ccoeff % *fockao * *ccoeff);
       omofock.diagonalize(oeig);
       *ccoeff *= omofock;
       // invoking frozen core
-      if (ncore_) {
+      if (ncore_)
         tie(ccoeff, oeig) = remove_core(ccoeff, oeig);
-      }
     } {
       DiagType vmofock(*vcoeff % *fockao * *vcoeff);
       vmofock.diagonalize(veig);
@@ -414,6 +413,13 @@ void NEVPT2<DataType>::compute() {
   array<DataType,8> energy;
   fill(energy.begin(), energy.end(), static_cast<DataType>(0.0));
 
+  // utility function that returns A^T B without conjugating A (identical to A%B for real).
+  auto multiply = [](const ViewType a, const ViewType b) {
+    MatType out(a.mdim(), b.mdim(), true);
+    btas::contract(1.0, a, {0,1}, b, {0,2}, 0.0, out, {1,2}, false, false);
+    return move(out);
+  };
+
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
     if (n+ncache < nloop)
@@ -431,20 +437,62 @@ void NEVPT2<DataType>::compute() {
     } else if (i < nclosed_ && j < nclosed_ && i >= 0 && j >= 0) {
       shared_ptr<const MatType> iblock = cache(i);
       shared_ptr<const MatType> jblock = cache(j);
-      MatType mat(iblock->mdim(), jblock->mdim(), true);
-      btas::contract(1.0, *iblock, {0,1}, *jblock, {0,2}, 0.0, mat, {1,2});
+
+      // S(0)ij,rs sector
+      {
+        const MatType mat = multiply(*iblock, *jblock);
+        DataType en = 0.0;
+        for (int v = 0; v != nvirt_; ++v) {
+          for (int u = v+1; u < nvirt_; ++u) {
+            const DataType vu = mat(v, u);
+            const DataType uv = mat(u, v);
+            en += (fac2*(detail::conj(uv)*uv + detail::conj(vu)*vu) - 2.0*detail::real(detail::conj(uv)*vu)) / (-veig(v)+oeig(i)-veig(u)+oeig(j));
+          }
+          if (is_same<DataType,double>::value) {
+            const DataType vv = mat(v, v);
+            en += detail::conj(vv)*vv / (-veig(v)+oeig(i)-veig(v)+oeig(j));
+          }
+        }
+        if (i != j) en *= 2.0;
+        energy[sect.at("(+0)")] += en * (fac2*0.5); // 0.5 when relativistic
+      }
 
       // active part
       const ViewType iablock = fullai->slice(i*nact_, (i+1)*nact_);
       const ViewType jablock = fullai->slice(j*nact_, (j+1)*nact_);
-      const MatType mat_va(*iblock % jablock);
-      const MatType mat_av(iablock % *jblock);
-      // hole density matrix
-      const MatType mat_vaR(mat_va * *hrdm1_);
-      const MatType mat_avR(*hrdm1_ % mat_av);
-      // K' matrix
-      const MatType mat_vaKp(mat_va * *kmatp_);
-      const MatType mat_avKp(*kmatp_ % mat_av);
+      // S(1)ij,r sector
+      {
+        const MatType mat_va = multiply(*iblock, jablock);
+        const MatType mat_av = multiply(iablock, *jblock);
+        // hole density matrix
+        const MatType mat_vaR(mat_va ^ *hrdm1_);
+        const MatType mat_avR(*hrdm1_ % mat_av);
+//      const MatType mat_avR = multiply(*hrdm1_, mat_av);
+        // K' matrix
+        const MatType mat_vaKp(mat_va ^ *kmatp_);
+        const MatType mat_avKp(*kmatp_ % mat_av);
+//      const MatType mat_avKp = multiply(*kmatp_, mat_av);
+
+        DataType en1 = 0.0;
+        for (int v = 0; v != nvirt_; ++v) {
+          DataType norm = 0.0;
+          DataType denom = 0.0;
+          for (int a = 0; a != nact_; ++a) {
+            const DataType va = detail::conj(mat_va(v, a));
+            const DataType av = detail::conj(mat_av(a, v));
+            const DataType vaR = mat_vaR(v, a);
+            const DataType avR = mat_avR(a, v);
+            const DataType vaK = mat_vaKp(v, a);
+            const DataType avK = mat_avKp(a, v);
+            norm  += (fac2*(va*vaR + av*avR) - av*vaR - va*avR);
+            denom += (fac2*(va*vaK + av*avK) - av*vaK - va*avK);
+          }
+          if (abs(norm) > norm_thresh_)
+            en1 += norm / (-denom/norm-veig(v)+oeig(i)+oeig(j));
+        }
+        if (i == j) en1 *= 0.5;
+        energy[sect.at("(+1)")] += en1 * (fac2*0.5); // 0.5 when relativistic
+      }
 
       // S(2)ij,rs sector
       const MatType mat_aa(iablock % jablock);
@@ -459,43 +507,6 @@ void NEVPT2<DataType>::compute() {
       if (abs(norm2) > norm_thresh_)
         energy[sect.at("(+2)")] += norm2 / (-denom2/norm2 + oeig(i)+oeig(j));
 
-      // TODO should thread
-      // S(1)ij,r sector
-      DataType en1 = 0.0;
-      for (int v = 0; v != nvirt_; ++v) {
-        DataType norm = 0.0;
-        DataType denom = 0.0;
-        for (int a = 0; a != nact_; ++a) {
-          const DataType va = mat_va(v, a);
-          const DataType av = mat_av(a, v);
-          const DataType vaR = mat_vaR(v, a);
-          const DataType avR = mat_avR(a, v);
-          const DataType vaK = mat_vaKp(v, a);
-          const DataType avK = mat_avKp(a, v);
-          norm  += (2.0*(va*vaR + av*avR) - av*vaR - va*avR);
-          denom += (2.0*(va*vaK + av*avK) - av*vaK - va*avK);
-        }
-        if (abs(norm) > norm_thresh_)
-          en1 += norm / (-denom/norm-veig(v)+oeig(i)+oeig(j));
-      }
-      if (i == j) en1 *= 0.5;
-      energy[sect.at("(+1)")] += en1;
-
-      // S(0)ij,rs sector
-      DataType en = 0.0;
-      for (int v = 0; v != nvirt_; ++v) {
-        for (int u = v+1; u < nvirt_; ++u) {
-          const DataType vu = mat(v, u);
-          const DataType uv = mat(u, v);
-          en += (fac2*(detail::conj(uv)*uv + detail::conj(vu)*vu) - 2.0*detail::real(detail::conj(uv)*vu)) / (-veig(v)+oeig(i)-veig(u)+oeig(j));
-        }
-        if (is_same<DataType,double>::value) {
-          const DataType vv = mat(v, v);
-          en += detail::conj(vv)*vv / (-veig(v)+oeig(i)-veig(v)+oeig(j));
-        }
-      }
-      if (i != j) en *= 2.0;
-      energy[sect.at("(+0)")] += en * (fac2*0.5); // 0.5 when relativistic
 
     } else if (i >= nclosed_+nact_ && j >= nclosed_+nact_) {
       // S(-2)rs sector
