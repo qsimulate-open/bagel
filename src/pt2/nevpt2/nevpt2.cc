@@ -401,7 +401,8 @@ void NEVPT2<DataType>::compute() {
     } else if (i < nclosed_ && j < nclosed_ && i >= 0 && j >= 0) {
       shared_ptr<const MatType> iblock = cache(i);
       shared_ptr<const MatType> jblock = cache(j);
-      const MatType mat(*iblock % *jblock);
+      MatType mat(iblock->mdim(), jblock->mdim());
+      btas::contract(1.0, *iblock, {0,1}, *jblock, {0,2}, 0.0, mat, {1,2});
 
       // active part
       const ViewType iablock = fullai->slice(i*nact_, (i+1)*nact_);
@@ -456,10 +457,10 @@ void NEVPT2<DataType>::compute() {
         for (int u = v+1; u < nvirt_; ++u) {
           const DataType vu = mat(v, u);
           const DataType uv = mat(u, v);
-          en += 2.0*(uv*uv + vu*vu - uv*vu) / (-veig(v)+oeig(i)-veig(u)+oeig(j));
+          en += (fac2*(detail::conj(uv)*uv + detail::conj(vu)*vu) - 2.0*detail::real(detail::conj(uv)*vu)) / (-veig(v)+oeig(i)-veig(u)+oeig(j));
         }
         const DataType vv = mat(v, v);
-        en += vv*vv / (-veig(v)+oeig(i)-veig(v)+oeig(j));
+        en += detail::conj(vv)*vv / (-veig(v)+oeig(i)-veig(v)+oeig(j));
       }
       if (i != j) en *= 2.0;
       energy[sect.at("(+0)")] += en;
