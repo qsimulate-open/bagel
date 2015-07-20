@@ -29,7 +29,8 @@ template<typename DataType>
 void NEVPT2<DataType>::compute_kmat() {
   {
     // Eq. (27)
-    auto kmat = make_shared<MatType>(*fockact_c_ * *rdm1_);
+    auto kmat = make_shared<MatType>(nact_, nact_, true);
+    btas::contract(1.0, *fockact_c_, {0,1}, *rdm1_, {2,1}, 0.0, *kmat, {0,2});
     *kmat += *qvec_;
     kmat->localize();
 
@@ -39,7 +40,7 @@ void NEVPT2<DataType>::compute_kmat() {
     kmatp->localize();
 
     kmat_ = kmat;
-    kmatp_ = kmatp;
+    kmatp_ = kmatp->get_conjg();
   }
   {
     auto compute_kmat = [this](shared_ptr<const MatType> rdm2, shared_ptr<const MatType> rdm3, shared_ptr<const MatType> fock, const double sign) {

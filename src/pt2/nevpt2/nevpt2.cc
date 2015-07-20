@@ -465,13 +465,11 @@ void NEVPT2<DataType>::compute() {
         const MatType mat_va = multiply(*iblock, jablock);
         const MatType mat_av = multiply(iablock, *jblock);
         // hole density matrix
-        const MatType mat_vaR(mat_va ^ *hrdm1_);
-        const MatType mat_avR(*hrdm1_ % mat_av);
-//      const MatType mat_avR = multiply(*hrdm1_, mat_av);
+        const MatType mat_vaR(mat_va * *hrdm1_);
+        const MatType mat_avR = multiply(*hrdm1_, mat_av);
         // K' matrix
-        const MatType mat_vaKp(mat_va ^ *kmatp_);
-        const MatType mat_avKp(*kmatp_ % mat_av);
-//      const MatType mat_avKp = multiply(*kmatp_, mat_av);
+        const MatType mat_vaKp(mat_va * *kmatp_);
+        const MatType mat_avKp = multiply(*kmatp_, mat_av);
 
         DataType en1 = 0.0;
         for (int v = 0; v != nvirt_; ++v) {
