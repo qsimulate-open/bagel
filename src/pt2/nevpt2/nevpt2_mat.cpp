@@ -27,6 +27,7 @@
 
 template<typename DataType>
 void NEVPT2<DataType>::compute_kmat() {
+  const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
   {
     // Eq. (27)
     auto kmat = make_shared<MatType>(nact_, nact_, true);
@@ -36,14 +37,14 @@ void NEVPT2<DataType>::compute_kmat() {
 
     // Eq. (A4)
     auto kmatp = make_shared<MatType>(*kmat * (-1.0));
-    *kmatp += *fockact_ * (is_same<DataType,double>::value ? 2.0 : 1.0);
+    *kmatp += *fockact_ * fac2;
     kmatp->localize();
 
     kmat_ = kmat;
     kmatp_ = kmatp;
   }
   {
-    auto compute_kmat = [this](shared_ptr<const MatType> rdm2, shared_ptr<const MatType> rdm3, shared_ptr<const MatType> fock, const double sign) {
+    auto compute_kmat = [this,&fac2](shared_ptr<const MatType> rdm2, shared_ptr<const MatType> rdm3, shared_ptr<const MatType> fock, const double sign) {
       auto out = rdm2->clone();
       // temp area
       for (int b = 0; b != nact_; ++b)
@@ -51,15 +52,15 @@ void NEVPT2<DataType>::compute_kmat() {
           for (int bp = 0; bp != nact_; ++bp)
             for (int ap = 0; ap != nact_; ++ap)
               for (int c = 0; c != nact_; ++c) {
-                out->element(ap+nact_*bp, a+nact_*b) += rdm2->element(ap+nact_*bp, c+nact_*b) * fock->element(c, a)
-                                                      + rdm2->element(ap+nact_*bp, a+nact_*c) * fock->element(c, b);
+                out->element(ap+nact_*bp, a+nact_*b) += rdm2->element(ap+nact_*bp, c+nact_*b) * fock->element(a, c)
+                                                      + rdm2->element(ap+nact_*bp, a+nact_*c) * fock->element(b, c);
                 for (int d = 0; d != nact_; ++d)
                   for (int e = 0; e != nact_; ++e) {
-                    out->element(ap+nact_*bp, a+nact_*b) += 0.5 * ints2_->element(c+nact_*d, e+nact_*a)
-                                                           * (sign* 2.0* rdm3->element(ap+nact_*(bp+nact_*e), d+nact_*(b+nact_*c))
+                    out->element(ap+nact_*bp, a+nact_*b) += 0.5 * ints2_->element(e+nact_*a, c+nact_*d)
+                                                           * (sign*fac2 * rdm3->element(ap+nact_*(bp+nact_*e), d+nact_*(b+nact_*c))
                                                              +sign*(b == e ? rdm2->element(ap+nact_*bp, d+nact_*c) : 0.0))
-                                                          +  0.5 * ints2_->element(c+nact_*d, e+nact_*b)
-                                                           * (sign* 2.0* rdm3->element(ap+nact_*(bp+nact_*e), a+nact_*(d+nact_*c))
+                                                          + 0.5 * ints2_->element(e+nact_*b, c+nact_*d)
+                                                           * (sign*fac2 * rdm3->element(ap+nact_*(bp+nact_*e), a+nact_*(d+nact_*c))
                                                              +sign*(a == e ? rdm2->element(ap+nact_*bp, c+nact_*d) : 0.0));
                   }
               }

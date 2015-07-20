@@ -502,7 +502,7 @@ void NEVPT2<DataType>::compute() {
       }
 
       // S(2)ij,rs sector
-      const MatType mat_aa(iablock % jablock);
+      const MatType mat_aa = multiply_tn(iablock, jablock);
       MatType mat_aaR(nact_, nact_, true);
       MatType mat_aaK(nact_, nact_, true);
       auto vmat_aaR = btas::group(mat_aaR,0,2);

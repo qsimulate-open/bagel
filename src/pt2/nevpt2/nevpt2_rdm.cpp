@@ -177,8 +177,8 @@ void NEVPT2<DataType>::compute_hrdm() {
       for (int k = 0; k != nact_; ++k) {
         hrdm2->element(j+nact_*k, i+nact_*k) += fac2 * hrdm1->element(j,i);
         hrdm2->element(k+nact_*j, i+nact_*k) -= hrdm1->element(j,i);
-        hrdm2->element(j+nact_*k, k+nact_*i) += rdm1_->element(i,j);
-        hrdm2->element(k+nact_*j, k+nact_*i) -= fac2 * rdm1_->element(i,j);
+        hrdm2->element(j+nact_*k, k+nact_*i) += rdm1_->element(j,i);
+        hrdm2->element(k+nact_*j, k+nact_*i) -= fac2 * rdm1_->element(j,i);
       }
     }
   }
@@ -191,12 +191,12 @@ void NEVPT2<DataType>::compute_hrdm() {
             hrdm3->element(id3(l,k,m),id3(j,i,m)) += fac2*hrdm2->element(l+nact_*k,j+nact_*i);
             hrdm3->element(id3(l,m,k),id3(j,i,m)) -=      hrdm2->element(l+nact_*k,j+nact_*i);
             hrdm3->element(id3(m,l,k),id3(j,i,m)) -=      hrdm2->element(l+nact_*k,i+nact_*j);
-            hrdm3->element(id3(l,k,m),id3(j,m,i)) +=      srdm2_->element(i+nact_*k,l+nact_*j);
-            hrdm3->element(id3(l,m,k),id3(j,m,i)) -= fac2*srdm2_->element(i+nact_*k,l+nact_*j);
-            hrdm3->element(id3(m,l,k),id3(j,m,i)) +=      srdm2_->element(i+nact_*k,l+nact_*j);
-            hrdm3->element(id3(l,k,m),id3(m,j,i)) -=      rdm2_->element(i+nact_*j,l+nact_*k);
-            hrdm3->element(id3(l,m,k),id3(m,j,i)) -=      rdm2_->element(i+nact_*j,k+nact_*l);
-            hrdm3->element(id3(m,l,k),id3(m,j,i)) += fac2*rdm2_->element(i+nact_*j,k+nact_*l);
+            hrdm3->element(id3(l,k,m),id3(j,m,i)) +=      detail::conj(srdm2_->element(i+nact_*k,l+nact_*j));
+            hrdm3->element(id3(l,m,k),id3(j,m,i)) -= fac2*detail::conj(srdm2_->element(i+nact_*k,l+nact_*j));
+            hrdm3->element(id3(m,l,k),id3(j,m,i)) +=      detail::conj(srdm2_->element(i+nact_*k,l+nact_*j));
+            hrdm3->element(id3(l,k,m),id3(m,j,i)) -=      rdm2_->element(l+nact_*k,i+nact_*j);
+            hrdm3->element(id3(l,m,k),id3(m,j,i)) -=      rdm2_->element(k+nact_*l,i+nact_*j);
+            hrdm3->element(id3(m,l,k),id3(m,j,i)) += fac2*rdm2_->element(k+nact_*l,i+nact_*j);
           }
   hrdm1_ = hrdm1;
   hrdm2_ = hrdm2;
