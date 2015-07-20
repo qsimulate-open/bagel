@@ -40,7 +40,7 @@ void NEVPT2<DataType>::compute_kmat() {
     kmatp->localize();
 
     kmat_ = kmat;
-    kmatp_ = kmatp->get_conjg();
+    kmatp_ = kmatp;
   }
   {
     auto compute_kmat = [this](shared_ptr<const MatType> rdm2, shared_ptr<const MatType> rdm3, shared_ptr<const MatType> fock, const double sign) {

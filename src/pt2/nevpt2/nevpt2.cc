@@ -418,9 +418,14 @@ void NEVPT2<DataType>::compute() {
   fill(energy.begin(), energy.end(), static_cast<DataType>(0.0));
 
   // utility function that returns A^T B without conjugating A (identical to A%B for real).
-  auto multiply = [](const ViewType a, const ViewType b) {
+  auto multiply_tn = [](const ViewType a, const ViewType b) {
     MatType out(a.mdim(), b.mdim(), true);
     btas::contract(1.0, a, {0,1}, b, {0,2}, 0.0, out, {1,2}, false, false);
+    return move(out);
+  };
+  auto multiply_nt = [](const ViewType a, const ViewType b) {
+    MatType out(a.ndim(), b.ndim(), true);
+    btas::contract(1.0, a, {0,1}, b, {2,1}, 0.0, out, {0,2}, false, false);
     return move(out);
   };
 
@@ -444,7 +449,7 @@ void NEVPT2<DataType>::compute() {
 
       // S(0)ij,rs sector
       {
-        const MatType mat = multiply(*iblock, *jblock);
+        const MatType mat = multiply_tn(*iblock, *jblock);
         DataType en = 0.0;
         for (int v = 0; v != nvirt_; ++v) {
           for (int u = v+1; u < nvirt_; ++u) {
@@ -466,14 +471,14 @@ void NEVPT2<DataType>::compute() {
       const ViewType jablock = fullai->slice(j*nact_, (j+1)*nact_);
       // S(1)ij,r sector
       {
-        const MatType mat_va = multiply(*iblock, jablock);
-        const MatType mat_av = multiply(iablock, *jblock);
+        const MatType mat_va = multiply_tn(*iblock, jablock);
+        const MatType mat_av = multiply_tn(iablock, *jblock);
         // hole density matrix
-        const MatType mat_vaR(mat_va ^ *hrdm1_);
+        const MatType mat_vaR = multiply_nt(mat_va, *hrdm1_);
         const MatType mat_avR(*hrdm1_ % mat_av);
         // K' matrix
-        const MatType mat_vaKp(mat_va ^ *kmatp_);
-        const MatType mat_avKp(*kmatp_ % mat_av);
+        const MatType mat_vaKp(mat_va * *kmatp_);
+        const MatType mat_avKp = multiply_tn(*kmatp_, mat_av);
 
         DataType en1 = 0.0;
         for (int v = 0; v != nvirt_; ++v) {
@@ -565,14 +570,14 @@ void NEVPT2<DataType>::compute() {
         for (int s = r; s != nvirt_; ++s) {
           const ViewType ibs = iblock->slice(s, s+1);
           const ViewType sblock = fullav->slice(s*nact_, (s+1)*nact_);
-          const MatType mat1(ibs % rblock); // (vi|ar) (i, r fixed)
-          const MatType mat2(ibr % sblock); // (vi|as) (i, s fixed)
-          const MatType mat1R(ibs % rblock * *rdm1_); // (vi|ar) (i, r fixed)
-          const MatType mat2R(ibr % sblock * *rdm1_); // (vi|as) (i, s fixed)
-          const MatType mat1K(ibs % rblock * *kmat_); // (vi|ar) (i, r fixed)
-          const MatType mat2K(ibr % sblock * *kmat_); // (vi|as) (i, s fixed)
-          const DataType norm  = (r == s ? 1.0 : 2.0) * (mat2R.dot_product(mat2) + mat1R.dot_product(mat1) - mat2R.dot_product(mat1));
-          const DataType denom = (r == s ? 1.0 : 2.0) * (mat2K.dot_product(mat2) + mat1K.dot_product(mat1) - mat2K.dot_product(mat1));
+          const MatType mat1 = multiply_tn(ibs, rblock); // (vi|aw) (i, r fixed)
+          const MatType mat2 = multiply_tn(ibr, sblock); // (vi|aw) (i, s fixed)
+          const MatType mat1R(mat1 * *rdm1_); // (vi|ar) (i, r fixed)
+          const MatType mat2R(mat2 * *rdm1_); // (vi|as) (i, s fixed)
+          const MatType mat1K = multiply_nt(mat1, *kmat_); // (vi|ar) (i, r fixed)
+          const MatType mat2K = multiply_nt(mat2, *kmat_); // (vi|as) (i, s fixed)
+          const DataType norm  = (r == s ? 1.0 : 2.0) * ((fac2*0.5)*(mat2R.dot_product(mat2) + mat1R.dot_product(mat1)) - mat2R.dot_product(mat1));
+          const DataType denom = (r == s ? 1.0 : 2.0) * ((fac2*0.5)*(mat2K.dot_product(mat2) + mat1K.dot_product(mat1)) - mat2K.dot_product(mat1));
           if (abs(norm) > norm_thresh_)
             energy[sect.at("(-1)")] += norm / (denom/norm + oeig(i) - veig[r] - veig[s]);
         }
