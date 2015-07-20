@@ -309,8 +309,12 @@ void NEVPT2<DataType>::compute() {
 
     shared_ptr<const MatType> fullaxm = fullax->replicate();
 
-    if (nclosed_)
-      fullai = fullaxm->slice_copy(0, nact_*nclosed_);
+    shared_ptr<MatType> tmp;
+    if (nclosed_) {
+      tmp = fullaxm->slice_copy(0, nact_*nclosed_);
+      blas::conj_n(tmp->data(), tmp->size());
+    }
+    fullai = tmp;
     fullaa = fullaxm->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_));
     fullav = fullaxm->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_));
   }
@@ -465,11 +469,11 @@ void NEVPT2<DataType>::compute() {
         const MatType mat_va = multiply(*iblock, jablock);
         const MatType mat_av = multiply(iablock, *jblock);
         // hole density matrix
-        const MatType mat_vaR(mat_va * *hrdm1_);
-        const MatType mat_avR = multiply(*hrdm1_, mat_av);
+        const MatType mat_vaR(mat_va ^ *hrdm1_);
+        const MatType mat_avR(*hrdm1_ % mat_av);
         // K' matrix
-        const MatType mat_vaKp(mat_va * *kmatp_);
-        const MatType mat_avKp = multiply(*kmatp_, mat_av);
+        const MatType mat_vaKp(mat_va ^ *kmatp_);
+        const MatType mat_avKp(*kmatp_ % mat_av);
 
         DataType en1 = 0.0;
         for (int v = 0; v != nvirt_; ++v) {
@@ -489,7 +493,7 @@ void NEVPT2<DataType>::compute() {
             en1 += norm / (-denom/norm-veig(v)+oeig(i)+oeig(j));
         }
         if (i == j) en1 *= 0.5;
-        energy[sect.at("(+1)")] += en1 * (fac2*0.5); // 0.5 when relativistic
+        energy[sect.at("(+1)")] += en1;
       }
 
       // S(2)ij,rs sector
