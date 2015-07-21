@@ -90,13 +90,14 @@ void NEVPT2<DataType>::compute_abcd() {
           for (int bp = 0; bp != nact_; ++bp)
             for (int ap = 0; ap != nact_; ++ap)
               for (int c = 0; c != nact_; ++c) {
-                amat2->element(ap+nact_*bp,a+nact_*b) += fockact_p_->element(c,a) * ardm2_->element(bp+nact_*ap,c+nact_*b) - fockact_p_->element(c,b) * ardm2_->element(bp+nact_*ap,a+nact_*c);
+                amat2->element(ap+nact_*bp,a+nact_*b) += fockact_p_->element(c,a) * ardm2_->element(bp+nact_*ap,c+nact_*b)
+                                                       - fockact_p_->element(b,c) * ardm2_->element(bp+nact_*ap,a+nact_*c);
                 for (int d = 0; d != nact_; ++d)
                   for (int e = 0; e != nact_; ++e)
                     amat2->element(ap+nact_*bp,a+nact_*b) += 0.5 * ints2_->element(c+nact_*d,e+nact_*a) * (ardm3_->element(id3(bp,ap,c),id3(e,d,b))
-                                                                                                    + ardm3_->element(id3(bp,ap,d),id3(b,c,e)))
-                                                         - 0.5 * ints2_->element(b+nact_*c,e+nact_*d) * (ardm3_->element(id3(bp,ap,a),id3(e,c,d))
-                                                                                                    + ardm3_->element(id3(bp,ap,c),id3(d,a,e)));
+                                                                                                         + ardm3_->element(id3(bp,ap,d),id3(b,c,e)))
+                                                           - 0.5 * ints2_->element(b+nact_*c,e+nact_*d) * (ardm3_->element(id3(bp,ap,a),id3(e,c,d))
+                                                                                                         + ardm3_->element(id3(bp,ap,c),id3(d,a,e)));
               }
       shared_ptr<MatType> tmp = amat2->copy();
       sort_indices<1,0,3,2,0,1,1,1>(tmp->data(), amat2->data(), nact_, nact_, nact_, nact_);
