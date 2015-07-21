@@ -278,7 +278,7 @@ void NEVPT2<DataType>::compute() {
     fock_c = make_shared<MatType>(*coeffall % *ofockao * *coeffall);
 
     // h'eff (only exchange in the active space)
-    auto fockao_p = compute_fock(cgeom, ofockao, *acoeff*(1.0/sqrt(fac2)), 1.0, 0.0); // only exchange TODO
+    auto fockao_p = compute_fock(cgeom, ofockao, *acoeff*(1.0/sqrt(2.0)), 1.0, 0.0); // only exchange TODO
     fockact_p_ = make_shared<MatType>(*acoeff % *fockao_p * *acoeff);
     fockact_p_->localize();
     fock_p = make_shared<MatType>(*coeffall % *fockao_p * *coeffall);
