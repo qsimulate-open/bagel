@@ -521,12 +521,12 @@ void NEVPT2<DataType>::compute() {
       const int jv = j-nclosed_-nact_;
       const ViewType iablock = fullav->slice(iv*nact_, (iv+1)*nact_);
       const ViewType jablock = fullav->slice(jv*nact_, (jv+1)*nact_);
-      MatType mat_aa(iablock % jablock);
+      MatType mat_aa = multiply_tn(iablock, jablock);
       MatType mat_aaR(nact_, nact_, true);
       MatType mat_aaK(nact_, nact_, true);
       auto vmat_aaR = btas::group(mat_aaR,0,2);
       auto vmat_aaK = btas::group(mat_aaK,0,2);
-      btas::contract(1.0, *rdm2_,  {0,1}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaR, {0});
+      btas::contract(1.0, *rdm2_,  {1,0}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaR, {0});
       btas::contract(1.0, *kmat2_, {1,0}, btas::group(mat_aa,0,2), {1}, 0.0, vmat_aaK, {0});
       const DataType norm  = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
       const DataType denom = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
