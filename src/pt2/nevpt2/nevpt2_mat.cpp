@@ -46,7 +46,7 @@ void NEVPT2<DataType>::compute_kmat() {
   {
     auto compute_kmat = [this,&fac2](shared_ptr<const MatType> rdm2, shared_ptr<const MatType> rdm3, shared_ptr<const MatType> fock, const double sign) {
       auto out = rdm2->clone();
-      // temp area
+      // Eq. (A7) and (A9)
       for (int b = 0; b != nact_; ++b)
         for (int a = 0; a != nact_; ++a)
           for (int bp = 0; bp != nact_; ++bp)
@@ -57,10 +57,10 @@ void NEVPT2<DataType>::compute_kmat() {
                 for (int d = 0; d != nact_; ++d)
                   for (int e = 0; e != nact_; ++e) {
                     out->element(ap+nact_*bp, a+nact_*b) += 0.5 * ints2_->element(e+nact_*a, c+nact_*d)
-                                                           * (sign*fac2 * rdm3->element(ap+nact_*(bp+nact_*e), d+nact_*(b+nact_*c))
+                                                           * (sign*2.0 * rdm3->element(ap+nact_*(bp+nact_*e), d+nact_*(b+nact_*c))
                                                              +sign*(b == e ? rdm2->element(ap+nact_*bp, d+nact_*c) : 0.0))
                                                           + 0.5 * ints2_->element(e+nact_*b, c+nact_*d)
-                                                           * (sign*fac2 * rdm3->element(ap+nact_*(bp+nact_*e), a+nact_*(d+nact_*c))
+                                                           * (sign*2.0 * rdm3->element(ap+nact_*(bp+nact_*e), a+nact_*(d+nact_*c))
                                                              +sign*(a == e ? rdm2->element(ap+nact_*bp, c+nact_*d) : 0.0));
                   }
               }
@@ -69,6 +69,9 @@ void NEVPT2<DataType>::compute_kmat() {
 
     kmat2_  = compute_kmat( rdm2_,  rdm3_, fockact_c_,  1.0);
     kmatp2_ = compute_kmat(hrdm2_, hrdm3_, fockact_h_, -1.0);
+    // for CAS references, these are Hermitian; if not, suspect the factor of 2.0 above
+    assert(kmat2_->is_hermitian());
+    assert(kmatp2_->is_hermitian());
   }
 }
 
