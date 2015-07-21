@@ -81,6 +81,8 @@ void NEVPT2<DataType>::compute_abcd() {
   auto id2 = [this](                          const int k, const int l) { return         (        (k+nact_*l)); };
   auto id3 = [this](             const int j, const int k, const int l) { return         (j+nact_*(k+nact_*l)); };
   auto id4 = [this](const int i, const int j, const int k, const int l) { return i+nact_*(j+nact_*(k+nact_*l)); };
+
+  const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
   // A matrices
   {
     shared_ptr<MatType> amat2 = rdm2_->clone();
@@ -220,22 +222,22 @@ void NEVPT2<DataType>::compute_abcd() {
         for (int bp = 0; bp != nact_; ++bp)
           for (int ap = 0; ap != nact_; ++ap)
             for (int c = 0; c != nact_; ++c) {
-              dmat2->element(ap+nact_*bp,a+nact_*b) -= fockact_p_->element(b,c) * ((a == ap ? 2.0 : 0.0) * rdm1_->element(bp,c) - rdm2_->element(a+nact_*bp,ap+nact_*c));
-              dmat2->element(ap+nact_*bp,a+nact_*b) += fockact_p_->element(a,c) * ((c == ap ? 2.0 : 0.0) * rdm1_->element(bp,b) - rdm2_->element(c+nact_*bp,ap+nact_*b));
+              dmat2->element(ap+nact_*bp,a+nact_*b) -= fockact_p_->element(b,c) * ((a == ap ? fac2: 0.0) * rdm1_->element(bp,c) - rdm2_->element(a+nact_*bp,ap+nact_*c));
+              dmat2->element(ap+nact_*bp,a+nact_*b) += fockact_p_->element(c,a) * ((c == ap ? fac2: 0.0) * rdm1_->element(bp,b) - rdm2_->element(c+nact_*bp,ap+nact_*b));
               for (int d = 0; d != nact_; ++d)
                 for (int e = 0; e != nact_; ++e) {
                   dmat2->element(ap+nact_*bp,a+nact_*b) -= 0.5 * ints2_->element(c+nact_*b,e+nact_*d)
-                           * ((a == ap ? 2.0 : 0.0) * ardm2_->element(c+nact_*e,bp+nact_*d) - ardm3_->element(id3(c,e,a),id3(ap,bp,d))
-                           +  (a == ap ? 2.0 : 0.0) * ardm2_->element(bp+nact_*d,c+nact_*e) - ardm3_->element(id3(a,ap,bp),id3(d,c,e))
+                           * ((a == ap ? fac2: 0.0) * ardm2_->element(c+nact_*e,bp+nact_*d) - ardm3_->element(id3(c,e,a),id3(ap,bp,d))
+                           +  (a == ap ? fac2: 0.0) * ardm2_->element(bp+nact_*d,c+nact_*e) - ardm3_->element(id3(a,ap,bp),id3(d,c,e))
                            + (ap == bp ? 1.0 : 0.0) *(ardm2_->element(c+nact_*e,a+nact_*d)  + ardm2_->element(a+nact_*d,c+nact_*e))
-                           +  (c == ap ? 1.0 : 0.0) *((a == e  ? 2.0 : 0.0) * rdm1_->element(bp, d) - ardm2_->element(a+nact_*e,bp+nact_*d))
-                           - (bp == e  ? 1.0 : 0.0) *((a == ap ? 2.0 : 0.0) * rdm1_->element(c,d)   - ardm2_->element(a+nact_*ap,c+nact_*d)));
+                           +  (c == ap ? 1.0 : 0.0) *((a == e  ? fac2: 0.0) * rdm1_->element(bp, d) - ardm2_->element(a+nact_*e,bp+nact_*d))
+                           - (bp == e  ? 1.0 : 0.0) *((a == ap ? fac2: 0.0) * rdm1_->element(c,d)   - ardm2_->element(a+nact_*ap,c+nact_*d)));
                   dmat2->element(ap+nact_*bp,a+nact_*b) += 0.5 * ints2_->element(c+nact_*d,e+nact_*a)
-                           * ((d == ap ? 2.0 : 0.0) * ardm2_->element(c+nact_*e,bp+nact_*b) - ardm3_->element(id3(c,e,d),id3(ap,bp,b))
-                           +  (d == ap ? 2.0 : 0.0) * ardm2_->element(bp+nact_*b,c+nact_*e) - ardm3_->element(id3(d,ap,bp),id3(b,c,e))
+                           * ((d == ap ? fac2: 0.0) * ardm2_->element(c+nact_*e,bp+nact_*b) - ardm3_->element(id3(c,e,d),id3(ap,bp,b))
+                           +  (d == ap ? fac2: 0.0) * ardm2_->element(bp+nact_*b,c+nact_*e) - ardm3_->element(id3(d,ap,bp),id3(b,c,e))
                            + (ap == bp ? 1.0 : 0.0) *(ardm2_->element(c+nact_*e,d+nact_*b)  + ardm2_->element(d+nact_*b,c+nact_*e))
-                           +  (c == ap ? 1.0 : 0.0) *((d == e  ? 2.0 : 0.0) * rdm1_->element(bp, b) - ardm2_->element(d+nact_*e,bp+nact_*b))
-                           - (bp == e  ? 1.0 : 0.0) *((d == ap ? 2.0 : 0.0) * rdm1_->element(c,b)   - ardm2_->element(d+nact_*ap,c+nact_*b)));
+                           +  (c == ap ? 1.0 : 0.0) *((d == e  ? fac2: 0.0) * rdm1_->element(bp, b) - ardm2_->element(d+nact_*e,bp+nact_*b))
+                           - (bp == e  ? 1.0 : 0.0) *((d == ap ? fac2: 0.0) * rdm1_->element(c,b)   - ardm2_->element(d+nact_*ap,c+nact_*b)));
                 }
             }
     shared_ptr<MatType> tmp = dmat2->copy();
