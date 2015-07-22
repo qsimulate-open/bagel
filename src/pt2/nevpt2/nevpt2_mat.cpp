@@ -25,6 +25,16 @@
 
 #ifdef NEVPT2IMPL
 
+#ifndef NDEBUG
+template<typename T> inline bool is_hermitian_conjugate(shared_ptr<const T> t, shared_ptr<const T> u) { assert(false); return false; }
+template<> inline bool is_hermitian_conjugate<Matrix>(shared_ptr<const Matrix> t, shared_ptr<const Matrix> u) {
+  return abs((*t->transpose()-*u).rms()) < 1.0e-8;
+}
+template<> inline bool is_hermitian_conjugate<ZMatrix>(shared_ptr<const ZMatrix> t, shared_ptr<const ZMatrix> u) {
+  return abs((*t->transpose_conjg()-*u).rms()) < 1.0e-8;
+}
+#endif
+
 template<typename DataType>
 void NEVPT2<DataType>::compute_kmat() {
   const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
@@ -165,7 +175,7 @@ void NEVPT2<DataType>::compute_abcd() {
               for (int e = 0; e != nact_; ++e)
                 for (int f = 0; f != nact_; ++f) {
                   bmat2->element(id3(ap,bp,cp),a) -= ints2_->element(id2(a,c),id2(e,f)) * ardm3_->element(id3(cp,ap,bp),id3(e,c,f));
-                  bmat2t->element(id3(ap,bp,cp),a) += ints2_->element(id2(a,c),id2(e,f)) * srdm3_->element(id3(cp,ap,bp),id3(e,c,f));
+                  bmat2t->element(id3(ap,bp,cp),a) += ints2_->element(id2(e,c),id2(a,f)) * srdm3_->element(id3(cp,ap,bp),id3(e,c,f));
                 }
             }
     bmat2_ = bmat2;
@@ -182,7 +192,7 @@ void NEVPT2<DataType>::compute_abcd() {
       for (int b = 0; b != nact_; ++b)
         for (int c = 0; c != nact_; ++c)
           for (int d = 0; d != nact_; ++d)
-            s2rdm2->element(id2(d,c),id2(b,a)) += (d == c ? 2.0 : 0.0) * rdm1_->element(b,a) - ardm2_->element(id2(c,d), id2(b,a));
+            s2rdm2->element(id2(d,c),id2(b,a)) += (d == c ? fac2 : 0.0) * rdm1_->element(b,a) - ardm2_->element(id2(c,d), id2(b,a));
 
     for (int c = 0; c != nact_; ++c)
       for (int a = 0; a != nact_; ++a)
@@ -192,15 +202,15 @@ void NEVPT2<DataType>::compute_abcd() {
               cmat2->element(ap, id3(a,b,c)) += fockact_p_->element(d,a)*ardm2_->element(id2(ap,b),id2(d,c)) - fockact_p_->element(c,d)*ardm2_->element(id2(ap,b),id2(a,d))
                                               - fockact_p_->element(b,d)*ardm2_->element(id2(ap,d),id2(a,c));
               cmat2t->element(ap, id3(a,b,c)) += fockact_p_->element(d,a)*s2rdm2->element(id2(ap,b),id2(d,c)) - fockact_p_->element(c,d)*s2rdm2->element(id2(ap,b),id2(a,d))
-                                               + fockact_p_->element(b,d)*s2rdm2->element(id2(ap,d),id2(a,c));
+                                               + fockact_p_->element(d,b)*s2rdm2->element(id2(ap,d),id2(a,c));
               for (int e = 0; e != nact_; ++e) {
                 for (int f = 0; f != nact_; ++f) {
                   cmat2->element(ap, id3(a,b,c)) += ints2_->element(id2(d,e),id2(f,a))*ardm3_->element(id3(ap,b,d),id3(f,e,c))
                                                   - ints2_->element(id2(d,c),id2(f,e))*ardm3_->element(id3(ap,b,d),id3(f,a,e))
                                                   - ints2_->element(id2(d,b),id2(f,e))*ardm3_->element(id3(ap,e,d),id3(f,a,c));
-                  cmat2t->element(ap, id3(a,b,c))+= ints2_->element(id2(d,e),id2(f,a))*((ap == b ? 2.0 : 0.0)*ardm2_->element(id2(d,f),id2(e,c)) - ardm3_->element(id3(b,ap,d),id3(f,e,c)))
-                                                  - ints2_->element(id2(d,c),id2(f,e))*((ap == b ? 2.0 : 0.0)*ardm2_->element(id2(d,f),id2(a,e)) - ardm3_->element(id3(b,ap,d),id3(f,a,e)))
-                                                  + ints2_->element(id2(d,b),id2(f,e))*((ap == e ? 2.0 : 0.0)*ardm2_->element(id2(d,f),id2(a,c)) - ardm3_->element(id3(e,ap,d),id3(f,a,c)));
+                  cmat2t->element(ap, id3(a,b,c))+= ints2_->element(id2(d,e),id2(f,a))*((ap == b ? fac2 : 0.0)*ardm2_->element(id2(d,f),id2(e,c)) - ardm3_->element(id3(b,ap,d),id3(f,e,c)))
+                                                  - ints2_->element(id2(d,c),id2(f,e))*((ap == b ? fac2 : 0.0)*ardm2_->element(id2(d,f),id2(a,e)) - ardm3_->element(id3(b,ap,d),id3(f,a,e)))
+                                                  + ints2_->element(id2(d,e),id2(f,b))*((ap == e ? fac2 : 0.0)*ardm2_->element(id2(d,f),id2(a,c)) - ardm3_->element(id3(e,ap,d),id3(f,a,c)));
                 }
                 cmat2->element(ap, id3(a,b,c)) += ints2_->element(id2(c,d),id2(e,a))*ardm2_->element(id2(ap,b),id2(d,e))
                                              -0.5*ints2_->element(id2(d,e),id2(e,a))*ardm2_->element(id2(ap,b),id2(d,c))
@@ -209,12 +219,16 @@ void NEVPT2<DataType>::compute_abcd() {
                 cmat2t->element(ap, id3(a,b,c))+= ints2_->element(id2(c,d),id2(e,a))*s2rdm2->element(id2(ap,b),id2(d,e))
                                              -0.5*ints2_->element(id2(d,e),id2(e,a))*s2rdm2->element(id2(ap,b),id2(d,c))
                                              -0.5*ints2_->element(id2(c,d),id2(d,e))*s2rdm2->element(id2(ap,b),id2(a,e))
-                                             +0.5*ints2_->element(id2(b,d),id2(d,e))*s2rdm2->element(id2(ap,e),id2(a,c));
+                                             +0.5*ints2_->element(id2(e,d),id2(d,b))*s2rdm2->element(id2(ap,e),id2(a,c));
               }
             }
     cmat2_ = cmat2;
     cmat2t_ = cmat2t;
   }
+
+  // checking
+  assert(is_hermitian_conjugate(bmat2_, cmat2_));
+  assert(is_hermitian_conjugate(bmat2t_, cmat2t_));
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // D matrices

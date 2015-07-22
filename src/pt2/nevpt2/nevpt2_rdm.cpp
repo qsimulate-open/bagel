@@ -199,8 +199,11 @@ void NEVPT2<DataType>::compute_hrdm() {
             hrdm3->element(id3(m,l,k),id3(m,j,i)) += fac2*rdm2_->element(k+nact_*l,i+nact_*j);
           }
   hrdm1_ = hrdm1;
+  assert(hrdm1_->is_hermitian());
   hrdm2_ = hrdm2;
+  assert(hrdm2_->is_hermitian());
   hrdm3_ = hrdm3;
+  assert(hrdm3_->is_hermitian());
 }
 
 #endif
