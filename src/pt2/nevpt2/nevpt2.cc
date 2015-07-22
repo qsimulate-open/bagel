@@ -29,7 +29,8 @@
 #include <src/scf/dhf/dfock.h>
 #include <src/mat1e/rel/relhcore.h>
 #include <src/multi/casscf/superci.h>
-#include <src/multi/zcasscf/zcasbfgs.h>
+#include <src/multi/zcasscf/zcashybrid.h>
+#include <src/ci/zfci/relmofile.h>
 #include <src/util/prim_op.h>
 #include <src/util/parallel/resources.h>
 
@@ -81,7 +82,7 @@ void NEVPT2<double>::init_reference() {
 
 template<>
 void NEVPT2<complex<double>>::init_reference() {
-  auto casscf = make_shared<ZCASBFGS>(idata_, geom_, ref_);
+  auto casscf = make_shared<ZCASHybrid>(idata_, geom_, ref_);
   casscf->compute();
   ref_ = casscf->conv_to_ref();
 }
