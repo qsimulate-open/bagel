@@ -615,7 +615,7 @@ void NEVPT2<DataType>::compute() {
       VecType heff(nact_);
       for (int a = 0; a != nact_; ++a)
         heff(a) = fock_c->element(a+nclosed_, i);
-      const DataType norm  = abc % (*ardm3_sorted % abc) + heff % (2.0 * *ardm2_sorted % abc + *hrdm1_ % heff);
+      const DataType norm  = abc % (*ardm3_sorted % abc) + heff % (2.0 * *ardm2_sorted % abc + *hrdm1_->get_conjg() % heff);
       const DataType denom = abc % (*amat3t_ % abc)      + heff % (*bmat2t_ % abc + *cmat2t_ * abc + *dmat1t_ % heff);
       energy[sect.at("(+1)'")] += norm / (-denom/norm + oeig(i));
 #endif
