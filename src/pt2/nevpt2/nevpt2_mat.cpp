@@ -244,7 +244,7 @@ void NEVPT2<DataType>::compute_abcd() {
     shared_ptr<MatType> tmp = dmat2->copy();
     sort_indices<1,0,3,2,0,1,1,1>(tmp->data(), dmat2->data(), nact_, nact_, nact_, nact_);
     dmat2_ = dmat2;
-    dmat2_->is_hermitian();
+    assert(dmat2_->is_hermitian());
   }
   {
     shared_ptr<MatType> dmat1 = rdm1_->clone();

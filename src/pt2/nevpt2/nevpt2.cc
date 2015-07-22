@@ -278,7 +278,7 @@ void NEVPT2<DataType>::compute() {
     fock_c = make_shared<MatType>(*coeffall % *ofockao * *coeffall);
 
     // h'eff (only exchange in the active space)
-    auto fockao_p = compute_fock(cgeom, ofockao, *acoeff*(1.0/sqrt(2.0)), 1.0, 0.0); // only exchange TODO
+    auto fockao_p = compute_fock(cgeom, ofockao, *acoeff*(1.0/sqrt(2.0)), 1.0, 0.0); // only exchange
     fockact_p_ = make_shared<MatType>(*acoeff % *fockao_p * *acoeff);
     fockact_p_->localize();
     fock_p = make_shared<MatType>(*coeffall % *fockao_p * *coeffall);
@@ -541,12 +541,12 @@ void NEVPT2<DataType>::compute() {
       sort_indices<1,2,0,4,3,5,0,1,1,1>(ardm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
       const int iv = i-nclosed_-nact_;
       const ViewType rblock = fullav->slice(iv*nact_, (iv+1)*nact_);
-      const MatType bac = rblock % *fullaa;
+      const MatType bac(rblock % *fullaa);
       VecType abc(nact_*nact_*nact_);
       sort_indices<1,0,2,0,1,1,1>(bac.data(), abc.data(), nact_, nact_, nact_);
       VecType heff(nact_);
       for (int a = 0; a != nact_; ++a)
-        heff(a) = (2.0*fock_p->element(a+nclosed_, i) - fock_c->element(a+nclosed_, i));
+        heff(a) = detail::conj(2.0*fock_p->element(a+nclosed_, i) - fock_c->element(a+nclosed_, i));
       const DataType norm = abc % (*ardm3_sorted % abc) + heff % (2.0 * *ardm2_sorted % abc + *rdm1_ % heff);
       const DataType denom = abc % (*amat3_ % abc) + heff % (*bmat2_ % abc + *cmat2_ * abc + *dmat1_ % heff);
       if (abs(norm) > norm_thresh_)
