@@ -146,6 +146,7 @@ void NEVPT2<DataType>::compute_abcd() {
     amat2_ = amat2;
     assert(amat2_->is_hermitian());
     amat3_ = amat3;
+    assert(amat3_->is_hermitian());
     amat3t_ = amat3t;
   }
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -252,8 +253,8 @@ void NEVPT2<DataType>::compute_abcd() {
     for (int a = 0; a != nact_; ++a)
       for (int ap = 0; ap != nact_; ++ap)
         for (int c = 0; c != nact_; ++c) {
-          dmat1->element(ap,a) += -(fockact_p_->element(a,c)*2.0-fockact_c_->element(a,c)) * rdm1_->element(c,ap);
-          dmat1t->element(ap,a) += fockact_c_->element(a,c) * hrdm1_->element(c,ap);
+          dmat1->element(ap,a) += -(fockact_p_->element(a,c)*2.0-fockact_c_->element(a,c)) * rdm1_->element(ap,c);
+          dmat1t->element(ap,a) += fockact_c_->element(c,a) * hrdm1_->element(c,ap);
           for (int e = 0; e != nact_; ++e)
             for (int f = 0; f != nact_; ++f) {
               dmat1->element(ap,a) += - ints2_->element(id2(a,c),id2(e,f)) * ardm2_->element(id2(ap,e),id2(c,f));
@@ -261,6 +262,7 @@ void NEVPT2<DataType>::compute_abcd() {
             }
         }
     dmat1_ = dmat1;
+    assert(dmat1_->is_hermitian());
     dmat1t_ = dmat1t;
   }
 }
