@@ -119,7 +119,7 @@ void NEVPT2<DataType>::compute_abcd() {
                                                               - fockact_p_->element(b,d)*ardm3_->element(id3(cp,ap,bp),id3(d,a,c));
                     amat3t->element(id3(ap,bp,cp),id3(a,b,c))+= fockact_p_->element(d,a)*srdm3_->element(id3(cp,ap,bp),id3(b,d,c))
                                                               - fockact_p_->element(c,d)*srdm3_->element(id3(cp,ap,bp),id3(b,a,d))
-                                                              + fockact_p_->element(b,d)*srdm3_->element(id3(cp,ap,bp),id3(d,a,c));
+                                                              + fockact_p_->element(d,b)*srdm3_->element(id3(cp,ap,bp),id3(d,a,c));
                     for (int e = 0; e != nact_; ++e) {
                       amat3->element(id3(ap,bp,cp),id3(a,b,c)) += ints2_->element(id2(c,d),id2(e,a))*ardm3_->element(id3(cp,ap,bp),id3(b,d,e))
                                                             - 0.5*ints2_->element(id2(d,e),id2(e,a))*ardm3_->element(id3(cp,ap,bp),id3(b,d,c))
@@ -128,17 +128,17 @@ void NEVPT2<DataType>::compute_abcd() {
                       amat3t->element(id3(ap,bp,cp),id3(a,b,c))+= ints2_->element(id2(c,d),id2(e,a))*srdm3_->element(id3(cp,ap,bp),id3(b,d,e))
                                                             - 0.5*ints2_->element(id2(d,e),id2(e,a))*srdm3_->element(id3(cp,ap,bp),id3(b,d,c))
                                                             - 0.5*ints2_->element(id2(c,d),id2(d,e))*srdm3_->element(id3(cp,ap,bp),id3(b,a,e))
-                                                            + 0.5*ints2_->element(id2(b,d),id2(d,e))*srdm3_->element(id3(cp,ap,bp),id3(e,a,c));
+                                                            + 0.5*ints2_->element(id2(e,d),id2(d,b))*srdm3_->element(id3(cp,ap,bp),id3(e,a,c));
                       for (int f = 0; f != nact_; ++f) {
                         amat3->element(id3(ap,bp,cp),id3(a,b,c)) += ints2_->element(id2(d,e),id2(f,a))*ardm4_->element(id4(cp,ap,bp,b),id4(d,f,e,c))
                                                                   - ints2_->element(id2(d,c),id2(f,e))*ardm4_->element(id4(cp,ap,bp,b),id4(d,f,a,e))
                                                                   - ints2_->element(id2(d,b),id2(f,e))*ardm4_->element(id4(cp,ap,bp,e),id4(d,f,a,c));
                         amat3t->element(id3(ap,bp,cp),id3(a,b,c))+= ints2_->element(id2(d,e),id2(f,a))
-                                                                          *((b == bp ? 2.0 : 0.0)*ardm3_->element(id3(cp,ap,d),id3(f,e,c)) - ardm4_->element(id4(cp,ap,b,bp),id4(d,f,e,c)))
+                                                                          *((b == bp ? fac2 : 0.0)*ardm3_->element(id3(cp,ap,d),id3(f,e,c)) - ardm4_->element(id4(cp,ap,b,bp),id4(d,f,e,c)))
                                                                   - ints2_->element(id2(d,c),id2(f,e))
-                                                                          *((b == bp ? 2.0 : 0.0)*ardm3_->element(id3(cp,ap,d),id3(f,a,e)) - ardm4_->element(id4(cp,ap,b,bp),id4(d,f,a,e)))
-                                                                  + ints2_->element(id2(d,b),id2(f,e))
-                                                                          *((bp == e ? 2.0 : 0.0)*ardm3_->element(id3(cp,ap,d),id3(f,a,c)) - ardm4_->element(id4(cp,ap,e,bp),id4(d,f,a,c)));
+                                                                          *((b == bp ? fac2 : 0.0)*ardm3_->element(id3(cp,ap,d),id3(f,a,e)) - ardm4_->element(id4(cp,ap,b,bp),id4(d,f,a,e)))
+                                                                  + ints2_->element(id2(d,e),id2(f,b))
+                                                                          *((bp == e ? fac2 : 0.0)*ardm3_->element(id3(cp,ap,d),id3(f,a,c)) - ardm4_->element(id4(cp,ap,e,bp),id4(d,f,a,c)));
                       }
                     }
                   }
@@ -148,6 +148,7 @@ void NEVPT2<DataType>::compute_abcd() {
     amat3_ = amat3;
     assert(amat3_->is_hermitian());
     amat3t_ = amat3t;
+    assert(amat3t_->is_hermitian());
   }
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // B matrices
@@ -258,12 +259,13 @@ void NEVPT2<DataType>::compute_abcd() {
           for (int e = 0; e != nact_; ++e)
             for (int f = 0; f != nact_; ++f) {
               dmat1->element(ap,a) += - ints2_->element(id2(a,c),id2(e,f)) * ardm2_->element(id2(ap,e),id2(c,f));
-              dmat1t->element(ap,a) += ints2_->element(id2(a,c),id2(e,f)) * ((ap == e ? 2.0 : 0.0)*rdm1_->element(c,f) - ardm2_->element(id2(e,ap),id2(c,f)));
+              dmat1t->element(ap,a) += ints2_->element(id2(e,c),id2(a,f)) * ((ap == e ? fac2 : 0.0)*rdm1_->element(c,f) - ardm2_->element(id2(e,ap),id2(c,f)));
             }
         }
     dmat1_ = dmat1;
     assert(dmat1_->is_hermitian());
     dmat1t_ = dmat1t;
+    assert(dmat1t_->is_hermitian());
   }
 }
 
