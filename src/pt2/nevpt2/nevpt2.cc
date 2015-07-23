@@ -476,7 +476,7 @@ void NEVPT2<DataType>::compute() {
         const MatType mat_av = multiply_tn(iablock, *jblock);
         // hole density matrix
         const MatType mat_vaR = multiply_nt(mat_va, *hrdm1_);
-        const MatType mat_avR(*hrdm1_ % mat_av);
+        const MatType mat_avR(*hrdm1_ * mat_av);
         // K' matrix
         const MatType mat_vaKp(mat_va * *kmatp_);
         const MatType mat_avKp = multiply_tn(*kmatp_, mat_av);
