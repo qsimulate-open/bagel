@@ -31,31 +31,31 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
-#include <src/util/math/factorial.h>
+#include <src/util/constants.h>
 
 namespace bagel {
 
-class IGamma { // Upper incomplete gamma function
+class Gamma_upper { // Upper incomplete gamma function
 
   private:
 
   public:
-    IGamma() {}
-    ~IGamma() {}
+    Gamma_upper() {}
+    ~Gamma_upper() {}
 
-    double compute(const int l, const double x) const {
+    double compute(const double l, const double x) const {
 
       if (l > 1200 || x > 300)
         throw std::runtime_error("Failed to compute incomplete gamma function!");
 
       double gamma = sqrt(pi__) * erfc(x);
-      for (int i = 1; i <= l; ++i)
+      for (int i = 1; i < l; ++i)
         gamma = i * gamma + pow(x, i) * exp(-x);
 
       return gamma;
     }
 
-    double operator()(const int l, const double x) const { assert(l > 1200 && x > 300); return compute(l, x); }
+    double operator()(const int l, const double x) const { assert(l < 1200 && x < 300); return compute(l, x); }
 
 };
 
