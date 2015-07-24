@@ -80,6 +80,8 @@ void NEVPT2<DataType>::compute_kmat() {
     kmat2_  = compute_kmat( rdm2_,  rdm3_, fockact_c_,  1.0);
     kmatp2_ = compute_kmat(hrdm2_, hrdm3_, fockact_h_, -1.0);
     // for CAS references, these are Hermitian; if not, suspect the factor of 2.0 above
+    assert(kmat_->is_hermitian());
+    assert(kmatp_->is_hermitian());
     assert(kmat2_->is_hermitian());
     assert(kmatp2_->is_hermitian());
   }

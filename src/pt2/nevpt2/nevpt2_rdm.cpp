@@ -102,21 +102,28 @@ void NEVPT2<DataType>::compute_asrdm() {
 
   const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
 
-  shared_ptr<MatType> srdm2 = rdm2_->clone(); // S(a,b,c,d) = <0|a+p bp cq d+q|0>
+#if 0
+  shared_ptr<MatType> srdm2 = rdm2_->clone();
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k)
         for (int l = 0; l != nact_; ++l)
           srdm2->element(l+nact_*k,j+nact_*i) = -rdm2_->element(l+nact_*i,k+nact_*j) + (i == j ? fac2*rdm1_->element(l,k) : 0.0) - (i == k ? rdm1_->element(l,j) : 0.0);
-  // <a+ a b+ b> and <a+ a b+ b c+ c>
+#endif
+  // amat = <a+ a b+ b>, <a+ a b+ b c+ c>, and <a+ a b+ b c+ c d+ d>
+  // also srdm2 = <0|a+p bp cq d+q|0>
   shared_ptr<MatType> ardm2 = rdm2_->clone();
+  shared_ptr<MatType> srdm2 = rdm2_->clone();
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k) {
         for (int l = 0; l != nact_; ++l)
           ardm2->element(l+nact_*k,j+nact_*i) += rdm2_->element(l+nact_*j,k+nact_*i);
         ardm2->element(k+nact_*j,j+nact_*i) += rdm1_->element(k,i);
+
+        srdm2->element(k+nact_*j,i+nact_*i) += fac2*rdm1_->element(k,j);
       }
+  sort_indices<0,2,1,1,1,-1,1>(ardm2->data(), srdm2->data(), nact_*nact_, nact_, nact_);
   shared_ptr<MatType> ardm3 = rdm3_->clone();
   shared_ptr<MatType> srdm3 = rdm3_->clone(); // <a+ a b b+ c+ c>
   for (int i = 0; i != nact_; ++i)
