@@ -478,8 +478,8 @@ void NEVPT2<DataType>::compute() {
         const MatType mat_vaR = multiply_nt(mat_va, *hrdm1_);
         const MatType mat_avR(*hrdm1_ * mat_av);
         // K' matrix
-        const MatType mat_vaKp(mat_va * *kmatp_);
-        const MatType mat_avKp = multiply_tn(*kmatp_, mat_av);
+        const MatType mat_vaKp = multiply_nt(mat_va, *kmatp_);
+        const MatType mat_avKp(*kmatp_ * mat_av);
 
         DataType en1 = 0.0;
         for (int v = 0; v != nvirt_; ++v) {
@@ -567,18 +567,18 @@ void NEVPT2<DataType>::compute() {
         const ViewType ibr = iblock->slice(r, r+1);
         const ViewType rblock = fullav->slice(r*nact_, (r+1)*nact_);
 
-        // S(-1)rs sector
+        // S(-1)i,rs sector
         for (int s = r; s != nvirt_; ++s) {
           const ViewType ibs = iblock->slice(s, s+1);
           const ViewType sblock = fullav->slice(s*nact_, (s+1)*nact_);
-          const MatType mat1 = multiply_tn(ibs, rblock); // (vi|aw) (i, r fixed)
-          const MatType mat2 = multiply_tn(ibr, sblock); // (vi|aw) (i, s fixed)
-          const MatType mat1R(mat1 * *rdm1_); // (vi|ar) (i, r fixed)
-          const MatType mat2R(mat2 * *rdm1_); // (vi|as) (i, s fixed)
-          const MatType mat1K = multiply_nt(mat1, *kmat_); // (vi|ar) (i, r fixed)
-          const MatType mat2K = multiply_nt(mat2, *kmat_); // (vi|as) (i, s fixed)
-          const DataType norm  = (r == s ? 1.0 : 2.0) * ((fac2*0.5)*(mat2R.dot_product(mat2) + mat1R.dot_product(mat1)) - mat2R.dot_product(mat1));
-          const DataType denom = (r == s ? 1.0 : 2.0) * ((fac2*0.5)*(mat2K.dot_product(mat2) + mat1K.dot_product(mat1)) - mat2K.dot_product(mat1));
+          const MatType mat1 = multiply_tn(ibs, rblock); // (is|ar) (irs fixed)
+          const MatType mat2 = multiply_tn(ibr, sblock); // (ir|as) (irs fixed)
+          const MatType mat1R(mat1 * *rdm1_);
+          const MatType mat2R(mat2 * *rdm1_);
+          const MatType mat1K(mat1 * *kmat_);
+          const MatType mat2K(mat2 * *kmat_);
+          const DataType norm  = (r == s ? 1.0 : 2.0) * ((fac2*0.5)*(mat2R.dot_product(mat2) + mat1R.dot_product(mat1)) - detail::real(mat2R.dot_product(mat1)));
+          const DataType denom = (r == s ? 1.0 : 2.0) * ((fac2*0.5)*(mat2K.dot_product(mat2) + mat1K.dot_product(mat1)) - detail::real(mat2K.dot_product(mat1)));
           if (abs(norm) > norm_thresh_)
             energy[sect.at("(-1)")] += norm / (denom/norm + oeig(i) - veig[r] - veig[s]);
         }

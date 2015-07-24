@@ -41,13 +41,13 @@ void NEVPT2<DataType>::compute_kmat() {
   {
     // Eq. (27)
     auto kmat = make_shared<MatType>(nact_, nact_, true);
-    btas::contract(1.0, *fockact_c_, {0,1}, *rdm1_, {2,1}, 0.0, *kmat, {0,2});
+    btas::contract(1.0, *rdm1_, {0,1}, *fockact_c_, {2,1}, 0.0, *kmat, {0,2});
     *kmat += *qvec_;
     kmat->localize();
 
     // Eq. (A4)
     auto kmatp = make_shared<MatType>(*kmat * (-1.0));
-    *kmatp += *fockact_ * fac2;
+    *kmatp += *fockact_->get_conjg() * fac2;
     kmatp->localize();
 
     kmat_ = kmat;
