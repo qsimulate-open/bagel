@@ -67,6 +67,8 @@ void CASPT2::CASPT2::solve() {
   }
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
+
+  cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_+info_->ciwfn()->energy(0) << endl;
 }
 
 
