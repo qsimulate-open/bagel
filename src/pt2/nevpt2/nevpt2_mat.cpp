@@ -193,15 +193,16 @@ void NEVPT2<DataType>::compute_abcd() {
           for (int d = 0; d != nact_; ++d)
             s2rdm2->element(id2(d,c),id2(b,a)) += (d == c ? fac2 : 0.0) * rdm1_->element(b,a) - ardm2_->element(id2(c,d), id2(b,a));
 
+    const MatType fock_pp = *fockact_p_ * 2.0 - *fockact_c_;
     for (int c = 0; c != nact_; ++c)
       for (int a = 0; a != nact_; ++a)
         for (int b = 0; b != nact_; ++b)
           for (int ap = 0; ap != nact_; ++ap)
             for (int d = 0; d != nact_; ++d) {
-              cmat2->element(ap, id3(a,b,c)) += fockact_p_->element(d,a)*ardm2_->element(id2(ap,b),id2(d,c)) - fockact_p_->element(c,d)*ardm2_->element(id2(ap,b),id2(a,d))
-                                              - fockact_p_->element(b,d)*ardm2_->element(id2(ap,d),id2(a,c));
-              cmat2t->element(ap, id3(a,b,c)) += fockact_p_->element(d,a)*s2rdm2->element(id2(ap,b),id2(d,c)) - fockact_p_->element(c,d)*s2rdm2->element(id2(ap,b),id2(a,d))
-                                               + fockact_p_->element(d,b)*s2rdm2->element(id2(ap,d),id2(a,c));
+              cmat2->element(ap, id3(a,b,c)) += fock_pp.element(d,a)*ardm2_->element(id2(ap,b),id2(d,c)) - fockact_c_->element(c,d)*ardm2_->element(id2(ap,b),id2(a,d))
+                                              - fock_pp.element(b,d)*ardm2_->element(id2(ap,d),id2(a,c));
+              cmat2t->element(ap, id3(a,b,c)) += fock_pp.element(d,a)*s2rdm2->element(id2(ap,b),id2(d,c)) - fockact_c_->element(c,d)*s2rdm2->element(id2(ap,b),id2(a,d))
+                                               + fockact_c_->element(d,b)*s2rdm2->element(id2(ap,d),id2(a,c));
               for (int e = 0; e != nact_; ++e) {
                 for (int f = 0; f != nact_; ++f) {
                   cmat2->element(ap, id3(a,b,c)) += ints2_->element(id2(d,e),id2(f,a))*ardm3_->element(id3(ap,b,d),id3(f,e,c))
@@ -211,14 +212,8 @@ void NEVPT2<DataType>::compute_abcd() {
                                                   - ints2_->element(id2(d,c),id2(f,e))*((ap == b ? fac2 : 0.0)*ardm2_->element(id2(d,f),id2(a,e)) - ardm3_->element(id3(b,ap,d),id3(f,a,e)))
                                                   + ints2_->element(id2(d,e),id2(f,b))*((ap == e ? fac2 : 0.0)*ardm2_->element(id2(d,f),id2(a,c)) - ardm3_->element(id3(e,ap,d),id3(f,a,c)));
                 }
-                cmat2->element(ap, id3(a,b,c)) += ints2_->element(id2(c,d),id2(e,a))*ardm2_->element(id2(ap,b),id2(d,e))
-                                             -0.5*ints2_->element(id2(d,e),id2(e,a))*ardm2_->element(id2(ap,b),id2(d,c))
-                                             -0.5*ints2_->element(id2(c,d),id2(d,e))*ardm2_->element(id2(ap,b),id2(a,e))
-                                             +0.5*ints2_->element(id2(b,d),id2(d,e))*ardm2_->element(id2(ap,e),id2(a,c));
-                cmat2t->element(ap, id3(a,b,c))+= ints2_->element(id2(c,d),id2(e,a))*s2rdm2->element(id2(ap,b),id2(d,e))
-                                             -0.5*ints2_->element(id2(d,e),id2(e,a))*s2rdm2->element(id2(ap,b),id2(d,c))
-                                             -0.5*ints2_->element(id2(c,d),id2(d,e))*s2rdm2->element(id2(ap,b),id2(a,e))
-                                             +0.5*ints2_->element(id2(e,d),id2(d,b))*s2rdm2->element(id2(ap,e),id2(a,c));
+                cmat2->element(ap, id3(a,b,c)) += ints2_->element(id2(c,d),id2(e,a))*ardm2_->element(id2(ap,b),id2(d,e));
+                cmat2t->element(ap, id3(a,b,c))+= ints2_->element(id2(c,d),id2(e,a))*s2rdm2->element(id2(ap,b),id2(d,e));
               }
             }
     cmat2_ = cmat2;
@@ -232,6 +227,21 @@ void NEVPT2<DataType>::compute_abcd() {
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // D matrices
   {
+    shared_ptr<MatType> s2rdm2 = ardm2_->clone();
+    shared_ptr<MatType> s2rdm3 = ardm3_->clone();
+    for (int a = 0; a != nact_; ++a)
+      for (int b = 0; b != nact_; ++b)
+        for (int c = 0; c != nact_; ++c)
+          for (int d = 0; d != nact_; ++d)
+            s2rdm2->element(id2(d,c),id2(b,a)) += (d == c ? fac2 : 0.0) * rdm1_->element(b,a) - ardm2_->element(id2(c,d), id2(b,a));
+    for (int a = 0; a != nact_; ++a)
+      for (int b = 0; b != nact_; ++b)
+        for (int c = 0; c != nact_; ++c)
+          for (int d = 0; d != nact_; ++d)
+            for (int e = 0; e != nact_; ++e)
+              for (int f = 0; f != nact_; ++f)
+                s2rdm3->element(id3(f,e,d),id3(c,b,a)) += (f == e ? fac2 : 0.0) * ardm2_->element(id2(d,c),id2(b,a)) - ardm3_->element(id3(e,f,d), id3(c,b,a));
+
     shared_ptr<MatType> dmat2 = rdm2_->clone();
     for (int b = 0; b != nact_; ++b)
       for (int a = 0; a != nact_; ++a)
@@ -243,17 +253,16 @@ void NEVPT2<DataType>::compute_abcd() {
               for (int d = 0; d != nact_; ++d)
                 for (int e = 0; e != nact_; ++e) {
                   dmat2->element(ap+nact_*bp,a+nact_*b) -= 0.5 * ints2_->element(c+nact_*b,e+nact_*d)
-                           * ((a == ap ? fac2: 0.0) * ardm2_->element(c+nact_*e,bp+nact_*d) - ardm3_->element(id3(c,e,a),id3(ap,bp,d))
-                           +  (a == ap ? fac2: 0.0) * ardm2_->element(bp+nact_*d,c+nact_*e) - ardm3_->element(id3(a,ap,bp),id3(d,c,e))
+                           * (srdm3_->element(id3(c,e,ap),id3(a,bp,d)) +  s2rdm3->element(id3(ap,a,bp),id3(d,c,e))
                            + (ap == bp ? 1.0 : 0.0) *(ardm2_->element(c+nact_*e,a+nact_*d)  + ardm2_->element(a+nact_*d,c+nact_*e))
-                           +  (c == ap ? 1.0 : 0.0) *((a == e  ? fac2: 0.0) * rdm1_->element(bp, d) - ardm2_->element(a+nact_*e,bp+nact_*d))
-                           - (bp == e  ? 1.0 : 0.0) *((a == ap ? fac2: 0.0) * rdm1_->element(c,d)   - ardm2_->element(a+nact_*ap,c+nact_*d)));
+                           +  (c == ap ? 1.0 : 0.0) *s2rdm2->element(e+nact_*a,bp+nact_*d)
+                           - (bp == e  ? 1.0 : 0.0) *s2rdm2->element(ap+nact_*a,c+nact_*d));
                   dmat2->element(ap+nact_*bp,a+nact_*b) += 0.5 * ints2_->element(c+nact_*d,e+nact_*a)
-                           * ((d == ap ? fac2: 0.0) * ardm2_->element(c+nact_*e,bp+nact_*b) - ardm3_->element(id3(c,e,d),id3(ap,bp,b))
-                           +  (d == ap ? fac2: 0.0) * ardm2_->element(bp+nact_*b,c+nact_*e) - ardm3_->element(id3(d,ap,bp),id3(b,c,e))
+                           * (srdm3_->element(id3(c,e,ap),id3(d,bp,b)) +  s2rdm3->element(id3(ap,d,bp),id3(b,c,e))
                            + (ap == bp ? 1.0 : 0.0) *(ardm2_->element(c+nact_*e,d+nact_*b)  + ardm2_->element(d+nact_*b,c+nact_*e))
-                           +  (c == ap ? 1.0 : 0.0) *((d == e  ? fac2: 0.0) * rdm1_->element(bp, b) - ardm2_->element(d+nact_*e,bp+nact_*b))
-                           - (bp == e  ? 1.0 : 0.0) *((d == ap ? fac2: 0.0) * rdm1_->element(c,b)   - ardm2_->element(d+nact_*ap,c+nact_*b)));
+                           +  (c == ap ? 1.0 : 0.0) * s2rdm2->element(id2(e,d), id2(bp,b))
+                           - (bp == e  ? 1.0 : 0.0) * s2rdm2->element(id2(ap,d), id2(c,b)));
+
                 }
             }
     shared_ptr<MatType> tmp = dmat2->copy();
