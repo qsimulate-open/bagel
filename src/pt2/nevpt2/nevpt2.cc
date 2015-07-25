@@ -548,7 +548,7 @@ void NEVPT2<DataType>::compute() {
       VecType heff(nact_);
       for (int a = 0; a != nact_; ++a)
         heff(a) = detail::conj(2.0*fock_p->element(a+nclosed_, i) - fock_c->element(a+nclosed_, i));
-      const DataType norm = abc % (*ardm3_sorted % abc) + heff % (2.0 * *ardm2_sorted % abc + *rdm1_ % heff);
+      const DataType norm = abc % (*ardm3_sorted % abc) + heff % (2.0 * *ardm2_sorted % abc + *rdm1_ * heff);
       const DataType denom = abc % (*amat3_ % abc) + heff % (*bmat2_ % abc + *cmat2_ * abc + *dmat1_ % heff);
       if (abs(norm) > norm_thresh_)
         energy[sect.at("(-1)'")] += norm / (-denom/norm - veig[iv]);
@@ -616,8 +616,8 @@ void NEVPT2<DataType>::compute() {
       VecType heff(nact_);
       for (int a = 0; a != nact_; ++a)
         heff(a) = fock_c->element(a+nclosed_, i);
-      const DataType norm  = abc % (*ardm3_sorted % abc) + heff % (2.0 * *ardm2_sorted % abc + *hrdm1_->get_conjg() % heff);
-      const DataType denom = abc % (*amat3t_ % abc)      + heff % (*bmat2t_ % abc + *cmat2t_ * abc + *dmat1t_ % heff);
+      const DataType norm  = abc % (*ardm3_sorted % abc) + detail::real(heff % (2.0 * *ardm2_sorted % abc + *hrdm1_->get_conjg() % heff));
+      const DataType denom = abc % (*amat3t_ % abc)      + detail::real(heff % (*bmat2t_ % abc + *cmat2t_ * abc + *dmat1t_ * heff));
       energy[sect.at("(+1)'")] += norm / (-denom/norm + oeig(i));
 #endif
     }
