@@ -48,7 +48,7 @@ class Gamma_upper { // Upper incomplete gamma function
       if (l > 1200 || x > 300)
         throw std::runtime_error("Failed to compute incomplete gamma function!");
 
-      double gamma = sqrt(pi__) * erfc(x);
+      double gamma = sqrt(pi__) * erfc(sqrt(x));
       for (int i = 1; i < l; ++i)
         gamma = i * gamma + pow(x, i) * exp(-x);
 
