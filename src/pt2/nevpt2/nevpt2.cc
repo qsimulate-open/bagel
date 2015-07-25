@@ -597,9 +597,9 @@ void NEVPT2<DataType>::compute() {
         btas::contract(1.0, srdm2_p, {1,0}, btas::group(mat2,0,2), {1}, 0.0, vmat2Sp, {0});
         btas::contract(1.0, *dmat2_, {1,0}, btas::group(mat2,0,2), {1}, 0.0, vmat2D , {0});
         const int ir = r + nclosed_ + nact_;
-        const DataType norm = - fac2*mat1S.dot_product(mat1) + blas::dot_product(mat1Ssym.data(), mat1Ssym.size(), mat2.data()) + mat2Sp.dot_product(mat2)
-                              + fac2*detail::conj(fock->element(ir,i) - fock_c->element(ir,i))*(fock_c->element(ir,i) + fock_h->element(ir,i))
-                              + fac2*detail::conj(fock_c->element(ir,i))*fock_c->element(ir,i);
+        const DataType norm = detail::real(-fac2*mat1S.dot_product(mat1) + blas::dot_product(mat1Ssym.data(), mat1Ssym.size(), mat2.data()) + mat2Sp.dot_product(mat2))
+                            + detail::real( fac2*detail::conj(fock->element(ir,i) - fock_c->element(ir,i))*(fock_c->element(ir,i) + fock_h->element(ir,i)))
+                            + fac2*detail::conj(fock_c->element(ir,i))*fock_c->element(ir,i);
         const DataType denom = fac2*mat1A.dot_product(mat1) - blas::dot_product(mat1Asym.data(), mat1Asym.size(), mat2.data()) + mat2D.dot_product(mat2);
         if (abs(norm) > norm_thresh_)
           energy[sect.at("(+0)'")] += norm / (-denom/norm + oeig(i) - veig[r]);
