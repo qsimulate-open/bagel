@@ -16,18 +16,16 @@ int main() {
 double x = 1e-3;
 bagel::Gamma_upper gamma;
 for (int i = 0; i != 100; ++i) {
-//  for (int j = 0; j != 10; ++j) {
-//    const double l = j + 0.5;
-    const double l = 0.5;
+  for (int j = 0; j != 10; ++j) {
+    const double l = j + 0.5;
     cout << "(l, x) = (" << l << ", " << setprecision(5) << x << ")" << endl;
     cout << "boost::tgamma                  = " << setw(20) << setprecision(12) << boost::math::tgamma(l, x) << "  "
          << "erfc(x)                        = " << setw(20) << setprecision(12) << boost::math::erfc(x) << endl;
-    const double expected = sqrt(bagel::pi__) * erfc(x);
-    cout << "bagel::Gamma_upper             = " << setw(20) << setprecision(12) << gamma(l, x) << "  "
-         << "erfc(x)                        = " << setw(20) << setprecision(12) << erfc(x) << "  ***  " << expected << endl;
+    cout << "bagel::Gamma_upper             = " << setw(20) << setprecision(12) << gamma(j, x) << "  "
+         << "erfc(x)                        = " << setw(20) << setprecision(12) << erfc(x) << endl;
     cout << "gsl_sf_gamma_inc               = " << setw(20) << setprecision(12) << gsl_sf_gamma_inc(l, x) << endl;
     cout << endl;
-//  }
+  }
   x += 0.01;
 }
 

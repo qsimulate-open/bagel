@@ -35,7 +35,7 @@
 
 namespace bagel {
 
-class Gamma_upper { // Upper incomplete gamma function
+class Gamma_upper { // Upper incomplete gamma function G(l+1/2, x)
 
   private:
 
@@ -43,14 +43,16 @@ class Gamma_upper { // Upper incomplete gamma function
     Gamma_upper() {}
     ~Gamma_upper() {}
 
-    double compute(const double l, const double x) const {
+    double compute(const int l, const double x) const {
 
       if (l > 1200 || x > 300)
         throw std::runtime_error("Failed to compute incomplete gamma function!");
 
       double gamma = sqrt(pi__) * erfc(sqrt(x));
-      for (int i = 1; i < l; ++i)
-        gamma = i * gamma + pow(x, i) * exp(-x);
+      for (int i = 1; i <= l; ++i) {
+        const double r = i + 0.5;
+        gamma = (r-1.0) * gamma + pow(x, r-1.0) * exp(-x);
+      }
 
       return gamma;
     }
