@@ -134,7 +134,7 @@ void NEVPT2<DataType>::compute_abcd() {
                                                               - fock_pp.element(b,d)*ardm3_->element(id3(cp,ap,bp),id3(d,a,c));
                     amat3t->element(id3(ap,bp,cp),id3(a,b,c))+= fock_pp.element(d,a)*srdm3_->element(id3(cp,ap,bp),id3(b,d,c))
                                                               - fockact_c_->element(c,d)*srdm3_->element(id3(cp,ap,bp),id3(b,a,d))
-                                                              + fock_pp.element(d,b)*srdm3_->element(id3(cp,ap,bp),id3(d,a,c));
+                                                              + fockact_c_->element(d,b)*srdm3_->element(id3(cp,ap,bp),id3(d,a,c));
                     for (int e = 0; e != nact_; ++e) {
                       amat3->element(id3(ap,bp,cp),id3(a,b,c)) += ints2_->element(id2(c,d),id2(e,a))*ardm3_->element(id3(cp,ap,bp),id3(b,d,e));
                       amat3t->element(id3(ap,bp,cp),id3(a,b,c))+= ints2_->element(id2(c,d),id2(e,a))*srdm3_->element(id3(cp,ap,bp),id3(b,d,e));
