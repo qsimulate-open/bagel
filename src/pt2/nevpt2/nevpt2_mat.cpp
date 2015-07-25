@@ -119,6 +119,7 @@ void NEVPT2<DataType>::compute_abcd() {
     shared_ptr<MatType> amat3 = rdm3_->clone();
     shared_ptr<MatType> amat3t = rdm3_->clone();
     {
+      const MatType fock_pp = *fockact_p_ * 2.0 - *fockact_c_;
       for (int c = 0; c != nact_; ++c)
         for (int b = 0; b != nact_; ++b)
           for (int a = 0; a != nact_; ++a)
@@ -126,21 +127,15 @@ void NEVPT2<DataType>::compute_abcd() {
               for (int bp = 0; bp != nact_; ++bp)
                 for (int ap = 0; ap != nact_; ++ap)
                   for (int d = 0; d != nact_; ++d) {
-                    amat3->element(id3(ap,bp,cp),id3(a,b,c)) += fockact_p_->element(d,a)*ardm3_->element(id3(cp,ap,bp),id3(b,d,c))
-                                                              - fockact_p_->element(c,d)*ardm3_->element(id3(cp,ap,bp),id3(b,a,d))
-                                                              - fockact_p_->element(b,d)*ardm3_->element(id3(cp,ap,bp),id3(d,a,c));
-                    amat3t->element(id3(ap,bp,cp),id3(a,b,c))+= fockact_p_->element(d,a)*srdm3_->element(id3(cp,ap,bp),id3(b,d,c))
-                                                              - fockact_p_->element(c,d)*srdm3_->element(id3(cp,ap,bp),id3(b,a,d))
-                                                              + fockact_p_->element(d,b)*srdm3_->element(id3(cp,ap,bp),id3(d,a,c));
+                    amat3->element(id3(ap,bp,cp),id3(a,b,c)) += fock_pp.element(d,a)*ardm3_->element(id3(cp,ap,bp),id3(b,d,c))
+                                                              - fockact_c_->element(c,d)*ardm3_->element(id3(cp,ap,bp),id3(b,a,d))
+                                                              - fock_pp.element(b,d)*ardm3_->element(id3(cp,ap,bp),id3(d,a,c));
+                    amat3t->element(id3(ap,bp,cp),id3(a,b,c))+= fock_pp.element(d,a)*srdm3_->element(id3(cp,ap,bp),id3(b,d,c))
+                                                              - fockact_c_->element(c,d)*srdm3_->element(id3(cp,ap,bp),id3(b,a,d))
+                                                              + fock_pp.element(d,b)*srdm3_->element(id3(cp,ap,bp),id3(d,a,c));
                     for (int e = 0; e != nact_; ++e) {
-                      amat3->element(id3(ap,bp,cp),id3(a,b,c)) += ints2_->element(id2(c,d),id2(e,a))*ardm3_->element(id3(cp,ap,bp),id3(b,d,e))
-                                                            - 0.5*ints2_->element(id2(d,e),id2(e,a))*ardm3_->element(id3(cp,ap,bp),id3(b,d,c))
-                                                            - 0.5*ints2_->element(id2(c,d),id2(d,e))*ardm3_->element(id3(cp,ap,bp),id3(b,a,e))
-                                                            + 0.5*ints2_->element(id2(b,d),id2(d,e))*ardm3_->element(id3(cp,ap,bp),id3(e,a,c));
-                      amat3t->element(id3(ap,bp,cp),id3(a,b,c))+= ints2_->element(id2(c,d),id2(e,a))*srdm3_->element(id3(cp,ap,bp),id3(b,d,e))
-                                                            - 0.5*ints2_->element(id2(d,e),id2(e,a))*srdm3_->element(id3(cp,ap,bp),id3(b,d,c))
-                                                            - 0.5*ints2_->element(id2(c,d),id2(d,e))*srdm3_->element(id3(cp,ap,bp),id3(b,a,e))
-                                                            + 0.5*ints2_->element(id2(e,d),id2(d,b))*srdm3_->element(id3(cp,ap,bp),id3(e,a,c));
+                      amat3->element(id3(ap,bp,cp),id3(a,b,c)) += ints2_->element(id2(c,d),id2(e,a))*ardm3_->element(id3(cp,ap,bp),id3(b,d,e));
+                      amat3t->element(id3(ap,bp,cp),id3(a,b,c))+= ints2_->element(id2(c,d),id2(e,a))*srdm3_->element(id3(cp,ap,bp),id3(b,d,e));
                       for (int f = 0; f != nact_; ++f) {
                         amat3->element(id3(ap,bp,cp),id3(a,b,c)) += ints2_->element(id2(d,e),id2(f,a))*ardm4_->element(id4(cp,ap,bp,b),id4(d,f,e,c))
                                                                   - ints2_->element(id2(d,c),id2(f,e))*ardm4_->element(id4(cp,ap,bp,b),id4(d,f,a,e))
