@@ -77,6 +77,9 @@ void NEVPT2<double>::init_reference() {
   auto casscf = make_shared<SuperCI>(idata_, geom_, ref_);
   casscf->compute();
   ref_ = casscf->conv_to_ref();
+
+  gaunt_ = false;
+  breit_ = false;
 }
 
 
@@ -85,6 +88,10 @@ void NEVPT2<complex<double>>::init_reference() {
   auto casscf = make_shared<ZCASHybrid>(idata_, geom_, ref_);
   casscf->compute();
   ref_ = casscf->conv_to_ref();
+
+  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
+  gaunt_ = ref->gaunt();
+  breit_ = ref->breit();
 }
 
 
@@ -98,8 +105,7 @@ shared_ptr<Matrix> NEVPT2<double>::compute_fock(shared_ptr<const Geometry> cgeom
 template<>
 shared_ptr<ZMatrix> NEVPT2<complex<double>>::compute_fock(shared_ptr<const Geometry> cgeom, shared_ptr<const ZMatrix> hcore,
                                                           const ZMatView coeff, const double scale_exch, const double scale_coulomb) {
-  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-  return make_shared<DFock>(cgeom, hcore, coeff, ref->gaunt(), ref->breit(), /*store_half*/false, /*robust*/ref->breit(), scale_exch, scale_coulomb);
+  return make_shared<DFock>(cgeom, hcore, coeff, gaunt_, breit_, /*store_half*/false, /*robust*/breit_, scale_exch, scale_coulomb);
 }
 
 
@@ -142,10 +148,10 @@ tuple<shared_ptr<ZMatrix>,VectorB> NEVPT2<complex<double>>::remove_core(shared_p
 
 
 template<>
-tuple<shared_ptr<DFDistT>, shared_ptr<DFDistT>>
+tuple<shared_ptr<DFDistT>, shared_ptr<DFDistT>, shared_ptr<DFDistT>, shared_ptr<DFDistT>>
   NEVPT2<double>::compute_full_nevpt2(shared_ptr<const Geometry> cgeom, shared_ptr<const Matrix> ccoeff, shared_ptr<const Matrix> acoeff,
-                                       shared_ptr<const Matrix> vcoeff, shared_ptr<const Matrix> coeffall) const {
-  shared_ptr<DFDistT> fullvi, fullax;
+                                       shared_ptr<const Matrix> vcoeff, shared_ptr<const Matrix> coeffall, const bool, const bool) const {
+  shared_ptr<DFDistT> fullvi, fullax, fullvi2, fullax2;
   if (nclosed_) {
     // this is now (naux, nvirt_, nclosed_), distributed by nvirt_*nclosed_. Always naux*nvirt_ block is localized to one node
     shared_ptr<const DFHalfDist> half = cgeom->df()->compute_half_transform(ccoeff);
@@ -163,33 +169,49 @@ tuple<shared_ptr<DFDistT>, shared_ptr<DFDistT>>
     fullax->discard_df();
     assert(fullax->nblocks() == 1);
   }
-  return tie(fullvi, fullax);
+  return tie(fullvi, fullax, fullvi2, fullax2); // fullvi2 and fullax2 are dummy
 }
 
 
 template<>
-tuple<shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>>
+tuple<shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>>
   NEVPT2<complex<double>>::compute_full_nevpt2(shared_ptr<const Geometry> cgeom, shared_ptr<const ZMatrix> ccoeff, shared_ptr<const ZMatrix> acoeff,
-                                                shared_ptr<const ZMatrix> vcoeff, shared_ptr<const ZMatrix> coeffall) const {
-  shared_ptr<RelDFFullT> fullvi, fullax;
+                                               shared_ptr<const ZMatrix> vcoeff, shared_ptr<const ZMatrix> coeffall, const bool gaunt ,const bool breit) const {
+  shared_ptr<RelDFFullT> fullvi, fullax, fullvi2, fullax2;
   if (nclosed_) {
     // this is now (naux, nvirt_, nclosed_), distributed by nvirt_*nclosed_. Always naux*nvirt_ block is localized to one node
     list<shared_ptr<RelDFHalf>> half, half2;
-    tie(half, half2) = RelMOFile::compute_half(cgeom, ccoeff, /*gaunt*/false, /*breit*/false);
-    shared_ptr<RelDFFull> full = RelMOFile::compute_full(vcoeff, half, /*appj*/true)->swap();
-    auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
-    fullvi = make_shared<RelDFFullT>(full, dist);
-    fullvi->discard_df();
+    tie(half, half2) = RelMOFile::compute_half(cgeom, ccoeff, gaunt, breit);
+    {
+      shared_ptr<RelDFFull> full = RelMOFile::compute_full(vcoeff, half, /*appj*/true)->swap();
+      auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
+      fullvi = make_shared<RelDFFullT>(full, dist);
+      fullvi->discard_df();
+    }
+    if (breit) {
+      shared_ptr<RelDFFull> full = RelMOFile::compute_full(vcoeff, half2, /*appj*/false)->swap();
+      auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
+      fullvi2 = make_shared<RelDFFullT>(full, dist);
+      fullvi2->discard_df();
+    }
   }
   {
     list<shared_ptr<RelDFHalf>> half, half2;
-    tie(half, half2) = RelMOFile::compute_half(cgeom, acoeff, /*gaunt*/false, /*breit*/false);
-    shared_ptr<RelDFFull> full = RelMOFile::compute_full(coeffall, half, /*appj*/true);
-    auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
-    fullax = make_shared<RelDFFullT>(full, dist);
-    fullax->discard_df();
+    tie(half, half2) = RelMOFile::compute_half(cgeom, acoeff, gaunt, breit);
+    {
+      shared_ptr<RelDFFull> full = RelMOFile::compute_full(coeffall, half, /*appj*/true);
+      auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
+      fullax = make_shared<RelDFFullT>(full, dist);
+      fullax->discard_df();
+    }
+    if (breit) {
+      shared_ptr<RelDFFull> full = RelMOFile::compute_full(coeffall, half2, /*appj*/false);
+      auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
+      fullax2 = make_shared<RelDFFullT>(full, dist);
+      fullax2->discard_df();
+    }
   }
-  return tie(fullvi, fullax);
+  return tie(fullvi, fullax, fullvi2, fullax2);
 }
 
 
@@ -207,10 +229,8 @@ void NEVPT2<DataType>::compute() {
     auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
     cgeom = make_shared<Geometry>(*geom_, info, false);
   }
-  if (!is_same<DataType,double>::value) {
-    auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-    cgeom = cgeom->relativistic(ref->gaunt());
-  }
+  if (!is_same<DataType,double>::value)
+    cgeom = cgeom->relativistic(gaunt_);
 
   // coefficients -- will be updated later
   shared_ptr<MatType> ccoeff = nclosed_ ? coeff()->slice_copy(0, ncore_+nclosed_) : nullptr;
@@ -294,52 +314,67 @@ void NEVPT2<DataType>::compute() {
 
   /////////////////////////////////////////////////////////////////////////////////////
   // compute transformed integrals
-  shared_ptr<DFType> fullvi;
-  shared_ptr<const MatType> fullav;
-  shared_ptr<const MatType> fullai;
+
+  // used later to determine the cache size
+  size_t memory_size = cgeom->df()->block(0)->size(); // TODO make it robust
+  mpi__->broadcast(&memory_size, 1, 0);
+
+  shared_ptr<DFType> fullvi, fullvi2, fullvi3;
+  shared_ptr<const MatType> fullav, fullav2, fullav3;
+  shared_ptr<const MatType> fullai, fullai2, fullai3;
   // TODO probably we want to use JKFIT for this for consistency?
-  shared_ptr<const MatType> fullaa;
-  size_t memory_size;
-  {
-    // used later to determine the cache size
-    memory_size = cgeom->df()->block(0)->size(); // TODO make it robust
-    mpi__->broadcast(&memory_size, 1, 0);
+  shared_ptr<const MatType> fullaa, fullaa2, fullaa3;
 
-    shared_ptr<DFType> fullax;
-    tie(fullvi, fullax) = compute_full_nevpt2(cgeom, ccoeff, acoeff, vcoeff, coeffall);
-
-    shared_ptr<const MatType> fullaxm = fullax->replicate();
-
+  auto slice_ax = [this](shared_ptr<DFType> full) {
+    shared_ptr<const MatType> fullm = full->replicate();
     shared_ptr<MatType> tmp;
     if (nclosed_) {
-      tmp = fullaxm->slice_copy(0, nact_*nclosed_);
+      tmp = fullm->slice_copy(0, nact_*nclosed_);
       blas::conj_n(tmp->data(), tmp->size());
     }
-    fullai = tmp;
-    fullaa = fullaxm->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_));
-    fullav = fullaxm->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_));
+    shared_ptr<const MatType> aa = fullm->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_));
+    shared_ptr<const MatType> av = fullm->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_));
+    return make_tuple(tmp, aa, av);
+  };
+  {
+    // computing Coulomb integrals
+    shared_ptr<DFType> fullax;
+    tie(fullvi, fullax, ignore, ignore) = compute_full_nevpt2(cgeom, ccoeff, acoeff, vcoeff, coeffall, false, false);
+    tie(fullai, fullaa, fullav) = slice_ax(fullax);
+  }
+  if (gaunt_) {
+    shared_ptr<DFType> fullax2, fullax3;
+    tie(fullvi2, fullax2, fullvi3, fullax3) = compute_full_nevpt2(cgeom, ccoeff, acoeff, vcoeff, coeffall, true, breit_);
+    tie(fullai2, fullaa2, fullav2) = slice_ax(fullax2);
+    if (breit_)
+      tie(fullai3, fullaa3, fullav3) = slice_ax(fullax3);
+  }
+
+  // set 4-index integrals within the active space
+  {
+    MatType ints(nact_*nact_, nact_*nact_, true);
+    btas::contract(1.0, *fullaa, {0,1}, *fullaa, {0,2}, 0.0, ints, {1,2}, false, false);
+    if (gaunt_) {
+      const double fac = breit_ ? -0.25 : -1.0;
+      btas::contract(fac, *fullaa2, {0,1}, *(breit_ ? fullaa3 : fullaa2), {0,2}, 1.0, ints, {1,2}, false, false);
+      if (breit_)
+        btas::contract(fac, *fullaa3, {0,1}, *fullaa2, {0,2}, 1.0, ints, {1,2}, false, false);
+    }
+    auto tmp = ints.clone();
+    sort_indices<0,2,1,3,0,1,1,1>(ints.data(), tmp->data(), nact_, nact_, nact_, nact_);
+    ints2_ = tmp;
   }
 
   {
-    {
-      // set 4-index integrals within the active space
-      MatType ints(nact_*nact_, nact_*nact_, true);
-      btas::contract(1.0, *fullaa, {0,1}, *fullaa, {0,2}, 0.0, ints, {1,2}, false, false);
-      auto tmp = ints.clone();
-      sort_indices<0,2,1,3,0,1,1,1>(ints.data(), tmp->data(), nact_, nact_, nact_, nact_);
-      ints2_ = tmp;
-    }
-
-    {
-      // set qvec
-      auto rdm2c = rdm2_->copy();
-      const btas::CRange<2> range(nact_, nact_*nact_*nact_);
-      auto intsv = btas::make_cview(range, ints2_->storage());
-      auto rdm2v = btas::make_cview(range, rdm2_->storage());
-      auto qvec = make_shared<MatType>(nact_, nact_);
-      btas::contract(1.0, intsv, {0,1}, rdm2v, {2,1}, 0.0, *qvec, {0,2}, false, false);
-      qvec_ = qvec;
-    }
+    // set qvec
+    // TODO check the 2-body energy here
+    auto rdm2c = rdm2_->copy();
+    const btas::CRange<2> range(nact_, nact_*nact_*nact_);
+    auto intsv = btas::make_cview(range, ints2_->storage());
+    auto rdm2v = btas::make_cview(range, rdm2_->storage());
+    auto qvec = make_shared<MatType>(nact_, nact_);
+    btas::contract(1.0, intsv, {0,1}, rdm2v, {2,1}, 0.0, *qvec, {0,2}, false, false);
+    qvec_ = qvec;
   }
   cout << "    * 3-index integral transformation done" << endl;
 
