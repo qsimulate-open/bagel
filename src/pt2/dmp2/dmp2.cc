@@ -119,9 +119,9 @@ void DMP2::compute() {
   for (size_t i = 0; i != nvirt; ++i) {
     shared_ptr<ZMatrix> data = fullc->form_4index_1fixed(fullc, 1.0, i);
     if (gaunt_) {
-      *data += *fullg->form_4index_1fixed(fullg2, (breit_ ? 0.5 : 1.0), i);
+      *data += *fullg->form_4index_1fixed(fullg2, (breit_ ? -0.25 : -1.0), i);
       if (breit_)
-        *data += *fullg2->form_4index_1fixed(fullg, (breit_ ? 0.5 : 1.0), i);
+        *data += *fullg2->form_4index_1fixed(fullg, (breit_ ? -0.25 : -1.0), i);
     }
     *buf = *data;
     // using a symmetrizer (src/util/prim_op.h)
