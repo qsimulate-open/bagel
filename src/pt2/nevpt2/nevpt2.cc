@@ -431,7 +431,7 @@ void NEVPT2<DataType>::compute() {
 
   // set 4-index integrals within the active space
   {
-    const MatType ints = compute_mat<DataType>(*fullaa, *fullaa); 
+    const MatType ints = compute_mat<DataType>(*fullaa, *fullaa);
     auto tmp = ints.clone();
     sort_indices<0,2,1,3,0,1,1,1>(ints.data(), tmp->data(), nact_, nact_, nact_, nact_);
     ints2_ = tmp;
@@ -559,8 +559,8 @@ void NEVPT2<DataType>::compute() {
       continue;
 #if 1
     } else if (i < nclosed_ && j < nclosed_ && i >= 0 && j >= 0) {
-      shared_ptr<const NEVMat<DataType>> iblock = get_cached_block(i); 
-      shared_ptr<const NEVMat<DataType>> jblock = get_cached_block(j); 
+      shared_ptr<const NEVMat<DataType>> iblock = get_cached_block(i);
+      shared_ptr<const NEVMat<DataType>> jblock = get_cached_block(j);
 
       // S(0)ij,rs sector
       {
@@ -675,7 +675,7 @@ void NEVPT2<DataType>::compute() {
 
     } else if (i < nclosed_ && j < 0) {
       // (g|vi) with i fixed
-      shared_ptr<const NEVMat<DataType>> iblock = get_cached_block(i); 
+      shared_ptr<const NEVMat<DataType>> iblock = get_cached_block(i);
 
       // (g|ai) with i fixed
       const NEVView<DataType> iablock = fullai->slice(i*nact_, (i+1)*nact_);
