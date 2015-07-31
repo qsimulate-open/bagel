@@ -35,13 +35,27 @@
 
 namespace bagel {
 
+#if 0
+class GammaLn { // Lanczos for ln(G(z))
+
+  public:
+    GammaLn() { }
+    ~GammaLn() { }
+
+    double compute(const double z) const {
+    }
+
+    double operator() (const double z) const { assert(z > 0); return compute(z); }
+};
+#endif
+
 class Gamma_upper { // Upper incomplete gamma function G(l+1/2, x)
 
   private:
 
   public:
-    Gamma_upper() {}
-    ~Gamma_upper() {}
+    Gamma_upper() { }
+    ~Gamma_upper() { }
 
     double compute(const int l, const double x) const {
 
