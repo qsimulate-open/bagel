@@ -36,6 +36,7 @@ class PFMM {
   protected:
     std::shared_ptr<const SimulationCell> scell_;
     int lmax_, ws_;
+    int ndim_;
     int num_multipoles_;
     std::vector<std::complex<double>> mlm_;
 
@@ -46,7 +47,7 @@ class PFMM {
     std::vector<std::complex<double>> mlm() const { return mlm_; }
 
     bool is_in_cff(std::array<double, 3> lvector);
-    void compute_mlm(std::vector<std::array<double, 3>> rvec, std::vector<std::array<double, 3>> svec);
+    void compute_mlm(const int limit = 100, const double thresh = PRIM_SCREEN_THRESH);
     void compute_Sn(const double thresh = PRIM_SCREEN_THRESH, const int max_iter = 20);
     std::shared_ptr<PData> compute_Jop(std::shared_ptr<const PData> density);
 

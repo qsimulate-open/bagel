@@ -60,6 +60,9 @@ class SimulationCell { /* cubic, same or larger than primitive cell */
     std::vector<std::array<double, 3>> jvectors() const { return jvectors_; }
     std::array<double, 3> jvectors(const int i) const { return jvectors_[i]; }
 
+    std::vector<std::array<double, 3>> primitive_vectors() const { return primitive_vectors_; }
+    std::array<double, 3> primitive_vectors(const int i) const { return primitive_vectors_[i]; }
+
     std::vector<std::shared_ptr<const ZMatrix>> multipoles() const { return multipoles_; }
 
     std::array<double, 3> centre() const { return charge_centre_; }
