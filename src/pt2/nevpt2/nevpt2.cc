@@ -215,6 +215,77 @@ tuple<shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>, sh
 }
 
 
+/// Data class for NEVPT2. One matrix or three matrices dependent on DataType.
+template<typename DataType>
+struct NEVView;
+template<typename DataType>
+struct NEVMat {
+  using MatType  = typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+  using ViewType = typename conditional<is_same<DataType,double>::value, MatView, ZMatView>::type;
+  array<shared_ptr<const MatType>,3> data_;
+  shared_ptr<const MatType> data() const { return data_[0]; }
+  shared_ptr<const MatType> data1() const { return data_[1]; }
+  shared_ptr<const MatType> data2() const { return data_[2]; }
+  NEVMat(shared_ptr<const MatType> in, shared_ptr<const MatType> in2 = nullptr, shared_ptr<const MatType> in3 = nullptr) {
+    data_[0] = in;
+    data_[1] = in2;
+    data_[2] = in3;
+  }
+  NEVView<DataType> slice(const int i, const int j) const {
+    return NEVView<DataType>(make_shared<ViewType>(data_[0]->slice(i,j)),
+                  data_[1] ? make_shared<ViewType>(data_[1]->slice(i,j)) : shared_ptr<ViewType>(),
+                  data_[2] ? make_shared<ViewType>(data_[2]->slice(i,j)) : shared_ptr<ViewType>());
+  }
+};
+template<typename DataType>
+struct NEVView {
+  using MatType  = typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+  using ViewType = typename conditional<is_same<DataType,double>::value, MatView, ZMatView>::type;
+  array<shared_ptr<const ViewType>,3> data_;
+  shared_ptr<const ViewType> data() const { return data_[0]; }
+  shared_ptr<const ViewType> data1() const { return data_[1]; }
+  shared_ptr<const ViewType> data2() const { return data_[2]; }
+  NEVView(const NEVMat<DataType>& in) {
+    data_[0] = make_shared<ViewType>(*in.data());
+    data_[1] = in.data1() ? make_shared<ViewType>(*in.data1()) : nullptr;
+    data_[2] = in.data2() ? make_shared<ViewType>(*in.data2()) : nullptr;
+  }
+  NEVView(shared_ptr<const ViewType> in, shared_ptr<const ViewType> in2 = nullptr, shared_ptr<const ViewType> in3 = nullptr) {
+    data_[0] = in;
+    data_[1] = in2;
+    data_[2] = in3;
+  }
+};
+
+
+template<typename DataType>
+typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type
+  compute_mat(const NEVView<DataType> a, const NEVView<DataType> b, const bool conjg = false) {
+
+  using MatType = typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+  using ViewType = typename conditional<is_same<DataType,double>::value, MatView, ZMatView>::type;
+
+  auto multiply_tn = [](const double fac, const ViewType a, const ViewType b, ViewType c, const bool conj) {
+    btas::contract(fac, a, {0,1}, b, {0,2}, 1.0, c, {1,2}, conj, false);
+  };
+
+  MatType out(a.data()->mdim(), b.data()->mdim(), true);
+  multiply_tn(1.0, *a.data(), *b.data(), out, conjg);
+
+  if (a.data1() && a.data2()) {
+    // breit case
+    assert(b.data1() && b.data2());
+    multiply_tn(-0.25, *a.data1(), *b.data2(), out, conjg);
+    multiply_tn(-0.25, *a.data2(), *b.data1(), out, conjg);
+  } else if (a.data1()) {
+    assert(b.data1());
+    multiply_tn(-1.0, *a.data1(), *b.data1(), out, conjg);
+  }
+  return out;
+}
+
+
+
 template<typename DataType>
 void NEVPT2<DataType>::compute() {
 
@@ -319,47 +390,48 @@ void NEVPT2<DataType>::compute() {
   size_t memory_size = cgeom->df()->block(0)->size(); // TODO make it robust
   mpi__->broadcast(&memory_size, 1, 0);
 
+  // this will be used in MP2Cache
   shared_ptr<DFType> fullvi, fullvi2, fullvi3;
-  shared_ptr<const MatType> fullav, fullav2, fullav3;
-  shared_ptr<const MatType> fullai, fullai2, fullai3;
-  // TODO probably we want to use JKFIT for this for consistency?
-  shared_ptr<const MatType> fullaa, fullaa2, fullaa3;
-
-  auto slice_ax = [this](shared_ptr<DFType> full) {
-    shared_ptr<const MatType> fullm = full->replicate();
-    shared_ptr<MatType> tmp;
-    if (nclosed_) {
-      tmp = fullm->slice_copy(0, nact_*nclosed_);
-      blas::conj_n(tmp->data(), tmp->size());
-    }
-    shared_ptr<const MatType> aa = fullm->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_));
-    shared_ptr<const MatType> av = fullm->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_));
-    return make_tuple(tmp, aa, av);
-  };
+  // this will be locally stored
+  shared_ptr<const NEVMat<DataType>> fullav, fullai, fullaa;
   {
-    // computing Coulomb integrals
-    shared_ptr<DFType> fullax;
-    tie(fullvi, fullax, ignore, ignore) = compute_full_nevpt2(cgeom, ccoeff, acoeff, vcoeff, coeffall, false, false);
-    tie(fullai, fullaa, fullav) = slice_ax(fullax);
-  }
-  if (gaunt_) {
-    shared_ptr<DFType> fullax2, fullax3;
-    tie(fullvi2, fullax2, fullvi3, fullax3) = compute_full_nevpt2(cgeom, ccoeff, acoeff, vcoeff, coeffall, true, breit_);
-    tie(fullai2, fullaa2, fullav2) = slice_ax(fullax2);
-    if (breit_)
-      tie(fullai3, fullaa3, fullav3) = slice_ax(fullax3);
+    shared_ptr<const MatType> fullav1, fullav2, fullav3;
+    shared_ptr<const MatType> fullai1, fullai2, fullai3;
+    // TODO probably we want to use JKFIT for this for consistency?
+    shared_ptr<const MatType> fullaa1, fullaa2, fullaa3;
+
+    auto slice_ax = [this](shared_ptr<DFType> full) {
+      shared_ptr<const MatType> fullm = full->replicate();
+      shared_ptr<MatType> tmp;
+      if (nclosed_) {
+        tmp = fullm->slice_copy(0, nact_*nclosed_);
+        blas::conj_n(tmp->data(), tmp->size());
+      }
+      shared_ptr<const MatType> aa = fullm->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_));
+      shared_ptr<const MatType> av = fullm->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_));
+      return make_tuple(tmp, aa, av);
+    };
+    {
+      // computing Coulomb integrals
+      shared_ptr<DFType> fullax;
+      tie(fullvi, fullax, ignore, ignore) = compute_full_nevpt2(cgeom, ccoeff, acoeff, vcoeff, coeffall, false, false);
+      tie(fullai1, fullaa1, fullav1) = slice_ax(fullax);
+    }
+    if (gaunt_) {
+      shared_ptr<DFType> fullax2, fullax3;
+      tie(fullvi2, fullax2, fullvi3, fullax3) = compute_full_nevpt2(cgeom, ccoeff, acoeff, vcoeff, coeffall, true, breit_);
+      tie(fullai2, fullaa2, fullav2) = slice_ax(fullax2);
+      if (breit_)
+        tie(fullai3, fullaa3, fullav3) = slice_ax(fullax3);
+    }
+    fullav = make_shared<NEVMat<DataType>>(fullav1, fullav2, fullav3);
+    fullai = make_shared<NEVMat<DataType>>(fullai1, fullai2, fullai3);
+    fullaa = make_shared<NEVMat<DataType>>(fullaa1, fullaa2, fullaa3);
   }
 
   // set 4-index integrals within the active space
   {
-    MatType ints(nact_*nact_, nact_*nact_, true);
-    btas::contract(1.0, *fullaa, {0,1}, *fullaa, {0,2}, 0.0, ints, {1,2}, false, false);
-    if (gaunt_) {
-      const double fac = breit_ ? -0.25 : -1.0;
-      btas::contract(fac, *fullaa2, {0,1}, *(breit_ ? fullaa3 : fullaa2), {0,2}, 1.0, ints, {1,2}, false, false);
-      if (breit_)
-        btas::contract(fac, *fullaa3, {0,1}, *fullaa2, {0,2}, 1.0, ints, {1,2}, false, false);
-    }
+    const MatType ints = compute_mat<DataType>(*fullaa, *fullaa); 
     auto tmp = ints.clone();
     sort_indices<0,2,1,3,0,1,1,1>(ints.data(), tmp->data(), nact_, nact_, nact_, nact_);
     ints2_ = tmp;
@@ -440,52 +512,59 @@ void NEVPT2<DataType>::compute() {
     }
   }
 
-  MP2Cache_<DataType> cache(cgeom->naux(), nclosed_, nvirt_, fullvi, tasks);
+  shared_ptr<MP2Cache_<DataType>> cache  = make_shared<MP2Cache_<DataType>>(cgeom->naux(), nclosed_, nvirt_, fullvi, tasks);
+  shared_ptr<MP2Cache_<DataType>> cache2 = gaunt_ ? make_shared<MP2Cache_<DataType>>(cgeom->naux(), nclosed_, nvirt_, fullvi2, tasks) : nullptr;
+  shared_ptr<MP2Cache_<DataType>> cache3 = breit_ ? make_shared<MP2Cache_<DataType>>(cgeom->naux(), nclosed_, nvirt_, fullvi3, tasks) : nullptr;
 
-  const int nloop = cache.nloop();
+  const int nloop = cache->nloop();
   const int ncache = max(3, min(static_cast<int>(memory_size/(nvirt_*nvirt_)), 20));
   cout << "    * ncache = " << ncache << endl;
   for (int n = 0; n != min(ncache, nloop); ++n)
-    cache.block(n, -1);
+    cache->block(n, -1);
 
   // loop over tasks
   const map<string, int> sect{{"(+0)", 0}, {"(+1)", 1}, {"(-1)", 2}, {"(+2)", 3}, {"(-2)", 4}, {"(+1)'", 5}, {"(-1)'", 6}, {"(+0)'", 7}};
   array<DataType,8> energy;
   fill(energy.begin(), energy.end(), static_cast<DataType>(0.0));
 
-  // utility function that returns A^T B without conjugating A (identical to A%B for real).
-  auto multiply_tn = [](const ViewType a, const ViewType b) {
-    MatType out(a.mdim(), b.mdim(), true);
-    btas::contract(1.0, a, {0,1}, b, {0,2}, 0.0, out, {1,2}, false, false);
-    return move(out);
-  };
-  auto multiply_nt = [](const ViewType a, const ViewType b) {
-    MatType out(a.ndim(), b.ndim(), true);
-    btas::contract(1.0, a, {0,1}, b, {2,1}, 0.0, out, {0,2}, false, false);
-    return move(out);
+  auto get_cached_block = [this,&cache,&cache2,&cache3](const int n) {
+    auto block = !cache2 ? make_shared<NEVMat<DataType>>((*cache)(n))
+              : (!cache3 ? make_shared<NEVMat<DataType>>((*cache)(n), (*cache2)(n))
+                         : make_shared<NEVMat<DataType>>((*cache)(n), (*cache2)(n), (*cache3)(n)));
+    return block;
   };
 
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
     if (n+ncache < nloop)
-      cache.block(n+ncache, n-1);
+      cache->block(n+ncache, n-1);
 
-    const int i = get<0>(cache.task(n));
-    const int j = get<1>(cache.task(n));
+    const int i = get<0>(cache->task(n));
+    const int j = get<1>(cache->task(n));
+
+#ifndef NDEBUG
+    if (gaunt_) {
+      assert(i == get<0>(cache2->task(n)) && j == get<1>(cache2->task(n)));
+      if (breit_)
+        assert(i == get<0>(cache3->task(n)) && j == get<1>(cache3->task(n)));
+    }
+#endif
 
     // wait till the data is available
-    cache.data_wait(n);
+    cache->data_wait(n);
+    if (cache2) cache2->data_wait(n);
+    if (cache3) cache3->data_wait(n);
 
     if (i < 0 && j < 0) {
       continue;
 #if 1
     } else if (i < nclosed_ && j < nclosed_ && i >= 0 && j >= 0) {
-      shared_ptr<const MatType> iblock = cache(i);
-      shared_ptr<const MatType> jblock = cache(j);
+      shared_ptr<const NEVMat<DataType>> iblock = get_cached_block(i); 
+      shared_ptr<const NEVMat<DataType>> jblock = get_cached_block(j); 
 
       // S(0)ij,rs sector
       {
-        const MatType mat = multiply_tn(*iblock, *jblock);
+        const MatType mat = compute_mat<DataType>(*iblock, *jblock);
         DataType en = 0.0;
         for (int v = 0; v != nvirt_; ++v) {
           for (int u = v+1; u < nvirt_; ++u) {
@@ -503,12 +582,18 @@ void NEVPT2<DataType>::compute() {
       }
 
       // active part
-      const ViewType iablock = fullai->slice(i*nact_, (i+1)*nact_);
-      const ViewType jablock = fullai->slice(j*nact_, (j+1)*nact_);
+      const NEVView<DataType> iablock = fullai->slice(i*nact_, (i+1)*nact_);
+      const NEVView<DataType> jablock = fullai->slice(j*nact_, (j+1)*nact_);
       // S(1)ij,r sector
       {
-        const MatType mat_va = multiply_tn(*iblock, jablock);
-        const MatType mat_av = multiply_tn(iablock, *jblock);
+        // utility function
+        auto multiply_nt = [](const ViewType a, const ViewType b) {
+          MatType out(a.ndim(), b.ndim(), true);
+          btas::contract(1.0, a, {0,1}, b, {2,1}, 0.0, out, {0,2}, false, false);
+          return move(out);
+        };
+        const MatType mat_va = compute_mat<DataType>(*iblock, jablock);
+        const MatType mat_av = compute_mat<DataType>(iablock, *jblock);
         // hole density matrix
         const MatType mat_vaR = multiply_nt(mat_va, *hrdm1_);
         const MatType mat_avR(*hrdm1_ * mat_av);
@@ -538,7 +623,7 @@ void NEVPT2<DataType>::compute() {
       }
 
       // S(2)ij,rs sector
-      const MatType mat_aa = multiply_tn(iablock, jablock);
+      const MatType mat_aa = compute_mat<DataType>(iablock, jablock);
       MatType mat_aaR(nact_, nact_, true);
       MatType mat_aaK(nact_, nact_, true);
       auto vmat_aaR = btas::group(mat_aaR,0,2);
@@ -555,9 +640,9 @@ void NEVPT2<DataType>::compute() {
       // S(-2)rs sector
       const int iv = i-nclosed_-nact_;
       const int jv = j-nclosed_-nact_;
-      const ViewType iablock = fullav->slice(iv*nact_, (iv+1)*nact_);
-      const ViewType jablock = fullav->slice(jv*nact_, (jv+1)*nact_);
-      MatType mat_aa = multiply_tn(iablock, jablock);
+      const NEVView<DataType> iablock = fullav->slice(iv*nact_, (iv+1)*nact_);
+      const NEVView<DataType> jablock = fullav->slice(jv*nact_, (jv+1)*nact_);
+      MatType mat_aa = compute_mat<DataType>(iablock, jablock);
       MatType mat_aaR(nact_, nact_, true);
       MatType mat_aaK(nact_, nact_, true);
       auto vmat_aaR = btas::group(mat_aaR,0,2);
@@ -576,8 +661,8 @@ void NEVPT2<DataType>::compute() {
       sort_indices<1,2,0,3,    0,1,1,1>(ardm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
       sort_indices<1,2,0,4,3,5,0,1,1,1>(ardm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
       const int iv = i-nclosed_-nact_;
-      const ViewType rblock = fullav->slice(iv*nact_, (iv+1)*nact_);
-      const MatType bac(rblock % *fullaa);
+      const NEVView<DataType> rblock = fullav->slice(iv*nact_, (iv+1)*nact_);
+      const MatType bac = compute_mat<DataType>(rblock, *fullaa, true);
       VecType abc(nact_*nact_*nact_);
       sort_indices<1,0,2,0,1,1,1>(bac.data(), abc.data(), nact_, nact_, nact_);
       VecType heff(nact_);
@@ -590,24 +675,24 @@ void NEVPT2<DataType>::compute() {
 
     } else if (i < nclosed_ && j < 0) {
       // (g|vi) with i fixed
-      shared_ptr<const MatType> iblock = cache(i);
+      shared_ptr<const NEVMat<DataType>> iblock = get_cached_block(i); 
 
       // (g|ai) with i fixed
-      const ViewType iablock = fullai->slice(i*nact_, (i+1)*nact_);
+      const NEVView<DataType> iablock = fullai->slice(i*nact_, (i+1)*nact_);
       // reordered srdm
       MatType srdm2_p(nact_*nact_, nact_*nact_);
       sort_indices<0,2,1,3,0,1,1,1>(srdm2_->data(), srdm2_p.data(), nact_, nact_, nact_, nact_);
 
       for (int r = 0; r != nvirt_; ++r) {
-        const ViewType ibr = iblock->slice(r, r+1);
-        const ViewType rblock = fullav->slice(r*nact_, (r+1)*nact_);
+        const NEVView<DataType> ibr = iblock->slice(r, r+1);
+        const NEVView<DataType> rblock = fullav->slice(r*nact_, (r+1)*nact_);
 
         // S(-1)i,rs sector
         for (int s = r; s != nvirt_; ++s) {
-          const ViewType ibs = iblock->slice(s, s+1);
-          const ViewType sblock = fullav->slice(s*nact_, (s+1)*nact_);
-          const MatType mat1 = multiply_tn(ibs, rblock); // (is|ar) (irs fixed)
-          const MatType mat2 = multiply_tn(ibr, sblock); // (ir|as) (irs fixed)
+          const NEVView<DataType> ibs = iblock->slice(s, s+1);
+          const NEVView<DataType> sblock = fullav->slice(s*nact_, (s+1)*nact_);
+          const MatType mat1 = compute_mat<DataType>(ibs, rblock); // (is|ar) (irs fixed)
+          const MatType mat2 = compute_mat<DataType>(ibr, sblock); // (ir|as) (irs fixed)
           const MatType mat1R(mat1 * *rdm1_);
           const MatType mat2R(mat2 * *rdm1_);
           const MatType mat1K(mat1 * *kmat_);
@@ -619,8 +704,8 @@ void NEVPT2<DataType>::compute() {
         }
 
         // S(0)ir sector
-        const MatType mat1 = multiply_tn(ibr, *fullaa); // (ir|ab)  as (1,nact_*nact_)
-        const MatType mat2 = multiply_tn(rblock, iablock); // (ra|bi) as (nact_, nact_)
+        const MatType mat1 = compute_mat<DataType>(ibr, *fullaa); // (ir|ab)  as (1,nact_*nact_)
+        const MatType mat2 = compute_mat<DataType>(rblock, iablock); // (ra|bi) as (nact_, nact_)
         const MatType mat1S(mat1 * *srdm2_);
         const MatType mat1A(mat1 * *amat2_);
         const MatType mat1Ssym(mat1S + (mat1 ^ *srdm2_));
@@ -645,7 +730,7 @@ void NEVPT2<DataType>::compute() {
       shared_ptr<MatType> ardm2_sorted = make_shared<MatType>(nact_*nact_*nact_, nact_, true);
       sort_indices<1,2,0,3,    0,1,1,1>(srdm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
       sort_indices<1,2,0,4,3,5,0,1,1,1>(srdm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
-      const MatType bac(iablock % *fullaa);
+      const MatType bac = compute_mat<DataType>(iablock, *fullaa, true);
       VecType abc(nact_*nact_*nact_);
       sort_indices<1,0,2,0,1,1,1>(bac.data(), abc.data(), nact_, nact_, nact_);
       VecType heff(nact_);
@@ -659,7 +744,9 @@ void NEVPT2<DataType>::compute() {
   }
 
   // just to double check that all the communition is done
-  cache.wait();
+  cache->wait();
+  if (cache2) cache2->wait();
+  if (cache3) cache3->wait();
   // allreduce energy contributions
   mpi__->allreduce(energy.data(), energy.size());
   energy_ = detail::real(accumulate(energy.begin(), energy.end(), static_cast<DataType>(0.0)));
