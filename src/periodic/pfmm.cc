@@ -56,7 +56,7 @@ bool PFMM::is_in_cff(array<double, 3> L) {
 }
 
 
-void PFMM::compute_mlm(vector<array<double, 3>> rvec) {
+void PFMM::compute_mlm(vector<array<double, 3>> rvec, vector<array<double, 3>> svec) {
 
   // real term
   for (auto& v : rvec) {
@@ -86,6 +86,35 @@ void PFMM::compute_mlm(vector<array<double, 3>> rvec) {
       }
     }
   }
+
+  // smooth term
+  const double coeff = pi__ * pi__ / (beta__ * beta__);
+  for (auto& v : svec) {
+    const double rsq = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+    const double ctheta = (rsq > numerical_zero__) ? v[2]/sqrt(rsq) : 0.0;
+    const double phi = atan2(v[1], v[0]);
+
+    int count = 1;
+    for (int l = 1; l <= lmax_; ++l) {
+      const complex<double> coeffl = pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5) / boost::math::tgamma(l+0.5);
+      for (int mm = 0; mm <= 2 * l; ++mm, ++count) {
+        const int m = mm - l;
+        const int am = abs(m);
+
+        double coeffm = plm.compute(l, abs(m), ctheta) * pow(rsq, (l - 2)/2) * exp(-rsq * coeff);
+        double ft = 1.0;
+        for (int i = 1; i <= l - abs(m); ++i) {
+          coeffm *= ft;
+          ++ft;
+        }
+
+        const double real = (m >=0) ? (coeffm * cos(am * phi)) : (-1.0 * coeffm * cos(am * phi));
+        const double imag = coeffm * sin(am * phi);
+        mlm_[count] += coeffl * complex<double>(real, imag);
+      }
+    }
+  }
+
 }
 
 
