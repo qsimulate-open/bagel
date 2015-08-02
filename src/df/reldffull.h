@@ -50,7 +50,8 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<DFFullDist> get_real() const { return dffull_[0]; }
     std::shared_ptr<DFFullDist> get_imag() const { return dffull_[1]; }
 
-    bool matches(std::shared_ptr<const RelDFFull>) const { return true; }
+    bool matches(std::shared_ptr<const RelDFFull> o) const { return alpha_matches(o); }
+    bool alpha_matches(std::shared_ptr<const RelDFFull>) const;
 
     int nocc1() const { assert(dffull_[0]->nocc1() == dffull_[1]->nocc1()); return dffull_[0]->nocc1(); }
     int nocc2() const { assert(dffull_[0]->nocc2() == dffull_[1]->nocc2()); return dffull_[0]->nocc2(); }
@@ -70,8 +71,6 @@ class RelDFFull : public RelDFBase {
     RelDFFull& operator-=(const RelDFFull& o) { ax_plus_y(-1.0, o); return *this; }
 
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
-
-    bool alpha_matches(std::shared_ptr<const RelDFFull>) const;
 
     std::shared_ptr<Matrix> form_aux_2index_real() const {
       std::shared_ptr<Matrix> out = dffull_[0]->form_aux_2index(dffull_[0], 1.0);

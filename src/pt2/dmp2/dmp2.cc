@@ -96,11 +96,12 @@ void DMP2::compute() {
     cgeom = tmp;
   }
 
-  shared_ptr<const RelDFFull> fullc, fullg, fullg2;
+  shared_ptr<const RelDFFull> fullc;
+  list<shared_ptr<RelDFFull>> fullg, fullg2;
   {
     list<shared_ptr<RelDFHalf>> half_coulomb;
     tie(half_coulomb, ignore) = RelMOFile::compute_half(cgeom, coeff->slice_copy(ncore_, ncore_+nocc), false, false);
-    fullc = RelMOFile::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_coulomb, true);
+    fullc = RelMOFile::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_coulomb, true).front();
   }
   if (gaunt_) {
     list<shared_ptr<RelDFHalf>> half_gaunt, half_gaunt2;
@@ -117,12 +118,16 @@ void DMP2::compute() {
 
   energy_ = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
+    // coulomb
     shared_ptr<ZMatrix> data = fullc->form_4index_1fixed(fullc, 1.0, i);
-    if (gaunt_) {
-      *data += *fullg->form_4index_1fixed(fullg2, (breit_ ? -0.25 : -1.0), i);
-      if (breit_)
-        *data += *fullg2->form_4index_1fixed(fullg, (breit_ ? -0.25 : -1.0), i);
-    }
+    // gaunt/breit
+    for (auto& ii : fullg)
+      for (auto& jj : fullg2)
+        if (ii->alpha_matches(jj)) {
+          *data += *ii->form_4index_1fixed(jj, (breit_ ? -0.25 : -1.0), i);
+          if (breit_)
+            *data += *jj->form_4index_1fixed(ii, (breit_ ? -0.25 : -1.0), i);
+        }
     *buf = *data;
     // using a symmetrizer (src/util/prim_op.h)
     sort_indices<2,1,0,1,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
