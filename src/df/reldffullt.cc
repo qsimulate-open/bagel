@@ -29,7 +29,8 @@
 using namespace std;
 using namespace bagel;
 
-RelDFFullT::RelDFFullT(shared_ptr<const RelDFFull> full, shared_ptr<const StaticDist> dist) {
+RelDFFullT::RelDFFullT(shared_ptr<const RelDFFull> full, shared_ptr<const StaticDist> dist) : basis_(full->basis().front()){
+  assert(full->basis().size() == 1);
   dffull_[0] = make_shared<DFDistT>(full->get_real(), dist);
   dffull_[1] = make_shared<DFDistT>(full->get_imag(), dist);
 }

@@ -27,6 +27,7 @@
 #ifndef __SRC_NEVPT2_NEVPT2_H
 #define __SRC_NEVPT2_NEVPT2_H
 
+#include <src/pt2/mp2/mp2cache.h>
 #include <src/wfn/method.h>
 #include <src/df/dfdistt.h>
 #include <src/df/reldffullt.h>
@@ -113,6 +114,13 @@ class NEVPT2 : public Method {
     std::tuple<std::shared_ptr<DFType>,std::shared_ptr<DFType>,std::shared_ptr<DFType>,std::shared_ptr<DFType>>
       compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const MatType>, std::shared_ptr<const MatType>,
                           std::shared_ptr<const MatType>, std::shared_ptr<const MatType>, const bool gaunt, const bool breit) const;
+    std::tuple<std::map<int,std::shared_ptr<const MatType>>,std::map<int,std::shared_ptr<const MatType>>,std::map<int,std::shared_ptr<const MatType>>>
+      slice_ax(std::shared_ptr<const DFType> o) const;
+
+    std::tuple<std::map<int,std::shared_ptr<MP2Cache_<DataType>>>,std::map<int,std::shared_ptr<MP2Cache_<DataType>>>,std::map<int,std::shared_ptr<MP2Cache_<DataType>>>>
+      set_up_cache(std::shared_ptr<const Geometry>, std::shared_ptr<DFType> fullvi, std::shared_ptr<DFType> fullvi2, std::shared_ptr<DFType> fullvi3,
+                   std::vector<std::vector<std::tuple<int,int,MP2Tag<DataType>,MP2Tag<DataType>>>>) const;
+
     void compute_rdm();
     void compute_hrdm();
     void compute_asrdm();
@@ -156,6 +164,26 @@ template<> std::tuple<std::shared_ptr<DFDistT>,std::shared_ptr<DFDistT>,std::sha
 template<> std::tuple<std::shared_ptr<ListRelDFFullT>,std::shared_ptr<ListRelDFFullT>,std::shared_ptr<ListRelDFFullT>,std::shared_ptr<ListRelDFFullT>>
   NEVPT2<std::complex<double>>::compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>,
                                                     std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>, const bool, const bool) const;
+
+template<> std::tuple<std::map<int,std::shared_ptr<const Matrix>>,std::map<int,std::shared_ptr<const Matrix>>,std::map<int,std::shared_ptr<const Matrix>>>
+              NEVPT2<double>::slice_ax(std::shared_ptr<const DFDistT> o) const;
+template<> std::tuple<std::map<int,std::shared_ptr<const ZMatrix>>,std::map<int,std::shared_ptr<const ZMatrix>>,std::map<int,std::shared_ptr<const ZMatrix>>>
+              NEVPT2<std::complex<double>>::slice_ax(std::shared_ptr<const ListRelDFFullT> o) const;
+
+template<>
+std::tuple<std::map<int,std::shared_ptr<MP2Cache_<double>>>,
+           std::map<int,std::shared_ptr<MP2Cache_<double>>>,
+           std::map<int,std::shared_ptr<MP2Cache_<double>>>>
+              NEVPT2<double>::set_up_cache(std::shared_ptr<const Geometry>,
+                                           std::shared_ptr<DFType> fullvi, std::shared_ptr<DFType> fullvi2, std::shared_ptr<DFType> fullvi3,
+                                           std::vector<std::vector<std::tuple<int,int,MP2Tag<double>,MP2Tag<double>>>>) const;
+template<>
+std::tuple<std::map<int,std::shared_ptr<MP2Cache_<std::complex<double>>>>,
+           std::map<int,std::shared_ptr<MP2Cache_<std::complex<double>>>>,
+           std::map<int,std::shared_ptr<MP2Cache_<std::complex<double>>>>>
+              NEVPT2<std::complex<double>>::set_up_cache(std::shared_ptr<const Geometry>,
+                                                         std::shared_ptr<DFType> fullvi, std::shared_ptr<DFType> fullvi2, std::shared_ptr<DFType> fullvi3,
+                                                         std::vector<std::vector<std::tuple<int,int,MP2Tag<std::complex<double>>,MP2Tag<std::complex<double>>>>>) const;
 
 extern template class NEVPT2<double>;
 extern template class NEVPT2<std::complex<double>>;

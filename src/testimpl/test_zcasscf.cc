@@ -26,7 +26,7 @@
 
 #include <src/multi/zcasscf/zsuperci.h>
 #include <src/multi/zcasscf/zcasbfgs.h>
-#include <src/multi/casscf/superci.h>
+#include <src/multi/zcasscf/zcashybrid.h>
 
 double relcas_energy(std::string inp) {
 
@@ -82,6 +82,11 @@ double relcas_energy(std::string inp) {
         zcas->compute();
         ref = zcas->conv_to_ref();
         energy = ref->energy();
+      } else if (algorithm == "hybrid") {
+        auto zcas = std::make_shared<ZCASHybrid>(itree, geom, ref);
+        zcas->compute();
+        ref = zcas->conv_to_ref();
+        energy = ref->energy();
       }
     }
 #ifndef DISABLE_SERIALIZATION
@@ -103,8 +108,8 @@ BOOST_AUTO_TEST_CASE(ZCASSCF) {
   BOOST_CHECK(compare(relcas_energy("h2_qzvpp_superci_coulomb"), -1.01931815));
   BOOST_CHECK(compare(relcas_energy("hf_tzvpp_superci_coulomb"), -100.03016820));
   BOOST_CHECK(compare(relcas_energy("he_tzvpp_bfgs_coulomb"),    -2.875647885));
-  BOOST_CHECK(compare(relcas_energy("nh_tzvpp_triplet_gaunt"),   -55.00281016));
-  BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),     -149.56647468));
+  BOOST_CHECK(compare(relcas_energy("nh_tzvpp_triplet_gaunt"),   -55.00281524));
+  BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),     -149.56647946));
 #ifndef DISABLE_SERIALIZATION
 //BOOST_CHECK(compare(relcas_energy("hf_tzvpp_bfgs_saveref"), -100.03016820));
 #endif

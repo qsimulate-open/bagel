@@ -24,7 +24,6 @@
 //
 
 #include <src/pt2/nevpt2/nevpt2.h>
-#include <src/pt2/mp2/mp2cache.h>
 #include <src/scf/hf/fock.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/mat1e/rel/relhcore.h>
@@ -222,38 +221,47 @@ template<typename DataType>
 struct NEVMat {
   using MatType  = typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type;
   using ViewType = typename conditional<is_same<DataType,double>::value, MatView, ZMatView>::type;
-  array<shared_ptr<const MatType>,3> data_;
-  shared_ptr<const MatType> data() const { return data_[0]; }
-  shared_ptr<const MatType> data1() const { return data_[1]; }
-  shared_ptr<const MatType> data2() const { return data_[2]; }
-  NEVMat(shared_ptr<const MatType> in, shared_ptr<const MatType> in2 = nullptr, shared_ptr<const MatType> in3 = nullptr) {
-    data_[0] = in;
-    data_[1] = in2;
-    data_[2] = in3;
+
+  map<int,shared_ptr<const MatType>> data_, data2_, data3_;
+  map<int,shared_ptr<const MatType>> data() const { return data_; }
+  map<int,shared_ptr<const MatType>> data2() const { return data2_; }
+  map<int,shared_ptr<const MatType>> data3() const { return data3_; }
+
+  NEVMat(map<int,shared_ptr<const MatType>> in, map<int,shared_ptr<const MatType>> in2, map<int,shared_ptr<const MatType>> in3)
+    : data_(in), data2_(in2), data3_(in3) {
   }
   NEVView<DataType> slice(const int i, const int j) const {
-    return NEVView<DataType>(make_shared<ViewType>(data_[0]->slice(i,j)),
-                  data_[1] ? make_shared<ViewType>(data_[1]->slice(i,j)) : shared_ptr<ViewType>(),
-                  data_[2] ? make_shared<ViewType>(data_[2]->slice(i,j)) : shared_ptr<ViewType>());
+    map<int,shared_ptr<const ViewType>> dat, dat2, dat3;
+    for (auto& k : data_)
+      dat.emplace(k.first, make_shared<ViewType>(k.second->slice(i,j)));
+    for (auto& k : data2_)
+      dat2.emplace(k.first, make_shared<ViewType>(k.second->slice(i,j)));
+    for (auto& k : data3_)
+      dat3.emplace(k.first, make_shared<ViewType>(k.second->slice(i,j)));
+    return NEVView<DataType>(dat, dat2, dat3);
   }
 };
+
 template<typename DataType>
 struct NEVView {
   using MatType  = typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type;
   using ViewType = typename conditional<is_same<DataType,double>::value, MatView, ZMatView>::type;
-  array<shared_ptr<const ViewType>,3> data_;
-  shared_ptr<const ViewType> data() const { return data_[0]; }
-  shared_ptr<const ViewType> data1() const { return data_[1]; }
-  shared_ptr<const ViewType> data2() const { return data_[2]; }
+
+  map<int,shared_ptr<const ViewType>> data_, data2_, data3_;
+  map<int,shared_ptr<const ViewType>> data() const { return data_; }
+  map<int,shared_ptr<const ViewType>> data2() const { return data2_; }
+  map<int,shared_ptr<const ViewType>> data3() const { return data3_; }
+
   NEVView(const NEVMat<DataType>& in) {
-    data_[0] = make_shared<ViewType>(*in.data());
-    data_[1] = in.data1() ? make_shared<ViewType>(*in.data1()) : nullptr;
-    data_[2] = in.data2() ? make_shared<ViewType>(*in.data2()) : nullptr;
+    for (auto& i : in.data())
+      data_.emplace(i.first, make_shared<ViewType>(*i.second));
+    for (auto& i : in.data2())
+      data2_.emplace(i.first, make_shared<ViewType>(*i.second));
+    for (auto& i : in.data3())
+      data3_.emplace(i.first, make_shared<ViewType>(*i.second));
   }
-  NEVView(shared_ptr<const ViewType> in, shared_ptr<const ViewType> in2 = nullptr, shared_ptr<const ViewType> in3 = nullptr) {
-    data_[0] = in;
-    data_[1] = in2;
-    data_[2] = in3;
+  NEVView(map<int,shared_ptr<const ViewType>> in, map<int,shared_ptr<const ViewType>> in2, map<int,shared_ptr<const ViewType>> in3)
+    : data_(in), data2_(in2), data3_(in3) {
   }
 };
 
@@ -269,27 +277,124 @@ typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type
     btas::contract(fac, a, {0,1}, b, {0,2}, 1.0, c, {1,2}, conj, false);
   };
 
-  MatType out(a.data()->mdim(), b.data()->mdim(), true);
-  multiply_tn(1.0, *a.data(), *b.data(), out, conjg);
+  map<int,shared_ptr<const ViewType>> ad = a.data();
+  map<int,shared_ptr<const ViewType>> bd = b.data();
+  map<int,shared_ptr<const ViewType>> ad2 = a.data2();
+  map<int,shared_ptr<const ViewType>> bd2 = b.data2();
+  map<int,shared_ptr<const ViewType>> ad3 = a.data3();
+  map<int,shared_ptr<const ViewType>> bd3 = b.data3();
 
-  if (a.data1() && a.data2()) {
-    // breit case
-    assert(b.data1() && b.data2());
-    multiply_tn(-0.25, *a.data1(), *b.data2(), out, conjg);
-    multiply_tn(-0.25, *a.data2(), *b.data1(), out, conjg);
-  } else if (a.data1()) {
-    assert(b.data1());
-    multiply_tn(-1.0, *a.data1(), *b.data1(), out, conjg);
+  assert(ad.size() == bd.size() && ad2.size() == bd2.size() && ad3.size() == bd3.size());
+
+  MatType out(ad.begin()->second->mdim(), bd.begin()->second->mdim(), true);
+
+  for (auto& i : ad)
+    for (auto& j : bd) {
+      assert(i.first == j.first);
+      multiply_tn(1.0, *i.second, *j.second, out, conjg);
+    }
+
+  if (!ad2.empty() && !ad3.empty()) {
+    assert(!bd2.empty() && !bd3.empty());
+    for (auto i : ad2)
+      for (auto j : bd3)
+        if (i.first == j.first)
+          multiply_tn(-0.25, *i.second, *j.second, out, conjg);
+    for (auto i : ad3)
+      for (auto j : bd2)
+        if (i.first == j.first)
+          multiply_tn(-0.25, *i.second, *j.second, out, conjg);
+  } else if (!ad2.empty()) {
+    assert(!bd2.empty());
+    for (auto i : ad2)
+      for (auto j : bd2)
+        if (i.first == j.first)
+          multiply_tn(-1.0, *i.second, *j.second, out, conjg);
   }
   return out;
 }
 
 
+template<>
+tuple<map<int,shared_ptr<const Matrix>>,map<int,shared_ptr<const Matrix>>,map<int,shared_ptr<const Matrix>>>
+  NEVPT2<double>::slice_ax(shared_ptr<const DFDistT> full) const {
+
+  shared_ptr<const Matrix> fullm = full->replicate();
+  shared_ptr<Matrix> tmp;
+  if (nclosed_)
+    tmp = fullm->slice_copy(0, nact_*nclosed_);
+  shared_ptr<const Matrix> aa = fullm->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_));
+  shared_ptr<const Matrix> av = fullm->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_));
+
+  using MapType = map<int,shared_ptr<const Matrix>>;
+  return make_tuple(MapType{{0,tmp}}, MapType{{0,aa}}, MapType{{0,av}});
+}
+
+
+template<>
+tuple<map<int,shared_ptr<const ZMatrix>>,map<int,shared_ptr<const ZMatrix>>,map<int,shared_ptr<const ZMatrix>>>
+  NEVPT2<complex<double>>::slice_ax(shared_ptr<const ListRelDFFullT> full) const {
+
+  map<int,shared_ptr<const ZMatrix>> ac, aa, av;
+  for (auto& inp : *full) {
+    const int alpha = inp->basis()->alpha_comp();
+
+    shared_ptr<const ZMatrix> fullm = inp->replicate();
+    shared_ptr<ZMatrix> tmp;
+    if (nclosed_) {
+      tmp = fullm->slice_copy(0, nact_*nclosed_);
+      blas::conj_n(tmp->data(), tmp->size());
+    }
+    ac.emplace(alpha, tmp);
+    aa.emplace(alpha, fullm->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_)));
+    av.emplace(alpha, fullm->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_)));
+  }
+  return make_tuple(ac, aa, av);
+}
+
+
+template<>
+tuple<map<int,shared_ptr<MP2Cache_<double>>>,
+      map<int,shared_ptr<MP2Cache_<double>>>,
+      map<int,shared_ptr<MP2Cache_<double>>>>
+  NEVPT2<double>::set_up_cache(shared_ptr<const Geometry> cgeom, shared_ptr<DFType> fullvi, shared_ptr<DFType> fullvi2, shared_ptr<DFType> fullvi3,
+                               vector<vector<tuple<int,int,MP2Tag<double>,MP2Tag<double>>>> tasks) const {
+
+  map<int,shared_ptr<MP2Cache_<double>>> cache, cache2, cache3;
+  // caching for non-rel/Coulomb
+  cache.emplace(0, make_shared<MP2Cache_<double>>(cgeom->naux(), nclosed_, nvirt_, fullvi, tasks));
+  return make_tuple(cache, cache2, cache3);
+}
+
+
+template<>
+tuple<map<int,shared_ptr<MP2Cache_<complex<double>>>>,
+      map<int,shared_ptr<MP2Cache_<complex<double>>>>,
+      map<int,shared_ptr<MP2Cache_<complex<double>>>>>
+  NEVPT2<complex<double>>::set_up_cache(shared_ptr<const Geometry> cgeom, shared_ptr<DFType> fullvi, shared_ptr<DFType> fullvi2, shared_ptr<DFType> fullvi3,
+                                        vector<vector<tuple<int,int,MP2Tag<complex<double>>,MP2Tag<complex<double>>>>> tasks) const {
+
+  map<int,shared_ptr<MP2Cache_<complex<double>>>> cache, cache2, cache3;
+  // caching for non-rel/Coulomb
+  for (auto& i : *fullvi)
+    cache.emplace(i->basis()->alpha_comp(), make_shared<MP2Cache_<complex<double>>>(cgeom->naux(), nclosed_, nvirt_, i, tasks));
+  // caching for Gaunt
+  if (fullvi2) {
+    for (auto& i : *fullvi2)
+      cache2.emplace(i->basis()->alpha_comp(), make_shared<MP2Cache_<complex<double>>>(cgeom->naux(), nclosed_, nvirt_, i, tasks));
+  }
+  // caching for Breit
+  if (fullvi3) {
+    for (auto& i : *fullvi3)
+      cache3.emplace(i->basis()->alpha_comp(), make_shared<MP2Cache_<complex<double>>>(cgeom->naux(), nclosed_, nvirt_, i, tasks));
+  }
+  return make_tuple(cache, cache2, cache3);
+}
+
 
 template<typename DataType>
 void NEVPT2<DataType>::compute() {
 
-#if 0
   Timer timer;
 
   const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
@@ -396,22 +501,10 @@ void NEVPT2<DataType>::compute() {
   // this will be locally stored
   shared_ptr<const NEVMat<DataType>> fullav, fullai, fullaa;
   {
-    shared_ptr<const MatType> fullav1, fullav2, fullav3;
-    shared_ptr<const MatType> fullai1, fullai2, fullai3;
-    // TODO probably we want to use JKFIT for this for consistency?
-    shared_ptr<const MatType> fullaa1, fullaa2, fullaa3;
+    map<int, shared_ptr<const MatType>> fullav1, fullav2, fullav3;
+    map<int, shared_ptr<const MatType>> fullai1, fullai2, fullai3;
+    map<int, shared_ptr<const MatType>> fullaa1, fullaa2, fullaa3;
 
-    auto slice_ax = [this](shared_ptr<DFType> full) {
-      shared_ptr<const MatType> fullm = full->replicate();
-      shared_ptr<MatType> tmp;
-      if (nclosed_) {
-        tmp = fullm->slice_copy(0, nact_*nclosed_);
-        blas::conj_n(tmp->data(), tmp->size());
-      }
-      shared_ptr<const MatType> aa = fullm->slice_copy(nact_*nclosed_, nact_*(nclosed_+nact_));
-      shared_ptr<const MatType> av = fullm->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_));
-      return make_tuple(tmp, aa, av);
-    };
     {
       // computing Coulomb integrals
       shared_ptr<DFType> fullax;
@@ -513,15 +606,20 @@ void NEVPT2<DataType>::compute() {
     }
   }
 
-  shared_ptr<MP2Cache_<DataType>> cache  = make_shared<MP2Cache_<DataType>>(cgeom->naux(), nclosed_, nvirt_, fullvi, tasks);
-  shared_ptr<MP2Cache_<DataType>> cache2 = gaunt_ ? make_shared<MP2Cache_<DataType>>(cgeom->naux(), nclosed_, nvirt_, fullvi2, tasks) : nullptr;
-  shared_ptr<MP2Cache_<DataType>> cache3 = breit_ ? make_shared<MP2Cache_<DataType>>(cgeom->naux(), nclosed_, nvirt_, fullvi3, tasks) : nullptr;
+  map<int,shared_ptr<MP2Cache_<DataType>>> cache, cache2, cache3;
+  tie(cache, cache2, cache3) = set_up_cache(cgeom, fullvi, fullvi2, fullvi3, tasks);
 
-  const int nloop = cache->nloop();
+  const int nloop = tasks.front().size();
   const int ncache = max(3, min(static_cast<int>(memory_size/(nvirt_*nvirt_)), 20));
   cout << "    * ncache = " << ncache << endl;
-  for (int n = 0; n != min(ncache, nloop); ++n)
-    cache->block(n, -1);
+  for (int n = 0; n != min(ncache, nloop); ++n) {
+    for (auto& i : cache)
+      i.second->block(n, -1);
+    for (auto& i : cache2)
+      i.second->block(n, -1);
+    for (auto& i : cache3)
+      i.second->block(n, -1);
+  }
 
   // loop over tasks
   const map<string, int> sect{{"(+0)", 0}, {"(+1)", 1}, {"(-1)", 2}, {"(+2)", 3}, {"(-2)", 4}, {"(+1)'", 5}, {"(-1)'", 6}, {"(+0)'", 7}};
@@ -529,36 +627,48 @@ void NEVPT2<DataType>::compute() {
   fill(energy.begin(), energy.end(), static_cast<DataType>(0.0));
 
   auto get_cached_block = [this,&cache,&cache2,&cache3](const int n) {
-    auto block = !cache2 ? make_shared<NEVMat<DataType>>((*cache)(n))
-              : (!cache3 ? make_shared<NEVMat<DataType>>((*cache)(n), (*cache2)(n))
-                         : make_shared<NEVMat<DataType>>((*cache)(n), (*cache2)(n), (*cache3)(n)));
-    return block;
+    map<int,shared_ptr<const MatType>> a, b, c;
+    for (auto& i : cache)
+      a.emplace(i.first, (*i.second)(n));
+    for (auto& i : cache2)
+      b.emplace(i.first, (*i.second)(n));
+    for (auto& i : cache3)
+      c.emplace(i.first, (*i.second)(n));
+    return make_shared<NEVMat<DataType>>(a, b, c);
   };
 
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
-    if (n+ncache < nloop)
-      cache->block(n+ncache, n-1);
+    if (n+ncache < nloop) {
+      for (auto& i : cache)
+        i.second->block(n+ncache, n-1);
+      for (auto& i : cache2)
+        i.second->block(n+ncache, n-1);
+      for (auto& i : cache3)
+        i.second->block(n+ncache, n-1);
+    }
 
-    const int i = get<0>(cache->task(n));
-    const int j = get<1>(cache->task(n));
+    const int i = get<0>(cache.begin()->second->task(n));
+    const int j = get<1>(cache.begin()->second->task(n));
 
 #ifndef NDEBUG
     if (gaunt_) {
-      assert(i == get<0>(cache2->task(n)) && j == get<1>(cache2->task(n)));
+      assert(i == get<0>(cache2.begin()->second->task(n)) && j == get<1>(cache2.begin()->second->task(n)));
       if (breit_)
-        assert(i == get<0>(cache3->task(n)) && j == get<1>(cache3->task(n)));
+        assert(i == get<0>(cache3.begin()->second->task(n)) && j == get<1>(cache3.begin()->second->task(n)));
     }
 #endif
 
     // wait till the data is available
-    cache->data_wait(n);
-    if (cache2) cache2->data_wait(n);
-    if (cache3) cache3->data_wait(n);
+    for (auto& i : cache)
+      i.second->data_wait(n);
+    for (auto& i : cache2)
+      i.second->data_wait(n);
+    for (auto& i : cache3)
+      i.second->data_wait(n);
 
     if (i < 0 && j < 0) {
       continue;
-#if 1
     } else if (i < nclosed_ && j < nclosed_ && i >= 0 && j >= 0) {
       shared_ptr<const NEVMat<DataType>> iblock = get_cached_block(i);
       shared_ptr<const NEVMat<DataType>> jblock = get_cached_block(j);
@@ -740,14 +850,16 @@ void NEVPT2<DataType>::compute() {
       const DataType norm  = abc % (*ardm3_sorted % abc) + detail::real(heff % (2.0 * *ardm2_sorted % abc + *hrdm1_->get_conjg() * heff));
       const DataType denom = abc % (*amat3t_ % abc)      + detail::real(heff % (*bmat2t_ % abc + *cmat2t_ * abc + *dmat1t_ * heff));
       energy[sect.at("(+1)'")] += norm / (-denom/norm + oeig(i));
-#endif
     }
   }
 
   // just to double check that all the communition is done
-  cache->wait();
-  if (cache2) cache2->wait();
-  if (cache3) cache3->wait();
+  for (auto& i : cache)
+    i.second->wait();
+  for (auto& i : cache2)
+    i.second->wait();
+  for (auto& i : cache3)
+    i.second->wait();
   // allreduce energy contributions
   mpi__->allreduce(energy.data(), energy.size());
   energy_ = detail::real(accumulate(energy.begin(), energy.end(), static_cast<DataType>(0.0)));
@@ -760,7 +872,6 @@ void NEVPT2<DataType>::compute() {
 
   energy_ += ref_->energy();
   cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
-#endif
 
 }
 

@@ -33,6 +33,7 @@ namespace bagel {
 
 class RelDFFullT {
   protected:
+    std::shared_ptr<const SpinorInfo> basis_;
     std::array<std::shared_ptr<DFDistT>,2> dffull_;
 
   public:
@@ -49,6 +50,8 @@ class RelDFFullT {
     std::shared_ptr<ZMatrix> replicate() const;
 
     int locate(const size_t i, const size_t n) const { assert(dffull_[0]->locate(i,n) == dffull_[1]->locate(i,n)); return dffull_[0]->locate(i,n); }
+
+    std::shared_ptr<const SpinorInfo> basis() const { return basis_; }
 
     static int nblocks() { return 1; }
 };
@@ -68,6 +71,11 @@ class ListRelDFFullT {
       for (auto& i : data_)
         i->discard_df();
     }
+
+    std::list<std::shared_ptr<RelDFFullT>>::const_iterator begin() const { return data_.cbegin(); }
+    std::list<std::shared_ptr<RelDFFullT>>::const_iterator end() const { return data_.cend(); }
+    std::list<std::shared_ptr<RelDFFullT>>::iterator begin() { return data_.begin(); }
+    std::list<std::shared_ptr<RelDFFullT>>::iterator end() { return data_.end(); }
 
     std::list<std::shared_ptr<RelDFFullT>> data() { return data_; }
 };
