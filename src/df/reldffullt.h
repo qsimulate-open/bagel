@@ -53,6 +53,25 @@ class RelDFFullT {
     static int nblocks() { return 1; }
 };
 
+
+class ListRelDFFullT {
+  protected:
+    std::list<std::shared_ptr<RelDFFullT>> data_;
+
+  public:
+    ListRelDFFullT(std::shared_ptr<const ListRelDFFull> full, std::shared_ptr<const StaticDist> dist = nullptr) {
+      for (auto& i : *full)
+        data_.push_back(std::make_shared<RelDFFullT>(i, dist));
+    }
+
+    void discard_df() {
+      for (auto& i : data_)
+        i->discard_df();
+    }
+
+    std::list<std::shared_ptr<RelDFFullT>> data() { return data_; }
+};
+
 }
 
 #endif

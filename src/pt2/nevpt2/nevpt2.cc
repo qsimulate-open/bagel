@@ -174,24 +174,24 @@ tuple<shared_ptr<DFDistT>, shared_ptr<DFDistT>, shared_ptr<DFDistT>, shared_ptr<
 
 
 template<>
-tuple<shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>>
+tuple<shared_ptr<ListRelDFFullT>, shared_ptr<ListRelDFFullT>, shared_ptr<ListRelDFFullT>, shared_ptr<ListRelDFFullT>>
   NEVPT2<complex<double>>::compute_full_nevpt2(shared_ptr<const Geometry> cgeom, shared_ptr<const ZMatrix> ccoeff, shared_ptr<const ZMatrix> acoeff,
                                                shared_ptr<const ZMatrix> vcoeff, shared_ptr<const ZMatrix> coeffall, const bool gaunt ,const bool breit) const {
-  shared_ptr<RelDFFullT> fullvi, fullax, fullvi2, fullax2;
+  shared_ptr<ListRelDFFullT> fullvi, fullax, fullvi2, fullax2;
   if (nclosed_) {
     // this is now (naux, nvirt_, nclosed_), distributed by nvirt_*nclosed_. Always naux*nvirt_ block is localized to one node
     list<shared_ptr<RelDFHalf>> half, half2;
     tie(half, half2) = RelMOFile::compute_half(cgeom, ccoeff, gaunt, breit);
     {
-      shared_ptr<RelDFFull> full = RelMOFile::compute_full(vcoeff, half, /*appj*/true)->swap();
+      shared_ptr<ListRelDFFull> full = RelMOFile::compute_full(vcoeff, half, /*appj*/true)->swap();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
-      fullvi = make_shared<RelDFFullT>(full, dist);
+      fullvi = make_shared<ListRelDFFullT>(full, dist);
       fullvi->discard_df();
     }
     if (breit) {
-      shared_ptr<RelDFFull> full = RelMOFile::compute_full(vcoeff, half2, /*appj*/false)->swap();
+      shared_ptr<ListRelDFFull> full = RelMOFile::compute_full(vcoeff, half2, /*appj*/false)->swap();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
-      fullvi2 = make_shared<RelDFFullT>(full, dist);
+      fullvi2 = make_shared<ListRelDFFullT>(full, dist);
       fullvi2->discard_df();
     }
   }
@@ -199,15 +199,15 @@ tuple<shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>, shared_ptr<RelDFFullT>, sh
     list<shared_ptr<RelDFHalf>> half, half2;
     tie(half, half2) = RelMOFile::compute_half(cgeom, acoeff, gaunt, breit);
     {
-      shared_ptr<RelDFFull> full = RelMOFile::compute_full(coeffall, half, /*appj*/true);
+      shared_ptr<ListRelDFFull> full = RelMOFile::compute_full(coeffall, half, /*appj*/true);
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
-      fullax = make_shared<RelDFFullT>(full, dist);
+      fullax = make_shared<ListRelDFFullT>(full, dist);
       fullax->discard_df();
     }
     if (breit) {
-      shared_ptr<RelDFFull> full = RelMOFile::compute_full(coeffall, half2, /*appj*/false);
+      shared_ptr<ListRelDFFull> full = RelMOFile::compute_full(coeffall, half2, /*appj*/false);
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
-      fullax2 = make_shared<RelDFFullT>(full, dist);
+      fullax2 = make_shared<ListRelDFFullT>(full, dist);
       fullax2->discard_df();
     }
   }
@@ -289,6 +289,7 @@ typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type
 template<typename DataType>
 void NEVPT2<DataType>::compute() {
 
+#if 0
   Timer timer;
 
   const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
@@ -759,6 +760,7 @@ void NEVPT2<DataType>::compute() {
 
   energy_ += ref_->energy();
   cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
+#endif
 
 }
 

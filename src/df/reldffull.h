@@ -102,6 +102,16 @@ class ListRelDFFull {
 
     void push_back(std::shared_ptr<RelDFFull> a) { data_.push_back(a); }
 
+    int nocc1() const { assert(!data_.empty()); return data_.front()->nocc1(); }
+    int nocc2() const { assert(!data_.empty()); return data_.front()->nocc2(); }
+
+    std::shared_ptr<ListRelDFFull> swap() const {
+      auto out = std::make_shared<ListRelDFFull>();
+      for (auto& i : data_)
+        out->push_back(i->swap());
+      return out;
+    }
+
     std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const ListRelDFFull> o, const double fac) const {
       std::shared_ptr<ZMatrix> out;
       for (auto& ii : data_)

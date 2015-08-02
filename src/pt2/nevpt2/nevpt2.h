@@ -42,7 +42,7 @@ class NEVPT2 : public Method {
     using DiagType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, QuatMatrix>::type;
     using VecType  = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
     using ViewType = typename std::conditional<std::is_same<DataType,double>::value, MatView, ZMatView>::type;
-    using DFType   = typename std::conditional<std::is_same<DataType,double>::value, DFDistT, RelDFFullT>::type;
+    using DFType   = typename std::conditional<std::is_same<DataType,double>::value, DFDistT, ListRelDFFullT>::type;
 
   protected:
     int ncore_;
@@ -153,7 +153,7 @@ template<> std::shared_ptr<ZMatrix> NEVPT2<std::complex<double>>::compute_fock(s
 template<> std::tuple<std::shared_ptr<DFDistT>,std::shared_ptr<DFDistT>,std::shared_ptr<DFDistT>,std::shared_ptr<DFDistT>>
   NEVPT2<double>::compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
                                       std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, const bool, const bool) const;
-template<> std::tuple<std::shared_ptr<RelDFFullT>,std::shared_ptr<RelDFFullT>,std::shared_ptr<RelDFFullT>,std::shared_ptr<RelDFFullT>>
+template<> std::tuple<std::shared_ptr<ListRelDFFullT>,std::shared_ptr<ListRelDFFullT>,std::shared_ptr<ListRelDFFullT>,std::shared_ptr<ListRelDFFullT>>
   NEVPT2<std::complex<double>>::compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>,
                                                     std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>, const bool, const bool) const;
 
