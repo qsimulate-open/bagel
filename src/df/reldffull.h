@@ -87,6 +87,67 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<RelDFFull> apply_2rdm(std::shared_ptr<const ZRDM<2>>) const;
 };
 
+
+class ListRelDFFull {
+  protected:
+    std::list<std::shared_ptr<RelDFFull>> data_;
+  public:
+    ListRelDFFull() { }
+    ListRelDFFull(std::list<std::shared_ptr<RelDFFull>> o) : data_(o) { }
+
+    std::list<std::shared_ptr<RelDFFull>>::iterator begin() { return data_.begin(); }
+    std::list<std::shared_ptr<RelDFFull>>::iterator end() { return data_.end(); }
+    std::list<std::shared_ptr<RelDFFull>>::const_iterator begin() const { return data_.cbegin(); }
+    std::list<std::shared_ptr<RelDFFull>>::const_iterator end() const { return data_.cend(); }
+
+    void push_back(std::shared_ptr<RelDFFull> a) { data_.push_back(a); }
+
+    std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const ListRelDFFull> o, const double fac) const {
+      std::shared_ptr<ZMatrix> out;
+      for (auto& ii : data_)
+        for (auto& jj : data_)
+          if (ii->alpha_matches(jj)) {
+            if (out) {
+              *out += *ii->form_4index(jj, fac);
+            } else {
+              out = ii->form_4index(jj, fac);
+            }
+          }
+      assert(out);
+      return out;
+    }
+
+    std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const ListRelDFFull> o, const double fac, const int i) const {
+      std::shared_ptr<ZMatrix> out;
+      for (auto& ii : data_)
+        for (auto& jj : data_)
+          if (ii->alpha_matches(jj)) {
+            if (out) {
+              *out += *ii->form_4index_1fixed(jj, fac, i);
+            } else {
+              out = ii->form_4index_1fixed(jj, fac, i);
+            }
+          }
+      assert(out);
+      return out;
+    }
+
+    std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const ListRelDFFull> o, const double fac, const bool conjugate_left = true) const {
+      std::shared_ptr<ZMatrix> out;
+      for (auto& ii : data_)
+        for (auto& jj : data_)
+          if (ii->alpha_matches(jj)) {
+            if (out) {
+              *out += *ii->form_2index(jj, fac, conjugate_left);
+            } else {
+              out = ii->form_2index(jj, fac, conjugate_left);
+            }
+          }
+      assert(out);
+      return out;
+    }
+};
+
 }
 
 #endif

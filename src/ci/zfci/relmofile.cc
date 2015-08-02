@@ -273,19 +273,18 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
       half_complex_gaunt_ = half_complex_exch;
 
     // (4) compute (gamma|ii)
-    using storagetype = list<shared_ptr<RelDFFull>>;
-    auto full = make_shared<Kramers<2,storagetype>>();
-    full->emplace({0,0}, make_shared<storagetype>(compute_full(coeff->at(0), half_complex_exch[0], true)));
-    full->emplace({1,0}, make_shared<storagetype>(compute_full(coeff->at(0), half_complex_exch[1], true)));
-    full->emplace({0,1}, make_shared<storagetype>(compute_full(coeff->at(1), half_complex_exch[0], true)));
-    full->emplace({1,1}, make_shared<storagetype>(compute_full(coeff->at(1), half_complex_exch[1], true)));
+    auto full = make_shared<Kramers<2,ListRelDFFull>>();
+    full->emplace({0,0}, compute_full(coeff->at(0), half_complex_exch[0], true));
+    full->emplace({1,0}, compute_full(coeff->at(0), half_complex_exch[1], true));
+    full->emplace({0,1}, compute_full(coeff->at(1), half_complex_exch[0], true));
+    full->emplace({1,1}, compute_full(coeff->at(1), half_complex_exch[1], true));
 
-    auto full2 = !breit ? full : make_shared<Kramers<2,storagetype>>();
+    auto full2 = !breit ? full : make_shared<Kramers<2,ListRelDFFull>>();
     if (breit) {
-      full2->emplace({0,0}, make_shared<storagetype>(compute_full(coeff->at(0), half_complex_exch2[0], false)));
-      full2->emplace({1,0}, make_shared<storagetype>(compute_full(coeff->at(0), half_complex_exch2[1], false)));
-      full2->emplace({0,1}, make_shared<storagetype>(compute_full(coeff->at(1), half_complex_exch2[0], false)));
-      full2->emplace({1,1}, make_shared<storagetype>(compute_full(coeff->at(1), half_complex_exch2[1], false)));
+      full2->emplace({0,0}, compute_full(coeff->at(0), half_complex_exch2[0], false));
+      full2->emplace({1,0}, compute_full(coeff->at(0), half_complex_exch2[1], false));
+      full2->emplace({0,1}, compute_full(coeff->at(1), half_complex_exch2[0], false));
+      full2->emplace({1,1}, compute_full(coeff->at(1), half_complex_exch2[1], false));
     }
 
     // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
@@ -304,24 +303,11 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
       // TODO : put in if statement for apply_J if nact*nact is much smaller than number of MPI processes
       const int b2a = i/4;
       const int b2b = i%4;
-      {
-        list<shared_ptr<RelDFFull>> lista = *full->at(b2a);
-        list<shared_ptr<RelDFFull>> list2b = *full2->at(b2b);
-        for (auto& ii : lista)
-          for (auto& jj : list2b)
-            if (ii->alpha_matches(jj))
-              out->add(i, ii->form_4index(jj, gscale));
-      }
+      out->add(i, full->at(b2a)->form_4index(full2->at(b2b), gscale));
 
       // in breit cases we explicitly symmetrize the Hamiltnian (hence the prefactor 0.5 above)
-      if (breit) {
-        list<shared_ptr<RelDFFull>> list2a = *full2->at(b2a);
-        list<shared_ptr<RelDFFull>> listb = *full->at(b2b);
-        for (auto& ii : list2a)
-          for (auto& jj : listb)
-            if (ii->alpha_matches(jj))
-              *out->at(i) += *ii->form_4index(jj, gscale);
-      }
+      if (breit)
+        *out->at(i) += *full2->at(b2a)->form_4index(full->at(b2b), gscale);
     }
   };
 
@@ -366,7 +352,7 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
 }
 
 
-list<shared_ptr<RelDFFull>> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<RelDFHalf>> half, const bool appj) {
+shared_ptr<ListRelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<RelDFHalf>> half, const bool appj) {
   // TODO remove once DFDistT class is fixed
   const bool transform_with_full = !(half.front()->nocc()*coeff->mdim() <= mpi__->size());
   if (!transform_with_full && appj) {
@@ -387,7 +373,7 @@ list<shared_ptr<RelDFFull>> RelMOFile::compute_full(shared_ptr<const ZMatrix> co
   if (transform_with_full && appj)
     for (auto& i : dffull)
       i = i->apply_J();
-  return dffull;
+  return make_shared<ListRelDFFull>(dffull);
 }
 
 

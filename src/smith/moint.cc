@@ -62,8 +62,7 @@ void K2ext<complex<double>>::init() {
 
   auto compute = [this, &cblocks](const bool gaunt, const bool breit) {
 
-    using StorageType = list<shared_ptr<RelDFFull>>;
-    map<size_t, shared_ptr<StorageType>> dflist, dflist2;
+    map<size_t, shared_ptr<const ListRelDFFull>> dflist, dflist2;
 
     for (auto& i0 : blocks_[0]) {
       shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
@@ -72,9 +71,9 @@ void K2ext<complex<double>>::init() {
 
       for (auto& i1 : blocks_[1]) {
         shared_ptr<const ZMatrix> i1coeff = coeff_->slice_copy(i1.offset(), i1.offset()+i1.size());
-        dflist.emplace(generate_hash_key(i0, i1), make_shared<StorageType>(RelMOFile::compute_full(i1coeff, half, true)));
+        dflist.emplace(generate_hash_key(i0, i1), RelMOFile::compute_full(i1coeff, half, true));
         if (breit)
-          dflist2.emplace(generate_hash_key(i0, i1), make_shared<StorageType>(RelMOFile::compute_full(i1coeff, half2, false)));
+          dflist2.emplace(generate_hash_key(i0, i1), RelMOFile::compute_full(i1coeff, half2, false));
       }
     }
     if (!breit)
@@ -88,9 +87,8 @@ void K2ext<complex<double>>::init() {
         // find three-index integrals
         size_t hashkey01 = generate_hash_key(i0, i1);
         assert(dflist.find(hashkey01) != dflist.end());
-        const StorageType df01   = *dflist.find(hashkey01)->second;
-        const StorageType df01_2 = *dflist2.find(hashkey01)->second;
-        assert(df01.size() == df01_2.size());
+        shared_ptr<const ListRelDFFull> df01   = dflist.find(hashkey01)->second;
+        shared_ptr<const ListRelDFFull> df01_2 = dflist2.find(hashkey01)->second;
         const int t0 = i0.kramers() ? 1 : 0;
         const int t1 = i1.kramers() ? 1 : 0;
 
@@ -104,30 +102,20 @@ void K2ext<complex<double>>::init() {
 
             size_t hashkey23 = generate_hash_key(i2, i3);
             assert(dflist.find(hashkey23) != dflist.end());
-            const StorageType df23   = *dflist.find(hashkey23)->second;
-            const StorageType df23_2 = *dflist2.find(hashkey23)->second;
-            assert(df23.size() == df23_2.size());
-            assert(df01.size() == df23_2.size());
+            shared_ptr<const ListRelDFFull> df23   = dflist.find(hashkey23)->second;
+            shared_ptr<const ListRelDFFull> df23_2 = dflist2.find(hashkey23)->second;
 
             // contract
             // TODO form_4index function now generates global 4 index tensor. This should be localized.
             // conjugating because (ai|ai) is associated with an excitation operator
             unique_ptr<complex<double>[]> target = data_->move_block(i0, i1, i2, i3);
             {
-              for (auto& ii : df01)
-                for (auto& jj : df23_2)
-                  if (ii->alpha_matches(jj)) {
-                    shared_ptr<ZMatrix> tmp = ii->form_4index(jj, 1.0)->get_conjg();
-                    blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
-                  }
+              shared_ptr<ZMatrix> tmp = df01->form_4index(df23_2, 1.0)->get_conjg();
+              blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
             }
             if (breit) {
-              for (auto& ii : df01_2)
-                for (auto& jj : df23)
-                  if (ii->alpha_matches(jj)) {
-                    shared_ptr<ZMatrix> tmp = ii->form_4index(jj, 1.0)->get_conjg();
-                    blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
-                  }
+              shared_ptr<ZMatrix> tmp = df01_2->form_4index(df23, 1.0)->get_conjg();
+              blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
             }
             data_->put_block(target, i0, i1, i2, i3);
           }

@@ -42,39 +42,30 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
     list<shared_ptr<RelDFHalf>> half, half2;
     tie(half, half2) = RelMOFile::compute_half(geom, acoeff, gaunt, breit);
 
-    list<shared_ptr<RelDFFull>> full = RelMOFile::compute_full(acoeff, half, true);
-    list<shared_ptr<RelDFFull>> full2 = !breit ? full : RelMOFile::compute_full(acoeff, half2, false);
+    shared_ptr<ListRelDFFull> full = RelMOFile::compute_full(acoeff, half, true);
+    shared_ptr<ListRelDFFull> full2 = !breit ? full : RelMOFile::compute_full(acoeff, half2, false);
 
-    list<shared_ptr<RelDFFull>> fullr = RelMOFile::compute_full(rcoeff, half, true);
-    list<shared_ptr<RelDFFull>> fullr2 = !breit ? fullr : RelMOFile::compute_full(rcoeff, half2, false);
+    shared_ptr<ListRelDFFull> fullr = RelMOFile::compute_full(rcoeff, half, true);
+    shared_ptr<ListRelDFFull> fullr2 = !breit ? fullr : RelMOFile::compute_full(rcoeff, half2, false);
 
     // form (rs|tu)*G(vs,tu) where r runs fastest
     shared_ptr<const ZRDM<2>> rdm2_av = expand_kramers(fci->rdm2_av_kramers(), nact);
 
-    list<shared_ptr<RelDFFull>> full_d;
-    for (auto& ii : full)
-      full_d.push_back(ii->apply_2rdm(rdm2_av));
-    list<shared_ptr<RelDFFull>> full2_d;
-    if (!breit)
-      full2_d = full_d;
-    else
-      for (auto& ii : full2)
-        full2_d.push_back(ii->apply_2rdm(rdm2_av));
+    auto full_d = make_shared<ListRelDFFull>();
+    for (auto& ii : *full)
+      full_d->push_back(ii->apply_2rdm(rdm2_av));
+
+    shared_ptr<ListRelDFFull> full2_d = full_d;
+    if (breit) {
+      full2_d = make_shared<ListRelDFFull>();
+      for (auto& ii : *full2)
+        full2_d->push_back(ii->apply_2rdm(rdm2_av));
+    }
 
     const double gscale = gaunt ? (breit ? -0.25 : -1.0) : 1.0;
-    auto out = make_shared<ZMatrix>(rcoeff->mdim(), acoeff->mdim());
-    {
-      for (auto& ii : fullr)
-        for (auto& jj : full2_d)
-          if (ii->alpha_matches(jj))
-            *out += *ii->form_2index(jj, gscale, false);
-    }
-    if (breit) {
-      for (auto& ii : fullr2)
-        for (auto& jj : full_d)
-          if (ii->alpha_matches(jj))
-            *out += *ii->form_2index(jj, gscale, false);
-    }
+    shared_ptr<ZMatrix> out = fullr->form_2index(full2_d, gscale, false);
+    if (breit)
+      *out += *fullr2->form_2index(full_d, gscale, false);
     return out;
   };
 
