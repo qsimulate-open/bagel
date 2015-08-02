@@ -24,7 +24,6 @@
 //
 
 #include <src/pt2/nevpt2/nevpt2.h>
-#include <src/pt2/mp2/mp2cache.h>
 #include <src/scf/hf/fock.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/mat1e/rel/relhcore.h>
@@ -234,11 +233,11 @@ struct NEVMat {
   NEVView<DataType> slice(const int i, const int j) const {
     map<int,shared_ptr<const ViewType>> dat, dat2, dat3;
     for (auto& k : data_)
-      dat.emplace(k.first, make_shared<ViewType>(k->slice(i,j)));
+      dat.emplace(k.first, make_shared<ViewType>(k.second->slice(i,j)));
     for (auto& k : data2_)
-      dat2.emplace(k.first, make_shared<ViewType>(k->slice(i,j)));
+      dat2.emplace(k.first, make_shared<ViewType>(k.second->slice(i,j)));
     for (auto& k : data3_)
-      dat3.emplace(k.first, make_shared<ViewType>(k->slice(i,j)));
+      dat3.emplace(k.first, make_shared<ViewType>(k.second->slice(i,j)));
     return NEVView<DataType>(dat, dat2, dat3);
   }
 };
@@ -351,6 +350,45 @@ tuple<map<int,shared_ptr<const ZMatrix>>,map<int,shared_ptr<const ZMatrix>>,map<
     av.emplace(alpha, fullm->slice_copy(nact_*(nclosed_+nact_), nact_*(nclosed_+nact_+nvirt_)));
   }
   return make_tuple(ac, aa, av);
+}
+
+
+template<>
+tuple<map<int,shared_ptr<MP2Cache_<double>>>,
+      map<int,shared_ptr<MP2Cache_<double>>>,
+      map<int,shared_ptr<MP2Cache_<double>>>>
+  NEVPT2<double>::set_up_cache(shared_ptr<const Geometry> cgeom, shared_ptr<DFType> fullvi, shared_ptr<DFType> fullvi2, shared_ptr<DFType> fullvi3,
+                               vector<vector<tuple<int,int,MP2Tag<double>,MP2Tag<double>>>> tasks) const {
+
+  map<int,shared_ptr<MP2Cache_<double>>> cache, cache2, cache3;
+  // caching for non-rel/Coulomb
+  cache.emplace(0, make_shared<MP2Cache_<double>>(cgeom->naux(), nclosed_, nvirt_, fullvi, tasks));
+  return make_tuple(cache, cache2, cache3);
+}
+
+
+template<>
+tuple<map<int,shared_ptr<MP2Cache_<complex<double>>>>,
+      map<int,shared_ptr<MP2Cache_<complex<double>>>>,
+      map<int,shared_ptr<MP2Cache_<complex<double>>>>>
+  NEVPT2<complex<double>>::set_up_cache(shared_ptr<const Geometry> cgeom, shared_ptr<DFType> fullvi, shared_ptr<DFType> fullvi2, shared_ptr<DFType> fullvi3,
+                                        vector<vector<tuple<int,int,MP2Tag<complex<double>>,MP2Tag<complex<double>>>>> tasks) const {
+
+  map<int,shared_ptr<MP2Cache_<complex<double>>>> cache, cache2, cache3;
+  // caching for non-rel/Coulomb
+  for (auto& i : *fullvi)
+    cache.emplace(i->basis()->alpha_comp(), make_shared<MP2Cache_<complex<double>>>(cgeom->naux(), nclosed_, nvirt_, i, tasks));
+  // caching for Gaunt
+  if (fullvi2) {
+    for (auto& i : *fullvi2)
+      cache2.emplace(i->basis()->alpha_comp(), make_shared<MP2Cache_<complex<double>>>(cgeom->naux(), nclosed_, nvirt_, i, tasks));
+  }
+  // caching for Breit
+  if (fullvi3) {
+    for (auto& i : *fullvi3)
+      cache3.emplace(i->basis()->alpha_comp(), make_shared<MP2Cache_<complex<double>>>(cgeom->naux(), nclosed_, nvirt_, i, tasks));
+  }
+  return make_tuple(cache, cache2, cache3);
 }
 
 
@@ -516,7 +554,6 @@ void NEVPT2<DataType>::compute() {
 
   timer.tick_print("A, B, C, and D matrices");
 
-#if 0
   /////////////////////////////////////////////////////////////////////////////////////
   // make a list of static distribution
   vector<vector<tuple<int,int,MP2Tag<DataType>,MP2Tag<DataType>>>> tasks(mpi__->size());
@@ -569,15 +606,20 @@ void NEVPT2<DataType>::compute() {
     }
   }
 
-  shared_ptr<MP2Cache_<DataType>> cache  = make_shared<MP2Cache_<DataType>>(cgeom->naux(), nclosed_, nvirt_, fullvi, tasks);
-  shared_ptr<MP2Cache_<DataType>> cache2 = gaunt_ ? make_shared<MP2Cache_<DataType>>(cgeom->naux(), nclosed_, nvirt_, fullvi2, tasks) : nullptr;
-  shared_ptr<MP2Cache_<DataType>> cache3 = breit_ ? make_shared<MP2Cache_<DataType>>(cgeom->naux(), nclosed_, nvirt_, fullvi3, tasks) : nullptr;
+  map<int,shared_ptr<MP2Cache_<DataType>>> cache, cache2, cache3;
+  tie(cache, cache2, cache3) = set_up_cache(cgeom, fullvi, fullvi2, fullvi3, tasks);
 
-  const int nloop = cache->nloop();
+  const int nloop = tasks.front().size();
   const int ncache = max(3, min(static_cast<int>(memory_size/(nvirt_*nvirt_)), 20));
   cout << "    * ncache = " << ncache << endl;
-  for (int n = 0; n != min(ncache, nloop); ++n)
-    cache->block(n, -1);
+  for (int n = 0; n != min(ncache, nloop); ++n) {
+    for (auto& i : cache)
+      i.second->block(n, -1);
+    for (auto& i : cache2)
+      i.second->block(n, -1);
+    for (auto& i : cache3)
+      i.second->block(n, -1);
+  }
 
   // loop over tasks
   const map<string, int> sect{{"(+0)", 0}, {"(+1)", 1}, {"(-1)", 2}, {"(+2)", 3}, {"(-2)", 4}, {"(+1)'", 5}, {"(-1)'", 6}, {"(+0)'", 7}};
@@ -585,36 +627,48 @@ void NEVPT2<DataType>::compute() {
   fill(energy.begin(), energy.end(), static_cast<DataType>(0.0));
 
   auto get_cached_block = [this,&cache,&cache2,&cache3](const int n) {
-    auto block = !cache2 ? make_shared<NEVMat<DataType>>((*cache)(n))
-              : (!cache3 ? make_shared<NEVMat<DataType>>((*cache)(n), (*cache2)(n))
-                         : make_shared<NEVMat<DataType>>((*cache)(n), (*cache2)(n), (*cache3)(n)));
-    return block;
+    map<int,shared_ptr<const MatType>> a, b, c;
+    for (auto& i : cache)
+      a.emplace(i.first, (*i.second)(n));
+    for (auto& i : cache2)
+      b.emplace(i.first, (*i.second)(n));
+    for (auto& i : cache3)
+      c.emplace(i.first, (*i.second)(n));
+    return make_shared<NEVMat<DataType>>(a, b, c);
   };
 
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
-    if (n+ncache < nloop)
-      cache->block(n+ncache, n-1);
+    if (n+ncache < nloop) {
+      for (auto& i : cache)
+        i.second->block(n+ncache, n-1);
+      for (auto& i : cache2)
+        i.second->block(n+ncache, n-1);
+      for (auto& i : cache3)
+        i.second->block(n+ncache, n-1);
+    }
 
-    const int i = get<0>(cache->task(n));
-    const int j = get<1>(cache->task(n));
+    const int i = get<0>(cache.begin()->second->task(n));
+    const int j = get<1>(cache.begin()->second->task(n));
 
 #ifndef NDEBUG
     if (gaunt_) {
-      assert(i == get<0>(cache2->task(n)) && j == get<1>(cache2->task(n)));
+      assert(i == get<0>(cache2.begin()->second->task(n)) && j == get<1>(cache2.begin()->second->task(n)));
       if (breit_)
-        assert(i == get<0>(cache3->task(n)) && j == get<1>(cache3->task(n)));
+        assert(i == get<0>(cache3.begin()->second->task(n)) && j == get<1>(cache3.begin()->second->task(n)));
     }
 #endif
 
     // wait till the data is available
-    cache->data_wait(n);
-    if (cache2) cache2->data_wait(n);
-    if (cache3) cache3->data_wait(n);
+    for (auto& i : cache)
+      i.second->data_wait(n);
+    for (auto& i : cache2)
+      i.second->data_wait(n);
+    for (auto& i : cache3)
+      i.second->data_wait(n);
 
     if (i < 0 && j < 0) {
       continue;
-#if 1
     } else if (i < nclosed_ && j < nclosed_ && i >= 0 && j >= 0) {
       shared_ptr<const NEVMat<DataType>> iblock = get_cached_block(i);
       shared_ptr<const NEVMat<DataType>> jblock = get_cached_block(j);
@@ -796,14 +850,16 @@ void NEVPT2<DataType>::compute() {
       const DataType norm  = abc % (*ardm3_sorted % abc) + detail::real(heff % (2.0 * *ardm2_sorted % abc + *hrdm1_->get_conjg() * heff));
       const DataType denom = abc % (*amat3t_ % abc)      + detail::real(heff % (*bmat2t_ % abc + *cmat2t_ * abc + *dmat1t_ * heff));
       energy[sect.at("(+1)'")] += norm / (-denom/norm + oeig(i));
-#endif
     }
   }
 
   // just to double check that all the communition is done
-  cache->wait();
-  if (cache2) cache2->wait();
-  if (cache3) cache3->wait();
+  for (auto& i : cache)
+    i.second->wait();
+  for (auto& i : cache2)
+    i.second->wait();
+  for (auto& i : cache3)
+    i.second->wait();
   // allreduce energy contributions
   mpi__->allreduce(energy.data(), energy.size());
   energy_ = detail::real(accumulate(energy.begin(), energy.end(), static_cast<DataType>(0.0)));
@@ -816,7 +872,6 @@ void NEVPT2<DataType>::compute() {
 
   energy_ += ref_->energy();
   cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
-#endif
 
 }
 
