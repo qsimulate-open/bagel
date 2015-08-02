@@ -115,7 +115,7 @@ class ListRelDFFull {
     std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const ListRelDFFull> o, const double fac) const {
       std::shared_ptr<ZMatrix> out;
       for (auto& ii : data_)
-        for (auto& jj : data_)
+        for (auto& jj : o->data_)
           if (ii->alpha_matches(jj)) {
             if (out) {
               *out += *ii->form_4index(jj, fac);
@@ -130,7 +130,7 @@ class ListRelDFFull {
     std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const ListRelDFFull> o, const double fac, const int i) const {
       std::shared_ptr<ZMatrix> out;
       for (auto& ii : data_)
-        for (auto& jj : data_)
+        for (auto& jj : o->data_)
           if (ii->alpha_matches(jj)) {
             if (out) {
               *out += *ii->form_4index_1fixed(jj, fac, i);
@@ -145,7 +145,7 @@ class ListRelDFFull {
     std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const ListRelDFFull> o, const double fac, const bool conjugate_left = true) const {
       std::shared_ptr<ZMatrix> out;
       for (auto& ii : data_)
-        for (auto& jj : data_)
+        for (auto& jj : o->data_)
           if (ii->alpha_matches(jj)) {
             if (out) {
               *out += *ii->form_2index(jj, fac, conjugate_left);
