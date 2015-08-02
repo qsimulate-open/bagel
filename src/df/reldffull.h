@@ -71,6 +71,8 @@ class RelDFFull : public RelDFBase {
 
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
 
+    bool alpha_matches(std::shared_ptr<const RelDFFull>) const;
+
     std::shared_ptr<Matrix> form_aux_2index_real() const {
       std::shared_ptr<Matrix> out = dffull_[0]->form_aux_2index(dffull_[0], 1.0);
       *out += *dffull_[1]->form_aux_2index(dffull_[1], 1.0); // positive, due to complex conjugate

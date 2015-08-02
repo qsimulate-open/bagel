@@ -221,3 +221,11 @@ shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZRDM<2>> rdm2) cons
   i->ax_plus_y( 1.0, dffull_[0]->apply_2rdm(*irdm));
   return make_shared<RelDFFull>(array<shared_ptr<DFFullDist>,2>{{r, i}}, cartesian_, basis_);
 }
+
+
+bool RelDFFull::alpha_matches(shared_ptr<const RelDFFull> o) const {
+  assert(basis_.size() == 1);
+  return basis_[0]->alpha_comp() == o->basis()[0]->alpha_comp();
+}
+
+
