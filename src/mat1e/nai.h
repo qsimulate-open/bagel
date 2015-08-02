@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dmp2.h
-// Copyright (C) 2013 Toru Shiozaki
+// Filename: nai.h
+// Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,34 +24,36 @@
 //
 
 
-#ifndef __SRC_REL_RELMP2_H
-#define __SRC_REL_RELMP2_H
+#ifndef __SRC_MAT1E_NAI_H
+#define __SRC_MAT1E_NAI_H
 
-#include <src/wfn/method.h>
+#include <src/mat1e/matrix1e.h>
 
 namespace bagel {
 
-class DMP2 : public Method {
+class NAI : public Matrix1e {
   protected:
-    int ncore_;
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
-    std::string abasis_;
-    bool gaunt_;
-    bool breit_;
+  private:
+    // serialization
+    friend class boost::serialization::access;
 
-    double energy_;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Matrix1e>(*this);
+    }
 
   public:
-    DMP2(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference> = nullptr);
+    NAI() { }
+    NAI(const std::shared_ptr<const Molecule>);
 
-    virtual void compute() override;
-    virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
-
-    double energy() const { return energy_; }
-    int ncore() const { return ncore_; }
-    std::string abasis() const { return abasis_; }
 };
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::NAI)
+
 #endif
+

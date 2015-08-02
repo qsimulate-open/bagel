@@ -31,6 +31,7 @@
 #include <src/mat1e/rel/relhcore.h>
 #include <src/df/reldffull.h>
 #include <src/scf/dhf/dfock.h>
+#include <src/ci/zfci/relmofile.h>
 #include <src/util/math/quatmatrix.h>
 
 using namespace std;
@@ -59,71 +60,20 @@ void K2ext<complex<double>>::init() {
     vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,1,1,1}} :
     vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,1,1}, {1,0,1,0}, {1,1,1,1}};
 
-  // TODO I am not happy with this code - too much repetition with RelMOFile. Should be cleaned up later
   auto compute = [this, &cblocks](const bool gaunt, const bool breit) {
-    // (1) make DFDists
-    vector<shared_ptr<const DFDist>> dfs;
-    if (!gaunt) {
-      dfs = info_->geom()->dfs()->split_blocks();
-      dfs.push_back(info_->geom()->df());
-    } else {
-      dfs = info_->geom()->dfsl()->split_blocks();
-    }
-    list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, gaunt);
 
-    map<size_t, shared_ptr<RelDFFull>> dflist, dflist2;
+    map<size_t, shared_ptr<const ListRelDFFull>> dflist, dflist2;
 
-    // (2) first-transform
     for (auto& i0 : blocks_[0]) {
-      list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff_->slice_copy(i0.offset(), i0.offset()+i0.size()));
-
-      // (3) split and factorize
-      list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
-      for (auto& i : half_complex) {
-        list<shared_ptr<RelDFHalf>> tmp = i->split(false);
-        half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
-      }
-      half_complex.clear();
-      DFock::factorize(half_complex_exch);
-
-      if (breit) {
-        auto breitint = make_shared<BreitInt>(info_->geom());
-        list<shared_ptr<Breit2Index>> breit_2index;
-        for (int i = 0; i != breitint->Nblocks(); ++i) {
-          breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), info_->geom()->df()->data2()));
-          if (breitint->not_diagonal(i))
-            breit_2index.push_back(breit_2index.back()->cross());
-        }
-        for (auto& i : half_complex_exch)
-          half_complex_exch2.push_back(i->apply_J());
-
-        for (auto& i : half_complex_exch)
-          for (auto& j : breit_2index)
-            if (i->alpha_matches(j)) {
-              half_complex_exch2.push_back(i->apply_J()->multiply_breit2index(j));
-              DFock::factorize(half_complex_exch2);
-            }
-      }
+      shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
+      list<shared_ptr<RelDFHalf>> half, half2;
+      tie(half, half2) = RelMOFile::compute_half(info_->geom(), i0coeff, gaunt, breit);
 
       for (auto& i1 : blocks_[1]) {
-        // (4) compute (gamma|ia)
-        auto compute_block = [this, &i0, &i1](const list<shared_ptr<RelDFHalf>>& half, map<size_t, shared_ptr<RelDFFull>>& target, const bool appj) {
-          list<shared_ptr<RelDFFull>> dffull;
-          for (auto& i : half)
-            dffull.push_back(make_shared<RelDFFull>(i, coeff_->slice_copy(i1.offset(), i1.offset()+i1.size())));
-          DFock::factorize(dffull);
-          assert(dffull.size() == 1);
-
-          shared_ptr<RelDFFull> dff = dffull.front();
-          dff->scale(dff->fac()); // take care of the factor
-          if (appj)
-            dff = dff->apply_J();
-          // adding this to dflist
-          target.emplace(generate_hash_key(i0, i1), dff);
-        };
-        compute_block(half_complex_exch, dflist, true);
+        shared_ptr<const ZMatrix> i1coeff = coeff_->slice_copy(i1.offset(), i1.offset()+i1.size());
+        dflist.emplace(generate_hash_key(i0, i1), RelMOFile::compute_full(i1coeff, half, true));
         if (breit)
-          compute_block(half_complex_exch2, dflist2, false);
+          dflist2.emplace(generate_hash_key(i0, i1), RelMOFile::compute_full(i1coeff, half2, false));
       }
     }
     if (!breit)
@@ -137,8 +87,8 @@ void K2ext<complex<double>>::init() {
         // find three-index integrals
         size_t hashkey01 = generate_hash_key(i0, i1);
         assert(dflist.find(hashkey01) != dflist.end());
-        shared_ptr<const RelDFFull> df01   = dflist.find(hashkey01)->second;
-        shared_ptr<const RelDFFull> df01_2 = dflist2.find(hashkey01)->second;
+        shared_ptr<const ListRelDFFull> df01   = dflist.find(hashkey01)->second;
+        shared_ptr<const ListRelDFFull> df01_2 = dflist2.find(hashkey01)->second;
         const int t0 = i0.kramers() ? 1 : 0;
         const int t1 = i1.kramers() ? 1 : 0;
 
@@ -152,8 +102,8 @@ void K2ext<complex<double>>::init() {
 
             size_t hashkey23 = generate_hash_key(i2, i3);
             assert(dflist.find(hashkey23) != dflist.end());
-            shared_ptr<const RelDFFull> df23   = dflist.find(hashkey23)->second;
-            shared_ptr<const RelDFFull> df23_2 = dflist2.find(hashkey23)->second;
+            shared_ptr<const ListRelDFFull> df23   = dflist.find(hashkey23)->second;
+            shared_ptr<const ListRelDFFull> df23_2 = dflist2.find(hashkey23)->second;
 
             // contract
             // TODO form_4index function now generates global 4 index tensor. This should be localized.

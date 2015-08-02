@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_MOLECULE_KINETIC_H
-#define __SRC_MOLECULE_KINETIC_H
+#ifndef __SRC_MAT1E_KINETIC_H
+#define __SRC_MAT1E_KINETIC_H
 
 #include <src/mat1e/matrix1e.h>
 

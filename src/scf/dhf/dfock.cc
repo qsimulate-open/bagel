@@ -31,12 +31,12 @@ using namespace bagel;
 // TODO batch size should be automatically determined by the memory size etc.
 const static int batchsize = 250;
 
-void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const double scale_exchange, const double scale_coulomb) {
+void DFock::two_electron_part(const ZMatView coeff, const double scale_exchange, const double scale_coulomb) {
 
-  assert(geom_->nbasis()*4 == coeff->ndim());
+  assert(geom_->nbasis()*4 == coeff.ndim());
 
-  auto ocoeffall = make_shared<ZMatrix>(*coeff);
-  const int nocc = coeff->mdim();
+  auto ocoeffall = make_shared<ZMatrix>(coeff);
+  const int nocc = coeff.mdim();
   const int nbatch = (nocc-1) / batchsize+1;
   StaticDist dist(nocc, nbatch);
   vector<pair<size_t, size_t>> table = dist.atable();
@@ -49,7 +49,7 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const doubl
     array<shared_ptr<const Matrix>, 4> tiocoeff;
 
     for (int i = 0; i != 4; ++i) {
-      shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), itable.first, geom_->nbasis(), itable.second);
+      shared_ptr<const ZMatrix> ocoeff = ocoeffall->get_submatrix(i*geom_->nbasis(), itable.first, geom_->nbasis(), itable.second);
       rocoeff[i] = ocoeff->get_real_part();
       iocoeff[i] = ocoeff->get_imag_part();
       trocoeff[i] = rocoeff[i]->transpose();

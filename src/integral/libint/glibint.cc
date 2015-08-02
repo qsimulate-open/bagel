@@ -39,7 +39,7 @@ using namespace bagel;
 
 const static CarSphList carsphlist;
 
-const static libint2::FmEval_Chebyshev3 fmeval(18);
+const static libint2::FmEval_Chebyshev3<double> fmeval(18);
 
 GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells, std::shared_ptr<StackMem> stack) : RysInt(shells, stack) {
   deriv_rank_ = 1;

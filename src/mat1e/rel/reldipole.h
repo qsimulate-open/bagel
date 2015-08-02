@@ -39,9 +39,10 @@ class RelDipole {
     std::string jobname_;
 
   public:
-    RelDipole(std::shared_ptr<const Molecule> g, std::shared_ptr<const ZMatrix> z, const std::string jobname = "") : geom_(g), density_(z), jobname_(jobname) { }
+    RelDipole(std::shared_ptr<const Molecule> g, std::shared_ptr<const ZMatrix> z = nullptr, const std::string jobname = "") : geom_(g), density_(z), jobname_(jobname) { }
 
-    std::array<double,3> compute();
+    std::array<double,3> compute() const;
+    std::array<std::shared_ptr<const ZMatrix>,3> compute_matrices() const;
 };
 
 }

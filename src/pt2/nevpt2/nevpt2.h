@@ -28,13 +28,23 @@
 #define __SRC_NEVPT2_NEVPT2_H
 
 #include <src/wfn/method.h>
-#include <src/multi/casscf/casscf.h>
+#include <src/df/dfdistt.h>
+#include <src/df/reldffullt.h>
+#include <src/util/math/quatmatrix.h>
+#include <src/wfn/relreference.h>
 
 namespace bagel {
 
+template<typename DataType>
 class NEVPT2 : public Method {
   protected:
-    std::shared_ptr<CASSCF> casscf_;
+    using MatType  = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+    using DiagType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, QuatMatrix>::type;
+    using VecType  = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
+    using ViewType = typename std::conditional<std::is_same<DataType,double>::value, MatView, ZMatView>::type;
+    using DFType   = typename std::conditional<std::is_same<DataType,double>::value, DFDistT, ListRelDFFullT>::type;
+
+  protected:
     int ncore_;
     int nclosed_;
     int nact_;
@@ -42,62 +52,67 @@ class NEVPT2 : public Method {
     int istate_;
     double norm_thresh_;
 
+    bool gaunt_;
+    bool breit_;
+
     std::string abasis_;
 
     double energy_;
 
-    // coefficient blocks
-    std::shared_ptr<const Matrix> ccoeff_;
-    std::shared_ptr<const Matrix> acoeff_;
-    std::shared_ptr<const Matrix> vcoeff_;
-
     // density matrices to be used
     // particle RDMs
-    std::shared_ptr<const Matrix> rdm1_;
-    std::shared_ptr<const Matrix> rdm2_;
-    std::shared_ptr<const Matrix> rdm3_;
-    std::shared_ptr<const Matrix> rdm4_;
+    std::shared_ptr<const MatType> rdm1_;
+    std::shared_ptr<const MatType> rdm2_;
+    std::shared_ptr<const MatType> rdm3_;
+    std::shared_ptr<const MatType> rdm4_;
     // hole RDMs
-    std::shared_ptr<const Matrix> hrdm1_;
-    std::shared_ptr<const Matrix> hrdm2_;
-    std::shared_ptr<const Matrix> hrdm3_;
+    std::shared_ptr<const MatType> hrdm1_;
+    std::shared_ptr<const MatType> hrdm2_;
+    std::shared_ptr<const MatType> hrdm3_;
     // <a+a b+b c+c..>
-    std::shared_ptr<const Matrix> ardm2_;
-    std::shared_ptr<const Matrix> ardm3_;
-    std::shared_ptr<const Matrix> ardm4_;
+    std::shared_ptr<const MatType> ardm2_;
+    std::shared_ptr<const MatType> ardm3_;
+    std::shared_ptr<const MatType> ardm4_;
     // <a+a bb+>
-    std::shared_ptr<const Matrix> srdm2_;
+    std::shared_ptr<const MatType> srdm2_;
     // <a+a bb+ c+c>
-    std::shared_ptr<const Matrix> srdm3_;
+    std::shared_ptr<const MatType> srdm3_;
 
     // integrals in physicists notation
-    std::shared_ptr<const Matrix> ints2_;
-    std::shared_ptr<      Matrix> fockact_;
-    std::shared_ptr<      Matrix> fockact_c_;
-    std::shared_ptr<      Matrix> fockact_h_;
-    std::shared_ptr<      Matrix> fockact_p_;
+    std::shared_ptr<const MatType> ints2_;
+    std::shared_ptr<      MatType> fockact_;
+    std::shared_ptr<      MatType> fockact_c_;
+    std::shared_ptr<      MatType> fockact_h_;
+    std::shared_ptr<      MatType> fockact_p_;
 
     // K and K'mat
-    std::shared_ptr<const Matrix> kmat_;
-    std::shared_ptr<const Matrix> kmatp_;
-    std::shared_ptr<const Matrix> kmat2_;
-    std::shared_ptr<const Matrix> kmatp2_;
+    std::shared_ptr<const MatType> qvec_;
+    std::shared_ptr<const MatType> kmat_;
+    std::shared_ptr<const MatType> kmatp_;
+    std::shared_ptr<const MatType> kmat2_;
+    std::shared_ptr<const MatType> kmatp2_;
 
     // A
-    std::shared_ptr<const Matrix> amat2_;
-    std::shared_ptr<const Matrix> amat3_;
-    std::shared_ptr<const Matrix> amat3t_;
+    std::shared_ptr<const MatType> amat2_;
+    std::shared_ptr<const MatType> amat3_;
+    std::shared_ptr<const MatType> amat3t_;
     // B
-    std::shared_ptr<const Matrix> bmat2_;
-    std::shared_ptr<const Matrix> bmat2t_;
+    std::shared_ptr<const MatType> bmat2_;
+    std::shared_ptr<const MatType> bmat2t_;
     // C
-    std::shared_ptr<const Matrix> cmat2_;
-    std::shared_ptr<const Matrix> cmat2t_;
+    std::shared_ptr<const MatType> cmat2_;
+    std::shared_ptr<const MatType> cmat2t_;
     // D
-    std::shared_ptr<const Matrix> dmat2_;
-    std::shared_ptr<const Matrix> dmat1_;
-    std::shared_ptr<const Matrix> dmat1t_;
+    std::shared_ptr<const MatType> dmat2_;
+    std::shared_ptr<const MatType> dmat1_;
+    std::shared_ptr<const MatType> dmat1t_;
 
+    void init_reference();
+    std::shared_ptr<MatType> compute_fock(std::shared_ptr<const Geometry> cgeom, std::shared_ptr<const MatType> hcore,
+                                          const ViewType coeff, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
+    std::tuple<std::shared_ptr<DFType>,std::shared_ptr<DFType>,std::shared_ptr<DFType>,std::shared_ptr<DFType>>
+      compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const MatType>, std::shared_ptr<const MatType>,
+                          std::shared_ptr<const MatType>, std::shared_ptr<const MatType>, const bool gaunt, const bool breit) const;
     void compute_rdm();
     void compute_hrdm();
     void compute_asrdm();
@@ -105,8 +120,11 @@ class NEVPT2 : public Method {
     void compute_kmat();
     void compute_abcd();
 
+    std::shared_ptr<const MatType> coeff() const;
+    std::tuple<std::shared_ptr<MatType>,VectorB> remove_core(std::shared_ptr<const MatType> in, const VectorB& eig) const;
+
   public:
-    NEVPT2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>, const std::shared_ptr<const Reference> = nullptr);
+    NEVPT2(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference> = nullptr);
 
     virtual void compute() override;
     virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
@@ -115,6 +133,32 @@ class NEVPT2 : public Method {
     int ncore() const { return ncore_; }
     std::string abasis() const { return abasis_; }
 };
+
+template<> void NEVPT2<double>::init_reference();
+template<> void NEVPT2<std::complex<double>>::init_reference();
+
+template<> void NEVPT2<double>::compute_rdm();
+template<> void NEVPT2<std::complex<double>>::compute_rdm();
+
+template<> std::shared_ptr<const Matrix> NEVPT2<double>::coeff() const;
+template<> std::shared_ptr<const ZMatrix> NEVPT2<std::complex<double>>::coeff() const;
+template<> std::tuple<std::shared_ptr<Matrix>,VectorB> NEVPT2<double>::remove_core(std::shared_ptr<const Matrix>, const VectorB&) const;
+template<> std::tuple<std::shared_ptr<ZMatrix>,VectorB> NEVPT2<std::complex<double>>::remove_core(std::shared_ptr<const ZMatrix>, const VectorB&) const;
+
+template<> std::shared_ptr<Matrix> NEVPT2<double>::compute_fock(std::shared_ptr<const Geometry> cgeom, std::shared_ptr<const Matrix> hcore,
+                                                                const MatView coeff, const double exch, const double coulomb);
+template<> std::shared_ptr<ZMatrix> NEVPT2<std::complex<double>>::compute_fock(std::shared_ptr<const Geometry> cgeom, std::shared_ptr<const ZMatrix> hcore,
+                                                                               const ZMatView coeff, const double exch, const double coulomb);
+
+template<> std::tuple<std::shared_ptr<DFDistT>,std::shared_ptr<DFDistT>,std::shared_ptr<DFDistT>,std::shared_ptr<DFDistT>>
+  NEVPT2<double>::compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
+                                      std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, const bool, const bool) const;
+template<> std::tuple<std::shared_ptr<ListRelDFFullT>,std::shared_ptr<ListRelDFFullT>,std::shared_ptr<ListRelDFFullT>,std::shared_ptr<ListRelDFFullT>>
+  NEVPT2<std::complex<double>>::compute_full_nevpt2(std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>,
+                                                    std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>, const bool, const bool) const;
+
+extern template class NEVPT2<double>;
+extern template class NEVPT2<std::complex<double>>;
 
 }
 

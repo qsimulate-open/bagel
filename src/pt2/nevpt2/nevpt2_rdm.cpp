@@ -23,33 +23,30 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/pt2/nevpt2/nevpt2.h>
-#include <src/util/prim_op.h>
+#ifdef NEVPT2IMPL
 
-using namespace std;
-using namespace bagel;
-
-void NEVPT2::compute_rdm() {
+template<>
+void NEVPT2<double>::compute_rdm() {
   // rdm 1
   {
-    auto tmp = casscf_->fci()->rdm1(istate_)->rdm1_mat(/*nclosed_*/0);
+    auto tmp = ref_->rdm1(istate_)->rdm1_mat(/*nclosed_*/0, false);
     tmp->localize();
     rdm1_ = tmp;
   }
   // rdm 2
   {
-    auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
+    auto tmp = make_shared<MatType>(nact_*nact_, nact_*nact_, true);
     shared_ptr<const RDM<2>> r2 = ref_->rdm2(istate_);
     sort_indices<0,2,1,3,0,1,1,1>(r2->data(), tmp->data(), nact_, nact_, nact_, nact_);
     rdm2_ = tmp;
   }
   // rdm 3 and 4
   {
-    shared_ptr<Matrix> tmp3 = make_shared<Matrix>(nact_*nact_*nact_, nact_*nact_*nact_, true);
-    shared_ptr<Matrix> tmp4 = make_shared<Matrix>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
+    auto tmp3 = make_shared<MatType>(nact_*nact_*nact_, nact_*nact_*nact_, true);
+    auto tmp4 = make_shared<MatType>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
     shared_ptr<const RDM<3>> r3;
     shared_ptr<const RDM<4>> r4;
-    tie(r3, r4) = casscf_->fci()->rdm34(istate_, istate_);
+    tie(r3, r4) = ref_->rdm34(istate_, istate_);
     sort_indices<0,2,4,  1,3,5,  0,1,1,1>(r3->data(), tmp3->data(), nact_, nact_, nact_, nact_, nact_, nact_);
     sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), tmp4->data(), nact_, nact_, nact_, nact_, nact_, nact_, nact_, nact_);
     rdm3_ = tmp3;
@@ -57,30 +54,78 @@ void NEVPT2::compute_rdm() {
   }
 }
 
+template<>
+void NEVPT2<complex<double>>::compute_rdm() {
+  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
+  // rdm 1
+  {
+    auto tmp = make_shared<MatType>(nact_, nact_, true);
+    auto rdm1k = ref->rdm1(istate_, istate_);
+    auto r1 = expand_kramers(rdm1k, nact_/2);
+    copy_n(r1->data(), nact_*nact_, tmp->data());
+    rdm1_ = tmp;
+  }
+  // rdm 2
+  {
+    auto tmp = make_shared<MatType>(nact_*nact_, nact_*nact_, true);
+    auto rdm2k = ref->rdm2(istate_, istate_);
+    auto r2 = expand_kramers(rdm2k, nact_/2);
+    sort_indices<0,2,1,3,0,1,1,1>(r2->data(), tmp->data(), nact_, nact_, nact_, nact_);
+    rdm2_ = tmp;
+  }
+  // rdm 3
+  {
+    auto tmp3 = make_shared<MatType>(nact_*nact_*nact_, nact_*nact_*nact_, true);
+    auto rdm3k = ref->rdm3(istate_, istate_);
+    auto r3 = expand_kramers(rdm3k, nact_/2);
+    sort_indices<0,2,4,1,3,5,0,1,1,1>(r3->data(), tmp3->data(), nact_, nact_, nact_, nact_, nact_, nact_);
+    rdm3_ = tmp3;
+  }
+  // TODO rdm 4 is too large to do this way - implement direct computation in ARDM3 later
+  // rdm 4
+  {
+    auto tmp4 = make_shared<MatType>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
+    auto rdm4k = ref->rdm4(istate_, istate_);
+    auto r4 = expand_kramers(rdm4k, nact_/2);
+    sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), tmp4->data(), nact_, nact_, nact_, nact_, nact_, nact_, nact_, nact_);
+    rdm4_ = tmp4;
+  }
+}
 
-void NEVPT2::compute_asrdm() {
+
+template<typename DataType>
+void NEVPT2<DataType>::compute_asrdm() {
   assert(rdm1_ && rdm2_ && rdm3_ && rdm4_);
   auto id2 = [this](                          const int k, const int l) { return         (        (k+nact_*l)); };
   auto id3 = [this](             const int j, const int k, const int l) { return         (j+nact_*(k+nact_*l)); };
   auto id4 = [this](const int i, const int j, const int k, const int l) { return i+nact_*(j+nact_*(k+nact_*l)); };
 
-  shared_ptr<Matrix> srdm2 = rdm2_->clone(); // S(a,b,c,d) = <0|a+p bp cq d+q|0>
+  const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
+
+#if 0
+  shared_ptr<MatType> srdm2 = rdm2_->clone();
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k)
         for (int l = 0; l != nact_; ++l)
-          srdm2->element(l+nact_*k,j+nact_*i) = -rdm2_->element(l+nact_*i,k+nact_*j) + (i == j ? 2.0*rdm1_->element(l,k) : 0.0) - (i == k ? rdm1_->element(l,j) : 0.0);
-  // <a+ a b+ b> and <a+ a b+ b c+ c>
-  shared_ptr<Matrix> ardm2 = rdm2_->clone();
+          srdm2->element(l+nact_*k,j+nact_*i) = -rdm2_->element(l+nact_*i,k+nact_*j) + (i == j ? fac2*rdm1_->element(l,k) : 0.0) - (i == k ? rdm1_->element(l,j) : 0.0);
+#endif
+  // amat = <a+ a b+ b>, <a+ a b+ b c+ c>, and <a+ a b+ b c+ c d+ d>
+  // also srdm2 = <0|a+p bp cq d+q|0>
+  shared_ptr<MatType> ardm2 = rdm2_->clone();
+  shared_ptr<MatType> srdm2 = rdm2_->clone();
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k) {
         for (int l = 0; l != nact_; ++l)
           ardm2->element(l+nact_*k,j+nact_*i) += rdm2_->element(l+nact_*j,k+nact_*i);
         ardm2->element(k+nact_*j,j+nact_*i) += rdm1_->element(k,i);
+
+        srdm2->element(k+nact_*j,i+nact_*i) += fac2*rdm1_->element(k,j);
       }
-  shared_ptr<Matrix> ardm3 = rdm3_->clone();
-  shared_ptr<Matrix> srdm3 = rdm3_->clone(); // <a+ a b b+ c+ c>
+  sort_indices<0,2,1,1,1,-1,1>(ardm2->data(), srdm2->data(), nact_*nact_, nact_, nact_);
+  shared_ptr<MatType> ardm3 = rdm3_->clone();
+  shared_ptr<MatType> srdm3 = rdm3_->clone(); // <a+ a b b+ c+ c>
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k)
@@ -92,10 +137,10 @@ void NEVPT2::compute_asrdm() {
             ardm3->element(id3(m,l,k),id3(j,j,i)) += rdm2_->element(m+nact_*k,l+nact_*i);
             ardm3->element(id3(m,l,k),id3(j,l,i)) += rdm2_->element(m+nact_*k,i+nact_*j);
 
-            srdm3->element(id3(m,l,k),id3(k,j,i)) += 2.0*ardm2->element(id2(m,l),id2(j,i));
+            srdm3->element(id3(m,l,k),id3(k,j,i)) += fac2*ardm2->element(id2(m,l),id2(j,i));
           }
   sort_indices<0,2,1,3,1,1,-1,1>(ardm3->data(), srdm3->data(), nact_*nact_, nact_, nact_, nact_*nact_);
-  shared_ptr<Matrix> ardm4 = rdm4_->clone();
+  shared_ptr<MatType> ardm4 = rdm4_->clone();
   for (int h = 0; h != nact_; ++h)
     for (int g = 0; g != nact_; ++g)
       for (int f = 0; f != nact_; ++f)
@@ -122,41 +167,50 @@ void NEVPT2::compute_asrdm() {
 }
 
 
-void NEVPT2::compute_hrdm() {
+template<typename DataType>
+void NEVPT2<DataType>::compute_hrdm() {
   assert(rdm1_ && rdm2_ && rdm3_ && srdm2_);
 
   auto id3 = [this](const int j, const int k, const int l) { return j+nact_*(k+nact_*l); };
 
-  shared_ptr<Matrix> unit = rdm1_->clone(); unit->unit();
-  shared_ptr<const Matrix> hrdm1 = make_shared<Matrix>(*unit*2.0 - *rdm1_);
-  shared_ptr<Matrix> hrdm2 = rdm2_->copy();
+  const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
+
+  shared_ptr<MatType> unit = rdm1_->clone(); unit->unit();
+  shared_ptr<MatType> hrdm2 = rdm2_->copy();
+  shared_ptr<const MatType> hrdm1 = make_shared<MatType>(*unit*fac2 - *rdm1_);
+
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nact_; ++j) {
       for (int k = 0; k != nact_; ++k) {
-        hrdm2->element(j+nact_*k, i+nact_*k) += 2.0 * hrdm1->element(j,i);
+        hrdm2->element(j+nact_*k, i+nact_*k) += fac2 * hrdm1->element(j,i);
         hrdm2->element(k+nact_*j, i+nact_*k) -= hrdm1->element(j,i);
-        hrdm2->element(j+nact_*k, k+nact_*i) += rdm1_->element(i,j);
-        hrdm2->element(k+nact_*j, k+nact_*i) -= 2.0 * rdm1_->element(i,j);
+        hrdm2->element(j+nact_*k, k+nact_*i) += rdm1_->element(j,i);
+        hrdm2->element(k+nact_*j, k+nact_*i) -= fac2 * rdm1_->element(j,i);
       }
     }
   }
-  shared_ptr<Matrix> hrdm3 = make_shared<Matrix>(*rdm3_ * (-1.0));
+  auto hrdm3 = make_shared<MatType>(*rdm3_ * (-1.0));
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
       for (int k = 0; k != nact_; ++k)
         for (int l = 0; l != nact_; ++l)
           for (int m = 0; m != nact_; ++m) {
-            hrdm3->element(id3(l,k,m),id3(j,i,m)) += 2.0*hrdm2->element(l+nact_*k,j+nact_*i);
-            hrdm3->element(id3(l,m,k),id3(j,i,m)) -=     hrdm2->element(l+nact_*k,j+nact_*i);
-            hrdm3->element(id3(m,l,k),id3(j,i,m)) -=     hrdm2->element(l+nact_*k,i+nact_*j);
-            hrdm3->element(id3(l,k,m),id3(j,m,i)) +=     srdm2_->element(i+nact_*k,l+nact_*j);
-            hrdm3->element(id3(l,m,k),id3(j,m,i)) -= 2.0*srdm2_->element(i+nact_*k,l+nact_*j);
-            hrdm3->element(id3(m,l,k),id3(j,m,i)) +=     srdm2_->element(i+nact_*k,l+nact_*j);
-            hrdm3->element(id3(l,k,m),id3(m,j,i)) -=     rdm2_->element(i+nact_*j,l+nact_*k);
-            hrdm3->element(id3(l,m,k),id3(m,j,i)) -=     rdm2_->element(i+nact_*j,k+nact_*l);
-            hrdm3->element(id3(m,l,k),id3(m,j,i)) += 2.0*rdm2_->element(i+nact_*j,k+nact_*l);
+            hrdm3->element(id3(l,k,m),id3(j,i,m)) += fac2*hrdm2->element(l+nact_*k,j+nact_*i);
+            hrdm3->element(id3(l,m,k),id3(j,i,m)) -=      hrdm2->element(l+nact_*k,j+nact_*i);
+            hrdm3->element(id3(m,l,k),id3(j,i,m)) -=      hrdm2->element(l+nact_*k,i+nact_*j);
+            hrdm3->element(id3(l,k,m),id3(j,m,i)) +=      detail::conj(srdm2_->element(i+nact_*k,l+nact_*j));
+            hrdm3->element(id3(l,m,k),id3(j,m,i)) -= fac2*detail::conj(srdm2_->element(i+nact_*k,l+nact_*j));
+            hrdm3->element(id3(m,l,k),id3(j,m,i)) +=      detail::conj(srdm2_->element(i+nact_*k,l+nact_*j));
+            hrdm3->element(id3(l,k,m),id3(m,j,i)) -=      rdm2_->element(l+nact_*k,i+nact_*j);
+            hrdm3->element(id3(l,m,k),id3(m,j,i)) -=      rdm2_->element(k+nact_*l,i+nact_*j);
+            hrdm3->element(id3(m,l,k),id3(m,j,i)) += fac2*rdm2_->element(k+nact_*l,i+nact_*j);
           }
   hrdm1_ = hrdm1;
+  assert(hrdm1_->is_hermitian());
   hrdm2_ = hrdm2;
+  assert(hrdm2_->is_hermitian());
   hrdm3_ = hrdm3;
+  assert(hrdm3_->is_hermitian());
 }
+
+#endif

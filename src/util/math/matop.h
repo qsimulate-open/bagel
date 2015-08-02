@@ -319,9 +319,7 @@ auto operator%(const T& a, const U& b) -> decltype(btas::dotc(a, b)) { return bt
 
 // operator * and % between Matrix and VectorB
 template <class T, class U,
-          class = typename std::enable_if<detail::is_mat<T>::value and detail::is_vec<U>::value
-                                      and std::is_same<typename std::remove_cv<typename T::value_type>::type, typename std::remove_cv<typename U::value_type>::type>::value
-                                         >::type
+          class = typename std::enable_if<(detail::is_mat<T>::value and detail::is_vec<U>::value) or (detail::is_zmat<T>::value and detail::is_zvec<U>::value)>::type
          >
 typename detail::returnable<U>::type operator*(const T& a, const U& b)  {
   typename detail::returnable<U>::type out(a.extent(0));
@@ -330,9 +328,7 @@ typename detail::returnable<U>::type operator*(const T& a, const U& b)  {
 }
 
 template <class T, class U,
-          class = typename std::enable_if<detail::is_mat<T>::value and detail::is_vec<U>::value
-                                      and std::is_same<typename std::remove_cv<typename T::value_type>::type, typename std::remove_cv<typename U::value_type>::type>::value
-                                         >::type
+          class = typename std::enable_if<(detail::is_mat<T>::value and detail::is_vec<U>::value) or (detail::is_zmat<T>::value and detail::is_zvec<U>::value)>::type
          >
 typename detail::returnable<U>::type operator%(const T& a, const U& b)  {
   typename detail::returnable<U>::type out(a.extent(1));
@@ -341,9 +337,7 @@ typename detail::returnable<U>::type operator%(const T& a, const U& b)  {
 }
 
 template <class T, class U,
-          class = typename std::enable_if<detail::is_mat<T>::value and detail::is_vec<U>::value
-                                      and std::is_same<typename std::remove_cv<typename T::value_type>::type, typename std::remove_cv<typename U::value_type>::type>::value
-                                         >::type
+          class = typename std::enable_if<(detail::is_mat<T>::value and detail::is_vec<U>::value) or (detail::is_zmat<T>::value and detail::is_zvec<U>::value)>::type
          >
 typename detail::returnable<U>::type operator%(const U& b, const T& a)  {
   auto out = a % b;

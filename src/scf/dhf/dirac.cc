@@ -28,6 +28,7 @@
 #include <src/scf/dhf/dfock.h>
 #include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/rel/reloverlap.h>
+#include <src/mat1e/rel/reldipole.h>
 #include <src/mat1e/giao/relhcore_london.h>
 #include <src/mat1e/giao/reloverlap_london.h>
 #include <src/wfn/zreference.h>
@@ -70,6 +71,8 @@ void Dirac::common_init(const shared_ptr<const PTree> idata) {
   thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
   ncharge_ = idata->get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
+
+  multipole_print_ = idata->get<int>("multipole", 1);
 
   if (!geom_->magnetism()) {
     hcore_ = make_shared<const RelHcore>(geom_);
@@ -164,6 +167,14 @@ void Dirac::compute() {
   }
 
   coeff_ = coeff->matrix();
+
+  if (!geom_->external() && !geom_->magnetism() && multipole_print_) {
+    if (multipole_print_ > 1)
+      cout << "    * Higher order multipoles are not implemented with Dirac Hartree-Fock." << endl;
+    auto den = aodensity->matrix();
+    RelDipole mu(geom_, den, "Dirac Hartree-Fock");
+    mu.compute();
+  }
 
   // print out orbital populations, if needed
   if (idata_->get<bool>("pop", false)) {

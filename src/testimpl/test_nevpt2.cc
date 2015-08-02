@@ -45,7 +45,7 @@ double nevpt2_energy(const std::string job) {
       geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "nevpt2") {
-      auto nevpt2 = std::make_shared<NEVPT2>(itree, geom);
+      auto nevpt2 = std::make_shared<NEVPT2<double>>(itree, geom);
       nevpt2->compute();
 
       std::cout.rdbuf(backup_stream);
