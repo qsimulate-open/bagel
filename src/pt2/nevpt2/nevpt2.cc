@@ -47,7 +47,8 @@ NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometr
   // checks for frozen core
   const bool frozen = idata_->get<bool>("frozen", true);
   istate_ = idata_->get<int>("istate", 0);
-  ncore_  = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2*z2 : 0));
+  ncore_  = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0))*z2;
+  nfrozenvirt_ = idata_->get<int>("nfrozenvirt", 0)*z2;
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
   // if three is a aux_basis keyword, we use that basis
@@ -60,7 +61,7 @@ NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometr
 
     nclosed_ = ref_->nclosed()*z2 - ncore_;
     nact_    = ref_->nact()*z2;
-    nvirt_   = ref_->nvirt()*z2;
+    nvirt_   = ref_->nvirt()*z2 - nfrozenvirt_;
 
     if (nclosed_+nact_ < 1) throw runtime_error("no correlated orbitals");
     if (nact_ < 1)          throw runtime_error("no active orbitals");
@@ -141,6 +142,35 @@ tuple<shared_ptr<ZMatrix>,VectorB> NEVPT2<complex<double>>::remove_core(shared_p
   for (int i = 0; i != n; ++i) {
     ov(i) = o(i+ncore_/2);
     ov(i+n) = o(i+ncore_+n);
+  }
+  return tie(out, ov);
+}
+
+
+template<>
+tuple<shared_ptr<Matrix>,VectorB> NEVPT2<double>::remove_frozenvirt(shared_ptr<const Matrix> in, const VectorB& o) const {
+  shared_ptr<Matrix> out = in->slice_copy(0, in->mdim()-nfrozenvirt_);
+  VectorB ov(in->mdim()-nfrozenvirt_);
+  copy_n(o.begin(), ov.size(), ov.begin());
+  return tie(out, ov);
+}
+
+
+template<>
+tuple<shared_ptr<ZMatrix>,VectorB> NEVPT2<complex<double>>::remove_frozenvirt(shared_ptr<const ZMatrix> in, const VectorB& o) const {
+  assert(in->mdim()%2 == 0 && nfrozenvirt_%2 == 0);
+  const int n = (in->mdim()-nfrozenvirt_)/2;
+  auto out = make_shared<ZMatrix>(in->ndim(), in->mdim()-nfrozenvirt_, in->localized());
+  out->copy_block(0, 0, in->ndim(), n, in->slice(0, n));
+  out->copy_block(0, n, in->ndim(), n, in->slice(in->mdim()/2, in->mdim()/2+n));
+
+  cout << "    * truncating virtuals: " << setw(20) << setprecision(10) << o(n) << endl;
+  assert(abs(o(n)-o(in->mdim()/2+n)) < 1.0e-8);
+
+  VectorB ov(n*2);
+  for (int i = 0; i != n; ++i) {
+    ov(i) = o(i);
+    ov(i+n) = o(i+in->mdim()/2);
   }
   return tie(out, ov);
 }
@@ -411,7 +441,7 @@ void NEVPT2<DataType>::compute() {
 
   // coefficients -- will be updated later
   shared_ptr<MatType> ccoeff = nclosed_ ? coeff()->slice_copy(0, ncore_+nclosed_) : nullptr;
-  shared_ptr<MatType> vcoeff = nvirt_   ? coeff()->slice_copy(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_) : nullptr;
+  shared_ptr<MatType> vcoeff = nvirt_   ? coeff()->slice_copy(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_+nfrozenvirt_) : nullptr;
 
   shared_ptr<const MatType> acoeff = coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
 
@@ -426,7 +456,7 @@ void NEVPT2<DataType>::compute() {
 
   /////////////////////////////////////////////////////////////////////////////////////
   // make canonical orbitals in closed and virtual subspaces
-  VectorB veig(nvirt_);
+  VectorB veig(nvirt_+nfrozenvirt_);
   VectorB oeig(ncore_+nclosed_);
   shared_ptr<MatType> coeffall;
   // fock
@@ -460,6 +490,9 @@ void NEVPT2<DataType>::compute() {
       DiagType vmofock(*vcoeff % *fockao * *vcoeff);
       vmofock.diagonalize(veig);
       *vcoeff *= vmofock;
+      // invoking frozen virtual
+      if (nfrozenvirt_)
+        tie(vcoeff, veig) = remove_frozenvirt(vcoeff, veig);
     }
     coeffall = make_shared<MatType>(acoeff->ndim(), nclosed_+nact_+nvirt_);
     if (nclosed_)
