@@ -32,22 +32,9 @@
 #include <cmath>
 #include <vector>
 #include <src/util/constants.h>
+#include <src/util/math/factorial.h>
 
 namespace bagel {
-
-#if 0
-class GammaLn { // Lanczos for ln(G(z))
-
-  public:
-    GammaLn() { }
-    ~GammaLn() { }
-
-    double compute(const double z) const {
-    }
-
-    double operator() (const double z) const { assert(z > 0); return compute(z); }
-};
-#endif
 
 class Gamma_upper { // Upper incomplete gamma function G(l+1/2, x)
 
@@ -73,6 +60,45 @@ class Gamma_upper { // Upper incomplete gamma function G(l+1/2, x)
 
     double operator()(const int l, const double x) const { assert(l < 1200 && x < 300); return compute(l, x); }
 
+};
+
+
+class Gamma_lower_scaled { // g(l+1/2, z^2)/x^{l+1} where z = beta^2 x^2
+
+  private:
+    double F_l(const int l, const double t) const {
+      double out;
+      if (t < 300) {
+        const int istart = 1200;
+        double prev = boost::math::tgamma_lower(istart+0.5, t) / (2.0 * pow(t, istart+0.5));
+        for (int i = istart-1; i <=l; --i) {
+          out = (2.0 * t * prev + exp(-t)) / (2 * i + 1.0);
+          prev = out;
+        }
+      } else {
+        const static DoubleFactorial df;
+        out = pow(pi__, 0.5) * df(2*l-1.0) / (pow(2.0, l+1.0) * pow(t, l+0.5));
+      }
+
+      return out;
+    }
+
+  public:
+    Gamma_lower_scaled() { }
+    ~Gamma_lower_scaled() { }
+
+    double compute(const int l, const double z, const double beta) const {
+      const double f = F_l(l, z);
+      const double rsq = z / (beta * beta);
+      const double out = 2.0 * pow(beta, 2*l+1.0) * pow(rsq, 0.5*l) * f;
+
+      return out;
+    }
+
+    double operator() (const int l, const double z, const double beta) const {
+      assert(z > 0);
+      return compute(l, z, beta);
+    }
 };
 
 }

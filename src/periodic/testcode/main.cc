@@ -33,6 +33,28 @@ for (int i = 0; i != 100; ++i) {
 };
 
 
+void test_gamma_lower_scaled() {
+
+// Test scaled lower gamma function for large argument
+double x = 15.0;
+const double beta = sqrt(pi__);
+bagel::Gamma_lower_scaled gamma_s;
+for (int i = 0; i != 10; ++i) {
+  for (int j = 0; j != 10; ++j) {
+    const double l = j + 0.5;
+    const double z = pi__ * pow(x, 2.0);
+    cout << "(l, x) = (" << l << ", " << setprecision(5) << z << ")" << endl;
+    cout << "boost      = " << setw(20) << setprecision(12) << boost::math::tgamma_lower(l, z)/pow(x, j+1.0) << endl;
+    cout << "bagel      = " << setw(20) << setprecision(12) << gamma_s(j, z, beta) << endl;
+    cout << "gsl        = " << setw(20) << setprecision(12) << (gsl_sf_gamma(l) - gsl_sf_gamma_inc(l, z))/pow(x, j+1.0) << endl;
+    cout << endl;
+  }
+  x += 1.0;
+}
+
+};
+
+
 void test_mlm() {
 
   vector<complex<double>> mlm;
@@ -43,18 +65,20 @@ void test_mlm() {
   mlm = compute_mlm(ws, lmax, limit, thresh);
   int cnt = 0;
   for (int l = 0; l <= lmax; ++l) {
-    for (int mm = 0; mm != 2*l+1; ++mm, ++cnt) {
+    for (int mm = 0; mm <= 2*l+1; ++mm, ++cnt) {
       const int m = mm - l;
-      if (mlm[cnt].real() > 1e-10)
+      if (abs(mlm[cnt].real()) > 1e-10)
         cout << "l = " << l << "  m = " << m << "  mlm = " << setw(20) << setprecision(14) << mlm[cnt].real() << endl;
     }
   }
-}
+
+};
 
 
 int main() {
 
 //  test_gamma();
-  test_mlm();
+//  test_mlm();
+  test_gamma_lower_scaled();
   return 0;
 }
