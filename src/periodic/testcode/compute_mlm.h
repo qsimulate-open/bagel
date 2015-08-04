@@ -54,9 +54,9 @@ vector<complex<double>> compute_mlm(const int ws, const int lmax, const int limi
     }
   }
 
-  cnt = 0;
+  int ivec = 0;
   for (auto& v : rvec) {
-    array<int, 3> id = vindex[cnt];
+    array<int, 3> id = vindex[ivec];
 
     const double rsq = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
     const double r = sqrt(rsq);
@@ -64,71 +64,47 @@ vector<complex<double>> compute_mlm(const int ws, const int lmax, const int limi
     const double phi = atan2(v[1], v[0]);
     const double b2r2 = beta__ * beta__ * rsq;
 
-    if (is_in_cff(ws, id[0], id[1], id[2])) {
-      // real term
-      int count = 0;
-      for (int l = 0; l <= lmax; ++l) {
-        for (int mm = 0; mm <= 2 * l; ++mm, ++count) {
-          const int m = mm - l;
-          const int am = abs(m);
-
-          double coeff = plm.compute(l, abs(m), ctheta) / pow(r, l + 1) * boost::math::gamma_q(l+0.5, b2r2);
-          double ft = 1.0;
-          for (int i = 1; i <= l - abs(m); ++i) {
-            coeff *= ft;
-            ++ft;
-          }
-
-          const double real = (m >=0) ? (coeff * cos(am * phi)) : (-1.0 * coeff * cos(am * phi));
-          const double imag = coeff * sin(am * phi);
-          out[count] += complex<double>(real, imag);
-
-        }
-      }
-    } else if(abs(id[0]) <= ws && abs(id[1]) <= ws && abs(id[2]) <= ws) {
-      // substract smooth part within ws
-      int count = 0;
-      for (int l = 0; l <= lmax; ++l) {
-        for (int mm = 0; mm <= 2 * l; ++mm, ++count) {
-          const int m = mm - l;
-          const int am = abs(m);
-
-          double coeff = plm.compute(l, abs(m), ctheta) / pow(r, l + 1) * boost::math::gamma_p(l+0.5, b2r2);
-          double ft = 1.0;
-          for (int i = 1; i <= l - abs(m); ++i) {
-            coeff *= ft;
-            ++ft;
-          }
-
-          const double real = (m >=0) ? (coeff * cos(am * phi)) : (-1.0 * coeff * cos(am * phi));
-          const double imag = coeff * sin(am * phi);
-          out[count] -= complex<double>(real, imag);
-        }
-      }
-    }
-
-    // smooth term
-    int count = 0;
+    int cnt = 0;
     for (int l = 0; l <= lmax; ++l) {
+      assert(boost::math::tgamma(l+0.5) - gsl_sf_gamma(l+0.5) < 1e-10);
       const complex<double> coeffl = pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5) / boost::math::tgamma(l+0.5);
-      for (int mm = 0; mm <= 2 * l; ++mm, ++count) {
+      for (int mm = 0; mm <= 2 * l; ++mm, ++cnt) {
         const int m = mm - l;
         const int am = abs(m);
 
-        double coeffm = plm.compute(l, abs(m), ctheta) * pow(r, l - 2) * exp(-rsq * pibeta);
+        double plm_tilde = plm.compute(l, abs(m), ctheta);
         double ft = 1.0;
         for (int i = 1; i <= l - abs(m); ++i) {
-          coeffm *= ft;
+          plm_tilde *= ft;
           ++ft;
         }
 
-        const double real = (m >=0) ? (coeffm * cos(am * phi)) : (-1.0 * coeffm * cos(am * phi));
+        const double sign = (m >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
+
+        if (is_in_cff(ws, id[0], id[1], id[2])) {
+          // real term
+          assert(boost::math::gamma_q(l+0.5, b2r2) - gsl_sf_gamma_inc_Q(l+0.5, b2r2) < 1e-10);
+          const double coeff = plm_tilde / pow(r, l + 1) * boost::math::gamma_q(l+0.5, b2r2);
+          const double real = coeff * sign;
+          const double imag = coeff * sin(am * phi);
+          out[cnt] += complex<double>(real, imag);
+        } else {
+          // substract smooth part within ws
+          assert(boost::math::gamma_p(l+0.5, b2r2) - gsl_sf_gamma_inc_P(l+0.5, b2r2) < 1e-10);
+          double coeff = plm_tilde / pow(r, l + 1) * boost::math::gamma_p(l+0.5, b2r2);
+          const double real = coeff * sign;
+          const double imag = coeff * sin(am * phi);
+          out[cnt] -= complex<double>(real, imag);
+        }
+        // smooth term
+        double coeffm = plm_tilde * pow(r, l - 2) * exp(-rsq * pibeta);
+        const double real = coeffm * sign;
         const double imag = coeffm * sin(am * phi);
-        out[count] += coeffl * complex<double>(real, imag);
+        out[cnt] += coeffl * complex<double>(real, imag);
       }
     }
 
-    ++cnt;
+    ++ivec;
   }
 
   return out;
