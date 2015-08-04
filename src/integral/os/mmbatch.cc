@@ -126,18 +126,12 @@ void MMBatch::perform_VRR(double* intermediate) {
     const double acy = P_[ii*3+1] - center_[1];
     const double acz = P_[ii*3+2] - center_[2];
 
-    for (int i = 0; i < amax1_; ++i) {
-      workx[1][i] = 0.5*i*workx[0][i-1]/xp_[ii] + acx*workx[0][i];
-      worky[1][i] = 0.5*i*worky[0][i-1]/xp_[ii] + acy*worky[0][i];
-      workz[1][i] = 0.5*i*workz[0][i-1]/xp_[ii] + acz*workz[0][i];
-    }
-
     // take a linear combination to get multipole integrals..
     for (int j = 1; j <= lmax_; ++j) {
       for (int i = 0; i != amax1_; ++i) {
-        workx[j][i] = acx*workx[j-1][i] + 0.5/xp_[ii]*(i*workx[j-1][i-1] + (j==1 ? 0.0 : (j-1)*workx[j-2][i]));
-        worky[j][i] = acy*worky[j-1][i] + 0.5/xp_[ii]*(i*worky[j-1][i-1] + (j==1 ? 0.0 : (j-1)*worky[j-2][i]));
-        workz[j][i] = acz*workz[j-1][i] + 0.5/xp_[ii]*(i*workz[j-1][i-1] + (j==1 ? 0.0 : (j-1)*workz[j-2][i]));
+        workx[j][i] = acx*workx[j-1][i] + 0.5/xp_[ii]*((i == 0 ? 0.0 : i*workx[j-1][i-1]) + (j==1 ? 0.0 : (j-1)*workx[j-2][i]));
+        worky[j][i] = acy*worky[j-1][i] + 0.5/xp_[ii]*((i == 0 ? 0.0 : i*worky[j-1][i-1]) + (j==1 ? 0.0 : (j-1)*worky[j-2][i]));
+        workz[j][i] = acz*workz[j-1][i] + 0.5/xp_[ii]*((i == 0 ? 0.0 : i*workz[j-1][i-1]) + (j==1 ? 0.0 : (j-1)*workz[j-2][i]));
       }
     }
 
