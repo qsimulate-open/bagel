@@ -36,6 +36,34 @@
 
 namespace bagel {
 
+class Gamma { // special case for half integers G(n/2)
+
+  private:
+
+  public:
+    Gamma() { }
+    ~Gamma() { }
+
+    double compute(const int l) const {
+      const double sqrtpi = sqrt(pi__);
+      double out = 1.0;
+      double ft = 1.0;
+      for (int i = 1; i <= l; ++i) {
+         out *= ft / 2.0;
+         ft += 2.0;
+      }
+
+      return out * sqrtpi;
+    }
+
+    double operator()(const int n) const {
+      assert(n > 0 && std::abs(n) % 2 == 1);
+      const int l = (n-1)/2;
+      return compute(l);
+    }
+
+};
+
 class Gamma_upper { // Upper incomplete gamma function G(l+1/2, x)
 
   private:
@@ -70,14 +98,20 @@ class Gamma_lower_scaled { // g(l+1/2, z^2)/x^{l+1} where z = beta^2 x^2
       double out;
       if (t < 300) {
         const int istart = 1200;
-        double prev = boost::math::tgamma_lower(istart+0.5, t) / (2.0 * pow(t, istart+0.5));
+        Gamma_upper gupper;
+        const double glower = boost::math::tgamma(istart+0.5) - gupper(istart+0.5, t);
+        double prev = glower / (2.0 * pow(t, istart+0.5));
         for (int i = istart-1; i <=l; --i) {
           out = (2.0 * t * prev + exp(-t)) / (2 * i + 1.0);
           prev = out;
         }
       } else {
-        const static DoubleFactorial df;
-        out = pow(pi__, 0.5) * df(2*l-1.0) / (pow(2.0, l+1.0) * pow(t, l+0.5));
+        out = pow(pi__, 0.5) / (pow(2.0, l+1.0) * pow(t, l+0.5));
+        double df = 1.0;
+        for (int i = 1; i <= 2*l-1; i += 2) {
+          out *= df;
+          df += 2.0;
+        }
       }
 
       return out;

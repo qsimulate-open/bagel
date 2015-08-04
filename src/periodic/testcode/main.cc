@@ -57,15 +57,24 @@ void test_gamma_lower_scaled() {
   }
 
 };
+
+
+void test_gamma() { //G(l+1/2)
+
+  // Test complete gamma function for half integers
+  bagel::Gamma gamma;
+  for (int l = 150; l != 300; ++l) {
+    const int n = 2 * l + 1;
+    const double boost_gamma = boost::math::tgamma(n/2.0);
+    const double bagel_gamma = gamma(n);
+    const double gsl_gamma = gsl_sf_gamma(n/2.0);
     if (abs(bagel_gamma - boost_gamma) > 1e-14 || abs(bagel_gamma - gsl_gamma) > 1e-14 || abs(boost_gamma - gsl_gamma) > 1e-14) {
-      cout << "(l, z) = (" << l << ", " << setprecision(5) << z << ")" << endl;
+      cout << "l = " << l << endl;
       cout << "boost      = " << setw(20) << setprecision(12) << boost_gamma << endl;
       cout << "bagel      = " << setw(20) << setprecision(12) << bagel_gamma << endl;
       cout << "gsl        = " << setw(20) << setprecision(12) << gsl_gamma << endl << endl;
     }
   }
-  x += 0.1;
-}
 
 };
 
@@ -94,6 +103,8 @@ int main() {
 
 //  test_gamma_upper();
 //  test_mlm();
-  test_gamma_lower_scaled();
+//  test_gamma_lower_scaled();
+  test_gamma();
+
   return 0;
 }
