@@ -33,6 +33,7 @@
 #include <vector>
 #include <src/util/constants.h>
 #include <src/util/math/factorial.h>
+#include <boost/math/special_functions/gamma.hpp>
 
 namespace bagel {
 
