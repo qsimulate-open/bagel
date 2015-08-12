@@ -120,6 +120,15 @@
         "title"   : "Automatic code generation enables nuclear gradient computations for fully internally contracted multireference theory",
         "doi"     : "10.1063/1.4907717",
         "type"    : "article"
+      },
+      {
+        "author"  : "I. Kim, S. M. Parker, and T. Shiozaki",
+        "journal" : "Journal of Chemical Theory and Computation",
+        "volume"  : "11",
+        "pages"   : "3636&ndash;3642",
+        "title"   : "Orbital optimization in the active space decomposition model",
+        "doi"     : "10.1021/acs.jctc.5b00429",
+        "type"    : "article"
       }
     ]
   }
