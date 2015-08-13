@@ -4,7 +4,6 @@
 //
 
 
-#include <boost/math/constants/constants.hpp>
 #include <src/util/math/legendre.h>
 #include "gmp_macros.h"
 #include "mpreal.h"

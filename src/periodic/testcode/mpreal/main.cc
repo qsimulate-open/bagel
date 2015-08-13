@@ -84,7 +84,7 @@ void test_mlm() {
 
   vector<complex<mpreal>> mlm;
   const int ws = 1;
-  const int lmax = 10;
+  const int lmax = 5;
   const int limit = 10;
   const mpreal thresh = static_cast<mpreal>(PRIM_SCREEN_THRESH);
   mlm = compute_mlm(ws, lmax, limit, thresh);
