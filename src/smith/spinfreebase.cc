@@ -26,6 +26,7 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
+#include <src/smith/tensor.h>
 #include <src/smith/moint.h>
 #include <src/smith/spinfreebase.h>
 #include <src/smith/smith_util.h>
@@ -34,11 +35,16 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
+namespace TA = TiledArray;
+
 template<typename DataType>
 SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> inf) : info_(inf) {
   static_assert(is_same<DataType,double>::value or is_same<DataType,complex<double>>::value,
                 "illegal DataType for SpinFreeMethod");
 
+  int czero = 0;
+  char** cnull;
+  madness::World& world = madness::initialize(czero, cnull); 
   Timer timer;
   const int max = info_->maxtile();
   if (info_->ncore() > info_->nclosed())
@@ -66,6 +72,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   ractive_ = make_shared<const IndexRange>(active_);
   rvirt_   = make_shared<const IndexRange>(virt_);
 
+  // only for gradient computation
   if (info_->ciwfn() && info_->grad()) {
     // length of the ci expansion
     const size_t ci_size = info_->ref()->civectors()->data(info_->target())->size();
@@ -119,6 +126,12 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
   // set e0
   e0_ = compute_e0();
+}
+
+
+template<typename DataType>
+SpinFreeMethod<DataType>::~SpinFreeMethod() {
+  madness::finalize();
 }
 
 
