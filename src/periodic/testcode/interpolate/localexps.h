@@ -1,6 +1,7 @@
 // Author: Hai-Anh Le
 // Date  : August 2015
 
+#include <iomanip>
 #include <src/util/constants.h>
 #include <src/util/parallel/resources.h>
 
@@ -14,7 +15,7 @@ class LocalExps {
     int limit_;
     double thresh_;
 
-    int rank_;
+    int max_rank_;
     double beta_;
     double *rvec_, *kvec_;
     double* T_;
@@ -42,7 +43,7 @@ class LocalExps {
     }
 
     bool is_in_cff(const int ws, const int n0, const int n1, const int n2);
-    void root_weight(const int size);
+    void root_weight(const int l, const int size);
 
   public:
     LocalExps(const int ws, const int lmax, const int limit, const double thresh = PRIM_SCREEN_THRESH);
