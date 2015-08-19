@@ -27,11 +27,13 @@
 #include <iostream>
 #include <iomanip>
 #include <src/util/math/sphharmonics.h>
+#include <src/util/math/factorial.h>
 
 using namespace std;
 using namespace bagel;
 
-const static Legendre legendre;
+const static Legendre_renorm legendre;
+const static Factorial fact;
 
 SphHarmonics::SphHarmonics(const array<int, 2> lm, const array<double, 3> c)
  : angular_momentum_(lm), centre_(c) {
@@ -83,14 +85,9 @@ complex<double> SphHarmonics::ylm() const {
     throw runtime_error ("SphHarmonics.ylm: |m| > l");
 
   const double plm = legendre.compute(l, am, cth);
-  double fact = 1.0;
-  for (int i = 1; i <= 2*am; ++i) {
-    fact *= l - am + i;
-  }
 
-  const double coef = sqrt((2*l+1) * 0.25 * fact / pi__);
-  double real = coef * plm * cos(am * phi_);
-  double imag = coef * plm * sin(am * phi_);
+  double real = plm * cos(am * phi_);
+  double imag = plm * sin(am * phi_);
   if (m < 0) {
     real *= pow(-1, m);
     imag *= pow(-1, m+1);
@@ -166,7 +163,6 @@ double SphHarmonics::sph_to_USP(const int lx, const int ly) const {
   if ((lx + ly - am) % 2 != 0 || j < 0) {
     return 0.0;
   } else {
-    Factorial fact;
     const int l = angular_momentum_[0];
     const double lmamf = fact(l - am);
     const double lpamf = fact(l + am);
