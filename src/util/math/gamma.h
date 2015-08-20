@@ -37,7 +37,7 @@
 
 namespace bagel {
 
-class Gamma { // special case for half integers G(n/2)
+class Gamma { // special case for half integers G(l + 1/2)
 
   private:
 
@@ -57,13 +57,33 @@ class Gamma { // special case for half integers G(n/2)
       return out * sqrtpi;
     }
 
-    double operator()(const int n) const {
-      assert(n > 0 && std::abs(n) % 2 == 1);
-      const int l = (n-1)/2;
-      return compute(l);
+    double operator()(const int l) const { return compute(l); }
+};
+
+
+class Gamma_scaled { // r^n/G(l + 1/2)
+
+  private:
+
+  public:
+    Gamma_scaled() { }
+    ~Gamma_scaled() { }
+
+    double compute(const int l, const double r) const {
+      const double sqrtpi = sqrt(pi__);
+      double out = 1.0;
+      double ft = 1.0;
+      for (int i = 1; i <= l; ++i) {
+         out *= 2.0 * r / ft;
+         ft += 2.0;
+      }
+
+      return out / sqrtpi;
     }
 
+    double operator()(const int l, const double r) const { return compute(l, r); }
 };
+
 
 class Gamma_upper { // Upper incomplete gamma function G(l+1/2, x)
 
