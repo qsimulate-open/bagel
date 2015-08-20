@@ -42,9 +42,7 @@
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>
-#define FORTRAN_LINKAGE_LC
 #include <tiledarray.h>
-#undef FORTRAN_LINKAGE_LC
 
 namespace bagel {
 namespace SMITH {
