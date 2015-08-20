@@ -140,6 +140,13 @@ if test x${with_mpi} != xno; then
     AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])], [])
 fi
 
+AC_ARG_ENABLE(tiledarray, [AS_HELP_STRING([--enable-tiledarray],[enable TA extensions.])], [use_ta=yes], [use_ta=no])
+if test "x${use_ta}" = xyes; then
+    AH_TEMPLATE([HAVE_TILEDARRAY], [TILEDARRAY will be used.])
+    AC_CHECK_LIB(MADworld, main,  [AC_DEFINE([HAVE_TILEDARRAY]) LIBS="-lMADworld $LIBS"], [AC_MSG_ERROR("Linking against MADworld failed.")])
+fi
+
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/util/Makefile
