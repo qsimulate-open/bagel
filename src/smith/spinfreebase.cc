@@ -35,7 +35,18 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-namespace TA = TiledArray;
+//namespace TA = TiledArray;
+
+#if 0
+void init_array(TA::Array<double, N>& x) {    
+  for (auto it = x.begin(); it != x.end(); ++it) {   
+    madness::Future<TA::Array<double, n>::value_type> tile =
+    x.get_world().taskq.add(&make_tile, x.trange().make_tile_range(it.ordinal()));
+    range(it.ordinal);
+    *it = tile;
+  }   
+}
+#endif
 
 template<typename DataType>
 SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> inf) : info_(inf) {
@@ -45,6 +56,21 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   int czero = 0;
   char** cnull;
   madness::World& world = madness::initialize(czero, cnull); 
+#if 0
+  std::vector<std::size_t> tile_boundaries;
+        for(std::size_t i = 0; i <= ; i += )
+        tile_boundaries.push_back(i); 
+
+    std::vector<TiledArray::TiledRange1>
+        ranges(N, TiledArray::TiledRange1(tile_boundaries.begin(), tile_boundaries.end()));
+
+    TA::TiledRange trange(ranges.begin(), ranges.end()); 
+
+    TA::Array<double, N> ARRAYNAMEHERE (world, trange); 
+
+    init_array(ARRAYNAMEHERE); 
+#endif
+
   Timer timer;
   const int max = info_->maxtile();
   if (info_->ncore() > info_->nclosed())
