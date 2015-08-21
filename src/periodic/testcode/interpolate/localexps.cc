@@ -5,6 +5,7 @@
 
 
 #include <src/util/math/legendre.h>
+#include <src/util/math/sphharmonics.h>
 #include <src/util/math/gamma.h>
 #include <src/integral/rys/erirootlist.h>
 #include "localexps.h"
@@ -45,28 +46,30 @@ void LocalExps::compute_mlm() {
   vector<array<int, 3>> vindex(nvec);
 
   // generate lattice vectors - 3D for now
+  int cnt = 0;
+  for (int n3 = -limit_; n3 <= limit_; ++n3)
+    for (int n2 = -limit_; n2 <= limit_; ++n2)
+      for (int n1 = -limit_; n1 <= limit_; ++n1, ++cnt)
+        vindex[cnt] = {{n1, n2, n3}};
+  assert(cnt == nvec);
+
+  std::sort(vindex.begin(), vindex.end(), sort_vector); // sort to sum spherically
+
   vector<array<double, 3>> primitive_vectors(3);
   primitive_vectors[0] = {{1.0, 0.0, 0.0}};
   primitive_vectors[1] = {{0.0, 1.0, 0.0}};
   primitive_vectors[2] = {{0.0, 0.0, 1.0}};
 
 
-  int cnt = 0;
-  for (int n3 = -limit_; n3 <= limit_; ++n3) {
-    for (int n2 = -limit_; n2 <= limit_; ++n2) {
-      for (int n1 = -limit_; n1 <= limit_; ++n1, ++cnt) {
-        const int pos = cnt * 3;
-        rvec_[pos    ] = n1 * primitive_vectors[0][0] + n2 * primitive_vectors[1][0] + n3 * primitive_vectors[2][0];
-        rvec_[pos + 1] = n1 * primitive_vectors[0][1] + n2 * primitive_vectors[1][1] + n3 * primitive_vectors[2][1];
-        rvec_[pos + 2] = n1 * primitive_vectors[0][2] + n2 * primitive_vectors[1][2] + n3 * primitive_vectors[2][2];
-        /////cout << cnt << "  ***  " << setprecision(9) << rvec_[pos] << "  " << rvec_[pos+1] << "  " << rvec_[pos+2] << endl;
-        Rsq_[cnt] = rvec_[pos]*rvec_[pos] + rvec_[pos+1]*rvec_[pos+1] * rvec_[pos+2]*rvec_[pos+2];
-        T_[cnt] = Rsq_[cnt] * beta_ * beta_;
-        vindex[cnt] = {{n1, n2, n3}};
-      }
-    }
+  for (int ivec = 0; ivec != nvec; ++ivec) {
+    const int pos = ivec * 3;
+    array<int, 3> idx = vindex[ivec];
+    rvec_[pos    ] = idx[0] * primitive_vectors[0][0] + idx[1] * primitive_vectors[1][0] + idx[2] * primitive_vectors[2][0];
+    rvec_[pos + 1] = idx[0] * primitive_vectors[0][1] + idx[1] * primitive_vectors[1][1] + idx[2] * primitive_vectors[2][1];
+    rvec_[pos + 2] = idx[0] * primitive_vectors[0][2] + idx[1] * primitive_vectors[1][2] + idx[2] * primitive_vectors[2][2];
+    Rsq_[ivec] = rvec_[pos]*rvec_[pos] + rvec_[pos+1]*rvec_[pos+1] + rvec_[pos+2]*rvec_[pos+2];
+    T_[ivec] = Rsq_[ivec] * beta_ * beta_;
   }
-  assert(cnt == nvec);
 
   for (int l = 0; l <= lmax_; ++l) {
     root_weight(l, nvec);
@@ -93,25 +96,34 @@ void LocalExps::compute_mlm() {
           glower += cweights[i] * pow(croots[i], l);
       }
 
-      Gamma gamma_func;
-      const double gamma = gamma_func(2*l+1);
+      Gamma_scaled gamma_sc;
+      const double coeff = 2.0 * pow(beta_, 2*l+1) * gamma_sc(l, r);
+#if 0 ////DEBUG
+      const double boost_gamma_sc = pow(r, l) / boost::math::tgamma(l+0.5);
+      const double bagel_gamma_sc = gamma_sc(l, r);
+      const double error1 = boost_gamma_sc - bagel_gamma_sc;
+      if (abs(error1) > 1e-14) {
+        cout << setprecision(9) << rvec_[pos] << "  " << rvec_[pos+1] << "  " << rvec_[pos+2] << "   ";
+        cout << "(l,x) = (" << l << ", " << r << ")  " << setprecision(9) << bagel_gamma_sc << " ***  boost = " << boost_gamma_sc << endl;
+      }
+
       const double boost_gamma = 0.5 * boost::math::tgamma_lower(l+0.5, b2r2)/std::pow(b2r2, l+0.5);
       const double error = boost_gamma - glower;
       if (abs(error) > 1e-14) {
         cout << setprecision(9) << rvec_[pos] << "  " << rvec_[pos+1] << "  " << rvec_[pos+2] << "   ";
         cout << "(l,x) = (" << l << ", " << b2r2 << ")  " << setprecision(9) << glower << " ***  boost = " << boost_gamma << endl;
       }
-//      const double gupper = gamma / pow(r, l+1.0) - gupper;
+#endif ///END OF DEBUG
+      const double gupper = 1.0 / pow(r, l+1.0) - glower * coeff;
 
-#if 0
       for (int mm = 0; mm <= 2 * l; ++mm) {
         const int m = mm - l;
         const int am = abs(m);
         const int imul = l * l + mm;
 
-        double plm_tilde = plm.compute(l, abs(m), ctheta);
+        double plm_tilde = plm.compute(l, am, ctheta);
         double ft = 1.0;
-        for (int i = 1; i <= l - abs(m); ++i) {
+        for (int i = 1; i <= l - am; ++i) {
           plm_tilde *= ft;
           ft += 1.0;
         }
@@ -119,63 +131,74 @@ void LocalExps::compute_mlm() {
 
         if (is_in_cff(ws_, id[0], id[1], id[2])) {
           // real term
-          const double real = gupper * sign * plm_tilde / gamma;
+          const double real = gupper * sign * plm_tilde;
           const double imag = gupper * sin(am * phi) * plm_tilde;
-          mlm[imul] += complex<double>(real, imag);
+          mlm_[imul] += complex<double>(real, imag);
         }
       }
-#endif
     }
-
   }
 
-#if 0
   array<double, 3> a23 = cross(primitive_vectors[1], primitive_vectors[2], 1.0);
-  const double scale = 2.0 * pi__ / dot(primitive_vectors[0], a23);
+  const double scale = 1.0 / dot(primitive_vectors[0], a23);
+  /////const double scale = 2.0 * pi__ / dot(primitive_vectors[0], a23);
   vector<array<double, 3>> primitive_kvectors(3);
   primitive_kvectors[0] = cross(primitive_vectors[1], primitive_vectors[2], scale);
   primitive_kvectors[1] = cross(primitive_vectors[2], primitive_vectors[0], scale);
   primitive_kvectors[2] = cross(primitive_vectors[0], primitive_vectors[1], scale);
 
-  cnt = 0;
-  for (int n3 = -limit_; n3 <= limit_; ++n3) {
-    for (int n2 = -limit_; n2 <= limit_; ++n2) {
-      for (int n1 = -limit_; n1 <= limit_; ++n1, ++cnt) {
-        const int pos = cnt * 3;
-        kvec_[pos    ] = n1 * primitive_kvectors[0][0] + n2 * primitive_kvectors[1][0] + n3 * primitive_kvectors[2][0];
-        kvec_[pos + 1] = n1 * primitive_kvectors[0][1] + n2 * primitive_kvectors[1][1] + n3 * primitive_kvectors[2][1];
-        kvec_[pos + 2] = n1 * primitive_kvectors[0][2] + n2 * primitive_kvectors[1][2] + n3 * primitive_kvectors[2][2];
-        Rsq_[nvec + cnt] = kvec_[pos]*kvec_[pos] + kvec_[pos+1]*kvec_[pos+1] * kvec_[pos+2]*kvec_[pos+2];
-        T_[nvec + cnt] = Rsq_[nvec + cnt] * beta_ * beta_;
-      }
-    }
+  for (int ivec = 0; ivec != nvec; ++ivec) {
+    const int pos = ivec * 3;
+    array<int, 3> idx = vindex[ivec];
+    kvec_[pos    ] = idx[0] * primitive_kvectors[0][0] + idx[1] * primitive_kvectors[1][0] + idx[2] * primitive_kvectors[2][0];
+    kvec_[pos + 1] = idx[0] * primitive_kvectors[0][1] + idx[1] * primitive_kvectors[1][1] + idx[2] * primitive_kvectors[2][1];
+    kvec_[pos + 2] = idx[0] * primitive_kvectors[0][2] + idx[1] * primitive_kvectors[1][2] + idx[2] * primitive_kvectors[2][2];
+    Rsq_[ivec] = kvec_[pos]*kvec_[pos] + kvec_[pos+1]*kvec_[pos+1] + kvec_[pos+2]*kvec_[pos+2];
+    T_[ivec] = Rsq_[ivec] * beta_ * beta_;
   }
 
-  for (int ivec = 0; ivec != nvec; ++ivec) {
-    array<int, 3> id = vindex[ivec];
+#if 1
+  fill_n(roots_, max_rank_ * nvec, 0.0);
+  fill_n(weights_, max_rank_ * nvec, 0.0);
+  for (int l = 0; l <= lmax_; ++l) {
+    const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5);
+    root_weight(l, nvec);
+    const int rank = l + 1;
 
-    const int pos = ivec * 3;
-    const double rsq = Rsq_[nvec + ivec];
-    const double r = sqrt(rsq);
-    const double ctheta = (rsq > numerical_zero__) ? kvec_[pos+2]/r : 0.0;
-    const double phi = atan2(kvec_[pos+1], kvec_[pos]);
-    const double b2r2 = T_[nvec + ivec];
-    const double* croots = roots_ + nvec + ivec * max_rank_;
-    const double* cweights = weights_ + nvec + ivec * max_rank_;
 
-    for (int l = 0; l <= lmax_; ++l) {
-      const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5);
-      Gamma gamma_func;
-      const double gamma  = gamma_func(2*l+1);
-      const double glower = cweights[l] * croots[l];
+    for (int ivec = 0; ivec != nvec; ++ivec) {
+      array<int, 3> id = vindex[ivec];
+
+      const int pos = ivec * 3;
+      const double rsq = Rsq_[ivec];
+      const double r = sqrt(rsq);
+      const double ctheta = (rsq > numerical_zero__) ? kvec_[pos+2]/r : 0.0;
+      const double phi = atan2(kvec_[pos+1], kvec_[pos]);
+      const double b2r2 = T_[ivec];
+      const double* croots = roots_ + ivec * rank;
+      const double* cweights = weights_ + ivec * rank;
+
+      double glower = 0.0;
+      if (l == 0) {
+        for (int i = 0; i != rank; ++i)
+          glower += cweights[i];
+      } else {
+        for (int i = 0; i != rank; ++i)
+          glower += cweights[i] * pow(croots[i], l);
+      }
+
+      Gamma_scaled gamma_sc;
+      const double gamma_coeff = gamma_sc(l, r);
+      const double coeff = 2.0 * pow(beta_, 2*l+1) * gamma_coeff;
+
       for (int mm = 0; mm <= 2 * l; ++mm) {
         const int m = mm - l;
         const int am = abs(m);
         const int imul = l * l + mm;
 
-        double plm_tilde = plm.compute(l, abs(m), ctheta);
+        double plm_tilde = plm.compute(l, am, ctheta);
         double ft = 1.0;
-        for (int i = 1; i <= l - abs(m); ++i) {
+        for (int i = 1; i <= l - am; ++i) {
           plm_tilde *= ft;
           ft += 1.0;
         }
@@ -184,19 +207,17 @@ void LocalExps::compute_mlm() {
 
         if (!is_in_cff(ws_, id[0], id[1], id[2])) {
           // substract smooth part within ws_
-          const double real = glower * sign * plm_tilde / gamma;
-          const double imag = glower * sin(am * phi) * plm_tilde;
-          mlm_[cnt] -= complex<double>(real, imag);
+          const double real = coeff * glower * sign * plm_tilde;
+          const double imag = coeff * glower * sin(am * phi) * plm_tilde;
+          mlm_[imul] -= complex<double>(real, imag);
         }
         // smooth term
-        const double coeffm = plm_tilde * pow(r, l-2) *  exp(-rsq * pibeta);
-        double real = coeffm * sign / gamma;
+        const double coeffm = plm_tilde * gamma_coeff *  exp(-rsq * pibeta) / (r * r);
+        double real = coeffm * sign;
         double imag = coeffm * sin(am * phi);
-        mlm_[cnt] += coeffl * complex<double>(real, imag);
+        mlm_[imul] += coeffl * complex<double>(real, imag);
       }
     }
-
-    ++ivec;
   }
 #endif
 };
@@ -222,7 +243,7 @@ void LocalExps::root_weight(const int l, const int size) {
 
 void LocalExps::allocate_arrays(const size_t ps) {
 
-  size_allocated_ = (max_rank_ * 2 + 9) * ps;
+  size_allocated_ = (max_rank_ * 2 + 8) * ps;
   buff_ = stack_->get(size_allocated_);
   double* pointer = buff_;
 
@@ -230,7 +251,6 @@ void LocalExps::allocate_arrays(const size_t ps) {
   kvec_  = pointer;   pointer += ps * 3;
   Rsq_ = pointer;       pointer += ps;
   T_ = pointer;       pointer += ps;
-  coeff_ = pointer;   pointer += ps;
   roots_ = pointer;   pointer += max_rank_ * ps;
   weights_ = pointer; pointer += max_rank_ * ps;
 }

@@ -20,7 +20,6 @@ class LocalExps {
     double *rvec_, *kvec_;
     double* T_;
     double* Rsq_;
-    double* coeff_;
     double *roots_, *weights_;
 
     std::vector<std::complex<double>> mlm_;
@@ -52,7 +51,14 @@ class LocalExps {
       resources__->release(stack_);
     }
 
-   std::vector<std::complex<double>> mlm() const { return mlm_; }
-   std::complex<double> mlm(const int i) const { return mlm_[i]; }
-   double mlm_real(const int i) const { return mlm_[i].real(); }
+    static bool sort_vector(std::array<int, 3> v1, std::array<int, 3> v2) {
+      int rad1 = v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2];
+      int rad2 = v2[0] * v2[0] + v2[1] * v2[1] + v2[2] * v2[2];
+      return rad1 < rad2;
+    };
+
+    std::vector<std::complex<double>> mlm() const { return mlm_; }
+    std::complex<double> mlm(const int i) const { return mlm_[i]; }
+    double mlm_real(const int i) const { return mlm_[i].real(); }
+    double mlm_imag(const int i) const { return mlm_[i].imag(); }
 };
