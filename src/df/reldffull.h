@@ -38,7 +38,10 @@ class RelDFFull : public RelDFBase {
   protected:
     std::array<std::shared_ptr<DFFullDist>,2> dffull_;
 
+    void init(std::shared_ptr<const RelDFHalf>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
+
   public:
+    RelDFFull(std::shared_ptr<const RelDFHalf>, std::shared_ptr<const ZMatrix>);
     RelDFFull(std::shared_ptr<const RelDFHalf>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
     RelDFFull(std::array<std::shared_ptr<DFFullDist>,2> a, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> basis);
     RelDFFull(const RelDFFull& o);
@@ -47,12 +50,17 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<DFFullDist> get_real() const { return dffull_[0]; }
     std::shared_ptr<DFFullDist> get_imag() const { return dffull_[1]; }
 
-    bool matches(std::shared_ptr<const RelDFFull>) const { return true; }
+    bool matches(std::shared_ptr<const RelDFFull> o) const { return alpha_matches(o); }
+    bool alpha_matches(std::shared_ptr<const RelDFFull>) const;
+
+    int nocc1() const { assert(dffull_[0]->nocc1() == dffull_[1]->nocc1()); return dffull_[0]->nocc1(); }
+    int nocc2() const { assert(dffull_[0]->nocc2() == dffull_[1]->nocc2()); return dffull_[0]->nocc2(); }
 
     std::shared_ptr<RelDFFull> copy() const { return std::make_shared<RelDFFull>(*this); }
     std::shared_ptr<RelDFFull> clone() const;
     std::shared_ptr<RelDFFull> apply_J() const;
     std::shared_ptr<RelDFFull> apply_JJ() const;
+    std::shared_ptr<RelDFFull> swap() const;
 
     // zaxpy
     void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFFull> o) { ax_plus_y(a, *o); }
@@ -77,6 +85,77 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const RelDFFull>, const double fac, const int i) const;
 
     std::shared_ptr<RelDFFull> apply_2rdm(std::shared_ptr<const ZRDM<2>>) const;
+};
+
+
+class ListRelDFFull {
+  protected:
+    std::list<std::shared_ptr<RelDFFull>> data_;
+  public:
+    ListRelDFFull() { }
+    ListRelDFFull(std::list<std::shared_ptr<RelDFFull>> o) : data_(o) { }
+
+    std::list<std::shared_ptr<RelDFFull>>::iterator begin() { return data_.begin(); }
+    std::list<std::shared_ptr<RelDFFull>>::iterator end() { return data_.end(); }
+    std::list<std::shared_ptr<RelDFFull>>::const_iterator begin() const { return data_.cbegin(); }
+    std::list<std::shared_ptr<RelDFFull>>::const_iterator end() const { return data_.cend(); }
+
+    void push_back(std::shared_ptr<RelDFFull> a) { data_.push_back(a); }
+
+    int nocc1() const { assert(!data_.empty()); return data_.front()->nocc1(); }
+    int nocc2() const { assert(!data_.empty()); return data_.front()->nocc2(); }
+
+    std::shared_ptr<ListRelDFFull> swap() const {
+      auto out = std::make_shared<ListRelDFFull>();
+      for (auto& i : data_)
+        out->push_back(i->swap());
+      return out;
+    }
+
+    std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const ListRelDFFull> o, const double fac) const {
+      std::shared_ptr<ZMatrix> out;
+      for (auto& ii : data_)
+        for (auto& jj : o->data_)
+          if (ii->alpha_matches(jj)) {
+            if (out) {
+              *out += *ii->form_4index(jj, fac);
+            } else {
+              out = ii->form_4index(jj, fac);
+            }
+          }
+      assert(out);
+      return out;
+    }
+
+    std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const ListRelDFFull> o, const double fac, const int i) const {
+      std::shared_ptr<ZMatrix> out;
+      for (auto& ii : data_)
+        for (auto& jj : o->data_)
+          if (ii->alpha_matches(jj)) {
+            if (out) {
+              *out += *ii->form_4index_1fixed(jj, fac, i);
+            } else {
+              out = ii->form_4index_1fixed(jj, fac, i);
+            }
+          }
+      assert(out);
+      return out;
+    }
+
+    std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const ListRelDFFull> o, const double fac, const bool conjugate_left = true) const {
+      std::shared_ptr<ZMatrix> out;
+      for (auto& ii : data_)
+        for (auto& jj : o->data_)
+          if (ii->alpha_matches(jj)) {
+            if (out) {
+              *out += *ii->form_2index(jj, fac, conjugate_left);
+            } else {
+              out = ii->form_2index(jj, fac, conjugate_left);
+            }
+          }
+      assert(out);
+      return out;
+    }
 };
 
 }

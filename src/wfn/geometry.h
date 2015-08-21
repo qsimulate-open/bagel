@@ -56,6 +56,8 @@ class Geometry : public Molecule {
     // Magnetism-specific parameters
     bool magnetism_;
     bool london_;
+    bool use_finite_;
+    bool use_ecp_basis_;
 
     // Lattice parameters
     std::vector<std::array<double, 3>> primitive_vectors_;
@@ -67,7 +69,8 @@ class Geometry : public Molecule {
 
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<Molecule>(*this) << schwarz_thresh_ << overlap_thresh_ << magnetism_ << london_;
+      ar << boost::serialization::base_object<Molecule>(*this);
+      ar << schwarz_thresh_ << overlap_thresh_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_;
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -77,7 +80,8 @@ class Geometry : public Molecule {
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> boost::serialization::base_object<Molecule>(*this) >> schwarz_thresh_ >> overlap_thresh_ >> magnetism_ >> london_;
+      ar >> boost::serialization::base_object<Molecule>(*this);
+      ar >> schwarz_thresh_ >> overlap_thresh_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_;
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;

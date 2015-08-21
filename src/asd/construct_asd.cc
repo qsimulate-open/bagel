@@ -33,7 +33,7 @@ using namespace bagel;
 
 namespace bagel {
 
-shared_ptr<ASD_base> construct_ASD(shared_ptr<const PTree> itree, shared_ptr<Dimer> dimer) {
+shared_ptr<ASD_base> construct_ASD(shared_ptr<const PTree> itree, shared_ptr<Dimer> dimer, bool rdm) {
   shared_ptr<ASD_base> out;
   string method = itree->get<string>("method");
   string variant = itree->get<string>("variant", "local");
@@ -41,7 +41,7 @@ shared_ptr<ASD_base> construct_ASD(shared_ptr<const PTree> itree, shared_ptr<Dim
   if (method == "cas" || method == "fci") {
     if (variant == "local") {
       shared_ptr<DimerCAS> cispace = dimer->compute_cispace<CASDvec>(itree);
-      out = make_shared<ASD_CAS>(itree, dimer, cispace);
+      out = make_shared<ASD_CAS>(itree, dimer, cispace, rdm);
     }
     else if (variant == "dist" || variant == "parallel") {
       shared_ptr<DimerDistCAS> cispace = dimer->compute_cispace<DistDvec>(itree);
@@ -54,7 +54,7 @@ shared_ptr<ASD_base> construct_ASD(shared_ptr<const PTree> itree, shared_ptr<Dim
   else if (method == "ras") {
     if (variant == "local") {
       shared_ptr<DimerRAS> cispace = dimer->compute_rcispace<RASDvec>(itree);
-      out = make_shared<ASD_RAS>(itree, dimer, cispace);
+      out = make_shared<ASD_RAS>(itree, dimer, cispace, rdm);
     }
     else if (variant == "dist" || variant == "parallel") {
       shared_ptr<DimerDistRAS> cispace = dimer->compute_rcispace<DistRASDvec>(itree);

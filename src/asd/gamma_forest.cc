@@ -28,6 +28,56 @@
 using namespace std;
 using namespace bagel;
 
+
+//TODO template to other VecType
+template <>
+void GammaTask<CASDvec>::compute() {
+  constexpr int nops = 4;
+  const int norb = tree_->norb();
+
+  auto action = [] (const int op) { return is_creation(GammaSQ(op)); };
+  auto spin = [] (const int op) { return is_alpha(GammaSQ(op)); };
+
+  shared_ptr<GammaBranch<CASDvec>> first = tree_->base()->branch(operation_);
+  assert(first->active()); // This should have been checked before sending it to the TaskQueue
+
+  shared_ptr<CASDvec> avec = tree_->ket()->apply_and_allocate(action(static_cast<int>(operation_)), spin(static_cast<int>(operation_))); //workspace
+  avec->apply_and_fill(tree_->ket(), a_, action(static_cast<int>(operation_)), spin(static_cast<int>(operation_))); //fill
+
+  for (auto& ibra : first->bras())
+    dot_product(ibra.second, avec, first->gammas().find(ibra.first)->second->element_ptr(0,a_));
+
+  for (int j = 0; j < nops; ++j) {
+    auto second = first->branch(j);
+    if (!second->active()) continue;
+
+    shared_ptr<CASDvec> bvec = avec->apply_and_allocate(action(j), spin(j));
+
+    for (int b = 0; b < norb; ++b) {
+      if (b==a_ && j==static_cast<int>(operation_)) continue;
+      bvec->apply_and_fill(avec, b, action(j), spin(j));
+      for (auto& jbra : second->bras())
+        dot_product(jbra.second, bvec, second->gammas().find(jbra.first)->second->element_ptr(0, a_*norb + b));
+
+      for (int k = 0; k < nops; ++k) {
+        shared_ptr<GammaBranch<CASDvec>> third = second->branch(k);
+        if (!third->active()) continue;
+
+        shared_ptr<CASDvec> cvec = bvec->apply_and_allocate(action(k), spin(k));
+
+        for (int c = 0; c < norb; ++c) {
+          if (b==c && k==j) continue;
+          cvec->apply_and_fill(bvec, c, action(k), spin(k));
+          for (auto& kbra : third->bras())
+            dot_product(kbra.second, cvec, third->gammas().find(kbra.first)->second->element_ptr(0, a_*norb*norb + b*norb + c));
+        }
+      }
+    }
+  }
+
+}
+
+
 // TODO this needs to be improved
 template <>
 void GammaForest<DistDvec, 2>::compute() {

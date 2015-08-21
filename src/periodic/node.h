@@ -55,10 +55,9 @@ class Node {
     void insert_child(std::shared_ptr<const Node> = NULL);
     void init();
     void get_interaction_list();
-    void compute_position();
     void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
-    void insert_neighbour(std::shared_ptr<const Node> neigh, const bool is_neighbour = false, const int ws = 2);
-    void make_interaction_list(const int ws = 2);
+    void insert_neighbour(std::shared_ptr<const Node> neigh, const bool is_neighbour = false, const int ws = 1);
+    void make_interaction_list(const int ws = 1);
 
     int nbasis_;
     bool is_same_as_parent_;
@@ -67,9 +66,11 @@ class Node {
     std::vector<std::shared_ptr<const ZMatrix>> local_moment_;
     std::shared_ptr<const ZMatrix> local_expansion_;
     std::vector<std::shared_ptr<const ZMatrix>> child_local_expansion_;
+    std::array<double, 3> compute_centre(std::array<std::shared_ptr<const Shell>, 2> shells);
     void compute_multipoles(const int lmax = ANG_HRR_END);
-    void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offset);
-    std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offset);
+    void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, const std::vector<int> offsets);
+    std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offsets);
+    std::shared_ptr<const ZMatrix> compute_exact_Coulomb_FF(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offsets);
 
   public:
     Node(const std::bitset<nbit__> key = 0, const int depth = 0,
@@ -107,6 +108,7 @@ class Node {
     std::shared_ptr<const ZMatrix> local_expansion() const { return local_expansion_; }
     std::vector<std::shared_ptr<const ZMatrix>> child_local_expansion() const { return child_local_expansion_; }
     std::shared_ptr<const ZMatrix> child_local_expansion(const int i) const { return child_local_expansion_[i]; }
+    void print_node() const;
 };
 
 }

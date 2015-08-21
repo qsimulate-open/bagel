@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+// Specialized class of DF integral tensors for complex basis functions, currently only used for GIAO
+// The design of this class is not entirely satisfactory, see issue #50 on github.com/nubakery/BAGEL
+
 
 #ifndef __SRC_DF_COMPLEXDF_H
 #define __SRC_DF_COMPLEXDF_H

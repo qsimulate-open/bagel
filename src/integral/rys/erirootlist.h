@@ -49,6 +49,14 @@ struct ERIRootList  {
     static void eriroot11(const double*, double*, double*, const int);
     static void eriroot12(const double*, double*, double*, const int);
     static void eriroot13(const double*, double*, double*, const int);
+    static void eriroot14(const double*, double*, double*, const int);
+    static void eriroot15(const double*, double*, double*, const int);
+    static void eriroot16(const double*, double*, double*, const int);
+    static void eriroot17(const double*, double*, double*, const int);
+    static void eriroot18(const double*, double*, double*, const int);
+    static void eriroot19(const double*, double*, double*, const int);
+    static void eriroot20(const double*, double*, double*, const int);
+    static void eriroot21(const double*, double*, double*, const int);
 
 
   public:
@@ -66,6 +74,14 @@ struct ERIRootList  {
       rfunc[11] = &eriroot11;
       rfunc[12] = &eriroot12;
       rfunc[13] = &eriroot13;
+      rfunc[14] = &eriroot14;
+      rfunc[15] = &eriroot15;
+      rfunc[16] = &eriroot16;
+      rfunc[17] = &eriroot17;
+      rfunc[18] = &eriroot18;
+      rfunc[19] = &eriroot19;
+      rfunc[20] = &eriroot20;
+      rfunc[21] = &eriroot21;
     }
 
     void root(const int i, const double* a1, double* a2, double* a3, const int a4) const { rfunc[i](a1, a2, a3, a4); }

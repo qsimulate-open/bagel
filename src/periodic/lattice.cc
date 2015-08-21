@@ -79,12 +79,12 @@ void Lattice::init() {
 
   ndim_ = primitive_cell_->primitive_vectors().size();
   if (ndim_ > 3)
-    cout << "  *** Warning: Dimension in P-SCF is greater than 3!" << endl;
+    throw runtime_error("  *** Warning: Dimension in P-SCF is greater than 3!");
   primitive_kvectors_.resize(ndim_);
 
   /* TODO: temp parameters */
-  ncell_ = 30;
-  k_parameter_ = 61;
+  ncell_ = 4;
+  k_parameter_ = 3;
   assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
 
   num_lattice_vectors_ = pow(2*ncell_+1, ndim_);
@@ -197,6 +197,32 @@ void Lattice::init_df(const double thresh) {
        << setprecision(3) << naux * nbas * nbas * num_lattice_vectors_* 8.e-9 << " GB" << endl;
   Timer time;
   form_df(thresh);
+  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
+}
+
+
+void Lattice::init_pfmm(const int lmax, const int ws, const double thresh) {
+
+  cout << "  Since PFMM option is specified, we will construct simulation cell." << endl;
+  Timer time;
+  bool is_cubic = true;
+  for (int i = 0; i != ndim_; ++i)
+    for (int j = 0; j != ndim_; ++j) {
+      const double dp = dot(primitive_cell_->primitive_vectors(i), primitive_cell_->primitive_vectors(j));
+      if (dp > numerical_zero__) {
+        is_cubic = false;
+        break;
+      }
+    }
+
+  if (is_cubic) {
+    cout << "  Provided unit cell is cubic, simulation cell is the same as primitive cell." << endl;
+    form_pfmm(is_cubic, lmax, ws, thresh);
+  } else {
+    cout << "  Provided unit cell is non-cubic, simulation cell is the smallest cubic cell that encloses the unit cell." << endl;
+    throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
+  }
+
   cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
 }
 
@@ -354,7 +380,7 @@ void Lattice::print_lattice_coordinates() const {
 
 array<double, 3> Lattice::cell_centre(const int icell) const {
 
-  array<double, 3> displacement = lattice_vectors_[icell];
+  const array<double, 3> displacement = lattice_vectors_[icell];
 
   array<double, 3> out;
   out[0] = centre(0) + displacement[0];
@@ -373,4 +399,16 @@ void Lattice::form_df(const double thresh) { /*form df object for all blocks in 
   vector<shared_ptr<const Atom>> aux_atoms = primitive_cell_->aux_atoms();
 
   df_ = make_shared<PDFDist>(lattice_vectors_, nbasis, naux, atoms0, aux_atoms, primitive_cell_, thresh);
+}
+
+
+
+void Lattice::form_pfmm(const bool is_cubic, const int lmax, const int ws, const double thresh) {
+
+  if (is_cubic) {
+    auto scell = make_shared<const SimulationCell>(primitive_cell_);
+    pfmm_ = make_shared<const PFMM>(scell, lmax, ws, thresh);
+  } else {
+    throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
+  }
 }

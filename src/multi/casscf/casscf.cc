@@ -134,8 +134,6 @@ void CASSCF::common_init() {
   resume_stdcout();
 
 
-  schwarz_ = geom_->schwarz();
-
   cout <<  "  === CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
 }
@@ -292,20 +290,6 @@ shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold
   dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, mat->data(), nact_,
                    0.0, cnew->data()+nbas*nclosed_, nbas);
   return cnew;
-}
-
-
-
-shared_ptr<Matrix> CASSCF::form_natural_orbs() {
-  // here make a natural orbitals and update the coefficients
-  // this effectively updates 1,2RDM and integrals
-  const pair<shared_ptr<Matrix>, VectorB> natorb = fci_->natorb_convert();
-  // new coefficients
-  coeff_ = update_coeff(coeff_, natorb.first);
-  // occupation number of the natural orbitals
-  occup_ = natorb.second;
-  if (natocc_) print_natocc();
-  return natorb.first;
 }
 
 

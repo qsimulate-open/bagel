@@ -48,6 +48,7 @@
 #include <src/smith/caspt2grad.h>
 #include <src/periodic/pscf.h>
 #include <src/prop/current.h>
+#include <src/prop/moprint.h>
 #include <src/wfn/construct_method.h>
 
 using namespace std;
@@ -60,16 +61,17 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
 
   shared_ptr<Method> out;
   if (!geom->magnetism()) {
-    if (title == "hf")          out = make_shared<RHF>(itree, geom, ref);
-    else if (title == "ks")     out = make_shared<KS>(itree, geom, ref);
-    else if (title == "uhf")    out = make_shared<UHF>(itree, geom, ref);
-    else if (title == "rohf")   out = make_shared<ROHF>(itree, geom, ref);
-    else if (title == "soscf")  out = make_shared<SOSCF>(itree, geom, ref);
-    else if (title == "mp2")    out = make_shared<MP2>(itree, geom, ref);
-    else if (title == "dhf")    out = make_shared<Dirac>(itree, geom, ref);
-    else if (title == "dmp2")   out = make_shared<DMP2>(itree, geom, ref);
-    else if (title == "smith")  out = make_shared<Smith>(itree, geom, ref);
-    else if (title == "zfci")   out = make_shared<ZHarrison>(itree, geom, ref);
+    if (title == "hf")            out = make_shared<RHF>(itree, geom, ref);
+    else if (title == "ks")       out = make_shared<KS>(itree, geom, ref);
+    else if (title == "uhf")      out = make_shared<UHF>(itree, geom, ref);
+    else if (title == "rohf")     out = make_shared<ROHF>(itree, geom, ref);
+    else if (title == "soscf")    out = make_shared<SOSCF>(itree, geom, ref);
+    else if (title == "mp2")      out = make_shared<MP2>(itree, geom, ref);
+    else if (title == "dhf")      out = make_shared<Dirac>(itree, geom, ref);
+    else if (title == "dmp2")     out = make_shared<DMP2>(itree, geom, ref);
+    else if (title == "smith")    out = make_shared<Smith>(itree, geom, ref);
+    else if (title == "relsmith") out = make_shared<RelSmith>(itree, geom, ref);
+    else if (title == "zfci")     out = make_shared<ZHarrison>(itree, geom, ref);
     else if (title == "ras") {
       const string algorithm = itree->get<string>("algorithm", "");
       if ( algorithm == "local" || algorithm == "" ) {
@@ -112,7 +114,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       // TODO to be called from optimizer
       out = make_shared<CASPT2Grad>(itree, geom, ref);
     }
-    else if (title == "nevpt2")  out = make_shared<NEVPT2>(itree, geom, ref);
+    else if (title == "nevpt2")  out = make_shared<NEVPT2<double>>(itree, geom, ref);
+    else if (title == "dnevpt2") out = make_shared<NEVPT2<complex<double>>>(itree, geom, ref);
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
       if (algorithm == "superci" || algorithm == "")
@@ -123,8 +126,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<ZCASBFGS>(itree, geom, ref);
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
-    }
-    else if (title == "current")  throw runtime_error("Charge currents are only available when using a GIAO basis set reference.");
+    } else if (title == "current")  throw runtime_error("Charge currents are only available when using a GIAO basis set reference.");
+    else if (title == "moprint") out = make_shared<MOPrint>(itree, geom, ref);
     else if (title == "pscf") out = make_shared<PSCF>(itree, geom, ref);
 
   // now the versions to use with magnetic fields
@@ -143,6 +146,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<ZCASBFGS>(itree, geom, ref);
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
+    } else if (title == "moprint") { out = make_shared<MOPrint>(itree, geom, ref);
     } else if (title == "molecule") {
     } else
       throw runtime_error(to_upper(title) + " method has not been implemented with an applied magnetic field.");

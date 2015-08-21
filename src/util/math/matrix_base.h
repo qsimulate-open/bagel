@@ -333,6 +333,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
     void unit() { zero(); for (int i = 0; i != ndim(); ++i) element(i,i) = DataType(1.0); assert(ndim() == mdim());}
 
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const DataType* o) {
+      assert(nstart >=0 && mstart >=0 && nstart + nsize <= ndim() && mstart + msize <= mdim());
       for (size_t i = mstart, j = 0; i != mstart + msize; ++i, ++j)
         std::copy_n(o + j*nsize, nsize, data() + nstart + i*ndim());
     }
@@ -346,6 +347,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
     }
 
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const DataType* o) {
+      assert(nstart >=0 && mstart >=0 && nstart + nsize <= ndim() && mstart + msize <= mdim());
       for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
         blas::ax_plus_y_n(a, o+j*nsize, nsize, element_ptr(nstart, i));
     }

@@ -58,7 +58,7 @@ void FCI::compute_rdm12() {
     rdm2_av_->zero();
   }
   // we need expanded lists
-  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, /*compressed=*/false, /*mute=*/true);
   cc_->set_det(detex);
 
   for (int i = 0; i != nstate_; ++i)
@@ -303,6 +303,8 @@ pair<shared_ptr<Matrix>, VectorB> FCI::natorb_convert() {
   pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_av_->generate_natural_orbitals();
   update_rdms(natorb.first);
   jop_->update_1ext_ints(natorb.first);
+  for (auto& i : natorb.second)
+    if (i < numerical_zero__) i = 0.0;
   return natorb;
 }
 

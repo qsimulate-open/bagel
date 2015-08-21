@@ -27,23 +27,29 @@
 #ifndef __SRC_PERIODIC_PFMM_H
 #define __SRC_PERIODIC_PFMM_H
 
-#include <src/periodic/pmultipole.h>
-#include <src/periodic/localexpansion.h>
+#include <src/periodic/simulationcell.h>
+#include <src/periodic/pdata.h>
 
 namespace bagel {
 
 class PFMM {
   protected:
-    std::shared_ptr<const Lattice> lattice_;
-    int lmax_;
+    std::shared_ptr<const SimulationCell> scell_;
+    int lmax_, ws_;
+    int ndim_;
     int num_multipoles_;
+    std::vector<std::complex<double>> mlm_;
 
   public:
-    PFMM(std::shared_ptr<const Lattice> lattice, const int lmax = ANG_HRR_END);
+    PFMM(std::shared_ptr<const SimulationCell>, const int lmax = ANG_HRR_END, const int ws = 2, const double thresh = PRIM_SCREEN_THRESH);
     ~PFMM() { }
 
-    std::vector<std::vector<std::complex<double>>> multipoles(const std::shared_ptr<const PData> density);
-    void print_multipoles(std::vector<std::complex<double>> multipoles) const;
+    std::vector<std::complex<double>> mlm() const { return mlm_; }
+
+    bool is_in_cff(std::array<double, 3> lvector);
+    void compute_mlm(const int limit = 100, const double thresh = PRIM_SCREEN_THRESH);
+    void compute_Sn(const double thresh = PRIM_SCREEN_THRESH, const int max_iter = 20);
+    std::shared_ptr<PData> compute_Jop(std::shared_ptr<const PData> density);
 
 };
 

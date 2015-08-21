@@ -37,8 +37,11 @@
 namespace bagel {
 namespace SMITH {
 
+template<typename DataType>
 class SpinFreeMethod {
   protected:
+    using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
+
     IndexRange virt_;
     IndexRange active_;
     IndexRange closed_;
@@ -51,46 +54,48 @@ class SpinFreeMethod {
     std::shared_ptr<const IndexRange> rclosed_;
     std::shared_ptr<const IndexRange> rci_;
 
-    std::shared_ptr<const SMITH_Info> ref_;
+    std::shared_ptr<const SMITH_Info<DataType>> info_;
 
-    std::shared_ptr<const Coeff> coeff_;
-    std::shared_ptr<const Civec> civec_;
+    std::shared_ptr<const MatType> coeff_;
     double e0_;
     double core_energy_;
     double energy_;
 
-    std::shared_ptr<Tensor> v2_;
-    std::shared_ptr<Tensor> f1_;
-    std::shared_ptr<Tensor> h1_;
+    std::shared_ptr<Tensor_<DataType>> v2_;
+    std::shared_ptr<Tensor_<DataType>> f1_;
+    std::shared_ptr<Tensor_<DataType>> h1_;
 
     // contains the current RDMs to be used in smith
-    std::shared_ptr<Tensor> rdm1_;
-    std::shared_ptr<Tensor> rdm2_;
-    std::shared_ptr<Tensor> rdm3_;
-    std::shared_ptr<Tensor> rdm4_;
+    std::shared_ptr<Tensor_<DataType>> rdm0_;
+    std::shared_ptr<Tensor_<DataType>> rdm1_;
+    std::shared_ptr<Tensor_<DataType>> rdm2_;
+    std::shared_ptr<Tensor_<DataType>> rdm3_;
+    std::shared_ptr<Tensor_<DataType>> rdm4_;
 
     // contains all the RDMs (for multistate runs)
-    std::shared_ptr<Vec<Tensor>> rdm1all_;
-    std::shared_ptr<Vec<Tensor>> rdm2all_;
-    std::shared_ptr<Vec<Tensor>> rdm3all_;
-    std::shared_ptr<Vec<Tensor>> rdm4all_;
+    std::shared_ptr<Vec<Tensor_<DataType>>> rdm0all_;
+    std::shared_ptr<Vec<Tensor_<DataType>>> rdm1all_;
+    std::shared_ptr<Vec<Tensor_<DataType>>> rdm2all_;
+    std::shared_ptr<Vec<Tensor_<DataType>>> rdm3all_;
+    std::shared_ptr<Vec<Tensor_<DataType>>> rdm4all_;
     // the function to set RDMs to rdm1_, rdm2_, etc
     void set_rdm(const int jst, const int ist);
 
-    // original determinants (for use in output)
-    std::shared_ptr<const Determinants> det_;
-
     // rdm ci derivatives
-    std::shared_ptr<Tensor> rdm0deriv_;
-    std::shared_ptr<Tensor> rdm1deriv_;
-    std::shared_ptr<Tensor> rdm2deriv_;
-    std::shared_ptr<Tensor> rdm3deriv_;
-    std::shared_ptr<Tensor> rdm4deriv_;
+    std::shared_ptr<Tensor_<DataType>> rdm0deriv_;
+    std::shared_ptr<Tensor_<DataType>> rdm1deriv_;
+    std::shared_ptr<Tensor_<DataType>> rdm2deriv_;
+    std::shared_ptr<Tensor_<DataType>> rdm3deriv_;
+    std::shared_ptr<Tensor_<DataType>> rdm4deriv_;
 
-    std::shared_ptr<Tensor> sigma_;
+    std::shared_ptr<Tensor_<DataType>> sigma_;
 
     // the diagonal denominator
     std::vector<double> eig_;
+
+    // init functions
+    void feed_rdm_denom(std::shared_ptr<const MatType> fockact);
+    void feed_rdm_deriv(std::shared_ptr<const MatType> fockact);
 
     // printing functions called from the solve function of a derived class
     static void print_iteration();
@@ -101,44 +106,46 @@ class SpinFreeMethod {
     double compute_e0();
 
     // denominator objects
-    std::vector<std::shared_ptr<const Denom>> denom_;
+    std::shared_ptr<const Denom<DataType>> denom_;
 
     // update t from the residual and denominator (this function does not zero out).
-    void update_amplitude(std::shared_ptr<Tensor> t, std::shared_ptr<const Tensor> r, std::shared_ptr<const Denom> denom = nullptr) const;
-    void update_amplitude(std::shared_ptr<MultiTensor> t, std::shared_ptr<const MultiTensor> r) const;
+    void update_amplitude(std::shared_ptr<Tensor_<DataType>> t, std::shared_ptr<const Tensor_<DataType>> r) const;
+    void update_amplitude(std::shared_ptr<MultiTensor_<DataType>> t, std::shared_ptr<const MultiTensor_<DataType>> r) const;
 
-    // initialize t2 amplitude
-    std::shared_ptr<Tensor> init_amplitude() const;
+    // utility function
+    void loop_over(std::function<void(const Index&, const Index&, const Index&, const Index&)>) const;
+    // initialize t2 and r amplitude
+    std::shared_ptr<Tensor_<DataType>> init_amplitude() const;
+    std::shared_ptr<Tensor_<DataType>> init_residual() const;
 
     // diagonal part of CASPT2 (for efficiency)
-    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
+    void diagonal(std::shared_ptr<Tensor_<DataType>> r, std::shared_ptr<const Tensor_<DataType>> t) const;
 
   public:
-    SpinFreeMethod(std::shared_ptr<const SMITH_Info> r);
+    SpinFreeMethod(std::shared_ptr<const SMITH_Info<DataType>> r);
 
     IndexRange& virt() { return virt_; }
     IndexRange& all() { return all_; }
     IndexRange& closed() { return closed_; }
 
-    std::shared_ptr<const SMITH_Info> ref() const { return ref_; }
-
-    std::shared_ptr<const Civec> civec() const { return civec_; }
-
-    std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+    std::shared_ptr<const SMITH_Info<DataType>> info() const { return info_; }
+    std::shared_ptr<const MatType> coeff() const { return coeff_; }
 
     double e0() const { return e0_; }
-
     double energy() const { return energy_; }
 
     virtual void solve() = 0;
 
-    std::shared_ptr<const Civec> rdm0deriv() const {
-      return rdm0deriv_->civec(det_);
-    }
-
-    double dot_product_transpose(std::shared_ptr<const Tensor> r, std::shared_ptr<const Tensor> t2) const;
-    double dot_product_transpose(std::shared_ptr<const MultiTensor> r, std::shared_ptr<const MultiTensor> t2) const;
+    DataType dot_product_transpose(std::shared_ptr<const Tensor_<DataType>> r, std::shared_ptr<const Tensor_<DataType>> t2) const;
+    DataType dot_product_transpose(std::shared_ptr<const MultiTensor_<DataType>> r, std::shared_ptr<const MultiTensor_<DataType>> t2) const;
 };
+
+template<> void SpinFreeMethod<double>::feed_rdm_denom(std::shared_ptr<const Matrix>);
+template<> void SpinFreeMethod<double>::feed_rdm_deriv(std::shared_ptr<const Matrix>);
+template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_denom(std::shared_ptr<const ZMatrix>);
+template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(std::shared_ptr<const ZMatrix>);
+extern template class SpinFreeMethod<double>;
+extern template class SpinFreeMethod<std::complex<double>>;
 
 }
 }

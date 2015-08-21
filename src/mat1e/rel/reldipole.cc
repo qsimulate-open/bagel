@@ -31,14 +31,14 @@
 using namespace std;
 using namespace bagel;
 
-array<double,3> RelDipole::compute() {
+array<shared_ptr<const ZMatrix>,3> RelDipole::compute_matrices() const {
   // first calculate AO integrals.
-  shared_ptr<const Matrix1eArray<3>> large = make_shared<const DipoleMatrix>(geom_);
+  shared_ptr<const Matrix1eArray<3>>  large = make_shared<const DipoleMatrix>(geom_);
   shared_ptr<const Matrix1eArray<12>> small = make_shared<const Small1e<DipoleBatch>>(geom_);
 
   const int n = geom_->nbasis();
 
-  array<double,3> out;
+  array<shared_ptr<const ZMatrix>,3> out;
 
   // loop over cartesian components
   for (int x = 0; x != 3; ++x) {
@@ -59,11 +59,24 @@ array<double,3> RelDipole::compute() {
     smalldip->add_real_block(w,   0, n, n, n,  (*small)[3+x*4]);
     smalldip->add_real_block(-w,  n, 0, n, n,  (*small)[3+x*4]);
 
-    auto data = make_shared<ZMatrix>(n*4, n*4);
-    data->copy_block(0, 0, 2*n, 2*n, zdip);
-    data->copy_block(2*n, 2*n, 2*n, 2*n, smalldip);
-    out[x] = density_->dot_product(data).real();
-    assert(fabs(density_->dot_product(data).imag()) < 1.0e-6);
+    auto work = make_shared<ZMatrix>(n*4, n*4);
+    work->copy_block(0, 0, 2*n, 2*n, zdip);
+    work->copy_block(2*n, 2*n, 2*n, 2*n, smalldip);
+    out[x] = work;
+  }
+  return out;
+}
+
+
+array<double,3> RelDipole::compute() const {
+  if (density_ == nullptr)
+    throw logic_error("RelDipole::compute was called without density matrix");
+
+  array<double,3> out;
+  array<shared_ptr<const ZMatrix>,3> matrices = compute_matrices();
+  for (int x = 0; x != 3; ++x) {
+    out[x] = density_->dot_product(matrices[x]).real();
+    assert(fabs(density_->dot_product(matrices[x]).imag()) < 1.0e-6);
   }
 
   cout << "    * Permanent dipole moment:" << (jobname_.empty() ? "" : " " + jobname_) << endl;

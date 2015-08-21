@@ -25,13 +25,14 @@
 
 
 #include <src/periodic/tree.h>
-#include <src/periodic/node.h>
 
 using namespace bagel;
 using namespace std;
 
-Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh, const int ws)
- : geom_(geom), max_height_(maxht), thresh_(thresh), ws_(ws) {
+static const AtomMap atommap_;
+
+Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const bool do_contract, const double thresh, const int ws)
+ : geom_(geom), max_height_(maxht), do_contraction_(do_contract), thresh_(thresh), ws_(ws) {
 
   init();
 }
@@ -40,39 +41,125 @@ Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const double thresh
 void Tree::init() {
 
   assert(max_height_ <= (nbit__ - 1)/3);
-  nvertex_ = geom_->natom();
   position_ = geom_->charge_center();
-  nbasis_ = 0;
-  coordinates_.resize(nvertex_);
-  for (int i = 0; i != nvertex_; ++i) {
-    coordinates_[i] = geom_->atoms(i)->position();
-    nbasis_ += geom_->atoms(i)->nbasis();
-  }
+  atomgroup_.resize(geom_->natom());
+  coordinates_.resize(geom_->natom());
 
-  for (int i = 0; i != nvertex_; ++i) {
-    coordinates_[i][0] -= position_[0];
-    coordinates_[i][1] -= position_[1];
-    coordinates_[i][2] -= position_[2];
+  nbasis_ = 0;
+  for (int i = 0; i != geom_->natom(); ++i)
+    nbasis_ += geom_->atoms(i)->nbasis();
+
+  shell_id_.resize(geom_->natom());
+  shell_id_[0] = 0;
+  for (int i = 1; i != geom_->natom(); ++i)
+    shell_id_[i] = shell_id_[i-1] + geom_->atoms(i-1)->nshell();
+
+  if (do_contraction_) {
+    contract_vertex();
+  } else {
+    nvertex_ = geom_->natom();
+    for (int i = 0; i != nvertex_; ++i) {
+      atomgroup_[i] = make_shared<const AtomGroup>
+                      (vector<shared_ptr<const Atom>>(1, geom_->atoms(i)), vector<int>(1, i), vector<int>(1, shell_id_[i]));
+      coordinates_[i][0] = geom_->atoms(i)->position(0) - position_[0];
+      coordinates_[i][1] = geom_->atoms(i)->position(1) - position_[1];
+      coordinates_[i][2] = geom_->atoms(i)->position(2) - position_[2];
+    }
   }
 
   ordering_.resize(nvertex_);
   iota(ordering_.begin(), ordering_.begin()+nvertex_, 0);
 
-  shell_id_.resize(nvertex_);
-  shell_id_[0] = 0;
-  for (int i = 1; i != nvertex_; ++i)
-    shell_id_[i] = shell_id_[i-1] + geom_->atoms(i-1)->nshell();
-
   get_particle_key();
   keysort();
-#if 0
-  for (int i = 0; i != nvertex_; ++i)
-    cout << leaves_[i]->key() << " *** " << setprecision(9)
-         << leaves_[i]->position(0) << "  " << leaves_[i]->position(1) << "  " << leaves_[i]->position(2) << endl;
-#endif
 
   build_tree();
 //  print_tree_xyz();
+}
+
+
+void Tree::contract_vertex() {
+
+  constexpr double pm2au = 1e-10 / au2meter__;
+  constexpr double tol = 0.0;
+  const set<string> svalence = {"h", "li", "f", "na", "cl", "k", "br", "i"};
+
+  int nvertex = 0;
+  vector<int> cont_vertex(geom_->natom(), -1);
+  for (int i = 0; i != geom_->natom(); ++i) {
+    if (cont_vertex[i] < 0) {
+      const bool is_singly_valent_atom = svalence.find(geom_->atoms(i)->name()) != svalence.end();
+      if (is_singly_valent_atom) {
+        const double rad_i = pm2au * atommap_.cov_radius(geom_->atoms(i)->name());
+
+        vector<shared_ptr<const Atom>> tmpatom;
+        vector<int> tmporder;
+        vector<int> tmpshell;
+        tmpatom.insert(tmpatom.end(), geom_->atoms(i));
+        tmporder.insert(tmporder.end(), i);
+        tmpshell.insert(tmpshell.end(), shell_id_[i]);
+        bool is_found = false;
+        for (int j = 0; j != geom_->natom(); ++j) {
+          if (j != i) {
+            array<double, 3> v12;
+            v12[0] = geom_->atoms(i)->position(0) - geom_->atoms(j)->position(0);
+            v12[1] = geom_->atoms(i)->position(1) - geom_->atoms(j)->position(1);
+            v12[2] = geom_->atoms(i)->position(2) - geom_->atoms(j)->position(2);
+            const double bondlength = sqrt(v12[0]*v12[0] + v12[1]*v12[1] + v12[2]*v12[2]);
+            const double rad_j = pm2au * atommap_.cov_radius(geom_->atoms(j)->name());
+            if (bondlength <= (1.0 + tol) * (rad_i + rad_j)) {
+              const int ivertex = cont_vertex[j];
+              is_found = true;
+              if (ivertex < 0) {
+                tmpatom.insert(tmpatom.end(), geom_->atoms(j));
+                tmporder.insert(tmporder.end(), j);
+                tmpshell.insert(tmpshell.end(), shell_id_[j]);
+                cont_vertex[i] = nvertex;
+                cont_vertex[j] = nvertex;
+
+                atomgroup_[nvertex] = make_shared<const AtomGroup>(tmpatom, tmporder, tmpshell);
+                ++nvertex;
+              } else {
+                cont_vertex[i] = ivertex;
+                const vector<shared_ptr<const Atom>> atom = atomgroup_[ivertex]->atoms();
+                const vector<int> order = atomgroup_[ivertex]->order_in_geom();
+                const vector<int> shell = atomgroup_[ivertex]->ishell();
+                tmpatom.insert(tmpatom.end(), atom.begin(), atom.end());
+                tmporder.insert(tmporder.end(), order.begin(), order.end());
+                tmpshell.insert(tmpshell.end(), shell.begin(), shell.end());
+
+                atomgroup_[ivertex] = make_shared<const AtomGroup>(tmpatom, tmporder, tmpshell);
+              }
+              break;
+            }
+          }
+        }
+        if (!is_found)
+          throw runtime_error("Found a radical");
+
+      } else {
+        atomgroup_[nvertex] = make_shared<const AtomGroup>
+                              (vector<shared_ptr<const Atom>>(1, geom_->atoms(i)), vector<int>(1, i), vector<int>(1, shell_id_[i]));
+        cont_vertex[i] = nvertex;
+        ++nvertex;
+      }
+    }
+  }
+
+  nvertex_ = nvertex;
+  atomgroup_.resize(nvertex_);
+  coordinates_.resize(nvertex_);
+  for (int i = 0; i != nvertex_; ++i) {
+    coordinates_[i][0] = atomgroup_[i]->position(0) - position_[0];
+    coordinates_[i][1] = atomgroup_[i]->position(1) - position_[1];
+    coordinates_[i][2] = atomgroup_[i]->position(2) - position_[2];
+    int iat = 0;
+    for (auto& atom : atomgroup_[i]->atoms()) {
+      cout << atom->name() << atomgroup_[i]->order_in_geom(iat) << " ";
+      ++iat;
+    }
+    cout << endl;
+  }
 }
 
 
@@ -83,12 +170,10 @@ void Tree::build_tree() {
   nodes_[0] = make_shared<Node>();
 
   bitset<nbit__>  current_key;
-  //for (int i = max_height_ - 1; i >= 0; --i) { /* top down */
-  for (int i = 1; i <= max_height_; ++i) { /* top down */
-    //const int depth = max_height_ - i;
+  const int max_height = max_height_;
+  for (int i = 1; i <= max_height; ++i) { /* top down */
     const int depth = i;
 
-    //const unsigned int shift = i * 3;
     const unsigned int shift = nbit__ - 1 - i * 3;
 
     int max_nbody = 0;
@@ -127,7 +212,10 @@ void Tree::build_tree() {
       }
 
     } // end of vertex loop
-    if (max_nbody <= 1) break;
+    if (max_nbody <= 1) {
+      max_height_ = i;
+      break;
+    }
   } // end if bit loop
   height_ = nodes_[nnode_-1]->depth();
 
@@ -142,7 +230,6 @@ void Tree::build_tree() {
         break;
       }
     }
-//    nodes_[i]->make_interaction_list(ws_);
   }
 }
 
@@ -157,17 +244,18 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
   fmmtime.tick_print("    Downward pass");
 
   // Upward pass
-  vector<int> offset;
-  for (int n = 0; n != nvertex_; ++n) {
+  vector<int> offsets;
+  for (int n = 0; n != geom_->natom(); ++n) {
     const vector<int> tmpoff = geom_->offset(n);
-    offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());
+    offsets.insert(offsets.end(), tmpoff.begin(), tmpoff.end());
   }
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   for (int i = 1; i != nnode_; ++i) {
-    nodes_[i]->compute_local_expansions(density, lmax, offset);
+    nodes_[i]->compute_local_expansions(density, lmax, offsets);
     if (nodes_[i]->is_leaf()) {
-      shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offset);
+      //////shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_exact_Coulomb_FF(density, lmax, offsets);
+      shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets);
       *out += *tmp;
     }
   }
@@ -182,7 +270,6 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
 void Tree::get_particle_key() {
 
   particle_keys_.resize(nvertex_);
-  box_length_ = 0.0;
 
   const unsigned int nbitx = (nbit__ - 1) / 3;
 
@@ -200,10 +287,6 @@ void Tree::get_particle_key() {
     }
     particle_keys_[iat] = key;
     ++iat;
-
-    const double tmp = max(pos[0], max(pos[1], pos[2]));
-    if (tmp > box_length_)
-      box_length_ = 2 * tmp;
   }
 }
 
@@ -234,7 +317,7 @@ void Tree::keysort() {
   leaves_.resize(nvertex_);
   for (int n = 0; n != nvertex_; ++n) {
     const int pos = ordering_[n];
-    auto leaf = make_shared<Vertex>(particle_keys_[n], geom_->atoms(pos), pos, shell_id_[pos]);
+    auto leaf = make_shared<Vertex>(particle_keys_[n], atomgroup_[pos]);
     leaves_[n] = leaf;
   }
 }
@@ -248,11 +331,10 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
     if (nodes_[i]->depth() != current_level) {
       ++current_level;
       cout << endl;
-      cout << geom_->natom() << endl;
+      cout << nvertex_ << endl;
       cout << "Level " << current_level << endl;
       node = 0;
     }
-//    cout << "Key = " << nodes_[i]->key() << endl;
     ++node;
     string symbol("");
     switch(node) {
@@ -321,9 +403,17 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
       case 63: symbol = "Eu"; break;
       case 64: symbol = "Gd"; break;
     }
-    for (int j = 0; j != nodes_[i]->nbody(); ++j)
+    for (int j = 0; j != nodes_[i]->nbody(); ++j) {
       cout << setw(5) << symbol << setprecision(5) << setw(10) << nodes_[i]->bodies(j)->position(0) << "   "
                                                    << setw(10) << nodes_[i]->bodies(j)->position(1) << "   "
                                                    << setw(10) << nodes_[i]->bodies(j)->position(2) << endl;
+      if (nodes_[i]->depth() == max_height_) {
+        cout << "*** Neighbours: " << endl;
+        for (auto& neigh : nodes_[i]->neighbour())
+          cout << setprecision(5) << setw(10) << neigh->position(0) << "  "
+                                  << setw(10) << neigh->position(1) << "  "
+                                  << setw(10) << neigh->position(2) << endl;
+      }
+    }
   }
 }

@@ -24,9 +24,9 @@
 //
 
 
-#include <src/multi/zcasscf/zcasscf.h>
 #include <src/multi/zcasscf/zsuperci.h>
 #include <src/multi/zcasscf/zcasbfgs.h>
+#include <src/multi/zcasscf/zcashybrid.h>
 
 double relcas_energy(std::string inp) {
 
@@ -61,6 +61,15 @@ double relcas_energy(std::string inp) {
         ref.reset();
       if (ref) ref = ref->project_coeff(geom);
 
+    } else if (method == "casscf") {
+      std::string algorithm = itree->get<std::string>("algorithm", "");
+      if (algorithm == "superci" || algorithm == "") {
+        auto cas = std::make_shared<SuperCI>(itree, geom, ref);
+        cas->compute();
+        ref = cas->conv_to_ref();
+        energy = ref->energy();
+      }
+
     } else if (method == "zcasscf") {
       std::string algorithm = itree->get<std::string>("algorithm", "");
       if (algorithm == "superci" || algorithm == "") {
@@ -70,6 +79,11 @@ double relcas_energy(std::string inp) {
         energy = ref->energy();
       } else if (algorithm == "bfgs") {
         auto zcas = std::make_shared<ZCASBFGS>(itree, geom, ref);
+        zcas->compute();
+        ref = zcas->conv_to_ref();
+        energy = ref->energy();
+      } else if (algorithm == "hybrid") {
+        auto zcas = std::make_shared<ZCASHybrid>(itree, geom, ref);
         zcas->compute();
         ref = zcas->conv_to_ref();
         energy = ref->energy();
@@ -94,11 +108,12 @@ BOOST_AUTO_TEST_CASE(ZCASSCF) {
   BOOST_CHECK(compare(relcas_energy("h2_qzvpp_superci_coulomb"), -1.01931815));
   BOOST_CHECK(compare(relcas_energy("hf_tzvpp_superci_coulomb"), -100.03016820));
   BOOST_CHECK(compare(relcas_energy("he_tzvpp_bfgs_coulomb"),    -2.875647885));
-  BOOST_CHECK(compare(relcas_energy("nh_tzvpp_triplet_gaunt"),   -55.00281016));
-  //BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),     -149.56647468));
+  BOOST_CHECK(compare(relcas_energy("nh_tzvpp_triplet_gaunt"),   -55.00281524));
+  BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),     -149.56647946));
 #ifndef DISABLE_SERIALIZATION
-  BOOST_CHECK(compare(relcas_energy("hf_tzvpp_bfgs_saveref"), -100.03016820));
+//BOOST_CHECK(compare(relcas_energy("hf_tzvpp_bfgs_saveref"), -100.03016820));
 #endif
+  BOOST_CHECK(compare(relcas_energy("lif_6-31g_bfgs_coulomb"), -106.88481827));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

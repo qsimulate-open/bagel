@@ -205,7 +205,7 @@ void FCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dvec> out
 }
 
 // returns seed determinants for initial guess
-vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
+vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) const {
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
   for (int i = 0; i != ndet; ++i) tmp.emplace(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0)));
 
@@ -227,14 +227,16 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
   return out;
 }
 
+
 void FCI::print_header() const {
   cout << "  ---------------------------" << endl;
   cout << "        FCI calculation      " << endl;
   cout << "  ---------------------------" << endl << endl;
 }
 
+
 shared_ptr<const CIWfn> FCI::conv_to_ciwfn() const {
-  return make_shared<const CIWfn>(geom_, ref_->coeff(), ncore_, norb_, ref_->coeff()->mdim() - ncore_ - norb_, energy_, cc_);
+  return make_shared<CIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, cc_->det());
 }
 
 

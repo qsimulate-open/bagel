@@ -308,7 +308,7 @@ class DistCivector {
         const size_t off = std::get<0>(outrange)*asize();
         std::copy_n(tmp.get(), out->dist_.size(i)*asize(), trans->local()+off);
         if (det_->nelea()*det_->neleb() & 1)
-          std::for_each(trans->local()+off, trans->local()+off+out->dist_.size(i)*asize(), [](DataType& a){ a = -a; });
+          blas::scale_n(static_cast<DataType>(-1.0), trans->local()+off, out->dist_.size(i)*asize());
 
         if (i != myrank) {
           out->transp_.push_back(mpi__->request_send(trans->local()+off, out->dist_.size(i)*asize(), i, myrank));
@@ -777,6 +777,9 @@ template<> void Civector<double>::spin_decontaminate(const double thresh);
 
 using Civec = Civector<double>;
 using ZCivec = Civector<std::complex<double>>;
+
+template <>
+void Dvector_base<Civec>::apply_and_fill(std::shared_ptr<const Dvector_base<Civec>> source_dvec, const int orbital, const bool action, const bool spin);
 
 using CASDvec = Dvector_base<Civec>;
 

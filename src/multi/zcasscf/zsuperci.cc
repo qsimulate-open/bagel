@@ -52,19 +52,16 @@ void ZSuperCI::compute() {
   {
     auto unit = coeff_->clone(); unit->unit();
     orthonorm = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
-    if (orthonorm > 2.5e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
+    if (orthonorm > 2.5e-13)
+      cout << "Coefficient is not sufficiently orthnormal: " << setprecision(10) << setw(15) << orthonorm << endl;;
   }
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // DIIS setup
     if (iter >= diis_start_ && gradient < 1.0e-2 && diis == nullptr) {
-      shared_ptr<ZMatrix> tmp = make_shared<ZMatrix>(coeff_->ndim(),coeff_->mdim()/2);
-      tmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
-      tmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2,nocc_*2+nvirtnr_));
-      tmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_,nocc_*2+nvirt_+nvirtnr_));
       shared_ptr<ZMatrix> unit = make_shared<ZMatrix>(coeff_->mdim()/2, coeff_->mdim()/2);
       unit->unit();
-      diis = make_shared<HPW_DIIS<ZMatrix, ZMatrix>>(10, tmp, unit);
+      diis = make_shared<HPW_DIIS<ZMatrix, ZMatrix>>(10, coeff_->electronic_part(), unit);
     }
 
     // first perform CASCI to obtain RDMs
@@ -155,32 +152,18 @@ void ZSuperCI::compute() {
     expa->purify_unitary();
 
     if (diis == nullptr) {
-      // extract electronic orbitals
-      auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
-      ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
-      ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2,nocc_*2+nvirtnr_));
-      ctmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_,nocc_*2+nvirt_+nvirtnr_));
-      // rotate orbitals
-      *ctmp *= *expa;
-      // copy electronic orbitals back to full coefficient
-      auto ctmp2 = coeff_->copy();
-      ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
-      ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2,nocc_*2+nvirtnr_));
-      ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
-      coeff_ = make_shared<const ZMatrix>(*ctmp2);
+      // rotate electronic orbitals
+      shared_ptr<ZMatrix> ctmp = coeff_->electronic_part();
+      *ctmp = *ctmp * *expa;
+      coeff_ = coeff_->update_electronic(ctmp);
     } else {
       // DIIS extrapolate
       shared_ptr<const ZMatrix> mcc = diis->extrapolate(expa);
-      // copy electronic orbitals back to full coefficient
-      auto ctmp2 = coeff_->copy();
-      ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, mcc->slice(0, nocc_*2));
-      ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, mcc->slice(nocc_*2,nocc_*2+nvirtnr_));
-      ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, mcc->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
-      coeff_ = make_shared<const ZMatrix>(*ctmp2);
+      coeff_ = coeff_->update_electronic(mcc);
     }
 
     // synchronization
-    mpi__->broadcast(const_pointer_cast<ZMatrix>(coeff_)->data(), coeff_->size(), 0);
+    mpi__->broadcast(const_pointer_cast<RelCoeff_Block>(coeff_)->data(), coeff_->size(), 0);
 
     // print out...
     resume_stdcout();
@@ -214,10 +197,13 @@ void ZSuperCI::compute() {
 
   // print out orbital populations, if needed
   if (idata_->get<bool>("pop", false)) {
-    cout << "    * Printing out population analysis to casscf.log" << endl;
+    Timer pop_timer;
+    cout << " " << endl;
+    cout << "    * Printing out population analysis of super-CI optimized orbitals to casscf.log" << endl;
     mute_stdcout();
-    population_analysis(geom_, coeff_->slice(0, nclosed_+nact_+nvirtnr_), overlap_);
+    population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_, nclosed_, nact_);
     resume_stdcout();
+    pop_timer.tick_print("population analysis");
   }
 }
 
@@ -229,12 +215,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   // qvec ; electronic contributions only
   shared_ptr<const ZMatrix> qvec;
   if (nact_) {
-    // extract electronic orbitals from coeff
-    auto coefftmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
-    coefftmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
-    coefftmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2, nocc_*2+nvirtnr_));
-    coefftmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
-    qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coefftmp, coefftmp->slice_copy(nclosed_*2, nocc_*2), nclosed_, fci_, gaunt_, breit_);
+    qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_->electronic_part(), coeff_->slice_copy(nclosed_*2, nocc_*2), nclosed_, fci_, gaunt_, breit_);
   }
 
   // calculate 1RDM in an original basis set
@@ -242,7 +223,9 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   // make natural orbitals, update coeff_ and transform rdm1
   shared_ptr<ZMatrix> natorb_coeff;
   if (nact_) {
-    natorb_coeff = make_natural_orbitals(rdm1);
+    pair<shared_ptr<ZMatrix>, VectorB> natorb_tmp = make_natural_orbitals(rdm1);
+    occup_ = natorb_tmp.second;
+    natorb_coeff = natorb_tmp.first;
     coeff_ = update_coeff(coeff_, natorb_coeff);
     qvec = update_qvec(qvec, natorb_coeff);
     rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
@@ -250,24 +233,20 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
 
   shared_ptr<const ZMatrix> cfock;
   { // Fock operators
-    // extract electronic orbitals from coeff
-    auto coefftmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
-    coefftmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
-    coefftmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2, nocc_*2+nvirtnr_));
-    coefftmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
+    shared_ptr<const ZMatrix> coeff_elec = coeff_->electronic_part();
 
     // closed Fock - same as inactive fock
     if (!nact_) {
       shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice_copy(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
-      cfock = make_shared<ZMatrix>(*coefftmp % *cfockao * *coefftmp);
+      cfock = make_shared<ZMatrix>(*coeff_elec % *cfockao * *coeff_elec);
     } else {
-      cfock = make_shared<const ZMatrix>(*coefftmp % *fci_->jop()->core_fock() * *coefftmp);
+      cfock = make_shared<const ZMatrix>(*coeff_elec % *fci_->jop()->core_fock() * *coeff_elec);
     }
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
     if (nact_) {
-      shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
-      afock = make_shared<ZMatrix>(*coefftmp % *afockao * *coefftmp);
+      shared_ptr<const ZMatrix> afockao = active_fock();
+      afock = make_shared<ZMatrix>(*coeff_elec % *afockao * *coeff_elec);
     } else {
       afock = cfock->clone();
     }

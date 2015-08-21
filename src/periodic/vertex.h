@@ -27,27 +27,20 @@
 #ifndef __SRC_PERIODIC_VERTEX_H
 #define __SRC_PERIODIC_VERTEX_H
 
-#include <array>
-#include <bitset>
-#include <iostream>
-#include <iomanip>
 #include <src/util/constants.h>
-#include <src/molecule/atom.h>
+#include <src/periodic/atomgroup.h>
 
 namespace bagel {
 
 class Vertex {
   protected:
     std::bitset<64> key_;
-    std::shared_ptr<const Atom> atom_;
+    std::shared_ptr<const AtomGroup> atomgroup_;
     std::array<double, 3> position_;
-    int index_, ishell_;
 
   public:
-    Vertex(std::bitset<64> key, std::shared_ptr<const Atom> atom, const int id, const int ib)
-     : key_(key), atom_(atom), index_(id), ishell_(ib) {
-      position_ = atom->position();
-    }
+    Vertex(std::bitset<64> key, std::shared_ptr<const AtomGroup> atomgrp)
+     : key_(key), atomgroup_(atomgrp), position_(atomgrp->position()) { }
     ~Vertex() { }
 
     std::bitset<64> key() const { return key_; }
@@ -62,10 +55,16 @@ class Vertex {
     std::array<double, 3> position() const { return position_; }
     double position(const int i) const { return position_[i]; }
 
-    std::shared_ptr<const Atom> atom() const { return atom_; }
-    int index() const { return index_; }
-    int ishell() const { return ishell_; }
-    int nbasis() const { return atom_->nbasis(); }
+    std::shared_ptr<const AtomGroup> atomgroup() const { return atomgroup_; }
+    const std::vector<std::shared_ptr<const Atom>> atoms() const { return atomgroup_->atoms(); }
+    std::shared_ptr<const Atom> atoms(const int i) const { return atomgroup_->atoms(i); }
+    const std::vector<int> order_in_geom()  const { return atomgroup_->order_in_geom(); }
+    int order_in_geom(const int i)  const { return atomgroup_->order_in_geom(i); }
+    const std::vector<int> ishell()  const { return atomgroup_->ishell(); }
+    int ishell(const int i)  const { return atomgroup_->ishell(i); }
+    int nbasis() const { return atomgroup_->nbasis(); }
+    int natom() const { return atomgroup_->natom(); }
+    bool is_simple() const { return natom() == 1; }
 };
 
 }

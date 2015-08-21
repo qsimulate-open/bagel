@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: denom.h
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -27,22 +27,35 @@
 #define __SRC_SMITH_DENOM_H
 
 #include <src/wfn/rdm.h>
-#include <src/util/math/matrix.h>
+#include <src/util/math/zmatrix.h>
 
 namespace bagel {
 namespace SMITH {
 
+template<typename DataType>
 class Denom {
   protected:
+    using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
+
+  protected:
+    std::shared_ptr<const MatType> fock_;
     const double thresh_;
 
-    std::shared_ptr<const Matrix> shalf_x_;
-    std::shared_ptr<const Matrix> shalf_h_;
-    std::shared_ptr<const Matrix> shalf_xx_;
-    std::shared_ptr<const Matrix> shalf_hh_;
-    std::shared_ptr<const Matrix> shalf_xh_;
-    std::shared_ptr<const Matrix> shalf_xhh_;
-    std::shared_ptr<const Matrix> shalf_xxh_;
+    std::shared_ptr<MatType> shalf_x_;
+    std::shared_ptr<MatType> shalf_h_;
+    std::shared_ptr<MatType> shalf_xx_;
+    std::shared_ptr<MatType> shalf_hh_;
+    std::shared_ptr<MatType> shalf_xh_;
+    std::shared_ptr<MatType> shalf_xhh_;
+    std::shared_ptr<MatType> shalf_xxh_;
+
+    std::shared_ptr<MatType> work_x_;
+    std::shared_ptr<MatType> work_h_;
+    std::shared_ptr<MatType> work_xx_;
+    std::shared_ptr<MatType> work_hh_;
+    std::shared_ptr<MatType> work_xh_;
+    std::shared_ptr<MatType> work_xhh_;
+    std::shared_ptr<MatType> work_xxh_;
 
     VectorB denom_x_;
     VectorB denom_h_;
@@ -53,24 +66,43 @@ class Denom {
     VectorB denom_xxh_;
 
     // init functions
-    void init_x_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_h_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_xx_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_hh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_xh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_xhh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
-    void init_xxh_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
+    void init_x_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                       std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
+    void init_h_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                       std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
+    void init_xx_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                        std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
+    void init_hh_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                        std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
+    void init_xh_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                        std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
+    void init_xhh_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                         std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
+    void init_xxh_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                         std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
 
   public:
-    Denom(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock, const double thr = 1.0e-8);
+    Denom(std::shared_ptr<const MatType> fock, const int nstates, const double th = 1.0e-8);
 
-    std::shared_ptr<const Matrix> shalf_x() const { return shalf_x_; }
-    std::shared_ptr<const Matrix> shalf_h() const { return shalf_h_; }
-    std::shared_ptr<const Matrix> shalf_xx() const { return shalf_xx_; }
-    std::shared_ptr<const Matrix> shalf_hh() const { return shalf_hh_; }
-    std::shared_ptr<const Matrix> shalf_xh() const { return shalf_xh_; }
-    std::shared_ptr<const Matrix> shalf_xhh() const { return shalf_xhh_; }
-    std::shared_ptr<const Matrix> shalf_xxh() const { return shalf_xxh_; }
+    // add RDMs (using fock-multiplied 4RDM)
+    void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                              std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
+    // add RDMs (using original 4RDM)
+    void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                              std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
+    // add RDMs (using Kramers-reduced 4RDM)
+    void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                              std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const Kramers<8,RDM<4,DataType>>>);
+    // diagonalize and set to shalf and denom
+    void compute();
+
+    std::shared_ptr<const MatType> shalf_x() const { return shalf_x_; }
+    std::shared_ptr<const MatType> shalf_h() const { return shalf_h_; }
+    std::shared_ptr<const MatType> shalf_xx() const { return shalf_xx_; }
+    std::shared_ptr<const MatType> shalf_hh() const { return shalf_hh_; }
+    std::shared_ptr<const MatType> shalf_xh() const { return shalf_xh_; }
+    std::shared_ptr<const MatType> shalf_xhh() const { return shalf_xhh_; }
+    std::shared_ptr<const MatType> shalf_xxh() const { return shalf_xxh_; }
 
     const double& denom_x(const size_t i) const { return denom_x_(i); }
     const double& denom_h(const size_t i) const { return denom_h_(i); }
@@ -81,6 +113,16 @@ class Denom {
     const double& denom_xxh(const size_t i) const { return denom_xxh_(i); }
 
 };
+
+template<>
+void Denom<double>::append(const int, const int, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>,
+                                                 std::shared_ptr<const RDM<3>>, std::shared_ptr<const Kramers<8,RDM<4>>>);
+template<>
+void Denom<std::complex<double>>::append(const int, const int, std::shared_ptr<const ZRDM<1>>, std::shared_ptr<const ZRDM<2>>,
+                                                               std::shared_ptr<const ZRDM<3>>, std::shared_ptr<const Kramers<8,ZRDM<4>>>);
+
+extern template class Denom<double>;
+extern template class Denom<std::complex<double>>;
 
 }
 }

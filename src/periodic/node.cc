@@ -34,7 +34,7 @@ using namespace std;
 
 static const double pisq__ = pi__ * pi__;
 
-Node::Node(const std::bitset<nbit__> key, const int depth, std::shared_ptr<const Node> parent, const double thresh)
+Node::Node(const bitset<nbit__> key, const int depth, shared_ptr<const Node> parent, const double thresh)
  : key_(key), depth_(depth), parent_(parent), thresh_(thresh) {
   if (depth == 0)
     key_[0] = 1;
@@ -83,11 +83,13 @@ void Node::init() {
   nbasis_ = 0;
   double sum = 0.0;
   for (auto& body : bodies_) {
-    position_[0] += body->atom()->atom_charge() * body->position(0);
-    position_[1] += body->atom()->atom_charge() * body->position(1);
-    position_[2] += body->atom()->atom_charge() * body->position(2);
-    sum += body->atom()->atom_charge();
-    nbasis_ += body->atom()->nbasis();
+    for (auto& atom : body->atoms()) {
+      position_[0] += atom->atom_charge() * atom->position(0);
+      position_[1] += atom->atom_charge() * atom->position(1);
+      position_[2] += atom->atom_charge() * atom->position(2);
+      sum += atom->atom_charge();
+      nbasis_ += atom->nbasis();
+    }
   }
   position_[0] /= sum;
   position_[1] /= sum;
@@ -112,8 +114,11 @@ void Node::init() {
 
 void Node::compute_extent(const double thresh) {
 
-  std::vector<std::shared_ptr<const Shell>> shells;
-  for (auto& body : bodies_) shells.insert(shells.end(), body->atom()->shells().begin(), body->atom()->shells().end());
+  vector<shared_ptr<const Shell>> shells;
+  for (auto& body : bodies_)
+    for (auto& atom : body->atoms())
+      shells.insert(shells.end(), atom->shells().begin(), atom->shells().end());
+
   const array<double, 3> centre = position_; // use charge centre for now
 
   extent_ = 0.0;
@@ -151,22 +156,27 @@ void Node::insert_neighbour(shared_ptr<const Node> neigh, const bool is_neighbou
 
   assert(neigh->depth() == depth_);
   if (!is_neighbour) {
-    array<double, 3> r12;
-    r12[0] = position_[0] - neigh->position(0);
-    r12[1] = position_[1] - neigh->position(1);
-    r12[2] = position_[2] - neigh->position(2);
-    const double r = sqrt(r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2]);
-    if (r <= (1.0 + ws) * (extent_ + neigh->extent())) {
-      neighbour_.resize(nneighbour_ + 1);
-      neighbour_[nneighbour_] = neigh;
-      ++nneighbour_;
-    #if 1
+      array<double, 3> r12;
+      r12[0] = position_[0] - neigh->position(0);
+      r12[1] = position_[1] - neigh->position(1);
+      r12[2] = position_[2] - neigh->position(2);
+      const double r = sqrt(r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2]);
+      if (r <= (1.0 + ws) * (extent_ + neigh->extent())) {
+        neighbour_.resize(nneighbour_ + 1);
+        neighbour_[nneighbour_] = neigh;
+        ++nneighbour_;
+      } else {
+        interaction_list_.resize(ninter_ + 1);
+        interaction_list_[ninter_] = neigh;
+        ++ninter_;
+      }
+#if 0
     } else {
       interaction_list_.resize(ninter_ + 1);
       interaction_list_[ninter_] = neigh;
       ++ninter_;
-    #endif
     }
+#endif
   } else {
     neighbour_.resize(nneighbour_ + 1);
     neighbour_[nneighbour_] = neigh;
@@ -199,6 +209,28 @@ void Node::make_interaction_list(const int ws) {
 }
 
 
+array<double, 3> Node::compute_centre(array<shared_ptr<const Shell>, 2> shells) {
+
+  const vector<double> exp0 = shells[0]->exponents();
+  const vector<double> exp1 = shells[1]->exponents();
+  array<double, 3> out = {{0.0, 0.0, 0.0}};
+  for (auto& expi0 : exp0) {
+    for (auto& expi1 : exp1) {
+      const double cxp_inv = 1.0 / (expi0 + expi1);
+      out[0] += (shells[0]->position(0) * expi0 + shells[1]->position(0) * expi1) * cxp_inv;
+      out[1] += (shells[0]->position(1) * expi0 + shells[1]->position(1) * expi1) * cxp_inv;
+      out[2] += (shells[0]->position(2) * expi0 + shells[1]->position(2) * expi1) * cxp_inv;
+    }
+  }
+  const int denom = shells[0]->exponents().size() * shells[1]->exponents().size();
+  out[0] /= denom;
+  out[1] /= denom;
+  out[2] /= denom;
+
+  return out;
+}
+
+
 void Node::compute_multipoles(const int lmax) {
 
   const int nmultipole = (lmax + 1) * (lmax + 1);
@@ -211,19 +243,25 @@ void Node::compute_multipoles(const int lmax) {
   if (is_leaf_) { //compute multipole integrals
     size_t ob0 = 0;
     for (auto& a0 : bodies_) {
-      for (auto& b0 : a0->atom()->shells()) {
-        size_t ob1 = 0;
-        for (auto& a1 : bodies_) {
-          for (auto& b1 : a1->atom()->shells()) {
-            MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
-            mpole.compute();
-            for (int i = 0; i != nmultipole; ++i)
-              multipoles[i]->add_block(1.0, ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+      for (auto& atom0 : a0->atoms()) {
+        for (auto& b0 : atom0->shells()) {
+          size_t ob1 = 0;
+          for (auto& a1 : bodies_) {
+            for (auto& atom1 : a1->atoms()) {
+              for (auto& b1 : atom1->shells()) {
+                //array<double, 3> centre = compute_centre({{b1, b0}});
+                //MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, centre, lmax);
+                MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
+                mpole.compute();
+                for (int i = 0; i != nmultipole; ++i)
+                  multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
 
-            ob1 += b1->nbasis();
+                ob1 += b1->nbasis();
+              }
+            }
           }
+          ob0 += b0->nbasis();
         }
-        ob0 += b0->nbasis();
       }
     }
   } else { //shift children's multipoles
@@ -231,8 +269,8 @@ void Node::compute_multipoles(const int lmax) {
     if (child->is_same_as_parent())
       skip = true;
 
-    int offset = 0;
     if (!skip) {
+      size_t offset = 0;
       for (int n = 0; n != nchild_; ++n) {
         shared_ptr<const Node> child = children_[n].lock();
         array<double, 3> r12;
@@ -241,10 +279,10 @@ void Node::compute_multipoles(const int lmax) {
         r12[2] = position_[2] - child->position(2);
         assert(nmultipole == child->multipoles().size());
         LocalExpansion shift(r12, child->multipoles(), lmax);
-        vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_moments();
+        vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
 
         for (int i = 0; i != nmultipole; ++i)
-          multipoles[i]->add_block(1.0, offset, offset, child->nbasis(), child->nbasis(), moment[i]->data());
+          multipoles[i]->copy_block(offset, offset, child->nbasis(), child->nbasis(), moment[i]->data());
 
         offset += child->nbasis();
       }
@@ -262,158 +300,78 @@ void Node::compute_multipoles(const int lmax) {
 }
 
 
-void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int lmax, vector<int> offset) {
+void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int lmax, const vector<int> offsets) {
 
   const int nmultipole = (lmax + 1) * (lmax + 1);
-  local_moment_.resize(nmultipole);
 
-  if (is_same_as_parent_) {
-    local_expansion_ = parent_->local_expansion();
-    for (int i = 0; i != nmultipole; ++i)
-      local_moment_[i] = make_shared<const ZMatrix>(*parent_->local_moment(i));
-  } else {
-    auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
+  vector<int> l_map(nmultipole);
+  int cnt = 0;
+  for (int l = 0; l <= lmax; ++l)
+    for (int m = 0; m <= 2 * l; ++m, ++cnt)
+      l_map[cnt] = l;
 
-#if 0
-    if (rank_ > 1) {
-      for (int n = 0; n != parent_->nchild(); ++n) {
-        shared_ptr<const Node> child = parent_->children(n);
-        if (key_ == child->key()) {
-          assert(child->nbasis() == nbasis_);
-          *out += *(parent_->child_local_expansion(n));
-          break;
-        }
-      }
-//      out->get_real_part()->print("From parent");
-    } else {
-      for (int n = 0; n != nchild_; ++n) {
-        shared_ptr<const Node> child = children_[n].lock();
-        child_local_expansion_[n] = make_shared<const ZMatrix>(child->nbasis(), child->nbasis());
-      }
-    }
-#endif
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
 
-    vector<shared_ptr<ZMatrix>> tmp_moment(nmultipole);
-    for (int n = 0; n != nmultipole; ++n)
-      tmp_moment[n] = make_shared<ZMatrix>(nbasis_, nbasis_);
+  for (auto& distant_node : interaction_list_) { // M2L
+    array<double, 3> r12;
+    r12[0] = position_[0] - distant_node->position(0);
+    r12[1] = position_[1] - distant_node->position(1);
+    r12[2] = position_[2] - distant_node->position(2);
+    LocalExpansion lx(r12, distant_node->multipoles(), lmax);
+    vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
 
-    for (auto& distant_node : interaction_list_) { // M2L
-      array<double, 3> r12;
-      r12[0] = distant_node->position(0) - position_[0];
-      r12[1] = distant_node->position(1) - position_[1];
-      r12[2] = distant_node->position(2) - position_[2];
-      LocalExpansion lx(r12, distant_node->multipoles(), lmax);
-      vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
-
-      const int dimb = distant_node->nbasis();
-      // need to get a sub-density matrix corresponding to distant_node
-      Matrix subden(dimb, dimb);
-      subden.zero();
-      size_t ob0 = 0;
-      for (auto& body0 : distant_node->bodies()) {
+    const int dimb = distant_node->nbasis();
+    // need to get a sub-density matrix corresponding to distant_node
+    Matrix subden(dimb, dimb);
+    subden.zero();
+    size_t ob0 = 0;
+    for (auto& body0 : distant_node->bodies()) {
+      size_t iat0 = 0;
+      for (auto& atom0 : body0->atoms()) {
         size_t ish0 = 0;
-        for (auto& b0 : body0->atom()->shells()) {
-          const int offset0 = offset[body0->ishell() + ish0];
+        for (auto& b0 : atom0->shells()) {
+          const int offset0 = offsets[body0->ishell(iat0) + ish0];
           const size_t size0 = b0->nbasis();
           ++ish0;
 
           size_t ob1 = 0;
           for (auto& body1 : distant_node->bodies()) {
-            size_t ish1 = 0;
-            for (auto& b1 : body1->atom()->shells()) {
-              const int offset1 = offset[body1->ishell() + ish1];
-              const size_t size1 = b1->nbasis();
-              ++ish1;
+            size_t iat1 = 0;
+            for (auto& atom1 : body1->atoms()) {
+              size_t ish1 = 0;
+              for (auto& b1 : atom1->shells()) {
+                const int offset1 = offsets[body1->ishell(iat1) + ish1];
+                const size_t size1 = b1->nbasis();
+                ++ish1;
 
-              shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
-              subden.copy_block(ob1, ob0, size1, size0, tmp);
-              ob1 += size1;
+                shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
+                subden.copy_block(ob1, ob0, size1, size0, tmp);
+                ob1 += size1;
+              }
+              ++iat1;
             }
           }
           ob0 += size0;
         }
-      }
-
-      for (int i = 0; i != nmultipole; ++i) {
-        complex<double> contract = 0.0;
-        for (int j = 0; j != dimb; ++j)
-          for (int k = 0; k != dimb; ++k)
-            contract += lmoments[i]->element(k, j) * subden.element(k, j);
-
-        auto tmp = make_shared<const ZMatrix>(contract * *multipoles_[i]);
-        *tmp_moment[i] += *tmp;
-        *out += *tmp;
+        ++iat0;
       }
     }
 
-    for (int i = 0; i != nmultipole; ++i)
-      local_moment_[i] = tmp_moment[i];
+    for (int i = 0; i != nmultipole; ++i) {
+      complex<double> contract = 0.0;
+      for (int j = 0; j != dimb; ++j)
+        for (int k = 0; k != dimb; ++k)
+          contract += lmoments[i]->element(k, j) * subden.element(k, j);
 
-    local_expansion_ = out;
-  }
-
-#if 0
-  if (rank_ > 1 && !is_leaf_) { // L2L: parent to child
-    Matrix subden(nbasis_, nbasis_);
-    subden.zero();
-    size_t ob0 = 0;
-    for (auto& body0 : bodies_) {
-      size_t ish0 = 0;
-      for (auto& b0 : body0->atom()->shells()) {
-        const int offset0 = offset[body0->ishell() + ish0];
-        const size_t size0 = b0->nbasis();
-        ++ish0;
-
-        size_t ob1 = 0;
-        for (auto& body1 : bodies_) {
-          size_t ish1 = 0;
-          for (auto& b1 : body1->atom()->shells()) {
-            const int offset1 = offset[body1->ishell() + ish1];
-            const size_t size1 = b1->nbasis();
-            ++ish1;
-
-            shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
-            subden.copy_block(ob1, ob0, size1, size0, tmp);
-            ob1 += size1;
-          }
-        }
-        ob0 += size0;
-      }
-    }
-
-    for (int n = 0; n != nchild_; ++n) {
-      shared_ptr<const Node> child = children_[n].lock();
-      auto tmp = make_shared<ZMatrix>(child->nbasis(), child->nbasis());
-
-      array<double, 3> r12;
-      r12[0] = position_[0] - child->position(0);
-      r12[1] = position_[1] - child->position(1);
-      r12[2] = position_[2] - child->position(2);
-      LocalExpansion local(r12, local_moment_, lmax);
-      vector<shared_ptr<const ZMatrix>> local_child = local.compute_shifted_local_expansions();
-
-      for (int i = 0; i != nmultipole; ++i) {
-        complex<double> contract = 0.0;
-        for (int j = 0; j != nbasis_; ++j)
-          for (int k = 0; k != nbasis_; ++k)
-            contract += local_child[i]->element(k, j) * subden.element(k, j);
-
-        *tmp += contract * *(child->multipoles(i));
-      }
-
-      child_local_expansion_[n] = tmp;
-    }
-  } else {
-    for (int n = 0; n != nchild_; ++n) {
-      shared_ptr<const Node> child = children_[n].lock();
-      child_local_expansion_[n] = make_shared<const ZMatrix>(child->nbasis(), child->nbasis());
+      *out += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
     }
   }
-#endif
+
+  local_expansion_ = out;
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offset) {
+shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
@@ -422,44 +380,82 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   // add FF local expansions to coulomb matrix
   size_t ob0 = 0;
   for (auto& body0 : bodies_) {
-    size_t ish0 = 0;
-    for (auto& b0 : body0->atom()->shells()) {
-      const int offset0 = offset[body0->ishell() + ish0];
-      const size_t size0 = b0->nbasis();
-      ++ish0;
+    size_t iat0 = 0;
+    for (auto& atom0 : body0->atoms()) {
+      size_t ish0 = 0;
+      for (auto& b0 : atom0->shells()) {
+        const int offset0 = offsets[body0->ishell(iat0) + ish0];
+        const size_t size0 = b0->nbasis();
+        ++ish0;
 
-      size_t ob1 = 0;
-      for (auto& body1 : bodies_) {
-        size_t ish1 = 0;
-        for (auto& b1 : body1->atom()->shells()) {
-          const int offset1 = offset[body1->ishell() + ish1];
-          const size_t size1 = b1->nbasis();
-          ++ish1;
+        size_t ob1 = 0;
+        for (auto& body1 : bodies_) {
+          size_t iat1 = 0;
+          for (auto& atom1 : body1->atoms()) {
+            size_t ish1 = 0;
+            for (auto& b1 : atom1->shells()) {
+              const int offset1 = offsets[body1->ishell(iat1) + ish1];
+              const size_t size1 = b1->nbasis();
+              ++ish1;
 
-          ZMatrix sublocal = *(local_expansion_->get_submatrix(ob1, ob0, size1, size0));
-          out->add_block(1.0, offset1, offset0, size1, size0, sublocal.data());
-          ob1 += size1;
+              ZMatrix sublocal = *(local_expansion_->get_submatrix(ob1, ob0, size1, size0));
+              out->copy_block(offset1, offset0, size1, size0, sublocal.data());
+              ob1 += size1;
+            }
+            ++iat1;
+          }
         }
+        ob0 += size0;
       }
-      ob0 += size0;
+      ++iat0;
     }
   }
 
   // compute near-field interactions using direct integration and add to far field
   vector<shared_ptr<const Shell>> basis;
   vector<int> new_offset;
-  for (auto& close_node : neighbour_) {
-    for (auto& close_body : close_node->bodies()) {
-      const vector<shared_ptr<const Shell>> tmp = close_body->atom()->shells();
-      basis.insert(basis.end(), tmp.begin(), tmp.end());
-      const int nshell = close_body->atom()->nshell();
-      vector<int> tmpoff(nshell);
-      for (int i = 0; i != nshell; ++i)
-        tmpoff[i] = offset[close_body->ishell() + i];
+  ////DEBUG
+#if 0
+  if (ninter_ != 0) {
+    for (auto& body : bodies_) {
+      size_t iat = 0;
+      for (auto& atom : body->atoms()) {
+        const vector<shared_ptr<const Shell>> tmp = atom->shells();
+        basis.insert(basis.end(), tmp.begin(), tmp.end());
+        vector<int> tmpoff;
+        size_t ish = 0;
+        for (auto& shell : atom->shells()) {
+          tmpoff.insert(tmpoff.end(), offsets[body->ishell(iat) + ish]);
+          ++ish;
+        }
 
-      new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+        new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+        ++iat;
+      }
     }
   }
+#endif
+  ////END OF DEBUG
+#if 1
+  for (auto& close_node : neighbour_) {
+    for (auto& close_body : close_node->bodies()) {
+      size_t iat = 0;
+      for (auto& close_atom : close_body->atoms()) {
+        const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
+        basis.insert(basis.end(), tmp.begin(), tmp.end());
+        vector<int> tmpoff;
+        size_t ish = 0;
+        for (auto& shell : close_atom->shells()) {
+          tmpoff.insert(tmpoff.end(), offsets[close_body->ishell(iat) + ish]);
+          ++ish;
+        }
+
+        new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+        ++iat;
+      }
+    }
+  }
+#endif
 
   const size_t size = basis.size();
   const double* density_data = density->data();
@@ -480,29 +476,32 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         const int b2size = b2->nbasis();
 
         for (auto& a3 : bodies_) {
-          size_t ib3 = 0;
-          for (auto& b3 : a3->atom()->shells()) {
-            const int b3size = b3->nbasis();
-            const size_t b3offset = offset[a3->ishell() + ib3];
+          size_t iat3 = 0;
+          for (auto& atom3 : a3->atoms()) {
+            size_t ish3 = 0;
+            for (auto& b3 : atom3->shells()) {
+              const int b3size = b3->nbasis();
+              const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
+              ++ish3;
 
-            array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
-            ERIBatch eribatch(input, 0.0);
-            eribatch.compute();
-            const double* eridata = eribatch.data();
+              array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+              ERIBatch eribatch(input, 0.0);
+              eribatch.compute();
+              const double* eridata = eribatch.data();
 
-            for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-              const int j0n = j0 * density->ndim();
-              for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
-                for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-                  for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
-                    const double eri = *eridata;
-                    out->element(j2, j3) += density_data[j0n + j1] * eri;
+              for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+                const int j0n = j0 * density->ndim();
+                for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                  for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                    for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                      const double eri = *eridata;
+                      out->element(j2, j3) += density_data[j0n + j1] * eri;
+                    }
                   }
                 }
               }
             }
-            ++ib3;
-
+            ++iat3;
           }
         }
       }
@@ -510,4 +509,120 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   }
 
   return out;
+}
+
+
+shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets) {
+
+  assert(is_leaf());
+  auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
+  out->zero();
+
+  if (ninter_ != 0) {
+    vector<shared_ptr<const Shell>> basis;
+    vector<int> new_offset;
+    for (auto& body : bodies_) {
+      size_t iat = 0;
+      for (auto& atom : body->atoms()) {
+        const vector<shared_ptr<const Shell>> tmp = atom->shells();
+        basis.insert(basis.end(), tmp.begin(), tmp.end());
+        vector<int> tmpoff;
+        size_t ish = 0;
+        for (auto& shell : atom->shells()) {
+          tmpoff.insert(tmpoff.end(), offsets[body->ishell(iat) + ish]);
+          ++ish;
+        }
+
+        new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+        ++iat;
+      }
+    }
+    for (auto& distant_node : interaction_list_) {
+      for (auto& distant_body : distant_node->bodies()) {
+        size_t iat = 0;
+        for (auto& distant_atom : distant_body->atoms()) {
+          const vector<shared_ptr<const Shell>> tmp = distant_atom->shells();
+          basis.insert(basis.end(), tmp.begin(), tmp.end());
+          vector<int> tmpoff;
+          size_t ish = 0;
+          for (auto& shell : distant_atom->shells()) {
+            tmpoff.insert(tmpoff.end(), offsets[distant_body->ishell(iat) + ish]);
+            ++ish;
+          }
+
+          new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+          ++iat;
+        }
+      }
+    }
+
+    const size_t size = basis.size();
+    const double* density_data = density->data();
+
+    for (int i0 = 0; i0 != size; ++i0) {
+      const shared_ptr<const Shell>  b0 = basis[i0];
+      const int b0offset = new_offset[i0];
+      const int b0size = b0->nbasis();
+
+      for (int i1 = 0; i1 != size; ++i1) {
+        const shared_ptr<const Shell>  b1 = basis[i1];
+        const int b1offset = new_offset[i1];
+        const int b1size = b1->nbasis();
+
+        for (int i2 = 0; i2 != size; ++i2) {
+          const shared_ptr<const Shell>  b2 = basis[i2];
+          const int b2offset = new_offset[i2];
+          const int b2size = b2->nbasis();
+
+          for (auto& a3 : bodies_) {
+            size_t iat3 = 0;
+            for (auto& atom3 : a3->atoms()) {
+              size_t ish3 = 0;
+              for (auto& b3 : atom3->shells()) {
+                const int b3size = b3->nbasis();
+                const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
+                ++ish3;
+
+                array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+                ERIBatch eribatch(input, 0.0);
+                eribatch.compute();
+                const double* eridata = eribatch.data();
+
+                for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+                  const int j0n = j0 * density->ndim();
+                  for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                    for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                      for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                        const double eri = *eridata;
+                        out->element(j2, j3) += density_data[j0n + j1] * eri;
+                      }
+                    }
+                  }
+                }
+              }
+              ++iat3;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return out;
+}
+
+
+void Node::print_node() const {
+
+  cout << "*** Node at " << setprecision(5) << position_[0] << "   " << position_[1] << "   " << position_[2] << endl;
+  cout << "has " << nbody_ << " bodies: " << endl;
+  for (auto& body : bodies_)
+    cout << setw(5) << setprecision(5) << setw(10) << body->position(0) << "   "
+                                       << setw(10) << body->position(1) << "   "
+                                       << setw(10) << body->position(2) << endl;
+  cout << "and " << nneighbour_ << " neighbours" << endl;
+  for (auto& neigh : neighbour_)
+    cout << setprecision(5) << setw(10) << neigh->position(0) << "  "
+                            << setw(10) << neigh->position(1) << "  "
+                            << setw(10) << neigh->position(2) << endl;
 }

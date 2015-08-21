@@ -27,10 +27,11 @@
 #ifndef __SRC_PERIODIC_TREE_H
 #define __SRC_PERIODIC_TREE_H
 
-#include <vector>
+#include <set>
 #include <src/wfn/geometry.h>
 #include <src/periodic/node.h>
 #include <src/periodic/vertex.h>
+#include <src/util/atommap.h>
 
 namespace bagel {
 
@@ -39,12 +40,12 @@ class Tree {
   protected:
     std::shared_ptr<const Geometry>geom_;
     int max_height_;
+    bool do_contraction_;
     int nvertex_;
     int nbasis_;
     std::vector<std::array<double, 3>> coordinates_;
     std::array<double, 3> position_;
 
-    double box_length_;
     std::vector<std::bitset<nbit__>> particle_keys_;
     std::vector<std::shared_ptr<const Vertex>> leaves_;
     std::vector<int> ordering_, shell_id_;
@@ -55,6 +56,10 @@ class Tree {
     double thresh_;
     int ws_;
 
+    // vertex contraction
+    std::vector<std::shared_ptr<const AtomGroup>> atomgroup_;
+    void contract_vertex();
+
 
     void init();
     void build_tree();
@@ -64,7 +69,7 @@ class Tree {
     std::shared_ptr<const ZMatrix> coulomb_;
 
   public:
-    Tree(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3,
+    Tree(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3, const bool do_contract = false,
          const double thresh = PRIM_SCREEN_THRESH, const int ws = 1);
     ~Tree() { }
 

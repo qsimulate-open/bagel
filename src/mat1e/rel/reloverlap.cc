@@ -53,8 +53,8 @@ shared_ptr<ZMatrix> RelOverlap::tildex(const double thresh) const {
   auto out = make_shared<ZMatrix>(4*n, 4*m);
   out->copy_real_block(1.0, 0, 0, n, m, tildeo);
   out->copy_real_block(1.0, n, m, n, m, tildeo);
-  out->copy_real_block(c__/sqrt(0.5), 2*n, 2*m, n, m, tildek);
-  out->copy_real_block(c__/sqrt(0.5), 3*n, 3*m, n, m, tildek);
+  out->copy_real_block(c__/std::sqrt(0.5), 2*n, 2*m, n, m, tildek);
+  out->copy_real_block(c__/std::sqrt(0.5), 3*n, 3*m, n, m, tildek);
 
   // check numerical stability of the orthogonalization
   assert((*out % *this * *out).is_identity());

@@ -163,23 +163,6 @@ void MP2::compute() {
 
   energy_ += ref_->energy();
   cout << "      MP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
-
-  // check if F12 is requested.
-  const bool do_f12 = idata_->get<bool>("f12", false);
-  if (do_f12) {
-#ifdef HAVE_LIBSLATER
-    const double gamma = idata_->get<double>("gamma", 1.5);
-    cout << "    * F12 calculation requested with gamma = " << setprecision(2) << gamma << endl;
-#if 0
-    auto f12int = make_shared<F12Int>(idata_, geom_, ref_, gamma, ncore_);
-#else
-    auto f12ref = make_shared<F12Ref>(geom_, ref_, ncore_, gamma);
-    f12ref->compute();
-#endif
-#else
-  throw runtime_error("Slater-quadrature library not linked");
-#endif
-  }
 }
 
 

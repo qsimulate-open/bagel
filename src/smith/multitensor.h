@@ -32,59 +32,64 @@
 namespace bagel {
 namespace SMITH {
 
-class MultiTensor {
+template<typename DataType>
+class MultiTensor_ {
   protected:
+    using TType = Tensor_<DataType>;
+    using Iterator = typename std::vector<std::shared_ptr<TType>>::iterator;
+    using ConstIterator = typename std::vector<std::shared_ptr<TType>>::const_iterator;
+
     // reference coefficients
-    std::vector<double> fac_;
+    std::vector<DataType> fac_;
     // external coefficients
-    std::vector<std::shared_ptr<Tensor>> tensors_;
+    std::vector<std::shared_ptr<TType>> tensors_;
 
   public:
-    MultiTensor() { }
-    MultiTensor(const int n) : fac_(n, 0.0), tensors_(n) { }
-    MultiTensor(const std::vector<double>& f, const std::vector<std::shared_ptr<Tensor>>& o) : fac_(f), tensors_(o) { }
+    MultiTensor_() { }
+    MultiTensor_(const int n) : fac_(n, 0.0), tensors_(n) { }
+    MultiTensor_(const std::vector<DataType>& f, const std::vector<std::shared_ptr<TType>>& o) : fac_(f), tensors_(o) { }
 
-    MultiTensor(const MultiTensor& o) : fac_(o.fac_.begin(), o.fac_.end()) {
+    MultiTensor_(const MultiTensor_<DataType>& o) : fac_(o.fac_.begin(), o.fac_.end()) {
       for (auto& i : o.tensors_)
         tensors_.push_back(i->copy());
     }
 
-    std::shared_ptr<MultiTensor> copy() const {
-      return std::make_shared<MultiTensor>(*this);
+    std::shared_ptr<MultiTensor_<DataType>> copy() const {
+      return std::make_shared<MultiTensor_<DataType>>(*this);
     }
 
-    std::shared_ptr<MultiTensor> clone() const {
-      auto out = std::make_shared<MultiTensor>(nref());
+    std::shared_ptr<MultiTensor_<DataType>> clone() const {
+      auto out = std::make_shared<MultiTensor_<DataType>>(nref());
       auto oiter = out->tensors_.begin();
       for (auto& i : tensors_)
         *oiter++ = i->clone();
       return out;
     }
 
-    void ax_plus_y(const double& a, const MultiTensor& o) {
+    void ax_plus_y(const DataType& a, const MultiTensor_<DataType>& o) {
       blas::ax_plus_y_n(a, o.fac_.data(), o.fac_.size(), fac_.data());
       auto oiter = o.tensors_.begin();
       for (auto& i : tensors_)
         i->ax_plus_y(a, *oiter++);
     }
 
-    void ax_plus_y(const double& a, std::shared_ptr<const MultiTensor> o) { ax_plus_y(a, *o); }
+    void ax_plus_y(const DataType& a, std::shared_ptr<const MultiTensor_<DataType>> o) { ax_plus_y(a, *o); }
 
-    std::vector<std::shared_ptr<Tensor>>::iterator begin() { return tensors_.begin(); }
-    std::vector<std::shared_ptr<Tensor>>::iterator end()   { return tensors_.end(); }
-    std::vector<std::shared_ptr<Tensor>>::const_iterator begin() const { return tensors_.begin(); }
-    std::vector<std::shared_ptr<Tensor>>::const_iterator end()   const { return tensors_.end(); }
-    std::vector<std::shared_ptr<Tensor>>::const_iterator cbegin() const { return tensors_.cbegin(); }
-    std::vector<std::shared_ptr<Tensor>>::const_iterator cend()   const { return tensors_.cend(); }
+    Iterator begin() { return tensors_.begin(); }
+    Iterator end()   { return tensors_.end(); }
+    ConstIterator begin() const { return tensors_.begin(); }
+    ConstIterator end()   const { return tensors_.end(); }
+    ConstIterator cbegin() const { return tensors_.cbegin(); }
+    ConstIterator cend()   const { return tensors_.cend(); }
 
-    std::shared_ptr<Tensor>& operator[](const size_t i) { assert(i < tensors_.size()); return tensors_[i]; }
-    std::shared_ptr<Tensor>& at(const size_t i) { return tensors_.at(i); }
-    std::shared_ptr<const Tensor> operator[](const size_t i) const { assert(i < tensors_.size()); return tensors_[i]; }
-    std::shared_ptr<const Tensor> at(const size_t i) const { return tensors_.at(i); }
+    std::shared_ptr<TType>& operator[](const size_t i) { assert(i < tensors_.size()); return tensors_[i]; }
+    std::shared_ptr<TType>& at(const size_t i) { return tensors_.at(i); }
+    std::shared_ptr<const TType> operator[](const size_t i) const { assert(i < tensors_.size()); return tensors_[i]; }
+    std::shared_ptr<const TType> at(const size_t i) const { return tensors_.at(i); }
 
-    std::vector<std::shared_ptr<Tensor>>& tensors() { return tensors(); }
+    std::vector<std::shared_ptr<TType>>& tensors() { return tensors(); }
 
-    void scale(const double a) {
+    void scale(const DataType& a) {
       blas::scale_n(a, fac_.data(), fac_.size());
       for (auto& i : tensors_)
         i->scale(a);
@@ -98,7 +103,7 @@ class MultiTensor {
       double out = 0.0;
       size_t size = fac_.size();
       for (auto& i : fac_)
-        out += i*i;
+        out += detail::real(detail::conj(i)*i);
       for (auto& i : tensors_) {
         out += std::pow(i->norm(),2);
         size += i->size_alloc();
@@ -106,9 +111,14 @@ class MultiTensor {
       return std::sqrt(out/size);
     }
 
-    double& fac(const int i) { return fac_[i]; }
-    const double& fac(const int i) const { return fac_[i]; }
+    DataType& fac(const int i) { return fac_[i]; }
+    const DataType& fac(const int i) const { return fac_[i]; }
 };
+
+namespace CASPT2 { using MultiTensor = MultiTensor_<double>; }
+namespace MRCI   { using MultiTensor = MultiTensor_<double>; }
+namespace RelCASPT2 { using MultiTensor = MultiTensor_<std::complex<double>>; }
+namespace RelMRCI   { using MultiTensor = MultiTensor_<std::complex<double>>; }
 
 }
 }
