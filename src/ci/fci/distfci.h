@@ -75,7 +75,7 @@ class DistFCI : public Method {
     void model_guess(std::vector<std::shared_ptr<DistCivec>>& out);
 
     // Determinant seeds in parallel
-    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
+    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet) const;
 
   public:
     // this constructor is ugly... to be fixed some day...

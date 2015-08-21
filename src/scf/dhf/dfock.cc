@@ -31,12 +31,12 @@ using namespace bagel;
 // TODO batch size should be automatically determined by the memory size etc.
 const static int batchsize = 250;
 
-void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const double scale_exchange) {
+void DFock::two_electron_part(const ZMatView coeff, const double scale_exchange, const double scale_coulomb) {
 
-  assert(geom_->nbasis()*4 == coeff->ndim());
+  assert(geom_->nbasis()*4 == coeff.ndim());
 
-  auto ocoeffall = make_shared<ZMatrix>(*coeff);
-  const int nocc = coeff->mdim();
+  auto ocoeffall = make_shared<ZMatrix>(coeff);
+  const int nocc = coeff.mdim();
   const int nbatch = (nocc-1) / batchsize+1;
   StaticDist dist(nocc, nbatch);
   vector<pair<size_t, size_t>> table = dist.atable();
@@ -49,16 +49,16 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const doubl
     array<shared_ptr<const Matrix>, 4> tiocoeff;
 
     for (int i = 0; i != 4; ++i) {
-      shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), itable.first, geom_->nbasis(), itable.second);
+      shared_ptr<const ZMatrix> ocoeff = ocoeffall->get_submatrix(i*geom_->nbasis(), itable.first, geom_->nbasis(), itable.second);
       rocoeff[i] = ocoeff->get_real_part();
       iocoeff[i] = ocoeff->get_imag_part();
       trocoeff[i] = rocoeff[i]->transpose();
       tiocoeff[i] = iocoeff[i]->transpose();
     }
 
-    driver(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange);
+    driver(rocoeff, iocoeff, trocoeff, tiocoeff, false, false, scale_exchange, scale_coulomb);
     if (gaunt_) {
-      driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange);
+      driver(rocoeff, iocoeff, trocoeff, tiocoeff, gaunt_, breit_, scale_exchange, scale_coulomb);
     }
   }
 }
@@ -91,8 +91,6 @@ void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const 
 void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc2, const double scale, const bool diag) {
 
   // minus from -1 in the definition of exchange
-  const int n = geom_->nbasis();
-
   shared_ptr<Matrix> r, i;
   if (!dfc1->sum()) {
     cout << "** warning : using 4 multiplication" << endl;
@@ -114,6 +112,7 @@ void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc
   for (auto& i1 : dfc1->basis()) {
     for (auto& i2 : dfc2->basis()) {
       auto out = make_shared<ZMatrix>(*a * (conj(i1->fac(dfc1->cartesian()))*i2->fac(dfc2->cartesian())));
+      const int n = out->ndim();
 
       const int index0 = i1->basis(1);
       const int index1 = i2->basis(1);
@@ -153,6 +152,21 @@ list<shared_ptr<RelDF>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> dfs
 }
 
 
+list<shared_ptr<RelDFHalf>> DFock::make_half_complex(list<shared_ptr<RelDF>> dfdists, shared_ptr<const ZMatrix> coeff) {
+  // Separate Coefficients into real and imaginary
+  array<shared_ptr<const Matrix>,4> rcoeff;
+  array<shared_ptr<const Matrix>,4> icoeff;
+  assert(coeff->ndim() % 4 == 0);
+  const size_t nbasis = coeff->ndim() / 4;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> oc = coeff->get_submatrix(i*nbasis, 0, nbasis, coeff->mdim());
+    rcoeff[i] = oc->get_real_part();
+    icoeff[i] = oc->get_imag_part();
+  }
+  return DFock::make_half_complex(dfdists, rcoeff, icoeff);
+}
+
+
 list<shared_ptr<RelDFHalf>> DFock::make_half_complex(list<shared_ptr<RelDF>> dfdists, array<shared_ptr<const Matrix>,4> rocoeff,
                                                      array<shared_ptr<const Matrix>,4> iocoeff) {
   list<shared_ptr<RelDFHalf>> half_complex;
@@ -170,9 +184,9 @@ list<shared_ptr<RelDFHalf>> DFock::make_half_complex(list<shared_ptr<RelDF>> dfd
 }
 
 
-void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff,
-                   array<shared_ptr<const Matrix>, 4> trocoeff, array<shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
-                   const double scale_exchange)  {
+void DFock::driver(array<shared_ptr<const Matrix>,4> rocoeff,  array<shared_ptr<const Matrix>,4> iocoeff,
+                   array<shared_ptr<const Matrix>,4> trocoeff, array<shared_ptr<const Matrix>,4>tiocoeff, bool gaunt, bool breit,
+                   const double scale_exchange, const double scale_coulomb)  {
 
   Timer timer(0);
 
@@ -258,27 +272,31 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
 
   // computing K operators
   int icnt = 0;
-  for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i, ++icnt) {
+  for (auto& i : half_complex_exch) {
     int jcnt = 0;
-    for (auto j = half_complex_exch2.begin(); j != half_complex_exch2.end(); ++j, ++jcnt) {
-      if ((*i)->alpha_matches(*j) && ((!robust_ && icnt <= jcnt) || robust_)) {
-        add_Exop_block(*i, *j, gscale*scale_exchange, icnt == jcnt);
+    for (auto& j : half_complex_exch2) {
+      if (i->alpha_matches(j) && ((!robust_ && icnt <= jcnt) || robust_)) {
+        add_Exop_block(i, j, gscale*scale_exchange, icnt == jcnt);
       }
+      ++jcnt;
     }
+    ++icnt;
   }
 
   timer.tick_print(printtag + ": K operator");
 
-  list<shared_ptr<const RelCDMatrix>> cd;
-  // compute J operators
-  for (auto& j : half_complex_exch2) {
-    for (auto& i : j->basis()) {
-      cd.push_back(make_shared<RelCDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
+  if (scale_coulomb != 0.0) {
+    list<shared_ptr<const RelCDMatrix>> cd;
+    // compute J operators
+    for (auto& j : half_complex_exch2) {
+      for (auto& i : j->basis()) {
+        cd.push_back(make_shared<RelCDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
+      }
     }
-  }
-
-  for (auto& i : dfdists) {
-    add_Jop_block(i, cd, gscale);
+    for (auto& i : dfdists) {
+      add_Jop_block(i, cd, gscale);
+    }
+    timer.tick_print(printtag + ": J operator");
   }
 
   // this is for gradient calculations
@@ -288,6 +306,4 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
       i->discard_sum_diff();
     half_ = half_complex_exch;
   }
-
-  timer.tick_print(printtag + ": J operator");
 }

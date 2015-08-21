@@ -65,15 +65,6 @@ void ASD<VecType>::compute_pure_terms(DSubSpace& AB, std::shared_ptr<const Dimer
 
 
 template <class VecType>
-void ASD<VecType>::compute_diagonal_2rdm(DSubSpace& AB) {
-  {
-    std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
-ccvecA->print();
-  }
-}
-
-
-template <class VecType>
 std::shared_ptr<Matrix> ASD<VecType>::compute_diagonal_1e(const DSubSpace& AB, const double* hAA, const double* hBB, const double diag) const {
   std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
   std::shared_ptr<const VecType> ccvecB = AB.template ci<1>();

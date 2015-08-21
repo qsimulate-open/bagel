@@ -29,8 +29,28 @@
 using namespace std;
 using namespace bagel;
 
-RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) : RelDFBase(*df) {
 
+RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, shared_ptr<const ZMatrix> coeff) : RelDFBase(*df) {
+  // Separate Coefficients into real and imaginary
+  array<shared_ptr<const Matrix>,4> rcoeff;
+  array<shared_ptr<const Matrix>,4> icoeff;
+  assert(coeff->ndim() % 4 == 0);
+  const size_t nbasis = coeff->ndim() / 4;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> oc = coeff->get_submatrix(i*nbasis, 0, nbasis, coeff->mdim());
+    rcoeff[i] = oc->get_real_part();
+    icoeff[i] = oc->get_imag_part();
+  }
+  init(df, rcoeff, icoeff);
+}
+
+
+RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) : RelDFBase(*df) {
+  init(df, rcoeff, icoeff);
+}
+
+
+void RelDFFull::init(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) {
   basis_ = df->basis();
   if (basis_.size() != 1)
     throw logic_error("RelDFFull should be called with basis_.size() == 1");
@@ -86,6 +106,12 @@ shared_ptr<RelDFFull> RelDFFull::clone() const {
 }
 
 
+shared_ptr<RelDFFull> RelDFFull::swap() const {
+  array<shared_ptr<DFFullDist>,2> a{{dffull_[0]->swap(), dffull_[1]->swap()}};
+  return make_shared<RelDFFull>(a, cartesian_, basis_);
+}
+
+
 void RelDFFull::ax_plus_y(complex<double> a, const RelDFFull& o) {
   if (imag(a) == 0.0) {
     const double fac = real(a);
@@ -115,7 +141,7 @@ void RelDFFull::scale(complex<double> a) {
     const double fac = imag(a);
     dffull_[0]->scale( fac);
     dffull_[1]->scale(-fac);
-    swap(dffull_[0], dffull_[1]);
+    std::swap(dffull_[0], dffull_[1]);
   } else {
     throw logic_error("should not happen..");
   }
@@ -195,3 +221,11 @@ shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZRDM<2>> rdm2) cons
   i->ax_plus_y( 1.0, dffull_[0]->apply_2rdm(*irdm));
   return make_shared<RelDFFull>(array<shared_ptr<DFFullDist>,2>{{r, i}}, cartesian_, basis_);
 }
+
+
+bool RelDFFull::alpha_matches(shared_ptr<const RelDFFull> o) const {
+  assert(basis_.size() == 1);
+  return basis_[0]->alpha_comp() == o->basis()[0]->alpha_comp();
+}
+
+

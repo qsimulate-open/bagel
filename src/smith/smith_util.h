@@ -27,12 +27,13 @@
 #define __SRC_SMITH_SMITH_UTIL_H
 
 #include <src/smith/tensor.h>
+#include <src/util/kramers.h>
 
 namespace bagel {
 namespace SMITH {
 
-template<int N>
-static void fill_block(std::shared_ptr<Tensor> target, std::shared_ptr<const btas::TensorN<double,N>> input,
+template<int N, typename DataType>
+static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_ptr<const btas::TensorN<DataType,N>> input,
                        const std::vector<int>& inpoffsets, const std::vector<IndexRange>& ranges_rev) {
   assert(input->range().ordinal().contiguous());
   assert(target->rank() == input->range().rank() && target->rank() > 0);
@@ -47,7 +48,7 @@ static void fill_block(std::shared_ptr<Tensor> target, std::shared_ptr<const bta
     assert(indices.size() == rank);
 
     const size_t buffersize = std::accumulate(indices.begin(), indices.end(), 1ul, prod);
-    std::unique_ptr<double[]> buffer(new double[buffersize]);
+    std::unique_ptr<DataType[]> buffer(new DataType[buffersize]);
     std::vector<size_t> stride;
     for (auto i = indices.begin(); i != indices.end(); ++i) {
       auto ii = i; ++ii;
@@ -78,6 +79,66 @@ static void fill_block(std::shared_ptr<Tensor> target, std::shared_ptr<const bta
 
     target->put_block(buffer, std::vector<Index>(indices.rbegin(), indices.rend()));
   }
+}
+
+
+template<int N, typename DataType, class T> // T is supposed to be derived from btas::Tensor
+static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_ptr<const Kramers<N,T>> input,
+                       const std::vector<int>& inpoffsets, const std::vector<IndexRange>& ranges_rev) {
+  const int rank = target->rank();
+  const std::vector<IndexRange> ranges(ranges_rev.rbegin(), ranges_rev.rend());
+
+  auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
+
+  LoopGenerator gen(ranges);
+  std::vector<std::vector<Index>> loop = gen.block_loop();
+  for (auto& indices : loop) {
+    assert(indices.size() == rank);
+
+    std::bitset<N> bit;
+    for (int i = 0; i != N; ++i)
+      bit[i] = indices[i].kramers() ? 1 : 0; // indices is reversed, so this is correct
+
+    if (input->exist(bit)) {
+      const size_t buffersize = std::accumulate(indices.begin(), indices.end(), 1ul, prod);
+      std::vector<size_t> stride;
+      for (auto i = indices.begin(); i != indices.end(); ++i) {
+        auto ii = i; ++ii;
+        stride.push_back(std::accumulate(ii, indices.end(), 1ul, prod));
+      }
+
+      std::unique_ptr<DataType[]> buffer(new DataType[buffersize]);
+
+      // in principle there is repetition (especially when active orbitals are separated into small blocks)
+      auto block = input->at(bit);
+      assert(block->range().ordinal().contiguous());
+      assert(target->rank() == block->range().rank() && target->rank() > 0);
+
+      std::vector<size_t> extent(rank);
+      auto e = extent.rbegin();
+      for (int i = 0; i != rank; ++i)
+        *e++ = block->extent(i);
+
+      std::vector<size_t> stride_target;
+      for (auto i = extent.begin(); i != extent.end(); ++i) {
+        auto ii = i; ++ii;
+        stride_target.push_back(std::accumulate(ii, extent.end(), 1ul, std::multiplies<size_t>()));
+      }
+
+      const size_t backsize = indices.back().size();
+      for (size_t n = 0; n != buffersize; n += backsize) {
+        size_t offset = 0lu;
+        size_t tmp = n;
+        for (int i = 0; i != rank; ++i) {
+          offset += (tmp / stride[i] + indices[i].kramers_offset() - inpoffsets[i]) * stride_target[i];
+          tmp = n % stride[i];
+        }
+        std::copy_n(block->data()+offset, backsize, buffer.get()+n);
+      }
+      target->put_block(buffer, std::vector<Index>(indices.rbegin(), indices.rend()));
+    }
+  }
+  target->set_perm(input->perm());
 }
 
 }

@@ -29,11 +29,12 @@
 #ifndef __BAGEL_ZFCI_ZHARRISON_H
 #define __BAGEL_ZFCI_ZHARRISON_H
 
+#include <src/util/kramers.h>
+#include <src/util/math/davidson.h>
 #include <src/wfn/method.h>
 #include <src/wfn/relreference.h>
 #include <src/ci/zfci/relmofile.h>
 #include <src/ci/zfci/reldvec.h>
-#include <src/util/math/davidson.h>
 
 namespace bagel {
 
@@ -82,11 +83,11 @@ class ZHarrison : public Method {
     std::shared_ptr<RelDvec> denom_;
 
     // RDMs
-    std::vector<std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>>> rdm1_;
-    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>>> rdm2_;
+    std::vector<std::shared_ptr<Kramers<2,ZRDM<1>>>> rdm1_;
+    std::vector<std::shared_ptr<Kramers<4,ZRDM<2>>>> rdm2_;
     // state averaged RDMs
-    std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>> rdm1_av_;
-    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_;
+    std::shared_ptr<Kramers<2,ZRDM<1>>> rdm1_av_;
+    std::shared_ptr<Kramers<4,ZRDM<2>>> rdm2_av_;
 
     std::shared_ptr<DavidsonDiag<RelZDvec, ZMatrix>> davidson_;
 
@@ -106,7 +107,7 @@ class ZHarrison : public Method {
       ar << max_iter_ << davidson_subspace_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_ << tsymm_
          << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
       // for jop_
-      std::shared_ptr<const ZMatrix> coeff = jop_->coeff_input();
+      std::shared_ptr<const RelCoeff_Block> coeff = jop_->coeff_input();
       ar << coeff;
     }
     template<class Archive>
@@ -114,7 +115,7 @@ class ZHarrison : public Method {
       ar >> boost::serialization::base_object<Method>(*this);
       ar >> max_iter_ >> davidson_subspace_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_ >> tsymm_
          >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_ >> restarted_;
-      std::shared_ptr<const ZMatrix> coeff;
+      std::shared_ptr<const RelCoeff_Block> coeff;
       ar >> coeff;
       update(coeff);
       restarted_ = true;
@@ -124,7 +125,7 @@ class ZHarrison : public Method {
     // obtain determinants for guess generation
     void generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset);
     // generate spin-adapted guess configurations
-    virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb);
+    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb) const;
 
     // print functions
     void print_header() const;
@@ -139,6 +140,9 @@ class ZHarrison : public Method {
     void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
     void sigma_1e_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
 
+    void sigma_1e_annih_a(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
+    void sigma_1e_annih_b(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
+
     void sigma_2e_annih_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
     void sigma_2e_annih_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
 
@@ -147,15 +151,12 @@ class ZHarrison : public Method {
 
     void sigma_2e_h0101_h1001(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
 
-    template<int i, int j, int k, int l>
+    template<int i, int j, int k, int l,
+             class = typename std::enable_if<i/2 == 0 and j/2 == 0 and k/2 == 0 and l/2 == 0>::type
+            >
     void sigma_2e_h(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans, const std::complex<double> fac = 1.0) const {
-      static_assert(!((i|1)^1) && !((j|1)^1) && !((k|1)^1) && !((l|1)^1), "illegal call of sigma_2e_h");
-      const int ij = d->ij();
-      const int lenab = d->lena()*d->lenb();
-      std::stringstream ss; ss << i << j << k << l;
-      std::bitset<4> bit4(ss.str());
-      if (trans) bit4 = ~bit4;
-      zgemm3m_("n", "t", lenab, ij, ij, fac, d->data(), lenab, jop->mo2e(bit4)->data(), ij, 0.0, e->data(), lenab);
+      std::bitset<4> bit4((i<<3)+(j<<2)+(k<<1)+l);
+      btas::contract(fac, *d, {0,1,2}, *jop->mo2e(trans ? ~bit4 : bit4), {3,2}, std::complex<double>(0.0), *e, {0,1,3});
     }
 
     void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
@@ -165,16 +166,22 @@ class ZHarrison : public Method {
                            const int istate, const bool diag, const bool trans) const;
 #endif
 
+    // protected functions for RDM computation. Annihilate two electrons from the reference
+    std::shared_ptr<Kramers<1,ZDvec>> one_down_from_civec(const int nelea, const int neleb, const int istate, std::shared_ptr<const RelSpace>) const;
+    std::shared_ptr<Kramers<2,ZDvec>> two_down_from_civec(const int nelea, const int neleb, const int istate) const;
+    std::shared_ptr<Kramers<3,ZDvec>> three_down_from_civec(const int nelea, const int neleb, const int istate, std::shared_ptr<const RelSpace>) const;
+    std::shared_ptr<Kramers<4,ZDvec>> four_down_from_civec(const int nelea, const int neleb, const int istate, std::shared_ptr<const RelSpace>) const;
+
   public:
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-              const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const ZMatrix> coeff_zcas = nullptr, const bool restricted = false);
+              const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const RelCoeff_Block> coeff_zcas = nullptr, const bool restricted = false);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
     // "restricted" refers to whether the coefficient matrix is already Kramers-adapted
-    void update(std::shared_ptr<const ZMatrix> coeff, const bool restricted = false) {
+    void update(std::shared_ptr<const RelCoeff_Block> coeff, const bool restricted = false) {
       Timer timer;
       jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, charge_, gaunt_, breit_, restricted, tsymm_);
 
@@ -182,7 +189,7 @@ class ZHarrison : public Method {
       const_denom();
     }
 
-    void compute() override;
+    virtual void compute() override;
 
     // returns members
     int norb() const { return norb_; }
@@ -191,28 +198,38 @@ class ZHarrison : public Method {
 
     int nij() const { return norb_*norb_; }
 
-    // TODO
+    std::shared_ptr<const RelCIWfn> conv_to_ciwfn() const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
     std::vector<double> energy() const { return energy_; }
 
-    void compute_rdm12();
-
-    std::shared_ptr<const ZMatrix> mo2e_full() const;
-    std::shared_ptr<const ZMatrix> rdm1_av() const;
-    std::shared_ptr<const ZMatrix> rdm2_av() const;
-    std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(std::string&& b) const { return rdm1_av_.at(std::bitset<2>(b)); }
-    std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(std::string&& b) const { return rdm2_av_.at(std::bitset<4>(b)); }
-    std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const std::bitset<2>& b) const { return rdm1_av_.at(b); }
-    std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
-    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_kramers() { return rdm2_av_; }
-
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
-    std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return jop_->kramers_coeff(); }
-    void update_kramers_coeff(std::shared_ptr<ZMatrix> natorb_transform) {
-      jop_->update_kramers_coeff(natorb_transform);
-    }
+    std::shared_ptr<const Kramers<1,ZMatrix>> kramers_coeff() const { return jop_->kramers_coeff(); }
+
+    // functions related to RDMs
+    void compute_rdm12();
+    std::shared_ptr<Kramers<2,ZRDM<1>>> rdm1(const int jst, const int ist) const;
+    std::shared_ptr<Kramers<4,ZRDM<2>>> rdm2(const int jst, const int ist) const;
+    std::shared_ptr<Kramers<6,ZRDM<3>>> rdm3(const int jst, const int ist) const;
+    std::shared_ptr<Kramers<8,ZRDM<4>>> rdm4(const int jst, const int ist) const;
+
+    std::shared_ptr<const ZMatrix> rdm1_av() const;
+    std::shared_ptr<const ZMatrix> rdm2_av() const;
+    std::shared_ptr<const Kramers<2,ZRDM<1>>> rdm1_av_kramers() const { return rdm1_av_; }
+    std::shared_ptr<const Kramers<4,ZRDM<2>>> rdm2_av_kramers() const { return rdm2_av_; }
+    template<typename T>
+    std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const T& b) const { KTag<2> t(b); return rdm1_av_->at(t); }
+    template<typename T>
+    std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
+};
+
+
+// only for RDM computation.
+class ZFCI_bare : public ZHarrison {
+  public:
+    ZFCI_bare(std::shared_ptr<const RelCIWfn> ci);
+    void compute() override { assert(false); }
 };
 
 }

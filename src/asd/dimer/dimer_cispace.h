@@ -29,7 +29,7 @@
 #define __BAGEL_DIMER_CISPACE_H
 
 #include <utility>
-
+#include <set>
 #include <src/ci/fci/dvec.h>
 #include <src/ci/ras/civector.h>
 

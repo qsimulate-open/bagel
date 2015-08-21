@@ -58,3 +58,41 @@ void Civector<double>::spin_decontaminate(const double thresh) {
     k += 2;
   }
 }
+
+
+template<>
+void CASDvec::apply_and_fill(shared_ptr<const CASDvec> source_dvec, const int orbital, const bool action, const bool spin) {
+  shared_ptr<const DetType> source_det = source_dvec->det();
+  shared_ptr<const DetType> target_det = this->det();
+
+  this->zero();
+
+  const int source_lenb = source_det->lenb();
+  const int target_lenb = target_det->lenb();
+  const int target_lena = target_det->lena();
+
+  if (spin) {
+    for (size_t ivec = 0; ivec != this->ij(); ++ivec) {
+      double* target_base = this->data(ivec)->data();
+      const double* source_base = source_dvec->data(ivec)->data();
+      for (auto& iter : (action ? source_det->phiupa(orbital) : source_det->phidowna(orbital))) {
+        const double sign = static_cast<double>(iter.sign);
+        double* target = target_base + target_lenb * iter.target;
+        const double* source = source_base + source_lenb * iter.source;
+        blas::ax_plus_y_n(sign, source, target_lenb, target);
+      }
+    }
+  } else {
+    for (size_t ivec = 0; ivec != this->ij(); ++ivec) {
+      for (int i = 0; i < target_lena; ++i) {
+        double* target_base = this->data(ivec)->element_ptr(0,i);
+        const double* source_base = source_dvec->data(ivec)->element_ptr(0,i);
+        for (auto& iter : (action ? source_det->phiupb(orbital) : source_det->phidownb(orbital))) {
+          const double sign = static_cast<double>(iter.sign);
+          target_base[iter.target] += sign * source_base[iter.source];
+        }
+      }
+    }
+  }
+}
+

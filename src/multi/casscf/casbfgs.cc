@@ -67,13 +67,14 @@ void CASBFGS::compute() {
     }
 
     shared_ptr<Matrix> natorb_mat = x->clone();
+    natorb_mat->unit();
     if (nact_) {
       // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
-      shared_ptr<const Matrix> natorb = form_natural_orbs();
-      natorb_mat->unit();
-      natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
-    } else {
-      natorb_mat->unit();
+      const pair<shared_ptr<Matrix>, VectorB> natorb = fci_->natorb_convert();
+      coeff_ = update_coeff(coeff_, natorb.first);
+      occup_ = natorb.second;
+      if (natocc_) print_natocc();
+      natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb.first);
     }
 
     auto sigma = make_shared<RotFile>(nclosed_, nact_, nvirt_);

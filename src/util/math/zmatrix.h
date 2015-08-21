@@ -91,6 +91,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     virtual void inverse();
     // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
     bool inverse_half(const double thresh = 1.0e-8);
+    void sqrt();
     virtual std::shared_ptr<ZMatrix> tildex(const double thresh = 1.0e-8) const;
 
     using Matrix_base<std::complex<double>>::copy_block;

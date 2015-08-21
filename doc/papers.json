@@ -95,6 +95,15 @@
     "year" : "2015",
     "references" : [
       {
+        "author"  : "R. D. Reynolds and T. Shiozaki",
+        "journal" : "Physical Chemistry Chemical Physics",
+        "volume"  : "17",
+        "pages"   : "14280&ndash;14283",
+        "title"   : "Fully relativistic self-consistent field under a magnetic field",
+        "doi"     : "10.1039/C4CP04027A",
+        "type"    : "article"
+      },
+      {
         "author"  : "J. E. Bates and T. Shiozaki",
         "journal" : "The Journal of Chemical Physics",
         "volume"  : "142",
@@ -110,6 +119,15 @@
         "pages"   : "051103",
         "title"   : "Automatic code generation enables nuclear gradient computations for fully internally contracted multireference theory",
         "doi"     : "10.1063/1.4907717",
+        "type"    : "article"
+      },
+      {
+        "author"  : "I. Kim, S. M. Parker, and T. Shiozaki",
+        "journal" : "Journal of Chemical Theory and Computation",
+        "volume"  : "11",
+        "pages"   : "3636&ndash;3642",
+        "title"   : "Orbital optimization in the active space decomposition model",
+        "doi"     : "10.1021/acs.jctc.5b00429",
         "type"    : "article"
       }
     ]

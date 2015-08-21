@@ -29,6 +29,7 @@
 
 #include <src/mat1e/hcore.h>
 #include <src/mat1e/kinetic.h>
+#include <src/mat1e/nai.h>
 #include <src/mat1e/rel/small1e.h>
 #include <src/integral/rys/naibatch.h>
 
@@ -38,17 +39,15 @@ class RelHcore : public ZMatrix {
   protected:
     const std::shared_ptr<const Molecule> geom_;
     const std::shared_ptr<const Matrix> kinetic_;
-    const std::shared_ptr<const Matrix> hcore_;
     const std::shared_ptr<const Matrix> nai_;
     std::shared_ptr<Small1e<NAIBatch>> smallnai_;
 
     void compute_();
 
   public:
-    RelHcore(const std::shared_ptr<const Molecule> geom) : ZMatrix(geom->nbasis()*4, geom->nbasis()*4), geom_(geom),
-            kinetic_(std::make_shared<Kinetic>(geom_)),
-            hcore_(std::make_shared<Hcore>(geom_)),
-            nai_(std::make_shared<Matrix>(*hcore_ - *kinetic_)) {
+    RelHcore(std::shared_ptr<const Molecule> geom)
+     : ZMatrix(geom->nbasis()*4, geom->nbasis()*4), geom_(geom),
+       kinetic_(std::make_shared<Kinetic>(geom_)), nai_(std::make_shared<NAI>(geom_)) {
       smallnai_ = std::make_shared<Small1e<NAIBatch>>(geom_);
       if (geom_->has_finite_nucleus())
         smallnai_->ax_plus_y(1.0, *std::make_shared<Small1e<ERIBatch>>(geom_));

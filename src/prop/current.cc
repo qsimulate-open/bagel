@@ -26,6 +26,7 @@
 
 #include <src/prop/current.h>
 #include <src/wfn/relreference.h>
+#include <src/wfn/zreference.h>
 #include <src/prop/momentum_london.h>
 #include <src/prop/momentum_point.h>
 
@@ -37,11 +38,13 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
                  const std::shared_ptr<const Reference> re) : Method(idata, geom, re) {
 
   // Need a GIAO-based Reference object
-  assert(geom_->magnetism());
-  auto newref = dynamic_pointer_cast<const RelReference>(ref_);
-  if (!newref)
+  auto ref_rel = dynamic_pointer_cast<const RelReference>(ref_);
+  auto ref_nr  = dynamic_pointer_cast<const ZReference>(ref_);
+  if (!ref_rel && !ref_nr)
     throw runtime_error("Charge currents are only available when using the result of a GIAO calculation.");
-  relativistic_ = newref->rel();
+  assert(geom_->magnetism());
+  assert(!ref_rel || !ref_nr);
+  relativistic_ = ref_rel ? true : false;
 
   // Determine type of current desired
   const string type = to_lower(idata->get<string>("current_type", "all"));
@@ -88,8 +91,10 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
   assert(ngrid_*3 == coords_.size());
 
   // Form density matrix
-  const double scale = relativistic_ ? 1.0 : 2.0;
-  density_ = newref->relcoeff()->form_density_rhf(newref->nclosed(), 0, scale);
+  if (relativistic_)
+    density_ = ref_rel->relcoeff()->form_density_rhf(ref_rel->nclosed(), 0, 1.0);
+  else
+    density_ = ref_nr->zcoeff()->form_density_rhf(ref_nr->nclosed(), 0, 2.0);
 
   const string mtype = relativistic_ ? "Dirac-Fock" : "RHF";
   const string ctype = paramagnetic_ ? (diamagnetic_ ? "total" : "paramagnetic") : "diamagnetic";

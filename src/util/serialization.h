@@ -44,8 +44,11 @@
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/complex.hpp>
 #include <boost/serialization/array.hpp>
-#include <boost/archive/shared_ptr_helper.hpp>
 #include <boost/property_tree/ptree_serialization.hpp>
+
+#if BOOST_VERSION <= 105600
+#include <boost/archive/shared_ptr_helper.hpp>
+#endif
 
 #if BOOST_VERSION >= 105600
 #include <boost/serialization/shared_ptr.hpp>

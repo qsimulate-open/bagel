@@ -63,8 +63,11 @@ void ZCASBFGS::compute() {
   {
     auto unit = coeff_->clone(); unit->unit();
     orthonorm = ((*coeff_ % *overlap_ * *coeff_) - *unit).rms();
-    if (orthonorm > 2.5e-13) throw logic_error("Coefficient is not sufficiently orthnormal.");
+    if (orthonorm > 2.5e-13)
+      cout << "Coefficient is not sufficiently orthnormal: " << setprecision(10) << setw(15) << orthonorm << endl;;
   }
+
+  prev_energy_ = vector<double>(nstate_, 0.0);
   cout << "     See casscf.log for further information on FCI output " << endl << endl;
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -79,6 +82,7 @@ void ZCASBFGS::compute() {
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
       fci_time.tick_print("RDMs");
+      energy_ = fci_->energy();
     }
 
     // TODO : compute one body operators only for the subspace being optimized; presently full coefficient is used to transform from AO to MO
@@ -101,7 +105,9 @@ void ZCASBFGS::compute() {
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
     if (nact_) {
-      shared_ptr<const ZMatrix> afockao = active_fock(rdm1, /*with_hcore*/false, /*bfgs*/true);
+      pair<shared_ptr<ZMatrix>, VectorB> natorb_tmp = make_natural_orbitals(rdm1);
+      occup_ = natorb_tmp.second;
+      shared_ptr<const ZMatrix> afockao = active_fock(natorb_tmp.first->get_conjg(), /*with_hcore*/false, /*bfgs*/true);
       afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
     } else {
       afock = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
@@ -165,32 +171,16 @@ void ZCASBFGS::compute() {
     const double gradient = grad->rms();
 
 //    cold = coeff_->copy(); // TODO : copy old coefficient if step rejection is ever implemented
+
+    // orbital rotations occur here
     if (optimize_electrons) {
-      // extract electronic orbitals from coefficient
-      auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), coeff_->mdim()/2);
-      ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2 + nvirtnr_, coeff_->slice(0, nocc_*2 + nvirtnr_));
-      ctmp->copy_block(0, nocc_*2 + nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2 + nvirt_, nocc_*2 + nvirt_ + nvirtnr_));
-      // rotate orbitals
+      shared_ptr<ZMatrix> ctmp = coeff_->electronic_part();
       *ctmp = *ctmp * *expa;
-      // copy back to full coeff
-      auto ctmp2 = coeff_->copy();
-      ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2 + nvirtnr_, ctmp->slice(0, nocc_*2 + nvirtnr_));
-      ctmp2->copy_block(0, nocc_*2 + nvirt_, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2 + nvirtnr_, ctmp->mdim()));
-      coeff_ = make_shared<const ZMatrix>(*ctmp2);
+      coeff_ = coeff_->update_electronic(ctmp);
     } else {
-      // extract occupied and positronic orbitals from coefficient
-      auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), coeff_->mdim()/2 + nocc_*2);
-      ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
-      ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nneg_/2, coeff_->slice(nocc_*2 + nvirtnr_, nocc_*2 + nvirt_));
-      ctmp->copy_block(0, nocc_*2 + nneg_/2, coeff_->ndim(), nneg_/2, coeff_->slice(nocc_*2 + nvirt_ + nvirtnr_, nocc_*2 + nvirt_*2));
-      // rotate orbitals
+      shared_ptr<ZMatrix> ctmp = coeff_->closed_act_positronic();
       *ctmp = *ctmp * *expa;
-      // copy back to full coeff
-      auto ctmp2 = coeff_->copy();
-      ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
-      ctmp2->copy_block(0, nocc_*2 + nvirtnr_, coeff_->ndim(), nneg_/2, ctmp->slice(nocc_*2, nocc_*2 +nneg_/2));
-      ctmp2->copy_block(0, nocc_*2 + nvirtnr_ + nvirt_, coeff_->ndim(), nneg_/2, ctmp->slice(nocc_*2 + nneg_/2, ctmp->mdim()));
-      coeff_ = make_shared<const ZMatrix>(*ctmp2);
+      coeff_ = coeff_->update_closed_act_positronic(ctmp);
     }
     // for next BFGS extrapolation
     if (optimize_electrons) {
@@ -200,7 +190,7 @@ void ZCASBFGS::compute() {
     }
 
     // synchronization
-    mpi__->broadcast(const_pointer_cast<ZMatrix>(coeff_)->data(), coeff_->size(), 0);
+    mpi__->broadcast(const_pointer_cast<RelCoeff_Block>(coeff_)->data(), coeff_->size(), 0);
 
     // print energy
     resume_stdcout();
@@ -241,6 +231,7 @@ void ZCASBFGS::compute() {
         throw logic_error("Coefficient has lost orthonormality during optimization");
     }
     mute_stdcout();
+    prev_energy_ = energy_;
   }
   if (energy_.size() == 0)
     optimize_electrons == true ? energy_.push_back(ele_energy.back()) : energy_.push_back(pos_energy.back());
@@ -256,10 +247,13 @@ void ZCASBFGS::compute() {
 
   // print out orbital populations, if needed
   if (idata_->get<bool>("pop", false)) {
-    cout << "    * Printing out population analysis to casscf.log" << endl;
+    Timer pop_timer;
+    cout << " " << endl;
+    cout << "    * Printing out population analysis of BFGS optimized orbitals to casscf.log" << endl;
     mute_stdcout();
-    population_analysis(geom_, coeff_->slice(0, nclosed_+nact_+nvirtnr_), overlap_);
+    population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_, nclosed_, nact_);
     resume_stdcout();
+    pop_timer.tick_print("population analysis");
   }
 
 }

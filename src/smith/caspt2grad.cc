@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
 
 #include <src/scf/hf/fock.h>
 #include <src/grad/cpcasscf.h>
@@ -39,7 +40,7 @@ using namespace bagel;
 
 CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
   : Method(inp, geom, ref) {
-
+#ifdef COMPILE_SMITH
   Timer timer;
 
   // compute CASSCF first
@@ -55,11 +56,15 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   timer.tick_print("Reference calculation");
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
+#else
+  throw logic_error("CASPT2 gradients require SMITH-generated code. Please compile BAGEL with --enable-smith");
+#endif
 }
 
 
 // compute smith and set rdms and ci deriv to a member
 void CASPT2Grad::compute() {
+#ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   {
@@ -75,8 +80,8 @@ void CASPT2Grad::compute() {
     if (nact) {
       cideriv_ = smith->cideriv()->copy();
     }
-    target_ = smith->algo()->ref()->target();
-    ncore_  = smith->algo()->ref()->ncore();
+    target_ = smith->algo()->info()->target();
+    ncore_  = smith->algo()->info()->ncore();
 
     Timer timer;
 
@@ -135,11 +140,13 @@ void CASPT2Grad::compute() {
     timer.tick_print("Postprocessing SMITH");
     cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
   }
+#endif
 }
 
 
 template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
+#ifdef COMPILE_SMITH
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();
@@ -318,12 +325,16 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   // set energy
   energy_ = task_->energy();
   return gradient;
+#else
+  return nullptr;
+#endif
 }
 
 
 tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   CASPT2Grad::compute_Y(shared_ptr<const Matrix> dm1, shared_ptr<const Matrix> dm11, shared_ptr<const Matrix> dm2,
                         shared_ptr<const DFHalfDist> half, shared_ptr<const DFHalfDist> halfj, shared_ptr<const DFHalfDist> halfjj) {
+#ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
@@ -467,5 +478,8 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   }
 
   return make_tuple(out, fullks);
+#else
+  return tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>();
+#endif
 }
 

@@ -42,7 +42,7 @@ namespace bagel {
 namespace SMITH {
 namespace MRCI{
 
-class MRCI : public SpinFreeMethod {
+class MRCI : public SpinFreeMethod<double> {
   protected:
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
@@ -56,6 +56,7 @@ class MRCI : public SpinFreeMethod {
     std::vector<std::shared_ptr<MultiTensor>> rall_;
     std::vector<std::shared_ptr<MultiTensor>> sall_;
     std::vector<std::shared_ptr<MultiTensor>> nall_;
+
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma1_();
@@ -165,12 +166,12 @@ class MRCI : public SpinFreeMethod {
     std::shared_ptr<FutureTensor> Gamma560_();
     std::shared_ptr<FutureTensor> Gamma566_();
     std::shared_ptr<FutureTensor> Gamma567_();
-    std::shared_ptr<Queue> make_residualq();
-    std::shared_ptr<Queue> make_sourceq();
-    std::shared_ptr<Queue> make_normq();
+    std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_normq(const bool reset = true, const bool diagonal = true);
 
   public:
-    MRCI(std::shared_ptr<const SMITH_Info> ref);
+    MRCI(std::shared_ptr<const SMITH_Info<double>> ref);
     ~MRCI() {}
 
     void solve();

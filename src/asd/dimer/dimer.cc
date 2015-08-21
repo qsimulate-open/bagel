@@ -42,23 +42,35 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : inpu
   construct_geometry();
 }
 
-Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : input_(input) {
-  array<double, 3> translation = input->get_array<double, 3>("translate");
-  if (input->get<bool>("angstrom", false))
-    for_each(translation.begin(), translation.end(), [](double& p) { p/= au2angstrom__; });
+Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, const bool linked) : input_(input) {
+  if (!linked) {
+    array<double, 3> translation = input->get_array<double, 3>("translate");
+    if (input->get<bool>("angstrom", false))
+      for_each(translation.begin(), translation.end(), [](double& p) { p/= au2angstrom__; });
 
-  assert(A);
-  auto geomB = make_shared<const Geometry>((*A->geom()), translation);
-  geoms_ = {A->geom(), geomB};
-  construct_geometry();
+    assert(A);
+    auto geomB = make_shared<const Geometry>((*A->geom()), translation);
+    geoms_ = {A->geom(), geomB};
+    construct_geometry();
 
-  auto tmpref = make_shared<const Reference>(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
-                                             A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av());
-  isolated_refs_ = {A, tmpref};
-  shared_ptr<const Matrix> coeff = construct_coeff();
+    auto tmpref = make_shared<const Reference>(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
+                                               A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av());
+    isolated_refs_ = {A, tmpref};
+    shared_ptr<const Matrix> coeff = construct_coeff();
 
-  nvirt_ = {A->nvirt(), A->nvirt()};
-  sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), 2*A->nclosed(), 2*A->nact(), 2*A->nvirt());
+    nvirt_ = {A->nvirt(), A->nvirt()};
+    sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), 2*A->nclosed(), 2*A->nact(), 2*A->nvirt());
+  }
+  else { //covalently linked dimer
+    print_orbital_ = input->get<bool>("print_orbital", false);
+    geoms_ = {A->geom(), A->geom()}; //initialize
+    construct_geometry(linked); //geoms_ is redefined with new basis sets, sgeom_ is defined
+    isolated_refs_ = {A, A}; //initialize
+    shared_ptr<const Matrix> coeff = construct_coeff(linked); //isolated_refs_ is redifined with new basis sets, dimension = (large,small)
+
+    nvirt_ = {A->nvirt(), A->nvirt()};
+    sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed(), /*0*/A->nact(), A->nvirt());
+  }
 }
 
 Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, shared_ptr<const Reference> B) : input_(input) {
@@ -73,7 +85,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, share
 }
 
 
-void Dimer::construct_geometry() {
+void Dimer::construct_geometry(bool linked) {
   cout << " ===== Constructing Dimer geometry ===== " << endl;
 
   const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
@@ -82,7 +94,12 @@ void Dimer::construct_geometry() {
     geoms_ = {make_shared<Geometry>(*geoms_.first, mdata), make_shared<Geometry>(*geoms_.second, mdata)};
   }
 
-  vector<shared_ptr<const Geometry>> geo_vec = { geoms_.first, geoms_.second };
+  vector<shared_ptr<const Geometry>> geo_vec;
+  if (!linked)
+    geo_vec = { geoms_.first, geoms_.second };
+  else
+    geo_vec = { geoms_.first }; //linked dimer geometry, only one is required
+
   shared_ptr<const PTree> env_data = input_->get_child_optional("environment");
   if (env_data) {
     Muffle hide_cout;
@@ -130,7 +147,8 @@ shared_ptr<const Matrix> Dimer::form_projected_coeffs() {
   return out;
 }
 
-shared_ptr<const Matrix> Dimer::construct_coeff() {
+
+shared_ptr<const Matrix> Dimer::construct_coeff(const bool linked) {
   cout << " ===== Constructing Dimer reference =====" << endl;
 
   const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
@@ -138,7 +156,11 @@ shared_ptr<const Matrix> Dimer::construct_coeff() {
     isolated_refs_ = {isolated_refs_.first->project_coeff(geoms_.first, false), isolated_refs_.second->project_coeff(geoms_.second, false)};
   }
 
-  shared_ptr<const Matrix> projected = form_projected_coeffs();
+  shared_ptr<const Matrix> projected;
+  if (!linked)
+    projected = form_projected_coeffs();
+  else
+    projected = isolated_refs_.first->coeff(); //so far, members of isolated_refs_ are the same
 
   // orthonormalize the "projected" coefficients
   Overlap S(sgeom_);
@@ -147,6 +169,7 @@ shared_ptr<const Matrix> Dimer::construct_coeff() {
 
   return make_shared<Matrix>(*projected * S_invhalf);
 }
+
 
 void Dimer::embed_refs() {
   Timer timer;
@@ -192,6 +215,7 @@ void Dimer::embed_refs() {
   }
 }
 
+
 void Dimer::get_spaces(shared_ptr<const PTree> idata, vector<vector<int>>& spaces_A, vector<vector<int>>& spaces_B) {
   auto space = idata->get_child_optional("space");
   if (space) {
@@ -211,6 +235,7 @@ void Dimer::get_spaces(shared_ptr<const PTree> idata, vector<vector<int>>& space
       spaces_B.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")});
   }
 }
+
 
 shared_ptr<Reference> Dimer::build_reference(const int site, const vector<bool> meanfield) const {
   const int nsites = meanfield.size();
@@ -243,4 +268,12 @@ shared_ptr<Reference> Dimer::build_reference(const int site, const vector<bool> 
   }
 
   return make_shared<Reference>(sgeom_, make_shared<Coeff>(move(*out)), nclosed, nact, 0);
+}
+
+
+void Dimer::update_coeff(shared_ptr<const Matrix> new_coeff) {
+  shared_ptr<Reference> temp_ref;
+  temp_ref = make_shared<Reference>(*sref_);
+  temp_ref->set_coeff(new_coeff);
+  sref_ = make_shared<const Reference>(*temp_ref);
 }
