@@ -104,7 +104,7 @@ class Legendre_renorm {
           return pmmp1;
         } else {
           double oldfact = sqrt(2.0 * am + 3.0);
-          double pll;
+          double pll = 0.0;
           for (int ll = am + 2; ll <= l; ++ll) {
             double fact = sqrt((4.0 * ll * ll - 1.0) / (ll * ll - am * am));
             pll = (x * pmmp1 - pmm / oldfact) * fact;

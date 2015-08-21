@@ -27,7 +27,6 @@
 #include <iostream>
 #include <iomanip>
 #include <src/util/math/sphharmonics.h>
-#include <src/util/math/factorial.h>
 
 using namespace std;
 using namespace bagel;

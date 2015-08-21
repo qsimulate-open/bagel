@@ -30,9 +30,9 @@
 #include <vector>
 #include <complex>
 #include <cmath>
-#include <src/util/constants.h>
 #include <src/util/math/legendre.h>
 #include <src/util/math/comb.h>
+#include <src/util/math/factorial.h>
 
 namespace bagel {
 

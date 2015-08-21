@@ -25,7 +25,6 @@
 
 
 #include <boost/math/special_functions/gamma.hpp>
-#include <src/util/math/legendre.h>
 #include <src/periodic/pfmm.h>
 
 using namespace std;
