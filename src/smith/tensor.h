@@ -47,6 +47,17 @@
 namespace bagel {
 namespace SMITH {
 
+
+#if 0
+template<typename DataType, int N>
+inline std::vector<IndexRange> get_indexranges(std::shared_ptr<TA::Array<DataType, N>> o) {
+   std::vector<IndexRange> out;
+   //   ... find a way to construct vector<IndexRange> from o (input)...
+   for (auto i = o.begin(); i != o.end; ++i) { out[i] = o; }
+   return out;
+}
+#endif
+
 template <typename DataType>
 class Tensor_ {
   protected:
@@ -61,6 +72,16 @@ class Tensor_ {
 
   public:
     Tensor_(std::vector<IndexRange> in, const bool kramers = false);
+
+#if 0
+    template<unsigned int N>
+    Tensor_(std::shared_ptr<TA::Array<DataType, N>> o) : Tensor_(get_indexranges(o)) { // delegate constuctor 
+      // copy the elements from o to data
+      for (auto i = o.begin(); i != o.end(); ++i) {
+//      data_ = i;
+      }
+    }
+#endif
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
       *data_ = *(o.data_);
