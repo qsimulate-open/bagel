@@ -512,24 +512,6 @@ void ZHarrison::spin_expectation_values() const {
   shared_ptr<const ZMatrix> closed_aodensity = jop_->coeff_input()->form_density_rhf(2*ncore_, 0, 1.0);
   const ZMatView active_coeff = jop_->coeff_input()->slice(2*ncore_, ncol);
 
-  cout << endl;
-  for (int i=0; i!=nstate_; ++i) {
-
-    ZMatrix aodensity = (active_coeff * *rdm1_set[i] ^ active_coeff) + *closed_aodensity;
-
-    const complex<double> valx = aodensity.dot_product(*spinx);
-    const complex<double> valy = aodensity.dot_product(*spiny);
-    const complex<double> valz = aodensity.dot_product(*spinz);
-    assert(std::abs(std::imag(valx)) < 1.0e-8);
-    assert(std::abs(std::imag(valy)) < 1.0e-8);
-    assert(std::abs(std::imag(valz)) < 1.0e-8);
-
-    cout << " ** State " << i << ": <S_x> = " << std::real(valx) << endl;
-    cout << " ** State " << i << ": <S_y> = " << std::real(valy) << endl;
-    cout << " ** State " << i << ": <S_z> = " << std::real(valz) << endl << endl;
-  }
-
-#if 1
   cout << endl << endl;
   const int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
   const int nspin1 = nspin + 1;
@@ -614,5 +596,4 @@ void ZHarrison::spin_expectation_values() const {
   diagspinx->print("Diagonalized spin matrix - x-component");
   diagspiny->print("Diagonalized spin matrix - y-component");
   diagspinz->print("Diagonalized spin matrix - z-component");
-#endif
 }
