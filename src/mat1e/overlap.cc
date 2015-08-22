@@ -32,7 +32,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Overlap)
 
-Overlap::Overlap(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
+Overlap::Overlap(shared_ptr<const Molecule> mol) : Matrix1e(mol) {
 
   init(mol);
   fill_upper();

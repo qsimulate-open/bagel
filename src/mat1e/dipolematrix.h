@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_MOLECULE_DIPOLEMATRIX_H
-#define __SRC_MOLECULE_DIPOLEMATRIX_H
+#ifndef __SRC_MAT1E_DIPOLEMATRIX_H
+#define __SRC_MAT1E_DIPOLEMATRIX_H
 
 #include <src/mat1e/matrix1earray.h>
 
@@ -36,7 +36,7 @@ class DipoleMatrix : public Matrix1eArray<3> {
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
   public:
-    DipoleMatrix(const std::shared_ptr<const Molecule>);
+    DipoleMatrix(std::shared_ptr<const Molecule>);
 };
 
 }
