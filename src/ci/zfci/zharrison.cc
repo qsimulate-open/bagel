@@ -517,13 +517,36 @@ void ZHarrison::spin_expectation_values() const {
   const int nspin1 = nspin + 1;
   cout << "    Modeling Pseudospin Hamiltonian for S = " << nspin/2 << (nspin % 2 == 0 ? "" : " 1/2") << endl;
 
+  vector<int> aniso_state;
+  aniso_state.resize(nspin1);
+  for (int i=0; i!=nspin1; ++i)
+    aniso_state[i] = i;
+
+  const shared_ptr<const PTree> exstates = idata_->get_child_optional("aniso_state");
+  if (exstates) {
+    aniso_state = {};
+    for (auto& i : *exstates)
+      aniso_state.push_back(lexical_cast<int>(i->data()) - 1);
+    if (aniso_state.size() != nspin1)
+      throw runtime_error("Aniso:  Wrong number of states requested for this S value (should be " + to_string(nspin1) + ")");
+    for (int i=0; i!=nspin1; ++i)
+      if (aniso_state[i] < 0 || aniso_state[i] >= nstate_)
+        throw runtime_error("Aniso:  Invalid state requested (should be between 1 and " + to_string(nstate_) + ")");
+    cout << "    For the following states:  ";
+    for (int i=0; i!=nspin1; ++i)
+      cout << aniso_state[i] << "  ";
+    cout << endl;
+  } else {
+    cout << "    For the ground spin-manifold" << endl;
+  }
+
   array<shared_ptr<ZMatrix>,3> spinmat;
   for (int i=0; i!=3; ++i) {
     spinmat[i] = make_shared<ZMatrix>(nspin1, nspin1);
   }
   for (int i=0; i!=nspin1; ++i) {
     for (int j=0; j!=nspin1; ++j) {
-      shared_ptr<Kramers<2,ZRDM<1>>> temprdm = rdm1(i, j);
+      shared_ptr<Kramers<2,ZRDM<1>>> temprdm = rdm1(aniso_state[i], aniso_state[j]);
       if (!temprdm->exist({1,0})) {
         cout << " * Need to generate an off-diagonal rdm of zeroes." << endl;
         temprdm->add({1,0}, temprdm->at({0,0})->clone());
@@ -575,12 +598,12 @@ void ZHarrison::spin_expectation_values() const {
 
   complex<double> energy_trace = 0;
   for (int i=0; i!=nspin1; ++i)
-    energy_trace += energy_[i];
+    energy_trace += energy_[aniso_state[i]];
   energy_trace /= nspin1;
 
   for (int i=0; i!=nspin1; ++i) {
     spinvals->element(i,i) = zeig[i];
-    energies->element(i,i) = energy_[i] - energy_trace;
+    energies->element(i,i) = energy_[aniso_state[i]] - energy_trace;
   }
 
   auto checkmat2 = make_shared<ZMatrix>(*transform * *spinvals ^ *transform);
