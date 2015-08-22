@@ -383,8 +383,7 @@ void ZHarrison::compute() {
 
   // TODO When the Property class is implemented, this should be one
   if (idata_->get<bool>("aniso", false)) {
-    compute_rdm12();
-    spin_expectation_values();
+    compute_pseudospin_hamiltonian();
   }
 }
 
@@ -406,10 +405,10 @@ shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
 }
 
 
-void ZHarrison::spin_expectation_values() const {
-  assert(rdm1_.size() == nstate_);  // If this fails, you probably forgot to compute the 1RDM first
+void ZHarrison::compute_pseudospin_hamiltonian() const {
 
-  // TODO Create a class for computation of atomic S_z values
+  // First, we create spin matrices in the atomic orbital basis
+  // TODO Create a class for this
   const int n = geom_->nbasis();
   auto overlap = make_shared<Overlap>(geom_);
   auto spinx = make_shared<ZMatrix>(4*n, 4*n);
@@ -417,6 +416,7 @@ void ZHarrison::spin_expectation_values() const {
   auto spinz = make_shared<ZMatrix>(4*n, 4*n);
   const complex<double> imag(0.0, 1.0);
 
+  // Large component
   spinx->add_real_block( 0.5,   n,   0, n, n, *overlap);
   spinx->add_real_block( 0.5,   0,   n, n, n, *overlap);
 
@@ -426,9 +426,9 @@ void ZHarrison::spin_expectation_values() const {
   spinz->add_real_block( 0.5,   0,   0, n, n, *overlap);
   spinz->add_real_block(-0.5,   n,   n, n, n, *overlap);
 
-/*****/
+  // Small component
   // TODO Simplify this code
-  // Commented out lines should cancel at zero-field; can be replaced with field*overlap for GIAO-RMB
+  // Commented out lines cancel at zero-field; can be replaced with field*overlap for GIAO-RMB
   const double w = 1.0/(8.0*c__*c__);
   auto smallints = make_shared<General_Small1e<OverlapBatch>>(geom_);
 
@@ -503,25 +503,26 @@ void ZHarrison::spin_expectation_values() const {
   //spiny->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[8]);
   spinz->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[8]);
   spinz->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[8]);
-/*****/
 
-  vector<shared_ptr<const ZMatrix>> rdm1_set = rdm1_matrix();
+
   const int ncol = 2*(ncore_+norb_);
-
   // TODO Probably we can ignore the closed part, but for now include it
   shared_ptr<const ZMatrix> closed_aodensity = jop_->coeff_input()->form_density_rhf(2*ncore_, 0, 1.0);
   const ZMatView active_coeff = jop_->coeff_input()->slice(2*ncore_, ncol);
 
+  // S value of spin manifold to be mapped
   cout << endl << endl;
   const int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
   const int nspin1 = nspin + 1;
   cout << "    Modeling Pseudospin Hamiltonian for S = " << nspin/2 << (nspin % 2 == 0 ? "" : " 1/2") << endl;
 
+  // By default, just use the ground states
   vector<int> aniso_state;
   aniso_state.resize(nspin1);
   for (int i=0; i!=nspin1; ++i)
     aniso_state[i] = i;
 
+  // aniso_state can be used to request mapping excited states instead
   const shared_ptr<const PTree> exstates = idata_->get_child_optional("aniso_state");
   if (exstates) {
     aniso_state = {};
@@ -539,7 +540,9 @@ void ZHarrison::spin_expectation_values() const {
   } else {
     cout << "    For the ground spin-manifold" << endl;
   }
+  cout << endl;
 
+  // Compute spin matrices in the basis of ZFCI Hamiltonian eigenstates
   array<shared_ptr<ZMatrix>,3> spinmat;
   for (int i=0; i!=3; ++i) {
     spinmat[i] = make_shared<ZMatrix>(nspin1, nspin1);
@@ -556,11 +559,7 @@ void ZHarrison::spin_expectation_values() const {
       copy_n(tmp->data(), tmp->size(), rdmmat->data());
 
       ZMatrix modensity (2*norb_, 2*norb_);
-      modensity.zero();
-//      for (int j=0; j!=2*ncore_; ++j)
-//        modensity.element(j, j) = 1.0;
-//      modensity.add_block( 1.0, 2*ncore_, 2*ncore_, 2*norb_, 2*norb_, rdmmat);
-      modensity.add_block( 1.0, 0, 0, 2*norb_, 2*norb_, rdmmat);
+      modensity.copy_block(0, 0, 2*norb_, 2*norb_, rdmmat);
 
       ZMatrix aodensity = (active_coeff * modensity ^ active_coeff) + *closed_aodensity;
 
@@ -570,12 +569,8 @@ void ZHarrison::spin_expectation_values() const {
     }
   }
 
-  spinmat[0]->print("Spin matrix elements in eigenstate basis - x-component");
-  spinmat[1]->print("Spin matrix elements in eigenstate basis - y-component");
-  spinmat[2]->print("Spin matrix elements in eigenstate basis - z-component");
-
+  // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   auto transform = spinmat[2]->copy();
-
   VectorB zeig(nspin1);
   transform->diagonalize(zeig);
 
@@ -591,32 +586,35 @@ void ZHarrison::spin_expectation_values() const {
   }
 
   for (int i=0; i!=nspin1; ++i)
-    cout << "Spin-z eigenvalue " << i+1 << " = " << zeig[i] << endl;
+    cout << "    Spin-z eigenvalue " << i+1 << " = " << zeig[i] << endl;
 
-  auto energies = make_shared<ZMatrix>(nspin1,nspin1);
-  auto spinvals = make_shared<ZMatrix>(nspin1,nspin1);
-
-  complex<double> energy_trace = 0;
+  // We will subtract out average energy so the pseudospin Hamiltonian is traceless
+  complex<double> energy_avg = 0;
   for (int i=0; i!=nspin1; ++i)
-    energy_trace += energy_[aniso_state[i]];
-  energy_trace /= nspin1;
+    energy_avg += energy_[aniso_state[i]];
+  energy_avg /= nspin1;
 
+  // Now build up the numerical pseudospin Hamiltonian!
+  auto energies = make_shared<ZMatrix>(nspin1,nspin1);
   for (int i=0; i!=nspin1; ++i) {
-    spinvals->element(i,i) = zeig[i];
-    energies->element(i,i) = energy_[aniso_state[i]] - energy_trace;
+    energies->element(i,i) = energy_[aniso_state[i]] - energy_avg;
   }
+  auto spinham = make_shared<ZMatrix>(*transform % *energies * *transform);
 
-  auto checkmat2 = make_shared<ZMatrix>(*transform * *spinvals ^ *transform);
-  auto spinham2 = make_shared<ZMatrix>(*transform % *energies * *transform);
   auto diagspinx = make_shared<ZMatrix>(*transform % *spinmat[0] * *transform);
   auto diagspiny = make_shared<ZMatrix>(*transform % *spinmat[1] * *transform);
   auto diagspinz = make_shared<ZMatrix>(*transform % *spinmat[2] * *transform);
 
-  checkmat2->print("Spin-z values (should match the above)");
+  cout << endl;
+  spinham->print("Pseudospin Hamiltonian!");
+  diagspinx->print("Spin matrix - x-component");
+  diagspiny->print("Spin matrix - y-component");
+  diagspinz->print("Spin matrix - z-component");
 
-  spinham2->print("Spin Hamiltonian!");
-
-  diagspinx->print("Diagonalized spin matrix - x-component");
-  diagspiny->print("Diagonalized spin matrix - y-component");
-  diagspinz->print("Diagonalized spin matrix - z-component");
+  cout << endl;
+  energies->print("Hamiltonian over the spin manifold, in ZFCI eigenstate basis");
+  spinmat[0]->print("Spin matrix (in ZFCI eigenstate basis) - x-component");
+  spinmat[1]->print("Spin matrix (in ZFCI eigenstate basis) - y-component");
+  spinmat[2]->print("Spin matrix (in ZFCI eigenstate basis) - z-component");
+  cout << endl;
 }
