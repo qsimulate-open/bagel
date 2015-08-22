@@ -141,6 +141,14 @@ class Tensor_ {
 
     // for Kramers tensors (does not do anything for standard tensors)
     void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { data_->set_perm(p); }
+
+    void print1(std::string label, const double thresh = 5.0e-2) const;
+    void print2(std::string label, const double thresh = 5.0e-2) const;
+    void print3(std::string label, const double thresh = 5.0e-2) const;
+    void print4(std::string label, const double thresh = 5.0e-2) const;
+    void print5(std::string label, const double thresh = 5.0e-2) const;
+    void print6(std::string label, const double thresh = 5.0e-2) const;
+    void print8(std::string label, const double thresh = 5.0e-2) const;
 };
 
 extern template class Tensor_<double>;
