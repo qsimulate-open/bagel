@@ -35,9 +35,7 @@ namespace bagel {
 
 template <typename DataType, Int_t IntType = Int_t::Standard>
 class ERIBatch_Base : public RysIntegral<DataType,IntType> {
-
   protected:
-
     // a hack for screening of three-center integrals
     static double rnd(const double& a) { return (a > 0.0) ? a : 1.0; };
 
@@ -54,32 +52,7 @@ class ERIBatch_Base : public RysIntegral<DataType,IntType> {
     void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
 
   public:
-
-    ERIBatch_Base(const std::array<std::shared_ptr<const Shell>,4>& o, const int deriv, const int breit = 0,
-              std::shared_ptr<StackMem> stack = nullptr) : RysIntegral<DataType, IntType>(o, stack) {
-
-      breit_ = breit;
-      deriv_rank_ = deriv;
-
-      // determines if we want to swap shells
-      this->set_swap_info(true);
-
-      // stores AB and CD
-      this->set_ab_cd();
-
-      // set primsize_ and contsize_, as well as relevant members
-      this->set_prim_contsizes();
-
-      // sets angular info
-      int asize_final, csize_final, asize_final_sph, csize_final_sph;
-      std::tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = this->set_angular_info();
-
-      // allocate
-      allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
-      this->allocate_arrays(primsize_);
-
-    }
-
+    ERIBatch_Base(const std::array<std::shared_ptr<const Shell>,4>& o, const int deriv, const int breit = 0, std::shared_ptr<StackMem> stack = nullptr);
 
   protected:
     using RysIntegral<DataType,IntType>::basisinfo_;
@@ -119,10 +92,6 @@ class ERIBatch_Base : public RysIntegral<DataType,IntType> {
 using ERIBatch_base = ERIBatch_Base<double, Int_t::Standard>;
 
 }
-
-#define ERIBATCH_BASE_HEADERS
-#include <src/integral/rys/eribatch_base_impl.hpp>
-#undef ERIBATCH_BASE_HEADERS
 
 extern template class bagel::ERIBatch_Base<double,bagel::Int_t::Standard>;
 extern template class bagel::ERIBatch_Base<std::complex<double>,bagel::Int_t::London>;

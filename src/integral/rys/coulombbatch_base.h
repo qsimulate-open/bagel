@@ -40,11 +40,12 @@ template <typename DataType, Int_t IntType = Int_t::Standard>
 class CoulombBatch_Base : public RysIntegral<DataType, IntType> {
 
   protected:
+    static constexpr double T_thresh__ = 1.0e-8;
 
     std::shared_ptr<const Molecule> mol_;
     int natom_;
 
-    /// for periodic calculations (UNCHECKED!!)
+    // TODO for periodic calculations (UNCHECKED!!)
     const int L_;
     const double A_;
 
@@ -98,11 +99,7 @@ using CoulombBatch_base = CoulombBatch_Base<double>;
 
 }
 
-#define COULOMBBATCH_BASE_HEADERS
-#include <src/integral/rys/coulombbatch_base_impl.hpp>
-#undef COULOMBBATCH_BASE_HEADERS
-
 extern template class bagel::CoulombBatch_Base<double>;
-//extern template class bagel::CoulombBatch_Base<std::complex<double>>;
+extern template class bagel::CoulombBatch_Base<std::complex<double>,bagel::Int_t::London>;
 
 #endif

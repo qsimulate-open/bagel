@@ -97,11 +97,6 @@ using OSInt = OSIntegral<double,Int_t::Standard>;
 
 }
 
-#define OSINTEGRAL_HEADERS
-#include <src/integral/os/osintegral_impl.hpp>
-#include <src/integral/os/oscontraction_impl.hpp>
-#undef OSINTEGRAL_HEADERS
-
 extern template class bagel::OSIntegral<double,bagel::Int_t::Standard>;
 extern template class bagel::OSIntegral<std::complex<double>,bagel::Int_t::London>;
 
