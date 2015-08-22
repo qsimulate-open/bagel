@@ -506,13 +506,14 @@ void ZHarrison::spin_expectation_values() const {
 /*****/
 
   vector<shared_ptr<const ZMatrix>> rdm1_set = rdm1_matrix();
+  const int ncol = 2*(ncore_+norb_);
+
+  // TODO Probably we can ignore the closed part, but for now include it
+  shared_ptr<const ZMatrix> closed_aodensity = jop_->coeff_input()->form_density_rhf(2*ncore_, 0, 1.0);
+  const ZMatView active_coeff = jop_->coeff_input()->slice(2*ncore_, ncol);
+
   for (int i=0; i!=nstate_; ++i) {
 
-    const int ncol = 2*(ncore_+norb_);
-
-    // TODO Probably we can ignore the closed part, but for now include it
-    shared_ptr<const ZMatrix> closed_aodensity = jop_->coeff_input()->form_density_rhf(2*ncore_, 0, 1.0);
-    const ZMatView active_coeff = jop_->coeff_input()->slice(2*ncore_, ncol);
     ZMatrix aodensity = (active_coeff * *rdm1_set[i] ^ active_coeff) + *closed_aodensity;
 
     const complex<double> valx = aodensity.dot_product(*spinx);
@@ -526,4 +527,74 @@ void ZHarrison::spin_expectation_values() const {
     cout << " ** State " << i << ": <S_y> = " << std::real(valy) << endl;
     cout << " ** State " << i << ": <S_z> = " << std::real(valz) << endl << endl;
   }
+
+#if 1
+  cout << endl << endl << endl;
+  array<shared_ptr<ZMatrix>,3> spinmat;
+  for (int i=0; i!=3; ++i) {
+    spinmat[i] = make_shared<ZMatrix>(3, 3);
+  }
+
+  for (int i=0; i!=3; ++i) {
+    for (int j=0; j!=3; ++j) {
+      shared_ptr<Kramers<2,ZRDM<1>>> temprdm = rdm1(i, j);
+      if (!temprdm->exist({1,0})) {
+        cout << " * Need to generate an off-diagonal rdm of zeroes." << endl;
+        temprdm->add({1,0}, temprdm->at({0,0})->clone());
+      }
+      shared_ptr<const ZRDM<1>> tmp = expand_kramers<1,complex<double>>(temprdm, norb_);
+      auto rdmmat = make_shared<ZMatrix>(norb_*2, norb_*2);
+      copy_n(tmp->data(), tmp->size(), rdmmat->data());
+
+      ZMatrix modensity (2*norb_, 2*norb_);
+      modensity.zero();
+//      for (int j=0; j!=2*ncore_; ++j)
+//        modensity.element(j, j) = 1.0;
+//      modensity.add_block( 1.0, 2*ncore_, 2*ncore_, 2*norb_, 2*norb_, rdmmat);
+      modensity.add_block( 1.0, 0, 0, 2*norb_, 2*norb_, rdmmat);
+
+      ZMatrix aodensity = (active_coeff * modensity ^ active_coeff) + *closed_aodensity;
+
+      spinmat[0]->element(i,j) = aodensity.dot_product(*spinx);
+      spinmat[1]->element(i,j) = aodensity.dot_product(*spiny);
+      spinmat[2]->element(i,j) = aodensity.dot_product(*spinz);
+    }
+  }
+
+  spinmat[0]->print("Spin matrix elements in eigenstate basis - x-component");
+  spinmat[1]->print("Spin matrix elements in eigenstate basis - y-component");
+  spinmat[2]->print("Spin matrix elements in eigenstate basis - z-component");
+
+  auto transform = spinmat[2]->copy();
+
+  VectorB zeig(3);
+  transform->diagonalize(zeig);
+  for (int i=0; i!=3; ++i)
+    cout << "Spin-z eigenvalue " << i+1 << " after diagonalization:" << zeig[2-i] << endl;
+  transform->print("Transformation matrix, initial");
+  transform = transform->swap_columns(0,1,2,1);
+  transform->print("Transformation matrix, final");
+
+  auto energies = make_shared<ZMatrix>(3,3);
+  auto spinvals = make_shared<ZMatrix>(3,3);
+  const complex<double> energy_trace = 1.0/3.0 * (energy_[0] + energy_[1] + energy_[2]);
+  for (int i=0; i!=3; ++i) {
+    spinvals->element(i,i) = zeig[2-i];
+    energies->element(i,i) = energy_[i] - energy_trace;
+  }
+
+  auto checkmat2 = make_shared<ZMatrix>(*transform * *spinvals ^ *transform);
+  auto spinham2 = make_shared<ZMatrix>(*transform % *energies * *transform);
+  auto diagspinx = make_shared<ZMatrix>(*transform % *spinoff[0] * *transform);
+  auto diagspiny = make_shared<ZMatrix>(*transform % *spinoff[1] * *transform);
+  auto diagspinz = make_shared<ZMatrix>(*transform % *spinoff[2] * *transform);
+
+  checkmat2->print("Spin-z values (should match the above)");
+
+  spinham2->print("Spin Hamiltonian!");
+
+  diagspinx->print("Diagonalized spin matrix - x-component");
+  diagspiny->print("Diagonalized spin matrix - y-component");
+  diagspinz->print("Diagonalized spin matrix - z-component");
+#endif
 }
