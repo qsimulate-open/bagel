@@ -380,6 +380,12 @@ void ZHarrison::compute() {
   }
 #endif
 
+
+  // TODO When the Property class is implemented, this should be one
+  if (idata_->get<bool>("aniso", false)) {
+    compute_rdm12();
+    spin_expectation_values();
+  }
 }
 
 
@@ -400,15 +406,8 @@ shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
 }
 
 
-vector<array<double,3>> ZHarrison::spin_expectation_values() const {
+void ZHarrison::spin_expectation_values() const {
   assert(rdm1_.size() == nstate_);  // If this fails, you probably forgot to compute the 1RDM first
-  vector<array<double,3>> out = {};
-
-  vector<shared_ptr<const ZMatrix>> rdm1_set = rdm1_matrix();
-  shared_ptr<const ZMatrix> active_coeff = jop_->coeff_input()->active_part();
-
-  // TODO Probably we can ignore the closed part, but for now include it
-  shared_ptr<const ZMatrix> closed_aodensity = jop_->coeff_input()->form_density_rhf(2*ncore_, 0, 1.0);
 
   // TODO Create a class for computation of atomic S_z values
   const int n = geom_->nbasis();
@@ -506,10 +505,15 @@ vector<array<double,3>> ZHarrison::spin_expectation_values() const {
   spinz->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[8]);
 /*****/
 
+  vector<shared_ptr<const ZMatrix>> rdm1_set = rdm1_matrix();
   for (int i=0; i!=nstate_; ++i) {
 
-    //ZMatrix aodensity = *active_coeff * *rdm1_set[i] ^ *active_coeff;
-    ZMatrix aodensity = (*active_coeff * *rdm1_set[i] ^ *active_coeff) + *closed_aodensity;
+    const int ncol = 2*(ncore_+norb_);
+
+    // TODO Probably we can ignore the closed part, but for now include it
+    shared_ptr<const ZMatrix> closed_aodensity = jop_->coeff_input()->form_density_rhf(2*ncore_, 0, 1.0);
+    const ZMatView active_coeff = jop_->coeff_input()->slice(2*ncore_, ncol);
+    ZMatrix aodensity = (active_coeff * *rdm1_set[i] ^ active_coeff) + *closed_aodensity;
 
     const complex<double> valx = aodensity.dot_product(*spinx);
     const complex<double> valy = aodensity.dot_product(*spiny);
@@ -518,7 +522,8 @@ vector<array<double,3>> ZHarrison::spin_expectation_values() const {
     assert(std::abs(std::imag(valy)) < 1.0e-8);
     assert(std::abs(std::imag(valz)) < 1.0e-8);
 
-    out.push_back({{std::real(valx), std::real(valy), std::real(valz)}});
+    cout << " ** State " << i << ": <S_x> = " << std::real(valx) << endl;
+    cout << " ** State " << i << ": <S_y> = " << std::real(valy) << endl;
+    cout << " ** State " << i << ": <S_z> = " << std::real(valz) << endl << endl;
   }
-  return out;
 }
