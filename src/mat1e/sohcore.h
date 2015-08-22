@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_SCF_SOHCORE_H
-#define __SRC_SCF_SOHCORE_H
+#ifndef __SRC_MAT1E_SOHCORE_H
+#define __SRC_MAT1E_SOHCORE_H
 
 #include <src/util/math/zmatrix.h>
 #include <src/molecule/molecule.h>

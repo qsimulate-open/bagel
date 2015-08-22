@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_MOLECULE_MATRIX1E_H
-#define __SRC_MOLECULE_MATRIX1E_H
+#ifndef __SRC_MAT1E_MATRIX1E_H
+#define __SRC_MAT1E_MATRIX1E_H
 
 #include <src/molecule/molecule.h>
 #include <src/util/math/matrix.h>
@@ -54,7 +54,7 @@ class Matrix1e_ : public MatType{
 
   public:
     Matrix1e_() { }
-    Matrix1e_(const std::shared_ptr<const Molecule>);
+    Matrix1e_(std::shared_ptr<const Molecule>);
     Matrix1e_(const Matrix1e_&);
     virtual ~Matrix1e_() { }
 

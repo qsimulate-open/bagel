@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_MOLECULE_MIXEDBASIS_H
-#define __SRC_MOLECULE_MIXEDBASIS_H
+#ifndef __SRC_MAT1E_MIXEDBASIS_H
+#define __SRC_MAT1E_MIXEDBASIS_H
 
 #include <src/molecule/molecule.h>
 
@@ -47,7 +47,7 @@ class MixedBasis : public MatType {
     }
 
   public:
-    MixedBasis(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const Molecule> g1, Value... tail)
+    MixedBasis(std::shared_ptr<const Molecule> g0, std::shared_ptr<const Molecule> g1, Value... tail)
      : MatType(g1->nbasis(), g0->nbasis()) {
       size_t off0 = 0;
       for (auto& catom0 : g0->atoms()) {
@@ -94,7 +94,7 @@ class MixedBasisArray {
     }
 
   public:
-    MixedBasisArray(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const Molecule> g1, Value... tail) {
+    MixedBasisArray(std::shared_ptr<const Molecule> g0, std::shared_ptr<const Molecule> g1, Value... tail) {
       for(int i = 0; i < TBatch::Nblocks(); ++i)
         matrices_[i] = std::make_shared<MatType>(g1->nbasis(), g0->nbasis());
 

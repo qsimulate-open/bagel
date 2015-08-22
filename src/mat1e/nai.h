@@ -46,7 +46,7 @@ class NAI : public Matrix1e {
 
   public:
     NAI() { }
-    NAI(const std::shared_ptr<const Molecule>);
+    NAI(std::shared_ptr<const Molecule>);
 
 };
 
