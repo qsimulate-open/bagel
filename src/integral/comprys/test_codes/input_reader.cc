@@ -22,7 +22,7 @@ This file computes the ERI over London orbitals.
 #include "ericompute.h"
 
 using namespace std;
-using namespace ryan;
+using namespace test;
 
 
 int main (int argc, char*argv[]) {
