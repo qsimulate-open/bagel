@@ -205,14 +205,14 @@ void LocalExps::compute_mlm() {
 
         const double sign = (m >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
 
-        if (!is_in_cff(ws_, id[0], id[1], id[2])) {
+        if (abs(id[0]) <= ws_ && abs(id[1]) <= ws_ && abs(id[2]) <= ws_) {
           // substract smooth part within ws_
           const double real = coeff * glower * sign * plm_tilde;
           const double imag = coeff * glower * sin(am * phi) * plm_tilde;
           mlm_[imul] -= complex<double>(real, imag);
         }
         // smooth term
-        const double coeffm = plm_tilde * gamma_coeff *  exp(-rsq * pibeta) / (r * r);
+        const double coeffm = (r > numerical_zero__) ? plm_tilde * gamma_coeff *  exp(-rsq * pibeta) / (r * r) : 0.0;
         double real = coeffm * sign;
         double imag = coeffm * sin(am * phi);
         mlm_[imul] += coeffl * complex<double>(real, imag);
