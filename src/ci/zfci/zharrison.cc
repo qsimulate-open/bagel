@@ -512,6 +512,7 @@ void ZHarrison::spin_expectation_values() const {
   shared_ptr<const ZMatrix> closed_aodensity = jop_->coeff_input()->form_density_rhf(2*ncore_, 0, 1.0);
   const ZMatView active_coeff = jop_->coeff_input()->slice(2*ncore_, ncol);
 
+  cout << endl;
   for (int i=0; i!=nstate_; ++i) {
 
     ZMatrix aodensity = (active_coeff * *rdm1_set[i] ^ active_coeff) + *closed_aodensity;
@@ -529,14 +530,17 @@ void ZHarrison::spin_expectation_values() const {
   }
 
 #if 1
-  cout << endl << endl << endl;
+  cout << endl << endl;
+  const int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
+  const int nspin1 = nspin + 1;
+  cout << "    Modeling Pseudospin Hamiltonian for S = " << nspin/2 << (nspin % 2 == 0 ? "" : " 1/2") << endl;
+
   array<shared_ptr<ZMatrix>,3> spinmat;
   for (int i=0; i!=3; ++i) {
-    spinmat[i] = make_shared<ZMatrix>(3, 3);
+    spinmat[i] = make_shared<ZMatrix>(nspin1, nspin1);
   }
-
-  for (int i=0; i!=3; ++i) {
-    for (int j=0; j!=3; ++j) {
+  for (int i=0; i!=nspin1; ++i) {
+    for (int j=0; j!=nspin1; ++j) {
       shared_ptr<Kramers<2,ZRDM<1>>> temprdm = rdm1(i, j);
       if (!temprdm->exist({1,0})) {
         cout << " * Need to generate an off-diagonal rdm of zeroes." << endl;
@@ -567,27 +571,41 @@ void ZHarrison::spin_expectation_values() const {
 
   auto transform = spinmat[2]->copy();
 
-  VectorB zeig(3);
+  VectorB zeig(nspin1);
   transform->diagonalize(zeig);
-  for (int i=0; i!=3; ++i)
-    cout << "Spin-z eigenvalue " << i+1 << " after diagonalization:" << zeig[2-i] << endl;
-  transform->print("Transformation matrix, initial");
-  transform = transform->swap_columns(0,1,2,1);
-  transform->print("Transformation matrix, final");
 
-  auto energies = make_shared<ZMatrix>(3,3);
-  auto spinvals = make_shared<ZMatrix>(3,3);
-  const complex<double> energy_trace = 1.0/3.0 * (energy_[0] + energy_[1] + energy_[2]);
-  for (int i=0; i!=3; ++i) {
-    spinvals->element(i,i) = zeig[2-i];
+  { // Reorder eigenvectors so positive M_s come first
+    shared_ptr<ZMatrix> tempm = transform->clone();
+    VectorB tempv = *zeig.clone();
+    for (int i=0; i!=nspin1; ++i) {
+      tempv[i] = zeig[nspin-i];
+      tempm->copy_block(0, i, nspin1, 1, transform->slice(nspin-i, nspin-i+1));
+    }
+    transform = tempm;
+    zeig = tempv;
+  }
+
+  for (int i=0; i!=nspin1; ++i)
+    cout << "Spin-z eigenvalue " << i+1 << " = " << zeig[i] << endl;
+
+  auto energies = make_shared<ZMatrix>(nspin1,nspin1);
+  auto spinvals = make_shared<ZMatrix>(nspin1,nspin1);
+
+  complex<double> energy_trace = 0;
+  for (int i=0; i!=nspin1; ++i)
+    energy_trace += energy_[i];
+  energy_trace /= nspin1;
+
+  for (int i=0; i!=nspin1; ++i) {
+    spinvals->element(i,i) = zeig[i];
     energies->element(i,i) = energy_[i] - energy_trace;
   }
 
   auto checkmat2 = make_shared<ZMatrix>(*transform * *spinvals ^ *transform);
   auto spinham2 = make_shared<ZMatrix>(*transform % *energies * *transform);
-  auto diagspinx = make_shared<ZMatrix>(*transform % *spinoff[0] * *transform);
-  auto diagspiny = make_shared<ZMatrix>(*transform % *spinoff[1] * *transform);
-  auto diagspinz = make_shared<ZMatrix>(*transform % *spinoff[2] * *transform);
+  auto diagspinx = make_shared<ZMatrix>(*transform % *spinmat[0] * *transform);
+  auto diagspiny = make_shared<ZMatrix>(*transform % *spinmat[1] * *transform);
+  auto diagspinz = make_shared<ZMatrix>(*transform % *spinmat[2] * *transform);
 
   checkmat2->print("Spin-z values (should match the above)");
 
