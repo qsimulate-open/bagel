@@ -140,9 +140,10 @@ void CoulombBatch_Base<DataType, IntType>::allocate_data(const int asize_final, 
   } else if (deriv_rank_ == 1) {
     size_block_ = asize_final * csize_final * primsize_;
     // if this is an NAI gradient integral
-    if (dynamic_cast<CoulombBatch_base*>(this)) {
+    if (is_same<DataType,double>::value) {
+      assert(IntType == Int_t::Standard);
       // in this case, we store everything
-      size_alloc_ = (dynamic_cast<CoulombBatch_base*>(this)->mol()->natom()) * 3.0 * size_block_;
+      size_alloc_ = mol()->natom() * 3.0 * size_block_;
       assert(csize_final == 1);
     } else {
       throw logic_error("something is strange in CoulombBatch_base::allocate_data");
