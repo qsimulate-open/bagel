@@ -45,10 +45,6 @@ class CoulombBatch_Base : public RysIntegral<DataType, IntType> {
     std::shared_ptr<const Molecule> mol_;
     int natom_;
 
-    // TODO for periodic calculations (UNCHECKED!!)
-    const int L_;
-    const double A_;
-
     void compute_ssss(const double) override;
     void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
     virtual DataType get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim, const bool swap) {
