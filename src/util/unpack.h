@@ -30,6 +30,7 @@
 #ifndef __SRC_UTIL_UNPACK_H
 #define __SRC_UTIL_UNPACK_H
 
+namespace bagel {
 namespace {
 
   template<int ...>
@@ -43,6 +44,7 @@ namespace {
     typedef seq<S...> type;
   };
 
+}
 }
 
 #endif

@@ -27,6 +27,7 @@
 
 using namespace bagel;
 
+namespace bagel {
 namespace {
 struct init {
   static std::list<std::list<GammaSQ>> call() { return {
@@ -54,6 +55,7 @@ struct init {
     {GammaSQ::CreateBeta,  GammaSQ::CreateBeta,  GammaSQ::AnnihilateBeta}
   }; }
 };
+}
 }
 
 const std::list<std::list<GammaSQ>> GammaTensor::oplist_(init::call());

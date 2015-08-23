@@ -34,7 +34,7 @@
 #include <cassert>
 #include <cmath>
 
-namespace ryan {
+namespace test {
 
 template <typename T>
 class polynomial {

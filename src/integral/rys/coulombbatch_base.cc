@@ -30,8 +30,7 @@ using namespace bagel;
 
 
 template <typename DataType, Int_t IntType>
-CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const array<shared_ptr<const Shell>,2>& _info, const shared_ptr<const Molecule> mol, const int deriv,
-                                                        shared_ptr<StackMem> stack)
+CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const array<shared_ptr<const Shell>,2>& _info, const shared_ptr<const Molecule> mol, const int deriv, shared_ptr<StackMem> stack)
  : RysIntegral<DataType, IntType>(_info, stack), mol_(mol) {
 
   deriv_rank_ = deriv;
