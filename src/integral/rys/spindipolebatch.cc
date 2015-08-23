@@ -35,6 +35,16 @@ using namespace bagel;
 const static HRRList hrr;
 const static CarSphList carsphlist;
 
+SpinDipoleBatch::SpinDipoleBatch(const array<shared_ptr<const Shell>,2>& _info, shared_ptr<const Atom> target, shared_ptr<StackMem> stack)
+  : CoulombBatch_Base<double>(_info, make_shared<Molecule>(vector<shared_ptr<const Atom>>{target}, vector<shared_ptr<const Atom>>{}), 0, 2, stack), target_(target) {
+
+  const double integral_thresh = PRIM_SCREEN_THRESH;
+  this->allocate_arrays(primsize_);
+  compute_ssss(integral_thresh);
+  root_weight(primsize_);
+}
+
+
 void SpinDipoleBatch::compute() {
   const double zero = 0.0;
 

@@ -42,10 +42,7 @@ class SpinDipoleBatch : public CoulombBatch_Base<double> {
   public:
 
     SpinDipoleBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, std::shared_ptr<const Atom> target,
-                    std::shared_ptr<StackMem> stack = nullptr)
-      : CoulombBatch_Base<double>(_info, std::make_shared<Molecule>(std::vector<std::shared_ptr<const Atom>>{target}, std::vector<std::shared_ptr<const Atom>>{}),
-                                  0, 2, stack), target_(target) {
-    }
+                    std::shared_ptr<StackMem> stack = nullptr);
 
     void compute() override;
 
