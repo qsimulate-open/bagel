@@ -54,7 +54,7 @@ class CoulombBatch_Base : public RysIntegral<DataType, IntType> {
     }
 
   public:
-    CoulombBatch_Base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv, const int breit,
+    CoulombBatch_Base(const std::array<std::shared_ptr<const Shell>,2>& _info, std::shared_ptr<const Molecule> mol, const int deriv, const int breit,
                   std::shared_ptr<StackMem> stack = nullptr);
     ~CoulombBatch_Base() {}
 

@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: coulombbatch_energy.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: spindipole.h
+// Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,34 +23,33 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_H
-#define __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_H
+#ifndef __SRC_INTEGRAL_RYS_SPINDIPOLEBATCH_H
+#define __SRC_INTEGRAL_RYS_SPINDIPOLEBATCH_H
 
 #include <src/integral/rys/coulombbatch_base.h>
 
 namespace bagel {
 
-class CoulombBatch_energy : public CoulombBatch_Base<double> {
+class SpinDipoleBatch : public CoulombBatch_Base<double> {
 
   protected:
+    std::shared_ptr<const Atom> target_;
 
     void root_weight(const int ps) override;
     virtual double scale_root(const double root, const double p, const double zeta) { return root; }
     virtual double scale_weight(const double weight) { return weight; }
-    std::vector<int> indexecp_;
-    int max_rterms_;
 
   public:
 
-    CoulombBatch_energy(const std::array<std::shared_ptr<const Shell>,2>& _info, std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
-      :  CoulombBatch_Base<double>(_info, mol, 0, 0, stack) {
+    SpinDipoleBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, std::shared_ptr<const Atom> target,
+                    std::shared_ptr<StackMem> stack = nullptr)
+      : CoulombBatch_Base<double>(_info, std::make_shared<Molecule>(std::vector<std::shared_ptr<const Atom>>{target}, std::vector<std::shared_ptr<const Atom>>{}),
+                                  0, 2, stack), target_(target) {
     }
-
-     ~CoulombBatch_energy() {}
 
     void compute() override;
 
-    constexpr static int Nblocks() { return 1; }
+    constexpr static int Nblocks() { return 6; }
 
 };
 

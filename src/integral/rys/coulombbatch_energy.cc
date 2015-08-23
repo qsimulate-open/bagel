@@ -130,7 +130,7 @@ void CoulombBatch_energy::compute() {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr.hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
-      copy(bkup_, bkup_+size_alloc_, data_);
+      copy_n(bkup_, size_alloc_, data_);
     }
   }
 
@@ -150,7 +150,7 @@ void CoulombBatch_energy::compute() {
   } else {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort.sortfunc_call(index, bkup_, data_, cont1size_, cont0size_, 1, swap01_);
-    copy(bkup_, bkup_+size_final_, data_);
+    copy_n(bkup_, size_final_, data_);
   }
 
   stack_->release(worksize, workz);
