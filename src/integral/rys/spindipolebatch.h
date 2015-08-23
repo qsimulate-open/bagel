@@ -49,6 +49,8 @@ class SpinDipoleBatch : public CoulombBatch_Base<double> {
 
     void compute() override;
 
+    double* data(const int i) override { return data_ + i*size_block_; }
+
     constexpr static int Nblocks() { return 6; }
 
 };

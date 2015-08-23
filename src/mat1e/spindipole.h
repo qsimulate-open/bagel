@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breitint.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: spindipole.h
+// Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,31 +24,32 @@
 //
 
 
-#ifndef __SRC_REL_BREITINT_H
-#define __SRC_REL_BREITINT_H
+#ifndef __SRC_MAT1E_SPINDIPOLE_H
+#define __SRC_MAT1E_SPINDIPOLE_H
 
-#include <src/molecule/molecule.h>
 #include <src/mat1e/matrix1earray.h>
 
 namespace bagel {
 
-class BreitInt : public Matrix1eArray<6> {
+class SpinDipole : public Matrix1eArray<6> {
   protected:
-    std::vector<std::pair<const int, const int>> index_;
+    std::shared_ptr<const Atom> atom_;
 
-    void init(std::shared_ptr<const Molecule>) override;
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Matrix1e>(*this);
+    }
+
   public:
-    BreitInt(const std::shared_ptr<const Molecule>);
+    SpinDipole() { }
+    SpinDipole(std::shared_ptr<const Molecule>, std::shared_ptr<const Atom>);
 
-    void print(const std::string name, const int len = 10) const override { Matrix1eArray<6>::print(name.empty() ? "Breit" : name, len); }
-
-    std::pair<const int, const int> index(const int i) const { return index_[i]; }
-    std::vector<std::pair<const int, const int>> index() const { return index_; }
-
-    /// returns if block k is not diagonal
-    bool not_diagonal(const int k) const { assert(k >= 0); assert(k <= index_.size()); return index_[k].first != index_[k].second; }
+    void print(const std::string name, const int len = 10) const override { Matrix1eArray<6>::print(name.empty() ? "Spin-Dipole" : name, len); }
 
 };
 
