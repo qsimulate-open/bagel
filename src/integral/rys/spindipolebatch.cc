@@ -46,9 +46,8 @@ SpinDipoleBatch::SpinDipoleBatch(const array<shared_ptr<const Shell>,2>& _info, 
 
 
 void SpinDipoleBatch::compute() {
-  const double zero = 0.0;
 
-  double* const stack_save = stack_->template get<double>(size_alloc_);
+  double* const stack_save = stack_->template get<double>(size_block_);
   bkup_ = stack_save;
 
   const int worksize = rank_ * (amax1_+1);
@@ -72,8 +71,7 @@ void SpinDipoleBatch::compute() {
   double r1z[20];
   double r2[20];
 
-  const int alc = size_alloc_;
-  fill_n(data_, alc, zero);
+  fill_n(data_, size_alloc_, 0.0);
 
   const SortList sort(spherical1_);
 
@@ -81,7 +79,7 @@ void SpinDipoleBatch::compute() {
   for (int xj = 0; xj != screening_size_; ++xj) {
     const int i = screening_[xj];
     const int offset_iprim = i * asize_;
-    double* dataxx = &data_[offset_iprim];
+    double* dataxx = data_  + offset_iprim;
     double* dataxy = dataxx + size_block_;
     double* dataxz = dataxy + size_block_;
     double* datayy = dataxz + size_block_;
@@ -93,9 +91,9 @@ void SpinDipoleBatch::compute() {
     for (int r = 0; r != rank_; ++r) {
       const double sroot = scale_root(croots[r], xp_[i], 1.0); // not doing anything at the moment, for complex version
       const double sweight = scale_weight(cweights[r]); // same as above
-      r1x[r] = P_[i * 3    ] - Ax - (P_[i * 3    ] - target_->position(0)) * sroot;
-      r1y[r] = P_[i * 3 + 1] - Ay - (P_[i * 3 + 1] - target_->position(1)) * sroot;
-      r1z[r] = P_[i * 3 + 2] - Az - (P_[i * 3 + 2] - target_->position(2)) * sroot;
+      r1x[r] = P_[i*3  ] - Ax - (P_[i*3  ] - target_->position(0)) * sroot;
+      r1y[r] = P_[i*3+1] - Ay - (P_[i*3+1] - target_->position(1)) * sroot;
+      r1z[r] = P_[i*3+2] - Az - (P_[i*3+2] - target_->position(2)) * sroot;
       r2[r] = (1.0 - sroot) * 0.5 / xp_[i];
 
       // absorb
@@ -123,9 +121,9 @@ void SpinDipoleBatch::compute() {
     for (int j = 0; j <= amax1_; ++j) {
       const int offset = j * rank_;
       for (int r = 0; r != rank_; ++r) {
-        worktx[offset + r] = (P_[0]-Q_[0]) * workx[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * workx[offset - rank_ + r]);
-        workty[offset + r] = (P_[1]-Q_[1]) * worky[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * worky[offset - rank_ + r]);
-        worktz[offset + r] = (P_[2]-Q_[2]) * workz[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * workz[offset - rank_ + r]);
+        worktx[offset + r] = (P_[i*3+0]-Q_[i*3+0]) * workx[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * workx[offset - rank_ + r]);
+        workty[offset + r] = (P_[i*3+1]-Q_[i*3+1]) * worky[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * worky[offset - rank_ + r]);
+        worktz[offset + r] = (P_[i*3+2]-Q_[i*3+2]) * workz[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * workz[offset - rank_ + r]);
       }
     }
 
@@ -167,13 +165,13 @@ void SpinDipoleBatch::compute() {
   // loop over cartesian blocks
   for (int i = 0; i != Nblocks(); ++i) {
     double* cdata = data_ + i * size_block_;
-    double* cbkup = bkup_ + i * size_block_;
+    fill_n(bkup_, size_block_, 0.0);
 
     // contract indices 01
     // data will be stored in bkup_: cont01{ xyz{ } }
     {
       const int m = asize_;
-      this->perform_contraction(m, cdata, prim0size_, prim1size_, cbkup,
+      this->perform_contraction(m, cdata, prim0size_, prim1size_, bkup_,
                           basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0size_,
                           basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1size_);
     }
@@ -183,9 +181,9 @@ void SpinDipoleBatch::compute() {
     {
       if (basisinfo_[1]->angular_number() != 0) {
         const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-        hrr.hrrfunc_call(hrr_index, contsize_, cbkup, AB_, cdata);
+        hrr.hrrfunc_call(hrr_index, contsize_, bkup_, AB_, cdata);
       } else {
-        copy_n(cbkup, size_alloc_, cdata);
+        copy_n(bkup_, size_block_, cdata);
       }
     }
 
@@ -194,18 +192,18 @@ void SpinDipoleBatch::compute() {
     if (spherical1_) {
       const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = contsize_;
-      carsphlist.carsphfunc_call(carsphindex, nloops, cdata, cbkup);
+      carsphlist.carsphfunc_call(carsphindex, nloops, cdata, bkup_);
     }
 
     // Sort cont01 and xyzab
     // data will be stored in data_: cont1b{ cont0a{ } }
     if (spherical1_) {
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort.sortfunc_call(index, cdata, cbkup, cont1size_, cont0size_, 1, swap01_);
+      sort.sortfunc_call(index, cdata, bkup_, cont1size_, cont0size_, 1, swap01_);
     } else {
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort.sortfunc_call(index, cbkup, cdata, cont1size_, cont0size_, 1, swap01_);
-      copy_n(cbkup, size_final_, cdata);
+      sort.sortfunc_call(index, bkup_, cdata, cont1size_, cont0size_, 1, swap01_);
+      copy_n(bkup_, size_final_, cdata);
     }
 
   }
@@ -219,7 +217,7 @@ void SpinDipoleBatch::compute() {
   stack_->release(worksize, workz);
   stack_->release(worksize, worky);
   stack_->release(worksize, workx);
-  stack_->release(size_alloc_, stack_save);
+  stack_->release(size_block_, stack_save);
 }
 
 

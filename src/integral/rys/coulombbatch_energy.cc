@@ -35,9 +35,8 @@ const static HRRList hrr;
 const static CarSphList carsphlist;
 
 void CoulombBatch_energy::compute() {
-  const double zero = 0.0;
 
-  double* const stack_save = stack_->template get<double>(size_alloc_);
+  double* const stack_save = stack_->template get<double>(size_block_);
   bkup_ = stack_save;
 
   const int worksize = rank_ * amax1_;
@@ -55,8 +54,7 @@ void CoulombBatch_energy::compute() {
   double r1z[20];
   double r2[20];
 
-  const int alc = size_alloc_;
-  fill_n(data_, alc, zero);
+  fill_n(data_, size_block_, 0.0);
 
   const SortList sort(spherical1_);
 
@@ -67,7 +65,7 @@ void CoulombBatch_energy::compute() {
     const int iprim = i / (natom_ * ecp);
     const int iatom = (i / ecp) % natom_;
     const int offset_iprim = iprim * asize_;
-    double* current_data = &data_[offset_iprim];
+    double* current_data = data_ + offset_iprim;
 
     const double* croots = roots_ + i * rank_;
     const double* cweights = weights_ + i * rank_;
@@ -130,7 +128,7 @@ void CoulombBatch_energy::compute() {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr.hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
-      copy_n(bkup_, size_alloc_, data_);
+      copy_n(bkup_, size_block_, data_);
     }
   }
 
@@ -156,7 +154,7 @@ void CoulombBatch_energy::compute() {
   stack_->release(worksize, workz);
   stack_->release(worksize, worky);
   stack_->release(worksize, workx);
-  stack_->release(size_alloc_, stack_save);
+  stack_->release(size_block_, stack_save);
 }
 
 void CoulombBatch_energy::root_weight(const int ps) {
