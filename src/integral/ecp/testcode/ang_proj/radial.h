@@ -16,6 +16,8 @@
 using namespace mpfr;
 static const double pi__ = std::atan(1.0)*4.0;
 
+namespace test {
+
 template<typename T, typename... Value>
 class RadialInt {
 
@@ -120,5 +122,7 @@ class RadialInt {
     }
 
 };
+
+}
 
 #endif

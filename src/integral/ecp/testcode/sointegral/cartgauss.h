@@ -12,11 +12,13 @@
 #include <vector>
 #include <complex>
 #include <memory>
-#include "src/util/constants.h"
-#include "src/util/math/factorial.h"
+#include <src/util/constants.h>
+#include <src/util/math/factorial.h>
 
 using namespace bagel;
 using namespace std;
+
+namespace test {
 
 const static DoubleFactorial dfact;
 const static Factorial fact;
@@ -90,5 +92,7 @@ class CartesianGauss {
     }
 
 };
+
+}
 
 #endif

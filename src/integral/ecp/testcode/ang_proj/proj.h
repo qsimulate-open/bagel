@@ -13,13 +13,17 @@
 #include <boost/math/special_functions/bessel.hpp>
 #include <complex>
 #include "mpreal.h"
-#include "src/util/math/comb.h"
-#include "src/integral/ecp/wigner3j_gen/wigner3j.h"
-#include "src/integral/carsphlist.h"
+#include <src/util/math/comb.h>
+#include <src/integral/ecp/wigner3j.h>
+#include <src/integral/carsphlist.h>
 
 using namespace mpfr;
 using namespace boost;
+using namespace bagel;
+const static Comb comb;
 constexpr int GMPPREC = 256;
+
+namespace test {
 
 class Factorial {
   protected:
@@ -77,7 +81,7 @@ class Modified_Spherical_Bessel_Iexp {
 class SphUSP {
   protected:
     std::array<int, 2> angular_momentum_;
-    std::vector<pair<double, int>> usp_;
+    std::vector<std::pair<double, int>> usp_;
 
   public:
     SphUSP(const std::array<int, 2> lm) : angular_momentum_(lm) {}
@@ -112,7 +116,6 @@ class SphUSP {
         }
 
         mpreal si = zero;
-        Comb comb;
         const int jp = lmam / 2;
         for (int i = j; i <= jp; ++i) {
           si += comb(angular_momentum_[0], i) * comb(i, j) * std::pow(-1.0, i)
@@ -144,7 +147,7 @@ class SphUSP {
 
     int angular_momentum(const int i) const { return angular_momentum_[i]; }
 
-    std::vector<pair<double, int>> usp() const { return usp_; }
+    std::vector<std::pair<double, int>> usp() const { return usp_; }
 
     void print() {
       std::cout << "** Real spherical harmonics to unitary sphere polynomials **" << std::endl;
@@ -153,7 +156,7 @@ class SphUSP {
       std::cout << "Y_lm = sum_i c_i * usp_i" << std::endl;
       this->expand();
       for (auto& it : usp_) {
-        std::cout << "(" << setw(17) << setprecision(9) << it.first << ", " << it.second << ")" << std::endl;
+        std::cout << "(" << std::setw(17) << std::setprecision(9) << it.first << ", " << it.second << ")" << std::endl;
       }
     }
 };
@@ -207,16 +210,16 @@ class CarSph {
       std::cout << "-- Print Cartesian in carsph --" << std::endl;
       std::cout << "car[" << (angular_momentum_ + 2) * (angular_momentum_ + 1) / 2 << "]" << std::endl;
       for (auto it = cartesian_.begin(); it != cartesian_.end(); ++it) {
-        std::cout << setw(17) << setprecision(9) << *it << std::endl;
+        std::cout << std::setw(17) << std::setprecision(9) << *it << std::endl;
       }
       std::cout << "-- Print Spherical in carsph --" << std::endl;
       std::cout << "sph[" << 2 * angular_momentum_ + 1 << "]" << std::endl;
       int cnt = 0;
       for (auto it = spherical_.begin(); it != spherical_.end(); ++it) {
         if (cnt % 2 == 0) {
-          cout << "(" << angular_momentum_ << ", " << setw(3) << angular_momentum_ - cnt/2 << ") " << setw(17) << setprecision(9) << *it << std::endl;
+          std::cout << "(" << angular_momentum_ << ", " << std::setw(3) << angular_momentum_ - cnt/2 << ") " << std::setw(17) << std::setprecision(9) << *it << std::endl;
         } else {
-          cout << "(" << angular_momentum_ << ", " << setw(3) << -(angular_momentum_ - cnt/2) << ") " << setw(17) << setprecision(9) << *it << std::endl;
+          std::cout << "(" << angular_momentum_ << ", " << std::setw(3) << -(angular_momentum_ - cnt/2) << ") " << std::setw(17) << std::setprecision(9) << *it << std::endl;
         }
         ++cnt;
       }
@@ -326,7 +329,7 @@ class RealSH : public SH {
                                                << angular_momentum_[1] << ")" << std::endl;
       std::cout << "Centre = " ;
       for (int i = 0; i != 3; ++i) {
-        std::cout << setw(17) << setprecision(9) << centre_[i] << ";   ";
+        std::cout << std::setw(17) << std::setprecision(9) << centre_[i] << ";   ";
       }
       std::cout << std::endl;
       std::cout << "---" << std::endl;
@@ -395,11 +398,11 @@ class CartesianGauss {
                                                        << angular_momentum_[2] << ")" << std::endl;
       std::cout << "Centre = " ;
       for (int i = 0; i != 3; ++i) {
-        std::cout << setw(17) << setprecision(9) << centre_[i] << ";   ";
+        std::cout << std::setw(17) << std::setprecision(9) << centre_[i] << ";   ";
       }
       std::cout << std::endl;
-      std::cout << "Exponent alpha = " << setw(17) << setprecision(9) << exponent_  << std::endl;
-      std::cout << "Normalisation const N = " << setw(17) << setprecision(9) << norm_ << std::endl;
+      std::cout << "Exponent alpha = " << std::setw(17) << std::setprecision(9) << exponent_  << std::endl;
+      std::cout << "Normalisation const N = " << std::setw(17) << std::setprecision(9) << norm_ << std::endl;
       std::cout << "---" << std::endl;
     }
 
@@ -522,7 +525,6 @@ class ProjectionInt {
     }
 
     double compute(const double r) const {
-      Comb comb;
       const double pi = static_cast<double>(atan(1.0) * 4.0);
       std::array<double, 3> AB;
       for (int i = 0; i != 3; ++i) AB[i] = gauss_->centre(i) - sh_->centre(i);
@@ -689,5 +691,7 @@ class BesselI {
     }
 
 };
+
+}
 
 #endif
