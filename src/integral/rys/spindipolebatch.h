@@ -36,8 +36,6 @@ class SpinDipoleBatch : public CoulombBatch_Base<double> {
     std::shared_ptr<const Atom> target_;
 
     void root_weight(const int ps) override;
-    virtual double scale_root(const double root, const double p, const double zeta) { return root; }
-    virtual double scale_weight(const double weight) { return weight; }
 
   public:
 

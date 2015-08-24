@@ -89,25 +89,22 @@ void SpinDipoleBatch::compute() {
     const double* croots = roots_ + i * rank_;
     const double* cweights = weights_ + i * rank_;
     for (int r = 0; r != rank_; ++r) {
-      const double sroot = scale_root(croots[r], xp_[i], 1.0); // not doing anything at the moment, for complex version
-      const double sweight = scale_weight(cweights[r]); // same as above
-      r1x[r] = P_[i*3  ] - Ax - (P_[i*3  ] - target_->position(0)) * sroot;
-      r1y[r] = P_[i*3+1] - Ay - (P_[i*3+1] - target_->position(1)) * sroot;
-      r1z[r] = P_[i*3+2] - Az - (P_[i*3+2] - target_->position(2)) * sroot;
-      r2[r] = (1.0 - sroot) * 0.5 / xp_[i];
+      r1x[r] = P_[i*3  ] - Ax - (P_[i*3  ] - target_->position(0)) * croots[r];
+      r1y[r] = P_[i*3+1] - Ay - (P_[i*3+1] - target_->position(1)) * croots[r];
+      r1z[r] = P_[i*3+2] - Az - (P_[i*3+2] - target_->position(2)) * croots[r];
+      r2[r] = (1.0 - croots[r]) * 0.5 / xp_[i];
 
       // absorb
-      workx[r] = sweight * coeff_[i] * xp_[i]*xp_[i] * 4.0 / (- target_->atom_charge());
+      workx[r] = cweights[r] * coeff_[i] * xp_[i]*xp_[i] * 4.0 / (- target_->atom_charge());
       // not above that since this is reusing NAI code, Z is automatically multiplied and it has to be compensated here
       worky[r] = 1.0;
       workz[r] = 1.0;
-    }
 
-    for (int r = 0; r != rank_; ++r) {
       workx[rank_ + r] = r1x[r] * workx[r];
       worky[rank_ + r] = r1y[r] * worky[r];
       workz[rank_ + r] = r1z[r] * workz[r];
     }
+
     for (int j = 2; j <= amax1_; ++j) {
       const int offset = j * rank_;
       for (int r = 0; r != rank_; ++r) {
@@ -121,9 +118,9 @@ void SpinDipoleBatch::compute() {
     for (int j = 0; j <= amax1_; ++j) {
       const int offset = j * rank_;
       for (int r = 0; r != rank_; ++r) {
-        worktx[offset + r] = (P_[i*3+0]-Q_[i*3+0]) * workx[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * workx[offset - rank_ + r]);
-        workty[offset + r] = (P_[i*3+1]-Q_[i*3+1]) * worky[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * worky[offset - rank_ + r]);
-        worktz[offset + r] = (P_[i*3+2]-Q_[i*3+2]) * workz[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * workz[offset - rank_ + r]);
+        worktx[offset + r] = (P_[i*3+0]-target_->position(0)) * workx[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * workx[offset - rank_ + r]);
+        workty[offset + r] = (P_[i*3+1]-target_->position(1)) * worky[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * worky[offset - rank_ + r]);
+        worktz[offset + r] = (P_[i*3+2]-target_->position(2)) * workz[offset + r] + (j == 0 ? 0.0 : j*0.5/xp_[i] * workz[offset - rank_ + r]);
       }
     }
 
