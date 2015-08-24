@@ -7,6 +7,8 @@
 
 using namespace bagel;
 
+namespace test {
+
 class LocalExps {
 
   private:
@@ -62,3 +64,5 @@ class LocalExps {
     double mlm_real(const int i) const { return mlm_[i].real(); }
     double mlm_imag(const int i) const { return mlm_[i].imag(); }
 };
+
+}

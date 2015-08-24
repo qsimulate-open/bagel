@@ -8,6 +8,7 @@
 #include <src/util/parallel/mpi_interface.h>
 
 using namespace std;
+using namespace test;
 
 namespace bagel{
   Resources* resources__;

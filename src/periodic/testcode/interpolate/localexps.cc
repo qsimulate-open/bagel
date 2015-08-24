@@ -13,6 +13,7 @@
 
 using namespace std;
 using namespace bagel;
+using namespace test;
 
 const static Legendre plm;
 
