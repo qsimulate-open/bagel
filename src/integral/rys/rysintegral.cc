@@ -63,8 +63,9 @@ tuple<int, int, int, int> RysIntegral<DataType,IntType>::set_angular_info() {
   const int ang1 = basisinfo_[1]->angular_number();
   const int ang2 = basisinfo_[2]->angular_number();
   const int ang3 = basisinfo_[3]->angular_number();
-  rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_ + breit_));
-  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_ + breit_);
+  rank_ = ceil(0.5 * (ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_ + (breit_ == 1 ? 1 : 0)));
+  assert(2 * rank_ >= ang0 + ang1 + ang2 + ang3 + 1 + deriv_rank_ + tenno_ + (breit_ == 1 ? 1 : 0));
+  assert(breit_ <= 2);
 
   amax_ = ang0 + ang1 + deriv_rank_;
   cmax_ = ang2 + ang3 + deriv_rank_;
