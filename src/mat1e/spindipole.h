@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sohcore.h
-// Copyright (C) 2014 Toru Shiozaki
+// Filename: spindipole.h
+// Copyright (C) 2015 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,39 +24,36 @@
 //
 
 
-#ifndef __SRC_MAT1E_SOHCORE_H
-#define __SRC_MAT1E_SOHCORE_H
+#ifndef __SRC_MAT1E_SPINDIPOLE_H
+#define __SRC_MAT1E_SPINDIPOLE_H
 
-#include <src/util/math/zmatrix.h>
-#include <src/molecule/molecule.h>
-#include <src/mat1e/hcore.h>
+#include <src/mat1e/matrix1earray.h>
 
 namespace bagel {
 
-class SOHcore : public ZMatrix {
+class SpinDipole : public Matrix1eArray<6> {
   protected:
-    std::shared_ptr<const Hcore> hcore_;
+    std::shared_ptr<const Atom> atom_;
 
-    void form_sohcore();
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
   private:
     // serialization
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<ZMatrix>(*this) & hcore_;
+      ar & boost::serialization::base_object<Matrix1e>(*this);
     }
 
   public:
-    SOHcore() { }
-    SOHcore(std::shared_ptr<const Molecule> geom, std::shared_ptr<const Hcore> h);
+    SpinDipole() { }
+    SpinDipole(std::shared_ptr<const Molecule>, std::shared_ptr<const Atom>);
+
+    void print(const std::string name, const int len = 10) const override { Matrix1eArray<6>::print(name.empty() ? "Spin-Dipole" : name, len); }
 
 };
 
 }
-
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::SOHcore)
 
 #endif
 

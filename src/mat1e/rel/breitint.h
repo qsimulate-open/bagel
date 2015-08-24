@@ -42,7 +42,7 @@ class BreitInt : public Matrix1eArray<6> {
   public:
     BreitInt(const std::shared_ptr<const Molecule>);
 
-    void print(const std::string name) const override { Matrix1eArray<6>::print(name.empty() ? "Breit" : name); }
+    void print(const std::string name, const int len = 10) const override { Matrix1eArray<6>::print(name.empty() ? "Breit" : name, len); }
 
     std::pair<const int, const int> index(const int i) const { return index_[i]; }
     std::vector<std::pair<const int, const int>> index() const { return index_; }

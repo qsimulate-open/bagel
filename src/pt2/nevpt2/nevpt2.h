@@ -47,6 +47,7 @@ class NEVPT2 : public Method {
 
   protected:
     int ncore_;
+    int nfrozenvirt_;
     int nclosed_;
     int nact_;
     int nvirt_;
@@ -130,6 +131,7 @@ class NEVPT2 : public Method {
 
     std::shared_ptr<const MatType> coeff() const;
     std::tuple<std::shared_ptr<MatType>,VectorB> remove_core(std::shared_ptr<const MatType> in, const VectorB& eig) const;
+    std::tuple<std::shared_ptr<MatType>,VectorB> remove_frozenvirt(std::shared_ptr<const MatType> in, const VectorB& eig) const;
 
   public:
     NEVPT2(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference> = nullptr);
@@ -151,7 +153,9 @@ template<> void NEVPT2<std::complex<double>>::compute_rdm();
 template<> std::shared_ptr<const Matrix> NEVPT2<double>::coeff() const;
 template<> std::shared_ptr<const ZMatrix> NEVPT2<std::complex<double>>::coeff() const;
 template<> std::tuple<std::shared_ptr<Matrix>,VectorB> NEVPT2<double>::remove_core(std::shared_ptr<const Matrix>, const VectorB&) const;
+template<> std::tuple<std::shared_ptr<Matrix>,VectorB> NEVPT2<double>::remove_frozenvirt(std::shared_ptr<const Matrix>, const VectorB&) const;
 template<> std::tuple<std::shared_ptr<ZMatrix>,VectorB> NEVPT2<std::complex<double>>::remove_core(std::shared_ptr<const ZMatrix>, const VectorB&) const;
+template<> std::tuple<std::shared_ptr<ZMatrix>,VectorB> NEVPT2<std::complex<double>>::remove_frozenvirt(std::shared_ptr<const ZMatrix>, const VectorB&) const;
 
 template<> std::shared_ptr<Matrix> NEVPT2<double>::compute_fock(std::shared_ptr<const Geometry> cgeom, std::shared_ptr<const Matrix> hcore,
                                                                 const MatView coeff, const double exch, const double coulomb);

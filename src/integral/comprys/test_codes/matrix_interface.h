@@ -13,7 +13,7 @@
 #include <type_traits>
 #include <src/util/parallel/scalapack.h>
 
-namespace ryan {
+namespace test {
 
 template<typename Batch, typename DataType>
 class RealLondon {

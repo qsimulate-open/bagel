@@ -36,7 +36,7 @@ void BreitBatch_base::root_weight(const int ps) {
   } else if (breit_ == 2) {
     spin2root__.root(rank_, T_, roots_, weights_, ps);
   } else {
-    assert(false);
+    throw logic_error("unimplemented case. BreitBatch_base::root_weight");
   }
 }
 

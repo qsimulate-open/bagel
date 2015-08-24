@@ -51,14 +51,6 @@ class RnBatch: public CoulombBatch_energy {
        this->allocate_arrays(primsize_ * natom_ * max_rterms_);
     }
 
-    RnBatch(const std::array<std::shared_ptr<const Shell>,2>& _info,
-            const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      : CoulombBatch_energy (_info, mol, L, A) {
-
-       max_rterms_ = get_max_rterms();
-       this->allocate_arrays(primsize_ * natom_ * max_rterms_);
-    }
-      
     ~RnBatch() { }
 
 };

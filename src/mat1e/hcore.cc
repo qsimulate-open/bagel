@@ -41,7 +41,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
 
-Hcore::Hcore(const shared_ptr<const Molecule> mol) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
+Hcore::Hcore(shared_ptr<const Molecule> mol) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
 
   init(mol);
   fill_upper();
@@ -115,7 +115,7 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     for (auto& i : mol->atoms()) {
       if (i->finite_nucleus()) {
         const double fac = - i->atom_charge()*pow(i->atom_exponent()/pi__, 1.5);
-        auto in = make_shared<Shell>(i->spherical(), i->position(), 0, vector<double>{i->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)});
+        auto in = make_shared<Shell>(i->spherical(), i->position(), 0, vector<double>{i->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{{0,1}});
         const array<shared_ptr<const Shell>,4> shells{{ dummy, in, input[0], input[1] }};
 #ifdef LIBINT_INTERFACE
         Libint eri(shells);

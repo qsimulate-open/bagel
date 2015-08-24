@@ -216,6 +216,9 @@ void Shell::init_relativistic(const array<double,3> magnetic_field, bool london)
 
 // In DFT we want to compute values of basis functions on grid
 void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, const double& x, const double& y, const double& z) const {
+  const bool dogradient = dx != nullptr && dy != nullptr && dz != nullptr;
+  assert(dogradient || (dx == nullptr && dy == nullptr && dz == nullptr));
+
   const double rr = x*x+y*y+z*z;
   auto range = contraction_ranges_.begin();
   const int nang = angular_number();
@@ -248,7 +251,8 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
     const double expy = exp1*y;
     const double expz = exp1*z;
     // TODO threshold hardwired
-    if (fabs(exp0) >= 1.0e-14) {
+    const bool nonzero = fabs(exp0) >= 1.0e-14;
+    if (nonzero && dogradient) {
       for (int iz = 0, ixyz = 0; iz <= nang; ++iz) {
         for (int iy = 0; iy <= nang - iz; ++iy, ++ixyz) {
           const int ix = nang - iy - iz;
@@ -270,14 +274,26 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
         copy_n(tmpy, nxyz, dy);
         copy_n(tmpz, nxyz, dz);
       }
+    } else if (nonzero) {
+      for (int iz = 0, ixyz = 0; iz <= nang; ++iz)
+        for (int iy = 0; iy <= nang - iz; ++iy, ++ixyz) {
+          const int ix = nang - iy - iz;
+          const double cart = powx[ix+1]*powy[iy+1]*powz[iz+1];
+          tmp0[ixyz] = cart*exp0;
+        }
+      if (spherical_ && index)
+        carsphlist.carsphfunc_call(index, 1, tmp0, b);
+      else
+        copy_n(tmp0, nxyz, b);
     }
     b  += nxyz;
-    dx += nxyz;
-    dy += nxyz;
-    dz += nxyz;
+    if (dogradient) {
+      dx += nxyz;
+      dy += nxyz;
+      dz += nxyz;
+    }
     ++range;
   }
-
 }
 
 
