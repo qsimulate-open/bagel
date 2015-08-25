@@ -64,6 +64,7 @@ static const double au2joule__ = au2kilogram__ * std::pow(au2meter__ / au2second
 static const double au2kjmol__ = au2joule__ * avogadro__ / 1.0e3;
 static const double au2eV__ = au2kilogram__ * au2meter__ * au2meter__ / au2second__ / au2second__ / au2coulomb__;
 static const double au2tesla__ = au2kilogram__ / au2coulomb__ / au2second__;
+static const double au2wavenumber__ = 1.0 / (2.0 * pi__ * c__ * au2meter__ * 100.0);
 
 /************************************************************
 *  Numerical constants                                      *
