@@ -16,6 +16,7 @@ using namespace bagel;
 using namespace test;
 
 const static Legendre plm;
+const static Gamma_scaled gamma_sc;
 
 LocalExps::LocalExps(const int ws, const int l, const int n, const double thr)
   : ws_(ws), lmax_(l), limit_(n), thresh_(thr) {
@@ -97,7 +98,6 @@ void LocalExps::compute_mlm() {
           glower += cweights[i] * pow(croots[i], l);
       }
 
-      Gamma_scaled gamma_sc;
       const double coeff = 2.0 * pow(beta_, 2*l+1) * gamma_sc(l, r);
 #if 0 ////DEBUG
       const double boost_gamma_sc = pow(r, l) / boost::math::tgamma(l+0.5);
@@ -188,7 +188,6 @@ void LocalExps::compute_mlm() {
           glower += cweights[i] * pow(croots[i], l);
       }
 
-      Gamma_scaled gamma_sc;
       const double gamma_coeff = gamma_sc(l, r);
       const double coeff = 2.0 * pow(beta_, 2*l+1) * gamma_coeff;
 
@@ -213,7 +212,7 @@ void LocalExps::compute_mlm() {
           mlm_[imul] -= complex<double>(real, imag);
         }
         // smooth term
-        const double coeffm = (r > numerical_zero__) ? plm_tilde * gamma_coeff *  exp(-rsq * pibeta) / (r * r) : 0.0;
+        const double coeffm = (r > numerical_zero__) ? plm_tilde * gamma_coeff *  exp(-rsq * pibeta) / rsq : 0.0;
         double real = coeffm * sign;
         double imag = coeffm * sin(am * phi);
         mlm_[imul] += coeffl * complex<double>(real, imag);
