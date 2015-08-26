@@ -407,6 +407,8 @@ shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
 
 void ZHarrison::compute_pseudospin_hamiltonian() const {
 
+  /**  Part 1: Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix  **/
+
   // First, we create spin matrices in the atomic orbital basis
   // TODO Create a class for this
   const int n = geom_->nbasis();
@@ -607,6 +609,7 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
 
   cout << endl;
   spinham->print("Pseudospin Hamiltonian!");
+/*
   diagspinx->print("Spin matrix - x-component");
   diagspiny->print("Spin matrix - y-component");
   diagspinz->print("Spin matrix - z-component");
@@ -616,5 +619,47 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   spinmat[0]->print("Spin matrix (in ZFCI eigenstate basis) - x-component");
   spinmat[1]->print("Spin matrix (in ZFCI eigenstate basis) - y-component");
   spinmat[2]->print("Spin matrix (in ZFCI eigenstate basis) - z-component");
+*/
   cout << endl;
+
+  /**  Part 2: Build up symbolic pseudospin Hamiltonian  **/
+
+  // S_x, S_y, and S_z operators in pseudospin basis
+  array<shared_ptr<ZMatrix>,3> pspinmat;
+  for (int i=0; i!=3; ++i)
+    pspinmat[i] = make_shared<ZMatrix>(nspin1, nspin1);
+
+  auto spin_plus = make_shared<ZMatrix>(nspin1, nspin1);
+  auto spin_minus = make_shared<ZMatrix>(nspin1, nspin1);
+  const double sval = nspin/2.0;
+  const double ssp1 = sval*(sval+1.0);
+
+  for (int i=0; i!=nspin1; ++i) {
+    const double ml1 = sval - i;
+    pspinmat[2]->element(i,i) = ml1;
+    if (i < nspin) {
+      spin_plus->element(i,i+1) = std::sqrt(ssp1 - ml1*(ml1-1.0));
+    }
+    if (i > 0) {
+      spin_minus->element(i,i-1) = std::sqrt(ssp1 - ml1*(ml1+1.0));
+    }
+  }
+
+  pspinmat[0]->add_block( 0.5, 0, 0, nspin1, nspin1, spin_plus);
+  pspinmat[0]->add_block( 0.5, 0, 0, nspin1, nspin1, spin_minus);
+  pspinmat[1]->add_block( complex<double>( 0.0, -0.5), 0, 0, nspin1, nspin1, spin_plus);
+  pspinmat[1]->add_block( complex<double>( 0.0,  0.5), 0, 0, nspin1, nspin1, spin_minus);
+
+  // Transformation matrix to build pseudospin Hamiltonian from D-tensor
+  // Rows correspond to pairs of pseudospins (SS, S-1S, S-2S...)
+  // Columns correspond to elements of the D-tensor (Dxx, Dyx, Dzx, Dxy...)
+  // Note that we look over the first indices before the second, so we can copy data between vectors and matrices and have it come out in the right order
+  auto d2h = make_shared<ZMatrix>(nspin1*nspin1,9);
+  for (int i=0; i!=3; ++i) {
+    for (int j=0; j!=3; ++j) {
+      ZMatrix temp = *pspinmat[i] * *pspinmat[j];
+      d2h->copy_block(0, 3*j+i, nspin1*nspin1, 1, temp.data());
+    }
+  }
+
 }
