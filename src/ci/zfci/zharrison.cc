@@ -662,4 +662,53 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
     }
   }
 
+  /**  Part 3: Extract D-tensor from the numerical pseudospin Hamiltonian **/
+
+  // h2d is the left-inverse of d2h
+  // It converts from the pseudospin Hamiltonian to the D-tensor.
+  ZMatrix d2h_sqinv = *d2h % *d2h;
+  d2h_sqinv.inverse();
+  ZMatrix h2d = d2h_sqinv ^ *d2h;
+
+  auto spinham_vec = make_shared<ZMatrix>(nspin1*nspin1,1);
+  spinham_vec->copy_block(0, 0, nspin1*nspin1, 1, spinham->element_ptr(0,0));
+  ZMatrix Dtensor_vec = h2d * *spinham_vec;
+  auto Dtensor = make_shared<ZMatrix>(3,3);
+  Dtensor->copy_block(0, 0, 3, 3, Dtensor_vec.element_ptr(0,0));
+
+#ifndef NDEBUG
+  // Watch for numerical instability - might happen if higher spins have linear dependency, for example
+  {
+    ZMatrix test = h2d * *d2h;
+    ZMatrix unit = *test.clone();
+    unit.unit();
+    const double error = (test-unit).rms();
+    if (error > 1.0e-8)
+      cout << "  **  RMS Error in left-inverse computation for extraction of D-tensor: " << scientific << setprecision(4) << error << endl;
+  }
+#endif
+
+//  const array<string,9> Dlabel = {{ "Dxx", "Dyx", "Dzx", "Dxy", "Dyy", "Dzy", "Dxz", "Dyz", "Dzz" }};
+//  for (int i=0; i!=9; ++i) {
+//    auto tmp = make_shared<ZMatrix>(nspin1,nspin1);
+//    tmp->copy_block(0, 0, nspin1, nspin1, d2h->element_ptr(0,i));
+//    tmp->print("Contributions of " + Dlabel[i] + " to the pseudospin Hamiltonian");
+//  }
+
+  Dtensor->print("D tensor");
+  VectorB Ddiag(3);
+  Dtensor->diagonalize(Ddiag);
+  for (int i=0; i!=3; ++i)
+    cout << "Diagonalized D-tensor value " << i << " = " << Ddiag[i] << endl;
+
+  int jmax = 0;
+  const array<int,3> fwd = {{ 1, 2, 0 }};
+  const array<int,3> bck = {{ 2, 0, 1 }};
+  if (std::abs(Ddiag[1]) > std::abs(Ddiag[jmax])) jmax = 1;
+  if (std::abs(Ddiag[2]) > std::abs(Ddiag[jmax])) jmax = 2;
+  const double Dval = Ddiag[jmax] - 0.5*(Ddiag[fwd[jmax]] + Ddiag[bck[jmax]]);
+  const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
+  cout << " ** D = " << Dval << " E_h, or " << Dval * au2wavenumber__ << " cm-1" << endl;
+  cout << " ** E = " << std::abs(Eval) << " E_h, or " << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
+
 }
