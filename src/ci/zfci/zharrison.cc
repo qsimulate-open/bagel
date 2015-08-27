@@ -701,11 +701,14 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   for (int i=0; i!=3; ++i)
     cout << "Diagonalized D-tensor value " << i << " = " << Ddiag[i] << endl;
 
+  // Compute Davg so that it works even if D is not traceless (which shouldn't happen on accident)
+  const double Davg = 1.0 / 3.0 * (Ddiag[0] + Ddiag[1] + Ddiag[2]);
+
   int jmax = 0;
   const array<int,3> fwd = {{ 1, 2, 0 }};
   const array<int,3> bck = {{ 2, 0, 1 }};
-  if (std::abs(Ddiag[1]) > std::abs(Ddiag[jmax])) jmax = 1;
-  if (std::abs(Ddiag[2]) > std::abs(Ddiag[jmax])) jmax = 2;
+  if (std::abs(Ddiag[1]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 1;
+  if (std::abs(Ddiag[2]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 2;
   const double Dval = Ddiag[jmax] - 0.5*(Ddiag[fwd[jmax]] + Ddiag[bck[jmax]]);
   const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
   cout << " ** D = " << Dval << " E_h, or " << Dval * au2wavenumber__ << " cm-1" << endl;
