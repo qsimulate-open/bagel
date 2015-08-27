@@ -9,7 +9,6 @@
 #include <src/util/math/gamma.h>
 #include <src/integral/rys/erirootlist.h>
 #include "localexps.h"
-#include <boost/math/special_functions/erf.hpp>
 
 using namespace std;
 using namespace bagel;
@@ -158,7 +157,6 @@ void LocalExps::compute_mlm() {
     T_[ivec] = Rsq_[ivec] * beta_ * beta_;
   }
 
-#if 1
   fill_n(roots_, max_rank_ * nvec, 0.0);
   fill_n(weights_, max_rank_ * nvec, 0.0);
   for (int l = 0; l <= lmax_; ++l) {
@@ -167,7 +165,7 @@ void LocalExps::compute_mlm() {
     const int rank = l + 1;
 
 
-    for (int ivec = 0; ivec != nvec; ++ivec) {
+    for (int ivec = 1; ivec != nvec; ++ivec) {
       array<int, 3> id = vindex[ivec];
 
       const int pos = ivec * 3;
@@ -212,14 +210,13 @@ void LocalExps::compute_mlm() {
           mlm_[imul] -= complex<double>(real, imag);
         }
         // smooth term
-        const double coeffm = (r > numerical_zero__) ? plm_tilde * gamma_coeff *  exp(-rsq * pibeta) / rsq : 0.0;
+        const double coeffm = plm_tilde * gamma_coeff *  exp(-rsq * pibeta) / rsq;
         double real = coeffm * sign;
         double imag = coeffm * sin(am * phi);
         mlm_[imul] += coeffl * complex<double>(real, imag);
       }
     }
   }
-#endif
 };
 
 
