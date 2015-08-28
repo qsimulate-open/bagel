@@ -53,7 +53,6 @@ template<typename DataType, int N>
 inline std::vector<IndexRange> get_indexranges(std::shared_ptr<TA::Array<DataType, N>> o) {
    std::vector<IndexRange> out;
    //   ... find a way to construct vector<IndexRange> from o (input)...
-   for (auto i = o.begin(); i != o.end; ++i) { out[i] = o; }
    return out;
 }
 #endif
@@ -62,7 +61,7 @@ template <typename DataType>
 class Tensor_ {
   protected:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
-  protected:
+  //protected:
     std::vector<IndexRange> range_;
     std::shared_ptr<Storage<DataType>> data_;
     int rank_;
@@ -74,12 +73,9 @@ class Tensor_ {
     Tensor_(std::vector<IndexRange> in, const bool kramers = false);
 
 #if 0
-    template<unsigned int N>
-    Tensor_(std::shared_ptr<TA::Array<DataType, N>> o) : Tensor_(get_indexranges(o)) { // delegate constuctor 
+   template<unsigned int N>
+   Tensor_(std::shared_ptr<TA::Array<DataType, N>> o) : Tensor_(get_indexranges(o)) { // delegate constuctor 
       // copy the elements from o to data
-      for (auto i = o.begin(); i != o.end(); ++i) {
-//      data_ = i;
-      }
     }
 #endif
 
@@ -108,6 +104,22 @@ class Tensor_ {
 
     int rank() const { return rank_; }
     size_t size_alloc() const;
+
+    typename TiledArray::Array<double, rank()>::value_type 
+      make_tile(TiledArray::Array<double, rank()>::range_type& range) {   
+        TiledArray::Array<double, rank()>::value_type tile(range);
+        for (std::size_t i = 0; i < tile.size(); ++i)                       //this for loop will add data to the tiles
+          tile[i] = ;                                                       //
+          return tile;
+    }
+    void init_array(TiledArray::Array<double,  rank()>& x) {
+      for (auto it = x.begin(); it != x.end(); ++it) {
+        madness::Future<TiledArray::Array<double, 2*rank()>::value_type> tile =
+        x.get_world().taskq.add(&make_tile, x.trange().make_tile_range(it.ordinal()));
+        range(it.ordinal);
+        *it = tile;
+     }  
+   }   
 
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
     double rms() const { return std::sqrt(detail::real(dot_product(*this))/size_alloc()); }
@@ -170,6 +182,22 @@ class Tensor_ {
     void print5(std::string label, const double thresh = 5.0e-2) const;
     void print6(std::string label, const double thresh = 5.0e-2) const;
     void print8(std::string label, const double thresh = 5.0e-2) const;
+    /*template<typename ...args>
+    Tensor_  TiledArray::Array<double, rank()>::value_type 
+      make_tile(TiledArray::Array<double, rank()>::range_type& range) {   
+        TiledArray::Array<double, rank()>::value_type tile(range);
+        for (std::size_t i = 0; i < tile.size(); ++i)                       //this for loop will add data to the tiles
+          tile[i] = ;                                                       //  
+          return tile;
+    }   
+    void init_array(TiledArray::Array<double,  rank()>& x) {
+      for (auto it = x.begin(); it != x.end(); ++it) {
+        madness::Future<TiledArray::Array<double, 2*rank()>::value_type> tile =
+        x.get_world().taskq.add(&make_tile, x.trange().make_tile_range(it.ordinal()));
+        range(it.ordinal);
+        *it = tile;
+     }   
+   }*/ 
 };
 
 extern template class Tensor_<double>;
