@@ -210,7 +210,7 @@ void Shell::init_relativistic(const array<double,3> magnetic_field, bool london)
 
   // zsmall is a transformation matrix (x,y,z components)
   zsmall_ = MomentCompute::call(*this, magnetic_field, london);
-  for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
+  for (int i = 0; i != 3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
 }
 
 

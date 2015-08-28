@@ -92,19 +92,19 @@ shared_ptr<RelCoeff_Block> RelCoeff_Striped::block_format(int nclosed, int nact,
   const int n = ndim();
   auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed, nact, nvirt_nr, nneg);
   // closed
-  for (int j=0; j!=nclosed; ++j) {
+  for (int j = 0; j != nclosed; ++j) {
     out->copy_block(0,           j, n, 1, slice(j*2  , j*2+1));
     out->copy_block(0, nclosed + j, n, 1, slice(j*2+1, j*2+2));
   }
   int offset = nclosed*2;
   // active
-  for (int j=0; j!=nact; ++j) {
+  for (int j = 0; j != nact; ++j) {
     out->copy_block(0, offset + j,        n, 1, slice(offset +j*2,   offset + j*2+1));
     out->copy_block(0, offset + nact + j, n, 1, slice(offset +j*2+1, offset + j*2+2));
   }
   offset = (nclosed+nact)*2;
   // virtual (including positrons)
-  for (int j=0; j!=nvirt_nr+nneg/2; ++j) {
+  for (int j = 0; j != nvirt_nr + nneg/2; ++j) {
     out->copy_block(0, offset + j,                     n, 1, slice(offset + j*2,   offset + j*2+1));
     out->copy_block(0, offset + nvirt_nr+nneg/2 + j,   n, 1, slice(offset + j*2+1, offset + j*2+2));
   }
@@ -118,19 +118,19 @@ shared_ptr<RelCoeff_Striped> RelCoeff_Block::striped_format() const {
   int offset = nclosed_;
   auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
   // closed
-  for (int j=0; j!=nclosed_; ++j) {
+  for (int j = 0; j != nclosed_; ++j) {
     out->copy_block(0, j*2,   n, 1, slice(j, j+1));
     out->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
   }
   offset = nclosed_*2;
   // active
-  for (int j=0; j!=nact_; ++j) {
+  for (int j = 0; j != nact_; ++j) {
     out->copy_block(0, offset + j*2,   n, 1, slice(offset + j,         offset + j+1));
     out->copy_block(0, offset + j*2+1, n, 1, slice(offset + nact_ + j, offset + nact_ + j+1));
   }
   offset = (nclosed_+nact_)*2;
   // vituals (including positrons)
-  for (int j=0; j!=nvirt_rel(); ++j) {
+  for (int j = 0; j != nvirt_rel(); ++j) {
     out->copy_block(0, offset + j*2,   n, 1, slice(offset + j,          offset + j+1));
     out->copy_block(0, offset + j*2+1, n, 1, slice(offset + nvirt_rel() + j, offset + nvirt_rel() + j+1));
   }
@@ -144,7 +144,7 @@ shared_ptr<RelCoeff_Striped> RelCoeff_Kramers::striped_format() const {
   int offset = nclosed_ + nact_ + nvirt_nr_ + nneg_/2;
   auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
 
-  for (int j=0; j!=offset; ++j) {
+  for (int j = 0; j != offset; ++j) {
     out->copy_block(0, j*2,   n, 1, slice(j, j+1));
     out->copy_block(0, j*2+1, n, 1, slice(offset + j, offset + j+1));
   }

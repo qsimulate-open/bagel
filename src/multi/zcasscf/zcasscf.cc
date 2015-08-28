@@ -317,7 +317,7 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
       if (occ_sort) {
         // sort by natural orbital occupation numbers
         int b2n = out->ndim();
-        for (int i=0; i!=out->mdim()/2; ++i) {
+        for (int i = 0; i != out->mdim()/2; ++i) {
           copy_n(tmp->element_ptr(0, out->mdim()/2-1-i), b2n, out->element_ptr(0, i));
           copy_n(tmp->element_ptr(0, out->mdim()-1-i), b2n, out->element_ptr(0, i+b2n/2));
           vec2[b2n/2-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
@@ -385,7 +385,7 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
     }
 
   } else { // set occupation numbers, but coefficients don't need to be updated
-    for (int i=0; i!=tmp->ndim(); ++i)
+    for (int i = 0; i != tmp->ndim(); ++i)
       vec2[i] = tmp->get_real_part()->element(i,i);
     out = tmp;
   }
@@ -466,7 +466,7 @@ void ZCASSCF::print_natocc() const {
   assert(occup_.size() > 0);
   cout << "  ========       state-averaged       ======== " << endl;
   cout << "  ======== natural occupation numbers ======== " << endl;
-  for (int i=0; i!=occup_.size()/2; ++i)
+  for (int i = 0; i != occup_.size()/2; ++i)
     cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
   cout << "  ============================================ " << endl;
 }

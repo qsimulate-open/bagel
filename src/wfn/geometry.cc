@@ -66,7 +66,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   const bool tesla = geominfo->get<bool>("tesla", false);
   if (tesla)
-    for (int i=0; i!=3; ++i)
+    for (int i = 0; i != 3; ++i)
       magnetic_field_[i] /= au2tesla__;
   set_london(geominfo);
 
@@ -322,7 +322,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     magnetic_field_ = geominfo->get_array<double,3>("magnetic_field");
     const bool tesla = geominfo->get<bool>("tesla", false);
     if (tesla)
-      for (int i=0; i!=3; ++i)
+      for (int i = 0; i != 3; ++i)
         magnetic_field_[i] /= au2tesla__;
 
     const string basis = geominfo->get<string>("basis_type", london_ ? "giao" : "gaussian");

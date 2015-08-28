@@ -521,7 +521,7 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   // By default, just use the ground states
   vector<int> aniso_state;
   aniso_state.resize(nspin1);
-  for (int i=0; i!=nspin1; ++i)
+  for (int i = 0; i != nspin1; ++i)
     aniso_state[i] = i;
 
   // aniso_state can be used to request mapping excited states instead
@@ -532,11 +532,11 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
       aniso_state.push_back(lexical_cast<int>(i->data()) - 1);
     if (aniso_state.size() != nspin1)
       throw runtime_error("Aniso:  Wrong number of states requested for this S value (should be " + to_string(nspin1) + ")");
-    for (int i=0; i!=nspin1; ++i)
+    for (int i = 0; i != nspin1; ++i)
       if (aniso_state[i] < 0 || aniso_state[i] >= nstate_)
         throw runtime_error("Aniso:  Invalid state requested (should be between 1 and " + to_string(nstate_) + ")");
     cout << "    For the following states:  ";
-    for (int i=0; i!=nspin1; ++i)
+    for (int i = 0; i != nspin1; ++i)
       cout << aniso_state[i] << "  ";
     cout << endl;
   } else {
@@ -546,11 +546,11 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
 
   // Compute spin matrices in the basis of ZFCI Hamiltonian eigenstates
   array<shared_ptr<ZMatrix>,3> spinmat;
-  for (int i=0; i!=3; ++i) {
+  for (int i = 0; i != 3; ++i) {
     spinmat[i] = make_shared<ZMatrix>(nspin1, nspin1);
   }
-  for (int i=0; i!=nspin1; ++i) {
-    for (int j=0; j!=nspin1; ++j) {
+  for (int i = 0; i != nspin1; ++i) {
+    for (int j = 0; j != nspin1; ++j) {
       shared_ptr<Kramers<2,ZRDM<1>>> temprdm = rdm1(aniso_state[i], aniso_state[j]);
       if (!temprdm->exist({1,0})) {
         cout << " * Need to generate an off-diagonal rdm of zeroes." << endl;
@@ -579,7 +579,7 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   { // Reorder eigenvectors so positive M_s come first
     shared_ptr<ZMatrix> tempm = transform->clone();
     VectorB tempv = *zeig.clone();
-    for (int i=0; i!=nspin1; ++i) {
+    for (int i = 0; i != nspin1; ++i) {
       tempv[i] = zeig[nspin-i];
       tempm->copy_block(0, i, nspin1, 1, transform->slice(nspin-i, nspin-i+1));
     }
@@ -587,18 +587,18 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
     zeig = tempv;
   }
 
-  for (int i=0; i!=nspin1; ++i)
+  for (int i = 0; i != nspin1; ++i)
     cout << "    Spin-z eigenvalue " << i+1 << " = " << zeig[i] << endl;
 
   // We will subtract out average energy so the pseudospin Hamiltonian is traceless
   complex<double> energy_avg = 0.0;
-  for (int i=0; i!=nspin1; ++i)
+  for (int i = 0; i != nspin1; ++i)
     energy_avg += energy_[aniso_state[i]];
   energy_avg /= nspin1;
 
   // Now build up the numerical pseudospin Hamiltonian!
   auto energies = make_shared<ZMatrix>(nspin1,nspin1);
-  for (int i=0; i!=nspin1; ++i) {
+  for (int i = 0; i != nspin1; ++i) {
     energies->element(i,i) = energy_[aniso_state[i]] - energy_avg;
   }
   auto spinham = make_shared<ZMatrix>(*transform % *energies * *transform);
@@ -626,7 +626,7 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
 
   // S_x, S_y, and S_z operators in pseudospin basis
   array<shared_ptr<ZMatrix>,3> pspinmat;
-  for (int i=0; i!=3; ++i)
+  for (int i = 0; i != 3; ++i)
     pspinmat[i] = make_shared<ZMatrix>(nspin1, nspin1);
 
   auto spin_plus = make_shared<ZMatrix>(nspin1, nspin1);
@@ -634,7 +634,7 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   const double sval = nspin/2.0;
   const double ssp1 = sval*(sval+1.0);
 
-  for (int i=0; i!=nspin1; ++i) {
+  for (int i = 0; i != nspin1; ++i) {
     const double ml1 = sval - i;
     pspinmat[2]->element(i,i) = ml1;
     if (i < nspin) {
@@ -655,8 +655,8 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   // Columns correspond to elements of the D-tensor (Dxx, Dyx, Dzx, Dxy...)
   // Note that we look over the first indices before the second, so we can copy data between vectors and matrices and have it come out in the right order
   auto d2h = make_shared<ZMatrix>(nspin1*nspin1,9);
-  for (int i=0; i!=3; ++i) {
-    for (int j=0; j!=3; ++j) {
+  for (int i = 0; i != 3; ++i) {
+    for (int j = 0; j != 3; ++j) {
       ZMatrix temp = *pspinmat[i] * *pspinmat[j];
       d2h->copy_block(0, 3*j+i, nspin1*nspin1, 1, temp.data());
     }
@@ -724,7 +724,7 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   Dtensor->print("D tensor");
   VectorB Ddiag(3);
   Dtensor->diagonalize(Ddiag);
-  for (int i=0; i!=3; ++i)
+  for (int i = 0; i != 3; ++i)
     cout << "Diagonalized D-tensor value " << i << " = " << Ddiag[i] << endl;
 
   // Compute Davg so that it works even if D is not traceless (which shouldn't happen on accident)
@@ -764,12 +764,12 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   }
 
   cout << "  ** Relative energies expected from the recomputed Pseudospin Hamiltonian: " << endl;
-  for (int i=nspin; i>=0; --i)
+  for (int i = nspin; i >= 0; --i)
     cout << "     " << i << "  " << shenergies[i] - shenergies[0] << " E_h  =  " << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
   cout << endl;
 
   cout << "  ** Relative energies observed by relativistic configuration interaction: " << endl;
-  for (int i=nspin; i>=0; --i)
+  for (int i = nspin; i >= 0; --i)
     cout << "     " << i << "  " << energy_[aniso_state[i]] - energy_[aniso_state[0]] << " E_h  =  " << (energy_[aniso_state[i]] - energy_[aniso_state[0]])*au2wavenumber__ << " cm-1" << endl;
   cout << endl;
 
