@@ -688,13 +688,6 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   }
 #endif
 
-//  const array<string,9> Dlabel = {{ "Dxx", "Dyx", "Dzx", "Dxy", "Dyy", "Dzy", "Dxz", "Dyz", "Dzz" }};
-//  for (int i=0; i!=9; ++i) {
-//    auto tmp = make_shared<ZMatrix>(nspin1,nspin1);
-//    tmp->copy_block(0, 0, nspin1, nspin1, d2h->element_ptr(0,i));
-//    tmp->print("Contributions of " + Dlabel[i] + " to the pseudospin Hamiltonian");
-//  }
-
   Dtensor->print("D tensor");
   VectorB Ddiag(3);
   Dtensor->diagonalize(Ddiag);
@@ -713,5 +706,44 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
   cout << " ** D = " << Dval << " E_h, or " << Dval * au2wavenumber__ << " cm-1" << endl;
   cout << " ** E = " << std::abs(Eval) << " E_h, or " << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
+
+  ZMatrix check_spinham_vec = *d2h * Dtensor_vec;
+  auto checkham = make_shared<ZMatrix>(nspin1,nspin1);
+  checkham->copy_block(0, 0, nspin1, nspin1, check_spinham_vec.element_ptr(0,0));
+  checkham->print("Pseudospin Hamiltonian, recomputed", 30);
+  cout << "  Error in recomputation of spin Hamiltonian from D = " << (*checkham - *spinham).rms() << endl << endl;
+
+  VectorB shenergies(nspin1);
+  checkham->diagonalize(shenergies);
+
+  if (nspin == 2) {
+    cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
+    if (Dval > 0.0) {
+      cout << "     2  " << Dval + std::abs(Eval) << " E_h  =  " << (Dval + std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
+      cout << "     1  " << Dval - std::abs(Eval) << " E_h  =  " << (Dval - std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
+      cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
+    } else {
+      cout << "     2  " << -Dval + 0.5*std::abs(Eval) << " E_h  =  " << (-Dval + 0.5*std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
+      cout << "     1  " << std::abs(Eval) << " E_h  =  " << std::abs(Eval)*au2wavenumber__ << " cm-1" << endl;
+      cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
+    }
+  } else if (nspin == 3) {
+    cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
+    const double energy32 = 2.0*std::sqrt(Dval*Dval + 3.0*Eval*Eval);
+    cout << "     3  " << energy32 << " E_h  =  " << energy32*au2wavenumber__ << " cm-1" << endl;
+    cout << "     2  " << energy32 << " E_h  =  " << energy32*au2wavenumber__ << " cm-1" << endl;
+    cout << "     1  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl;
+    cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
+  }
+
+  cout << "  ** Relative energies expected from the recomputed Pseudospin Hamiltonian: " << endl;
+  for (int i=nspin; i>=0; --i)
+    cout << "     " << i << "  " << shenergies[i] - shenergies[0] << " E_h  =  " << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
+  cout << endl;
+
+  cout << "  ** Relative energies observed by relativistic configuration interaction: " << endl;
+  for (int i=nspin; i>=0; --i)
+    cout << "     " << i << "  " << energy_[aniso_state[i]] - energy_[aniso_state[0]] << " E_h  =  " << (energy_[aniso_state[i]] - energy_[aniso_state[0]])*au2wavenumber__ << " cm-1" << endl;
+  cout << endl;
 
 }
