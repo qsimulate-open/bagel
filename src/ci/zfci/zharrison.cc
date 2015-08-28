@@ -694,15 +694,11 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
     Dtensor->copy_real_block(1.0, 0, 0, 3, 3, Dtensor_real);
 
     // Recompute Hamiltonian from D so we can check the fit
-    // If we convert H to D using real algebra, we must use the same in reverse...
-    Matrix check_spinham_vec = *d2h_real * Dtensor_vec_real;
-    Matrix tempr(nspin1, nspin1);
-    Matrix tempi(nspin1, nspin1);
-    tempr.copy_block(0, 0, nspin1, nspin1, check_spinham_vec.element_ptr(0,0));
-    tempi.copy_block(0, 0, nspin1, nspin1, check_spinham_vec.element_ptr(nspin1*nspin1,0));
-    checkham->zero();
-    checkham->add_real_block(complex<double>( 1.0, 0.0), 0, 0, nspin1, nspin1, tempr);
-    checkham->add_real_block(complex<double>( 0.0, 1.0), 0, 0, nspin1, nspin1, tempi);
+    ZMatrix Dtensor_vec(9, 1);
+    Dtensor_vec.copy_block(0, 0, 9, 1, Dtensor->element_ptr(0,0));
+    ZMatrix checkham_vec = *d2h * Dtensor_vec;
+    checkham->copy_block(0, 0, nspin1, nspin1, checkham_vec.element_ptr(0,0));
+
   } else {
     // On request, allow complex ZFS parameters
     // Same algorithm, working directly with complex matrices
@@ -720,6 +716,8 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
     ZMatrix check_spinham_vec = *d2h * Dtensor_vec;
     checkham->copy_block(0, 0, nspin1, nspin1, check_spinham_vec.element_ptr(0,0));
   }
+
+  cout << "  Error in recomputation of spin Hamiltonian from D = " << (*checkham - *spinham).rms() << endl << endl;
 
   Dtensor->print("D tensor");
   VectorB Ddiag(3);
