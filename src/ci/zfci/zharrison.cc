@@ -591,7 +591,7 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
     cout << "    Spin-z eigenvalue " << i+1 << " = " << zeig[i] << endl;
 
   // We will subtract out average energy so the pseudospin Hamiltonian is traceless
-  complex<double> energy_avg = 0;
+  complex<double> energy_avg = 0.0;
   for (int i=0; i!=nspin1; ++i)
     energy_avg += energy_[aniso_state[i]];
   energy_avg /= nspin1;
@@ -662,31 +662,64 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
     }
   }
 
+
   /**  Part 3: Extract D-tensor from the numerical pseudospin Hamiltonian **/
 
-  // h2d is the left-inverse of d2h
-  // It converts from the pseudospin Hamiltonian to the D-tensor.
-  ZMatrix d2h_sqinv = *d2h % *d2h;
-  d2h_sqinv.inverse();
-  ZMatrix h2d = d2h_sqinv ^ *d2h;
-
-  auto spinham_vec = make_shared<ZMatrix>(nspin1*nspin1,1);
-  spinham_vec->copy_block(0, 0, nspin1*nspin1, 1, spinham->element_ptr(0,0));
-  ZMatrix Dtensor_vec = h2d * *spinham_vec;
   auto Dtensor = make_shared<ZMatrix>(3,3);
-  Dtensor->copy_block(0, 0, 3, 3, Dtensor_vec.element_ptr(0,0));
+  auto checkham = make_shared<ZMatrix>(nspin1,nspin1);
 
-#ifndef NDEBUG
-  // Watch for numerical instability - might happen if higher spins have linear dependency, for example
-  {
-    ZMatrix test = h2d * *d2h;
-    ZMatrix unit = *test.clone();
-    unit.unit();
-    const double error = (test-unit).rms();
-    if (error > 1.0e-8)
-      cout << "  **  RMS Error in left-inverse computation for extraction of D-tensor: " << scientific << setprecision(4) << error << endl;
+  // Convert from the pseudospin Hamiltonian to the D-tensor using the left-inverse of d2h
+  if (idata_->get<bool>("aniso_real", true)) {
+    // By default, force the D tensor to be real
+
+    // Separate out real and imaginary parts
+    auto d2h_real = make_shared<Matrix>(nspin1*nspin1*2,9);
+    auto spinham_vec_real = make_shared<Matrix>(nspin1*nspin1*2,1);
+    d2h_real->copy_block(            0, 0, nspin1*nspin1, 9, d2h->get_real_part());
+    d2h_real->copy_block(nspin1*nspin1, 0, nspin1*nspin1, 9, d2h->get_imag_part());
+    spinham_vec_real->copy_block(            0, 0, nspin1*nspin1, 1, spinham->get_real_part()->element_ptr(0,0));
+    spinham_vec_real->copy_block(nspin1*nspin1, 0, nspin1*nspin1, 1, spinham->get_imag_part()->element_ptr(0,0));
+
+    // Compute left-inverse as  (A^T A)^-1 A^T
+    Matrix d2h_sqinv_real = *d2h_real % *d2h_real;
+    d2h_sqinv_real.inverse();
+    Matrix h2d_real = d2h_sqinv_real ^ *d2h_real;
+    assert((h2d_real * *d2h_real).is_identity());
+
+    // Extract D-tensor from it
+    Matrix Dtensor_vec_real = h2d_real * *spinham_vec_real;
+    Matrix Dtensor_real(3, 3);
+    Dtensor_real.copy_block(0, 0, 3, 3, Dtensor_vec_real.element_ptr(0,0));
+
+    Dtensor->copy_real_block(1.0, 0, 0, 3, 3, Dtensor_real);
+
+    // Recompute Hamiltonian from D so we can check the fit
+    // If we convert H to D using real algebra, we must use the same in reverse...
+    Matrix check_spinham_vec = *d2h_real * Dtensor_vec_real;
+    Matrix tempr(nspin1, nspin1);
+    Matrix tempi(nspin1, nspin1);
+    tempr.copy_block(0, 0, nspin1, nspin1, check_spinham_vec.element_ptr(0,0));
+    tempi.copy_block(0, 0, nspin1, nspin1, check_spinham_vec.element_ptr(nspin1*nspin1,0));
+    checkham->zero();
+    checkham->add_real_block(complex<double>( 1.0, 0.0), 0, 0, nspin1, nspin1, tempr);
+    checkham->add_real_block(complex<double>( 0.0, 1.0), 0, 0, nspin1, nspin1, tempi);
+  } else {
+    // On request, allow complex ZFS parameters
+    // Same algorithm, working directly with complex matrices
+    auto h2d = make_shared<ZMatrix>(9, nspin1*nspin1);
+    ZMatrix d2h_sqinv = *d2h % *d2h;
+    d2h_sqinv.inverse();
+    *h2d = d2h_sqinv ^ *d2h;
+    assert((*h2d * *d2h).is_identity());
+
+    auto spinham_vec = make_shared<ZMatrix>(nspin1*nspin1,1);
+    spinham_vec->copy_block(0, 0, nspin1*nspin1, 1, spinham->element_ptr(0,0));
+    ZMatrix Dtensor_vec = *h2d * *spinham_vec;
+    Dtensor->copy_block(0, 0, 3, 3, Dtensor_vec.element_ptr(0,0));
+
+    ZMatrix check_spinham_vec = *d2h * Dtensor_vec;
+    checkham->copy_block(0, 0, nspin1, nspin1, check_spinham_vec.element_ptr(0,0));
   }
-#endif
 
   Dtensor->print("D tensor");
   VectorB Ddiag(3);
@@ -706,12 +739,6 @@ void ZHarrison::compute_pseudospin_hamiltonian() const {
   const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
   cout << " ** D = " << Dval << " E_h, or " << Dval * au2wavenumber__ << " cm-1" << endl;
   cout << " ** E = " << std::abs(Eval) << " E_h, or " << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
-
-  ZMatrix check_spinham_vec = *d2h * Dtensor_vec;
-  auto checkham = make_shared<ZMatrix>(nspin1,nspin1);
-  checkham->copy_block(0, 0, nspin1, nspin1, check_spinham_vec.element_ptr(0,0));
-  checkham->print("Pseudospin Hamiltonian, recomputed", 30);
-  cout << "  Error in recomputation of spin Hamiltonian from D = " << (*checkham - *spinham).rms() << endl << endl;
 
   VectorB shenergies(nspin1);
   checkham->diagonalize(shenergies);
