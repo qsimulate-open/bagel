@@ -41,7 +41,7 @@
 using namespace std;
 const static bagel::ComplexERIRootList mapT;
 
-namespace ryan {
+namespace test {
 
 std::complex<double> overlap_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_) {
 

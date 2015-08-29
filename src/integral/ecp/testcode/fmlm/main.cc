@@ -11,6 +11,8 @@
 
 using namespace std;
 
+namespace test {
+
 class Fmlm {
   protected:
 
@@ -56,6 +58,9 @@ class Fmlm {
 
 };
 
+}
+
+using namespace test;
 int main() {
 
   cout << " +++ TEST <lm|l|lm'> +++ " << endl;

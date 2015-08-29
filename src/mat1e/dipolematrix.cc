@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-DipoleMatrix::DipoleMatrix(const shared_ptr<const Molecule> mol) : Matrix1eArray<3>(mol) {
+DipoleMatrix::DipoleMatrix(shared_ptr<const Molecule> mol) : Matrix1eArray<3>(mol) {
   init(mol);
   fill_upper();
 }

@@ -28,9 +28,9 @@
 
 #include <src/util/math/matrix.h>
 
-/// Class for blockwise sparse matrices
 namespace bagel {
 
+/// Class for blockwise sparse matrices
 class BlockSparseMatrix {
   protected:
     /// Store blocks as separate Matrix objects with offsets

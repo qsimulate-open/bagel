@@ -8,11 +8,13 @@
 #define __ECP_TESTCODE_SOINTEGRAL_SO_H
 
 #include <src/util/math/bessel.h>
-#include "src/integral/ecp/sphharmonics.h"
+#include <src/util/math/sphharmonics.h>
 #include "cartgauss.h"
 
 using namespace bagel;
 using namespace std;
+
+namespace test {
 
 class Angular {
   protected:
@@ -258,5 +260,7 @@ class SOIntegral { /* ACB */
     }
 
 };
+
+}
 
 #endif

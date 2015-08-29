@@ -34,7 +34,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(NAI)
 
-NAI::NAI(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
+NAI::NAI(shared_ptr<const Molecule> mol) : Matrix1e(mol) {
 
   init(mol);
   fill_upper();

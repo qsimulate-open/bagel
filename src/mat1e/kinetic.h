@@ -46,7 +46,7 @@ class Kinetic : public Matrix1e {
 
   public:
     Kinetic() { }
-    Kinetic(const std::shared_ptr<const Molecule>);
+    Kinetic(std::shared_ptr<const Molecule>);
 
 };
 

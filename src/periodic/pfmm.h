@@ -27,6 +27,8 @@
 #ifndef __SRC_PERIODIC_PFMM_H
 #define __SRC_PERIODIC_PFMM_H
 
+#include <src/util/math/legendre.h>
+#include <src/util/math/factorial.h>
 #include <src/periodic/simulationcell.h>
 #include <src/periodic/pdata.h>
 

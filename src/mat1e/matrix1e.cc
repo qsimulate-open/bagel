@@ -39,7 +39,7 @@ using namespace std;
 using namespace bagel;
 
 template <typename MatType, class Enable>
-Matrix1e_<MatType, Enable>::Matrix1e_(const shared_ptr<const Molecule> mol) : MatType(mol->nbasis(), mol->nbasis()) {
+Matrix1e_<MatType, Enable>::Matrix1e_(shared_ptr<const Molecule> mol) : MatType(mol->nbasis(), mol->nbasis()) {
   zero();
 }
 

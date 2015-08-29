@@ -22,6 +22,8 @@ using namespace std;
 const static DoubleFactorial dfact;
 const static Factorial fact;
 
+namespace test {
+
 class CartesianGauss {
   protected:
 
@@ -91,5 +93,7 @@ class CartesianGauss {
     }
 
 };
+
+}
 
 #endif

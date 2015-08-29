@@ -32,7 +32,7 @@
 #include <complex>
 #include <vector>
 #include <src/util/math/legendre.h>
-#include <src/util/constants.h>
+#include <src/util/math/factorial.h>
 
 namespace bagel {
 

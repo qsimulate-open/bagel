@@ -10,6 +10,8 @@
 
 //#include "src/integral/carsphlist.h"
 
+using namespace test;
+
 double overlap_ss(const std::shared_ptr<CartesianGauss> gA, const std::shared_ptr<CartesianGauss> gB) {
 
   const int max_iter = 100;

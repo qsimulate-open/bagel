@@ -20,8 +20,8 @@ int main() {
 
   vector<complex<double>> mlm;
   const int ws = 1;
-  const int lmax = 8;
-  const int limit = 20;
+  const int lmax = 20;
+  const int limit = 10;
 
 
   LocalExps test(ws, lmax, limit);

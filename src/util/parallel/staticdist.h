@@ -35,6 +35,8 @@
 #include <stdexcept>
 #include <cassert>
 
+namespace bagel {
+
 class StaticDist {
   protected:
     const size_t nele_;
@@ -89,5 +91,7 @@ class StaticDist {
     }
 
 };
+
+}
 
 #endif

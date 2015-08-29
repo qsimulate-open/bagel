@@ -11,9 +11,11 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
-#include "src/util/constants.h"
+#include <src/util/constants.h>
 
 using namespace bagel;
+
+namespace test {
 
 template<typename T, typename... Value>
 class RadialInt {
@@ -119,5 +121,7 @@ class RadialInt {
     }
 
 };
+
+}
 
 #endif

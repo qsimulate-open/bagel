@@ -40,12 +40,15 @@ template <typename DataType, Int_t IntType = Int_t::Standard>
 class CoulombBatch_Base : public RysIntegral<DataType, IntType> {
 
   protected:
+    static constexpr double T_thresh__ = 1.0e-8;
 
     std::shared_ptr<const Molecule> mol_;
     int natom_;
 
     void compute_ssss(const double) override;
     void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
+
+    virtual void root_weight(const int ps) = 0;
     virtual DataType get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim, const bool swap) {
       return (coord1*exp1 + coord2*exp2) * one12;
     }
@@ -94,11 +97,7 @@ using CoulombBatch_base = CoulombBatch_Base<double>;
 
 }
 
-#define COULOMBBATCH_BASE_HEADERS
-#include <src/integral/rys/coulombbatch_base_impl.hpp>
-#undef COULOMBBATCH_BASE_HEADERS
-
 extern template class bagel::CoulombBatch_Base<double>;
-//extern template class bagel::CoulombBatch_Base<std::complex<double>>;
+extern template class bagel::CoulombBatch_Base<std::complex<double>,bagel::Int_t::London>;
 
 #endif

@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_MOLECULE_HSO_H
-#define __SRC_MOLECULE_HSO_H
+#ifndef __SRC_MAT1E_HSO_H
+#define __SRC_MAT1E_HSO_H
 
 #include <src/util/math/matrix.h>
 
