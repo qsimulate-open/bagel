@@ -35,7 +35,6 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-
 template<typename DataType>
 SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> inf) : info_(inf) {
   static_assert(is_same<DataType,double>::value or is_same<DataType,complex<double>>::value,
@@ -45,22 +44,19 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   char** cnull;
   madness::World& world = madness::initialize(czero, cnull); 
   
+#if 0
   std::vector<std::size_t> tile_boundaries;
-    for(std::size_t i = 0; i <=IndexRange::nblock(); i +=IndexRange::nbl())   //size_ and rem are from indexrange.h class Index.  Not sure this is the right way to get these values
+  for(std::size_t i = 0; i <= IndexRange::nblock(); i += IndexRange::nbl()) //IndexRange is not a namespace!
     tile_boundaries.push_back(i); 
 
-  std::vector<TiledArray::TiledRange1>
-    ranges(rank(), TiledArray::TiledRange1(tile_boundaries.begin(), tile_boundaries.end()));
-
-  TA::TiledRange trange(ranges.begin(), ranges.end()); 
-
-  TA::Array<double, rank()> TILEDARRAY (world, trange); 
-
+  std::vector<TiledArray::TiledRange1> ranges(rank(), TiledArray::TiledRange1(tile_boundaries.begin(), tile_boundaries.end()));
+  TiledArray::TiledRange trange(ranges.begin(), ranges.end()); 
+  TiledArray::Array<DataType, rank()> TILEDARRAY (world, trange); 
   init_array(TILEDARRAY); 
     
-  if (world.rank () == 0) {
+  if (world.rank () == 0)
     cout << "Tiled Array = \n" << TILEDARRAY << "\n";
-}
+#endif
 
   Timer timer;
   const int max = info_->maxtile();
