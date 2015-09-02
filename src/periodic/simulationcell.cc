@@ -30,9 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-SimulationCell::SimulationCell(const shared_ptr<const Geometry> g)
- : atoms_(g->atoms()), ndim_(g->primitive_vectors().size()) {
-
+SimulationCell::SimulationCell(const shared_ptr<const Geometry> g) : atoms_(g->atoms()), ndim_(g->primitive_vectors().size()) {
   primitive_vectors_.resize(ndim_);
   for (int i = 0; i != ndim_; ++i)
     primitive_vectors_[i] = g->primitive_vectors(i);
@@ -40,7 +38,7 @@ SimulationCell::SimulationCell(const shared_ptr<const Geometry> g)
 
 
 SimulationCell::SimulationCell(vector<shared_ptr<const Atom>> a, const int n, vector<array<double, 3>> pvec)
- : atoms_(a), ndim_(n), primitive_vectors_(pvec) { }
+ : atoms_(a), ndim_(n), primitive_vectors_(pvec) { assert(n == pvec.size()); }
 
 
 void SimulationCell::init() {
