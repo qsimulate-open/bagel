@@ -4,7 +4,7 @@
   "title" : "molecule",
   "symmetry" : "C1",
   "basis" : "3-21g",
-  "df_basis" : "ano-rcc_unc",
+  "df_basis" : "ano-rcc",
   "angstrom" : "false",
   "finite_nucleus" : "true",
   "basis_type" : "giao",
