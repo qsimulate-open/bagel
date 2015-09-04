@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-const static Legendre_renorm legendre;
+const static Legendre legendre;
 const static Factorial fact;
 
 SphHarmonics::SphHarmonics(const array<int, 2> lm, const array<double, 3> c)
@@ -84,9 +84,14 @@ complex<double> SphHarmonics::ylm() const {
     throw runtime_error ("SphHarmonics.ylm: |m| > l");
 
   const double plm = legendre.compute(l, am, cth);
+  double fact = 1.0;
+  for (int i = 1; i <= 2*am; ++i)
+    fact *= l - am + i;
 
-  double real = plm * cos(am * phi_);
-  double imag = plm * sin(am * phi_);
+  const double coef = sqrt((2*l+1)*0.25 * fact / pi__);
+  double real = coef * plm * cos(am*phi_);
+  double imag = coef * plm * sin(am*phi_);
+
   if (m < 0) {
     real *= pow(-1, m);
     imag *= pow(-1, m+1);
