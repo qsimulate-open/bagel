@@ -278,23 +278,32 @@ void PFMM::allocate_arrays(const size_t ps) {
 }
 
 
-#if 0
-void PFMM::compute_Sn(const int max_iter) { // S(n+1) = U_M[S(n)] O* + M*
+void PFMM::compute_Slm() {
 
-  for (int iter = 0; iter != max_iter; ++i) {
+  const size_t nbasis1 = scell_->multipoles().front()->ndim();
+  const size_t nbasis0 = scell_->multipoles().front()->mdim();
+  for (int l = 0; l <= lmax_; ++l) {
+    for (int m = 0; m <= 2*l; ++m) {
+      const int im1 = l * l + m;
 
-    const double error = 0.0;
-    if (error < thresh) {
-      cout << "  * Sn converged." << endl << endl;
-      break;
-    } else if (iter == max_iter-1) {
-      cout << "  * Max iteration reached when in compute_Sn." << endl << endl;
-      break;
+      ZMatrix local(nbasis1, nbasis0);
+      for (int j = 0; j <= lmax_; ++j) {
+        for (int k = 0; k <= 2*j; ++k) {
+          const int im2 = j * j + k;
+          const int a = l + j;
+          const int b = m + k - l - j;
+          const int im = a * a + m + k;
+          zaxpy_(nbasis0 * nbasis1, mlm_[im], scell_->multipoles().at(im2)->data(), 1, local.data(), 1);
+        }
+      }
+      slm_[im1] = make_shared<const ZMatrix>(local);
+
     }
   }
 }
 
 
+#if 0
 shared_ptr<PData> PFMM::compute_Jop(shared_ptr<const PData> density) {
 
 }

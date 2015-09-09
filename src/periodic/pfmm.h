@@ -46,6 +46,7 @@ class PFMM {
     int ndim_;
     int num_multipoles_;
     std::vector<std::complex<double>> mlm_;
+    std::vector<std::shared_ptr<const ZMatrix>> slm_;
 
     int max_rank_;
     double *rvec_, *kvec_;
@@ -69,6 +70,7 @@ class PFMM {
     void compute_mlm();
     void root_weight(const int l, const int size);
     void allocate_arrays(const size_t ps);
+    void compute_Slm();
 
   public:
     PFMM(std::shared_ptr<const SimulationCell>, const int lmax = 10, const int ws = 2, const int extent = 10,
@@ -90,9 +92,10 @@ class PFMM {
     int extent_sum() const { return extent_sum_; }
     std::complex<double> mlm(const int i) const { return mlm_[i]; }
     std::vector<std::complex<double>> mlm() const { return mlm_; }
+    std::shared_ptr<const ZMatrix> slm(const int i) const { return slm_[i]; }
+    std::vector<std::shared_ptr<const ZMatrix>> slm() const { return slm_; }
 
     bool is_in_cff(std::array<double, 3> lvector);
-    void compute_Sn(const int max_iter = 20);
     std::shared_ptr<PData> compute_Jop(std::shared_ptr<const PData> density);
 
 };
