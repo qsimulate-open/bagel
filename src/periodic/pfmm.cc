@@ -35,16 +35,25 @@ const static Gamma_scaled sgamma;
 
 const static double beta__ = sqrt(pi__); // convergence parameter
 
-PFMM::PFMM(shared_ptr<const SimulationCell> scell, const int lmax, const int ws, const int extent, const double thresh)
+PFMM::PFMM(shared_ptr<const SimulationCell> scell, const int lmax, const int ws, const int extent, const double thresh, shared_ptr<StackMem> stack)
   : scell_(scell), lmax_(lmax), ws_(ws), extent_sum_(extent), thresh_(thresh) {
 
-  assert(lmax_ <= ANG_HRR_END);
+  if (stack == nullptr) {
+    stack_ = resources__->get();
+    allocated_here_ = true;
+  } else {
+    stack_ = stack;
+    allocated_here_ = false;
+  }
+
+  assert(lmax_ < RYS_MAX);
   ndim_ = scell->ndim();
   if (ndim_ > 3 || ndim_ < 1)
     throw runtime_error("System must be periodic in 1-, 2-, or 3-D");
 
   num_multipoles_ = (lmax_ + 1) * (lmax_ + 1);
   mlm_.resize(num_multipoles_);
+  max_rank_ = lmax_ + 1;
   compute_mlm();
 }
 
@@ -63,11 +72,7 @@ bool PFMM::is_in_cff(array<double, 3> L) {
 void PFMM::compute_mlm() {
 
   const double pibeta = pi__ * pi__ / (beta__ * beta__);
-
-  const size_t num_multipoles = (lmax_ + 1) * (lmax_ + 1);
-  mlm_.resize(num_multipoles);
-
-  const int nvec = std::pow(2*extent_sum_+1, ndim_);
+  const int nvec = pow(2*extent_sum_+1, ndim_);
   allocate_arrays(nvec);
   vector<array<int, 3>> vidx(nvec);
 
@@ -159,23 +164,24 @@ void PFMM::compute_mlm() {
     }
   }
 
+#if 0
   vector<array<double, 3>> primkvecs(ndim_);
   if (ndim_ == 1) {
     const double a1sq = sqrt(primvecs[0][0]*primvecs[0][1] + primvecs[0][1]*primvecs[0][1] + primvecs[0][2]*primvecs[0][2]);
     for (int i = 0; i != 3; ++i)
       primkvecs[0][i] = primvecs[0][i] / a1sq;
   } else if (ndim_ == 2) {
-    array<double, 3> a12 = cross(primvecs[0], primvecs[1], 1.0);
+    array<double, 3> a12 = cross(primvecs[0], primvecs[1]);
     const double scale = 1.0 / sqrt(dot(a12, a12));
     primkvecs[0] = cross(primvecs[1], a12, scale);
     primkvecs[1] = cross(a12, primvecs[0], scale);
   } else {
-    array<double, 3> a23 = cross(primvecs[1], primvecs[2], 1.0);
+    array<double, 3> a23 = cross(primvecs[1], primvecs[2]);
     const double scale = 1.0 / dot(primvecs[0], a23);
     for (int i = 0; i != 3; ++i) {
       const int j = (i+1 < ndim_) ? i+1 : i+1-ndim_;
       const int k = (i+2 < ndim_) ? i+2 : i+2-ndim_;
-      primkvecs[i] = cross(primkvecs[j], primkvecs[k], scale);
+      primkvecs[i] = cross(primvecs[j], primvecs[k], scale);
     }
   }
 
@@ -230,13 +236,14 @@ void PFMM::compute_mlm() {
         const double sign = (m >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
 
         // smooth term
-        const double coeffm = plm_tilde * sgamma(l, r) *  exp(-rsq * pibeta) / rsq;
+        const double coeffm = plm_tilde * sgamma(l, r) * exp(-rsq * pibeta) / rsq;
         double real = coeffm * sign;
         double imag = coeffm * sin(am * phi);
         mlm_[imul] += coeffl * complex<double>(real, imag);
       }
     }
   }
+#endif
 }
 
 
