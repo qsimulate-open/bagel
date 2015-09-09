@@ -71,7 +71,7 @@ class PFMM {
     void allocate_arrays(const size_t ps);
 
   public:
-    PFMM(std::shared_ptr<const SimulationCell>, const int lmax = RYS_MAX-1, const int ws = 2, const int extent = 10,
+    PFMM(std::shared_ptr<const SimulationCell>, const int lmax = 10, const int ws = 2, const int extent = 10,
          const double thresh = PRIM_SCREEN_THRESH, std::shared_ptr<StackMem> stack = nullptr);
     ~PFMM() {
       stack_->release(size_allocated_, buff_);
@@ -84,7 +84,8 @@ class PFMM {
       return rad1 < rad2;
     };
 
-    double lmax() const { return lmax_; }
+    int lmax() const { return lmax_; }
+    int max_rank() const { return max_rank_; }
     int ws() const { return ws_; }
     int extent_sum() const { return extent_sum_; }
     std::complex<double> mlm(const int i) const { return mlm_[i]; }

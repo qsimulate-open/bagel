@@ -46,14 +46,14 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const int lmax, const int ws,
     allocated_here_ = false;
   }
 
-  assert(lmax_ < RYS_MAX);
+  assert(lmax_ <= 10);
   ndim_ = scell->ndim();
   if (ndim_ > 3 || ndim_ < 1)
     throw runtime_error("System must be periodic in 1-, 2-, or 3-D");
 
-  num_multipoles_ = (lmax_ + 1) * (lmax_ + 1);
+  num_multipoles_ = (2*lmax_ + 1) * (2*lmax_ + 1);
   mlm_.resize(num_multipoles_);
-  max_rank_ = lmax_ + 1;
+  max_rank_ = (lmax_ * 2) + 1;
   compute_mlm();
 }
 
@@ -108,7 +108,7 @@ void PFMM::compute_mlm() {
     T_[ivec] = Rsq_[ivec] * beta__ * beta__;
   }
 
-  for (int l = 0; l <= lmax_; ++l) {
+  for (int l = 0; l < max_rank_; ++l) {
     root_weight(l, nvec);
     const int rank = l + 1;
 
@@ -196,7 +196,7 @@ void PFMM::compute_mlm() {
 
   fill_n(roots_, max_rank_ * nvec, 0.0);
   fill_n(weights_, max_rank_ * nvec, 0.0);
-  for (int l = 0; l <= lmax_; ++l) {
+  for (int l = 0; l < max_rank_; ++l) {
     const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5);
     root_weight(l, nvec);
     const int rank = l + 1;
