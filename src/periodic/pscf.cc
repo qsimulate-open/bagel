@@ -37,7 +37,7 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(PSCF)
 
 PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
-  : PSCF_base(idata, geom, re), dodf_(idata->get<bool>("df",true)) {
+  : PSCF_base(idata, geom, re), dodf_(idata->get<bool>("df",true)), dofmm_(idata->get<bool>("cfmm", false)) {
   cout << "  *** Periodic Hartree--Fock ***" << endl << endl;
   if (!dodf_)
     throw runtime_error("Periodic SCF only works with density fitting!");

@@ -39,6 +39,7 @@ class PFock : public PData {
     std::shared_ptr<const PData> pdensity_;
 
     double correction_;
+    bool dofmm_;
 
   private:
     // serialization
@@ -52,7 +53,7 @@ class PFock : public PData {
   public:
     PFock() { }
     PFock(const std::shared_ptr<const Lattice> lattice, std::shared_ptr<const PData> previous,
-          const std::shared_ptr<const PData> pdensity);
+          const std::shared_ptr<const PData> pdensity, const bool dofmm = false);
     ~PFock() { }
 
     double correction() const { return correction_; }
