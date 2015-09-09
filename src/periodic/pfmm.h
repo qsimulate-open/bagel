@@ -48,7 +48,6 @@ class PFMM {
     std::vector<std::complex<double>> mlm_;
 
     int max_rank_;
-    double beta_;
     double *rvec_, *kvec_;
     double* T_;
     double* Rsq_;
@@ -62,7 +61,6 @@ class PFMM {
       out[2] = (b[0]*c[1] - b[1]*c[0]) * s;
       return out;
     }
-
 
     bool allocated_here_;
     std::shared_ptr<StackMem> stack_;

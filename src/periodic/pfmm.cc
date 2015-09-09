@@ -105,7 +105,7 @@ void PFMM::compute_mlm() {
     rvec_[pos + 1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
     rvec_[pos + 2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
     Rsq_[ivec] = rvec_[pos]*rvec_[pos] + rvec_[pos+1]*rvec_[pos+1] + rvec_[pos+2]*rvec_[pos+2];
-    T_[ivec] = Rsq_[ivec] * beta_ * beta_;
+    T_[ivec] = Rsq_[ivec] * beta__ * beta__;
   }
 
   for (int l = 0; l <= lmax_; ++l) {
@@ -132,7 +132,7 @@ void PFMM::compute_mlm() {
           glower += cweights[i] * pow(croots[i], l);
       }
 
-      const double coeff = 2.0 * pow(beta_, 2*l+1) * sgamma(l, r);
+      const double coeff = 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
       const double gupper = 1.0 / pow(r, l+1.0) - glower * coeff;
 
       for (int mm = 0; mm <= 2 * l; ++mm) {
@@ -164,7 +164,6 @@ void PFMM::compute_mlm() {
     }
   }
 
-#if 0
   vector<array<double, 3>> primkvecs(ndim_);
   if (ndim_ == 1) {
     const double a1sq = sqrt(primvecs[0][0]*primvecs[0][1] + primvecs[0][1]*primvecs[0][1] + primvecs[0][2]*primvecs[0][2]);
@@ -192,7 +191,7 @@ void PFMM::compute_mlm() {
     kvec_[pos + 1] = idx[0] * primkvecs[0][1] + idx[1] * primkvecs[1][1] + idx[2] * primkvecs[2][1];
     kvec_[pos + 2] = idx[0] * primkvecs[0][2] + idx[1] * primkvecs[1][2] + idx[2] * primkvecs[2][2];
     Rsq_[ivec] = kvec_[pos]*kvec_[pos] + kvec_[pos+1]*kvec_[pos+1] + kvec_[pos+2]*kvec_[pos+2];
-    T_[ivec] = Rsq_[ivec] * beta_ * beta_;
+    T_[ivec] = Rsq_[ivec] * beta__ * beta__;
   }
 
   fill_n(roots_, max_rank_ * nvec, 0.0);
@@ -243,7 +242,6 @@ void PFMM::compute_mlm() {
       }
     }
   }
-#endif
 }
 
 
