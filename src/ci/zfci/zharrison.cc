@@ -383,7 +383,11 @@ void ZHarrison::compute() {
 
   // TODO When the Property class is implemented, this should be one
   if (idata_->get<bool>("aniso", false)) {
-    compute_pseudospin_hamiltonian();
+    if (geom_->magnetism()) {
+      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
+    } else {
+      compute_pseudospin_hamiltonian();
+    }
   }
 }
 
