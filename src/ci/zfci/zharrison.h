@@ -204,6 +204,7 @@ class ZHarrison : public Method {
     std::vector<double> energy() const { return energy_; }
 
     void compute_pseudospin_hamiltonian() const;
+    void compute_extended_stevens_operators() const;
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }

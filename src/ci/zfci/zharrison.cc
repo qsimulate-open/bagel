@@ -387,6 +387,8 @@ void ZHarrison::compute() {
       cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
     } else {
       compute_pseudospin_hamiltonian();
+
+      compute_extended_stevens_operators();
     }
   }
 }
