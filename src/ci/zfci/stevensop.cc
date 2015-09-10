@@ -61,11 +61,17 @@ double compute_Nkk(const int k) {
 }
 
 double compute_Nkq(const int k, const int q) {
-  const double Nkk = compute_Nkk(k);
-  const double sign = (k - q) % 2 == 0 ? 1.0 : -1.0;
-  const double numerator = fact(k + q);
-  const double denomenator = (fact(k - q) * fact(2 * k));
-  const double out = sign * Nkk * std::sqrt(numerator / denomenator);
+  double out;
+  if (q >= 0) {
+    const double Nkk = compute_Nkk(k);
+    const double sign = (k - q) % 2 == 0 ? 1.0 : -1.0;
+    const double numerator = fact(k + q);
+    const double denomenator = (fact(k - q) * fact(2 * k));
+    out = sign * Nkk * std::sqrt(numerator / denomenator);
+  } else {
+    const double sign = (k % 2 == 0) ? 1.0 : -1.0;
+    out = sign * compute_Nkq(k, -q);
+  }
   return out;
 }
 
