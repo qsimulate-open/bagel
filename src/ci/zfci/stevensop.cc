@@ -132,9 +132,9 @@ void ZHarrison::compute_extended_stevens_operators() const {
 
   const int kmax = idata_->get<bool>("aniso_extrastevens", false) ? 8 : nspin;
 
-  // Requires k!, and factorials are tabulated up to 20
-  if (kmax > 20)
-    throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of 20th order and lower");
+  // Requires factorial of k
+  if (kmax >= fact.max())
+    throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(fact.max() - 1) + " and lower");
 
   cout << fixed << setprecision(6);
   for (int k = 0; k <= kmax; ++k) {

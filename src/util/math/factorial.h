@@ -48,6 +48,7 @@ class Factorial {
       f_[20] =  2432902008176640000ull;
     }
     size_t operator()(const int i) const { assert(i >= 0 && i < max_); return f_[i]; }
+    int max() const { return max_; }
 };
 
 class DoubleFactorial {
