@@ -52,23 +52,24 @@ double compute_alpha(const int k, const int q) {
   return out;
 }
 
-double compute_Nkk(const int k) {
+// In Ryabov's notation, this gives us Nkk / sqrt(2k!)
+// The 2k! would cancel out later, and dropping it extends the applicability of this code
+double compute_Nkk_partial(const int k) {
   const double sign = (k % 2 == 0) ? 1.0 : -1.0;
   const double twok = std::pow(2.0,k);
   const double denomenator = twok * fact(k);
-  const double f2k = fact(2 * k);
-  const double numerator = std::sqrt(f2k);
+  const double numerator = 1.0;
   const double out = sign * numerator / denomenator;
   return out;
 }
 
-double compute_Nkq(const int k, const int q, const double Nkk) {
+double compute_Nkq(const int k, const int q, const double Nkk_partial) {
   double out;
   assert (k >= 0 && q >= 0 && q <= k);
   const double sign = (k - q) % 2 == 0 ? 1.0 : -1.0;
   const double numerator = fact(k + q);
-  const double denomenator = (fact(k - q) * fact(2 * k));
-  out = sign * Nkk * std::sqrt(numerator / denomenator);
+  const double denomenator = (fact(k - q));
+  out = sign * Nkk_partial * std::sqrt(numerator / denomenator);
   return out;
 }
 
@@ -143,14 +144,13 @@ void ZHarrison::compute_extended_stevens_operators() const {
 
   const int kmax = idata_->get<bool>("aniso_extrastevens", false) ? 8 : nspin;
 
-  // Requires (2k)!, and factorials are tabulated up to 20
-  if (kmax > 10)
-    throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of 10th order and lower");
+  // Requires k!, and factorials are tabulated up to 20
+  if (kmax > 20)
+    throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of 20th order and lower");
 
   cout << fixed << setprecision(6);
   for (int k = 0; k <= kmax; ++k) {
 
-    const double Nkk = compute_Nkk(k);
     vector<double> alpha(k + 1);
     vector<double> Nkq(k + 1);  // positive q
     vector<double> Nk_q(k + 1); // negative q
@@ -162,13 +162,20 @@ void ZHarrison::compute_extended_stevens_operators() const {
     // same but for negative q
     vector<vector<double>> ak_qm(k + 1);
 
+    const double Nkk_partial = compute_Nkk_partial(k);
+    for (int q = 0; q <= k; ++q) {
+      alpha[q] = compute_alpha(k, q);
+      if (q == 0)
+        Nkq[q] = compute_Nkq(k, q, Nkk_partial);
+      else
+        Nkq[q] = -1.0 * Nkq[q-1] * std::sqrt((k + q) * (k - q + 1.0));
+    }
+
     for (int q = k; q >= 0; --q) {
 
       vector<double> akqm_current(k - q + 1);  // positive q
       vector<double> ak_qm_current(k - q + 1); // negative q
 
-      alpha[q] = compute_alpha(k, q);
-      Nkq[q] = compute_Nkq(k, q, Nkk);
       Nk_q[q] = Nkq[q] * ((k % 2 == 0) ? 1.0 : -1.0);
 
 
@@ -181,10 +188,8 @@ void ZHarrison::compute_extended_stevens_operators() const {
         ak_qm_current[m] = akqm_current[m] * (m % 2 == 0 ? 1.0 : -1.0);
 
 
-        cout << "       k = " << setw(4) << k << ", q = " << setw(4) << q << ", m = " << setw(4) << m << ", alpha = " << setw(12) << alpha[q] << ", Nkk = " << setw(12) << Nkk << ", Nkq = " << setw(12) << Nkq[q] << ", Nk_q = " << setw(12) << Nk_q[q] << ", Nkq/Nkk = " << setw(12) << Nkq[q] / Nkk << "  acoeff = " << setw(12) << akqm_current[m] << endl;
+        cout << "       k = " << setw(4) << k << ", q = " << setw(4) << q << ", m = " << setw(4) << m << ", alpha = " << setw(12) << alpha[q] << ", Nkk = " << setw(12) << Nkk_partial*std::sqrt(fact(2*k)) << ", Nkq = " << setw(12) << Nkq[q] << ", Nk_q = " << setw(12) << Nk_q[q] << ", Nkq/Nkk = " << setw(12) << Nkq[q] / (Nkk_partial * std::sqrt(fact(2*k))) << "  acoeff = " << setw(12) << akqm_current[m] << endl;
       }
-
-      assert(q == k ? true : (std::abs(Nkq[q] + (Nkq[q+1] / std::sqrt((k + q + 1)*(k - q))))) < 1.0e-12); // check against a recurrence relation
 
       akqm[q] = akqm_current;
       ak_qm[q] = ak_qm_current;
