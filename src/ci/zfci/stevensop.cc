@@ -152,7 +152,7 @@ void ZHarrison::compute_extended_stevens_operators() const {
 
       alpha[q] = compute_alpha(k, q);
       Nkq[q] = compute_Nkq(k, q, Nkk);
-      Nk_q[q] = Nkq[q] * (k % 2 == 0) ? 1.0 : -1.0;
+      Nk_q[q] = Nkq[q] * ((k % 2 == 0) ? 1.0 : -1.0);
 
 
       for (int m = 0; m <= k - q; ++m) {
