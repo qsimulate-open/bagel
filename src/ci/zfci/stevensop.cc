@@ -29,6 +29,7 @@
 
 #include <src/ci/zfci/zharrison.h>
 #include <src/util/math/factorial.h>
+#include <src/util/math/comb.h>
 
 
 using namespace std;
@@ -38,6 +39,7 @@ using namespace bagel;
 namespace {
 
 const Factorial fact;
+const Comb comb;
 
 // Even k:  alpha = 1.0
 // Odd k:   alpha = 1.0 or 0.5 for even or odd q, respectively
@@ -71,10 +73,25 @@ double compute_Nkq(const int k, const int q, const double Nkk) {
 }
 
 // a(k, q; m) in Ryabov's notation
-double compute_akqm(const int k, const int q, const int m) {
-  assert (k >= 0 && q >= 0 && m >= 0 && q <= k && m <= k - q);
-  double out = 0.0;
-  // TODO
+// Uses a downward recurrence relation:  the input vector akq1m contains the output for k, q+1, and all values of m
+double compute_akqm(const int k, const int q, const int m, const int nspin, const vector<double> akq1m) {
+  assert (k >= 1 && q >= 0 && m >= 0 && q < k && m <= k - q);
+
+  double out = m > 0 ? (2.0 * q + m + 1.0) * akq1m[m - 1] : 0.0;
+
+  if (m <= k - q - 1)
+    out += (q * (q + 1.0) - m * (m + 1.0) / 2.0) * akq1m[m];
+
+  const double ss1 = nspin * (nspin + 2.0) / 4.0; // S(S+1)
+  for (int n = 1; n <= k - q - m - 1; ++n) {
+    const double sign = (n % 2 == 0) ? 1.0 : -1.0;
+    const double coeff1 = comb(m + n, m) * ss1;
+    const double coeff2 = m > 0 ? -1.0 * comb(m + n, m - 1) : 0.0;
+    const double coeff3 = m > 1 ? -1.0 * comb(m + n, m - 2) : 0.0;
+
+    out += sign * (coeff1 + coeff2 + coeff3) * akq1m[m + n];
+  }
+
   return out;
 }
 
@@ -156,9 +173,13 @@ void ZHarrison::compute_extended_stevens_operators() const {
 
 
       for (int m = 0; m <= k - q; ++m) {
-        // TODO
-        akqm_current[m] = compute_akqm(k, q, m);
-        ak_qm_current[m] = 0.0;
+        if (q == k)
+          akqm_current[m] = 1.0;
+        else
+          akqm_current[m] = compute_akqm(k, q, m, nspin, akqm[q + 1]);
+
+        ak_qm_current[m] = akqm_current[m] * (m % 2 == 0 ? 1.0 : -1.0);
+
 
         cout << "       k = " << setw(4) << k << ", q = " << setw(4) << q << ", m = " << setw(4) << m << ", alpha = " << setw(12) << alpha[q] << ", Nkk = " << setw(12) << Nkk << ", Nkq = " << setw(12) << Nkq[q] << ", Nk_q = " << setw(12) << Nk_q[q] << ", Nkq/Nkk = " << setw(12) << Nkq[q] / Nkk << "  acoeff = " << setw(12) << akqm_current[m] << endl;
       }
