@@ -52,24 +52,12 @@ double compute_alpha(const int k, const int q) {
   return out;
 }
 
-// In Ryabov's notation, this gives us Nkk / sqrt(2k!)
-// The 2k! would cancel out later, and dropping it extends the applicability of this code
-double compute_Nkk_partial(const int k) {
-  const double sign = (k % 2 == 0) ? 1.0 : -1.0;
+// Compute Nkq for q = 0
+double compute_Nk0(const int k) {
+  assert (k >= 0);
   const double twok = std::pow(2.0,k);
-  const double denomenator = twok * fact(k);
-  const double numerator = 1.0;
-  const double out = sign * numerator / denomenator;
-  return out;
-}
-
-double compute_Nkq(const int k, const int q, const double Nkk_partial) {
-  double out;
-  assert (k >= 0 && q >= 0 && q <= k);
-  const double sign = (k - q) % 2 == 0 ? 1.0 : -1.0;
-  const double numerator = fact(k + q);
-  const double denomenator = (fact(k - q));
-  out = sign * Nkk_partial * std::sqrt(numerator / denomenator);
+  const double Nkk_denomenator = twok * fact(k);
+  const double out = 1.0 / Nkk_denomenator;
   return out;
 }
 
@@ -162,13 +150,12 @@ void ZHarrison::compute_extended_stevens_operators() const {
     // same but for negative q
     vector<vector<double>> ak_qm(k + 1);
 
-    const double Nkk_partial = compute_Nkk_partial(k);
-    for (int q = 0; q <= k; ++q) {
+    alpha[0] = 1.0;
+    Nkq[0] = compute_Nk0(k);
+
+    for (int q = 1; q <= k; ++q) {
       alpha[q] = compute_alpha(k, q);
-      if (q == 0)
-        Nkq[q] = compute_Nkq(k, q, Nkk_partial);
-      else
-        Nkq[q] = -1.0 * Nkq[q-1] * std::sqrt((k + q) * (k - q + 1.0));
+      Nkq[q] = -1.0 * Nkq[q-1] * std::sqrt((k + q) * (k - q + 1.0));
     }
 
     for (int q = k; q >= 0; --q) {
@@ -188,7 +175,8 @@ void ZHarrison::compute_extended_stevens_operators() const {
         ak_qm_current[m] = akqm_current[m] * (m % 2 == 0 ? 1.0 : -1.0);
 
 
-        cout << "       k = " << setw(4) << k << ", q = " << setw(4) << q << ", m = " << setw(4) << m << ", alpha = " << setw(12) << alpha[q] << ", Nkk = " << setw(12) << Nkk_partial*std::sqrt(fact(2*k)) << ", Nkq = " << setw(12) << Nkq[q] << ", Nk_q = " << setw(12) << Nk_q[q] << ", Nkq/Nkk = " << setw(12) << Nkq[q] / (Nkk_partial * std::sqrt(fact(2*k))) << "  acoeff = " << setw(12) << akqm_current[m] << endl;
+        const double Nkk = Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0);
+        cout << "       k = " << setw(4) << k << ", q = " << setw(4) << q << ", m = " << setw(4) << m << ", alpha = " << setw(12) << alpha[q] << ", Nkk = " << setw(12) << Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0) << ", Nkq = " << setw(12) << Nkq[q] << ", Nk_q = " << setw(12) << Nk_q[q] << ", Nkq/Nkk = " << setw(12) << Nkq[q] / Nkk << "  acoeff = " << setw(12) << akqm_current[m] << endl;
       }
 
       akqm[q] = akqm_current;
