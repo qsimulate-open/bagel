@@ -84,6 +84,39 @@ double compute_akqm(const int k, const int q, const int m, const int nspin, cons
   return out;
 }
 
+// a(k, q; m, i) in Ryabov's notation
+// Uses a downward recurrence relation:  the input vector akq1m contains the output for k, q+1, and all values of m, i
+// Output corresponds to a specific k, q; m but all values of i
+vector<double> compute_akqmi(const int k, const int q, const int m, const int nspin, const vector<vector<double>> akq1mi) {
+  assert (k >= 1 && q >= 0 && m >= 0 && q < k && m <= k - q);
+
+  const int nval = (k - q - m) / 2 + 1;
+  vector<double> out(nval);
+
+  for (int i=0; i!=nval; ++i) {
+
+    out[i] = m > 0 ? (2 * q + m + 1) * akq1mi[m - 1][i] : 0;
+
+    if (m <= k - q - 1 && i <= (k - q - m - 1) / 2)
+      out[i] += (q * (q + 1) - m * (m + 1) / 2) * akq1mi[m][i];
+
+    for (int n = 1; n <= k - q - m - 1; ++n) {
+      const double sign = (n % 2 == 0) ? 1 : -1;
+      const double coeff1 = comb(m + n, m);
+      const double coeff2 = m > 0 ? comb(m + n, m - 1) : 0.0;
+      const double coeff3 = m > 1 ? comb(m + n, m - 2) : 0.0;
+
+      if (i <= (k - q - m - n + 1) / 2 && i > 0)
+        out[i] += sign * coeff1 * akq1mi[m + n][i-1];
+
+      if (i <= (k - q - m - n - 1) / 2)
+        out[i] -= sign * (coeff2 + coeff3) * akq1mi[m + n][i];
+    }
+  }
+  return out;
+}
+
+
 } // end of anonymous namespace
 
 
@@ -152,6 +185,9 @@ void ZHarrison::compute_extended_stevens_operators() const {
     // access is akqm[q][m]
     vector<vector<double>> akqm(k + 1);
 
+    /*** For k,q;m,i-based calculation ***/
+    vector<vector<vector<double>>> akqmi(k + 1);
+
     // same but for negative q
     vector<vector<double>> ak_qm(k + 1);
 
@@ -168,8 +204,10 @@ void ZHarrison::compute_extended_stevens_operators() const {
       vector<double> akqm_current(k - q + 1);  // positive q
       vector<double> ak_qm_current(k - q + 1); // negative q
 
-      Nk_q[q] = Nkq[q] * ((k % 2 == 0) ? 1.0 : -1.0);
+      /*** For k,q;m,i-based calculation ***/
+      vector<vector<double>> akqmi_current(k - q + 1.0);
 
+      Nk_q[q] = Nkq[q] * ((k % 2 == 0) ? 1.0 : -1.0);
 
       for (int m = 0; m <= k - q; ++m) {
         if (q == k)
@@ -179,14 +217,31 @@ void ZHarrison::compute_extended_stevens_operators() const {
 
         ak_qm_current[m] = akqm_current[m] * (m % 2 == 0 ? 1.0 : -1.0);
 
+        /*** For k,q;m,i-based calculation ***/
+        if (q == k) {
+          akqmi_current[m] = vector<double>(1, 1.0);
+        } else {
+          akqmi_current[m] = compute_akqmi(k, q, m, nspin, akqmi[q + 1]);
+        }
 
-        const double Nkk = Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0);
-        cout << "       k = " << setw(4) << k << ", q = " << setw(4) << q << ", m = " << setw(4) << m << ", alpha = " << setw(12) << alpha[q] << ", Nkk = " << setw(12) << Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0) << ", Nkq = " << setw(12) << Nkq[q] << ", Nk_q = " << setw(12) << Nk_q[q] << ", Nkq/Nkk = " << setw(12) << Nkq[q] / Nkk << "  acoeff = " << setw(12) << akqm_current[m] << endl;
+
+        double check_akqm = 0.0;
+        for (int i=0; i <= (k-q-m)/2; ++i) {
+          const double ss1 = nspin * (nspin + 2.0) / 4.0; // S(S+1)
+          check_akqm += std::pow(ss1, i) * akqmi_current[m][i];
+        }
+        //cout << "    **** Error in computation of akqm = " << check_akqm - akqm_current[m] << endl;
+        cout << setprecision(0) << "  k = " << k << ", akqm = " << setw(22) << akqm_current[m] << ", check_akqm = " << setw(22) << check_akqm << ", error = " << setw(22) << check_akqm - akqm_current[m] << endl;
+
+        //const double Nkk = Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0);
+        //cout << "       k = " << setw(4) << k << ", q = " << setw(4) << q << ", m = " << setw(4) << m << ", alpha = " << setw(8) << setprecision(2) << alpha[q] << ", Nkk = " << setw(10) << setprecision(6) << Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0) << ", Nkq = " << setw(10) << Nkq[q] << ", Nk_q = " << setw(10) << Nk_q[q] << ", Nkq/Nkk = " << setw(10) << Nkq[q] / Nkk << "  acoeff = " << setw(14) << setprecision(2) << akqm_current[m] << ", akqm_is = " << setw(14) << check_akqm << endl;
       }
 
       akqm[q] = akqm_current;
       ak_qm[q] = ak_qm_current;
 
+      /*** For k,q;m,i-based calculation ***/
+      akqmi[q] = akqmi_current;
     }
     cout << endl;
   }
