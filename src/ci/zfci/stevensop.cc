@@ -136,6 +136,11 @@ void ZHarrison::compute_extended_stevens_operators() const {
   if (kmax >= fact.max())
     throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(fact.max() - 1) + " and lower");
 
+  // Eventually coefficients become so large that long long and double fail to capture them.
+  // With double, the errors are probably negligible; multiple precision could be used if needed
+  if (kmax >= 13)
+    cout << "  ** Warning:  You may encounter numerical issues for pseudospin Hamiltonians of very high order. **" << endl;
+
   cout << fixed << setprecision(6);
   for (int k = 0; k <= kmax; ++k) {
 
