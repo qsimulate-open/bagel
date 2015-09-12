@@ -87,11 +87,11 @@ double compute_akqm(const int k, const int q, const int m, const int nspin, cons
 // a(k, q; m, i) in Ryabov's notation
 // Uses a downward recurrence relation:  the input vector akq1m contains the output for k, q+1, and all values of m, i
 // Output corresponds to a specific k, q; m but all values of i
-vector<double> compute_akqmi(const int k, const int q, const int m, const int nspin, const vector<vector<double>> akq1mi) {
+vector<long long> compute_akqmi(const int k, const int q, const int m, const int nspin, const vector<vector<long long>> akq1mi) {
   assert (k >= 1 && q >= 0 && m >= 0 && q < k && m <= k - q);
 
   const int nval = (k - q - m) / 2 + 1;
-  vector<double> out(nval);
+  vector<long long> out(nval);
 
   for (int i=0; i!=nval; ++i) {
 
@@ -101,10 +101,10 @@ vector<double> compute_akqmi(const int k, const int q, const int m, const int ns
       out[i] += (q * (q + 1) - m * (m + 1) / 2) * akq1mi[m][i];
 
     for (int n = 1; n <= k - q - m - 1; ++n) {
-      const double sign = (n % 2 == 0) ? 1 : -1;
-      const double coeff1 = comb(m + n, m);
-      const double coeff2 = m > 0 ? comb(m + n, m - 1) : 0.0;
-      const double coeff3 = m > 1 ? comb(m + n, m - 2) : 0.0;
+      const long long sign = (n % 2 == 0) ? 1 : -1;
+      const long long coeff1 = comb(m + n, m);
+      const long long coeff2 = m > 0 ? comb(m + n, m - 1) : 0;
+      const long long coeff3 = m > 1 ? comb(m + n, m - 2) : 0;
 
       if (i <= (k - q - m - n + 1) / 2 && i > 0)
         out[i] += sign * coeff1 * akq1mi[m + n][i-1];
@@ -166,13 +166,11 @@ void ZHarrison::compute_extended_stevens_operators() const {
   const int kmax = idata_->get<bool>("aniso_extrastevens", false) ? 8 : nspin;
 
   // Requires factorial of k
-  if (kmax >= fact.max())
-    throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(fact.max() - 1) + " and lower");
-
-  // Eventually coefficients become so large that long long and double fail to capture them.
-  // With double, the errors are probably negligible; multiple precision could be used if needed
-  if (kmax >= 13)
-    cout << "  ** Warning:  You may encounter numerical issues for pseudospin Hamiltonians of very high order. **" << endl;
+  // Above kmax = 12, coefficients become so large that long long fails to capture them.
+  // Potentially we could store a(k, q; m) / Fkq or something, but for now this is fine.
+  const int kmax_limit = std::min(fact.max(), 13);
+  if (kmax >= kmax_limit)
+    throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(kmax_limit - 1) + " and lower");
 
   cout << fixed << setprecision(6);
   for (int k = 0; k <= kmax; ++k) {
@@ -186,7 +184,7 @@ void ZHarrison::compute_extended_stevens_operators() const {
     vector<vector<double>> akqm(k + 1);
 
     /*** For k,q;m,i-based calculation ***/
-    vector<vector<vector<double>>> akqmi(k + 1);
+    vector<vector<vector<long long>>> akqmi(k + 1);
 
     // same but for negative q
     vector<vector<double>> ak_qm(k + 1);
@@ -205,7 +203,7 @@ void ZHarrison::compute_extended_stevens_operators() const {
       vector<double> ak_qm_current(k - q + 1); // negative q
 
       /*** For k,q;m,i-based calculation ***/
-      vector<vector<double>> akqmi_current(k - q + 1.0);
+      vector<vector<long long>> akqmi_current(k - q + 1);
 
       Nk_q[q] = Nkq[q] * ((k % 2 == 0) ? 1.0 : -1.0);
 
@@ -219,7 +217,7 @@ void ZHarrison::compute_extended_stevens_operators() const {
 
         /*** For k,q;m,i-based calculation ***/
         if (q == k) {
-          akqmi_current[m] = vector<double>(1, 1.0);
+          akqmi_current[m] = vector<long long>(1, 1);
         } else {
           akqmi_current[m] = compute_akqmi(k, q, m, nspin, akqmi[q + 1]);
         }
@@ -231,10 +229,10 @@ void ZHarrison::compute_extended_stevens_operators() const {
           check_akqm += std::pow(ss1, i) * akqmi_current[m][i];
         }
         //cout << "    **** Error in computation of akqm = " << check_akqm - akqm_current[m] << endl;
-        cout << setprecision(0) << "  k = " << k << ", akqm = " << setw(22) << akqm_current[m] << ", check_akqm = " << setw(22) << check_akqm << ", error = " << setw(22) << check_akqm - akqm_current[m] << endl;
+        //cout << setprecision(0) << "  k = " << k << ", akqm = " << setw(22) << akqm_current[m] << ", check_akqm = " << setw(22) << check_akqm << ", error = " << setw(22) << check_akqm - akqm_current[m] << endl;
 
-        //const double Nkk = Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0);
-        //cout << "       k = " << setw(4) << k << ", q = " << setw(4) << q << ", m = " << setw(4) << m << ", alpha = " << setw(8) << setprecision(2) << alpha[q] << ", Nkk = " << setw(10) << setprecision(6) << Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0) << ", Nkq = " << setw(10) << Nkq[q] << ", Nk_q = " << setw(10) << Nk_q[q] << ", Nkq/Nkk = " << setw(10) << Nkq[q] / Nkk << "  acoeff = " << setw(14) << setprecision(2) << akqm_current[m] << ", akqm_is = " << setw(14) << check_akqm << endl;
+        const double Nkk = Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0);
+        cout << "       k = " << setw(4) << k << ", q = " << setw(4) << q << ", m = " << setw(4) << m << ", alpha = " << setw(8) << setprecision(2) << alpha[q] << ", Nkk = " << setw(10) << setprecision(6) << Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0) << ", Nkq = " << setw(10) << Nkq[q] << ", Nk_q = " << setw(10) << Nk_q[q] << ", Nkq/Nkk = " << setw(10) << Nkq[q] / Nkk << "  acoeff = " << setw(14) << setprecision(2) << akqm_current[m] << ", akqm_is = " << setw(14) << check_akqm << endl;
       }
 
       akqm[q] = akqm_current;
