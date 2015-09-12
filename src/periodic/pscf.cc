@@ -30,6 +30,7 @@
 #include <src/util/math/diis.h>
 #include <src/periodic/pscf.h>
 #include <src/periodic/poverlap.h>
+//#include <src/periodic/pfmm.h>
 
 using namespace std;
 using namespace bagel;

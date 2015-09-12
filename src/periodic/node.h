@@ -30,6 +30,8 @@
 #include <memory>
 #include <vector>
 #include <src/periodic/vertex.h>
+#include <src/df/df.h>
+#include <src/integral/rys/eribatch.h>
 
 namespace bagel {
 
@@ -50,6 +52,7 @@ class Node {
     std::vector<std::shared_ptr<const Node>> interaction_list_;
     std::vector<std::shared_ptr<const Node>> neighbour_;
     const double thresh_;
+    mutable std::shared_ptr<DFDist> df_;
 
     void insert_vertex(std::shared_ptr<const Vertex>);
     void insert_child(std::shared_ptr<const Node> = NULL);
@@ -57,7 +60,7 @@ class Node {
     void get_interaction_list();
     void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
     void insert_neighbour(std::shared_ptr<const Node> neigh, const bool is_neighbour = false, const int ws = 1);
-    void make_interaction_list(const int ws = 1);
+    void make_interaction_list(const int ws);
 
     int nbasis_;
     bool is_same_as_parent_;
@@ -69,8 +72,11 @@ class Node {
     std::array<double, 3> compute_centre(std::array<std::shared_ptr<const Shell>, 2> shells);
     void compute_multipoles(const int lmax = ANG_HRR_END);
     void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, const std::vector<int> offsets);
-    std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offsets);
+    std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offsets, const bool dodf, const std::string auxfile);
     std::shared_ptr<const ZMatrix> compute_exact_Coulomb_FF(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offsets);
+    std::shared_ptr<DFDist_ints<ERIBatch>> form_fit(const int nbas, const int naux, std::vector<std::shared_ptr<const Atom>> atoms, std::vector<std::shared_ptr<const Atom>> aux_atoms) {
+      return std::make_shared<DFDist_ints<ERIBatch>>(nbas, naux, atoms, aux_atoms, thresh_, true /*J^-1/2*/, 0.0/*dum*/);
+    }
 
   public:
     Node(const std::bitset<nbit__> key = 0, const int depth = 0,

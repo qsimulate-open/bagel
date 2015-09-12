@@ -234,7 +234,10 @@ void Tree::build_tree() {
 }
 
 
-void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
+void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const string auxfile) {
+
+  if (dodf && !auxfile.empty())
+    throw runtime_error("Do FMM with DF but no df basis provided");
 
   Timer fmmtime;
   // Downward pass
@@ -255,7 +258,7 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density) {
     nodes_[i]->compute_local_expansions(density, lmax, offsets);
     if (nodes_[i]->is_leaf()) {
       //////shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_exact_Coulomb_FF(density, lmax, offsets);
-      shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets);
+      shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, dodf, auxfile);
       *out += *tmp;
     }
   }

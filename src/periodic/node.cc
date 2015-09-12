@@ -27,7 +27,6 @@
 #include <src/periodic/node.h>
 #include <src/periodic/multipolebatch.h>
 #include <src/periodic/localexpansion.h>
-#include <src/integral/rys/eribatch.h>
 
 using namespace bagel;
 using namespace std;
@@ -371,7 +370,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets) {
+shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets, const bool dodf, const string auxfile) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
@@ -436,11 +435,15 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   }
 #endif
   ////END OF DEBUG
-#if 1
+
+  vector<shared_ptr<const Atom>> close_atoms;
+  int nbas = 0;
   for (auto& close_node : neighbour_) {
     for (auto& close_body : close_node->bodies()) {
+      close_atoms.insert(close_atoms.end(), close_body->atoms().begin(), close_body->atoms().end());
       size_t iat = 0;
       for (auto& close_atom : close_body->atoms()) {
+        nbas += close_atom->nbasis();
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
         vector<int> tmpoff;
@@ -455,55 +458,92 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
       }
     }
   }
-#endif
-
   const size_t size = basis.size();
-  const double* density_data = density->data();
 
-  for (int i0 = 0; i0 != size; ++i0) {
-    const shared_ptr<const Shell>  b0 = basis[i0];
-    const int b0offset = new_offset[i0];
-    const int b0size = b0->nbasis();
+  if (!dodf) {
+    const double* density_data = density->data();
 
-    for (int i1 = 0; i1 != size; ++i1) {
-      const shared_ptr<const Shell>  b1 = basis[i1];
-      const int b1offset = new_offset[i1];
-      const int b1size = b1->nbasis();
+    for (int i0 = 0; i0 != size; ++i0) {
+      const shared_ptr<const Shell>  b0 = basis[i0];
+      const int b0offset = new_offset[i0];
+      const int b0size = b0->nbasis();
 
-      for (int i2 = 0; i2 != size; ++i2) {
-        const shared_ptr<const Shell>  b2 = basis[i2];
-        const int b2offset = new_offset[i2];
-        const int b2size = b2->nbasis();
+      for (int i1 = 0; i1 != size; ++i1) {
+        const shared_ptr<const Shell>  b1 = basis[i1];
+        const int b1offset = new_offset[i1];
+        const int b1size = b1->nbasis();
 
-        for (auto& a3 : bodies_) {
-          size_t iat3 = 0;
-          for (auto& atom3 : a3->atoms()) {
-            size_t ish3 = 0;
-            for (auto& b3 : atom3->shells()) {
-              const int b3size = b3->nbasis();
-              const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
-              ++ish3;
+        for (int i2 = 0; i2 != size; ++i2) {
+          const shared_ptr<const Shell>  b2 = basis[i2];
+          const int b2offset = new_offset[i2];
+          const int b2size = b2->nbasis();
 
-              array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
-              ERIBatch eribatch(input, 0.0);
-              eribatch.compute();
-              const double* eridata = eribatch.data();
+          for (auto& a3 : bodies_) {
+            size_t iat3 = 0;
+            for (auto& atom3 : a3->atoms()) {
+              size_t ish3 = 0;
+              for (auto& b3 : atom3->shells()) {
+                const int b3size = b3->nbasis();
+                const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
+                ++ish3;
 
-              for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-                const int j0n = j0 * density->ndim();
-                for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
-                  for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-                    for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
-                      const double eri = *eridata;
-                      out->element(j2, j3) += density_data[j0n + j1] * eri;
+                array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+                ERIBatch eribatch(input, 0.0);
+                eribatch.compute();
+                const double* eridata = eribatch.data();
+
+                for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+                  const int j0n = j0 * density->ndim();
+                  for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                    for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                      for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                        const double eri = *eridata;
+                        out->element(j2, j3) += density_data[j0n + j1] * eri;
+                      }
                     }
                   }
                 }
               }
+              ++iat3;
             }
-            ++iat3;
           }
         }
+      }
+    }
+  } else { /* dodf */
+    vector<shared_ptr<const Atom>> aux_atoms;
+    const int naux =  nbas;
+    shared_ptr<const PTree> bdata = PTree::read_basis(auxfile);
+    for (auto& a : close_atoms)
+       aux_atoms.push_back(make_shared<const Atom>(*a, a->spherical(), auxfile, make_pair(auxfile, bdata), nullptr));
+
+    df_ = form_fit(nbas, naux, close_atoms, aux_atoms);
+
+    shared_ptr<const Matrix> subden;
+    for (int i0 = 0; i0 != size; ++i0) {
+      const shared_ptr<const Shell>  b0 = basis[i0];
+      const int b0offset = new_offset[i0];
+      const int b0size = b0->nbasis();
+      for (int i1 = 0; i1 != size; ++i1) {
+        const shared_ptr<const Shell>  b1 = basis[i1];
+        const int b1offset = new_offset[i1];
+        const int b1size = b1->nbasis();
+        subden = density->get_submatrix(b1offset, b0offset, b1size, b0size);
+        assert(subden->ndim() == nbas && subden->mdim() == nbas);
+      }
+    }
+
+    shared_ptr<const Matrix> o = df_->compute_Jop(subden);
+
+    for (int i0 = 0; i0 != size; ++i0) {
+      const shared_ptr<const Shell>  b0 = basis[i0];
+      const int b0offset = new_offset[i0];
+      const int b0size = b0->nbasis();
+      for (int i1 = 0; i1 != size; ++i1) {
+        const shared_ptr<const Shell>  b1 = basis[i1];
+        const int b1offset = new_offset[i1];
+        const int b1size = b1->nbasis();
+        out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *o);
       }
     }
   }
