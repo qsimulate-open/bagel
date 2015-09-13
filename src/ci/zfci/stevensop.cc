@@ -93,6 +93,18 @@ vector<long long> compute_akqmi(const int k, const int q, const int m, const int
   return out;
 }
 
+long long greatest_common_factor(const long long a, const long long b) {
+  return b == 0 ? a : greatest_common_factor(b, a % b);
+}
+
+// Fkq is the greatest common factor of all a(k, q; m, i) with the same k, q
+long long compute_Fkq(const vector<vector<long long>> input) {
+  long long out = std::abs(input[0][0]);
+  for(int m = 0; m != input.size(); ++m)
+    for(int i = 0; i != input[m].size(); ++i)
+      out = greatest_common_factor(out, std::abs(input[m][i]));
+  return out;
+}
 
 } // end of anonymous namespace
 
@@ -197,6 +209,7 @@ void ZHarrison::compute_extended_stevens_operators() const {
         ak_qm_current[m] = akqm_current[m] * (m % 2 == 0 ? 1.0 : -1.0);
       }
 
+      const long long Fkq = compute_Fkq(akqmi_current);
 
       // Debug printout
       const double Nkk = Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0);
