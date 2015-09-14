@@ -574,6 +574,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
 
             o1 += b1size;
           }
+          ++iat1;
         }
       }
       o0 += b0size;
