@@ -115,7 +115,10 @@ void ZHarrison::compute_extended_stevens_operators() const {
   /***************************************************/
   /* TODO This section is repeated from zharrison.cc */
   /***************************************************/
-  int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
+  for (int nspin = 0; nspin != 11; ++nspin) {
+  cout << endl << endl << endl << endl;
+
+  //int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
   int nspin1 = nspin + 1;
 
   // S_x, S_y, and S_z operators in pseudospin basis
@@ -162,12 +165,16 @@ void ZHarrison::compute_extended_stevens_operators() const {
   if (kmax >= kmax_limit)
     throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(kmax_limit - 1) + " and lower");
 
+  // Stevens operators:  Since q runs from -k to k, access Okq as stevensop[k][q+k]
+  vector<vector<shared_ptr<const ZMatrix>>> stevensop(kmax + 1);
+
   cout << fixed << setprecision(6);
   for (int k = 0; k <= kmax; ++k) {
 
     vector<double> alpha(k + 1);
     vector<double> Nkq(k + 1);  // positive q
     vector<double> Nk_q(k + 1); // negative q
+    stevensop[k] = vector<shared_ptr<const ZMatrix>>(2 * k + 1);
 
     // a(k, q; m) in Ryabov's notation
     // access is akqm[q][m]
@@ -212,15 +219,68 @@ void ZHarrison::compute_extended_stevens_operators() const {
       const long long Fkq = compute_Fkq(akqmi_current);
 
       // Debug printout
-      const double Nkk = Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0);
-      for (int m = 0; m <= k - q; ++m)
-        cout << "       k = " << setw(2) << k << ", q = " << setw(2) << q << ", m = " << setw(2) << m << ", alpha = " << setw(6) << setprecision(2) << alpha[q] << ", Nkk = " << setw(10) << setprecision(6) << Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0) << ", Nkq = " << setw(10) << Nkq[q] << ", Nk_q = " << setw(10) << Nk_q[q] << ", Nkq/Nkk = " << setw(10) << Nkq[q] / Nkk << "    akqm = " << setw(14) << setprecision(2) << akqm_current[m] << ", Fkq = " << setw(6) << Fkq << ", a(k, q; m)/Fkq = " << setw(10) << akqm_current[m] / Fkq << endl;
+      //const double Nkk = Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0);
+      //for (int m = 0; m <= k - q; ++m)
+        //cout << "       k = " << setw(2) << k << ", q = " << setw(2) << q << ", m = " << setw(2) << m << ", alpha = " << setw(6) << setprecision(2) << alpha[q] << ", Nkk = " << setw(10) << setprecision(6) << Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0) << ", Nkq = " << setw(10) << Nkq[q] << ", Nk_q = " << setw(10) << Nk_q[q] << ", Nkq/Nkk = " << setw(10) << Nkq[q] / Nkk << "    akqm = " << setw(14) << setprecision(2) << akqm_current[m] << ", Fkq = " << setw(6) << Fkq << ", a(k, q; m)/Fkq = " << setw(10) << akqm_current[m] / Fkq << endl;
 
       akqm[q] = akqm_current;
       akqmi[q] = akqmi_current;
       ak_qm[q] = ak_qm_current;
+
+      shared_ptr<ZMatrix> Tkq = spin_plus->clone();
+      shared_ptr<ZMatrix> Tk_q = spin_plus->clone();
+      shared_ptr<ZMatrix> Tk_q_check = spin_plus->clone();
+      const double sign1 = (q % 2 == 0) ? 1.0 : -1.0;
+
+      for (int m = 0; m <= k - q; ++m) {
+        // Need spin-z matrix to power of m and spin-plus to power of q
+        shared_ptr<ZMatrix> Szm = pspinmat[2]->clone();
+        shared_ptr<ZMatrix> Spq = pspinmat[2]->clone();
+        Szm->unit();
+        Spq->unit();
+        for (int i = 0; i != m; ++i)
+          *Szm *= *pspinmat[2];
+        for (int i = 0; i != q; ++i)
+          *Spq *= *spin_plus;
+
+        const double sign2 = ((k - m) % 2 == 0) ? 1.0 : -1.0;
+        const double coeff = sign1 * sign2 * Nkq[q] * akqm[q][m];
+        *Tkq += (coeff * *Szm * *Spq);
+
+        /******/ // Debug code
+        shared_ptr<ZMatrix> Smq = pspinmat[2]->clone();
+        Smq->unit();
+        for (int i = 0; i != q; ++i)
+          *Smq *= *spin_minus;
+        const double coeff2 = sign1 * Nkq[q] * akqm[q][m];
+        *Tk_q_check += (coeff2 * *Szm * *Smq);
+        /******/
+      }
+
+      *Tk_q = sign1 * *Tkq->transpose_conjg();
+
+      assert((*Tk_q - *Tk_q_check).rms() < 1.0e-10);
+
+      const double ckq = alpha[q] / (Nkq[q] * Fkq);
+      auto Okq = make_shared<const ZMatrix>(ckq * *Tkq);
+      auto Ok_q = make_shared<const ZMatrix>(sign1 * ckq * *Tk_q);
+
+      // assert that the +q and -q algorithms give the same final result for q = 0
+      assert(q != 0 || (*Okq - *Ok_q).rms() < 1.0e-10);
+
+      stevensop[k][k + q] = Okq;
+      stevensop[k][k - q] = Ok_q;
+
+      const string spinstring = to_string(nspin/2) + (nspin % 2 == 0 ? "" : " 1/2");
+      if (Okq->rms() > 1.0e-10)
+        Okq->print("Stevens operator, S = " + spinstring + ", k = " + to_string(k) + " , q = " + to_string(q), 12);
+      if (Ok_q->rms() > 1.0e-10)
+        Ok_q->print("Stevens operator, S = " + spinstring + ", k = " + to_string(k) + " , q = " + to_string(-q), 12);
+
     }
     cout << endl;
   }
+  } // end loop over nspin
 }
+
 
