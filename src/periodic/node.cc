@@ -439,19 +439,18 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
 #endif
   ////END OF DEBUG
 
+  assert(iself_ >= 0);
   int ibas = -1;
-  cout << "iself = " << iself_ << endl;
   vector<shared_ptr<const Atom>> close_atoms;
   int nbas = 0;
-  int ibody = 0;
+  int inode = 0;
   for (auto& close_node : neighbour_) {
-    if (ibody == iself_)
-      ibas = nbas;
+    if (inode == iself_) ibas = nbas;
+    nbas += close_node->nbasis();
     for (auto& close_body : close_node->bodies()) {
       size_t iat = 0;
       for (auto& close_atom : close_body->atoms()) {
         close_atoms.push_back(close_atom);
-        nbas += close_atom->nbasis();
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
         vector<int> tmpoff;
@@ -465,7 +464,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         ++iat;
       }
     }
-    ++ibody;
+    ++inode;
   }
   assert (ibas >= 0);
   const size_t size = basis.size();
@@ -554,7 +553,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
     shared_ptr<const Matrix> o = df_->compute_Jop(make_shared<const Matrix>(subden));
 
     o0 = 0;
-    assert(iself_ >= 0);
     for (int i0 = 0; i0 != size; ++i0) {
       const shared_ptr<const Shell>  b0 = basis[i0];
       const int b0offset = new_offset[i0];
