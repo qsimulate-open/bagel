@@ -65,6 +65,7 @@ class Node {
     int nbasis_;
     bool is_same_as_parent_;
     int rank_;
+    int iself_; // in neighbour_
     std::vector<std::shared_ptr<const ZMatrix>> multipoles_;
     std::vector<std::shared_ptr<const ZMatrix>> local_moment_;
     std::shared_ptr<const ZMatrix> local_expansion_;

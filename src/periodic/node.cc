@@ -73,6 +73,7 @@ void Node::insert_child(shared_ptr<const Node> child) {
 void Node::init() {
 
   is_complete_ = true;
+  iself_ = -1;
   if (nchild_ == 0) is_leaf_ = true;
 
   if (!is_leaf_)
@@ -163,6 +164,8 @@ void Node::insert_neighbour(shared_ptr<const Node> neigh, const bool is_neighbou
       if (r <= (1.0 + ws) * (extent_ + neigh->extent())) {
         neighbour_.resize(nneighbour_ + 1);
         neighbour_[nneighbour_] = neigh;
+        if (r < numerical_zero__)
+          iself_ = nneighbour_;
         ++nneighbour_;
       } else {
         interaction_list_.resize(ninter_ + 1);
@@ -436,9 +439,14 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
 #endif
   ////END OF DEBUG
 
+  int ibas = -1;
+  cout << "iself = " << iself_ << endl;
   vector<shared_ptr<const Atom>> close_atoms;
   int nbas = 0;
+  int ibody = 0;
   for (auto& close_node : neighbour_) {
+    if (ibody == iself_)
+      ibas = nbas;
     for (auto& close_body : close_node->bodies()) {
       size_t iat = 0;
       for (auto& close_atom : close_body->atoms()) {
@@ -457,7 +465,9 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         ++iat;
       }
     }
+    ++ibody;
   }
+  assert (ibas >= 0);
   const size_t size = basis.size();
 
   if (!dodf) {
@@ -544,19 +554,27 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
     shared_ptr<const Matrix> o = df_->compute_Jop(make_shared<const Matrix>(subden));
 
     o0 = 0;
+    assert(iself_ >= 0);
     for (int i0 = 0; i0 != size; ++i0) {
       const shared_ptr<const Shell>  b0 = basis[i0];
       const int b0offset = new_offset[i0];
       const int b0size = b0->nbasis();
-      int o1 = 0;
-      for (int i1 = 0; i1 != size; ++i1) {
-        const shared_ptr<const Shell>  b1 = basis[i1];
-        const int b1offset = new_offset[i1];
-        const int b1size = b1->nbasis();
-        auto tmp = o->get_submatrix(o1, o0, b1size, b0size);
-        out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *tmp);
+      int o1 = ibas;
+      for (auto& a1 : bodies_) {
+        size_t iat1 = 0;
+        for (auto& atom1 : a1->atoms()) {
+          size_t ish1 = 0;
+          for (auto& b1 : atom1->shells()) {
+            const size_t b1offset = offsets[a1->ishell(iat1) + ish1];
+            const int b1size = b1->nbasis();
+            ++ish1;
 
-        o1 += b1size;
+            auto tmp = o->get_submatrix(o1, o0, b1size, b0size);
+            out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *tmp);
+
+            o1 += b1size;
+          }
+        }
       }
       o0 += b0size;
     }
