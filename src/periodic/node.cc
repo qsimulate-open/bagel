@@ -440,9 +440,9 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   int nbas = 0;
   for (auto& close_node : neighbour_) {
     for (auto& close_body : close_node->bodies()) {
-      close_atoms.insert(close_atoms.end(), close_body->atoms().begin(), close_body->atoms().end());
       size_t iat = 0;
       for (auto& close_atom : close_body->atoms()) {
+        close_atoms.push_back(close_atom);
         nbas += close_atom->nbasis();
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
@@ -512,39 +512,53 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
     }
   } else { /* dodf */
     vector<shared_ptr<const Atom>> aux_atoms;
-    const int naux =  nbas;
     shared_ptr<const PTree> bdata = PTree::read_basis(auxfile);
-    for (auto& a : close_atoms)
-       aux_atoms.push_back(make_shared<const Atom>(*a, a->spherical(), auxfile, make_pair(auxfile, bdata), nullptr));
+    int naux =  0;
+    for (auto& a : close_atoms) {
+       auto aux_atom = make_shared<const Atom>(*a, a->spherical(), auxfile, make_pair(auxfile, bdata), nullptr);
+       aux_atoms.push_back(aux_atom);
+       naux += aux_atom->nbasis();
+    }
 
     df_ = form_fit(nbas, naux, close_atoms, aux_atoms);
 
-    shared_ptr<const Matrix> subden;
+    Matrix subden(nbas, nbas);
+    int o0 = 0;
     for (int i0 = 0; i0 != size; ++i0) {
       const shared_ptr<const Shell>  b0 = basis[i0];
       const int b0offset = new_offset[i0];
       const int b0size = b0->nbasis();
+      int o1 = 0;
       for (int i1 = 0; i1 != size; ++i1) {
         const shared_ptr<const Shell>  b1 = basis[i1];
         const int b1offset = new_offset[i1];
         const int b1size = b1->nbasis();
-        subden = density->get_submatrix(b1offset, b0offset, b1size, b0size);
-        assert(subden->ndim() == nbas && subden->mdim() == nbas);
+        auto tmp = density->get_submatrix(b1offset, b0offset, b1size, b0size);
+        subden.copy_block(o1, o0, b1size, b0size, *tmp);
+
+        o1 += b1size;
       }
+      o0 += b0size;
     }
 
-    shared_ptr<const Matrix> o = df_->compute_Jop(subden);
+    shared_ptr<const Matrix> o = df_->compute_Jop(make_shared<const Matrix>(subden));
 
+    o0 = 0;
     for (int i0 = 0; i0 != size; ++i0) {
       const shared_ptr<const Shell>  b0 = basis[i0];
       const int b0offset = new_offset[i0];
       const int b0size = b0->nbasis();
+      int o1 = 0;
       for (int i1 = 0; i1 != size; ++i1) {
         const shared_ptr<const Shell>  b1 = basis[i1];
         const int b1offset = new_offset[i1];
         const int b1size = b1->nbasis();
-        out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *o);
+        auto tmp = o->get_submatrix(o1, o0, b1size, b0size);
+        out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *tmp);
+
+        o1 += b1size;
       }
+      o0 += b0size;
     }
   }
 
