@@ -26,14 +26,11 @@
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/zfci/relspace.h>
 #include <src/util/math/comb.h>
+#include <src/prop/pseudospin/pseudospin.h>
 #include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/giao/relhcore_london.h>
 #include <src/mat1e/rel/reloverlap.h>
 #include <src/mat1e/giao/reloverlap_london.h>
-/**/
-#include <src/mat1e/rel/general_small1e.h>
-#include <src/integral/os/overlapbatch.h>
-/**/
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 
@@ -165,12 +162,13 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
   shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
   int ndet = nstate*10;
   int oindex = offset;
+  const bool spin_adapt = idata_->get<bool>("spin_adapt", true);
   while (oindex < offset+nstate) {
     vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet, nelea, neleb);
 
     // Spin adapt detseeds
     oindex = offset;
-    vector<bitset<nbit__>> done;
+    vector<pair<bitset<nbit__>,bitset<nbit__>>> done;
     for (auto& it : bits) {
       bitset<nbit__> alpha = it.second;
       bitset<nbit__> beta = it.first;
@@ -180,16 +178,26 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       if (alpha.count() + beta.count() != nele_)
         throw logic_error("ZFCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
 
+      pair<bitset<nbit__>,bitset<nbit__>> config = spin_adapt ? make_pair(open_bit, alpha & beta) : it;
+      if (find(done.begin(), done.end(), config) != done.end()) continue;
+      done.push_back(config);
+
       // make sure that we have enough unpaired alpha
       const int unpairalpha = (alpha ^ (alpha & beta)).count();
       const int unpairbeta  = (beta ^ (alpha & beta)).count();
       if (unpairalpha-unpairbeta < nelea-neleb) continue;
 
-      if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
+      //if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
 
-      done.push_back(open_bit);
+      //done.push_back(open_bit);
       pair<vector<tuple<int, int, int>>, double> adapt;
-      adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+       if (spin_adapt) {
+         adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+       } else {
+         adapt.first = vector<tuple<int, int, int>>(1, make_tuple(space_->finddet(nelea, neleb)->lexical<1>(beta),
+                                                                  space_->finddet(nelea, neleb)->lexical<0>(alpha), 1));
+         adapt.second = 1.0;
+       }
 
       const double fac = adapt.second;
       for (auto& iter : adapt.first) {
@@ -386,9 +394,11 @@ void ZHarrison::compute() {
     if (geom_->magnetism()) {
       cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
     } else {
-      compute_pseudospin_hamiltonian();
+      int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
+      Pseudospin ps(nspin);
 
-      compute_extended_stevens_operators();
+      ps.compute_pseudospin_hamiltonian(geom_, idata_, *this, ncore_, norb_, jop_->coeff_input(), energy_);
+      ps.compute_extended_stevens_operators();
     }
   }
 }
@@ -411,370 +421,3 @@ shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
 }
 
 
-void ZHarrison::compute_pseudospin_hamiltonian() const {
-
-  /**  Part 1: Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix  **/
-
-  // First, we create spin matrices in the atomic orbital basis
-  // TODO Create a class for this
-  const int n = geom_->nbasis();
-  auto overlap = make_shared<Overlap>(geom_);
-  auto spinx = make_shared<ZMatrix>(4*n, 4*n);
-  auto spiny = make_shared<ZMatrix>(4*n, 4*n);
-  auto spinz = make_shared<ZMatrix>(4*n, 4*n);
-  const complex<double> imag(0.0, 1.0);
-
-  // Large component
-  spinx->add_real_block( 0.5,   n,   0, n, n, *overlap);
-  spinx->add_real_block( 0.5,   0,   n, n, n, *overlap);
-
-  spiny->add_real_block( 0.5*imag,   n,   0, n, n, *overlap);
-  spiny->add_real_block(-0.5*imag,   0,   n, n, n, *overlap);
-
-  spinz->add_real_block( 0.5,   0,   0, n, n, *overlap);
-  spinz->add_real_block(-0.5,   n,   n, n, n, *overlap);
-
-  // Small component
-  // TODO Simplify this code
-  // Commented out lines cancel at zero-field; can be replaced with field*overlap for GIAO-RMB
-  const double w = 1.0/(8.0*c__*c__);
-  auto smallints = make_shared<General_Small1e<OverlapBatch>>(geom_);
-
-  // x^x contributions
-  spinx->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[0]);
-  spinx->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[0]);
-  spiny->add_real_block( imag*w, 2*n, 3*n, n, n, (*smallints)[0]);
-  spiny->add_real_block(-imag*w, 3*n, 2*n, n, n, (*smallints)[0]);
-  spinz->add_real_block(     -w, 2*n, 2*n, n, n, (*smallints)[0]);
-  spinz->add_real_block(      w, 3*n, 3*n, n, n, (*smallints)[0]);
-
-  // y^y contributions
-  spinx->add_real_block(     -w, 2*n, 3*n, n, n, (*smallints)[1]);
-  spinx->add_real_block(     -w, 3*n, 2*n, n, n, (*smallints)[1]);
-  spiny->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[1]);
-  spiny->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[1]);
-  spinz->add_real_block(     -w, 2*n, 2*n, n, n, (*smallints)[1]);
-  spinz->add_real_block(      w, 3*n, 3*n, n, n, (*smallints)[1]);
-
-  // z^z contributions
-  spinx->add_real_block(     -w, 2*n, 3*n, n, n, (*smallints)[2]);
-  spinx->add_real_block(     -w, 3*n, 2*n, n, n, (*smallints)[2]);
-  spiny->add_real_block( imag*w, 2*n, 3*n, n, n, (*smallints)[2]);
-  spiny->add_real_block(-imag*w, 3*n, 2*n, n, n, (*smallints)[2]);
-  spinz->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[2]);
-  spinz->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[2]);
-
-  // x^y contributions
-  spinx->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[3]);
-  spinx->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[3]);
-  spiny->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[3]);
-  spiny->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[3]);
-  //spinz->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[3]);
-  //spinz->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[3]);
-
-  // y^x contributions
-  spinx->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[6]);
-  spinx->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[6]);
-  spiny->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[6]);
-  spiny->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[6]);
-  //spinz->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[6]);
-  //spinz->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[6]);
-
-  // y^z contributions
-  //spinx->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[4]);
-  //spinx->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[4]);
-  spiny->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[4]);
-  spiny->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[4]);
-  spinz->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[4]);
-  spinz->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[4]);
-
-  // z^y contributions
-  //spinx->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[7]);
-  //spinx->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[7]);
-  spiny->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[7]);
-  spiny->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[7]);
-  spinz->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[7]);
-  spinz->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[7]);
-
-  // z^x contributions
-  spinx->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[5]);
-  spinx->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[5]);
-  //spiny->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[5]);
-  //spiny->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[5]);
-  spinz->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[5]);
-  spinz->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[5]);
-
-  // x^z contributions
-  spinx->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[8]);
-  spinx->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[8]);
-  //spiny->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[8]);
-  //spiny->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[8]);
-  spinz->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[8]);
-  spinz->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[8]);
-
-
-  const int ncol = 2*(ncore_+norb_);
-  // TODO Probably we can ignore the closed part, but for now include it
-  shared_ptr<const ZMatrix> closed_aodensity = jop_->coeff_input()->form_density_rhf(2*ncore_, 0, 1.0);
-  const ZMatView active_coeff = jop_->coeff_input()->slice(2*ncore_, ncol);
-
-  // S value of spin manifold to be mapped
-  cout << endl << endl;
-  const int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
-  const int nspin1 = nspin + 1;
-  cout << "    Modeling Pseudospin Hamiltonian for S = " << nspin/2 << (nspin % 2 == 0 ? "" : " 1/2") << endl;
-
-  // By default, just use the ground states
-  vector<int> aniso_state;
-  aniso_state.resize(nspin1);
-  for (int i = 0; i != nspin1; ++i)
-    aniso_state[i] = i;
-
-  // aniso_state can be used to request mapping excited states instead
-  const shared_ptr<const PTree> exstates = idata_->get_child_optional("aniso_state");
-  if (exstates) {
-    aniso_state = {};
-    for (auto& i : *exstates)
-      aniso_state.push_back(lexical_cast<int>(i->data()) - 1);
-    if (aniso_state.size() != nspin1)
-      throw runtime_error("Aniso:  Wrong number of states requested for this S value (should be " + to_string(nspin1) + ")");
-    for (int i = 0; i != nspin1; ++i)
-      if (aniso_state[i] < 0 || aniso_state[i] >= nstate_)
-        throw runtime_error("Aniso:  Invalid state requested (should be between 1 and " + to_string(nstate_) + ")");
-    cout << "    For the following states:  ";
-    for (int i = 0; i != nspin1; ++i)
-      cout << aniso_state[i] << "  ";
-    cout << endl;
-  } else {
-    cout << "    For the ground spin-manifold" << endl;
-  }
-  cout << endl;
-
-  // Compute spin matrices in the basis of ZFCI Hamiltonian eigenstates
-  array<shared_ptr<ZMatrix>,3> spinmat;
-  for (int i = 0; i != 3; ++i) {
-    spinmat[i] = make_shared<ZMatrix>(nspin1, nspin1);
-  }
-  for (int i = 0; i != nspin1; ++i) {
-    for (int j = 0; j != nspin1; ++j) {
-      shared_ptr<Kramers<2,ZRDM<1>>> temprdm = rdm1(aniso_state[i], aniso_state[j]);
-      if (!temprdm->exist({1,0})) {
-        cout << " * Need to generate an off-diagonal rdm of zeroes." << endl;
-        temprdm->add({1,0}, temprdm->at({0,0})->clone());
-      }
-      shared_ptr<const ZRDM<1>> tmp = expand_kramers<1,complex<double>>(temprdm, norb_);
-      auto rdmmat = make_shared<ZMatrix>(norb_*2, norb_*2);
-      copy_n(tmp->data(), tmp->size(), rdmmat->data());
-
-      ZMatrix modensity (2*norb_, 2*norb_);
-      modensity.copy_block(0, 0, 2*norb_, 2*norb_, rdmmat);
-
-      ZMatrix aodensity = (active_coeff * modensity ^ active_coeff) + *closed_aodensity;
-
-      spinmat[0]->element(i,j) = aodensity.dot_product(*spinx);
-      spinmat[1]->element(i,j) = aodensity.dot_product(*spiny);
-      spinmat[2]->element(i,j) = aodensity.dot_product(*spinz);
-    }
-  }
-
-  // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
-  auto transform = spinmat[2]->copy();
-  VectorB zeig(nspin1);
-  transform->diagonalize(zeig);
-
-  { // Reorder eigenvectors so positive M_s come first
-    shared_ptr<ZMatrix> tempm = transform->clone();
-    VectorB tempv = *zeig.clone();
-    for (int i = 0; i != nspin1; ++i) {
-      tempv[i] = zeig[nspin-i];
-      tempm->copy_block(0, i, nspin1, 1, transform->slice(nspin-i, nspin-i+1));
-    }
-    transform = tempm;
-    zeig = tempv;
-  }
-
-  for (int i = 0; i != nspin1; ++i)
-    cout << "    Spin-z eigenvalue " << i+1 << " = " << zeig[i] << endl;
-
-  // We will subtract out average energy so the pseudospin Hamiltonian is traceless
-  complex<double> energy_avg = 0.0;
-  for (int i = 0; i != nspin1; ++i)
-    energy_avg += energy_[aniso_state[i]];
-  energy_avg /= nspin1;
-
-  // Now build up the numerical pseudospin Hamiltonian!
-  auto energies = make_shared<ZMatrix>(nspin1,nspin1);
-  for (int i = 0; i != nspin1; ++i) {
-    energies->element(i,i) = energy_[aniso_state[i]] - energy_avg;
-  }
-  auto spinham = make_shared<ZMatrix>(*transform % *energies * *transform);
-
-  auto diagspinx = make_shared<ZMatrix>(*transform % *spinmat[0] * *transform);
-  auto diagspiny = make_shared<ZMatrix>(*transform % *spinmat[1] * *transform);
-  auto diagspinz = make_shared<ZMatrix>(*transform % *spinmat[2] * *transform);
-
-  cout << endl;
-  spinham->print("Pseudospin Hamiltonian!");
-/*
-  diagspinx->print("Spin matrix - x-component");
-  diagspiny->print("Spin matrix - y-component");
-  diagspinz->print("Spin matrix - z-component");
-
-  cout << endl;
-  energies->print("Hamiltonian over the spin manifold, in ZFCI eigenstate basis");
-  spinmat[0]->print("Spin matrix (in ZFCI eigenstate basis) - x-component");
-  spinmat[1]->print("Spin matrix (in ZFCI eigenstate basis) - y-component");
-  spinmat[2]->print("Spin matrix (in ZFCI eigenstate basis) - z-component");
-*/
-  cout << endl;
-
-  /**  Part 2: Build up symbolic pseudospin Hamiltonian  **/
-
-  // S_x, S_y, and S_z operators in pseudospin basis
-  array<shared_ptr<ZMatrix>,3> pspinmat;
-  for (int i = 0; i != 3; ++i)
-    pspinmat[i] = make_shared<ZMatrix>(nspin1, nspin1);
-
-  auto spin_plus = make_shared<ZMatrix>(nspin1, nspin1);
-  auto spin_minus = make_shared<ZMatrix>(nspin1, nspin1);
-  const double sval = nspin/2.0;
-  const double ssp1 = sval*(sval+1.0);
-
-  for (int i = 0; i != nspin1; ++i) {
-    const double ml1 = sval - i;
-    pspinmat[2]->element(i,i) = ml1;
-    if (i < nspin) {
-      spin_plus->element(i,i+1) = std::sqrt(ssp1 - ml1*(ml1-1.0));
-    }
-    if (i > 0) {
-      spin_minus->element(i,i-1) = std::sqrt(ssp1 - ml1*(ml1+1.0));
-    }
-  }
-
-  pspinmat[0]->add_block( 0.5, 0, 0, nspin1, nspin1, spin_plus);
-  pspinmat[0]->add_block( 0.5, 0, 0, nspin1, nspin1, spin_minus);
-  pspinmat[1]->add_block( complex<double>( 0.0, -0.5), 0, 0, nspin1, nspin1, spin_plus);
-  pspinmat[1]->add_block( complex<double>( 0.0,  0.5), 0, 0, nspin1, nspin1, spin_minus);
-
-  // Transformation matrix to build pseudospin Hamiltonian from D-tensor
-  // Rows correspond to pairs of pseudospins (SS, S-1S, S-2S...)
-  // Columns correspond to elements of the D-tensor (Dxx, Dyx, Dzx, Dxy...)
-  // Note that we look over the first indices before the second, so we can copy data between vectors and matrices and have it come out in the right order
-  auto d2h = make_shared<ZMatrix>(nspin1*nspin1,9);
-  for (int i = 0; i != 3; ++i) {
-    for (int j = 0; j != 3; ++j) {
-      ZMatrix temp = *pspinmat[i] * *pspinmat[j];
-      d2h->copy_block(0, 3*j+i, nspin1*nspin1, 1, temp.data());
-    }
-  }
-
-
-  /**  Part 3: Extract D-tensor from the numerical pseudospin Hamiltonian **/
-
-  auto Dtensor = make_shared<ZMatrix>(3,3);
-  auto checkham = make_shared<ZMatrix>(nspin1,nspin1);
-
-  // Convert from the pseudospin Hamiltonian to the D-tensor using the left-inverse of d2h
-  if (idata_->get<bool>("aniso_real", true)) {
-    // By default, force the D tensor to be real
-
-    // Separate out real and imaginary parts
-    auto d2h_real = make_shared<Matrix>(nspin1*nspin1*2,9);
-    auto spinham_vec_real = make_shared<Matrix>(nspin1*nspin1*2,1);
-    d2h_real->copy_block(            0, 0, nspin1*nspin1, 9, d2h->get_real_part());
-    d2h_real->copy_block(nspin1*nspin1, 0, nspin1*nspin1, 9, d2h->get_imag_part());
-    spinham_vec_real->copy_block(            0, 0, nspin1*nspin1, 1, spinham->get_real_part()->element_ptr(0,0));
-    spinham_vec_real->copy_block(nspin1*nspin1, 0, nspin1*nspin1, 1, spinham->get_imag_part()->element_ptr(0,0));
-
-    // Compute left-inverse as  (A^T A)^-1 A^T
-    Matrix d2h_sqinv_real = *d2h_real % *d2h_real;
-    d2h_sqinv_real.inverse();
-    Matrix h2d_real = d2h_sqinv_real ^ *d2h_real;
-    assert((h2d_real * *d2h_real).is_identity());
-
-    // Extract D-tensor from it
-    Matrix Dtensor_vec_real = h2d_real * *spinham_vec_real;
-    Matrix Dtensor_real(3, 3);
-    Dtensor_real.copy_block(0, 0, 3, 3, Dtensor_vec_real.element_ptr(0,0));
-
-    Dtensor->copy_real_block(1.0, 0, 0, 3, 3, Dtensor_real);
-
-    // Recompute Hamiltonian from D so we can check the fit
-    ZMatrix Dtensor_vec(9, 1);
-    Dtensor_vec.copy_block(0, 0, 9, 1, Dtensor->element_ptr(0,0));
-    ZMatrix checkham_vec = *d2h * Dtensor_vec;
-    checkham->copy_block(0, 0, nspin1, nspin1, checkham_vec.element_ptr(0,0));
-
-  } else {
-    // On request, allow complex ZFS parameters
-    // Same algorithm, working directly with complex matrices
-    auto h2d = make_shared<ZMatrix>(9, nspin1*nspin1);
-    ZMatrix d2h_sqinv = *d2h % *d2h;
-    d2h_sqinv.inverse();
-    *h2d = d2h_sqinv ^ *d2h;
-    assert((*h2d * *d2h).is_identity());
-
-    auto spinham_vec = make_shared<ZMatrix>(nspin1*nspin1,1);
-    spinham_vec->copy_block(0, 0, nspin1*nspin1, 1, spinham->element_ptr(0,0));
-    ZMatrix Dtensor_vec = *h2d * *spinham_vec;
-    Dtensor->copy_block(0, 0, 3, 3, Dtensor_vec.element_ptr(0,0));
-
-    ZMatrix check_spinham_vec = *d2h * Dtensor_vec;
-    checkham->copy_block(0, 0, nspin1, nspin1, check_spinham_vec.element_ptr(0,0));
-  }
-
-  cout << "  Error in recomputation of spin Hamiltonian from D = " << (*checkham - *spinham).rms() << endl << endl;
-
-  Dtensor->print("D tensor");
-  VectorB Ddiag(3);
-  Dtensor->diagonalize(Ddiag);
-  for (int i = 0; i != 3; ++i)
-    cout << "Diagonalized D-tensor value " << i << " = " << Ddiag[i] << endl;
-
-  // Compute Davg so that it works even if D is not traceless (which shouldn't happen on accident)
-  const double Davg = 1.0 / 3.0 * (Ddiag[0] + Ddiag[1] + Ddiag[2]);
-
-  int jmax = 0;
-  const array<int,3> fwd = {{ 1, 2, 0 }};
-  const array<int,3> bck = {{ 2, 0, 1 }};
-  if (std::abs(Ddiag[1]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 1;
-  if (std::abs(Ddiag[2]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 2;
-  const double Dval = Ddiag[jmax] - 0.5*(Ddiag[fwd[jmax]] + Ddiag[bck[jmax]]);
-  const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
-  cout << " ** D = " << Dval << " E_h, or " << Dval * au2wavenumber__ << " cm-1" << endl;
-  cout << " ** E = " << std::abs(Eval) << " E_h, or " << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
-
-  VectorB shenergies(nspin1);
-  checkham->diagonalize(shenergies);
-
-  if (nspin == 2) {
-    cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
-    if (Dval > 0.0) {
-      cout << "     2  " << Dval + std::abs(Eval) << " E_h  =  " << (Dval + std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
-      cout << "     1  " << Dval - std::abs(Eval) << " E_h  =  " << (Dval - std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
-      cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
-    } else {
-      cout << "     2  " << -Dval + 0.5*std::abs(Eval) << " E_h  =  " << (-Dval + 0.5*std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
-      cout << "     1  " << std::abs(Eval) << " E_h  =  " << std::abs(Eval)*au2wavenumber__ << " cm-1" << endl;
-      cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
-    }
-  } else if (nspin == 3) {
-    cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
-    const double energy32 = 2.0*std::sqrt(Dval*Dval + 3.0*Eval*Eval);
-    cout << "     3  " << energy32 << " E_h  =  " << energy32*au2wavenumber__ << " cm-1" << endl;
-    cout << "     2  " << energy32 << " E_h  =  " << energy32*au2wavenumber__ << " cm-1" << endl;
-    cout << "     1  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl;
-    cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
-  }
-
-  cout << "  ** Relative energies expected from the recomputed Pseudospin Hamiltonian: " << endl;
-  for (int i = nspin; i >= 0; --i)
-    cout << "     " << i << "  " << shenergies[i] - shenergies[0] << " E_h  =  " << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
-  cout << endl;
-
-  cout << "  ** Relative energies observed by relativistic configuration interaction: " << endl;
-  for (int i = nspin; i >= 0; --i)
-    cout << "     " << i << "  " << energy_[aniso_state[i]] - energy_[aniso_state[0]] << " E_h  =  " << (energy_[aniso_state[i]] - energy_[aniso_state[0]])*au2wavenumber__ << " cm-1" << endl;
-  cout << endl;
-
-}

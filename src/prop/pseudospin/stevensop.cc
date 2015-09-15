@@ -112,54 +112,12 @@ long long compute_Fkq(const vector<vector<long long>> input) {
 
 // And now the driver
 void Pseudospin::compute_extended_stevens_operators() const {
-
-  /***************************************************/
-  /* TODO This section is repeated from zharrison.cc */
-  /***************************************************/
-  for (int nspin = 0; nspin != 11; ++nspin) {
-  cout << endl << endl << endl << endl;
-
-  //int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
-  int nspin1 = nspin + 1;
-
-  // S_x, S_y, and S_z operators in pseudospin basis
-  array<shared_ptr<ZMatrix>,3> pspinmat;
-  for (int i = 0; i != 3; ++i)
-    pspinmat[i] = make_shared<ZMatrix>(nspin1, nspin1);
-
-  auto spin_plus = make_shared<ZMatrix>(nspin1, nspin1);
-  auto spin_minus = make_shared<ZMatrix>(nspin1, nspin1);
-  const double sval = nspin/2.0;
-  const double ssp1 = sval*(sval+1.0);
-
-  for (int i = 0; i != nspin1; ++i) {
-    const double ml1 = sval - i;
-    pspinmat[2]->element(i,i) = ml1;
-    if (i < nspin) {
-      const double ml1m = ml1 - 1.0;
-      spin_plus->element(i,i+1) = std::sqrt(ssp1 - ml1*(ml1m));
-    }
-    if (i > 0) {
-      const double ml1p = ml1 + 1.0;
-      spin_minus->element(i,i-1) = std::sqrt(ssp1 - ml1*(ml1p));
-    }
-  }
-
-  pspinmat[0]->add_block( 0.5, 0, 0, nspin1, nspin1, spin_plus);
-  pspinmat[0]->add_block( 0.5, 0, 0, nspin1, nspin1, spin_minus);
-  pspinmat[1]->add_block( complex<double>( 0.0, -0.5), 0, 0, nspin1, nspin1, spin_plus);
-  pspinmat[1]->add_block( complex<double>( 0.0,  0.5), 0, 0, nspin1, nspin1, spin_minus);
-
-  /***************************************************/
-  /*                    fin                          */
-  /***************************************************/
-
-  cout << "    Computing extended stevens operators for S = " << nspin/2 << (nspin % 2 == 0 ? "" : " 1/2") << endl;
+  cout << "    Computing extended stevens operators for S = " << nspin_/2 << (nspin_ % 2 == 0 ? "" : " 1/2") << endl;
 
   // TODO Get this value properly
-  //const int kmax = idata_->get<bool>("aniso_extrastevens", false) ? 8 : nspin;
+  //const int kmax = idata_->get<bool>("aniso_extrastevens", false) ? 8 : nspin_;
   const int kmax = 8;
-  const double ss1 = nspin * (nspin + 2.0) / 4.0; // S(S+1)
+  const double ss1 = nspin_ * (nspin_ + 2.0) / 4.0; // S(S+1)
 
   // Requires factorial of k
   // Above kmax = 12, coefficients become so large that long long fails to capture them.
@@ -210,7 +168,7 @@ void Pseudospin::compute_extended_stevens_operators() const {
         if (q == k)
           akqmi_current[m] = vector<long long>(1, 1);
         else
-          akqmi_current[m] = compute_akqmi(k, q, m, nspin, akqmi[q + 1]);
+          akqmi_current[m] = compute_akqmi(k, q, m, nspin_, akqmi[q + 1]);
 
         akqm_current[m] = 0.0;
         for (int i=0; i <= (k-q-m)/2; ++i)
@@ -230,31 +188,31 @@ void Pseudospin::compute_extended_stevens_operators() const {
       akqmi[q] = akqmi_current;
       ak_qm[q] = ak_qm_current;
 
-      shared_ptr<ZMatrix> Tkq = spin_plus->clone();
-      shared_ptr<ZMatrix> Tk_q = spin_plus->clone();
-      shared_ptr<ZMatrix> Tk_q_check = spin_plus->clone();
+      shared_ptr<ZMatrix> Tkq = spin_plus()->clone();
+      shared_ptr<ZMatrix> Tk_q = spin_plus()->clone();
+      shared_ptr<ZMatrix> Tk_q_check = spin_plus()->clone();
       const double sign1 = (q % 2 == 0) ? 1.0 : -1.0;
 
       for (int m = 0; m <= k - q; ++m) {
         // Need spin-z matrix to power of m and spin-plus to power of q
-        shared_ptr<ZMatrix> Szm = pspinmat[2]->clone();
-        shared_ptr<ZMatrix> Spq = pspinmat[2]->clone();
+        shared_ptr<ZMatrix> Szm = spin_xyz(2)->clone();
+        shared_ptr<ZMatrix> Spq = spin_xyz(2)->clone();
         Szm->unit();
         Spq->unit();
         for (int i = 0; i != m; ++i)
-          *Szm *= *pspinmat[2];
+          *Szm *= *spin_xyz(2);
         for (int i = 0; i != q; ++i)
-          *Spq *= *spin_plus;
+          *Spq *= *spin_plus();
 
         const double sign2 = ((k - m) % 2 == 0) ? 1.0 : -1.0;
         const double coeff = sign1 * sign2 * Nkq[q] * akqm[q][m];
         *Tkq += (coeff * *Szm * *Spq);
 
         /******/ // Debug code
-        shared_ptr<ZMatrix> Smq = pspinmat[2]->clone();
+        shared_ptr<ZMatrix> Smq = spin_xyz(2)->clone();
         Smq->unit();
         for (int i = 0; i != q; ++i)
-          *Smq *= *spin_minus;
+          *Smq *= *spin_minus();
         const double coeff2 = sign1 * Nkq[q] * akqm[q][m];
         *Tk_q_check += (coeff2 * *Szm * *Smq);
         /******/
@@ -277,7 +235,7 @@ void Pseudospin::compute_extended_stevens_operators() const {
       stevensop[k][k + q] = Ocos_kq;
       stevensop[k][k - q] = Osin_kq;
 
-      const string spinstring = to_string(nspin/2) + (nspin % 2 == 0 ? "" : " 1/2");
+      const string spinstring = to_string(nspin_ / 2) + (nspin_ % 2 == 0 ? "" : " 1/2");
       if (Ocos_kq->rms() > 1.0e-10)
         Ocos_kq->print("Stevens operator, S = " + spinstring + ", k = " + to_string(k) + " , q = " + to_string(q), 12);
       if (Osin_kq->rms() > 1.0e-10)
@@ -286,7 +244,6 @@ void Pseudospin::compute_extended_stevens_operators() const {
     }
     cout << endl;
   }
-  } // end loop over nspin
 }
 
 
