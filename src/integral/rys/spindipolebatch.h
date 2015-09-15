@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breitbatch.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: spindipole.h
+// Copyright (C) 2015 Toru Shiozaki
 //
-// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,20 +23,33 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/integral/rys/breitbatch.h>
-#include <src/integral/rys/breitrootlist.h>
-#include <src/integral/rys/spin2rootlist.h>
+#ifndef __SRC_INTEGRAL_RYS_SPINDIPOLEBATCH_H
+#define __SRC_INTEGRAL_RYS_SPINDIPOLEBATCH_H
 
-using namespace std;
-using namespace bagel;
+#include <src/integral/rys/coulombbatch_base.h>
 
-void BreitBatch_base::root_weight(const int ps) {
-  if (breit_ == 1) {
-    breitroot__.root(rank_, T_, roots_, weights_, ps);
-  } else if (breit_ == 2) {
-    spin2root__.root(rank_, T_, roots_, weights_, ps);
-  } else {
-    throw logic_error("unimplemented case. BreitBatch_base::root_weight");
-  }
+namespace bagel {
+
+class SpinDipoleBatch : public CoulombBatch_Base<double> {
+
+  protected:
+    std::shared_ptr<const Atom> target_;
+
+    void root_weight(const int ps) override;
+
+  public:
+
+    SpinDipoleBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, std::shared_ptr<const Atom> target,
+                    std::shared_ptr<StackMem> stack = nullptr);
+
+    void compute() override;
+
+    double* data(const int i) override { return data_ + i*size_block_; }
+
+    constexpr static int Nblocks() { return 6; }
+
+};
+
 }
 
+#endif

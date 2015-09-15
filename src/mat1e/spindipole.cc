@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breitbatch.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: spindipole.cc
+// Copyright (C) 2015 Toru Shiozaki
 //
-// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,20 +23,31 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/integral/rys/breitbatch.h>
-#include <src/integral/rys/breitrootlist.h>
-#include <src/integral/rys/spin2rootlist.h>
+
+#include <src/mat1e/spindipole.h>
+#include <src/integral/rys/spindipolebatch.h>
 
 using namespace std;
 using namespace bagel;
 
-void BreitBatch_base::root_weight(const int ps) {
-  if (breit_ == 1) {
-    breitroot__.root(rank_, T_, roots_, weights_, ps);
-  } else if (breit_ == 2) {
-    spin2root__.root(rank_, T_, roots_, weights_, ps);
-  } else {
-    throw logic_error("unimplemented case. BreitBatch_base::root_weight");
-  }
+SpinDipole::SpinDipole(shared_ptr<const Molecule> mol, shared_ptr<const Atom> atom) : Matrix1eArray<6>(mol), atom_(atom) {
+
+  init(mol);
+  fill_upper();
+
 }
 
+
+void SpinDipole::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule>) {
+
+  // input = [b1, b0]
+  assert(input.size() == 2);
+  const int dimb1 = input[0]->nbasis();
+  const int dimb0 = input[1]->nbasis();
+  SpinDipoleBatch sd(input, atom_);
+  sd.compute();
+
+  for (int i = 0; i < Nblocks(); ++i) {
+    matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, sd.data(i));
+  }
+}

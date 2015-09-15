@@ -45,7 +45,7 @@ class ComplexNAIBatch : public CoulombBatch_Base<std::complex<double>,Int_t::Lon
     void compute() override;
 
     ComplexNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
-      :  CoulombBatch_Base<std::complex<double>,Int_t::London>(_info, mol, 0, stack) {
+      :  CoulombBatch_Base<std::complex<double>,Int_t::London>(_info, mol, 0, 0, stack) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       this->allocate_arrays(primsize_*natom_);
       compute_ssss(integral_thresh);
