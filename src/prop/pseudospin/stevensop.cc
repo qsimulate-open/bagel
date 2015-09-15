@@ -27,9 +27,10 @@
 // Notation follows I. D. Ryabov, Appl. Magn. Reson. (2009) 35, 481-494.
 // Some equations also come from I. D. Ryabov, J. Magn. Reson. (1999) 140, 141-145.
 
-#include <src/ci/zfci/zharrison.h>
+#include <src/prop/pseudospin/pseudospin.h>
 #include <src/util/math/factorial.h>
 #include <src/util/math/comb.h>
+#include <src/util/math/matop.h>
 
 
 using namespace std;
@@ -110,7 +111,7 @@ long long compute_Fkq(const vector<vector<long long>> input) {
 
 
 // And now the driver
-void ZHarrison::compute_extended_stevens_operators() const {
+void Pseudospin::compute_extended_stevens_operators() const {
 
   /***************************************************/
   /* TODO This section is repeated from zharrison.cc */
@@ -155,7 +156,9 @@ void ZHarrison::compute_extended_stevens_operators() const {
 
   cout << "    Computing extended stevens operators for S = " << nspin/2 << (nspin % 2 == 0 ? "" : " 1/2") << endl;
 
-  const int kmax = idata_->get<bool>("aniso_extrastevens", false) ? 8 : nspin;
+  // TODO Get this value properly
+  //const int kmax = idata_->get<bool>("aniso_extrastevens", false) ? 8 : nspin;
+  const int kmax = 8;
   const double ss1 = nspin * (nspin + 2.0) / 4.0; // S(S+1)
 
   // Requires factorial of k
@@ -259,7 +262,7 @@ void ZHarrison::compute_extended_stevens_operators() const {
 
       *Tk_q = sign1 * *Tkq->transpose_conjg();
 
-      assert((*Tk_q - *Tk_q_check).rms() < 1.0e-10);
+      assert(((*Tk_q - *Tk_q_check).rms() < Tk_q->rms() * 1.0e-8) || (Tk_q->rms() < 1.0e-8));
 
       const double ckq = alpha[q] / (Nkq[q] * Fkq);
       auto Okq = make_shared<const ZMatrix>(ckq * *Tkq);
