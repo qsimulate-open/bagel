@@ -268,14 +268,17 @@ void ZHarrison::compute_extended_stevens_operators() const {
       // assert that the +q and -q algorithms give the same final result for q = 0
       assert(q != 0 || (*Okq - *Ok_q).rms() < 1.0e-10);
 
-      stevensop[k][k + q] = Okq;
-      stevensop[k][k - q] = Ok_q;
+      auto Ocos_kq = make_shared<const ZMatrix>(sign1 * 0.5 * (*Okq + *Okq->transpose_conjg()));
+      auto Osin_kq = make_shared<const ZMatrix>(sign1 * complex<double>(0.0, -0.5) * (*Okq - *Okq->transpose_conjg()));
+
+      stevensop[k][k + q] = Ocos_kq;
+      stevensop[k][k - q] = Osin_kq;
 
       const string spinstring = to_string(nspin/2) + (nspin % 2 == 0 ? "" : " 1/2");
-      if (Okq->rms() > 1.0e-10)
-        Okq->print("Stevens operator, S = " + spinstring + ", k = " + to_string(k) + " , q = " + to_string(q), 12);
-      if (Ok_q->rms() > 1.0e-10)
-        Ok_q->print("Stevens operator, S = " + spinstring + ", k = " + to_string(k) + " , q = " + to_string(-q), 12);
+      if (Ocos_kq->rms() > 1.0e-10)
+        Ocos_kq->print("Stevens operator, S = " + spinstring + ", k = " + to_string(k) + " , q = " + to_string(q), 12);
+      if (Osin_kq->rms() > 1.0e-10)
+        Osin_kq->print("Stevens operator, S = " + spinstring + ", k = " + to_string(k) + " , q = " + to_string(-q), 12);
 
     }
     cout << endl;
