@@ -116,7 +116,7 @@ vector<Spin_Operator> Pseudospin::build_extended_stevens_operators() const {
 
   // TODO Get this value properly
   //const int kmax = idata_->get<bool>("aniso_extrastevens", false) ? 8 : nspin_;
-  const int kmax = 8;
+  const int kmax = 2;
   const double ss1 = nspin_ * (nspin_ + 2.0) / 4.0; // S(S+1)
 
   // Requires factorial of k
@@ -129,7 +129,7 @@ vector<Spin_Operator> Pseudospin::build_extended_stevens_operators() const {
   vector<Spin_Operator> stevensop = {};
 
   cout << fixed << setprecision(6);
-  for (int k = 0; k <= kmax; ++k) {
+  for (int k = 2; k <= kmax; ++k) {
 
     vector<double> alpha(k + 1);
     vector<double> Nkq(k + 1);  // positive q

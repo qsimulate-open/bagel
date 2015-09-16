@@ -81,7 +81,7 @@ class Pseudospin {
     std::vector<Spin_Operator> build_2ndorder_zfs_operators() const;
 
     void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
-    void extract_hamiltonian_parameters(const bool real);
+    void extract_hamiltonian_parameters(const bool real, const std::vector<Spin_Operator> param);
 
     std::shared_ptr<ZMatrix> spin_xyz(const int i) const { return spin_xyz_[i]; }
     std::shared_ptr<ZMatrix> spin_plus() const { return spin_plus_; }

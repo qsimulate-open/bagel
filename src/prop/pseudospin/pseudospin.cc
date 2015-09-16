@@ -68,8 +68,8 @@ Pseudospin::Pseudospin(const int _nspin) : nspin_(_nspin), nspin1_(_nspin + 1) {
 vector<Spin_Operator> Pseudospin::build_2ndorder_zfs_operators() const {
   vector<Spin_Operator> out;
   const array<string,3> dim = {{ "x", "y", "z" }};
-  for (int i = 0; i != 3; ++i) {
-    for (int j = 0; j != 3; ++j) {
+  for (int j = 0; j != 3; ++j) {
+    for (int i = 0; i != 3; ++i) {
       auto mat = make_shared<ZMatrix>(*spin_xyz(i) * *spin_xyz(j));
       const string label = "D" + dim[i] + dim[j];
       Spin_Operator tmp(mat, label);
@@ -114,9 +114,9 @@ vector<Spin_Operator> Pseudospin::build_2ndorder_zfs_operators() const {
 */
 
 
+// Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix
 void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr<const RelCoeff_Block> active_coeff) {
 
-  /**  Part 1: Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix  **/
   // First, we create spin matrices in the atomic orbital basis
   RelSpinInt aospin(zfci.geom());
 
@@ -485,33 +485,33 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 }
 
 
-void Pseudospin::extract_hamiltonian_parameters(const bool real) {
-  /**  Part 3: Extract D-tensor from the numerical pseudospin Hamiltonian **/
+// Extract D-tensor or Stevens coefficients from the numerical pseudospin Hamiltonian
+void Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Spin_Operator> param) {
 
-  // Transformation matrix to build pseudospin Hamiltonian from D-tensor
+  const int nop = param.size();
+
+  // d2h is the transformation matrix to build pseudospin Hamiltonian from D-tensor or Extended Stevens Operators
   // Rows correspond to pairs of pseudospins (SS, S-1S, S-2S...)
-  // Columns correspond to elements of the D-tensor (Dxx, Dyx, Dzx, Dxy...)
+  // Columns correspond to spin Hamiltonian parameters (e.g., Dxx, Dyx, Dzx, Dxy...)
   // Note that we look over the first indices before the second, so we can copy data between vectors and matrices and have it come out in the right order
-  auto d2h = make_shared<ZMatrix>(nspin1_ * nspin1_, 9);
-  for (int i = 0; i != 3; ++i) {
-    for (int j = 0; j != 3; ++j) {
-      ZMatrix temp = *spin_xyz(i) * *spin_xyz(j);
-      d2h->copy_block(0, 3*j+i, nspin1_ * nspin1_, 1, temp.data());
-    }
-  }
+  auto d2h = make_shared<ZMatrix>(nspin1_ * nspin1_, nop);
+
+  for (int i = 0; i != nop; ++i)
+    d2h->copy_block(0, i, nspin1_ * nspin1_, 1, param[i].matrix()->data());
 
   auto Dtensor = make_shared<ZMatrix>(3,3);
   auto checkham = make_shared<ZMatrix>(nspin1_, nspin1_);
+
 
   // Convert from the pseudospin Hamiltonian to the D-tensor using the left-inverse of d2h
   if (real) {
     // By default, force the D tensor to be real
 
     // Separate out real and imaginary parts
-    auto d2h_real = make_shared<Matrix>(nspin1_ * nspin1_ * 2, 9);
+    auto d2h_real = make_shared<Matrix>(nspin1_ * nspin1_ * 2, nop);
     auto spinham_vec_real = make_shared<Matrix>(nspin1_ * nspin1_ * 2, 1);
-    d2h_real->copy_block(            0, 0, nspin1_ * nspin1_, 9, d2h->get_real_part());
-    d2h_real->copy_block(nspin1_ * nspin1_, 0, nspin1_ * nspin1_, 9, d2h->get_imag_part());
+    d2h_real->copy_block(            0, 0, nspin1_ * nspin1_, nop, d2h->get_real_part());
+    d2h_real->copy_block(nspin1_ * nspin1_, 0, nspin1_ * nspin1_, nop, d2h->get_imag_part());
     spinham_vec_real->copy_block(            0, 0, nspin1_ * nspin1_, 1, spinham_s_->get_real_part()->element_ptr(0,0));
     spinham_vec_real->copy_block(nspin1_ * nspin1_, 0, nspin1_ * nspin1_, 1, spinham_s_->get_imag_part()->element_ptr(0,0));
 
@@ -523,21 +523,27 @@ void Pseudospin::extract_hamiltonian_parameters(const bool real) {
 
     // Extract D-tensor from it
     Matrix Dtensor_vec_real = h2d_real * *spinham_vec_real;
+/*
     Matrix Dtensor_real(3, 3);
     Dtensor_real.copy_block(0, 0, 3, 3, Dtensor_vec_real.element_ptr(0,0));
 
     Dtensor->copy_real_block(1.0, 0, 0, 3, 3, Dtensor_real);
+*/
 
     // Recompute Hamiltonian from D so we can check the fit
-    ZMatrix Dtensor_vec(9, 1);
-    Dtensor_vec.copy_block(0, 0, 9, 1, Dtensor->element_ptr(0,0));
+    ZMatrix Dtensor_vec(nop, 1);
+    //Dtensor_vec.copy_block(0, 0, nop, 1, Dtensor->element_ptr(0,0));
+    Dtensor_vec.add_real_block(1.0, 0, 0, nop, 1, Dtensor_vec_real);
     ZMatrix checkham_vec = *d2h * Dtensor_vec;
     checkham->copy_block(0, 0, nspin1_, nspin1_, checkham_vec.element_ptr(0,0));
+
+    for (int i = 0; i != nop; ++i)
+      cout << "  Pseudospin Hamiltonian parameter: " << setw(7) << param[i].coeff_name() << " = " << Dtensor_vec.element(i, 0) << endl;
 
   } else {
     // On request, allow complex ZFS parameters
     // Same algorithm, working directly with complex matrices
-    auto h2d = make_shared<ZMatrix>(9, nspin1_ * nspin1_);
+    auto h2d = make_shared<ZMatrix>(nop, nspin1_ * nspin1_);
     ZMatrix d2h_sqinv = *d2h % *d2h;
     d2h_sqinv.inverse();
     *h2d = d2h_sqinv ^ *d2h;
@@ -546,24 +552,30 @@ void Pseudospin::extract_hamiltonian_parameters(const bool real) {
     auto spinham_vec = make_shared<ZMatrix>(nspin1_ * nspin1_,1);
     spinham_vec->copy_block(0, 0, nspin1_ * nspin1_, 1, spinham_s_->element_ptr(0,0));
     ZMatrix Dtensor_vec = *h2d * *spinham_vec;
-    Dtensor->copy_block(0, 0, 3, 3, Dtensor_vec.element_ptr(0,0));
+//    Dtensor->copy_block(0, 0, 3, 3, Dtensor_vec.element_ptr(0,0));
 
     ZMatrix check_spinham_vec = *d2h * Dtensor_vec;
     checkham->copy_block(0, 0, nspin1_, nspin1_, check_spinham_vec.element_ptr(0,0));
+
+    for (int i = 0; i != nop; ++i)
+      cout << "  Pseudospin Hamiltonian parameter: " << setw(7) << param[i].coeff_name() << " = " << Dtensor_vec.element(i, 0) << endl;
   }
 
   checkham->print("Pseudospin Hamiltonian, recomputed", 30);
   cout << "  Error in recomputation of spin Hamiltonian from D = " << (*checkham - *spinham_s_).rms() << endl << endl;
 
+/*
   Dtensor->print("D tensor");
   VectorB Ddiag(3);
   Dtensor->diagonalize(Ddiag);
   for (int i = 0; i != 3; ++i)
     cout << "Diagonalized D-tensor value " << i << " = " << Ddiag[i] << endl;
+*/
 
   // Compute Davg so that it works even if D is not traceless (which shouldn't happen on accident)
-  const double Davg = 1.0 / 3.0 * (Ddiag[0] + Ddiag[1] + Ddiag[2]);
+//  const double Davg = 1.0 / 3.0 * (Ddiag[0] + Ddiag[1] + Ddiag[2]);
 
+/*
   int jmax = 0;
   const array<int,3> fwd = {{ 1, 2, 0 }};
   const array<int,3> bck = {{ 2, 0, 1 }};
@@ -573,10 +585,12 @@ void Pseudospin::extract_hamiltonian_parameters(const bool real) {
   const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
   cout << " ** D = " << Dval << " E_h, or " << Dval * au2wavenumber__ << " cm-1" << endl;
   cout << " ** E = " << std::abs(Eval) << " E_h, or " << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
+*/
 
   VectorB shenergies(nspin1_);
   checkham->diagonalize(shenergies);
 
+/*
   if (nspin_ == 2) {
     cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
     if (Dval > 0.0) {
@@ -596,6 +610,7 @@ void Pseudospin::extract_hamiltonian_parameters(const bool real) {
     cout << "     1  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl;
     cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
   }
+*/
 
   cout << "  ** Relative energies expected from the recomputed Pseudospin Hamiltonian: " << endl;
   for (int i = nspin_; i >= 0; --i)
