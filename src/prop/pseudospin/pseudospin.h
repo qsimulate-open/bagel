@@ -58,18 +58,30 @@ class Spin_Operator {
 class Pseudospin {
   protected:
     int nspin_;
+    int nspin1_;
+    std::vector<double> ref_energy_;
+
+    // These are the basic spin operators
     std::array<std::shared_ptr<ZMatrix>,3> spin_xyz_;
     std::shared_ptr<ZMatrix> spin_plus_;
     std::shared_ptr<ZMatrix> spin_minus_;
+
+    // These are over eigenstates of the (ZFCI) Hamiltonian
+    std::shared_ptr<ZMatrix> spinham_h_;
+    std::array<std::shared_ptr<ZMatrix>,3> spinop_h_;
+
+    // These are over pseudospin eigenstates
+    std::shared_ptr<ZMatrix> spinham_s_;
+    std::array<std::shared_ptr<ZMatrix>,3> spinop_s_;
 
   public:
     Pseudospin(const int nspin);
 
     std::vector<Spin_Operator> build_extended_stevens_operators() const;
     std::vector<Spin_Operator> build_2ndorder_zfs_operators() const;
-    // TODO Remove dependence upon so many members of ZHarrison
-    void compute_pseudospin_hamiltonian(std::shared_ptr<const Geometry> geom, std::shared_ptr<const PTree> idata, const ZHarrison& zfci,
-                                        const int ncore, const int norb, std::shared_ptr<const ZMatrix> coeff_input, const std::vector<double> energy);
+
+    void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
+    void extract_hamiltonian_parameters(const bool real);
 
     std::shared_ptr<ZMatrix> spin_xyz(const int i) const { return spin_xyz_[i]; }
     std::shared_ptr<ZMatrix> spin_plus() const { return spin_plus_; }
