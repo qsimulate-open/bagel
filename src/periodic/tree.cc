@@ -236,7 +236,7 @@ void Tree::build_tree() {
 
 void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const string auxfile) {
 
-  if (dodf && !auxfile.empty())
+  if (dodf && auxfile.empty())
     throw runtime_error("Do FMM with DF but no df basis provided");
 
   Timer fmmtime;
