@@ -194,6 +194,7 @@ class ZHarrison : public Method {
     // returns members
     int norb() const { return norb_; }
     int ncore() const { return ncore_; }
+    int nstate() const { return nstate_; }
     double core_energy() const { return jop_->core_energy(); }
 
     int nij() const { return norb_*norb_; }
