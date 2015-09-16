@@ -111,7 +111,7 @@ long long compute_Fkq(const vector<vector<long long>> input) {
 
 
 // And now the driver
-void Pseudospin::compute_extended_stevens_operators() const {
+vector<Spin_Operator> Pseudospin::build_extended_stevens_operators() const {
   cout << "    Computing extended stevens operators for S = " << nspin_/2 << (nspin_ % 2 == 0 ? "" : " 1/2") << endl;
 
   // TODO Get this value properly
@@ -126,8 +126,7 @@ void Pseudospin::compute_extended_stevens_operators() const {
   if (kmax >= kmax_limit)
     throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(kmax_limit - 1) + " and lower");
 
-  // Stevens operators:  Since q runs from -k to k, access Okq as stevensop[k][q+k]
-  vector<vector<shared_ptr<const ZMatrix>>> stevensop(kmax + 1);
+  vector<Spin_Operator> stevensop = {};
 
   cout << fixed << setprecision(6);
   for (int k = 0; k <= kmax; ++k) {
@@ -135,7 +134,6 @@ void Pseudospin::compute_extended_stevens_operators() const {
     vector<double> alpha(k + 1);
     vector<double> Nkq(k + 1);  // positive q
     vector<double> Nk_q(k + 1); // negative q
-    stevensop[k] = vector<shared_ptr<const ZMatrix>>(2 * k + 1);
 
     // a(k, q; m) in Ryabov's notation
     // access is akqm[q][m]
@@ -232,8 +230,10 @@ void Pseudospin::compute_extended_stevens_operators() const {
       auto Ocos_kq = make_shared<const ZMatrix>(sign1 * 0.5 * (*Okq + *Okq->transpose_conjg()));
       auto Osin_kq = make_shared<const ZMatrix>(sign1 * complex<double>(0.0, -0.5) * (*Okq - *Okq->transpose_conjg()));
 
-      stevensop[k][k + q] = Ocos_kq;
-      stevensop[k][k - q] = Osin_kq;
+      const string label_pq = "B_" + to_string(k) + "^" + to_string(q);
+      const string label_mq = "B_" + to_string(k) + "^-" + to_string(q);
+      stevensop.push_back(Spin_Operator(Ocos_kq, label_pq));
+      stevensop.push_back(Spin_Operator(Osin_kq, label_mq));
 
       const string spinstring = to_string(nspin_ / 2) + (nspin_ % 2 == 0 ? "" : " 1/2");
       if (Ocos_kq->rms() > 1.0e-10)
@@ -244,6 +244,7 @@ void Pseudospin::compute_extended_stevens_operators() const {
     }
     cout << endl;
   }
+  return stevensop;
 }
 
 

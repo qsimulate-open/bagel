@@ -67,6 +67,22 @@ Pseudospin::Pseudospin(const int _nspin) : nspin_(_nspin) {
   spin_xyz_[1]->add_block( complex<double>( 0.0,  0.5), 0, 0, nspin1, nspin1, spin_minus_);
 }
 
+
+vector<Spin_Operator> Pseudospin::build_2ndorder_zfs_operators() const {
+  vector<Spin_Operator> out;
+  const array<string,3> dim = {{ "x", "y", "z" }};
+  for (int i = 0; i != 3; ++i) {
+    for (int j = 0; j != 3; ++j) {
+      auto mat = make_shared<ZMatrix>(*spin_xyz(i) * *spin_xyz(j));
+      const string label = "D" + dim[i] + dim[j];
+      Spin_Operator tmp(mat, label);
+      out.push_back(tmp);
+    }
+  }
+  return out;
+}
+
+
 /*
   // If true, we use the calculated spin eigenvalues rather than the expected nonrel. limit
   const bool numerical = idata->get<bool>("aniso_numerical", false);

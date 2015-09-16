@@ -39,18 +39,18 @@ namespace bagel {
 class Spin_Operator {
   protected:
     int nspin_;
-    std::shared_ptr<ZMatrix> matrix_;
+    std::shared_ptr<const ZMatrix> matrix_;
     std::string coeff_name_;
 
   public:
-    Spin_Operator(const std::shared_ptr<ZMatrix> mat, const std::string name)
+    Spin_Operator(std::shared_ptr<const ZMatrix> mat, const std::string name)
      : matrix_(mat), coeff_name_(name) {
       assert(matrix_->ndim() == matrix_->mdim());
       nspin_ = matrix_->ndim();
     }
 
     int nspin() const { return nspin_; }
-    std::shared_ptr<ZMatrix> matrix() const { return matrix_; }
+    std::shared_ptr<const ZMatrix> matrix() const { return matrix_; }
     std::string coeff_name() const { return coeff_name_; }
 };
 
@@ -65,9 +65,8 @@ class Pseudospin {
   public:
     Pseudospin(const int nspin);
 
-//    typedef std::shared_ptr<Kramers<2,ZRDM<1>>> (bagel::ZHarrison::*rdm1func)(const int jst, const int ist);
-
-    void compute_extended_stevens_operators() const;
+    std::vector<Spin_Operator> build_extended_stevens_operators() const;
+    std::vector<Spin_Operator> build_2ndorder_zfs_operators() const;
     // TODO Remove dependence upon so many members of ZHarrison
     void compute_pseudospin_hamiltonian(std::shared_ptr<const Geometry> geom, std::shared_ptr<const PTree> idata, const ZHarrison& zfci,
                                         const int ncore, const int norb, std::shared_ptr<const ZMatrix> coeff_input, const std::vector<double> energy);
