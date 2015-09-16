@@ -1,0 +1,127 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: spinint.cc
+// Copyright (C) 2015 Toru Shiozaki
+//
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+
+#include <src/util/constants.h>
+#include <src/mat1e/rel/spinint.h>
+#include <src/mat1e/rel/general_small1e.h>
+#include <src/integral/os/overlapbatch.h>
+
+using namespace std;
+using namespace bagel;
+
+void RelSpinInt::compute_() {
+  const int n = mol_->nbasis();
+  const complex<double> imag(0.0, 1.0);
+  for (int i = 0; i != 3; ++i) data_[i] = make_shared<ZMatrix>(4*n, 4*n);
+
+  // Large component
+  data_[0]->add_real_block( 0.5,   n,   0, n, n, *overlap_);
+  data_[0]->add_real_block( 0.5,   0,   n, n, n, *overlap_);
+
+  data_[1]->add_real_block( 0.5*imag,   n,   0, n, n, *overlap_);
+  data_[1]->add_real_block(-0.5*imag,   0,   n, n, n, *overlap_);
+
+  data_[2]->add_real_block( 0.5,   0,   0, n, n, *overlap_);
+  data_[2]->add_real_block(-0.5,   n,   n, n, n, *overlap_);
+
+  // Small component
+  // TODO Simplify this code
+  // Commented out lines cancel at zero-field; can be replaced with field * overlap_ for GIAO-RMB
+  const double w = 1.0/(8.0*c__*c__);
+  auto smallints = make_shared<General_Small1e<OverlapBatch>>(mol_);
+
+  // x^x contributions
+  data_[0]->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[0]);
+  data_[0]->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[0]);
+  data_[1]->add_real_block( imag*w, 2*n, 3*n, n, n, (*smallints)[0]);
+  data_[1]->add_real_block(-imag*w, 3*n, 2*n, n, n, (*smallints)[0]);
+  data_[2]->add_real_block(     -w, 2*n, 2*n, n, n, (*smallints)[0]);
+  data_[2]->add_real_block(      w, 3*n, 3*n, n, n, (*smallints)[0]);
+
+  // y^y contributions
+  data_[0]->add_real_block(     -w, 2*n, 3*n, n, n, (*smallints)[1]);
+  data_[0]->add_real_block(     -w, 3*n, 2*n, n, n, (*smallints)[1]);
+  data_[1]->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[1]);
+  data_[1]->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[1]);
+  data_[2]->add_real_block(     -w, 2*n, 2*n, n, n, (*smallints)[1]);
+  data_[2]->add_real_block(      w, 3*n, 3*n, n, n, (*smallints)[1]);
+
+  // z^z contributions
+  data_[0]->add_real_block(     -w, 2*n, 3*n, n, n, (*smallints)[2]);
+  data_[0]->add_real_block(     -w, 3*n, 2*n, n, n, (*smallints)[2]);
+  data_[1]->add_real_block( imag*w, 2*n, 3*n, n, n, (*smallints)[2]);
+  data_[1]->add_real_block(-imag*w, 3*n, 2*n, n, n, (*smallints)[2]);
+  data_[2]->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[2]);
+  data_[2]->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[2]);
+
+  // x^y contributions
+  data_[0]->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[3]);
+  data_[0]->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[3]);
+  data_[1]->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[3]);
+  data_[1]->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[3]);
+  //data_[2]->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[3]);
+  //data_[2]->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[3]);
+
+  // y^x contributions
+  data_[0]->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[6]);
+  data_[0]->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[6]);
+  data_[1]->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[6]);
+  data_[1]->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[6]);
+  //data_[2]->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[6]);
+  //data_[2]->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[6]);
+
+  // y^z contributions
+  //data_[0]->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[4]);
+  //data_[0]->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[4]);
+  data_[1]->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[4]);
+  data_[1]->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[4]);
+  data_[2]->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[4]);
+  data_[2]->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[4]);
+
+  // z^y contributions
+  //data_[0]->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[7]);
+  //data_[0]->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[7]);
+  data_[1]->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[7]);
+  data_[1]->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[7]);
+  data_[2]->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[7]);
+  data_[2]->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[7]);
+
+  // z^x contributions
+  data_[0]->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[5]);
+  data_[0]->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[5]);
+  //data_[1]->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[5]);
+  //data_[1]->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[5]);
+  data_[2]->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[5]);
+  data_[2]->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[5]);
+
+  // x^z contributions
+  data_[0]->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[8]);
+  data_[0]->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[8]);
+  //data_[1]->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[8]);
+  //data_[1]->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[8]);
+  data_[2]->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[8]);
+  data_[2]->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[8]);
+}

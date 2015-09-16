@@ -28,9 +28,7 @@
 // Some equations also come from I. D. Ryabov, J. Magn. Reson. (1999) 140, 141-145.
 
 #include <src/prop/pseudospin/pseudospin.h>
-#include <src/mat1e/rel/general_small1e.h>
-#include <src/integral/os/overlapbatch.h>
-#include <src/mat1e/overlap.h>
+#include <src/mat1e/rel/spinint.h>
 
 using namespace std;
 using namespace bagel;
@@ -123,101 +121,7 @@ void Pseudospin::compute_pseudospin_hamiltonian(shared_ptr<const Geometry> geom,
   /**  Part 1: Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix  **/
 
   // First, we create spin matrices in the atomic orbital basis
-  // TODO Create a class for this
-  const int n = geom->nbasis();
-  auto overlap = make_shared<Overlap>(geom);
-  auto spinx = make_shared<ZMatrix>(4*n, 4*n);
-  auto spiny = make_shared<ZMatrix>(4*n, 4*n);
-  auto spinz = make_shared<ZMatrix>(4*n, 4*n);
-  const complex<double> imag(0.0, 1.0);
-
-  // Large component
-  spinx->add_real_block( 0.5,   n,   0, n, n, *overlap);
-  spinx->add_real_block( 0.5,   0,   n, n, n, *overlap);
-
-  spiny->add_real_block( 0.5*imag,   n,   0, n, n, *overlap);
-  spiny->add_real_block(-0.5*imag,   0,   n, n, n, *overlap);
-
-  spinz->add_real_block( 0.5,   0,   0, n, n, *overlap);
-  spinz->add_real_block(-0.5,   n,   n, n, n, *overlap);
-
-  // Small component
-  // TODO Simplify this code
-  // Commented out lines cancel at zero-field; can be replaced with field*overlap for GIAO-RMB
-  const double w = 1.0/(8.0*c__*c__);
-  auto smallints = make_shared<General_Small1e<OverlapBatch>>(geom);
-
-  // x^x contributions
-  spinx->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[0]);
-  spinx->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[0]);
-  spiny->add_real_block( imag*w, 2*n, 3*n, n, n, (*smallints)[0]);
-  spiny->add_real_block(-imag*w, 3*n, 2*n, n, n, (*smallints)[0]);
-  spinz->add_real_block(     -w, 2*n, 2*n, n, n, (*smallints)[0]);
-  spinz->add_real_block(      w, 3*n, 3*n, n, n, (*smallints)[0]);
-
-  // y^y contributions
-  spinx->add_real_block(     -w, 2*n, 3*n, n, n, (*smallints)[1]);
-  spinx->add_real_block(     -w, 3*n, 2*n, n, n, (*smallints)[1]);
-  spiny->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[1]);
-  spiny->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[1]);
-  spinz->add_real_block(     -w, 2*n, 2*n, n, n, (*smallints)[1]);
-  spinz->add_real_block(      w, 3*n, 3*n, n, n, (*smallints)[1]);
-
-  // z^z contributions
-  spinx->add_real_block(     -w, 2*n, 3*n, n, n, (*smallints)[2]);
-  spinx->add_real_block(     -w, 3*n, 2*n, n, n, (*smallints)[2]);
-  spiny->add_real_block( imag*w, 2*n, 3*n, n, n, (*smallints)[2]);
-  spiny->add_real_block(-imag*w, 3*n, 2*n, n, n, (*smallints)[2]);
-  spinz->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[2]);
-  spinz->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[2]);
-
-  // x^y contributions
-  spinx->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[3]);
-  spinx->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[3]);
-  spiny->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[3]);
-  spiny->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[3]);
-  //spinz->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[3]);
-  //spinz->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[3]);
-
-  // y^x contributions
-  spinx->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[6]);
-  spinx->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[6]);
-  spiny->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[6]);
-  spiny->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[6]);
-  //spinz->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[6]);
-  //spinz->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[6]);
-
-  // y^z contributions
-  //spinx->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[4]);
-  //spinx->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[4]);
-  spiny->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[4]);
-  spiny->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[4]);
-  spinz->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[4]);
-  spinz->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[4]);
-
-  // z^y contributions
-  //spinx->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[7]);
-  //spinx->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[7]);
-  spiny->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[7]);
-  spiny->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[7]);
-  spinz->add_real_block(-imag*w, 2*n, 3*n, n, n, (*smallints)[7]);
-  spinz->add_real_block( imag*w, 3*n, 2*n, n, n, (*smallints)[7]);
-
-  // z^x contributions
-  spinx->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[5]);
-  spinx->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[5]);
-  //spiny->add_real_block(-imag*w, 2*n, 2*n, n, n, (*smallints)[5]);
-  //spiny->add_real_block(-imag*w, 3*n, 3*n, n, n, (*smallints)[5]);
-  spinz->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[5]);
-  spinz->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[5]);
-
-  // x^z contributions
-  spinx->add_real_block(      w, 2*n, 2*n, n, n, (*smallints)[8]);
-  spinx->add_real_block(     -w, 3*n, 3*n, n, n, (*smallints)[8]);
-  //spiny->add_real_block( imag*w, 2*n, 2*n, n, n, (*smallints)[8]);
-  //spiny->add_real_block( imag*w, 3*n, 3*n, n, n, (*smallints)[8]);
-  spinz->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[8]);
-  spinz->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[8]);
+  RelSpinInt aospin(geom);
 
 
   const int ncol = 2*(ncore + norb);
@@ -295,9 +199,9 @@ void Pseudospin::compute_pseudospin_hamiltonian(shared_ptr<const Geometry> geom,
 
       ZMatrix aodensity = (active_coeff * modensity ^ active_coeff) + *closed_aodensity;
 
-      spinmat[0]->element(i,j) = aodensity.dot_product(*spinx);
-      spinmat[1]->element(i,j) = aodensity.dot_product(*spiny);
-      spinmat[2]->element(i,j) = aodensity.dot_product(*spinz);
+      spinmat[0]->element(i,j) = aodensity.dot_product(*aospin(0));
+      spinmat[1]->element(i,j) = aodensity.dot_product(*aospin(1));
+      spinmat[2]->element(i,j) = aodensity.dot_product(*aospin(2));
     }
   }
 
