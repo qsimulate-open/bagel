@@ -79,7 +79,7 @@ class Pseudospin {
   public:
     Pseudospin(const int nspin);
 
-    std::vector<Spin_Operator> build_extended_stevens_operators() const;
+    std::vector<Spin_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
     std::vector<Spin_Operator> build_2ndorder_zfs_operators() const;
 
     void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);

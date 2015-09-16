@@ -400,11 +400,24 @@ void ZHarrison::compute() {
       ps.compute_numerical_hamiltonian(*this, jop_->coeff_input()->active_part());
 
       vector<Spin_Operator> Dop = ps.build_2ndorder_zfs_operators();
-      vector<Spin_Operator> ESO = ps.build_extended_stevens_operators();
 
       const bool real = idata_->get<bool>("aniso_real", false);
       ps.extract_hamiltonian_parameters(real, Dop);
-      ps.extract_hamiltonian_parameters(real, ESO);
+
+      { // Extended Stevens Operators: default should grab the nonzero time-reversal symmetric orders, but can be specified in input
+        vector<int> ranks = {};
+        for (int i = 2; i <= nspin; i += 2)
+          ranks.push_back(i);
+
+        const shared_ptr<const PTree> eso_ranks = idata_->get_child_optional("aniso_rank");
+        if (eso_ranks) {
+          ranks = {};
+          for (auto& i : *eso_ranks)
+            ranks.push_back(lexical_cast<int>(i->data()));
+        }
+        vector<Spin_Operator> ESO = ps.build_extended_stevens_operators(ranks);
+        ps.extract_hamiltonian_parameters(real, ESO);
+      }
     }
   }
 }

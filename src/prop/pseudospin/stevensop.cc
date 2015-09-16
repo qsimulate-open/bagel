@@ -111,25 +111,23 @@ long long compute_Fkq(const vector<vector<long long>> input) {
 
 
 // And now the driver
-vector<Spin_Operator> Pseudospin::build_extended_stevens_operators() const {
+vector<Spin_Operator> Pseudospin::build_extended_stevens_operators(const vector<int> ranks) const {
   cout << "    Computing extended stevens operators for S = " << nspin_/2 << (nspin_ % 2 == 0 ? "" : " 1/2") << endl;
-
-  // TODO Get this value properly
-  //const int kmax = idata_->get<bool>("aniso_extrastevens", false) ? 8 : nspin_;
-  const int kmax = 2;
   const double ss1 = nspin_ * (nspin_ + 2.0) / 4.0; // S(S+1)
 
-  // Requires factorial of k
-  // Above kmax = 12, coefficients become so large that long long fails to capture them.
-  // Potentially we could store a(k, q; m) / Fkq or something, but for now this is fine.
-  const int kmax_limit = std::min(fact.max(), 13);
-  if (kmax >= kmax_limit)
-    throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(kmax_limit - 1) + " and lower");
-
   vector<Spin_Operator> stevensop = {};
-
   cout << fixed << setprecision(6);
-  for (int k = 2; k <= kmax; ++k) {
+
+  for (auto& k : ranks) {
+
+    // Requires factorial of k
+    // Above k = 12, coefficients become so large that long long fails to capture them.
+    // Potentially we could store a(k, q; m) / Fkq or something, but for now this is fine.
+    const int kmax = std::min(fact.max(), 13);
+    if (k >= kmax)
+      throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(kmax - 1) + " and lower");
+    if (k < 0)
+      throw runtime_error("Ranks of Extended Stevens Operators must be whole numbers.");
 
     vector<double> alpha(k + 1);
     vector<double> Nkq(k + 1);  // positive q
