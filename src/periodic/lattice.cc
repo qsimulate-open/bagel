@@ -405,9 +405,10 @@ void Lattice::form_df(const double thresh) { /*form df object for all blocks in 
 
 void Lattice::form_pfmm(const bool is_cubic, const int lmax, const int ws, const double thresh) {
 
+  const string auxfile = primitive_cell_->auxfile();
   if (is_cubic) {
     auto scell = make_shared<const SimulationCell>(primitive_cell_);
-    pfmm_ = make_shared<const PFMM>(scell, lmax, ws, thresh);
+    pfmm_ = make_shared<const PFMM>(scell, auxfile, lmax, ws, thresh);
   } else {
     throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
   }

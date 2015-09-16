@@ -40,6 +40,7 @@ namespace bagel {
 class PFMM {
   protected:
     std::shared_ptr<const SimulationCell> scell_;
+    std::string auxfile_;
     int lmax_, ws_;
     int extent_sum_;
     double thresh_;
@@ -71,9 +72,10 @@ class PFMM {
     void root_weight(const int l, const int size);
     void allocate_arrays(const size_t ps);
     void compute_Slm();
+    void compute_cfmm(std::shared_ptr<const PData> density);
 
   public:
-    PFMM(std::shared_ptr<const SimulationCell>, const int lmax = 10, const int ws = 2, const int extent = 10,
+    PFMM(std::shared_ptr<const SimulationCell>, const std::string auxfile = " ", const int lmax = 10, const int ws = 2, const int extent = 10,
          const double thresh = PRIM_SCREEN_THRESH, std::shared_ptr<StackMem> stack = nullptr);
     ~PFMM() {
       stack_->release(size_allocated_, buff_);

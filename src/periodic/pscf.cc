@@ -46,6 +46,11 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   if (nocc_ != noccB_)
     throw runtime_error("PSCF only works for closed shell systems.");
 
+  if (dofmm_) {
+    fmm_lmax_ = idata->get<int>("l_max", 10);
+    fmm_ws_   = idata->get<int>("ws", 2);
+  }
+
   cout << indent << "=== V(unit cell) in direct space ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << lattice_->volume() << endl << endl;
 

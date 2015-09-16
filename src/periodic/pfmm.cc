@@ -35,8 +35,8 @@ const static Gamma_scaled sgamma;
 
 const static double beta__ = sqrt(pi__); // convergence parameter
 
-PFMM::PFMM(shared_ptr<const SimulationCell> scell, const int lmax, const int ws, const int extent, const double thresh, shared_ptr<StackMem> stack)
-  : scell_(scell), lmax_(lmax), ws_(ws), extent_sum_(extent), thresh_(thresh) {
+PFMM::PFMM(shared_ptr<const SimulationCell> scell, const string fl, const int lmax, const int ws, const int extent, const double thresh, shared_ptr<StackMem> stack)
+  : scell_(scell), auxfile_(fl), lmax_(lmax), ws_(ws), extent_sum_(extent), thresh_(thresh) {
 
   if (stack == nullptr) {
     stack_ = resources__->get();
