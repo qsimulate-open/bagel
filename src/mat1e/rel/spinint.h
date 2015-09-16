@@ -28,26 +28,25 @@
 #ifndef __SRC_MAT1E_REL_SPININT_H
 #define __SRC_MAT1E_REL_SPININT_H
 
-#include <src/mat1e/overlap.h>
+#include <src/wfn/geometry.h>
 #include <src/util/math/zmatrix.h>
 
 namespace bagel {
 
 class RelSpinInt {
   protected:
-    const std::shared_ptr<const Molecule> mol_;
-    const std::shared_ptr<const Overlap> overlap_;
-
+    const std::shared_ptr<const Geometry> geom_;
     void compute_();
+
     std::array<std::shared_ptr<ZMatrix>,3> data_;
 
   public:
-    RelSpinInt(const std::shared_ptr<const Molecule> mol) : mol_(mol), overlap_(std::make_shared<Overlap>(mol)) {
+    RelSpinInt(const std::shared_ptr<const Geometry> geom) : geom_(geom) {
+      assert(!geom->magnetism()); // GIAO-RMB version has not been implemented
       compute_();
     }
 
     std::shared_ptr<ZMatrix>operator()(const int i) const { assert(i >= 0 && i < 3); return data_[i]; }
-
 };
 
 }

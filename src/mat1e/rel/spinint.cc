@@ -25,6 +25,7 @@
 
 
 #include <src/util/constants.h>
+#include <src/mat1e/overlap.h>
 #include <src/mat1e/rel/spinint.h>
 #include <src/mat1e/rel/general_small1e.h>
 #include <src/integral/os/overlapbatch.h>
@@ -33,25 +34,27 @@ using namespace std;
 using namespace bagel;
 
 void RelSpinInt::compute_() {
-  const int n = mol_->nbasis();
+  const int n = geom_->nbasis();
   const complex<double> imag(0.0, 1.0);
+  auto overlap = make_shared<Overlap>(geom_);
+
   for (int i = 0; i != 3; ++i) data_[i] = make_shared<ZMatrix>(4*n, 4*n);
 
   // Large component
-  data_[0]->add_real_block( 0.5,   n,   0, n, n, *overlap_);
-  data_[0]->add_real_block( 0.5,   0,   n, n, n, *overlap_);
+  data_[0]->add_real_block( 0.5,   n,   0, n, n, *overlap);
+  data_[0]->add_real_block( 0.5,   0,   n, n, n, *overlap);
 
-  data_[1]->add_real_block( 0.5*imag,   n,   0, n, n, *overlap_);
-  data_[1]->add_real_block(-0.5*imag,   0,   n, n, n, *overlap_);
+  data_[1]->add_real_block( 0.5*imag,   n,   0, n, n, *overlap);
+  data_[1]->add_real_block(-0.5*imag,   0,   n, n, n, *overlap);
 
-  data_[2]->add_real_block( 0.5,   0,   0, n, n, *overlap_);
-  data_[2]->add_real_block(-0.5,   n,   n, n, n, *overlap_);
+  data_[2]->add_real_block( 0.5,   0,   0, n, n, *overlap);
+  data_[2]->add_real_block(-0.5,   n,   n, n, n, *overlap);
 
   // Small component
   // TODO Simplify this code
-  // Commented out lines cancel at zero-field; can be replaced with field * overlap_ for GIAO-RMB
+  // Commented out lines cancel at zero-field; can be replaced with field * overlap for GIAO-RMB
   const double w = 1.0/(8.0*c__*c__);
-  auto smallints = make_shared<General_Small1e<OverlapBatch>>(mol_);
+  auto smallints = make_shared<General_Small1e<OverlapBatch>>(geom_);
 
   // x^x contributions
   data_[0]->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[0]);
