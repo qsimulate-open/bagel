@@ -36,26 +36,34 @@ using namespace bagel;
 
 Pseudospin::Pseudospin(const int _nspin) : nspin_(_nspin), nspin1_(_nspin + 1) {
 
-  // S_x, S_y, and S_z operators in pseudospin basis
+  VectorB spinvals(nspin1_);
+  for (int i = 0; i != nspin1_; ++i)
+    spinvals[i] = (nspin_ / 2.0) - i;
+  update_spin_matrices(spinvals);
+}
+
+
+// Compute S_x, S_y, and S_z plus the raising and lowering operators operators in pseudospin basis
+void Pseudospin::update_spin_matrices(VectorB spinvals) {
+  assert(spinvals.size() == nspin1_);
+  for (int i = 0; i != nspin1_ / 2; ++i) {
+    assert(std::abs(spinvals[i] + spinvals[nspin_ - i]) < 1.0e-6);
+  }
+
   for (int i = 0; i != 3; ++i)
     spin_xyz_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
   spin_plus_ = make_shared<ZMatrix>(nspin1_, nspin1_);
   spin_minus_ = make_shared<ZMatrix>(nspin1_, nspin1_);
 
-  const double sval = nspin_ / 2.0;
+  const double sval = spinvals[0];
   const double ssp1 = sval * (sval + 1.0);
 
   for (int i = 0; i != nspin1_; ++i) {
-    const double ml1 = sval - i;
-    spin_xyz_[2]->element(i,i) = ml1;
-    if (i < nspin_) {
-      const double ml1m = ml1 - 1.0;
-      spin_plus_->element(i,i+1) = std::sqrt(ssp1 - ml1*(ml1m));
-    }
-    if (i > 0) {
-      const double ml1p = ml1 + 1.0;
-      spin_minus_->element(i,i-1) = std::sqrt(ssp1 - ml1*(ml1p));
-    }
+    spin_xyz_[2]->element(i,i) = spinvals[i];
+    if (i < nspin_)
+      spin_plus_->element(i,i+1) = std::sqrt(ssp1 - spinvals[i]*spinvals[i+1]);
+    if (i > 0)
+      spin_minus_->element(i,i-1) = std::sqrt(ssp1 - spinvals[i]*spinvals[i-1]);
   }
 
   spin_xyz_[0]->add_block( 0.5, 0, 0, nspin1_, nspin1_, spin_plus_);
@@ -78,40 +86,6 @@ vector<Spin_Operator> Pseudospin::build_2ndorder_zfs_operators() const {
   }
   return out;
 }
-
-
-/*
-  // If true, we use the calculated spin eigenvalues rather than the expected nonrel. limit
-  const bool numerical = zfci.idata()->get<bool>("aniso_numerical", false);
-  if (numerical)
-    assert(std::abs(zeig[0] + zeig[nspin_]) < 1.0e-6);
-
-  // S_x, S_y, and S_z operators in pseudospin basis
-  array<shared_ptr<ZMatrix>,3> pspinmat;
-  for (int i = 0; i != 3; ++i)
-    pspinmat[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
-
-  auto spin_plus = make_shared<ZMatrix>(nspin1_, nspin1_);
-  auto spin_minus = make_shared<ZMatrix>(nspin1_, nspin1_);
-  const double sval = numerical ? zeig[0] : nspin_ / 2.0;
-//  const double sval = nspin_ / 2.0;
-  const double ssp1 = sval * (sval + 1.0);
-
-  for (int i = 0; i != nspin1_; ++i) {
-    const double ml1 = numerical ? zeig[i] : sval - i;
-//    const double ml1 = sval - i;
-    pspinmat[2]->element(i,i) = ml1;
-    if (i < nspin_) {
-      const double ml1m = numerical ? zeig[i+1] : ml1 - 1.0;
-      spin_plus->element(i,i+1) = std::sqrt(ssp1 - ml1*(ml1m));
-//      spin_plus->element(i,i+1) = std::sqrt(ssp1 - ml1*(ml1-1.0));
-    }
-    if (i > 0) {
-      const double ml1p = numerical ? zeig[i-1] : ml1 + 1.0;
-      spin_minus->element(i,i-1) = std::sqrt(ssp1 - ml1*(ml1p));
-//      spin_minus->element(i,i-1) = std::sqrt(ssp1 - ml1*(ml1+1.0));
-    }
-*/
 
 
 // Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix
@@ -250,6 +224,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   // To average out broken symmetry and obtain a consistent set of linear equations
   if (zfci.idata()->get<bool>("aniso_approximate", false)) {
     if (nspin_ == 3) {
+      cout << "  **  By request, we will average out time-reversal asymmetry for an S = 3/2 Hamiltonian to ensure a consistent set of equations" << endl;
       const complex<double> offdiag1 = 0.25 * (spinham_s_->element(0,1) + std::conj(spinham_s_->element(1,0)) - spinham_s_->element(2,3) - std::conj(spinham_s_->element(3,2)));
       const complex<double> offdiag2 = 0.25 * (spinham_s_->element(0,2) + std::conj(spinham_s_->element(2,0)) + spinham_s_->element(1,3) + std::conj(spinham_s_->element(3,1)));
       spinham_s_->element(0,1) = offdiag1;
@@ -262,6 +237,11 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
       spinham_s_->element(3,1) = std::conj(offdiag2);
       spinham_s_->print("Pseudospin Hamiltonian!...  Forcibly symmetrized");
     }
+  }
+
+  if(zfci.idata()->get<bool>("aniso_numerical", false)) {
+    cout << "  **  By request, we compute the Hamiltonian using eigenvalues of S_z, rather than the canonical m_s values" << endl;
+    update_spin_matrices(zeig);
   }
 }
 

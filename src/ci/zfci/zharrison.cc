@@ -397,9 +397,10 @@ void ZHarrison::compute() {
       int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
       Pseudospin ps(nspin);
 
+      ps.compute_numerical_hamiltonian(*this, jop_->coeff_input()->active_part());
+
       vector<Spin_Operator> Dop = ps.build_2ndorder_zfs_operators();
       vector<Spin_Operator> ESO = ps.build_extended_stevens_operators();
-      ps.compute_numerical_hamiltonian(*this, jop_->coeff_input()->active_part());
 
       const bool real = idata_->get<bool>("aniso_real", false);
       ps.extract_hamiltonian_parameters(real, Dop);

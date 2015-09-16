@@ -74,6 +74,8 @@ class Pseudospin {
     std::shared_ptr<ZMatrix> spinham_s_;
     std::array<std::shared_ptr<ZMatrix>,3> spinop_s_;
 
+    void update_spin_matrices(VectorB spinvals);
+
   public:
     Pseudospin(const int nspin);
 
