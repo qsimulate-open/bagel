@@ -233,7 +233,8 @@ vector<Spin_Operator> Pseudospin::build_extended_stevens_operators() const {
       const string label_pq = "B_" + to_string(k) + "^" + to_string(q);
       const string label_mq = "B_" + to_string(k) + "^-" + to_string(q);
       stevensop.push_back(Spin_Operator(Ocos_kq, label_pq));
-      stevensop.push_back(Spin_Operator(Osin_kq, label_mq));
+      if (q != 0)
+        stevensop.push_back(Spin_Operator(Osin_kq, label_mq));
 
       const string spinstring = to_string(nspin_ / 2) + (nspin_ % 2 == 0 ? "" : " 1/2");
       if (Ocos_kq->rms() > 1.0e-10)
