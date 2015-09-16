@@ -119,14 +119,10 @@ void Pseudospin::compute_pseudospin_hamiltonian(shared_ptr<const Geometry> geom,
                                                 const int ncore, const int norb, shared_ptr<const ZMatrix> coeff_input, const vector<double> energy) {
 
   /**  Part 1: Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix  **/
-
   // First, we create spin matrices in the atomic orbital basis
   RelSpinInt aospin(geom);
 
-
   const int ncol = 2*(ncore + norb);
-  // TODO Probably we can ignore the closed part, but for now include it
-  shared_ptr<const ZMatrix> closed_aodensity = coeff_input->form_density_rhf(2 * ncore, 0, 1.0);
   const ZMatView active_coeff = coeff_input->slice(2 * ncore, ncol);
 
   // S value of spin manifold to be mapped
@@ -197,7 +193,7 @@ void Pseudospin::compute_pseudospin_hamiltonian(shared_ptr<const Geometry> geom,
       ZMatrix modensity (2 * norb, 2 * norb);
       modensity.copy_block(0, 0, 2 * norb, 2 * norb, rdmmat);
 
-      ZMatrix aodensity = (active_coeff * modensity ^ active_coeff) + *closed_aodensity;
+      ZMatrix aodensity = (active_coeff * modensity ^ active_coeff);
 
       spinmat[0]->element(i,j) = aodensity.dot_product(*aospin(0));
       spinmat[1]->element(i,j) = aodensity.dot_product(*aospin(1));
