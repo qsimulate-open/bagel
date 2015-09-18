@@ -34,6 +34,37 @@ using namespace std;
 using namespace bagel;
 
 
+Spin_Operator::Spin_Operator(shared_ptr<const ZMatrix> _mat, const bool _stev, const int _ord, const int _ind)
+ : nspin_(_mat->ndim() - 1), matrix_(_mat), stevens_(_stev), order_(_ord), index_(_ind) {
+  assert(matrix_->ndim() == matrix_->mdim());                                                         // Matrix representation must be square
+  assert((stevens_ && abs(index_) <= order_) || (!stevens_ && index_ >= 0 && index_ <= 8));           // Validity of index_
+  assert((stevens_ && order_ >= 0) || (!stevens_ && order_ == 2));                                    // Validity of order_
+  assert((order_ <= nspin_ || matrix_->rms() == 0.0));                                                // High-order contributions should be zero for low spin
+}
+
+string Spin_Operator::operator_name() const {
+  string out = "";
+  if (stevens_) {
+    out += "O_" + to_string(order_) + "^" + to_string(index_);
+    if (index_ >= 0) out += " ";
+  } else {
+    const array<string, 3> dim = {{ "x", "y", "z" }};
+    out += "S" + dim[index_ % 3] + "S" + dim[index_ / 3];
+  }
+  return out;
+}
+
+string Spin_Operator::coeff_name() const {
+  string out = operator_name();
+  if (stevens_)
+    out[0] = 'B';
+  else
+    out[0] = 'D';
+    out.erase(2, 1);
+  return out;
+}
+
+
 Pseudospin::Pseudospin(const int _nspin) : nspin_(_nspin), nspin1_(_nspin + 1) {
 
   VectorB spinvals(nspin1_);
@@ -75,12 +106,10 @@ void Pseudospin::update_spin_matrices(VectorB spinvals) {
 
 vector<Spin_Operator> Pseudospin::build_2ndorder_zfs_operators() const {
   vector<Spin_Operator> out;
-  const array<string,3> dim = {{ "x", "y", "z" }};
   for (int j = 0; j != 3; ++j) {
     for (int i = 0; i != 3; ++i) {
       auto mat = make_shared<ZMatrix>(*spin_xyz(i) * *spin_xyz(j));
-      const string label = "D" + dim[i] + dim[j];
-      Spin_Operator tmp(mat, label);
+      Spin_Operator tmp(mat, false, 2, 3 * j + i);
       out.push_back(tmp);
     }
   }

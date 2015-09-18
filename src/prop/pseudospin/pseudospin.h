@@ -38,20 +38,30 @@ namespace bagel {
 // Some operator that acts on a basis of pseudospin eigenstates
 class Spin_Operator {
   protected:
-    int nspin_;
+    const int nspin_;
     std::shared_ptr<const ZMatrix> matrix_;
-    std::string coeff_name_;
+
+    // stevens_ == true:  order_ = k, index_ = q
+    // stevens_ == false: order_ = 2, index_ from 0 to 8 denotes xx, yx, zx, xy...
+    const bool stevens_;
+    const int order_;
+    const int index_;
 
   public:
-    Spin_Operator(std::shared_ptr<const ZMatrix> mat, const std::string name)
-     : matrix_(mat), coeff_name_(name) {
-      assert(matrix_->ndim() == matrix_->mdim());
-      nspin_ = matrix_->ndim();
-    }
+    Spin_Operator(std::shared_ptr<const ZMatrix> _mat, const bool _stev, const int _ord, const int _ind);
 
     int nspin() const { return nspin_; }
+    int order() const { return order_; }
+    int index() const { return index_; }
     std::shared_ptr<const ZMatrix> matrix() const { return matrix_; }
-    std::string coeff_name() const { return coeff_name_; }
+
+    std::string operator_name() const;
+    std::string coeff_name() const;
+
+    void print() const {
+      const std::string label = operator_name() + " for S = " + (nspin_ == 1 ? "" : std::to_string(nspin_ / 2) + " ") + (nspin_ % 2 == 0 ? "" : "1/2");
+      matrix_->print(label, 20);
+    }
 };
 
 

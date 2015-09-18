@@ -228,17 +228,15 @@ vector<Spin_Operator> Pseudospin::build_extended_stevens_operators(const vector<
       auto Ocos_kq = make_shared<const ZMatrix>(sign1 * 0.5 * (*Okq + *Okq->transpose_conjg()));
       auto Osin_kq = make_shared<const ZMatrix>(sign1 * complex<double>(0.0, -0.5) * (*Okq - *Okq->transpose_conjg()));
 
-      const string label_pq = "B_" + to_string(k) + "^" + to_string(q);
-      const string label_mq = "B_" + to_string(k) + "^-" + to_string(q);
-      stevensop.push_back(Spin_Operator(Ocos_kq, label_pq));
+      stevensop.push_back(Spin_Operator(Ocos_kq, true, k, q));
       if (q != 0)
-        stevensop.push_back(Spin_Operator(Osin_kq, label_mq));
+        stevensop.push_back(Spin_Operator(Osin_kq, true, k, -q));
 
       const string spinstring = to_string(nspin_ / 2) + (nspin_ % 2 == 0 ? "" : " 1/2");
       if (Ocos_kq->rms() > 1.0e-10)
-        Ocos_kq->print("Stevens operator, S = " + spinstring + ", k = " + to_string(k) + " , q = " + to_string(q), 12);
+        stevensop.rbegin()[q == 0 ? 0 : 1].print();
       if (Osin_kq->rms() > 1.0e-10)
-        Osin_kq->print("Stevens operator, S = " + spinstring + ", k = " + to_string(k) + " , q = " + to_string(-q), 12);
+        stevensop.rbegin()[0].print();
 
     }
     cout << endl;
