@@ -30,22 +30,23 @@
 using namespace std;
 using namespace bagel;
 
-SimulationCell::SimulationCell(const shared_ptr<const Geometry> g) : atoms_(g->atoms()), ndim_(g->primitive_vectors().size()) {
+SimulationCell::SimulationCell(const shared_ptr<const Geometry> g) : geom_(g), ndim_(g->primitive_vectors().size()) {
   primitive_vectors_.resize(ndim_);
   for (int i = 0; i != ndim_; ++i)
     primitive_vectors_[i] = g->primitive_vectors(i);
 }
 
 
-SimulationCell::SimulationCell(vector<shared_ptr<const Atom>> a, const int n, vector<array<double, 3>> pvec)
- : atoms_(a), ndim_(n), primitive_vectors_(pvec) { assert(n == pvec.size()); }
+SimulationCell::SimulationCell(const shared_ptr<const Geometry> g, vector<array<double, 3>> pvec)
+ : geom_(g), ndim_(pvec.size()), primitive_vectors_(pvec) { }
 
 
 void SimulationCell::init() {
 
+  vector<shared_ptr<const Atom>> atoms = geom_->atoms();
   charge_centre_ = {{0.0, 0.0, 0.0}};
   double sum = 0.0;
-  for (auto& atom : atoms_) {
+  for (auto& atom : atoms) {
     charge_centre_[0] += atom->atom_charge() * atom->position(0);
     charge_centre_[1] += atom->atom_charge() * atom->position(1);
     charge_centre_[2] += atom->atom_charge() * atom->position(2);
@@ -57,7 +58,7 @@ void SimulationCell::init() {
 
   radius_ = 0.0;
   nbasis_ = 0;
-  for (auto& atom : atoms_) {
+  for (auto& atom : atoms) {
     nbasis_ += atom->nbasis();
     array<double, 3> r;
     r[0] = atom->position(0) - centre(0);
@@ -74,7 +75,7 @@ void SimulationCell::init() {
 void SimulationCell::compute_extent(const double thresh) { // extent at charge centre
 
   vector<shared_ptr<const Shell>> shells;
-  for (auto& atom : atoms_)
+  for (auto& atom : geom_->atoms())
     shells.insert(shells.end(), atom->shells().begin(), atom->shells().end());
 
   extent_ = 0.0;
@@ -116,11 +117,12 @@ void SimulationCell::compute_multipoles(const int lmax) {
   for (int i = 0; i != nmultipole; ++i)
     multipoles[i] = make_shared<ZMatrix>(nbasis_, nbasis_);
 
+  vector<shared_ptr<const Atom>> atoms = geom_->atoms();
   size_t ob0 = 0;
-  for (auto& atom0 : atoms_) {
+  for (auto& atom0 : atoms) {
     for (auto& b0 : atom0->shells()) {
       size_t ob1 = 0;
-      for (auto& atom1 : atoms_) {
+      for (auto& atom1 : atoms) {
         for (auto& b1 : atom1->shells()) {
           MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, centre(), lmax);
           mpole.compute();

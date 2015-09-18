@@ -83,8 +83,8 @@ void Lattice::init() {
   primitive_kvectors_.resize(ndim_);
 
   /* TODO: temp parameters */
-  ncell_ = 4;
-  k_parameter_ = 3;
+  ncell_ = 0;
+  k_parameter_ = 1;
   assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
 
   num_lattice_vectors_ = pow(2*ncell_+1, ndim_);
@@ -201,25 +201,26 @@ void Lattice::init_df(const double thresh) {
 }
 
 
-void Lattice::init_pfmm(const int lmax, const int ws, const double thresh) {
+void Lattice::init_pfmm(const int lmax, const int ws, const int extent, const double thresh) const {
 
-  cout << "  Since PFMM option is specified, we will construct simulation cell." << endl;
+  cout << "  PFMM option is specified: simulation cell will be constructed." << endl;
   Timer time;
   bool is_cubic = true;
   for (int i = 0; i != ndim_; ++i)
     for (int j = 0; j != ndim_; ++j) {
-      const double dp = dot(primitive_cell_->primitive_vectors(i), primitive_cell_->primitive_vectors(j));
-      if (dp > numerical_zero__) {
-        is_cubic = false;
-        break;
+      if (i != j) {
+        const double dp = dot(primitive_cell_->primitive_vectors(i), primitive_cell_->primitive_vectors(j));
+        if (dp > numerical_zero__) {
+          is_cubic = false;
+          break;
+        }
       }
     }
 
   if (is_cubic) {
-    cout << "  Provided unit cell is cubic, simulation cell is the same as primitive cell." << endl;
-    form_pfmm(is_cubic, lmax, ws, thresh);
+    cout << "  Unit cell is rectangular, simulation cell is the same as primitive cell." << endl;
   } else {
-    cout << "  Provided unit cell is non-cubic, simulation cell is the smallest cubic cell that encloses the unit cell." << endl;
+    cout << "  Unit cell is non-rectangular, simulation cell is the smallest cubic cell that encloses the unit cell." << endl;
     throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
   }
 
@@ -227,10 +228,10 @@ void Lattice::init_pfmm(const int lmax, const int ws, const double thresh) {
 }
 
 
-double Lattice::dot(array<double, 3> b, array<double, 3> c) { return b[0] * c[0] + b[1] * c[1] + b[2] * c[2]; }
+double Lattice::dot(array<double, 3> b, array<double, 3> c) const { return b[0] * c[0] + b[1] * c[1] + b[2] * c[2]; }
 
 
-array<double, 3> Lattice::cross(array<double, 3> b, array<double, 3> c, double s) {
+array<double, 3> Lattice::cross(array<double, 3> b, array<double, 3> c, double s) const {
 
   array<double, 3> out;
   out[0] = (b[1] * c[2] - b[2] * c[1]) * s;
@@ -403,13 +404,15 @@ void Lattice::form_df(const double thresh) { /*form df object for all blocks in 
 
 
 
-void Lattice::form_pfmm(const bool is_cubic, const int lmax, const int ws, const double thresh) {
+shared_ptr<const PFMM> Lattice::form_pfmm(const int lmax, const int ws, const int extent, const double thresh) const {
+
+  // rectangular cells for now
+  init_pfmm(lmax, ws, extent, thresh);
+  shared_ptr<const PFMM> out;
 
   const string auxfile = primitive_cell_->auxfile();
-  if (is_cubic) {
-    auto scell = make_shared<const SimulationCell>(primitive_cell_);
-    pfmm_ = make_shared<const PFMM>(scell, auxfile, lmax, ws, thresh);
-  } else {
-    throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
-  }
+  auto scell = make_shared<const SimulationCell>(primitive_cell_);
+  out = make_shared<const PFMM>(scell, auxfile, lmax, ws, extent, thresh);
+
+  return out;
 }

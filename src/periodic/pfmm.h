@@ -34,6 +34,7 @@
 #include <src/periodic/simulationcell.h>
 #include <src/periodic/pdata.h>
 #include <src/util/parallel/resources.h>
+#include <src/periodic/tree.h>
 
 namespace bagel {
 
@@ -49,11 +50,16 @@ class PFMM {
     std::vector<std::complex<double>> mlm_;
     std::vector<std::shared_ptr<const ZMatrix>> slm_;
 
+    // Mlm
     int max_rank_;
     double *rvec_, *kvec_;
     double* T_;
     double* Rsq_;
     double *roots_, *weights_;
+
+    // near-field FMM
+    int max_height_;
+    bool do_contract_;
 
     double dot(std::array<double, 3> b, std::array<double, 3> c) { return b[0]*c[0]+b[1]*c[1]+b[2]*c[2]; }
     std::array<double, 3> cross(std::array<double, 3> b, std::array<double, 3> c, double s = 1.0) {

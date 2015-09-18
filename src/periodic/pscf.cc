@@ -47,8 +47,9 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
     throw runtime_error("PSCF only works for closed shell systems.");
 
   if (dofmm_) {
-    fmm_lmax_ = idata->get<int>("l_max", 10);
-    fmm_ws_   = idata->get<int>("ws", 2);
+    fmm_lmax_   = idata->get<int>("l_max", 10);
+    fmm_ws_     = idata->get<int>("ws", 2);
+    fmm_extent_ = idata->get<int>("extent", 10);
   }
 
   cout << indent << "=== V(unit cell) in direct space ===" << endl << indent << endl;
@@ -129,7 +130,12 @@ void PSCF::compute() {
   for (int iter = 0; iter !=  max_iter_; ++iter) {
     auto c = make_shared<PCoeff>(*coeff);
     shared_ptr<const PData> pdensity = c->form_density_rhf(nocc_);
-    auto fock = make_shared<const PFock>(lattice_, hcore_, pdensity);
+    shared_ptr<const PFock> fock;
+    if (!dofmm_) {
+      fock = make_shared<const PFock>(lattice_, hcore_, pdensity);
+    } else {
+      fock = make_shared<const PFock>(lattice_, hcore_, pdensity, dofmm_, fmm_lmax_, fmm_ws_, fmm_extent_);
+    }
     shared_ptr<const PData> kfock = fock->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
     auto fock0 = make_shared<ZMatrix>(*((*kfock)(gamma)));
     double error = 0;

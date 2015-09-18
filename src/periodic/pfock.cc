@@ -31,7 +31,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(PFock)
 
-PFock::PFock(const shared_ptr<const Lattice> l, shared_ptr<const PData> h, const shared_ptr<const PData> density, const bool fmm, const int lmax, const int ws)
+PFock::PFock(const shared_ptr<const Lattice> l, shared_ptr<const PData> h, const shared_ptr<const PData> density, const bool fmm, const int lmax, const int ws, const int ext)
   : PData(l->primitive_cell()->nbasis(), l->num_lattice_vectors()), lattice_(l), previous_(h), pdensity_(density) {
 
   assert(h->blocksize() == blocksize_ && density->blocksize() == blocksize_);
@@ -40,7 +40,7 @@ PFock::PFock(const shared_ptr<const Lattice> l, shared_ptr<const PData> h, const
   if (!fmm) {
     form_pfock();
   } else {
-    form_pfock_fmm(lmax, ws);
+    form_pfock_fmm(lmax, ws, ext);
   }
 }
 
@@ -63,7 +63,7 @@ void PFock::form_pfock() {
 }
 
 
-void PFock::form_pfock_fmm(const int lmax, const int ws) {
+void PFock::form_pfock_fmm(const int lmax, const int ws, const int ext) {
 
   // 1e part
   for (int i = 0; i != nblock_; ++i)
@@ -71,6 +71,12 @@ void PFock::form_pfock_fmm(const int lmax, const int ws) {
 
   // Coulomb term
   Timer time;
-    for (int i = 0; i != nblock_; ++i)
-      *(pdata_[i]) += *((*jop)(i));
+
+  shared_ptr<const PFMM> fmm = lattice_->form_pfmm(lmax, ws, ext);
+
+#if 0
+  shared_ptr<PData> jop = fmm->pcompute_Jop(pdensity_);
+  for (int i = 0; i != nblock_; ++i)
+    *(pdata_[i]) += *((*jop)(i));
+#endif
 }

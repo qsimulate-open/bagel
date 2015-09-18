@@ -57,15 +57,17 @@ class Lattice {
     int num_lattice_kvectors_;
     int gamma_point_;
 
-    double dot(std::array<double, 3> b, std::array<double, 3> c);
-    std::array<double, 3> cross(std::array<double, 3> b, std::array<double, 3> c, double s = 1.0);
+    double dot(std::array<double, 3> b, std::array<double, 3> c) const;
+    std::array<double, 3> cross(std::array<double, 3> b, std::array<double, 3> c, double s = 1.0) const;
 
     int nele_;
 
     //  for density fitting calculations
     std::shared_ptr<PDFDist> df_;
-    // lattice sum - FMM
-    std::shared_ptr<const PFMM> pfmm_;
+
+    void init();
+    void init_df(const double thresh = PRIM_SCREEN_THRESH);
+    void init_pfmm(const int lmax, const int ws, const int extent, const double thresh) const;
 
   private:
     // serialization
@@ -91,9 +93,6 @@ class Lattice {
     std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
     std::array<double, 3> lattice_vectors(const int i) const { return lattice_vectors_[i]; }
 
-    void init();
-    void init_df(const double thresh = PRIM_SCREEN_THRESH);
-    void init_pfmm(const int lmax = ANG_HRR_END, const int ws = 2, const double thresh = PRIM_SCREEN_THRESH);
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     double volume() const { return volume_; }
     int nele() const { return nele_; }
@@ -119,8 +118,7 @@ class Lattice {
     void form_df(const double thresh);
     std::shared_ptr<PDFDist> df() const { return df_; }
     // PFMM
-    void form_pfmm(const bool is_cubic, const int lmax, const int ws, const double thresh);
-    std::shared_ptr<const PFMM> pfmm() const { return pfmm_; }
+    std::shared_ptr<const PFMM> form_pfmm(const int lmax, const int ws, const int extent, const double thresh = PRIM_SCREEN_THRESH) const;
 };
 
 }

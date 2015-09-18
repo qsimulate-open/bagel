@@ -54,6 +54,11 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const string fl, const int lm
   num_multipoles_ = (2*lmax_ + 1) * (2*lmax_ + 1);
   mlm_.resize(num_multipoles_);
   max_rank_ = (lmax_ * 2) + 1;
+
+  // should be provided from input
+  max_height_ = 21; // tree construction 21 is absolute max
+  do_contract_ = true;
+
   compute_mlm();
 }
 
@@ -69,7 +74,7 @@ bool PFMM::is_in_cff(array<double, 3> L) {
 }
 
 
-void PFMM::compute_mlm() {
+void PFMM::compute_mlm() { // rectangular scell for now
 
   const double pibeta = pi__ * pi__ / (beta__ * beta__);
   const int nvec = pow(2*extent_sum_+1, ndim_);
@@ -303,8 +308,69 @@ void PFMM::compute_Slm() {
 }
 
 
-#if 0
-shared_ptr<PData> PFMM::compute_Jop(shared_ptr<const PData> density) {
+void PFMM::compute_cfmm(shared_ptr<const PData> density) { // within ws
+
+  const int nvec = pow(2*ws_+1, ndim_);
+  allocate_arrays(nvec);
+  vector<array<int, 3>> vidx(nvec);
+
+  int cnt = 0;
+  if (ndim_ == 3) {
+    for (int n3 = -ws_; n3 <= ws_; ++n3)
+      for (int n2 = -ws_; n2 <= ws_; ++n2)
+        for (int n1 = -ws_; n1 <= ws_; ++n1, ++cnt)
+          vidx[cnt] = {{n1, n2, n3}};
+  } else if (ndim_ == 2) {
+    for (int n2 = -ws_; n2 <= ws_; ++n2)
+      for (int n1 = -ws_; n1 <= ws_; ++n1, ++cnt)
+      vidx[cnt] = {{n1, n2, 0}};
+  } else if (ndim_ == 1) {
+    for (int n1 = -ws_; n1 <= ws_; ++n1, ++cnt)
+      vidx[cnt] = {{n1, 0, 0}};
+  }
+  assert(cnt == nvec);
+
+  vector<array<double, 3>> primvecs(ndim_);
+  for (int i = 0; i != ndim_; ++i)
+    primvecs[i] = scell_->primitive_vectors(i);
+
+  // concatenate all cells within ws into one supercell
+  vector<shared_ptr<const Geometry>> geoms;
+  for (int ivec = 0; ivec != nvec; ++ivec) {
+    array<int, 3> idx = vidx[ivec];
+    array<double, 3> disp;
+    disp[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
+    disp[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
+    disp[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+    geoms.push_back(make_shared<const Geometry>(*scell_->geom(), disp));
+  }
+  auto supergeom = make_shared<const Geometry>(geoms);
+
+  const size_t ndim = nvec * scell_->nbasis();
+
+  // get density for supergeom: ncell_ in lattice should be set to ws
+  auto superden = make_shared<Matrix>(ndim, ndim);
+  int offset = 0;
+  for (int i = 0; i != nvec; ++i) {
+    array<int, 3> idx = vidx[i];
+    const size_t block = idx[0] + (2*ws_+1) * (idx[1] + (2*ws_+1) * idx[2]);
+    superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(block)->get_real_part());
+  }
+
+  // construct a tree from the super-geometry
+  Tree fmm_tree(supergeom, max_height_, do_contract_);
+  fmm_tree.fmm(lmax_, superden, true /*dodf*/, auxfile_);
+  shared_ptr<const ZMatrix> coulomb = fmm_tree.coulomb();
+  coulomb->get_real_part()->print();
 
 }
-#endif
+
+
+shared_ptr<PData> PFMM::compute_Jop(shared_ptr<const PData> density) {
+
+  shared_ptr<PData> out;
+
+  // call functions to compute jOp here
+
+  return out;
+}
