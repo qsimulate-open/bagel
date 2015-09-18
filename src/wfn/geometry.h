@@ -145,6 +145,7 @@ class Geometry : public Molecule {
     std::vector<std::array<double, 3>> primitive_vectors() const { return primitive_vectors_; }
     std::array<double, 3> primitive_vectors(const int i) const { return primitive_vectors_[i]; };
     const bool do_periodic_df() const { return do_periodic_df_; }
+    std::shared_ptr<const Geometry> periodic(std::vector<std::shared_ptr<const Atom>> new_atoms) const;
 
 
 };

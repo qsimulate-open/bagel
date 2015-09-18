@@ -601,6 +601,26 @@ void Geometry::get_electric_field(shared_ptr<const PTree>& geominfo) {
 }
 
 
+shared_ptr<const Geometry> Geometry::periodic(vector<shared_ptr<const Atom>> atoms) const {
+  assert(do_periodic_df_ == true);
+
+  auto out = make_shared<Geometry>(*this);
+
+  vector<shared_ptr<const Atom>> aux_atoms;
+  shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
+  for (auto& a : atoms) {
+    auto aux_atom = make_shared<const Atom>(*a, a->spherical(), auxfile_, make_pair(auxfile_, bdata), nullptr);
+    aux_atoms.push_back(aux_atom);
+  }
+  out->atoms_ = atoms;
+  out->aux_atoms_ = aux_atoms;
+
+  out->common_init1();
+
+  return make_shared<const Geometry>(*out);
+}
+
+
 shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt, const bool do_coulomb) const {
   cout << "  *** Geometry (Relativistic) ***" << endl;
   Timer timer;
