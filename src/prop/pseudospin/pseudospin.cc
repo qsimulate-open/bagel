@@ -359,53 +359,8 @@ vector<Spin_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real
   checkham->print("Pseudospin Hamiltonian, recomputed", 30);
   cout << "  Error in recomputation of spin Hamiltonian from D = " << (*checkham - *spinham_s_).rms() << endl << endl;
 
-/*
-  Dtensor->print("D tensor");
-  VectorB Ddiag(3);
-  Dtensor->diagonalize(Ddiag);
-  for (int i = 0; i != 3; ++i)
-    cout << "Diagonalized D-tensor value " << i << " = " << Ddiag[i] << endl;
-*/
-
-  // Compute Davg so that it works even if D is not traceless (which shouldn't happen on accident)
-//  const double Davg = 1.0 / 3.0 * (Ddiag[0] + Ddiag[1] + Ddiag[2]);
-
-/*
-  int jmax = 0;
-  const array<int,3> fwd = {{ 1, 2, 0 }};
-  const array<int,3> bck = {{ 2, 0, 1 }};
-  if (std::abs(Ddiag[1]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 1;
-  if (std::abs(Ddiag[2]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 2;
-  const double Dval = Ddiag[jmax] - 0.5*(Ddiag[fwd[jmax]] + Ddiag[bck[jmax]]);
-  const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
-  cout << " ** D = " << Dval << " E_h, or " << Dval * au2wavenumber__ << " cm-1" << endl;
-  cout << " ** E = " << std::abs(Eval) << " E_h, or " << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
-*/
-
   VectorB shenergies(nspin1_);
   checkham->diagonalize(shenergies);
-
-/*
-  if (nspin_ == 2) {
-    cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
-    if (Dval > 0.0) {
-      cout << "     2  " << Dval + std::abs(Eval) << " E_h  =  " << (Dval + std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
-      cout << "     1  " << Dval - std::abs(Eval) << " E_h  =  " << (Dval - std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
-      cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
-    } else {
-      cout << "     2  " << -Dval + 0.5*std::abs(Eval) << " E_h  =  " << (-Dval + 0.5*std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
-      cout << "     1  " << std::abs(Eval) << " E_h  =  " << std::abs(Eval)*au2wavenumber__ << " cm-1" << endl;
-      cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
-    }
-  } else if (nspin_ == 3) {
-    cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
-    const double energy32 = 2.0*std::sqrt(Dval*Dval + 3.0*Eval*Eval);
-    cout << "     3  " << energy32 << " E_h  =  " << energy32*au2wavenumber__ << " cm-1" << endl;
-    cout << "     2  " << energy32 << " E_h  =  " << energy32*au2wavenumber__ << " cm-1" << endl;
-    cout << "     1  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl;
-    cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
-  }
-*/
 
   cout << "  ** Relative energies expected from the recomputed Pseudospin Hamiltonian: " << endl;
   for (int i = nspin_; i >= 0; --i)
@@ -468,6 +423,48 @@ shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Spin_Operator> inpu
       out->element(i % 3, i / 3) = input[i].coeff();
     }
   }
+
+  /**** PRINTOUT ***/
+  shared_ptr<ZMatrix> Dtensor_diag = out->copy();
+  //Dtensor_diag->print("D tensor");
+  VectorB Ddiag(3);
+  Dtensor_diag->diagonalize(Ddiag);
+  for (int i = 0; i != 3; ++i)
+    cout << "Diagonalized D-tensor value " << i << " = " << Ddiag[i] << endl;
+
+  // Compute Davg so that it works even if D is not traceless (which shouldn't happen on accident)
+  const double Davg = 1.0 / 3.0 * (Ddiag[0] + Ddiag[1] + Ddiag[2]);
+
+  int jmax = 0;
+  const array<int,3> fwd = {{ 1, 2, 0 }};
+  const array<int,3> bck = {{ 2, 0, 1 }};
+  if (std::abs(Ddiag[1]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 1;
+  if (std::abs(Ddiag[2]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 2;
+  const double Dval = Ddiag[jmax] - 0.5*(Ddiag[fwd[jmax]] + Ddiag[bck[jmax]]);
+  const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
+  cout << " ** D = " << Dval << " E_h, or " << Dval * au2wavenumber__ << " cm-1" << endl;
+  cout << " ** E = " << std::abs(Eval) << " E_h, or " << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
+
+  if (input[0].nspin() == 2) {
+    cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
+    if (Dval > 0.0) {
+      cout << "     2  " << Dval + std::abs(Eval) << " E_h  =  " << (Dval + std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
+      cout << "     1  " << Dval - std::abs(Eval) << " E_h  =  " << (Dval - std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
+      cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
+    } else {
+      cout << "     2  " << -Dval + 0.5*std::abs(Eval) << " E_h  =  " << (-Dval + 0.5*std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
+      cout << "     1  " << std::abs(Eval) << " E_h  =  " << std::abs(Eval)*au2wavenumber__ << " cm-1" << endl;
+      cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
+    }
+  } else if (input[0].nspin() == 3) {
+    cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
+    const double energy32 = 2.0*std::sqrt(Dval*Dval + 3.0*Eval*Eval);
+    cout << "     3  " << energy32 << " E_h  =  " << energy32*au2wavenumber__ << " cm-1" << endl;
+    cout << "     2  " << energy32 << " E_h  =  " << energy32*au2wavenumber__ << " cm-1" << endl;
+    cout << "     1  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl;
+    cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
+  }
+
   return out;
 }
 
