@@ -402,7 +402,8 @@ void ZHarrison::compute() {
       vector<Spin_Operator> Dop = ps.build_2ndorder_zfs_operators();
 
       const bool real = idata_->get<bool>("aniso_real", false);
-      ps.extract_hamiltonian_parameters(real, Dop);
+      Dop = ps.extract_hamiltonian_parameters(real, Dop);
+      shared_ptr<const ZMatrix> D_1 = ps.compute_Dtensor(Dop);
 
       { // Extended Stevens Operators: default should grab the nonzero time-reversal symmetric orders, but can be specified in input
         vector<int> ranks = {};
@@ -416,7 +417,10 @@ void ZHarrison::compute() {
             ranks.push_back(lexical_cast<int>(i->data()));
         }
         vector<Spin_Operator> ESO = ps.build_extended_stevens_operators(ranks);
-        ps.extract_hamiltonian_parameters(real, ESO);
+        ESO = ps.extract_hamiltonian_parameters(real, ESO);
+        shared_ptr<const ZMatrix> D_2 = ps.compute_Dtensor(Dop);
+        D_1->print("D-tensor, obtained directly");
+        D_2->print("D-tensor, obtained from ESO");
       }
     }
   }

@@ -40,6 +40,7 @@ class Spin_Operator {
   protected:
     const int nspin_;
     std::shared_ptr<const ZMatrix> matrix_;
+    std::complex<double> coeff_;
 
     // stevens_ == true:  order_ = k, index_ = q
     // stevens_ == false: order_ = 2, index_ from 0 to 8 denotes xx, yx, zx, xy...
@@ -51,9 +52,14 @@ class Spin_Operator {
     Spin_Operator(std::shared_ptr<const ZMatrix> _mat, const bool _stev, const int _ord, const int _ind);
 
     int nspin() const { return nspin_; }
+    std::shared_ptr<const ZMatrix> matrix() const { return matrix_; }
+
+    void set_coeff(const std::complex<double> in) { coeff_ = in; }
+    std::complex<double> coeff() const { assert(coeff_ == coeff_); return coeff_; }  // Default value is NaN; triggers assertion if coeff_ has not been computed
+
+    bool stevens() const { return stevens_; }
     int order() const { return order_; }
     int index() const { return index_; }
-    std::shared_ptr<const ZMatrix> matrix() const { return matrix_; }
 
     std::string operator_name() const;
     std::string coeff_name() const;
@@ -93,11 +99,13 @@ class Pseudospin {
     std::vector<Spin_Operator> build_2ndorder_zfs_operators() const;
 
     void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
-    void extract_hamiltonian_parameters(const bool real, const std::vector<Spin_Operator> param);
+    std::vector<Spin_Operator> extract_hamiltonian_parameters(const bool real, const std::vector<Spin_Operator> param);
 
     std::shared_ptr<ZMatrix> spin_xyz(const int i) const { return spin_xyz_[i]; }
     std::shared_ptr<ZMatrix> spin_plus() const { return spin_plus_; }
     std::shared_ptr<ZMatrix> spin_minus() const { return spin_minus_; }
+
+    static std::shared_ptr<ZMatrix> compute_Dtensor(const std::vector<Spin_Operator> input);
 };
 
 }

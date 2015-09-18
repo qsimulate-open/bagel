@@ -36,6 +36,7 @@ using namespace bagel;
 
 Spin_Operator::Spin_Operator(shared_ptr<const ZMatrix> _mat, const bool _stev, const int _ord, const int _ind)
  : nspin_(_mat->ndim() - 1), matrix_(_mat), stevens_(_stev), order_(_ord), index_(_ind) {
+  coeff_ = nan("");
   assert(matrix_->ndim() == matrix_->mdim());                                                         // Matrix representation must be square
   assert((stevens_ && abs(index_) <= order_) || (!stevens_ && index_ >= 0 && index_ <= 8));           // Validity of index_
   assert((stevens_ && order_ >= 0) || (!stevens_ && order_ == 2));                                    // Validity of order_
@@ -276,9 +277,9 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 
 
 // Extract D-tensor or Stevens coefficients from the numerical pseudospin Hamiltonian
-void Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Spin_Operator> param) {
-
+vector<Spin_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Spin_Operator> param) {
   const int nop = param.size();
+  vector<Spin_Operator> out = param;
 
   // d2h is the transformation matrix to build pseudospin Hamiltonian from D-tensor or Extended Stevens Operators
   // Rows correspond to pairs of pseudospins (SS, S-1S, S-2S...)
@@ -327,8 +328,10 @@ void Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Sp
     ZMatrix checkham_vec = *d2h * Dtensor_vec;
     checkham->copy_block(0, 0, nspin1_, nspin1_, checkham_vec.element_ptr(0,0));
 
-    for (int i = 0; i != nop; ++i)
+    for (int i = 0; i != nop; ++i) {
       cout << "  Pseudospin Hamiltonian parameter: " << setw(7) << param[i].coeff_name() << " = " << Dtensor_vec.element(i, 0) << endl;
+      out[i].set_coeff(Dtensor_vec.element(i, 0));
+    }
 
   } else {
     // On request, allow complex ZFS parameters
@@ -347,8 +350,10 @@ void Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Sp
     ZMatrix check_spinham_vec = *d2h * Dtensor_vec;
     checkham->copy_block(0, 0, nspin1_, nspin1_, check_spinham_vec.element_ptr(0,0));
 
-    for (int i = 0; i != nop; ++i)
+    for (int i = 0; i != nop; ++i) {
       cout << "  Pseudospin Hamiltonian parameter: " << setw(7) << param[i].coeff_name() << " = " << Dtensor_vec.element(i, 0) << endl;
+      out[i].set_coeff(Dtensor_vec.element(i, 0));
+    }
   }
 
   checkham->print("Pseudospin Hamiltonian, recomputed", 30);
@@ -412,4 +417,59 @@ void Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Sp
     cout << "     " << i << "  " << ref_energy_[i] - ref_energy_[0] << " E_h  =  " << (ref_energy_[i] - ref_energy_[0])*au2wavenumber__ << " cm-1" << endl;
   cout << endl;
 
+  return out;
 }
+
+
+// Working with complex algebra, although it should be fully real...
+shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Spin_Operator> input) {
+  auto out = make_shared<ZMatrix>(3, 3);
+  out->zero();
+
+  if (input[0].stevens()) {
+    // Get D from second-order extended Stevens Operators
+    for (int i = 0; i != input.size(); ++i) {
+      assert(input[i].stevens());
+      if (input[i].order() == 2) {
+        switch (input[i].index()) {
+          case  0:
+            assert(std::abs(std::imag(input[i].coeff())) < 1.0e-8);
+            out->element(0, 0) -= 1.0 * input[i].coeff();
+            out->element(1, 1) -= 1.0 * input[i].coeff();
+            out->element(2, 2) += 2.0 * input[i].coeff();
+            break;
+          case -1:
+            out->element(1, 2) += 0.5 * input[i].coeff();
+            out->element(2, 1) += 0.5 * std::conj(input[i].coeff());
+            break;
+          case  1:
+            out->element(2, 0) += 0.5 * input[i].coeff();
+            out->element(0, 2) += 0.5 * std::conj(input[i].coeff());
+            break;
+          case -2:
+            out->element(0, 1) += 1.0 * input[i].coeff();
+            out->element(1, 0) += 1.0 * std::conj(input[i].coeff());
+            break;
+          case  2:
+            assert(std::abs(std::imag(input[i].coeff())) < 1.0e-8);
+            out->element(0, 0) += 1.0 * input[i].coeff();
+            out->element(1, 1) -= 1.0 * input[i].coeff();
+            break;
+          default:
+            throw logic_error("Some invalid operator was found in Pseudospin::compute_Dtensor(...)");
+        }
+      }
+    }
+  } else {
+    // Just have to copy the data if we have fit the D-tensor directly
+    assert(input.size() == 9);
+    for (int i = 0; i != 9; ++i) {
+      assert(!input[i].stevens() && input[i].order() == 2);
+      out->element(i % 3, i / 3) = input[i].coeff();
+    }
+  }
+  return out;
+}
+
+
+
