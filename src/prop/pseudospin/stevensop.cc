@@ -42,14 +42,14 @@ namespace {
 const Factorial fact;
 const Comb comb;
 
-// Even k:  alpha = 1.0
-// Odd k:   alpha = 1.0 or 0.5 for even or odd q, respectively
+// Odd k:  alpha = 1.0
+// Even k: alpha = 1.0 or 0.5 for even or odd q, respectively
 double compute_alpha(const int k, const int q) {
   double out;
   if (k % 2 == 0)
-    out = 1.0;
-  else
     out = (q % 2 == 0) ? 1.0 : 0.5;
+  else
+    out = 1.0;
   return out;
 }
 
