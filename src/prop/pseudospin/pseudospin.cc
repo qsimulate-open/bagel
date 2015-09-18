@@ -119,7 +119,8 @@ vector<Spin_Operator> Pseudospin::build_2ndorder_zfs_operators() const {
 
 
 // Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix
-void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr<const RelCoeff_Block> active_coeff) {
+void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr<const RelCoeff_Block> active_coeff, const std::array<std::complex<double>, 3> rotation) {
+  assert(std::abs(1.0 - std::sqrt(std::conj(rotation[0])*rotation[0] + std::conj(rotation[1])*rotation[1] + std::conj(rotation[2])*rotation[2])) < 1.0e-4);
 
   // First, we create spin matrices in the atomic orbital basis
   RelSpinInt aospin(zfci.geom());
@@ -206,9 +207,13 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
     spinop_h_[i]->print("Spin matrix, for component " + to_string(i) + " over ZFCI states");
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
-  const int usedim = zfci.idata()->get<int>("aniso_spindim", 2);
-  auto transform = spinop_h_[usedim]->copy();
+  auto transform = make_shared<ZMatrix>(nspin1_, nspin1_);
+  //const double scale = 1.0 / std::sqrt(std::conj(rotation[0])*rotation[0] + std::conj(rotation[1])*rotation[1] + std::conj(rotation[2])*rotation[2]);
+  for (int i = 0; i != 3; ++i)
+    *transform += rotation[i] * *spinop_h_[i];
+    //*transform += scale * rotation[i] * *spinop_h_[i];
   VectorB zeig(nspin1_);
+  transform->print("Spin matrix to be diagonalized");
   transform->diagonalize(zeig);
 
   { // Reorder eigenvectors so positive M_s come first

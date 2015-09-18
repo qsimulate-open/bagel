@@ -98,7 +98,8 @@ class Pseudospin {
     std::vector<Spin_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
     std::vector<Spin_Operator> build_2ndorder_zfs_operators() const;
 
-    void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
+    void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff,
+                                       const std::array<std::complex<double>, 3> rotation = {{ 0.0, 0.0, 1.0 }});
     std::vector<Spin_Operator> extract_hamiltonian_parameters(const bool real, const std::vector<Spin_Operator> param);
 
     std::shared_ptr<ZMatrix> spin_xyz(const int i) const { return spin_xyz_[i]; }

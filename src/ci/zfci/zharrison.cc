@@ -418,7 +418,7 @@ void ZHarrison::compute() {
         }
         vector<Spin_Operator> ESO = ps.build_extended_stevens_operators(ranks);
         ESO = ps.extract_hamiltonian_parameters(real, ESO);
-        shared_ptr<const ZMatrix> D_2 = ps.compute_Dtensor(Dop);
+        shared_ptr<const ZMatrix> D_2 = ps.compute_Dtensor(ESO);
         D_1->print("D-tensor, obtained directly");
         D_2->print("D-tensor, obtained from ESO");
       }
