@@ -40,7 +40,7 @@ Spin_Operator::Spin_Operator(shared_ptr<const ZMatrix> _mat, const bool _stev, c
   assert(matrix_->ndim() == matrix_->mdim());                                                         // Matrix representation must be square
   assert((stevens_ && abs(index_) <= order_) || (!stevens_ && index_ >= 0 && index_ <= 8));           // Validity of index_
   assert((stevens_ && order_ >= 0) || (!stevens_ && order_ == 2));                                    // Validity of order_
-  assert((order_ <= nspin_ || matrix_->rms() == 0.0));                                                // High-order contributions should be zero for low spin
+  assert((order_ <= nspin_ || matrix_->rms() < 1.0e-8));                                              // High-order contributions should be zero for low spin
 }
 
 string Spin_Operator::operator_name() const {
