@@ -403,7 +403,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 *  Merge info from multiple geometries to make one          *
 *  supergeometry                                            *
 ************************************************************/
-Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
+Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
   schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), magnetism_(false), london_(nmer.front()->london_),
   use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_) {
 
@@ -465,7 +465,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
   /* Data is merged (crossed fingers), now finish */
   common_init1();
   print_atoms();
-  common_init2(true,overlap_thresh_);
+  common_init2(true,overlap_thresh_, nodf);
 
   // static external field
   if (external())

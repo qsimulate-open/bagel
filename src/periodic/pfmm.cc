@@ -344,7 +344,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
     disp[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
     geoms.push_back(make_shared<const Geometry>(*scell_->geom(), disp));
   }
-  auto supergeom = make_shared<const Geometry>(geoms);
+  auto supergeom = make_shared<const Geometry>(geoms, true/*nodf*/);
   time.tick_print("  Construct a supercell for crystal near-field");
 
   const size_t ndim = nvec * scell_->nbasis();
