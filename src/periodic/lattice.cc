@@ -35,9 +35,6 @@ Lattice::Lattice(const shared_ptr<const Geometry> g) : primitive_cell_(g) {
 
   init();
 
-  if (g->do_periodic_df())
-    init_df(primitive_cell_->overlap_thresh());
-
 #if 0
   cout << "Check orthogonalization of primitive lattice vectors and k-vectors +++" << endl;
   for (int i = 0; i != ndim_; ++i)
@@ -86,6 +83,8 @@ void Lattice::init() {
   ncell_ = 0;
   k_parameter_ = 1;
   assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
+
+  thresh_ = primitive_cell_->overlap_thresh();
 
   num_lattice_vectors_ = pow(2*ncell_+1, ndim_);
   lattice_vectors_.resize(num_lattice_vectors_);
@@ -184,47 +183,6 @@ int Lattice::find_lattice_vector(const int i, const int j) const {
   const int out = i1 + (2 * ncell_ + 1) * (i2 + (2 * ncell_ + 1) * i3);
 
   return out;
-}
-
-
-void Lattice::init_df(const double thresh) {
-
-  const int nbas = primitive_cell_->nbasis();
-  const int naux = primitive_cell_->naux();
-  cout << "  Number of auxiliary basis functions per cell: " << setw(8) << naux << endl << endl;
-  cout << "  Since a DF basis is specified, we compute overlap, 2-, and 3-index integrals:" << endl;
-  cout << "    o Storage requirement is "
-       << setprecision(3) << naux * nbas * nbas * num_lattice_vectors_* 8.e-9 << " GB" << endl;
-  Timer time;
-  form_df(thresh);
-  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
-}
-
-
-void Lattice::init_pfmm(const int lmax, const int ws, const int extent, const double thresh) const {
-
-  cout << "  PFMM option is specified: simulation cell will be constructed." << endl;
-  Timer time;
-  bool is_cubic = true;
-  for (int i = 0; i != ndim_; ++i)
-    for (int j = 0; j != ndim_; ++j) {
-      if (i != j) {
-        const double dp = dot(primitive_cell_->primitive_vectors(i), primitive_cell_->primitive_vectors(j));
-        if (dp > numerical_zero__) {
-          is_cubic = false;
-          break;
-        }
-      }
-    }
-
-  if (is_cubic) {
-    cout << "  Unit cell is rectangular, simulation cell is the same as primitive cell." << endl;
-  } else {
-    cout << "  Unit cell is non-rectangular, simulation cell is the smallest cubic cell that encloses the unit cell." << endl;
-    throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
-  }
-
-  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
 }
 
 
@@ -392,27 +350,58 @@ array<double, 3> Lattice::cell_centre(const int icell) const {
 }
 
 
-void Lattice::form_df(const double thresh) { /*form df object for all blocks in direct space*/
+shared_ptr<const PDFDist> Lattice::form_df() const { /*form df object for all blocks in direct space*/
 
-  const int nbasis = primitive_cell_->nbasis();
-  const int naux   = primitive_cell_->naux();
+  assert(primitive_cell_->do_periodic_df());
+  Timer time;
+  const int nbas = primitive_cell_->nbasis();
+  const int naux = primitive_cell_->naux();
+  cout << "  Number of auxiliary basis functions per cell: " << setw(8) << naux << endl << endl;
+  cout << "  Since a DF basis is specified, we compute overlap, 2-, and 3-index integrals:" << endl;
+  cout << "    o Storage requirement is "
+       << setprecision(3) << naux * nbas * nbas * num_lattice_vectors_* 8.e-9 << " GB" << endl;
+
   vector<shared_ptr<const Atom>> atoms0 = primitive_cell_->atoms();
   vector<shared_ptr<const Atom>> aux_atoms = primitive_cell_->aux_atoms();
 
-  df_ = make_shared<PDFDist>(lattice_vectors_, nbasis, naux, atoms0, aux_atoms, primitive_cell_, thresh);
+  auto out = make_shared<const PDFDist>(lattice_vectors_, nbas, naux, atoms0, aux_atoms, primitive_cell_, thresh_);
+  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
+
+  return out;
 }
 
 
 
-shared_ptr<const PFMM> Lattice::form_pfmm(const int lmax, const int ws, const int extent, const double thresh) const {
+shared_ptr<const PFMM> Lattice::form_pfmm(const int lmax, const int ws, const int extent) const {
 
   // rectangular cells for now
-  init_pfmm(lmax, ws, extent, thresh);
+  cout << "  PFMM option is specified: simulation cell will be constructed." << endl;
+  Timer time;
+  bool is_rec = true;
+  for (int i = 0; i != ndim_; ++i)
+    for (int j = 0; j != ndim_; ++j) {
+      if (i != j) {
+        const double dp = dot(primitive_cell_->primitive_vectors(i), primitive_cell_->primitive_vectors(j));
+        if (dp > numerical_zero__) {
+          is_rec = false;
+          break;
+        }
+      }
+    }
+
+  if (is_rec) {
+    cout << "  Unit cell is rectangular, simulation cell is the same as primitive cell." << endl;
+  } else {
+    cout << "  Unit cell is non-rectangular, simulation cell is the smallest cubic cell that encloses the unit cell." << endl;
+    throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
+  }
+
   shared_ptr<const PFMM> out;
 
   const string auxfile = primitive_cell_->auxfile();
   auto scell = make_shared<const SimulationCell>(primitive_cell_);
-  out = make_shared<const PFMM>(scell, auxfile, lmax, ws, extent, thresh);
+  out = make_shared<const PFMM>(scell, auxfile, lmax, ws, extent, thresh_);
+  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
 
   return out;
 }

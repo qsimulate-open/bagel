@@ -45,6 +45,7 @@ class Lattice {
 
     double nuclear_repulsion_;
     double compute_nuclear_repulsion() const;
+    double thresh_;
 
     // ``volume'' of a unit cell
     double volume_;
@@ -62,12 +63,7 @@ class Lattice {
 
     int nele_;
 
-    //  for density fitting calculations
-    std::shared_ptr<PDFDist> df_;
-
     void init();
-    void init_df(const double thresh = PRIM_SCREEN_THRESH);
-    void init_pfmm(const int lmax, const int ws, const int extent, const double thresh) const;
 
   private:
     // serialization
@@ -115,10 +111,9 @@ class Lattice {
     std::array<double, 3> cell_centre(const int icell) const;
 
     // density fitting
-    void form_df(const double thresh);
-    std::shared_ptr<PDFDist> df() const { return df_; }
+    std::shared_ptr<const PDFDist> form_df() const;
     // PFMM
-    std::shared_ptr<const PFMM> form_pfmm(const int lmax, const int ws, const int extent, const double thresh = PRIM_SCREEN_THRESH) const;
+    std::shared_ptr<const PFMM> form_pfmm(const int lmax, const int ws, const int extent) const;
 };
 
 }
