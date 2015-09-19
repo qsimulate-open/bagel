@@ -219,14 +219,9 @@ vector<Spin_Operator> Pseudospin::build_extended_stevens_operators(const vector<
       assert(((*Tk_q - *Tk_q_check).rms() < Tk_q->rms() * 1.0e-8) || (Tk_q->rms() < 1.0e-8));
 
       const double ckq = alpha[q] / (Nkq[q] * Fkq);
-      auto Okq = make_shared<const ZMatrix>(ckq * *Tkq);
-      auto Ok_q = make_shared<const ZMatrix>(sign1 * ckq * *Tk_q);
 
-      // assert that the +q and -q algorithms give the same final result for q = 0
-      assert(q != 0 || (*Okq - *Ok_q).rms() < 1.0e-10);
-
-      auto Ocos_kq = make_shared<const ZMatrix>(sign1 * 0.5 * (*Okq + *Okq->transpose_conjg()));
-      auto Osin_kq = make_shared<const ZMatrix>(sign1 * complex<double>(0.0, -0.5) * (*Okq - *Okq->transpose_conjg()));
+      auto Ocos_kq = make_shared<const ZMatrix>(complex<double>(0.5,  0.0) * ckq * (*Tkq + *Tkq->transpose_conjg()));
+      auto Osin_kq = make_shared<const ZMatrix>(complex<double>(0.0, -0.5) * ckq * (*Tkq - *Tkq->transpose_conjg()));
 
       stevensop.push_back(Spin_Operator(Ocos_kq, true, k, q));
       if (q != 0)
