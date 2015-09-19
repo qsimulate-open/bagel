@@ -119,8 +119,7 @@ vector<Spin_Operator> Pseudospin::build_2ndorder_zfs_operators() const {
 
 
 // Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix
-void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr<const RelCoeff_Block> active_coeff, const std::array<std::complex<double>, 3> rotation) {
-  assert(std::abs(1.0 - std::sqrt(std::conj(rotation[0])*rotation[0] + std::conj(rotation[1])*rotation[1] + std::conj(rotation[2])*rotation[2])) < 1.0e-4);
+void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr<const RelCoeff_Block> active_coeff) {
 
   // First, we create spin matrices in the atomic orbital basis
   RelSpinInt aospin(zfci.geom());
@@ -206,6 +205,24 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   for (int i = 0; i != 3; ++i)
     spinop_h_[i]->print("Spin matrix, for component " + to_string(i) + " over ZFCI states");
 
+  // We will subtract out average energy so the pseudospin Hamiltonian is traceless
+  complex<double> energy_avg = 0.0;
+  for (int i = 0; i != nspin1_; ++i)
+    energy_avg += ref_energy_[i];
+  energy_avg /= nspin1_;
+
+  // Now build up the numerical pseudospin Hamiltonian!
+  spinham_h_ = make_shared<ZMatrix>(nspin1_, nspin1_);
+  for (int i = 0; i != nspin1_; ++i) {
+    spinham_h_->element(i,i) = ref_energy_[i] - energy_avg;
+  }
+
+}
+
+
+shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize, const array<complex<double>, 3> rotation) const {
+  assert(std::abs(1.0 - std::sqrt(std::conj(rotation[0])*rotation[0] + std::conj(rotation[1])*rotation[1] + std::conj(rotation[2])*rotation[2])) < 1.0e-4);
+
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   auto transform = make_shared<ZMatrix>(nspin1_, nspin1_);
   //const double scale = 1.0 / std::sqrt(std::conj(rotation[0])*rotation[0] + std::conj(rotation[1])*rotation[1] + std::conj(rotation[2])*rotation[2]);
@@ -230,59 +247,52 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   for (int i = 0; i != nspin1_; ++i)
     cout << "    Spin-z eigenvalue " << i+1 << " = " << zeig[i] << endl;
 
-  // We will subtract out average energy so the pseudospin Hamiltonian is traceless
-  complex<double> energy_avg = 0.0;
-  for (int i = 0; i != nspin1_; ++i)
-    energy_avg += ref_energy_[i];
-  energy_avg /= nspin1_;
+  // We can no longer use this option, since I made this function const...
+  //if (numerical_eig) {
+  //  cout << "  **  By request, we compute the Hamiltonian using eigenvalues of S_z, rather than the canonical m_s values" << endl;
+  //  update_spin_matrices(zeig);
+  //}
 
-  // Now build up the numerical pseudospin Hamiltonian!
-  spinham_h_ = make_shared<ZMatrix>(nspin1_, nspin1_);
-  for (int i = 0; i != nspin1_; ++i) {
-    spinham_h_->element(i,i) = ref_energy_[i] - energy_avg;
-  }
+  shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
 
-  spinham_s_ = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
-
+  array<shared_ptr<ZMatrix>, 3> spinop_s;
   for (int i = 0; i != 3; ++i)
-    spinop_s_[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
+    spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
 
   cout << endl;
 
   cout << endl;
-  spinham_s_->print("Pseudospin Hamiltonian!");
+  spinham_s->print("Pseudospin Hamiltonian!");
 
-  spinop_s_[0]->print("Spin matrix - x-component");
-  spinop_s_[1]->print("Spin matrix - y-component");
-  spinop_s_[2]->print("Spin matrix - z-component");
+  spinop_s[0]->print("Spin matrix - x-component");
+  spinop_s[1]->print("Spin matrix - y-component");
+  spinop_s[2]->print("Spin matrix - z-component");
+
   /************/
   // To average out broken symmetry and obtain a consistent set of linear equations
-  if (zfci.idata()->get<bool>("aniso_approximate", false)) {
+  if (symmetrize) {
     if (nspin_ == 3) {
       cout << "  **  By request, we will average out time-reversal asymmetry for an S = 3/2 Hamiltonian to ensure a consistent set of equations" << endl;
-      const complex<double> offdiag1 = 0.25 * (spinham_s_->element(0,1) + std::conj(spinham_s_->element(1,0)) - spinham_s_->element(2,3) - std::conj(spinham_s_->element(3,2)));
-      const complex<double> offdiag2 = 0.25 * (spinham_s_->element(0,2) + std::conj(spinham_s_->element(2,0)) + spinham_s_->element(1,3) + std::conj(spinham_s_->element(3,1)));
-      spinham_s_->element(0,1) = offdiag1;
-      spinham_s_->element(1,0) = std::conj(offdiag1);
-      spinham_s_->element(2,3) = -offdiag1;
-      spinham_s_->element(3,2) = -std::conj(offdiag1);
-      spinham_s_->element(0,2) = offdiag2;
-      spinham_s_->element(1,3) = offdiag2;
-      spinham_s_->element(2,0) = std::conj(offdiag2);
-      spinham_s_->element(3,1) = std::conj(offdiag2);
-      spinham_s_->print("Pseudospin Hamiltonian!...  Forcibly symmetrized");
+      const complex<double> offdiag1 = 0.25 * (spinham_s->element(0,1) + std::conj(spinham_s->element(1,0)) - spinham_s->element(2,3) - std::conj(spinham_s->element(3,2)));
+      const complex<double> offdiag2 = 0.25 * (spinham_s->element(0,2) + std::conj(spinham_s->element(2,0)) + spinham_s->element(1,3) + std::conj(spinham_s->element(3,1)));
+      spinham_s->element(0,1) = offdiag1;
+      spinham_s->element(1,0) = std::conj(offdiag1);
+      spinham_s->element(2,3) = -offdiag1;
+      spinham_s->element(3,2) = -std::conj(offdiag1);
+      spinham_s->element(0,2) = offdiag2;
+      spinham_s->element(1,3) = offdiag2;
+      spinham_s->element(2,0) = std::conj(offdiag2);
+      spinham_s->element(3,1) = std::conj(offdiag2);
+      spinham_s->print("Pseudospin Hamiltonian!...  Forcibly symmetrized");
     }
   }
 
-  if(zfci.idata()->get<bool>("aniso_numerical", false)) {
-    cout << "  **  By request, we compute the Hamiltonian using eigenvalues of S_z, rather than the canonical m_s values" << endl;
-    update_spin_matrices(zeig);
-  }
+  return spinham_s;
 }
 
 
 // Extract D-tensor or Stevens coefficients from the numerical pseudospin Hamiltonian
-vector<Spin_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Spin_Operator> param) {
+vector<Spin_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Spin_Operator> param, shared_ptr<const ZMatrix> spinham_s) const {
   const int nop = param.size();
   vector<Spin_Operator> out = param;
 
@@ -308,8 +318,8 @@ vector<Spin_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real
     auto spinham_vec_real = make_shared<Matrix>(nspin1_ * nspin1_ * 2, 1);
     d2h_real->copy_block(            0, 0, nspin1_ * nspin1_, nop, d2h->get_real_part());
     d2h_real->copy_block(nspin1_ * nspin1_, 0, nspin1_ * nspin1_, nop, d2h->get_imag_part());
-    spinham_vec_real->copy_block(            0, 0, nspin1_ * nspin1_, 1, spinham_s_->get_real_part()->element_ptr(0,0));
-    spinham_vec_real->copy_block(nspin1_ * nspin1_, 0, nspin1_ * nspin1_, 1, spinham_s_->get_imag_part()->element_ptr(0,0));
+    spinham_vec_real->copy_block(            0, 0, nspin1_ * nspin1_, 1, spinham_s->get_real_part()->element_ptr(0,0));
+    spinham_vec_real->copy_block(nspin1_ * nspin1_, 0, nspin1_ * nspin1_, 1, spinham_s->get_imag_part()->element_ptr(0,0));
 
     // Compute left-inverse as  (A^T A)^-1 A^T
     Matrix d2h_sqinv_real = *d2h_real % *d2h_real;
@@ -348,7 +358,7 @@ vector<Spin_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real
     assert((*h2d * *d2h).is_identity());
 
     auto spinham_vec = make_shared<ZMatrix>(nspin1_ * nspin1_,1);
-    spinham_vec->copy_block(0, 0, nspin1_ * nspin1_, 1, spinham_s_->element_ptr(0,0));
+    spinham_vec->copy_block(0, 0, nspin1_ * nspin1_, 1, spinham_s->element_ptr(0,0));
     ZMatrix Dtensor_vec = *h2d * *spinham_vec;
 //    Dtensor->copy_block(0, 0, 3, 3, Dtensor_vec.element_ptr(0,0));
 
@@ -362,7 +372,7 @@ vector<Spin_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real
   }
 
   checkham->print("Pseudospin Hamiltonian, recomputed", 30);
-  cout << "  Error in recomputation of spin Hamiltonian from D = " << (*checkham - *spinham_s_).rms() << endl << endl;
+  cout << "  Error in recomputation of spin Hamiltonian from D = " << (*checkham - *spinham_s).rms() << endl << endl;
 
   VectorB shenergies(nspin1_);
   checkham->diagonalize(shenergies);

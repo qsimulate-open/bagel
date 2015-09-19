@@ -397,12 +397,17 @@ void ZHarrison::compute() {
       int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
       Pseudospin ps(nspin);
 
-      ps.compute_numerical_hamiltonian(*this, jop_->coeff_input()->active_part());
+      const bool symmetrize = idata_->get<bool>("aniso_symmetrize", false);
+      const bool numerical_eig = idata_->get<bool>("aniso_numerical", false);
+      assert(!numerical_eig);  // This feature is deactivated
+      const bool real = idata_->get<bool>("aniso_real", false);
 
       vector<Spin_Operator> Dop = ps.build_2ndorder_zfs_operators();
 
-      const bool real = idata_->get<bool>("aniso_real", false);
-      Dop = ps.extract_hamiltonian_parameters(real, Dop);
+      ps.compute_numerical_hamiltonian(*this, jop_->coeff_input()->active_part());
+      shared_ptr<ZMatrix> spinham_s = ps.compute_spin_eigegenvalues(symmetrize);
+
+      Dop = ps.extract_hamiltonian_parameters(real, Dop, spinham_s);
       shared_ptr<const ZMatrix> D_1 = ps.compute_Dtensor(Dop);
 
       { // Extended Stevens Operators: default should grab the nonzero time-reversal symmetric orders, but can be specified in input
@@ -417,7 +422,7 @@ void ZHarrison::compute() {
             ranks.push_back(lexical_cast<int>(i->data()));
         }
         vector<Spin_Operator> ESO = ps.build_extended_stevens_operators(ranks);
-        ESO = ps.extract_hamiltonian_parameters(real, ESO);
+        ESO = ps.extract_hamiltonian_parameters(real, ESO, spinham_s);
         shared_ptr<const ZMatrix> D_2 = ps.compute_Dtensor(ESO);
         D_1->print("D-tensor, obtained directly");
         D_2->print("D-tensor, obtained from ESO");

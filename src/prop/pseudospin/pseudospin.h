@@ -82,13 +82,9 @@ class Pseudospin {
     std::shared_ptr<ZMatrix> spin_plus_;
     std::shared_ptr<ZMatrix> spin_minus_;
 
-    // These are over eigenstates of the (ZFCI) Hamiltonian
+    // These are over eigenstates of the (ZFCI) Hamiltonian; those over pseudospin eigenstates are not saved as members
     std::shared_ptr<ZMatrix> spinham_h_;
     std::array<std::shared_ptr<ZMatrix>,3> spinop_h_;
-
-    // These are over pseudospin eigenstates
-    std::shared_ptr<ZMatrix> spinham_s_;
-    std::array<std::shared_ptr<ZMatrix>,3> spinop_s_;
 
     void update_spin_matrices(VectorB spinvals);
 
@@ -98,9 +94,11 @@ class Pseudospin {
     std::vector<Spin_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
     std::vector<Spin_Operator> build_2ndorder_zfs_operators() const;
 
-    void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff,
-                                       const std::array<std::complex<double>, 3> rotation = {{ 0.0, 0.0, 1.0 }});
-    std::vector<Spin_Operator> extract_hamiltonian_parameters(const bool real, const std::vector<Spin_Operator> param);
+    void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
+
+    std::shared_ptr<ZMatrix> compute_spin_eigegenvalues(const bool symmetrize, const std::array<std::complex<double>, 3> rotation = {{ 0.0, 0.0, 1.0 }} ) const;
+
+    std::vector<Spin_Operator> extract_hamiltonian_parameters(const bool real, const std::vector<Spin_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
 
     std::shared_ptr<ZMatrix> spin_xyz(const int i) const { return spin_xyz_[i]; }
     std::shared_ptr<ZMatrix> spin_plus() const { return spin_plus_; }
