@@ -50,6 +50,15 @@ PData::PData(const PData& o) : blocksize_(o.blocksize()), nblock_(o.nblock()) {
 }
 
 
+PData::PData(std::vector<std::shared_ptr<const ZMatrix>> v) : blocksize_(v.front()->ndim()), nblock_(v.size()) {
+
+  assert(v.front()->ndim() == v.front()->mdim());
+  pdata_.resize(nblock_);
+  for (int i = 0; i != nblock_; ++i)
+    pdata_[i] = make_shared<ZMatrix>(*v[i]);
+}
+
+
 #if 1
 PData PData::operator+(const PData& o) const {
 
