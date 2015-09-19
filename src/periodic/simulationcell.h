@@ -36,11 +36,9 @@ class SimulationCell { /* cubic, same or larger than primitive cell */
     std::shared_ptr<const Geometry> geom_;
     int ndim_;
     std::vector<std::array<double, 3>> primitive_vectors_; // orthogonal vectors
-    std::array<double, 3> charge_centre_;
 
     int num_jvectors_;
     std::vector<std::array<double, 3>> jvectors_;
-    int nbasis_;
     void init();
     int ws_;
     double extent_, radius_;
@@ -66,11 +64,11 @@ class SimulationCell { /* cubic, same or larger than primitive cell */
 
     std::vector<std::shared_ptr<const ZMatrix>> multipoles() const { return multipoles_; }
 
-    std::array<double, 3> centre() const { return charge_centre_; }
-    double centre(const int i) const { return charge_centre_[i]; }
+    std::array<double, 3> centre() const { return geom_->charge_center(); }
+    double centre(const int i) const { return geom_->charge_center()[i]; }
     double extent() const { return extent_; }
     double radius() const { return radius_; }
-    int nbasis() const { return nbasis_; }
+    int nbasis() const { return geom_->nbasis(); }
 };
 
 }

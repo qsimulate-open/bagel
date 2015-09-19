@@ -44,22 +44,8 @@ SimulationCell::SimulationCell(const shared_ptr<const Geometry> g, vector<array<
 void SimulationCell::init() {
 
   vector<shared_ptr<const Atom>> atoms = geom_->atoms();
-  charge_centre_ = {{0.0, 0.0, 0.0}};
-  double sum = 0.0;
-  for (auto& atom : atoms) {
-    charge_centre_[0] += atom->atom_charge() * atom->position(0);
-    charge_centre_[1] += atom->atom_charge() * atom->position(1);
-    charge_centre_[2] += atom->atom_charge() * atom->position(2);
-    sum += atom->atom_charge();
-  }
-  charge_centre_[0] /= sum;
-  charge_centre_[1] /= sum;
-  charge_centre_[2] /= sum;
-
   radius_ = 0.0;
-  nbasis_ = 0;
   for (auto& atom : atoms) {
-    nbasis_ += atom->nbasis();
     array<double, 3> r;
     r[0] = atom->position(0) - centre(0);
     r[1] = atom->position(1) - centre(1);
@@ -115,7 +101,7 @@ void SimulationCell::compute_multipoles(const int lmax) {
   multipoles_.resize(nmultipole);
   vector<shared_ptr<ZMatrix>> multipoles(nmultipole);
   for (int i = 0; i != nmultipole; ++i)
-    multipoles[i] = make_shared<ZMatrix>(nbasis_, nbasis_);
+    multipoles[i] = make_shared<ZMatrix>(nbasis(), nbasis());
 
   vector<shared_ptr<const Atom>> atoms = geom_->atoms();
   size_t ob0 = 0;
