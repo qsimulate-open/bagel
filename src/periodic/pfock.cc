@@ -75,7 +75,7 @@ void PFock::form_pfock_fmm(const int lmax, const int ws, const int ext) {
   shared_ptr<const PFMM> fmm = lattice_->form_pfmm(lmax, ws, ext);
 
 #if 0
-  shared_ptr<PData> jop = fmm->pcompute_Jop(pdensity_);
+  shared_ptr<const PData> jop = fmm->pcompute_Jop(pdensity_);
   for (int i = 0; i != nblock_; ++i)
     *(pdata_[i]) += *((*jop)(i));
 #endif

@@ -78,7 +78,7 @@ class PFMM {
     void root_weight(const int l, const int size);
     void allocate_arrays(const size_t ps);
     void compute_Slm();
-    void compute_cfmm(std::shared_ptr<const PData> density);
+    std::shared_ptr<const PData> compute_cfmm(std::shared_ptr<const PData> density) const;
 
   public:
     PFMM(std::shared_ptr<const SimulationCell>, const std::string auxfile = " ", const int lmax = 10, const int ws = 2, const int extent = 10,
@@ -104,7 +104,7 @@ class PFMM {
     std::vector<std::shared_ptr<const ZMatrix>> slm() const { return slm_; }
 
     bool is_in_cff(std::array<double, 3> lvector);
-    std::shared_ptr<PData> compute_Jop(std::shared_ptr<const PData> density);
+    std::shared_ptr<const PData> pcompute_Jop(std::shared_ptr<const PData> density) const;
 
 };
 

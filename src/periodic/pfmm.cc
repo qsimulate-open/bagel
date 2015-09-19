@@ -308,10 +308,10 @@ void PFMM::compute_Slm() {
 }
 
 
-void PFMM::compute_cfmm(shared_ptr<const PData> density) { // within ws
+shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) const { // within ws
 
+  Timer time;
   const int nvec = pow(2*ws_+1, ndim_);
-  allocate_arrays(nvec);
   vector<array<int, 3>> vidx(nvec);
 
   int cnt = 0;
@@ -345,13 +345,14 @@ void PFMM::compute_cfmm(shared_ptr<const PData> density) { // within ws
     geoms.push_back(make_shared<const Geometry>(*scell_->geom(), disp));
   }
   auto supergeom = make_shared<const Geometry>(geoms);
+  time.tick_print("  Construct a supercell for crystal near-field");
 
   const size_t ndim = nvec * scell_->nbasis();
 
   // get density for supergeom: ncell_ in lattice should be set to ws
   auto superden = make_shared<Matrix>(ndim, ndim);
   int offset = 0;
-  for (int i = 0; i != nvec; ++i) {
+  for (int i = 0; i != nvec; ++i, offset += scell_->nbasis()) {
     array<int, 3> idx = vidx[i];
     const size_t block = idx[0] + (2*ws_+1) * (idx[1] + (2*ws_+1) * idx[2]);
     superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(block)->get_real_part());
@@ -361,12 +362,19 @@ void PFMM::compute_cfmm(shared_ptr<const PData> density) { // within ws
   Tree fmm_tree(supergeom, max_height_, do_contract_);
   fmm_tree.fmm(lmax_, superden, true /*dodf*/, auxfile_);
   shared_ptr<const ZMatrix> coulomb = fmm_tree.coulomb();
-  coulomb->get_real_part()->print();
 
+  vector<shared_ptr<const ZMatrix>> out(nvec);
+  offset = 0;
+  for (int i = 0; i != nvec; ++i, offset += scell_->nbasis()) {
+    auto tmp = coulomb->get_submatrix(offset, offset, scell_->nbasis(), scell_->nbasis());
+    out[i] = make_shared<const ZMatrix>(*tmp);
+  }
+
+  return make_shared<const PData>(out);
 }
 
 
-shared_ptr<PData> PFMM::compute_Jop(shared_ptr<const PData> density) {
+shared_ptr<const PData> PFMM::pcompute_Jop(shared_ptr<const PData> density) const {
 
   shared_ptr<PData> out;
 
