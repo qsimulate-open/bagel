@@ -394,39 +394,131 @@ void ZHarrison::compute() {
     if (geom_->magnetism()) {
       cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
     } else {
-      int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
+
+      assert(!idata_->get<bool>("aniso_numerical", false));  // This feature is deactivated
+
+      const int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
+      const bool symmetrize = idata_->get<bool>("aniso_symmetrize", false);
+      const bool real = idata_->get<bool>("aniso_real", false);
       Pseudospin ps(nspin);
 
-      const bool symmetrize = idata_->get<bool>("aniso_symmetrize", false);
-      const bool numerical_eig = idata_->get<bool>("aniso_numerical", false);
-      assert(!numerical_eig);  // This feature is deactivated
-      const bool real = idata_->get<bool>("aniso_real", false);
+      // Extended Stevens Operators: default should grab the nonzero time-reversal symmetric orders, but can be specified in input
+      vector<int> ranks = {};
+      for (int i = 2; i <= nspin; i += 2)
+        ranks.push_back(i);
 
-      vector<Spin_Operator> Dop = ps.build_2ndorder_zfs_operators();
+      const shared_ptr<const PTree> eso_ranks = idata_->get_child_optional("aniso_rank");
+      if (eso_ranks) {
+        ranks = {};
+        for (auto& i : *eso_ranks)
+          ranks.push_back(lexical_cast<int>(i->data()));
+      }
+
+#if 0
+      vector<Spin_Operator> ESO = ps.build_extended_stevens_operators(ranks);
+#else
+      vector<Spin_Operator> ESO = ps.build_2ndorder_zfs_operators();
+#endif
 
       ps.compute_numerical_hamiltonian(*this, jop_->coeff_input()->active_part());
       shared_ptr<ZMatrix> spinham_s = ps.compute_spin_eigegenvalues(symmetrize);
+      ESO = ps.extract_hamiltonian_parameters(real, ESO, spinham_s);
 
-      Dop = ps.extract_hamiltonian_parameters(real, Dop, spinham_s);
-      shared_ptr<const ZMatrix> D_1 = ps.compute_Dtensor(Dop);
+      auto prev_transform = make_shared<ZMatrix>(3, 3);
+      prev_transform->unit();
+      shared_ptr<ZMatrix> transform = prev_transform->copy();
+      bool d_is_diagonal = false;
+      int iter = 0;
+      do {
+        ++iter;
+        VectorB Ddiag(3);
+        transform->diagonalize(Ddiag);
 
-      { // Extended Stevens Operators: default should grab the nonzero time-reversal symmetric orders, but can be specified in input
-        vector<int> ranks = {};
-        for (int i = 2; i <= nspin; i += 2)
-          ranks.push_back(i);
+/*
+        const double Davg = 1.0 / 3.0 * (Ddiag[0] + Ddiag[1] + Ddiag[2]);
+        int jmax = 0;
+        if (std::abs(Ddiag[1]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 1;
+        if (std::abs(Ddiag[2]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 2;
+        cout << "jmax = " << jmax << endl;
+*/
 
-        const shared_ptr<const PTree> eso_ranks = idata_->get_child_optional("aniso_rank");
-        if (eso_ranks) {
-          ranks = {};
-          for (auto& i : *eso_ranks)
-            ranks.push_back(lexical_cast<int>(i->data()));
-        }
-        vector<Spin_Operator> ESO = ps.build_extended_stevens_operators(ranks);
+        //prev_transform = make_shared<ZMatrix>(*prev_transform * *transform);
+        prev_transform = make_shared<ZMatrix>(*transform * *prev_transform);
+//      array<complex<double>, 3> rotation = {{ prev_transform->element(0, jmax2), prev_transform->element(1, jmax2), prev_transform->element(2, jmax2) }};
+        array<complex<double>, 3> rotation = {{ prev_transform->element(0, 0), prev_transform->element(1, 0), prev_transform->element(2, 0) }};
+        spinham_s = ps.compute_spin_eigegenvalues(true, rotation);
         ESO = ps.extract_hamiltonian_parameters(real, ESO, spinham_s);
-        shared_ptr<const ZMatrix> D_2 = ps.compute_Dtensor(ESO);
+        transform = ps.compute_Dtensor(ESO);
+        transform->print("D tensor from iteration " + to_string(iter));
+
+        d_is_diagonal = true;
+        for (int i = 0; i != 3; ++i) {
+          for (int j = 0; j != 3; ++j) {
+            if (i != j && std::abs(transform->element(i, j)) > 1.0e-6)
+              d_is_diagonal = false;
+          }
+        }
+
+      } while (!d_is_diagonal);
+
+      cout << endl << endl << endl << " ** Here comes the final solution:  numer of iterations = " << iter << endl << endl;
+      array<complex<double>, 3> rotation = {{ prev_transform->element(0, 0), prev_transform->element(1, 0), prev_transform->element(2, 0) }};
+      spinham_s = ps.compute_spin_eigegenvalues(false, rotation);
+      ESO = ps.extract_hamiltonian_parameters(real, ESO, spinham_s);
+      transform = ps.compute_Dtensor(ESO);
+
+/*
+      {
+        shared_ptr<ZMatrix> Dtensor_diag = D_1->copy();
+        VectorB Ddiag(3);
+        Dtensor_diag->print("First D-tensor, before diag");
+        Dtensor_diag->diagonalize(Ddiag);
+        Dtensor_diag->print("Rotation Matrix");
+        cout << "D-tensor Eigenvalues = " << Ddiag[0] << ", " << Ddiag[1] << ", " << Ddiag[2] << endl;
+
+        const double Davg = 1.0 / 3.0 * (Ddiag[0] + Ddiag[1] + Ddiag[2]);
+
+        int jmax = 0;
+        if (std::abs(Ddiag[1]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 1;
+        if (std::abs(Ddiag[2]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 2;
+        cout << "jmax = " << jmax << endl;
+        const array<complex<double>, 3> rotation = {{ Dtensor_diag->element(0, jmax), Dtensor_diag->element(1, jmax), Dtensor_diag->element(2, jmax) }};
+
+        spinham_s = ps.compute_spin_eigegenvalues(symmetrize, rotation);
+        Dop = ps.build_2ndorder_zfs_operators();
+        Dop = ps.extract_hamiltonian_parameters(real, Dop, spinham_s);
+        shared_ptr<const ZMatrix> D_3 = ps.compute_Dtensor(Dop);
+
+        *//**************//*
+        shared_ptr<ZMatrix> Dtensor_diag2 = D_3->copy();
+        VectorB Ddiag2(3);
+        Dtensor_diag2->print("Second D-tensor, before diag");
+        Dtensor_diag2->diagonalize(Ddiag2);
+        Dtensor_diag2->print("Rotation Matrix");
+        cout << "D-tensor Eigenvalues = " << Ddiag2[0] << ", " << Ddiag2[1] << ", " << Ddiag2[2] << endl;
+
+        const double Davg2 = 1.0 / 3.0 * (Ddiag2[0] + Ddiag2[1] + Ddiag2[2]);
+
+        int jmax2 = 0;
+        if (std::abs(Ddiag2[1]-Davg2) > std::abs(Ddiag2[jmax2]-Davg2)) jmax2 = 1;
+        if (std::abs(Ddiag2[2]-Davg2) > std::abs(Ddiag2[jmax2]-Davg2)) jmax2 = 2;
+        cout << "jmax2 = " << jmax2 << endl;
+
+        auto Dtensor_diagsum = make_shared<ZMatrix>(*Dtensor_diag2 * *Dtensor_diag);
+        array<complex<double>, 3> rotation2 = {{ Dtensor_diagsum->element(0, jmax2), Dtensor_diagsum->element(1, jmax2), Dtensor_diagsum->element(2, jmax2) }};
+        //array<complex<double>, 3> rotation2 = {{ Dtensor_diag2->element(0, jmax2), Dtensor_diag2->element(1, jmax2), Dtensor_diag2->element(2, jmax2) }};
+        //for (int i = 0; i != 3; ++i) rotation2[i] += rotation[i];
+
+        spinham_s = ps.compute_spin_eigegenvalues(symmetrize, rotation2);
+        Dop = ps.build_2ndorder_zfs_operators();
+        Dop = ps.extract_hamiltonian_parameters(real, Dop, spinham_s);
+        shared_ptr<const ZMatrix> D_4 = ps.compute_Dtensor(Dop);
+
         D_1->print("D-tensor, obtained directly");
-        D_2->print("D-tensor, obtained from ESO");
+        D_3->print("D-tensor, after rotation");
+        D_4->print("D-tensor, after rotation twice");
       }
+*/
     }
   }
 }

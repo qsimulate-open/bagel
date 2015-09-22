@@ -91,20 +91,21 @@ class Pseudospin {
   public:
     Pseudospin(const int nspin);
 
-    std::vector<Spin_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
-    std::vector<Spin_Operator> build_2ndorder_zfs_operators() const;
-
-    void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
-
-    std::shared_ptr<ZMatrix> compute_spin_eigegenvalues(const bool symmetrize, const std::array<std::complex<double>, 3> rotation = {{ 0.0, 0.0, 1.0 }} ) const;
-
-    std::vector<Spin_Operator> extract_hamiltonian_parameters(const bool real, const std::vector<Spin_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
-
+    // return symbolic spin matrices
     std::shared_ptr<ZMatrix> spin_xyz(const int i) const { return spin_xyz_[i]; }
     std::shared_ptr<ZMatrix> spin_plus() const { return spin_plus_; }
     std::shared_ptr<ZMatrix> spin_minus() const { return spin_minus_; }
 
+    // setup functions
+    std::vector<Spin_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
+    std::vector<Spin_Operator> build_2ndorder_zfs_operators() const;
+    void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
+
+    // to extract D-tensor
+    std::shared_ptr<ZMatrix> compute_spin_eigegenvalues(const bool symmetrize, const std::array<std::complex<double>, 3> rotation = {{ 0.0, 0.0, 1.0 }} ) const;
+    std::vector<Spin_Operator> extract_hamiltonian_parameters(const bool real, const std::vector<Spin_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
     static std::shared_ptr<ZMatrix> compute_Dtensor(const std::vector<Spin_Operator> input);
+
 };
 
 }
