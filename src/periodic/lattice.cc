@@ -398,9 +398,9 @@ shared_ptr<const PFMM> Lattice::form_pfmm(const int lmax, const int ws, const in
 
   shared_ptr<const PFMM> out;
 
-  const string auxfile = primitive_cell_->auxfile();
   auto scell = make_shared<const SimulationCell>(primitive_cell_);
-  out = make_shared<const PFMM>(scell, auxfile, lmax, ws, extent, thresh_);
+  time.tick_print("  Construct a supercell for crystal near-field");
+  out = make_shared<const PFMM>(scell, lmax, ws, extent, thresh_);
   cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
 
   return out;

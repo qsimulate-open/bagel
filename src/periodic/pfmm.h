@@ -81,7 +81,7 @@ class PFMM {
     std::shared_ptr<const PData> compute_cfmm(std::shared_ptr<const PData> density) const;
 
   public:
-    PFMM(std::shared_ptr<const SimulationCell>, const std::string auxfile = " ", const int lmax = 10, const int ws = 2, const int extent = 10,
+    PFMM(std::shared_ptr<const SimulationCell>, const int lmax = 10, const int ws = 2, const int extent = 10,
          const double thresh = PRIM_SCREEN_THRESH, std::shared_ptr<StackMem> stack = nullptr);
     ~PFMM() {
       stack_->release(size_allocated_, buff_);
