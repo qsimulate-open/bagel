@@ -60,6 +60,8 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const int lmax, const int ws,
   do_contract_ = true;
 
   compute_mlm();
+  stack_->release(size_allocated_, buff_);
+  resources__->release(stack_);
 }
 
 
