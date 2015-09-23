@@ -332,9 +332,11 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   }
   assert(cnt == nvec);
 
-  vector<array<double, 3>> primvecs(ndim_);
+  vector<array<double, 3>> primvecs(3);
   for (int i = 0; i != ndim_; ++i)
     primvecs[i] = scell_->primitive_vectors(i);
+  for (int i = ndim_; i != 3 - ndim_; ++i)
+    primvecs[i] = {{0.0, 0.0, 0.0}};
 
   // concatenate all cells within ws into one supercell
   vector<shared_ptr<const Geometry>> geoms;
@@ -349,16 +351,34 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   auto supergeom = make_shared<const Geometry>(geoms, true/*nodf*/);
   time.tick_print("  Construct a supercell for crystal near-field");
 
-  const size_t ndim = nvec * scell_->nbasis();
-
   // get density for supergeom: ncell_ in lattice should be set to ws
-  auto superden = make_shared<Matrix>(ndim, ndim);
+  const size_t nbas = nvec * scell_->nbasis();
+  auto superden = make_shared<Matrix>(nbas, nbas);
   int offset = 0;
   for (int i = 0; i != nvec; ++i, offset += scell_->nbasis()) {
     array<int, 3> idx = vidx[i];
-    const size_t block = idx[0] + (2*ws_+1) * (idx[1] + (2*ws_+1) * idx[2]);
+    int block = -1;
+    switch(ndim_) {
+      case 1 :
+        {
+          block = idx[0] + ws_;
+          break;
+        }
+      case 2 :
+        {
+          block = idx[0] + ws_ + (2*ws_+1) * (idx[1] + ws_);
+          break;
+        }
+      case 3 :
+        {
+          block = idx[0] + ws_ + (2*ws_+1) * ((idx[1] + ws_) + (2*ws_+1) * (idx[2] + ws_));
+          break;
+        }
+    }
+    assert (block >= 0);
     superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(block)->get_real_part());
   }
+  time.tick_print("  Construct superdensity");
 
   // construct a tree from the super-geometry
   Tree fmm_tree(supergeom, max_height_, do_contract_);
