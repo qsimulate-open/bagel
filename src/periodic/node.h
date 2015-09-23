@@ -52,7 +52,7 @@ class Node {
     std::vector<std::shared_ptr<const Node>> interaction_list_;
     std::vector<std::shared_ptr<const Node>> neighbour_;
     const double thresh_;
-    mutable std::shared_ptr<DFDist> df_;
+    std::shared_ptr<const DFDist> df_;
 
     void insert_vertex(std::shared_ptr<const Vertex>);
     void insert_child(std::shared_ptr<const Node> = NULL);
@@ -75,8 +75,8 @@ class Node {
     void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, const std::vector<int> offsets);
     std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offsets, const bool dodf, const std::string auxfile);
     std::shared_ptr<const ZMatrix> compute_exact_Coulomb_FF(std::shared_ptr<const Matrix> density, const int lmax, std::vector<int> offsets);
-    std::shared_ptr<DFDist_ints<ERIBatch>> form_fit(const int nbas, const int naux, std::vector<std::shared_ptr<const Atom>> atoms, std::vector<std::shared_ptr<const Atom>> aux_atoms) {
-      return std::make_shared<DFDist_ints<ERIBatch>>(nbas, naux, atoms, aux_atoms, thresh_, true /*J^-1/2*/, 0.0/*dum*/);
+    std::shared_ptr<const DFDist_ints<ERIBatch>> form_fit(const int nbas, const int naux, std::vector<std::shared_ptr<const Atom>> atoms, std::vector<std::shared_ptr<const Atom>> aux_atoms) const {
+      return std::make_shared<const DFDist_ints<ERIBatch>>(nbas, naux, atoms, aux_atoms, thresh_, true /*J^-1/2*/, 0.0/*dum*/);
     }
 
   public:
