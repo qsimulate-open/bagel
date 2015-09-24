@@ -34,11 +34,11 @@ namespace bagel {
 
 class Lattice {
   protected:
+    std::shared_ptr<const Geometry> primitive_cell_;
     int ndim_;
-    int ncell_; // tmp
+    int ncell_;
     int num_lattice_vectors_;
     int num_lattice_pts_;
-    std::shared_ptr<const Geometry> primitive_cell_;
     // real lattice vectors g
     std::vector<std::array<double, 3>> lattice_vectors_;
     std::map<int, std::array<int, 3>> lattice_map_;
@@ -76,7 +76,7 @@ class Lattice {
 
   public:
     Lattice() { }
-    Lattice(const std::shared_ptr<const Geometry> g);
+    Lattice(const std::shared_ptr<const Geometry> g, const int ncell = 0);
     virtual ~Lattice() { }
 
     int ndim() const { return ndim_; }

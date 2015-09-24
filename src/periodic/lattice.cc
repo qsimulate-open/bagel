@@ -31,8 +31,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 
-Lattice::Lattice(const shared_ptr<const Geometry> g) : primitive_cell_(g) {
-
+Lattice::Lattice(const shared_ptr<const Geometry> g, const int n) : primitive_cell_(g), ncell_(n) {
   init();
 
 #if 0
@@ -80,7 +79,6 @@ void Lattice::init() {
   primitive_kvectors_.resize(ndim_);
 
   /* TODO: temp parameters */
-  ncell_ = 0;
   k_parameter_ = 1;
   assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
 
