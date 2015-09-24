@@ -399,7 +399,6 @@ void ZHarrison::compute() {
 
       const int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
       const bool symmetrize = idata_->get<bool>("aniso_symmetrize", false);
-      const bool real = idata_->get<bool>("aniso_real", false);
       Pseudospin ps(nspin);
 
       // Extended Stevens Operators: default should grab the nonzero time-reversal symmetric orders, but can be specified in input
@@ -418,8 +417,8 @@ void ZHarrison::compute() {
 
       ps.compute_numerical_hamiltonian(*this, jop_->coeff_input()->active_part());
       shared_ptr<ZMatrix> spinham_s = ps.compute_spin_eigegenvalues(symmetrize);
-      ESO = ps.extract_hamiltonian_parameters(real, ESO, spinham_s);
 
+      ESO = ps.extract_hamiltonian_parameters(ESO, spinham_s);
       auto prev_transform = make_shared<ZMatrix>(3, 3);
       prev_transform->unit();
       shared_ptr<ZMatrix> transform = prev_transform->copy();
@@ -443,7 +442,7 @@ void ZHarrison::compute() {
 //      array<complex<double>, 3> rotation = {{ prev_transform->element(0, jmax2), prev_transform->element(1, jmax2), prev_transform->element(2, jmax2) }};
         array<complex<double>, 3> rotation = {{ prev_transform->element(0, 0), prev_transform->element(1, 0), prev_transform->element(2, 0) }};
         spinham_s = ps.compute_spin_eigegenvalues(true, rotation);
-        ESO = ps.extract_hamiltonian_parameters(real, ESO, spinham_s);
+        ESO = ps.extract_hamiltonian_parameters(ESO, spinham_s);
         transform = ps.compute_Dtensor(ESO);
         transform->print("D tensor from iteration " + to_string(iter));
 
@@ -460,7 +459,7 @@ void ZHarrison::compute() {
       cout << endl << endl << endl << " ** Here comes the final solution:  numer of iterations = " << iter << endl << endl;
       array<complex<double>, 3> rotation = {{ prev_transform->element(0, 0), prev_transform->element(1, 0), prev_transform->element(2, 0) }};
       spinham_s = ps.compute_spin_eigegenvalues(false, rotation);
-      ESO = ps.extract_hamiltonian_parameters(real, ESO, spinham_s);
+      ESO = ps.extract_hamiltonian_parameters(ESO, spinham_s);
       transform = ps.compute_Dtensor(ESO);
 
 /*
@@ -481,9 +480,9 @@ void ZHarrison::compute() {
         const array<complex<double>, 3> rotation = {{ Dtensor_diag->element(0, jmax), Dtensor_diag->element(1, jmax), Dtensor_diag->element(2, jmax) }};
 
         spinham_s = ps.compute_spin_eigegenvalues(symmetrize, rotation);
-        Dop = ps.build_2ndorder_zfs_operators();
-        Dop = ps.extract_hamiltonian_parameters(real, Dop, spinham_s);
-        shared_ptr<const ZMatrix> D_3 = ps.compute_Dtensor(Dop);
+        ESO = ps.build_extended_stevens_operators(ranks);
+        ESO = ps.extract_hamiltonian_parameters(ESO, spinham_s);
+        shared_ptr<const ZMatrix> D_3 = ps.compute_Dtensor(ESO);
 
         *//**************//*
         shared_ptr<ZMatrix> Dtensor_diag2 = D_3->copy();
@@ -507,7 +506,7 @@ void ZHarrison::compute() {
 
         spinham_s = ps.compute_spin_eigegenvalues(symmetrize, rotation2);
         ESO = ps.build_extended_stevens_operators(ranks);
-        ESO = ps.extract_hamiltonian_parameters(real, ESO, spinham_s);
+        ESO = ps.extract_hamiltonian_parameters(ESO, spinham_s);
         shared_ptr<const ZMatrix> D_4 = ps.compute_Dtensor(ESO);
 
         D_1->print("D-tensor, obtained directly");

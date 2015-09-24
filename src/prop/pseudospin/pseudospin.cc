@@ -306,7 +306,7 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
 
 
 // Extract D-tensor or Stevens coefficients from the numerical pseudospin Hamiltonian
-vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Stevens_Operator> param, shared_ptr<const ZMatrix> spinham_s) const {
+vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector<Stevens_Operator> param, shared_ptr<const ZMatrix> spinham_s) const {
   const int nop = param.size();
   vector<Stevens_Operator> out = param;
 
@@ -319,52 +319,10 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const bool r
   for (int i = 0; i != nop; ++i)
     d2h->copy_block(0, i, nspin1_ * nspin1_, 1, param[i].matrix()->data());
 
-  auto Dtensor = make_shared<ZMatrix>(3,3);
   auto checkham = make_shared<ZMatrix>(nspin1_, nspin1_);
 
-
-  // Convert from the pseudospin Hamiltonian to the D-tensor using the left-inverse of d2h
-  if (real) {
-    // By default, force the D tensor to be real
-
-    // Separate out real and imaginary parts
-    auto d2h_real = make_shared<Matrix>(nspin1_ * nspin1_ * 2, nop);
-    auto spinham_vec_real = make_shared<Matrix>(nspin1_ * nspin1_ * 2, 1);
-    d2h_real->copy_block(            0, 0, nspin1_ * nspin1_, nop, d2h->get_real_part());
-    d2h_real->copy_block(nspin1_ * nspin1_, 0, nspin1_ * nspin1_, nop, d2h->get_imag_part());
-    spinham_vec_real->copy_block(            0, 0, nspin1_ * nspin1_, 1, spinham_s->get_real_part()->element_ptr(0,0));
-    spinham_vec_real->copy_block(nspin1_ * nspin1_, 0, nspin1_ * nspin1_, 1, spinham_s->get_imag_part()->element_ptr(0,0));
-
-    // Compute left-inverse as  (A^T A)^-1 A^T
-    Matrix d2h_sqinv_real = *d2h_real % *d2h_real;
-    d2h_sqinv_real.inverse();
-    Matrix h2d_real = d2h_sqinv_real ^ *d2h_real;
-    assert((h2d_real * *d2h_real).is_identity());
-
-    // Extract D-tensor from it
-    Matrix Dtensor_vec_real = h2d_real * *spinham_vec_real;
-/*
-    Matrix Dtensor_real(3, 3);
-    Dtensor_real.copy_block(0, 0, 3, 3, Dtensor_vec_real.element_ptr(0,0));
-
-    Dtensor->copy_real_block(1.0, 0, 0, 3, 3, Dtensor_real);
-*/
-
-    // Recompute Hamiltonian from D so we can check the fit
-    ZMatrix Dtensor_vec(nop, 1);
-    //Dtensor_vec.copy_block(0, 0, nop, 1, Dtensor->element_ptr(0,0));
-    Dtensor_vec.add_real_block(1.0, 0, 0, nop, 1, Dtensor_vec_real);
-    ZMatrix checkham_vec = *d2h * Dtensor_vec;
-    checkham->copy_block(0, 0, nspin1_, nspin1_, checkham_vec.element_ptr(0,0));
-
-    for (int i = 0; i != nop; ++i) {
-      cout << "  Pseudospin Hamiltonian parameter: " << setw(7) << param[i].coeff_name() << " = " << Dtensor_vec.element(i, 0) << endl;
-      out[i].set_coeff(Dtensor_vec.element(i, 0));
-    }
-
-  } else {
-    // On request, allow complex ZFS parameters
-    // Same algorithm, working directly with complex matrices
+  { // Convert from the pseudospin Hamiltonian to the D-tensor using the left-inverse of d2h
+    // We use complex algebra, but the result should be purely real
     auto h2d = make_shared<ZMatrix>(nop, nspin1_ * nspin1_);
     ZMatrix d2h_sqinv = *d2h % *d2h;
     d2h_sqinv.inverse();
@@ -374,7 +332,6 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const bool r
     auto spinham_vec = make_shared<ZMatrix>(nspin1_ * nspin1_,1);
     spinham_vec->copy_block(0, 0, nspin1_ * nspin1_, 1, spinham_s->element_ptr(0,0));
     ZMatrix Dtensor_vec = *h2d * *spinham_vec;
-//    Dtensor->copy_block(0, 0, 3, 3, Dtensor_vec.element_ptr(0,0));
 
     ZMatrix check_spinham_vec = *d2h * Dtensor_vec;
     checkham->copy_block(0, 0, nspin1_, nspin1_, check_spinham_vec.element_ptr(0,0));

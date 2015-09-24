@@ -99,7 +99,7 @@ class Pseudospin {
 
     // to extract D-tensor
     std::shared_ptr<ZMatrix> compute_spin_eigegenvalues(const bool symmetrize, const std::array<std::complex<double>, 3> rotation = {{ 0.0, 0.0, 1.0 }} ) const;
-    std::vector<Stevens_Operator> extract_hamiltonian_parameters(const bool real, const std::vector<Stevens_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
+    std::vector<Stevens_Operator> extract_hamiltonian_parameters(const std::vector<Stevens_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
     static std::shared_ptr<ZMatrix> compute_Dtensor(const std::vector<Stevens_Operator> input);
 
     // To verify that a matrix in pseudospin basis has specified time-reversal symmetry
