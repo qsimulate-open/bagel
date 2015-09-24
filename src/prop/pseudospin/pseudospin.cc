@@ -57,11 +57,12 @@ string Spin_Operator::operator_name() const {
 
 string Spin_Operator::coeff_name() const {
   string out = operator_name();
-  if (stevens_)
+  if (stevens_) {
     out[0] = 'B';
-  else
+  } else {
     out[0] = 'D';
     out.erase(2, 1);
+  }
   return out;
 }
 
