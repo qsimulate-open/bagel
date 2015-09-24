@@ -205,13 +205,6 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   for (int i = 0; i != 3; ++i)
     spinop_h_[i]->print("Spin matrix, for component " + to_string(i) + " over ZFCI states");
 
-  ZMatrix whatev = *spinop_h_[0]->clone();
-  for (int i = 0; i != 3; ++i) {
-    (*spinop_h_[i] * *spinop_h_[i]).print("Spin matrix squared for component " + to_string(i));
-    whatev += (*spinop_h_[i] * *spinop_h_[i]);
-  }
-  whatev.print("Total spin-squared matrix");
-
   // We will subtract out average energy so the pseudospin Hamiltonian is traceless
   complex<double> energy_avg = 0.0;
   for (int i = 0; i != nspin1_; ++i)
@@ -228,20 +221,15 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 
 
 shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize, const array<complex<double>, 3> rotation) const {
-  //assert(std::abs(1.0 - std::sqrt(std::conj(rotation[0])*rotation[0] + std::conj(rotation[1])*rotation[1] + std::conj(rotation[2])*rotation[2])) < 1.0e-4);
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   auto transform = make_shared<ZMatrix>(nspin1_, nspin1_);
   const complex<double> scale = 1.0 / std::sqrt(std::conj(rotation[0])*rotation[0] + std::conj(rotation[1])*rotation[1] + std::conj(rotation[2])*rotation[2]);
   assert(std::abs(std::imag(scale)) < 1.0e-10);
   for (int i = 0; i != 3; ++i)
-    //*transform += rotation[i] * *spinop_h_[i];
     *transform += scale * rotation[i] * *spinop_h_[i];
   VectorB zeig(nspin1_);
-  transform->print("Spin matrix to be diagonalized");
   transform->diagonalize(zeig);
-
-  transform->print("Transformation matrix for spin diagonalization");
 
   { // Reorder eigenvectors so positive M_s come first
     shared_ptr<ZMatrix> tempm = transform->clone();
@@ -267,30 +255,8 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
 /**********/
 
 
-  transform->print("Reordered spin transformation matrix");
   for (int i = 0; i != nspin1_; ++i)
     cout << "    Spin-z eigenvalue " << i+1 << " = " << zeig[i] << endl;
-
-#if 0
-/**********/
-  for (double asign = -1.0; asign <= 2.0; asign += 2.0) {
-    for (double bsign = -1.0; bsign <= 2.0; bsign += 2.0) {
-      for (double csign = -1.0; csign <= 2.0; csign += 2.0) {
-        for (double dsign = -1.0; dsign <= 2.0; dsign += 2.0) {
-          auto temptrans = transform->copy();
-          for (int i = 0; i != nspin1_; ++i) {
-            temptrans->element(i, 0) = asign * transform->element(i, 0);
-            temptrans->element(i, 1) = bsign * transform->element(i, 1);
-            temptrans->element(i, 2) = csign * transform->element(i, 2);
-            temptrans->element(i, 3) = dsign * transform->element(i, 3);
-          }
-          (*temptrans % *spinham_h_ * *temptrans).print("Spin Hamiltonian using the sign switches " + to_string(asign) + ", " + to_string(bsign) + ", " + to_string(csign) + ", " + to_string(dsign));
-        }
-      }
-    }
-  }
-/**********/
-#endif
 
   // We can no longer use this option, since I made this function const...
   //if (numerical_eig) {
@@ -299,7 +265,6 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
   //}
 
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
-//  shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform * *spinham_h_ ^ *transform);
 
   array<shared_ptr<ZMatrix>, 3> spinop_s;
   for (int i = 0; i != 3; ++i)
@@ -318,12 +283,6 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
   (*spinop_s[0] * *spinop_s[0]).print("Spin matrix, x^2");
   (*spinop_s[1] * *spinop_s[1]).print("Spin matrix, y^2");
   (*spinop_s[2] * *spinop_s[2]).print("Spin matrix, z^2");
-  ZMatrix whatev2 = *spinop_h_[0]->clone();
-  for (int i = 0; i != 3; ++i) {
-    whatev2 += (*spinop_s[i] * *spinop_s[i]);
-  }
-  whatev2.print("Total spin-squared matrix");
-
 
   /************/
   // To average out broken symmetry and obtain a consistent set of linear equations
