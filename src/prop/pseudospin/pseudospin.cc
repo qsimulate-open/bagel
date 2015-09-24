@@ -238,35 +238,21 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
     for (int i = 0; i != nspin1_; ++i) {
       tempv[i] = zeig[nspin_ - i];
       tempm->copy_block(0, i, nspin1_, 1, transform->slice(nspin_ - i, nspin_ - i + 1));
-      //tempm->copy_block(0, i, nspin1_, 1, transform->transpose_conjg()->slice(nspin_ - i, nspin_ - i + 1));
     }
     transform = tempm;
-    //transform = tempm->transpose_conjg();
     zeig = tempv;
   }
 
-/**********/
-
-  transform->print("initial transformation matrix");
-  // Adjust the phase to ensure proper time-reversal symmetry
-  {
+  { // Adjust the phases of eigenvectors to ensure proper time-reversal symmetry
     shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
-    spinham_s->print("Matrix to be symmetrized");
-    complex<double> prev_adjust = 1.0;
+    complex<double> adjust = 1.0;
     for (int k = nspin_ / 2; k > 0; --k) {
       const double phase_error = std::fmod(std::arg(spinham_s->element(nspin_ - k, nspin1_ - k)) - std::arg(spinham_s->element(k - 1, k)) - pi__, 2.0 * pi__);
-      const complex<double> adjust = std::polar(1.0, -1.0 * phase_error);
-      cout << "k = " << k << ", comparing elements (" << nspin_ - k << ", " << nspin1_ - k << ") - (" << k - 1 << ", " << k << "), phase error = " << phase_error << ", fix with " << adjust << endl;
+      adjust *= std::polar(1.0, -1.0 * phase_error);
       for (int i = 0; i != nspin1_; ++i)
-        transform->element(i, nspin1_ - k) = adjust * prev_adjust * transform->element(i, nspin1_ - k);
-      (*transform % *spinham_h_ * *transform).print("Hamiltonian matrix after this stage of symmetrization");
-      prev_adjust *= adjust;
+        transform->element(i, nspin1_ - k) = adjust * transform->element(i, nspin1_ - k);
     }
   }
-
-  transform->print("adjusted transformation matrix");
-/**********/
-
 
   for (int i = 0; i != nspin1_; ++i)
     cout << "    Spin-z eigenvalue " << i+1 << " = " << zeig[i] << endl;
@@ -278,10 +264,14 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
   //}
 
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
+  if (!is_t_symmetric(spinham_s, /*hermitian*/true, /*time reversal*/true))
+    throw runtime_error("The spin Hamiltonian seems to not have proper time-reversal symmetry.  Check that your spin value and states mapped are reasonable.");
 
   array<shared_ptr<ZMatrix>, 3> spinop_s;
-  for (int i = 0; i != 3; ++i)
+  for (int i = 0; i != 3; ++i) {
     spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
+    assert(is_t_symmetric(spinop_s[i], /*hermitian*/true, /*time reversal*/false));
+  }
 
   cout << endl;
 
