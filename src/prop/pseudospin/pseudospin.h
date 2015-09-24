@@ -108,7 +108,7 @@ class Pseudospin {
 
     // To verify that a matrix in pseudospin basis has specified time-reversal symmetry
     // The bool parameters tell us if the matrix should be symmetric or antisymmetric under Hermitian conjugation and time-reversal, respectively
-    bool is_t_symmetric(std::shared_ptr<const ZMatrix> in, const bool hermitian = true, const bool t_symmetric = true, const double thresh = 1.0e-6) const;
+    bool is_t_symmetric(const ZMatrix& in, const bool hermitian = true, const bool t_symmetric = true, const double thresh = 1.0e-6) const;
 
 };
 

@@ -244,13 +244,27 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
   }
 
   { // Adjust the phases of eigenvectors to ensure proper time-reversal symmetry
-    shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
+    ZMatrix spinham_s = *transform % *spinham_h_ * *transform;
     complex<double> adjust = 1.0;
     for (int k = nspin_ / 2; k > 0; --k) {
-      const double phase_error = std::fmod(std::arg(spinham_s->element(nspin_ - k, nspin1_ - k)) - std::arg(spinham_s->element(k - 1, k)) - pi__, 2.0 * pi__);
+      const double phase_error = std::arg(spinham_s.element(nspin_ - k, nspin1_ - k)) - std::arg(spinham_s.element(k - 1, k)) - pi__;
       adjust *= std::polar(1.0, -1.0 * phase_error);
       for (int i = 0; i != nspin1_; ++i)
         transform->element(i, nspin1_ - k) = adjust * transform->element(i, nspin1_ - k);
+    }
+  }
+
+  { // Check a spin matrix as well with basically the same procedure, since sometimes we miss a phase due to numerically zero entries in the Hamiltonian
+    const ZMatrix spinop_x = *transform % *spinop_h_[0] * *transform;
+    if (!is_t_symmetric(spinop_x, /*hermitian*/ true, /*t_symmetric*/ false, 1.0e-8)) {
+      complex<double> adjust = 1.0;
+      for (int k = nspin_ / 2; k > 0; --k) {
+        const double phase_error = std::arg(spinop_x.element(nspin_ - k, nspin1_ - k)) - std::arg(spinop_x.element(k - 1, k));
+        assert(std::abs(phase_error) < 1.0e-2); // should be a small correction
+        adjust *= std::polar(1.0, -1.0 * phase_error);
+        for (int i = 0; i != nspin1_; ++i)
+          transform->element(i, nspin1_ - k) = adjust * transform->element(i, nspin1_ - k);
+      }
     }
   }
 
@@ -264,13 +278,13 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
   //}
 
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
-  if (!is_t_symmetric(spinham_s, /*hermitian*/true, /*time reversal*/true))
+  if (!is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true))
     throw runtime_error("The spin Hamiltonian seems to not have proper time-reversal symmetry.  Check that your spin value and states mapped are reasonable.");
 
   array<shared_ptr<ZMatrix>, 3> spinop_s;
   for (int i = 0; i != 3; ++i) {
     spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
-    assert(is_t_symmetric(spinop_s[i], /*hermitian*/true, /*time reversal*/false));
+    assert(is_t_symmetric(*spinop_s[i], /*hermitian*/true, /*time reversal*/false));
   }
 
   cout << endl;
@@ -478,6 +492,7 @@ shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Spin_Operator> inpu
   const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
   cout << " ** D = " << Dval << " E_h, or " << Dval * au2wavenumber__ << " cm-1" << endl;
   cout << " ** E = " << std::abs(Eval) << " E_h, or " << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
+  cout << " ** E / D = " << std::abs(Eval / Dval) << endl;
 
   if (input[0].nspin() == 2) {
     cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
@@ -503,16 +518,17 @@ shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Spin_Operator> inpu
 }
 
 
-bool Pseudospin::is_t_symmetric(shared_ptr<const ZMatrix> in, const bool hermitian, const bool t_symmetric, const double thresh) const {
+bool Pseudospin::is_t_symmetric(const ZMatrix& in, const bool hermitian, const bool t_symmetric, const double thresh) const {
+  in.print("Checking t-symmetry of this matrix; hermitian = " + to_string(hermitian) + ", t_symmetric = " + to_string(t_symmetric));
   // The matrix must be either Hermitian or skew-Hermitian
   if (hermitian) {
-    assert(in->is_hermitian());
+    assert(in.is_hermitian());
   } else {
-    assert((*in + *in->transpose_conjg()).rms() < 1.0e-8);
+    assert((in + *in.transpose_conjg()).rms() < 1.0e-8);
   }
 
-  assert(in->ndim() == in->mdim());
-  assert(in->ndim() == nspin1_);
+  assert(in.ndim() == in.mdim());
+  assert(in.ndim() == nspin1_);
   const double h = hermitian ? 1.0 : -1.0;
   const double t = t_symmetric ? 1.0 : -1.0;
 
@@ -524,7 +540,7 @@ bool Pseudospin::is_t_symmetric(shared_ptr<const ZMatrix> in, const bool hermiti
       const int evendiag = (j - i) % 2;
       const double fac = evendiag ? -1.0 : 1.0;
 
-      const complex<double> val = in->element(i, j) - t * h * fac * in->element(nspin_ - j, nspin_ - i);
+      const complex<double> val = in.element(i, j) - t * h * fac * in.element(nspin_ - j, nspin_ - i);
       if (std::abs(val) > thresh)
         out = false;
     }
