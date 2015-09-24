@@ -182,7 +182,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 }
 
 
-shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize, const array<complex<double>, 3> rotation) const {
+shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<complex<double>, 3> rotation) const {
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   auto transform = make_shared<ZMatrix>(nspin1_, nspin1_);
@@ -266,25 +266,6 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
   (*spinop_s[0] * *spinop_s[0]).print("Spin matrix, x^2");
   (*spinop_s[1] * *spinop_s[1]).print("Spin matrix, y^2");
   (*spinop_s[2] * *spinop_s[2]).print("Spin matrix, z^2");
-
-  /************/
-  // To average out broken symmetry and obtain a consistent set of linear equations
-  if (symmetrize) {
-    if (nspin_ == 3) {
-      cout << "  **  By request, we will average out time-reversal asymmetry for an S = 3/2 Hamiltonian to ensure a consistent set of equations" << endl;
-      const complex<double> offdiag1 = 0.25 * (spinham_s->element(0,1) + std::conj(spinham_s->element(1,0)) - spinham_s->element(2,3) - std::conj(spinham_s->element(3,2)));
-      const complex<double> offdiag2 = 0.25 * (spinham_s->element(0,2) + std::conj(spinham_s->element(2,0)) + spinham_s->element(1,3) + std::conj(spinham_s->element(3,1)));
-      spinham_s->element(0,1) = offdiag1;
-      spinham_s->element(1,0) = std::conj(offdiag1);
-      spinham_s->element(2,3) = -offdiag1;
-      spinham_s->element(3,2) = -std::conj(offdiag1);
-      spinham_s->element(0,2) = offdiag2;
-      spinham_s->element(1,3) = offdiag2;
-      spinham_s->element(2,0) = std::conj(offdiag2);
-      spinham_s->element(3,1) = std::conj(offdiag2);
-      spinham_s->print("Pseudospin Hamiltonian!...  Forcibly symmetrized");
-    }
-  }
 
   return spinham_s;
 }

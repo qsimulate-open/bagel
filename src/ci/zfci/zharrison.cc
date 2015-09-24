@@ -398,7 +398,6 @@ void ZHarrison::compute() {
       assert(!idata_->get<bool>("aniso_numerical", false));  // This feature is deactivated
 
       const int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
-      const bool symmetrize = idata_->get<bool>("aniso_symmetrize", false);
       Pseudospin ps(nspin);
 
       // Extended Stevens Operators: default should grab the nonzero time-reversal symmetric orders, but can be specified in input
@@ -414,10 +413,14 @@ void ZHarrison::compute() {
       }
 
       vector<Stevens_Operator> ESO = ps.build_extended_stevens_operators(ranks);
+#if 1
+      array<complex<double>, 3> rotin = idata_->get_array<complex<double>,3>("aniso_axis", array<complex<double>,3>({{0.0, 0.0, 1.0}}));
+#else
+      array<complex<double>, 3> rotin = {{ 0.0, 0.0, 1.0 }};
+#endif
 
       ps.compute_numerical_hamiltonian(*this, jop_->coeff_input()->active_part());
-      shared_ptr<ZMatrix> spinham_s = ps.compute_spin_eigegenvalues(symmetrize);
-
+      shared_ptr<ZMatrix> spinham_s = ps.compute_spin_eigegenvalues(rotin);
       ESO = ps.extract_hamiltonian_parameters(ESO, spinham_s);
       auto prev_transform = make_shared<ZMatrix>(3, 3);
       prev_transform->unit();
@@ -479,7 +482,7 @@ void ZHarrison::compute() {
         cout << "jmax = " << jmax << endl;
         const array<complex<double>, 3> rotation = {{ Dtensor_diag->element(0, jmax), Dtensor_diag->element(1, jmax), Dtensor_diag->element(2, jmax) }};
 
-        spinham_s = ps.compute_spin_eigegenvalues(symmetrize, rotation);
+        spinham_s = ps.compute_spin_eigegenvalues(rotation);
         ESO = ps.build_extended_stevens_operators(ranks);
         ESO = ps.extract_hamiltonian_parameters(ESO, spinham_s);
         shared_ptr<const ZMatrix> D_3 = ps.compute_Dtensor(ESO);
@@ -504,7 +507,7 @@ void ZHarrison::compute() {
         //array<complex<double>, 3> rotation2 = {{ Dtensor_diag2->element(0, jmax2), Dtensor_diag2->element(1, jmax2), Dtensor_diag2->element(2, jmax2) }};
         //for (int i = 0; i != 3; ++i) rotation2[i] += rotation[i];
 
-        spinham_s = ps.compute_spin_eigegenvalues(symmetrize, rotation2);
+        spinham_s = ps.compute_spin_eigegenvalues(rotation2);
         ESO = ps.build_extended_stevens_operators(ranks);
         ESO = ps.extract_hamiltonian_parameters(ESO, spinham_s);
         shared_ptr<const ZMatrix> D_4 = ps.compute_Dtensor(ESO);
