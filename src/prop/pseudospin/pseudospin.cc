@@ -154,21 +154,6 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
       auto rdmmat = make_shared<ZMatrix>(norb * 2, norb * 2);
       copy_n(tmp->data(), tmp->size(), rdmmat->data());
 
-      /*******/
-      // Test i j symmetry
-      if (i > j && zfci.idata()->get<bool>("aniso_test_symm", false)) {
-        temprdm = zfci.rdm1(aniso_state[j], aniso_state[i]);
-        if (!temprdm->exist({1,0})) {
-          cout << " * Need to generate an off-diagonal rdm of zeroes." << endl;
-          temprdm->add({1,0}, temprdm->at({0,0})->clone());
-        }
-        tmp = expand_kramers<1,complex<double>>(temprdm, norb);
-        rdmmat->zero();
-        copy_n(tmp->data(), tmp->size(), rdmmat->data());
-        rdmmat = rdmmat->transpose_conjg();
-      }
-      /*******/
-
       ZMatrix modensity (2 * norb, 2 * norb);
       modensity.copy_block(0, 0, 2 * norb, 2 * norb, rdmmat);
 
