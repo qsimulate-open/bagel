@@ -41,7 +41,7 @@ namespace bagel {
 class PFMM {
   protected:
     std::shared_ptr<const SimulationCell> scell_;
-    std::string auxfile_;
+    const bool dodf_;
     int lmax_, ws_;
     int extent_sum_;
     double thresh_;
@@ -81,7 +81,7 @@ class PFMM {
     std::shared_ptr<const PData> compute_cfmm(std::shared_ptr<const PData> density) const;
 
   public:
-    PFMM(std::shared_ptr<const SimulationCell>, const int lmax = 10, const int ws = 2, const int extent = 10,
+    PFMM(std::shared_ptr<const SimulationCell>, const bool dodf = true, const int lmax = 10, const int ws = 2, const int extent = 10,
          const double thresh = PRIM_SCREEN_THRESH, std::shared_ptr<StackMem> stack = nullptr);
     ~PFMM() { }
 

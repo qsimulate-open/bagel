@@ -38,10 +38,10 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(PSCF)
 
 PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
-  : PSCF_base(idata, geom, re), dodf_(idata->get<bool>("df",true)), dofmm_(idata->get<bool>("cfmm", false)) {
+  : PSCF_base(idata, geom, re), dodf_(idata->get<bool>("df", true)), dofmm_(idata->get<bool>("cfmm", false)) {
   cout << "  *** Periodic Hartree--Fock ***" << endl << endl;
-  if (!dodf_)
-    throw runtime_error("Periodic SCF only works with density fitting!");
+  if (!dodf_ && !dofmm_)
+    throw runtime_error("Periodic SCF only works with FMM if no density fitting is specified!");
 
   if (nocc_ != noccB_)
     throw runtime_error("PSCF only works for closed shell systems.");
@@ -134,7 +134,7 @@ void PSCF::compute() {
     if (!dofmm_) {
       fock = make_shared<const PFock>(lattice_, hcore_, pdensity);
     } else {
-      fock = make_shared<const PFock>(lattice_, hcore_, pdensity, dofmm_, fmm_lmax_, fmm_ws_, fmm_extent_);
+      fock = make_shared<const PFock>(lattice_, hcore_, pdensity, true, dodf_, fmm_lmax_, fmm_ws_, fmm_extent_);
     }
     shared_ptr<const PData> kfock = fock->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
     auto fock0 = make_shared<ZMatrix>(*((*kfock)(gamma)));

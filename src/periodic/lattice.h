@@ -113,7 +113,7 @@ class Lattice {
     // density fitting
     std::shared_ptr<const PDFDist> form_df() const;
     // PFMM
-    std::shared_ptr<const PFMM> form_pfmm(const int lmax, const int ws, const int extent) const;
+    std::shared_ptr<const PFMM> form_pfmm(const bool dodf, const int lmax, const int ws, const int extent) const;
 };
 
 }
