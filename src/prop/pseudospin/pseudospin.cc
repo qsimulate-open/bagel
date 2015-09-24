@@ -246,13 +246,25 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
   }
 
 /**********/
-  if (nspin_ == 3) { // Adjust the phase to ensure proper time-reversal symmetry
+
+  transform->print("initial transformation matrix");
+  // Adjust the phase to ensure proper time-reversal symmetry
+  {
     shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
-    const double phase_error = std::arg(spinham_s->element(1, 3)) - std::arg(spinham_s->element(0, 2));
-    const complex<double> adjust = std::polar(1.0, -1.0 * phase_error);
-    for (int i = 0; i != nspin1_; ++i)
-      transform->element(i, 3) = adjust * transform->element(i, 3);
+    spinham_s->print("Matrix to be symmetrized");
+    complex<double> prev_adjust = 1.0;
+    for (int k = nspin_ / 2; k > 0; --k) {
+      const double phase_error = std::fmod(std::arg(spinham_s->element(nspin_ - k, nspin1_ - k)) - std::arg(spinham_s->element(k - 1, k)) - pi__, 2.0 * pi__);
+      const complex<double> adjust = std::polar(1.0, -1.0 * phase_error);
+      cout << "k = " << k << ", comparing elements (" << nspin_ - k << ", " << nspin1_ - k << ") - (" << k - 1 << ", " << k << "), phase error = " << phase_error << ", fix with " << adjust << endl;
+      for (int i = 0; i != nspin1_; ++i)
+        transform->element(i, nspin1_ - k) = adjust * prev_adjust * transform->element(i, nspin1_ - k);
+      (*transform % *spinham_h_ * *transform).print("Hamiltonian matrix after this stage of symmetrization");
+      prev_adjust *= adjust;
+    }
   }
+
+  transform->print("adjusted transformation matrix");
 /**********/
 
 
