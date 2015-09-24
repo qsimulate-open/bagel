@@ -399,26 +399,8 @@ void ZHarrison::compute() {
 
       const int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
       Pseudospin ps(nspin);
+      ps.compute(*this);
 
-      // Extended Stevens Operators: default should grab the nonzero time-reversal symmetric orders, but can be specified in input
-      vector<int> ranks = {};
-      for (int i = 2; i <= nspin; i += 2)
-        ranks.push_back(i);
-
-      const shared_ptr<const PTree> eso_ranks = idata_->get_child_optional("aniso_rank");
-      if (eso_ranks) {
-        ranks = {};
-        for (auto& i : *eso_ranks)
-          ranks.push_back(lexical_cast<int>(i->data()));
-      }
-
-      vector<Stevens_Operator> ESO = ps.build_extended_stevens_operators(ranks);
-      array<complex<double>, 3> rotin = idata_->get_array<complex<double>,3>("aniso_axis", array<complex<double>,3>({{0.0, 0.0, 1.0}}));
-
-      ps.compute_numerical_hamiltonian(*this, jop_->coeff_input()->active_part());
-      shared_ptr<ZMatrix> spinham_s = ps.compute_spin_eigegenvalues(rotin);
-      ESO = ps.extract_hamiltonian_parameters(ESO, spinham_s);
-      shared_ptr<ZMatrix> dtens = ps.compute_Dtensor(ESO);
     }
   }
 }

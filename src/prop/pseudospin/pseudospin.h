@@ -88,6 +88,8 @@ class Pseudospin {
   public:
     Pseudospin(const int nspin);
 
+    void compute(const ZHarrison& zfci);
+
     // return symbolic spin matrices
     std::shared_ptr<ZMatrix> spin_xyz(const int i) const { return spin_xyz_[i]; }
     std::shared_ptr<ZMatrix> spin_plus() const { return spin_plus_; }

@@ -65,6 +65,32 @@ Pseudospin::Pseudospin(const int _nspin) : nspin_(_nspin), nspin1_(_nspin + 1) {
 }
 
 
+void Pseudospin::compute(const ZHarrison& zfci) {
+
+  // Which ranks of extended Stevens operators to use
+  // Default should grab the nonzero time-reversal symmetric orders, but can be specified in input
+  vector<int> ranks = {};
+  for (int i = 2; i <= nspin_; i += 2)
+    ranks.push_back(i);
+  const shared_ptr<const PTree> eso_ranks = zfci.idata()->get_child_optional("aniso_rank");
+  if (eso_ranks) {
+    ranks = {};
+    for (auto& i : *eso_ranks)
+      ranks.push_back(lexical_cast<int>(i->data()));
+  }
+
+  array<complex<double>, 3> rotin = zfci.idata()->get_array<complex<double>,3>("aniso_axis", array<complex<double>,3>({{0.0, 0.0, 1.0}}));
+
+  vector<Stevens_Operator> ESO = build_extended_stevens_operators(ranks);
+
+  compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
+
+  shared_ptr<ZMatrix> spinham_s = compute_spin_eigegenvalues(rotin);
+  ESO = extract_hamiltonian_parameters(ESO, spinham_s);
+  shared_ptr<ZMatrix> dtens = compute_Dtensor(ESO);
+}
+
+
 // Compute S_x, S_y, and S_z plus the raising and lowering operators operators in pseudospin basis
 void Pseudospin::update_spin_matrices(VectorB spinvals) {
   assert(spinvals.size() == nspin1_);
