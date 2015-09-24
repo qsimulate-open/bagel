@@ -76,7 +76,7 @@ class Lattice {
 
   public:
     Lattice() { }
-    Lattice(const std::shared_ptr<const Geometry> g, const int ncell = 0);
+    Lattice(const std::shared_ptr<const Geometry> g, const int ncell = 1);
     virtual ~Lattice() { }
 
     int ndim() const { return ndim_; }

@@ -396,7 +396,7 @@ shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, const int lmax, const
 
   shared_ptr<const PFMM> out;
 
-  auto scell = make_shared<const SimulationCell>(primitive_cell_);
+  auto scell = make_shared<const SimulationCell>(primitive_cell_, lmax);
   time.tick_print("  Construct a supercell for crystal near-field");
   out = make_shared<const PFMM>(scell, dodf, lmax, ws, extent, thresh_);
   cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;

@@ -53,13 +53,15 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
 
   num_multipoles_ = (2*lmax_ + 1) * (2*lmax_ + 1);
   mlm_.resize(num_multipoles_);
+  slm_.resize(num_multipoles_);
   max_rank_ = (lmax_ * 2) + 1;
 
   // should be provided from input
   max_height_ = 21; // tree construction 21 is absolute max
   do_contract_ = true;
 
-  compute_mlm();
+  compute_Mlm();
+  compute_Slm();
   stack_->release(size_allocated_, buff_);
   resources__->release(stack_);
 }
@@ -76,7 +78,7 @@ bool PFMM::is_in_cff(array<double, 3> L) {
 }
 
 
-void PFMM::compute_mlm() { // rectangular scell for now
+void PFMM::compute_Mlm() { // rectangular scell for now
 
   const double pibeta = pi__ * pi__ / (beta__ * beta__);
   const int nvec = pow(2*extent_sum_+1, ndim_);
@@ -289,6 +291,7 @@ void PFMM::compute_Slm() {
 
   const size_t nbasis1 = scell_->multipoles().front()->ndim();
   const size_t nbasis0 = scell_->multipoles().front()->mdim();
+  assert(nbasis1 == nbasis0 && nbasis1 == scell_->nbasis());
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2*l; ++m) {
       const int im1 = l * l + m;
@@ -307,6 +310,31 @@ void PFMM::compute_Slm() {
 
     }
   }
+}
+
+
+shared_ptr<const ZMatrix> PFMM::compute_far_field(shared_ptr<const PData> density) const {
+  shared_ptr<const ZMatrix> ffden = density->pdata().back();
+  const size_t nbas = scell_->nbasis();
+  assert(ffden->ndim() == ffden->mdim() && ffden->ndim() == nbas);
+  auto out = make_shared<ZMatrix>(nbas, nbas);
+
+  vector<std::pair<int, int>> lm_map;
+  int cnt = 0;
+  for (int l = 0; l <= lmax_; ++l)
+    for (int m = 0; m <= 2 * l; ++m, ++cnt)
+      lm_map.push_back(make_pair(l, m-l));
+
+  for (int i = 0; i != num_multipoles_; ++i) {
+    complex<double> contract = 0.0;
+    for (int j = 0; j != nbas; ++j)
+      for (int k = 0; k != nbas; ++k)
+        contract += slm_[i]->element(k, j) * ffden->element(k, j);
+
+    *out += pow(-1.0, lm_map[i].first) * contract * *scell_->multipoles().at(i);
+  }
+
+  return make_shared<const ZMatrix>(*out);
 }
 
 
@@ -400,11 +428,8 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
 
 
 shared_ptr<const PData> PFMM::pcompute_Jop(shared_ptr<const PData> density) const {
+  shared_ptr<const PData> nf = compute_cfmm(density);
+  shared_ptr<const ZMatrix> ff = compute_far_field(density);
 
-  shared_ptr<const PData> out;
-
-
-  // call functions to compute jOp here
-  compute_cfmm(density);
-  return out;
+  return make_shared<const PData>(*nf, ff);
 }

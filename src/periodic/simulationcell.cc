@@ -30,15 +30,17 @@
 using namespace std;
 using namespace bagel;
 
-SimulationCell::SimulationCell(const shared_ptr<const Geometry> g) : geom_(g), ndim_(g->primitive_vectors().size()) {
+SimulationCell::SimulationCell(const shared_ptr<const Geometry> g, const int l) : geom_(g), ndim_(g->primitive_vectors().size()), lmax_(l) {
   primitive_vectors_.resize(ndim_);
   for (int i = 0; i != ndim_; ++i)
     primitive_vectors_[i] = g->primitive_vectors(i);
+
+  init();
 }
 
 
-SimulationCell::SimulationCell(const shared_ptr<const Geometry> g, vector<array<double, 3>> pvec)
- : geom_(g), ndim_(pvec.size()), primitive_vectors_(pvec) { }
+SimulationCell::SimulationCell(const shared_ptr<const Geometry> g, vector<array<double, 3>> pvec, const int l)
+ : geom_(g), ndim_(pvec.size()), primitive_vectors_(pvec), lmax_(l) { init(); }
 
 
 void SimulationCell::init() {
@@ -55,6 +57,7 @@ void SimulationCell::init() {
       radius_ = rsq;
   }
   radius_ = sqrt(radius_);
+  compute_multipoles();
 }
 
 
@@ -95,9 +98,9 @@ void SimulationCell::compute_extent(const double thresh) { // extent at charge c
 }
 
 
-void SimulationCell::compute_multipoles(const int lmax) {
+void SimulationCell::compute_multipoles() {
 
-  const int nmultipole = (lmax + 1) * (lmax + 1);
+  const int nmultipole = (lmax_ + 1) * (lmax_ + 1);
   multipoles_.resize(nmultipole);
   vector<shared_ptr<ZMatrix>> multipoles(nmultipole);
   for (int i = 0; i != nmultipole; ++i)
@@ -110,7 +113,7 @@ void SimulationCell::compute_multipoles(const int lmax) {
       size_t ob1 = 0;
       for (auto& atom1 : atoms) {
         for (auto& b1 : atom1->shells()) {
-          MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, centre(), lmax);
+          MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, centre(), lmax_);
           mpole.compute();
           for (int i = 0; i != nmultipole; ++i)
             multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));

@@ -74,10 +74,11 @@ class PFMM {
     std::shared_ptr<StackMem> stack_;
     size_t size_allocated_;
     double* buff_;
-    void compute_mlm();
+    void compute_Mlm();
     void root_weight(const int l, const int size);
     void allocate_arrays(const size_t ps);
     void compute_Slm();
+    std::shared_ptr<const ZMatrix> compute_far_field(std::shared_ptr<const PData> density) const;
     std::shared_ptr<const PData> compute_cfmm(std::shared_ptr<const PData> density) const;
 
   public:

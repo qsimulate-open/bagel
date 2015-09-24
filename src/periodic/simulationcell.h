@@ -36,6 +36,7 @@ class SimulationCell { /* cubic, same or larger than primitive cell */
     std::shared_ptr<const Geometry> geom_;
     int ndim_;
     std::vector<std::array<double, 3>> primitive_vectors_; // orthogonal vectors
+    int lmax_;
 
     int num_jvectors_;
     std::vector<std::array<double, 3>> jvectors_;
@@ -43,13 +44,13 @@ class SimulationCell { /* cubic, same or larger than primitive cell */
     int ws_;
     double extent_, radius_;
     std::vector<std::shared_ptr<const ZMatrix>> multipoles_;
-    void compute_multipoles(const int lmax);
     void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
+    void compute_multipoles();
 
   public:
     SimulationCell() { }
-    SimulationCell(const std::shared_ptr<const Geometry> geom);
-    SimulationCell(const std::shared_ptr<const Geometry> geom, std::vector<std::array<double, 3>> prim_vec);
+    SimulationCell(const std::shared_ptr<const Geometry> geom, const int lmax = 10);
+    SimulationCell(const std::shared_ptr<const Geometry> geom, std::vector<std::array<double, 3>> prim_vec, const int lmax = 10);
     virtual ~SimulationCell() { }
 
     int ndim() const { return ndim_; }
