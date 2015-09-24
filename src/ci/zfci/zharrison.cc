@@ -414,11 +414,7 @@ void ZHarrison::compute() {
           ranks.push_back(lexical_cast<int>(i->data()));
       }
 
-#if 0
-      vector<Spin_Operator> ESO = ps.build_extended_stevens_operators(ranks);
-#else
-      vector<Spin_Operator> ESO = ps.build_2ndorder_zfs_operators();
-#endif
+      vector<Stevens_Operator> ESO = ps.build_extended_stevens_operators(ranks);
 
       ps.compute_numerical_hamiltonian(*this, jop_->coeff_input()->active_part());
       shared_ptr<ZMatrix> spinham_s = ps.compute_spin_eigegenvalues(symmetrize);
@@ -510,9 +506,9 @@ void ZHarrison::compute() {
         //for (int i = 0; i != 3; ++i) rotation2[i] += rotation[i];
 
         spinham_s = ps.compute_spin_eigegenvalues(symmetrize, rotation2);
-        Dop = ps.build_2ndorder_zfs_operators();
-        Dop = ps.extract_hamiltonian_parameters(real, Dop, spinham_s);
-        shared_ptr<const ZMatrix> D_4 = ps.compute_Dtensor(Dop);
+        ESO = ps.build_extended_stevens_operators(ranks);
+        ESO = ps.extract_hamiltonian_parameters(real, ESO, spinham_s);
+        shared_ptr<const ZMatrix> D_4 = ps.compute_Dtensor(ESO);
 
         D_1->print("D-tensor, obtained directly");
         D_3->print("D-tensor, after rotation");

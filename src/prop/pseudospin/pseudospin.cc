@@ -34,35 +34,24 @@ using namespace std;
 using namespace bagel;
 
 
-Spin_Operator::Spin_Operator(shared_ptr<const ZMatrix> _mat, const bool _stev, const int _ord, const int _ind)
- : nspin_(_mat->ndim() - 1), matrix_(_mat), stevens_(_stev), order_(_ord), index_(_ind) {
+Stevens_Operator::Stevens_Operator(shared_ptr<const ZMatrix> _mat, const int _ord, const int _ind)
+ : nspin_(_mat->ndim() - 1), matrix_(_mat), order_(_ord), index_(_ind) {
   coeff_ = nan("");
-  assert(matrix_->ndim() == matrix_->mdim());                                                         // Matrix representation must be square
-  assert((stevens_ && abs(index_) <= order_) || (!stevens_ && index_ >= 0 && index_ <= 8));           // Validity of index_
-  assert((stevens_ && order_ >= 0) || (!stevens_ && order_ == 2));                                    // Validity of order_
-  assert((order_ <= nspin_ || matrix_->rms() < 1.0e-8));                                              // High-order contributions should be zero for low spin
+  assert(matrix_->ndim() == matrix_->mdim());
+  assert(abs(index_) <= order_);
+  assert(order_ >= 0);
+  assert((order_ <= nspin_ || matrix_->rms() < 1.0e-8)); // High-order contributions should be zero for low spin
 }
 
-string Spin_Operator::operator_name() const {
-  string out = "";
-  if (stevens_) {
-    out += "O_" + to_string(order_) + "^" + to_string(index_);
-    if (index_ >= 0) out += " ";
-  } else {
-    const array<string, 3> dim = {{ "x", "y", "z" }};
-    out += "S" + dim[index_ % 3] + "S" + dim[index_ / 3];
-  }
+string Stevens_Operator::operator_name() const {
+  string out = "O_" + to_string(order_) + "^" + to_string(index_);
+  if (index_ >= 0) out += " ";
   return out;
 }
 
-string Spin_Operator::coeff_name() const {
+string Stevens_Operator::coeff_name() const {
   string out = operator_name();
-  if (stevens_) {
-    out[0] = 'B';
-  } else {
-    out[0] = 'D';
-    out.erase(2, 1);
-  }
+  out[0] = 'B';
   return out;
 }
 
@@ -103,19 +92,6 @@ void Pseudospin::update_spin_matrices(VectorB spinvals) {
   spin_xyz_[0]->add_block( 0.5, 0, 0, nspin1_, nspin1_, spin_minus_);
   spin_xyz_[1]->add_block( complex<double>( 0.0, -0.5), 0, 0, nspin1_, nspin1_, spin_plus_);
   spin_xyz_[1]->add_block( complex<double>( 0.0,  0.5), 0, 0, nspin1_, nspin1_, spin_minus_);
-}
-
-
-vector<Spin_Operator> Pseudospin::build_2ndorder_zfs_operators() const {
-  vector<Spin_Operator> out;
-  for (int j = 0; j != 3; ++j) {
-    for (int i = 0; i != 3; ++i) {
-      auto mat = make_shared<ZMatrix>(*spin_xyz(i) * *spin_xyz(j));
-      Spin_Operator tmp(mat, false, 2, 3 * j + i);
-      out.push_back(tmp);
-    }
-  }
-  return out;
 }
 
 
@@ -330,9 +306,9 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
 
 
 // Extract D-tensor or Stevens coefficients from the numerical pseudospin Hamiltonian
-vector<Spin_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Spin_Operator> param, shared_ptr<const ZMatrix> spinham_s) const {
+vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real, const vector<Stevens_Operator> param, shared_ptr<const ZMatrix> spinham_s) const {
   const int nop = param.size();
-  vector<Spin_Operator> out = param;
+  vector<Stevens_Operator> out = param;
 
   // d2h is the transformation matrix to build pseudospin Hamiltonian from D-tensor or Extended Stevens Operators
   // Rows correspond to pairs of pseudospins (SS, S-1S, S-2S...)
@@ -430,50 +406,40 @@ vector<Spin_Operator> Pseudospin::extract_hamiltonian_parameters(const bool real
 
 
 // Working with complex algebra, although it should be fully real...
-shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Spin_Operator> input) {
+shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> input) {
   auto out = make_shared<ZMatrix>(3, 3);
   out->zero();
 
-  if (input[0].stevens()) {
-    // Get D from second-order extended Stevens Operators
-    for (int i = 0; i != input.size(); ++i) {
-      assert(input[i].stevens());
-      if (input[i].order() == 2) {
-        switch (input[i].index()) {
-          case  0:
-            assert(std::abs(std::imag(input[i].coeff())) < 1.0e-8);
-            out->element(0, 0) -= 1.0 * input[i].coeff();
-            out->element(1, 1) -= 1.0 * input[i].coeff();
-            out->element(2, 2) += 2.0 * input[i].coeff();
-            break;
-          case -1:
-            out->element(1, 2) += 0.5 * input[i].coeff();
-            out->element(2, 1) += 0.5 * std::conj(input[i].coeff());
-            break;
-          case  1:
-            out->element(2, 0) += 0.5 * input[i].coeff();
-            out->element(0, 2) += 0.5 * std::conj(input[i].coeff());
-            break;
-          case -2:
-            out->element(0, 1) += 1.0 * input[i].coeff();
-            out->element(1, 0) += 1.0 * std::conj(input[i].coeff());
-            break;
-          case  2:
-            assert(std::abs(std::imag(input[i].coeff())) < 1.0e-8);
-            out->element(0, 0) += 1.0 * input[i].coeff();
-            out->element(1, 1) -= 1.0 * input[i].coeff();
-            break;
-          default:
-            throw logic_error("Some invalid operator was found in Pseudospin::compute_Dtensor(...)");
-        }
+  // Get D from second-order extended Stevens Operators
+  for (int i = 0; i != input.size(); ++i) {
+    if (input[i].order() == 2) {
+      switch (input[i].index()) {
+        case  0:
+          assert(std::abs(std::imag(input[i].coeff())) < 1.0e-8);
+          out->element(0, 0) -= 1.0 * input[i].coeff();
+          out->element(1, 1) -= 1.0 * input[i].coeff();
+          out->element(2, 2) += 2.0 * input[i].coeff();
+          break;
+        case -1:
+          out->element(1, 2) += 0.5 * input[i].coeff();
+          out->element(2, 1) += 0.5 * std::conj(input[i].coeff());
+          break;
+        case  1:
+          out->element(2, 0) += 0.5 * input[i].coeff();
+          out->element(0, 2) += 0.5 * std::conj(input[i].coeff());
+          break;
+        case -2:
+          out->element(0, 1) += 1.0 * input[i].coeff();
+          out->element(1, 0) += 1.0 * std::conj(input[i].coeff());
+          break;
+        case  2:
+          assert(std::abs(std::imag(input[i].coeff())) < 1.0e-8);
+          out->element(0, 0) += 1.0 * input[i].coeff();
+          out->element(1, 1) -= 1.0 * input[i].coeff();
+          break;
+        default:
+          throw logic_error("Some invalid operator was found in Pseudospin::compute_Dtensor(...)");
       }
-    }
-  } else {
-    // Just have to copy the data if we have fit the D-tensor directly
-    assert(input.size() == 9);
-    for (int i = 0; i != 9; ++i) {
-      assert(!input[i].stevens() && input[i].order() == 2);
-      out->element(i % 3, i / 3) = input[i].coeff();
     }
   }
 

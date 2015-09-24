@@ -36,20 +36,18 @@
 namespace bagel {
 
 // Some operator that acts on a basis of pseudospin eigenstates
-class Spin_Operator {
+class Stevens_Operator {
   protected:
     const int nspin_;
     std::shared_ptr<const ZMatrix> matrix_;
     std::complex<double> coeff_;
 
-    // stevens_ == true:  order_ = k, index_ = q
-    // stevens_ == false: order_ = 2, index_ from 0 to 8 denotes xx, yx, zx, xy...
-    const bool stevens_;
+    // order_ = k, index_ = q
     const int order_;
     const int index_;
 
   public:
-    Spin_Operator(std::shared_ptr<const ZMatrix> _mat, const bool _stev, const int _ord, const int _ind);
+    Stevens_Operator(std::shared_ptr<const ZMatrix> _mat, const int _ord, const int _ind);
 
     int nspin() const { return nspin_; }
     std::shared_ptr<const ZMatrix> matrix() const { return matrix_; }
@@ -57,7 +55,6 @@ class Spin_Operator {
     void set_coeff(const std::complex<double> in) { coeff_ = in; }
     std::complex<double> coeff() const { assert(coeff_ == coeff_); return coeff_; }  // Default value is NaN; triggers assertion if coeff_ has not been computed
 
-    bool stevens() const { return stevens_; }
     int order() const { return order_; }
     int index() const { return index_; }
 
@@ -97,14 +94,13 @@ class Pseudospin {
     std::shared_ptr<ZMatrix> spin_minus() const { return spin_minus_; }
 
     // setup functions
-    std::vector<Spin_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
-    std::vector<Spin_Operator> build_2ndorder_zfs_operators() const;
+    std::vector<Stevens_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
     void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
 
     // to extract D-tensor
     std::shared_ptr<ZMatrix> compute_spin_eigegenvalues(const bool symmetrize, const std::array<std::complex<double>, 3> rotation = {{ 0.0, 0.0, 1.0 }} ) const;
-    std::vector<Spin_Operator> extract_hamiltonian_parameters(const bool real, const std::vector<Spin_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
-    static std::shared_ptr<ZMatrix> compute_Dtensor(const std::vector<Spin_Operator> input);
+    std::vector<Stevens_Operator> extract_hamiltonian_parameters(const bool real, const std::vector<Stevens_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
+    static std::shared_ptr<ZMatrix> compute_Dtensor(const std::vector<Stevens_Operator> input);
 
     // To verify that a matrix in pseudospin basis has specified time-reversal symmetry
     // The bool parameters tell us if the matrix should be symmetric or antisymmetric under Hermitian conjugation and time-reversal, respectively

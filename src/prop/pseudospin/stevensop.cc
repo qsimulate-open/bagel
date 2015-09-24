@@ -111,11 +111,11 @@ long long compute_Fkq(const vector<vector<long long>> input) {
 
 
 // And now the driver
-vector<Spin_Operator> Pseudospin::build_extended_stevens_operators(const vector<int> ranks) const {
+vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vector<int> ranks) const {
   cout << "    Computing extended stevens operators for S = " << nspin_/2 << (nspin_ % 2 == 0 ? "" : " 1/2") << endl;
   const double ss1 = nspin_ * (nspin_ + 2.0) / 4.0; // S(S+1)
 
-  vector<Spin_Operator> stevensop = {};
+  vector<Stevens_Operator> stevensop = {};
   cout << fixed << setprecision(6);
 
   for (auto& k : ranks) {
@@ -223,9 +223,9 @@ vector<Spin_Operator> Pseudospin::build_extended_stevens_operators(const vector<
       auto Ocos_kq = make_shared<const ZMatrix>(complex<double>(0.5,  0.0) * ckq * (*Tkq + *Tkq->transpose_conjg()));
       auto Osin_kq = make_shared<const ZMatrix>(complex<double>(0.0, -0.5) * ckq * (*Tkq - *Tkq->transpose_conjg()));
 
-      stevensop.push_back(Spin_Operator(Ocos_kq, true, k, q));
+      stevensop.push_back(Stevens_Operator(Ocos_kq, k, q));
       if (q != 0)
-        stevensop.push_back(Spin_Operator(Osin_kq, true, k, -q));
+        stevensop.push_back(Stevens_Operator(Osin_kq, k, -q));
 
       const string spinstring = to_string(nspin_ / 2) + (nspin_ % 2 == 0 ? "" : " 1/2");
       if (Ocos_kq->rms() > 1.0e-10)
