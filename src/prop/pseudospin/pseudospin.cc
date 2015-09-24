@@ -541,4 +541,32 @@ shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Spin_Operator> inpu
 }
 
 
+bool Pseudospin::is_t_symmetric(shared_ptr<const ZMatrix> in, const bool hermitian, const bool t_symmetric, const double thresh) const {
+  // The matrix must be either Hermitian or skew-Hermitian
+  if (hermitian) {
+    assert(in->is_hermitian());
+  } else {
+    assert((*in + *in->transpose_conjg()).rms() < 1.0e-8);
+  }
+
+  assert(in->ndim() == in->mdim());
+  assert(in->ndim() == nspin1_);
+  const double h = hermitian ? 1.0 : -1.0;
+  const double t = t_symmetric ? 1.0 : -1.0;
+
+  // We explicitly check the upper-triangular part element by element
+  bool out = true;
+  for (int i = 0; i != nspin1_; ++i) {
+    for (int j = i; j != nspin1_; ++j) {
+      // fac is +/- 1.0 depending on how close we are to the diagonal
+      const int evendiag = (j - i) % 2;
+      const double fac = evendiag ? -1.0 : 1.0;
+
+      const complex<double> val = in->element(i, j) - t * h * fac * in->element(nspin_ - j, nspin_ - i);
+      if (std::abs(val) > thresh)
+        out = false;
+    }
+  }
+  return out;
+}
 

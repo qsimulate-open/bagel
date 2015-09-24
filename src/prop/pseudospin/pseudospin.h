@@ -106,6 +106,10 @@ class Pseudospin {
     std::vector<Spin_Operator> extract_hamiltonian_parameters(const bool real, const std::vector<Spin_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
     static std::shared_ptr<ZMatrix> compute_Dtensor(const std::vector<Spin_Operator> input);
 
+    // To verify that a matrix in pseudospin basis has specified time-reversal symmetry
+    // The bool parameters tell us if the matrix should be symmetric or antisymmetric under Hermitian conjugation and time-reversal, respectively
+    bool is_t_symmetric(std::shared_ptr<const ZMatrix> in, const bool hermitian = true, const bool t_symmetric = true, const double thresh = 1.0e-6) const;
+
 };
 
 }
