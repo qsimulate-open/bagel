@@ -243,6 +243,11 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const bool symmetrize
     zeig = tempv;
   }
 
+//      cout << " k = " << k << ", comparing elements (" << nspin_-k << ", " << nspin1_-k << ") - (" << k-1 << ", " << k << ")  ... phase_error = " << std::arg(spinham_s->element(nspin_-k,nspin1_-k)) << " - " << std::arg(spinham_s->element(k-1, k)) << " = " << phase_error << endl;
+//      cout << scientific << endl;
+//      cout << "Element 1 has mag " << std::abs(spinham_s->element(nspin_ - k, nspin1_ - k)) << " and phase " << std::arg(spinham_s->element(nspin_ - k, nspin1_ - k)) << endl;
+//      cout << "Element 2 has mag " << std::abs(spinham_s->element(k-1, k)) << " and phase " << std::arg(spinham_s->element(k-1, k)) << endl;
+
   { // Adjust the phases of eigenvectors to ensure proper time-reversal symmetry
     ZMatrix spinham_s = *transform % *spinham_h_ * *transform;
     complex<double> adjust = 1.0;
@@ -545,6 +550,22 @@ bool Pseudospin::is_t_symmetric(const ZMatrix& in, const bool hermitian, const b
         out = false;
     }
   }
+
+#ifndef NDEBUG
+  { // Ensure that the element-by-element check for observed pattern agrees with the actual time-reversal operator
+    // The time-reversal operator is kramersop + complex conjugation
+    ZMatrix kramersop(nspin1_, nspin1_);
+    double val = -1.0;
+    for (int i = 0; i != nspin1_; ++i) {
+      kramersop.element(nspin_ - i, i) = val;
+      val *= -1.0;
+    }
+    ZMatrix in_reversed = kramersop * *in.get_conjg() * *kramersop.transpose_conjg();  // K O K^-1
+    const double error = (in - (t * in_reversed)).rms();
+    assert((out == true && error < thresh) || (out == false && error >= thresh));
+  }
+#endif
+
   return out;
 }
 
