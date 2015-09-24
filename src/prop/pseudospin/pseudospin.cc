@@ -297,45 +297,45 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<complex<d
 }
 
 
-// Extract D-tensor or Stevens coefficients from the numerical pseudospin Hamiltonian
+// Extract Stevens coefficients from the numerical pseudospin Hamiltonian
 vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector<Stevens_Operator> param, shared_ptr<const ZMatrix> spinham_s) const {
   const int nop = param.size();
   vector<Stevens_Operator> out = param;
 
-  // d2h is the transformation matrix to build pseudospin Hamiltonian from D-tensor or Extended Stevens Operators
+  // s2h is the transformation matrix to build pseudospin Hamiltonian from extended Stevens operators
   // Rows correspond to pairs of pseudospins (SS, S-1S, S-2S...)
-  // Columns correspond to spin Hamiltonian parameters (e.g., Dxx, Dyx, Dzx, Dxy...)
+  // Columns correspond to Stevens coefficients (B22, B2-2, B21...)
   // Note that we look over the first indices before the second, so we can copy data between vectors and matrices and have it come out in the right order
-  auto d2h = make_shared<ZMatrix>(nspin1_ * nspin1_, nop);
+  auto s2h = make_shared<ZMatrix>(nspin1_ * nspin1_, nop);
 
   for (int i = 0; i != nop; ++i)
-    d2h->copy_block(0, i, nspin1_ * nspin1_, 1, param[i].matrix()->data());
+    s2h->copy_block(0, i, nspin1_ * nspin1_, 1, param[i].matrix()->data());
 
   auto checkham = make_shared<ZMatrix>(nspin1_, nspin1_);
 
-  { // Convert from the pseudospin Hamiltonian to the D-tensor using the left-inverse of d2h
+  { // Convert from the pseudospin Hamiltonian to the Stevens coefficients using the left-inverse of s2h
     // We use complex algebra, but the result should be purely real
-    auto h2d = make_shared<ZMatrix>(nop, nspin1_ * nspin1_);
-    ZMatrix d2h_sqinv = *d2h % *d2h;
-    d2h_sqinv.inverse();
-    *h2d = d2h_sqinv ^ *d2h;
-    assert((*h2d * *d2h).is_identity());
+    auto h2s = make_shared<ZMatrix>(nop, nspin1_ * nspin1_);
+    ZMatrix s2h_sqinv = *s2h % *s2h;
+    s2h_sqinv.inverse();
+    *h2s = s2h_sqinv ^ *s2h;
+    assert((*h2s * *s2h).is_identity());
 
     auto spinham_vec = make_shared<ZMatrix>(nspin1_ * nspin1_,1);
     spinham_vec->copy_block(0, 0, nspin1_ * nspin1_, 1, spinham_s->element_ptr(0,0));
-    ZMatrix Dtensor_vec = *h2d * *spinham_vec;
+    ZMatrix stevop_vec = *h2s * *spinham_vec;
 
-    ZMatrix check_spinham_vec = *d2h * Dtensor_vec;
+    ZMatrix check_spinham_vec = *s2h * stevop_vec;
     checkham->copy_block(0, 0, nspin1_, nspin1_, check_spinham_vec.element_ptr(0,0));
 
     for (int i = 0; i != nop; ++i) {
-      cout << "  Pseudospin Hamiltonian parameter: " << setw(7) << param[i].coeff_name() << " = " << Dtensor_vec.element(i, 0) << endl;
-      out[i].set_coeff(Dtensor_vec.element(i, 0));
+      cout << "  Pseudospin Hamiltonian parameter: " << setw(7) << param[i].coeff_name() << " = " << stevop_vec.element(i, 0) << endl;
+      out[i].set_coeff(stevop_vec.element(i, 0));
     }
   }
 
   checkham->print("Pseudospin Hamiltonian, recomputed", 30);
-  cout << "  Error in recomputation of spin Hamiltonian from D = " << (*checkham - *spinham_s).rms() << endl << endl;
+  cout << "  Error in recomputation of spin Hamiltonian from Stevens parameters = " << (*checkham - *spinham_s).rms() << endl << endl;
 
   VectorB shenergies(nspin1_);
   checkham->diagonalize(shenergies);
