@@ -46,7 +46,7 @@ class PFMM {
     int extent_sum_;
     double thresh_;
     int ndim_;
-    int num_multipoles_;
+    int msize_, osize_; // #multipoles in M and O
     std::vector<std::complex<double>> mlm_;
     std::vector<std::shared_ptr<const ZMatrix>> slm_;
 

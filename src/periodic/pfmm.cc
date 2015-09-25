@@ -51,9 +51,10 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
   if (ndim_ > 3 || ndim_ < 1)
     throw runtime_error("System must be periodic in 1-, 2-, or 3-D");
 
-  num_multipoles_ = (2*lmax_ + 1) * (2*lmax_ + 1);
-  mlm_.resize(num_multipoles_);
-  slm_.resize(num_multipoles_);
+  msize_ = (2*lmax_ + 1) * (2*lmax_ + 1);
+  osize_ = (lmax_ + 1) * (lmax_ + 1);
+  mlm_.resize(msize_);
+  slm_.resize(osize_);
   max_rank_ = (lmax_ * 2) + 1;
 
   // should be provided from input
@@ -325,8 +326,9 @@ shared_ptr<const ZMatrix> PFMM::compute_far_field(shared_ptr<const PData> densit
     for (int m = 0; m <= 2 * l; ++m, ++cnt)
       lm_map.push_back(make_pair(l, m-l));
 
-  for (int i = 0; i != num_multipoles_; ++i) {
+  for (int i = 0; i != osize_; ++i) {
     complex<double> contract = 0.0;
+    assert(slm_[i]->ndim() == nbas && slm_[i]->mdim() == nbas);
     for (int j = 0; j != nbas; ++j)
       for (int k = 0; k != nbas; ++k)
         contract += slm_[i]->element(k, j) * ffden->element(k, j);
