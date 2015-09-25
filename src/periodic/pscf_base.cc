@@ -47,9 +47,9 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
     fmm_lmax_   = idata->get<int>("l_max", 10);
     fmm_ws_     = idata->get<int>("ws", 2);
     fmm_extent_ = idata->get<int>("extent", 10);
-    lattice_ = make_shared<const Lattice>(geom, 2*fmm_ws_+2); // one for CFF
+    lattice_ = make_shared<const Lattice>(geom, fmm_ws_);
   } else {
-    lattice_ = make_shared<const Lattice>(geom, idata->get<int>("ncell", 1));
+    lattice_ = make_shared<const Lattice>(geom, idata->get<int>("extent", 0));
   }
 
   Timer pscf;

@@ -61,7 +61,7 @@ void PMatrix1e::init(shared_ptr<const Lattice> lattice) {
 
   shared_ptr<const Geometry> cell0 = lattice->primitive_cell();
   const size_t nshell = accumulate(cell0->atoms().begin(), cell0->atoms().end(), 0, [](int r, shared_ptr<const Atom> p) { return r+p->nshell(); });
-  TaskQueue<PMatrix1eTask> task(nshell * nshell * lattice->ncell());
+  TaskQueue<PMatrix1eTask> task(nshell * nshell * lattice->extent());
 
   int g = 0;
   int u = 0;

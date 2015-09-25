@@ -31,7 +31,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 
-Lattice::Lattice(const shared_ptr<const Geometry> g, const int n) : primitive_cell_(g), ncell_(n) {
+Lattice::Lattice(const shared_ptr<const Geometry> g, const int n) : primitive_cell_(g), extent_(n) {
   init();
 
 #if 0
@@ -49,7 +49,7 @@ double Lattice::compute_nuclear_repulsion() const {
   auto cell0 = make_shared<const Geometry>(*primitive_cell_);
   vector<shared_ptr<const Atom>> atoms0 = cell0->atoms();
   int icell0 = 0;
-  for (int i = 0; i != ndim_; ++i) icell0 += ncell_ * pow(2 * ncell_ + 1, i);
+  for (int i = 0; i != ndim_; ++i) icell0 += extent_ * pow(2 * extent_ + 1, i);
   int count = 0;
   for (auto& disp : lattice_vectors_) {
     auto cell = make_shared<const Geometry>(*primitive_cell_, disp);
@@ -84,7 +84,7 @@ void Lattice::init() {
 
   thresh_ = primitive_cell_->overlap_thresh();
 
-  num_lattice_vectors_ = pow(2*ncell_+1, ndim_);
+  num_lattice_vectors_ = pow(2*extent_+1, ndim_); // one for CFF
   lattice_vectors_.resize(num_lattice_vectors_);
   num_lattice_pts_ = num_lattice_vectors_ * primitive_cell_->natom();
   nele_ = primitive_cell_->nele() * num_lattice_vectors_;
@@ -95,13 +95,13 @@ void Lattice::init() {
       {
         const array<double, 3> a1 = primitive_cell_->primitive_vectors(0);
         array<double, 3> disp;
-        for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
+        for (int i1 = -extent_; i1 <= extent_; ++i1) {
           disp[0] = i1 * a1[0];
           disp[1] = i1 * a1[1];
           disp[2] = i1 * a1[2];
           array<int, 3> vector = {{i1, 0, 0}};
-          lattice_map_.insert(make_pair(i1 +  ncell_, vector));
-          lattice_vectors_[i1 + ncell_] = disp;
+          lattice_map_.insert(make_pair(i1 +  extent_, vector));
+          lattice_vectors_[i1 + extent_] = disp;
         }
         const double a1sq = dot(a1, a1);
         volume_ = sqrt(a1sq);
@@ -114,8 +114,8 @@ void Lattice::init() {
         const array<double, 3> a2 = primitive_cell_->primitive_vectors(1);
         array<double, 3> disp;
         int count = 0;
-        for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
-          for (int i1 = -ncell_; i1 <= ncell_; ++i1, ++count) {
+        for (int i2 = -extent_; i2 <= extent_; ++i2) {
+          for (int i1 = -extent_; i1 <= extent_; ++i1, ++count) {
             disp[0] = i1 * a1[0] + i2 * a2[0];
             disp[1] = i1 * a1[1] + i2 * a2[1];
             disp[2] = i1 * a1[2] + i2 * a2[2];
@@ -139,9 +139,9 @@ void Lattice::init() {
         const array<double, 3> a3 = primitive_cell_->primitive_vectors(2);
         array<double, 3> disp;
         int count = 0;
-        for (int i3 = -ncell_; i3 <= ncell_; ++i3) {
-          for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
-            for (int i1 = -ncell_; i1 <= ncell_; ++i1, ++count) {
+        for (int i3 = -extent_; i3 <= extent_; ++i3) {
+          for (int i2 = -extent_; i2 <= extent_; ++i2) {
+            for (int i1 = -extent_; i1 <= extent_; ++i1, ++count) {
               disp[0] = i1 * a1[0] + i2 * a2[0] + i3 * a3[0];
               disp[1] = i1 * a1[1] + i2 * a2[1] + i3 * a3[1];
               disp[2] = i1 * a1[2] + i2 * a2[2] + i3 * a3[2];
@@ -178,7 +178,7 @@ int Lattice::find_lattice_vector(const int i, const int j) const {
   const int i1 = abs(v1[0] - v2[0]);
   const int i2 = abs(v1[1] - v2[1]);
   const int i3 = abs(v1[2] - v2[2]);
-  const int out = i1 + (2 * ncell_ + 1) * (i2 + (2 * ncell_ + 1) * i3);
+  const int out = i1 + (2 * extent_ + 1) * (i2 + (2 * extent_ + 1) * i3);
 
   return out;
 }

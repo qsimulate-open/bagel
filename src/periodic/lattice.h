@@ -36,7 +36,7 @@ class Lattice {
   protected:
     std::shared_ptr<const Geometry> primitive_cell_;
     int ndim_;
-    int ncell_;
+    int extent_;
     int num_lattice_vectors_;
     int num_lattice_pts_;
     // real lattice vectors g
@@ -70,17 +70,17 @@ class Lattice {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & ndim_ & ncell_ & num_lattice_vectors_ & num_lattice_pts_ & primitive_cell_ & lattice_vectors_
+      ar & ndim_ & extent_ & num_lattice_vectors_ & num_lattice_pts_ & primitive_cell_ & lattice_vectors_
          & nuclear_repulsion_ & volume_ & primitive_kvectors_ & lattice_kvectors_ & k_parameter_ & num_lattice_kvectors_ & nele_;
     }
 
   public:
     Lattice() { }
-    Lattice(const std::shared_ptr<const Geometry> g, const int ncell = 1);
+    Lattice(const std::shared_ptr<const Geometry> g, const int extent = 0);
     virtual ~Lattice() { }
 
     int ndim() const { return ndim_; }
-    int ncell() const {return ncell_; }
+    int extent() const {return extent_; }
     int num_lattice_pts() const { return num_lattice_pts_; }
     int num_lattice_vectors() const { return num_lattice_vectors_; }
     int num_lattice_kvectors() const { return num_lattice_kvectors_; }

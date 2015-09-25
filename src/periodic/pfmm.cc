@@ -53,8 +53,6 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
 
   msize_ = (2*lmax_ + 1) * (2*lmax_ + 1);
   osize_ = (lmax_ + 1) * (lmax_ + 1);
-  mlm_.resize(msize_);
-  slm_.resize(osize_);
   max_rank_ = (lmax_ * 2) + 1;
 
   // should be provided from input
@@ -81,6 +79,7 @@ bool PFMM::is_in_cff(array<double, 3> L) {
 
 void PFMM::compute_Mlm() { // rectangular scell for now
 
+  mlm_.resize(msize_);
   const double pibeta = pi__ * pi__ / (beta__ * beta__);
   const int nvec = pow(2*extent_sum_+1, ndim_);
   allocate_arrays(nvec);
@@ -290,6 +289,7 @@ void PFMM::allocate_arrays(const size_t ps) {
 
 void PFMM::compute_Slm() {
 
+  slm_.resize(osize_);
   const size_t nbasis1 = scell_->multipoles().front()->ndim();
   const size_t nbasis0 = scell_->multipoles().front()->mdim();
   assert(nbasis1 == nbasis0 && nbasis1 == scell_->nbasis());
@@ -325,6 +325,7 @@ shared_ptr<const ZMatrix> PFMM::compute_far_field(shared_ptr<const PData> densit
   for (int l = 0; l <= lmax_; ++l)
     for (int m = 0; m <= 2 * l; ++m, ++cnt)
       lm_map.push_back(make_pair(l, m-l));
+  assert(cnt == osize_);
 
   for (int i = 0; i != osize_; ++i) {
     complex<double> contract = 0.0;
@@ -431,6 +432,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
 
 shared_ptr<const PData> PFMM::pcompute_Jop(shared_ptr<const PData> density) const {
   shared_ptr<const PData> nf = compute_cfmm(density);
+  assert(nf->nblock() == 2*ws_+1);
   shared_ptr<const ZMatrix> ff = compute_far_field(density);
 
   return make_shared<const PData>(*nf, ff);
