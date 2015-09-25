@@ -417,45 +417,25 @@ shared_ptr<Matrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> in
 bool Pseudospin::is_t_symmetric(const ZMatrix& in, const bool hermitian, const bool t_symmetric, const double thresh) const {
   // The matrix must be either Hermitian or skew-Hermitian
   if (hermitian) {
-    assert(in.is_hermitian());
+    assert(in.is_hermitian(thresh));
   } else {
-    assert((in + *in.transpose_conjg()).rms() < 1.0e-8);
+    assert((in + *in.transpose_conjg()).rms() < thresh);
   }
-
   assert(in.ndim() == in.mdim());
   assert(in.ndim() == nspin1_);
-  const double h = hermitian ? 1.0 : -1.0;
   const double t = t_symmetric ? 1.0 : -1.0;
 
-  // We explicitly check the upper-triangular part element by element
-  bool out = true;
+  // The time-reversal operator is kramersop + complex conjugation
+  ZMatrix kramersop(nspin1_, nspin1_);
+  double val = -1.0;
   for (int i = 0; i != nspin1_; ++i) {
-    for (int j = i; j != nspin1_; ++j) {
-      // fac is +/- 1.0 depending on how close we are to the diagonal
-      const int evendiag = (j - i) % 2;
-      const double fac = evendiag ? -1.0 : 1.0;
-
-      const complex<double> val = in.element(i, j) - t * h * fac * in.element(nspin_ - j, nspin_ - i);
-      if (std::abs(val) > thresh)
-        out = false;
-    }
+    kramersop.element(nspin_ - i, i) = val;
+    val *= -1.0;
   }
+  ZMatrix in_reversed = kramersop * *in.get_conjg() ^ kramersop;  // K O K^-1
+  const double error = (in - (t * in_reversed)).rms();
 
-#ifndef NDEBUG
-  { // Ensure that the element-by-element check for observed pattern agrees with the actual time-reversal operator
-    // The time-reversal operator is kramersop + complex conjugation
-    ZMatrix kramersop(nspin1_, nspin1_);
-    double val = -1.0;
-    for (int i = 0; i != nspin1_; ++i) {
-      kramersop.element(nspin_ - i, i) = val;
-      val *= -1.0;
-    }
-    ZMatrix in_reversed = kramersop * *in.get_conjg() * *kramersop.transpose_conjg();  // K O K^-1
-    const double error = (in - (t * in_reversed)).rms();
-    assert((out == true && error < thresh) || (out == false && error >= thresh));
-  }
-#endif
-
+  const bool out = error < thresh;
   return out;
 }
 
