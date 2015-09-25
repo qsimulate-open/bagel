@@ -67,7 +67,7 @@ PData::PData(const PData& o, shared_ptr<const ZMatrix> b) : blocksize_(b->ndim()
   for (int i = 0; i != nblock_ - 1; ++i)
     pdata_[i] = o.pdata(i);
 
-  pdata_[nblock_] = make_shared<ZMatrix>(*b);
+  pdata_[nblock_-1] = make_shared<ZMatrix>(*b);
 }
 
 
