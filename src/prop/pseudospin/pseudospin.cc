@@ -79,7 +79,11 @@ void Pseudospin::compute(const ZHarrison& zfci) {
       ranks.push_back(lexical_cast<int>(i->data()));
   }
 
-  array<complex<double>, 3> rotin = zfci.idata()->get_array<complex<double>,3>("aniso_axis", array<complex<double>,3>({{0.0, 0.0, 1.0}}));
+  array<double, 3> rotin = zfci.idata()->get_array<double,3>("aniso_axis", array<double, 3>({{0.0, 0.0, 1.0}}));
+
+  cout << setprecision(8);
+  cout << endl << "    ********      " << endl;
+  cout << endl << "    Modeling Pseudospin Hamiltonian for S = " << nspin_ / 2 << (nspin_ % 2 == 0 ? "" : " 1/2") << endl;
 
   vector<Stevens_Operator> ESO = build_extended_stevens_operators(ranks);
 
@@ -128,10 +132,6 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   RelSpinInt aospin(zfci.geom());
 
   const int norb = zfci.norb();
-
-  // S value of spin manifold to be mapped
-  cout << endl << endl;
-  cout << "    Modeling Pseudospin Hamiltonian for S = " << nspin_ / 2 << (nspin_ % 2 == 0 ? "" : " 1/2") << endl;
 
   // By default, just use the ground states
   vector<int> aniso_state;
@@ -190,9 +190,6 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
     }
   }
 
-  for (int i = 0; i != 3; ++i)
-    spinop_h_[i]->print("Spin matrix, for component " + to_string(i) + " over ZFCI states");
-
   // We will subtract out average energy so the pseudospin Hamiltonian is traceless
   complex<double> energy_avg = 0.0;
   for (int i = 0; i != nspin1_; ++i)
@@ -208,11 +205,11 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 }
 
 
-shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<complex<double>, 3> rotation) const {
+shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<double, 3> rotation) const {
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   auto transform = make_shared<ZMatrix>(nspin1_, nspin1_);
-  const complex<double> scale = 1.0 / std::sqrt(std::conj(rotation[0])*rotation[0] + std::conj(rotation[1])*rotation[1] + std::conj(rotation[2])*rotation[2]);
+  const complex<double> scale = 1.0 / std::sqrt(rotation[0]*rotation[0] + rotation[1]*rotation[1] + rotation[2]*rotation[2]);
   assert(std::abs(std::imag(scale)) < 1.0e-10);
   for (int i = 0; i != 3; ++i)
     *transform += scale * rotation[i] * *spinop_h_[i];
@@ -229,11 +226,6 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<complex<d
     transform = tempm;
     zeig = tempv;
   }
-
-//      cout << " k = " << k << ", comparing elements (" << nspin_-k << ", " << nspin1_-k << ") - (" << k-1 << ", " << k << ")  ... phase_error = " << std::arg(spinham_s->element(nspin_-k,nspin1_-k)) << " - " << std::arg(spinham_s->element(k-1, k)) << " = " << phase_error << endl;
-//      cout << scientific << endl;
-//      cout << "Element 1 has mag " << std::abs(spinham_s->element(nspin_ - k, nspin1_ - k)) << " and phase " << std::arg(spinham_s->element(nspin_ - k, nspin1_ - k)) << endl;
-//      cout << "Element 2 has mag " << std::abs(spinham_s->element(k-1, k)) << " and phase " << std::arg(spinham_s->element(k-1, k)) << endl;
 
   { // Adjust the phases of eigenvectors to ensure proper time-reversal symmetry
     ZMatrix spinham_s = *transform % *spinham_h_ * *transform;
@@ -260,8 +252,9 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<complex<d
     }
   }
 
+  cout << "    The z-axis is set to (" << rotation[0] << ", " << rotation[1] << ", " << rotation[2] << ")." << endl << endl;
   for (int i = 0; i != nspin1_; ++i)
-    cout << "    Spin-z eigenvalue " << i+1 << " = " << zeig[i] << endl;
+    cout << "    Pseudospin eigenvalue " << i+1 << " = " << setw(12) << zeig[i] << endl;
 
   // We can no longer use this option, since I made this function const...
   //if (numerical_eig) {
@@ -278,20 +271,6 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<complex<d
     spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
     assert(is_t_symmetric(*spinop_s[i], /*hermitian*/true, /*time reversal*/false));
   }
-
-  cout << endl;
-
-  cout << endl;
-  spinham_s->print("Pseudospin Hamiltonian!");
-
-  spinop_s[0]->print("Spin matrix - x-component");
-  spinop_s[1]->print("Spin matrix - y-component");
-  spinop_s[2]->print("Spin matrix - z-component");
-
-
-  (*spinop_s[0] * *spinop_s[0]).print("Spin matrix, x^2");
-  (*spinop_s[1] * *spinop_s[1]).print("Spin matrix, y^2");
-  (*spinop_s[2] * *spinop_s[2]).print("Spin matrix, z^2");
 
   return spinham_s;
 }
@@ -329,26 +308,39 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
     checkham->copy_block(0, 0, nspin1_, nspin1_, check_spinham_vec.element_ptr(0,0));
 
     for (int i = 0; i != nop; ++i) {
-      cout << "  Pseudospin Hamiltonian parameter: " << setw(7) << param[i].coeff_name() << " = " << stevop_vec.element(i, 0) << endl;
       out[i].set_coeff(stevop_vec.element(i, 0));
     }
   }
 
-  checkham->print("Pseudospin Hamiltonian, recomputed", 30);
-  cout << "  Error in recomputation of spin Hamiltonian from Stevens parameters = " << (*checkham - *spinham_s).rms() << endl << endl;
+  cout << endl << "    Stevens coefficients:  " << endl << endl;
+  for (int i = 0; i != out.size(); ++i)
+    cout << "    " << setw(8) << out[i].coeff_name() << " = " << out[i].coeff() << endl;
+  cout << endl;
 
+  const double checkham_error = (*checkham - *spinham_s).rms();
   VectorB shenergies(nspin1_);
   checkham->diagonalize(shenergies);
 
-  cout << "  ** Relative energies expected from the recomputed Pseudospin Hamiltonian: " << endl;
-  for (int i = nspin_; i >= 0; --i)
-    cout << "     " << i << "  " << shenergies[i] - shenergies[0] << " E_h  =  " << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
-  cout << endl;
+  if (checkham_error > 1.0e-8) {
+    cout << "  **** CAUTION ****  The pseudospin Hamiltonian does not fully reproduce the ab initio Hamiltonian.  RMS error = " << checkham_error << endl;
 
-  cout << "  ** Relative energies observed by relativistic configuration interaction: " << endl;
-  for (int i = nspin_; i >= 0; --i)
-    cout << "     " << i << "  " << ref_energy_[i] - ref_energy_[0] << " E_h  =  " << (ref_energy_[i] - ref_energy_[0])*au2wavenumber__ << " cm-1" << endl;
-  cout << endl;
+    cout << "  ** Relative energies from the pseudospin Hamiltonian: " << endl;
+    for (int i = nspin_; i >= 0; --i)
+      cout << "     " << i << "  " << setw(12) << shenergies[i] - shenergies[0] << " E_h  =  " << setw(14) << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
+    cout << endl;
+
+    cout << "  ** Relative energies from the ab initio (relativistic configuration interaction) Hamiltonian: " << endl;
+    for (int i = nspin_; i >= 0; --i)
+      cout << "     " << i << "  " << setw(12) << ref_energy_[i] - ref_energy_[0] << " E_h  =  " << setw(14) << (ref_energy_[i] - ref_energy_[0])*au2wavenumber__ << " cm-1" << endl;
+    cout << endl;
+  } else {
+    cout << "  ** Relative energies: " << endl;
+    for (int i = nspin_; i >= 0; --i) {
+      cout << "     " << i << "  " << setw(12) << shenergies[i] - shenergies[0] << " E_h  =  " << setw(14) << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
+      assert(std::abs(shenergies[i] - shenergies[0] - ref_energy_[i] + ref_energy_[0]) < 1.0e-7);
+    }
+    cout << endl;
+  }
 
   return out;
 }
@@ -393,12 +385,11 @@ shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> i
   }
 
   /**** PRINTOUT ***/
+
   shared_ptr<ZMatrix> Dtensor_diag = out->copy();
-  //Dtensor_diag->print("D tensor");
+  Dtensor_diag->print("D tensor");
   VectorB Ddiag(3);
   Dtensor_diag->diagonalize(Ddiag);
-  for (int i = 0; i != 3; ++i)
-    cout << "Diagonalized D-tensor value " << i << " = " << Ddiag[i] << endl;
 
   // Compute Davg so that it works even if D is not traceless (which shouldn't happen on accident)
   const double Davg = 1.0 / 3.0 * (Ddiag[0] + Ddiag[1] + Ddiag[2]);
@@ -408,38 +399,22 @@ shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> i
   const array<int,3> bck = {{ 2, 0, 1 }};
   if (std::abs(Ddiag[1]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 1;
   if (std::abs(Ddiag[2]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 2;
+
+  cout << endl << "    Upon diagonalization," << endl;
+  cout << "      Dxx = " << setw(12) << Ddiag[fwd[jmax]] << endl;
+  cout << "      Dyy = " << setw(12) << Ddiag[bck[jmax]] << endl;
+  cout << "      Dzz = " << setw(12) << Ddiag[jmax] << endl << endl;
   const double Dval = Ddiag[jmax] - 0.5*(Ddiag[fwd[jmax]] + Ddiag[bck[jmax]]);
   const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
-  cout << " ** D = " << Dval << " E_h, or " << Dval * au2wavenumber__ << " cm-1" << endl;
-  cout << " ** E = " << std::abs(Eval) << " E_h, or " << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
+  cout << " ** D = " << setw(12) << Dval << " E_h = " << setw(14) << Dval * au2wavenumber__ << " cm-1" << endl;
+  cout << " ** E = " << setw(12) << std::abs(Eval) << " E_h = " << setw(14) << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
   cout << " ** E / D = " << std::abs(Eval / Dval) << endl;
-
-  if (input[0].nspin() == 2) {
-    cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
-    if (Dval > 0.0) {
-      cout << "     2  " << Dval + std::abs(Eval) << " E_h  =  " << (Dval + std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
-      cout << "     1  " << Dval - std::abs(Eval) << " E_h  =  " << (Dval - std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
-      cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
-    } else {
-      cout << "     2  " << -Dval + 0.5*std::abs(Eval) << " E_h  =  " << (-Dval + 0.5*std::abs(Eval))*au2wavenumber__ << " cm-1" << endl;
-      cout << "     1  " << std::abs(Eval) << " E_h  =  " << std::abs(Eval)*au2wavenumber__ << " cm-1" << endl;
-      cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
-    }
-  } else if (input[0].nspin() == 3) {
-    cout << "  ** Relative energies expected from diagonalized D parameters: " << endl;
-    const double energy32 = 2.0*std::sqrt(Dval*Dval + 3.0*Eval*Eval);
-    cout << "     3  " << energy32 << " E_h  =  " << energy32*au2wavenumber__ << " cm-1" << endl;
-    cout << "     2  " << energy32 << " E_h  =  " << energy32*au2wavenumber__ << " cm-1" << endl;
-    cout << "     1  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl;
-    cout << "     0  " << 0.0 << " E_h  =  " << 0.0 << " cm-1" << endl << endl;
-  }
 
   return out;
 }
 
 
 bool Pseudospin::is_t_symmetric(const ZMatrix& in, const bool hermitian, const bool t_symmetric, const double thresh) const {
-  in.print("Checking t-symmetry of this matrix; hermitian = " + to_string(hermitian) + ", t_symmetric = " + to_string(t_symmetric));
   // The matrix must be either Hermitian or skew-Hermitian
   if (hermitian) {
     assert(in.is_hermitian());

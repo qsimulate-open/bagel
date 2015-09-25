@@ -112,17 +112,19 @@ long long compute_Fkq(const vector<vector<long long>> input) {
 
 // And now the driver
 vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vector<int> ranks) const {
-  cout << "    Computing extended stevens operators for S = " << nspin_/2 << (nspin_ % 2 == 0 ? "" : " 1/2") << endl;
+  cout << "    Using extended Stevens operators for rank" << ((ranks.size() > 1) ? "s " : " ");
+  for (int i = 0; i != ranks.size(); ++i)
+    cout << ranks[i] << " ";
+  cout << endl;
   const double ss1 = nspin_ * (nspin_ + 2.0) / 4.0; // S(S+1)
 
   vector<Stevens_Operator> stevensop = {};
-  cout << fixed << setprecision(6);
 
   for (auto& k : ranks) {
 
     // Requires factorial of k
     // Above k = 12, coefficients become so large that long long fails to capture them.
-    // Potentially we could store a(k, q; m) / Fkq or something, but for now this is fine.
+    // Potentially we could tabulate a(k, q; m) / Fkq or something, but for now this is fine.
     const int kmax = std::min(fact.max(), 13);
     if (k >= kmax)
       throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(kmax - 1) + " and lower");
@@ -175,18 +177,12 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
 
       const long long Fkq = compute_Fkq(akqmi_current);
 
-      // Debug printout
-      //const double Nkk = Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0);
-      //for (int m = 0; m <= k - q; ++m)
-        //cout << "       k = " << setw(2) << k << ", q = " << setw(2) << q << ", m = " << setw(2) << m << ", alpha = " << setw(6) << setprecision(2) << alpha[q] << ", Nkk = " << setw(10) << setprecision(6) << Nkq[0]*std::sqrt(fact(2*k))*(k % 2 == 0 ? 1.0 : -1.0) << ", Nkq = " << setw(10) << Nkq[q] << ", Nk_q = " << setw(10) << Nk_q[q] << ", Nkq/Nkk = " << setw(10) << Nkq[q] / Nkk << "    akqm = " << setw(14) << setprecision(2) << akqm_current[m] << ", Fkq = " << setw(6) << Fkq << ", a(k, q; m)/Fkq = " << setw(10) << akqm_current[m] / Fkq << endl;
-
       akqm[q] = akqm_current;
       akqmi[q] = akqmi_current;
       ak_qm[q] = ak_qm_current;
 
       shared_ptr<ZMatrix> Tkq = spin_plus()->clone();
       shared_ptr<ZMatrix> Tk_q = spin_plus()->clone();
-      shared_ptr<ZMatrix> Tk_q_check = spin_plus()->clone();
       const double sign1 = (q % 2 == 0) ? 1.0 : -1.0;
 
       for (int m = 0; m <= k - q; ++m) {
@@ -203,20 +199,9 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
         const double sign2 = ((k - m) % 2 == 0) ? 1.0 : -1.0;
         const double coeff = sign1 * sign2 * Nkq[q] * akqm[q][m];
         *Tkq += (coeff * *Szm * *Spq);
-
-        /******/ // Debug code
-        shared_ptr<ZMatrix> Smq = spin_xyz(2)->clone();
-        Smq->unit();
-        for (int i = 0; i != q; ++i)
-          *Smq *= *spin_minus();
-        const double coeff2 = sign1 * Nkq[q] * akqm[q][m];
-        *Tk_q_check += (coeff2 * *Szm * *Smq);
-        /******/
       }
 
       *Tk_q = sign1 * *Tkq->transpose_conjg();
-
-      assert(((*Tk_q - *Tk_q_check).rms() < Tk_q->rms() * 1.0e-8) || (Tk_q->rms() < 1.0e-8));
 
       const double ckq = alpha[q] / (Nkq[q] * Fkq);
 
@@ -226,15 +211,7 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
       stevensop.push_back(Stevens_Operator(Ocos_kq, k, q));
       if (q != 0)
         stevensop.push_back(Stevens_Operator(Osin_kq, k, -q));
-
-      const string spinstring = to_string(nspin_ / 2) + (nspin_ % 2 == 0 ? "" : " 1/2");
-      if (Ocos_kq->rms() > 1.0e-10)
-        stevensop.rbegin()[q == 0 ? 0 : 1].print();
-      if (Osin_kq->rms() > 1.0e-10)
-        stevensop.rbegin()[0].print();
-
     }
-    cout << endl;
   }
   return stevensop;
 }
