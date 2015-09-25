@@ -40,7 +40,7 @@ class Stevens_Operator {
   protected:
     const int nspin_;
     std::shared_ptr<const ZMatrix> matrix_;
-    std::complex<double> coeff_;
+    double coeff_;
 
     // order_ = k, index_ = q
     const int order_;
@@ -52,8 +52,8 @@ class Stevens_Operator {
     int nspin() const { return nspin_; }
     std::shared_ptr<const ZMatrix> matrix() const { return matrix_; }
 
-    void set_coeff(const std::complex<double> in) { coeff_ = in; }
-    std::complex<double> coeff() const { assert(coeff_ == coeff_); return coeff_; }  // Default value is NaN; triggers assertion if coeff_ has not been computed
+    void set_coeff(const double in) { coeff_ = in; }
+    double coeff() const { assert(coeff_ == coeff_); return coeff_; }  // Default value is NaN; triggers assertion if coeff_ has not been computed
 
     int order() const { return order_; }
     int index() const { return index_; }
@@ -102,7 +102,7 @@ class Pseudospin {
     // to extract D-tensor
     std::shared_ptr<ZMatrix> compute_spin_eigegenvalues(const std::array<double, 3> rotation = {{ 0.0, 0.0, 1.0 }} ) const;
     std::vector<Stevens_Operator> extract_hamiltonian_parameters(const std::vector<Stevens_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
-    static std::shared_ptr<ZMatrix> compute_Dtensor(const std::vector<Stevens_Operator> input);
+    static std::shared_ptr<Matrix> compute_Dtensor(const std::vector<Stevens_Operator> input);
 
     // To verify that a matrix in pseudospin basis has specified time-reversal symmetry
     // The bool parameters tell us if the matrix should be symmetric or antisymmetric under Hermitian conjugation and time-reversal, respectively

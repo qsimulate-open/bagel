@@ -91,7 +91,7 @@ void Pseudospin::compute(const ZHarrison& zfci) {
 
   shared_ptr<ZMatrix> spinham_s = compute_spin_eigegenvalues(rotin);
   ESO = extract_hamiltonian_parameters(ESO, spinham_s);
-  shared_ptr<ZMatrix> dtens = compute_Dtensor(ESO);
+  shared_ptr<Matrix> dtens = compute_Dtensor(ESO);
 }
 
 
@@ -308,13 +308,15 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
     checkham->copy_block(0, 0, nspin1_, nspin1_, check_spinham_vec.element_ptr(0,0));
 
     for (int i = 0; i != nop; ++i) {
-      out[i].set_coeff(stevop_vec.element(i, 0));
+      out[i].set_coeff(std::real(stevop_vec.element(i, 0)));
+      if (std::abs(std::imag(stevop_vec.element(i, 0))) > 1.0e-8)
+        throw runtime_error("For some reason, we have obtained a complex coefficient for an extended Stevens operator...  It should be real.");
     }
   }
 
   cout << endl << "    Stevens coefficients:  " << endl << endl;
   for (int i = 0; i != out.size(); ++i)
-    cout << "    " << setw(8) << out[i].coeff_name() << " = " << out[i].coeff() << endl;
+    cout << "    " << setw(8) << out[i].coeff_name() << " = " << setw(12) << out[i].coeff() << endl;
   cout << endl;
 
   const double checkham_error = (*checkham - *spinham_s).rms();
@@ -346,9 +348,8 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
 }
 
 
-// Working with complex algebra, although it should be fully real...
-shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> input) {
-  auto out = make_shared<ZMatrix>(3, 3);
+shared_ptr<Matrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> input) {
+  auto out = make_shared<Matrix>(3, 3);
   out->zero();
 
   // Get D from second-order extended Stevens Operators
@@ -356,25 +357,23 @@ shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> i
     if (input[i].order() == 2) {
       switch (input[i].index()) {
         case  0:
-          assert(std::abs(std::imag(input[i].coeff())) < 1.0e-8);
           out->element(0, 0) -= 1.0 * input[i].coeff();
           out->element(1, 1) -= 1.0 * input[i].coeff();
           out->element(2, 2) += 2.0 * input[i].coeff();
           break;
         case -1:
           out->element(1, 2) += 0.5 * input[i].coeff();
-          out->element(2, 1) += 0.5 * std::conj(input[i].coeff());
+          out->element(2, 1) += 0.5 * input[i].coeff();
           break;
         case  1:
           out->element(2, 0) += 0.5 * input[i].coeff();
-          out->element(0, 2) += 0.5 * std::conj(input[i].coeff());
+          out->element(0, 2) += 0.5 * input[i].coeff();
           break;
         case -2:
           out->element(0, 1) += 1.0 * input[i].coeff();
-          out->element(1, 0) += 1.0 * std::conj(input[i].coeff());
+          out->element(1, 0) += 1.0 * input[i].coeff();
           break;
         case  2:
-          assert(std::abs(std::imag(input[i].coeff())) < 1.0e-8);
           out->element(0, 0) += 1.0 * input[i].coeff();
           out->element(1, 1) -= 1.0 * input[i].coeff();
           break;
@@ -386,8 +385,9 @@ shared_ptr<ZMatrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> i
 
   /**** PRINTOUT ***/
 
-  shared_ptr<ZMatrix> Dtensor_diag = out->copy();
+  shared_ptr<Matrix> Dtensor_diag = out->copy();
   Dtensor_diag->print("D tensor");
+  cout << setprecision(8);
   VectorB Ddiag(3);
   Dtensor_diag->diagonalize(Ddiag);
 
