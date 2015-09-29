@@ -104,26 +104,19 @@ void ComplexNAIBatch::compute() {
   const CSortList sort(spherical1_);
 
   // perform VRR
-  const int natom_unit = natom_ / (2 * L_ + 1);
-  assert(natom_ % (2 * L_ + 1) == 0);
   for (int xj = 0; xj != screening_size_; ++xj) {
     const int i = screening_[xj];
     const int iprim = i / natom_;
-    const int resid = i % natom_;
-    const int cell  = resid / natom_unit - L_;
-    const int iatom = resid % natom_unit;
-    double disp[3];
-    disp[0] = disp[1] = 0.0;
-    disp[2] = A_ * cell;
+    const int iatom = i % natom_;
     const int offset_iprim = iprim * asize_;
     complex<double>* current_data = &data_[offset_iprim];
 
     const complex<double>* croots = roots_ + i * rank_;
     const complex<double>* cweights = &weights_[i * rank_];
     for (int r = 0; r != rank_; ++r) {
-      r1x[r] = P_[i * 3    ] - Ax - (P_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * croots[r];
-      r1y[r] = P_[i * 3 + 1] - Ay - (P_[i * 3 + 1] - mol_->atoms(iatom)->position(1) - disp[1]) * croots[r];
-      r1z[r] = P_[i * 3 + 2] - Az - (P_[i * 3 + 2] - mol_->atoms(iatom)->position(2) - disp[2]) * croots[r];
+      r1x[r] = P_[i * 3    ] - Ax - (P_[i * 3    ] - mol_->atoms(iatom)->position(0)) * croots[r];
+      r1y[r] = P_[i * 3 + 1] - Ay - (P_[i * 3 + 1] - mol_->atoms(iatom)->position(1)) * croots[r];
+      r1z[r] = P_[i * 3 + 2] - Az - (P_[i * 3 + 2] - mol_->atoms(iatom)->position(2)) * croots[r];
       r2[r] = (1.0 - croots[r]) * 0.5 / xp_[i];
 
       workx[r] = cweights[r] * coeff_[i];

@@ -114,6 +114,8 @@ void GammaForest<DistDvec, 2>::compute() {
   }
 }
 
+namespace bagel {
+
 class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
   protected:
     shared_ptr<GammaTree<DistRASDvec>> tree_;
@@ -212,6 +214,8 @@ class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
       }
     }
 };
+
+}
 
 template <>
 void GammaForest<DistRASDvec, 2>::compute() {

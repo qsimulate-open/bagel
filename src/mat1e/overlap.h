@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_MOLECULE_OVERLAP_H
-#define __SRC_MOLECULE_OVERLAP_H
+#ifndef __SRC_MAT1E_OVERLAP_H
+#define __SRC_MAT1E_OVERLAP_H
 
 #include <src/mat1e/matrix1e.h>
 
@@ -46,7 +46,7 @@ class Overlap : public Matrix1e {
 
   public:
     Overlap() { }
-    Overlap(const std::shared_ptr<const Molecule>);
+    Overlap(std::shared_ptr<const Molecule>);
 
 };
 

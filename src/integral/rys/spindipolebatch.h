@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sohcore.h
-// Copyright (C) 2014 Toru Shiozaki
+// Filename: spindipole.h
+// Copyright (C) 2015 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,40 +23,33 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifndef __SRC_INTEGRAL_RYS_SPINDIPOLEBATCH_H
+#define __SRC_INTEGRAL_RYS_SPINDIPOLEBATCH_H
 
-#ifndef __SRC_MAT1E_SOHCORE_H
-#define __SRC_MAT1E_SOHCORE_H
-
-#include <src/util/math/zmatrix.h>
-#include <src/molecule/molecule.h>
-#include <src/mat1e/hcore.h>
+#include <src/integral/rys/coulombbatch_base.h>
 
 namespace bagel {
 
-class SOHcore : public ZMatrix {
+class SpinDipoleBatch : public CoulombBatch_Base<double> {
+
   protected:
-    std::shared_ptr<const Hcore> hcore_;
+    std::shared_ptr<const Atom> target_;
 
-    void form_sohcore();
-
-  private:
-    // serialization
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<ZMatrix>(*this) & hcore_;
-    }
+    void root_weight(const int ps) override;
 
   public:
-    SOHcore() { }
-    SOHcore(std::shared_ptr<const Molecule> geom, std::shared_ptr<const Hcore> h);
+
+    SpinDipoleBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, std::shared_ptr<const Atom> target,
+                    std::shared_ptr<StackMem> stack = nullptr);
+
+    void compute() override;
+
+    double* data(const int i) override { return data_ + i*size_block_; }
+
+    constexpr static int Nblocks() { return 6; }
 
 };
 
 }
 
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::SOHcore)
-
 #endif
-

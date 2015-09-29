@@ -32,7 +32,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Kinetic)
 
-Kinetic::Kinetic(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
+Kinetic::Kinetic(shared_ptr<const Molecule> mol) : Matrix1e(mol) {
 
   init(mol);
   fill_upper();

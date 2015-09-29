@@ -244,9 +244,11 @@ tuple<shared_ptr<ListRelDFFullT>, shared_ptr<ListRelDFFullT>, shared_ptr<ListRel
 }
 
 
-/// Data class for NEVPT2. One matrix or three matrices dependent on DataType.
+namespace bagel {
+
 template<typename DataType>
 struct NEVView;
+/// Data class for NEVPT2. One matrix or three matrices dependent on DataType.
 template<typename DataType>
 struct NEVMat {
   using MatType  = typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type;
@@ -294,6 +296,8 @@ struct NEVView {
     : data_(in), data2_(in2), data3_(in3) {
   }
 };
+
+}
 
 
 template<typename DataType>

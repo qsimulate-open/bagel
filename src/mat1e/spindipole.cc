@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sohcore.h
-// Copyright (C) 2014 Toru Shiozaki
+// Filename: spindipole.cc
+// Copyright (C) 2015 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,39 +24,30 @@
 //
 
 
-#ifndef __SRC_MAT1E_SOHCORE_H
-#define __SRC_MAT1E_SOHCORE_H
+#include <src/mat1e/spindipole.h>
+#include <src/integral/rys/spindipolebatch.h>
 
-#include <src/util/math/zmatrix.h>
-#include <src/molecule/molecule.h>
-#include <src/mat1e/hcore.h>
+using namespace std;
+using namespace bagel;
 
-namespace bagel {
+SpinDipole::SpinDipole(shared_ptr<const Molecule> mol, shared_ptr<const Atom> atom) : Matrix1eArray<6>(mol), atom_(atom) {
 
-class SOHcore : public ZMatrix {
-  protected:
-    std::shared_ptr<const Hcore> hcore_;
-
-    void form_sohcore();
-
-  private:
-    // serialization
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<ZMatrix>(*this) & hcore_;
-    }
-
-  public:
-    SOHcore() { }
-    SOHcore(std::shared_ptr<const Molecule> geom, std::shared_ptr<const Hcore> h);
-
-};
+  init(mol);
+  fill_upper();
 
 }
 
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::SOHcore)
 
-#endif
+void SpinDipole::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule>) {
 
+  // input = [b1, b0]
+  assert(input.size() == 2);
+  const int dimb1 = input[0]->nbasis();
+  const int dimb0 = input[1]->nbasis();
+  SpinDipoleBatch sd(input, atom_);
+  sd.compute();
+
+  for (int i = 0; i < Nblocks(); ++i) {
+    matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, sd.data(i));
+  }
+}

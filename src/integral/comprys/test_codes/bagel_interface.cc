@@ -39,7 +39,7 @@
 
 using namespace std;
 
-namespace ryan {
+namespace test {
 
 // Returns a vector identifying all the possible Cartesian functions with total angular momentum L
 vector<vector<int>> assign_angular (const int L) {

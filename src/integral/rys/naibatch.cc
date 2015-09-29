@@ -38,13 +38,3 @@ NAIBatch::NAIBatch(const array<shared_ptr<const Shell>,2>& _info, const shared_p
   root_weight(primsize_*natom_);
 }
 
-
-NAIBatch::NAIBatch(const array<shared_ptr<const Shell>,2>& _info, const shared_ptr<const Molecule> mol, const int L, const double A)
-  : CoulombBatch_energy (_info, mol, L, A) {
-  const double integral_thresh = PRIM_SCREEN_THRESH;
-
-  this->allocate_arrays(primsize_*natom_);
-  compute_ssss(integral_thresh);
-  root_weight(primsize_*natom_);
-}
-
