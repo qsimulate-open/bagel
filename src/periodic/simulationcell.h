@@ -28,6 +28,7 @@
 #define __BAGEL_SRC_PERIODIC_SIMULATIONCELL_H
 
 #include <src/wfn/geometry.h>
+#include <src/periodic/localexpansion.h>
 
 namespace bagel {
 
@@ -64,6 +65,7 @@ class SimulationCell { /* cubic, same or larger than primitive cell */
     std::array<double, 3> primitive_vectors(const int i) const { return primitive_vectors_[i]; }
 
     std::vector<std::shared_ptr<const ZMatrix>> multipoles() const { return multipoles_; }
+    std::vector<std::shared_ptr<const ZMatrix>> shift_multipoles(std::array<double, 3> r) const;
 
     std::array<double, 3> centre() const { return geom_->charge_center(); }
     double centre(const int i) const { return geom_->charge_center()[i]; }

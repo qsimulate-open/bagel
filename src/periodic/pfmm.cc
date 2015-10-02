@@ -83,24 +83,8 @@ void PFMM::compute_Mlm() { // rectangular scell for now
   const double pibeta = pi__ * pi__ / (beta__ * beta__);
   const int nvec = pow(2*extent_sum_+1, ndim_);
   allocate_arrays(nvec);
-  vector<array<int, 3>> vidx(nvec);
-
-  int cnt = 0;
-  if (ndim_ == 3) {
-    for (int n3 = -extent_sum_; n3 <= extent_sum_; ++n3)
-      for (int n2 = -extent_sum_; n2 <= extent_sum_; ++n2)
-        for (int n1 = -extent_sum_; n1 <= extent_sum_; ++n1, ++cnt)
-          vidx[cnt] = {{n1, n2, n3}};
-  } else if (ndim_ == 2) {
-    for (int n2 = -extent_sum_; n2 <= extent_sum_; ++n2)
-      for (int n1 = -extent_sum_; n1 <= extent_sum_; ++n1, ++cnt)
-      vidx[cnt] = {{n1, n2, 0}};
-  } else if (ndim_ == 1) {
-    for (int n1 = -extent_sum_; n1 <= extent_sum_; ++n1, ++cnt)
-      vidx[cnt] = {{n1, 0, 0}};
-  }
-  assert(cnt == nvec);
-
+  vector<array<int, 3>> vidx = generate_vidx(extent_sum_);
+  assert(vidx.size() == nvec);
   std::sort(vidx.begin(), vidx.end(), sort_vector); // sort to sum spherically
 
   vector<array<double, 3>> primvecs(ndim_);
@@ -289,6 +273,31 @@ void PFMM::allocate_arrays(const size_t ps) {
 
 void PFMM::compute_Slm() {
 
+  // sums over L and m have extent ws_ for now
+  const int nvec = pow(2*ws_+1, ndim_);
+  vector<array<int, 3>> vidx = generate_vidx(ws_);
+  assert(vidx.size() == nvec);
+
+  vector<array<double, 3>> primvecs(3);
+  for (int i = 0; i != ndim_; ++i)
+    primvecs[i] = scell_->primitive_vectors(i);
+  for (int i = ndim_; i != 3 - ndim_; ++i)
+    primvecs[i] = {{0.0, 0.0, 0.0}};
+
+  // translate Olm(m) and sum over m (disp here) on the fly
+  vector<shared_ptr<ZMatrix>> olm(osize_);
+  for (int ivec = 0; ivec != nvec; ++ivec) {
+    array<int, 3> idx = vidx[ivec];
+    array<double, 3> disp;
+    disp[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
+    disp[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
+    disp[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+    vector<shared_ptr<const ZMatrix>> tmp = scell_->shift_multipoles(disp);
+    assert(tmp.size() == osize_);
+    for (int i = 0; i != osize_; ++i)
+      *olm[i] += *tmp[i];
+  }
+
   slm_.resize(osize_);
   const size_t nbasis1 = scell_->multipoles().front()->ndim();
   const size_t nbasis0 = scell_->multipoles().front()->mdim();
@@ -304,7 +313,7 @@ void PFMM::compute_Slm() {
           const int a = l + j;
           const int b = m + k - l - j;
           const int im = a * a + m + k;
-          zaxpy_(nbasis0 * nbasis1, mlm_[im], scell_->multipoles().at(im2)->data(), 1, local.data(), 1);
+          zaxpy_(nbasis0 * nbasis1, mlm_[im], olm.at(im2)->data(), 1, local.data(), 1);
         }
       }
       slm_[im1] = make_shared<const ZMatrix>(local);
@@ -315,7 +324,27 @@ void PFMM::compute_Slm() {
 
 
 shared_ptr<const ZMatrix> PFMM::compute_far_field(shared_ptr<const PData> density) const {
-  shared_ptr<const ZMatrix> ffden = density->pdata().back();
+
+  size_t iblock = -1;
+  switch(ndim_) {
+    case 1 :
+      {
+        iblock = ws_;
+        break;
+      }
+    case 2 :
+      {
+        iblock = ws_ + (2*ws_+1) * ws_;
+        break;
+      }
+    case 3 :
+      {
+        iblock = ws_ + (2*ws_+1) * (ws_ + (2*ws_+1) * ws_);
+        break;
+      }
+  }
+  assert(iblock >= 0);
+  shared_ptr<const ZMatrix> ffden = density->pdata(iblock);
   const size_t nbas = scell_->nbasis();
   assert(ffden->ndim() == ffden->mdim() && ffden->ndim() == nbas);
   auto out = make_shared<ZMatrix>(nbas, nbas);
@@ -345,23 +374,8 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
 
   Timer time;
   const int nvec = pow(2*ws_+1, ndim_);
-  vector<array<int, 3>> vidx(nvec);
-
-  int cnt = 0;
-  if (ndim_ == 3) {
-    for (int n3 = -ws_; n3 <= ws_; ++n3)
-      for (int n2 = -ws_; n2 <= ws_; ++n2)
-        for (int n1 = -ws_; n1 <= ws_; ++n1, ++cnt)
-          vidx[cnt] = {{n1, n2, n3}};
-  } else if (ndim_ == 2) {
-    for (int n2 = -ws_; n2 <= ws_; ++n2)
-      for (int n1 = -ws_; n1 <= ws_; ++n1, ++cnt)
-      vidx[cnt] = {{n1, n2, 0}};
-  } else if (ndim_ == 1) {
-    for (int n1 = -ws_; n1 <= ws_; ++n1, ++cnt)
-      vidx[cnt] = {{n1, 0, 0}};
-  }
-  assert(cnt == nvec);
+  vector<array<int, 3>> vidx = generate_vidx(ws_);
+  assert(vidx.size() == nvec);
 
   vector<array<double, 3>> primvecs(3);
   for (int i = 0; i != ndim_; ++i)
@@ -371,6 +385,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
 
   // concatenate all cells within ws into one supercell
   vector<shared_ptr<const Geometry>> geoms;
+  vector<shared_ptr<ZMatrix>> olm(osize_);
   for (int ivec = 0; ivec != nvec; ++ivec) {
     array<int, 3> idx = vidx[ivec];
     array<double, 3> disp;
@@ -379,6 +394,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
     disp[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
     geoms.push_back(make_shared<const Geometry>(*scell_->geom(), disp));
   }
+
   auto supergeom = make_shared<const Geometry>(geoms, true/*nodf*/);
   time.tick_print("  Construct a supercell for crystal near-field");
 
@@ -427,6 +443,31 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   }
 
   return make_shared<const PData>(out);
+}
+
+
+vector<array<int, 3>> PFMM::generate_vidx(const int n) const {
+
+  const int nvec = pow(2*n+1, ndim_);
+  vector<array<int, 3>> vidx(nvec);
+
+  int cnt = 0;
+  if (ndim_ == 3) {
+    for (int n3 = -n; n3 <= n; ++n3)
+      for (int n2 = -n; n2 <= n; ++n2)
+        for (int n1 = -n; n1 <= n; ++n1, ++cnt)
+          vidx[cnt] = {{n1, n2, n3}};
+  } else if (ndim_ == 2) {
+    for (int n2 = -n; n2 <= n; ++n2)
+      for (int n1 = -n; n1 <= n; ++n1, ++cnt)
+      vidx[cnt] = {{n1, n2, 0}};
+  } else if (ndim_ == 1) {
+    for (int n1 = -n; n1 <= n; ++n1, ++cnt)
+      vidx[cnt] = {{n1, 0, 0}};
+  }
+  assert(cnt == nvec);
+
+  return vidx;
 }
 
 

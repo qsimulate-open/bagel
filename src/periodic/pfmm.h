@@ -74,6 +74,7 @@ class PFMM {
     std::shared_ptr<StackMem> stack_;
     size_t size_allocated_;
     double* buff_;
+    std::vector<std::array<int, 3>> generate_vidx(const int n) const;
     void compute_Mlm();
     void root_weight(const int l, const int size);
     void allocate_arrays(const size_t ps);

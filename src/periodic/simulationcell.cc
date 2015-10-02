@@ -128,3 +128,12 @@ void SimulationCell::compute_multipoles() {
   for (int i = 0; i != nmultipole; ++i)
     multipoles_[i] = multipoles[i];
 }
+
+
+vector<shared_ptr<const ZMatrix>> SimulationCell::shift_multipoles(array<double, 3> r) const {
+
+  LocalExpansion shift(r, multipoles_, lmax_);
+  vector<shared_ptr<const ZMatrix>> out = shift.compute_shifted_multipoles();
+
+  return out;
+}
