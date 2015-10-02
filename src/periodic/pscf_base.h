@@ -42,6 +42,7 @@ class PSCF_base : public Method {
 
     std::shared_ptr<const Lattice> lattice_;
     std::shared_ptr<const PData> ktildex_;
+    std::shared_ptr<const POverlap> overlap_;
     std::shared_ptr<const PData> koverlap_;
     std::shared_ptr<const PHcore> hcore_;
     std::shared_ptr<const PCoeff> coeff_;

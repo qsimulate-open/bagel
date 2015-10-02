@@ -58,8 +58,8 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
   for (auto& eigblock : eig_) eigblock = make_shared<VectorB>(geom->nbasis());
 
   restart_ = idata_->get<bool>("restart", false);
-  auto overlap = make_shared<const POverlap>(lattice_);
-  koverlap_ = overlap->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+  overlap_ = make_shared<const POverlap>(lattice_);
+  koverlap_ = overlap_->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
   pscf.tick_print("Periodic overlap matrix");
   hcore_ = make_shared<const PHcore>(lattice_);
   pscf.tick_print("Periodic hcore matrix");

@@ -71,6 +71,30 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   ft2_overlap->print("I(IFT)-Overlap", 100);
 #endif
 /**********************************************************************/
+#if 0
+  cout << "DO FMM = " << dofmm_ << endl;
+
+  vector<array<double, 3>> primvecs(3);
+  primvecs[0] = {{1.0, 0.0, 0.0}};
+  primvecs[1] = {{0.0, 1.0, 0.0}};
+  primvecs[2] = {{0.0, 0.0, 1.0}};
+
+  vector<shared_ptr<const Atom>> atoms = geom->atoms();
+  shared_ptr<const Geometry> newgeom = geom->periodic(atoms);
+  auto scell = make_shared<const SimulationCell>(newgeom, primvecs);
+  PFMM test(scell);
+  for (int l = 0; l < test.max_rank(); ++l) {
+    for (int m = 0; m <= l; ++m) { // Mlm = -Ml-m
+      const int imul = l * l + m + l;
+      const double mlm = (test.mlm(imul)).real();
+//      if (abs(mlm) > 1e-8)
+//        cout << "l = " << l << "  m = " << m << "  mlm = " << setw(20) << setprecision(14) << mlm << endl;
+      if (l % 2 == 0 && m % 4 == 0)
+        cout << l << "   " << m << "  " << setw(20) << setprecision(14) << mlm << endl;
+    }
+  }
+#endif
+
 
 }
 
@@ -141,13 +165,12 @@ void PSCF::compute() {
 
     complex<double> energy;
     double charge = 0.0;
-    shared_ptr<const PData> overlap = koverlap_->ift(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
     for (int i = 0; i != lattice_->num_lattice_vectors(); ++i) {
       energy += (*((*fock)(i)) * *((*pdensity)(i))).trace();
       assert(energy.imag() < 1e-8);
       for (int j = 0; j != blocksize; ++j)
         for (int k = 0; k != blocksize; ++k)
-          charge += ((*overlap)(i)->element(j, k) * (*pdensity)(i)->element(j, k)).real();
+          charge += ((*overlap_)(i)->element(j, k) * (*pdensity)(i)->element(j, k)).real();
     }
     cout << "SP = " << setprecision(1) << charge << "       #ele = " << lattice_->nele();
     energy_ = energy.real() + lattice_->nuclear_repulsion() + fock->correction();
