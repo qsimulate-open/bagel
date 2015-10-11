@@ -207,23 +207,6 @@ class Tensor_ {
     void print5(std::string label, const double thresh = 5.0e-2) const;
     void print6(std::string label, const double thresh = 5.0e-2) const;
     void print8(std::string label, const double thresh = 5.0e-2) const;
-
-    template<unsigned int N>
-    typename TiledArray::Array<DataType, N>::value_type make_tile(typename TiledArray::Array<DataType, N>::range_type& range) {
-      typename TiledArray::Array<DataType, N>::value_type tile(range);
-      std::fill(tile.begin(), tile.end(), 0.0);
-
-      return tile;
-    }
-
-    template<unsigned int N>
-    void init_array(TiledArray::Array<DataType, N>& x) {
-      for(typename TiledArray::Array<DataType, N>::iterator it = x.begin(); it != x.end(); ++it) {
-        madness::Future<typename TiledArray::Array<DataType, N>::value_type> tile =
-          x.get_world().taskq.add(& make_tile, x.trange().make_tile_range(it.ordinal()), 0.0);
-        *it = tile;
-      }
-    }
 };
 
 extern template class Tensor_<double>;
