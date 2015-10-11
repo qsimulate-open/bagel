@@ -36,6 +36,8 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
+#define LOCAL_DEBUG
+
 Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
@@ -45,8 +47,10 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 
   if (method == "caspt2") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
+#ifndef LOCAL_DEBUG
   } else if (method == "mrci") {
     algo_ = make_shared<MRCI::MRCI>(info);
+#endif
   } else {
 #else
   {
@@ -85,6 +89,7 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
 #ifdef COMPILE_SMITH
+#ifndef LOCAL_DEBUG
   // make a smith_info class
   auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
 
@@ -93,6 +98,9 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
   } else if (method == "caspt2") {
     algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
   } else {
+#else
+  {
+#endif
 #else
   {
 #endif

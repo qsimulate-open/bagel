@@ -40,23 +40,12 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   static_assert(is_same<DataType,double>::value or is_same<DataType,complex<double>>::value,
                 "illegal DataType for SpinFreeMethod");
 
-  int czero = 0;
-  char** cnull;
-  madness::World& world = madness::initialize(czero, cnull); 
-  
-#if 0
-  std::vector<std::size_t> tile_boundaries;
-  for(std::size_t i = 0; i <= IndexRange::nblock(); i += IndexRange::nbl()) //IndexRange is not a namespace!
-    tile_boundaries.push_back(i); 
-
-  std::vector<TiledArray::TiledRange1> ranges(rank(), TiledArray::TiledRange1(tile_boundaries.begin(), tile_boundaries.end()));
-  TiledArray::TiledRange trange(ranges.begin(), ranges.end()); 
-  TiledArray::Array<DataType, rank()> TILEDARRAY (world, trange); 
-  init_array(TILEDARRAY); 
-    
-  if (world.rank () == 0)
-    cout << "Tiled Array = \n" << TILEDARRAY << "\n";
-#endif
+  { // initializing madness world
+    assert(!madness::initialized());
+    int czero = 0;
+    char** cnull;
+    madness::initialize(czero, cnull);
+  }
 
   Timer timer;
   const int max = info_->maxtile();
@@ -97,6 +86,11 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   {
     MOFock<DataType> fock(info_, {all_, all_});
     f1_ = fock.tensor();
+auto f1ta = f1_->template tiledarray<2>(madness::World::get_default());
+cout << "printing out" << endl;
+cout << *f1ta << endl;
+cout << "..." << endl;
+f1_->print2("f1");
     h1_ = fock.h1();
     core_energy_ = fock.core_energy();
     // canonical orbitals within closed and virtual subspaces

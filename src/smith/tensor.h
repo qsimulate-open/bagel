@@ -61,7 +61,8 @@ template <typename DataType>
 class Tensor_ {
   protected:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
-  //protected:
+
+  protected:
     std::vector<IndexRange> range_;
     std::shared_ptr<Storage<DataType>> data_;
     int rank_;
@@ -74,7 +75,7 @@ class Tensor_ {
 
 #if 0
    template<unsigned int N>
-   Tensor_(std::shared_ptr<TA::Array<DataType, N>> o) : Tensor_(get_indexranges(o)) { // delegate constuctor 
+   Tensor_(std::shared_ptr<TA::Array<DataType, N>> o) : Tensor_(get_indexranges(o)) { // delegate constuctor
       // copy the elements from o to data
     }
 #endif
@@ -82,6 +83,46 @@ class Tensor_ {
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
       *data_ = *(o.data_);
       return *this;
+    }
+
+    // Debug function to return TiledArray Tensor from this
+    template<int N>
+    std::shared_ptr<TiledArray::Array<DataType, N>> tiledarray(madness::World& world) const {
+      assert(range_.size() == N);
+      std::vector<TiledArray::TiledRange1> ranges;
+      std::vector<std::map<size_t,size_t>> keymap;
+      for (auto& i : range_) {
+        std::vector<size_t> tile_boundaries;
+        std::map<size_t,size_t> key;
+        for (auto& j : i) {
+          tile_boundaries.push_back(j.offset());
+          key.emplace(j.offset(), j.key());
+        }
+        tile_boundaries.push_back(i.back().offset()+i.back().size());
+        ranges.emplace_back(tile_boundaries.begin(), tile_boundaries.end());
+        keymap.push_back(key);
+      }
+      TiledArray::TiledRange trange(ranges.begin(), ranges.end());
+      auto out = std::make_shared<TiledArray::Array<DataType, N>>(world, trange);
+
+      for (auto it = out->begin(); it != out->end(); ++it) {
+        const TiledArray::Range range = out->trange().make_tile_range(it.ordinal());
+        typename TiledArray::Array<DataType,N>::value_type tile(range);
+        auto lo = range.lobound();
+        assert(lo.size() == N);
+        std::vector<size_t> seed;
+        int index = 0;
+        for (auto& i : lo)
+          seed.push_back(keymap[index++].at(i));
+        // pull out the tile
+        std::unique_ptr<DataType[]> data = get_block(generate_hash_key(seed));
+        // copy
+        for (size_t i = 0; i != tile.size(); ++i)
+          tile[i] = data[i];
+        *it = tile;
+      }
+
+      return out;
     }
 
     std::shared_ptr<Tensor_<DataType>> clone() const {
@@ -171,7 +212,7 @@ class Tensor_ {
     typename TiledArray::Array<DataType, N>::value_type make_tile(typename TiledArray::Array<DataType, N>::range_type& range) {
       typename TiledArray::Array<DataType, N>::value_type tile(range);
       std::fill(tile.begin(), tile.end(), 0.0);
-      
+
       return tile;
     }
 
