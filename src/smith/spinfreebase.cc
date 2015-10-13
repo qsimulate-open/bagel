@@ -86,11 +86,8 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   {
     MOFock<DataType> fock(info_, {all_, all_});
     f1_ = fock.tensor();
-auto f1ta = f1_->template tiledarray<2>(madness::World::get_default());
-cout << "printing out" << endl;
-cout << *f1ta << endl;
-cout << "..." << endl;
-f1_->print2("f1");
+auto f1ta = f1_->template tiledarray<2>();
+f1_ = make_shared<Tensor_<DataType>>(f1ta, std::vector<IndexRange>{all_, all_});
     h1_ = fock.h1();
     core_energy_ = fock.core_energy();
     // canonical orbitals within closed and virtual subspaces
@@ -109,6 +106,8 @@ f1_->print2("f1");
     }
     K2ext<DataType> v2k(info_, coeff_, {occ, virt, occ, virt});
     v2_ = v2k.tensor();
+auto v2ta = v2_->template tiledarray<4>();
+v2_ = make_shared<Tensor_<DataType>>(v2ta, std::vector<IndexRange>{occ, virt, occ, virt});
   }
   timer.tick_print("MO integral evaluation");
 

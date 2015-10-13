@@ -48,15 +48,6 @@ namespace bagel {
 namespace SMITH {
 
 
-#if 0
-template<typename DataType, int N>
-std::vector<IndexRange> get_indexranges(std::shared_ptr<TA::Array<DataType, N>> o) {
-   std::vector<IndexRange> out;
-   //   ... find a way to construct vector<IndexRange> from o (input)...
-   return out;
-}
-#endif
-
 template <typename DataType>
 class Tensor_ {
   protected:
@@ -73,12 +64,45 @@ class Tensor_ {
   public:
     Tensor_(std::vector<IndexRange> in, const bool kramers = false);
 
-#if 0
-   template<unsigned int N>
-   Tensor_(std::shared_ptr<TA::Array<DataType, N>> o) : Tensor_(get_indexranges(o)) { // delegate constuctor
-      // copy the elements from o to data
+    template<unsigned int N>
+    Tensor_(std::shared_ptr<TiledArray::Array<DataType, N>> o, const std::vector<IndexRange>& inrange) : Tensor_(inrange) { // delegate constuctor
+      std::vector<TiledArray::TiledRange1> range = o->trange().data();
+      // consistency check
+      assert(range.size() == inrange.size());
+      auto iter = inrange.begin();
+      for (auto it = range.rbegin(); it != range.rend(); ++it, ++iter) {
+        // TODO in principle one could avoid passing IndexRange around (i.e., reconstruct).
+        auto c = iter->begin();
+        for (auto& i : *it) {
+          assert(i.first == c->offset());
+          assert(i.second-i.first == c->size());
+          ++c;
+        }
+      }
+      // loop over tiles
+      for (auto it = o->begin(); it != o->end(); ++it) {
+        // first get range
+        const TiledArray::Range range = o->trange().make_tile_range(it.ordinal());
+        auto lo = range.lobound();
+        size_t cnt = 0;
+        std::vector<Index> indices;
+        for (auto i = lo.rbegin(); i != lo.rend(); ++i, ++cnt) {
+          Index ind;
+          for (auto& index : inrange[cnt])
+            if (index.offset() == *i) {
+              ind = index;
+              break;
+            }
+          assert(ind.size());
+          indices.push_back(ind);
+        }
+        const typename TiledArray::Array<DataType,N>::value_type& tile = *it;
+        std::unique_ptr<DataType[]> data(new DataType[tile.size()]);
+        for (size_t i = 0; i != tile.size(); ++i)
+          data[i] = tile[i];
+        this->put_block(data, indices);
+      }
     }
-#endif
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
       *data_ = *(o.data_);
@@ -87,33 +111,36 @@ class Tensor_ {
 
     // Debug function to return TiledArray Tensor from this
     template<int N>
-    std::shared_ptr<TiledArray::Array<DataType, N>> tiledarray(madness::World& world) const {
+    std::shared_ptr<TiledArray::Array<DataType, N>> tiledarray() const {
       assert(range_.size() == N);
       std::vector<TiledArray::TiledRange1> ranges;
       std::vector<std::map<size_t,size_t>> keymap;
-      for (auto& i : range_) {
+      for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
         std::vector<size_t> tile_boundaries;
         std::map<size_t,size_t> key;
-        for (auto& j : i) {
+        for (auto& j : *it) {
           tile_boundaries.push_back(j.offset());
           key.emplace(j.offset(), j.key());
         }
-        tile_boundaries.push_back(i.back().offset()+i.back().size());
+        tile_boundaries.push_back(it->back().offset()+it->back().size());
         ranges.emplace_back(tile_boundaries.begin(), tile_boundaries.end());
         keymap.push_back(key);
       }
       TiledArray::TiledRange trange(ranges.begin(), ranges.end());
-      auto out = std::make_shared<TiledArray::Array<DataType, N>>(world, trange);
+      auto out = std::make_shared<TiledArray::Array<DataType, N>>(madness::World::get_default(), trange);
 
       for (auto it = out->begin(); it != out->end(); ++it) {
         const TiledArray::Range range = out->trange().make_tile_range(it.ordinal());
         typename TiledArray::Array<DataType,N>::value_type tile(range);
         auto lo = range.lobound();
         assert(lo.size() == N);
-        std::vector<size_t> seed;
-        int index = 0;
-        for (auto& i : lo)
-          seed.push_back(keymap[index++].at(i));
+        std::vector<size_t> seed(lo.size());
+        {
+          auto iter = seed.rbegin();
+          auto key = keymap.begin();
+          for (auto jt = lo.begin(); jt != lo.end(); ++jt, ++key, ++iter)
+            *iter = key->at(*jt);
+        }
         // pull out the tile
         std::unique_ptr<DataType[]> data = get_block(generate_hash_key(seed));
         // copy

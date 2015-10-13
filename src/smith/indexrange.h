@@ -46,7 +46,7 @@ class Index {
     size_t key_;
   public:
     Index(const size_t& o, const size_t& o2, const size_t& s, const size_t& i) : offset_(o), offset2_(o2), size_(s), key_(i) {}
-    Index() {}
+    Index() : offset_(0), offset2_(0), size_(0), key_(0) {}
     ~Index() {}
     size_t offset() const { return offset_; }
     size_t size() const { return size_; }
