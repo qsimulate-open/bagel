@@ -413,43 +413,46 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   const size_t nbas = nvec * scell_->nbasis();
   auto superden = make_shared<Matrix>(nbas, nbas);
   int offset = 0;
+  int blk0 = -1;
   for (int i = 0; i != nvec; ++i, offset += scell_->nbasis()) {
     array<int, 3> idx = vidx[i];
-    int block = -1;
     switch(ndim_) {
       case 1 :
         {
-          block = idx[0] + ws_;
+          blk0  = ws_;
           break;
         }
       case 2 :
         {
-          block = idx[0] + ws_ + (2*ws_+1) * (idx[1] + ws_);
+          blk0  = ws_ + (2*ws_+1) * ws_;
           break;
         }
       case 3 :
         {
-          block = idx[0] + ws_ + (2*ws_+1) * ((idx[1] + ws_) + (2*ws_+1) * (idx[2] + ws_));
+          blk0  = ws_ + (2*ws_+1) * (ws_ + (2*ws_+1) * ws_);
           break;
         }
     }
-    assert (block >= 0);
-    superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(block)->get_real_part());
+    assert (blk0 >=0);
+    superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(i)->get_real_part());
+    superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(i)->get_real_part());
   }
+ // density->print_real_part("Density");
+ // superden->print("density", 40);
   time.tick_print("  Construct superdensity");
 
-  // construct a tree from the super-geometry
+  // construct a tree from the super-geometry, ws for FMM is 2 by default
   Tree fmm_tree(supergeom, max_height_, do_contract_);
   time.tick_print("  Construct tree");
   const string auxfile = scell_->geom()->auxfile();
   fmm_tree.fmm(lmax_, superden, dodf_, auxfile);
-  shared_ptr<const ZMatrix> coulomb = fmm_tree.coulomb(); // should be block-diagonal
+  shared_ptr<const ZMatrix> coulomb = fmm_tree.coulomb();
   time.tick_print("  Compute Coulomb matrix");
 
   vector<shared_ptr<const ZMatrix>> out(nvec);
   offset = 0;
   for (int i = 0; i != nvec; ++i, offset += scell_->nbasis()) {
-    auto tmp = coulomb->get_submatrix(offset, offset, scell_->nbasis(), scell_->nbasis());
+    auto tmp = coulomb->get_submatrix(blk0*scell_->nbasis(), offset, scell_->nbasis(), scell_->nbasis());
     out[i] = make_shared<const ZMatrix>(*tmp);
   }
 
