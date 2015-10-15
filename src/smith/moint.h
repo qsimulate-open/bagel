@@ -76,8 +76,8 @@ class MOFock {
     std::shared_ptr<const SMITH_Info<DataType>> info_;
     std::shared_ptr<const MatType> coeff_;
     std::vector<IndexRange> blocks_;
-    std::shared_ptr<Tensor_<DataType>> data_;
-    std::shared_ptr<Tensor_<DataType>> h1_;
+    std::shared_ptr<TATensor<DataType,2>> data_;
+    std::shared_ptr<TATensor<DataType,2>> h1_;
 
     double core_energy_;
 
@@ -87,9 +87,9 @@ class MOFock {
     MOFock(std::shared_ptr<const SMITH_Info<DataType>> r, const std::vector<IndexRange>& b);
 
     // fock operator
-    std::shared_ptr<Tensor_<DataType>> tensor() { return data_; }
+    std::shared_ptr<TATensor<DataType,2>> tensor() { return data_; }
     // core Fock operator minus diagonal part of the two-body integrals
-    std::shared_ptr<Tensor_<DataType>> h1() { return h1_; }
+    std::shared_ptr<TATensor<DataType,2>> h1() { return h1_; }
 
     std::shared_ptr<const MatType> coeff() const { return coeff_; }
     double core_energy() const { return core_energy_; }

@@ -202,8 +202,8 @@ template<typename DataType>
 MOFock<DataType>::MOFock(shared_ptr<const SMITH_Info<DataType>> r, const vector<IndexRange>& b) : info_(r), coeff_(info_->coeff()), blocks_(b) {
   assert(b.size() == 2 && b[0] == b[1]);
 
-  data_  = make_shared<Tensor_<DataType>>(blocks_);
-  h1_    = make_shared<Tensor_<DataType>>(blocks_);
+  data_  = make_shared<TATensor<DataType,2>>(blocks_);
+  h1_    = make_shared<TATensor<DataType,2>>(blocks_);
   init();
 }
 
@@ -284,8 +284,8 @@ void MOFock<complex<double>>::init() {
   if (!f->is_hermitian()) throw logic_error("Fock is not Hermitian");
   if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
 
-  fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0}, blocks_);
-  fill_block<2,complex<double>>(h1_,  h1->get_conjg(), {0,0}, blocks_);
+  fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0});
+  fill_block<2,complex<double>>(h1_,  h1->get_conjg(), {0,0});
 }
 
 template<>
@@ -354,8 +354,8 @@ void MOFock<double>::init() {
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
 
-  fill_block<2,double>(data_,  f, {0,0}, blocks_);
-  fill_block<2,double>(h1_,   h1, {0,0}, blocks_);
+  fill_block<2,double>(data_,  f, {0,0});
+  fill_block<2,double>(h1_,   h1, {0,0});
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

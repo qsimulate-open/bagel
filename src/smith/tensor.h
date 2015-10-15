@@ -42,7 +42,7 @@
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>
-#include <tiledarray.h>
+#include <src/smith/tatensor.h>
 
 namespace bagel {
 namespace SMITH {
@@ -64,21 +64,9 @@ class Tensor_ {
   public:
     Tensor_(std::vector<IndexRange> in, const bool kramers = false);
 
-    template<unsigned int N>
-    Tensor_(std::shared_ptr<TiledArray::Array<DataType, N>> o, const std::vector<IndexRange>& inrange) : Tensor_(inrange) { // delegate constuctor
-      std::vector<TiledArray::TiledRange1> range = o->trange().data();
-      // consistency check
-      assert(range.size() == inrange.size());
-      auto iter = inrange.begin();
-      for (auto it = range.rbegin(); it != range.rend(); ++it, ++iter) {
-        // TODO in principle one could avoid passing IndexRange around (i.e., reconstruct).
-        auto c = iter->begin();
-        for (auto& i : *it) {
-          assert(i.first == c->offset());
-          assert(i.second-i.first == c->size());
-          ++c;
-        }
-      }
+    template<typename D, int N, class = typename std::enable_if<std::is_same<D,DataType>::value>::type>
+    Tensor_(const TATensor<D,N>& tao) : Tensor_(tao.indexrange()) { // delegate constuctor
+      auto o = tao.data();
       // loop over tiles
       for (auto it = o->begin(); it != o->end(); ++it) {
         // first get range
@@ -88,7 +76,7 @@ class Tensor_ {
         std::vector<Index> indices;
         for (auto i = lo.rbegin(); i != lo.rend(); ++i, ++cnt) {
           Index ind;
-          for (auto& index : inrange[cnt])
+          for (auto& index : range_[cnt])
             if (index.offset() == *i) {
               ind = index;
               break;
@@ -98,8 +86,7 @@ class Tensor_ {
         }
         const typename TiledArray::Array<DataType,N>::value_type& tile = *it;
         std::unique_ptr<DataType[]> data(new DataType[tile.size()]);
-        for (size_t i = 0; i != tile.size(); ++i)
-          data[i] = tile[i];
+        std::copy_n(&(tile[0]), tile.size(), data.get());
         this->put_block(data, indices);
       }
     }
@@ -111,23 +98,17 @@ class Tensor_ {
 
     // Debug function to return TiledArray Tensor from this
     template<int N>
-    std::shared_ptr<TiledArray::Array<DataType, N>> tiledarray() const {
+    std::shared_ptr<TATensor<DataType,N>> tiledarray() const {
       assert(range_.size() == N);
-      std::vector<TiledArray::TiledRange1> ranges;
       std::vector<std::map<size_t,size_t>> keymap;
       for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
-        std::vector<size_t> tile_boundaries;
         std::map<size_t,size_t> key;
-        for (auto& j : *it) {
-          tile_boundaries.push_back(j.offset());
+        for (auto& j : *it)
           key.emplace(j.offset(), j.key());
-        }
-        tile_boundaries.push_back(it->back().offset()+it->back().size());
-        ranges.emplace_back(tile_boundaries.begin(), tile_boundaries.end());
         keymap.push_back(key);
       }
-      TiledArray::TiledRange trange(ranges.begin(), ranges.end());
-      auto out = std::make_shared<TiledArray::Array<DataType, N>>(madness::World::get_default(), trange);
+      auto taout = std::make_shared<TATensor<DataType,N>>(range_);
+      auto out = taout->data();
 
       for (auto it = out->begin(); it != out->end(); ++it) {
         const TiledArray::Range range = out->trange().make_tile_range(it.ordinal());
@@ -144,12 +125,11 @@ class Tensor_ {
         // pull out the tile
         std::unique_ptr<DataType[]> data = get_block(generate_hash_key(seed));
         // copy
-        for (size_t i = 0; i != tile.size(); ++i)
-          tile[i] = data[i];
+        std::copy_n(data.get(), tile.size(), &(tile[0]));
         *it = tile;
       }
 
-      return out;
+      return taout;
     }
 
     std::shared_ptr<Tensor_<DataType>> clone() const {
