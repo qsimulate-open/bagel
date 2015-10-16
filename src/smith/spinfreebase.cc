@@ -103,9 +103,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
       virt = all_;
     }
     K2ext<DataType> v2k(info_, coeff_, {occ, virt, occ, virt});
-    v2_ = v2k.tensor();
-shared_ptr<TATensor<DataType,4>> v2ta = v2_->template tiledarray<4>();
-v2_ = make_shared<Tensor_<DataType>>(*v2ta);
+    v2_ = make_shared<Tensor_<DataType>>(*v2k.tensor());
   }
   timer.tick_print("MO integral evaluation");
 

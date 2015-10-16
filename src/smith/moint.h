@@ -52,15 +52,14 @@ class K2ext {
     std::shared_ptr<const SMITH_Info<DataType>> info_;
     std::shared_ptr<const MatType> coeff_;
     std::vector<IndexRange> blocks_;
-    std::shared_ptr<Tensor_<DataType>> data_;
+    std::shared_ptr<TATensor<DataType,4>> data_;
 
-    // some handwritten drivers
     void init() { assert(false); }
 
   public:
     K2ext(std::shared_ptr<const SMITH_Info<DataType>> r, std::shared_ptr<const MatType> c, const std::vector<IndexRange>& b);
 
-    std::shared_ptr<Tensor_<DataType>> tensor() { return data_; }
+    std::shared_ptr<TATensor<DataType,4>> tensor() { return data_; }
 };
 template<> void K2ext<double>::init();
 template<> void K2ext<std::complex<double>>::init();

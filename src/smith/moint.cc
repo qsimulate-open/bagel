@@ -46,7 +46,7 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
   // so far MOInt can be called for 2-external K integral and all-internals.
   if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
     throw logic_error("MOInt called with wrong blocks");
-  data_ = make_shared<Tensor_<DataType>>(blocks_, is_same<DataType,complex<double>>::value);
+  data_ = make_shared<TATensor<DataType,4>>(blocks_, is_same<DataType,complex<double>>::value);
   init();
 }
 
@@ -54,6 +54,8 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
 template<>
 void K2ext<complex<double>>::init() {
 
+// broken ... waiting to hear symmetry support in TiledArray
+#if 0
   // bits to store
   const bool braket = blocks_[0] == blocks_[1] && blocks_[2] == blocks_[3];
   const vector<vector<int>> cblocks = braket ?
@@ -135,6 +137,7 @@ void K2ext<complex<double>>::init() {
     perm.emplace(vector<int>{3,2,1,0}, make_pair(1.0, true));
   }
   data_->set_perm(perm);
+#endif
 }
 
 
@@ -179,18 +182,29 @@ void K2ext<double>::init() {
           shared_ptr<const DFFullDist> df23 = iter23->second;
 
           // contract
-          // TODO form_4index function now generates global 4 index tensor. This should be localized.
           shared_ptr<Matrix> tmp = df01->form_4index(df23, 1.0);
-          unique_ptr<double[]> target(new double[tmp->size()]);
-          copy_n(tmp->data(), tmp->size(), target.get()); // unnecessary copy
 
-          // move in place
-          if (hashkey23 != hashkey01) {
-            unique_ptr<double[]> target2(new double[i0.size()*i1.size()*i2.size()*i3.size()]);
-            blas::transpose(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
-            data_->put_block(target2, i2, i3, i0, i1);
+          {
+            const std::vector<Index> index = {i0, i1, i2, i3};
+            auto tileiter = data_->local(index);
+            if (tileiter.first) {
+              const TiledArray::Range range = data_->data()->trange().make_tile_range(tileiter.second.ordinal());
+              typename TiledArray::Array<double,4>::value_type tile(range);
+              copy_n(tmp->data(), tmp->size(), &(tile[0]));
+              *tileiter.second = tile;
+            }
           }
-          data_->put_block(target, i0, i1, i2, i3);
+
+          if (hashkey23 != hashkey01) {
+            const std::vector<Index> index = {i2, i3, i0, i1};
+            auto tileiter = data_->local(index);
+            if (tileiter.first) {
+              const TiledArray::Range range = data_->data()->trange().make_tile_range(tileiter.second.ordinal());
+              typename TiledArray::Array<double,4>::value_type tile(range);
+              blas::transpose(tmp->data(), i0.size()*i1.size(), i2.size()*i3.size(), &(tile[0]));
+              *tileiter.second = tile;
+            }
+          }
         }
       }
     }

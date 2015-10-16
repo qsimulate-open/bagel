@@ -39,8 +39,11 @@ class TATensor {
     std::shared_ptr<TiledArray::Array<DataType,N>> data_;
     std::vector<IndexRange> range_;
 
+//TODO do something for symmetry
+//  std::map<std::vector<int>, std::pair<double,bool>> perm_;
+
   public:
-    TATensor(const std::vector<IndexRange>& r) : range_(r) {
+    TATensor(const std::vector<IndexRange>& r, /*toggle for symmetry*/const bool dummy = false) : range_(r) {
       assert(r.size() == N);
       std::vector<TiledArray::TiledRange1> ranges;
       for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
@@ -58,6 +61,26 @@ class TATensor {
     }
 
     TATensor(TATensor<DataType,N>&& o) : data_(std::make_shared<TATensor<DataType,N>>(std::move(o.data_))), range_(o.range_) {
+    }
+
+    auto local(const std::vector<Index>& index) -> decltype(std::make_pair(true,data_->begin())) {
+      assert(index.size() == N);
+      bool out = false;
+      auto it = data_->begin();
+      for ( ; it != data_->end(); ++it) {
+        const TiledArray::Range range = data_->trange().make_tile_range(it.ordinal());
+        auto lo = range.lobound();
+        assert(lo.size() == N);
+        bool found = true;
+        auto j = index.rbegin();
+        for (auto& i : lo) {
+          found &= i == j->offset();
+          ++j;
+        }
+        out = found;
+        if (found) break;
+      }
+      return std::make_pair(out, it);
     }
 
     std::shared_ptr<TiledArray::Array<DataType,N>> data() { return data_; }
