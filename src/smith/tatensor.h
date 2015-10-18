@@ -34,41 +34,48 @@ namespace SMITH {
 
 // wrapper class for TiledArray Tensor
 template<typename DataType, int N>
-class TATensor {
+class TATensor : public TiledArray::Array<DataType,N> {
+  public:
+    using TiledArray::Array<DataType,N>::begin;
+    using TiledArray::Array<DataType,N>::end;
+    using TiledArray::Array<DataType,N>::trange;
+
   protected:
-    std::shared_ptr<TiledArray::Array<DataType,N>> data_;
     std::vector<IndexRange> range_;
 
 //TODO do something for symmetry
 //  std::map<std::vector<int>, std::pair<double,bool>> perm_;
 
-  public:
-    TATensor(const std::vector<IndexRange>& r, /*toggle for symmetry*/const bool dummy = false) : range_(r) {
-      assert(r.size() == N);
+    static std::shared_ptr<TiledArray::TiledRange> make_trange(const std::vector<IndexRange>& r) {
       std::vector<TiledArray::TiledRange1> ranges;
-      for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
+      for (auto it = r.rbegin(); it != r.rend(); ++it) {
         std::vector<size_t> tile_boundaries;
         for (auto& j : *it)
           tile_boundaries.push_back(j.offset());
         tile_boundaries.push_back(it->back().offset()+it->back().size());
         ranges.emplace_back(tile_boundaries.begin(), tile_boundaries.end());
       }
-      TiledArray::TiledRange trange(ranges.begin(), ranges.end());
-      data_ = std::make_shared<TiledArray::Array<DataType, N>>(madness::World::get_default(), trange);
+      return std::make_shared<TiledArray::TiledRange>(ranges.begin(), ranges.end());
     }
 
-    TATensor(const TATensor<DataType,N>& o) : data_(std::make_shared<TATensor<DataType,N>>(o.data_)), range_(o.range_) {
+  public:
+    TATensor(const std::vector<IndexRange>& r, /*toggle for symmetry*/const bool dummy = false)
+      : TiledArray::Array<DataType,N>(madness::World::get_default(), *make_trange(r)), range_(r) {
+      assert(r.size() == N);
     }
 
-    TATensor(TATensor<DataType,N>&& o) : data_(std::make_shared<TATensor<DataType,N>>(std::move(o.data_))), range_(o.range_) {
+    TATensor(const TATensor<DataType,N>& o) : TiledArray::Array<DataType,N>(o), range_(o.range_) {
     }
 
-    auto local(const std::vector<Index>& index) -> decltype(std::make_pair(true,data_->begin())) {
+    TATensor(TATensor<DataType,N>&& o) : TiledArray::Array<DataType,N>(std::move(o)), range_(o.range_) {
+    }
+
+    auto local(const std::vector<Index>& index) -> decltype(std::make_pair(true,begin())) {
       assert(index.size() == N);
       bool out = false;
-      auto it = data_->begin();
-      for ( ; it != data_->end(); ++it) {
-        const TiledArray::Range range = data_->trange().make_tile_range(it.ordinal());
+      auto it = begin();
+      for ( ; it != end(); ++it) {
+        const TiledArray::Range range = trange().make_tile_range(it.ordinal());
         auto lo = range.lobound();
         assert(lo.size() == N);
         bool found = true;
@@ -82,9 +89,6 @@ class TATensor {
       }
       return std::make_pair(out, it);
     }
-
-    std::shared_ptr<TiledArray::Array<DataType,N>> data() { return data_; }
-    std::shared_ptr<const TiledArray::Array<DataType,N>> data() const { return data_; }
 
     std::vector<IndexRange> indexrange() const { return range_; }
 };

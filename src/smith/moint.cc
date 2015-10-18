@@ -188,7 +188,7 @@ void K2ext<double>::init() {
             const std::vector<Index> index = {i0, i1, i2, i3};
             auto tileiter = data_->local(index);
             if (tileiter.first) {
-              const TiledArray::Range range = data_->data()->trange().make_tile_range(tileiter.second.ordinal());
+              const TiledArray::Range range = data_->trange().make_tile_range(tileiter.second.ordinal());
               typename TiledArray::Array<double,4>::value_type tile(range);
               copy_n(tmp->data(), tmp->size(), &(tile[0]));
               *tileiter.second = tile;
@@ -199,7 +199,7 @@ void K2ext<double>::init() {
             const std::vector<Index> index = {i2, i3, i0, i1};
             auto tileiter = data_->local(index);
             if (tileiter.first) {
-              const TiledArray::Range range = data_->data()->trange().make_tile_range(tileiter.second.ordinal());
+              const TiledArray::Range range = data_->trange().make_tile_range(tileiter.second.ordinal());
               typename TiledArray::Array<double,4>::value_type tile(range);
               blas::transpose(tmp->data(), i0.size()*i1.size(), i2.size()*i3.size(), &(tile[0]));
               *tileiter.second = tile;

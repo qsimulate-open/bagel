@@ -106,9 +106,8 @@ static void fill_block(std::shared_ptr<TATensor<DataType,N>> target, std::shared
   }
 
   // loop over tiles of TATensor
-  auto ta = target->data();
-  for (auto it = ta->begin(); it != ta->end(); ++it) {
-    const TiledArray::Range range = ta->trange().make_tile_range(it.ordinal());
+  for (auto it = target->begin(); it != target->end(); ++it) {
+    const TiledArray::Range range = target->trange().make_tile_range(it.ordinal());
     auto lo = range.lobound();
     assert(lo.size() == N);
     // this vector<Index> is what we use in SMITH tensor

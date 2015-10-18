@@ -154,10 +154,10 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
     for (int jst = 0; jst != nstates; ++jst) {
 
       auto rdm0t = make_shared<Tensor_<double>>(vector<IndexRange>());
-      auto rdm1t = make_shared<Tensor_<double>>(vector<IndexRange>(2,active_));
-      auto rdm2t = make_shared<Tensor_<double>>(vector<IndexRange>(4,active_));
-      auto rdm3t = make_shared<Tensor_<double>>(vector<IndexRange>(6,active_));
-      auto rdm4t = make_shared<Tensor_<double>>(vector<IndexRange>(8,active_));
+      auto rdm1t = make_shared<TATensor<double,2>>(vector<IndexRange>(2,active_));
+      auto rdm2t = make_shared<TATensor<double,4>>(vector<IndexRange>(4,active_));
+      auto rdm3t = make_shared<TATensor<double,6>>(vector<IndexRange>(6,active_));
+      auto rdm4t = make_shared<TATensor<double,8>>(vector<IndexRange>(8,active_));
 
       shared_ptr<const RDM<1>> rdm1;
       shared_ptr<const RDM<2>> rdm2;
@@ -169,16 +169,16 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
       unique_ptr<double[]> data0(new double[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
       rdm0t->put_block(data0);
-      fill_block<2,double>(rdm1t, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
-      fill_block<4,double>(rdm2t, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
-      fill_block<6,double>(rdm3t, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
-      fill_block<8,double>(rdm4t, rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
+      fill_block<2,double>(rdm1t, rdm1, vector<int>(2,nclo));
+      fill_block<4,double>(rdm2t, rdm2, vector<int>(4,nclo));
+      fill_block<6,double>(rdm3t, rdm3, vector<int>(6,nclo));
+      fill_block<8,double>(rdm4t, rdm4, vector<int>(8,nclo));
 
       rdm0all_->emplace(jst, ist, rdm0t);
-      rdm1all_->emplace(jst, ist, rdm1t);
-      rdm2all_->emplace(jst, ist, rdm2t);
-      rdm3all_->emplace(jst, ist, rdm3t);
-      rdm4all_->emplace(jst, ist, rdm4t);
+      rdm1all_->emplace(jst, ist, make_shared<Tensor_<double>>(*rdm1t));
+      rdm2all_->emplace(jst, ist, make_shared<Tensor_<double>>(*rdm2t));
+      rdm3all_->emplace(jst, ist, make_shared<Tensor_<double>>(*rdm3t));
+      rdm4all_->emplace(jst, ist, make_shared<Tensor_<double>>(*rdm4t));
 
       denom->append(jst, ist, rdm1, rdm2, rdm3, rdm4);
     }
@@ -286,7 +286,6 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
 
 template<>
 void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
-  using DataType = double;
   shared_ptr<Dvec> rdm0d = make_shared<Dvec>(info_->ref()->civectors()->data(info_->target()), 1);
   shared_ptr<Dvec> rdm1d = info_->ref()->rdm1deriv(info_->target());
   shared_ptr<Dvec> rdm2d = info_->ref()->rdm2deriv(info_->target());
@@ -299,11 +298,11 @@ void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
   vector<IndexRange> o3 = {ci_, active_, active_};
   vector<IndexRange> o5 = {ci_, active_, active_, active_, active_};
   vector<IndexRange> o7 = {ci_, active_, active_, active_, active_, active_, active_};
-  rdm0deriv_ = make_shared<Tensor_<DataType>>(o1);
-  rdm1deriv_ = make_shared<Tensor_<DataType>>(o3);
-  rdm2deriv_ = make_shared<Tensor_<DataType>>(o5);
-  rdm3deriv_ = make_shared<Tensor_<DataType>>(o7);
-  rdm4deriv_ = make_shared<Tensor_<DataType>>(o7);
+  auto rdm0deriv = make_shared<TATensor<double,1>>(o1);
+  auto rdm1deriv = make_shared<TATensor<double,3>>(o3);
+  auto rdm2deriv = make_shared<TATensor<double,5>>(o5);
+  auto rdm3deriv = make_shared<TATensor<double,7>>(o7);
+  auto rdm4deriv = make_shared<TATensor<double,7>>(o7);
 
   const int nclo = info_->nclosed();
   vector<int> inpoff1(1,0);
@@ -322,11 +321,16 @@ void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
   rdm2d->resize(range5);
   rdm3d->resize(range7);
   rdm4d->resize(range7);
-  fill_block<1,DataType>(rdm0deriv_, rdm0d, inpoff1, o1);
-  fill_block<3,DataType>(rdm1deriv_, rdm1d, inpoff3, o3);
-  fill_block<5,DataType>(rdm2deriv_, rdm2d, inpoff5, o5);
-  fill_block<7,DataType>(rdm3deriv_, rdm3d, inpoff7, o7);
-  fill_block<7,DataType>(rdm4deriv_, rdm4d, inpoff7, o7);
+  fill_block<1,double>(rdm0deriv, rdm0d, inpoff1);
+  fill_block<3,double>(rdm1deriv, rdm1d, inpoff3);
+  fill_block<5,double>(rdm2deriv, rdm2d, inpoff5);
+  fill_block<7,double>(rdm3deriv, rdm3d, inpoff7);
+  fill_block<7,double>(rdm4deriv, rdm4d, inpoff7);
+  rdm0deriv_ = make_shared<Tensor_<double>>(*rdm0deriv);
+  rdm1deriv_ = make_shared<Tensor_<double>>(*rdm1deriv);
+  rdm2deriv_ = make_shared<Tensor_<double>>(*rdm2deriv);
+  rdm3deriv_ = make_shared<Tensor_<double>>(*rdm3deriv);
+  rdm4deriv_ = make_shared<Tensor_<double>>(*rdm4deriv);
 }
 
 

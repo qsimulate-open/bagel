@@ -65,12 +65,11 @@ class Tensor_ {
     Tensor_(std::vector<IndexRange> in, const bool kramers = false);
 
     template<typename D, int N, class = typename std::enable_if<std::is_same<D,DataType>::value>::type>
-    Tensor_(const TATensor<D,N>& tao) : Tensor_(tao.indexrange()) { // delegate constuctor
-      auto o = tao.data();
+    Tensor_(const TATensor<D,N>& o) : Tensor_(o.indexrange()) { // delegate constuctor
       // loop over tiles
-      for (auto it = o->begin(); it != o->end(); ++it) {
+      for (auto it = o.begin(); it != o.end(); ++it) {
         // first get range
-        const TiledArray::Range range = o->trange().make_tile_range(it.ordinal());
+        const TiledArray::Range range = o.trange().make_tile_range(it.ordinal());
         auto lo = range.lobound();
         size_t cnt = 0;
         std::vector<Index> indices;
@@ -107,8 +106,7 @@ class Tensor_ {
           key.emplace(j.offset(), j.key());
         keymap.push_back(key);
       }
-      auto taout = std::make_shared<TATensor<DataType,N>>(range_);
-      auto out = taout->data();
+      auto out = std::make_shared<TATensor<DataType,N>>(range_);
 
       for (auto it = out->begin(); it != out->end(); ++it) {
         const TiledArray::Range range = out->trange().make_tile_range(it.ordinal());
@@ -129,7 +127,7 @@ class Tensor_ {
         *it = tile;
       }
 
-      return taout;
+      return out;
     }
 
     std::shared_ptr<Tensor_<DataType>> clone() const {
