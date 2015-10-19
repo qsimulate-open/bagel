@@ -97,7 +97,7 @@ class Tensor_ {
 
     // Debug function to return TiledArray Tensor from this
     template<int N>
-    std::shared_ptr<TATensor<DataType,N>> tiledarray() const {
+    std::shared_ptr<TATensor<DataType,N>> tiledarray() {
       assert(range_.size() == N);
       std::vector<std::map<size_t,size_t>> keymap;
       for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
@@ -121,10 +121,12 @@ class Tensor_ {
             *iter = key->at(*jt);
         }
         // pull out the tile
-        std::unique_ptr<DataType[]> data = get_block(generate_hash_key(seed));
+        std::unique_ptr<DataType[]> data = move_block(generate_hash_key(seed));
         // copy
         std::copy_n(data.get(), tile.size(), &(tile[0]));
         *it = tile;
+        // restore the original tensnor
+        put_block(data, generate_hash_key(seed));
       }
 
       return out;

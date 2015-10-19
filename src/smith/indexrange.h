@@ -40,14 +40,17 @@ namespace SMITH {
 // one index block
 class Index {
   protected:
+    std::string label_;
     size_t offset_;
     size_t offset2_;
     size_t size_;
     size_t key_;
   public:
-    Index(const size_t& o, const size_t& o2, const size_t& s, const size_t& i) : offset_(o), offset2_(o2), size_(s), key_(i) {}
+    Index(const std::string lab, const size_t& o, const size_t& o2, const size_t& s, const size_t& i) : label_(lab), offset_(o), offset2_(o2), size_(s), key_(i) {}
     Index() : offset_(0), offset2_(0), size_(0), key_(0) {}
     ~Index() {}
+
+    std::string label() const { return label_; }
     size_t offset() const { return offset_; }
     size_t size() const { return size_; }
     size_t key() const { return key_; }
@@ -76,7 +79,7 @@ class IndexRange {
     int orboffset2_;
 
   public:
-    IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0, const int orboff2 = -1)
+    IndexRange(const std::string lab, const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0, const int orboff2 = -1)
       : keyoffset_(boffset), orboffset_(orboff), orboffset2_(orboff2 < 0 ? orboff : orboff2) {
       if (size > 0) {
         // first determine number of blocks.
@@ -93,7 +96,7 @@ class IndexRange {
         // key is offsetted by the input value
         size_t cnt = boffset;
         for (auto& i : blocksizes) {
-          Index t(off, off2, i, cnt++);
+          Index t(lab, off, off2, i, cnt++);
           range_.push_back(t);
           off += i;
           off2 += i;

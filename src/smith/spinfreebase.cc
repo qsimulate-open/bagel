@@ -54,19 +54,19 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
   const int ncore2 = info_->ncore()*(is_same<DataType,double>::value ? 1 : 2);
 
-  closed_ = IndexRange(info_->nclosed()-info_->ncore(), max, 0, info_->ncore());
+  closed_ = IndexRange("c", info_->nclosed()-info_->ncore(), max, 0, info_->ncore());
   if (is_same<DataType,complex<double>>::value)
-    closed_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock(), ncore2+closed_.size(), info_->ncore()));
+    closed_.merge(IndexRange("c", info_->nclosed()-info_->ncore(), max, closed_.nblock(), ncore2+closed_.size(), info_->ncore()));
 
-  active_ = IndexRange(info_->nact(), min(max,10), closed_.nblock(), ncore2+closed_.size());
+  active_ = IndexRange("x", info_->nact(), min(max,10), closed_.nblock(), ncore2+closed_.size());
   if (is_same<DataType,complex<double>>::value)
-    active_.merge(IndexRange(info_->nact(), min(max,10), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
-                                                                                            ncore2+closed_.size()));
+    active_.merge(IndexRange("x", info_->nact(), min(max,10), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
+                                                                                                 ncore2+closed_.size()));
 
-  virt_ = IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());
+  virt_ = IndexRange("a", info_->nvirt(), max, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());
   if (is_same<DataType,complex<double>>::value)
-    virt_.merge(IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock()+virt_.nblock(), ncore2+closed_.size()+active_.size()+virt_.size(),
-                                                                                                  ncore2+closed_.size()+active_.size()));
+    virt_.merge(IndexRange("a", info_->nvirt(), max, closed_.nblock()+active_.nblock()+virt_.nblock(), ncore2+closed_.size()+active_.size()+virt_.size(),
+                                                                                                       ncore2+closed_.size()+active_.size()));
 
   all_    = closed_; all_.merge(active_); all_.merge(virt_);
 
@@ -78,7 +78,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   if (info_->ciwfn() && info_->grad()) {
     // length of the ci expansion
     const size_t ci_size = info_->ref()->civectors()->data(info_->target())->size();
-    ci_ = IndexRange(ci_size, max);
+    ci_ = IndexRange("ci", ci_size, max);
     rci_ = make_shared<const IndexRange>(ci_);
   }
 
