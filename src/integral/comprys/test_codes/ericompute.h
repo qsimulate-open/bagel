@@ -104,8 +104,8 @@ std::vector<molecular_orbital> orthogonalize_basis (std::vector<double> field, s
 
 
 // ERI Recurrence Relations
-ryan::polynomial<std::complex<double>> get_ERI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
-ryan::polynomial<std::complex<double>> get_ERI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
+test::polynomial<std::complex<double>> get_ERI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
+test::polynomial<std::complex<double>> get_ERI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
 
 
 // Setting up MOs, etc. before computing integrals
@@ -127,8 +127,8 @@ std::complex<double> compute_nai (std::vector<atomic_orbital> basis, std::vector
 std::complex<double> compute_finite_nai (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, std::vector<nucleus> nuclei);
 std::complex<double> get_finite_nai_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 
-ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
-ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
+test::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
+test::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 
 // Used in computation of kinetic energy
 std::complex<double> kinetic_MO (std::vector<double> field, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis);

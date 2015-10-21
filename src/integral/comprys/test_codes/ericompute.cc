@@ -212,7 +212,7 @@ void atomic_orbital::change_angular (const int ax, const int ay, const int az) {
 }
 
 // Run the VRR and HRR to account for angular momentum in one particular dimension
-ryan::polynomial<std::complex<double>> get_ERI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
+test::polynomial<std::complex<double>> get_ERI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
 
   const int a = A_.angular_momentum[dimension];
   const int b = B_.angular_momentum[dimension];
@@ -266,11 +266,11 @@ ryan::polynomial<std::complex<double>> get_ERI_Ix (const int dimension, const st
     B01v[1] = (-0.5*p/(q*(p+q)) );
   }
 
-  const ryan::polynomial<std::complex<double>> C00 (C00v);
-  const ryan::polynomial<std::complex<double>> D00 (D00v);
-  const ryan::polynomial<std::complex<double>> B00 (B00v);
-  const ryan::polynomial<std::complex<double>> B10 (B10v);
-  const ryan::polynomial<std::complex<double>> B01 (B01v);
+  const test::polynomial<std::complex<double>> C00 (C00v);
+  const test::polynomial<std::complex<double>> D00 (D00v);
+  const test::polynomial<std::complex<double>> B00 (B00v);
+  const test::polynomial<std::complex<double>> B10 (B10v);
+  const test::polynomial<std::complex<double>> B01 (B01v);
 
 #if 0
   std::cout << "C00 = "; C00.show();
@@ -281,10 +281,10 @@ ryan::polynomial<std::complex<double>> get_ERI_Ix (const int dimension, const st
   std::cout << "angular momentum indices: " << a << ", " << b << ", " << c << ", " << d << std::endl;
 #endif
 
-  std::vector<std::vector<std::vector<std::vector<ryan::polynomial<std::complex<double>>>>>> Iabcd;
+  std::vector<std::vector<std::vector<std::vector<test::polynomial<std::complex<double>>>>>> Iabcd;
   std::vector<std::complex<double>> one = {1.0};
   std::vector<std::complex<double>> zero = {0.0};
-  ryan::polynomial<std::complex<double>> ssss (one);
+  test::polynomial<std::complex<double>> ssss (one);
 
   // set vector size and instantiate each polynomial as 1
   Iabcd.resize(abcd+1);
@@ -514,12 +514,12 @@ std::pair<std::complex<double>,std::complex<double>> compute_eri_ssss (const std
   return out;
 }
 
-ryan::polynomial<std::complex<double>> get_ERI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
-  const ryan::polynomial<std::complex<double>> Ix = get_ERI_Ix (0, field, A_, B_, C_, D_);
-  const ryan::polynomial<std::complex<double>> Iy = get_ERI_Ix (1, field, A_, B_, C_, D_);
-  const ryan::polynomial<std::complex<double>> Iz = get_ERI_Ix (2, field, A_, B_, C_, D_);
-  const ryan::polynomial<std::complex<double>> IxIy = ryan::multiply_polynomials (Ix, Iy);
-  const ryan::polynomial<std::complex<double>> IxIyIz = ryan::multiply_polynomials (IxIy, Iz);
+test::polynomial<std::complex<double>> get_ERI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
+  const test::polynomial<std::complex<double>> Ix = get_ERI_Ix (0, field, A_, B_, C_, D_);
+  const test::polynomial<std::complex<double>> Iy = get_ERI_Ix (1, field, A_, B_, C_, D_);
+  const test::polynomial<std::complex<double>> Iz = get_ERI_Ix (2, field, A_, B_, C_, D_);
+  const test::polynomial<std::complex<double>> IxIy = test::multiply_polynomials (Ix, Iy);
+  const test::polynomial<std::complex<double>> IxIyIz = test::multiply_polynomials (IxIy, Iz);
   return IxIyIz;
 }
 
@@ -890,7 +890,7 @@ pair<complex<double>,complex<double>> compute_ss (const vector<double> field, at
 }
 
 // Run the VRR and HRR to account for angular momentum in one particular dimension
-ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
+test::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
 
   const int a = A_.angular_momentum[dimension];
   const int b = B_.angular_momentum[dimension];
@@ -923,9 +923,9 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
     R2v[1] = ( -0.5/p );
   }
 
-  const ryan::polynomial<std::complex<double>> R1p (R1pv);
-  const ryan::polynomial<std::complex<double>> R1 (R1v);
-  const ryan::polynomial<std::complex<double>> R2 (R2v);
+  const test::polynomial<std::complex<double>> R1p (R1pv);
+  const test::polynomial<std::complex<double>> R1 (R1v);
+  const test::polynomial<std::complex<double>> R2 (R2v);
 
 #if 0
   char dim;
@@ -944,10 +944,10 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
   std::cout << "R2_" << dim << " = "; R2.show();
 #endif
 
-  std::vector<std::vector<ryan::polynomial<std::complex<double>>>> Iab;
+  std::vector<std::vector<test::polynomial<std::complex<double>>>> Iab;
   std::vector<std::complex<double>> one = {1.0};
   std::vector<std::complex<double>> zero = {0.0};
-  ryan::polynomial<std::complex<double>> ss (one);
+  test::polynomial<std::complex<double>> ss (one);
 
   // set vector size and instantiate each polynomial as 1
   Iab.resize(ab+1);
@@ -988,15 +988,15 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
   return Iab[a][b];
 }
 
-ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
-  const ryan::polynomial<std::complex<double>> Ix = get_NAI_Ix (0, field, A_, B_, C_);
-  const ryan::polynomial<std::complex<double>> Iy = get_NAI_Ix (1, field, A_, B_, C_);
-  const ryan::polynomial<std::complex<double>> Iz = get_NAI_Ix (2, field, A_, B_, C_);
+test::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
+  const test::polynomial<std::complex<double>> Ix = get_NAI_Ix (0, field, A_, B_, C_);
+  const test::polynomial<std::complex<double>> Iy = get_NAI_Ix (1, field, A_, B_, C_);
+  const test::polynomial<std::complex<double>> Iz = get_NAI_Ix (2, field, A_, B_, C_);
 /*
   const std::vector<std::complex<double>> one = {1.0};
-  ryan::polynomial<std::complex<double>> Ix (one);
-  ryan::polynomial<std::complex<double>> Iy (one);
-  ryan::polynomial<std::complex<double>> Iz (one);
+  test::polynomial<std::complex<double>> Ix (one);
+  test::polynomial<std::complex<double>> Iy (one);
+  test::polynomial<std::complex<double>> Iz (one);
 
   int total_angular[3];
   for (int i=0; i!=3; i++) total_angular[i] = A_.angular_momentum[i] + B_.angular_momentum[i];
