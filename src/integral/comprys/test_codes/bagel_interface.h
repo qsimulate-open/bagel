@@ -41,6 +41,7 @@ std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_fin
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_overlap (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::array<double,3> magnetic_field);
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_kinetic (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::array<double,3> magnetic_field);
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_momentum (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::array<double,3> magnetic_field);
+std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_orb_angular (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::array<double,3> magnetic_field, const std::array<double,3> Mcoord);
 
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_smallNAI (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::shared_ptr<const bagel::Molecule> mol, const std::array<double,3> magnetic_field, const int ia, const int ib);
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_small_finiteNAI (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::shared_ptr<const bagel::Molecule> mol, const std::array<double,3> magnetic_field, const int ia, const int ib);

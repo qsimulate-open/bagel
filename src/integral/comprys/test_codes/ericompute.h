@@ -130,11 +130,13 @@ std::complex<double> get_finite_nai_matrix_element (const std::vector<double> fi
 test::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 test::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 
-// Used in computation of kinetic energy
+// Used in computation of kinetic energy and related
 std::complex<double> kinetic_MO (std::vector<double> field, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis);
 std::complex<double> kinetic (std::vector<double> field, atomic_orbital A_, atomic_orbital B_);
 std::vector<std::complex<double>> momentum_MO (std::vector<double> field, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis);
 std::vector<std::complex<double>> momentum (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_);
+std::vector<std::complex<double>> orb_angular_MO (std::vector<double> field, const std::array<double,3> Mcoord, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis);
+std::vector<std::complex<double>> orb_angular (const std::vector<double> field, const std::array<double,3> Mcoord, atomic_orbital A_, atomic_orbital B_);
 
 // Used for small component integrals
 std::complex<double> compute_smallnai (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, std::vector<nucleus> nuclei, const int ia, const int ib);

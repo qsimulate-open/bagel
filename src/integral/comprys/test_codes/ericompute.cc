@@ -192,7 +192,7 @@ void atomic_orbital::set_data (const double* pos, const double exp, const int* a
     position[i] = pos[i];
     angular_momentum[i] = ang_mom[i];
   }
-#if 0  // For London orbitals
+#if 1  // For London orbitals
   vector_potential[0] = 0.5*(field[1]*pos[2] - field[2]*pos[1]);
   vector_potential[1] = 0.5*(field[2]*pos[0] - field[0]*pos[2]);
   vector_potential[2] = 0.5*(field[0]*pos[1] - field[1]*pos[0]);
@@ -356,7 +356,7 @@ std::pair<std::complex<double>,std::complex<double>> compute_eri_ssss (const std
   const double p = alpha + beta;
   const double q = gamma + delta;
   const double rho = p*q/(p+q);
-#if 0 // For London orbitals
+#if 1 // For London orbitals
   double A_A[3] = { 0.5*(field[1]*A[2] - field[2]*A[1]), 0.5*(field[2]*A[0] - field[0]*A[2]), 0.5*(field[0]*A[1] - field[1]*A[0]) };
   double A_B[3] = { 0.5*(field[1]*B[2] - field[2]*B[1]), 0.5*(field[2]*B[0] - field[0]*B[2]), 0.5*(field[0]*B[1] - field[1]*B[0]) };
   double A_C[3] = { 0.5*(field[1]*C[2] - field[2]*C[1]), 0.5*(field[2]*C[0] - field[0]*C[2]), 0.5*(field[0]*C[1] - field[1]*C[0]) };
@@ -847,7 +847,7 @@ pair<complex<double>,complex<double>> compute_ss (const vector<double> field, at
   const double alpha = A_.exponent;
   const double beta  = B_.exponent;
   const double p = alpha + beta;
-#if 0 // For London orbitals
+#if 1 // For London orbitals
   const double A_A[3] = { 0.5*(field[1]*A[2] - field[2]*A[1]), 0.5*(field[2]*A[0] - field[0]*A[2]), 0.5*(field[0]*A[1] - field[1]*A[0]) };
   const double A_B[3] = { 0.5*(field[1]*B[2] - field[2]*B[1]), 0.5*(field[2]*B[0] - field[0]*B[2]), 0.5*(field[0]*B[1] - field[1]*B[0]) };
 #else // For common origin
@@ -1005,8 +1005,8 @@ test::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> fi
   if (total_angular[1]) Iy = get_NAI_Ix (1, field, A_, B_, C_);
   if (total_angular[2]) Iz = get_NAI_Ix (2, field, A_, B_, C_);
 */
-  const ryan::polynomial<std::complex<double>> IxIy = ryan::multiply_polynomials (Ix, Iy);
-  const ryan::polynomial<std::complex<double>> IxIyIz = ryan::multiply_polynomials (IxIy, Iz);
+  const test::polynomial<std::complex<double>> IxIy = test::multiply_polynomials (Ix, Iy);
+  const test::polynomial<std::complex<double>> IxIyIz = test::multiply_polynomials (IxIy, Iz);
   return IxIyIz;
 }
 
@@ -1310,6 +1310,108 @@ vector<std::complex<double>> momentum (const std::vector<double> field, atomic_o
   return out;
 }
 
+vector<complex<double>> orb_angular_MO (vector<double> field, const array<double,3> Mcoord, molecular_orbital A_, molecular_orbital B_, vector<atomic_orbital> basis) {
+  const int nbasis = basis.size();
+  complex<double> coeff_prod;
+  vector<complex<double>> current_term;
+  complex<double> fullx, fully, fullz;
+  for (int i = 0; i!=nbasis; i++) {
+    for (int j = 0; j!=nbasis; j++) {
+      coeff_prod = conj(A_.coefficient[i]) * B_.coefficient[j];
+      if (abs(coeff_prod)) {
+        current_term = orb_angular(field, Mcoord, basis[i], basis[j]);
+        fullx += (coeff_prod * current_term[0]);
+        fully += (coeff_prod * current_term[1]);
+        fullz += (coeff_prod * current_term[2]);
+      }
+    }
+  }
+  vector<complex<double>> Full_orb_angular = {fullx, fully, fullz};
+  return Full_orb_angular;
+}
+
+vector<std::complex<double>> orb_angular (const std::vector<double> field, const array<double,3> Mcoord, atomic_orbital A_, atomic_orbital B_) {
+  const complex<double> imag (0.0, 1.0);
+  atomic_orbital A = A_;
+  atomic_orbital B = B_;
+  const double beta = B.exponent;
+  const int bx = B_.angular_momentum[0];
+  const int by = B_.angular_momentum[1];
+  const int bz = B_.angular_momentum[2];
+  const double bxd = bx;
+  const double byd = by;
+  const double bzd = bz;
+  const double Mx = Mcoord[0];
+  const double My = Mcoord[1];
+  const double Mz = Mcoord[2];
+  const double Bx = B_.position[0];
+  const double By = B_.position[1];
+  const double Bz = B_.position[2];
+  const double ABx = B_.vector_potential[0];
+  const double ABy = B_.vector_potential[1];
+  const double ABz = B_.vector_potential[2];
+
+  complex<double> outx = 0.0;
+  complex<double> outy = 0.0;
+  complex<double> outz = 0.0;
+
+  if (bx > 0) {
+    B.change_angular(bx-1,by  ,bz  );
+    outy -= imag * bxd * (Bz - Mz) * overlap(field,A,B);
+    outz += imag * bxd * (By - My) * overlap(field,A,B);
+
+    B.change_angular(bx-1,by+1,bz  );
+    outz += imag * bxd * overlap(field,A,B);
+
+    B.change_angular(bx-1,by  ,bz+1);
+    outy -= imag * bxd * overlap(field,A,B);
+  }
+
+  if (by > 0) {
+    B.change_angular(bx  ,by-1,bz  );
+    outz -= imag * byd * (Bx - Mx) * overlap(field,A,B);
+    outx += imag * byd * (Bz - Mz) * overlap(field,A,B);
+
+    B.change_angular(bx  ,by-1,bz+1);
+    outx += imag * byd * overlap(field,A,B);
+
+    B.change_angular(bx+1,by-1,bz  );
+    outz -= imag * byd * overlap(field,A,B);
+  }
+
+  if (bz > 0) {
+    B.change_angular(bx  ,by  ,bz-1);
+    outx -= imag * bzd * (By - My) * overlap(field,A,B);
+    outy += imag * bzd * (Bx - Mx) * overlap(field,A,B);
+
+    B.change_angular(bx+1,by  ,bz-1);
+    outy += imag * bzd * overlap(field,A,B);
+
+    B.change_angular(bx  ,by+1,bz-1);
+    outx -= imag * bzd * overlap(field,A,B);
+  }
+
+  B.change_angular(bx+1,by  ,bz  );
+  outy += (ABz + imag * (2.0 * beta * (Bz - Mz))) * overlap(field,A,B);
+  outz -= (ABy + imag * (2.0 * beta * (By - My))) * overlap(field,A,B);
+
+  B.change_angular(bx  ,by+1,bz  );
+  outz += (ABx + imag * (2.0 * beta * (Bx - Mx))) * overlap(field,A,B);
+  outx -= (ABz + imag * (2.0 * beta * (Bz - Mz))) * overlap(field,A,B);
+
+  B.change_angular(bx  ,by  ,bz+1);
+  outx += (ABy + imag * (2.0 * beta * (By - My))) * overlap(field,A,B);
+  outy -= (ABx + imag * (2.0 * beta * (Bx - Mx))) * overlap(field,A,B);
+
+  B.change_angular(bx  ,by  ,bz  );
+  outx += ((My * ABz) - (By * ABz) + (Bz * ABy) - (Mz * ABy)) * overlap(field,A,B);
+  outy += ((Mz * ABx) - (Bz * ABx) + (Bx * ABz) - (Mx * ABz)) * overlap(field,A,B);
+  outz += ((Mx * ABy) - (Bx * ABy) + (By * ABx) - (My * ABx)) * overlap(field,A,B);
+
+  vector<complex<double>> out = {outx, outy, outz};
+  return out;
+}
+
 complex<double> compute_smallnai (vector<atomic_orbital> basis, vector<molecular_orbital> input, vector<double> field, vector<nucleus> nuclei, const int ia, const int ib) {
   // Use a four-fold summation to compute the ERI over MO_A, MO_B, MO_C, and MO_D
   const int nbasis = basis.size();
@@ -1380,7 +1482,7 @@ complex<double> get_smallnai_matrix_element (const vector<double> field, atomic_
   for (int i=0; i!=3; i++) axd[i] = ax[i];
   for (int i=0; i!=3; i++) bxd[i] = bx[i];
 
-#if 1
+#if 0
   const int nterms = 5;  // For Gaussian orbitals (common origin)
 #else
   const int nterms = 4;  // For London orbitals
@@ -1452,7 +1554,7 @@ complex<double> get_smalloverlap_matrix_element (const vector<double> field, ato
   for (int i=0; i!=3; i++) axd[i] = ax[i];
   for (int i=0; i!=3; i++) bxd[i] = bx[i];
 
-#if 1
+#if 0
   const int nterms = 5;  // For Gaussian orbitals (common origin)
 #else
   const int nterms = 4;  // For London orbitals
@@ -1557,7 +1659,7 @@ complex<double> get_small_finitenai_matrix_element (const vector<double> field, 
   for (int i=0; i!=3; i++) axd[i] = ax[i];
   for (int i=0; i!=3; i++) bxd[i] = bx[i];
 
-#if 1
+#if 0
   const int nterms = 5;  // For Gaussian orbitals (common origin)
 #else
   const int nterms = 4;  // For London orbitals
@@ -1735,7 +1837,7 @@ complex<double> get_smalleri_matrix_element (const vector<double> field, atomic_
   for (int i=0; i!=3; i++) cxd[i] = cx[i];
   for (int i=0; i!=3; i++) dxd[i] = dx[i];
 
-#if 1
+#if 0
   const int nterms = 5;  // For Gaussian orbitals (common origin)
 #else
   const int nterms = 4;  // For London orbitals
@@ -1844,7 +1946,7 @@ complex<double> get_mixederi_matrix_element (const vector<double> field, atomic_
   array<double,3> cxd;
   for (int i=0; i!=3; i++) cxd[i] = cx[i];
 
-#if 1
+#if 0
   const int nterms = 5;  // For Gaussian orbitals (common origin)
 #else
   const int nterms = 4;  // For London orbitals
