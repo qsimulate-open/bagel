@@ -29,6 +29,12 @@
 #include <tiledarray.h>
 #include <src/smith/indexrange.h>
 
+#if defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 9
+#include <regex>
+#else
+#include <boost/regex.hpp>
+#endif
+
 namespace bagel {
 namespace SMITH {
 
@@ -91,6 +97,54 @@ class TATensor : public TiledArray::Array<DataType,N> {
     }
 
     std::vector<IndexRange> indexrange() const { return range_; }
+
+    auto operator()(const std::string& vars) -> decltype(TiledArray::Array<DataType,N>::operator()(vars).block(std::array<size_t,N>(), std::array<size_t, N>())) {
+#if defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 9
+      using std::regex;
+      using std::smatch;
+      using std::regex_search;
+      using std::sregex_token_iterator;
+#else
+      using boost::regex;
+      using boost::smatch;
+      using boost::regex_search;
+      using boost::sregex_token_iterator;
+#endif
+      regex re(",");
+      sregex_token_iterator p(vars.begin(), vars.end(), re, -1);
+      sregex_token_iterator end;
+      std::vector<std::string> ss;
+      while (p != end)
+        ss.push_back(*p++);
+      assert(ss.size() == N);
+
+      std::string revvars;
+      for (auto i = ss.rbegin(); i != ss.rend(); ++i) {
+        if (i != ss.rbegin()) revvars += ",";
+        revvars += *i;
+      }
+
+      std::array<size_t, N> low, high;
+      auto riter = range_.rbegin();
+      int n = 0;
+      for (auto i = ss.rbegin(); i != ss.rend(); ++i, ++riter, ++n) {
+        regex re2("[a-z]+");
+        smatch m;
+        regex_search(*i, m, re2);
+        std::string label = m[0]; // c, x, a, ci
+
+        bool find = false;
+        low[n] = 0;
+        high[n] = 0;
+        for (int j = 0; j != riter->nblock(); ++j) {
+          const bool matches = riter->range(j).label() == label;
+          find |= matches;
+          if (!find) low[n] += 1;
+          if (!find || matches) high[n] += 1;
+        }
+      }
+      return TiledArray::Array<DataType,N>::operator()(revvars).block(low, high);
+    }
 };
 
 }}
