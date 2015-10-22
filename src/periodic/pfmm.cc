@@ -59,6 +59,7 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
   max_height_ = 21; // tree construction 21 is absolute max
   do_contract_ = true;
 
+  compute_Mlm_direct();
   compute_Mlm();
   stack_->release(size_allocated_, buff_);
   resources__->release(stack_);
@@ -73,6 +74,156 @@ bool PFMM::is_in_cff(array<double, 3> L) {
   const bool out = (rsq > 2.0 * (1 + ws_) *  extent) ? true : false;
 
   return out;
+}
+
+
+void PFMM::compute_Mlm_direct() {
+
+  vector<array<double, 3>> primvecs(ndim_);
+  for (int i = 0; i != ndim_; ++i)
+    primvecs[i] = scell_->primitive_vectors(i);
+
+  // M* = sum of M in [-1, 1]
+  const int n0 = pow(3, ndim_);
+  vector<array<int, 3>> vidx0 = generate_vidx(1);
+  std::sort(vidx0.begin(), vidx0.end(), sort_vector);
+  assert(vidx0.size() == n0);
+
+  vector<complex<double>> mstar(osize_, 0.0);
+
+  for (int n = 0; n != n0; ++n) {
+    array<int, 3> idx = vidx0[n];
+    array<double, 3> mvec;
+    mvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
+    mvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
+    mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+    const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
+    const double r = sqrt(rsq);
+    const double ctheta = (rsq > numerical_zero__) ? mvec[2]/r : 0.0;
+    const double phi = atan2(mvec[1], mvec[0]);
+
+    for (int l = 0; l <= lmax_; ++l) {
+      for (int m = 0; m <= 2 * l; ++m) {
+        const int am = abs(m - l);
+        const int imul = l * l + m;
+
+        double plm_tilde = plm.compute(l, am, ctheta) * pow(r, l);
+        double ft = 1.0;
+        for (int i = 1; i <= l + am; ++i) {
+          plm_tilde /= ft;
+          ft += 1.0;
+        }
+
+        const double sign = (m - l >= 0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
+        const double real = sign * plm_tilde;
+        const double imag = sin(am * phi) * plm_tilde;
+
+        mstar[imul] += complex<double>(real, imag);
+      }
+    }
+  }
+
+  // get L* = sum of L in FF'
+  const int ws1 = 2 * ws_;
+  cout << "ws_ = " << ws_ << endl;
+  const int n1 = pow(2*ws1+1, ndim_);
+  vector<array<int, 3>> tmp = generate_vidx(ws1);
+  assert(tmp.size() == n1);
+  std::sort(tmp.begin(), tmp.end(), sort_vector);
+
+  vector<array<int, 3>> vidx1;
+  for (int n = 0; n != n1; ++n) {
+    array<int, 3> idx = tmp[n];
+    if (abs(idx[0]) > ws_ || abs(idx[1]) > ws_ || abs(idx[2]) > ws_)
+      vidx1.push_back(idx);
+  }
+
+  const int nvec = vidx1.size();
+  vector<complex<double>> lstar(msize_, 0.0);
+
+  for (int ivec = 0; ivec != nvec; ++ivec) {
+    array<int, 3> idx = vidx1[ivec];
+    array<double, 3> mvec;
+    mvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
+    mvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
+    mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+
+    const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
+    const double r = sqrt(rsq);
+    const double ctheta = (rsq > numerical_zero__) ? mvec[2]/r : 0.0;
+    const double phi = atan2(mvec[1], mvec[0]);
+
+    for (int l = 0; l < max_rank_; ++l) {
+      for (int m = 0; m <= 2 * l; ++m) {
+        const int am = abs(m - l);
+        const int imul = l * l + m;
+
+        double plm_tilde = plm.compute(l, am, ctheta) / pow(r, l+1);
+        double ft = 1.0;
+        for (int i = 1; i <= l - am; ++i) {
+          plm_tilde *= ft;
+          ft += 1.0;
+        }
+
+        const double sign = (m - l >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
+        const double real = sign * plm_tilde;
+        const double imag = sin(am * phi) * plm_tilde;
+
+        lstar[imul] += complex<double>(real, imag);
+      }
+    }
+  }
+
+  // Mlm(n)
+  vector<pair<int, int>> lm_map;
+  for (int l = 0; l < max_rank_; ++l)
+    for (int m = 0; m <= 2 * l; ++m)
+      lm_map.push_back(make_pair(l, m-l));
+
+  vector<complex<double>> mlm(lstar); // iter 0
+  double conv = 0.0;
+
+  const int max_iter = 16; // to be changed!!!
+  for (int n = 1; n <= max_iter; ++n) {
+    vector<complex<double>> previous(msize_);
+    for (int i = 0; i != msize_; ++i) {
+      const int l = lm_map[i].first;
+      previous[i] = mlm[i] / pow(3.0, l+1);
+      mlm[i] = 0.0;
+    }
+
+    for (int l = 0; l < max_rank_; ++l) {
+      for (int m = 0; m <= 2*l; ++m) {
+        const int im0 = l * l + m;
+
+        for (int j = 0; j <= lmax_ - l; ++j) {
+          for (int k = 0; k <= 2*j; ++k) {
+            const int im1 = j * j + k;
+            const int im = (l+j)*(l+j) + m + k;
+            assert(l + j < max_rank_);
+            mlm[im0] += previous[im] * mstar[im1];
+          }
+        }
+        mlm[im0] += lstar[im0];
+        conv += norm(mlm[im0]);
+      }
+    }
+    if (conv < numerical_zero__)
+      break;
+  }
+  // DEBUG
+  cout << "RESULTS FROM DIRECT SUMMATION" << endl;
+  for (int l = 0; l < max_rank_; ++l)
+    for (int m = 0; m <= l; ++m) { // Slm = -sl-m
+      const int imul = l * l + m + l;
+      const double tmp = mlm[imul].real();
+      //if (abs(tmp) > 1e-8)
+      if (l % 2 == 0 && m % 4 == 0)
+        cout << "l = " << l << "  m = " << m << "  mlm = " << setw(20) << setprecision(14) << tmp << endl;
+    }
+  cout << " ******* END ******* " << endl;
+  // END DEBUG
+
 }
 
 
@@ -93,9 +244,9 @@ void PFMM::compute_Mlm() { // rectangular scell for now
   for (int ivec = 0; ivec != nvec; ++ivec) {
     const int pos = ivec * 3;
     array<int, 3> idx = vidx[ivec];
-    rvec_[pos    ] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
-    rvec_[pos + 1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
-    rvec_[pos + 2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+    rvec_[pos    ] = scell_->centre(0) + idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
+    rvec_[pos + 1] = scell_->centre(1) + idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
+    rvec_[pos + 2] = scell_->centre(2) + idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
     Rsq_[ivec] = rvec_[pos]*rvec_[pos] + rvec_[pos+1]*rvec_[pos+1] + rvec_[pos+2]*rvec_[pos+2];
     T_[ivec] = Rsq_[ivec] * beta__ * beta__;
   }
@@ -308,7 +459,6 @@ vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const
     assert(tmp.size() == osize_);
 
     shared_ptr<const ZMatrix> ffden = density->pdata(ivec);
-    cout << "ivec = " << ivec << " rms " << ffden->get_real_part()->rms() << endl;
     for (int i = 0; i != osize_; ++i) {
       complex<double> contract = 0.0;
       for (int j = 0; j != nbasis1; ++j)

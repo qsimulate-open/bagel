@@ -75,6 +75,7 @@ class PFMM {
     double* buff_;
     std::vector<std::array<int, 3>> generate_vidx(const int n) const;
     void compute_Mlm();
+    void compute_Mlm_direct();
     void root_weight(const int l, const int size);
     void allocate_arrays(const size_t ps);
     std::vector<std::complex<double>> compute_Slm(std::shared_ptr<const PData> density) const;
