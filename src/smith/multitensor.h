@@ -95,7 +95,10 @@ class MultiTensor_ {
         i->scale(a);
     }
 
-    void zero() { scale(0.0); }
+    void zero() {
+      for (auto& i : tensors_)
+        i->zero();
+    }
 
     size_t nref() const { assert(fac_.size() == tensors_.size()); return fac_.size(); }
 

@@ -39,13 +39,13 @@ class FutureTensor_ : public Tensor_<DataType> {
     using Tensor_<DataType>::initialized_;
 
   protected:
-    // TODO actually not const, but this is the only way to make it compiled...
-    void init() const override { init_->compute(); initialized_ = true; }
     mutable std::shared_ptr<Task> init_;
 
   public:
     FutureTensor_(const Tensor_<DataType>& i,  std::shared_ptr<Task> j) : Tensor_<DataType>(i), init_(j) { }
 
+    // TODO actually not const, but this is the only way to make it compiled...
+    void init() const override { init_->compute(); initialized_ = true; }
 };
 
 namespace CASPT2 { using FutureTensor = FutureTensor_<double>; }

@@ -241,7 +241,7 @@ void Tensor_<DataType>::print4(string label, const double thresh) const {
     for (auto& i2 : o[2].range()) {
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
-          if (!this->get_size(i0, i1, i2, i3)) continue;
+          if (!this->get_size_alloc(i0, i1, i2, i3)) continue;
           unique_ptr<DataType[]> data = this->get_block(i0, i1, i2, i3);
           size_t iall = 0;
           for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)

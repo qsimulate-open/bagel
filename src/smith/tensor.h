@@ -58,7 +58,6 @@ class Tensor_ {
     std::shared_ptr<Storage<DataType>> data_;
     int rank_;
 
-    virtual void init() const { initialized_ = true; }
     mutable bool initialized_;
 
   public:
@@ -83,10 +82,13 @@ class Tensor_ {
           assert(ind.size());
           indices.push_back(ind);
         }
-        const typename TiledArray::Array<DataType,N>::value_type& tile = *it;
-        std::unique_ptr<DataType[]> data(new DataType[tile.size()]);
-        std::copy_n(&(tile[0]), tile.size(), data.get());
-        this->put_block(data, indices);
+        if (it->probe()) {
+          auto tile = it->get();
+          std::unique_ptr<DataType[]> data(new DataType[tile.size()]);
+          assert(tile.size() == get_size(indices));
+          std::copy_n(&(tile[0]), tile.size(), data.get());
+          this->put_block(data, indices);
+        }
       }
     }
 
@@ -97,7 +99,7 @@ class Tensor_ {
 
     // Debug function to return TiledArray Tensor from this
     template<int N>
-    std::shared_ptr<TATensor<DataType,N>> tiledarray() {
+    std::shared_ptr<TATensor<DataType,N>> tiledarray() const {
       assert(range_.size() == N);
       std::vector<std::map<size_t,size_t>> keymap;
       for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
@@ -120,13 +122,15 @@ class Tensor_ {
           for (auto jt = lo.begin(); jt != lo.end(); ++jt, ++key, ++iter)
             *iter = key->at(*jt);
         }
-        // pull out the tile
-        std::unique_ptr<DataType[]> data = move_block(generate_hash_key(seed));
-        // copy
-        std::copy_n(data.get(), tile.size(), &(tile[0]));
-        *it = tile;
-        // restore the original tensnor
-        put_block(data, generate_hash_key(seed));
+        if (get_size_alloc(seed)) {
+          // pull out the tile
+          std::unique_ptr<DataType[]> data = get_block(generate_hash_key(seed));
+          assert(tile.size() == get_size_alloc(seed));
+          // copy
+//        for (size_t i = 0; i != tile.size(); ++i) tile[i] = data[i];
+          std::copy_n(data.get(), tile.size(), &(tile[0]));
+          *it = tile;
+        }
       }
 
       return out;
@@ -196,6 +200,8 @@ class Tensor_ {
     void conjugate_inplace() {
       data_->conjugate_inplace();
     }
+
+    virtual void init() const { initialized_ = true; }
 
     std::vector<DataType> diag() const;
 
