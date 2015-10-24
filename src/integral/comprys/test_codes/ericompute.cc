@@ -1433,12 +1433,6 @@ vector<std::complex<double>> orb_angular (const std::vector<double> field, const
   outx += (0.5 * (Fx * Bz - Fx * Mz) + imag * (2.0 * beta * (By - My))) * overlap(field,A,B);
   outy += (0.5 * (Fy * Bz - Fy * Mz) - imag * (2.0 * beta * (Bx - Mx))) * overlap(field,A,B);
 
-
-  B.change_angular(bx  ,by  ,bz  );
-  outx += (Fx * By * My) + (Fx * Bz * Mz) + (Fy * Bx * By) + (Fz * Bx * Bz) * overlap(field,A,B);
-  outy += (Fy * Bz * Mz) + (Fy * Bx * Mx) + (Fz * By * Bz) + (Fx * By * Bx) * overlap(field,A,B);
-  outz += (Fz * Bx * Mx) + (Fz * By * My) + (Fx * Bz * Bx) + (Fy * Bz * By) * overlap(field,A,B);
-
   vector<complex<double>> out = {outx, outy, outz};
   return out;
 }
