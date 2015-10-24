@@ -1347,9 +1347,9 @@ vector<std::complex<double>> orb_angular (const std::vector<double> field, const
   const double Bx = B_.position[0];
   const double By = B_.position[1];
   const double Bz = B_.position[2];
-  const double ABx = B_.vector_potential[0];
-  const double ABy = B_.vector_potential[1];
-  const double ABz = B_.vector_potential[2];
+  const double Fx = field[0];
+  const double Fy = field[1];
+  const double Fz = field[2];
 
   complex<double> outx = 0.0;
   complex<double> outy = 0.0;
@@ -1391,22 +1391,53 @@ vector<std::complex<double>> orb_angular (const std::vector<double> field, const
     outx -= imag * bzd * overlap(field,A,B);
   }
 
+
+  B.change_angular(bx+1,by+1,bz  );
+  outx -= 0.5 * Fy * overlap(field,A,B);
+  outy -= 0.5 * Fx * overlap(field,A,B);
+
+  B.change_angular(bx  ,by+1,bz+1);
+  outy -= 0.5 * Fz * overlap(field,A,B);
+  outz -= 0.5 * Fy * overlap(field,A,B);
+
+  B.change_angular(bx+1,by  ,bz+1);
+  outz -= 0.5 * Fx * overlap(field,A,B);
+  outx -= 0.5 * Fz * overlap(field,A,B);
+
+
+  B.change_angular(bx+2,by  ,bz  );
+  outy += 0.5 * Fy * overlap(field,A,B);
+  outz += 0.5 * Fz * overlap(field,A,B);
+
+  B.change_angular(bx  ,by+2,bz  );
+  outx += 0.5 * Fx * overlap(field,A,B);
+  outz += 0.5 * Fz * overlap(field,A,B);
+
+  B.change_angular(bx  ,by  ,bz+2);
+  outx += 0.5 * Fx * overlap(field,A,B);
+  outy += 0.5 * Fy * overlap(field,A,B);
+
+
   B.change_angular(bx+1,by  ,bz  );
-  outy += (ABz + imag * (2.0 * beta * (Bz - Mz))) * overlap(field,A,B);
-  outz -= (ABy + imag * (2.0 * beta * (By - My))) * overlap(field,A,B);
+  outx += 0.5 * (Fy * My - Fy * By - Fz * Bz + Fz * Mz) * overlap(field,A,B);
+  outy += (0.5 * (Fy * Bx - Fy * Mx) + imag * (2.0 * beta * (Bz - Mz))) * overlap(field,A,B);
+  outz += (0.5 * (Fz * Bx - Fz * Mx) - imag * (2.0 * beta * (By - My))) * overlap(field,A,B);
 
   B.change_angular(bx  ,by+1,bz  );
-  outz += (ABx + imag * (2.0 * beta * (Bx - Mx))) * overlap(field,A,B);
-  outx -= (ABz + imag * (2.0 * beta * (Bz - Mz))) * overlap(field,A,B);
+  outy += 0.5 * (Fz * Mz - Fz * Bz - Fx * Bx + Fx * Mx) * overlap(field,A,B);
+  outz += (0.5 * (Fz * By - Fz * My) + imag * (2.0 * beta * (Bx - Mx))) * overlap(field,A,B);
+  outx += (0.5 * (Fx * By - Fx * My) - imag * (2.0 * beta * (Bz - Mz))) * overlap(field,A,B);
 
   B.change_angular(bx  ,by  ,bz+1);
-  outx += (ABy + imag * (2.0 * beta * (By - My))) * overlap(field,A,B);
-  outy -= (ABx + imag * (2.0 * beta * (Bx - Mx))) * overlap(field,A,B);
+  outz += 0.5 * (Fx * Mx - Fx * Bx - Fy * By + Fy * My) * overlap(field,A,B);
+  outx += (0.5 * (Fx * Bz - Fx * Mz) + imag * (2.0 * beta * (By - My))) * overlap(field,A,B);
+  outy += (0.5 * (Fy * Bz - Fy * Mz) - imag * (2.0 * beta * (Bx - Mx))) * overlap(field,A,B);
+
 
   B.change_angular(bx  ,by  ,bz  );
-  outx += ((My * ABz) - (By * ABz) + (Bz * ABy) - (Mz * ABy)) * overlap(field,A,B);
-  outy += ((Mz * ABx) - (Bz * ABx) + (Bx * ABz) - (Mx * ABz)) * overlap(field,A,B);
-  outz += ((Mx * ABy) - (Bx * ABy) + (By * ABx) - (My * ABx)) * overlap(field,A,B);
+  outx += (Fx * By * My) + (Fx * Bz * Mz) + (Fy * Bx * By) + (Fz * Bx * Bz) * overlap(field,A,B);
+  outy += (Fy * Bz * Mz) + (Fy * Bx * Mx) + (Fz * By * Bz) + (Fx * By * Bx) * overlap(field,A,B);
+  outz += (Fz * Bx * Mx) + (Fz * By * My) + (Fx * Bz * Bx) + (Fy * Bz * By) * overlap(field,A,B);
 
   vector<complex<double>> out = {outx, outy, outz};
   return out;
