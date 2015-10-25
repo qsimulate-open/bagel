@@ -48,6 +48,8 @@ class ComplexAngMomBatch : public OSIntegral<std::complex<double>,Int_t::London>
     ComplexAngMomBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, const std::array<double,3> _magnetic_field, const std::array<double,3> _mcoord)
       : OSIntegral<std::complex<double>,Int_t::London>(basis), magnetic_field_(_magnetic_field), mcoord_(_mcoord) { common_init(); }
 
+    constexpr static int Nblocks() { return 3; }
+
     void compute() override;
 };
 

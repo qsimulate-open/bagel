@@ -31,12 +31,15 @@
 #include <src/integral/smallints1e.h>
 #include <src/integral/rys/naibatch.h>
 #include <src/mat1e/matrix1earray.h>
+#include <src/util/unpack.h>
 
 namespace bagel {
 
-template <typename Batch>
+template<typename Batch, typename ...Args>
 class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
   protected:
+    const std::tuple<Args...> args_;
+
     void init(std::shared_ptr<const Molecule> mol) override {
       std::list<std::shared_ptr<const Shell>> shells;
       for (auto& i : mol->atoms())
@@ -62,12 +65,19 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
       for (auto& i : this->matrices_) i->allreduce();
     }
 
+    // Unpack variadic template arguments here
+    template <int ...S>
+    SmallInts1e<Batch, Args...> get_batch(std::array<std::shared_ptr<const Shell>,2> input, std::shared_ptr<const Molecule> mol, seq<S...>) {
+      SmallInts1e<Batch, Args...> out(input, mol, std::get<S>(args_) ...);
+      return out;
+    }
+
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) override {
       // input = [b1, b0]
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      SmallInts1e<Batch> batch(input, mol);
+      SmallInts1e<Batch, Args...> batch = get_batch(input, mol, typename gens<sizeof...(Args)>::type());
       batch.compute();
 
       for (int i = 0; i != this->Nblocks(); ++i)
@@ -75,7 +85,7 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
     }
 
   public:
-    Small1e(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<4*Batch::Nblocks()>(mol) {
+    Small1e(const std::shared_ptr<const Molecule> mol, Args... args) : Matrix1eArray<4*Batch::Nblocks()>(mol), args_(args...) {
       init(mol);
     }
 
