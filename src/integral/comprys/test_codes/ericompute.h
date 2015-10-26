@@ -149,6 +149,8 @@ std::complex<double> compute_smalleri (std::vector<atomic_orbital> basis, std::v
 std::complex<double> get_smalleri_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_, const int ia, const int ib);
 std::complex<double> compute_mixederi (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, const int ia, const int ib);
 std::complex<double> get_mixederi_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_, const int ia, const int ib);
+std::complex<double> compute_small_orb_angular(std::vector<double> field, const std::array<double,3> Mcoord, const int dim, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis, const int ia, const int ib);
+std::complex<double> get_small_orb_angular_matrix_element (const std::vector<double> field, const std::array<double,3> Mcoord, const int dim, atomic_orbital A_, atomic_orbital B_, const int ia, const int ib);
 
 }
 
