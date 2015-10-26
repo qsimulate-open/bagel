@@ -63,7 +63,7 @@ class Tensor_ {
   public:
     Tensor_(std::vector<IndexRange> in, const bool kramers = false);
 
-    template<typename D, int N, class = typename std::enable_if<std::is_same<D,DataType>::value>::type>
+    template<typename D, int N>
     Tensor_(const TATensor<D,N>& o) : Tensor_(o.indexrange()) { // delegate constuctor
       // loop over tiles
       for (auto it = o.begin(); it != o.end(); ++it) {
@@ -90,6 +90,12 @@ class Tensor_ {
           this->put_block(data, indices);
         }
       }
+      // for zero dimentional array
+      if (N == 0) {
+        std::unique_ptr<DataType[]> data(new DataType[1]);
+        data[0] = o.get_scalar();
+        this->put_block(data, generate_hash_key());
+      }
     }
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
@@ -99,7 +105,7 @@ class Tensor_ {
 
     // Debug function to return TiledArray Tensor from this
     template<int N>
-    std::shared_ptr<TATensor<DataType,N>> tiledarray() const {
+    std::shared_ptr<TATensor<DataType,N>> tiledarray(const bool init = false) const {
       assert(range_.size() == N);
       std::vector<std::map<size_t,size_t>> keymap;
       for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
@@ -112,7 +118,6 @@ class Tensor_ {
 
       for (auto it = out->begin(); it != out->end(); ++it) {
         const TiledArray::Range range = out->trange().make_tile_range(it.ordinal());
-        typename TiledArray::Array<DataType,N>::value_type tile(range);
         auto lo = range.lobound();
         assert(lo.size() == N);
         std::vector<size_t> seed(lo.size());
@@ -125,14 +130,26 @@ class Tensor_ {
         if (get_size_alloc(seed)) {
           // pull out the tile
           std::unique_ptr<DataType[]> data = get_block(generate_hash_key(seed));
-          assert(tile.size() == get_size_alloc(seed));
           // copy
-//        for (size_t i = 0; i != tile.size(); ++i) tile[i] = data[i];
+          typename TiledArray::Array<DataType,N>::value_type tile(range);
+          assert(tile.size() == get_size_alloc(seed));
           std::copy_n(data.get(), tile.size(), &(tile[0]));
+          *it = tile;
+        } else if (init) {
+          typename TiledArray::Array<DataType,N>::value_type tile(range);
+          std::fill_n(&(tile[0]), tile.size(), 0.0);
           *it = tile;
         }
       }
-
+      // for zero dimentional array
+      if (N == 0) {
+        if (get_size_alloc()) {
+          std::unique_ptr<DataType[]> data = get_block();
+          out->set_scalar(data[0]);
+        } else {
+          out->set_scalar(static_cast<DataType>(0.0));
+        }
+      }
       return out;
     }
 

@@ -145,6 +145,43 @@ class TATensor : public TiledArray::Array<DataType,N> {
       }
       return TiledArray::Array<DataType,N>::operator()(revvars).block(low, high);
     }
+
+    DataType get_scalar() const { /*dummy function*/ assert(false); return static_cast<DataType>(0.0); }
+    void set_scalar(const DataType& i) { /*dummy function*/ assert(false); }
+};
+
+
+template<typename DataType>
+class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
+  public:
+    using TiledArray::Array<DataType,1>::end;
+    using TiledArray::Array<DataType,1>::trange;
+    auto begin() -> decltype(TiledArray::Array<DataType,1>::end()) { end(); }
+    auto begin() const -> decltype(TiledArray::Array<DataType,1>::end()) { end(); }
+
+  protected:
+    std::vector<IndexRange> range_;
+    DataType data_;
+
+    static std::shared_ptr<TiledArray::TiledRange> make_trange(const std::vector<IndexRange>&) {
+      std::vector<TiledArray::TiledRange1> ranges;
+      std::vector<size_t> tile_boundaries {0,1};
+      ranges.emplace_back(tile_boundaries.begin(), tile_boundaries.end());
+      return std::make_shared<TiledArray::TiledRange>(ranges.begin(), ranges.end());
+    }
+
+  public:
+    TATensor(const std::vector<IndexRange>& r, /*toggle for symmetry*/const bool dummy = false)
+      : TiledArray::Array<DataType,1>(madness::World::get_default(), *make_trange(r)), range_(r) {
+    }
+
+    DataType& operator()(const std::string& vars) { assert(vars.empty()); return data_; }
+    const DataType& operator()(const std::string& vars) const { assert(vars.empty()); return data_; }
+
+    std::vector<IndexRange> indexrange() const { return range_; }
+
+    DataType get_scalar() const { return data_; }
+    void set_scalar(const DataType& i) { data_ = i; }
 };
 
 }}
