@@ -67,13 +67,16 @@ class TATensor : public TiledArray::Array<DataType,N> {
   public:
     TATensor(const std::vector<IndexRange>& r, /*toggle for symmetry*/const bool dummy = false)
       : TiledArray::Array<DataType,N>(madness::World::get_default(), *make_trange(r)), range_(r) {
+      static_assert(N != 0, "this should not happen");
       assert(r.size() == N);
     }
 
     TATensor(const TATensor<DataType,N>& o) : TiledArray::Array<DataType,N>(o), range_(o.range_) {
+      static_assert(N != 0, "this should not happen");
     }
 
     TATensor(TATensor<DataType,N>&& o) : TiledArray::Array<DataType,N>(std::move(o)), range_(o.range_) {
+      static_assert(N != 0, "this should not happen");
     }
 
     auto local(const std::vector<Index>& index, const std::vector<IndexRange>& r) -> decltype(std::make_pair(true,begin())) {
@@ -157,8 +160,8 @@ class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
   public:
     using TiledArray::Array<DataType,1>::end;
     using TiledArray::Array<DataType,1>::trange;
-    auto begin() -> decltype(TiledArray::Array<DataType,1>::end()) { end(); }
-    auto begin() const -> decltype(TiledArray::Array<DataType,1>::end()) { end(); }
+    auto begin() -> decltype(TiledArray::Array<DataType,1>::end()) { return end(); }
+    auto begin() const -> decltype(TiledArray::Array<DataType,1>::end()) { return end(); }
 
   protected:
     std::vector<IndexRange> range_;
@@ -176,6 +179,12 @@ class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
       : TiledArray::Array<DataType,1>(madness::World::get_default(), *make_trange(r)), range_(r) {
     }
 
+    TATensor(const TATensor<DataType,0>& o) : TiledArray::Array<DataType,1>(o), range_(o.range_), data_(o.data_) {
+    }
+
+    TATensor(TATensor<DataType,0>&& o) : TiledArray::Array<DataType,1>(std::move(o)), range_(o.range_), data_(o.data_) {
+    }
+
     DataType& operator()(const std::string& vars) { assert(vars.empty()); return data_; }
     const DataType& operator()(const std::string& vars) const { assert(vars.empty()); return data_; }
 
@@ -184,6 +193,7 @@ class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
     DataType get_scalar() const { return data_; }
     void set_scalar(const DataType& i) { data_ = i; }
 };
+
 
 }}
 
