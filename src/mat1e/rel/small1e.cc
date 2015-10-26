@@ -35,14 +35,14 @@ template<> void Small1e<NAIBatch>::computebatch(const array<shared_ptr<const She
   const int dimb0 = input[1]->nbasis();
 
   if (mol->natom() < nucleus_blocksize__) {
-    SmallInts1e<NAIBatch> batch(input, mol);
+    SmallInts1e<NAIBatch, shared_ptr<const Molecule>> batch(input, mol);
     batch.compute();
     for (int i = 0; i != this->Nblocks(); ++i)
       this->matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
   } else {
     const vector<shared_ptr<const Molecule>> atom_subsets = mol->split_atoms(nucleus_blocksize__);
     for (auto& current_mol : atom_subsets) {
-      SmallInts1e<NAIBatch> batch(input, current_mol);
+      SmallInts1e<NAIBatch, shared_ptr<const Molecule>> batch(input, current_mol);
       batch.compute();
       for (int i = 0; i != this->Nblocks(); ++i)
         this->matrices_[i]->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, batch[i]);
@@ -57,9 +57,9 @@ template<> void Small1e<ERIBatch>::computebatch(const array<shared_ptr<const She
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
 #ifdef LIBINT_INTERFACE
-  SmallInts1e<Libint> batch(input, mol);
+  SmallInts1e<Libint, shared_ptr<const Molecule>> batch(input, mol);
 #else
-  SmallInts1e<ERIBatch> batch(input, mol);
+  SmallInts1e<ERIBatch, shared_ptr<const Molecule>> batch(input, mol);
 #endif
 
   vector<shared_ptr<const Shell>> nshells;

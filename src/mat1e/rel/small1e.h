@@ -67,8 +67,8 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
 
     // Unpack variadic template arguments here
     template <int ...S>
-    SmallInts1e<Batch, Args...> get_batch(std::array<std::shared_ptr<const Shell>,2> input, std::shared_ptr<const Molecule> mol, seq<S...>) {
-      SmallInts1e<Batch, Args...> out(input, mol, std::get<S>(args_) ...);
+    SmallInts1e<Batch, std::shared_ptr<const Molecule>, Args...> get_batch(std::array<std::shared_ptr<const Shell>,2> input, std::shared_ptr<const Molecule> mol, seq<S...>) {
+      SmallInts1e<Batch, std::shared_ptr<const Molecule>, Args...> out(input, mol, std::get<S>(args_) ...);
       return out;
     }
 
@@ -77,7 +77,7 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      SmallInts1e<Batch, Args...> batch = get_batch(input, mol, typename gens<sizeof...(Args)>::type());
+      SmallInts1e<Batch, std::shared_ptr<const Molecule>, Args...> batch = get_batch(input, mol, typename gens<sizeof...(Args)>::type());
       batch.compute();
 
       for (int i = 0; i != this->Nblocks(); ++i)

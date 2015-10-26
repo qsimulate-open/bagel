@@ -41,7 +41,6 @@ class SmallInts1e {
   protected:
     std::array<std::shared_ptr<Matrix>,4*Batch::Nblocks()> data_;
 
-    const std::shared_ptr<const Molecule> mol_;
     const std::tuple<Args...> args_;
     const std::array<std::shared_ptr<const Shell>,2> shells_;
 
@@ -77,8 +76,8 @@ class SmallInts1e {
     }
 
   public:
-    SmallInts1e(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, Args... args)
-      : mol_(mol), args_(args...), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
+    SmallInts1e(std::array<std::shared_ptr<const Shell>,2> info, Args... args)
+      : args_(args...), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
 
       for (int i = 0; i != Nblocks(); ++i)
         data_[i] = std::make_shared<Matrix>(shells_[0]->nbasis(), shells_[1]->nbasis(), true);
@@ -89,7 +88,7 @@ class SmallInts1e {
     // Unpack variadic template arguments here
     template <int ...S>
     std::shared_ptr<Batch> get_batch(std::shared_ptr<const Shell> a0, std::shared_ptr<const Shell> a1, seq<S...>) {
-      auto out = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{a0, a1}}, mol_, std::get<S>(args_) ...);
+      auto out = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{a0, a1}}, std::get<S>(args_) ...);
       return out;
     }
 
@@ -149,9 +148,9 @@ class SmallInts1e {
 template<>
 template<typename Value>
 #ifdef LIBINT_INTERFACE
-void SmallInts1e<Libint>::compute(const Value& nshells) {
+void SmallInts1e<Libint, std::shared_ptr<const Molecule>>::compute(const Value& nshells) {
 #else
-void SmallInts1e<ERIBatch>::compute(const Value& nshells) {
+void SmallInts1e<ERIBatch, std::shared_ptr<const Molecule>>::compute(const Value& nshells) {
 #endif
   const int a0size_inc = shells_[0]->nbasis_aux_increment();
   const int a1size_inc = shells_[1]->nbasis_aux_increment();
