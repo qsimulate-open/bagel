@@ -186,7 +186,7 @@ void K2ext<double>::init() {
 
           {
             const std::vector<Index> index = {i0, i1, i2, i3};
-            auto tileiter = data_->local(index);
+            auto tileiter = data_->local(index, blocks_);
             if (tileiter.first) {
               const TiledArray::Range range = data_->trange().make_tile_range(tileiter.second.ordinal());
               typename TiledArray::Array<double,4>::value_type tile(range);
@@ -197,7 +197,8 @@ void K2ext<double>::init() {
 
           if (hashkey23 != hashkey01) {
             const std::vector<Index> index = {i2, i3, i0, i1};
-            auto tileiter = data_->local(index);
+            const std::vector<IndexRange> rrev = {blocks_[2], blocks_[3], blocks_[0], blocks_[1]};
+            auto tileiter = data_->local(index, rrev);
             if (tileiter.first) {
               const TiledArray::Range range = data_->trange().make_tile_range(tileiter.second.ordinal());
               typename TiledArray::Array<double,4>::value_type tile(range);

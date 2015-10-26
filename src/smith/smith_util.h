@@ -101,7 +101,7 @@ static void fill_block(std::shared_ptr<TATensor<DataType,N>> target, std::shared
   for (auto it = ranges.begin(); it != ranges.end(); ++it) {
     std::map<size_t,Index> key;
     for (auto& j : *it)
-      key.emplace(j.offset(), j);
+      key.emplace(j.offset()-it->front().offset(), j);
     keymap.push_back(key);
   }
 

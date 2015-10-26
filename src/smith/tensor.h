@@ -75,7 +75,7 @@ class Tensor_ {
         for (auto i = lo.rbegin(); i != lo.rend(); ++i, ++cnt) {
           Index ind;
           for (auto& index : range_[cnt])
-            if (index.offset() == *i) {
+            if (index.offset()-range_[cnt].front().offset() == *i) {
               ind = index;
               break;
             }
@@ -111,7 +111,7 @@ class Tensor_ {
       for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
         std::map<size_t,size_t> key;
         for (auto& j : *it)
-          key.emplace(j.offset(), j.key());
+          key.emplace(j.offset()-it->front().offset(), j.key());
         keymap.push_back(key);
       }
       auto out = std::make_shared<TATensor<DataType,N>>(range_);

@@ -57,8 +57,8 @@ class TATensor : public TiledArray::Array<DataType,N> {
       for (auto it = r.rbegin(); it != r.rend(); ++it) {
         std::vector<size_t> tile_boundaries;
         for (auto& j : *it)
-          tile_boundaries.push_back(j.offset());
-        tile_boundaries.push_back(it->back().offset()+it->back().size());
+          tile_boundaries.push_back(j.offset()-it->front().offset());
+        tile_boundaries.push_back(it->back().offset()+it->back().size()-it->front().offset());
         ranges.emplace_back(tile_boundaries.begin(), tile_boundaries.end());
       }
       return std::make_shared<TiledArray::TiledRange>(ranges.begin(), ranges.end());
@@ -76,7 +76,7 @@ class TATensor : public TiledArray::Array<DataType,N> {
     TATensor(TATensor<DataType,N>&& o) : TiledArray::Array<DataType,N>(std::move(o)), range_(o.range_) {
     }
 
-    auto local(const std::vector<Index>& index) -> decltype(std::make_pair(true,begin())) {
+    auto local(const std::vector<Index>& index, const std::vector<IndexRange>& r) -> decltype(std::make_pair(true,begin())) {
       assert(index.size() == N);
       bool out = false;
       auto it = begin();
@@ -86,9 +86,10 @@ class TATensor : public TiledArray::Array<DataType,N> {
         assert(lo.size() == N);
         bool found = true;
         auto j = index.rbegin();
+        auto jj = r.rbegin();
         for (auto& i : lo) {
-          found &= i == j->offset();
-          ++j;
+          found &= i == (j->offset() - jj->front().offset());
+          ++j; ++jj;
         }
         out = found;
         if (found) break;
