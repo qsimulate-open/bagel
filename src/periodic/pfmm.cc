@@ -79,9 +79,11 @@ bool PFMM::is_in_cff(array<double, 3> L) {
 
 void PFMM::compute_Mlm_direct() {
 
-  vector<array<double, 3>> primvecs(ndim_);
+  vector<array<double, 3>> primvecs(3);
   for (int i = 0; i != ndim_; ++i)
     primvecs[i] = scell_->primitive_vectors(i);
+  for (int i = ndim_; i != 3; ++i)
+    primvecs[i] = {{0.0, 0.0, 0.0}};
 
   // M* = sum of M in [-1, 1]
   const int n0 = pow(3, ndim_);
@@ -229,6 +231,7 @@ void PFMM::compute_Mlm_direct() {
 
 void PFMM::compute_Mlm() { // rectangular scell for now
 
+  mlm_.clear();
   mlm_.resize(msize_);
   const double pibeta = pi__ * pi__ / (beta__ * beta__);
   const int nvec = pow(2*extent_sum_+1, ndim_);
@@ -237,16 +240,18 @@ void PFMM::compute_Mlm() { // rectangular scell for now
   assert(vidx.size() == nvec);
   std::sort(vidx.begin(), vidx.end(), sort_vector); // sort to sum spherically
 
-  vector<array<double, 3>> primvecs(ndim_);
+  vector<array<double, 3>> primvecs(3);
   for (int i = 0; i != ndim_; ++i)
     primvecs[i] = scell_->primitive_vectors(i);
+  for (int i = ndim_; i != 3; ++i)
+    primvecs[i] = {{0.0, 0.0, 0.0}};
 
   for (int ivec = 0; ivec != nvec; ++ivec) {
     const int pos = ivec * 3;
     array<int, 3> idx = vidx[ivec];
-    rvec_[pos    ] = scell_->centre(0) + idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
-    rvec_[pos + 1] = scell_->centre(1) + idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
-    rvec_[pos + 2] = scell_->centre(2) + idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+    rvec_[pos    ] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
+    rvec_[pos + 1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
+    rvec_[pos + 2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
     Rsq_[ivec] = rvec_[pos]*rvec_[pos] + rvec_[pos+1]*rvec_[pos+1] + rvec_[pos+2]*rvec_[pos+2];
     T_[ivec] = Rsq_[ivec] * beta__ * beta__;
   }
@@ -441,7 +446,7 @@ vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const
   vector<array<double, 3>> primvecs(3);
   for (int i = 0; i != ndim_; ++i)
     primvecs[i] = scell_->primitive_vectors(i);
-  for (int i = ndim_; i != 3 - ndim_; ++i)
+  for (int i = ndim_; i != 3; ++i)
     primvecs[i] = {{0.0, 0.0, 0.0}};
 
   // translate Olm(m), contract with density, and sum over m
@@ -504,7 +509,7 @@ shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density)
   vector<array<double, 3>> primvecs(3);
   for (int i = 0; i != ndim_; ++i)
     primvecs[i] = scell_->primitive_vectors(i);
-  for (int i = ndim_; i != 3 - ndim_; ++i)
+  for (int i = ndim_; i != 3; ++i)
     primvecs[i] = {{0.0, 0.0, 0.0}};
 
   // translate Olm(L), contract with Slm
@@ -542,7 +547,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   vector<array<double, 3>> primvecs(3);
   for (int i = 0; i != ndim_; ++i)
     primvecs[i] = scell_->primitive_vectors(i);
-  for (int i = ndim_; i != 3 - ndim_; ++i)
+  for (int i = ndim_; i != 3; ++i)
     primvecs[i] = {{0.0, 0.0, 0.0}};
 
   // concatenate all cells within ws into one supercell
