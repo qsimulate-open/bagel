@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: general_small1e.h
+// Filename: small1e_general.h
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
@@ -31,15 +31,13 @@
 #ifndef __SRC_REL_GENERAL_SMALL1E_H
 #define __SRC_REL_GENERAL_SMALL1E_H
 
-#include <src/util/math/zmatrix.h>
-#include <src/integral/general_smallints1e.h>
-#include <src/integral/rys/naibatch.h>
+#include <src/integral/smallints1e_general.h>
 #include <src/mat1e/matrix1earray.h>
 
 namespace bagel {
 
 template <typename Batch>
-class General_Small1e : public Matrix1eArray<9*Batch::Nblocks()> {
+class Small1e_General : public Matrix1eArray<9*Batch::Nblocks()> {
   protected:
     void init(std::shared_ptr<const Molecule> mol) override {
       std::list<std::shared_ptr<const Shell>> shells;
@@ -71,7 +69,7 @@ class General_Small1e : public Matrix1eArray<9*Batch::Nblocks()> {
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      General_SmallInts1e<Batch> batch(input, mol);
+      SmallInts1e_General<Batch> batch(input, mol);
       batch.compute();
 
       for (int i = 0; i != this->Nblocks(); ++i)
@@ -79,12 +77,12 @@ class General_Small1e : public Matrix1eArray<9*Batch::Nblocks()> {
     }
 
   public:
-    General_Small1e(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<9*Batch::Nblocks()>(mol) {
+    Small1e_General(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<9*Batch::Nblocks()>(mol) {
       init(mol);
     }
 
     void print(const std::string name = "", const int len = 10) const override {
-      Matrix1eArray<9*Batch::Nblocks()>::print(name.empty() ? "General_Small1e" : name, len);
+      Matrix1eArray<9*Batch::Nblocks()>::print(name.empty() ? "Small1e_General" : name, len);
     }
 };
 

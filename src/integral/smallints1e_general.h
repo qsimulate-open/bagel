@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: general_smallints1e.h
+// Filename: smallints1e_general.h
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
@@ -28,23 +28,20 @@
 // Very similar to standard SmallInts1e - TODO Eliminate redundancy
 
 
-#ifndef __SRC_INTEGRAL_GENERAL_SMALLINTS1E_H
-#define __SRC_INTEGRAL_GENERAL_SMALLINTS1E_H
+#ifndef __SRC_INTEGRAL_SMALLINTS1E_GENERAL_H
+#define __SRC_INTEGRAL_SMALLINTS1E_GENERAL_H
 
-#include <src/molecule/molecule.h>
-#include <src/integral/rys/eribatch.h>
-#include <src/integral/libint/libint.h>
+#include <src/util/math/matrix.h>
 
 // computes (sigma p)Vnuc(sigma p), and returns 9 blocks of data
 
 namespace bagel {
 
 template<typename Batch>
-class General_SmallInts1e {
+class SmallInts1e_General {
   protected:
     std::array<std::shared_ptr<Matrix>,9*Batch::Nblocks()> data_;
 
-    const std::shared_ptr<const Molecule> mol_;
     const std::array<std::shared_ptr<const Shell>,2> shells_;
 
     const size_t size_block_;
@@ -85,8 +82,8 @@ class General_SmallInts1e {
     }
 
   public:
-    General_SmallInts1e(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol)
-      : mol_(mol), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
+    SmallInts1e_General(std::array<std::shared_ptr<const Shell>,2> info)
+      : shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
 
       for (int i = 0; i != Nblocks(); ++i)
         data_[i] = std::make_shared<Matrix>(shells_[0]->nbasis(), shells_[1]->nbasis(), true);
@@ -96,7 +93,7 @@ class General_SmallInts1e {
 
     template<typename Value>
     void compute(const Value&) {
-      static_assert(std::is_same<Value, void*>::value, "General_SmallInts1e::compute called illegally");
+      static_assert(std::is_same<Value, void*>::value, "SmallInts1e_General::compute called illegally");
       const int a0size_inc = shells_[0]->nbasis_aux_increment();
       const int a1size_inc = shells_[1]->nbasis_aux_increment();
       const int a0size_dec = shells_[0]->nbasis_aux_decrement();
