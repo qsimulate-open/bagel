@@ -77,7 +77,7 @@ class Small1e_London : public Matrix1eArray<4*Batch::Nblocks(), ZMatrix> {
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      SmallInts1e_London<Batch, Args...> batch = get_batch(input, mol, typename gens<sizeof...(Args)>::type());
+      SmallInts1e_London<Batch, std::shared_ptr<const Molecule>, Args...> batch = get_batch(input, mol, typename gens<sizeof...(Args)>::type());
       batch.compute();
 
       for (int i = 0; i != this->Nblocks(); ++i)
