@@ -127,7 +127,6 @@ void PFMM::compute_Mlm_direct() {
 
   // get L* = sum of L in FF'
   const int ws1 = 2 * ws_;
-  cout << "ws_ = " << ws_ << endl;
   const int n1 = pow(2*ws1+1, ndim_);
   vector<array<int, 3>> tmp = generate_vidx(ws1);
   assert(tmp.size() == n1);
@@ -181,20 +180,22 @@ void PFMM::compute_Mlm_direct() {
   for (int l = 0; l < max_rank_; ++l)
     for (int m = 0; m <= 2 * l; ++m)
       lm_map.push_back(make_pair(l, m-l));
+  assert(lm_map.size() == msize_);
 
-  vector<complex<double>> mlm(lstar); // iter 0
+  mlm_ = lstar; // iter 0
   double conv = 0.0;
 
   const int max_iter = 16; // to be changed!!!
+  mlm_[0] = 0.0;
   for (int n = 1; n <= max_iter; ++n) {
     vector<complex<double>> previous(msize_);
     for (int i = 0; i != msize_; ++i) {
       const int l = lm_map[i].first;
-      previous[i] = mlm[i] / pow(3.0, l+1);
-      mlm[i] = 0.0;
+      previous[i] = mlm_[i] / pow(3.0, l+1);
+      mlm_[i] = 0.0;
     }
 
-    for (int l = 0; l < max_rank_; ++l) {
+    for (int l = 1; l < max_rank_; ++l) {
       for (int m = 0; m <= 2*l; ++m) {
         const int im0 = l * l + m;
 
@@ -203,11 +204,11 @@ void PFMM::compute_Mlm_direct() {
             const int im1 = j * j + k;
             const int im = (l+j)*(l+j) + m + k;
             assert(l + j < max_rank_);
-            mlm[im0] += previous[im] * mstar[im1];
+            mlm_[im0] += previous[im] * mstar[im1];
           }
         }
-        mlm[im0] += lstar[im0];
-        conv += norm(mlm[im0]);
+        mlm_[im0] += lstar[im0];
+        conv += norm(mlm_[im0]);
       }
     }
     if (conv < numerical_zero__)
@@ -218,9 +219,9 @@ void PFMM::compute_Mlm_direct() {
   for (int l = 0; l < max_rank_; ++l)
     for (int m = 0; m <= l; ++m) { // Slm = -sl-m
       const int imul = l * l + m + l;
-      const double tmp = mlm[imul].real();
+      const double tmp = mlm_[imul].real();
       //if (abs(tmp) > 1e-8)
-      if (l % 2 == 0 && m % 4 == 0)
+      //if (l % 2 == 0 && m % 4 == 0)
         cout << "l = " << l << "  m = " << m << "  mlm = " << setw(20) << setprecision(14) << tmp << endl;
     }
   cout << " ******* END ******* " << endl;
@@ -392,7 +393,8 @@ void PFMM::compute_Mlm() { // rectangular scell for now
   }
 
   // DEBUG
-  for (int l = 0; l < max_rank_; ++l)
+  mlm_[0] = 0.0;
+  for (int l = 1; l < max_rank_; ++l)
     for (int m = 0; m <= l; ++m) { // Mlm = -Ml-m
       const int imul = l * l + m + l;
       const double mlm = mlm_[imul].real();
@@ -449,7 +451,7 @@ vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const
   for (int i = ndim_; i != 3; ++i)
     primvecs[i] = {{0.0, 0.0, 0.0}};
 
-  // translate Olm(m), contract with density, and sum over m
+  // translate Olm_ab(0), contract with density D_ab(m), and sum over m
   const size_t nbasis1 = scell_->multipoles().front()->ndim();
   const size_t nbasis0 = scell_->multipoles().front()->mdim();
   vector<complex<double>> olm(osize_);
@@ -460,40 +462,40 @@ vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const
     mvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
     mvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
     mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
-    vector<shared_ptr<const ZMatrix>> tmp = scell_->shift_multipoles(mvec);
-    assert(tmp.size() == osize_);
+    vector<shared_ptr<const ZMatrix>> olm_ab_m = scell_->shift_multipoles(mvec);
+    assert(olm_ab_m.size() == osize_);
 
     shared_ptr<const ZMatrix> ffden = density->pdata(ivec);
     for (int i = 0; i != osize_; ++i) {
-      complex<double> contract = 0.0;
-      for (int j = 0; j != nbasis1; ++j)
-        for (int k = 0; k != nbasis0; ++k)
-          contract += tmp[i]->element(k, j) * ffden->element(k, j);
-      olm[i] += contract;
+      complex<double> olm_m = 0.0;
+      for (int a = 0; a != nbasis1; ++a)
+        for (int b = 0; b != nbasis0; ++b)
+          olm_m += olm_ab_m[i]->element(b, a) * ffden->element(b, a);
+      olm[i] += olm_m;
     }
   }
 
+  // contract with Mlm
   vector<complex<double>> out(osize_);
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2*l; ++m) {
       const int im1 = l * l + m;
 
-      complex<double> tmp;
+      complex<double> slm;
       for (int j = 0; j <= lmax_; ++j) {
         for (int k = 0; k <= 2*j; ++k) {
           const int im2 = j * j + k;
-          const int a = l + j;
-          const int b = m + k - l - j;
-          const int im = a * a + m + k;
-          tmp += mlm_.at(im) * olm.at(im2);
+          const int im = (l+j)*(l+j) + m + k;
+          slm += mlm_.at(im) * olm.at(im2);
         }
       }
-      out[im1] = pow(-1.0, l) * tmp;
       cout << "Slm(" << l << ", " << m << ") = " << setprecision(10) << out[im1] << "   " << olm[im1]<< endl;
+      out[im1] = pow(-1.0, l) * slm;
     }
   }
 
   return out;
+  // should be the same as getting Slm(0) from Olm(0) and Mlm, translate Slm(0) then sum over m
 }
 
 
