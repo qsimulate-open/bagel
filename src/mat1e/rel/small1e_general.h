@@ -69,7 +69,7 @@ class Small1e_General : public Matrix1eArray<9*Batch::Nblocks()> {
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      SmallInts1e_General<Batch> batch(input, mol);
+      SmallInts1e_General<Batch> batch(input);
       batch.compute();
 
       for (int i = 0; i != this->Nblocks(); ++i)
