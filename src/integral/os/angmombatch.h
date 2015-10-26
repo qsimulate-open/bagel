@@ -46,10 +46,6 @@ class AngMomBatch : public OSIntegral<std::complex<double>,Int_t::London> {
     AngMomBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, const std::array<double,3> _mcoord)
       : OSIntegral<std::complex<double>,Int_t::London>(basis), mcoord_(_mcoord) { common_init(); }
 
-    // TODO Get rid of this; mol is not used
-    AngMomBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<const Molecule> mol, const std::array<double,3> _mcoord)
-      : OSIntegral<std::complex<double>,Int_t::London>(basis), mcoord_(_mcoord) { common_init(); }
-
     constexpr static int Nblocks() { return 3; }
 
     void compute() override;

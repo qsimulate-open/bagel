@@ -35,14 +35,14 @@ template<> void Small1e_London<ComplexNAIBatch>::computebatch(const array<shared
   const int dimb0 = input[1]->nbasis();
 
   if (mol->natom() < nucleus_blocksize__) {
-    SmallInts1e_London<ComplexNAIBatch, std::shared_ptr<const Molecule>> batch(input, mol);
+    SmallInts1e_London<ComplexNAIBatch, shared_ptr<const Molecule>> batch(input, mol);
     batch.compute();
     for (int i = 0; i != this->Nblocks(); ++i)
       this->matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
   } else {
     const vector<shared_ptr<const Molecule>> atom_subsets = mol->split_atoms(nucleus_blocksize__);
     for (auto& current_mol : atom_subsets) {
-      SmallInts1e_London<ComplexNAIBatch, std::shared_ptr<const Molecule>> batch(input, current_mol);
+      SmallInts1e_London<ComplexNAIBatch, shared_ptr<const Molecule>> batch(input, current_mol);
       batch.compute();
       for (int i = 0; i != this->Nblocks(); ++i)
         this->matrices_[i]->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, batch[i]);
