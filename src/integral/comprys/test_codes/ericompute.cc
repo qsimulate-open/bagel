@@ -47,6 +47,7 @@ std::complex<double> overlap_Ix (const int dimension, const std::vector<double> 
 
   const int a = A_.angular_momentum[dimension];
   const int b = B_.angular_momentum[dimension];
+  assert(a >= 0 && b >= 0);
   const int ab = a + b;
   const double alpha = A_.exponent;
   const double beta  = B_.exponent;
@@ -2069,9 +2070,11 @@ complex<double> get_small_orb_angular_matrix_element (const vector<double> field
       A.change_angular( ax[0]+newa[0], ax[1]+newa[1], ax[2]+newa[2] );
       B.change_angular( bx[0]+newb[0], bx[1]+newb[1], bx[2]+newb[2] );
       const complex<double> coef = Acoeff[a] * Bcoeff[b];
-      const vector<complex<double>> rawdata = orb_angular(field, Mcoord, A, B);
-      assert(rawdata.size() == 3);
-      if (coef != 0.0) out += coef * rawdata[dim];
+      if (coef != 0.0) {
+        const vector<complex<double>> rawdata = orb_angular(field, Mcoord, A, B);
+        out += coef * rawdata[dim];
+        assert(rawdata.size() == 3);
+      }
     }
   }
   return out;

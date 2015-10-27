@@ -27,7 +27,6 @@
 #ifndef __SRC_INTEGRAL_SMALLINTS1E_LONDON_H
 #define __SRC_INTEGRAL_SMALLINTS1E_LONDON_H
 
-#include <src/molecule/molecule.h>
 #include <src/integral/comprys/complexeribatch.h>
 #include <src/util/unpack.h>
 
