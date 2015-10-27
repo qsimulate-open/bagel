@@ -82,10 +82,9 @@ class AccTask : public Task {
   protected:
     double target_;
   public:
-    AccTask() {}
+    AccTask() : target_(0.0) {}
     ~AccTask() {}
     double target() const { return target_; }
-
 };
 
 }
