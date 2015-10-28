@@ -49,6 +49,8 @@ class TATensor : public TiledArray::Array<DataType,N> {
   protected:
     std::vector<IndexRange> range_;
 
+    bool initialized_;
+
 //TODO do something for symmetry
 //  std::map<std::vector<int>, std::pair<double,bool>> perm_;
 
@@ -64,45 +66,8 @@ class TATensor : public TiledArray::Array<DataType,N> {
       return std::make_shared<TiledArray::TiledRange>(ranges.begin(), ranges.end());
     }
 
-  public:
-    TATensor(const std::vector<IndexRange>& r, /*toggle for symmetry*/const bool dummy = false)
-      : TiledArray::Array<DataType,N>(madness::World::get_default(), *make_trange(r)), range_(r) {
-      static_assert(N != 0, "this should not happen");
-      assert(r.size() == N);
-    }
 
-    TATensor(const TATensor<DataType,N>& o) : TiledArray::Array<DataType,N>(o), range_(o.range_) {
-      static_assert(N != 0, "this should not happen");
-    }
-
-    TATensor(TATensor<DataType,N>&& o) : TiledArray::Array<DataType,N>(std::move(o)), range_(o.range_) {
-      static_assert(N != 0, "this should not happen");
-    }
-
-    auto local(const std::vector<Index>& index, const std::vector<IndexRange>& r) -> decltype(std::make_pair(true,begin())) {
-      assert(index.size() == N);
-      bool out = false;
-      auto it = begin();
-      for ( ; it != end(); ++it) {
-        const TiledArray::Range range = trange().make_tile_range(it.ordinal());
-        auto lo = range.lobound();
-        assert(lo.size() == N);
-        bool found = true;
-        auto j = index.rbegin();
-        auto jj = r.rbegin();
-        for (auto& i : lo) {
-          found &= i == (j->offset() - jj->front().offset());
-          ++j; ++jj;
-        }
-        out = found;
-        if (found) break;
-      }
-      return std::make_pair(out, it);
-    }
-
-    std::vector<IndexRange> indexrange() const { return range_; }
-
-    auto operator()(const std::string& vars) -> decltype(TiledArray::Array<DataType,N>::operator()(vars).block(std::array<size_t,N>(), std::array<size_t, N>())) {
+    std::tuple<std::string, std::array<size_t, N>, std::array<size_t, N>> index_mapping(const std::string& vars) const {
 #if defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 9
       using std::regex;
       using std::smatch;
@@ -147,11 +112,84 @@ class TATensor : public TiledArray::Array<DataType,N> {
           if (!find || matches) high[n] += 1;
         }
       }
-      return TiledArray::Array<DataType,N>::operator()(revvars).block(low, high);
+      return std::make_tuple(revvars, low, high);
     }
 
-    DataType get_scalar() const { /*dummy function*/ assert(false); return static_cast<DataType>(0.0); }
-    void set_scalar(const DataType& i) { /*dummy function*/ assert(false); }
+  public:
+    TATensor(const std::vector<IndexRange>& r, const bool initialize = false, /*toggle for symmetry*/const bool dummy = false)
+      : TiledArray::Array<DataType,N>(madness::World::get_default(), *make_trange(r)), range_(r), initialized_(initialize) {
+      static_assert(N != 0, "this should not happen");
+      assert(r.size() == N);
+      if (initialize)
+        this->fill_local(0.0);
+    }
+
+    TATensor(const TATensor<DataType,N>& o) : TiledArray::Array<DataType,N>(o), range_(o.range_), initialized_(true) {
+      static_assert(N != 0, "this should not happen");
+    }
+
+    TATensor(TATensor<DataType,N>&& o) : TiledArray::Array<DataType,N>(std::move(o)), range_(o.range_), initialized_(true) {
+      static_assert(N != 0, "this should not happen");
+    }
+
+    virtual void init() { assert(false); }
+
+    bool initialized() const { return initialized_; }
+
+    void fill_local(const DataType& o) {
+      initialized_ = true;
+      TiledArray::Array<DataType,N>::fill_local(o);
+    }
+
+    auto get_local(const std::vector<Index>& index, const std::vector<IndexRange>& r) -> decltype(std::make_pair(true,begin())) {
+      assert(index.size() == N);
+      bool out = false;
+      auto it = begin();
+      for ( ; it != end(); ++it) {
+        const TiledArray::Range range = trange().make_tile_range(it.ordinal());
+        auto lo = range.lobound();
+        assert(lo.size() == N);
+        bool found = true;
+        auto j = index.rbegin();
+        auto jj = r.rbegin();
+        for (auto& i : lo) {
+          found &= i == (j->offset() - jj->front().offset());
+          ++j; ++jj;
+        }
+        out = found;
+        if (found) break;
+      }
+      return std::make_pair(out, it);
+    }
+
+    std::vector<IndexRange> indexrange() const { return range_; }
+
+    auto operator()(const std::string& vars) const -> decltype(TiledArray::Array<DataType,N>::operator()(vars).block(std::array<size_t,N>(), std::array<size_t, N>())) {
+      auto m = index_mapping(vars);
+      return TiledArray::Array<DataType,N>::operator()(std::get<0>(m)).block(std::get<1>(m), std::get<2>(m));
+    }
+
+    auto operator()(const std::string& vars) -> decltype(TiledArray::Array<DataType,N>::operator()(vars).block(std::array<size_t,N>(), std::array<size_t, N>())) {
+      auto m = index_mapping(vars);
+      return TiledArray::Array<DataType,N>::operator()(std::get<0>(m)).block(std::get<1>(m), std::get<2>(m));
+    }
+
+    TATensor<DataType,N>& operator=(TATensor<DataType,N>&& o) {
+      range_ = o.range_;
+      initialized_ = o.initialized_;
+      TiledArray::Array<DataType,N>::operator=(o);
+      return *this;
+    }
+
+    TATensor<DataType,N>& operator=(const TATensor<DataType,N>& o) {
+      range_ = o.range_;
+      initialized_ = o.initialized_;
+      TiledArray::Array<DataType,N>::operator=(o);
+      return *this;
+    }
+
+    // Dummy function...
+    DataType get_scalar() const { assert(false); return 0.0; }
 };
 
 
@@ -167,6 +205,8 @@ class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
     std::vector<IndexRange> range_;
     DataType data_;
 
+    bool initialized_;
+
     static std::shared_ptr<TiledArray::TiledRange> make_trange(const std::vector<IndexRange>&) {
       std::vector<TiledArray::TiledRange1> ranges;
       std::vector<size_t> tile_boundaries {0,1};
@@ -175,23 +215,42 @@ class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
     }
 
   public:
-    TATensor(const std::vector<IndexRange>& r, /*toggle for symmetry*/const bool dummy = false)
-      : TiledArray::Array<DataType,1>(madness::World::get_default(), *make_trange(r)), range_(r) {
+    TATensor(const std::vector<IndexRange>& r, /*dummy*/bool initialize = true, /*toggle for symmetry*/const bool dummy = false)
+      : TiledArray::Array<DataType,1>(madness::World::get_default(), *make_trange(r)), range_(r), initialized_(true) {
     }
 
-    TATensor(const TATensor<DataType,0>& o) : TiledArray::Array<DataType,1>(o), range_(o.range_), data_(o.data_) {
+    TATensor(const TATensor<DataType,0>& o) : TiledArray::Array<DataType,1>(o), range_(o.range_), data_(o.data_), initialized_(true) {
     }
 
-    TATensor(TATensor<DataType,0>&& o) : TiledArray::Array<DataType,1>(std::move(o)), range_(o.range_), data_(o.data_) {
+    TATensor(TATensor<DataType,0>&& o) : TiledArray::Array<DataType,1>(std::move(o)), range_(o.range_), data_(o.data_), initialized_(true) {
     }
 
     DataType& operator()(const std::string& vars) { assert(vars.empty()); return data_; }
     const DataType& operator()(const std::string& vars) const { assert(vars.empty()); return data_; }
 
+    TATensor<DataType,0>& operator=(TATensor<DataType,0>&& o) {
+      range_ = o.range_;
+      data_ = o.data_;
+      initialized_ = o.initialized_;
+      TiledArray::Array<DataType,1>::operator=(o);
+      return *this;
+    }
+
+    TATensor<DataType,0>& operator=(const TATensor<DataType,0>& o) {
+      range_ = o.range_;
+      data_ = o.data_;
+      initialized_ = o.initialized_;
+      TiledArray::Array<DataType,1>::operator=(o);
+      return *this;
+    }
+
+
     std::vector<IndexRange> indexrange() const { return range_; }
 
+    bool initialized() const { return initialized_; }
+    void fill_local(const DataType& i) { data_ = i; }
+
     DataType get_scalar() const { return data_; }
-    void set_scalar(const DataType& i) { data_ = i; }
 };
 
 

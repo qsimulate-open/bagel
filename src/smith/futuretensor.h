@@ -48,6 +48,26 @@ class FutureTensor_ : public Tensor_<DataType> {
     void init() const override { init_->compute(); initialized_ = true; }
 };
 
+
+template<typename DataType, int N>
+class FutureTATensor : public TATensor<DataType,N> {
+  protected:
+    using TATensor<DataType,N>::initialized_;
+
+  protected:
+    std::shared_ptr<Tensor_<DataType>> tensor_;
+    mutable std::shared_ptr<Task> init_;
+
+  public:
+    FutureTATensor(const TATensor<DataType,N>& i,  std::shared_ptr<Tensor_<DataType>> t, std::shared_ptr<Task> j) : TATensor<DataType,N>(i), tensor_(t), init_(j) { }
+
+    void init() override {
+      init_->compute();
+      TATensor<DataType,N>::operator=(std::move(*tensor_->template tiledarray<N>()));
+    }
+};
+
+
 namespace CASPT2 { using FutureTensor = FutureTensor_<double>; }
 namespace MRCI   { using FutureTensor = FutureTensor_<double>; }
 namespace RelCASPT2 { using FutureTensor = FutureTensor_<std::complex<double>>; }

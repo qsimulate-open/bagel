@@ -145,9 +145,9 @@ class Tensor_ {
       if (N == 0) {
         if (get_size_alloc()) {
           std::unique_ptr<DataType[]> data = get_block();
-          out->set_scalar(data[0]);
+          out->fill_local(data[0]);
         } else {
-          out->set_scalar(static_cast<DataType>(0.0));
+          out->fill_local(static_cast<DataType>(0.0));
         }
       }
       return out;
@@ -218,7 +218,7 @@ class Tensor_ {
       data_->conjugate_inplace();
     }
 
-    virtual void init() const { initialized_ = true; }
+    virtual void init() const { initialized_ = true; } /*const due to hacky code*/
 
     std::vector<DataType> diag() const;
 
