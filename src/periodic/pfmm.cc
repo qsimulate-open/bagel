@@ -126,7 +126,7 @@ void PFMM::compute_Mlm_direct() {
   }
 
   // get L* = sum of L in FF'
-  const int ws1 = 2 * ws_;
+  const int ws1 = 3 * ws_ + 1;
   const int n1 = pow(2*ws1+1, ndim_);
   vector<array<int, 3>> tmp = generate_vidx(ws1);
   assert(tmp.size() == n1);
@@ -183,10 +183,8 @@ void PFMM::compute_Mlm_direct() {
   assert(lm_map.size() == msize_);
 
   mlm_ = lstar; // iter 0
-  double conv = 0.0;
 
-  const int max_iter = 16; // to be changed!!!
-  mlm_[0] = 0.0;
+  const int max_iter = 15;
   for (int n = 1; n <= max_iter; ++n) {
     vector<complex<double>> previous(msize_);
     for (int i = 0; i != msize_; ++i) {
@@ -195,7 +193,7 @@ void PFMM::compute_Mlm_direct() {
       mlm_[i] = 0.0;
     }
 
-    for (int l = 1; l < max_rank_; ++l) {
+    for (int l = 0; l < max_rank_; ++l) {
       for (int m = 0; m <= 2*l; ++m) {
         const int im0 = l * l + m;
 
@@ -208,11 +206,8 @@ void PFMM::compute_Mlm_direct() {
           }
         }
         mlm_[im0] += lstar[im0];
-        conv += norm(mlm_[im0]);
       }
     }
-    if (conv < numerical_zero__)
-      break;
   }
   // DEBUG
   cout << "RESULTS FROM DIRECT SUMMATION" << endl;
@@ -262,52 +257,54 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     const int rank = l + 1;
 
     for (int ivec = 1; ivec != nvec; ++ivec) {
-      array<int, 3> idx = vidx[ivec];
+      if (Rsq_[ivec] > numerical_zero__) {
+        array<int, 3> idx = vidx[ivec];
 
-      const int pos = ivec * 3;
-      const double rsq = Rsq_[ivec];
-      const double r = sqrt(rsq);
-      const double ctheta = (rsq > numerical_zero__) ? rvec_[pos+2]/r : 0.0;
-      const double phi = atan2(rvec_[pos+1], rvec_[pos]);
-      const double* croots = roots_ + ivec * rank;
-      const double* cweights = weights_ + ivec * rank;
+        const int pos = ivec * 3;
+        const double rsq = Rsq_[ivec];
+        const double r = sqrt(rsq);
+        const double ctheta = rvec_[pos+2]/r;
+        const double phi = atan2(rvec_[pos+1], rvec_[pos]);
+        const double* croots = roots_ + ivec * rank;
+        const double* cweights = weights_ + ivec * rank;
 
-      double glower = 0.0;
-      if (l == 0) {
-        for (int i = 0; i != rank; ++i)
-          glower += cweights[i];
-      } else {
-        for (int i = 0; i != rank; ++i)
-          glower += cweights[i] * pow(croots[i], l);
-      }
-
-      const double coeff = 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
-      const double gupper = 1.0 / pow(r, l+1.0) - glower * coeff;
-
-      for (int mm = 0; mm <= 2 * l; ++mm) {
-        const int m = mm - l;
-        const int am = abs(m);
-        const int imul = l * l + mm;
-
-        double plm_tilde = plm.compute(l, am, ctheta);
-        double ft = 1.0;
-        for (int i = 1; i <= l - am; ++i) {
-          plm_tilde *= ft;
-          ft += 1.0;
+        double glower = 0.0;
+        if (l == 0) {
+          for (int i = 0; i != rank; ++i)
+            glower += cweights[i];
+        } else {
+          for (int i = 0; i != rank; ++i)
+            glower += cweights[i] * pow(croots[i], l);
         }
-        const double sign = (m >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
 
-        if (abs(idx[0]) > ws_ && abs(idx[1]) > ws_ && abs(idx[2]) > ws_) {
-          // real term
-          const double real = gupper * sign * plm_tilde;
-          const double imag = gupper * sin(am * phi) * plm_tilde;
-          mlm_[imul] += complex<double>(real, imag);
-        }
-        if (abs(idx[0]) <= ws_ && abs(idx[1]) <= ws_ && abs(idx[2]) <= ws_) {
-          // substract smooth part within ws_
-          const double real = coeff * glower * sign * plm_tilde;
-          const double imag = coeff * glower * sin(am * phi) * plm_tilde;
-          mlm_[imul] -= complex<double>(real, imag);
+        const double coeff = 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
+        const double gupper = 1.0 / pow(r, l+1.0) - glower * coeff;
+
+        for (int mm = 0; mm <= 2 * l; ++mm) {
+          const int m = mm - l;
+          const int am = abs(m);
+          const int imul = l * l + mm;
+
+          double plm_tilde = plm.compute(l, am, ctheta);
+          double ft = 1.0;
+          for (int i = 1; i <= l - am; ++i) {
+            plm_tilde *= ft;
+            ft += 1.0;
+          }
+          const double sign = (m >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
+
+          if (abs(idx[0]) > ws_ || abs(idx[1]) > ws_ || abs(idx[2]) > ws_) {
+            // real term
+            const double real = gupper * sign * plm_tilde;
+            const double imag = gupper * sin(am * phi) * plm_tilde;
+            mlm_[imul] += complex<double>(real, imag);
+          }
+          if (abs(idx[0]) <= ws_ && abs(idx[1]) <= ws_ && abs(idx[2]) <= ws_) {
+            // substract smooth part within ws_
+            const double real = coeff * glower * sign * plm_tilde;
+            const double imag = coeff * glower * sin(am * phi) * plm_tilde;
+            mlm_[imul] -= complex<double>(real, imag);
+          }
         }
       }
     }
@@ -352,49 +349,50 @@ void PFMM::compute_Mlm() { // rectangular scell for now
 
 
     for (int ivec = 1; ivec != nvec; ++ivec) {
-      const int pos = ivec * 3;
-      const double rsq = Rsq_[ivec];
-      const double r = sqrt(rsq);
-      const double ctheta = (rsq > numerical_zero__) ? kvec_[pos+2]/r : 0.0;
-      const double phi = atan2(kvec_[pos+1], kvec_[pos]);
-      const double* croots = roots_ + ivec * rank;
-      const double* cweights = weights_ + ivec * rank;
+      if (Rsq_[ivec] > numerical_zero__) {
+        const int pos = ivec * 3;
+        const double rsq = Rsq_[ivec];
+        const double r = sqrt(rsq);
+        const double ctheta = kvec_[pos+2]/r;
+        const double phi = atan2(kvec_[pos+1], kvec_[pos]);
+        const double* croots = roots_ + ivec * rank;
+        const double* cweights = weights_ + ivec * rank;
 
-      double glower = 0.0;
-      if (l == 0) {
-        for (int i = 0; i != rank; ++i)
-          glower += cweights[i];
-      } else {
-        for (int i = 0; i != rank; ++i)
-          glower += cweights[i] * pow(croots[i], l);
-      }
-
-      for (int mm = 0; mm <= 2 * l; ++mm) {
-        const int m = mm - l;
-        const int am = abs(m);
-        const int imul = l * l + mm;
-
-        double plm_tilde = plm.compute(l, am, ctheta);
-        double ft = 1.0;
-        for (int i = 1; i <= l - am; ++i) {
-          plm_tilde *= ft;
-          ft += 1.0;
+        double glower = 0.0;
+        if (l == 0) {
+          for (int i = 0; i != rank; ++i)
+            glower += cweights[i];
+        } else {
+          for (int i = 0; i != rank; ++i)
+            glower += cweights[i] * pow(croots[i], l);
         }
 
-        const double sign = (m >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
+        for (int mm = 0; mm <= 2 * l; ++mm) {
+          const int m = mm - l;
+          const int am = abs(m);
+          const int imul = l * l + mm;
 
-        // smooth term
-        const double coeffm = plm_tilde * sgamma(l, r) * exp(-rsq * pibeta) / rsq;
-        double real = coeffm * sign;
-        double imag = coeffm * sin(am * phi);
-        mlm_[imul] += coeffl * complex<double>(real, imag);
+          double plm_tilde = plm.compute(l, am, ctheta);
+          double ft = 1.0;
+          for (int i = 1; i <= l - am; ++i) {
+            plm_tilde *= ft;
+            ft += 1.0;
+          }
+
+          const double sign = (m >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
+
+          // smooth term
+          const double coeffm = plm_tilde * sgamma(l, r) * exp(-rsq * pibeta) / rsq;
+          double real = coeffm * sign;
+          double imag = coeffm * sin(am * phi);
+          mlm_[imul] += coeffl * complex<double>(real, imag);
+        }
       }
     }
   }
 
   // DEBUG
-  mlm_[0] = 0.0;
-  for (int l = 1; l < max_rank_; ++l)
+  for (int l = 0; l < max_rank_; ++l)
     for (int m = 0; m <= l; ++m) { // Mlm = -Ml-m
       const int imul = l * l + m + l;
       const double mlm = mlm_[imul].real();
@@ -645,9 +643,8 @@ vector<array<int, 3>> PFMM::generate_vidx(const int n) const {
 shared_ptr<const PData> PFMM::pcompute_Jop(shared_ptr<const PData> density) const {
   shared_ptr<const PData> nf = compute_cfmm(density);
   assert(nf->nblock() == 2*ws_+1);
-//  shared_ptr<const PData> ff = compute_far_field(density);
-//  assert(nf->nblock() == 2*ws_+1);
+  shared_ptr<const PData> ff = compute_far_field(density);
+  assert(nf->nblock() == 2*ws_+1);
 
-  return make_shared<const PData>(*nf);
-  //return make_shared<const PData>(*nf + *ff);
+  return make_shared<const PData>(*nf + *ff);
 }
