@@ -31,7 +31,7 @@ using namespace std;
 using namespace bagel;
 
 AngMom::AngMom(shared_ptr<const Geometry> g, array<double,3> mc) : geom_(g), mcoord_(mc) {
-  assert(geom_->magnetism());
+  assert(!geom_->magnetism());
 }
 
 
