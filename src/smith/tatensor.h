@@ -134,6 +134,11 @@ class TATensor : public TiledArray::Array<DataType,N> {
 
     virtual void init() { assert(false); }
 
+    void zero() {
+      for (auto it = begin(); it != end(); ++it)
+        std::fill_n(it->begin(), it->size(), 0.0);
+    }
+
     bool initialized() const { return initialized_; }
 
     void fill_local(const DataType& o) {
@@ -187,6 +192,9 @@ class TATensor : public TiledArray::Array<DataType,N> {
       TiledArray::Array<DataType,N>::operator=(o);
       return *this;
     }
+
+    std::shared_ptr<TATensor<DataType,N>> clone() const { return std::make_shared<TATensor<DataType,N>>(range_); }
+    std::shared_ptr<TATensor<DataType,N>> copy() const { return std::make_shared<TATensor<DataType,N>>(*this); }
 
     // Dummy function...
     DataType get_scalar() const { assert(false); return 0.0; }
@@ -244,6 +252,8 @@ class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
       return *this;
     }
 
+    std::shared_ptr<TATensor<DataType,0>> clone() const { return std::make_shared<TATensor<DataType,0>>(range_); }
+    std::shared_ptr<TATensor<DataType,0>> copy() const { return std::make_shared<TATensor<DataType,0>>(*this); }
 
     std::vector<IndexRange> indexrange() const { return range_; }
 
