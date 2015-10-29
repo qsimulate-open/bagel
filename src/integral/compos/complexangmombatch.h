@@ -24,6 +24,7 @@
 //
 
 // Orbital angular momentum integrals, for GIAO basis functions, around some center mcoord_
+// We return <A| L |B>; to agree with the zero-field code (AngMomBatch) one or the other has to be scaled
 
 #ifndef __SRC_INTEGRAL_COMPOS_COMPLEXANGMOMBATCH_H
 #define __SRC_INTEGRAL_COMPOS_COMPLEXANGMOMBATCH_H

@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-// Orbital angular momentum integrals, for GIAO basis functions, around some center mcoord_
+// Orbital angular momentum integrals, for real Gaussian basis functions, around some center mcoord_
 // The result is pure imaginary, so we actually return <A| -iL |B>; multiply by i for the correct matrix elements
 
 #ifndef __SRC_INTEGRAL_OS_ANGMOMBATCH_H

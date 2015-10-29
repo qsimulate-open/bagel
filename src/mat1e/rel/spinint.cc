@@ -27,7 +27,7 @@
 #include <src/util/constants.h>
 #include <src/mat1e/overlap.h>
 #include <src/mat1e/rel/spinint.h>
-#include <src/mat1e/rel/general_small1e.h>
+#include <src/mat1e/rel/small1e_general.h>
 #include <src/integral/os/overlapbatch.h>
 
 using namespace std;
@@ -54,7 +54,7 @@ void RelSpinInt::compute_() {
   // TODO Simplify this code
   // Commented out lines cancel at zero-field; can be replaced with field * overlap for GIAO-RMB
   const double w = 1.0/(8.0*c__*c__);
-  auto smallints = make_shared<General_Small1e<OverlapBatch>>(geom_);
+  auto smallints = make_shared<Small1e_General<OverlapBatch>>(geom_);
 
   // x^x contributions
   data_[0]->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[0]);
