@@ -171,15 +171,9 @@ void ComplexAngMomBatch::perform_VRR(complex<double>* intermediate) {
                 complex<double> minus1x = 0.0;
                 complex<double> minus1y = 0.0;
                 complex<double> minus1z = 0.0;
-                complex<double> minus2x = 0.0;
-                complex<double> minus2y = 0.0;
-                complex<double> minus2z = 0.0;
                 if (jx > 0) minus1x = jxd * worksx[ix + amax3 * (jx-1)];
                 if (jy > 0) minus1y = jyd * worksy[iy + amax3 * (jy-1)];
                 if (jz > 0) minus1z = jzd * worksz[iz + amax3 * (jz-1)];
-                if (jx > 1) minus2x = jxd * (jxd-1.0) * worksx[ix + amax3 * (jx-2)];
-                if (jy > 1) minus2y = jyd * (jyd-1.0) * worksy[iy + amax3 * (jy-2)];
-                if (jz > 1) minus2z = jzd * (jzd-1.0) * worksz[iz + amax3 * (jz-2)];
 
                 Sx = worksx[ix + amax3 * jx];
                 Sy = worksy[iy + amax3 * jy];
