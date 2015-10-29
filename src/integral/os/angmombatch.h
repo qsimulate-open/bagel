@@ -24,6 +24,7 @@
 //
 
 // Orbital angular momentum integrals, for GIAO basis functions, around some center mcoord_
+// The result is pure imaginary, so we actually return <A| -iL |B>; multiply by i for the correct matrix elements
 
 #ifndef __SRC_INTEGRAL_OS_ANGMOMBATCH_H
 #define __SRC_INTEGRAL_OS_ANGMOMBATCH_H
@@ -33,18 +34,18 @@
 
 namespace bagel {
 
-class AngMomBatch : public OSIntegral<std::complex<double>,Int_t::London> {
+class AngMomBatch : public OSIntegral<double,Int_t::Standard> {
   protected:
     std::array<double,3> mcoord_;
 
-    void perform_VRR(std::complex<double>*) override;
+    void perform_VRR(double*) override;
 
     int nblocks() const override { return 3; }
     int nrank() const override { return 0; }
 
   public:
     AngMomBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, const std::array<double,3> _mcoord)
-      : OSIntegral<std::complex<double>,Int_t::London>(basis), mcoord_(_mcoord) { common_init(); }
+      : OSIntegral<double,Int_t::Standard>(basis), mcoord_(_mcoord) { common_init(); }
 
     constexpr static int Nblocks() { return 3; }
 

@@ -35,12 +35,12 @@ AngMom::AngMom(shared_ptr<const Geometry> g, array<double,3> mc) : geom_(g), mco
 }
 
 
-array<shared_ptr<ZMatrix>, 3> AngMom::compute() const {
+array<shared_ptr<Matrix>, 3> AngMom::compute() const {
 
   const int nbasis = geom_->nbasis();
-  auto mat0 = make_shared<ZMatrix>(nbasis, nbasis);
-  auto mat1 = make_shared<ZMatrix>(nbasis, nbasis);
-  auto mat2 = make_shared<ZMatrix>(nbasis, nbasis);
+  auto mat0 = make_shared<Matrix>(nbasis, nbasis);
+  auto mat1 = make_shared<Matrix>(nbasis, nbasis);
+  auto mat2 = make_shared<Matrix>(nbasis, nbasis);
 
   // TODO perhaps we could reduce operation by a factor of 2
   auto o0 = geom_->offsets().begin();
@@ -57,9 +57,9 @@ array<shared_ptr<ZMatrix>, 3> AngMom::compute() const {
           AngMomBatch mom(input, mcoord_);
           mom.compute();
 
-          const complex<double>* dat0 = mom.data();
-          const complex<double>* dat1 = mom.data() + mom.size_block();
-          const complex<double>* dat2 = mom.data() + mom.size_block()*2;
+          const double* dat0 = mom.data();
+          const double* dat1 = mom.data() + mom.size_block();
+          const double* dat2 = mom.data() + mom.size_block()*2;
           for (int i = *offset0; i != *offset0 + (*b0)->nbasis(); ++i) {
             for (int j = *offset1; j != *offset1 + (*b1)->nbasis(); ++j, ++dat0, ++dat1, ++dat2) {
               mat0->element(j,i) = *dat0;
@@ -73,5 +73,5 @@ array<shared_ptr<ZMatrix>, 3> AngMom::compute() const {
     }
   }
 
-  return array<shared_ptr<ZMatrix>,3>{{mat0, mat1, mat2}};
+  return array<shared_ptr<Matrix>,3>{{mat0, mat1, mat2}};
 }

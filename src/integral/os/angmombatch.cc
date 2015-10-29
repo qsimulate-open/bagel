@@ -24,28 +24,27 @@
 //
 
 
-#include <complex>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/angmombatch.h>
 
 using namespace std;
 using namespace bagel;
 
-const static CCarSphList carsphlist;
+const static CarSphList carsphlist;
 
 
 void AngMomBatch::compute() {
 
-  const CSortList sort_(spherical_);
+  const SortList sort_(spherical_);
 
-  complex<double>* const intermediate_p = stack_->get<complex<double>>(size_block_*3);
+  double* const intermediate_p = stack_->get<double>(size_block_*3);
   fill_n(intermediate_p, size_block_*3, 0.0);
   perform_VRR(intermediate_p);
 
   for (int i = 0; i != 3; ++i) {
-    complex<double>* const cdata = data_ + i*size_block_;
-    const complex<double>* const csource = intermediate_p + i*size_block_;
-    complex<double>* const intermediate_c = stack_->get<complex<double>>(cont0_ * cont1_ * asize_intermediate_);
+    double* const cdata = data_ + i*size_block_;
+    const double* const csource = intermediate_p + i*size_block_;
+    double* const intermediate_c = stack_->get<double>(cont0_ * cont1_ * asize_intermediate_);
     fill_n(intermediate_c, cont0_ * cont1_ * asize_intermediate_, 0.0);
     perform_contraction(asize_intermediate_, csource, prim0_, prim1_, intermediate_c,
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
@@ -53,7 +52,7 @@ void AngMomBatch::compute() {
 
     if (basisinfo_[0]->spherical() && basisinfo_[1]->spherical()) {
       // transform both indices to spherical
-      complex<double>* const intermediate_i = stack_->get<complex<double>>(cont0_ * cont1_ * asize_final_);
+      double* const intermediate_i = stack_->get<double>(cont0_ * cont1_ * asize_final_);
       fill_n(intermediate_i, cont0_ * cont1_ * asize_final_, 0.0);
       const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = cont0_ * cont1_;
@@ -74,14 +73,14 @@ void AngMomBatch::compute() {
 }
 
 
-void AngMomBatch::perform_VRR(complex<double>* intermediate) {
+void AngMomBatch::perform_VRR(double* intermediate) {
   const int amax3 = amax1_+2;
   const int worksize = amax3;
-  complex<double>* worksx = stack_->get<complex<double>>(worksize * worksize);
-  complex<double>* worksy = stack_->get<complex<double>>(worksize * worksize);
-  complex<double>* worksz = stack_->get<complex<double>>(worksize * worksize);
+  double* worksx = stack_->get<double>(worksize * worksize);
+  double* worksy = stack_->get<double>(worksize * worksize);
+  double* worksz = stack_->get<double>(worksize * worksize);
 
-  complex<double> imag (0.0, 1.0);
+  double imag = 1.0;
   if (swap01_) imag *= -1.0;
   const double Bx = basisinfo_[1]->position(0);
   const double By = basisinfo_[1]->position(1);
@@ -92,10 +91,10 @@ void AngMomBatch::perform_VRR(complex<double>* intermediate) {
     int offset_ii = ii * asize_intermediate_;
     const double cop = 1.0 / xp_[ii];
     const double cb = xb_[ii];
-    const complex<double> cxpa = P_[ii * 3    ] - basisinfo_[0]->position(0);
-    const complex<double> cypa = P_[ii * 3 + 1] - basisinfo_[0]->position(1);
-    const complex<double> czpa = P_[ii * 3 + 2] - basisinfo_[0]->position(2);
-    complex<double>* current_data = &intermediate[offset_ii];
+    const double cxpa = P_[ii * 3    ] - basisinfo_[0]->position(0);
+    const double cypa = P_[ii * 3 + 1] - basisinfo_[0]->position(1);
+    const double czpa = P_[ii * 3 + 2] - basisinfo_[0]->position(2);
+    double* current_data = &intermediate[offset_ii];
 
     // obtain S(0, 0)
     worksx[0] = coeffsx_[ii];
@@ -143,9 +142,9 @@ void AngMomBatch::perform_VRR(complex<double>* intermediate) {
       }
     }
 
-    complex<double> Sx, Sy, Sz;    // operator = 1
-    complex<double> ox, oy, oz;    // operator = x
-    complex<double> dx, dy, dz;    // operator = d/dx
+    double Sx, Sy, Sz;    // operator = 1
+    double ox, oy, oz;    // operator = x
+    double dx, dy, dz;    // operator = d/dx
 
     // now we obtain the output
     int cnt = 0;
@@ -161,9 +160,9 @@ void AngMomBatch::perform_VRR(complex<double>* intermediate) {
                 const double jxd = jx;
                 const double jyd = jy;
                 const double jzd = jz;
-                complex<double> minus1x = 0.0;
-                complex<double> minus1y = 0.0;
-                complex<double> minus1z = 0.0;
+                double minus1x = 0.0;
+                double minus1y = 0.0;
+                double minus1z = 0.0;
                 if (jx > 0) minus1x = jxd * worksx[ix + amax3 * (jx-1)];
                 if (jy > 0) minus1y = jyd * worksy[iy + amax3 * (jy-1)];
                 if (jz > 0) minus1z = jzd * worksz[iz + amax3 * (jz-1)];

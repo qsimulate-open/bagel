@@ -39,7 +39,7 @@ class AngMom {
   public:
     AngMom(std::shared_ptr<const Geometry> geom, std::array<double,3> mcoord);
 
-    std::array<std::shared_ptr<ZMatrix>,3> compute() const;
+    std::array<std::shared_ptr<Matrix>,3> compute() const;
 };
 
 }
