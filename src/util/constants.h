@@ -54,6 +54,7 @@ static constexpr double au2kilogram__ = 9.10938291e-31;    // CODATA 2010 electr
 static constexpr double au2coulomb__ = 1.602176565e-19;    // CODATA 2010 elementary charge
 static constexpr double au2meter__ = 5.2917721092e-11;     // CODATA 2010 Bohr radius
 static constexpr double avogadro__ = 6.02214129e23;        // CODATA 2010 Avogadro constant
+static constexpr double g_elec__ = 2.00231930436182;       // Absolute value of CODATA 2014 electron g factor
 
 /************************************************************
 *  Derived unit conversions                                 *
