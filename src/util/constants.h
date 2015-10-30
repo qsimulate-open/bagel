@@ -49,11 +49,11 @@ static constexpr int nucleus_blocksize__ = 500;            // maximum number of 
 ************************************************************/
 static const double pi__ = std::atan(1.0)*4.0;
 static const double rad2deg__ = 180.0 / pi__;
-static constexpr double c__ = 137.035999074;               // CODATA 2010 inverse fine-structure constant
-static constexpr double au2kilogram__ = 9.10938291e-31;    // CODATA 2010 electron rest mass
-static constexpr double au2coulomb__ = 1.602176565e-19;    // CODATA 2010 elementary charge
-static constexpr double au2meter__ = 5.2917721092e-11;     // CODATA 2010 Bohr radius
-static constexpr double avogadro__ = 6.02214129e23;        // CODATA 2010 Avogadro constant
+static constexpr double c__ = 137.035999139;               // CODATA 2014 inverse fine-structure constant
+static constexpr double au2kilogram__ = 9.10938356e-31;    // CODATA 2014 electron rest mass
+static constexpr double au2coulomb__ = 1.6021766208e-19;   // CODATA 2014 elementary charge
+static constexpr double au2meter__ = 5.2917721067e-11;     // CODATA 2014 Bohr radius
+static constexpr double avogadro__ = 6.022140857e23;       // CODATA 2014 Avogadro constant
 static constexpr double g_elec__ = 2.00231930436182;       // Absolute value of CODATA 2014 electron g factor
 
 /************************************************************
