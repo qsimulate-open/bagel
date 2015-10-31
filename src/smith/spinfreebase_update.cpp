@@ -26,20 +26,18 @@
 #ifdef SPINFREEMETHOD_DETAIL
 
 template<typename DataType>
-void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<Tensor_<DataType>> t, shared_ptr<const Tensor_<DataType>> r) const {
-  shared_ptr<MultiTensor_<DataType>> tt
-    = make_shared<MultiTensor_<DataType>>(vector<DataType>{0.0}, vector<shared_ptr<Tensor_<DataType>>>{t});
-
-  auto r0 = const_pointer_cast<Tensor_<DataType>>(r);
-  shared_ptr<const MultiTensor_<DataType>> rr
-    = make_shared<MultiTensor_<DataType>>(vector<DataType>{0.0}, vector<shared_ptr<Tensor_<DataType>>>{r0});
+void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<TATensor<DataType,4>> t, shared_ptr<const TATensor<DataType,4>> r) const {
+  auto tt = make_shared<MultiTATensor<DataType,4>>(vector<DataType>{0.0}, vector<shared_ptr<TATensor<DataType,4>>>{t});
+  // ... not good code...
+  auto r0 = const_pointer_cast<TATensor<DataType,4>>(r);
+  auto rr = make_shared<MultiTATensor<DataType,4>>(vector<DataType>{0.0}, vector<shared_ptr<TATensor<DataType,4>>>{r0});
 
   update_amplitude(tt, rr);
 }
 
 
 template<typename DataType>
-void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType>> t, shared_ptr<const MultiTensor_<DataType>> r) const {
+void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTATensor<DataType,4>> t, shared_ptr<const MultiTATensor<DataType,4>> r) const {
 
   if (t->nref() != r->nref())
     throw logic_error("something is wrong. SpinFreeMethod::update_amplitude");
@@ -48,37 +46,42 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
   const int fac2 = is_same<DataType,double>::value ? 1.0 : 2.0;
 
   for (int ist = 0; ist != nst; ++ist) {
+    // TODO to be fully replaced...
+    auto rist = make_shared<Tensor_<DataType>>(*r->at(ist));
     t->fac(ist) = 0.0;
-    for (auto& i3 : virt_) {
-      for (auto& i2 : closed_) {
-        for (auto& i1 : virt_) {
-          for (auto& i0 : closed_) {
-            // if this block is not included in the current wave function, skip it
-            if (!r->at(ist)->get_size_alloc(i0, i1, i2, i3)) continue;
-            unique_ptr<DataType[]>       data0 = r->at(ist)->get_block(i0, i1, i2, i3);
-
-            // this is an inverse of the overlap.
-            if (is_same<DataType,double>::value) {
-              const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i0, i3, i2, i1);
-              sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
-            } else {
-              blas::scale_n(0.25, data0.get(), r->at(ist)->get_size_alloc(i0, i1, i2, i3));
-            }
-            size_t iall = 0;
-            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                    // note that e0 is cancelled by another term
-                    data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1];
-            t->at(ist)->add_block(data0, i0, i1, i2, i3);
-          }
-        }
-      }
-    }
 
     // not the best structure, but I am assuming that this does not take too much time...
     for (int jst = 0; jst != nst; ++jst) {
+     auto tjst = make_shared<Tensor_<DataType>>(*t->at(jst));
+      if (ist == jst) {
+        for (auto& i3 : virt_) {
+          for (auto& i2 : closed_) {
+            for (auto& i1 : virt_) {
+              for (auto& i0 : closed_) {
+                // if this block is not included in the current wave function, skip it
+                if (!rist->get_size_alloc(i0, i1, i2, i3)) continue;
+                unique_ptr<DataType[]>       data0 = rist->get_block(i0, i1, i2, i3);
+
+                // this is an inverse of the overlap.
+                if (is_same<DataType,double>::value) {
+                  const unique_ptr<DataType[]> data1 = rist->get_block(i0, i3, i2, i1);
+                  sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+                } else {
+                  blas::scale_n(0.25, data0.get(), rist->get_size_alloc(i0, i1, i2, i3));
+                }
+                size_t iall = 0;
+                for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                  for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                    for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                        // note that e0 is cancelled by another term
+                        data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1];
+                tjst->add_block(data0, i0, i1, i2, i3);
+              }
+            }
+          }
+        }
+      }
 
       for (auto& i2 : active_) {
       for (auto& i0 : active_) {
@@ -104,11 +107,12 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i3 : virt_) {
             for (auto& i1 : virt_) {
               // if this block is not included in the current wave function, skip it
-              const size_t blocksize = r->at(ist)->get_size_alloc(i0, i1, i2, i3);
-              const size_t blocksizet = r->at(jst)->get_size_alloc(i0t, i1, i2t, i3);
+              const size_t blocksize = rist->get_size_alloc(i0, i1, i2, i3);
+              const size_t blocksizet = tjst->get_size_alloc(i2t, i3, i0t, i1);
+//            const size_t blocksizet = rjst->get_size_alloc(i0t, i1, i2t, i3);
               if (!blocksize || !blocksizet) continue;
               // data0 is the source area
-              unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i0, i1, i2, i3);
+              unique_ptr<DataType[]> data0 = rist->get_block(i0, i1, i2, i3);
               unique_ptr<DataType[]> data1(new DataType[max(blocksize,blocksizet)]);
               // sort. Active indices run faster
               sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
@@ -134,7 +138,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               // sort back to the original order
               unique_ptr<DataType[]> data2(new DataType[blocksizet]);
               sort_indices<0,2,1,3,0,1,1,1>(data1, data2, i0t.size(), i2t.size(), i1.size(), i3.size());
-              t->at(jst)->add_block(data2, i0t, i1, i2t, i3);
+              tjst->add_block(data2, i0t, i1, i2t, i3);
             }
           }
         }
@@ -162,16 +166,17 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i3 : virt_) {
             for (auto& i2 : closed_) {
               for (auto& i1 : virt_) {
-                const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
-                const size_t blocksizet = r->at(jst)->get_size_alloc(i2, i3, i0t, i1);
+                const size_t blocksize = rist->get_size_alloc(i2, i3, i0, i1);
+                const size_t blocksizet = tjst->get_size_alloc(i0t, i1, i2, i3);
+//              const size_t blocksizet = rjst->get_size_alloc(i2, i3, i0t, i1);
                 if (!blocksize || !blocksizet) continue;
 
-                unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i2, i3, i0, i1);
+                unique_ptr<DataType[]> data0 = rist->get_block(i2, i3, i0, i1);
                 unique_ptr<DataType[]> data2(new DataType[blocksize]);
                 sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
                 if (is_same<DataType,double>::value) {
-                  assert(r->at(ist)->get_size_alloc(i2, i1, i0, i3));
-                  const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i2, i1, i0, i3);
+                  assert(rist->get_size_alloc(i2, i1, i0, i3));
+                  const unique_ptr<DataType[]> data1 = rist->get_block(i2, i1, i0, i3);
                   sort_indices<2,1,0,3,2,3,1,3>(data1, data2, i2.size(), i1.size(), i0.size(), i3.size());
                 } else {
                   blas::scale_n(0.5, data2.get(), blocksize);
@@ -194,7 +199,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                 btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0t.size(), i1.size()*i2.size()*i3.size(), interm_size,
                                             1.0, transp2.get(), interm_size, interm.get(), interm_size, 0.0, data3.get(), i0t.size());
 
-                t->at(jst)->add_block(data3, i0t, i1, i2, i3);
+                tjst->add_block(data3, i0t, i1, i2, i3);
               }
             }
           }
@@ -222,16 +227,17 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i2 : closed_) {
             for (auto& i1 : virt_) {
               for (auto& i0 : closed_) {
-                const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
-                const size_t blocksizet = r->at(jst)->get_size_alloc(i2, i3t, i0, i1);
+                const size_t blocksize = rist->get_size_alloc(i2, i3, i0, i1);
+                const size_t blocksizet = tjst->get_size_alloc(i0, i1, i2, i3t);
+//              const size_t blocksizet = rjst->get_size_alloc(i2, i3t, i0, i1);
                 if (!blocksize || !blocksizet) continue;
 
-                assert(r->at(ist)->get_size_alloc(i0, i3, i2, i1));
-                unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i2, i3, i0, i1);
+                assert(rist->get_size_alloc(i0, i3, i2, i1));
+                unique_ptr<DataType[]> data0 = rist->get_block(i2, i3, i0, i1);
                 unique_ptr<DataType[]> data2(new DataType[blocksize]);
                 sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
                 if (is_same<DataType,double>::value) {
-                  const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i0, i3, i2, i1);
+                  const unique_ptr<DataType[]> data1 = rist->get_block(i0, i3, i2, i1);
                   sort_indices<0,3,2,1,2,3,1,3>(data1, data2, i0.size(), i3.size(), i2.size(), i1.size());
                 } else {
                   blas::scale_n(0.5, data2.get(), blocksize);
@@ -254,7 +260,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                 btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size()*i2.size(), i3t.size(), interm_size,
                                             1.0, interm.get(), i0.size()*i1.size()*i2.size(), transp2.get(), interm_size, 0.0, data3.get(), i0.size()*i1.size()*i2.size());
 
-                t->at(jst)->add_block(data3, i0, i1, i2, i3t);
+                tjst->add_block(data3, i0, i1, i2, i3t);
               }
             }
           }
@@ -285,11 +291,12 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i2 : closed_) {
             for (auto& i0 : closed_) {
               // if this block is not included in the current wave function, skip it
-              const size_t blocksize = r->at(ist)->get_size_alloc(i0, i1, i2, i3);
-              const size_t blocksizet = r->at(jst)->get_size_alloc(i0, i1t, i2, i3t);
+              const size_t blocksize = rist->get_size_alloc(i0, i1, i2, i3);
+              const size_t blocksizet = tjst->get_size_alloc(i2, i3t, i0, i1t);
+//            const size_t blocksizet = rjst->get_size_alloc(i0, i1t, i2, i3t);
               if (!blocksize || !blocksizet) continue;
               // data0 is the source area
-              unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i0, i1, i2, i3);
+              unique_ptr<DataType[]> data0 = rist->get_block(i0, i1, i2, i3);
               unique_ptr<DataType[]> data1(new DataType[max(blocksize,blocksizet)]);
               // sort. Active indices run slower
               sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
@@ -314,7 +321,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               // sort back to the original order
               unique_ptr<DataType[]> data2(new DataType[blocksizet]);
               sort_indices<0,2,1,3,0,1,1,1>(data1, data2, i0.size(), i2.size(), i1t.size(), i3t.size());
-              t->at(jst)->add_block(data2, i0, i1t, i2, i3t);
+              tjst->add_block(data2, i0, i1t, i2, i3t);
             }
           }
         }
@@ -350,12 +357,13 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
               // if this block is not included in the current wave function, skip it
-              const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
-              const size_t blocksizet = r->at(jst)->get_size_alloc(i2t, i3t, i0, i1);
+              const size_t blocksize = rist->get_size_alloc(i2, i3, i0, i1);
+              const size_t blocksizet = tjst->get_size_alloc(i0, i1, i2t, i3t);
+//            const size_t blocksizet = rjst->get_size_alloc(i2t, i3t, i0, i1);
               if (!blocksize || !blocksizet) continue;
-              assert(blocksize == r->at(ist)->get_size_alloc(i0, i3, i2, i1));
-              unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i2, i3, i0, i1);
-              unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i0, i3, i2, i1);
+              assert(blocksize == rist->get_size_alloc(i0, i3, i2, i1));
+              unique_ptr<DataType[]> data0 = rist->get_block(i2, i3, i0, i1);
+              unique_ptr<DataType[]> data1 = rist->get_block(i0, i3, i2, i1);
 
               unique_ptr<DataType[]> data2(new DataType[max(blocksize,blocksizet)*2]);
               // sort. Active indices run slower
@@ -383,8 +391,8 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               unique_ptr<DataType[]> data4(new DataType[blocksizet]);
               copy_n(data2.get(), blocksizet, data3.get());
               sort_indices<2,1,0,3,0,1,1,1>(data2.get()+blocksizet, data4.get(), i0.size(), i1.size(), i2t.size(), i3t.size());
-              t->at(jst)->add_block(data3, i0, i1, i2t, i3t);
-              t->at(jst)->add_block(data4, i2t, i1, i0, i3t);
+              tjst->add_block(data3, i0, i1, i2t, i3t);
+              tjst->add_block(data4, i2t, i1, i0, i3t);
             }
           }
         }
@@ -412,10 +420,11 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
               // if this block is not included in the current wave function, skip it
-              const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
-              const size_t blocksizet = r->at(jst)->get_size_alloc(i2t, i3t, i0, i1);
+              const size_t blocksize = rist->get_size_alloc(i2, i3, i0, i1);
+              const size_t blocksizet = tjst->get_size_alloc(i0, i1, i2t, i3t);
+//            const size_t blocksizet = rjst->get_size_alloc(i2t, i3t, i0, i1);
               if (!blocksize || !blocksizet) continue;
-              unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i2, i3, i0, i1);
+              unique_ptr<DataType[]> data0 = rist->get_block(i2, i3, i0, i1);
 
               unique_ptr<DataType[]> data2(new DataType[max(blocksize,blocksizet)]);
               // sort. Active indices run slower
@@ -440,7 +449,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               // sort back to the original order
               unique_ptr<DataType[]> data3(new DataType[blocksizet]);
               copy_n(data2.get(), blocksizet, data3.get());
-              t->at(jst)->add_block(data3, i0, i1, i2t, i3t);
+              tjst->add_block(data3, i0, i1, i2t, i3t);
             }
           }
         }
@@ -475,11 +484,12 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
           for (auto& i1 : virt_) {
             // if this block is not included in the current wave function, skip it
-            const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
-            const size_t blocksizet = r->at(jst)->get_size_alloc(i2t, i3t, i0t, i1);
+            const size_t blocksize = rist->get_size_alloc(i2, i3, i0, i1);
+            const size_t blocksizet = tjst->get_size_alloc(i0t, i1, i2t, i3t);
+//          const size_t blocksizet = rjst->get_size_alloc(i2t, i3t, i0t, i1);
             if (!blocksize || !blocksizet) continue;
             // data0 is the source area
-            unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i2, i3, i0, i1);
+            unique_ptr<DataType[]> data0 = rist->get_block(i2, i3, i0, i1);
             unique_ptr<DataType[]> data1(new DataType[max(blocksize,blocksizet)]);
             // sort. Active indices run slower
             sort_indices<3,2,0,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
@@ -502,7 +512,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
             // sort back to the original order
             unique_ptr<DataType[]> data2(new DataType[blocksizet]);
             sort_indices<1,0,2,3,0,1,1,1>(data1, data2, i1.size(), i0t.size(), i2t.size(), i3t.size());
-            t->at(jst)->add_block(data2, i0t, i1, i2t, i3t);
+            tjst->add_block(data2, i0t, i1, i2t, i3t);
           }
         }
         }
@@ -537,11 +547,12 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
           for (auto& i2 : closed_) {
             // if this block is not included in the current wave function, skip it
-            const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
-            const size_t blocksizet = r->at(jst)->get_size_alloc(i2, i3t, i0t, i1t);
+            const size_t blocksize = rist->get_size_alloc(i2, i3, i0, i1);
+            const size_t blocksizet = tjst->get_size_alloc(i0t, i1t, i2, i3t);
+//          const size_t blocksizet = rjst->get_size_alloc(i2, i3t, i0t, i1t);
             if (!blocksize || !blocksizet) continue;
             // data0 is the source area
-            unique_ptr<DataType[]> data0 = r->at(ist)->get_block(i2, i3, i0, i1);
+            unique_ptr<DataType[]> data0 = rist->get_block(i2, i3, i0, i1);
             unique_ptr<DataType[]> data1(new DataType[max(blocksize,blocksizet)]);
             // sort. Active indices run slower
             sort_indices<0,2,3,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
@@ -564,7 +575,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
             // sort back to the original order
             unique_ptr<DataType[]> data2(new DataType[blocksizet]);
             sort_indices<1,2,0,3,0,1,1,1>(data1, data2, i2.size(), i0t.size(), i1t.size(), i3t.size());
-            t->at(jst)->add_block(data2, i0t, i1t, i2, i3t);
+            tjst->add_block(data2, i0t, i1t, i2, i3t);
           }
         }
         }
@@ -573,6 +584,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
       }
       }
 
+      t->at(jst) = tjst->template tiledarray<4>();
     } // jst loop
   } // ist loop
 

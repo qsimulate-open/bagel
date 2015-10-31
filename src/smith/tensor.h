@@ -65,6 +65,7 @@ class Tensor_ {
 
     template<typename D, int N>
     Tensor_(const TATensor<D,N>& o) : Tensor_(o.indexrange()) { // delegate constuctor
+      madness::World::get_default().gop.fence();
       // loop over tiles
       for (auto it = o.begin(); it != o.end(); ++it) {
         // first get range
@@ -137,7 +138,7 @@ class Tensor_ {
           *it = tile;
         } else if (init) {
           typename TiledArray::Array<DataType,N>::value_type tile(range);
-          std::fill_n(&(tile[0]), tile.size(), 0.0);
+          std::fill_n(tile.begin(), tile.size(), 0.0);
           *it = tile;
         }
       }

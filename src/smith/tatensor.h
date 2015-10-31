@@ -135,9 +135,76 @@ class TATensor : public TiledArray::Array<DataType,N> {
     virtual void init() { assert(false); }
 
     void zero() {
+      madness::World::get_default().gop.fence();
       for (auto it = begin(); it != end(); ++it)
-        std::fill_n(it->begin(), it->size(), 0.0);
+        if (it->probe()) {
+          auto i = it->get();
+          std::fill_n(i.begin(), i.size(), 0.0);
+        }
+      madness::World::get_default().gop.fence();
     }
+
+    void scale(const DataType& a) {
+      madness::World::get_default().gop.fence();
+      for (auto it = begin(); it != end(); ++it)
+        if (it->probe()) {
+          auto i = it->get();
+          blas::scale_n(a, i.begin(), i.size());
+        }
+      madness::World::get_default().gop.fence();
+    }
+
+    void ax_plus_y(const DataType& a, std::shared_ptr<const TATensor<DataType,N>> o) { ax_plus_y(a, *o); }
+    void ax_plus_y(const DataType& a, const TATensor<DataType,N>& o) {
+      madness::World::get_default().gop.fence();
+      assert(range_ == o.range_);
+      // TODO this code is assuming that this and o are distributed equally
+      auto ot = o.begin();
+      for (auto it = begin(); it != end(); ++it, ++ot) {
+        assert(!(it->probe() ^ ot->probe()));
+        if (it->probe() && ot->probe()) {
+          auto i = it->get();
+          auto j = ot->get();
+          assert(i.size() == j.size());
+          blas::ax_plus_y_n(a, j.begin(), j.size(), i.begin());
+        }
+      }
+      madness::World::get_default().gop.fence();
+    }
+
+    DataType dot_product(std::shared_ptr<const TATensor<DataType,N>> o) const { return dot_product(*o); }
+    DataType dot_product(const TATensor<DataType,N>& o) const {
+      madness::World::get_default().gop.fence();
+      assert(range_ == o.range_);
+      DataType out = 0.0;
+      auto ot = o.begin();
+      for (auto it = begin(); it != end(); ++it, ++ot) {
+        assert(!(it->probe() ^ ot->probe()));
+        if (it->probe() && ot->probe()) {
+          auto i = it->get();
+          auto j = ot->get();
+          assert(i.size() == j.size());
+          out += blas::dot_product(j.begin(), j.size(), i.begin());
+        }
+      }
+      madness::World::get_default().gop.fence();
+      return out;
+    }
+
+    size_t size_alloc() const {
+      madness::World::get_default().gop.fence();
+      size_t out = 0;
+      for (auto it = begin(); it != end(); ++it) {
+        if (it->probe())
+          out += it->get().size();
+      }
+      madness::World::get_default().gop.fence();
+      mpi__->allreduce(&out, 1);
+      return out;
+    }
+
+    double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
+    double rms() const { return std::sqrt(detail::real(dot_product(*this))/size_alloc()); }
 
     bool initialized() const { return initialized_; }
 
@@ -146,7 +213,7 @@ class TATensor : public TiledArray::Array<DataType,N> {
       TiledArray::Array<DataType,N>::fill_local(o);
     }
 
-    auto get_local(const std::vector<Index>& index, const std::vector<IndexRange>& r) -> decltype(std::make_pair(true,begin())) {
+    auto get_local(const std::vector<Index>& index) -> decltype(std::make_pair(true,begin())) {
       assert(index.size() == N);
       bool out = false;
       auto it = begin();
@@ -156,7 +223,7 @@ class TATensor : public TiledArray::Array<DataType,N> {
         assert(lo.size() == N);
         bool found = true;
         auto j = index.rbegin();
-        auto jj = r.rbegin();
+        auto jj = range_.rbegin();
         for (auto& i : lo) {
           found &= i == (j->offset() - jj->front().offset());
           ++j; ++jj;
@@ -256,6 +323,9 @@ class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
     std::shared_ptr<TATensor<DataType,0>> copy() const { return std::make_shared<TATensor<DataType,0>>(*this); }
 
     std::vector<IndexRange> indexrange() const { return range_; }
+
+    void zero() { data_ = static_cast<DataType>(0.0); }
+    void scale(const DataType& a) { data_ *= a; }
 
     bool initialized() const { return initialized_; }
     void fill_local(const DataType& i) { data_ = i; }

@@ -46,7 +46,7 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
   // so far MOInt can be called for 2-external K integral and all-internals.
   if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
     throw logic_error("MOInt called with wrong blocks");
-  data_ = make_shared<TATensor<DataType,4>>(blocks_, is_same<DataType,complex<double>>::value);
+  data_ = make_shared<TATensor<DataType,4>>(blocks_, false, is_same<DataType,complex<double>>::value);
   init();
 }
 
@@ -186,7 +186,7 @@ void K2ext<double>::init() {
 
           {
             const std::vector<Index> index = {i0, i1, i2, i3};
-            auto tileiter = data_->get_local(index, blocks_);
+            auto tileiter = data_->get_local(index);
             if (tileiter.first) {
               const TiledArray::Range range = data_->trange().make_tile_range(tileiter.second.ordinal());
               typename TiledArray::Array<double,4>::value_type tile(range);
@@ -197,8 +197,7 @@ void K2ext<double>::init() {
 
           if (hashkey23 != hashkey01) {
             const std::vector<Index> index = {i2, i3, i0, i1};
-            const std::vector<IndexRange> rrev = {blocks_[2], blocks_[3], blocks_[0], blocks_[1]};
-            auto tileiter = data_->get_local(index, rrev);
+            auto tileiter = data_->get_local(index);
             if (tileiter.first) {
               const TiledArray::Range range = data_->trange().make_tile_range(tileiter.second.ordinal());
               typename TiledArray::Array<double,4>::value_type tile(range);
@@ -299,6 +298,16 @@ void MOFock<complex<double>>::init() {
   if (!f->is_hermitian()) throw logic_error("Fock is not Hermitian");
   if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
 
+  {
+    unique_ptr<complex<double>[]> eig = f->diag();
+    const int n = f->ndim();
+    eig_ = vector<double>(n);
+    for (int i = 0; i != n; ++i) {
+      assert(fabs(imag(eig[i])) < 1.0e-10);
+      eig_[i] = real(eig[i]);
+    }
+  }
+
   fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0});
   fill_block<2,complex<double>>(h1_,  h1->get_conjg(), {0,0});
 }
@@ -368,6 +377,12 @@ void MOFock<double>::init() {
   coeff_ = newcoeff;
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
+
+  {
+    unique_ptr<double[]> eig = f->diag();
+    const int n = f->ndim();
+    eig_ = vector<double>(eig.get(), eig.get()+n);
+  }
 
   fill_block<2,double>(data_,  f, {0,0});
   fill_block<2,double>(h1_,   h1, {0,0});

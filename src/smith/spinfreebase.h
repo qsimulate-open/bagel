@@ -61,34 +61,32 @@ class SpinFreeMethod {
     double core_energy_;
     double energy_;
 
-    std::shared_ptr<Tensor_<DataType>> v2_;
-    std::shared_ptr<Tensor_<DataType>> f1_;
-    std::shared_ptr<Tensor_<DataType>> h1_;
+    std::shared_ptr<TATensor<DataType,4>> v2_;
+    std::shared_ptr<TATensor<DataType,2>> f1_;
+    std::shared_ptr<TATensor<DataType,2>> h1_;
 
     // contains the current RDMs to be used in smith
-    std::shared_ptr<Tensor_<DataType>> rdm0_;
-    std::shared_ptr<Tensor_<DataType>> rdm1_;
-    std::shared_ptr<Tensor_<DataType>> rdm2_;
-    std::shared_ptr<Tensor_<DataType>> rdm3_;
-    std::shared_ptr<Tensor_<DataType>> rdm4_;
+    std::shared_ptr<TATensor<DataType,0>> rdm0_;
+    std::shared_ptr<TATensor<DataType,2>> rdm1_;
+    std::shared_ptr<TATensor<DataType,4>> rdm2_;
+    std::shared_ptr<TATensor<DataType,6>> rdm3_;
+    std::shared_ptr<TATensor<DataType,8>> rdm4_;
 
     // contains all the RDMs (for multistate runs)
-    std::shared_ptr<Vec<Tensor_<DataType>>> rdm0all_;
-    std::shared_ptr<Vec<Tensor_<DataType>>> rdm1all_;
-    std::shared_ptr<Vec<Tensor_<DataType>>> rdm2all_;
-    std::shared_ptr<Vec<Tensor_<DataType>>> rdm3all_;
-    std::shared_ptr<Vec<Tensor_<DataType>>> rdm4all_;
+    std::shared_ptr<Vec<TATensor<DataType,0>>> rdm0all_;
+    std::shared_ptr<Vec<TATensor<DataType,2>>> rdm1all_;
+    std::shared_ptr<Vec<TATensor<DataType,4>>> rdm2all_;
+    std::shared_ptr<Vec<TATensor<DataType,6>>> rdm3all_;
+    std::shared_ptr<Vec<TATensor<DataType,8>>> rdm4all_;
     // the function to set RDMs to rdm1_, rdm2_, etc
     void set_rdm(const int jst, const int ist);
 
     // rdm ci derivatives
-    std::shared_ptr<Tensor_<DataType>> rdm0deriv_;
-    std::shared_ptr<Tensor_<DataType>> rdm1deriv_;
-    std::shared_ptr<Tensor_<DataType>> rdm2deriv_;
-    std::shared_ptr<Tensor_<DataType>> rdm3deriv_;
-    std::shared_ptr<Tensor_<DataType>> rdm4deriv_;
-
-    std::shared_ptr<Tensor_<DataType>> sigma_;
+    std::shared_ptr<TATensor<DataType,1>> rdm0deriv_;
+    std::shared_ptr<TATensor<DataType,3>> rdm1deriv_;
+    std::shared_ptr<TATensor<DataType,5>> rdm2deriv_;
+    std::shared_ptr<TATensor<DataType,7>> rdm3deriv_;
+    std::shared_ptr<TATensor<DataType,7>> rdm4deriv_;
 
     // the diagonal denominator
     std::vector<double> eig_;
@@ -109,17 +107,17 @@ class SpinFreeMethod {
     std::shared_ptr<const Denom<DataType>> denom_;
 
     // update t from the residual and denominator (this function does not zero out).
-    void update_amplitude(std::shared_ptr<Tensor_<DataType>> t, std::shared_ptr<const Tensor_<DataType>> r) const;
-    void update_amplitude(std::shared_ptr<MultiTensor_<DataType>> t, std::shared_ptr<const MultiTensor_<DataType>> r) const;
+    void update_amplitude(std::shared_ptr<TATensor<DataType,4>> t, std::shared_ptr<const TATensor<DataType,4>> r) const;
+    void update_amplitude(std::shared_ptr<MultiTATensor<DataType,4>> t, std::shared_ptr<const MultiTATensor<DataType,4>> r) const;
 
     // utility function
     void loop_over(std::function<void(const Index&, const Index&, const Index&, const Index&)>) const;
     // initialize t2 and r amplitude
-    std::shared_ptr<Tensor_<DataType>> init_amplitude() const;
-    std::shared_ptr<Tensor_<DataType>> init_residual() const;
+    std::shared_ptr<TATensor<DataType,4>> init_amplitude() const;
+    std::shared_ptr<TATensor<DataType,4>> init_residual() const;
 
     // diagonal part of CASPT2 (for efficiency)
-    void diagonal(std::shared_ptr<Tensor_<DataType>> r, std::shared_ptr<const Tensor_<DataType>> t) const;
+    std::shared_ptr<TATensor<DataType,4>> diagonal(std::shared_ptr<TATensor<DataType,4>> r, std::shared_ptr<const TATensor<DataType,4>> t) const;
 
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info<DataType>> r);
@@ -137,8 +135,8 @@ class SpinFreeMethod {
 
     virtual void solve() = 0;
 
-    DataType dot_product_transpose(std::shared_ptr<const Tensor_<DataType>> r, std::shared_ptr<const Tensor_<DataType>> t2) const;
-    DataType dot_product_transpose(std::shared_ptr<const MultiTensor_<DataType>> r, std::shared_ptr<const MultiTensor_<DataType>> t2) const;
+    DataType dot_product_transpose(std::shared_ptr<const TATensor<DataType,4>> r, std::shared_ptr<const TATensor<DataType,4>> t2) const;
+    DataType dot_product_transpose(std::shared_ptr<const MultiTATensor<DataType,4>> r, std::shared_ptr<const MultiTATensor<DataType,4>> t2) const;
 };
 
 template<> void SpinFreeMethod<double>::feed_rdm_denom(std::shared_ptr<const Matrix>);
