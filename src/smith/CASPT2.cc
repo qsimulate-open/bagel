@@ -36,11 +36,6 @@ using namespace bagel::SMITH;
 CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref) {
   t2 = init_amplitude();
   r = init_residual();
-  den1 = h1_->clone();
-  den2 = h1_->clone();
-  Den1 = v2_->clone();
-  if (info_->grad())
-    deci = make_shared<TATensor<double,1>>(vector<IndexRange>{ci_});
 }
 
 
@@ -77,17 +72,26 @@ void CASPT2::CASPT2::solve_deriv() {
   correlated_norm_ = accumulate(corrq);
   timer.tick_print("T1 norm evaluation");
 
+  den2 = h1_->clone();
+  den2->fill_local(0.0);
   shared_ptr<Queue> dens2 = make_densityq();
   while (!dens2->done())
     dens2->next_compute();
+
+  den1 = h1_->clone();
+  den1->fill_local(0.0);
   shared_ptr<Queue> dens1 = make_density1q();
   while (!dens1->done())
     dens1->next_compute();
+
+  Den1 = init_residual();
   shared_ptr<Queue> Dens1 = make_density2q();
   while (!Dens1->done())
     Dens1->next_compute();
   timer.tick_print("Correlated density matrix evaluation");
 
+  deci = make_shared<TATensor<double,1>>(vector<IndexRange>{ci_});
+  deci->fill_local(0.0);
   shared_ptr<Queue> dec = make_deciq();
   while (!dec->done())
     dec->next_compute();
