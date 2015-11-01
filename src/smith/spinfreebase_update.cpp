@@ -26,18 +26,21 @@
 #ifdef SPINFREEMETHOD_DETAIL
 
 template<typename DataType>
-void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<TATensor<DataType,4>> t, shared_ptr<const TATensor<DataType,4>> r) const {
+shared_ptr<TATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude(shared_ptr<TATensor<DataType,4>> t, shared_ptr<const TATensor<DataType,4>> r) const {
   auto tt = make_shared<MultiTATensor<DataType,4>>(vector<DataType>{0.0}, vector<shared_ptr<TATensor<DataType,4>>>{t});
   // ... not good code...
   auto r0 = const_pointer_cast<TATensor<DataType,4>>(r);
   auto rr = make_shared<MultiTATensor<DataType,4>>(vector<DataType>{0.0}, vector<shared_ptr<TATensor<DataType,4>>>{r0});
 
-  update_amplitude(tt, rr);
+  shared_ptr<MultiTATensor<DataType,4>> tnew = update_amplitude(tt, rr);
+  return tnew->at(0);
 }
 
 
 template<typename DataType>
-void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTATensor<DataType,4>> t, shared_ptr<const MultiTATensor<DataType,4>> r) const {
+shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTATensor<DataType,4>> t, shared_ptr<const MultiTATensor<DataType,4>> r) const {
+
+  auto out = t->clone();
 
   if (t->nref() != r->nref())
     throw logic_error("something is wrong. SpinFreeMethod::update_amplitude");
@@ -583,11 +586,11 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTATensor<DataTyp
       }
       }
       }
-
-      t->at(jst) = tjst->template tiledarray<4>();
+      (*out)[jst] = tjst->template tiledarray<4>();
     } // jst loop
   } // ist loop
 
+  return out;
 }
 
 #endif

@@ -34,14 +34,13 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref) {
-  eig_ = f1_->diag();
   t2 = init_amplitude();
-  r = t2->clone();
+  r = init_residual();
   den1 = h1_->clone();
   den2 = h1_->clone();
   Den1 = v2_->clone();
   if (info_->grad())
-    deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+    deci = make_shared<TATensor<double,1>>(vector<IndexRange>{ci_});
 }
 
 
@@ -56,12 +55,12 @@ void CASPT2::CASPT2::solve() {
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
-    diagonal(r, t2);
+    r = diagonal(r, t2);
     energy_ += detail::real(dot_product_transpose(r, t2));
     const double err = r->rms();
     print_iteration(iter, energy_, err, mtimer.tick());
 
-    update_amplitude(t2, r);
+    t2 = update_amplitude(t2, r);
     r->zero();
     if (err < info_->thresh()) break;
   }

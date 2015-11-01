@@ -107,8 +107,8 @@ class SpinFreeMethod {
     std::shared_ptr<const Denom<DataType>> denom_;
 
     // update t from the residual and denominator (this function does not zero out).
-    void update_amplitude(std::shared_ptr<TATensor<DataType,4>> t, std::shared_ptr<const TATensor<DataType,4>> r) const;
-    void update_amplitude(std::shared_ptr<MultiTATensor<DataType,4>> t, std::shared_ptr<const MultiTATensor<DataType,4>> r) const;
+    std::shared_ptr<TATensor<DataType,4>> update_amplitude(std::shared_ptr<TATensor<DataType,4>> t, std::shared_ptr<const TATensor<DataType,4>> r) const;
+    std::shared_ptr<MultiTATensor<DataType,4>> update_amplitude(std::shared_ptr<MultiTATensor<DataType,4>> t, std::shared_ptr<const MultiTATensor<DataType,4>> r) const;
 
     // utility function
     void loop_over(std::function<void(const Index&, const Index&, const Index&, const Index&)>) const;

@@ -84,7 +84,6 @@ class MultiTATensor {
 
     std::shared_ptr<TType>& operator[](const size_t i) { assert(i < tensors_.size()); return tensors_[i]; }
     std::shared_ptr<TType>& at(const size_t i) { return tensors_.at(i); }
-    std::shared_ptr<const TType> operator[](const size_t i) const { assert(i < tensors_.size()); return tensors_[i]; }
     std::shared_ptr<const TType> at(const size_t i) const { return tensors_.at(i); }
 
     std::vector<std::shared_ptr<TType>>& tensors() { return tensors(); }
