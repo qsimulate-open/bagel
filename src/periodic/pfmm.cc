@@ -216,7 +216,7 @@ void PFMM::compute_Mlm_direct() {
       const int imul = l * l + m + l;
       const double tmp = mlm_[imul].real();
       //if (abs(tmp) > 1e-8)
-      //if (l % 2 == 0 && m % 4 == 0)
+      if (l % 2 == 0 && m % 4 == 0)
         cout << "l = " << l << "  m = " << m << "  mlm = " << setw(20) << setprecision(14) << tmp << endl;
     }
   cout << " ******* END ******* " << endl;
@@ -256,7 +256,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     root_weight(l, nvec);
     const int rank = l + 1;
 
-    for (int ivec = 1; ivec != nvec; ++ivec) {
+    for (int ivec = 0; ivec != nvec; ++ivec) {
       if (Rsq_[ivec] > numerical_zero__) {
         array<int, 3> idx = vidx[ivec];
 
@@ -310,25 +310,33 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     }
   }
 
-  vector<array<double, 3>> primkvecs(ndim_);
-  if (ndim_ == 1) {
-    const double a1sq = sqrt(primvecs[0][0]*primvecs[0][1] + primvecs[0][1]*primvecs[0][1] + primvecs[0][2]*primvecs[0][2]);
-    for (int i = 0; i != 3; ++i)
-      primkvecs[0][i] = primvecs[0][i] / a1sq;
-  } else if (ndim_ == 2) {
-    array<double, 3> a12 = cross(primvecs[0], primvecs[1]);
-    const double scale = 1.0 / sqrt(dot(a12, a12));
-    primkvecs[0] = cross(primvecs[1], a12, scale);
-    primkvecs[1] = cross(a12, primvecs[0], scale);
-  } else {
-    array<double, 3> a23 = cross(primvecs[1], primvecs[2]);
-    const double scale = 1.0 / dot(primvecs[0], a23);
-    for (int i = 0; i != 3; ++i) {
-      const int j = (i+1 < ndim_) ? i+1 : i+1-ndim_;
-      const int k = (i+2 < ndim_) ? i+2 : i+2-ndim_;
-      primkvecs[i] = cross(primvecs[j], primvecs[k], scale);
-    }
+  vector<array<double, 3>> primkvecs(3);
+  switch (ndim_) {
+    case 1:
+      {
+        const double a1sq = dot(primvecs[0], primvecs[0]);
+        for (int i = 0; i != 3; ++i)
+          primkvecs[0][i] = primvecs[0][i] / a1sq;
+      }
+    case 2:
+      {
+        array<double, 3> a12 = cross(primvecs[0], primvecs[1]);
+        const double scale = 1.0 / dot(a12, a12);
+        primkvecs[0] = cross(primvecs[1], a12, scale);
+        primkvecs[1] = cross(a12, primvecs[0], scale);
+      }
+    case 3:
+      {
+      array<double, 3> a23 = cross(primvecs[1], primvecs[2]);
+      const double scale = 1.0 / dot(primvecs[0], a23);
+      primkvecs[0] = cross(primvecs[1], primvecs[2], scale);
+      primkvecs[1] = cross(primvecs[2], primvecs[0], scale);
+      primkvecs[2] = cross(primvecs[0], primvecs[1], scale);
+      }
   }
+
+  for (int i = ndim_; i != 3; ++i)
+    primkvecs[i] = {{0.0, 0.0, 0.0}};
 
   for (int ivec = 0; ivec != nvec; ++ivec) {
     const int pos = ivec * 3;
@@ -348,7 +356,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     const int rank = l + 1;
 
 
-    for (int ivec = 1; ivec != nvec; ++ivec) {
+    for (int ivec = 0; ivec != nvec; ++ivec) {
       if (Rsq_[ivec] > numerical_zero__) {
         const int pos = ivec * 3;
         const double rsq = Rsq_[ivec];
@@ -396,7 +404,8 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     for (int m = 0; m <= l; ++m) { // Mlm = -Ml-m
       const int imul = l * l + m + l;
       const double mlm = mlm_[imul].real();
-      if (abs(mlm) > 1e-8)
+      //if (abs(mlm) > 1e-8)
+      if (l % 2 == 0 && m % 4 == 0)
         cout << "l = " << l << "  m = " << m << "  mlm = " << setw(20) << setprecision(14) << mlm << endl;
     }
   // END DEBUG
@@ -437,6 +446,8 @@ void PFMM::allocate_arrays(const size_t ps) {
 
 
 vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const {
+
+  density->print_real_part("Density");
 
   // sums over L and m have extent ws_ for now
   const int nvec = pow(2*ws_+1, ndim_);
@@ -487,8 +498,8 @@ vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const
           slm += mlm_.at(im) * olm.at(im2);
         }
       }
-      cout << "Slm(" << l << ", " << m << ") = " << setprecision(10) << out[im1] << "   " << olm[im1]<< endl;
       out[im1] = pow(-1.0, l) * slm;
+////      cout << "Slm(" << l << ", " << m << ") = " << setprecision(10) << out[im1] << "   " << olm[im1]<< endl;
     }
   }
 
