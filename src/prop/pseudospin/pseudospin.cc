@@ -341,6 +341,18 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<double, 3
   for (int i = 0; i != 3; ++i)
     spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
 
+  auto Atensor_h = make_shared<ZMatrix>(3, 3);
+  for (int i = 0; i != 3; ++i)
+    for (int j = 0; j != 3; ++j)
+      for (int k = 0; k != nspin1_; ++k)
+        for (int l = 0; l != nspin1_; ++l)
+          Atensor_h->element(i, j) += 0.5 * spinop_h_[i]->element(k, l) * spinop_h_[j]->element(l, k);
+
+  Atensor_h->print("A tensor, in zfci eigenstate basis");
+  VectorB Aeig(3);
+  Atensor_h->diagonalize(Aeig);
+  for (int i = 0; i != 3; ++i)
+    cout << " *** Atensor eigenvalue " << i << " = " << Aeig[i] << endl;
 
   cout << endl;
   cout << endl;
