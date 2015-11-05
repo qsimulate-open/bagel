@@ -29,6 +29,9 @@
 
 #include <src/prop/pseudospin/pseudospin.h>
 #include <src/mat1e/rel/spinint.h>
+#include <src/mat1e/angmom.h>
+#include <src/integral/os/angmombatch.h>
+#include <src/mat1e/rel/small1e.h>
 
 using namespace std;
 using namespace bagel;
@@ -127,9 +130,61 @@ void Pseudospin::update_spin_matrices(VectorB spinvals) {
 
 // Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix
 void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr<const RelCoeff_Block> active_coeff) {
+  const complex<double> imag(0.0, 1.0);
 
-  // First, we create spin matrices in the atomic orbital basis
-  RelSpinInt aospin(zfci.geom());
+  // First, we create matrices of the magnetic moment in atomic orbital basis
+  array<shared_ptr<ZMatrix>,3> magnetic_moment;
+
+  RelSpinInt ao_spin(zfci.geom());
+  { // spin angular momentum
+    for (int i = 0; i != 3; ++i) {
+      magnetic_moment[i] = ao_spin(i)->copy();
+      magnetic_moment[i]->scale(g_elec__);
+    }
+  }
+
+  array<shared_ptr<ZMatrix>,3> ao_orbang;
+  { // orbital angular momentum
+    // TODO For geometries with only one metal atom, use that atom's position as default mcoord
+    const array<double, 3> mcoord = zfci.idata()->get_array<double,3>("aniso_center", array<double, 3>({{0.0, 0.0, 0.0}}));
+    const int n = zfci.geom()->nbasis();
+
+    array<shared_ptr<ZMatrix>,3> angmom_large;
+    array<array<shared_ptr<ZMatrix>,4>,3> angmom_small;
+
+    {
+      AngMom angmom(zfci.geom(), mcoord);
+      array<shared_ptr<Matrix>,3> mom = angmom.compute();
+      for (int i = 0; i != 3; ++i)
+        angmom_large[i] = make_shared<ZMatrix>(*mom[i], imag);
+    }
+    {
+      auto smallmom = make_shared<Small1e<AngMomBatch, array<double,3>>>(zfci.geom(), mcoord);
+      for (int i = 0; i != 3; ++i)
+        for (int j = 0; j != 4; ++j)
+          angmom_small[i][j] = make_shared<ZMatrix>((*smallmom)[4*i+j], imag);
+    }
+
+    const complex<double> w(0.25/(c__*c__));
+    const complex<double> wi(0.0, w.real());
+    for (int i = 0; i != 3; ++i) {
+      ao_orbang[i] = magnetic_moment[i]->clone();
+
+      ao_orbang[i]->add_block(1.0, 0, 0, n, n, angmom_large[i]);
+      ao_orbang[i]->add_block(1.0, n, n, n, n, angmom_large[i]);
+
+      ao_orbang[i]->add_block(  w, 2*n, 2*n, n, n, angmom_small[i][0]);
+      ao_orbang[i]->add_block(  w, 3*n, 3*n, n, n, angmom_small[i][0]);
+      ao_orbang[i]->add_block( wi, 2*n, 2*n, n, n, angmom_small[i][1]);
+      ao_orbang[i]->add_block(-wi, 3*n, 3*n, n, n, angmom_small[i][1]);
+      ao_orbang[i]->add_block( wi, 2*n, 3*n, n, n, angmom_small[i][2]);
+      ao_orbang[i]->add_block( wi, 3*n, 2*n, n, n, angmom_small[i][2]);
+      ao_orbang[i]->add_block(  w, 2*n, 3*n, n, n, angmom_small[i][3]);
+      ao_orbang[i]->add_block( -w, 3*n, 2*n, n, n, angmom_small[i][3]);
+
+      (*magnetic_moment[i]).add_block(1.0, 0, 0, 4*n, 4*n, ao_orbang[i]);
+    }
+  }
 
   const int norb = zfci.norb();
 
@@ -166,10 +221,11 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   // Compute spin matrices in the basis of ZFCI Hamiltonian eigenstates
   for (int i = 0; i != 3; ++i) {
     spinop_h_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+    zfci_spin_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+    zfci_orbang_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
   }
   for (int i = 0; i != nspin1_; ++i) {
     for (int j = 0; j != nspin1_; ++j) {
-//      shared_ptr<Kramers<2,ZRDM<1>>> temprdm = (*rdm1)(aniso_state[i], aniso_state[j]);
       shared_ptr<Kramers<2,ZRDM<1>>> temprdm = zfci.rdm1(aniso_state[i], aniso_state[j]);
       if (!temprdm->exist({1,0})) {
         cout << " * Need to generate an off-diagonal rdm of zeroes." << endl;
@@ -185,10 +241,21 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 
       ZMatrix aodensity = (*active_coeff * modensity ^ *active_coeff);
 
-      for (int k = 0; k != 3; ++k)
-        spinop_h_[k]->element(i,j) = aodensity.dot_product(*aospin(k));
+      for (int k = 0; k != 3; ++k) {
+        spinop_h_[k]->element(i,j) = aodensity.dot_product(*magnetic_moment[k]);
+        zfci_spin_[k]->element(i,j) = aodensity.dot_product(*ao_spin(k));
+        zfci_orbang_[k]->element(i,j) = aodensity.dot_product(*ao_orbang[k]);
+      }
     }
   }
+
+#if 0
+  for (int k = 0; k != 3; ++k) {
+    spinop_h_[k]->print("Magnetic moment in ZFCI basis");
+    zfci_spin_[k]->print("Spin angular momentum in ZFCI basis");
+    zfci_orbang_[k]->print("Orbital angular momentum in ZFCI basis");
+  }
+#endif
 
   // We will subtract out average energy so the pseudospin Hamiltonian is traceless
   complex<double> energy_avg = 0.0;
@@ -226,6 +293,10 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<double, 3
     transform = tempm;
     zeig = tempv;
   }
+
+//  const complex<double> dadjust = polar(1.0, 2.12391);
+//  for (int i = 0; i != nspin1_; ++i)
+//    transform->element(i, 0) = dadjust * transform->element(i, 0);
 
   { // Adjust the phases of eigenvectors to ensure proper time-reversal symmetry
     ZMatrix spinham_s = *transform % *spinham_h_ * *transform;
@@ -267,8 +338,20 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<double, 3
     throw runtime_error("The spin Hamiltonian seems to not have proper time-reversal symmetry.  Check that your spin value and states mapped are reasonable.");
 
   array<shared_ptr<ZMatrix>, 3> spinop_s;
-  for (int i = 0; i != 3; ++i) {
+  for (int i = 0; i != 3; ++i)
     spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
+
+
+  cout << endl;
+  cout << endl;
+  for (int i = 0; i != 3; ++i) {
+    //spinop_h_[i]->print("ZFCI basis spin matrix " + to_string(i+1));
+#if 0
+    spinop_s[i]->print("Spin eigenfunction basis magnetic moment matrix " + to_string(i+1));
+    (*transform % *zfci_spin_[i] * *transform).print("Spin eigenfunction basis spin angular momentum matrix " + to_string(i+1));
+    (*transform % *zfci_orbang_[i] * *transform).print("Spin eigenfunction basis orbital angular momentum matrix " + to_string(i+1));
+#endif
+    cout << endl;
     assert(is_t_symmetric(*spinop_s[i], /*hermitian*/true, /*time reversal*/false));
   }
 

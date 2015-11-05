@@ -82,6 +82,8 @@ class Pseudospin {
     // These are over eigenstates of the (ZFCI) Hamiltonian; those over pseudospin eigenstates are not saved as members
     std::shared_ptr<ZMatrix> spinham_h_;
     std::array<std::shared_ptr<ZMatrix>,3> spinop_h_;
+    std::array<std::shared_ptr<ZMatrix>,3> zfci_spin_;
+    std::array<std::shared_ptr<ZMatrix>,3> zfci_orbang_;
 
     void update_spin_matrices(VectorB spinvals);
 
