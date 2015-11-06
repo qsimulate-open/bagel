@@ -93,8 +93,11 @@ void Pseudospin::compute(const ZHarrison& zfci) {
   compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
 
   shared_ptr<ZMatrix> spinham_s = compute_spin_eigegenvalues(rotin);
-  ESO = extract_hamiltonian_parameters(ESO, spinham_s);
-  shared_ptr<Matrix> dtens = compute_Dtensor(ESO);
+
+  if (nspin_ > 1) {
+    ESO = extract_hamiltonian_parameters(ESO, spinham_s);
+    shared_ptr<Matrix> dtens = compute_Dtensor(ESO);
+  }
 }
 
 
