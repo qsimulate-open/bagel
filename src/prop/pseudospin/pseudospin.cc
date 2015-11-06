@@ -341,20 +341,26 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<double, 3
   for (int i = 0; i != 3; ++i)
     spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
 
-  auto Atensor_h = make_shared<ZMatrix>(3, 3);
-  for (int i = 0; i != 3; ++i)
-    for (int j = 0; j != 3; ++j)
-      for (int k = 0; k != nspin1_; ++k)
-        for (int l = 0; l != nspin1_; ++l)
-          Atensor_h->element(i, j) += 0.5 * spinop_h_[i]->element(k, l) * spinop_h_[j]->element(l, k);
-
-  Atensor_h->print("A tensor, in zfci eigenstate basis");
+  auto Atensor = make_shared<const Matrix>(3, 3);
+  shared_ptr<Matrix> Atransform;
   VectorB Aeig(3);
-  Atensor_h->diagonalize(Aeig);
-  for (int i = 0; i != 3; ++i)
-    cout << " *** Atensor eigenvalue " << i << " = " << Aeig[i] << endl;
+  {
+    auto temp = make_shared<ZMatrix>(3, 3);
+    for (int i = 0; i != 3; ++i)
+      for (int j = 0; j != 3; ++j)
+        for (int k = 0; k != nspin1_; ++k)
+          for (int l = 0; l != nspin1_; ++l)
+            temp->element(i, j) += 0.5 * spinop_h_[i]->element(k, l) * spinop_h_[j]->element(l, k);
 
-  cout << endl;
+    Atensor = temp->get_real_part();
+    assert(temp->get_imag_part()->rms() < 1.0e-10);
+    Atensor->print("A tensor");
+    Atransform = Atensor->copy();
+    Atransform->diagonalize(Aeig);
+    for (int i = 0; i != 3; ++i)
+      cout << " *** Atensor eigenvalue " << i << " = " << Aeig[i] << endl;
+  }
+
   cout << endl;
   for (int i = 0; i != 3; ++i) {
     //spinop_h_[i]->print("ZFCI basis spin matrix " + to_string(i+1));
@@ -362,9 +368,35 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<double, 3
     spinop_s[i]->print("Spin eigenfunction basis magnetic moment matrix " + to_string(i+1));
     (*transform % *zfci_spin_[i] * *transform).print("Spin eigenfunction basis spin angular momentum matrix " + to_string(i+1));
     (*transform % *zfci_orbang_[i] * *transform).print("Spin eigenfunction basis orbital angular momentum matrix " + to_string(i+1));
-#endif
     cout << endl;
+#endif
     assert(is_t_symmetric(*spinop_s[i], /*hermitian*/true, /*time reversal*/false));
+  }
+
+  // S = 1/2
+  if (nspin_ == 1) {
+    auto gtensor = make_shared<Matrix>(3, 3);
+    gtensor->zero();
+    array<double,3> gval;
+    for (int i = 0; i != 3; ++i) {
+      gval[i] = 4.0 * std::sqrt(Aeig[i]);
+      gtensor->element(i, i) = gval[i];
+    }
+
+    *gtensor = (*Atransform * *gtensor ^ *Atransform);
+    auto Gtensor = make_shared<Matrix>(*gtensor ^ *gtensor);
+    assert((*Gtensor - (16.0 * *Atensor)).rms() < 1.0e-8);
+
+    gtensor->print("g-tensor");
+    Gtensor->print("G-tensor");
+
+    cout << "  Main axes of magnetic anisotropy:" << endl;
+    for (int i = 0; i != 3; ++i) {
+      cout << "   " << i << " |g_" << i << "| = " << setw(12) << gval[i] << ",  axis = ( ";
+      cout << setw(12) << Atransform->element(i, 0) << ", ";
+      cout << setw(12) << Atransform->element(i, 1) << ", ";
+      cout << setw(12) << Atransform->element(i, 2) << " )" << endl;
+    }
   }
 
   return spinham_s;
