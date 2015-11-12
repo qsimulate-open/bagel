@@ -155,7 +155,7 @@ int main() {
         }
         const mpreal sign = (m >=0) ? (cos(am * phi)) : (-one * cos(am * phi));
 
-        if (abs(v[0]) > ws && abs(v[1]) > ws && abs(v[2]) > ws) {
+        if (abs(v[0]) > ws || abs(v[1]) > ws || abs(v[2]) > ws) {
           const mpreal real = gupper * sign * plm_tilde;
           const mpreal imag = gupper * sin(am * phi) * plm_tilde;
           mlm[im] += complex<mpreal>(real, imag);
