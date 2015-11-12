@@ -72,6 +72,7 @@ class SimulationCell { /* cubic, same or larger than primitive cell */
     double extent() const { return extent_; }
     double radius() const { return radius_; }
     int nbasis() const { return geom_->nbasis(); }
+    void print() const { geom_->print_atoms(); }
 };
 
 }
