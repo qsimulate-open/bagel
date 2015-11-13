@@ -82,8 +82,6 @@ void Pseudospin::compute(const ZHarrison& zfci) {
       ranks.push_back(lexical_cast<int>(i->data()));
   }
 
-  array<double, 3> rotin = zfci.idata()->get_array<double,3>("aniso_axis", array<double, 3>({{0.0, 0.0, 1.0}}));
-
   cout << setprecision(8);
   cout << endl << "    ********      " << endl;
   cout << endl << "    Modeling Pseudospin Hamiltonian for S = " << nspin_ / 2 << (nspin_ % 2 == 0 ? "" : " 1/2") << endl;
@@ -92,7 +90,14 @@ void Pseudospin::compute(const ZHarrison& zfci) {
 
   compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
 
-  shared_ptr<ZMatrix> spinham_s = compute_spin_eigenvalues(rotin);
+  shared_ptr<const Matrix> mag_axes = identify_magnetic_axes();
+  array<double,3> rotation;
+    for (int i = 0; i != 3; ++i)
+      rotation[i] = mag_axes->element(2, i);
+
+  array<double, 3> rotin = zfci.idata()->get_array<double,3>("aniso_axis", rotation);
+
+  shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues(rotin);
 
   if (nspin_ > 1) {
     ESO = extract_hamiltonian_parameters(ESO, spinham_s);
@@ -275,7 +280,66 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 }
 
 
-shared_ptr<ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<double, 3> rotation) const {
+shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
+  auto Atensor = make_shared<const Matrix>(3, 3);
+  shared_ptr<Matrix> Atransform;
+  VectorB Aeig(3);
+  {
+    auto temp = make_shared<ZMatrix>(3, 3);
+    for (int i = 0; i != 3; ++i)
+      for (int j = 0; j != 3; ++j)
+        for (int k = 0; k != nspin1_; ++k)
+          for (int l = 0; l != nspin1_; ++l)
+            temp->element(i, j) += 0.5 * spinop_h_[i]->element(k, l) * spinop_h_[j]->element(l, k);
+
+    Atensor = temp->get_real_part();
+    assert(temp->get_imag_part()->rms() < 1.0e-10);
+    Atransform = Atensor->copy();
+    Atransform->diagonalize(Aeig);
+
+    Atensor->print("A tensor");
+    cout << endl;
+    for (int i = 0; i != 3; ++i)
+      cout << " *** Atensor eigenvalue " << i << " = " << Aeig[i] << endl;
+    cout << endl;
+  }
+
+  {
+    auto gtensor = make_shared<Matrix>(3, 3);
+    gtensor->zero();
+    array<double,3> gval;
+    const double factor = 12.0 / (nspin_ * (0.5 * nspin_ + 1.0) * (nspin_ + 1.0)); //  6.0 / ( S * (S+1) * (2S+1) )
+    if (nspin_ > 2)
+      cout << "  **  Use caution:  This mapping to the pseudospin Hamiltonian is approximate.  (3rd-order and above terms in A are neglected.)" << endl;
+    for (int i = 0; i != 3; ++i) {
+      gval[i] = 2.0 * std::sqrt(factor * Aeig[i]);
+      gtensor->element(i, i) = gval[i];
+    }
+
+    *gtensor = (*Atransform * *gtensor ^ *Atransform);
+    auto Gtensor = make_shared<Matrix>(*gtensor ^ *gtensor);
+
+    gtensor->print("g-tensor");
+    cout << endl;
+    Gtensor->print("G-tensor");
+    cout << endl;
+
+    assert((*Gtensor - 4.0 * factor * *Atensor).rms() < 1.0e-8);
+
+    cout << "  Main axes of magnetic anisotropy:" << endl;
+    for (int i = 0; i != 3; ++i) {
+      cout << "   " << i << " |g_" << i << "| = " << setw(12) << gval[i] << ",  axis = ( ";
+      cout << setw(12) << Atransform->element(i, 0) << ", ";
+      cout << setw(12) << Atransform->element(i, 1) << ", ";
+      cout << setw(12) << Atransform->element(i, 2) << " )" << endl;
+    }
+    cout << endl;
+  }
+  return Atransform;
+}
+
+
+shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<double, 3> rotation) const {
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   auto transform = make_shared<ZMatrix>(nspin1_, nspin1_);
@@ -345,28 +409,6 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<double, 3> 
   for (int i = 0; i != 3; ++i)
     spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
 
-  auto Atensor = make_shared<const Matrix>(3, 3);
-  shared_ptr<Matrix> Atransform;
-  VectorB Aeig(3);
-  {
-    auto temp = make_shared<ZMatrix>(3, 3);
-    for (int i = 0; i != 3; ++i)
-      for (int j = 0; j != 3; ++j)
-        for (int k = 0; k != nspin1_; ++k)
-          for (int l = 0; l != nspin1_; ++l)
-            temp->element(i, j) += 0.5 * spinop_h_[i]->element(k, l) * spinop_h_[j]->element(l, k);
-
-    Atensor = temp->get_real_part();
-    assert(temp->get_imag_part()->rms() < 1.0e-10);
-    cout << endl;
-    Atransform = Atensor->copy();
-    Atransform->diagonalize(Aeig);
-
-    Atensor->print("A tensor");
-    for (int i = 0; i != 3; ++i)
-      cout << " *** Atensor eigenvalue " << i << " = " << Aeig[i] << endl;
-  }
-
   cout << endl;
   for (int i = 0; i != 3; ++i) {
     //spinop_h_[i]->print("ZFCI basis spin matrix " + to_string(i+1));
@@ -377,37 +419,6 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<double, 3> 
     cout << endl;
 #endif
     assert(is_t_symmetric(*spinop_s[i], /*hermitian*/true, /*time reversal*/false));
-  }
-
-  {
-    auto gtensor = make_shared<Matrix>(3, 3);
-    gtensor->zero();
-    array<double,3> gval;
-    const double factor = 12.0 / (nspin_ * (0.5 * nspin_ + 1.0) * (nspin_ + 1.0)); //  6.0 / ( S * (S+1) * (2S+1) )
-    if (nspin_ > 2)
-      cout << "  **  Use caution:  This mapping to the pseudospin Hamiltonian is approximate.  (3rd-order and above terms in A are neglected.)" << endl;
-    for (int i = 0; i != 3; ++i) {
-      gval[i] = 2.0 * std::sqrt(factor * Aeig[i]);
-      gtensor->element(i, i) = gval[i];
-    }
-
-    *gtensor = (*Atransform * *gtensor ^ *Atransform);
-    auto Gtensor = make_shared<Matrix>(*gtensor ^ *gtensor);
-
-    gtensor->print("g-tensor");
-    cout << endl;
-    Gtensor->print("G-tensor");
-    cout << endl;
-
-    assert((*Gtensor - 4.0 * factor * *Atensor).rms() < 1.0e-8);
-
-    cout << "  Main axes of magnetic anisotropy:" << endl;
-    for (int i = 0; i != 3; ++i) {
-      cout << "   " << i << " |g_" << i << "| = " << setw(12) << gval[i] << ",  axis = ( ";
-      cout << setw(12) << Atransform->element(i, 0) << ", ";
-      cout << setw(12) << Atransform->element(i, 1) << ", ";
-      cout << setw(12) << Atransform->element(i, 2) << " )" << endl;
-    }
   }
 
   return spinham_s;

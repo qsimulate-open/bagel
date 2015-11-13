@@ -100,9 +100,10 @@ class Pseudospin {
     // setup functions
     std::vector<Stevens_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
     void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
+    std::shared_ptr<const Matrix> identify_magnetic_axes() const;
 
     // to extract D-tensor
-    std::shared_ptr<ZMatrix> compute_spin_eigenvalues(const std::array<double, 3> rotation = {{ 0.0, 0.0, 1.0 }} ) const;
+    std::shared_ptr<const ZMatrix> compute_spin_eigenvalues(const std::array<double, 3> rotation = {{ 0.0, 0.0, 1.0 }} ) const;
     std::vector<Stevens_Operator> extract_hamiltonian_parameters(const std::vector<Stevens_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
     static std::shared_ptr<Matrix> compute_Dtensor(const std::vector<Stevens_Operator> input);
 
