@@ -312,8 +312,9 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<double, 3> 
     }
   }
 
-  { // Check a spin matrix as well with basically the same procedure, since sometimes we miss a phase due to numerically zero entries in the Hamiltonian
-    const ZMatrix spinop_x = *transform % *spinop_h_[0] * *transform;
+  // Check the spin matrices as well with basically the same procedure, since sometimes we miss a phase due to numerically zero entries in the Hamiltonian
+  for (int j = 0; j != 3; ++j) {
+    const ZMatrix spinop_x = *transform % *spinop_h_[j] * *transform;
     if (!is_t_symmetric(spinop_x, /*hermitian*/ true, /*t_symmetric*/ false, 1.0e-8)) {
       complex<double> adjust = 1.0;
       for (int k = nspin_ / 2; k > 0; --k) {
