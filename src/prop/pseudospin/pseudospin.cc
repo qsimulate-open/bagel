@@ -92,7 +92,7 @@ void Pseudospin::compute(const ZHarrison& zfci) {
 
   compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
 
-  shared_ptr<ZMatrix> spinham_s = compute_spin_eigegenvalues(rotin);
+  shared_ptr<ZMatrix> spinham_s = compute_spin_eigenvalues(rotin);
 
   if (nspin_ > 1) {
     ESO = extract_hamiltonian_parameters(ESO, spinham_s);
@@ -275,7 +275,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 }
 
 
-shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<double, 3> rotation) const {
+shared_ptr<ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<double, 3> rotation) const {
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   auto transform = make_shared<ZMatrix>(nspin1_, nspin1_);
