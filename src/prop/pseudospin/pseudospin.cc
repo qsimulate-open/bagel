@@ -357,9 +357,11 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<double, 3
 
     Atensor = temp->get_real_part();
     assert(temp->get_imag_part()->rms() < 1.0e-10);
-    Atensor->print("A tensor");
+    cout << endl;
     Atransform = Atensor->copy();
     Atransform->diagonalize(Aeig);
+
+    Atensor->print("A tensor");
     for (int i = 0; i != 3; ++i)
       cout << " *** Atensor eigenvalue " << i << " = " << Aeig[i] << endl;
   }
@@ -376,22 +378,27 @@ shared_ptr<ZMatrix> Pseudospin::compute_spin_eigegenvalues(const array<double, 3
     assert(is_t_symmetric(*spinop_s[i], /*hermitian*/true, /*time reversal*/false));
   }
 
-  // S = 1/2
-  if (nspin_ == 1) {
+  {
     auto gtensor = make_shared<Matrix>(3, 3);
     gtensor->zero();
     array<double,3> gval;
+    const double factor = 12.0 / (nspin_ * (0.5 * nspin_ + 1.0) * (nspin_ + 1.0)); //  6.0 / ( S * (S+1) * (2S+1) )
+    if (nspin_ > 2)
+      cout << "  **  Use caution:  This mapping to the pseudospin Hamiltonian is approximate.  (3rd-order and above terms in A are neglected.)" << endl;
     for (int i = 0; i != 3; ++i) {
-      gval[i] = 4.0 * std::sqrt(Aeig[i]);
+      gval[i] = 2.0 * std::sqrt(factor * Aeig[i]);
       gtensor->element(i, i) = gval[i];
     }
 
     *gtensor = (*Atransform * *gtensor ^ *Atransform);
     auto Gtensor = make_shared<Matrix>(*gtensor ^ *gtensor);
-    assert((*Gtensor - (16.0 * *Atensor)).rms() < 1.0e-8);
 
     gtensor->print("g-tensor");
+    cout << endl;
     Gtensor->print("G-tensor");
+    cout << endl;
+
+    assert((*Gtensor - 4.0 * factor * *Atensor).rms() < 1.0e-8);
 
     cout << "  Main axes of magnetic anisotropy:" << endl;
     for (int i = 0; i != 3; ++i) {
