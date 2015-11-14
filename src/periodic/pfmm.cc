@@ -100,27 +100,28 @@ void PFMM::compute_Mlm_direct() {
     mvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
     mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
     const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
-    const double r = sqrt(rsq);
-    const double ctheta = (rsq > numerical_zero__) ? mvec[2]/r : 0.0;
-    const double phi = atan2(mvec[1], mvec[0]);
+    if (rsq > numerical_zero__) {
+      const double r = sqrt(rsq);
+      const double ctheta = mvec[2]/r;
+      const double phi = atan2(mvec[1], mvec[0]);
 
-    for (int l = 0; l <= lmax_; ++l) {
-      for (int m = 0; m <= 2 * l; ++m) {
-        const int am = abs(m - l);
-        const int imul = l * l + m;
+      for (int l = 0; l <= lmax_; ++l) {
+        for (int m = 0; m <= 2 * l; ++m) {
+          const int am = abs(m - l);
+          const int imul = l * l + m;
 
-        double plm_tilde = plm.compute(l, am, ctheta) * pow(r, l);
-        double ft = 1.0;
-        for (int i = 1; i <= l + am; ++i) {
-          plm_tilde /= ft;
-          ft += 1.0;
+          double plm_tilde = plm.compute(l, am, ctheta) * pow(r, l);
+          double ft = 1.0;
+          for (int i = 1; i <= l + am; ++i) {
+            plm_tilde /= ft;
+            ft += 1.0;
+          }
+
+          const double sign = (m - l >= 0) ? 1.0 : -1.0;
+          const double real = sign * cos(am * phi) * plm_tilde;
+          const double imag = sin(am * phi) * plm_tilde;
+          mstar[imul] += complex<double>(real, imag);
         }
-
-        const double sign = (m - l >= 0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
-        const double real = sign * plm_tilde;
-        const double imag = sin(am * phi) * plm_tilde;
-
-        mstar[imul] += complex<double>(real, imag);
       }
     }
   }
@@ -150,52 +151,42 @@ void PFMM::compute_Mlm_direct() {
     mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
 
     const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
-    const double r = sqrt(rsq);
-    const double ctheta = (rsq > numerical_zero__) ? mvec[2]/r : 0.0;
-    const double phi = atan2(mvec[1], mvec[0]);
+    if (rsq > numerical_zero__) {
+      const double r = sqrt(rsq);
+      const double ctheta = mvec[2]/r;
+      const double phi = atan2(mvec[1], mvec[0]);
 
-    for (int l = 0; l < max_rank_; ++l) {
-      for (int m = 0; m <= 2 * l; ++m) {
-        const int am = abs(m - l);
-        const int imul = l * l + m;
+      for (int l = 0; l < max_rank_; ++l) {
+        for (int m = 0; m <= 2 * l; ++m) {
+          const int am = abs(m - l);
+          const int imul = l * l + m;
 
-        double plm_tilde = plm.compute(l, am, ctheta) / pow(r, l+1);
-        double ft = 1.0;
-        for (int i = 1; i <= l - am; ++i) {
-          plm_tilde *= ft;
-          ft += 1.0;
+          double plm_tilde = plm.compute(l, am, ctheta) / pow(r, l+1);
+          double ft = 1.0;
+          for (int i = 1; i <= l - am; ++i) {
+            plm_tilde *= ft;
+            ft += 1.0;
+          }
+
+          const double sign = (m - l >=0) ? 1.0 : -1.0;
+          const double real = sign * cos(am * phi) * plm_tilde;
+          const double imag = sin(am * phi) * plm_tilde;
+          lstar[imul] += complex<double>(real, imag);
         }
-
-        const double sign = (m - l >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
-        const double real = sign * plm_tilde;
-        const double imag = sin(am * phi) * plm_tilde;
-
-        lstar[imul] += complex<double>(real, imag);
       }
     }
   }
 
   // Mlm(n)
-  vector<pair<int, int>> lm_map;
-  for (int l = 0; l < max_rank_; ++l)
-    for (int m = 0; m <= 2 * l; ++m)
-      lm_map.push_back(make_pair(l, m-l));
-  assert(lm_map.size() == msize_);
-
   mlm_ = lstar; // iter 0
-
   const int max_iter = 15;
   for (int n = 1; n <= max_iter; ++n) {
     vector<complex<double>> previous(msize_);
-    for (int i = 0; i != msize_; ++i) {
-      const int l = lm_map[i].first;
-      previous[i] = mlm_[i] / pow(3.0, l+1);
-      mlm_[i] = 0.0;
-    }
-
     for (int l = 0; l < max_rank_; ++l) {
       for (int m = 0; m <= 2*l; ++m) {
         const int im0 = l * l + m;
+        previous[im0] = mlm_[im0] / pow(3.0, l+1);
+        mlm_[im0] = 0.0;
 
         for (int j = 0; j <= lmax_ - l; ++j) {
           for (int k = 0; k <= 2*j; ++k) {
@@ -261,8 +252,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
         array<int, 3> idx = vidx[ivec];
 
         const int pos = ivec * 3;
-        const double rsq = Rsq_[ivec];
-        const double r = sqrt(rsq);
+        const double r = sqrt(Rsq_[ivec]);
         const double ctheta = rvec_[pos+2]/r;
         const double phi = atan2(rvec_[pos+1], rvec_[pos]);
         const double* croots = roots_ + ivec * rank;
@@ -277,8 +267,8 @@ void PFMM::compute_Mlm() { // rectangular scell for now
             glower += cweights[i] * pow(croots[i], l);
         }
 
-        const double coeff = 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
-        const double gupper = 1.0 / pow(r, l+1.0) - glower * coeff;
+        glower *= 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
+        const double gupper = 1.0 / pow(r, l+1.0) - glower;
 
         for (int mm = 0; mm <= 2 * l; ++mm) {
           const int m = mm - l;
@@ -291,18 +281,17 @@ void PFMM::compute_Mlm() { // rectangular scell for now
             plm_tilde *= ft;
             ft += 1.0;
           }
-          const double sign = (m >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
+          const double sign = (m >=0) ? 1.0 : -1.0;
 
           if (abs(idx[0]) > ws_ || abs(idx[1]) > ws_ || abs(idx[2]) > ws_) {
             // real term
-            const double real = gupper * sign * plm_tilde;
+            const double real = gupper * sign * cos(am * phi) * plm_tilde;
             const double imag = gupper * sin(am * phi) * plm_tilde;
             mlm_[imul] += complex<double>(real, imag);
-          }
-          if (abs(idx[0]) <= ws_ && abs(idx[1]) <= ws_ && abs(idx[2]) <= ws_) {
+          } else {
             // substract smooth part within ws_
-            const double real = coeff * glower * sign * plm_tilde;
-            const double imag = coeff * glower * sin(am * phi) * plm_tilde;
+            const double real = glower * sign * cos(am * phi) * plm_tilde;
+            const double imag = glower * sin(am * phi) * plm_tilde;
             mlm_[imul] -= complex<double>(real, imag);
           }
         }
@@ -327,11 +316,11 @@ void PFMM::compute_Mlm() { // rectangular scell for now
       }
     case 3:
       {
-      array<double, 3> a23 = cross(primvecs[1], primvecs[2]);
-      const double scale = 1.0 / dot(primvecs[0], a23);
-      primkvecs[0] = cross(primvecs[1], primvecs[2], scale);
-      primkvecs[1] = cross(primvecs[2], primvecs[0], scale);
-      primkvecs[2] = cross(primvecs[0], primvecs[1], scale);
+        array<double, 3> a23 = cross(primvecs[1], primvecs[2]);
+        const double scale = 1.0 / dot(primvecs[0], a23);
+        primkvecs[0] = cross(primvecs[1], primvecs[2], scale);
+        primkvecs[1] = cross(primvecs[2], primvecs[0], scale);
+        primkvecs[2] = cross(primvecs[0], primvecs[1], scale);
       }
   }
 
@@ -339,41 +328,18 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     primkvecs[i] = {{0.0, 0.0, 0.0}};
 
   for (int ivec = 0; ivec != nvec; ++ivec) {
-    const int pos = ivec * 3;
     array<int, 3> idx = vidx[ivec];
-    kvec_[pos    ] = idx[0] * primkvecs[0][0] + idx[1] * primkvecs[1][0] + idx[2] * primkvecs[2][0];
-    kvec_[pos + 1] = idx[0] * primkvecs[0][1] + idx[1] * primkvecs[1][1] + idx[2] * primkvecs[2][1];
-    kvec_[pos + 2] = idx[0] * primkvecs[0][2] + idx[1] * primkvecs[1][2] + idx[2] * primkvecs[2][2];
-    Rsq_[ivec] = kvec_[pos]*kvec_[pos] + kvec_[pos+1]*kvec_[pos+1] + kvec_[pos+2]*kvec_[pos+2];
-    T_[ivec] = Rsq_[ivec] * beta__ * beta__;
-  }
-
-  fill_n(roots_, max_rank_ * nvec, 0.0);
-  fill_n(weights_, max_rank_ * nvec, 0.0);
-  for (int l = 0; l < max_rank_; ++l) {
-    const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5);
-    root_weight(l, nvec);
-    const int rank = l + 1;
-
-
-    for (int ivec = 0; ivec != nvec; ++ivec) {
-      if (Rsq_[ivec] > numerical_zero__) {
-        const int pos = ivec * 3;
-        const double rsq = Rsq_[ivec];
-        const double r = sqrt(rsq);
-        const double ctheta = kvec_[pos+2]/r;
-        const double phi = atan2(kvec_[pos+1], kvec_[pos]);
-        const double* croots = roots_ + ivec * rank;
-        const double* cweights = weights_ + ivec * rank;
-
-        double glower = 0.0;
-        if (l == 0) {
-          for (int i = 0; i != rank; ++i)
-            glower += cweights[i];
-        } else {
-          for (int i = 0; i != rank; ++i)
-            glower += cweights[i] * pow(croots[i], l);
-        }
+    array<double, 3> kvec;
+    kvec[0] = idx[0] * primkvecs[0][0] + idx[1] * primkvecs[1][0] + idx[2] * primkvecs[2][0];
+    kvec[1] = idx[0] * primkvecs[0][1] + idx[1] * primkvecs[1][1] + idx[2] * primkvecs[2][1];
+    kvec[2] = idx[0] * primkvecs[0][2] + idx[1] * primkvecs[1][2] + idx[2] * primkvecs[2][2];
+    const double rsq = kvec[0]*kvec[0] + kvec[1]*kvec[1] + kvec[2]*kvec[2];
+    const double r = sqrt(rsq);
+    const double ctheta = kvec[2]/r;
+    const double phi = atan2(kvec[1], kvec[0]);
+    if (rsq > numerical_zero__) {
+      for (int l = 0; l < max_rank_; ++l) {
+        const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5);
 
         for (int mm = 0; mm <= 2 * l; ++mm) {
           const int m = mm - l;
@@ -387,11 +353,11 @@ void PFMM::compute_Mlm() { // rectangular scell for now
             ft += 1.0;
           }
 
-          const double sign = (m >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
+          const double sign = (m >=0) ? 1.0 : -1.0;
 
           // smooth term
           const double coeffm = plm_tilde * sgamma(l, r) * exp(-rsq * pibeta) / rsq;
-          double real = coeffm * sign;
+          double real = coeffm * sign * cos(am * phi);
           double imag = coeffm * sin(am * phi);
           mlm_[imul] += coeffl * complex<double>(real, imag);
         }
@@ -432,12 +398,11 @@ void PFMM::root_weight(const int l, const int size) {
 
 void PFMM::allocate_arrays(const size_t ps) {
 
-  size_allocated_ = (max_rank_ * 2 + 8) * ps;
+  size_allocated_ = (max_rank_ * 2 + 5) * ps;
   buff_ = stack_->get(size_allocated_);
   double* pointer = buff_;
 
   rvec_  = pointer;   pointer += ps * 3;
-  kvec_  = pointer;   pointer += ps * 3;
   Rsq_ = pointer;       pointer += ps;
   T_ = pointer;       pointer += ps;
   roots_ = pointer;   pointer += max_rank_ * ps;
