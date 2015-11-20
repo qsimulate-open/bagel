@@ -27,9 +27,8 @@
 #ifndef __SRC_PERIODIC_PMATRIX1EARRAY_H
 #define __SRC_PERIODIC_PMATRIX1EARRAY_H
 
-#include <src/periodic/pmatrix1e.h>
-#include <src/util/taskqueue.h>
 #include <src/util/constants.h>
+#include <src/periodic/pmatrix1e.h>
 
 
 namespace bagel {

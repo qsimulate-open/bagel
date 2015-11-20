@@ -24,15 +24,6 @@
 //
 
 
-#include <algorithm>
-#include <iostream>
-#include <iomanip>
-#include <src/util/f77.h>
-#include <cassert>
-#include <cmath>
-#include <src/util/parallel/mpi_interface.h>
-#include <src/util/parallel/resources.h>
-#include <src/util/taskqueue.h>
 #include <src/periodic/pmatrix1e.h>
 
 using namespace std;
@@ -41,6 +32,7 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(PMatrix1e)
 
 PMatrix1e::PMatrix1e(const shared_ptr<const Lattice> lattice) : PData(lattice->primitive_cell()->nbasis(), lattice->num_lattice_vectors()) { }
+
 
 namespace bagel {
 class PMatrix1eTask {
@@ -56,6 +48,7 @@ class PMatrix1eTask {
     void compute() const { parent_->computebatch(bas, ob0, ob1, lattice, block); }
 };
 }
+
 
 void PMatrix1e::init(shared_ptr<const Lattice> lattice) {
 

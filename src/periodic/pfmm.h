@@ -30,7 +30,6 @@
 #include <src/util/math/sphharmonics.h>
 #include <src/util/math/gamma.h>
 #include <src/integral/rys/erirootlist.h>
-#include <src/util/math/factorial.h>
 #include <src/periodic/simulationcell.h>
 #include <src/periodic/pdata.h>
 #include <src/util/parallel/resources.h>
