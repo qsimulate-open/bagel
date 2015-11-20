@@ -410,6 +410,42 @@ void PFMM::allocate_arrays(const size_t ps) {
 }
 
 
+vector<shared_ptr<const ZMatrix>> PFMM::compute_multipoles(shared_ptr<const Geometry> geom0, shared_ptr<const Geometry> geom1) const {
+
+  vector<shared_ptr<const ZMatrix>> out(osize_);
+
+  const size_t nbasis = geom0->nbasis();
+  vector<shared_ptr<ZMatrix>> multipoles(osize_);
+  for (int i = 0; i != osize_; ++i)
+    multipoles[i] = make_shared<ZMatrix>(nbasis, nbasis);
+
+  vector<shared_ptr<const Atom>> atoms0 = geom0->atoms();
+  vector<shared_ptr<const Atom>> atoms1 = geom1->atoms();
+  size_t ob0 = 0;
+  for (auto& atom0 : atoms0) {
+    for (auto& b0 : atom0->shells()) {
+      size_t ob1 = 0;
+      for (auto& atom1 : atoms1) {
+        for (auto& b1 : atom1->shells()) {
+          MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, geom0->charge_center(), lmax_);
+          mpole.compute();
+          for (int i = 0; i != osize_; ++i)
+            multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+
+          ob1 += b1->nbasis();
+        }
+      }
+      ob0 += b0->nbasis();
+    }
+  }
+
+  for (int i = 0; i != osize_; ++i)
+    out[i] = make_shared<const ZMatrix>(*multipoles[i]);
+
+  return out;
+}
+
+
 vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const {
 
   density->print_real_part("Density");
@@ -425,19 +461,21 @@ vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const
   for (int i = ndim_; i != 3; ++i)
     primvecs[i] = {{0.0, 0.0, 0.0}};
 
-  // translate Olm_ab(0), contract with density D_ab(m), and sum over m
+  // compute Olm(m), contract with density D_ab(m), and sum over m
+
   const size_t nbasis1 = scell_->multipoles().front()->ndim();
   const size_t nbasis0 = scell_->multipoles().front()->mdim();
   vector<complex<double>> olm(osize_);
 
   for (int ivec = 0; ivec != nvec; ++ivec) { // m
     array<int, 3> idx = vidx[ivec];
+    // compute multipoles (0|Olm|m)
     array<double, 3> mvec;
     mvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
     mvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
     mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
-    vector<shared_ptr<const ZMatrix>> olm_ab_m = scell_->shift_multipoles(mvec);
-    assert(olm_ab_m.size() == osize_);
+    auto cell = make_shared<const Geometry>(*scell_->geom(), mvec);
+    vector<shared_ptr<const ZMatrix>> olm_ab_m = compute_multipoles(scell_->geom(), cell);
 
     shared_ptr<const ZMatrix> ffden = density->pdata(ivec);
     for (int i = 0; i != osize_; ++i) {

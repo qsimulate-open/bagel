@@ -80,6 +80,7 @@ class PFMM {
     std::vector<std::complex<double>> compute_Slm(std::shared_ptr<const PData> density) const;
     std::shared_ptr<const PData> compute_far_field(std::shared_ptr<const PData> density) const;
     std::shared_ptr<const PData> compute_cfmm(std::shared_ptr<const PData> density) const;
+    std::vector<std::shared_ptr<const ZMatrix>> compute_multipoles(std::shared_ptr<const Geometry>, std::shared_ptr<const Geometry>) const;
 
   public:
     PFMM(std::shared_ptr<const SimulationCell>, const bool dodf = true, const int lmax = 10, const int ws = 2, const int extent = 10,
