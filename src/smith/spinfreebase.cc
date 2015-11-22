@@ -27,6 +27,7 @@
 #ifdef COMPILE_SMITH
 
 #include <src/smith/tensor.h>
+#include <src/smith/lazytensor.h>
 #include <src/smith/moint.h>
 #include <src/smith/spinfreebase.h>
 #include <src/smith/smith_util.h>
@@ -512,32 +513,22 @@ shared_ptr<TATensor<DataType,4>> SpinFreeMethod<DataType>::diagonal(shared_ptr<T
   if (!is_same<DataType,double>::value)
     throw logic_error("SpinFreeMethod<DataType>::diagonal is only correct for non-rel spin-adapted cases ");
 
-  auto rt = make_shared<Tensor_<DataType>>(*r);
-  auto tt = make_shared<Tensor_<DataType>>(*t);
+  const int ncore = info_->ncore();
+  const int nocc  = info_->nclosed() + info_->nact();
+  Diag4Gen gen(eig_, nocc, nocc, ncore, ncore);
 
-  for (auto& i3 : virt_) {
-    for (auto& i2 : closed_) {
-      for (auto& i1 : virt_) {
-        for (auto& i0 : closed_) {
-          // if this block is not included in the current wave function, skip it
-          if (!rt->get_size_alloc(i0, i1, i2, i3)) continue;
-          unique_ptr<DataType[]>       data0 = tt->get_block(i0, i1, i2, i3);
-          const unique_ptr<DataType[]> data1 = tt->get_block(i0, i3, i2, i1);
-
-          sort_indices<0,3,2,1,8,1,-4,1>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
-          size_t iall = 0;
-          for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                  // note that e0 is cancelled by another term
-                  data0[iall] *= -(eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
-          rt->add_block(data0, i0, i1, i2, i3);
-        }
-      }
+  using LazyArray = LazyTATensor<double,4,LazyTensor<double,4,Diag4Gen>>;
+  LazyArray d({virt_, virt_, closed_, closed_});
+  for (auto& t : d.trange().tiles()) {
+    if (d.is_local(t)) {
+      array<size_t, 4> index;
+      copy(t.begin(), t.end(), index.begin());
+      madness::Future<typename LazyArray::value_type> tile((LazyTensor<double, 4, Diag4Gen>(&d, index, &gen)));
+      d.set(t, tile);
     }
   }
-  return rt->template tiledarray<4>();
+  (*r)("c2,a3,c0,a1") += ((*t)("c0,a1,c2,a3")*8.0 - (*t)("c0,a3,c2,a1")*4.0) * d("a1,a3,c0,c2");
+  return r;
 }
 
 #define SPINFREEMETHOD_DETAIL

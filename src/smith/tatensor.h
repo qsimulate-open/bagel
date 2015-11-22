@@ -46,14 +46,6 @@ class TATensor : public TiledArray::Array<DataType,N> {
     using TiledArray::Array<DataType,N>::end;
     using TiledArray::Array<DataType,N>::trange;
 
-  protected:
-    std::vector<IndexRange> range_;
-
-    bool initialized_;
-
-//TODO do something for symmetry
-//  std::map<std::vector<int>, std::pair<double,bool>> perm_;
-
     static std::shared_ptr<TiledArray::TiledRange> make_trange(const std::vector<IndexRange>& r) {
       std::vector<TiledArray::TiledRange1> ranges;
       for (auto it = r.rbegin(); it != r.rend(); ++it) {
@@ -66,6 +58,13 @@ class TATensor : public TiledArray::Array<DataType,N> {
       return std::make_shared<TiledArray::TiledRange>(ranges.begin(), ranges.end());
     }
 
+  protected:
+    std::vector<IndexRange> range_;
+
+    bool initialized_;
+
+//TODO do something for symmetry
+//  std::map<std::vector<int>, std::pair<double,bool>> perm_;
 
     std::tuple<std::string, std::array<size_t, N>, std::array<size_t, N>> index_mapping(const std::string& vars) const {
 #if defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 9
