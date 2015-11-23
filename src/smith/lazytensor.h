@@ -78,11 +78,60 @@ class LazyTensor {
 };
 
 
-template<typename DataType, int N, typename Lazy>
-class LazyTATensor : public TiledArray::Array<DataType,N,Lazy> {
+// assuming that the diagonal element is real (which is usually right)
+// TODO CAUTION -- column-row major convention.
+class Diag4Gen {
+  protected:
+    std::vector<double> eig_;
+    const int o0_, o1_, o2_, o3_;
   public:
-    LazyTATensor(const std::vector<IndexRange>& r)
-      : TiledArray::Array<DataType,N,Lazy>(madness::World::get_default(), *TATensor<DataType,N>::make_trange(r)) {
+    // 0 and 1 are virtual orbitals; 2 and 3 are closed orbitals
+    Diag4Gen(const std::vector<double>& eig, const int off0, const int off1, const int off2, const int off3)
+     : eig_(eig), o0_(off0), o1_(off1), o2_(off2), o3_(off3) {
+    }
+    template <typename Index>
+    double operator()(const Index& i) {
+      // TODO index reversed due to column-row major convention
+      return eig_[o0_+i[3]] + eig_[o1_+i[2]] - eig_[o2_+i[1]] - eig_[o3_+i[0]];
+    }
+};
+
+
+// TODO CAUTION -- column-row major convention.
+class DenomAACC {
+  protected:
+    std::vector<double> eig_;
+    const int o0_, o1_, o2_, o3_;
+  public:
+    // 0 and 1 are virtual orbitals; 2 and 3 are closed orbitals
+    DenomAACC(const std::vector<double>& eig, const int off0, const int off1, const int off2, const int off3)
+     : eig_(eig), o0_(off0), o1_(off1), o2_(off2), o3_(off3) {
+    }
+    template <typename Index>
+    double operator()(const Index& i) {
+      // TODO index reversed due to column-row major convention
+      return 1.0 / (eig_[o0_+i[3]] + eig_[o1_+i[2]] - eig_[o2_+i[1]] - eig_[o3_+i[0]]);
+    }
+};
+
+
+template<typename DataType, int N, typename Gen>
+class LazyTATensor : public TiledArray::Array<DataType,N,LazyTensor<DataType,N,Gen>> {
+  protected:
+    using Lazy = LazyTensor<DataType,N,Gen>;
+    Gen gen_;
+
+  public:
+    LazyTATensor(const std::vector<IndexRange>& r, Gen gen)
+      : TiledArray::Array<DataType,N,Lazy>(madness::World::get_default(), *TATensor<DataType,N>::make_trange(r)), gen_(gen) {
+
+      for (auto& t : this->trange().tiles())
+        if (this->is_local(t)) {
+          std::array<size_t, N> index;
+          std::copy(t.begin(), t.end(), index.begin());
+          madness::Future<typename LazyTATensor<DataType,N,Gen>::value_type> tile(Lazy(this, index, &gen_));
+          this->set(t, tile);
+        }
     }
 
     auto operator()(const std::string& vars) const -> decltype(TiledArray::Array<DataType,N,Lazy>::operator()(vars)) {
@@ -112,25 +161,6 @@ class LazyTATensor : public TiledArray::Array<DataType,N,Lazy> {
         revvars += *i;
       }
       return TiledArray::Array<DataType,N,Lazy>::operator()(revvars);
-    }
-};
-
-
-// assuming that the diagonal element is real (which is usually right)
-// TODO CAUTION -- column-row major convention.
-class Diag4Gen {
-  protected:
-    std::vector<double> eig_;
-    const int o0_, o1_, o2_, o3_;
-  public:
-    // 0 and 1 are virtual orbitals; 2 and 3 are closed orbitals
-    Diag4Gen(const std::vector<double>& eig, const int off0, const int off1, const int off2, const int off3)
-     : eig_(eig), o0_(off0), o1_(off1), o2_(off2), o3_(off3) {
-    }
-    template <typename Index>
-    double operator()(const Index& i) {
-      // TODO index reversed due to column-row major convention
-      return eig_[o0_+i[3]] + eig_[o1_+i[2]] - eig_[o2_+i[1]] - eig_[o3_+i[0]];
     }
 };
 

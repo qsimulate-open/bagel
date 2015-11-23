@@ -515,18 +515,8 @@ shared_ptr<TATensor<DataType,4>> SpinFreeMethod<DataType>::diagonal(shared_ptr<T
 
   const int ncore = info_->ncore();
   const int nocc  = info_->nclosed() + info_->nact();
-  Diag4Gen gen(eig_, nocc, nocc, ncore, ncore);
+  LazyTATensor<double,4,Diag4Gen> d({virt_, virt_, closed_, closed_}, Diag4Gen(eig_, nocc, nocc, ncore, ncore));
 
-  using LazyArray = LazyTATensor<double,4,LazyTensor<double,4,Diag4Gen>>;
-  LazyArray d({virt_, virt_, closed_, closed_});
-  for (auto& t : d.trange().tiles()) {
-    if (d.is_local(t)) {
-      array<size_t, 4> index;
-      copy(t.begin(), t.end(), index.begin());
-      madness::Future<typename LazyArray::value_type> tile((LazyTensor<double, 4, Diag4Gen>(&d, index, &gen)));
-      d.set(t, tile);
-    }
-  }
   (*r)("c2,a3,c0,a1") += ((*t)("c0,a1,c2,a3")*8.0 - (*t)("c0,a3,c2,a1")*4.0) * d("a1,a3,c0,c2");
   return r;
 }

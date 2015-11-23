@@ -45,45 +45,29 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
   if (t->nref() != r->nref())
     throw logic_error("something is wrong. SpinFreeMethod::update_amplitude");
 
+  const int ncore = info_->ncore();
+  const int nocc  = info_->nclosed() + info_->nact();
   const int nst = t->nref();
   const int fac2 = is_same<DataType,double>::value ? 1.0 : 2.0;
 
   for (int ist = 0; ist != nst; ++ist) {
     // TODO to be fully replaced...
     auto rist = make_shared<Tensor_<DataType>>(*r->at(ist));
+    auto rnew = r->at(ist);
     t->fac(ist) = 0.0;
 
     // not the best structure, but I am assuming that this does not take too much time...
     for (int jst = 0; jst != nst; ++jst) {
-     auto tjst = make_shared<Tensor_<DataType>>(*t->at(jst));
-      if (ist == jst) {
-        for (auto& i3 : virt_) {
-          for (auto& i2 : closed_) {
-            for (auto& i1 : virt_) {
-              for (auto& i0 : closed_) {
-                // if this block is not included in the current wave function, skip it
-                if (!rist->get_size_alloc(i0, i1, i2, i3)) continue;
-                unique_ptr<DataType[]>       data0 = rist->get_block(i0, i1, i2, i3);
+      auto tjst = make_shared<Tensor_<DataType>>(*t->at(jst));
 
-                // this is an inverse of the overlap.
-                if (is_same<DataType,double>::value) {
-                  const unique_ptr<DataType[]> data1 = rist->get_block(i0, i3, i2, i1);
-                  sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
-                } else {
-                  blas::scale_n(0.25, data0.get(), rist->get_size_alloc(i0, i1, i2, i3));
-                }
-                size_t iall = 0;
-                for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-                  for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                    for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                        // note that e0 is cancelled by another term
-                        data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1];
-                tjst->add_block(data0, i0, i1, i2, i3);
-              }
-            }
-          }
-        }
+
+      auto tnew = init_amplitude();
+      if (ist == jst) {
+        LazyTATensor<DataType,4,DenomAACC> d({virt_, virt_, closed_, closed_}, DenomAACC(eig_, nocc, nocc, ncore, ncore));
+        if (is_same<DataType,double>::value)
+          (*tnew)("c0,a1,c2,a3") -= ((*rnew)("c0,a1,c2,a3") * (1.0/6.0) + (*rnew)("c0,a3,c2,a1") * (1.0/12.0)) * d("a1,a3,c0,c2");
+        else
+          (*tnew)("c0,a1,c2,a3") -= (*rnew)("c0,a1,c2,a3") * 0.25 * d("a1,a3,c0,c2");
       }
 
       for (auto& i2 : active_) {
@@ -112,7 +96,6 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
               // if this block is not included in the current wave function, skip it
               const size_t blocksize = rist->get_size_alloc(i0, i1, i2, i3);
               const size_t blocksizet = tjst->get_size_alloc(i2t, i3, i0t, i1);
-//            const size_t blocksizet = rjst->get_size_alloc(i0t, i1, i2t, i3);
               if (!blocksize || !blocksizet) continue;
               // data0 is the source area
               unique_ptr<DataType[]> data0 = rist->get_block(i0, i1, i2, i3);
@@ -586,7 +569,9 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
       }
       }
       }
-      (*out)[jst] = tjst->template tiledarray<4>();
+      auto tmp = tjst->template tiledarray<4>();
+      (*tmp)("c0,a1,c2,a3") += (*tnew)("c0,a1,c2,a3");
+      (*out)[jst] = tmp;
     } // jst loop
   } // ist loop
 
