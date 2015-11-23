@@ -82,7 +82,9 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   vector<shared_ptr<const Atom>> atoms = geom->atoms();
   shared_ptr<const Geometry> newgeom = geom->periodic(atoms);
   auto scell = make_shared<const SimulationCell>(newgeom, primvecs);
-  PFMM test(scell);
+  cout << "*** Simulation Cell ***" << endl;
+  scell->print();
+  PFMM test(scell, true, 10, 1, 10);
   for (int l = 0; l < test.max_rank(); ++l) {
     for (int m = 0; m <= l; ++m) { // Mlm = -Ml-m
       const int imul = l * l + m + l;
@@ -174,7 +176,7 @@ void PSCF::compute() {
     }
     cout << "SP = " << setprecision(1) << charge << "       #ele = " << lattice_->nele();
     energy_ = energy.real() + lattice_->nuclear_repulsion() + fock->correction();
-    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
+    cout << indent << setw(5) << iter << setw(30) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << pscftime.tick();
     if (abs(energy.imag()) > 1e-12) {
       cout << "  *** Warning *** Im(E) = " << setw(15) << fixed << setprecision(12) << energy.imag() << endl;

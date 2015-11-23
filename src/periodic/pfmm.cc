@@ -59,7 +59,7 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
   max_height_ = 21; // tree construction 21 is absolute max
   do_contract_ = true;
 
-  compute_Mlm_direct();
+//  compute_Mlm_direct();
   compute_Mlm();
   stack_->release(size_allocated_, buff_);
   resources__->release(stack_);
@@ -201,6 +201,8 @@ void PFMM::compute_Mlm_direct() {
       }
     }
   }
+
+#if 0
   // DEBUG
   cout << "RESULTS FROM DIRECT SUMMATION" << endl;
   for (int l = 0; l < max_rank_; ++l)
@@ -213,7 +215,7 @@ void PFMM::compute_Mlm_direct() {
     }
   cout << " ******* END ******* " << endl;
   // END DEBUG
-
+#endif
 }
 
 
@@ -373,6 +375,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     }
   }
 
+#if 0
   // DEBUG
   for (int l = 0; l < max_rank_; ++l)
     for (int m = 0; m <= l; ++m) { // Mlm = -Ml-m
@@ -383,6 +386,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
         cout << "l = " << l << "  m = " << m << "  mlm = " << setw(25) << scientific << setprecision(20) << mlm << endl;
     }
   // END DEBUG
+#endif
 }
 
 

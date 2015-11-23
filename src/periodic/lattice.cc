@@ -79,7 +79,7 @@ void Lattice::init() {
   primitive_kvectors_.resize(ndim_);
 
   /* TODO: temp parameters */
-  k_parameter_ = 1;
+  k_parameter_ = 15;
   assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
 
   thresh_ = primitive_cell_->overlap_thresh();

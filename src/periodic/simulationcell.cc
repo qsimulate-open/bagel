@@ -25,7 +25,6 @@
 
 
 #include <src/periodic/simulationcell.h>
-#include <src/periodic/multipolebatch.h>
 
 using namespace std;
 using namespace bagel;

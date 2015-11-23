@@ -73,8 +73,9 @@ int main() {
   vector<array<mpreal, 3>> primvecs(3);
   primvecs[0] = {{one, zero, zero}};
   primvecs[1] = {{zero, one, zero}};
-  primvecs[2] = {{zero, zero, "1.1"}};
+  primvecs[2] = {{zero, zero, "0.0"}};
 
+  const int ndim = 2;
   const int lmax = 50;
   const int max_rank = lmax*2 + 1;
   const int ws = 1;
@@ -87,11 +88,20 @@ int main() {
   vector<complex<mpreal>> mstar(osize);
   vector<array<int, 3>> vidx0(n0);
   int cnt = 0;
-  for (int i = -a; i <= a; ++i)
+  if (ndim == 3) {
+    for (int i = -a; i <= a; ++i)
+      for (int j = -a; j <= a; ++j)
+        for (int k = -a; k <= a; ++k, ++cnt)
+          vidx0[cnt] = {{k, j, i}};
+  } else if (ndim == 2) {
     for (int j = -a; j <= a; ++j)
       for (int k = -a; k <= a; ++k, ++cnt)
-        vidx0[cnt] = {{i, j, k}};
-//  std::sort(vidx0.begin(), vidx0.end(), sort_vector);
+        vidx0[cnt] = {{k, j, 0}};
+  } else if (ndim == 1) {
+    for (int k = -a; k <= a; ++k, ++cnt)
+      vidx0[cnt] = {{k, 0, 0}};
+  }
+  //  std::sort(vidx0.begin(), vidx0.end(), sort_vector);
 
   for (int n = 0; n != n0; ++n) {
     array<int, 3> idx = vidx0[n];
@@ -145,8 +155,8 @@ int main() {
   for (int i = -ws1; i <= ws1; ++i)
     for (int j = -ws1; j <= ws1; ++j)
       for (int k = -ws1; k <= ws1; ++k, ++cnt)
-        tmp[cnt] = {{i, j, k}};
-  std::sort(tmp.begin(), tmp.end(), sort_vector);
+        tmp[cnt] = {{k, j, i}};
+//  std::sort(tmp.begin(), tmp.end(), sort_vector);
 
   vector<array<int, 3>> vidx1;
   for (int n = 0; n != n1; ++n) {

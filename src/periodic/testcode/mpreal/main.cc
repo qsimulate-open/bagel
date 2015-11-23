@@ -129,29 +129,39 @@ int main() {
   mpfr::mpreal::set_default_prec(GMPPREC);
   const mpreal pi = GMPPI;
   const mpreal beta = GMPPISQRT;
-  const int a = 10;
-  const int ndim = 3;
-  const int nvec = std::pow(2*a+1, ndim);
-  vector<array<int, 3>> vidx(nvec);
-  int cnt = 0;
-   for (int i = -a; i <= a; ++i)
-    for (int j = -a; j <= a; ++j)
-      for (int k = -a; k <= a; ++k, ++cnt)
-        vidx[cnt] = {{k, j, i}};
-  assert(cnt == nvec);
-//  std::sort(vidx.begin(), vidx.end(), sort_vector);
-
   const mpreal zero = "0.0";
   const mpreal half = "0.5";
   const mpreal one  = "1.0";
   const mpreal two  = "2.0";
-  const int lmax = 20;
-  const int ws = 1;
-  vector<complex<mpreal>> mlm((lmax+1)*(lmax+1));
+
   vector<array<mpreal, 3>> primvecs(3);
   primvecs[0] = {{one, zero, zero}};
   primvecs[1] = {{zero, one, zero}};
-  primvecs[2] = {{zero, zero, "0.1"}};
+  primvecs[2] = {{zero, zero, "0.0"}};
+  const int a = 10;
+  const int ndim = 3;
+  const int nvec = std::pow(2*a+1, ndim);
+  const int lmax = 20;
+  const int ws = 1;
+  vector<complex<mpreal>> mlm((lmax+1)*(lmax+1));
+
+  vector<array<int, 3>> vidx(nvec);
+  int cnt = 0;
+  if (ndim == 3) {
+    for (int i = -a; i <= a; ++i)
+      for (int j = -a; j <= a; ++j)
+        for (int k = -a; k <= a; ++k, ++cnt)
+          vidx[cnt] = {{k, j, i}};
+  } else if (ndim == 2) {
+    for (int j = -a; j <= a; ++j)
+      for (int k = -a; k <= a; ++k, ++cnt)
+        vidx[cnt] = {{k, j, 0}};
+  } else if (ndim == 1) {
+    for (int k = -a; k <= a; ++k, ++cnt)
+      vidx[cnt] = {{k, 0, 0}};
+  }
+  assert(cnt == nvec);
+//  std::sort(vidx.begin(), vidx.end(), sort_vector);
 
 #if 1
   for(int l = 0; l <= lmax; ++l) {

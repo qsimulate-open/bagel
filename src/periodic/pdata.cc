@@ -24,7 +24,6 @@
 //
 
 #include <src/periodic/pdata.h>
-#include <src/util/math/matop.h>
 
 using namespace std;
 using namespace bagel;
