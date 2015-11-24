@@ -301,10 +301,10 @@ void MOFock<complex<double>>::init() {
   {
     unique_ptr<complex<double>[]> eig = f->diag();
     const int n = f->ndim();
-    eig_ = vector<double>(n);
+    eig_ = VectorB(n);
     for (int i = 0; i != n; ++i) {
       assert(fabs(imag(eig[i])) < 1.0e-10);
-      eig_[i] = real(eig[i]);
+      eig_(i) = real(eig[i]);
     }
   }
 
@@ -381,7 +381,8 @@ void MOFock<double>::init() {
   {
     unique_ptr<double[]> eig = f->diag();
     const int n = f->ndim();
-    eig_ = vector<double>(eig.get(), eig.get()+n);
+    eig_ = VectorB(n);
+    copy_n(eig.get(), n, eig_.data());
   }
 
   fill_block<2,double>(data_,  f, {0,0});

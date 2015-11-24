@@ -522,7 +522,7 @@ shared_ptr<TATensor<DataType,4>> SpinFreeMethod<DataType>::diagonal(shared_ptr<T
 
   const int ncore = info_->ncore();
   const int nocc  = info_->nclosed() + info_->nact();
-  LazyTATensor<double,4,Diag4Gen> d({virt_, virt_, closed_, closed_}, Diag4Gen(eig_, nocc, nocc, ncore, ncore));
+  LazyTATensor<double,4,DiagGen4> d({virt_, virt_, closed_, closed_}, DiagGen4(eig_, nocc, nocc, ncore, ncore));
 
   (*r)("c2,a3,c0,a1") += ((*t)("c0,a1,c2,a3")*8.0 - (*t)("c0,a3,c2,a1")*4.0) * d("a1,a3,c0,c2");
   return r;

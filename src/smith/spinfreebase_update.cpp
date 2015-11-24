@@ -55,7 +55,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
       auto tjst = t->at(jst);
 
       if (ist == jst) { // AACC
-        LazyTATensor<DataType,4,DenomAACC> d({virt_, virt_, closed_, closed_}, DenomAACC(eig_, nocc, nocc, ncore, ncore));
+        LazyTATensor<DataType,4,DenomGen4> d({virt_, virt_, closed_, closed_}, DenomGen4(eig_, nocc, nocc, ncore, ncore));
         if (is_same<DataType,double>::value)
           (*tjst)("c0,a1,c2,a3") -= ((*rist)("c0,a1,c2,a3") * (1.0/6.0) + (*rist)("c0,a3,c2,a1") * (1.0/12.0)) * d("a1,a3,c0,c2");
         else
@@ -97,7 +97,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         shared_ptr<const TATensor<DataType,4>> s = denom_->tashalf_xhh({ortho3_, active_, active_, active_});
         (*tjst)("x00,a1,x20,x30") -= (*rist)("x2,x3,x0,a1") * (*s)("o4,x0,x2,x3") * d("o4,a1") * (*s)("o4,x00,x20,x30");
       }
-      {
+      { // XXCA
         LazyTATensor<DataType,3,DenomGen2<1,-1>> d({ortho2t_, virt_, closed_}, DenomGen2<1,-1>(e0_, denom_->denom_xh(), eig_, nocc, ncore));
         if (is_same<DataType,double>::value) {
           shared_ptr<const TATensor<DataType,3>> s0 = denom_->template tashalf_xh_nonrel<0>({ortho2t_, active_, active_});

@@ -77,7 +77,7 @@ class MOFock {
     std::vector<IndexRange> blocks_;
     std::shared_ptr<TATensor<DataType,2>> data_;
     std::shared_ptr<TATensor<DataType,2>> h1_;
-    std::vector<double> eig_;
+    VectorB eig_;
 
     double core_energy_;
 
@@ -93,7 +93,7 @@ class MOFock {
 
     std::shared_ptr<const MatType> coeff() const { return coeff_; }
     double core_energy() const { return core_energy_; }
-    std::vector<double> eig() const { return eig_; }
+    VectorB eig() const { return eig_; }
 };
 template<> void MOFock<double>::init();
 template<> void MOFock<std::complex<double>>::init();

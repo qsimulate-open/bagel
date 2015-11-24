@@ -93,7 +93,7 @@ class SpinFreeMethod {
     std::shared_ptr<TATensor<DataType,7>> rdm4deriv_;
 
     // the diagonal denominator
-    std::vector<double> eig_;
+    VectorB eig_;
 
     // init functions
     void feed_rdm_denom(std::shared_ptr<const MatType> fockact);
