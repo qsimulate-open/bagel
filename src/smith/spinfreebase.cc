@@ -76,6 +76,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   ortho1_ = IndexRange("o", nact2, max);
   ortho2_ = IndexRange("o", nact2*nact2, max);
   ortho3_ = IndexRange("o", nact2*nact2*nact2, max);
+  ortho2t_ = IndexRange("o", nact2*nact2*(is_same<DataType,double>::value ? 2 : 1), max); // for XXCA
 
   rclosed_ = make_shared<const IndexRange>(closed_);
   ractive_ = make_shared<const IndexRange>(active_);

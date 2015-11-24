@@ -50,6 +50,7 @@ class SpinFreeMethod {
     IndexRange ortho1_;
     IndexRange ortho2_;
     IndexRange ortho3_;
+    IndexRange ortho2t_;
 
     // TODO these are redundant.
     std::shared_ptr<const IndexRange> rvirt_;

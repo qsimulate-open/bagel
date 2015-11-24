@@ -132,6 +132,25 @@ class Denom {
       fill_block<3,DataType>(out, tmp, std::vector<int>{nclo, nclo, 0});
       return out;
     }
+    std::shared_ptr<const TATensor<DataType,3>> tashalf_xh_rel(const std::vector<IndexRange>& ranges) const {
+      auto out = std::make_shared<TATensor<DataType,3>>(ranges);
+      // TODO not an optimal code
+      auto tmp = std::make_shared<btas::Tensor3<DataType>>(btas::CRange<3>(ranges[0].size(), ranges[1].size(), ranges[2].size()));
+      std::copy_n(shalf_xh_->data(), shalf_xh_->size(), tmp->data());
+      const int nclo = ranges[1].front().offset();
+      fill_block<3,DataType>(out, tmp, std::vector<int>{nclo, nclo, 0});
+      return out;
+    }
+    template<int I>
+    std::shared_ptr<const TATensor<DataType,3>> tashalf_xh_nonrel(const std::vector<IndexRange>& ranges) const {
+      auto out = std::make_shared<TATensor<DataType,3>>(ranges);
+      // TODO not an optimal code
+      auto tmp = std::make_shared<btas::Tensor3<DataType>>(btas::CRange<3>(ranges[0].size(), ranges[1].size(), ranges[2].size()));
+      std::copy_n(shalf_xh_->data()+I*shalf_xh_->size()/2, shalf_xh_->size()/2, tmp->data());
+      const int nclo = ranges[1].front().offset();
+      fill_block<3,DataType>(out, tmp, std::vector<int>{nclo, nclo, 0});
+      return out;
+    }
     std::shared_ptr<const TATensor<DataType,3>> tashalf_hh(const std::vector<IndexRange>& ranges) const {
       auto out = std::make_shared<TATensor<DataType,3>>(ranges);
       // TODO not an optimal code
