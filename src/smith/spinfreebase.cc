@@ -71,6 +71,12 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
   all_    = closed_; all_.merge(active_); all_.merge(virt_);
 
+  // IndexRange for orbital update
+  const int nact2 = info_->nact()*(is_same<DataType,double>::value ? 1 : 2);
+  ortho1_ = IndexRange("o", nact2, max);
+  ortho2_ = IndexRange("o", nact2*nact2, max);
+  ortho3_ = IndexRange("o", nact2*nact2*nact2, max);
+
   rclosed_ = make_shared<const IndexRange>(closed_);
   ractive_ = make_shared<const IndexRange>(active_);
   rvirt_   = make_shared<const IndexRange>(virt_);

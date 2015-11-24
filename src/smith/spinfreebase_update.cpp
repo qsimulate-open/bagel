@@ -45,10 +45,10 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
   if (t->nref() != r->nref())
     throw logic_error("something is wrong. SpinFreeMethod::update_amplitude");
 
-  const int ncore = info_->ncore();
-  const int nocc  = info_->nclosed() + info_->nact();
-  const int nst = t->nref();
   const int fac2 = is_same<DataType,double>::value ? 1.0 : 2.0;
+  const int ncore = info_->ncore() * fac2;
+  const int nocc  = (info_->nclosed() + info_->nact()) * fac2;
+  const int nst = t->nref();
 
   for (int ist = 0; ist != nst; ++ist) {
     // TODO to be fully replaced...
@@ -62,134 +62,33 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
 
 
       auto tnew = init_amplitude();
-      if (ist == jst) {
+      if (ist == jst) { // AACC
         LazyTATensor<DataType,4,DenomAACC> d({virt_, virt_, closed_, closed_}, DenomAACC(eig_, nocc, nocc, ncore, ncore));
         if (is_same<DataType,double>::value)
           (*tnew)("c0,a1,c2,a3") -= ((*rnew)("c0,a1,c2,a3") * (1.0/6.0) + (*rnew)("c0,a3,c2,a1") * (1.0/12.0)) * d("a1,a3,c0,c2");
         else
           (*tnew)("c0,a1,c2,a3") -= (*rnew)("c0,a1,c2,a3") * 0.25 * d("a1,a3,c0,c2");
       }
-
-      for (auto& i2 : active_) {
-      for (auto& i0 : active_) {
-        // trans is the transformation matrix
-        assert(denom_->shalf_xx());
-        const size_t interm_size = denom_->shalf_xx()->ndim();
-        const int nact = info_->nact() * fac2;
-        const int nclo = info_->nclosed() * fac2;
-        auto create_transp = [&nclo,&nact,&interm_size, this](const int i, const Index& I0, const Index& I2) {
-          unique_ptr<DataType[]> out(new DataType[I0.size()*I2.size()*interm_size]);
-          for (int j2 = I2.offset(), k = 0; j2 != I2.offset()+I2.size(); ++j2)
-            for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
-              copy_n(denom_->shalf_xx()->element_ptr(0,(j0-nclo)+(j2-nclo)*nact + i*nact*nact),
-                     interm_size, out.get()+interm_size*k);
-          return move(out);
-        };
-        unique_ptr<DataType[]> transp = create_transp(ist, i0, i2);
-
-        for (auto& i2t : active_) {
-        for (auto& i0t : active_) {
-          unique_ptr<DataType[]> transp2 = create_transp(jst, i0t, i2t);
-
-          for (auto& i3 : virt_) {
-            for (auto& i1 : virt_) {
-              // if this block is not included in the current wave function, skip it
-              const size_t blocksize = rist->get_size_alloc(i0, i1, i2, i3);
-              const size_t blocksizet = tjst->get_size_alloc(i2t, i3, i0t, i1);
-              if (!blocksize || !blocksizet) continue;
-              // data0 is the source area
-              unique_ptr<DataType[]> data0 = rist->get_block(i0, i1, i2, i3);
-              unique_ptr<DataType[]> data1(new DataType[max(blocksize,blocksizet)]);
-              // sort. Active indices run faster
-              sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
-              // intermediate area
-              unique_ptr<DataType[]> interm(new DataType[i1.size()*i3.size()*interm_size]);
-
-              // move to orthogonal basis
-              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, interm_size, i1.size()*i3.size(), i0.size()*i2.size(),
-                                          1.0, transp.get(), interm_size, data1.get(), i0.size()*i2.size(), 0.0, interm.get(), interm_size);
-
-              size_t iall = 0;
-              for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                  for (int j02 = 0; j02 != interm_size; ++j02, ++iall)
-                    interm[iall] /= min(-0.1, e0_ - (denom_->denom_xx(j02) + eig_[j3] + eig_[j1]));
-
-              // move back to non-orthogonal basis
-              // factor of 0.5 due to the factor in the overlap
-              // TODO check for complex cases
-              btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0t.size()*i2t.size(), i1.size()*i3.size(), interm_size,
-                                          0.5, transp2.get(), interm_size, interm.get(), interm_size, 0.0, data1.get(), i0t.size()*i2t.size());
-
-              // sort back to the original order
-              unique_ptr<DataType[]> data2(new DataType[blocksizet]);
-              sort_indices<0,2,1,3,0,1,1,1>(data1, data2, i0t.size(), i2t.size(), i1.size(), i3.size());
-              tjst->add_block(data2, i0t, i1, i2t, i3);
-            }
-          }
-        }
-        }
+      { // AAXX
+        LazyTATensor<DataType,3,DenomXX> d({ortho2_, virt_, virt_}, DenomXX(e0_, denom_->denom_xx(), eig_, nocc, nocc));
+        shared_ptr<const TATensor<DataType,3>> s = denom_->tashalf_xx({ortho2_, active_, active_});
+        TATensor<DataType,3> i0(std::vector<IndexRange>{ortho2_, virt_, virt_}, true);
+        TATensor<DataType,3> i1(std::vector<IndexRange>{ortho2_, virt_, virt_}, true);
+        i0("o4,a1,a3") = (*rnew)("x0,a1,x2,a3") * (*s)("o4,x0,x2");
+        i1("o4,a1,a3") = i0("o4,a1,a3") * d("o4,a1,a3");
+        (*tnew)("x0,a1,x2,a3") -= i1("o4,a1,a3") * 0.5 * (*s)("o4,x0,x2"); // TODO conjugate s for complex cases
       }
-      }
-
-      for (auto& i0 : active_) {
-        // trans is the transformation matrix
-        assert(denom_->shalf_x());
-        const size_t interm_size = denom_->shalf_x()->ndim();
-        const int nact = info_->nact() * fac2;
-        const int nclo = info_->nclosed() * fac2;
-        auto create_transp = [&nclo,&nact,&interm_size, this](const int i, const Index& I0) {
-          unique_ptr<DataType[]> out(new DataType[I0.size()*interm_size]);
-          for (int j0 = I0.offset(), k = 0; j0 != I0.offset()+I0.size(); ++j0, ++k)
-            copy_n(denom_->shalf_x()->element_ptr(0,j0-nclo + i*nact), interm_size, out.get()+interm_size*k);
-          return move(out);
-        };
-        unique_ptr<DataType[]> transp = create_transp(ist, i0);
-
-        for (auto& i0t : active_) {
-          unique_ptr<DataType[]> transp2 = create_transp(jst, i0t);
-
-          for (auto& i3 : virt_) {
-            for (auto& i2 : closed_) {
-              for (auto& i1 : virt_) {
-                const size_t blocksize = rist->get_size_alloc(i2, i3, i0, i1);
-                const size_t blocksizet = tjst->get_size_alloc(i0t, i1, i2, i3);
-//              const size_t blocksizet = rjst->get_size_alloc(i2, i3, i0t, i1);
-                if (!blocksize || !blocksizet) continue;
-
-                unique_ptr<DataType[]> data0 = rist->get_block(i2, i3, i0, i1);
-                unique_ptr<DataType[]> data2(new DataType[blocksize]);
-                sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
-                if (is_same<DataType,double>::value) {
-                  assert(rist->get_size_alloc(i2, i1, i0, i3));
-                  const unique_ptr<DataType[]> data1 = rist->get_block(i2, i1, i0, i3);
-                  sort_indices<2,1,0,3,2,3,1,3>(data1, data2, i2.size(), i1.size(), i0.size(), i3.size());
-                } else {
-                  blas::scale_n(0.5, data2.get(), blocksize);
-                }
-
-                // move to orthogonal basis
-                unique_ptr<DataType[]> interm(new DataType[i1.size()*i2.size()*i3.size()*interm_size]);
-                btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, interm_size, i1.size()*i2.size()*i3.size(), i0.size(),
-                                            1.0, transp.get(), interm_size, data2.get(), i0.size(), 0.0, interm.get(), interm_size);
-
-                size_t iall = 0;
-                for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-                  for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                    for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                      for (int j0 = 0; j0 != interm_size; ++j0, ++iall)
-                        interm[iall] /= min(-0.1, e0_ - (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]));
-
-                // move back to non-orthogonal basis
-                unique_ptr<DataType[]> data3(new DataType[blocksizet]);
-                btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0t.size(), i1.size()*i2.size()*i3.size(), interm_size,
-                                            1.0, transp2.get(), interm_size, interm.get(), interm_size, 0.0, data3.get(), i0t.size());
-
-                tjst->add_block(data3, i0t, i1, i2, i3);
-              }
-            }
-          }
-        }
+      { // AACX
+        LazyTATensor<DataType,4,DenomX> d({ortho1_, virt_, virt_, closed_}, DenomX(e0_, denom_->denom_x(), eig_, nocc, nocc, ncore));
+        shared_ptr<const TATensor<DataType,2>> s = denom_->tashalf_x({ortho1_, active_});
+        TATensor<DataType,4> i0(std::vector<IndexRange>{ortho1_, virt_, virt_, closed_}, true);
+        TATensor<DataType,4> i1(std::vector<IndexRange>{ortho1_, virt_, virt_, closed_}, true);
+        if (is_same<DataType,double>::value)
+          i0("o4,a1,a3,c2") = ((*rnew)("c2,a3,x0,a1")*(2.0/3.0) + (*rnew)("c2,a1,x0,a3")*(1.0/3.0)) * (*s)("o4,x0");
+        else
+          i0("o4,a1,a3,c2") = (*rnew)("c2,a3,x0,a1") * 0.5 * (*s)("o4,x0");
+        i1("o4,a1,a3,c2") = i0("o4,a1,a3,c2") * d("o4,a1,a3,c2");
+        (*tnew)("x0,a1,c2,a3") -= i1("o4,a1,a3,c2") * (*s)("o4,x0"); // TODO conjugate s for complex cases
       }
 
       for (auto& i3 : active_) {
@@ -571,6 +470,8 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
       }
       auto tmp = tjst->template tiledarray<4>();
       (*tmp)("c0,a1,c2,a3") += (*tnew)("c0,a1,c2,a3");
+      (*tmp)("x0,a1,x2,a3") += (*tnew)("x0,a1,x2,a3");
+      (*tmp)("x0,a1,c2,a3") += (*tnew)("x0,a1,c2,a3");
       (*out)[jst] = tmp;
     } // jst loop
   } // ist loop

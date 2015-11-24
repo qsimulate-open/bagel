@@ -99,7 +99,7 @@ class TATensor : public TiledArray::Array<DataType,N> {
         regex re2("[a-z]+");
         smatch m;
         regex_search(*i, m, re2);
-        std::string label = m[0]; // c, x, a, ci
+        std::string label = m[0]; // c, x, a, ci, o
 
         bool find = false;
         low[n] = 0;

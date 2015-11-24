@@ -97,20 +97,41 @@ class Diag4Gen {
 };
 
 
-// TODO CAUTION -- column-row major convention.
 class DenomAACC {
   protected:
     std::vector<double> eig_;
     const int o0_, o1_, o2_, o3_;
   public:
-    // 0 and 1 are virtual orbitals; 2 and 3 are closed orbitals
     DenomAACC(const std::vector<double>& eig, const int off0, const int off1, const int off2, const int off3)
-     : eig_(eig), o0_(off0), o1_(off1), o2_(off2), o3_(off3) {
-    }
-    template <typename Index>
-    double operator()(const Index& i) {
-      // TODO index reversed due to column-row major convention
+     : eig_(eig), o0_(off0), o1_(off1), o2_(off2), o3_(off3) { }
+    template <typename Index> double operator()(const Index& i) {
       return 1.0 / (eig_[o0_+i[3]] + eig_[o1_+i[2]] - eig_[o2_+i[1]] - eig_[o3_+i[0]]);
+    }
+};
+class DenomXX {
+  protected:
+    double e0_;
+    VectorB denom_;
+    std::vector<double> eig_;
+    const int o0_, o1_;
+  public:
+    DenomXX(const double e, const VectorB& d, const std::vector<double>& eig, const int off0, const int off1)
+     : e0_(e), denom_(d), eig_(eig), o0_(off0), o1_(off1) { }
+    template <typename Index> double operator()(const Index& i) {
+      return 1.0 / (denom_[i[2]] + eig_[o0_+i[1]] + eig_[o1_+i[0]] - e0_);
+    }
+};
+class DenomX {
+  protected:
+    double e0_;
+    VectorB denom_;
+    std::vector<double> eig_;
+    const int o0_, o1_, o2_;
+  public:
+    DenomX(const double e, const VectorB& d, const std::vector<double>& eig, const int off0, const int off1, const int off2)
+     : e0_(e), denom_(d), eig_(eig), o0_(off0), o1_(off1), o2_(off2) { }
+    template <typename Index> double operator()(const Index& i) {
+      return 1.0 / (denom_[i[3]] + eig_[o0_+i[2]] + eig_[o1_+i[1]] - eig_[o2_+i[0]] - e0_);
     }
 };
 
