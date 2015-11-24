@@ -194,8 +194,10 @@ class ZHarrison : public Method {
     // returns members
     int norb() const { return norb_; }
     int ncore() const { return ncore_; }
+    int nele() const { return nele_; }
     int nstate() const { return nstate_; }
     double core_energy() const { return jop_->core_energy(); }
+    std::shared_ptr<const RelZDvec> cc() const { return cc_; }
 
     int nij() const { return norb_*norb_; }
 
