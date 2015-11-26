@@ -91,6 +91,8 @@ class Tensor_ {
           this->put_block(data, indices);
         }
       }
+      // allreduce
+      if (N != 0) allreduce();
       // for zero dimentional array
       if (N == 0) {
         std::unique_ptr<DataType[]> data(new DataType[1]);
@@ -218,6 +220,8 @@ class Tensor_ {
     void conjugate_inplace() {
       data_->conjugate_inplace();
     }
+
+    void allreduce() { data_->allreduce(); }
 
     virtual void init() const { initialized_ = true; } /*const due to hacky code*/
 

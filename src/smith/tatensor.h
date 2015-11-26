@@ -186,7 +186,7 @@ class TATensor : public TiledArray::Array<DataType,N> {
           out += blas::dot_product(j.begin(), j.size(), i.begin());
         }
       }
-      madness::World::get_default().gop.fence();
+      mpi__->allreduce(&out, 1);
       return out;
     }
 

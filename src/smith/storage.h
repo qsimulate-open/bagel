@@ -110,6 +110,11 @@ class Storage_base {
       for (auto& i : hashtable_)
         i.second->conjugate_inplace();
     }
+
+    void allreduce() {
+      for (auto& i : hashtable_)
+        i.second->allreduce();
+    }
 };
 
 
@@ -145,6 +150,7 @@ class StorageBlock {
     void scale(const DataType& a);
 
     void conjugate_inplace();
+    void allreduce();
 };
 
 
