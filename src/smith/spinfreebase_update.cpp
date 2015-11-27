@@ -65,8 +65,14 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
           i0("c0,a1,c2,a3") = (*rist)("c0,a1,c2,a3") * 0.25;
         foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
           auto range = tile.range();
-          for (auto& i : range)
-            tile[i] /= - eig(i[3]+ncore) + eig(i[2]+nocc) - eig(i[1]+ncore) + eig(i[0]+nocc);
+          auto lo = range.lobound();
+          auto up = range.upbound();
+          size_t n = 0;
+          for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
+            for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
+              for (size_t i2 = lo[2]; i2 != up[2]; ++i2)
+                for (size_t i3 = lo[3]; i3 != up[3]; ++i3)
+                  tile[n++] /= - eig(i3+ncore) + eig(i2+nocc) - eig(i1+ncore) + eig(i0+nocc);
         });
         (*tjst)("c0,a1,c2,a3") -= i0("c0,a1,c2,a3");
       }
@@ -77,8 +83,13 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         const VecView denom = denom_->denom_xx();
         foreach_inplace(i0, [&](typename TATensor<DataType,3>::value_type& tile) {
           auto range = tile.range();
-          for (auto& i : range)
-            tile[i] /= denom(i[2]) + eig(i[1]+nocc) + eig(i[0]+nocc) - e0;
+          auto lo = range.lobound();
+          auto up = range.upbound();
+          size_t n = 0;
+          for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
+            for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
+              for (size_t i2 = lo[2]; i2 != up[2]; ++i2)
+                tile[n++] /= denom(i2) + eig(i1+nocc) + eig(i0+nocc) - e0;
         });
         (*tjst)("x0,a1,x2,a3") -= i0("o4,a1,a3") * 0.5 * (*s)("o4,x0,x2"); // TODO conjugate s for complex cases
       }
@@ -92,8 +103,14 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         const VecView denom = denom_->denom_x();
         foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
           auto range = tile.range();
-          for (auto& i : range)
-            tile[i] /= denom(i[3]) + eig(i[2]+nocc) + eig(i[1]+nocc) - eig(i[0]+ncore) - e0;
+          auto lo = range.lobound();
+          auto up = range.upbound();
+          size_t n = 0;
+          for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
+            for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
+              for (size_t i2 = lo[2]; i2 != up[2]; ++i2)
+                for (size_t i3 = lo[3]; i3 != up[3]; ++i3)
+                  tile[n++] /= denom(i3) + eig(i2+nocc) + eig(i1+nocc) - eig(i0+ncore) - e0;
         });
         (*tjst)("x0,a1,c2,a3") -=  i0("o4,a1,a3,c2") * (*s)("o4,x0");
       }
@@ -107,8 +124,14 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         const VecView denom = denom_->denom_h();
         foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
           auto range = tile.range();
-          for (auto& i : range)
-            tile[i] /= denom(i[3]) + eig(i[2]+nocc) - eig(i[1]+ncore) - eig(i[0]+ncore) - e0;
+          auto lo = range.lobound();
+          auto up = range.upbound();
+          size_t n = 0;
+          for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
+            for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
+              for (size_t i2 = lo[2]; i2 != up[2]; ++i2)
+                for (size_t i3 = lo[3]; i3 != up[3]; ++i3)
+                  tile[n++] /= denom(i3) + eig(i2+nocc) - eig(i1+ncore) - eig(i0+ncore) - e0;
         });
         (*tjst)("c0,a1,c2,x3") -= i0("o4,a1,c0,c2") * (*s)("o4,x3");
       }
@@ -119,8 +142,13 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         const VecView denom = denom_->denom_hh();
         foreach_inplace(i0, [&](typename TATensor<DataType,3>::value_type& tile) {
           auto range = tile.range();
-          for (auto& i : range)
-            tile[i] /= denom(i[2]) - eig(i[1]+ncore) - eig(i[0]+ncore) - e0;
+          auto lo = range.lobound();
+          auto up = range.upbound();
+          size_t n = 0;
+          for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
+            for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
+              for (size_t i2 = lo[2]; i2 != up[2]; ++i2)
+                tile[n++] /= denom(i2) - eig(i1+ncore) - eig(i0+ncore) - e0;
         });
         (*tjst)("c0,x1,c2,x3") -= i0("o4,c0,c2") * (*s)("o4,x1,x3");
       }
@@ -131,8 +159,12 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         const VecView denom = denom_->denom_xxh();
         foreach_inplace(i0, [&](typename TATensor<DataType,2>::value_type& tile) {
           auto range = tile.range();
-          for (auto& i : range)
-            tile[i] /= denom(i[1]) - eig(i[0]+ncore) - e0;
+          auto lo = range.lobound();
+          auto up = range.upbound();
+          size_t n = 0;
+          for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
+            for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
+              tile[n++] /= denom(i1) - eig(i0+ncore) - e0;
         });
         (*tjst)("x0,x1,c2,x3") -= i0("o4,c2") * (*s)("o4,x0,x1,x3");
       }
@@ -143,18 +175,27 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         const VecView denom = denom_->denom_xhh();
         foreach_inplace(i0, [&](typename TATensor<DataType,2>::value_type& tile) {
           auto range = tile.range();
-          for (auto& i : range)
-            tile[i] /= denom(i[1]) + eig(i[0]+nocc) - e0;
+          auto lo = range.lobound();
+          auto up = range.upbound();
+          size_t n = 0;
+          for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
+            for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
+              tile[n++] /= denom(i1) + eig(i0+nocc) - e0;
         });
-        (*tjst)("x00,a1,x20,x30") -= i0("o4,a1") * (*s)("o4,x00,x20,x30");
+        (*tjst)("x0,a1,x2,x3") -= i0("o4,a1") * (*s)("o4,x0,x2,x3");
       }
       { // XXCA
         const VecView denom = denom_->denom_xh();
         TATensor<DataType,3> i0(vector<IndexRange>{ortho2t_, virt_, closed_}, true);
         auto lambda = [&](typename TATensor<DataType,3>::value_type& tile) {
           auto range = tile.range();
-          for (auto& i : range)
-            tile[i] /= denom(i[2]) + eig(i[1]+nocc) - eig(i[0]+ncore) - e0;
+          auto lo = range.lobound();
+          auto up = range.upbound();
+          size_t n = 0;
+          for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
+            for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
+              for (size_t i2 = lo[2]; i2 != up[2]; ++i2)
+                tile[n++] /= denom(i2) + eig(i1+nocc) - eig(i0+ncore) - e0;
         };
         if (is_same<DataType,double>::value) {
           shared_ptr<const TATensor<DataType,3>> s0 = denom_->template tashalf_xh_nonrel<0>({ortho2t_, active_, active_});

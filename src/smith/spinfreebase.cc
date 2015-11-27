@@ -27,7 +27,6 @@
 #ifdef COMPILE_SMITH
 
 #include <src/smith/tensor.h>
-#include <src/smith/lazytensor.h>
 #include <src/smith/moint.h>
 #include <src/smith/spinfreebase.h>
 #include <src/smith/smith_util.h>
@@ -522,9 +521,22 @@ shared_ptr<TATensor<DataType,4>> SpinFreeMethod<DataType>::diagonal(shared_ptr<T
 
   const int ncore = info_->ncore();
   const int nocc  = info_->nclosed() + info_->nact();
-  LazyTATensor<double,4,DiagGen4> d({virt_, virt_, closed_, closed_}, DiagGen4(eig_, nocc, nocc, ncore, ncore));
+  const VecView eig = eig_;
 
-  (*r)("c2,a3,c0,a1") += ((*t)("c0,a1,c2,a3")*8.0 - (*t)("c0,a3,c2,a1")*4.0) * d("a1,a3,c0,c2");
+  TATensor<DataType,4> i0(vector<IndexRange>{closed_, virt_, closed_, virt_}, true);
+  i0("c2,a3,c0,a1") = (*t)("c0,a1,c2,a3")*8.0 - (*t)("c0,a3,c2,a1")*4.0;
+  foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
+    auto range = tile.range();
+    auto lo = range.lobound();
+    auto up = range.upbound();
+    size_t n = 0;
+    for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
+      for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
+        for (size_t i2 = lo[2]; i2 != up[2]; ++i2)
+          for (size_t i3 = lo[3]; i3 != up[3]; ++i3)
+            tile[n++] *= - eig(i3+ncore) + eig(i2+nocc) - eig(i1+ncore) + eig(i0+nocc);
+  });
+  (*r)("c2,a3,c0,a1") += i0("c2,a3,c0,a1");
   return r;
 }
 
