@@ -97,13 +97,13 @@ class Denom {
     // diagonalize and set to shalf and denom
     void compute();
 
-    const VectorB& denom_x() const { return denom_x_; }
-    const VectorB& denom_h() const { return denom_h_; }
-    const VectorB& denom_xx() const { return denom_xx_; }
-    const VectorB& denom_hh() const { return denom_hh_; }
-    const VectorB& denom_xh() const { return denom_xh_; }
-    const VectorB& denom_xhh() const { return denom_xhh_; }
-    const VectorB& denom_xxh() const { return denom_xxh_; }
+    const VecView denom_x() const { return denom_x_; }
+    const VecView denom_h() const { return denom_h_; }
+    const VecView denom_xx() const { return denom_xx_; }
+    const VecView denom_hh() const { return denom_hh_; }
+    const VecView denom_xh() const { return denom_xh_; }
+    const VecView denom_xhh() const { return denom_xhh_; }
+    const VecView denom_xxh() const { return denom_xxh_; }
 
     std::shared_ptr<const TATensor<DataType,4>> tashalf_xxh(const std::vector<IndexRange>& ranges) const {
       auto out = std::make_shared<TATensor<DataType,4>>(ranges);

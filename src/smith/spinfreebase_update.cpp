@@ -46,6 +46,9 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
   const int ncore = info_->ncore() * fac2;
   const int nocc  = (info_->nclosed() + info_->nact()) * fac2;
 
+  const double e0 = e0_;
+  const VecView eig(eig_);
+
   for (int ist = 0; ist != t->nref(); ++ist) {
     auto rist = r->at(ist);
     t->fac(ist) = 0.0;
@@ -55,63 +58,116 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
       auto tjst = t->at(jst);
 
       if (ist == jst) { // AACC
-        LazyTATensor<DataType,4,DenomGen4> d({virt_, virt_, closed_, closed_}, DenomGen4(eig_, nocc, nocc, ncore, ncore));
+        TATensor<DataType,4> i0(vector<IndexRange>{closed_, virt_, closed_, virt_}, true);
         if (is_same<DataType,double>::value)
-          (*tjst)("c0,a1,c2,a3") -= ((*rist)("c0,a1,c2,a3") * (1.0/6.0) + (*rist)("c0,a3,c2,a1") * (1.0/12.0)) * d("a1,a3,c0,c2");
+          i0("c0,a1,c2,a3") = (*rist)("c0,a1,c2,a3") * (1.0/6.0) + (*rist)("c0,a3,c2,a1") * (1.0/12.0);
         else
-          (*tjst)("c0,a1,c2,a3") -= (*rist)("c0,a1,c2,a3") * 0.25 * d("a1,a3,c0,c2");
+          i0("c0,a1,c2,a3") = (*rist)("c0,a1,c2,a3") * 0.25;
+        foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
+          auto range = tile.range();
+          for (auto& i : range)
+            tile[i] /= - eig(i[3]+ncore) + eig(i[2]+nocc) - eig(i[1]+ncore) + eig(i[0]+nocc);
+        });
+        (*tjst)("c0,a1,c2,a3") -= i0("c0,a1,c2,a3");
       }
       { // AAXX
-        LazyTATensor<DataType,3,DenomGen2<1,1>> d({ortho2_, virt_, virt_}, DenomGen2<1,1>(e0_, denom_->denom_xx(), eig_, nocc, nocc));
         shared_ptr<const TATensor<DataType,3>> s = denom_->tashalf_xx({ortho2_, active_, active_});
-        (*tjst)("x00,a1,x20,a3") -= (*rist)("x0,a1,x2,a3") * (*s)("o4,x0,x2") * d("o4,a1,a3") * 0.5 * (*s)("o4,x00,x20");
+        TATensor<DataType,3> i0(vector<IndexRange>{ortho2_, virt_, virt_}, true);
+        i0("o4,a1,a3") = (*rist)("x0,a1,x2,a3") * (*s)("o4,x0,x2");
+        const VecView denom = denom_->denom_xx();
+        foreach_inplace(i0, [&](typename TATensor<DataType,3>::value_type& tile) {
+          auto range = tile.range();
+          for (auto& i : range)
+            tile[i] /= denom(i[2]) + eig(i[1]+nocc) + eig(i[0]+nocc) - e0;
+        });
+        (*tjst)("x0,a1,x2,a3") -= i0("o4,a1,a3") * 0.5 * (*s)("o4,x0,x2"); // TODO conjugate s for complex cases
       }
       { // AACX
-        LazyTATensor<DataType,4,DenomGen1<1,1,-1>> d({ortho1_, virt_, virt_, closed_}, DenomGen1<1,1,-1>(e0_, denom_->denom_x(), eig_, nocc, nocc, ncore));
         shared_ptr<const TATensor<DataType,2>> s = denom_->tashalf_x({ortho1_, active_});
+        TATensor<DataType,4> i0(vector<IndexRange>{ortho1_, virt_, virt_, closed_}, true);
         if (is_same<DataType,double>::value)
-          (*tjst)("x00,a1,c2,a3") -= ((*rist)("c2,a3,x0,a1")*(2.0/3.0) + (*rist)("c2,a1,x0,a3")*(1.0/3.0)) * (*s)("o4,x0") * d("o4,a1,a3,c2") * (*s)("o4,x00");
+          i0("o4,a1,a3,c2") = ((*rist)("c2,a3,x0,a1")*(2.0/3.0) + (*rist)("c2,a1,x0,a3")*(1.0/3.0)) * (*s)("o4,x0");
         else
-          (*tjst)("x00,a1,c2,a3") -= (*rist)("c2,a3,x0,a1") * 0.5 * (*s)("o4,x0") * d("o4,a1,a3,c2") * (*s)("o4,x00");
+          i0("o4,a1,a3,c2") = (*rist)("c2,a3,x0,a1") * 0.5 * (*s)("o4,x0");
+        const VecView denom = denom_->denom_x();
+        foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
+          auto range = tile.range();
+          for (auto& i : range)
+            tile[i] /= denom(i[3]) + eig(i[2]+nocc) + eig(i[1]+nocc) - eig(i[0]+ncore) - e0;
+        });
+        (*tjst)("x0,a1,c2,a3") -=  i0("o4,a1,a3,c2") * (*s)("o4,x0");
       }
       { // AXCC
-        LazyTATensor<DataType,4,DenomGen1<1,-1,-1>> d({ortho1_, virt_, closed_, closed_}, DenomGen1<1,-1,-1>(e0_, denom_->denom_h(), eig_, nocc, ncore, ncore));
         shared_ptr<const TATensor<DataType,2>> s = denom_->tashalf_h({ortho1_, active_});
+        TATensor<DataType,4> i0(vector<IndexRange>{ortho1_, virt_, closed_, closed_}, true);
         if (is_same<DataType,double>::value)
-          (*tjst)("c0,a1,c2,x30") -= ((*rist)("c2,x3,c0,a1")*(2.0/3.0) + (*rist)("c0,x3,c2,a1")*(1.0/3.0)) * (*s)("o4,x3") * d("o4,a1,c0,c2") * (*s)("o4,x30");
+          i0("o4,a1,c0,c2") = ((*rist)("c2,x3,c0,a1")*(2.0/3.0) + (*rist)("c0,x3,c2,a1")*(1.0/3.0)) * (*s)("o4,x3");
         else
-          (*tjst)("c0,a1,c2,x30") -= (*rist)("c2,x3,c0,a1") * 0.5 * (*s)("o4,x3") * d("o4,a1,c0,c2") * (*s)("o4,x3");
+          i0("o4,a1,c0,c2") = (*rist)("c2,x3,c0,a1") * 0.5 * (*s)("o4,x3");
+        const VecView denom = denom_->denom_h();
+        foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
+          auto range = tile.range();
+          for (auto& i : range)
+            tile[i] /= denom(i[3]) + eig(i[2]+nocc) - eig(i[1]+ncore) - eig(i[0]+ncore) - e0;
+        });
+        (*tjst)("c0,a1,c2,x3") -= i0("o4,a1,c0,c2") * (*s)("o4,x3");
       }
       { // XXCC
-        LazyTATensor<DataType,3,DenomGen2<-1,-1>> d({ortho2_, closed_, closed_}, DenomGen2<-1,-1>(e0_, denom_->denom_hh(), eig_, ncore, ncore));
         shared_ptr<const TATensor<DataType,3>> s = denom_->tashalf_hh({ortho2_, active_, active_});
-        (*tjst)("c0,x10,c2,x30") -= (*rist)("c0,x1,c2,x3") * (*s)("o4,x1,x3") * d("o4,c0,c2") * 0.5 * (*s)("o4,x10,x30");
+        TATensor<DataType,3> i0(vector<IndexRange>{ortho2_, closed_, closed_}, true);
+        i0("o4,c0,c2") = (*rist)("c0,x1,c2,x3") * (*s)("o4,x1,x3") * 0.5;
+        const VecView denom = denom_->denom_hh();
+        foreach_inplace(i0, [&](typename TATensor<DataType,3>::value_type& tile) {
+          auto range = tile.range();
+          for (auto& i : range)
+            tile[i] /= denom(i[2]) - eig(i[1]+ncore) - eig(i[0]+ncore) - e0;
+        });
+        (*tjst)("c0,x1,c2,x3") -= i0("o4,c0,c2") * (*s)("o4,x1,x3");
       }
       { // XXCX
-        LazyTATensor<DataType,2,DenomGen3<-1>> d({ortho3_, closed_}, DenomGen3<-1>(e0_, denom_->denom_xxh(), eig_, ncore));
         shared_ptr<const TATensor<DataType,4>> s = denom_->tashalf_xxh({ortho3_, active_, active_, active_});
-        (*tjst)("x00,x10,c2,x30") -= (*rist)("c2,x3,x0,x1") * (*s)("o4,x0,x1,x3") * d("o4,c2") * (*s)("o4,x00,x10,x30");
+        TATensor<DataType,2> i0(vector<IndexRange>{ortho3_, closed_}, true);
+        i0("o4,c2") = (*rist)("c2,x3,x0,x1") * (*s)("o4,x0,x1,x3");
+        const VecView denom = denom_->denom_xxh();
+        foreach_inplace(i0, [&](typename TATensor<DataType,2>::value_type& tile) {
+          auto range = tile.range();
+          for (auto& i : range)
+            tile[i] /= denom(i[1]) - eig(i[0]+ncore) - e0;
+        });
+        (*tjst)("x0,x1,c2,x3") -= i0("o4,c2") * (*s)("o4,x0,x1,x3");
       }
       { // AXXX
-        LazyTATensor<DataType,2,DenomGen3<1>> d({ortho3_, virt_}, DenomGen3<1>(e0_, denom_->denom_xhh(), eig_, nocc));
         shared_ptr<const TATensor<DataType,4>> s = denom_->tashalf_xhh({ortho3_, active_, active_, active_});
-        (*tjst)("x00,a1,x20,x30") -= (*rist)("x2,x3,x0,a1") * (*s)("o4,x0,x2,x3") * d("o4,a1") * (*s)("o4,x00,x20,x30");
+        TATensor<DataType,2> i0(vector<IndexRange>{ortho3_, virt_}, true);
+        i0("o4,a1") = (*rist)("x2,x3,x0,a1") * (*s)("o4,x0,x2,x3");
+        const VecView denom = denom_->denom_xhh();
+        foreach_inplace(i0, [&](typename TATensor<DataType,2>::value_type& tile) {
+          auto range = tile.range();
+          for (auto& i : range)
+            tile[i] /= denom(i[1]) + eig(i[0]+nocc) - e0;
+        });
+        (*tjst)("x00,a1,x20,x30") -= i0("o4,a1") * (*s)("o4,x00,x20,x30");
       }
       { // XXCA
-        LazyTATensor<DataType,3,DenomGen2<1,-1>> d({ortho2t_, virt_, closed_}, DenomGen2<1,-1>(e0_, denom_->denom_xh(), eig_, nocc, ncore));
+        const VecView denom = denom_->denom_xh();
+        TATensor<DataType,3> i0(vector<IndexRange>{ortho2t_, virt_, closed_}, true);
+        auto lambda = [&](typename TATensor<DataType,3>::value_type& tile) {
+          auto range = tile.range();
+          for (auto& i : range)
+            tile[i] /= denom(i[2]) + eig(i[1]+nocc) - eig(i[0]+ncore) - e0;
+        };
         if (is_same<DataType,double>::value) {
           shared_ptr<const TATensor<DataType,3>> s0 = denom_->template tashalf_xh_nonrel<0>({ortho2t_, active_, active_});
           shared_ptr<const TATensor<DataType,3>> s1 = denom_->template tashalf_xh_nonrel<1>({ortho2t_, active_, active_});
-
-          // TODO not the most efficient code
-          (*tjst)("c0,a1,x20,x30") -= (*rist)("x2,x3,c0,a1") * (*s0)("o4,x2,x3") * d("o4,a1,c0") * (*s0)("o4,x20,x30")
-                                    + (*rist)("c0,x3,x2,a1") * (*s1)("o4,x2,x3") * d("o4,a1,c0") * (*s0)("o4,x20,x30");
-          (*tjst)("x20,a1,c0,x30") -= (*rist)("x2,x3,c0,a1") * (*s0)("o4,x2,x3") * d("o4,a1,c0") * (*s1)("o4,x20,x30")
-                                    + (*rist)("c0,x3,x2,a1") * (*s1)("o4,x2,x3") * d("o4,a1,c0") * (*s1)("o4,x20,x30");
-
+          i0("o4,a1,c0") = (*rist)("x2,x3,c0,a1") * (*s0)("o4,x2,x3") + (*rist)("c0,x3,x2,a1") * (*s1)("o4,x2,x3");
+          foreach_inplace(i0, lambda);
+          (*tjst)("c0,a1,x2,x3") -= i0("o4,a1,c0") * (*s0)("o4,x2,x3");
+          (*tjst)("x2,a1,c0,x3") -= i0("o4,a1,c0") * (*s1)("o4,x2,x3");
         } else {
           shared_ptr<const TATensor<DataType,3>> s = denom_->tashalf_xh_rel({ortho2t_, active_, active_});
-          (*tjst)("c0,a1,x20,x30") -= (*rist)("x2,x3,c0,a1") * (*s)("o4,x2,x3") * d("o4,a1,c0") * (*s)("o4,x20,x30");
+          i0("o4,a1,c0") = (*rist)("x2,x3,c0,a1") * (*s)("o4,x2,x3");
+          foreach_inplace(i0, lambda);
+          (*tjst)("c0,a1,x2,x3") -= i0("o4,a1,c0") * (*s)("o4,x2,x3");
         }
       }
     } // jst loop
