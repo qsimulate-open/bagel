@@ -254,7 +254,8 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
   // first form <0|E_mn|I><I|E_ij,kl|0>
   {
     auto tmp3 = make_shared<RDM<3>>(norb_);
-    dgemm_("T", "N", dbra->ij(), eket->ij(), nri, 1.0, dbra->data(), nri, eket->data(), nri, 0.0, tmp3->data(), dbra->ij());
+    auto tmp3v = group(group(*tmp3,2,6),0,2);
+    contract(1.0, group(*dbra,0,2), {0,1}, group(*eket,0,2), {0,2}, 0.0, tmp3v, {1,2});
     sort_indices<1,0,2,0,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb_*norb_*norb_*norb_);
 
     // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
@@ -358,7 +359,8 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
   // first form <0|E_mn|I><I|E_ij,kl|0>
   {
     auto tmp3 = make_shared<RDM<3>>(norb_);
-    dgemm_("T", "N", dbra->ij(), eket->ij(), nri, 1.0, dbra->data(), nri, eket->data(), nri, 0.0, tmp3->data(), dbra->ij());
+    auto tmp3v = group(group(*tmp3,2,6),0,2);
+    contract(1.0, group(*dbra,0,2), {0,1}, group(*eket,0,2), {0,2}, 0.0, tmp3v, {1,2});
     sort_indices<1,0,2,0,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb_*norb_*norb_*norb_);
 
     // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
