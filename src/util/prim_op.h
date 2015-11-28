@@ -237,6 +237,21 @@ void sort_indices<0,2,1,1,1,-1,1>(const double* unsorted, double* sorted, const 
     for (int j = 0; j != c; ++j)
       blas::ax_plus_y_n(-1.0, unsorted+d*(j+c*i), d, sorted+d*(i+b*j));
 }
+template<>
+void sort_indices<1,0,2,0,1,1,1>(const double* unsorted, double* sorted, const int d, const int c, const int b) {
+  for (int i = 0, off = 0; i != b; ++i, off += d*c)
+    sort_indices<1,0,0,1,1,1>(unsorted+off, sorted+off, d, c);
+}
+template<>
+void sort_indices<1,0,2,1,1,1,1>(const double* unsorted, double* sorted, const int d, const int c, const int b) {
+  for (int i = 0, off = 0; i != b; ++i, off += d*c)
+    sort_indices<1,0,1,1,1,1>(unsorted+off, sorted+off, d, c);
+}
+template<>
+void sort_indices<1,0,2,1,1,-1,1>(const double* unsorted, double* sorted, const int d, const int c, const int b) {
+  for (int i = 0, off = 0; i != b; ++i, off += d*c)
+    sort_indices<1,0,1,1,-1,1>(unsorted+off, sorted+off, d, c);
+}
 
 template<>
 void sort_indices<0,1,2,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
@@ -291,6 +306,21 @@ void sort_indices<0,2,1,1,1,-1,1>(const std::complex<double>* unsorted, std::com
   for (int i = 0; i != b; ++i)
     for (int j = 0; j != c; ++j)
       blas::ax_plus_y_n(-1.0, unsorted+d*(j+c*i), d, sorted+d*(i+b*j));
+}
+template<>
+void sort_indices<1,0,2,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  for (int i = 0, off = 0; i != b; ++i, off += d*c)
+    sort_indices<1,0,0,1,1,1>(unsorted+off, sorted+off, d, c);
+}
+template<>
+void sort_indices<1,0,2,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  for (int i = 0, off = 0; i != b; ++i, off += d*c)
+    sort_indices<1,0,1,1,1,1>(unsorted+off, sorted+off, d, c);
+}
+template<>
+void sort_indices<1,0,2,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted, const int d, const int c, const int b) {
+  for (int i = 0, off = 0; i != b; ++i, off += d*c)
+    sort_indices<1,0,1,1,-1,1>(unsorted+off, sorted+off, d, c);
 }
 
 #endif
@@ -439,6 +469,51 @@ void sort_indices<0,2,3,1,1,1,-1,1>(const double* unsorted, double* sorted,
                                     const int d, const int c, const int b, const int a) {
   sort_indices<0,2,1,1,1,-1,1>(unsorted, sorted, d, c, b*a);
 }
+template<>
+void sort_indices<2,0,1,3,0,1,1,1>(const double* unsorted, double* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,0,1,1,1>(unsorted, sorted, d*c, b, a);
+}
+template<>
+void sort_indices<2,0,1,3,1,1,1,1>(const double* unsorted, double* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,1,1>(unsorted, sorted, d*c, b, a);
+}
+template<>
+void sort_indices<2,0,1,3,1,1,-1,1>(const double* unsorted, double* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,-1,1>(unsorted, sorted, d*c, b, a);
+}
+template<>
+void sort_indices<1,2,0,3,0,1,1,1>(const double* unsorted, double* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,0,1,1,1>(unsorted, sorted, d, c*b, a);
+}
+template<>
+void sort_indices<1,2,0,3,1,1,1,1>(const double* unsorted, double* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,1,1>(unsorted, sorted, d, c*b, a);
+}
+template<>
+void sort_indices<1,2,0,3,1,1,-1,1>(const double* unsorted, double* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,-1,1>(unsorted, sorted, d, c*b, a);
+}
+template<>
+void sort_indices<1,0,2,3,0,1,1,1>(const double* unsorted, double* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,0,1,1,1>(unsorted, sorted, d, c, b*a);
+}
+template<>
+void sort_indices<1,0,2,3,1,1,1,1>(const double* unsorted, double* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,1,1>(unsorted, sorted, d, c, b*a);
+}
+template<>
+void sort_indices<1,0,2,3,1,1,-1,1>(const double* unsorted, double* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,-1,1>(unsorted, sorted, d, c, b*a);
+}
 
 template<>
 void sort_indices<0,1,2,3,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
@@ -544,6 +619,51 @@ template<>
 void sort_indices<0,2,3,1,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
                                     const int d, const int c, const int b, const int a) {
   sort_indices<0,2,1,1,1,-1,1>(unsorted, sorted, d, c, b*a);
+}
+template<>
+void sort_indices<2,0,1,3,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,0,1,1,1>(unsorted, sorted, d*c, b, a);
+}
+template<>
+void sort_indices<2,0,1,3,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,1,1>(unsorted, sorted, d*c, b, a);
+}
+template<>
+void sort_indices<2,0,1,3,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,-1,1>(unsorted, sorted, d*c, b, a);
+}
+template<>
+void sort_indices<1,2,0,3,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,0,1,1,1>(unsorted, sorted, d, c*b, a);
+}
+template<>
+void sort_indices<1,2,0,3,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,1,1>(unsorted, sorted, d, c*b, a);
+}
+template<>
+void sort_indices<1,2,0,3,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,-1,1>(unsorted, sorted, d, c*b, a);
+}
+template<>
+void sort_indices<1,0,2,3,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,0,1,1,1>(unsorted, sorted, d, c, b*a);
+}
+template<>
+void sort_indices<1,0,2,3,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,1,1>(unsorted, sorted, d, c, b*a);
+}
+template<>
+void sort_indices<1,0,2,3,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  sort_indices<1,0,2,1,1,-1,1>(unsorted, sorted, d, c, b*a);
 }
 #endif
 
