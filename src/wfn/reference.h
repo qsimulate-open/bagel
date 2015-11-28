@@ -152,6 +152,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> rdm12(const int ist, const int jst) const;
     std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> rdm34(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<3>>>
+      rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const;
 
     // function to return a CI vectors from orbital info
     std::shared_ptr<const Dvec> civectors() const;

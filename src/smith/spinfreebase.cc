@@ -174,9 +174,11 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<1>> rdm1;
       shared_ptr<const RDM<2>> rdm2;
       shared_ptr<const RDM<3>> rdm3;
-      shared_ptr<const RDM<4>> rdm4;
+      shared_ptr<const RDM<4>> rdm4; // TODO to be removed
+      shared_ptr<const RDM<3>> frdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
-      tie(rdm3, rdm4) = info_->rdm34(jst, ist);
+      tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
+      tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact);
 
       (*rdm0t)("") = jst == ist ? 1.0 : 0.0;
       fill_block<2,double>(rdm1t, rdm1, vector<int>(2,nclo));
@@ -190,7 +192,7 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
       rdm3all_->emplace(jst, ist, rdm3t);
       rdm4all_->emplace(jst, ist, rdm4t);
 
-      denom->append(jst, ist, rdm1, rdm2, rdm3, rdm4);
+      denom->append(jst, ist, rdm1, rdm2, rdm3, frdm4);
     }
   }
   denom->compute();
