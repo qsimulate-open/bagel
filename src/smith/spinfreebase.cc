@@ -159,7 +159,8 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
   rdm3all_ = make_shared<Vec<TATensor<double,6>>>();
   rdm4all_ = make_shared<Vec<TATensor<double,8>>>();
 
-  auto denom = make_shared<Denom<double>>(fockact, nstates, /*thresh*/1.0e-9);
+  const array<IndexRange,5> range{{active_, ortho1_, ortho2_, ortho3_, ortho2t_}};
+  auto denom = make_shared<Denom<double>>(fockact, nstates, range, /*thresh*/1.0e-9);
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
@@ -210,7 +211,8 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
   rdm3all_ = make_shared<Vec<TATensor<complex<double>,6>>>();
   rdm4all_ = make_shared<Vec<TATensor<complex<double>,8>>>();
 
-  auto denom = make_shared<Denom<complex<double>>>(fockact, nstates, /*thresh*/1.0e-9);
+  const array<IndexRange,5> range{{active_, ortho1_, ortho2_, ortho3_, ortho2t_}};
+  auto denom = make_shared<Denom<complex<double>>>(fockact, nstates, range, /*thresh*/1.0e-9);
 
   // TODO TODO not implemented proplerly yet
 #if 0

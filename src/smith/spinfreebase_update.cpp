@@ -77,7 +77,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         (*tjst)("c0,a1,c2,a3") -= i0("c0,a1,c2,a3");
       }
       { // AAXX
-        shared_ptr<const TATensor<DataType,3>> s = denom_->tashalf_xx({ortho2_, active_, active_});
+        shared_ptr<const TATensor<DataType,3>> s = denom_->tashalf_xx();
         TATensor<DataType,3> i0(vector<IndexRange>{ortho2_, virt_, virt_}, true);
         i0("o4,a1,a3") = (*rist)("x0,a1,x2,a3") * (*s)("o4,x0,x2");
         const VecView denom = denom_->denom_xx();
@@ -94,7 +94,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         (*tjst)("x0,a1,x2,a3") -= i0("o4,a1,a3") * 0.5 * (*s)("o4,x0,x2"); // TODO conjugate s for complex cases
       }
       { // AACX
-        shared_ptr<const TATensor<DataType,2>> s = denom_->tashalf_x({ortho1_, active_});
+        shared_ptr<const TATensor<DataType,2>> s = denom_->tashalf_x();
         TATensor<DataType,4> i0(vector<IndexRange>{ortho1_, virt_, virt_, closed_}, true);
         if (is_same<DataType,double>::value)
           i0("o4,a1,a3,c2") = ((*rist)("c2,a3,x0,a1")*(2.0/3.0) + (*rist)("c2,a1,x0,a3")*(1.0/3.0)) * (*s)("o4,x0");
@@ -115,7 +115,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         (*tjst)("x0,a1,c2,a3") -=  i0("o4,a1,a3,c2") * (*s)("o4,x0");
       }
       { // AXCC
-        shared_ptr<const TATensor<DataType,2>> s = denom_->tashalf_h({ortho1_, active_});
+        shared_ptr<const TATensor<DataType,2>> s = denom_->tashalf_h();
         TATensor<DataType,4> i0(vector<IndexRange>{ortho1_, virt_, closed_, closed_}, true);
         if (is_same<DataType,double>::value)
           i0("o4,a1,c0,c2") = ((*rist)("c2,x3,c0,a1")*(2.0/3.0) + (*rist)("c0,x3,c2,a1")*(1.0/3.0)) * (*s)("o4,x3");
@@ -136,7 +136,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         (*tjst)("c0,a1,c2,x3") -= i0("o4,a1,c0,c2") * (*s)("o4,x3");
       }
       { // XXCC
-        shared_ptr<const TATensor<DataType,3>> s = denom_->tashalf_hh({ortho2_, active_, active_});
+        shared_ptr<const TATensor<DataType,3>> s = denom_->tashalf_hh();
         TATensor<DataType,3> i0(vector<IndexRange>{ortho2_, closed_, closed_}, true);
         i0("o4,c0,c2") = (*rist)("c0,x1,c2,x3") * (*s)("o4,x1,x3") * 0.5;
         const VecView denom = denom_->denom_hh();
@@ -153,7 +153,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         (*tjst)("c0,x1,c2,x3") -= i0("o4,c0,c2") * (*s)("o4,x1,x3");
       }
       { // XXCX
-        shared_ptr<const TATensor<DataType,4>> s = denom_->tashalf_xxh({ortho3_, active_, active_, active_});
+        shared_ptr<const TATensor<DataType,4>> s = denom_->tashalf_xxh();
         TATensor<DataType,2> i0(vector<IndexRange>{ortho3_, closed_}, true);
         i0("o4,c2") = (*rist)("c2,x3,x0,x1") * (*s)("o4,x0,x1,x3");
         const VecView denom = denom_->denom_xxh();
@@ -169,7 +169,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         (*tjst)("x0,x1,c2,x3") -= i0("o4,c2") * (*s)("o4,x0,x1,x3");
       }
       { // AXXX
-        shared_ptr<const TATensor<DataType,4>> s = denom_->tashalf_xhh({ortho3_, active_, active_, active_});
+        shared_ptr<const TATensor<DataType,4>> s = denom_->tashalf_xhh();
         TATensor<DataType,2> i0(vector<IndexRange>{ortho3_, virt_}, true);
         i0("o4,a1") = (*rist)("x2,x3,x0,a1") * (*s)("o4,x0,x2,x3");
         const VecView denom = denom_->denom_xhh();
@@ -198,14 +198,14 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
                 tile[n++] /= denom(i2) + eig(i1+nocc) - eig(i0+ncore) - e0;
         };
         if (is_same<DataType,double>::value) {
-          shared_ptr<const TATensor<DataType,3>> s0 = denom_->template tashalf_xh_nonrel<0>({ortho2t_, active_, active_});
-          shared_ptr<const TATensor<DataType,3>> s1 = denom_->template tashalf_xh_nonrel<1>({ortho2t_, active_, active_});
+          shared_ptr<const TATensor<DataType,3>> s0 = denom_->template tashalf_xh<true>();
+          shared_ptr<const TATensor<DataType,3>> s1 = denom_->template tashalf_xh<false>();
           i0("o4,a1,c0") = (*rist)("x2,x3,c0,a1") * (*s0)("o4,x2,x3") + (*rist)("c0,x3,x2,a1") * (*s1)("o4,x2,x3");
           foreach_inplace(i0, lambda);
           (*tjst)("c0,a1,x2,x3") -= i0("o4,a1,c0") * (*s0)("o4,x2,x3");
           (*tjst)("x2,a1,c0,x3") -= i0("o4,a1,c0") * (*s1)("o4,x2,x3");
         } else {
-          shared_ptr<const TATensor<DataType,3>> s = denom_->tashalf_xh_rel({ortho2t_, active_, active_});
+          shared_ptr<const TATensor<DataType,3>> s = denom_->template tashalf_xh<true>();
           i0("o4,a1,c0") = (*rist)("x2,x3,c0,a1") * (*s)("o4,x2,x3");
           foreach_inplace(i0, lambda);
           (*tjst)("c0,a1,x2,x3") -= i0("o4,a1,c0") * (*s)("o4,x2,x3");

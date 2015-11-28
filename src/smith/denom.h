@@ -40,8 +40,14 @@ class Denom {
 
   protected:
     std::shared_ptr<const MatType> fock_;
+    const IndexRange active_;
+    const IndexRange ortho1_;
+    const IndexRange ortho2_;
+    const IndexRange ortho3_;
+    const IndexRange ortho2t_;
     const double thresh_;
 
+    // work area
     std::shared_ptr<MatType> shalf_x_;
     std::shared_ptr<MatType> shalf_h_;
     std::shared_ptr<MatType> shalf_xx_;
@@ -49,7 +55,7 @@ class Denom {
     std::shared_ptr<MatType> shalf_xh_;
     std::shared_ptr<MatType> shalf_xhh_;
     std::shared_ptr<MatType> shalf_xxh_;
-
+    // work area
     std::shared_ptr<MatType> work_x_;
     std::shared_ptr<MatType> work_h_;
     std::shared_ptr<MatType> work_xx_;
@@ -57,6 +63,15 @@ class Denom {
     std::shared_ptr<MatType> work_xh_;
     std::shared_ptr<MatType> work_xhh_;
     std::shared_ptr<MatType> work_xxh_;
+
+    std::shared_ptr<TATensor<DataType,2>> tashalf_x_;
+    std::shared_ptr<TATensor<DataType,2>> tashalf_h_;
+    std::shared_ptr<TATensor<DataType,3>> tashalf_xx_;
+    std::shared_ptr<TATensor<DataType,3>> tashalf_hh_;
+    std::shared_ptr<TATensor<DataType,3>> tashalf_xh_;
+    std::shared_ptr<TATensor<DataType,3>> tashalf_xh2_;
+    std::shared_ptr<TATensor<DataType,4>> tashalf_xhh_;
+    std::shared_ptr<TATensor<DataType,4>> tashalf_xxh_;
 
     VectorB denom_x_;
     VectorB denom_h_;
@@ -83,7 +98,7 @@ class Denom {
                                          std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
 
   public:
-    Denom(std::shared_ptr<const MatType> fock, const int nstates, const double th = 1.0e-8);
+    Denom(std::shared_ptr<const MatType> fock, const int nstates, const std::array<IndexRange,5>&, const double th = 1.0e-8);
 
     // add RDMs (using fock-multiplied 4RDM)
     void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
@@ -105,90 +120,14 @@ class Denom {
     const VecView denom_xhh() const { return denom_xhh_; }
     const VecView denom_xxh() const { return denom_xxh_; }
 
-    std::shared_ptr<const TATensor<DataType,4>> tashalf_xxh(const std::vector<IndexRange>& ranges) const {
-      auto out = std::make_shared<TATensor<DataType,4>>(ranges);
-      // TODO not an optimal code
-      auto tmp = std::make_shared<btas::Tensor4<DataType>>(btas::CRange<3>(ranges[0].size(), ranges[1].size(), ranges[2].size(), ranges[3].size()));
-      std::copy_n(shalf_xxh_->data(), shalf_xxh_->size(), tmp->data());
-      const int nclo = ranges[1].front().offset();
-      fill_block<4,DataType>(out, tmp, std::vector<int>{nclo, nclo, nclo, 0});
-      return out;
-    }
-    std::shared_ptr<const TATensor<DataType,4>> tashalf_xhh(const std::vector<IndexRange>& ranges) const {
-      auto out = std::make_shared<TATensor<DataType,4>>(ranges);
-      // TODO not an optimal code
-      auto tmp = std::make_shared<btas::Tensor4<DataType>>(btas::CRange<3>(ranges[0].size(), ranges[1].size(), ranges[2].size(), ranges[3].size()));
-      std::copy_n(shalf_xhh_->data(), shalf_xhh_->size(), tmp->data());
-      const int nclo = ranges[1].front().offset();
-      fill_block<4,DataType>(out, tmp, std::vector<int>{nclo, nclo, nclo, 0});
-      return out;
-    }
-    std::shared_ptr<const TATensor<DataType,3>> tashalf_xx(const std::vector<IndexRange>& ranges) const {
-      auto out = std::make_shared<TATensor<DataType,3>>(ranges);
-      // TODO not an optimal code
-      auto tmp = std::make_shared<btas::Tensor3<DataType>>(btas::CRange<3>(ranges[0].size(), ranges[1].size(), ranges[2].size()));
-      std::copy_n(shalf_xx_->data(), shalf_xx_->size(), tmp->data());
-      const int nclo = ranges[1].front().offset();
-      fill_block<3,DataType>(out, tmp, std::vector<int>{nclo, nclo, 0});
-      return out;
-    }
-    std::shared_ptr<const TATensor<DataType,3>> tashalf_xh_rel(const std::vector<IndexRange>& ranges) const {
-      auto out = std::make_shared<TATensor<DataType,3>>(ranges);
-      // TODO not an optimal code
-      auto tmp = std::make_shared<btas::Tensor3<DataType>>(btas::CRange<3>(ranges[0].size(), ranges[1].size(), ranges[2].size()));
-      std::copy_n(shalf_xh_->data(), shalf_xh_->size(), tmp->data());
-      const int nclo = ranges[1].front().offset();
-      fill_block<3,DataType>(out, tmp, std::vector<int>{nclo, nclo, 0});
-      return out;
-    }
-    template<int I>
-    std::shared_ptr<const TATensor<DataType,3>> tashalf_xh_nonrel(const std::vector<IndexRange>& ranges) const {
-      auto out = std::make_shared<TATensor<DataType,3>>(ranges);
-      // TODO not an optimal code
-      auto tmp = std::make_shared<btas::Tensor3<DataType>>(btas::CRange<3>(ranges[0].size(), ranges[1].size(), ranges[2].size()));
-      std::copy_n(shalf_xh_->data()+I*shalf_xh_->size()/2, shalf_xh_->size()/2, tmp->data());
-      const int nclo = ranges[1].front().offset();
-      fill_block<3,DataType>(out, tmp, std::vector<int>{nclo, nclo, 0});
-      return out;
-    }
-    std::shared_ptr<const TATensor<DataType,3>> tashalf_hh(const std::vector<IndexRange>& ranges) const {
-      auto out = std::make_shared<TATensor<DataType,3>>(ranges);
-      // TODO not an optimal code
-      auto tmp = std::make_shared<btas::Tensor3<DataType>>(btas::CRange<3>(ranges[0].size(), ranges[1].size(), ranges[2].size()));
-      std::copy_n(shalf_hh_->data(), shalf_hh_->size(), tmp->data());
-      const int nclo = ranges[1].front().offset();
-      fill_block<3,DataType>(out, tmp, std::vector<int>{nclo, nclo, 0});
-      return out;
-    }
-    std::shared_ptr<const TATensor<DataType,2>> tashalf_x(const std::vector<IndexRange>& ranges) const {
-      auto out = std::make_shared<TATensor<DataType,2>>(ranges);
-      const int nclo = ranges[1].front().offset();
-      fill_block<2,DataType>(out, shalf_x_, std::vector<int>{nclo, 0});
-      return out;
-    }
-    std::shared_ptr<const TATensor<DataType,2>> tashalf_h(const std::vector<IndexRange>& ranges) const {
-      auto out = std::make_shared<TATensor<DataType,2>>(ranges);
-      const int nclo = ranges[1].front().offset();
-      fill_block<2,DataType>(out, shalf_h_, std::vector<int>{nclo, 0});
-      return out;
-    }
-
-    // deprecated
-    std::shared_ptr<const MatType> shalf_x() const { return shalf_x_; }
-    std::shared_ptr<const MatType> shalf_h() const { return shalf_h_; }
-    std::shared_ptr<const MatType> shalf_xx() const { return shalf_xx_; }
-    std::shared_ptr<const MatType> shalf_hh() const { return shalf_hh_; }
-    std::shared_ptr<const MatType> shalf_xh() const { return shalf_xh_; }
-    std::shared_ptr<const MatType> shalf_xhh() const { return shalf_xhh_; }
-    std::shared_ptr<const MatType> shalf_xxh() const { return shalf_xxh_; }
-    // deprecated
-    const double& denom_x(const size_t i) const { return denom_x_(i); }
-    const double& denom_h(const size_t i) const { return denom_h_(i); }
-    const double& denom_xx(const size_t i) const { return denom_xx_(i); }
-    const double& denom_hh(const size_t i) const { return denom_hh_(i); }
-    const double& denom_xh(const size_t i) const { return denom_xh_(i); }
-    const double& denom_xhh(const size_t i) const { return denom_xhh_(i); }
-    const double& denom_xxh(const size_t i) const { return denom_xxh_(i); }
+    std::shared_ptr<const TATensor<DataType,2>> tashalf_x() const { return tashalf_x_; }
+    std::shared_ptr<const TATensor<DataType,2>> tashalf_h() const { return tashalf_h_; }
+    std::shared_ptr<const TATensor<DataType,3>> tashalf_xx() const { return tashalf_xx_; }
+    std::shared_ptr<const TATensor<DataType,3>> tashalf_hh() const { return tashalf_hh_; }
+    std::shared_ptr<const TATensor<DataType,4>> tashalf_xhh() const { return tashalf_xhh_; }
+    std::shared_ptr<const TATensor<DataType,4>> tashalf_xxh() const { return tashalf_xxh_; }
+    template<bool I>
+    std::shared_ptr<const TATensor<DataType,3>> tashalf_xh() const { auto o = I ? tashalf_xh_ : tashalf_xh2_; assert(o); return o; }
 };
 
 template<>
