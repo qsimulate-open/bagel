@@ -286,8 +286,8 @@ void Denom<DataType>::init_hh_(const int jst, const int ist, shared_ptr<const RD
       for (int i0 = 0; i0 != nact; ++i0) {
         shalf->element(i0, i1, i1, i2) +=         rdm1->element(i2, i0);
         shalf->element(i0, i1, i2, i1) += -fac2 * rdm1->element(i2, i0);
-        shalf->element(i0, i1, i0, i2) += -fac2 * rdm1->element(i2, i1);
-        shalf->element(i0, i1, i2, i0) +=         rdm1->element(i2, i1);
+        shalf->element(i1, i0, i1, i2) += -fac2 * rdm1->element(i2, i0);
+        shalf->element(i1, i0, i2, i1) +=         rdm1->element(i2, i0);
       }
     }
   auto sview = group(group(*shalf, 2,4),0,2);
@@ -318,14 +318,14 @@ void Denom<DataType>::init_hh_(const int jst, const int ist, shared_ptr<const RD
           r3->element(i4, i1, i4, i1, i2, i3) +=  fac4 * rdm1->element(i2, i3);
           r3->element(i4, i1, i1, i4, i2, i3) += -fac2 * rdm1->element(i2, i3);
           for (int i0 = 0; i0 != nact; ++i0) {
-            r3->element(i0, i1, i3, i4, i2, i3) +=         rdm2->element(i4, i1, i2, i0);
+            r3->element(i0, i1, i3, i4, i2, i3) +=         rdm2->element(i2, i0, i4, i1);
             r3->element(i0, i1, i4, i3, i2, i3) +=         rdm2->element(i4, i0, i2, i1);
             r3->element(i0, i1, i1, i4, i2, i3) +=         rdm2->element(i4, i0, i2, i3);
             r3->element(i0, i1, i4, i1, i2, i3) += -fac2 * rdm2->element(i4, i0, i2, i3);
             r3->element(i0, i1, i2, i4, i1, i3) +=         rdm2->element(i2, i0, i4, i3);
-            r3->element(i0, i1, i0, i4, i2, i3) += -fac2 * rdm2->element(i4, i1, i2, i3);
-            r3->element(i0, i1, i4, i0, i2, i3) +=         rdm2->element(i4, i1, i2, i3);
-            r3->element(i0, i1, i2, i4, i0, i3) +=         rdm2->element(i4, i1, i2, i3);
+            r3->element(i1, i0, i1, i4, i2, i3) += -fac2 * rdm2->element(i4, i0, i2, i3);
+            r3->element(i1, i0, i4, i1, i2, i3) +=         rdm2->element(i4, i0, i2, i3);
+            r3->element(i1, i0, i2, i4, i1, i3) +=         rdm2->element(i4, i0, i2, i3);
           }
         }
       }
@@ -390,9 +390,9 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
             blas::ax_plus_y_n(1.0, rdm2->element_ptr(0, i3, i4, i5), nact, d3->element_ptr(0, i2, i4, i5, i2, i3));
           }
           d0->element(i3, i2, i4, i5, i2, i3) +=  fac2 * rdm1->element(i4, i5);
+          blas::ax_plus_y_n(-1.0, rdm2->element_ptr(0, i3, i2, i5), nact, d0->element_ptr(0, i4, i2, i5, i4, i3));
           for (int i1 = 0; i1 != nact; ++i1) {
             d0->element(i3, i1, i4, i5, i2, i3) += -1.0  * rdm2->element(i2, i1, i4, i5);
-            d0->element(i4, i1, i2, i5, i1, i3) += -1.0  * rdm2->element(i4, i3, i2, i5);
             d0->element(i1, i1, i4, i5, i2, i3) +=  fac2 * rdm2->element(i2, i3, i4, i5);
           }
         }
