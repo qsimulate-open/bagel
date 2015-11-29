@@ -6,14 +6,14 @@ CASPT2.cc CASPT2_gamma.cc \
 CASPT2_residualq.cc CASPT2_corrq.cc CASPT2_deciq.cc CASPT2_densityq.cc CASPT2_energyq.cc CASPT2_density1q.cc CASPT2_density2q.cc \
 CASPT2_tasks1.cc CASPT2_tasks2.cc CASPT2_tasks3.cc CASPT2_tasks4.cc CASPT2_tasks5.cc CASPT2_tasks6.cc CASPT2_tasks7.cc CASPT2_tasks8.cc \
 CASPT2_tasks9.cc CASPT2_tasks10.cc CASPT2_tasks11.cc CASPT2_tasks12.cc CASPT2_tasks13.cc CASPT2_tasks14.cc CASPT2_tasks15.cc CASPT2_tasks16.cc \
-CASPT2_tasks17.cc CASPT2_gen1.cc CASPT2_gen2.cc
-# \
-#MRCI.cc MRCI_gamma.cc MRCI_sourceq.cc MRCI_residualq.cc MRCI_normq.cc \
-#MRCI_tasks1.cc MRCI_tasks2.cc MRCI_tasks3.cc MRCI_tasks4.cc MRCI_tasks5.cc MRCI_tasks6.cc MRCI_tasks7.cc MRCI_tasks8.cc MRCI_tasks9.cc MRCI_tasks10.cc \
-#MRCI_tasks11.cc MRCI_tasks12.cc MRCI_tasks13.cc MRCI_tasks14.cc MRCI_tasks15.cc MRCI_tasks16.cc MRCI_tasks17.cc MRCI_tasks18.cc MRCI_tasks19.cc MRCI_tasks20.cc \
-#MRCI_gen1.cc MRCI_gen2.cc MRCI_gen3.cc
-# \
-#\
+CASPT2_tasks17.cc CASPT2_gen1.cc CASPT2_gen2.cc \
+\
+MRCI.cc MRCI_gamma.cc MRCI_sourceq.cc MRCI_residualq.cc MRCI_normq.cc \
+MRCI_tasks1.cc MRCI_tasks2.cc MRCI_tasks3.cc MRCI_tasks4.cc MRCI_tasks5.cc MRCI_tasks6.cc MRCI_tasks7.cc MRCI_tasks8.cc MRCI_tasks9.cc MRCI_tasks10.cc \
+MRCI_tasks11.cc MRCI_tasks12.cc MRCI_tasks13.cc MRCI_tasks14.cc MRCI_tasks15.cc MRCI_tasks16.cc MRCI_tasks17.cc MRCI_tasks18.cc MRCI_tasks19.cc MRCI_tasks20.cc \
+MRCI_gen1.cc MRCI_gen2.cc MRCI_gen3.cc
+
+#
 #RelCASPT2.cc RelCASPT2_gamma.cc RelCASPT2_residualq.cc RelCASPT2_sourceq.cc \
 #RelCASPT2_gen1.cc RelCASPT2_tasks1.cc RelCASPT2_gen2.cc RelCASPT2_tasks2.cc RelCASPT2_gen3.cc RelCASPT2_tasks3.cc RelCASPT2_gen4.cc RelCASPT2_tasks4.cc \
 #RelCASPT2_gen5.cc RelCASPT2_tasks5.cc \

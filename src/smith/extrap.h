@@ -41,12 +41,12 @@ template<typename DataType>
 class Residual {
   friend class Amplitude<DataType>;
   protected:
-    std::shared_ptr<MultiTensor_<DataType>> res_;
+    std::shared_ptr<MultiTATensor<DataType,4>> res_;
     SpinFreeMethod<DataType>* me_;
 
   public:
-    Residual(std::shared_ptr<const MultiTensor_<DataType>> r, SpinFreeMethod<DataType>* m) : res_(r->copy()), me_(m) { }
-    Residual(std::shared_ptr<MultiTensor_<DataType>>&& r, SpinFreeMethod<DataType>* m) : res_(std::move(r)), me_(m) { }
+    Residual(std::shared_ptr<const MultiTATensor<DataType,4>> r, SpinFreeMethod<DataType>* m) : res_(r->copy()), me_(m) { }
+    Residual(std::shared_ptr<MultiTATensor<DataType,4>>&& r, SpinFreeMethod<DataType>* m) : res_(std::move(r)), me_(m) { }
 
     std::shared_ptr<Residual<DataType>> clone() const {
       auto out = std::make_shared<Residual<DataType>>(res_, me_);
@@ -64,22 +64,22 @@ class Residual {
     DataType dot_product(const Amplitude<DataType>& o) const;
     DataType dot_product(std::shared_ptr<const Amplitude<DataType>> o) const;
 
-    std::shared_ptr<MultiTensor_<DataType>> tensor() { return res_; }
-    std::shared_ptr<const MultiTensor_<DataType>> tensor() const { return res_; }
+    std::shared_ptr<MultiTATensor<DataType,4>> tensor() { return res_; }
+    std::shared_ptr<const MultiTATensor<DataType,4>> tensor() const { return res_; }
 };
 
 template<typename DataType>
 class Amplitude {
   friend class Residual<DataType>;
   protected:
-    std::shared_ptr<MultiTensor_<DataType>> amp_;
+    std::shared_ptr<MultiTATensor<DataType,4>> amp_;
     // the result of <ab/ij|\phi> so that one can easily compute the overlap
-    std::shared_ptr<MultiTensor_<DataType>> left_;
+    std::shared_ptr<MultiTATensor<DataType,4>> left_;
 
     SpinFreeMethod<DataType>* me_;
 
   public:
-    Amplitude(std::shared_ptr<const MultiTensor_<DataType>> t, std::shared_ptr<const MultiTensor_<DataType>> l, SpinFreeMethod<DataType>* m)
+    Amplitude(std::shared_ptr<const MultiTATensor<DataType,4>> t, std::shared_ptr<const MultiTATensor<DataType,4>> l, SpinFreeMethod<DataType>* m)
      : amp_(t->copy()), left_(l->copy()), me_(m) { }
 
     std::shared_ptr<Amplitude<DataType>> clone() const {
@@ -99,8 +99,8 @@ class Amplitude {
     DataType dot_product(const Residual<DataType>& o) const { return detail::conj(me_->dot_product_transpose(o.res_, amp_)); }
     DataType dot_product(std::shared_ptr<const Residual<DataType>> o) const { return dot_product(*o); }
 
-    std::shared_ptr<const MultiTensor_<DataType>> tensor() const { return amp_; }
-    std::shared_ptr<const MultiTensor_<DataType>> left() const { return left_; }
+    std::shared_ptr<const MultiTATensor<DataType,4>> tensor() const { return amp_; }
+    std::shared_ptr<const MultiTATensor<DataType,4>> left() const { return left_; }
 };
 
 template<typename DataType>

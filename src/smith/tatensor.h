@@ -299,6 +299,8 @@ class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
     TATensor(TATensor<DataType,0>&& o) : TiledArray::Array<DataType,1>(std::move(o)), range_(o.range_), data_(o.data_), initialized_(true) {
     }
 
+    virtual void init() { assert(false); }
+
     DataType& operator()(const std::string& vars) { assert(vars.empty()); return data_; }
     const DataType& operator()(const std::string& vars) const { assert(vars.empty()); return data_; }
 
