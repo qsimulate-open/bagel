@@ -123,8 +123,14 @@ class TATensor : public TiledArray::Array<DataType,N> {
         this->fill_local(0.0);
     }
 
-    TATensor(const TATensor<DataType,N>& o) : TiledArray::Array<DataType,N>(o), range_(o.range_), initialized_(true) {
+    TATensor(const TATensor<DataType,N>& o) : TiledArray::Array<DataType,N>(o.get_world(), *make_trange(o.range_)), range_(o.range_), initialized_(true) {
       static_assert(N != 0, "this should not happen");
+      // TODO This is not going to work in parallel
+      auto ot = o.begin();
+      for (auto it = begin(); it != end(); ++it, ++ot) {
+        if (ot->probe())
+          *it = ot->get().clone();
+      }
     }
 
     TATensor(TATensor<DataType,N>&& o) : TiledArray::Array<DataType,N>(std::move(o)), range_(o.range_), initialized_(true) {
