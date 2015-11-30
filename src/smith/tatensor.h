@@ -35,6 +35,30 @@
 #include <boost/regex.hpp>
 #endif
 
+namespace TiledArray {
+
+// modified version of clone function (which is copy in BAGEL's language)
+// see the original in tiledarray/src/TiledArray/conversions/clone.h written by Justus Calvin
+template <typename Tile, typename Policy>
+inline DistArray<Tile, Policy> clone_part(const DistArray<Tile, Policy>& arg) {
+  using value_type = typename DistArray<Tile, Policy>::value_type;
+  World& world = arg.get_world();
+  DistArray<Tile, Policy> result(world, arg.trange(), arg.get_shape(), arg.get_pmap());
+
+  for (auto index : *arg.get_pmap()) {
+    if (arg.is_zero(index))
+      continue;
+    auto atile = arg.find(index);
+    if (!atile.probe())
+      continue;
+    Future<value_type> tile = world.taskq.add([](const value_type& tile){ return TiledArray::clone(tile); }, atile);
+    result.set(index, tile);
+  }
+  return result;
+}
+
+}
+
 namespace bagel {
 namespace SMITH {
 
@@ -42,9 +66,20 @@ namespace SMITH {
 template<typename DataType, int N>
 class TATensor : public TiledArray::Array<DataType,N> {
   public:
-    using TiledArray::Array<DataType,N>::begin;
-    using TiledArray::Array<DataType,N>::end;
-    using TiledArray::Array<DataType,N>::trange;
+    using BaseArray = typename TiledArray::Array<DataType,N>;
+    using value_type = typename BaseArray::value_type;
+    using size_type  = typename BaseArray::size_type;
+
+    using BaseArray::begin;
+    using BaseArray::end;
+    using BaseArray::trange;
+    using BaseArray::range;
+    using BaseArray::get_world;
+    using BaseArray::id;
+    using BaseArray::find;
+    using BaseArray::is_local;
+    using BaseArray::owner;
+
 
     static std::shared_ptr<TiledArray::TiledRange> make_trange(const std::vector<IndexRange>& r) {
       std::vector<TiledArray::TiledRange1> ranges;
@@ -114,108 +149,127 @@ class TATensor : public TiledArray::Array<DataType,N> {
       return std::make_tuple(revvars, low, high);
     }
 
+    struct DotProduct {
+      using result_type = DataType;
+      using first_argument_type = value_type;
+      using second_argument_type = value_type;
+      result_type operator()() const { return 0.0; }
+      const result_type& operator()(const result_type& result) const { return result; }
+      void operator()(result_type& result, const result_type& arg) const { result += arg; }
+      void operator()(result_type& result, const first_argument_type& first, const second_argument_type& second) const {
+        if (!second.empty()) result += first.dot(second);
+      }
+    };
+    struct SquaredNorm {
+      using result_type = DataType;
+      using argument_type = value_type;
+      result_type operator()() const { return 0.0; }
+      const result_type& operator()(const result_type& result) const { return result; }
+      void operator()(result_type& result, const result_type& arg) const { result += arg; }
+      void operator()(result_type& result, const argument_type& arg) const { result += arg.squared_norm(); }
+    };
+    struct Size {
+      using result_type = size_t;
+      using argument_type = value_type;
+      result_type operator()() const { return 0lu; }
+      const result_type& operator()(const result_type& result) const { return result; }
+      void operator()(result_type& result, const result_type& arg) const { result += arg; }
+      void operator()(result_type& result, const argument_type& arg) const { result += arg.size(); }
+    };
+    DataType squared_norm() const {
+      get_world().gop.fence();
+      TiledArray::detail::ReduceTask<SquaredNorm> reduce_task(get_world());
+      for (auto it = begin(); it != end(); ++it)
+        if (it->probe())
+          reduce_task.add((*it).future());
+      return get_world().gop.all_reduce(id(), reduce_task.submit(), SquaredNorm()).get();
+    }
+
   public:
     TATensor(const std::vector<IndexRange>& r, const bool initialize = false, /*toggle for symmetry*/const bool dummy = false)
-      : TiledArray::Array<DataType,N>(madness::World::get_default(), *make_trange(r)), range_(r), initialized_(initialize) {
+      : BaseArray(madness::World::get_default(), *make_trange(r)), range_(r), initialized_(initialize) {
       static_assert(N != 0, "this should not happen");
       assert(r.size() == N);
       if (initialize)
         this->fill_local(0.0);
     }
 
-    TATensor(const TATensor<DataType,N>& o) : TiledArray::Array<DataType,N>(o.get_world(), *make_trange(o.range_)), range_(o.range_), initialized_(true) {
+    TATensor(const TATensor<DataType,N>& o) : BaseArray(TiledArray::clone_part(o)), range_(o.range_), initialized_(true) {
       static_assert(N != 0, "this should not happen");
-      // TODO This is not going to work in parallel
-      auto ot = o.begin();
-      for (auto it = begin(); it != end(); ++it, ++ot) {
-        if (ot->probe())
-          *it = ot->get().clone();
-      }
     }
 
-    TATensor(TATensor<DataType,N>&& o) : TiledArray::Array<DataType,N>(std::move(o)), range_(o.range_), initialized_(true) {
+    TATensor(TATensor<DataType,N>&& o) : BaseArray(std::move(o)), range_(o.range_), initialized_(true) {
       static_assert(N != 0, "this should not happen");
     }
 
     virtual void init() { assert(false); }
 
     void zero() {
-      madness::World::get_default().gop.fence();
+      get_world().gop.fence();
       for (auto it = begin(); it != end(); ++it)
         if (it->probe()) {
           auto i = it->get();
           std::fill_n(i.begin(), i.size(), 0.0);
         }
-      madness::World::get_default().gop.fence();
+      get_world().gop.fence();
     }
 
     void scale(const DataType& a) {
-      madness::World::get_default().gop.fence();
+      get_world().gop.fence();
       for (auto it = begin(); it != end(); ++it)
         if (it->probe()) {
           auto i = it->get();
           blas::scale_n(a, i.begin(), i.size());
         }
-      madness::World::get_default().gop.fence();
+      get_world().gop.fence();
     }
 
     void ax_plus_y(const DataType& a, std::shared_ptr<const TATensor<DataType,N>> o) { ax_plus_y(a, *o); }
     void ax_plus_y(const DataType& a, const TATensor<DataType,N>& o) {
-      madness::World::get_default().gop.fence();
+      get_world().gop.fence();
       assert(range_ == o.range_);
-      // TODO this code is assuming that this and o are distributed equally
-      auto ot = o.begin();
-      for (auto it = begin(); it != end(); ++it, ++ot) {
-        assert(!(it->probe() ^ ot->probe()));
-        if (it->probe() && ot->probe()) {
-          auto i = it->get();
-          auto j = ot->get();
-          assert(i.size() == j.size());
-          blas::ax_plus_y_n(a, j.begin(), j.size(), i.begin());
-        }
+
+      for (auto it = begin(); it != end(); ++it) {
+        if (it->probe())
+          get_world().taskq.add([=](value_type& y, const value_type& x) {
+                                  assert(!x.empty());
+                                  y.inplace_binary(x, [=](DataType& l, const DataType r) { l += r*a; });
+                                }, (*it).future(), o.find(it.ordinal()));
       }
-      madness::World::get_default().gop.fence();
+      get_world().gop.fence();
     }
 
     DataType dot_product(std::shared_ptr<const TATensor<DataType,N>> o) const { return dot_product(*o); }
     DataType dot_product(const TATensor<DataType,N>& o) const {
-      madness::World::get_default().gop.fence();
+      get_world().gop.fence();
+      assert(get_world() == o.get_world());
       assert(range_ == o.range_);
-      DataType out = 0.0;
-      auto ot = o.begin();
-      for (auto it = begin(); it != end(); ++it, ++ot) {
-        assert(!(it->probe() ^ ot->probe()));
-        if (it->probe() && ot->probe()) {
-          auto i = it->get();
-          auto j = ot->get();
-          assert(i.size() == j.size());
-          out += blas::dot_product(j.begin(), j.size(), i.begin());
-        }
+
+      TiledArray::detail::ReduceTask<DotProduct> reduce_task(get_world());
+      for (auto it = begin(); it != end(); ++it) {
+        if (it->probe())
+          reduce_task.add((*it).future(), o.find(it.ordinal()));
       }
-      mpi__->allreduce(&out, 1);
-      return out;
+      return get_world().gop.all_reduce(id(), reduce_task.submit(), DotProduct()).get();
     }
 
     size_t size_alloc() const {
-      madness::World::get_default().gop.fence();
-      size_t out = 0;
-      for (auto it = begin(); it != end(); ++it) {
+      get_world().gop.fence();
+      TiledArray::detail::ReduceTask<Size> reduce_task(get_world());
+      for (auto it = begin(); it != end(); ++it)
         if (it->probe())
-          out += it->get().size();
-      }
-      madness::World::get_default().gop.fence();
-      mpi__->allreduce(&out, 1);
-      return out;
+          reduce_task.add((*it).future());
+      return get_world().gop.all_reduce(id(), reduce_task.submit(), Size()).get();
     }
 
-    double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
-    double rms() const { return std::sqrt(detail::real(dot_product(*this))/size_alloc()); }
+    double norm() const { return std::sqrt(detail::real(squared_norm())); }
+    double rms() const { return std::sqrt(detail::real(squared_norm())/size_alloc()); }
 
     bool initialized() const { return initialized_; }
 
     void fill_local(const DataType& o) {
       initialized_ = true;
-      TiledArray::Array<DataType,N>::fill_local(o);
+      BaseArray::fill_local(o);
     }
 
     auto get_local(const std::vector<Index>& index) -> decltype(std::make_pair(true,begin())) {
@@ -241,27 +295,27 @@ class TATensor : public TiledArray::Array<DataType,N> {
 
     std::vector<IndexRange> indexrange() const { return range_; }
 
-    auto operator()(const std::string& vars) const -> decltype(TiledArray::Array<DataType,N>::operator()(vars).block(std::array<size_t,N>(), std::array<size_t, N>())) {
+    auto operator()(const std::string& vars) const -> decltype(BaseArray::operator()(vars).block(std::array<size_t,N>(), std::array<size_t, N>())) {
       auto m = index_mapping(vars);
-      return TiledArray::Array<DataType,N>::operator()(std::get<0>(m)).block(std::get<1>(m), std::get<2>(m));
+      return BaseArray::operator()(std::get<0>(m)).block(std::get<1>(m), std::get<2>(m));
     }
 
-    auto operator()(const std::string& vars) -> decltype(TiledArray::Array<DataType,N>::operator()(vars).block(std::array<size_t,N>(), std::array<size_t, N>())) {
+    auto operator()(const std::string& vars) -> decltype(BaseArray::operator()(vars).block(std::array<size_t,N>(), std::array<size_t, N>())) {
       auto m = index_mapping(vars);
-      return TiledArray::Array<DataType,N>::operator()(std::get<0>(m)).block(std::get<1>(m), std::get<2>(m));
+      return BaseArray::operator()(std::get<0>(m)).block(std::get<1>(m), std::get<2>(m));
     }
 
     TATensor<DataType,N>& operator=(TATensor<DataType,N>&& o) {
       range_ = o.range_;
       initialized_ = o.initialized_;
-      TiledArray::Array<DataType,N>::operator=(o);
+      BaseArray::operator=(o);
       return *this;
     }
 
     TATensor<DataType,N>& operator=(const TATensor<DataType,N>& o) {
       range_ = o.range_;
       initialized_ = o.initialized_;
-      TiledArray::Array<DataType,N>::operator=(o);
+      BaseArray::operator=(o);
       return *this;
     }
 
