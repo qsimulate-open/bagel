@@ -138,6 +138,11 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     }
   }
 
+#ifdef HAVE_MKL_H
+  num_threads_ = mkl_get_max_threads();
+  mkl_set_num_threads(1);
+#endif
+
   // set e0
   e0_ = compute_e0();
 }
@@ -146,6 +151,9 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 template<typename DataType>
 SpinFreeMethod<DataType>::~SpinFreeMethod() {
   madness::finalize();
+#ifdef HAVE_MKL_H
+  mkl_set_num_threads(num_threads_);
+#endif
 }
 
 

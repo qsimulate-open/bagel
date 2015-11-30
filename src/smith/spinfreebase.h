@@ -123,6 +123,9 @@ class SpinFreeMethod {
     // diagonal part of CASPT2 (for efficiency)
     std::shared_ptr<TATensor<DataType,4>> diagonal(std::shared_ptr<TATensor<DataType,4>> r, std::shared_ptr<const TATensor<DataType,4>> t) const;
 
+  private:
+    int num_threads_;
+
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info<DataType>> r);
     ~SpinFreeMethod();
