@@ -295,12 +295,12 @@ class TATensor : public TiledArray::Array<DataType,N> {
 
     std::vector<IndexRange> indexrange() const { return range_; }
 
-    auto operator()(const std::string& vars) const -> decltype(BaseArray::operator()(vars).block(std::array<size_t,N>(), std::array<size_t, N>())) {
+    auto operator()(const std::string& vars) const -> decltype(BaseArray::operator()("").block({0},{0})) {
       auto m = index_mapping(vars);
       return BaseArray::operator()(std::get<0>(m)).block(std::get<1>(m), std::get<2>(m));
     }
 
-    auto operator()(const std::string& vars) -> decltype(BaseArray::operator()(vars).block(std::array<size_t,N>(), std::array<size_t, N>())) {
+    auto operator()(const std::string& vars) -> decltype(BaseArray::operator()("").block({0},{0})) {
       auto m = index_mapping(vars);
       return BaseArray::operator()(std::get<0>(m)).block(std::get<1>(m), std::get<2>(m));
     }
