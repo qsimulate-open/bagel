@@ -217,10 +217,8 @@ class TATensor : public TiledArray::Array<DataType,N> {
     void scale(const DataType& a) {
       get_world().gop.fence();
       for (auto it = begin(); it != end(); ++it)
-        if (it->probe()) {
-          auto i = it->get();
-          blas::scale_n(a, i.begin(), i.size());
-        }
+        if (it->probe())
+          get_world().taskq.add([=](value_type& x) { x.scale_to(a); }, (*it).future());
       get_world().gop.fence();
     }
 
@@ -229,13 +227,12 @@ class TATensor : public TiledArray::Array<DataType,N> {
       get_world().gop.fence();
       assert(range_ == o.range_);
 
-      for (auto it = begin(); it != end(); ++it) {
+      for (auto it = begin(); it != end(); ++it)
         if (it->probe())
           get_world().taskq.add([=](value_type& y, const value_type& x) {
                                   assert(!x.empty());
                                   y.inplace_binary(x, [=](DataType& l, const DataType r) { l += r*a; });
                                 }, (*it).future(), o.find(it.ordinal()));
-      }
       get_world().gop.fence();
     }
 
@@ -315,7 +312,7 @@ class TATensor : public TiledArray::Array<DataType,N> {
     TATensor<DataType,N>& operator=(const TATensor<DataType,N>& o) {
       range_ = o.range_;
       initialized_ = o.initialized_;
-      BaseArray::operator=(o);
+      BaseArray::operator=(TiledArray::clone_part(o));
       return *this;
     }
 
