@@ -157,7 +157,9 @@ class TATensor : public TiledArray::Array<DataType,N> {
       const result_type& operator()(const result_type& result) const { return result; }
       void operator()(result_type& result, const result_type& arg) const { result += arg; }
       void operator()(result_type& result, const first_argument_type& first, const second_argument_type& second) const {
-        if (!second.empty()) result += first.dot(second);
+        assert(!second.empty());
+        // TODO not the best code at the moment
+        result += first.conj().dot(second);
       }
     };
     struct SquaredNorm {
@@ -177,12 +179,17 @@ class TATensor : public TiledArray::Array<DataType,N> {
       void operator()(result_type& result, const argument_type& arg) const { result += arg.size(); }
     };
     DataType squared_norm() const {
+#if 0
       get_world().gop.fence();
       TiledArray::detail::ReduceTask<SquaredNorm> reduce_task(get_world());
       for (auto it = begin(); it != end(); ++it)
         if (it->probe())
           reduce_task.add((*it).future());
       return get_world().gop.all_reduce(id(), reduce_task.submit(), SquaredNorm()).get();
+#else
+      // TODO until Tensor::squared_norm() is fixed
+      return dot_product(*this);
+#endif
     }
 
   public:
@@ -206,11 +213,10 @@ class TATensor : public TiledArray::Array<DataType,N> {
 
     void zero() {
       get_world().gop.fence();
+      const DataType zero = static_cast<DataType>(0.0);
       for (auto it = begin(); it != end(); ++it)
-        if (it->probe()) {
-          auto i = it->get();
-          std::fill_n(i.begin(), i.size(), 0.0);
-        }
+        if (it->probe())
+          get_world().taskq.add([=](value_type& x) { x.inplace_unary([=](DataType& l) { l = zero; }); }, (*it).future());
       get_world().gop.fence();
     }
 
@@ -239,10 +245,9 @@ class TATensor : public TiledArray::Array<DataType,N> {
     DataType dot_product(std::shared_ptr<const TATensor<DataType,N>> o) const { return dot_product(*o); }
     DataType dot_product(const TATensor<DataType,N>& o) const {
       get_world().gop.fence();
-      assert(get_world() == o.get_world());
       assert(range_ == o.range_);
 
-      TiledArray::detail::ReduceTask<DotProduct> reduce_task(get_world());
+      TiledArray::detail::ReducePairTask<DotProduct> reduce_task(get_world());
       for (auto it = begin(); it != end(); ++it) {
         if (it->probe())
           reduce_task.add((*it).future(), o.find(it.ordinal()));
@@ -318,6 +323,15 @@ class TATensor : public TiledArray::Array<DataType,N> {
 
     std::shared_ptr<TATensor<DataType,N>> clone() const { return std::make_shared<TATensor<DataType,N>>(range_); }
     std::shared_ptr<TATensor<DataType,N>> copy() const { return std::make_shared<TATensor<DataType,N>>(*this); }
+
+    // TODO temp solution to complex conjugate
+    std::shared_ptr<TATensor<DataType,N>> conjg() const {
+      std::shared_ptr<TATensor<DataType,N>> out = copy();
+      for (auto it = out->begin(); it != out->end(); ++it)
+        if (it->probe())
+          get_world().taskq.add([=](value_type& x) { x.inplace_unary([](DataType& ele) { ele = detail::conj(ele); }); }, (*it).future());
+      return out;
+    }
 
     // Dummy function...
     DataType get_scalar() const { assert(false); return 0.0; }
