@@ -146,9 +146,7 @@ class SpinFreeMethod {
     DataType dot_product_transpose(std::shared_ptr<const MultiTATensor<DataType,4>> r, std::shared_ptr<const MultiTATensor<DataType,4>> t2) const;
 };
 
-template<> void SpinFreeMethod<double>::feed_rdm_denom(std::shared_ptr<const Matrix>);
 template<> void SpinFreeMethod<double>::feed_rdm_deriv(std::shared_ptr<const Matrix>);
-template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_denom(std::shared_ptr<const ZMatrix>);
 template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(std::shared_ptr<const ZMatrix>);
 extern template class SpinFreeMethod<double>;
 extern template class SpinFreeMethod<std::complex<double>>;

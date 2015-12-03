@@ -51,32 +51,42 @@ tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<3>>> SMITH_Info<double>::rd
 
 
 template<>
-tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>>
+tuple<shared_ptr<const ZRDM<1>>, shared_ptr<const ZRDM<2>>>
   SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
 
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
   auto rdm1 = ref->rdm1(ist, jst);
   auto rdm2 = ref->rdm2(ist, jst);
-  return make_tuple(rdm1, rdm2);
+  return make_tuple(expand_kramers(rdm1,nact()), expand_kramers(rdm2,nact()));
 }
 
 
 template<>
-tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>>
+tuple<shared_ptr<const ZRDM<3>>, shared_ptr<const ZRDM<4>>>
   SMITH_Info<complex<double>>::rdm34(const int ist, const int jst) const {
 
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
   auto rdm3 = ref->rdm3(ist, jst);
   auto rdm4 = ref->rdm4(ist, jst);
-  return make_tuple(rdm3, rdm4);
+  return make_tuple(expand_kramers(rdm3,nact()), expand_kramers(rdm4,nact()));
 }
 
 
 template<>
-tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<6,ZRDM<3>>>>
+tuple<shared_ptr<const ZRDM<3>>, shared_ptr<const ZRDM<3>>>
   SMITH_Info<complex<double>>::rdm34f(const int ist, const int jst, shared_ptr<const ZMatrix> fock) const {
-  assert(false); // TODO not implemented yet
-  return tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<6,ZRDM<3>>>>();
+
+  // TODO not the best code
+  shared_ptr<const ZRDM<3>> rdm3;
+  shared_ptr<const ZRDM<4>> rdm4;
+  tie(rdm3, rdm4) = rdm34(ist, jst);
+
+  shared_ptr<ZRDM<3>> rdm4f = rdm3->clone();;
+  auto rdm4v = group(group(*rdm4, 6,8), 0,6);
+  auto rdm4vf = group(*rdm4f, 0, 6);
+  contract(1.0, rdm4v, {0,1}, group(*fock,0,2), {1}, 0.0, rdm4vf, {0});
+
+  return make_tuple(rdm3, rdm4f);
 }
 
 

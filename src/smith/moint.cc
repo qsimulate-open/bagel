@@ -54,13 +54,16 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
 template<>
 void K2ext<complex<double>>::init() {
 
-// broken ... waiting to hear symmetry support in TiledArray
-#if 0
   // bits to store
   const bool braket = blocks_[0] == blocks_[1] && blocks_[2] == blocks_[3];
+#if 0
   const vector<vector<int>> cblocks = braket ?
     vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,1,1,1}} :
     vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,1,1}, {1,0,1,0}, {1,1,1,1}};
+#else
+  const vector<vector<int>> cblocks {{0,0,0,0},{0,0,0,1},{0,0,1,0},{0,1,0,0},{1,0,0,0},{0,0,1,1},{0,1,0,1},{1,0,0,1},
+                                     {0,1,1,0},{1,0,1,0},{1,1,0,0},{0,1,1,1},{1,0,1,1},{1,1,0,1},{1,1,1,0},{1,1,1,1}};
+#endif
 
   auto compute = [this, &cblocks](const bool gaunt, const bool breit) {
 
@@ -110,16 +113,24 @@ void K2ext<complex<double>>::init() {
             // contract
             // TODO form_4index function now generates global 4 index tensor. This should be localized.
             // conjugating because (ai|ai) is associated with an excitation operator
-            unique_ptr<complex<double>[]> target = data_->move_block(i0, i1, i2, i3);
-            {
-              shared_ptr<ZMatrix> tmp = df01->form_4index(df23_2, 1.0)->get_conjg();
-              blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
+
+            shared_ptr<ZMatrix> tmp = df01->form_4index(df23_2, 1.0)->get_conjg();
+            if (breit)
+              *tmp += *df01->form_4index(df23_2, 1.0)->get_conjg();
+
+            const std::vector<Index> index = {i0, i1, i2, i3};
+            auto tileit = data_->get_local(index);
+            if (tileit.first) {
+              const TiledArray::Range range = data_->trange().make_tile_range(tileit.second.ordinal());
+              typename TiledArray::Array<complex<double>,4>::value_type tile(range);
+              copy_n(tmp->data(), tmp->size(), &(tile[0]));
+              if (!tileit.second->probe()) {
+                *tileit.second = tile;
+              } else {
+                tileit.second->get().add(tile);
+              }
             }
-            if (breit) {
-              shared_ptr<ZMatrix> tmp = df01_2->form_4index(df23, 1.0)->get_conjg();
-              blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
-            }
-            data_->put_block(target, i0, i1, i2, i3);
+
           }
         }
       }
@@ -131,6 +142,7 @@ void K2ext<complex<double>>::init() {
   if (info_->gaunt())
     compute(true, info_->breit());
 
+#if 0
   map<vector<int>, pair<double,bool>> perm{{{0,1,2,3}, {1.0, false}}, {{2,3,0,1}, {1.0, false}}};
   if (braket) {
     perm.emplace(vector<int>{1,0,3,2}, make_pair(1.0, true));
@@ -197,12 +209,12 @@ void K2ext<double>::init() {
 
           if (hashkey23 != hashkey01) {
             const std::vector<Index> index = {i2, i3, i0, i1};
-            auto tileiter = data_->get_local(index);
-            if (tileiter.first) {
-              const TiledArray::Range range = data_->trange().make_tile_range(tileiter.second.ordinal());
+            auto tileit = data_->get_local(index);
+            if (tileit.first) {
+              const TiledArray::Range range = data_->trange().make_tile_range(tileit.second.ordinal());
               typename TiledArray::Array<double,4>::value_type tile(range);
               blas::transpose(tmp->data(), i0.size()*i1.size(), i2.size()*i3.size(), &(tile[0]));
-              *tileiter.second = tile;
+              *tileit.second = tile;
             }
           }
         }

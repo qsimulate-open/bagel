@@ -85,9 +85,12 @@ class TATensor : public TiledArray::Array<DataType,N> {
       std::vector<TiledArray::TiledRange1> ranges;
       for (auto it = r.rbegin(); it != r.rend(); ++it) {
         std::vector<size_t> tile_boundaries;
-        for (auto& j : *it)
-          tile_boundaries.push_back(j.offset()-it->front().offset());
-        tile_boundaries.push_back(it->back().offset()+it->back().size()-it->front().offset());
+        size_t off = 0;
+        for (auto& j : *it) {
+          tile_boundaries.push_back(off);
+          off += j.size();
+        }
+        tile_boundaries.push_back(off);
         ranges.emplace_back(tile_boundaries.begin(), tile_boundaries.end());
       }
       return std::make_shared<TiledArray::TiledRange>(ranges.begin(), ranges.end());
@@ -276,23 +279,22 @@ class TATensor : public TiledArray::Array<DataType,N> {
 
     auto get_local(const std::vector<Index>& index) -> decltype(std::make_pair(true,begin())) {
       assert(index.size() == N);
-      bool out = false;
+      // find index and set lo
+      std::array<size_t,N> lo_in;
+      for (int n = 0; n != N; ++n)
+        lo_in[n] = std::accumulate(range_[n].begin(),
+                     std::find_if(range_[n].begin(), range_[n].end(), [&](const Index& i) { return i.offset() == index[n].offset(); }),
+                     0lu, [](size_t n, const Index& i){ return n + i.size(); });
+
       auto it = begin();
       for ( ; it != end(); ++it) {
         const TiledArray::Range range = trange().make_tile_range(it.ordinal());
         auto lo = range.lobound();
         assert(lo.size() == N);
-        bool found = true;
-        auto j = index.rbegin();
-        auto jj = range_.rbegin();
-        for (auto& i : lo) {
-          found &= i == (j->offset() - jj->front().offset());
-          ++j; ++jj;
-        }
-        out = found;
-        if (found) break;
+        if (std::equal(lo_in.rbegin(), lo_in.rend(), lo.begin()))
+          break;
       }
-      return std::make_pair(out, it);
+      return std::make_pair(it != end(), it);
     }
 
     std::vector<IndexRange> indexrange() const { return range_; }
@@ -405,6 +407,8 @@ class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
     DataType get_scalar() const { return data_; }
 };
 
+template<typename DataType>
+std::ostream& operator<<(std::ostream& os, const TATensor<DataType,0>& o) { os << o(""); return os; }
 
 }}
 

@@ -100,8 +100,11 @@ static void fill_block(std::shared_ptr<TATensor<DataType,N>> target, std::shared
   std::vector<std::map<size_t,Index>> keymap;
   for (auto it = ranges.begin(); it != ranges.end(); ++it) {
     std::map<size_t,Index> key;
-    for (auto& j : *it)
-      key.emplace(j.offset()-it->front().offset(), j);
+    size_t off = 0lu;
+    for (auto& j : *it) {
+      key.emplace(off, j);
+      off += j.size();
+    }
     keymap.push_back(key);
   }
 

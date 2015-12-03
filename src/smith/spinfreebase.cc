@@ -157,43 +157,44 @@ SpinFreeMethod<DataType>::~SpinFreeMethod() {
 }
 
 
-template<>
-void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
+template<typename DataType>
+void SpinFreeMethod<DataType>::feed_rdm_denom(shared_ptr<const MatType> fockact) {
   const int nclo = info_->nclosed();
   const int nstates = info_->ciwfn()->nstates();
-  rdm0all_ = make_shared<Vec<TATensor<double,0>>>();
-  rdm1all_ = make_shared<Vec<TATensor<double,2>>>();
-  rdm2all_ = make_shared<Vec<TATensor<double,4>>>();
-  rdm3all_ = make_shared<Vec<TATensor<double,6>>>();
-  rdm4all_ = make_shared<Vec<TATensor<double,8>>>();
+  rdm0all_ = make_shared<Vec<TATensor<DataType,0>>>();
+  rdm1all_ = make_shared<Vec<TATensor<DataType,2>>>();
+  rdm2all_ = make_shared<Vec<TATensor<DataType,4>>>();
+  rdm3all_ = make_shared<Vec<TATensor<DataType,6>>>();
+  rdm4all_ = make_shared<Vec<TATensor<DataType,8>>>();
 
   const array<IndexRange,5> range{{active_, ortho1_, ortho2_, ortho3_, ortho2t_}};
-  auto denom = make_shared<Denom<double>>(fockact, nstates, range, /*thresh*/1.0e-9);
+  auto denom = make_shared<Denom<DataType>>(fockact, nstates, range, /*thresh*/1.0e-9);
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
     for (int jst = 0; jst != nstates; ++jst) {
 
-      auto rdm0t = make_shared<TATensor<double,0>>(vector<IndexRange>());
-      auto rdm1t = make_shared<TATensor<double,2>>(vector<IndexRange>(2,active_));
-      auto rdm2t = make_shared<TATensor<double,4>>(vector<IndexRange>(4,active_));
-      auto rdm3t = make_shared<TATensor<double,6>>(vector<IndexRange>(6,active_));
-      auto rdm4t = make_shared<TATensor<double,8>>(vector<IndexRange>(8,active_));
+      auto rdm0t = make_shared<TATensor<DataType,0>>(vector<IndexRange>());
+      auto rdm1t = make_shared<TATensor<DataType,2>>(vector<IndexRange>(2,active_));
+      auto rdm2t = make_shared<TATensor<DataType,4>>(vector<IndexRange>(4,active_));
+      auto rdm3t = make_shared<TATensor<DataType,6>>(vector<IndexRange>(6,active_));
+      auto rdm4t = make_shared<TATensor<DataType,8>>(vector<IndexRange>(8,active_));
 
-      shared_ptr<const RDM<1>> rdm1;
-      shared_ptr<const RDM<2>> rdm2;
-      shared_ptr<const RDM<3>> rdm3;
-      shared_ptr<const RDM<4>> rdm4; // TODO to be removed
-      shared_ptr<const RDM<3>> frdm4;
+      shared_ptr<const RDM<1,DataType>> rdm1;
+      shared_ptr<const RDM<2,DataType>> rdm2;
+      shared_ptr<const RDM<3,DataType>> rdm3;
+      shared_ptr<const RDM<4,DataType>> rdm4; // TODO to be removed from here
+      shared_ptr<const RDM<3,DataType>> frdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
       tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
       tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact);
 
       (*rdm0t)("") = jst == ist ? 1.0 : 0.0;
-      fill_block<2,double>(rdm1t, rdm1, vector<int>(2,nclo));
-      fill_block<4,double>(rdm2t, rdm2, vector<int>(4,nclo));
-      fill_block<6,double>(rdm3t, rdm3, vector<int>(6,nclo));
-      fill_block<8,double>(rdm4t, rdm4, vector<int>(8,nclo));
+      const int fac = is_same<DataType,double>::value ? 1.0 : 2.0;
+      fill_block<2,DataType>(rdm1t, rdm1, vector<int>(2,nclo*fac));
+      fill_block<4,DataType>(rdm2t, rdm2, vector<int>(4,nclo*fac));
+      fill_block<6,DataType>(rdm3t, rdm3, vector<int>(6,nclo*fac));
+      fill_block<8,DataType>(rdm4t, rdm4, vector<int>(8,nclo*fac));
 
       rdm0all_->emplace(jst, ist, rdm0t);
       rdm1all_->emplace(jst, ist, rdm1t);
@@ -209,6 +210,7 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
 }
 
 
+#if 0
 template<>
 void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> fockact) {
   const int nclo = info_->nclosed();
@@ -223,7 +225,6 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
   auto denom = make_shared<Denom<complex<double>>>(fockact, nstates, range, /*thresh*/1.0e-9);
 
   // TODO TODO not implemented proplerly yet
-#if 0
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
     for (int jst = 0; jst != nstates; ++jst) {
@@ -305,8 +306,8 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
   }
   denom->compute();
   denom_ = denom;
-#endif
 }
+#endif
 
 
 template<>
@@ -512,15 +513,17 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const MultiT
 template<typename DataType>
 DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const TATensor<DataType,4>> r, shared_ptr<const TATensor<DataType,4>> t2) const {
   DataType out = 0.0;
-  out += (*r)("c2,a3,c0,a1").dot((*t2)("c0,a1,c2,a3")).get();
-  out += (*r)("x2,a3,x0,a1").dot((*t2)("x0,a1,x2,a3")).get();
-  out += (*r)("c2,a3,x0,a1").dot((*t2)("x0,a1,c2,a3")).get();
-  out += (*r)("c2,x3,c0,a1").dot((*t2)("c0,a1,c2,x3")).get();
-  out += (*r)("c2,x3,c0,x1").dot((*t2)("c0,x1,c2,x3")).get();
-  out += (*r)("x2,x3,c0,a1").dot((*t2)("c0,a1,x2,x3")).get();
-  out += (*r)("c0,x3,x2,a1").dot((*t2)("x2,a1,c0,x3")).get();
-  out += (*r)("x2,x3,x0,a1").dot((*t2)("x0,a1,x2,x3")).get();
-  out += (*r)("c2,x3,x0,x1").dot((*t2)("x0,x1,c2,x3")).get();
+  // TODO this should not be replicated here!
+  auto rconj = r->conjg();
+  out += (*rconj)("c2,a3,c0,a1").dot((*t2)("c0,a1,c2,a3")).get();
+  out += (*rconj)("x2,a3,x0,a1").dot((*t2)("x0,a1,x2,a3")).get();
+  out += (*rconj)("c2,a3,x0,a1").dot((*t2)("x0,a1,c2,a3")).get();
+  out += (*rconj)("c2,x3,c0,a1").dot((*t2)("c0,a1,c2,x3")).get();
+  out += (*rconj)("c2,x3,c0,x1").dot((*t2)("c0,x1,c2,x3")).get();
+  out += (*rconj)("x2,x3,c0,a1").dot((*t2)("c0,a1,x2,x3")).get();
+  out += (*rconj)("c0,x3,x2,a1").dot((*t2)("x2,a1,c0,x3")).get();
+  out += (*rconj)("x2,x3,x0,a1").dot((*t2)("x0,a1,x2,x3")).get();
+  out += (*rconj)("c2,x3,x0,x1").dot((*t2)("x0,x1,c2,x3")).get();
   return out;
 }
 

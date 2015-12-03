@@ -66,6 +66,14 @@ class Tensor_ {
     template<typename D, int N>
     Tensor_(const TATensor<D,N>& o) : Tensor_(o.indexrange()) { // delegate constuctor
       madness::World::get_default().gop.fence();
+      std::vector<std::map<size_t, Index>> imap(N);
+      for (int n = 0; n != N; ++n) {
+        size_t off = 0lu;
+        for (auto& j : range_[n]) {
+          imap[n].emplace(off, j);
+          off += j.size();
+        }
+      }
       // loop over tiles
       for (auto it = o.begin(); it != o.end(); ++it) {
         // first get range
@@ -73,16 +81,8 @@ class Tensor_ {
         auto lo = range.lobound();
         size_t cnt = 0;
         std::vector<Index> indices;
-        for (auto i = lo.rbegin(); i != lo.rend(); ++i, ++cnt) {
-          Index ind;
-          for (auto& index : range_[cnt])
-            if (index.offset()-range_[cnt].front().offset() == *i) {
-              ind = index;
-              break;
-            }
-          assert(ind.size());
-          indices.push_back(ind);
-        }
+        for (auto i = lo.rbegin(); i != lo.rend(); ++i)
+          indices.push_back(imap[cnt++].at(*i));
         if (it->probe()) {
           auto tile = it->get();
           std::unique_ptr<DataType[]> data(new DataType[tile.size()]);
@@ -113,8 +113,11 @@ class Tensor_ {
       std::vector<std::map<size_t,size_t>> keymap;
       for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
         std::map<size_t,size_t> key;
-        for (auto& j : *it)
-          key.emplace(j.offset()-it->front().offset(), j.key());
+        size_t off = 0lu;
+        for (auto& j : *it) {
+          key.emplace(off, j.key());
+          off += j.size();
+        }
         keymap.push_back(key);
       }
       auto out = std::make_shared<TATensor<DataType,N>>(range_);
