@@ -27,7 +27,7 @@
 #include <bagel_config.h>
 #include <src/smith/smith.h>
 #include <src/smith/MRCI.h>
-//#include <src/smith/RelMRCI.h>
+#include <src/smith/RelMRCI.h>
 #include <src/smith/CASPT2.h>
 #include <src/smith/RelCASPT2.h>
 
@@ -92,10 +92,8 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
 
   if (method == "caspt2") {
     algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
-#ifndef LOCAL_DEBUG
   } else if (method == "mrci") {
     algo_ = make_shared<RelMRCI::RelMRCI>(info);
-#endif
   } else {
 #else
   {
