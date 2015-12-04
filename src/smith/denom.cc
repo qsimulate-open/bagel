@@ -38,6 +38,8 @@ template<typename DataType>
 Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const array<IndexRange,5>& r, const double th)
  : fock_(fock), active_(r[0]), ortho1_(r[1]), ortho2_(r[2]), ortho3_(r[3]), ortho2t_(r[4]), thresh_(th) {
 
+  // TODO compute() function still assumes nstates = 1
+  assert(nstates == 1);
   const size_t ndim = fock->mdim() * nstates;
   const size_t ndim2 = fock->mdim() * ndim;
   const size_t ndim3 = fock->mdim() * ndim2;

@@ -71,11 +71,12 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   all_    = closed_; all_.merge(active_); all_.merge(virt_);
 
   // IndexRange for orbital update
+  const int nstates = info_->ciwfn()->nstates();
   const int nact2 = info_->nact()*(is_same<DataType,double>::value ? 1 : 2);
-  ortho1_ = IndexRange("o", nact2, max);
-  ortho2_ = IndexRange("o", nact2*nact2, max);
-  ortho3_ = IndexRange("o", nact2*nact2*nact2, max);
-  ortho2t_ = IndexRange("o", nact2*nact2*(is_same<DataType,double>::value ? 2 : 1), max); // for XXCA
+  ortho1_  = IndexRange("o", nstates*nact2, max);
+  ortho2_  = IndexRange("o", nstates*nact2*nact2, max);
+  ortho3_  = IndexRange("o", nstates*nact2*nact2*nact2, max);
+  ortho2t_ = IndexRange("o", nstates*nact2*nact2*(is_same<DataType,double>::value ? 2 : 1), max); // for XXCA
 
   rclosed_ = make_shared<const IndexRange>(closed_);
   ractive_ = make_shared<const IndexRange>(active_);
@@ -189,6 +190,25 @@ void SpinFreeMethod<DataType>::feed_rdm_denom(shared_ptr<const MatType> fockact)
       tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
       tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact);
 
+      denom->append(jst, ist, rdm1, rdm2, rdm3, frdm4);
+
+      // in complex cases we reorder indices
+      if (is_same<DataType,complex<double>>::value) {
+        const int n = info_->nact()*2;
+        auto rdm1x = rdm1->clone();
+        auto rdm2x = rdm2->clone();
+        auto rdm3x = rdm3->clone();
+        auto rdm4x = rdm4->clone();
+        sort_indices<1,0,0,1,1,1>            (rdm1->data(), rdm1x->data(), n, n);
+        sort_indices<1,0,3,2,0,1,1,1>        (rdm2->data(), rdm2x->data(), n, n, n, n);
+        sort_indices<1,0,3,2,5,4,0,1,1,1>    (rdm3->data(), rdm3x->data(), n, n, n, n, n, n);
+        sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(rdm4->data(), rdm4x->data(), n, n, n, n, n, n, n, n);
+        rdm1 = rdm1x;
+        rdm2 = rdm2x;
+        rdm3 = rdm3x;
+        rdm4 = rdm4x;
+      }
+
       (*rdm0t)("") = jst == ist ? 1.0 : 0.0;
       const int fac = is_same<DataType,double>::value ? 1.0 : 2.0;
       fill_block<2,DataType>(rdm1t, rdm1, vector<int>(2,nclo*fac));
@@ -201,8 +221,6 @@ void SpinFreeMethod<DataType>::feed_rdm_denom(shared_ptr<const MatType> fockact)
       rdm2all_->emplace(jst, ist, rdm2t);
       rdm3all_->emplace(jst, ist, rdm3t);
       rdm4all_->emplace(jst, ist, rdm4t);
-
-      denom->append(jst, ist, rdm1, rdm2, rdm3, frdm4);
     }
   }
   denom->compute();

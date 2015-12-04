@@ -318,6 +318,16 @@ void MOFock<complex<double>>::init() {
       assert(fabs(imag(eig[i])) < 1.0e-10);
       eig_(i) = real(eig[i]);
     }
+    // move ncore to first
+    if (ncore) {
+      VectorB tmp(n);
+      copy_n(eig_.data(), ncore, tmp.data());
+      copy_n(eig_.data()+ncore+nclosed, ncore, tmp.data()+ncore);
+      copy_n(eig_.data()+ncore, nclosed, tmp.data()+ncore*2);
+      copy_n(eig_.data()+ncore*2+nclosed, nclosed, tmp.data()+ncore*2+nclosed);
+      copy_n(eig_.data()+ncore*2+nclosed*2, nact*2+nvirt*2, tmp.data()+ncore*2+nclosed*2);
+      eig_ = tmp;
+    }
   }
 
   fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0});

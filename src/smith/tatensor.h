@@ -328,10 +328,13 @@ class TATensor : public TiledArray::Array<DataType,N> {
 
     // TODO temp solution to complex conjugate
     std::shared_ptr<TATensor<DataType,N>> conjg() const {
+      get_world().gop.fence();
       std::shared_ptr<TATensor<DataType,N>> out = copy();
+      get_world().gop.fence();
       for (auto it = out->begin(); it != out->end(); ++it)
         if (it->probe())
-          get_world().taskq.add([=](value_type& x) { x.inplace_unary([](DataType& ele) { ele = detail::conj(ele); }); }, (*it).future());
+          get_world().taskq.add([=](value_type& x) { blas::conj_n(x.begin(), x.size()); }, (*it).future());
+      get_world().gop.fence();
       return out;
     }
 

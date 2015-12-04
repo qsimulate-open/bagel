@@ -63,7 +63,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
           i0("c0,a1,c2,a3") = (*rist)("c0,a1,c2,a3") * (1.0/6.0) + (*rist)("c0,a3,c2,a1") * (1.0/12.0);
         else
           i0("c0,a1,c2,a3") = (*rist)("c0,a1,c2,a3") * 0.25;
-        foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
+        foreach_inplace(i0, [=](typename TATensor<DataType,4>::value_type& tile) {
           auto range = tile.range();
           auto lo = range.lobound();
           auto up = range.upbound();
@@ -81,7 +81,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         TATensor<DataType,3> i0(vector<IndexRange>{ortho2_, virt_, virt_}, true);
         i0("o4,a1,a3") = (*rist)("x0,a1,x2,a3") * (*s)("o4,x0,x2");
         const VecView denom = denom_->denom_xx();
-        foreach_inplace(i0, [&](typename TATensor<DataType,3>::value_type& tile) {
+        foreach_inplace(i0, [=](typename TATensor<DataType,3>::value_type& tile) {
           auto range = tile.range();
           auto lo = range.lobound();
           auto up = range.upbound();
@@ -101,7 +101,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         else
           i0("o4,a1,a3,c2") = (*rist)("c2,a3,x0,a1") * 0.5 * (*s)("o4,x0");
         const VecView denom = denom_->denom_x();
-        foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
+        foreach_inplace(i0, [=](typename TATensor<DataType,4>::value_type& tile) {
           auto range = tile.range();
           auto lo = range.lobound();
           auto up = range.upbound();
@@ -122,7 +122,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         else
           i0("o4,a1,c0,c2") = (*rist)("c2,x3,c0,a1") * 0.5 * (*s)("o4,x3");
         const VecView denom = denom_->denom_h();
-        foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
+        foreach_inplace(i0, [=](typename TATensor<DataType,4>::value_type& tile) {
           auto range = tile.range();
           auto lo = range.lobound();
           auto up = range.upbound();
@@ -140,7 +140,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         TATensor<DataType,3> i0(vector<IndexRange>{ortho2_, closed_, closed_}, true);
         i0("o4,c0,c2") = (*rist)("c0,x1,c2,x3") * (*s)("o4,x1,x3") * 0.5;
         const VecView denom = denom_->denom_hh();
-        foreach_inplace(i0, [&](typename TATensor<DataType,3>::value_type& tile) {
+        foreach_inplace(i0, [=](typename TATensor<DataType,3>::value_type& tile) {
           auto range = tile.range();
           auto lo = range.lobound();
           auto up = range.upbound();
@@ -157,7 +157,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         TATensor<DataType,2> i0(vector<IndexRange>{ortho3_, closed_}, true);
         i0("o4,c2") = (*rist)("c2,x3,x0,x1") * (*s)("o4,x0,x1,x3");
         const VecView denom = denom_->denom_xxh();
-        foreach_inplace(i0, [&](typename TATensor<DataType,2>::value_type& tile) {
+        foreach_inplace(i0, [=](typename TATensor<DataType,2>::value_type& tile) {
           auto range = tile.range();
           auto lo = range.lobound();
           auto up = range.upbound();
@@ -173,7 +173,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         TATensor<DataType,2> i0(vector<IndexRange>{ortho3_, virt_}, true);
         i0("o4,a1") = (*rist)("x2,x3,x0,a1") * (*s)("o4,x0,x2,x3");
         const VecView denom = denom_->denom_xhh();
-        foreach_inplace(i0, [&](typename TATensor<DataType,2>::value_type& tile) {
+        foreach_inplace(i0, [=](typename TATensor<DataType,2>::value_type& tile) {
           auto range = tile.range();
           auto lo = range.lobound();
           auto up = range.upbound();
@@ -187,7 +187,7 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
       { // XXCA
         const VecView denom = denom_->denom_xh();
         TATensor<DataType,3> i0(vector<IndexRange>{ortho2t_, virt_, closed_}, true);
-        auto lambda = [&](typename TATensor<DataType,3>::value_type& tile) {
+        auto lambda = [=](typename TATensor<DataType,3>::value_type& tile) {
           auto range = tile.range();
           auto lo = range.lobound();
           auto up = range.upbound();
