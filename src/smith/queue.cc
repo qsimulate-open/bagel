@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: queue.h
+// Filename: queue.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,42 +24,25 @@
 //
 
 
-// Impliments a Task queue; in the future this should be replaced by
-// some standard interface (boost::graph?)
+#include <src/smith/queue.h>
 
-#ifndef __SRC_SMITH_QUEUE_H
-#define __SRC_SMITH_QUEUE_H
+using namespace std;
+using namespace bagel::SMITH;
 
-#include <src/smith/task.h>
+shared_ptr<Task> Queue::next_compute() {
+  auto i = tasklist_.begin();
+  for ( ; i != tasklist_.end(); ++i)
+    if ((*i)->ready()) break;
 
-namespace bagel {
-namespace SMITH {
-
-class Queue {
-  protected:
-    std::list<std::shared_ptr<Task>> tasklist_;
-
-  public:
-    Queue() {}
-    Queue(const std::list<std::shared_ptr<Task>>& d) : tasklist_(d) { }
-
-    std::shared_ptr<Task> next_compute();
-
-    void add_task(std::shared_ptr<Task> a) { tasklist_.push_back(a); }
-
-    void insert(std::shared_ptr<Queue> b) {
-      for (auto& i : b->tasklist_)
-        tasklist_.push_back(i);
-    }
-
-    bool done() const { return tasklist_.empty(); }
-
-    void initialize() {
-      for (auto& i : tasklist_) i->initialize();
-    }
-};
-
+  assert(i != tasklist_.end());
+  shared_ptr<Task> out = *i;
+  // execute
+  out->compute();
+  // TODO for the time being fencing here
+  madness::World::get_default().gop.fence();
+  // delete dependency (to remove intermediate storages)
+  for (auto& j : tasklist_) j->delete_dep(out);
+  // delete this task from the queue
+  tasklist_.erase(i);
+  return out;
 }
-}
-
-#endif

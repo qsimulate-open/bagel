@@ -36,60 +36,40 @@ using namespace bagel::SMITH::CASPT2;
 void Task800::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x0, x3") += (*ta1_)("x3, a1, c2, a3") * (*ta1_)("x0, a1, c2, a3") * 4;
-  madness::World::get_default().gop.fence();
+  ta1_->init();
+  (*ta0_)("ci0") += (*ta1_)("ci0, x5, x0, x4, x1") * (*ta2_)("x1, x0, x5, x4");
 }
 
 void Task801::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("ci0") += (*ta1_)("ci0, x5, x0, x4, x1") * (*ta2_)("x1, x0, x5, x4");
-  madness::World::get_default().gop.fence();
+  (*ta0_)("x1, x0, x5, x4") += (*ta1_)("x5, a1, x4, a2") * (*ta1_)("x0, a1, x1, a2") * 4;
 }
 
 void Task802::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x1, x0, x5, x4") += (*ta1_)("x5, a1, x4, a2") * (*ta1_)("x0, a1, x1, a2") * 4;
-  madness::World::get_default().gop.fence();
+  ta1_->init();
+  (*ta0_)("ci0") += (*ta1_)("ci0, x2, x5, x4, x3, x1, x0") * (*ta2_)("x2, x1, x0, x5, x4, x3");
 }
 
 void Task803::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("ci0") += (*ta1_)("ci0, x2, x5, x4, x3, x1, x0") * (*ta2_)("x2, x1, x0, x5, x4, x3");
-  madness::World::get_default().gop.fence();
+  (*ta0_)("x2, x1, x0, x5, x4, x3") += (*ta1_)("c1, x5, x4, x3") * (*ta2_)("x0, x1, c1, x2");
 }
 
 void Task804::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x2, x1, x0, x5, x4, x3") += (*ta1_)("c1, x5, x4, x3") * (*ta2_)("x0, x1, c1, x2");
-  madness::World::get_default().gop.fence();
+  ta1_->init();
+  (*ta0_)("ci0") += (*ta1_)("ci0, x5, x4, x0, x3, x2, x1") * (*ta2_)("x3, x4, x5, x0, x1, x2");
 }
 
 void Task805::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("ci0") += (*ta1_)("ci0, x5, x4, x0, x3, x2, x1") * (*ta2_)("x3, x4, x5, x0, x1, x2");
-  madness::World::get_default().gop.fence();
-}
-
-void Task806::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("x3, x4, x5, x0, x1, x2") += (*ta1_)("c1, x0, x1, x2") * (*ta2_)("x5, x4, c1, x3");
-  madness::World::get_default().gop.fence();
 }
 
 #endif

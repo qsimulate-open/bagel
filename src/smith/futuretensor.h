@@ -33,22 +33,6 @@
 namespace bagel {
 namespace SMITH {
 
-template<typename DataType>
-class FutureTensor_ : public Tensor_<DataType> {
-  protected:
-    using Tensor_<DataType>::initialized_;
-
-  protected:
-    mutable std::shared_ptr<Task> init_;
-
-  public:
-    FutureTensor_(const Tensor_<DataType>& i,  std::shared_ptr<Task> j) : Tensor_<DataType>(i), init_(j) { }
-
-    // TODO actually not const, but this is the only way to make it compiled...
-    void init() const override { init_->compute(); initialized_ = true; }
-};
-
-
 template<typename DataType, int N>
 class FutureTATensor : public TATensor<DataType,N> {
   protected:
@@ -63,7 +47,8 @@ class FutureTATensor : public TATensor<DataType,N> {
 
     void init() override {
       init_->compute();
-      TATensor<DataType,N>::operator=(std::move(*tensor_->template tiledarray<N>()));
+      // shallow copy
+      TATensor<DataType,N>::operator=(*tensor_->template tiledarray<N>());
     }
 };
 

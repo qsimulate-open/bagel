@@ -34,378 +34,282 @@ using namespace bagel::SMITH;
 using namespace bagel::SMITH::CASPT2;
 
 void Task500::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a1, x0") += (*ta1_)("x3, x0, x2, x1") * (*ta2_)("x3, a1, x2, x1") * 2;
-  madness::World::get_default().gop.fence();
+  (*ta0_)("c4, x1") += (*ta1_)("c4, x1");
 }
 
 void Task501::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c4, x1") += (*ta1_)("c4, x1");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  ta1_->init();
+  (*ta0_)("c4, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, c4");
 }
 
 void Task502::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c4, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, c4");
-  madness::World::get_default().gop.fence();
+  (*ta0_)("x0, c4") += (*ta1_)("c2, a3, c4, a1") * (*ta1_)("x0, a1, c2, a3") * (-4);
 }
 
 void Task503::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x0, c4") += (*ta1_)("c2, a3, c4, a1") * (*ta1_)("x0, a1, c2, a3") * (-4);
-  madness::World::get_default().gop.fence();
+  (*ta0_)("x0, c4") += (*ta1_)("c2, a1, c4, a3") * (*ta1_)("x0, a1, c2, a3") * 2;
 }
 
 void Task504::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x0, c4") += (*ta1_)("c2, a1, c4, a3") * (*ta1_)("x0, a1, c2, a3") * 2;
-  madness::World::get_default().gop.fence();
+  (*ta0_)("c4, c2") += (*ta1_)("c2, c4");
 }
 
 void Task505::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c4, c2") += (*ta1_)("c2, c4");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  (*ta0_)("c2, c4") += (*ta1_)("x1, a3, c4, a1") * (*ta2_)("a3, c2, a1, x1");
 }
 
 void Task506::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c2, c4") += (*ta1_)("x1, a3, c4, a1") * (*ta2_)("a3, c2, a1, x1");
-  madness::World::get_default().gop.fence();
+  ta1_->init();
+  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3");
 }
 
 void Task507::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3");
-  madness::World::get_default().gop.fence();
+  (*ta0_)("c2, c4") += (*ta1_)("x1, a1, c4, a3") * (*ta2_)("a3, c2, a1, x1");
 }
 
 void Task508::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c2, c4") += (*ta1_)("x1, a1, c4, a3") * (*ta2_)("a3, c2, a1, x1");
-  madness::World::get_default().gop.fence();
+  ta1_->init();
+  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3") * (-2);
 }
 
 void Task509::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3") * (-2);
-  madness::World::get_default().gop.fence();
+  (*ta0_)("a1, a4") += (*ta1_)("a1, a4");
 }
 
 void Task510::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a1, a4") += (*ta1_)("a1, a4");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  (*ta0_)("a1, a4") += (*ta1_)("x1, a4, c2, a3") * (*ta2_)("a3, c2, a1, x1");
 }
 
 void Task511::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a1, a4") += (*ta1_)("x1, a4, c2, a3") * (*ta2_)("a3, c2, a1, x1");
-  madness::World::get_default().gop.fence();
+  ta1_->init();
+  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3") * 2;
 }
 
 void Task512::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3") * 2;
-  madness::World::get_default().gop.fence();
+  (*ta0_)("a1, a4") += (*ta1_)("x1, a3, c2, a4") * (*ta2_)("a3, c2, a1, x1");
 }
 
 void Task513::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a1, a4") += (*ta1_)("x1, a3, c2, a4") * (*ta2_)("a3, c2, a1, x1");
-  madness::World::get_default().gop.fence();
+  ta1_->init();
+  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3") * (-1);
 }
 
 void Task514::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3") * (-1);
-  madness::World::get_default().gop.fence();
+  (*ta0_)("a3, a4") += (*ta1_)("a3, a4");
 }
 
 void Task515::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a3, a4") += (*ta1_)("a3, a4");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  (*ta0_)("a3, a4") += (*ta1_)("x1, a4, c2, a1") * (*ta2_)("a3, c2, a1, x1");
 }
 
 void Task516::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a3, a4") += (*ta1_)("x1, a4, c2, a1") * (*ta2_)("a3, c2, a1, x1");
-  madness::World::get_default().gop.fence();
+  ta1_->init();
+  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3") * (-1);
 }
 
 void Task517::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3") * (-1);
-  madness::World::get_default().gop.fence();
+  (*ta0_)("a3, a4") += (*ta1_)("x1, a1, c2, a4") * (*ta2_)("a3, c2, a1, x1");
 }
 
 void Task518::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a3, a4") += (*ta1_)("x1, a1, c2, a4") * (*ta2_)("a3, c2, a1, x1");
-  madness::World::get_default().gop.fence();
+  ta1_->init();
+  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3") * 2;
 }
 
 void Task519::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a3, c2, a1, x1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, a3") * 2;
-  madness::World::get_default().gop.fence();
+  (*ta0_)("x1, c2") += (*ta1_)("x1, c2");
 }
 
 void Task520::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x1, c2") += (*ta1_)("x1, c2");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  (*ta0_)("x1, c2") += (*ta1_)("x0, a1, c2, a3") * (*ta2_)("a1, a3, x0, x1");
 }
 
 void Task521::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x1, c2") += (*ta1_)("x0, a1, c2, a3") * (*ta2_)("a1, a3, x0, x1");
-  madness::World::get_default().gop.fence();
+  ta1_->init();
+  (*ta0_)("a1, a3, x0, x1") += (*ta1_)("x3, x0, x2, x1") * (*ta2_)("x3, a1, x2, a3") * (-2);
 }
 
-void Task522::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a1, a3, x0, x1") += (*ta1_)("x3, x0, x2, x1") * (*ta2_)("x3, a1, x2, a3") * (-2);
-  madness::World::get_default().gop.fence();
+void Task523::compute_() {
+  (*ta0_)("c1, x0") += (*ta1_)("c1, x0");
 }
 
 void Task524::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c1, x0") += (*ta1_)("c1, x0");
-  madness::World::get_default().gop.fence();
-}
-
-void Task525::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c1, x0") += (*ta1_)("x3, x2, x0, x1") * (*ta2_)("x3, x2, c1, x1");
-  madness::World::get_default().gop.fence();
+}
+
+void Task525::compute_() {
+  (*ta0_)("c1, a2") += (*ta1_)("a2, c1");
 }
 
 void Task526::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c1, a2") += (*ta1_)("a2, c1");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  ta1_->init();
+  (*ta0_)("a2, c1") += (*ta1_)("x1, x0") * (*ta2_)("x1, a2, c1, x0");
 }
 
 void Task527::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a2, c1") += (*ta1_)("x1, x0") * (*ta2_)("x1, a2, c1, x0");
-  madness::World::get_default().gop.fence();
+  (*ta0_)("x1, a2, c1, x0") += (*ta1_)("x1, a2, c1, x0") * (-1)
+     + (*ta1_)("c1, a2, x1, x0") * 2;
 }
 
 void Task528::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x1, a2, c1, x0") += (*ta1_)("x1, a2, c1, x0") * (-1)
-     + (*ta1_)("c1, a2, x1, x0") * 2;
-  madness::World::get_default().gop.fence();
+  (*ta0_)("x0, a1") += (*ta1_)("a1, x0");
 }
 
 void Task529::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x0, a1") += (*ta1_)("a1, x0");
-  madness::World::get_default().gop.fence();
-}
-
-void Task530::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("a1, x0") += (*ta1_)("x3, x0, x2, x1") * (*ta2_)("x3, a1, x2, x1");
-  madness::World::get_default().gop.fence();
+}
+
+void Task531::compute_() {
+  (*ta0_)("c2, x1, c1, x0") += (*ta1_)("c1, c2, x0, x1");
 }
 
 void Task532::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c2, x1, c1, x0") += (*ta1_)("c1, c2, x0, x1");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  ta1_->init();
+  (*ta0_)("c1, c2, x0, x1") += (*ta1_)("x0, x3, x1, x2") * (*ta2_)("c1, x3, c2, x2") * 2;
 }
 
 void Task533::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c1, c2, x0, x1") += (*ta1_)("x0, x3, x1, x2") * (*ta2_)("c1, x3, c2, x2") * 2;
-  madness::World::get_default().gop.fence();
+  (*ta0_)("c1, x2, x0, x1") += (*ta1_)("c1, x2, x1, x0");
 }
 
 void Task534::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c1, x2, x0, x1") += (*ta1_)("c1, x2, x1, x0");
-  madness::World::get_default().gop.fence();
-}
-
-void Task535::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c1, x2, x1, x0") += (*ta1_)("x5, x4, x2, x3, x1, x0") * (*ta2_)("x5, x4, c1, x3");
-  madness::World::get_default().gop.fence();
+}
+
+void Task535::compute_() {
+  (*ta0_)("c3, x0, c1, a2") += (*ta1_)("c3, a2, c1, x0");
 }
 
 void Task536::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c3, x0, c1, a2") += (*ta1_)("c3, a2, c1, x0");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  ta1_->init();
+  (*ta0_)("c3, a2, c1, x0") += (*ta1_)("x0, x1") * (*ta2_)("c3, a2, c1, x1");
 }
 
 void Task537::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c3, a2, c1, x0") += (*ta1_)("x0, x1") * (*ta2_)("c3, a2, c1, x1");
-  madness::World::get_default().gop.fence();
+  (*ta0_)("c3, a2, c1, x1") += (*ta1_)("c3, a2, c1, x1") * (-1)
+     + (*ta1_)("c1, a2, c3, x1") * 2;
 }
 
 void Task538::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c3, a2, c1, x1") += (*ta1_)("c3, a2, c1, x1") * (-1)
-     + (*ta1_)("c1, a2, c3, x1") * 2;
-  madness::World::get_default().gop.fence();
+  (*ta0_)("c2, x1, x0, a1") += (*ta1_)("a1, c2, x0, x1");
 }
 
 void Task539::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c2, x1, x0, a1") += (*ta1_)("a1, c2, x0, x1");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  ta1_->init();
+  (*ta0_)("a1, c2, x0, x1") += (*ta1_)("x3, x0, x1, x2") * (*ta2_)("x3, a1, c2, x2");
 }
 
 void Task540::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a1, c2, x0, x1") += (*ta1_)("x3, x0, x1, x2") * (*ta2_)("x3, a1, c2, x2");
-  madness::World::get_default().gop.fence();
+  (*ta0_)("a1, c2, x0, x1") += (*ta1_)("x3, x2, x1, x0") * (*ta2_)("c2, a1, x3, x2") * (-1);
 }
 
 void Task541::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a1, c2, x0, x1") += (*ta1_)("x3, x2, x1, x0") * (*ta2_)("c2, a1, x3, x2") * (-1);
-  madness::World::get_default().gop.fence();
+  (*ta0_)("x0, x1, c1, a2") += (*ta1_)("a2, c1, x1, x0");
 }
 
 void Task542::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x0, x1, c1, a2") += (*ta1_)("a2, c1, x1, x0");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  ta1_->init();
+  (*ta0_)("a2, c1, x1, x0") += (*ta1_)("x3, x2, x1, x0") * (*ta2_)("x3, a2, c1, x2");
 }
 
 void Task543::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  madness::World::get_default().gop.fence();
-  (*ta0_)("a2, c1, x1, x0") += (*ta1_)("x3, x2, x1, x0") * (*ta2_)("x3, a2, c1, x2");
-  madness::World::get_default().gop.fence();
+  (*ta0_)("x3, a2, c1, x2") += (*ta1_)("x3, a2, c1, x2") * (-1)
+     + (*ta1_)("c1, a2, x3, x2") * 2;
 }
 
 void Task544::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x3, a2, c1, x2") += (*ta1_)("x3, a2, c1, x2") * (-1)
-     + (*ta1_)("c1, a2, x3, x2") * 2;
-  madness::World::get_default().gop.fence();
+  (*ta0_)("x1, x2, x0, a1") += (*ta1_)("a1, x0, x2, x1");
 }
 
 void Task545::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("x1, x2, x0, a1") += (*ta1_)("a1, x0, x2, x1");
-  madness::World::get_default().gop.fence();
-}
-
-void Task546::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("a1, x0, x2, x1") += (*ta1_)("x5, x0, x4, x3, x2, x1") * (*ta2_)("x5, a1, x4, x3");
-  madness::World::get_default().gop.fence();
+}
+
+void Task546::compute_() {
+  (*ta0_)("c3, a4, c1, a2") += (*ta1_)("c1, a4, c3, a2");
 }
 
 void Task547::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c3, a4, c1, a2") += (*ta1_)("c1, a4, c3, a2");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  (*ta0_)("c1, a4, c3, a2") += (*ta1_)("c1, a4, c3, a2") * (-4)
+     + (*ta1_)("c1, a2, c3, a4") * 8;
 }
 
 void Task548::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c1, a4, c3, a2") += (*ta1_)("c1, a4, c3, a2") * (-4)
-     + (*ta1_)("c1, a2, c3, a4") * 8;
-  madness::World::get_default().gop.fence();
+  (*ta0_)("c2, a3, x0, a1") += (*ta1_)("a3, c2, a1, x0");
 }
 
 void Task549::compute_() {
-  madness::World::get_default().gop.fence();
-  (*ta0_)("c2, a3, x0, a1") += (*ta1_)("a3, c2, a1, x0");
-  madness::World::get_default().gop.fence();
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  ta1_->init();
+  (*ta0_)("a3, c2, a1, x0") += (*ta1_)("x1, x0") * (*ta2_)("x1, a3, c2, a1");
 }
 
 #endif

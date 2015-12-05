@@ -121,10 +121,10 @@ void Task102::Task_local::compute() {
   // associated with merged
   std::unique_ptr<double[]> fdata = in(4)->get_block(x3, x2);
   // rdm0 merged case
-  if (x1 == x4 && x0 == x2 && x3 == x5) {
+  if (x0 == x2 && x1 == x4 && x3 == x5) {
     std::unique_ptr<double[]> i0data = in(0)->get_block();
-    for (int i4 = 0; i4 != x4.size(); ++i4) {
-      for (int i2 = 0; i2 != x2.size(); ++i2) {
+    for (int i2 = 0; i2 != x2.size(); ++i2) {
+      for (int i4 = 0; i4 != x4.size(); ++i4) {
         for (int i5 = 0; i5 != x5.size(); ++i5) {
           odata[i2+x0.size()*(i5+x5.size()*(i4+x1.size()*(i4)))]  += -4.0 * i0data[0] * fdata[i5+x3.size()*(i2)];
         }
@@ -193,11 +193,11 @@ void Task102::Task_local::compute() {
     }
   }
   // rdm0 merged case
-  if (x3 == x4 && x0 == x5 && x1 == x2) {
+  if (x3 == x4 && x1 == x2 && x0 == x5) {
     std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i4 = 0; i4 != x4.size(); ++i4) {
-      for (int i5 = 0; i5 != x5.size(); ++i5) {
-        for (int i2 = 0; i2 != x2.size(); ++i2) {
+      for (int i2 = 0; i2 != x2.size(); ++i2) {
+        for (int i5 = 0; i5 != x5.size(); ++i5) {
           odata[i5+x0.size()*(i5+x5.size()*(i2+x1.size()*(i4)))]  += -4.0 * i0data[0] * fdata[i4+x3.size()*(i2)];
         }
       }
@@ -216,12 +216,12 @@ void Task102::Task_local::compute() {
       }
     }
   }
-  if (x3 == x4 && x1 == x2) {
+  if (x1 == x2 && x3 == x4) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x5);
     for (int i5 = 0; i5 != x5.size(); ++i5) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
-        for (int i4 = 0; i4 != x4.size(); ++i4) {
-          for (int i2 = 0; i2 != x2.size(); ++i2) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
+          for (int i4 = 0; i4 != x4.size(); ++i4) {
             odata[i0+x0.size()*(i5+x5.size()*(i2+x1.size()*(i4)))]
               += (2.0) * i0data[i0+x0.size()*(i5)] * fdata[i4+x3.size()*(i2)];
           }
@@ -314,13 +314,13 @@ void Task103::Task_local::compute() {
   std::unique_ptr<double[]> odata = out()->move_block(x0, x7, x1, x6);
   // associated with merged
   std::unique_ptr<double[]> fdata = in(5)->get_block(x5, x4, x3, x2);
-  if (x3 == x7 && x1 == x6 && x0 == x2) {
+  if (x3 == x7 && x0 == x2 && x1 == x6) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
-          for (int i6 = 0; i6 != x6.size(); ++i6) {
-            for (int i2 = 0; i2 != x2.size(); ++i2) {
+          for (int i2 = 0; i2 != x2.size(); ++i2) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
               odata[i2+x0.size()*(i7+x7.size()*(i6+x1.size()*(i6)))]
                 += (-4.0) * i0data[i5+x5.size()*(i4)] * fdata[i5+x5.size()*(i4+x4.size()*(i7+x3.size()*(i2)))];
             }
@@ -329,13 +329,13 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x1 == x7 && x3 == x6 && x0 == x2) {
+  if (x0 == x2 && x1 == x7 && x3 == x6) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
-        for (int i7 = 0; i7 != x7.size(); ++i7) {
-          for (int i6 = 0; i6 != x6.size(); ++i6) {
-            for (int i2 = 0; i2 != x2.size(); ++i2) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
+          for (int i7 = 0; i7 != x7.size(); ++i7) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
               odata[i2+x0.size()*(i7+x7.size()*(i7+x1.size()*(i6)))]
                 += (2.0) * i0data[i5+x5.size()*(i4)] * fdata[i5+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
             }
@@ -344,13 +344,13 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x1 == x6 && x3 == x7 && x0 == x4) {
+  if (x0 == x4 && x1 == x6 && x3 == x7) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
-        for (int i6 = 0; i6 != x6.size(); ++i6) {
-          for (int i7 = 0; i7 != x7.size(); ++i7) {
-            for (int i4 = 0; i4 != x4.size(); ++i4) {
+        for (int i4 = 0; i4 != x4.size(); ++i4) {
+          for (int i6 = 0; i6 != x6.size(); ++i6) {
+            for (int i7 = 0; i7 != x7.size(); ++i7) {
               odata[i4+x0.size()*(i7+x7.size()*(i6+x1.size()*(i6)))]
                 += (2.0) * i0data[i5+x5.size()*(i2)] * fdata[i5+x5.size()*(i4+x4.size()*(i7+x3.size()*(i2)))];
             }
@@ -359,12 +359,12 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x1 == x7 && x0 == x4 && x3 == x6) {
+  if (x0 == x4 && x1 == x7 && x3 == x6) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
-        for (int i7 = 0; i7 != x7.size(); ++i7) {
-          for (int i4 = 0; i4 != x4.size(); ++i4) {
+        for (int i4 = 0; i4 != x4.size(); ++i4) {
+          for (int i7 = 0; i7 != x7.size(); ++i7) {
             for (int i6 = 0; i6 != x6.size(); ++i6) {
               odata[i4+x0.size()*(i7+x7.size()*(i7+x1.size()*(i6)))]
                 += (-1.0) * i0data[i5+x5.size()*(i2)] * fdata[i5+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
@@ -374,13 +374,13 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x0 == x6 && x3 == x7 && x1 == x2) {
+  if (x1 == x2 && x3 == x7 && x0 == x6) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
-        for (int i6 = 0; i6 != x6.size(); ++i6) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
           for (int i7 = 0; i7 != x7.size(); ++i7) {
-            for (int i2 = 0; i2 != x2.size(); ++i2) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
               odata[i6+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]
                 += (2.0) * i0data[i5+x5.size()*(i4)] * fdata[i5+x5.size()*(i4+x4.size()*(i7+x3.size()*(i2)))];
             }
@@ -404,14 +404,14 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x0 == x6 && x3 == x7) {
+  if (x3 == x7 && x0 == x6) {
     std::unique_ptr<double[]> i0data = in(2)->get_block(x5, x4, x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i5 = 0; i5 != x5.size(); ++i5) {
-            for (int i6 = 0; i6 != x6.size(); ++i6) {
-              for (int i7 = 0; i7 != x7.size(); ++i7) {
+            for (int i7 = 0; i7 != x7.size(); ++i7) {
+              for (int i6 = 0; i6 != x6.size(); ++i6) {
                 odata[i6+x0.size()*(i7+x7.size()*(i1+x1.size()*(i6)))]
                   += (-1.0) * i0data[i5+x5.size()*(i4+x4.size()*(i1+x1.size()*(i2)))] * fdata[i5+x5.size()*(i4+x4.size()*(i7+x3.size()*(i2)))];
               }
@@ -421,13 +421,13 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x3 == x6 && x1 == x2 && x0 == x7) {
+  if (x1 == x2 && x0 == x7 && x3 == x6) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
-        for (int i6 = 0; i6 != x6.size(); ++i6) {
-          for (int i2 = 0; i2 != x2.size(); ++i2) {
-            for (int i7 = 0; i7 != x7.size(); ++i7) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
+          for (int i7 = 0; i7 != x7.size(); ++i7) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
               odata[i7+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]
                 += (-4.0) * i0data[i5+x5.size()*(i4)] * fdata[i5+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
             }
@@ -451,14 +451,14 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x3 == x6 && x0 == x7) {
+  if (x0 == x7 && x3 == x6) {
     std::unique_ptr<double[]> i0data = in(2)->get_block(x5, x4, x1, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i5 = 0; i5 != x5.size(); ++i5) {
-            for (int i6 = 0; i6 != x6.size(); ++i6) {
-              for (int i7 = 0; i7 != x7.size(); ++i7) {
+            for (int i7 = 0; i7 != x7.size(); ++i7) {
+              for (int i6 = 0; i6 != x6.size(); ++i6) {
                 odata[i7+x0.size()*(i7+x7.size()*(i1+x1.size()*(i6)))]
                   += (2.0) * i0data[i5+x5.size()*(i4+x4.size()*(i1+x1.size()*(i2)))] * fdata[i5+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
               }
@@ -485,14 +485,14 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x3 == x6 && x1 == x7) {
+  if (x1 == x7 && x3 == x6) {
     std::unique_ptr<double[]> i0data = in(2)->get_block(x5, x4, x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i5 = 0; i5 != x5.size(); ++i5) {
-            for (int i6 = 0; i6 != x6.size(); ++i6) {
-              for (int i7 = 0; i7 != x7.size(); ++i7) {
+            for (int i7 = 0; i7 != x7.size(); ++i7) {
+              for (int i6 = 0; i6 != x6.size(); ++i6) {
                 odata[i0+x0.size()*(i7+x7.size()*(i7+x1.size()*(i6)))]
                   += (-1.0) * i0data[i5+x5.size()*(i4+x4.size()*(i0+x0.size()*(i2)))] * fdata[i5+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
               }
@@ -503,11 +503,11 @@ void Task103::Task_local::compute() {
     }
   }
   // rdm0 merged case
-  if (x3 == x6 && x0 == x2 && x1 == x4 && x5 == x7) {
+  if (x3 == x6 && x1 == x4 && x0 == x2 && x5 == x7) {
     std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i6 = 0; i6 != x6.size(); ++i6) {
-      for (int i2 = 0; i2 != x2.size(); ++i2) {
-        for (int i4 = 0; i4 != x4.size(); ++i4) {
+      for (int i4 = 0; i4 != x4.size(); ++i4) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
           for (int i7 = 0; i7 != x7.size(); ++i7) {
             odata[i2+x0.size()*(i7+x7.size()*(i4+x1.size()*(i6)))]  += 2.0 * i0data[0] * fdata[i7+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
           }
@@ -1119,14 +1119,14 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x5 == x6 && x0 == x7) {
+  if (x0 == x7 && x5 == x6) {
     std::unique_ptr<double[]> i0data = in(2)->get_block(x1, x4, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i1 = 0; i1 != x1.size(); ++i1) {
-            for (int i6 = 0; i6 != x6.size(); ++i6) {
-              for (int i7 = 0; i7 != x7.size(); ++i7) {
+            for (int i7 = 0; i7 != x7.size(); ++i7) {
+              for (int i6 = 0; i6 != x6.size(); ++i6) {
                 odata[i7+x0.size()*(i7+x7.size()*(i1+x1.size()*(i6)))]
                   += (2.0) * i0data[i1+x1.size()*(i4+x4.size()*(i3+x3.size()*(i2)))] * fdata[i6+x5.size()*(i4+x4.size()*(i3+x3.size()*(i2)))];
               }
@@ -1136,13 +1136,13 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x5 == x6 && x3 == x4 && x1 == x2) {
+  if (x3 == x4 && x1 == x2 && x5 == x6) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x7);
     for (int i7 = 0; i7 != x7.size(); ++i7) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
-        for (int i6 = 0; i6 != x6.size(); ++i6) {
-          for (int i4 = 0; i4 != x4.size(); ++i4) {
-            for (int i2 = 0; i2 != x2.size(); ++i2) {
+        for (int i4 = 0; i4 != x4.size(); ++i4) {
+          for (int i2 = 0; i2 != x2.size(); ++i2) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
               odata[i0+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]
                 += (2.0) * i0data[i0+x0.size()*(i7)] * fdata[i6+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
             }
@@ -1151,12 +1151,12 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x5 == x7 && x3 == x4 && x1 == x2) {
+  if (x3 == x4 && x5 == x7 && x1 == x2) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x6);
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
-        for (int i7 = 0; i7 != x7.size(); ++i7) {
-          for (int i4 = 0; i4 != x4.size(); ++i4) {
+        for (int i4 = 0; i4 != x4.size(); ++i4) {
+          for (int i7 = 0; i7 != x7.size(); ++i7) {
             for (int i2 = 0; i2 != x2.size(); ++i2) {
               odata[i0+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]
                 += (-1.0) * i0data[i0+x0.size()*(i6)] * fdata[i7+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
@@ -1166,13 +1166,13 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x5 == x7 && x3 == x6 && x1 == x2) {
+  if (x3 == x6 && x1 == x2 && x5 == x7) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
-        for (int i7 = 0; i7 != x7.size(); ++i7) {
-          for (int i6 = 0; i6 != x6.size(); ++i6) {
-            for (int i2 = 0; i2 != x2.size(); ++i2) {
+        for (int i6 = 0; i6 != x6.size(); ++i6) {
+          for (int i2 = 0; i2 != x2.size(); ++i2) {
+            for (int i7 = 0; i7 != x7.size(); ++i7) {
               odata[i0+x0.size()*(i7+x7.size()*(i2+x1.size()*(i6)))]
                 += (2.0) * i0data[i0+x0.size()*(i4)] * fdata[i7+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
             }
@@ -1362,13 +1362,13 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x5 == x7 && x3 == x4 && x1 == x6) {
+  if (x3 == x4 && x1 == x6 && x5 == x7) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
-        for (int i7 = 0; i7 != x7.size(); ++i7) {
-          for (int i4 = 0; i4 != x4.size(); ++i4) {
-            for (int i6 = 0; i6 != x6.size(); ++i6) {
+        for (int i4 = 0; i4 != x4.size(); ++i4) {
+          for (int i6 = 0; i6 != x6.size(); ++i6) {
+            for (int i7 = 0; i7 != x7.size(); ++i7) {
               odata[i0+x0.size()*(i7+x7.size()*(i6+x1.size()*(i6)))]
                 += (2.0) * i0data[i0+x0.size()*(i2)] * fdata[i7+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
             }
@@ -1394,13 +1394,13 @@ void Task103::Task_local::compute() {
       }
     }
   }
-  if (x5 == x6 && x3 == x4 && x1 == x7) {
+  if (x3 == x4 && x1 == x7 && x5 == x6) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x0, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i0 = 0; i0 != x0.size(); ++i0) {
-        for (int i6 = 0; i6 != x6.size(); ++i6) {
-          for (int i4 = 0; i4 != x4.size(); ++i4) {
-            for (int i7 = 0; i7 != x7.size(); ++i7) {
+        for (int i4 = 0; i4 != x4.size(); ++i4) {
+          for (int i7 = 0; i7 != x7.size(); ++i7) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
               odata[i0+x0.size()*(i7+x7.size()*(i7+x1.size()*(i6)))]
                 += (-1.0) * i0data[i0+x0.size()*(i2)] * fdata[i6+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
             }
@@ -1802,345 +1802,263 @@ void Task107::Task_local::compute() {
 }
 
 void Task109::compute_() {
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, x1, c1, x0") += (*ta1_)("c2, c1, x0, x1") + (*ta1_)("c1, c2, x1, x0");
-  madness::World::get_default().gop.fence();
 }
 
 void Task110::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("x0, x3, x1, x2") * (*ta2_)("c2, c1, x3, x2");
-  madness::World::get_default().gop.fence();
 }
 
 void Task111::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x3, x2") += (*ta1_)("c1, x3, c3, x2") * (*ta2_)("c2, c3") * (-2);
-  madness::World::get_default().gop.fence();
 }
 
 void Task112::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x3, x2") += (*ta1_)("c3, a4, c1, x3") * (*ta2_)("a4, x2, c2, c3");
-  madness::World::get_default().gop.fence();
 }
 
 void Task113::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("a4, x2, c2, c3") += (*ta1_)("a4, x2, c2, c3") * (-1)
      + (*ta1_)("c2, x2, a4, c3") * 2;
-  madness::World::get_default().gop.fence();
 }
 
 void Task114::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x3, x2") += (*ta1_)("c1, a4, c3, x3") * (*ta2_)("c2, x2, a4, c3") * (-1);
-  madness::World::get_default().gop.fence();
 }
 
 void Task115::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("c2, x2") * (*ta2_)("c1, x0, x1, x2");
-  madness::World::get_default().gop.fence();
 }
 
 void Task116::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c1, x0, x1, x2") += (*ta1_)("x5, x4, x0, x3, x1, x2") * (*ta2_)("x5, x4, c1, x3");
-  madness::World::get_default().gop.fence();
 }
 
 void Task117::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("x1, x3, x0, x2") * (*ta2_)("x2, c1, c2, x3");
-  madness::World::get_default().gop.fence();
 }
 
 void Task118::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("x2, c1, c2, x3") += (*ta1_)("c1, a3, c2, x3") * (*ta2_)("a3, x2") * (-1);
-  madness::World::get_default().gop.fence();
 }
 
 void Task119::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("x2, c1, c2, x3") += (*ta1_)("c1, a4, c3, x3") * (*ta2_)("a4, x2, c2, c3");
-  madness::World::get_default().gop.fence();
 }
 
 void Task120::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("x0, x5, x1, x4, x3, x2") * (*ta2_)("c2, x3, x2, c1, x5, x4");
-  madness::World::get_default().gop.fence();
 }
 
 void Task121::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, x3, x2, c1, x5, x4") += (*ta1_)("c1, x5, c3, x4") * (*ta2_)("c2, c3, x3, x2");
-  madness::World::get_default().gop.fence();
 }
 
 void Task122::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c3, x3, x2") += (*ta1_)("c2, c3, x3, x2") * (-1)
      + (*ta1_)("x3, x2, c2, c3") * (-1);
-  madness::World::get_default().gop.fence();
 }
 
 void Task123::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("x0, x5, x2, x4, x1, x3") * (*ta2_)("c2, x3, x2, c1, x5, x4");
-  madness::World::get_default().gop.fence();
 }
 
 void Task124::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, x3, x2, c1, x5, x4") += (*ta1_)("c1, x5, c3, x4") * (*ta2_)("c2, x3, x2, c3") * (-1);
-  madness::World::get_default().gop.fence();
 }
 
 void Task125::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("x0, x5, x3, x4, x1, x2") * (*ta2_)("x3, c2, x2, c1, x5, x4");
-  madness::World::get_default().gop.fence();
 }
 
 void Task126::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("x3, c2, x2, c1, x5, x4") += (*ta1_)("c1, x5, c3, x4") * (*ta2_)("x3, c3, c2, x2");
-  madness::World::get_default().gop.fence();
 }
 
 void Task127::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("x7, x6, c1, x5") * (*ta2_)("c2, x7, x6, x0, x5, x1");
-  madness::World::get_default().gop.fence();
 }
 
 void Task128::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, x7, x6, x0, x5, x1") += (*ta1_)("x7, x6, x0, x5, x1, x4, x3, x2") * (*ta2_)("c2, x4, x3, x2") * 0.5;
-  madness::World::get_default().gop.fence();
 }
 
 void Task129::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, x7, x6, x0, x5, x1") += (*ta1_)("x7, x6, x0, x5, x4, x3, x1, x2") * (*ta2_)("x4, x3, c2, x2") * 0.5;
-  madness::World::get_default().gop.fence();
 }
 
 void Task130::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("c1, x2, c2, c3") * (*ta2_)("c3, x1, x0, x2");
-  madness::World::get_default().gop.fence();
 }
 
 void Task131::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c3, x1, x0, x2") += (*ta1_)("x5, x4, x1, x3, x0, x2") * (*ta2_)("x5, x4, c3, x3");
-  madness::World::get_default().gop.fence();
 }
 
 void Task132::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("c1, a3, c2, x5") * (*ta2_)("a3, x1, x5, x0");
-  madness::World::get_default().gop.fence();
 }
 
 void Task133::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("a3, x1, x5, x0") += (*ta1_)("x1, x5, x0, x4, x3, x2") * (*ta2_)("a3, x4, x3, x2") * (-0.5);
-  madness::World::get_default().gop.fence();
 }
 
 void Task134::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("a3, x1, x5, x0") += (*ta1_)("x1, x5, x4, x3, x0, x2") * (*ta2_)("x4, x3, a3, x2") * (-0.5);
-  madness::World::get_default().gop.fence();
 }
 
 void Task135::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("x5, x2, x0, x4, x1, x3") * (*ta2_)("c2, x3, x2, x5, c1, x4");
-  madness::World::get_default().gop.fence();
 }
 
 void Task136::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, x3, x2, x5, c1, x4") += (*ta1_)("x5, a3, c1, x4") * (*ta2_)("c2, x3, a3, x2");
-  madness::World::get_default().gop.fence();
 }
 
 void Task137::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("x5, x4, x1, x3, x0, x2") * (*ta2_)("c2, x3, x2, c1, x5, x4");
-  madness::World::get_default().gop.fence();
 }
 
 void Task138::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, x3, x2, c1, x5, x4") += (*ta1_)("c1, a3, x5, x4") * (*ta2_)("c2, x3, a3, x2") * (-1);
-  madness::World::get_default().gop.fence();
 }
 
 void Task139::compute_() {
-  madness::World::get_default().gop.fence();
   (*ta0_)("c1, x2, x0, x1") += (*ta1_)("c1, x2, x1, x0");
-  madness::World::get_default().gop.fence();
 }
 
 void Task140::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c1, x2, x1, x0") += (*ta1_)("x2, x5, x3, x4, x1, x0") * (*ta2_)("x3, c1, x5, x4");
-  madness::World::get_default().gop.fence();
 }
 
 void Task141::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("x3, c1, x5, x4") += (*ta1_)("c1, x5, c2, x4") * (*ta2_)("x3, c2") * 2;
-  madness::World::get_default().gop.fence();
 }
 
 void Task142::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("x3, c1, x5, x4") += (*ta1_)("c2, x5, c3, x4") * (*ta2_)("x3, c3, c1, c2") * (-2);
-  madness::World::get_default().gop.fence();
 }
 
 void Task143::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("x3, c1, x5, x4") += (*ta1_)("c2, a3, c1, x5") * (*ta2_)("a3, x4, x3, c2") * 0.5;
-  madness::World::get_default().gop.fence();
 }
 
 void Task144::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c1, x2, x1, x0") += (*ta1_)("c1, c2") * (*ta2_)("c2, x2, x1, x0");
-  madness::World::get_default().gop.fence();
 }
 
 void Task145::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c2, x2, x1, x0") += (*ta1_)("x5, x4, x2, x3, x1, x0") * (*ta2_)("x5, x4, c2, x3") * (-1);
-  madness::World::get_default().gop.fence();
 }
 
 void Task146::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  madness::World::get_default().gop.fence();
   (*ta0_)("c1, x2, x1, x0") += (*ta1_)("x2, x3, x1, x0") * (*ta2_)("c1, x3");
-  madness::World::get_default().gop.fence();
 }
 
 void Task147::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c1, x3") += (*ta1_)("c2, a3, c1, x3") * (*ta2_)("a3, c2") * 2;
-  madness::World::get_default().gop.fence();
 }
 
 void Task148::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c1, x3") += (*ta1_)("c1, a3, c2, x3") * (*ta2_)("a3, c2") * (-1);
-  madness::World::get_default().gop.fence();
 }
 
 void Task149::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  madness::World::get_default().gop.fence();
   (*ta0_)("c1, x3") += (*ta1_)("c4, a3, c2, x3") * (*ta2_)("c1, c4, a3, c2");
-  madness::World::get_default().gop.fence();
 }
 
 #endif

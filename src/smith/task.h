@@ -27,10 +27,7 @@
 #ifndef __SRC_SMITH_TASK_H
 #define __SRC_SMITH_TASK_H
 
-#include <stddef.h>
 #include <list>
-#include <memory>
-#include <algorithm>
 #include <src/smith/storage.h>
 
 namespace bagel {
