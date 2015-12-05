@@ -25,6 +25,7 @@
 
 
 #include <src/smith/queue.h>
+#include <tiledarray.h>
 
 using namespace std;
 using namespace bagel::SMITH;

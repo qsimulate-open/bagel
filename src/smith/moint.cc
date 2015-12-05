@@ -123,7 +123,7 @@ void K2ext<complex<double>>::init() {
             if (tileit.first) {
               const TiledArray::Range range = data_->trange().make_tile_range(tileit.second.ordinal());
               typename TiledArray::Array<complex<double>,4>::value_type tile(range);
-              copy_n(tmp->data(), tmp->size(), &(tile[0]));
+              copy_n(tmp->data(), tmp->size(), tile.begin());
               if (!tileit.second->probe()) {
                 *tileit.second = tile;
               } else {
@@ -202,7 +202,7 @@ void K2ext<double>::init() {
             if (tileiter.first) {
               const TiledArray::Range range = data_->trange().make_tile_range(tileiter.second.ordinal());
               typename TiledArray::Array<double,4>::value_type tile(range);
-              copy_n(tmp->data(), tmp->size(), &(tile[0]));
+              copy_n(tmp->data(), tmp->size(), tile.begin());
               *tileiter.second = tile;
             }
           }
@@ -213,7 +213,7 @@ void K2ext<double>::init() {
             if (tileit.first) {
               const TiledArray::Range range = data_->trange().make_tile_range(tileit.second.ordinal());
               typename TiledArray::Array<double,4>::value_type tile(range);
-              blas::transpose(tmp->data(), i0.size()*i1.size(), i2.size()*i3.size(), &(tile[0]));
+              blas::transpose(tmp->data(), i0.size()*i1.size(), i2.size()*i3.size(), tile.begin());
               *tileit.second = tile;
             }
           }
