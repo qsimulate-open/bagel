@@ -55,8 +55,8 @@ template<>
 void K2ext<complex<double>>::init() {
 
   // bits to store
-  const bool braket = blocks_[0] == blocks_[1] && blocks_[2] == blocks_[3];
 #if 0
+  const bool braket = blocks_[0] == blocks_[1] && blocks_[2] == blocks_[3];
   const vector<vector<int>> cblocks = braket ?
     vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,1,1,1}} :
     vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,1,1}, {1,0,1,0}, {1,1,1,1}};

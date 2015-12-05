@@ -47,8 +47,23 @@ class FutureTATensor : public TATensor<DataType,N> {
 
     void init() override {
       init_->compute();
-      // shallow copy
-      TATensor<DataType,N>::operator=(*tensor_->template tiledarray<N>());
+      TATensor<DataType,N>::operator=(std::move(*tensor_->template tiledarray<N>()));
+    }
+};
+
+template<typename DataType, int N>
+class FutureTATensor_new : public TATensor<DataType,N> {
+  protected:
+    std::shared_ptr<TATensor<DataType,N>> tensor_;
+    mutable std::shared_ptr<Task> init_;
+
+  public:
+    FutureTATensor_new(std::shared_ptr<TATensor<DataType,N>> i, std::shared_ptr<Task> j) : TATensor<DataType,N>(*i), tensor_(i), init_(j) { }
+
+    void init() override {
+      this->initialized_ = true;
+      init_->compute();
+      TATensor<DataType,N>::operator=(std::move(*tensor_));
     }
 };
 
