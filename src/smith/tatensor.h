@@ -165,14 +165,6 @@ class TATensor : public TiledArray::Array<DataType,N> {
         result += first.conj().dot(second);
       }
     };
-    struct SquaredNorm {
-      using result_type = DataType;
-      using argument_type = value_type;
-      result_type operator()() const { return 0.0; }
-      const result_type& operator()(const result_type& result) const { return result; }
-      void operator()(result_type& result, const result_type& arg) const { result += arg; }
-      void operator()(result_type& result, const argument_type& arg) const { result += arg.squared_norm(); }
-    };
     struct Size {
       using result_type = size_t;
       using argument_type = value_type;
@@ -181,18 +173,6 @@ class TATensor : public TiledArray::Array<DataType,N> {
       void operator()(result_type& result, const result_type& arg) const { result += arg; }
       void operator()(result_type& result, const argument_type& arg) const { result += arg.size(); }
     };
-    DataType squared_norm() const {
-#if 0
-      TiledArray::detail::ReduceTask<SquaredNorm> reduce_task(get_world());
-      for (auto it = begin(); it != end(); ++it)
-        if (it->probe())
-          reduce_task.add((*it).future());
-      return get_world().gop.all_reduce(id(), reduce_task.submit(), SquaredNorm()).get();
-#else
-      // TODO until Tensor::squared_norm() is fixed
-      return dot_product(*this);
-#endif
-    }
 
   public:
     TATensor(const std::vector<IndexRange>& r, const bool initialize = false, /*toggle for symmetry*/const bool dummy = false)
@@ -258,8 +238,8 @@ class TATensor : public TiledArray::Array<DataType,N> {
       return get_world().gop.all_reduce(id(), reduce_task.submit(), Size()).get();
     }
 
-    double norm() const { return std::sqrt(detail::real(squared_norm())); }
-    double rms() const { return std::sqrt(detail::real(squared_norm())/size_alloc()); }
+    double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
+    double rms() const { return std::sqrt(detail::real(dot_product(*this))/size_alloc()); }
 
     bool initialized() const { return initialized_; }
 
@@ -270,11 +250,11 @@ class TATensor : public TiledArray::Array<DataType,N> {
 
     void init_tile(typename BaseArray::iterator it) {
       madness::Future<value_type> t
-        = get_world().taskq.add([this](typename BaseArray::iterator i) {
-                                  value_type tile(trange().make_tile_range(i.ordinal()));
+        = get_world().taskq.add([](typename BaseArray::range_Type r) {
+                                  value_type tile(r);
                                   std::fill(tile.begin(), tile.end(), 0.0);
                                   return tile;
-                                }, it);
+                                }, trange().make_tile_range(it.ordinal()));
       *it = t;
     }
 
@@ -282,11 +262,10 @@ class TATensor : public TiledArray::Array<DataType,N> {
       assert(index.size() == N);
       // find index and set lo
       std::array<size_t,N> lo_in;
-      for (int n = 0; n != N; ++n)
-        lo_in[n] = std::accumulate(range_[n].begin(),
-                     std::find_if(range_[n].begin(), range_[n].end(), [&](const Index& i) { return i.offset() == index[n].offset(); }),
-                     0lu, [](size_t n, const Index& i){ return n + i.size(); });
-
+      for (int n = 0; n != N; ++n) {
+        auto iter = std::find_if(range_[n].begin(), range_[n].end(), [&](const Index& i) { return i.offset() == index[n].offset(); });
+        lo_in[n] = std::accumulate(range_[n].begin(), iter, 0lu, [](size_t n, const Index& i){ return n + i.size(); });
+      }
       auto it = begin();
       for ( ; it != end(); ++it) {
         const TiledArray::Range range = trange().make_tile_range(it.ordinal());
