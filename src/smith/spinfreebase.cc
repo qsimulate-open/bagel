@@ -486,15 +486,11 @@ shared_ptr<TATensor<DataType,4>> SpinFreeMethod<DataType>::init_amplitude() cons
   shared_ptr<TATensor<DataType,4>> out = v2_->clone();
   auto put = [this, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
     auto local = out->get_local(vector<Index>{i0, i1, i2, i3});
-    if (local.first) {
-      auto it = local.second;
-      const TiledArray::Range range = out->trange().make_tile_range(it.ordinal());
-      typename TiledArray::Array<DataType,4>::value_type tile(range);
-      std::fill_n(tile.begin(), tile.size(), 0.0);
-      *it = tile;
-    }
+    if (local.first)
+      out->init_tile(local.second);
   };
   loop_over(put);
+  out->get_world().gop.fence();
   return out;
 }
 
@@ -502,17 +498,13 @@ shared_ptr<TATensor<DataType,4>> SpinFreeMethod<DataType>::init_amplitude() cons
 template<typename DataType>
 shared_ptr<TATensor<DataType,4>> SpinFreeMethod<DataType>::init_residual() const {
   shared_ptr<TATensor<DataType,4>> out = v2_->clone();
-  auto put = [this, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+  auto put = [&out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
     auto local = out->get_local(vector<Index>{i2, i3, i0, i1});
-    if (local.first) {
-      auto it = local.second;
-      const TiledArray::Range range = out->trange().make_tile_range(it.ordinal());
-      typename TiledArray::Array<DataType,4>::value_type tile(range);
-      std::fill_n(tile.begin(), tile.size(), 0.0);
-      *it = tile;
-    }
+    if (local.first)
+      out->init_tile(local.second);
   };
   loop_over(put);
+  out->get_world().gop.fence();
   return out;
 }
 

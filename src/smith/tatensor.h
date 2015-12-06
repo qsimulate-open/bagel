@@ -43,6 +43,8 @@ template <typename Tile, typename Policy>
 inline DistArray<Tile, Policy> clone_part(const DistArray<Tile, Policy>& arg) {
   using value_type = typename DistArray<Tile, Policy>::value_type;
   World& world = arg.get_world();
+  // TODO until sparsity is handled properly
+  world.gop.fence();
   DistArray<Tile, Policy> result(world, arg.trange(), arg.get_shape(), arg.get_pmap());
 
   for (auto index : *arg.get_pmap()) {
@@ -264,6 +266,16 @@ class TATensor : public TiledArray::Array<DataType,N> {
     void fill_local(const DataType& o) {
       initialized_ = true;
       BaseArray::fill_local(o);
+    }
+
+    void init_tile(typename BaseArray::iterator it) {
+      madness::Future<value_type> t
+        = get_world().taskq.add([this](typename BaseArray::iterator i) {
+                                  value_type tile(trange().make_tile_range(i.ordinal()));
+                                  std::fill(tile.begin(), tile.end(), 0.0);
+                                  return tile;
+                                }, it);
+      *it = t;
     }
 
     auto get_local(const std::vector<Index>& index) -> decltype(std::make_pair(true,begin())) {
