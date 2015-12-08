@@ -26,8 +26,8 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <src/smith/CASPT2.h>
-#include <src/smith/CASPT2_tasks.h>
+#include <src/smith/caspt2/CASPT2.h>
+#include <src/smith/caspt2/CASPT2_tasks.h>
 
 using namespace std;
 using namespace bagel;

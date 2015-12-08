@@ -662,23 +662,48 @@ class Task26 : public Task {  // associated with gamma
 
 class Task27 : public Task {  // associated with gamma
   protected:
-    std::shared_ptr<TATensor<std::complex<double>,4>> out_;
-    std::shared_ptr<const TATensor<std::complex<double>,4>> rdm2_;
-    void compute_() override;
+    class Task_local : public SubTask<4,1> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor>& out() const { return this->out_tensor(); }
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,1>(block, in, out), range_(ran) { }
+        void compute() override;
+    };
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+    void compute_() override {
+      for (auto& i : subtasks_) i->compute();
+    }
   public:
-    Task27(std::shared_ptr<TATensor<std::complex<double>,4>> out, std::shared_ptr<const TATensor<std::complex<double>,4>> rdm2) : out_(out), rdm2_(rdm2) { }
+    Task27(std::array<std::shared_ptr<Tensor>,2> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task27() {}
 };
 
 class Task28 : public Task {  // associated with gamma
   protected:
-    std::shared_ptr<TATensor<std::complex<double>,0>> out_;
-    std::shared_ptr<const TATensor<std::complex<double>,2>> rdm1_;
-    std::shared_ptr<const TATensor<std::complex<double>,2>> f1_;
-    void compute_() override;
+    class Task_local : public SubTask<2,2> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+        const Index& b(const size_t& i) const { return this->block(i); }
+        const std::shared_ptr<const Tensor>& in(const size_t& i) const { return this->in_tensor(i); }
+        const std::shared_ptr<Tensor>& out() const { return this->out_tensor(); }
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,2>(block, in, out), range_(ran) { }
+        void compute() override;
+    };
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+    void compute_() override {
+      for (auto& i : subtasks_) i->compute();
+    }
   public:
-    Task28(std::shared_ptr<TATensor<std::complex<double>,0>> out, std::shared_ptr<const TATensor<std::complex<double>,2>> rdm1,
-           std::shared_ptr<const TATensor<std::complex<double>,2>> f1)
-      : out_(out), rdm1_(rdm1), f1_(f1) { }
+    Task28(std::array<std::shared_ptr<Tensor>,3> t,  std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task28() {}
 };
 
 class Task29 : public Task {  // associated with gamma

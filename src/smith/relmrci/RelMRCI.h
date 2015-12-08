@@ -56,8 +56,8 @@ class RelMRCI : public SpinFreeMethod<std::complex<double>> {
     std::vector<std::shared_ptr<MultiTATensor<std::complex<double>,4>>> rall_;
     std::vector<std::shared_ptr<MultiTATensor<std::complex<double>,4>>> sall_;
     std::vector<std::shared_ptr<MultiTATensor<std::complex<double>,4>>> nall_;
-
     void diagonal(std::shared_ptr<TATensor<std::complex<double>,4>> r, std::shared_ptr<const TATensor<std::complex<double>,4>> t) const;
+
 
     std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma0_();
     std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma1_();

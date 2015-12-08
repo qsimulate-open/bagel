@@ -53,6 +53,7 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     void diagonal(std::shared_ptr<TATensor<double,4>> r, std::shared_ptr<const TATensor<double,4>> t) const;
 
+
     std::shared_ptr<FutureTATensor<double,4>> Gamma0_();
     std::shared_ptr<FutureTATensor<double,4>> Gamma92_();
     std::shared_ptr<FutureTATensor<double,6>> Gamma2_();

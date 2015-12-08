@@ -29,22 +29,22 @@
 #ifndef __SRC_SMITH_RelMRCI_TASKS_H
 #define __SRC_SMITH_RelMRCI_TASKS_H
 
-#include <src/smith/RelMRCI_tasks1.h>
-#include <src/smith/RelMRCI_tasks2.h>
-#include <src/smith/RelMRCI_tasks3.h>
-#include <src/smith/RelMRCI_tasks4.h>
-#include <src/smith/RelMRCI_tasks5.h>
-#include <src/smith/RelMRCI_tasks6.h>
-#include <src/smith/RelMRCI_tasks7.h>
-#include <src/smith/RelMRCI_tasks8.h>
-#include <src/smith/RelMRCI_tasks9.h>
-#include <src/smith/RelMRCI_tasks10.h>
-#include <src/smith/RelMRCI_tasks11.h>
-#include <src/smith/RelMRCI_tasks12.h>
-#include <src/smith/RelMRCI_tasks13.h>
-#include <src/smith/RelMRCI_tasks14.h>
-#include <src/smith/RelMRCI_tasks15.h>
-#include <src/smith/RelMRCI_tasks16.h>
+#include <src/smith/relmrci/RelMRCI_tasks1.h>
+#include <src/smith/relmrci/RelMRCI_tasks2.h>
+#include <src/smith/relmrci/RelMRCI_tasks3.h>
+#include <src/smith/relmrci/RelMRCI_tasks4.h>
+#include <src/smith/relmrci/RelMRCI_tasks5.h>
+#include <src/smith/relmrci/RelMRCI_tasks6.h>
+#include <src/smith/relmrci/RelMRCI_tasks7.h>
+#include <src/smith/relmrci/RelMRCI_tasks8.h>
+#include <src/smith/relmrci/RelMRCI_tasks9.h>
+#include <src/smith/relmrci/RelMRCI_tasks10.h>
+#include <src/smith/relmrci/RelMRCI_tasks11.h>
+#include <src/smith/relmrci/RelMRCI_tasks12.h>
+#include <src/smith/relmrci/RelMRCI_tasks13.h>
+#include <src/smith/relmrci/RelMRCI_tasks14.h>
+#include <src/smith/relmrci/RelMRCI_tasks15.h>
+#include <src/smith/relmrci/RelMRCI_tasks16.h>
 
 #endif
 #endif

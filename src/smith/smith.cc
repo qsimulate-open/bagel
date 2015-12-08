@@ -26,10 +26,10 @@
 
 #include <bagel_config.h>
 #include <src/smith/smith.h>
-#include <src/smith/MRCI.h>
-#include <src/smith/RelMRCI.h>
-#include <src/smith/CASPT2.h>
-#include <src/smith/RelCASPT2.h>
+#include <src/smith/mrci/MRCI.h>
+#include <src/smith/caspt2/CASPT2.h>
+#include <src/smith/relmrci/RelMRCI.h>
+#include <src/smith/relcaspt2/RelCASPT2.h>
 
 
 using namespace std;

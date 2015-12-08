@@ -103,12 +103,6 @@ class Denom {
     // add RDMs (using fock-multiplied 4RDM)
     void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
                                               std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
-    // add RDMs (using original 4RDM)
-    void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
-                                              std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
-    // add RDMs (using Kramers-reduced 4RDM)
-    void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
-                                              std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const Kramers<8,RDM<4,DataType>>>);
     // diagonalize and set to shalf and denom
     void compute();
 
@@ -129,13 +123,6 @@ class Denom {
     template<bool I>
     std::shared_ptr<const TATensor<DataType,3>> tashalf_xh() const { auto o = I ? tashalf_xh_ : tashalf_xh2_; assert(o); return o; }
 };
-
-template<>
-void Denom<double>::append(const int, const int, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>,
-                                                 std::shared_ptr<const RDM<3>>, std::shared_ptr<const Kramers<8,RDM<4>>>);
-template<>
-void Denom<std::complex<double>>::append(const int, const int, std::shared_ptr<const ZRDM<1>>, std::shared_ptr<const ZRDM<2>>,
-                                                               std::shared_ptr<const ZRDM<3>>, std::shared_ptr<const Kramers<8,ZRDM<4>>>);
 
 extern template class Denom<double>;
 extern template class Denom<std::complex<double>>;

@@ -29,7 +29,7 @@
 
 #include <src/util/math/davidson.h>
 #include <src/smith/extrap.h>
-#include <src/smith/RelMRCI.h>
+#include <src/smith/relmrci/RelMRCI.h>
 
 using namespace std;
 using namespace bagel;
@@ -202,4 +202,6 @@ void RelMRCI::RelMRCI::solve() {
 void RelMRCI::RelMRCI::solve_deriv() {
   throw std::logic_error("Nuclear gradients not implemented for RelMRCI");
 }
+
+
 #endif

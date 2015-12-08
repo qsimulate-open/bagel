@@ -26,7 +26,7 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <src/smith/MRCI_tasks8.h>
+#include <src/smith/mrci/MRCI_tasks8.h>
 
 using namespace std;
 using namespace bagel;

@@ -26,8 +26,8 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <src/smith/RelCASPT2.h>
-#include <src/smith/RelCASPT2_tasks.h>
+#include <src/smith/relcaspt2/RelCASPT2.h>
+#include <src/smith/relcaspt2/RelCASPT2_tasks.h>
 
 using namespace std;
 using namespace bagel;
@@ -250,16 +250,20 @@ shared_ptr<FutureTATensor<std::complex<double>,6>> RelCASPT2::RelCASPT2::Gamma59
   return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma59, Gamma59, task26);
 }
 
-shared_ptr<FutureTATensor_new<std::complex<double>,4>> RelCASPT2::RelCASPT2::Gamma60_() {
-  auto Gamma60 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto task27 = make_shared<Task27>(Gamma60, rdm2_);
-  return make_shared<FutureTATensor_new<std::complex<double>,4>>(Gamma60, task27);
+shared_ptr<FutureTATensor<std::complex<double>,4>> RelCASPT2::RelCASPT2::Gamma60_() {
+  auto Gamma60 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto TAGamma60 = Gamma60->tiledarray<4>();
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto task27 = make_shared<Task27>(array<shared_ptr<Tensor>,2>{{Gamma60, make_shared<Tensor>(*rdm2_)}}, pindex);
+  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma60, Gamma60, task27);
 }
 
-shared_ptr<FutureTATensor_new<std::complex<double>,0>> RelCASPT2::RelCASPT2::Gamma69_() {
-  auto Gamma69 = make_shared<TATensor<std::complex<double>,0>>(std::vector<IndexRange>{});
-  auto task28 = make_shared<Task28>(Gamma69, rdm1_, f1_);
-  return make_shared<FutureTATensor_new<std::complex<double>,0>>(Gamma69, task28);
+shared_ptr<FutureTATensor<std::complex<double>,0>> RelCASPT2::RelCASPT2::Gamma69_() {
+  auto Gamma69 = make_shared<Tensor>(std::vector<IndexRange>{});
+  auto TAGamma69 = Gamma69->tiledarray<0>();
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto task28 = make_shared<Task28>(array<shared_ptr<Tensor>,3>{{Gamma69, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*f1_)}}, pindex);
+  return make_shared<FutureTATensor<std::complex<double>,0>>(*TAGamma69, Gamma69, task28);
 }
 
 shared_ptr<FutureTATensor<std::complex<double>,2>> RelCASPT2::RelCASPT2::Gamma81_() {

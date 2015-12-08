@@ -27,7 +27,7 @@
 #ifdef COMPILE_SMITH
 
 
-#include <src/smith/RelCASPT2.h>
+#include <src/smith/relcaspt2/RelCASPT2.h>
 
 using namespace std;
 using namespace bagel;

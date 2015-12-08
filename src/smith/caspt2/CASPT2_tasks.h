@@ -29,23 +29,23 @@
 #ifndef __SRC_SMITH_CASPT2_TASKS_H
 #define __SRC_SMITH_CASPT2_TASKS_H
 
-#include <src/smith/CASPT2_tasks1.h>
-#include <src/smith/CASPT2_tasks2.h>
-#include <src/smith/CASPT2_tasks3.h>
-#include <src/smith/CASPT2_tasks4.h>
-#include <src/smith/CASPT2_tasks5.h>
-#include <src/smith/CASPT2_tasks6.h>
-#include <src/smith/CASPT2_tasks7.h>
-#include <src/smith/CASPT2_tasks8.h>
-#include <src/smith/CASPT2_tasks9.h>
-#include <src/smith/CASPT2_tasks10.h>
-#include <src/smith/CASPT2_tasks11.h>
-#include <src/smith/CASPT2_tasks12.h>
-#include <src/smith/CASPT2_tasks13.h>
-#include <src/smith/CASPT2_tasks14.h>
-#include <src/smith/CASPT2_tasks15.h>
-#include <src/smith/CASPT2_tasks16.h>
-#include <src/smith/CASPT2_tasks17.h>
+#include <src/smith/caspt2/CASPT2_tasks1.h>
+#include <src/smith/caspt2/CASPT2_tasks2.h>
+#include <src/smith/caspt2/CASPT2_tasks3.h>
+#include <src/smith/caspt2/CASPT2_tasks4.h>
+#include <src/smith/caspt2/CASPT2_tasks5.h>
+#include <src/smith/caspt2/CASPT2_tasks6.h>
+#include <src/smith/caspt2/CASPT2_tasks7.h>
+#include <src/smith/caspt2/CASPT2_tasks8.h>
+#include <src/smith/caspt2/CASPT2_tasks9.h>
+#include <src/smith/caspt2/CASPT2_tasks10.h>
+#include <src/smith/caspt2/CASPT2_tasks11.h>
+#include <src/smith/caspt2/CASPT2_tasks12.h>
+#include <src/smith/caspt2/CASPT2_tasks13.h>
+#include <src/smith/caspt2/CASPT2_tasks14.h>
+#include <src/smith/caspt2/CASPT2_tasks15.h>
+#include <src/smith/caspt2/CASPT2_tasks16.h>
+#include <src/smith/caspt2/CASPT2_tasks17.h>
 
 #endif
 #endif

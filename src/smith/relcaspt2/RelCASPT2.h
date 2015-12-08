@@ -75,8 +75,8 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma57_();
     std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma58_();
     std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma59_();
-    std::shared_ptr<FutureTATensor_new<std::complex<double>,4>> Gamma60_();
-    std::shared_ptr<FutureTATensor_new<std::complex<double>,0>> Gamma69_();
+    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma60_();
+    std::shared_ptr<FutureTATensor<std::complex<double>,0>> Gamma69_();
     std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma81_();
     std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma92_();
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);

@@ -27,8 +27,8 @@
 #ifdef COMPILE_SMITH
 
 
-#include <src/smith/MRCI.h>
-#include <src/smith/MRCI_tasks.h>
+#include <src/smith/mrci/MRCI.h>
+#include <src/smith/mrci/MRCI_tasks.h>
 
 using namespace std;
 using namespace bagel;

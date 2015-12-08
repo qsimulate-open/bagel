@@ -512,8 +512,8 @@ class Task243 : public AccTask {
     std::shared_ptr<TATensor<double,4>> ta2_;
     void compute_() override;
   public:
-    Task243(std::shared_ptr<TATensor<double,4>> t2, std::shared_ptr<TATensor<double,4>> I338)
-   : ta1_(t2), ta2_(I338) { }
+    Task243(std::shared_ptr<TATensor<double,4>> v2, std::shared_ptr<TATensor<double,4>> I338)
+   : ta1_(v2), ta2_(I338) { }
 };
 
 class Task244 : public AccTask {
@@ -523,40 +523,39 @@ class Task244 : public AccTask {
     std::shared_ptr<TATensor<double,4>> ta2_;
     void compute_() override;
   public:
-    Task244(std::shared_ptr<TATensor<double,4>> I338, std::shared_ptr<TATensor<double,6>> Gamma105, std::shared_ptr<TATensor<double,4>> v2)
-   : ta0_(I338), ta1_(Gamma105), ta2_(v2) { }
+    Task244(std::shared_ptr<TATensor<double,4>> I338, std::shared_ptr<TATensor<double,6>> Gamma105, std::shared_ptr<TATensor<double,4>> t2)
+   : ta0_(I338), ta1_(Gamma105), ta2_(t2) { }
 };
 
 class Task245 : public AccTask {
+  protected:
+    std::shared_ptr<TATensor<double,4>> ta1_;
+    std::shared_ptr<TATensor<double,4>> ta2_;
+    void compute_() override;
+  public:
+    Task245(std::shared_ptr<TATensor<double,4>> t2, std::shared_ptr<TATensor<double,4>> I341)
+   : ta1_(t2), ta2_(I341) { }
+};
+
+class Task246 : public AccTask {
   protected:
     std::shared_ptr<TATensor<double,4>> ta0_;
     std::shared_ptr<TATensor<double,6>> ta1_;
     std::shared_ptr<TATensor<double,4>> ta2_;
     void compute_() override;
   public:
-    Task245(std::shared_ptr<TATensor<double,4>> I338, std::shared_ptr<TATensor<double,6>> Gamma6, std::shared_ptr<TATensor<double,4>> v2)
-   : ta0_(I338), ta1_(Gamma6), ta2_(v2) { }
+    Task246(std::shared_ptr<TATensor<double,4>> I341, std::shared_ptr<TATensor<double,6>> Gamma6, std::shared_ptr<TATensor<double,4>> v2)
+   : ta0_(I341), ta1_(Gamma6), ta2_(v2) { }
 };
 
-class Task246 : public AccTask {
+class Task247 : public AccTask {
   protected:
     std::shared_ptr<TATensor<double,2>> ta1_;
     std::shared_ptr<TATensor<double,2>> ta2_;
     void compute_() override;
   public:
-    Task246(std::shared_ptr<TATensor<double,2>> Gamma16, std::shared_ptr<TATensor<double,2>> I344)
+    Task247(std::shared_ptr<TATensor<double,2>> Gamma16, std::shared_ptr<TATensor<double,2>> I344)
    : ta1_(Gamma16), ta2_(I344) { }
-};
-
-class Task247 : public AccTask {
-  protected:
-    std::shared_ptr<TATensor<double,2>> ta0_;
-    std::shared_ptr<TATensor<double,4>> ta1_;
-    std::shared_ptr<TATensor<double,4>> ta2_;
-    void compute_() override;
-  public:
-    Task247(std::shared_ptr<TATensor<double,2>> I344, std::shared_ptr<TATensor<double,4>> v2, std::shared_ptr<TATensor<double,4>> t2)
-   : ta0_(I344), ta1_(v2), ta2_(t2) { }
 };
 
 class Task248 : public AccTask {
@@ -572,12 +571,13 @@ class Task248 : public AccTask {
 
 class Task249 : public AccTask {
   protected:
+    std::shared_ptr<TATensor<double,2>> ta0_;
     std::shared_ptr<TATensor<double,4>> ta1_;
     std::shared_ptr<TATensor<double,4>> ta2_;
     void compute_() override;
   public:
-    Task249(std::shared_ptr<TATensor<double,4>> Gamma35, std::shared_ptr<TATensor<double,4>> I350)
-   : ta1_(Gamma35), ta2_(I350) { }
+    Task249(std::shared_ptr<TATensor<double,2>> I344, std::shared_ptr<TATensor<double,4>> v2, std::shared_ptr<TATensor<double,4>> t2)
+   : ta0_(I344), ta1_(v2), ta2_(t2) { }
 };
 
 

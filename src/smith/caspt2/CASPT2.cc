@@ -27,7 +27,7 @@
 #ifdef COMPILE_SMITH
 
 
-#include <src/smith/CASPT2.h>
+#include <src/smith/caspt2/CASPT2.h>
 
 using namespace std;
 using namespace bagel;

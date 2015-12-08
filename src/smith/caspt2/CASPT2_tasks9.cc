@@ -26,7 +26,7 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <src/smith/CASPT2_tasks9.h>
+#include <src/smith/caspt2/CASPT2_tasks9.h>
 
 using namespace std;
 using namespace bagel;
@@ -34,306 +34,306 @@ using namespace bagel::SMITH;
 using namespace bagel::SMITH::CASPT2;
 
 void Task400::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  (*ta0_)("x1, c1") += (*ta1_)("c1, a2, c3, x0") * (*ta2_)("a2, c3, x1, x0");
+  (*ta0_)("x1, c1") += (*ta1_)("x1, c1");
 }
 
 void Task401::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  (*ta0_)("a2, c3, x1, x0") += (*ta1_)("x3, x1, x0, x2") * (*ta2_)("x3, a2, c3, x2");
+  (*ta0_)("x1, c1") += (*ta1_)("c1, a2, c3, x0") * (*ta2_)("a2, c3, x1, x0");
 }
 
 void Task402::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  (*ta0_)("a2, c3, x1, x0") += (*ta1_)("x3, x2, x0, x1") * (*ta2_)("c3, a2, x3, x2") * (-1);
+  (*ta0_)("a2, c3, x1, x0") += (*ta1_)("x3, x1, x0, x2") * (*ta2_)("x3, a2, c3, x2");
 }
 
 void Task403::compute_() {
-  (*ta0_)("x1, c3") += (*ta1_)("x1, c3");
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  ta1_->init();
+  (*ta0_)("a2, c3, x1, x0") += (*ta1_)("x3, x2, x0, x1") * (*ta2_)("c3, a2, x3, x2") * (-1);
 }
 
 void Task404::compute_() {
+  (*ta0_)("x1, c3") += (*ta1_)("x1, c3");
+}
+
+void Task405::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x1, c3") += (*ta1_)("c1, a2, c3, x0") * (*ta2_)("a2, c1, x0, x1");
 }
 
-void Task405::compute_() {
+void Task406::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("a2, c1, x0, x1") += (*ta1_)("x3, x2, x0, x1") * (*ta2_)("x3, a2, c1, x2");
 }
 
-void Task406::compute_() {
+void Task407::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x3, a2, c1, x2") += (*ta1_)("x3, a2, c1, x2") * (-1)
      + (*ta1_)("c1, a2, x3, x2") * 2;
 }
 
-void Task407::compute_() {
+void Task408::compute_() {
   (*ta0_)("x1, a4") += (*ta1_)("a4, x1");
 }
 
-void Task408::compute_() {
+void Task409::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("a4, x1") += (*ta1_)("x0, x1") * (*ta2_)("x0, a4");
 }
 
-void Task409::compute_() {
+void Task410::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x0, a4") += (*ta1_)("c1, a4, c3, a2") * (*ta1_)("c1, a2, c3, x0") * (-2);
 }
 
-void Task410::compute_() {
+void Task411::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x0, a4") += (*ta1_)("c1, a2, c3, a4") * (*ta1_)("c1, a2, c3, x0") * 4;
 }
 
-void Task411::compute_() {
+void Task412::compute_() {
   (*ta0_)("a1, x2") += (*ta1_)("x2, a1");
 }
 
-void Task412::compute_() {
+void Task413::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x2, a1") += (*ta1_)("x0, a1, c2, x1") * (*ta2_)("c2, x1, x2, x0");
 }
 
-void Task413::compute_() {
+void Task414::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c2, x1, x2, x0") += (*ta1_)("x5, x4, x1, x3, x2, x0") * (*ta2_)("x5, x4, c2, x3") * (-1);
 }
 
-void Task414::compute_() {
+void Task415::compute_() {
   (*ta0_)("c3, x2") += (*ta1_)("x2, c3");
 }
 
-void Task415::compute_() {
+void Task416::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x2, c3") += (*ta1_)("c3, a1, c2, x3") * (*ta2_)("c2, a1, x3, x2");
 }
 
-void Task416::compute_() {
+void Task417::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c2, a1, x3, x2") += (*ta1_)("x1, x3, x2, x0") * (*ta2_)("x0, a1, c2, x1");
 }
 
-void Task417::compute_() {
+void Task418::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x2, c3") += (*ta1_)("c2, a1, c3, x3") * (*ta2_)("c2, a1, x2, x3");
 }
 
-void Task418::compute_() {
+void Task419::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c2, a1, x2, x3") += (*ta1_)("x2, x3, x1, x0") * (*ta2_)("x0, a1, c2, x1") * (-1);
 }
 
-void Task419::compute_() {
+void Task420::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x2, c3") += (*ta1_)("c3, a2, c1, x3") * (*ta2_)("a2, c1, x2, x3");
 }
 
-void Task420::compute_() {
+void Task421::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("a2, c1, x2, x3") += (*ta1_)("x2, x3, x1, x0") * (*ta2_)("c1, a2, x0, x1") * (-1);
 }
 
-void Task421::compute_() {
+void Task422::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x2, c3") += (*ta1_)("c1, a2, c3, x3") * (*ta2_)("a2, c1, x2, x3");
 }
 
-void Task422::compute_() {
+void Task423::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("a2, c1, x2, x3") += (*ta1_)("x2, x3, x1, x0") * (*ta2_)("c1, a2, x0, x1") * 2;
 }
 
-void Task423::compute_() {
+void Task424::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x2, c3") += (*ta1_)("x3, a1, c3, a2") * (*ta2_)("a2, a1, x3, x2");
 }
 
-void Task424::compute_() {
+void Task425::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("a2, a1, x3, x2") += (*ta1_)("x3, x0, x2, x1") * (*ta2_)("x0, a1, x1, a2") * (-2);
 }
 
-void Task425::compute_() {
+void Task426::compute_() {
   (*ta0_)("a1, a3") += (*ta1_)("a1, a3");
 }
 
-void Task426::compute_() {
+void Task427::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("a1, a3") += (*ta1_)("x3, a3, c2, x2") * (*ta2_)("c2, a1, x3, x2");
 }
 
-void Task427::compute_() {
+void Task428::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c2, a1, x3, x2") += (*ta1_)("x3, x0, x1, x2") * (*ta2_)("x0, a1, c2, x1");
 }
 
-void Task428::compute_() {
+void Task429::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("a1, a3") += (*ta1_)("c2, a3, x3, x2") * (*ta2_)("c2, a1, x3, x2");
 }
 
-void Task429::compute_() {
+void Task430::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c2, a1, x3, x2") += (*ta1_)("x3, x2, x1, x0") * (*ta2_)("x0, a1, c2, x1") * (-1);
 }
 
-void Task430::compute_() {
+void Task431::compute_() {
   (*ta0_)("c3, a4") += (*ta1_)("a4, c3");
 }
 
-void Task431::compute_() {
+void Task432::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("a4, c3") += (*ta1_)("c2, a4, c3, a1") * (*ta2_)("c2, a1");
 }
 
-void Task432::compute_() {
+void Task433::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c2, a1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, x1") * 2;
 }
 
-void Task433::compute_() {
+void Task434::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("a4, c3") += (*ta1_)("c2, a1, c3, a4") * (*ta2_)("c2, a1");
 }
 
-void Task434::compute_() {
+void Task435::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c2, a1") += (*ta1_)("x1, x0") * (*ta2_)("x0, a1, c2, x1") * (-4);
 }
 
-void Task435::compute_() {
+void Task436::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("a4, c3") += (*ta1_)("c1, a4, c3, a2") * (*ta2_)("a2, c1");
 }
 
-void Task436::compute_() {
+void Task437::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("a2, c1") += (*ta1_)("x1, x0") * (*ta2_)("c1, a2, x0, x1") * (-4);
 }
 
-void Task437::compute_() {
+void Task438::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("a4, c3") += (*ta1_)("c1, a2, c3, a4") * (*ta2_)("a2, c1");
 }
 
-void Task438::compute_() {
+void Task439::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("a2, c1") += (*ta1_)("x1, x0") * (*ta2_)("c1, a2, x0, x1") * 8;
 }
 
-void Task439::compute_() {
+void Task440::compute_() {
   (*ta0_)("a2, x2") += (*ta1_)("x2, a2");
 }
 
-void Task440::compute_() {
+void Task441::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x2, a2") += (*ta1_)("c1, a2, x0, x1") * (*ta2_)("c1, x2, x1, x0");
 }
 
-void Task441::compute_() {
+void Task442::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c1, x2, x1, x0") += (*ta1_)("x5, x4, x2, x3, x1, x0") * (*ta2_)("x5, x4, c1, x3");
 }
 
-void Task442::compute_() {
+void Task443::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x2, a2") += (*ta1_)("x0, a1, x1, a2") * (*ta2_)("a1, x0, x2, x1");
 }
 
-void Task443::compute_() {
+void Task444::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("a1, x0, x2, x1") += (*ta1_)("x5, x0, x4, x3, x2, x1") * (*ta2_)("x5, a1, x4, x3") * 2;
 }
 
-void Task444::compute_() {
+void Task445::compute_() {
   (*ta0_)("c3, c1") += (*ta1_)("c1, c3");
 }
 
-void Task445::compute_() {
+void Task446::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("c1, c3") += (*ta1_)("x3, a2, c3, x2") * (*ta2_)("a2, c1, x3, x2");
 }
 
-void Task446::compute_() {
+void Task447::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("a2, c1, x3, x2") += (*ta1_)("x3, x2, x1, x0") * (*ta2_)("c1, a2, x0, x1");
 }
 
-void Task447::compute_() {
+void Task448::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("c1, c3") += (*ta1_)("c3, a2, x3, x2") * (*ta2_)("a2, c1, x3, x2");
 }
 
-void Task448::compute_() {
+void Task449::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("a2, c1, x3, x2") += (*ta1_)("x3, x2, x1, x0") * (*ta2_)("c1, a2, x0, x1") * (-2);
-}
-
-void Task449::compute_() {
-  (*ta0_)("a2, a3") += (*ta1_)("a2, a3");
 }
 
 #endif

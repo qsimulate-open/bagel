@@ -29,7 +29,7 @@
 
 #include <src/util/math/davidson.h>
 #include <src/smith/extrap.h>
-#include <src/smith/MRCI.h>
+#include <src/smith/mrci/MRCI.h>
 
 using namespace std;
 using namespace bagel;

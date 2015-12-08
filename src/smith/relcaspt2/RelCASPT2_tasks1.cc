@@ -26,7 +26,7 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <src/smith/RelCASPT2_tasks1.h>
+#include <src/smith/relcaspt2/RelCASPT2_tasks1.h>
 
 using namespace std;
 using namespace bagel;
@@ -44,12 +44,12 @@ void Task0::Task_local::compute() {
   std::unique_ptr<std::complex<double>[]> odata = out()->move_block(x0, x5, x1, x4);
   // associated with merged
   std::unique_ptr<std::complex<double>[]> fdata = in(4)->get_block(x3, x2);
-  if (x1 == x5 && x0 == x4) {
+  if (x0 == x4 && x1 == x5) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
-        for (int i5 = 0; i5 != x5.size(); ++i5) {
-          for (int i4 = 0; i4 != x4.size(); ++i4) {
+        for (int i4 = 0; i4 != x4.size(); ++i4) {
+          for (int i5 = 0; i5 != x5.size(); ++i5) {
             odata[i4+x0.size()*(i5+x5.size()*(i5+x1.size()*(i4)))]
               += (-1.0) * i0data[i3+x3.size()*(i2)] * fdata[i3+x3.size()*(i2)];
           }
@@ -71,11 +71,11 @@ void Task0::Task_local::compute() {
     }
   }
   // rdm0 merged case
-  if (x0 == x2 && x1 == x4 && x3 == x5) {
+  if (x1 == x4 && x3 == x5 && x0 == x2) {
     std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block();
-    for (int i2 = 0; i2 != x2.size(); ++i2) {
-      for (int i4 = 0; i4 != x4.size(); ++i4) {
-        for (int i5 = 0; i5 != x5.size(); ++i5) {
+    for (int i4 = 0; i4 != x4.size(); ++i4) {
+      for (int i5 = 0; i5 != x5.size(); ++i5) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
           odata[i2+x0.size()*(i5+x5.size()*(i4+x1.size()*(i4)))]  += 1.0 * i0data[0] * fdata[i5+x3.size()*(i2)];
         }
       }
@@ -95,22 +95,22 @@ void Task0::Task_local::compute() {
     }
   }
   // rdm0 merged case
-  if (x3 == x4 && x1 == x5 && x0 == x2) {
+  if (x0 == x2 && x3 == x4 && x1 == x5) {
     std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block();
-    for (int i4 = 0; i4 != x4.size(); ++i4) {
-      for (int i5 = 0; i5 != x5.size(); ++i5) {
-        for (int i2 = 0; i2 != x2.size(); ++i2) {
+    for (int i2 = 0; i2 != x2.size(); ++i2) {
+      for (int i4 = 0; i4 != x4.size(); ++i4) {
+        for (int i5 = 0; i5 != x5.size(); ++i5) {
           odata[i2+x0.size()*(i5+x5.size()*(i5+x1.size()*(i4)))]  += -1.0 * i0data[0] * fdata[i4+x3.size()*(i2)];
         }
       }
     }
   }
-  if (x1 == x5 && x0 == x2) {
+  if (x0 == x2 && x1 == x5) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x3, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
-        for (int i5 = 0; i5 != x5.size(); ++i5) {
-          for (int i2 = 0; i2 != x2.size(); ++i2) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
+          for (int i5 = 0; i5 != x5.size(); ++i5) {
             odata[i2+x0.size()*(i5+x5.size()*(i5+x1.size()*(i4)))]
               += (1.0) * i0data[i3+x3.size()*(i4)] * fdata[i3+x3.size()*(i2)];
           }
@@ -2828,14 +2828,38 @@ void Task26::Task_local::compute() {
   out()->put_block(odata, x5, x0, x4, x3, x2, x1);
 }
 
-void Task27::compute_() {
-  out_->fill_local(0.0);
-  (*out_)("x3,x0,x2,x1") += (*rdm2_)("x3,x0,x2,x1");
+void Task27::Task_local::compute() {
+  const Index x1 = b(0);
+  const Index x2 = b(1);
+  const Index x0 = b(2);
+  const Index x3 = b(3);
+  // tensor label: Gamma60
+  std::unique_ptr<std::complex<double>[]> odata = out()->move_block(x3, x0, x2, x1);
+  {
+    std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x3, x0, x2, x1);
+    sort_indices<0,1,2,3,1,1,1,1>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
+  }
+  out()->put_block(odata, x3, x0, x2, x1);
 }
 
-void Task28::compute_() {
-  out_->fill_local(0.0);
-  (*out_)("") = (*f1_)("x1,x0").dot((*rdm1_)("x1,x0")).get();
+void Task28::Task_local::compute() {
+  const Index x0 = b(0);
+  const Index x1 = b(1);
+  // scalar
+  // tensor label: Gamma69
+  std::unique_ptr<std::complex<double>[]> odata = out()->move_block();
+  // associated with merged
+  std::unique_ptr<std::complex<double>[]> fdata = in(1)->get_block(x1, x0);
+  {
+    std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x1, x0);
+    for (int i0 = 0; i0 != x0.size(); ++i0) {
+      for (int i1 = 0; i1 != x1.size(); ++i1) {
+        odata[0]
+          += (1.0) * i0data[i1+x1.size()*(i0)] * fdata[i1+x1.size()*(i0)];
+      }
+    }
+  }
+  out()->put_block(odata);
 }
 
 void Task29::Task_local::compute() {
