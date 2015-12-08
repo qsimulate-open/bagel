@@ -538,32 +538,6 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const TATens
 }
 
 
-template<typename DataType>
-shared_ptr<TATensor<DataType,4>> SpinFreeMethod<DataType>::diagonal(shared_ptr<TATensor<DataType,4>> r, shared_ptr<const TATensor<DataType,4>> t) const {
-  assert(to_upper(info_->method()) == "CASPT2");
-  if (!is_same<DataType,double>::value)
-    throw logic_error("SpinFreeMethod<DataType>::diagonal is only correct for non-rel spin-adapted cases ");
-
-  const int ncore = info_->ncore();
-  const int nocc  = info_->nclosed() + info_->nact();
-  const VecView eig = eig_;
-
-  TATensor<DataType,4> i0(vector<IndexRange>{closed_, virt_, closed_, virt_}, true);
-  i0("c2,a3,c0,a1") = (*t)("c0,a1,c2,a3")*8.0 - (*t)("c0,a3,c2,a1")*4.0;
-  foreach_inplace(i0, [&](typename TATensor<DataType,4>::value_type& tile) {
-    auto range = tile.range();
-    auto lo = range.lobound();
-    auto up = range.upbound();
-    size_t n = 0;
-    for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
-      for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
-        for (size_t i2 = lo[2]; i2 != up[2]; ++i2)
-          for (size_t i3 = lo[3]; i3 != up[3]; ++i3)
-            tile[n++] *= - eig(i3+ncore) + eig(i2+nocc) - eig(i1+ncore) + eig(i0+nocc);
-  });
-  (*r)("c2,a3,c0,a1") += i0("c2,a3,c0,a1");
-  return r;
-}
 
 #define SPINFREEMETHOD_DETAIL
 #include <src/smith/spinfreebase_update.cpp>

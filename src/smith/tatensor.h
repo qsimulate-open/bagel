@@ -250,7 +250,7 @@ class TATensor : public TiledArray::Array<DataType,N> {
 
     void init_tile(typename BaseArray::iterator it) {
       madness::Future<value_type> t
-        = get_world().taskq.add([](typename BaseArray::range_Type r) {
+        = get_world().taskq.add([](typename BaseArray::range_type r) {
                                   value_type tile(r);
                                   std::fill(tile.begin(), tile.end(), 0.0);
                                   return tile;

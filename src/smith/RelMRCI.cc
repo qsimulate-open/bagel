@@ -147,6 +147,7 @@ void RelMRCI::RelMRCI::solve() {
           auto queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
+          diagonal(r, t2);
         }
       }
 
@@ -201,6 +202,4 @@ void RelMRCI::RelMRCI::solve() {
 void RelMRCI::RelMRCI::solve_deriv() {
   throw std::logic_error("Nuclear gradients not implemented for RelMRCI");
 }
-
-
 #endif

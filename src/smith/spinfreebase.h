@@ -120,9 +120,6 @@ class SpinFreeMethod {
     std::shared_ptr<TATensor<DataType,4>> init_amplitude() const;
     std::shared_ptr<TATensor<DataType,4>> init_residual() const;
 
-    // diagonal part of CASPT2 (for efficiency)
-    std::shared_ptr<TATensor<DataType,4>> diagonal(std::shared_ptr<TATensor<DataType,4>> r, std::shared_ptr<const TATensor<DataType,4>> t) const;
-
   private:
     int num_threads_;
 

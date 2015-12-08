@@ -147,6 +147,7 @@ void MRCI::MRCI::solve() {
           auto queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
+          diagonal(r, t2);
         }
       }
 

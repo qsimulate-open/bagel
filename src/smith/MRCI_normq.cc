@@ -37,130 +37,130 @@ using namespace bagel::SMITH;
 shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) {
 
   auto normq = make_shared<Queue>();
-  auto task969 = make_shared<Task969>(n, reset);
+  auto task962 = make_shared<Task962>(n, reset);
+  normq->add_task(task962);
+
+  auto I1765 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, closed_, active_, active_});
+  auto task963 = make_shared<Task963>(n, I1765);
+  task963->add_dep(task962);
+  normq->add_task(task963);
+
+  auto task964 = make_shared<Task964>(I1765, Gamma0_(), t2);
+  task963->add_dep(task964);
+  task964->add_dep(task962);
+  normq->add_task(task964);
+
+  auto I1767 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto task965 = make_shared<Task965>(n, I1767);
+  task965->add_dep(task962);
+  normq->add_task(task965);
+
+  auto task966 = make_shared<Task966>(I1767, Gamma4_(), t2);
+  task965->add_dep(task966);
+  task966->add_dep(task962);
+  normq->add_task(task966);
+
+  auto I1769 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, virt_, closed_, active_});
+  auto task967 = make_shared<Task967>(n, I1769);
+  task967->add_dep(task962);
+  normq->add_task(task967);
+
+  auto I1770 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, virt_, closed_, active_});
+  auto task968 = make_shared<Task968>(I1769, Gamma12_(), I1770);
+  task967->add_dep(task968);
+  task968->add_dep(task962);
+  normq->add_task(task968);
+
+  auto task969 = make_shared<Task969>(I1770, t2);
+  task968->add_dep(task969);
+  task969->add_dep(task962);
   normq->add_task(task969);
 
-  auto I1778 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, closed_, active_, active_});
-  auto task970 = make_shared<Task970>(n, I1778);
-  task970->add_dep(task969);
+  auto I1773 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, closed_, active_, active_});
+  auto task970 = make_shared<Task970>(n, I1773);
+  task970->add_dep(task962);
   normq->add_task(task970);
 
-  auto task971 = make_shared<Task971>(I1778, Gamma0_(), t2);
+  auto task971 = make_shared<Task971>(I1773, Gamma27_(), t2);
   task970->add_dep(task971);
-  task971->add_dep(task969);
+  task971->add_dep(task962);
   normq->add_task(task971);
 
-  auto I1780 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
-  auto task972 = make_shared<Task972>(n, I1780);
-  task972->add_dep(task969);
+  auto task972 = make_shared<Task972>(I1773, Gamma29_(), t2);
+  task970->add_dep(task972);
+  task972->add_dep(task962);
   normq->add_task(task972);
 
-  auto task973 = make_shared<Task973>(I1780, Gamma4_(), t2);
-  task972->add_dep(task973);
-  task973->add_dep(task969);
+  auto I1777 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, closed_, active_, active_});
+  auto task973 = make_shared<Task973>(n, I1777);
+  task973->add_dep(task962);
   normq->add_task(task973);
 
-  auto I1782 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, virt_, closed_, active_});
-  auto task974 = make_shared<Task974>(n, I1782);
-  task974->add_dep(task969);
+  auto I1778 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
+  auto task974 = make_shared<Task974>(I1777, Gamma29_(), I1778);
+  task973->add_dep(task974);
+  task974->add_dep(task962);
   normq->add_task(task974);
 
-  auto I1783 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, virt_, closed_, active_});
-  auto task975 = make_shared<Task975>(I1782, Gamma12_(), I1783);
+  auto task975 = make_shared<Task975>(I1778, t2);
   task974->add_dep(task975);
-  task975->add_dep(task969);
+  task975->add_dep(task962);
   normq->add_task(task975);
 
-  auto task976 = make_shared<Task976>(I1783, t2);
-  task975->add_dep(task976);
-  task976->add_dep(task969);
+  auto I1781 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, active_, active_, active_});
+  auto task976 = make_shared<Task976>(n, I1781);
+  task976->add_dep(task962);
   normq->add_task(task976);
 
-  auto I1786 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, closed_, active_, active_});
-  auto task977 = make_shared<Task977>(n, I1786);
-  task977->add_dep(task969);
+  auto task977 = make_shared<Task977>(I1781, Gamma50_(), t2);
+  task976->add_dep(task977);
+  task977->add_dep(task962);
   normq->add_task(task977);
 
-  auto task978 = make_shared<Task978>(I1786, Gamma27_(), t2);
-  task977->add_dep(task978);
-  task978->add_dep(task969);
-  normq->add_task(task978);
+  shared_ptr<TATensor<double,4>> I1783;
+  if (diagonal) {
+    I1783 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, virt_, closed_, virt_});
+  }
+  shared_ptr<Task978> task978;
+  if (diagonal) {
+    task978 = make_shared<Task978>(n, I1783);
+    task978->add_dep(task962);
+    normq->add_task(task978);
+  }
 
-  auto task979 = make_shared<Task979>(I1786, Gamma29_(), t2);
-  task977->add_dep(task979);
-  task979->add_dep(task969);
-  normq->add_task(task979);
+  shared_ptr<Task979> task979;
+  if (diagonal) {
+    task979 = make_shared<Task979>(I1783, t2);
+    task978->add_dep(task979);
+    task979->add_dep(task962);
+    normq->add_task(task979);
+  }
 
-  auto I1790 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, closed_, active_, active_});
-  auto task980 = make_shared<Task980>(n, I1790);
-  task980->add_dep(task969);
+  auto I1785 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, closed_, virt_, active_});
+  auto task980 = make_shared<Task980>(n, I1785);
+  task980->add_dep(task962);
   normq->add_task(task980);
 
-  auto I1791 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
-  auto task981 = make_shared<Task981>(I1790, Gamma29_(), I1791);
+  auto I1786 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, virt_, closed_, virt_});
+  auto task981 = make_shared<Task981>(I1785, Gamma32_(), I1786);
   task980->add_dep(task981);
-  task981->add_dep(task969);
+  task981->add_dep(task962);
   normq->add_task(task981);
 
-  auto task982 = make_shared<Task982>(I1791, t2);
+  auto task982 = make_shared<Task982>(I1786, t2);
   task981->add_dep(task982);
-  task982->add_dep(task969);
+  task982->add_dep(task962);
   normq->add_task(task982);
 
-  auto I1794 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, active_, active_, active_});
-  auto task983 = make_shared<Task983>(n, I1794);
-  task983->add_dep(task969);
+  auto I1789 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, virt_, active_, active_});
+  auto task983 = make_shared<Task983>(n, I1789);
+  task983->add_dep(task962);
   normq->add_task(task983);
 
-  auto task984 = make_shared<Task984>(I1794, Gamma50_(), t2);
+  auto task984 = make_shared<Task984>(I1789, Gamma51_(), t2);
   task983->add_dep(task984);
-  task984->add_dep(task969);
+  task984->add_dep(task962);
   normq->add_task(task984);
-
-  shared_ptr<TATensor<double,4>> I1796;
-  if (diagonal) {
-    I1796 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, virt_, closed_, virt_});
-  }
-  shared_ptr<Task985> task985;
-  if (diagonal) {
-    task985 = make_shared<Task985>(n, I1796);
-    task985->add_dep(task969);
-    normq->add_task(task985);
-  }
-
-  shared_ptr<Task986> task986;
-  if (diagonal) {
-    task986 = make_shared<Task986>(I1796, t2);
-    task985->add_dep(task986);
-    task986->add_dep(task969);
-    normq->add_task(task986);
-  }
-
-  auto I1798 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, closed_, virt_, active_});
-  auto task987 = make_shared<Task987>(n, I1798);
-  task987->add_dep(task969);
-  normq->add_task(task987);
-
-  auto I1799 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, virt_, closed_, virt_});
-  auto task988 = make_shared<Task988>(I1798, Gamma32_(), I1799);
-  task987->add_dep(task988);
-  task988->add_dep(task969);
-  normq->add_task(task988);
-
-  auto task989 = make_shared<Task989>(I1799, t2);
-  task988->add_dep(task989);
-  task989->add_dep(task969);
-  normq->add_task(task989);
-
-  auto I1802 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, virt_, active_, active_});
-  auto task990 = make_shared<Task990>(n, I1802);
-  task990->add_dep(task969);
-  normq->add_task(task990);
-
-  auto task991 = make_shared<Task991>(I1802, Gamma51_(), t2);
-  task990->add_dep(task991);
-  task991->add_dep(task969);
-  normq->add_task(task991);
 
   return normq;
 }
