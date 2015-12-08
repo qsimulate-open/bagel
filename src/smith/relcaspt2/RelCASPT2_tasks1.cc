@@ -2828,38 +2828,14 @@ void Task26::Task_local::compute() {
   out()->put_block(odata, x5, x0, x4, x3, x2, x1);
 }
 
-void Task27::Task_local::compute() {
-  const Index x1 = b(0);
-  const Index x2 = b(1);
-  const Index x0 = b(2);
-  const Index x3 = b(3);
-  // tensor label: Gamma60
-  std::unique_ptr<std::complex<double>[]> odata = out()->move_block(x3, x0, x2, x1);
-  {
-    std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x3, x0, x2, x1);
-    sort_indices<0,1,2,3,1,1,1,1>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
-  }
-  out()->put_block(odata, x3, x0, x2, x1);
+void Task27::compute_() {
+  out_->fill_local(0.0);
+  (*out_)("x3,x0,x2,x1") += (*rdm2_)("x3,x0,x2,x1");
 }
 
-void Task28::Task_local::compute() {
-  const Index x0 = b(0);
-  const Index x1 = b(1);
-  // scalar
-  // tensor label: Gamma69
-  std::unique_ptr<std::complex<double>[]> odata = out()->move_block();
-  // associated with merged
-  std::unique_ptr<std::complex<double>[]> fdata = in(1)->get_block(x1, x0);
-  {
-    std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x1, x0);
-    for (int i0 = 0; i0 != x0.size(); ++i0) {
-      for (int i1 = 0; i1 != x1.size(); ++i1) {
-        odata[0]
-          += (1.0) * i0data[i1+x1.size()*(i0)] * fdata[i1+x1.size()*(i0)];
-      }
-    }
-  }
-  out()->put_block(odata);
+void Task28::compute_() {
+  out_->fill_local(0.0);
+  (*out_)("") = (*f1_)("x1,x0").dot((*rdm1_)("x1,x0")).get();
 }
 
 void Task29::Task_local::compute() {
