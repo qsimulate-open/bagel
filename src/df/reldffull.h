@@ -78,7 +78,8 @@ class RelDFFull : public RelDFBase {
       return out;
     }
 
-    std::shared_ptr<btas::Tensor3<std::complex<double>>> get_block(const int i, const int ii, const int j, const int jj, const int k, const int kk);
+    std::shared_ptr<btas::Tensor3<std::complex<double>>>
+      get_block(const int i, const int ii, const int j, const int jj, const int k, const int kk) const;
 
     std::list<std::shared_ptr<RelDFHalfB>> back_transform(std::array<std::shared_ptr<const Matrix>,4>,
                                                           std::array<std::shared_ptr<const Matrix>,4>) const;
