@@ -51,7 +51,8 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<DFFullDist> get_imag() const { return dffull_[1]; }
 
     bool matches(std::shared_ptr<const RelDFFull> o) const { return alpha_matches(o); }
-    bool alpha_matches(std::shared_ptr<const RelDFFull>) const;
+    bool alpha_matches(std::shared_ptr<const RelDFFull> o) const { return alpha_comp() == o->alpha_comp(); }
+    int alpha_comp() const { assert(basis_.size() == 1); return basis_[0]->alpha_comp(); }
 
     int nocc1() const { assert(dffull_[0]->nocc1() == dffull_[1]->nocc1()); return dffull_[0]->nocc1(); }
     int nocc2() const { assert(dffull_[0]->nocc2() == dffull_[1]->nocc2()); return dffull_[0]->nocc2(); }
@@ -78,6 +79,8 @@ class RelDFFull : public RelDFBase {
       return out;
     }
 
+    std::shared_ptr<btas::Tensor3<std::complex<double>>> get_block(const int i, const int ii, const int j, const int jj, const int k, const int kk);
+
     std::list<std::shared_ptr<RelDFHalfB>> back_transform(std::array<std::shared_ptr<const Matrix>,4>,
                                                           std::array<std::shared_ptr<const Matrix>,4>) const;
     std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const RelDFFull>, const double fac) const;
@@ -85,6 +88,7 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const RelDFFull>, const double fac, const int i) const;
 
     std::shared_ptr<RelDFFull> apply_2rdm(std::shared_ptr<const ZRDM<2>>) const;
+
 };
 
 
@@ -101,6 +105,8 @@ class ListRelDFFull {
     std::list<std::shared_ptr<RelDFFull>>::const_iterator end() const { return data_.cend(); }
 
     void push_back(std::shared_ptr<RelDFFull> a) { data_.push_back(a); }
+
+    std::list<std::shared_ptr<RelDFFull>> data() const { return data_; }
 
     int nocc1() const { assert(!data_.empty()); return data_.front()->nocc1(); }
     int nocc2() const { assert(!data_.empty()); return data_.front()->nocc2(); }

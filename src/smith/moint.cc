@@ -51,133 +51,107 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
 }
 
 
+namespace TiledArray { namespace detail {
+class DFPmap : public Pmap {
+  protected:
+    vector<int> ainfo_;
+  public:
+    DFPmap(World& world, const std::vector<int>& ainfo, const Pmap::size_type dim23) : Pmap(world, ainfo.size()*dim23), ainfo_(ainfo) {
+      Pmap::local_.reserve(std::count(ainfo.begin(), ainfo.end(), Pmap::rank_) * dim23);
+      for (int j = 0, cnt = 0; j != dim23; ++j)
+        for (int i = 0; i != ainfo.size(); ++i, ++cnt)
+          if (ainfo[i] == Pmap::rank_)
+            Pmap::local_.push_back(cnt);
+    }
+    virtual ~DFPmap() { }
+    virtual Pmap::size_type owner(const Pmap::size_type tile) const { return ainfo_[tile % ainfo_.size()]; }
+    virtual bool is_local(const Pmap::size_type tile) const { return DFPmap::owner(tile) == Pmap::rank_; }
+};
+}}
+
+
 template<>
 void K2ext<complex<double>>::init() {
 
-  // bits to store
-#if 0
-  const bool braket = blocks_[0] == blocks_[1] && blocks_[2] == blocks_[3];
-  const vector<vector<int>> cblocks = braket ?
-    vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,1,1,1}} :
-    vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,1,1}, {1,0,1,0}, {1,1,1,1}};
-#else
-  const vector<vector<int>> cblocks {{0,0,0,0},{0,0,0,1},{0,0,1,0},{0,1,0,0},{1,0,0,0},{0,0,1,1},{0,1,0,1},{1,0,0,1},
-                                     {0,1,1,0},{1,0,1,0},{1,1,0,0},{0,1,1,1},{1,0,1,1},{1,1,0,1},{1,1,1,0},{1,1,1,1}};
-#endif
+  vector<int> ainfo;
+  IndexRange aux;
+  shared_ptr<const DFDist> df = info_->geom()->df();
+  const vector<pair<size_t, size_t>> atable = df->adist_now()->atable();
+  for (int n = 0; n != atable.size(); ++n) {
+    IndexRange a("o", atable[n].second, info_->maxtile(), aux.nblock(), aux.size());
+    for (int j = 0; j != a.nblock(); ++j)
+      ainfo.push_back(n);
+    aux.merge(a);
+  }
+  auto pmap = make_shared<TiledArray::detail::DFPmap>(madness::World::get_default(), ainfo, blocks_[0].nblock()*blocks_[1].nblock());
 
-  auto compute = [this, &cblocks](const bool gaunt, const bool breit) {
+  // Coulomb
+  data_->fill_local(0.0);
+  {
+    TATensor<complex<double>,3> ext(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
+    for (auto& i0 : blocks_[0]) {
+      shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
+      list<shared_ptr<RelDFHalf>> half;
+      tie(half, ignore) = RelMOFile::compute_half(info_->geom(), i0coeff, /*gaunt*/false, /*breit*/false);
 
-    map<size_t, shared_ptr<const ListRelDFFull>> dflist, dflist2;
+      for (auto& i1 : blocks_[1]) {
+        shared_ptr<const ZMatrix> i1coeff = coeff_->slice_copy(i1.offset(), i1.offset()+i1.size());
+        shared_ptr<const ListRelDFFull> dffull = RelMOFile::compute_full(i1coeff, half, true);
+        for (auto& a : aux) {
+          auto it = ext.get_local(vector<Index>{a, i0, i1});
+          if (it.first)
+            ext.init_tile(it.second, dffull->data().front()->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
+        }
+      }
+    }
+    (*data_)("o0,o1,o2,o3") += (*ext.conjg())("o4,o0,o1") * (*ext.conjg())("o4,o2,o3");
+  }
+
+  if (info_->gaunt()) {
+    auto temp = make_shared<TATensor<complex<double>,3>>(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
+    using MapType = map<int, shared_ptr<TATensor<complex<double>,3>>>;
+    MapType ext {{Comp::X, temp}, {Comp::Y, temp->clone()}, {Comp::Z, temp->clone()}};
+
+    MapType ext2;
+    if (info_->breit())
+      ext2 = MapType{{Comp::X, temp->clone()}, {Comp::Y, temp->clone()}, {Comp::Z, temp->clone()}};
 
     for (auto& i0 : blocks_[0]) {
       shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
       list<shared_ptr<RelDFHalf>> half, half2;
-      tie(half, half2) = RelMOFile::compute_half(info_->geom(), i0coeff, gaunt, breit);
+      tie(half, half2) = RelMOFile::compute_half(info_->geom(), i0coeff, true, info_->breit());
 
       for (auto& i1 : blocks_[1]) {
         shared_ptr<const ZMatrix> i1coeff = coeff_->slice_copy(i1.offset(), i1.offset()+i1.size());
-        dflist.emplace(generate_hash_key(i0, i1), RelMOFile::compute_full(i1coeff, half, true));
-        if (breit)
-          dflist2.emplace(generate_hash_key(i0, i1), RelMOFile::compute_full(i1coeff, half2, false));
-      }
-    }
-    if (!breit)
-      dflist2 = dflist;
-
-    // form four-index integrals
-    // TODO this part should be heavily parallelized
-    const double gscale = gaunt ? (breit ? -0.25 /*we explicitly symmetrize*/ : -1.0) : 1.0;
-    for (auto& i0 : blocks_[0]) {
-      for (auto& i1 : blocks_[1]) {
-        // find three-index integrals
-        size_t hashkey01 = generate_hash_key(i0, i1);
-        assert(dflist.find(hashkey01) != dflist.end());
-        shared_ptr<const ListRelDFFull> df01   = dflist.find(hashkey01)->second;
-        shared_ptr<const ListRelDFFull> df01_2 = dflist2.find(hashkey01)->second;
-        const int t0 = i0.kramers() ? 1 : 0;
-        const int t1 = i1.kramers() ? 1 : 0;
-
-        for (auto& i2 : blocks_[2]) {
-          for (auto& i3 : blocks_[3]) {
-            // find three-index integrals
-            const int t2 = i2.kramers() ? 1 : 0;
-            const int t3 = i3.kramers() ? 1 : 0;
-            if (find(cblocks.begin(), cblocks.end(), vector<int>{t0, t1, t2, t3}) == cblocks.end())
-              continue;
-
-            size_t hashkey23 = generate_hash_key(i2, i3);
-            assert(dflist.find(hashkey23) != dflist.end());
-            shared_ptr<const ListRelDFFull> df23   = dflist.find(hashkey23)->second;
-            shared_ptr<const ListRelDFFull> df23_2 = dflist2.find(hashkey23)->second;
-
-            // contract
-            // TODO form_4index function now generates global 4 index tensor. This should be localized.
-            // conjugating because (ai|ai) is associated with an excitation operator
-
-            shared_ptr<ZMatrix> tmp = df01->form_4index(df23_2, 1.0)->get_conjg();
-            if (breit)
-              *tmp += *df01->form_4index(df23_2, 1.0)->get_conjg();
-
-            const std::vector<Index> index = {i0, i1, i2, i3};
-            auto tileit = data_->get_local(index);
-            if (tileit.first) {
-              const TiledArray::Range range = data_->trange().make_tile_range(tileit.second.ordinal());
-              typename TiledArray::Array<complex<double>,4>::value_type tile(range);
-              copy_n(tmp->data(), tmp->size(), tile.begin());
-              if (!tileit.second->probe()) {
-                *tileit.second = tile;
-              } else {
-                tileit.second->get().add(tile);
-              }
+        auto init_local = [&](list<shared_ptr<RelDFFull>> li, MapType ee) {
+          for (auto& c : li)
+            for (auto& a : aux) {
+              auto it = ee.at(c->alpha_comp())->get_local(vector<Index>{a, i0, i1});
+              if (it.first)
+                ee.at(c->alpha_comp())->init_tile(it.second, c->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
             }
-
-          }
-        }
+        };
+        init_local(RelMOFile::compute_full(i1coeff, half, true)->data(), ext);
+        if (info_->breit())
+          init_local(RelMOFile::compute_full(i1coeff, half2, false)->data(), ext2);
       }
     }
-  };
+    if (!info_->breit())
+      ext2 = ext;
 
-  // coulomb operator
-  compute(false, false);
-  if (info_->gaunt())
-    compute(true, info_->breit());
-
-#if 0
-  map<vector<int>, pair<double,bool>> perm{{{0,1,2,3}, {1.0, false}}, {{2,3,0,1}, {1.0, false}}};
-  if (braket) {
-    perm.emplace(vector<int>{1,0,3,2}, make_pair(1.0, true));
-    perm.emplace(vector<int>{3,2,1,0}, make_pair(1.0, true));
-  }
-  data_->set_perm(perm);
-#endif
-}
-
-
-namespace TiledArray {
-namespace detail {
-
-class DFPmap : public Pmap {
-  public:
-    using size_type = Pmap::size_type;
-  protected:
-    using Pmap::rank_;
-    std::vector<int> ainfo_;
-  public:
-    DFPmap(World& world, const std::vector<int>& ainfo, const size_type dim23) : Pmap(world, ainfo.size()*dim23), ainfo_(ainfo) {
-      Pmap::local_.reserve(std::count(ainfo.begin(), ainfo.end(), rank_) * dim23);
-      size_t cnt = 0;
-      for (int j = 0; j != dim23; ++j)
-        for (int i = 0; i != ainfo.size(); ++i, ++cnt)
-          if (ainfo[i] == rank_)
-            Pmap::local_.push_back(cnt);
+    const double scale = info_->breit() ? -0.25 /*we explicitly symmetrize*/ : -1.0;
+    (*data_)("o0,o1,o2,o3") += (*ext[Comp::X]->conjg())("o4,o0,o1") * ((*ext2[Comp::X]->conjg())("o4,o2,o3") * scale);
+    (*data_)("o0,o1,o2,o3") += (*ext[Comp::Y]->conjg())("o4,o0,o1") * ((*ext2[Comp::Y]->conjg())("o4,o2,o3") * scale);
+    (*data_)("o0,o1,o2,o3") += (*ext[Comp::Z]->conjg())("o4,o0,o1") * ((*ext2[Comp::Z]->conjg())("o4,o2,o3") * scale);
+    if (info_->breit()) {
+      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::X]->conjg())("o4,o0,o1") * ((*ext[Comp::X]->conjg())("o4,o2,o3") * scale);
+      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::Y]->conjg())("o4,o0,o1") * ((*ext[Comp::Y]->conjg())("o4,o2,o3") * scale);
+      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::Z]->conjg())("o4,o0,o1") * ((*ext[Comp::Z]->conjg())("o4,o2,o3") * scale);
     }
-    virtual ~DFPmap() { }
-    virtual size_type owner(const size_type tile) const { return ainfo_[tile % ainfo_.size()]; }
-    virtual bool is_local(const size_type tile) const { return DFPmap::owner(tile) == rank_; }
-};
+  }
 
 }
-}
+
 
 
 template<>
@@ -200,7 +174,7 @@ void K2ext<double>::init() {
     aux.merge(a);
   }
   auto pmap = make_shared<TiledArray::detail::DFPmap>(madness::World::get_default(), ainfo, blocks_[0].nblock()*blocks_[1].nblock());
-  auto ext  = make_shared<TATensor<double,3>>(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
+  TATensor<double,3> ext(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
 
   // occ loop
   for (auto& i0 : blocks_[0]) {
@@ -209,15 +183,15 @@ void K2ext<double>::init() {
     for (auto& i1 : blocks_[1]) {
       shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->slice(i1.offset(), i1.offset()+i1.size()));
       for (auto& a : aux) {
-        auto it = ext->get_local(vector<Index>{a, i0, i1});
+        auto it = ext.get_local(vector<Index>{a, i0, i1});
         if (it.first)
-          ext->init_tile(it.second, df_full->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
+          ext.init_tile(it.second, df_full->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
       }
     }
   }
 
   data_->fill_local(0.0);
-  (*data_)("o0,o1,o2,o3") += (*ext)("o4,o0,o1") * (*ext)("o4,o2,o3");
+  (*data_)("o0,o1,o2,o3") += ext("o4,o0,o1") * ext("o4,o2,o3");
 
 }
 
