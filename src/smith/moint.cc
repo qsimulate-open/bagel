@@ -46,7 +46,7 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
   // so far MOInt can be called for 2-external K integral and all-internals.
   if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
     throw logic_error("MOInt called with wrong blocks");
-  data_ = make_shared<TATensor<DataType,4>>(blocks_, false, is_same<DataType,complex<double>>::value);
+  data_ = make_shared<TATensor<DataType,4>>(blocks_, false);
   init();
 }
 
@@ -153,6 +153,33 @@ void K2ext<complex<double>>::init() {
 }
 
 
+namespace TiledArray {
+namespace detail {
+
+class DFPmap : public Pmap {
+  public:
+    using size_type = Pmap::size_type;
+  protected:
+    using Pmap::rank_;
+    std::vector<int> ainfo_;
+  public:
+    DFPmap(World& world, const std::vector<int>& ainfo, const size_type dim23) : Pmap(world, ainfo.size()*dim23), ainfo_(ainfo) {
+      Pmap::local_.reserve(std::count(ainfo.begin(), ainfo.end(), rank_) * dim23);
+      size_t cnt = 0;
+      for (int j = 0; j != dim23; ++j)
+        for (int i = 0; i != ainfo.size(); ++i, ++cnt)
+          if (ainfo[i] == rank_)
+            Pmap::local_.push_back(cnt);
+    }
+    virtual ~DFPmap() { }
+    virtual size_type owner(const size_type tile) const { return ainfo_[tile % ainfo_.size()]; }
+    virtual bool is_local(const size_type tile) const { return DFPmap::owner(tile) == rank_; }
+};
+
+}
+}
+
+
 template<>
 void K2ext<double>::init() {
   shared_ptr<const DFDist> df = info_->geom()->df();
@@ -163,87 +190,35 @@ void K2ext<double>::init() {
   // AO dimension
   assert(df->nbasis0() == df->nbasis1());
 
+  vector<int> ainfo;
+  IndexRange aux;
+  const vector<pair<size_t, size_t>> atable = df->adist_now()->atable();
+  for (int n = 0; n != atable.size(); ++n) {
+    IndexRange a("o", atable[n].second, info_->maxtile(), aux.nblock(), aux.size());
+    for (int j = 0; j != a.nblock(); ++j)
+      ainfo.push_back(n);
+    aux.merge(a);
+  }
+  auto pmap = make_shared<TiledArray::detail::DFPmap>(madness::World::get_default(), ainfo, blocks_[0].nblock()*blocks_[1].nblock());
+  auto ext  = make_shared<TATensor<double,3>>(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
+
   // occ loop
   for (auto& i0 : blocks_[0]) {
     shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->slice(i0.offset(), i0.offset()+i0.size()))->apply_J();
     // virtual loop
     for (auto& i1 : blocks_[1]) {
       shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->slice(i1.offset(), i1.offset()+i1.size()));
-      dflist.emplace(generate_hash_key(i0, i1), df_full);
-    }
-  }
-
-  // form four-index integrals
-  bool four_ext = false;
-  for (auto& i0 : blocks_[0]) {
-    for (auto& i1 : blocks_[1]) {
-      // find three-index integrals
-      auto iter01 = dflist.find(generate_hash_key(i0, i1));
-      assert(iter01 != dflist.end());
-      shared_ptr<DFFullDist> df01 = iter01->second;
-      size_t hashkey01 = generate_hash_key(i0, i1);
-
-      const bool i01_virt = i0.label() == "a" && i1.label() == "a";
-
-      for (auto& i2 : blocks_[2]) {
-        for (auto& i3 : blocks_[3]) {
-          // find three-index integrals
-          size_t hashkey23 = generate_hash_key(i2, i3);
-          if (hashkey23 > hashkey01) continue;
-
-          const bool i23_virt = i2.label() == "a" && i3.label() == "a";
-          if (i01_virt && i23_virt) {
-            four_ext = true;
-#if 0
-            continue;
-#endif
-          }
-
-          auto iter23 = dflist.find(generate_hash_key(i2, i3));
-          assert(iter23 != dflist.end());
-          shared_ptr<const DFFullDist> df23 = iter23->second;
-
-          // contract
-          shared_ptr<Matrix> tmp = df01->form_4index(df23, 1.0);
-
-          {
-            const std::vector<Index> index = {i0, i1, i2, i3};
-            auto tileit = data_->get_local(index);
-            if (tileit.first)
-              data_->init_tile(tileit.second, tmp);
-          }
-          if (hashkey23 != hashkey01) {
-            const std::vector<Index> index = {i2, i3, i0, i1};
-            auto tileit = data_->get_local(index);
-            if (tileit.first)
-              data_->init_tile(tileit.second, tmp->transpose());
-          }
-        }
+      for (auto& a : aux) {
+        auto it = ext->get_local(vector<Index>{a, i0, i1});
+        if (it.first)
+          ext->init_tile(it.second, df_full->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
       }
     }
   }
-  // in case 4-external integrals are requested, we store (gamma|aa)?
-#if 0
-  if (four_ext) {
-    vector<pair<size_t, size_t>> atable = df->adist_now()->atable();
-    IndexRange aux;
-    for (auto& i : atable)
-      aux.merge(IndexRange("o", i.second, info_->maxtile(), aux.nblock(), aux.size()));
-    ext_ = make_shared<TATensor<double,3>>(vector<IndexRange>{aux, info_->virt(), info_->virt()}); // TODO pmap!
-    for (auto& i0 : blocks_[0]) {
-      for (auto& i1 : blocks_[1]) {
-        if (i0.label() == "a" && i1.label() == "a") {
-          auto df_full = dflist.at(generate_hash_key(i0, i1));
-          for (auto& a : aux) {
-            auto it = ext_->get_local(vector<Index>{a, i0, i1});
-            if (it.first)
-              ext_->init_tile(it.second, df_full->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
-          }
-        }
-      }
-    }
-  }
-#endif
+
+  data_->fill_local(0.0);
+  (*data_)("o0,o1,o2,o3") += (*ext)("o4,o0,o1") * (*ext)("o4,o2,o3");
+
 }
 
 

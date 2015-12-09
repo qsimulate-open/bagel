@@ -124,29 +124,32 @@ class TATensor : public TiledArray::Array<DataType,N> {
         ss.push_back(*p++);
       assert(ss.size() == N);
 
-      std::string revvars;
-      for (auto i = ss.rbegin(); i != ss.rend(); ++i) {
-        if (i != ss.rbegin()) revvars += ",";
-        revvars += *i;
-      }
-
-      std::array<size_t, N> low, high;
       auto riter = range_.rbegin();
       int n = 0;
+      std::string revvars;
+      std::array<size_t, N> low, high;
       for (auto i = ss.rbegin(); i != ss.rend(); ++i, ++riter, ++n) {
+        if (i != ss.rbegin()) revvars += ",";
+        revvars += *i;
+
         regex re2("[a-z]+");
         smatch m;
         regex_search(*i, m, re2);
         std::string label = m[0]; // c, x, a, ci, o
 
-        bool find = false;
-        low[n] = 0;
-        high[n] = 0;
-        for (int j = 0; j != riter->nblock(); ++j) {
-          const bool matches = riter->range(j).label() == label;
-          find |= matches;
-          if (!find) low[n] += 1;
-          if (!find || matches) high[n] += 1;
+        if (label != "o") { // o is a wild card
+          bool find = false;
+          low[n] = 0;
+          high[n] = 0;
+          for (int j = 0; j != riter->nblock(); ++j) {
+            const bool matches = riter->range(j).label() == label;
+            find |= matches;
+            if (!find) low[n] += 1;
+            if (!find || matches) high[n] += 1;
+          }
+        } else {
+          low[n] = 0;
+          high[n] = riter->nblock();
         }
       }
       return std::make_tuple(revvars, low, high);
@@ -175,8 +178,8 @@ class TATensor : public TiledArray::Array<DataType,N> {
     };
 
   public:
-    TATensor(const std::vector<IndexRange>& r, const bool initialize = false, /*toggle for symmetry*/const bool dummy = false)
-      : BaseArray(madness::World::get_default(), *make_trange(r)), range_(r), initialized_(initialize) {
+    TATensor(const std::vector<IndexRange>& r, const bool initialize = false, std::shared_ptr<typename BaseArray::pmap_interface> pmap = nullptr)
+      : BaseArray(madness::World::get_default(), *make_trange(r), pmap), range_(r), initialized_(initialize) {
       static_assert(N != 0, "this should not happen");
       assert(r.size() == N);
       if (initialize)

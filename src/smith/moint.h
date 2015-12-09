@@ -61,7 +61,6 @@ class K2ext {
     K2ext(std::shared_ptr<const SMITH_Info<DataType>> r, std::shared_ptr<const MatType> c, const std::vector<IndexRange>& b);
 
     std::shared_ptr<TATensor<DataType,4>> tensor() { return data_; }
-    std::shared_ptr<TATensor<DataType,3>> ext() { return ext_; }
 };
 template<> void K2ext<double>::init();
 template<> void K2ext<std::complex<double>>::init();
