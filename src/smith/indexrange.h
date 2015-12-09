@@ -107,8 +107,7 @@ class IndexRange {
         size_ = 0;
       }
     }
-    IndexRange() {}
-    ~IndexRange() {}
+    IndexRange() : size_(0), keyoffset_(0), orboffset_(0), orboffset2_(0) {}
 
     const std::vector<Index>& range() const { return range_; }
     Index range(const int i) const { return range_[i]; }
@@ -127,8 +126,8 @@ class IndexRange {
     int keyoffset() const { return keyoffset_; }
 
     void merge(const IndexRange& o) {
-       range_.insert(range_.end(), o.range_.begin(), o.range_.end());
-       size_ += o.size_;
+      range_.insert(range_.end(), o.range_.begin(), o.range_.end());
+      size_ += o.size_;
     }
 
     bool operator==(const IndexRange& o) const {

@@ -174,7 +174,7 @@ void K2ext<double>::init() {
   }
 
   // form four-index integrals
-  // TODO this part should be heavily parallelized
+  bool four_ext = false;
   for (auto& i0 : blocks_[0]) {
     for (auto& i1 : blocks_[1]) {
       // find three-index integrals
@@ -183,11 +183,21 @@ void K2ext<double>::init() {
       shared_ptr<DFFullDist> df01 = iter01->second;
       size_t hashkey01 = generate_hash_key(i0, i1);
 
+      const bool i01_virt = i0.label() == "a" && i1.label() == "a";
+
       for (auto& i2 : blocks_[2]) {
         for (auto& i3 : blocks_[3]) {
           // find three-index integrals
           size_t hashkey23 = generate_hash_key(i2, i3);
           if (hashkey23 > hashkey01) continue;
+
+          const bool i23_virt = i2.label() == "a" && i3.label() == "a";
+          if (i01_virt && i23_virt) {
+            four_ext = true;
+#if 0
+            continue;
+#endif
+          }
 
           auto iter23 = dflist.find(generate_hash_key(i2, i3));
           assert(iter23 != dflist.end());
@@ -198,29 +208,42 @@ void K2ext<double>::init() {
 
           {
             const std::vector<Index> index = {i0, i1, i2, i3};
-            auto tileiter = data_->get_local(index);
-            if (tileiter.first) {
-              const TiledArray::Range range = data_->trange().make_tile_range(tileiter.second.ordinal());
-              typename TiledArray::Array<double,4>::value_type tile(range);
-              copy_n(tmp->data(), tmp->size(), tile.begin());
-              *tileiter.second = tile;
-            }
+            auto tileit = data_->get_local(index);
+            if (tileit.first)
+              data_->init_tile(tileit.second, tmp);
           }
-
           if (hashkey23 != hashkey01) {
             const std::vector<Index> index = {i2, i3, i0, i1};
             auto tileit = data_->get_local(index);
-            if (tileit.first) {
-              const TiledArray::Range range = data_->trange().make_tile_range(tileit.second.ordinal());
-              typename TiledArray::Array<double,4>::value_type tile(range);
-              blas::transpose(tmp->data(), i0.size()*i1.size(), i2.size()*i3.size(), tile.begin());
-              *tileit.second = tile;
-            }
+            if (tileit.first)
+              data_->init_tile(tileit.second, tmp->transpose());
           }
         }
       }
     }
   }
+  // in case 4-external integrals are requested, we store (gamma|aa)?
+#if 0
+  if (four_ext) {
+    vector<pair<size_t, size_t>> atable = df->adist_now()->atable();
+    IndexRange aux;
+    for (auto& i : atable)
+      aux.merge(IndexRange("o", i.second, info_->maxtile(), aux.nblock(), aux.size()));
+    ext_ = make_shared<TATensor<double,3>>(vector<IndexRange>{aux, info_->virt(), info_->virt()}); // TODO pmap!
+    for (auto& i0 : blocks_[0]) {
+      for (auto& i1 : blocks_[1]) {
+        if (i0.label() == "a" && i1.label() == "a") {
+          auto df_full = dflist.at(generate_hash_key(i0, i1));
+          for (auto& a : aux) {
+            auto it = ext_->get_local(vector<Index>{a, i0, i1});
+            if (it.first)
+              ext_->init_tile(it.second, df_full->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
+          }
+        }
+      }
+    }
+  }
+#endif
 }
 
 

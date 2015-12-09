@@ -258,6 +258,19 @@ class TATensor : public TiledArray::Array<DataType,N> {
       *it = t;
     }
 
+    template<typename InputStorage>
+    void init_tile(typename BaseArray::iterator it, std::shared_ptr<InputStorage> o) {
+      madness::Future<value_type> t
+        = get_world().taskq.add([=](typename BaseArray::range_type r) {
+                                  value_type tile(r);
+                                  assert(o->size() == tile.size());
+                                  std::copy(o->begin(), o->end(), tile.begin());
+                                  return tile;
+                                }, trange().make_tile_range(it.ordinal()));
+      *it = t;
+    }
+
+
     std::pair<bool, typename BaseArray::iterator> get_local(const std::vector<Index>& index) {
       assert(index.size() == N);
       // find index and set lo

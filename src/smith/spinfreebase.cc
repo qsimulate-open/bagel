@@ -88,6 +88,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     }
     K2ext<DataType> v2k(info_, coeff_, {occ, virt, occ, virt});
     v2_ = v2k.tensor();
+    ext_ = v2k.ext();
   }
   timer.tick_print("MO integral evaluation");
 

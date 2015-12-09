@@ -69,6 +69,8 @@ class SpinFreeMethod {
     std::shared_ptr<TATensor<DataType,4>> v2_;
     std::shared_ptr<TATensor<DataType,2>> f1_;
     std::shared_ptr<TATensor<DataType,2>> h1_;
+    // For four-external code
+    std::shared_ptr<TATensor<DataType,3>> ext_;
 
     // contains the current RDMs to be used in smith
     std::shared_ptr<TATensor<DataType,0>> rdm0_;
