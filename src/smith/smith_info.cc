@@ -31,6 +31,62 @@
 
 using namespace std;
 using namespace bagel;
+using namespace bagel::SMITH;
+
+template<typename DataType>
+SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr<const PTree> idata) : ref_(o) {
+  method_ = idata->get<string>("method");
+
+  const bool frozen = idata->get<bool>("frozen", true);
+  ncore_ = idata->get<int>("ncore", (frozen ? ref_->geom()->num_count_ncore_only()/2 : 0));
+  if (ncore_)
+    cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
+  if (ncore_ > nclosed())
+    throw runtime_error("frozen core has been specified but there are not enough closed orbitals");
+  nfrozenvirt_ = idata->get<int>("nfrozenvirt", 0);
+  if (nfrozenvirt_)
+    cout << "    * freezing " << nfrozenvirt_ << " orbital" << (nfrozenvirt_^1 ? "s" : "") << " (virtual)" << endl;
+
+  maxiter_ = idata->get<int>("maxiter", 50);
+  target_  = idata->get<int>("target",   0);
+  maxtile_ = idata->get<int>("maxtile", 10);
+  grad_    = idata->get<bool>("grad", false);
+
+  thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
+  davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
+
+  // subspaces
+  const bool comp  = is_same<DataType,complex<double>>::value;
+  const int ncore2 = ncore_*(comp ? 2 : 1);
+
+  closed_ = IndexRange("c", nclosed()-ncore_, maxtile_, 0, ncore_);
+  if (comp)
+    closed_.merge(IndexRange("c", nclosed()-ncore_, maxtile_, closed_.nblock(), ncore2+closed_.size(), ncore_));
+  active_ = IndexRange("x", nact(), min(maxtile_,10), closed_.nblock(), ncore2+closed_.size());
+  if (comp)
+    active_.merge(IndexRange("x", nact(), min(maxtile_,10), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(), ncore2+closed_.size()));
+  virt_ = IndexRange("a", nvirt(), maxtile_, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());
+  if (comp)
+    virt_.merge(IndexRange("a", nvirt(), maxtile_, closed_.nblock()+active_.nblock()+virt_.nblock(), ncore2+closed_.size()+active_.size()+virt_.size(),
+                                                                                                     ncore2+closed_.size()+active_.size()));
+  all_    = closed_; all_.merge(active_); all_.merge(virt_);
+
+  // IndexRange for orbital update
+  const int nstates = ciwfn()->nstates();
+  const int nact2 = nact()*(comp ? 2 : 1);
+  ortho1_  = IndexRange("o", nstates*nact2, maxtile_);
+  ortho2_  = IndexRange("o", nstates*nact2*nact2, maxtile_);
+  ortho3_  = IndexRange("o", nstates*nact2*nact2*nact2, maxtile_);
+  ortho2t_ = IndexRange("o", nstates*nact2*nact2*(comp ? 1 : 2), maxtile_); // for XXCA
+
+  // only for gradient computation
+  if (ciwfn() && grad_) {
+    // length of the ci expansion
+    const size_t ci_size = ref_->civectors()->data(target_)->size();
+    ci_ = IndexRange("ci", ci_size, maxtile_);
+  }
+}
+
 
 template<>
 tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const {

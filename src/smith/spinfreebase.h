@@ -65,6 +65,7 @@ class SpinFreeMethod {
     double core_energy_;
     double energy_;
 
+    // Hamiltonian. Those are const, but in order to mark as const, one has to update the generator...
     std::shared_ptr<TATensor<DataType,4>> v2_;
     std::shared_ptr<TATensor<DataType,2>> f1_;
     std::shared_ptr<TATensor<DataType,2>> h1_;

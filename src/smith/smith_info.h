@@ -27,17 +27,18 @@
 #define __SRC_SMITH_SMITH_INFO_H
 
 #include <src/wfn/relreference.h>
+#include <src/smith/indexrange.h>
 
 namespace bagel {
+namespace SMITH {
 
 template<typename DataType>
 class SMITH_Info {
   protected:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
+    using CIWfnT  = typename std::conditional<std::is_same<DataType,double>::value,CIWfn,RelCIWfn>::type;
     template<int N>
     using RDMType = RDM<N,DataType>;
-//  using RDMType = typename std::conditional<std::is_same<DataType,double>::value,RDM<N>,Kramers<N*2,ZRDM<N>>>::type;
-    using CIWfnT  = typename std::conditional<std::is_same<DataType,double>::value,CIWfn,RelCIWfn>::type;
 
     std::shared_ptr<const Reference> ref_;
     std::string method_;
@@ -52,26 +53,18 @@ class SMITH_Info {
 
     bool grad_;
 
+    IndexRange virt_;
+    IndexRange active_;
+    IndexRange closed_;
+    IndexRange all_;
+    IndexRange ci_;
+    IndexRange ortho1_;
+    IndexRange ortho2_;
+    IndexRange ortho3_;
+    IndexRange ortho2t_;
+
   public:
-    SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata) : ref_(o) {
-      method_ = idata->get<std::string>("method");
-
-      const bool frozen = idata->get<bool>("frozen", true);
-      ncore_ = idata->get<int>("ncore", (frozen ? ref_->geom()->num_count_ncore_only()/2 : 0));
-      if (ncore_)
-        std::cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << std::endl;
-      nfrozenvirt_ = idata->get<int>("nfrozenvirt", 0);
-      if (nfrozenvirt_)
-        std::cout << "    * freezing " << nfrozenvirt_ << " orbital" << (nfrozenvirt_^1 ? "s" : "") << " (virtual)" << std::endl;
-
-      maxiter_ = idata->get<int>("maxiter", 50);
-      target_  = idata->get<int>("target",   0);
-      maxtile_ = idata->get<int>("maxtile", 10);
-      grad_    = idata->get<bool>("grad", false);
-
-      thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
-      davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
-    }
+    SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata);
 
     std::string method() const { return method_; }
     int ncore() const { return ncore_; }
@@ -95,6 +88,16 @@ class SMITH_Info {
     int target() const { return target_; }
     int maxtile() const { return maxtile_; }
     bool grad() const { return grad_; }
+
+    IndexRange virt() const { return virt_; }
+    IndexRange active() const { return active_; }
+    IndexRange closed() const { return closed_; }
+    IndexRange all() const { return all_; }
+    IndexRange ci() const { return ci_; }
+    IndexRange ortho1() const { return ortho1_; }
+    IndexRange ortho2() const { return ortho2_; }
+    IndexRange ortho3() const { return ortho3_; }
+    IndexRange ortho2t() const { return ortho2t_; }
 
     template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
     bool gaunt() const { return relref()->gaunt(); }
@@ -138,6 +141,7 @@ template<> std::shared_ptr<const ZRDM<1>> SMITH_Info<std::complex<double>>::rdm1
 extern template class SMITH_Info<double>;
 extern template class SMITH_Info<std::complex<double>>;
 
+}
 }
 
 #endif

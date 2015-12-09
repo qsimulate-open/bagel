@@ -48,47 +48,22 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   }
 
   Timer timer;
-  const int max = info_->maxtile();
-  if (info_->ncore() > info_->nclosed())
-    throw runtime_error("frozen core has been specified but there are not enough closed orbitals");
 
-  const int ncore2 = info_->ncore()*(is_same<DataType,double>::value ? 1 : 2);
-
-  closed_ = IndexRange("c", info_->nclosed()-info_->ncore(), max, 0, info_->ncore());
-  if (is_same<DataType,complex<double>>::value)
-    closed_.merge(IndexRange("c", info_->nclosed()-info_->ncore(), max, closed_.nblock(), ncore2+closed_.size(), info_->ncore()));
-
-  active_ = IndexRange("x", info_->nact(), min(max,10), closed_.nblock(), ncore2+closed_.size());
-  if (is_same<DataType,complex<double>>::value)
-    active_.merge(IndexRange("x", info_->nact(), min(max,10), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
-                                                                                                 ncore2+closed_.size()));
-
-  virt_ = IndexRange("a", info_->nvirt(), max, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());
-  if (is_same<DataType,complex<double>>::value)
-    virt_.merge(IndexRange("a", info_->nvirt(), max, closed_.nblock()+active_.nblock()+virt_.nblock(), ncore2+closed_.size()+active_.size()+virt_.size(),
-                                                                                                       ncore2+closed_.size()+active_.size()));
-
-  all_    = closed_; all_.merge(active_); all_.merge(virt_);
-
-  // IndexRange for orbital update
-  const int nstates = info_->ciwfn()->nstates();
-  const int nact2 = info_->nact()*(is_same<DataType,double>::value ? 1 : 2);
-  ortho1_  = IndexRange("o", nstates*nact2, max);
-  ortho2_  = IndexRange("o", nstates*nact2*nact2, max);
-  ortho3_  = IndexRange("o", nstates*nact2*nact2*nact2, max);
-  ortho2t_ = IndexRange("o", nstates*nact2*nact2*(is_same<DataType,double>::value ? 2 : 1), max); // for XXCA
+  virt_   = info_->virt();
+  active_ = info_->active();
+  closed_ = info_->closed();
+  all_    = info_->all();
+  ci_     = info_->ci();
+  ortho1_ = info_->ortho1();
+  ortho2_ = info_->ortho2();
+  ortho3_ = info_->ortho3();
+  ortho2t_= info_->ortho2t();
 
   rclosed_ = make_shared<const IndexRange>(closed_);
   ractive_ = make_shared<const IndexRange>(active_);
   rvirt_   = make_shared<const IndexRange>(virt_);
-
-  // only for gradient computation
-  if (info_->ciwfn() && info_->grad()) {
-    // length of the ci expansion
-    const size_t ci_size = info_->ref()->civectors()->data(info_->target())->size();
-    ci_ = IndexRange("ci", ci_size, max);
+  if (info_->ciwfn() && info_->grad())
     rci_ = make_shared<const IndexRange>(ci_);
-  }
 
   // f1 tensor.
   {

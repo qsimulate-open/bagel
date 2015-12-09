@@ -258,7 +258,7 @@ class TATensor : public TiledArray::Array<DataType,N> {
       *it = t;
     }
 
-    auto get_local(const std::vector<Index>& index) -> decltype(std::make_pair(true,begin())) {
+    std::pair<bool, typename BaseArray::iterator> get_local(const std::vector<Index>& index) {
       assert(index.size() == N);
       // find index and set lo
       std::array<size_t,N> lo_in;
@@ -276,6 +276,26 @@ class TATensor : public TiledArray::Array<DataType,N> {
       }
       return std::make_pair(it != end(), it);
     }
+
+    std::pair<bool, typename BaseArray::const_iterator> get_local(const std::vector<Index>& index) const {
+      assert(index.size() == N);
+      // find index and set lo
+      std::array<size_t,N> lo_in;
+      for (int n = 0; n != N; ++n) {
+        auto iter = std::find_if(range_[n].begin(), range_[n].end(), [&](const Index& i) { return i.offset() == index[n].offset(); });
+        lo_in[n] = std::accumulate(range_[n].begin(), iter, 0lu, [](size_t n, const Index& i){ return n + i.size(); });
+      }
+      auto it = begin();
+      for ( ; it != end(); ++it) {
+        const TiledArray::Range range = trange().make_tile_range(it.ordinal());
+        auto lo = range.lobound();
+        assert(lo.size() == N);
+        if (std::equal(lo_in.rbegin(), lo_in.rend(), lo.begin()))
+          break;
+      }
+      return std::make_pair(it != end(), it);
+    }
+
 
     std::vector<IndexRange> indexrange() const { return range_; }
 
