@@ -30,6 +30,7 @@
 #include <src/util/math/diis.h>
 #include <src/periodic/pscf.h>
 #include <src/periodic/poverlap.h>
+//#include <src/periodic/pfmm.h>
 
 using namespace std;
 using namespace bagel;
@@ -37,11 +38,8 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(PSCF)
 
 PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
-  : PSCF_base(idata, geom, re), dodf_(idata->get<bool>("df",true)) {
+  : PSCF_base(idata, geom, re) {
   cout << "  *** Periodic Hartree--Fock ***" << endl << endl;
-  if (!dodf_)
-    throw runtime_error("Periodic SCF only works with density fitting!");
-
   if (nocc_ != noccB_)
     throw runtime_error("PSCF only works for closed shell systems.");
 
@@ -73,6 +71,32 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   ft2_overlap->print("I(IFT)-Overlap", 100);
 #endif
 /**********************************************************************/
+#if 0
+  cout << "DO FMM = " << dofmm_ << endl;
+
+  vector<array<double, 3>> primvecs(3);
+  primvecs[0] = {{1.0, 0.0, 0.0}};
+  primvecs[1] = {{0.0, 1.0, 0.0}};
+  primvecs[2] = {{0.0, 0.0, 1.0}};
+
+  vector<shared_ptr<const Atom>> atoms = geom->atoms();
+  shared_ptr<const Geometry> newgeom = geom->periodic(atoms);
+  auto scell = make_shared<const SimulationCell>(newgeom, primvecs);
+  cout << "*** Simulation Cell ***" << endl;
+  scell->print();
+  PFMM test(scell, true, 10, 1, 10);
+  for (int l = 0; l < test.max_rank(); ++l) {
+    for (int m = 0; m <= l; ++m) { // Mlm = -Ml-m
+      const int imul = l * l + m + l;
+      const double mlm = (test.mlm(imul)).real();
+//      if (abs(mlm) > 1e-8)
+//        cout << "l = " << l << "  m = " << m << "  mlm = " << setw(20) << setprecision(14) << mlm << endl;
+      if (l % 2 == 0 && m % 4 == 0)
+        cout << l << "   " << m << "  " << setw(20) << setprecision(14) << mlm << endl;
+    }
+  }
+#endif
+
 
 }
 
@@ -123,7 +147,12 @@ void PSCF::compute() {
   for (int iter = 0; iter !=  max_iter_; ++iter) {
     auto c = make_shared<PCoeff>(*coeff);
     shared_ptr<const PData> pdensity = c->form_density_rhf(nocc_);
-    auto fock = make_shared<const PFock>(lattice_, hcore_, pdensity);
+    shared_ptr<const PFock> fock;
+    if (!dofmm_) {
+      fock = make_shared<const PFock>(lattice_, hcore_, pdensity);
+    } else {
+      fock = make_shared<const PFock>(lattice_, hcore_, pdensity, true, dodf_, fmm_lmax_, fmm_ws_, fmm_extent_);
+    }
     shared_ptr<const PData> kfock = fock->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
     auto fock0 = make_shared<ZMatrix>(*((*kfock)(gamma)));
     double error = 0;
@@ -138,17 +167,16 @@ void PSCF::compute() {
 
     complex<double> energy;
     double charge = 0.0;
-    shared_ptr<const PData> overlap = koverlap_->ift(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
     for (int i = 0; i != lattice_->num_lattice_vectors(); ++i) {
       energy += (*((*fock)(i)) * *((*pdensity)(i))).trace();
       assert(energy.imag() < 1e-8);
       for (int j = 0; j != blocksize; ++j)
         for (int k = 0; k != blocksize; ++k)
-          charge += ((*overlap)(i)->element(j, k) * (*pdensity)(i)->element(j, k)).real();
+          charge += ((*overlap_)(i)->element(j, k) * (*pdensity)(i)->element(j, k)).real();
     }
     cout << "SP = " << setprecision(1) << charge << "       #ele = " << lattice_->nele();
     energy_ = energy.real() + lattice_->nuclear_repulsion() + fock->correction();
-    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
+    cout << indent << setw(5) << iter << setw(30) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << pscftime.tick();
     if (abs(energy.imag()) > 1e-12) {
       cout << "  *** Warning *** Im(E) = " << setw(15) << fixed << setprecision(12) << energy.imag() << endl;

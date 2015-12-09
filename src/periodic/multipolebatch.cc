@@ -28,7 +28,6 @@
 #include <src/integral/carsphlist.h>
 #include <src/integral/hrrlist.h>
 #include <src/integral/sortlist.h>
-#include <src/integral/os/osintegral.h>
 
 using namespace std;
 using namespace bagel;

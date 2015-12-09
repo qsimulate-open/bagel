@@ -48,6 +48,7 @@ class Matrix1eArray {
     bool localized_;
 
   public:
+    Matrix1eArray() {}
     Matrix1eArray(const std::shared_ptr<const Molecule>, const bool loc = false);
     Matrix1eArray(const int n, const int m, const bool loc = false);
     Matrix1eArray(const Matrix1eArray&);
@@ -69,7 +70,7 @@ class Matrix1eArray {
     void fill_upper() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper(); }
     void fill_upper_conjg() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper_conjg(); }
 
-    virtual void print(const std::string name = "") const;
+    virtual void print(const std::string name = "", const int len = 10) const;
 
     void localize() {
       localized_ = true;
@@ -105,11 +106,11 @@ Matrix1eArray<N, MatType>::Matrix1eArray(const Matrix1eArray& o) : localized_(o.
 
 
 template <int N, typename MatType>
-void Matrix1eArray<N, MatType>::print(const std::string name) const {
+void Matrix1eArray<N, MatType>::print(const std::string name, const int len) const {
   int j = 0;
   for (auto& i : matrices_) {
     std::stringstream ss; ss << name << " " << j++;
-    i->print(ss.str());
+    i->print(ss.str(), len);
   }
 }
 

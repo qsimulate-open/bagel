@@ -51,6 +51,8 @@ class PData {
     PData() { }
     PData(const int bsize, const int nblock, const bool serial = false);
     PData(const PData&);
+    PData(std::vector<std::shared_ptr<const ZMatrix>> vecmat);
+    PData(const PData&, std::shared_ptr<const ZMatrix> block);
 
     ~PData() { }
 

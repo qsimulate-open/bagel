@@ -34,7 +34,7 @@ namespace bagel {
 
 struct ERIRootList  {
   private:
-    std::function<void (const double*, double*, double*, const int)> rfunc[RYS_MAX + 1];
+    std::function<void (const double*, double*, double*, const int)> rfunc[51];
 
     static void eriroot1(const double*, double*, double*, const int);
     static void eriroot2(const double*, double*, double*, const int);
@@ -57,6 +57,35 @@ struct ERIRootList  {
     static void eriroot19(const double*, double*, double*, const int);
     static void eriroot20(const double*, double*, double*, const int);
     static void eriroot21(const double*, double*, double*, const int);
+    static void eriroot22(const double*, double*, double*, const int);
+    static void eriroot23(const double*, double*, double*, const int);
+    static void eriroot24(const double*, double*, double*, const int);
+    static void eriroot25(const double*, double*, double*, const int);
+    static void eriroot26(const double*, double*, double*, const int);
+    static void eriroot27(const double*, double*, double*, const int);
+    static void eriroot28(const double*, double*, double*, const int);
+    static void eriroot29(const double*, double*, double*, const int);
+    static void eriroot30(const double*, double*, double*, const int);
+    static void eriroot31(const double*, double*, double*, const int);
+    static void eriroot32(const double*, double*, double*, const int);
+    static void eriroot33(const double*, double*, double*, const int);
+    static void eriroot34(const double*, double*, double*, const int);
+    static void eriroot35(const double*, double*, double*, const int);
+    static void eriroot36(const double*, double*, double*, const int);
+    static void eriroot37(const double*, double*, double*, const int);
+    static void eriroot38(const double*, double*, double*, const int);
+    static void eriroot39(const double*, double*, double*, const int);
+    static void eriroot40(const double*, double*, double*, const int);
+    static void eriroot41(const double*, double*, double*, const int);
+    static void eriroot42(const double*, double*, double*, const int);
+    static void eriroot43(const double*, double*, double*, const int);
+    static void eriroot44(const double*, double*, double*, const int);
+    static void eriroot45(const double*, double*, double*, const int);
+    static void eriroot46(const double*, double*, double*, const int);
+    static void eriroot47(const double*, double*, double*, const int);
+    static void eriroot48(const double*, double*, double*, const int);
+    static void eriroot49(const double*, double*, double*, const int);
+    static void eriroot50(const double*, double*, double*, const int);
 
 
   public:
@@ -82,6 +111,35 @@ struct ERIRootList  {
       rfunc[19] = &eriroot19;
       rfunc[20] = &eriroot20;
       rfunc[21] = &eriroot21;
+      rfunc[22] = &eriroot22;
+      rfunc[23] = &eriroot23;
+      rfunc[24] = &eriroot24;
+      rfunc[25] = &eriroot25;
+      rfunc[26] = &eriroot26;
+      rfunc[27] = &eriroot27;
+      rfunc[28] = &eriroot28;
+      rfunc[29] = &eriroot29;
+      rfunc[30] = &eriroot30;
+      rfunc[31] = &eriroot31;
+      rfunc[32] = &eriroot32;
+      rfunc[33] = &eriroot33;
+      rfunc[34] = &eriroot34;
+      rfunc[35] = &eriroot35;
+      rfunc[36] = &eriroot36;
+      rfunc[37] = &eriroot37;
+      rfunc[38] = &eriroot38;
+      rfunc[39] = &eriroot39;
+      rfunc[40] = &eriroot40;
+      rfunc[41] = &eriroot41;
+      rfunc[42] = &eriroot42;
+      rfunc[43] = &eriroot43;
+      rfunc[44] = &eriroot44;
+      rfunc[45] = &eriroot45;
+      rfunc[46] = &eriroot46;
+      rfunc[47] = &eriroot47;
+      rfunc[48] = &eriroot48;
+      rfunc[49] = &eriroot49;
+      rfunc[50] = &eriroot50;
     }
 
     void root(const int i, const double* a1, double* a2, double* a3, const int a4) const { rfunc[i](a1, a2, a3, a4); }

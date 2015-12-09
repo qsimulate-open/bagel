@@ -24,7 +24,6 @@
 //
 
 #include <src/periodic/pdata.h>
-#include <src/util/math/matop.h>
 
 using namespace std;
 using namespace bagel;
@@ -47,6 +46,27 @@ PData::PData(const PData& o) : blocksize_(o.blocksize()), nblock_(o.nblock()) {
   pdata_.resize(nblock_);
   for (int i = 0; i != nblock_; ++i)
     pdata_[i] = o.pdata(i);
+}
+
+
+PData::PData(std::vector<std::shared_ptr<const ZMatrix>> v) : blocksize_(v.front()->ndim()), nblock_(v.size()) {
+
+  assert(v.front()->ndim() == v.front()->mdim());
+  pdata_.resize(nblock_);
+  for (int i = 0; i != nblock_; ++i)
+    pdata_[i] = make_shared<ZMatrix>(*v[i]);
+}
+
+
+PData::PData(const PData& o, shared_ptr<const ZMatrix> b) : blocksize_(b->ndim()), nblock_(o.nblock() + 1) {
+
+  assert(b->ndim() == b->mdim());
+  assert(o.pdata().front()->ndim() == b->ndim());
+  pdata_.resize(nblock_);
+  for (int i = 0; i != nblock_ - 1; ++i)
+    pdata_[i] = o.pdata(i);
+
+  pdata_[nblock_-1] = make_shared<ZMatrix>(*b);
 }
 
 

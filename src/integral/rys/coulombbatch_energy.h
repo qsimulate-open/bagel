@@ -42,10 +42,11 @@ class CoulombBatch_energy : public CoulombBatch_Base<double> {
 
   public:
 
-    CoulombBatch_energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
-      :  CoulombBatch_Base<double>(_info, mol, 0, stack) {};
+    CoulombBatch_energy(const std::array<std::shared_ptr<const Shell>,2>& _info, std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
+      :  CoulombBatch_Base<double>(_info, mol, 0, 0, stack) {
+    }
 
-     ~CoulombBatch_energy() {};
+     ~CoulombBatch_energy() {}
 
     void compute() override;
 

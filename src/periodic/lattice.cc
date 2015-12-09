@@ -31,12 +31,8 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 
-Lattice::Lattice(const shared_ptr<const Geometry> g) : primitive_cell_(g) {
-
+Lattice::Lattice(const shared_ptr<const Geometry> g, const int n) : primitive_cell_(g), extent_(n) {
   init();
-
-  if (g->do_periodic_df())
-    init_df(primitive_cell_->overlap_thresh());
 
 #if 0
   cout << "Check orthogonalization of primitive lattice vectors and k-vectors +++" << endl;
@@ -53,7 +49,7 @@ double Lattice::compute_nuclear_repulsion() const {
   auto cell0 = make_shared<const Geometry>(*primitive_cell_);
   vector<shared_ptr<const Atom>> atoms0 = cell0->atoms();
   int icell0 = 0;
-  for (int i = 0; i != ndim_; ++i) icell0 += ncell_ * pow(2 * ncell_ + 1, i);
+  for (int i = 0; i != ndim_; ++i) icell0 += extent_ * pow(2 * extent_ + 1, i);
   int count = 0;
   for (auto& disp : lattice_vectors_) {
     auto cell = make_shared<const Geometry>(*primitive_cell_, disp);
@@ -83,11 +79,12 @@ void Lattice::init() {
   primitive_kvectors_.resize(ndim_);
 
   /* TODO: temp parameters */
-  ncell_ = 4;
-  k_parameter_ = 3;
+  k_parameter_ = 15;
   assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
 
-  num_lattice_vectors_ = pow(2*ncell_+1, ndim_);
+  thresh_ = primitive_cell_->overlap_thresh();
+
+  num_lattice_vectors_ = pow(2*extent_+1, ndim_); // one for CFF
   lattice_vectors_.resize(num_lattice_vectors_);
   num_lattice_pts_ = num_lattice_vectors_ * primitive_cell_->natom();
   nele_ = primitive_cell_->nele() * num_lattice_vectors_;
@@ -98,13 +95,13 @@ void Lattice::init() {
       {
         const array<double, 3> a1 = primitive_cell_->primitive_vectors(0);
         array<double, 3> disp;
-        for (int i1 = -ncell_; i1 <= ncell_; ++i1) {
+        for (int i1 = -extent_; i1 <= extent_; ++i1) {
           disp[0] = i1 * a1[0];
           disp[1] = i1 * a1[1];
           disp[2] = i1 * a1[2];
           array<int, 3> vector = {{i1, 0, 0}};
-          lattice_map_.insert(make_pair(i1 +  ncell_, vector));
-          lattice_vectors_[i1 + ncell_] = disp;
+          lattice_map_.insert(make_pair(i1 +  extent_, vector));
+          lattice_vectors_[i1 + extent_] = disp;
         }
         const double a1sq = dot(a1, a1);
         volume_ = sqrt(a1sq);
@@ -117,8 +114,8 @@ void Lattice::init() {
         const array<double, 3> a2 = primitive_cell_->primitive_vectors(1);
         array<double, 3> disp;
         int count = 0;
-        for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
-          for (int i1 = -ncell_; i1 <= ncell_; ++i1, ++count) {
+        for (int i2 = -extent_; i2 <= extent_; ++i2) {
+          for (int i1 = -extent_; i1 <= extent_; ++i1, ++count) {
             disp[0] = i1 * a1[0] + i2 * a2[0];
             disp[1] = i1 * a1[1] + i2 * a2[1];
             disp[2] = i1 * a1[2] + i2 * a2[2];
@@ -142,9 +139,9 @@ void Lattice::init() {
         const array<double, 3> a3 = primitive_cell_->primitive_vectors(2);
         array<double, 3> disp;
         int count = 0;
-        for (int i3 = -ncell_; i3 <= ncell_; ++i3) {
-          for (int i2 = -ncell_; i2 <= ncell_; ++i2) {
-            for (int i1 = -ncell_; i1 <= ncell_; ++i1, ++count) {
+        for (int i3 = -extent_; i3 <= extent_; ++i3) {
+          for (int i2 = -extent_; i2 <= extent_; ++i2) {
+            for (int i1 = -extent_; i1 <= extent_; ++i1, ++count) {
               disp[0] = i1 * a1[0] + i2 * a2[0] + i3 * a3[0];
               disp[1] = i1 * a1[1] + i2 * a2[1] + i3 * a3[1];
               disp[2] = i1 * a1[2] + i2 * a2[2] + i3 * a3[2];
@@ -181,56 +178,16 @@ int Lattice::find_lattice_vector(const int i, const int j) const {
   const int i1 = abs(v1[0] - v2[0]);
   const int i2 = abs(v1[1] - v2[1]);
   const int i3 = abs(v1[2] - v2[2]);
-  const int out = i1 + (2 * ncell_ + 1) * (i2 + (2 * ncell_ + 1) * i3);
+  const int out = i1 + (2 * extent_ + 1) * (i2 + (2 * extent_ + 1) * i3);
 
   return out;
 }
 
 
-void Lattice::init_df(const double thresh) {
-
-  const int nbas = primitive_cell_->nbasis();
-  const int naux = primitive_cell_->naux();
-  cout << "  Number of auxiliary basis functions per cell: " << setw(8) << naux << endl << endl;
-  cout << "  Since a DF basis is specified, we compute overlap, 2-, and 3-index integrals:" << endl;
-  cout << "    o Storage requirement is "
-       << setprecision(3) << naux * nbas * nbas * num_lattice_vectors_* 8.e-9 << " GB" << endl;
-  Timer time;
-  form_df(thresh);
-  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
-}
+double Lattice::dot(array<double, 3> b, array<double, 3> c) const { return b[0] * c[0] + b[1] * c[1] + b[2] * c[2]; }
 
 
-void Lattice::init_pfmm(const int lmax, const int ws, const double thresh) {
-
-  cout << "  Since PFMM option is specified, we will construct simulation cell." << endl;
-  Timer time;
-  bool is_cubic = true;
-  for (int i = 0; i != ndim_; ++i)
-    for (int j = 0; j != ndim_; ++j) {
-      const double dp = dot(primitive_cell_->primitive_vectors(i), primitive_cell_->primitive_vectors(j));
-      if (dp > numerical_zero__) {
-        is_cubic = false;
-        break;
-      }
-    }
-
-  if (is_cubic) {
-    cout << "  Provided unit cell is cubic, simulation cell is the same as primitive cell." << endl;
-    form_pfmm(is_cubic, lmax, ws, thresh);
-  } else {
-    cout << "  Provided unit cell is non-cubic, simulation cell is the smallest cubic cell that encloses the unit cell." << endl;
-    throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
-  }
-
-  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
-}
-
-
-double Lattice::dot(array<double, 3> b, array<double, 3> c) { return b[0] * c[0] + b[1] * c[1] + b[2] * c[2]; }
-
-
-array<double, 3> Lattice::cross(array<double, 3> b, array<double, 3> c, double s) {
+array<double, 3> Lattice::cross(array<double, 3> b, array<double, 3> c, double s) const {
 
   array<double, 3> out;
   out[0] = (b[1] * c[2] - b[2] * c[1]) * s;
@@ -391,24 +348,58 @@ array<double, 3> Lattice::cell_centre(const int icell) const {
 }
 
 
-void Lattice::form_df(const double thresh) { /*form df object for all blocks in direct space*/
+shared_ptr<const PDFDist> Lattice::form_df() const { /*form df object for all blocks in direct space*/
 
-  const int nbasis = primitive_cell_->nbasis();
-  const int naux   = primitive_cell_->naux();
+  assert(primitive_cell_->do_periodic_df());
+  Timer time;
+  const int nbas = primitive_cell_->nbasis();
+  const int naux = primitive_cell_->naux();
+  cout << "  Number of auxiliary basis functions per cell: " << setw(8) << naux << endl << endl;
+  cout << "  Since a DF basis is specified, we compute overlap, 2-, and 3-index integrals:" << endl;
+  cout << "    o Storage requirement is "
+       << setprecision(3) << naux * nbas * nbas * num_lattice_vectors_* 8.e-9 << " GB" << endl;
+
   vector<shared_ptr<const Atom>> atoms0 = primitive_cell_->atoms();
   vector<shared_ptr<const Atom>> aux_atoms = primitive_cell_->aux_atoms();
 
-  df_ = make_shared<PDFDist>(lattice_vectors_, nbasis, naux, atoms0, aux_atoms, primitive_cell_, thresh);
+  auto out = make_shared<const PDFDist>(lattice_vectors_, nbas, naux, atoms0, aux_atoms, primitive_cell_, thresh_);
+  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
+
+  return out;
 }
 
 
 
-void Lattice::form_pfmm(const bool is_cubic, const int lmax, const int ws, const double thresh) {
+shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, const int lmax, const int ws, const int extent) const {
 
-  if (is_cubic) {
-    auto scell = make_shared<const SimulationCell>(primitive_cell_);
-    pfmm_ = make_shared<const PFMM>(scell, lmax, ws, thresh);
+  // rectangular cells for now
+  cout << "  PFMM option is specified: simulation cell will be constructed." << endl;
+  Timer time;
+  bool is_rec = true;
+  for (int i = 0; i != ndim_; ++i)
+    for (int j = 0; j != ndim_; ++j) {
+      if (i != j) {
+        const double dp = dot(primitive_cell_->primitive_vectors(i), primitive_cell_->primitive_vectors(j));
+        if (dp > numerical_zero__) {
+          is_rec = false;
+          break;
+        }
+      }
+    }
+
+  if (is_rec) {
+    cout << "  Unit cell is rectangular, simulation cell is the same as primitive cell." << endl;
   } else {
+    cout << "  Unit cell is non-rectangular, simulation cell is the smallest cubic cell that encloses the unit cell." << endl;
     throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
   }
+
+  shared_ptr<const PFMM> out;
+
+  auto scell = make_shared<const SimulationCell>(primitive_cell_, lmax);
+  time.tick_print("  Construct a supercell for crystal near-field");
+  out = make_shared<const PFMM>(scell, dodf, lmax, ws, extent, thresh_);
+  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
+
+  return out;
 }

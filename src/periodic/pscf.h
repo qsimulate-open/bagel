@@ -35,7 +35,6 @@ namespace bagel {
 
 class PSCF : public PSCF_base {
   protected:
-    bool dodf_;
 
   private:
     // serialization

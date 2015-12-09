@@ -110,7 +110,7 @@ class Geometry : public Molecule {
     Geometry(const Geometry& o, std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);
     Geometry(const Geometry& o, std::shared_ptr<const Matrix> disp, std::shared_ptr<const PTree> geominfo, const bool rotate = true, const bool nodf = false);
     Geometry(const Geometry& o, const std::array<double,3> disp);
-    Geometry(std::vector<std::shared_ptr<const Geometry>>);
+    Geometry(std::vector<std::shared_ptr<const Geometry>>, const bool nodf = false);
 
     // Returns a constant
     std::shared_ptr<const Matrix> compute_grad_vnuc() const;
@@ -145,6 +145,7 @@ class Geometry : public Molecule {
     std::vector<std::array<double, 3>> primitive_vectors() const { return primitive_vectors_; }
     std::array<double, 3> primitive_vectors(const int i) const { return primitive_vectors_[i]; };
     const bool do_periodic_df() const { return do_periodic_df_; }
+    std::shared_ptr<const Geometry> periodic(std::vector<std::shared_ptr<const Atom>> new_atoms) const;
 
 
 };

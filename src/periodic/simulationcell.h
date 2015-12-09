@@ -28,33 +28,35 @@
 #define __BAGEL_SRC_PERIODIC_SIMULATIONCELL_H
 
 #include <src/wfn/geometry.h>
+#include <src/periodic/localexpansion.h>
+#include <src/periodic/multipolebatch.h>
 
 namespace bagel {
 
 class SimulationCell { /* cubic, same or larger than primitive cell */
   protected:
-    std::vector<std::shared_ptr<const Atom>> atoms_;
+    std::shared_ptr<const Geometry> geom_;
     int ndim_;
     std::vector<std::array<double, 3>> primitive_vectors_; // orthogonal vectors
-    std::array<double, 3> charge_centre_;
+    int lmax_;
 
     int num_jvectors_;
     std::vector<std::array<double, 3>> jvectors_;
-    int nbasis_;
     void init();
     int ws_;
     double extent_, radius_;
     std::vector<std::shared_ptr<const ZMatrix>> multipoles_;
-    void compute_multipoles(const int lmax);
     void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
+    void compute_multipoles();
 
   public:
     SimulationCell() { }
-    SimulationCell(const std::shared_ptr<const Geometry> geom);
-    SimulationCell(std::vector<std::shared_ptr<const Atom>> atoms, const int ndim, std::vector<std::array<double, 3>> prim_vec);
+    SimulationCell(const std::shared_ptr<const Geometry> geom, const int lmax = 10);
+    SimulationCell(const std::shared_ptr<const Geometry> geom, std::vector<std::array<double, 3>> prim_vec, const int lmax = 10);
     virtual ~SimulationCell() { }
 
     int ndim() const { return ndim_; }
+    std::shared_ptr<const Geometry> geom() const { return geom_; }
     int num_jvectors() const { return num_jvectors_; }
 
     std::vector<std::array<double, 3>> jvectors() const { return jvectors_; }
@@ -64,11 +66,14 @@ class SimulationCell { /* cubic, same or larger than primitive cell */
     std::array<double, 3> primitive_vectors(const int i) const { return primitive_vectors_[i]; }
 
     std::vector<std::shared_ptr<const ZMatrix>> multipoles() const { return multipoles_; }
+    std::vector<std::shared_ptr<const ZMatrix>> shift_multipoles(std::array<double, 3> r) const;
 
-    std::array<double, 3> centre() const { return charge_centre_; }
-    double centre(const int i) const { return charge_centre_[i]; }
+    std::array<double, 3> centre() const { return geom_->charge_center(); }
+    double centre(const int i) const { return geom_->charge_center()[i]; }
     double extent() const { return extent_; }
     double radius() const { return radius_; }
+    int nbasis() const { return geom_->nbasis(); }
+    void print() const { geom_->print_atoms(); }
 };
 
 }

@@ -27,7 +27,6 @@
 #include <src/periodic/node.h>
 #include <src/periodic/multipolebatch.h>
 #include <src/periodic/localexpansion.h>
-#include <src/integral/rys/eribatch.h>
 
 using namespace bagel;
 using namespace std;
@@ -74,6 +73,7 @@ void Node::insert_child(shared_ptr<const Node> child) {
 void Node::init() {
 
   is_complete_ = true;
+  iself_ = -1;
   if (nchild_ == 0) is_leaf_ = true;
 
   if (!is_leaf_)
@@ -164,6 +164,8 @@ void Node::insert_neighbour(shared_ptr<const Node> neigh, const bool is_neighbou
       if (r <= (1.0 + ws) * (extent_ + neigh->extent())) {
         neighbour_.resize(nneighbour_ + 1);
         neighbour_[nneighbour_] = neigh;
+        if (r < numerical_zero__)
+          iself_ = nneighbour_;
         ++nneighbour_;
       } else {
         interaction_list_.resize(ninter_ + 1);
@@ -371,7 +373,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets) {
+shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets, const bool dodf, const string auxfile) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
@@ -436,11 +438,19 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   }
 #endif
   ////END OF DEBUG
-#if 1
+
+  assert(iself_ >= 0);
+  int ibas = -1;
+  vector<shared_ptr<const Atom>> close_atoms;
+  int nbas = 0;
+  int inode = 0;
   for (auto& close_node : neighbour_) {
+    if (inode == iself_) ibas = nbas;
+    nbas += close_node->nbasis();
     for (auto& close_body : close_node->bodies()) {
       size_t iat = 0;
       for (auto& close_atom : close_body->atoms()) {
+        close_atoms.push_back(close_atom);
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
         vector<int> tmpoff;
@@ -454,57 +464,118 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         ++iat;
       }
     }
+    ++inode;
   }
-#endif
-
+  assert (ibas >= 0);
   const size_t size = basis.size();
-  const double* density_data = density->data();
 
-  for (int i0 = 0; i0 != size; ++i0) {
-    const shared_ptr<const Shell>  b0 = basis[i0];
-    const int b0offset = new_offset[i0];
-    const int b0size = b0->nbasis();
+  if (!dodf) {
+    const double* density_data = density->data();
 
-    for (int i1 = 0; i1 != size; ++i1) {
-      const shared_ptr<const Shell>  b1 = basis[i1];
-      const int b1offset = new_offset[i1];
-      const int b1size = b1->nbasis();
+    for (int i0 = 0; i0 != size; ++i0) {
+      const shared_ptr<const Shell>  b0 = basis[i0];
+      const int b0offset = new_offset[i0];
+      const int b0size = b0->nbasis();
 
-      for (int i2 = 0; i2 != size; ++i2) {
-        const shared_ptr<const Shell>  b2 = basis[i2];
-        const int b2offset = new_offset[i2];
-        const int b2size = b2->nbasis();
+      for (int i1 = 0; i1 != size; ++i1) {
+        const shared_ptr<const Shell>  b1 = basis[i1];
+        const int b1offset = new_offset[i1];
+        const int b1size = b1->nbasis();
 
-        for (auto& a3 : bodies_) {
-          size_t iat3 = 0;
-          for (auto& atom3 : a3->atoms()) {
-            size_t ish3 = 0;
-            for (auto& b3 : atom3->shells()) {
-              const int b3size = b3->nbasis();
-              const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
-              ++ish3;
+        for (int i2 = 0; i2 != size; ++i2) {
+          const shared_ptr<const Shell>  b2 = basis[i2];
+          const int b2offset = new_offset[i2];
+          const int b2size = b2->nbasis();
 
-              array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
-              ERIBatch eribatch(input, 0.0);
-              eribatch.compute();
-              const double* eridata = eribatch.data();
+          for (auto& a3 : bodies_) {
+            size_t iat3 = 0;
+            for (auto& atom3 : a3->atoms()) {
+              size_t ish3 = 0;
+              for (auto& b3 : atom3->shells()) {
+                const int b3size = b3->nbasis();
+                const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
+                ++ish3;
 
-              for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-                const int j0n = j0 * density->ndim();
-                for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
-                  for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-                    for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
-                      const double eri = *eridata;
-                      out->element(j2, j3) += density_data[j0n + j1] * eri;
+                array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+                ERIBatch eribatch(input, 0.0);
+                eribatch.compute();
+                const double* eridata = eribatch.data();
+
+                for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+                  const int j0n = j0 * density->ndim();
+                  for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                    for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                      for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                        const double eri = *eridata;
+                        out->element(j2, j3) += density_data[j0n + j1] * eri;
+                      }
                     }
                   }
                 }
               }
+              ++iat3;
             }
-            ++iat3;
           }
         }
       }
+    }
+  } else { /* dodf */
+    vector<shared_ptr<const Atom>> aux_atoms;
+    shared_ptr<const PTree> bdata = PTree::read_basis(auxfile);
+    int naux =  0;
+    for (auto& a : close_atoms) {
+       auto aux_atom = make_shared<const Atom>(*a, a->spherical(), auxfile, make_pair(auxfile, bdata), nullptr);
+       aux_atoms.push_back(aux_atom);
+       naux += aux_atom->nbasis();
+    }
+
+    df_ = form_fit(nbas, naux, close_atoms, aux_atoms);
+
+    Matrix subden(nbas, nbas);
+    int o0 = 0;
+    for (int i0 = 0; i0 != size; ++i0) {
+      const shared_ptr<const Shell>  b0 = basis[i0];
+      const int b0offset = new_offset[i0];
+      const int b0size = b0->nbasis();
+      int o1 = 0;
+      for (int i1 = 0; i1 != size; ++i1) {
+        const shared_ptr<const Shell>  b1 = basis[i1];
+        const int b1offset = new_offset[i1];
+        const int b1size = b1->nbasis();
+        auto tmp = density->get_submatrix(b1offset, b0offset, b1size, b0size);
+        subden.copy_block(o1, o0, b1size, b0size, *tmp);
+
+        o1 += b1size;
+      }
+      o0 += b0size;
+    }
+
+    shared_ptr<const Matrix> o = df_->compute_Jop(make_shared<const Matrix>(subden));
+
+    o0 = 0;
+    for (int i0 = 0; i0 != size; ++i0) {
+      const shared_ptr<const Shell>  b0 = basis[i0];
+      const int b0offset = new_offset[i0];
+      const int b0size = b0->nbasis();
+      int o1 = ibas;
+      for (auto& a1 : bodies_) {
+        size_t iat1 = 0;
+        for (auto& atom1 : a1->atoms()) {
+          size_t ish1 = 0;
+          for (auto& b1 : atom1->shells()) {
+            const size_t b1offset = offsets[a1->ishell(iat1) + ish1];
+            const int b1size = b1->nbasis();
+            ++ish1;
+
+            auto tmp = o->get_submatrix(o1, o0, b1size, b0size);
+            out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *tmp);
+
+            o1 += b1size;
+          }
+          ++iat1;
+        }
+      }
+      o0 += b0size;
     }
   }
 

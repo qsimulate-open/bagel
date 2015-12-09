@@ -29,6 +29,10 @@
 
 #include <src/periodic/pdata.h>
 #include <src/periodic/lattice.h>
+#include <src/util/f77.h>
+#include <src/util/parallel/mpi_interface.h>
+#include <src/util/parallel/resources.h>
+#include <src/util/taskqueue.h>
 
 namespace bagel {
 

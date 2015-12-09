@@ -10,5 +10,6 @@
 # for debug
 #g++ -O0 -g -std=c++11 -fopenmp -DDAWSON -lgsl -lblas -llapack -I/usr/local/include -L/opt/local/lib -lgmp -lmpfr -I$HOME/develop/BAGEL *.cc ../_r2root*.cc -o gen
 # for production runs
-g++ -O3 -std=c++11 -fopenmp -DDAWSON -lgsl -lblas -llapack -I/usr/local/include -L/opt/local/lib -lgmp -lmpfr -I$HOME/develop/BAGEL *.cc ../_r2root*.cc -o gen
+#g++ -O3 -std=c++11 -fopenmp -DDAWSON -lgsl -lblas -llapack -I/usr/local/include -L/opt/local/lib -lgmp -lmpfr -I$HOME/develop/BAGEL *.cc ../_r2root*.cc -o gen
+g++ -O3 -std=c++11 -fopenmp -lgsl -lblas -llapack -I/usr/local/include -L/opt/local/lib -lgmp -lmpfr -I$HOME/develop/BAGEL *.cc ../_eriroot*.cc -o gen
 chmod 700 gen

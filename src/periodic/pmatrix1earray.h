@@ -27,9 +27,8 @@
 #ifndef __SRC_PERIODIC_PMATRIX1EARRAY_H
 #define __SRC_PERIODIC_PMATRIX1EARRAY_H
 
-#include <src/periodic/pmatrix1e.h>
-#include <src/util/taskqueue.h>
 #include <src/util/constants.h>
+#include <src/periodic/pmatrix1e.h>
 
 
 namespace bagel {
@@ -79,7 +78,7 @@ void PMatrix1eArray<N>::init(std::shared_ptr<const Lattice> lattice) {
 
   std::shared_ptr<const Geometry> cell0 = lattice->primitive_cell();
   const size_t nshell = accumulate(cell0->atoms().begin(), cell0->atoms().end(), 0, [](int r, std::shared_ptr<const Atom> p) { return r+p->nshell(); });
-  TaskQueue<PMatrix1eArrayTask<N>> task(nshell * nshell * lattice->ncell());
+  TaskQueue<PMatrix1eArrayTask<N>> task(nshell * nshell * lattice->extent());
 
   int g = 0;
   int u = 0;

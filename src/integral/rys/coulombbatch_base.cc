@@ -30,9 +30,11 @@ using namespace bagel;
 
 
 template <typename DataType, Int_t IntType>
-CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const array<shared_ptr<const Shell>,2>& _info, const shared_ptr<const Molecule> mol, const int deriv, shared_ptr<StackMem> stack)
+CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const array<shared_ptr<const Shell>,2>& _info, shared_ptr<const Molecule> mol, const int deriv, const int breit,
+                                                        shared_ptr<StackMem> stack)
  : RysIntegral<DataType, IntType>(_info, stack), mol_(mol) {
 
+  breit_ = breit;
   deriv_rank_ = deriv;
 
   if (_info.size() != 2) throw logic_error("CoulombBatch_base should be called with shell pairs");
@@ -125,7 +127,7 @@ void CoulombBatch_Base<DataType, IntType>::allocate_data(const int asize_final, 
     size_block_ = max(size_start, max(size_intermediate, size_intermediate2));
     size_alloc_ = size_block_;
 
-    // if this is a two-electron Breit integral
+    // if this is a one-electron Breit-type integral
     if (breit_)
       size_alloc_ = 6 * size_block_;
 
@@ -143,7 +145,7 @@ void CoulombBatch_Base<DataType, IntType>::allocate_data(const int asize_final, 
     if (is_same<DataType,double>::value) {
       assert(IntType == Int_t::Standard);
       // in this case, we store everything
-      size_alloc_ = mol()->natom() * 3.0 * size_block_;
+      size_alloc_ = mol()->natom() * 3 * size_block_;
       assert(csize_final == 1);
     } else {
       throw logic_error("something is strange in CoulombBatch_base::allocate_data");

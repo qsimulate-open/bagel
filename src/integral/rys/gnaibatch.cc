@@ -31,7 +31,7 @@ using namespace bagel;
 
 
 GNAIBatch::GNAIBatch(const array<shared_ptr<const Shell>,2>& _info, const shared_ptr<const Molecule> mol, const tuple<int,int> i, shared_ptr<StackMem> stack)
-  :  CoulombBatch_base(_info, mol, 1, stack), iatom_(i) {
+  :  CoulombBatch_base(_info, mol, 1, 0, stack), iatom_(i) {
   if (swap01_) {
     swap(get<0>(iatom_), get<1>(iatom_));
   }

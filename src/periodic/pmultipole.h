@@ -40,7 +40,7 @@ class PMultipole : public PMatrix1eArray<64> {
 
   public:
     PMultipole() { }
-    PMultipole(const std::shared_ptr<const Lattice>, const int iblock, const int lmax = ANG_HRR_END);
+    PMultipole(const std::shared_ptr<const Lattice>, const int lmax = ANG_HRR_END);
 
     ~PMultipole() { }
 

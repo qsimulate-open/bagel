@@ -36,8 +36,13 @@ namespace bagel {
 
 class PSCF_base : public Method {
   protected:
+    bool dodf_;
+    bool dofmm_;
+    int fmm_lmax_, fmm_ws_, fmm_extent_;
+
     std::shared_ptr<const Lattice> lattice_;
     std::shared_ptr<const PData> ktildex_;
+    std::shared_ptr<const POverlap> overlap_;
     std::shared_ptr<const PData> koverlap_;
     std::shared_ptr<const PHcore> hcore_;
     std::shared_ptr<const PCoeff> coeff_;

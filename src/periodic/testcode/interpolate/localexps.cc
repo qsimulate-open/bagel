@@ -9,12 +9,13 @@
 #include <src/util/math/gamma.h>
 #include <src/integral/rys/erirootlist.h>
 #include "localexps.h"
-#include <boost/math/special_functions/erf.hpp>
 
 using namespace std;
 using namespace bagel;
+using namespace test;
 
 const static Legendre plm;
+const static Gamma_scaled gamma_sc;
 
 LocalExps::LocalExps(const int ws, const int l, const int n, const double thr)
   : ws_(ws), lmax_(l), limit_(n), thresh_(thr) {
@@ -75,7 +76,7 @@ void LocalExps::compute_mlm() {
     root_weight(l, nvec);
     const int rank = l + 1;
 
-    for (int ivec = 0; ivec != nvec; ++ivec) {
+    for (int ivec = 1; ivec != nvec; ++ivec) {
       array<int, 3> id = vindex[ivec];
 
       const int pos = ivec * 3;
@@ -96,22 +97,23 @@ void LocalExps::compute_mlm() {
           glower += cweights[i] * pow(croots[i], l);
       }
 
-      Gamma_scaled gamma_sc;
       const double coeff = 2.0 * pow(beta_, 2*l+1) * gamma_sc(l, r);
-#if 0 ////DEBUG
+#if 1 ////DEBUG
+#if 0
       const double boost_gamma_sc = pow(r, l) / boost::math::tgamma(l+0.5);
       const double bagel_gamma_sc = gamma_sc(l, r);
       const double error1 = boost_gamma_sc - bagel_gamma_sc;
       if (abs(error1) > 1e-14) {
         cout << setprecision(9) << rvec_[pos] << "  " << rvec_[pos+1] << "  " << rvec_[pos+2] << "   ";
-        cout << "(l,x) = (" << l << ", " << r << ")  " << setprecision(9) << bagel_gamma_sc << " ***  boost = " << boost_gamma_sc << endl;
+        cout << "(l,x) = (" << l << ", " << r << ")  " << setprecision(21) << bagel_gamma_sc << " ***  boost = " << boost_gamma_sc << endl;
       }
+#endif
 
       const double boost_gamma = 0.5 * boost::math::tgamma_lower(l+0.5, b2r2)/std::pow(b2r2, l+0.5);
       const double error = boost_gamma - glower;
-      if (abs(error) > 1e-14) {
+      if (abs(error) > numerical_zero__) {
         cout << setprecision(9) << rvec_[pos] << "  " << rvec_[pos+1] << "  " << rvec_[pos+2] << "   ";
-        cout << "(l,x) = (" << l << ", " << b2r2 << ")  " << setprecision(9) << glower << " ***  boost = " << boost_gamma << endl;
+        cout << "(l,x) = (" << l << ", " << b2r2 << ")  " << setprecision(21) << glower << " ***  boost = " << boost_gamma << endl;
       }
 #endif ///END OF DEBUG
       const double gupper = 1.0 / pow(r, l+1.0) - glower * coeff;
@@ -135,13 +137,19 @@ void LocalExps::compute_mlm() {
           const double imag = gupper * sin(am * phi) * plm_tilde;
           mlm_[imul] += complex<double>(real, imag);
         }
+        if (abs(id[0]) <= ws_ && abs(id[1]) <= ws_ && abs(id[2]) <= ws_) {
+          // substract smooth part within ws_
+          const double real = coeff * glower * sign * plm_tilde;
+          const double imag = coeff * glower * sin(am * phi) * plm_tilde;
+          mlm_[imul] -= complex<double>(real, imag);
+        }
       }
     }
   }
 
+#if 0
   array<double, 3> a23 = cross(primitive_vectors[1], primitive_vectors[2], 1.0);
   const double scale = 1.0 / dot(primitive_vectors[0], a23);
-  /////const double scale = 2.0 * pi__ / dot(primitive_vectors[0], a23);
   vector<array<double, 3>> primitive_kvectors(3);
   primitive_kvectors[0] = cross(primitive_vectors[1], primitive_vectors[2], scale);
   primitive_kvectors[1] = cross(primitive_vectors[2], primitive_vectors[0], scale);
@@ -157,7 +165,6 @@ void LocalExps::compute_mlm() {
     T_[ivec] = Rsq_[ivec] * beta_ * beta_;
   }
 
-#if 1
   fill_n(roots_, max_rank_ * nvec, 0.0);
   fill_n(weights_, max_rank_ * nvec, 0.0);
   for (int l = 0; l <= lmax_; ++l) {
@@ -166,7 +173,7 @@ void LocalExps::compute_mlm() {
     const int rank = l + 1;
 
 
-    for (int ivec = 0; ivec != nvec; ++ivec) {
+    for (int ivec = 1; ivec != nvec; ++ivec) {
       array<int, 3> id = vindex[ivec];
 
       const int pos = ivec * 3;
@@ -187,7 +194,6 @@ void LocalExps::compute_mlm() {
           glower += cweights[i] * pow(croots[i], l);
       }
 
-      Gamma_scaled gamma_sc;
       const double gamma_coeff = gamma_sc(l, r);
       const double coeff = 2.0 * pow(beta_, 2*l+1) * gamma_coeff;
 
@@ -205,14 +211,9 @@ void LocalExps::compute_mlm() {
 
         const double sign = (m >=0) ? (cos(am * phi)) : (-1.0 * cos(am * phi));
 
-        if (abs(id[0]) <= ws_ && abs(id[1]) <= ws_ && abs(id[2]) <= ws_) {
-          // substract smooth part within ws_
-          const double real = coeff * glower * sign * plm_tilde;
-          const double imag = coeff * glower * sin(am * phi) * plm_tilde;
-          mlm_[imul] -= complex<double>(real, imag);
-        }
         // smooth term
-        const double coeffm = (r > numerical_zero__) ? plm_tilde * gamma_coeff *  exp(-rsq * pibeta) / (r * r) : 0.0;
+        //const double coeffm = (r > numerical_zero__) ? plm_tilde * gamma_coeff *  exp(-rsq * pibeta) / rsq : 0.0;
+        const double coeffm = plm_tilde * gamma_coeff *  exp(-rsq * pibeta) / rsq;
         double real = coeffm * sign;
         double imag = coeffm * sin(am * phi);
         mlm_[imul] += coeffl * complex<double>(real, imag);

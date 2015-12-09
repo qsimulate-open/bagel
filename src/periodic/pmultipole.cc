@@ -30,8 +30,8 @@
 using namespace std;
 using namespace bagel;
 
-PMultipole::PMultipole(const shared_ptr<const Lattice> lattice, const int iblock, const int lmax)
- : PMatrix1eArray<64>(lattice), lmax_(lmax), centre_(lattice->cell_centre(iblock)) {
+PMultipole::PMultipole(const shared_ptr<const Lattice> lattice, const int lmax)
+ : PMatrix1eArray<64>(lattice), lmax_(lmax), centre_(lattice->centre()) {
 
   num_multipoles_ = (lmax + 1) * (lmax + 1);
   assert(num_multipoles_ <= Nblocks());

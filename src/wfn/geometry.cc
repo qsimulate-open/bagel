@@ -403,9 +403,9 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 *  Merge info from multiple geometries to make one          *
 *  supergeometry                                            *
 ************************************************************/
-Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
+Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
   schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), magnetism_(false), london_(nmer.front()->london_),
-  use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_) {
+  use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_), do_periodic_df_(false) {
 
   // A member of Molecule
   spherical_ = nmer.front()->spherical_;
@@ -465,7 +465,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
   /* Data is merged (crossed fingers), now finish */
   common_init1();
   print_atoms();
-  common_init2(true,overlap_thresh_);
+  common_init2(true,overlap_thresh_, nodf);
 
   // static external field
   if (external())
@@ -598,6 +598,27 @@ void Geometry::get_electric_field(shared_ptr<const PTree>& geominfo) {
   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
                                                                          << setw(7) << external_[1] << ", "
                                                                          << setw(7) << external_[2] << ") a.u." << endl << endl;
+}
+
+
+shared_ptr<const Geometry> Geometry::periodic(vector<shared_ptr<const Atom>> atoms) const {
+
+  auto out = make_shared<Geometry>(*this);
+
+  vector<shared_ptr<const Atom>> aux_atoms;
+  if (!auxfile_.empty()) {
+    shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
+    for (auto& a : atoms)
+      aux_atoms.push_back(make_shared<const Atom>(*a, spherical_, auxfile_, make_pair(auxfile_, bdata), nullptr));
+  }
+  out->atoms_ = atoms;
+  out->aux_atoms_ = aux_atoms;
+  out->do_periodic_df_ = false;
+
+  out->common_init1();
+  out->common_init2(true, overlap_thresh_);
+
+  return make_shared<const Geometry>(*out);
 }
 
 

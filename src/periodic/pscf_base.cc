@@ -38,7 +38,19 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(PSCF_base)
 
 PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
- : Method(idata, geom, re), lattice_(make_shared<const Lattice>(geom)) {
+ : Method(idata, geom, re), dodf_(idata->get<bool>("df", true)), dofmm_(idata->get<bool>("cfmm", false)) {
+
+  if (!dodf_ && !dofmm_)
+    throw runtime_error("Periodic SCF only works with FMM if no density fitting is specified!");
+
+  if (dofmm_) {
+    fmm_lmax_   = idata->get<int>("l_max", 10);
+    fmm_ws_     = idata->get<int>("ws", 2);
+    fmm_extent_ = idata->get<int>("extent", 10);
+    lattice_ = make_shared<const Lattice>(geom, fmm_ws_);
+  } else {
+    lattice_ = make_shared<const Lattice>(geom, idata->get<int>("extent", 0));
+  }
 
   Timer pscf;
 
@@ -46,8 +58,8 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
   for (auto& eigblock : eig_) eigblock = make_shared<VectorB>(geom->nbasis());
 
   restart_ = idata_->get<bool>("restart", false);
-  auto overlap = make_shared<const POverlap>(lattice_);
-  koverlap_ = overlap->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+  overlap_ = make_shared<const POverlap>(lattice_);
+  koverlap_ = overlap_->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
   pscf.tick_print("Periodic overlap matrix");
   hcore_ = make_shared<const PHcore>(lattice_);
   pscf.tick_print("Periodic hcore matrix");
