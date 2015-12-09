@@ -46,10 +46,11 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<TATensor<std::complex<double>,4>> t2;
     std::shared_ptr<TATensor<std::complex<double>,4>> r;
     std::shared_ptr<TATensor<std::complex<double>,4>> s;
+    void diagonal(std::shared_ptr<TATensor<std::complex<double>,4>> r, std::shared_ptr<const TATensor<std::complex<double>,4>> t) const;
 
 
     std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma0_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma94_();
+    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma92_();
     std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma2_();
     std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma3_();
     std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma4_();
@@ -57,7 +58,7 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma6_();
     std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma7_();
     std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma9_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma107_();
+    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma105_();
     std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma12_();
     std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma14_();
     std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma16_();
@@ -76,9 +77,8 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma58_();
     std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma59_();
     std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma60_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,0>> Gamma69_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma81_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma92_();
+    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma79_();
+    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma90_();
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
 

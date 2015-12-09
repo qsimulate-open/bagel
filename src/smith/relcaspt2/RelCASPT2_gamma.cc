@@ -42,12 +42,12 @@ shared_ptr<FutureTATensor<std::complex<double>,4>> RelCASPT2::RelCASPT2::Gamma0_
   return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma0, Gamma0, task0);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelCASPT2::RelCASPT2::Gamma94_() {
-  auto Gamma94 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma94 = Gamma94->tiledarray<4>();
+shared_ptr<FutureTATensor<std::complex<double>,4>> RelCASPT2::RelCASPT2::Gamma92_() {
+  auto Gamma92 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto TAGamma92 = Gamma92->tiledarray<4>();
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task1 = make_shared<Task1>(array<shared_ptr<Tensor>,4>{{Gamma94, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma94, Gamma94, task1);
+  auto task1 = make_shared<Task1>(array<shared_ptr<Tensor>,4>{{Gamma92, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
+  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma92, Gamma92, task1);
 }
 
 shared_ptr<FutureTATensor<std::complex<double>,6>> RelCASPT2::RelCASPT2::Gamma2_() {
@@ -106,12 +106,12 @@ shared_ptr<FutureTATensor<std::complex<double>,6>> RelCASPT2::RelCASPT2::Gamma9_
   return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma9, Gamma9, task8);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelCASPT2::RelCASPT2::Gamma107_() {
-  auto Gamma107 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma107 = Gamma107->tiledarray<6>();
+shared_ptr<FutureTATensor<std::complex<double>,6>> RelCASPT2::RelCASPT2::Gamma105_() {
+  auto Gamma105 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
+  auto TAGamma105 = Gamma105->tiledarray<6>();
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task9 = make_shared<Task9>(array<shared_ptr<Tensor>,4>{{Gamma107, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma107, Gamma107, task9);
+  auto task9 = make_shared<Task9>(array<shared_ptr<Tensor>,4>{{Gamma105, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
+  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma105, Gamma105, task9);
 }
 
 shared_ptr<FutureTATensor<std::complex<double>,4>> RelCASPT2::RelCASPT2::Gamma12_() {
@@ -258,28 +258,20 @@ shared_ptr<FutureTATensor<std::complex<double>,4>> RelCASPT2::RelCASPT2::Gamma60
   return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma60, Gamma60, task27);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,0>> RelCASPT2::RelCASPT2::Gamma69_() {
-  auto Gamma69 = make_shared<Tensor>(std::vector<IndexRange>{});
-  auto TAGamma69 = Gamma69->tiledarray<0>();
+shared_ptr<FutureTATensor<std::complex<double>,2>> RelCASPT2::RelCASPT2::Gamma79_() {
+  auto Gamma79 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_});
+  auto TAGamma79 = Gamma79->tiledarray<2>();
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task28 = make_shared<Task28>(array<shared_ptr<Tensor>,3>{{Gamma69, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*f1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,0>>(*TAGamma69, Gamma69, task28);
+  auto task28 = make_shared<Task28>(array<shared_ptr<Tensor>,3>{{Gamma79, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*f1_)}}, pindex);
+  return make_shared<FutureTATensor<std::complex<double>,2>>(*TAGamma79, Gamma79, task28);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,2>> RelCASPT2::RelCASPT2::Gamma81_() {
-  auto Gamma81 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_});
-  auto TAGamma81 = Gamma81->tiledarray<2>();
+shared_ptr<FutureTATensor<std::complex<double>,4>> RelCASPT2::RelCASPT2::Gamma90_() {
+  auto Gamma90 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto TAGamma90 = Gamma90->tiledarray<4>();
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task29 = make_shared<Task29>(array<shared_ptr<Tensor>,3>{{Gamma81, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*f1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,2>>(*TAGamma81, Gamma81, task29);
-}
-
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelCASPT2::RelCASPT2::Gamma92_() {
-  auto Gamma92 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma92 = Gamma92->tiledarray<4>();
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task30 = make_shared<Task30>(array<shared_ptr<Tensor>,3>{{Gamma92, make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*f1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma92, Gamma92, task30);
+  auto task29 = make_shared<Task29>(array<shared_ptr<Tensor>,3>{{Gamma90, make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*f1_)}}, pindex);
+  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma90, Gamma90, task29);
 }
 
 #endif
