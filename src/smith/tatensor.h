@@ -339,7 +339,9 @@ class TATensor : public TiledArray::Array<DataType,N> {
       return *this;
     }
 
-    std::shared_ptr<TATensor<DataType,N>> clone() const { return std::make_shared<TATensor<DataType,N>>(range_); }
+    std::shared_ptr<TATensor<DataType,N>> clone(std::shared_ptr<typename BaseArray::pmap_interface> pmap = nullptr) const {
+      return std::make_shared<TATensor<DataType,N>>(range_, false, pmap);
+    }
     std::shared_ptr<TATensor<DataType,N>> copy() const { return std::make_shared<TATensor<DataType,N>>(*this); }
 
     // TODO temp solution to complex conjugate

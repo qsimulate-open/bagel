@@ -110,11 +110,11 @@ void K2ext<complex<double>>::init() {
   if (info_->gaunt()) {
     auto temp = make_shared<TATensor<complex<double>,3>>(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
     using MapType = map<int, shared_ptr<TATensor<complex<double>,3>>>;
-    MapType ext {{Comp::X, temp}, {Comp::Y, temp->clone()}, {Comp::Z, temp->clone()}};
+    MapType ext {{Comp::X, temp}, {Comp::Y, temp->clone(pmap)}, {Comp::Z, temp->clone(pmap)}};
 
     MapType ext2;
     if (info_->breit())
-      ext2 = MapType{{Comp::X, temp->clone()}, {Comp::Y, temp->clone()}, {Comp::Z, temp->clone()}};
+      ext2 = MapType{{Comp::X, temp->clone(pmap)}, {Comp::Y, temp->clone(pmap)}, {Comp::Z, temp->clone(pmap)}};
 
     for (auto& i0 : blocks_[0]) {
       shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
