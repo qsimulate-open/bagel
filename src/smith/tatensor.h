@@ -56,8 +56,6 @@ inline DistArray<Tile, Policy> clone_part(const DistArray<Tile, Policy>& arg) {
     Future<value_type> tile = world.taskq.add([](const value_type& tile){ return TiledArray::clone(tile); }, atile);
     result.set(index, tile);
   }
-  // TODO until sparsity is handled properly
-  world.gop.fence();
   return result;
 }
 
@@ -197,6 +195,9 @@ class TATensor : public TiledArray::Array<DataType,N> {
     virtual void init() { assert(false); }
 
     void zero() {
+      // TODO until sparsity is implemented properly
+      get_world().gop.fence();
+
       const DataType zero = static_cast<DataType>(0.0);
       for (auto it = begin(); it != end(); ++it)
         if (it->probe())
@@ -204,6 +205,9 @@ class TATensor : public TiledArray::Array<DataType,N> {
     }
 
     void scale(const DataType& a) {
+      // TODO until sparsity is implemented properly
+      get_world().gop.fence();
+
       for (auto it = begin(); it != end(); ++it)
         if (it->probe())
           get_world().taskq.add([=](value_type& x) { x.scale_to(a); }, (*it).future());
@@ -212,6 +216,8 @@ class TATensor : public TiledArray::Array<DataType,N> {
     void ax_plus_y(const DataType& a, std::shared_ptr<const TATensor<DataType,N>> o) { ax_plus_y(a, *o); }
     void ax_plus_y(const DataType& a, const TATensor<DataType,N>& o) {
       assert(range_ == o.range_);
+      // TODO until sparsity is implemented properly
+      get_world().gop.fence();
 
       for (auto it = begin(); it != end(); ++it)
         if (it->probe())
@@ -224,6 +230,8 @@ class TATensor : public TiledArray::Array<DataType,N> {
     DataType dot_product(std::shared_ptr<const TATensor<DataType,N>> o) const { return dot_product(*o); }
     DataType dot_product(const TATensor<DataType,N>& o) const {
       assert(range_ == o.range_);
+      // TODO until sparsity is implemented properly
+      get_world().gop.fence();
 
       TiledArray::detail::ReducePairTask<DotProduct> reduce_task(get_world());
       for (auto it = begin(); it != end(); ++it) {
@@ -234,6 +242,9 @@ class TATensor : public TiledArray::Array<DataType,N> {
     }
 
     size_t size_alloc() const {
+      // TODO until sparsity is implemented properly
+      get_world().gop.fence();
+
       TiledArray::detail::ReduceTask<Size> reduce_task(get_world());
       for (auto it = begin(); it != end(); ++it)
         if (it->probe())
