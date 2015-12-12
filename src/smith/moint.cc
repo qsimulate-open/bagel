@@ -110,55 +110,71 @@ void K2ext<complex<double>>::init() {
 #ifdef HAVE_MKL_H
     mkl_set_num_threads(1);
 #endif
-    (*data_)("o0,o1,o2,o3") += ext("o4,o0,o1").conj() * ext("o4,o2,o3").conj();
+    TATensor<complex<double>,3> ext2(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, true);
+    ext2("o4,o0,o1") += ext("o4,o0,o1").conj();
+    (*data_)("o0,o1,o2,o3") += ext2("o4,o0,o1") * ext2("o4,o2,o3");
   }
 
   if (info_->gaunt()) {
-    auto temp = make_shared<TATensor<complex<double>,3>>(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
     using MapType = map<int, shared_ptr<TATensor<complex<double>,3>>>;
-    MapType ext {{Comp::X, temp}, {Comp::Y, temp->clone(pmap)}, {Comp::Z, temp->clone(pmap)}};
-
-    MapType ext2;
-    if (info_->breit())
-      ext2 = MapType{{Comp::X, temp->clone(pmap)}, {Comp::Y, temp->clone(pmap)}, {Comp::Z, temp->clone(pmap)}};
+    MapType ext, ext2;
 
 #ifdef HAVE_MKL_H
     mkl_set_num_threads(info_->num_threads());
 #endif
-    for (auto& i0 : blocks_[0]) {
-      shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
-      list<shared_ptr<RelDFHalf>> half, half2;
-      tie(half, half2) = RelMOFile::compute_half(info_->geom(), i0coeff, true, info_->breit());
+    {
+      auto temp = make_shared<TATensor<complex<double>,3>>(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
+      ext = MapType{{Comp::X, temp}, {Comp::Y, temp->clone(pmap)}, {Comp::Z, temp->clone(pmap)}};
 
-      for (auto& i1 : blocks_[1]) {
-        shared_ptr<const ZMatrix> i1coeff = coeff_->slice_copy(i1.offset(), i1.offset()+i1.size());
-        auto init_local = [&](list<shared_ptr<RelDFFull>> li, MapType ee) {
-          for (auto& c : li)
-            for (auto& a : aux) {
-              auto it = ee.at(c->alpha_comp())->get_local(vector<Index>{a, i0, i1});
-              if (it.first)
-                ee.at(c->alpha_comp())->init_tile(it.second, c->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
-            }
-        };
-        init_local(RelMOFile::compute_full(i1coeff, half, true)->data(), ext);
-        if (info_->breit())
-          init_local(RelMOFile::compute_full(i1coeff, half2, false)->data(), ext2);
+      if (info_->breit())
+        ext2 = MapType{{Comp::X, temp->clone(pmap)}, {Comp::Y, temp->clone(pmap)}, {Comp::Z, temp->clone(pmap)}};
+
+      for (auto& i0 : blocks_[0]) {
+        shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
+        list<shared_ptr<RelDFHalf>> half, half2;
+        tie(half, half2) = RelMOFile::compute_half(info_->geom(), i0coeff, true, info_->breit());
+
+        for (auto& i1 : blocks_[1]) {
+          shared_ptr<const ZMatrix> i1coeff = coeff_->slice_copy(i1.offset(), i1.offset()+i1.size());
+          auto init_local = [&](list<shared_ptr<RelDFFull>> li, MapType ee) {
+            for (auto& c : li)
+              for (auto& a : aux) {
+                auto it = ee.at(c->alpha_comp())->get_local(vector<Index>{a, i0, i1});
+                if (it.first)
+                  ee.at(c->alpha_comp())->init_tile(it.second, c->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
+              }
+          };
+          init_local(RelMOFile::compute_full(i1coeff, half, true)->data(), ext);
+          if (info_->breit())
+            init_local(RelMOFile::compute_full(i1coeff, half2, false)->data(), ext2);
+        }
       }
+      if (!info_->breit())
+        ext2 = ext;
     }
-    if (!info_->breit())
-      ext2 = ext;
-
 #ifdef HAVE_MKL_H
     mkl_set_num_threads(1);
 #endif
+    auto make_conj = [](shared_ptr<const TATensor<complex<double>,3>> o) {
+      auto out = o->clone();
+      out->fill_local(0.0);
+      (*out)("o4,o0,o1") += (*o)("o4,o0,o1").conj();
+      return out;
+    };
+    for (auto& i : ext)
+      i.second = make_conj(i.second);
+    if (info_->breit())
+      for (auto& i : ext2)
+        i.second = make_conj(i.second);
+
     const double scale = info_->breit() ? -0.25 /*we explicitly symmetrize*/ : -1.0;
-    (*data_)("o0,o1,o2,o3") += (*ext[Comp::X])("o4,o0,o1").conj() * ((*ext2[Comp::X])("o4,o2,o3").conj() * scale);
-    (*data_)("o0,o1,o2,o3") += (*ext[Comp::Y])("o4,o0,o1").conj() * ((*ext2[Comp::Y])("o4,o2,o3").conj() * scale);
-    (*data_)("o0,o1,o2,o3") += (*ext[Comp::Z])("o4,o0,o1").conj() * ((*ext2[Comp::Z])("o4,o2,o3").conj() * scale);
+    (*data_)("o0,o1,o2,o3") += (*ext[Comp::X])("o4,o0,o1") * ((*ext2[Comp::X])("o4,o2,o3") * scale);
+    (*data_)("o0,o1,o2,o3") += (*ext[Comp::Y])("o4,o0,o1") * ((*ext2[Comp::Y])("o4,o2,o3") * scale);
+    (*data_)("o0,o1,o2,o3") += (*ext[Comp::Z])("o4,o0,o1") * ((*ext2[Comp::Z])("o4,o2,o3") * scale);
     if (info_->breit()) {
-      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::X])("o4,o0,o1").conj() * ((*ext[Comp::X])("o4,o2,o3").conj() * scale);
-      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::Y])("o4,o0,o1").conj() * ((*ext[Comp::Y])("o4,o2,o3").conj() * scale);
-      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::Z])("o4,o0,o1").conj() * ((*ext[Comp::Z])("o4,o2,o3").conj() * scale);
+      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::X])("o4,o0,o1") * ((*ext[Comp::X])("o4,o2,o3") * scale);
+      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::Y])("o4,o0,o1") * ((*ext[Comp::Y])("o4,o2,o3") * scale);
+      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::Z])("o4,o0,o1") * ((*ext[Comp::Z])("o4,o2,o3") * scale);
     }
   }
 
@@ -208,7 +224,9 @@ void K2ext<double>::init() {
 #ifdef HAVE_MKL_H
   mkl_set_num_threads(1);
 #endif
-  (*data_)("o0,o1,o2,o3") += ext("o4,o0,o1") * ext("o4,o2,o3");
+  TATensor<double,3> ext2(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, true);
+  ext2("o4,o0,o1") += ext("o4,o0,o1");
+  (*data_)("o0,o1,o2,o3") += ext2("o4,o0,o1") * ext2("o4,o2,o3");
 
 }
 
