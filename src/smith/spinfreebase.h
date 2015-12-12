@@ -121,9 +121,6 @@ class SpinFreeMethod {
     std::shared_ptr<TATensor<DataType,4>> init_amplitude() const;
     std::shared_ptr<TATensor<DataType,4>> init_residual() const;
 
-  private:
-    int num_threads_;
-
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info<DataType>> r);
     ~SpinFreeMethod();

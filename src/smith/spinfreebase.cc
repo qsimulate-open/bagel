@@ -45,6 +45,9 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     int czero = 0;
     char** cnull;
     madness::initialize(czero, cnull);
+#ifdef HAVE_MKL_H
+    mkl_set_num_threads(1);
+#endif
   }
 
   Timer timer;
@@ -114,11 +117,6 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     }
   }
 
-#ifdef HAVE_MKL_H
-  num_threads_ = mkl_get_max_threads();
-  mkl_set_num_threads(1);
-#endif
-
   // set e0
   e0_ = compute_e0();
 }
@@ -128,7 +126,7 @@ template<typename DataType>
 SpinFreeMethod<DataType>::~SpinFreeMethod() {
   madness::finalize();
 #ifdef HAVE_MKL_H
-  mkl_set_num_threads(num_threads_);
+  mkl_set_num_threads(info_->num_threads());
 #endif
 }
 
@@ -399,16 +397,15 @@ template<typename DataType>
 DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const TATensor<DataType,4>> r, shared_ptr<const TATensor<DataType,4>> t2) const {
   DataType out = 0.0;
   // TODO this should not be replicated here!
-  auto rconj = r->conjg();
-  out += (*rconj)("c2,a3,c0,a1").dot((*t2)("c0,a1,c2,a3")).get();
-  out += (*rconj)("x2,a3,x0,a1").dot((*t2)("x0,a1,x2,a3")).get();
-  out += (*rconj)("c2,a3,x0,a1").dot((*t2)("x0,a1,c2,a3")).get();
-  out += (*rconj)("c2,x3,c0,a1").dot((*t2)("c0,a1,c2,x3")).get();
-  out += (*rconj)("c2,x3,c0,x1").dot((*t2)("c0,x1,c2,x3")).get();
-  out += (*rconj)("x2,x3,c0,a1").dot((*t2)("c0,a1,x2,x3")).get();
-  out += (*rconj)("c0,x3,x2,a1").dot((*t2)("x2,a1,c0,x3")).get();
-  out += (*rconj)("x2,x3,x0,a1").dot((*t2)("x0,a1,x2,x3")).get();
-  out += (*rconj)("c2,x3,x0,x1").dot((*t2)("x0,x1,c2,x3")).get();
+  out += (*r)("c2,a3,c0,a1").conj().dot((*t2)("c0,a1,c2,a3")).get();
+  out += (*r)("x2,a3,x0,a1").conj().dot((*t2)("x0,a1,x2,a3")).get();
+  out += (*r)("c2,a3,x0,a1").conj().dot((*t2)("x0,a1,c2,a3")).get();
+  out += (*r)("c2,x3,c0,a1").conj().dot((*t2)("c0,a1,c2,x3")).get();
+  out += (*r)("c2,x3,c0,x1").conj().dot((*t2)("c0,x1,c2,x3")).get();
+  out += (*r)("x2,x3,c0,a1").conj().dot((*t2)("c0,a1,x2,x3")).get();
+  out += (*r)("c0,x3,x2,a1").conj().dot((*t2)("x2,a1,c0,x3")).get();
+  out += (*r)("x2,x3,x0,a1").conj().dot((*t2)("x0,a1,x2,x3")).get();
+  out += (*r)("c2,x3,x0,x1").conj().dot((*t2)("x0,x1,c2,x3")).get();
   return out;
 }
 

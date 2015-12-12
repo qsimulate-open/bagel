@@ -344,15 +344,6 @@ class TATensor : public TiledArray::Array<DataType,N> {
     }
     std::shared_ptr<TATensor<DataType,N>> copy() const { return std::make_shared<TATensor<DataType,N>>(*this); }
 
-    // TODO temp solution to complex conjugate
-    std::shared_ptr<TATensor<DataType,N>> conjg() const {
-      std::shared_ptr<TATensor<DataType,N>> out = copy();
-      for (auto it = out->begin(); it != out->end(); ++it)
-        if (it->probe())
-          get_world().taskq.add([=](value_type& x) { blas::conj_n(x.begin(), x.size()); }, (*it).future());
-      return out;
-    }
-
     // Dummy function...
     DataType get_scalar() const { assert(false); return 0.0; }
 };

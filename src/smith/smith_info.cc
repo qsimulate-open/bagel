@@ -51,6 +51,9 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   target_  = idata->get<int>("target",   0);
   maxtile_ = idata->get<int>("maxtile", 10);
   grad_    = idata->get<bool>("grad", false);
+#ifdef HAVE_MKL_H
+  num_threads_ = mkl_get_max_threads();
+#endif
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);

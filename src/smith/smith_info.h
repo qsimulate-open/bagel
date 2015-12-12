@@ -52,6 +52,7 @@ class SMITH_Info {
     int davidson_subspace_;
 
     bool grad_;
+    int num_threads_;
 
     IndexRange virt_;
     IndexRange active_;
@@ -88,6 +89,7 @@ class SMITH_Info {
     int target() const { return target_; }
     int maxtile() const { return maxtile_; }
     bool grad() const { return grad_; }
+    int num_threads() const { return num_threads_; }
 
     IndexRange virt() const { return virt_; }
     IndexRange active() const { return active_; }
