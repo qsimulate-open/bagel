@@ -413,6 +413,7 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const TATens
 
 #define SPINFREEMETHOD_DETAIL
 #include <src/smith/spinfreebase_update.cpp>
+#include <src/smith/tardm.cpp>
 #undef SPINFREEMETHOD_DETAIL
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

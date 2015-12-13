@@ -98,6 +98,7 @@ class SpinFreeMethod {
 
     // init functions
     void feed_rdm_denom(std::shared_ptr<const MatType> fockact);
+    void feed_rdm_ta();
     void feed_rdm_deriv(std::shared_ptr<const MatType> fockact);
 
     // printing functions called from the solve function of a derived class
@@ -141,8 +142,12 @@ class SpinFreeMethod {
     DataType dot_product_transpose(std::shared_ptr<const MultiTATensor<DataType,4>> r, std::shared_ptr<const MultiTATensor<DataType,4>> t2) const;
 };
 
+
 template<> void SpinFreeMethod<double>::feed_rdm_deriv(std::shared_ptr<const Matrix>);
+template<> void SpinFreeMethod<double>::feed_rdm_ta();
 template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(std::shared_ptr<const ZMatrix>);
+template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_ta();
+
 extern template class SpinFreeMethod<double>;
 extern template class SpinFreeMethod<std::complex<double>>;
 
