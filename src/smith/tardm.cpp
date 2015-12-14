@@ -72,8 +72,9 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
   // TODO take care of this later
   assert(nele > 1);
 
+  const size_t nact = info_->nact();
   auto space0 = dynamic_pointer_cast<const RelSpace>(reldvec->space());
-  auto space1 = make_shared<RelSpace>(info_->nact(), nele-1);
+  auto space1 = make_shared<RelSpace>(nact, nele-1);
 
   vector<MapType<2>> tadvec(nstates);
   for (int nket = 0; nket != nstates; ++nket) {
@@ -99,7 +100,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
           assert(up[0]-lo[0] == lenb && lo[0] % lenb == 0);
 
           // skip beta tiles
-          if (lo[1] > info_->nact()) continue;
+          if (lo[1] >= nact) continue;
           // target alpha string
           const bitset<nbit__> astring = det->string_bits_a(lo[0]/lenb);
           for (int i = lo[1]; i != up[1]; ++i) {
@@ -126,7 +127,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
         auto det = space1->finddet(det_orig->nelea(), det_orig->neleb()-1);
         const size_t lenb = det->lenb();
         const size_t lenb_orig = det_orig->lenb();
-        IndexRange ci("o", det->size(), det->lenb());
+        IndexRange ci("o", det->size(), lenb);
 
         const pair<int, int> cpair{det->nelea(), det->neleb()};
         const bool exist = tadvec[nket].find(cpair) != tadvec[nket].end();
@@ -141,18 +142,18 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
           assert(up[0]-lo[0] == lenb && lo[0] % lenb == 0);
 
           // skip alpha tiles
-          if (lo[1] <= info_->nact()) continue;
+          if (lo[1] < nact) continue;
 
           const size_t sa = lo[0]/lenb;
 
           taket->get_world().taskq.add(
-            [=](typename TA<2>::value_type target, typename TA<1>::value_type source) {
-              for (int i = lo[1]; i != up[1]; ++i) {
+            [=](typename TA<2>::value_type tile, typename TA<1>::value_type stile) {
+              for (int i = lo[1]-nact; i != up[1]-nact; ++i) {
                 for (auto& ts : det->string_bits_b()) {
                   if (ts[i]) continue;
                   const double sign = det->sign<1>(ts, i);
                   bitset<nbit__> s = ts; s.set(i);
-                  target[det->lexical<1>(s) + (i-lo[1])*lenb] += sign*source[det_orig->lexical<1>(s)];
+                  tile[det->lexical<1>(ts) + (i-lo[1]+nact)*lenb] += sign*stile[det_orig->lexical<1>(s)];
                 }
               }
             }, (*it).future(), source->find(sa)
@@ -166,7 +167,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
   }
 
   // TODO form 1RDM
-#if 1
+#if 0
   set_rdm(0,0);
   shared_ptr<TA<2>> tmp = rdm1_->clone();
   tmp->fill_local(0.0);
