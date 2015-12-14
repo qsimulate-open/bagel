@@ -108,6 +108,8 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     fockact = fockact->get_conjg();
 
     feed_rdm_denom(fockact);
+    // TODO debug
+    feed_rdm_ta();
     timer.tick_print("RDM + denominator evaluation");
 
     // rdm ci derivatives. Only for gradient computations
