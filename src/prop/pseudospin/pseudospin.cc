@@ -88,6 +88,12 @@ void Pseudospin::compute(const ZHarrison& zfci) {
 
   vector<Stevens_Operator> ESO = build_extended_stevens_operators(ranks);
 
+#if 0
+  cout << "Number of Stevens operators = " << ESO.size() << endl;
+  for (int i = 0; i != ESO.size(); ++i)
+    ESO[i].print();
+#endif
+
   compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
 
   shared_ptr<const Matrix> mag_axes = identify_magnetic_axes();
@@ -97,7 +103,7 @@ void Pseudospin::compute(const ZHarrison& zfci) {
 
   array<double, 3> rotin = zfci.idata()->get_array<double,3>("aniso_axis", rotation);
 
-  shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues(rotin);
+  shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues(rotin, zfci);
 
   if (nspin_ > 1) {
     ESO = extract_hamiltonian_parameters(ESO, spinham_s);
@@ -339,7 +345,7 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
 }
 
 
-shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<double, 3> rotation) const {
+shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<double, 3> rotation, const ZHarrison& zfci) const {
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   auto transform = make_shared<ZMatrix>(nspin1_, nspin1_);
@@ -348,6 +354,9 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   for (int i = 0; i != 3; ++i)
     *transform += scale * rotation[i] * *spinop_h_[i];
   VectorB zeig(nspin1_);
+#ifndef NDEBUG
+  auto spinmat_to_diag = transform->copy();
+#endif
   transform->diagonalize(zeig);
 
   { // Reorder eigenvectors so positive M_s come first
@@ -361,10 +370,18 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
     zeig = tempv;
   }
 
-//  const complex<double> dadjust = polar(1.0, 2.12391);
-//  for (int i = 0; i != nspin1_; ++i)
-//    transform->element(i, 0) = dadjust * transform->element(i, 0);
+#if 1
+  // For testing arbitrary phase shifts applied to pseudospin eigenfunctions
+  const complex<double> dadjust = polar(1.0, zfci.idata()->get<double>("aniso_dadjust", 0.0));
+  cout << " ** Phase shift = " << std::arg(dadjust) << endl;
+  for (int i = 0; i != nspin1_; ++i) {
+    transform->element(i, 0) = dadjust * transform->element(i, 0);
+    //transform->element(i, nspin_) = std::conj(dadjust) * transform->element(i, nspin_);
+  }
+#endif
 
+#if 1
+  // Enforce time-reversal symmetry by looking at the matrices - misses the {1/2, -1/2} element
   { // Adjust the phases of eigenvectors to ensure proper time-reversal symmetry
     ZMatrix spinham_s = *transform % *spinham_h_ * *transform;
     complex<double> adjust = 1.0;
@@ -390,6 +407,23 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
       }
     }
   }
+#endif
+
+#ifndef NDEBUG
+  {
+    auto diagspin = transform->clone();
+    for (int i = 0; i != nspin1_; ++i)
+      diagspin->element(i, i) = zeig[i];
+    *diagspin = *transform * *diagspin ^ *transform;
+    /*
+    spinmat_to_diag->print("Original spin matrix");
+    diagspin->print("Recalculated spin matrix");
+    (*spinmat_to_diag - *diagspin).print("Error");
+    cout << endl;
+    */
+    assert((*diagspin - *spinmat_to_diag).rms() < 1.0e-6);
+  }
+#endif
 
   cout << "    The z-axis is set to (" << rotation[0] << ", " << rotation[1] << ", " << rotation[2] << ")." << endl << endl;
   for (int i = 0; i != nspin1_; ++i)
@@ -402,12 +436,19 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   //}
 
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
-  if (!is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true))
-    throw runtime_error("The spin Hamiltonian seems to not have proper time-reversal symmetry.  Check that your spin value and states mapped are reasonable.");
-
   array<shared_ptr<ZMatrix>, 3> spinop_s;
   for (int i = 0; i != 3; ++i)
     spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
+
+  spinham_s->print("Spin Hamiltonian");
+  cout << endl;
+  for (int i = 0; i != 3; ++i) {
+    spinop_s[i]->print("Spin matrix, component " + to_string(i));
+    cout << endl;
+  }
+
+  if (!is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true))
+    throw runtime_error("The spin Hamiltonian seems to not have proper time-reversal symmetry.  Check that your spin value and states mapped are reasonable.");
 
   cout << endl;
   for (int i = 0; i != 3; ++i) {
@@ -420,6 +461,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
 #endif
     assert(is_t_symmetric(*spinop_s[i], /*hermitian*/true, /*time reversal*/false));
   }
+  assert(is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true));
 
   return spinham_s;
 }
@@ -583,6 +625,7 @@ bool Pseudospin::is_t_symmetric(const ZMatrix& in, const bool hermitian, const b
   }
   ZMatrix in_reversed = kramersop * *in.get_conjg() ^ kramersop;  // K O K^-1
   const double error = (in - (t * in_reversed)).rms();
+  //(in - (t * in_reversed)).print("Time-reversal symmetry error");
 
   const bool out = error < thresh;
   return out;
