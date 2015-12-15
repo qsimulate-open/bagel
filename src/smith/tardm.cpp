@@ -30,6 +30,133 @@ using TA = TATensor<complex<double>,N>;
 template<int N>
 using MapType = map<pair<int, int>, shared_ptr<TA<N>>>;
 
+template <int N>
+inline vector<MapType<N+1>> annihilate_one(vector<MapType<N>> in, const IndexRange active) {
+  const int nele = in[0].begin()->first.first + in[0].begin()->first.second;
+  const int nact = active.size()/2;
+  const int nstates = in.size();
+  assert(nact*2 == active.size());
+  auto ssp = make_shared<RelSpace>(nact, nele);
+  auto tsp = make_shared<RelSpace>(nact, nele-1);
+
+  vector<MapType<N+1>> out(nstates);
+  for (int nket = 0; nket != nstates; ++nket) {
+    for (auto& c : in[nket]) {
+      auto det_orig = ssp->finddet(c.first.first, c.first.second);
+      shared_ptr<const TA<N>> source = c.second;
+      // annihilate a
+      if (det_orig->nelea() > 0) {
+        auto det = tsp->finddet(det_orig->nelea()-1, det_orig->neleb());
+        const size_t lenb = det->lenb();
+        IndexRange ci("o", det->size(), lenb);
+
+        const pair<int, int> cpair{det->nelea(), det->neleb()};
+        const bool exist = out[nket].find(cpair) != out[nket].end();
+        vector<IndexRange> ind{ci};
+        for (int i = 0; i != N; ++i)
+          ind.push_back(active);
+        shared_ptr<TA<N+1>> taket = exist ? out[nket].at(cpair) : make_shared<TA<N+1>>(ind, true);
+
+        for (auto it = taket->begin(); it != taket->end(); ++it) {
+          auto range = taket->trange().make_tile_range(it.ordinal());
+          auto lo_r = range.lobound();
+          auto up_r = range.upbound();
+          const vector<size_t> lo(lo_r.rbegin(), lo_r.rend());
+          const vector<size_t> up(up_r.rbegin(), up_r.rend());
+          assert(up[0]-lo[0] == lenb && lo[0] % lenb == 0);
+
+          // skip beta tiles
+          if (lo[1] >= nact) continue;
+          // target alpha string
+          const bitset<nbit__> astring = det->string_bits_a(lo[0]/lenb);
+          // number of loops and stride
+          const size_t sstride = lenb;
+          const size_t tstride = (up[1]-lo[1]) * lenb;
+          const size_t nloops = range.volume() / tstride;
+          for (int i = lo[1]; i != up[1]; ++i) {
+            if (astring[i]) continue;
+            const double sign = det->template sign<0>(astring, i);
+            // source alpha string
+            bitset<nbit__> s = astring; s.set(i);
+            // obtain the ordinal of the source tile
+            vector<size_t> lo2(1, det_orig->template lexical<0>(s)*lenb);
+            for (int i = 2; i < lo.size(); ++i)
+              lo2.push_back(lo[i]);
+            const vector<size_t> lo2_r(lo2.rbegin(), lo2.rend());
+            const size_t sa = source->trange().tiles().ordinal(source->trange().element_to_tile(lo2_r));
+
+            // submit a task
+            taket->get_world().taskq.add(
+              [=](typename TA<N+1>::value_type target, typename TA<N>::value_type source) {
+                for (size_t n = 0; n != nloops; ++n)
+                  blas::ax_plus_y_n(sign, source.begin()+n*sstride, lenb, target.begin()+n*tstride+(i-lo[1])*lenb);
+              }, (*it).future(), source->find(sa)
+            );
+          }
+        }
+        if (!exist)
+          out[nket].emplace(cpair, taket);
+      }
+
+      // annihilate b
+      if (det_orig->neleb() > 0) {
+        auto det = tsp->finddet(det_orig->nelea(), det_orig->neleb()-1);
+        const size_t lenb = det->lenb();
+        const size_t lenb_orig = det_orig->lenb();
+        IndexRange ci("o", det->size(), lenb);
+
+        const pair<int, int> cpair{det->nelea(), det->neleb()};
+        const bool exist = out[nket].find(cpair) != out[nket].end();
+        vector<IndexRange> ind{ci};
+        for (int i = 0; i != N; ++i)
+          ind.push_back(active);
+        shared_ptr<TA<N+1>> taket = exist ? out[nket].at(cpair) : make_shared<TA<N+1>>(ind, true);
+
+        for (auto it = taket->begin(); it != taket->end(); ++it) {
+          auto range = taket->trange().make_tile_range(it.ordinal());
+          auto lo_r = range.lobound();
+          auto up_r = range.upbound();
+          const vector<size_t> lo(lo_r.rbegin(), lo_r.rend());
+          const vector<size_t> up(up_r.rbegin(), up_r.rend());
+          assert(up[0]-lo[0] == lenb && lo[0] % lenb == 0);
+
+          // skip alpha tiles
+          if (lo[1] < nact) continue;
+
+          vector<size_t> lo2(1, lo[0]/lenb*lenb_orig);
+          for (int i = 2; i < lo.size(); ++i)
+            lo2.push_back(lo[i]);
+          const vector<size_t> lo2_r(lo2.rbegin(), lo2.rend());
+          const size_t sa = source->trange().tiles().ordinal(source->trange().element_to_tile(lo2_r));
+
+          const size_t sstride = lenb_orig;
+          const size_t tstride = (up[1]-lo[1]) * lenb;
+          const size_t nloops = range.volume() / tstride;
+
+          taket->get_world().taskq.add(
+            [=](typename TA<N+1>::value_type tile, typename TA<N>::value_type stile) {
+              for (size_t n = 0, soff = 0, toff = 0; n != nloops; ++n, soff += sstride, toff += tstride) {
+                for (int i = lo[1]-nact; i != up[1]-nact; ++i) {
+                  for (auto& ts : det->string_bits_b()) {
+                    if (ts[i]) continue;
+                    const double sign = det->template sign<1>(ts, i);
+                    bitset<nbit__> s = ts; s.set(i);
+                    tile[toff+det->template lexical<1>(ts)+(i-lo[1]+nact)*lenb] += sign*stile[soff+det_orig->template lexical<1>(s)];
+                  }
+                }
+              }
+            }, (*it).future(), source->find(sa)
+          );
+        }
+
+        if (!exist)
+          out[nket].emplace(cpair, taket);
+      }
+    }
+  }
+  return out;
+}
+
 
 template<>
 void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
@@ -72,110 +199,37 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
   // TODO take care of this later
   assert(nele > 1);
 
-  const size_t nact = info_->nact();
-  auto space0 = dynamic_pointer_cast<const RelSpace>(reldvec->space());
-  auto space1 = make_shared<RelSpace>(nact, nele-1);
-
-  vector<MapType<2>> tadvec(nstates);
-  for (int nket = 0; nket != nstates; ++nket) {
-    for (auto& c : tacivec[nket]) {
-      auto det_orig = space0->finddet(c.first.first, c.first.second);
-      shared_ptr<const TA<1>> source = c.second;
-      // annihilate a
-      if (det_orig->nelea() > 0) {
-        auto det = space1->finddet(det_orig->nelea()-1, det_orig->neleb());
-        const size_t lenb = det->lenb();
-        IndexRange ci("o", det->size(), lenb);
-
-        const pair<int, int> cpair{det->nelea(), det->neleb()};
-        const bool exist = tadvec[nket].find(cpair) != tadvec[nket].end();
-        shared_ptr<TA<2>> taket = exist ? tadvec[nket].at(cpair) : make_shared<TA<2>>(vector<IndexRange>{ci, active_}, true);
-
-        for (auto it = taket->begin(); it != taket->end(); ++it) {
-          auto range = taket->trange().make_tile_range(it.ordinal());
-          auto lo_r = range.lobound();
-          auto up_r = range.upbound();
-          const vector<size_t> lo(lo_r.rbegin(), lo_r.rend());
-          const vector<size_t> up(up_r.rbegin(), up_r.rend());
-          assert(up[0]-lo[0] == lenb && lo[0] % lenb == 0);
-
-          // skip beta tiles
-          if (lo[1] >= nact) continue;
-          // target alpha string
-          const bitset<nbit__> astring = det->string_bits_a(lo[0]/lenb);
-          for (int i = lo[1]; i != up[1]; ++i) {
-            if (astring[i]) continue;
-            const double sign = det->sign<0>(astring, i);
-            // source alpha string
-            bitset<nbit__> s = astring; s.set(i);
-            // lexical order
-            const size_t sa = det_orig->lexical<0>(s);
-            // submit a task
-            taket->get_world().taskq.add(
-              [=](typename TA<2>::value_type target, typename TA<1>::value_type source) {
-                blas::ax_plus_y_n(sign, source.begin(), lenb, target.begin()+(i-lo[1])*lenb);
-              }, (*it).future(), source->find(sa)
-            );
-          }
-        }
-        if (!exist)
-          tadvec[nket].emplace(cpair, taket);
-      }
-
-      // annihilate b
-      if (det_orig->neleb() > 0) {
-        auto det = space1->finddet(det_orig->nelea(), det_orig->neleb()-1);
-        const size_t lenb = det->lenb();
-        const size_t lenb_orig = det_orig->lenb();
-        IndexRange ci("o", det->size(), lenb);
-
-        const pair<int, int> cpair{det->nelea(), det->neleb()};
-        const bool exist = tadvec[nket].find(cpair) != tadvec[nket].end();
-        shared_ptr<TA<2>> taket = exist ? tadvec[nket].at(cpair) : make_shared<TA<2>>(vector<IndexRange>{ci, active_}, true);
-
-        for (auto it = taket->begin(); it != taket->end(); ++it) {
-          auto range = taket->trange().make_tile_range(it.ordinal());
-          auto lo_r = range.lobound();
-          auto up_r = range.upbound();
-          const vector<size_t> lo(lo_r.rbegin(), lo_r.rend());
-          const vector<size_t> up(up_r.rbegin(), up_r.rend());
-          assert(up[0]-lo[0] == lenb && lo[0] % lenb == 0);
-
-          // skip alpha tiles
-          if (lo[1] < nact) continue;
-
-          const size_t sa = lo[0]/lenb;
-
-          taket->get_world().taskq.add(
-            [=](typename TA<2>::value_type tile, typename TA<1>::value_type stile) {
-              for (int i = lo[1]-nact; i != up[1]-nact; ++i) {
-                for (auto& ts : det->string_bits_b()) {
-                  if (ts[i]) continue;
-                  const double sign = det->sign<1>(ts, i);
-                  bitset<nbit__> s = ts; s.set(i);
-                  tile[det->lexical<1>(ts) + (i-lo[1]+nact)*lenb] += sign*stile[det_orig->lexical<1>(s)];
-                }
-              }
-            }, (*it).future(), source->find(sa)
-          );
-        }
-
-        if (!exist)
-          tadvec[nket].emplace(cpair, taket);
-      }
-    }
+  auto ta1vec = annihilate_one(tacivec, active_);
+#if 1 // TODO check 1RDM
+  {
+    set_rdm(0,0);
+    shared_ptr<TA<2>> tmp = rdm1_->clone();
+    tmp->fill_local(0.0);
+    for (auto& i : ta1vec[0])
+      for (auto& j : ta1vec[0])
+        if (i.first == j.first)
+          (*tmp)("o1,o2") += (*i.second)("o0,o1").conj() * (*i.second)("o0,o2");
+    cout << *tmp << endl << "---" << endl << *rdm1_ << endl << "---" << endl;
   }
+#endif
 
-  // TODO form 1RDM
-#if 0
-  set_rdm(0,0);
-  shared_ptr<TA<2>> tmp = rdm1_->clone();
-  tmp->fill_local(0.0);
-  for (auto& i : tadvec[0])
-    for (auto& j : tadvec[0])
-      if (i.first == j.first)
-        (*tmp)("o1,o2") += (*i.second)("o0,o1").conj() * (*i.second)("o0,o2");
-  cout << *tmp << endl << "---" << endl << *rdm1_ << endl;
+  auto ta2vec = annihilate_one(ta1vec, active_);
+
+#if 1 // TODO check 1RDM
+  {
+    cout << setprecision(5);
+    set_rdm(0,0);
+    shared_ptr<TA<4>> tmp = rdm2_->clone();
+    shared_ptr<TA<4>> tmp2 = rdm2_->clone();
+    tmp->fill_local(0.0);
+    tmp2->fill_local(0.0);
+    for (auto& i : ta2vec[0])
+      for (auto& j : ta2vec[0])
+        if (i.first == j.first)
+          (*tmp)("o1,o2,o3,o4") += (*i.second)("o0,o1,o2").conj() * (*i.second)("o0,o3,o4");
+    (*tmp2)("o1,o2,o3,o4") += (*tmp)("o1,o3,o2,o4");
+    cout << *tmp2 << endl << "---" << endl << *rdm2_ << endl << "---" << endl;
+  }
 #endif
 }
 
