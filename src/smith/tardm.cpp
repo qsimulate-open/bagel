@@ -40,8 +40,8 @@ inline vector<MapType<N+1>> annihilate_one(vector<MapType<N>> in, const IndexRan
   auto tsp = make_shared<RelSpace>(nact, nele-1);
 
   vector<MapType<N+1>> out(nstates);
-  for (int nket = 0; nket != nstates; ++nket) {
-    for (auto& c : in[nket]) {
+  for (int istate = 0; istate != nstates; ++istate) {
+    for (auto& c : in[istate]) {
       auto det_orig = ssp->finddet(c.first.first, c.first.second);
       shared_ptr<const TA<N>> source = c.second;
       // annihilate a
@@ -51,11 +51,11 @@ inline vector<MapType<N+1>> annihilate_one(vector<MapType<N>> in, const IndexRan
         IndexRange ci("o", det->size(), lenb);
 
         const pair<int, int> cpair{det->nelea(), det->neleb()};
-        const bool exist = out[nket].find(cpair) != out[nket].end();
+        const bool exist = out[istate].find(cpair) != out[istate].end();
         vector<IndexRange> ind{ci};
         for (int i = 0; i != N; ++i)
           ind.push_back(active);
-        shared_ptr<TA<N+1>> taket = exist ? out[nket].at(cpair) : make_shared<TA<N+1>>(ind, true);
+        shared_ptr<TA<N+1>> taket = exist ? out[istate].at(cpair) : make_shared<TA<N+1>>(ind, true);
 
         for (auto it = taket->begin(); it != taket->end(); ++it) {
           auto range = taket->trange().make_tile_range(it.ordinal());
@@ -95,7 +95,7 @@ inline vector<MapType<N+1>> annihilate_one(vector<MapType<N>> in, const IndexRan
           }
         }
         if (!exist)
-          out[nket].emplace(cpair, taket);
+          out[istate].emplace(cpair, taket);
       }
 
       // annihilate b
@@ -106,11 +106,11 @@ inline vector<MapType<N+1>> annihilate_one(vector<MapType<N>> in, const IndexRan
         IndexRange ci("o", det->size(), lenb);
 
         const pair<int, int> cpair{det->nelea(), det->neleb()};
-        const bool exist = out[nket].find(cpair) != out[nket].end();
+        const bool exist = out[istate].find(cpair) != out[istate].end();
         vector<IndexRange> ind{ci};
         for (int i = 0; i != N; ++i)
           ind.push_back(active);
-        shared_ptr<TA<N+1>> taket = exist ? out[nket].at(cpair) : make_shared<TA<N+1>>(ind, true);
+        shared_ptr<TA<N+1>> taket = exist ? out[istate].at(cpair) : make_shared<TA<N+1>>(ind, true);
 
         for (auto it = taket->begin(); it != taket->end(); ++it) {
           auto range = taket->trange().make_tile_range(it.ordinal());
@@ -135,22 +135,20 @@ inline vector<MapType<N+1>> annihilate_one(vector<MapType<N>> in, const IndexRan
 
           taket->get_world().taskq.add(
             [=](typename TA<N+1>::value_type tile, typename TA<N>::value_type stile) {
-              for (size_t n = 0, soff = 0, toff = 0; n != nloops; ++n, soff += sstride, toff += tstride) {
-                for (int i = lo[1]-nact; i != up[1]-nact; ++i) {
+              for (size_t n = 0, soff = 0, toff = 0; n != nloops; ++n, soff += sstride, toff += tstride)
+                for (int i = lo[1]-nact; i != up[1]-nact; ++i)
                   for (auto& ts : det->string_bits_b()) {
                     if (ts[i]) continue;
                     const double sign = det->template sign<1>(ts, i);
                     bitset<nbit__> s = ts; s.set(i);
                     tile[toff+det->template lexical<1>(ts)+(i-lo[1]+nact)*lenb] += sign*stile[soff+det_orig->template lexical<1>(s)];
                   }
-                }
-              }
             }, (*it).future(), source->find(sa)
           );
         }
 
         if (!exist)
-          out[nket].emplace(cpair, taket);
+          out[istate].emplace(cpair, taket);
       }
     }
   }
@@ -171,66 +169,55 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
   const int nstates = info_->ciwfn()->nstates();
 
   vector<MapType<1>> tacivec(nstates);
-
-  for (int nket = 0; nket != nstates; ++nket) {
+  for (int istate = 0; istate != nstates; ++istate)
     for (auto& id : reldvec->dvecs()) {
-      shared_ptr<const ZCivec> cket = id.second->data(nket);
+      shared_ptr<const ZCivec> cc = id.second->data(istate);
 
       // index range is blocked by boundaries of beta strings
-      IndexRange ci("o", cket->size(), cket->lenb());
+      IndexRange ci("o", cc->size(), cc->lenb());
       auto taket = make_shared<TA<1>>(vector<IndexRange>{ci});
 
       for (auto it = taket->begin(); it != taket->end(); ++it) {
-        auto buf = make_shared<ZVectorB>(cket->lenb());
+        auto buf = make_shared<ZVectorB>(cc->lenb());
         auto range = taket->trange().make_tile_range(it.ordinal());
         auto lo = range.lobound();
-        copy_n(cket->data()+lo[0], cket->lenb(), buf->data());
+        copy_n(cc->data()+lo[0], cc->lenb(), buf->data());
         taket->init_tile(it, buf);
       }
-
-      tacivec[nket].emplace(id.first, taket);
+      tacivec[istate].emplace(id.first, taket);
     }
-  }
-
-  // checking norm
-  assert(all_of(tacivec.begin(), tacivec.end(), [](MapType<1>& o) { return 1.0e-8 >
-    fabs(1.0-accumulate(o.begin(), o.end(), 0.0, [](double n, pair<pair<int, int>, shared_ptr<TA<1>>> b) { return n+pow(b.second->norm(),2); })); }));
 
   // TODO take care of this later
   assert(nele > 1);
-
   auto ta1vec = annihilate_one(tacivec, active_);
-#if 1 // TODO check 1RDM
-  {
-    set_rdm(0,0);
-    shared_ptr<TA<2>> tmp = rdm1_->clone();
-    tmp->fill_local(0.0);
-    for (auto& i : ta1vec[0])
-      for (auto& j : ta1vec[0])
-        if (i.first == j.first)
-          (*tmp)("o1,o2") += (*i.second)("o0,o1").conj() * (*i.second)("o0,o2");
-    cout << *tmp << endl << "---" << endl << *rdm1_ << endl << "---" << endl;
-  }
-#endif
-
   auto ta2vec = annihilate_one(ta1vec, active_);
 
-#if 1 // TODO check 1RDM
-  {
-    cout << setprecision(5);
-    set_rdm(0,0);
-    shared_ptr<TA<4>> tmp = rdm2_->clone();
-    shared_ptr<TA<4>> tmp2 = rdm2_->clone();
-    tmp->fill_local(0.0);
-    tmp2->fill_local(0.0);
-    for (auto& i : ta2vec[0])
-      for (auto& j : ta2vec[0])
-        if (i.first == j.first)
-          (*tmp)("o1,o2,o3,o4") += (*i.second)("o0,o1,o2").conj() * (*i.second)("o0,o3,o4");
-    (*tmp2)("o1,o2,o3,o4") += (*tmp)("o1,o3,o2,o4");
-    cout << *tmp2 << endl << "---" << endl << *rdm2_ << endl << "---" << endl;
-  }
-#endif
+  // TODO rebuilding these quantities (remove the code in spinfreebase.cc once everything is done.
+  rdm0all_ = make_shared<Vec<TATensor<complex<double>,0>>>();
+  rdm1all_ = make_shared<Vec<TATensor<complex<double>,2>>>();
+  rdm2all_ = make_shared<Vec<TATensor<complex<double>,4>>>();
+  for (int ibra = 0; ibra != nstates; ++ibra)
+    for (int iket = 0; iket != nstates; ++iket) { // TODO can be reduced by 2 using symmetry
+      auto rdm0t = make_shared<TATensor<complex<double>,0>>(vector<IndexRange>());
+      auto rdm1t = make_shared<TATensor<complex<double>,2>>(vector<IndexRange>(2,active_), true);
+      auto rdm2t = make_shared<TATensor<complex<double>,4>>(vector<IndexRange>(4,active_), true);
+
+      (*rdm0t)("") = ibra == iket ? 1.0 : 0.0;
+
+      for (auto& i : ta1vec[ibra])
+        for (auto& j : ta1vec[iket])
+          if (i.first == j.first)
+            (*rdm1t)("o2,o1") += (*i.second)("o0,o1").conj() * (*j.second)("o0,o2"); // note: reversing indices
+
+      for (auto& i : ta2vec[ibra])
+        for (auto& j : ta2vec[iket])
+          if (i.first == j.first)
+            (*rdm2t)("o3,o1,o4,o2") += (*i.second)("o0,o1,o2").conj() * (*j.second)("o0,o3,o4");
+
+      rdm0all_->emplace(ibra, iket, rdm0t);
+      rdm1all_->emplace(ibra, iket, rdm1t);
+      rdm2all_->emplace(ibra, iket, rdm2t);
+    }
 }
 
 template<>
