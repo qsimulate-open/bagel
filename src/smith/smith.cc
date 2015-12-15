@@ -23,18 +23,25 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #include <bagel_config.h>
+
 #include <src/smith/smith.h>
+
+#ifdef COMPILE_SMITH
 #include <src/smith/MRCI.h>
 #include <src/smith/RelMRCI.h>
 #include <src/smith/CASPT2.h>
 #include <src/smith/RelCASPT2.h>
-
-
+#if 0
+#include <src/smith/mrci/MRCI.h>
+#include <src/smith/caspt2/CASPT2.h>
+#include <src/smith/relmrci/RelMRCI.h>
+#include <src/smith/relcaspt2/RelCASPT2.h>
+#endif
+using namespace bagel::SMITH;
+#endif
 using namespace std;
 using namespace bagel;
-using namespace bagel::SMITH;
 
 Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
   const string method = to_lower(idata_->get<string>("method", "caspt2"));

@@ -27,6 +27,9 @@
 #ifndef __SRC_SMITH_SPINFREEBASE_H
 #define __SRC_SMITH_SPINFREEBASE_H
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <chrono>
 #include <src/ci/fci/civec.h>
 #include <src/util/vec.h>
@@ -150,4 +153,5 @@ extern template class SpinFreeMethod<std::complex<double>>;
 }
 }
 
+#endif
 #endif
