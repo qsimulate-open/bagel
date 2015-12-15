@@ -26,15 +26,17 @@
 
 #include <bagel_config.h>
 #include <src/smith/smith.h>
-#include <src/smith/MRCI.h>
-#include <src/smith/RelMRCI.h>
-#include <src/smith/CASPT2.h>
-#include <src/smith/RelCASPT2.h>
+#include <src/smith/mrci/MRCI.h>
+#include <src/smith/caspt2/CASPT2.h>
+#include <src/smith/relmrci/RelMRCI.h>
+#include <src/smith/relcaspt2/RelCASPT2.h>
 
 
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
+
+#define LOCAL_DEBUG
 
 Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
@@ -88,10 +90,10 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
   // make a smith_info class
   auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
 
-  if (method == "mrci") {
-    algo_ = make_shared<RelMRCI::RelMRCI>(info);
-  } else if (method == "caspt2") {
+  if (method == "caspt2") {
     algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
+  } else if (method == "mrci") {
+    algo_ = make_shared<RelMRCI::RelMRCI>(info);
   } else {
 #else
   {

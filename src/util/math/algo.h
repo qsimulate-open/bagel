@@ -213,4 +213,10 @@ namespace {
 
 }
 
+// for convenience
+namespace std {
+  inline std::complex<double> operator*(const std::complex<double>& i, const int& j) { return i * static_cast<double>(j); }
+  inline std::complex<double> operator*(const int& j, const std::complex<double>& i) { return i * static_cast<double>(j); }
+}
+
 #endif

@@ -94,7 +94,7 @@ void ZMatrix::diagonalize(VecView eig) {
   assert(eig.size() >= ndim());
 
   // assert that matrix is hermitian to ensure real eigenvalues
-  assert(is_hermitian(1.0e-10));
+//assert(is_hermitian(1.0e-10));
 
   const int n = ndim();
   int info;

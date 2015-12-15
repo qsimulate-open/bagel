@@ -84,6 +84,7 @@ class MPI_Interface {
     int ireduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts);
     // sum reduce and broadcast to each process
     void allreduce(int*, const size_t size) const;
+    void allreduce(size_t*, const size_t size) const;
     void allreduce(double*, const size_t size) const;
     void allreduce(std::complex<double>*, const size_t size) const;
     int iallreduce(size_t*, const size_t size);

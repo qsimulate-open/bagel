@@ -334,12 +334,10 @@ shared_ptr<Tensor3<double>> DFBlock::get_block(const int ist, const int i, const
   if (ista < 0 || jsta < 0 || ksta < 0 || ifen > asize() || jfen > b1size() || kfen > b2size())
     throw logic_error("illegal call of DFBlock::get_block");
 
-  // TODO we need 3-index tensor class here!
   auto out = make_shared<Tensor3<double>>(i, j, k);
   for (int kk = ksta; kk != kfen; ++kk)
     for (int jj = jsta; jj != jfen; ++jj)
-      for (int ii = ista; ii != ifen; ++ii)
-        (*out)(ii-ista, jj-jsta, kk-ksta) = (*this)(ii, jj, kk);
+      copy_n(&((*this)(ista, jj, kk)), ifen-ista, &((*out)(0, jj-jsta, kk-ksta)));
 
   return out;
 }

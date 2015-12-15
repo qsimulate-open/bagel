@@ -27,10 +27,7 @@
 #ifndef __SRC_SMITH_TASK_H
 #define __SRC_SMITH_TASK_H
 
-#include <stddef.h>
 #include <list>
-#include <memory>
-#include <algorithm>
 #include <src/smith/storage.h>
 
 namespace bagel {
@@ -82,10 +79,9 @@ class AccTask : public Task {
   protected:
     double target_;
   public:
-    AccTask() {}
+    AccTask() : target_(0.0) {}
     ~AccTask() {}
     double target() const { return target_; }
-
 };
 
 }

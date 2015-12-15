@@ -83,6 +83,12 @@ class RelDvector {
 
     std::shared_ptr<const Space_base> space() const { return space_; }
     std::map<std::pair<int, int>, std::shared_ptr<Dvector<DataType>>> dvecs() { return dvecs_; }
+    std::map<std::pair<int, int>, std::shared_ptr<const Dvector<DataType>>> dvecs() const {
+      std::map<std::pair<int, int>, std::shared_ptr<const Dvector<DataType>>> out;
+      for (auto& i : dvecs_)
+        out.emplace(i.first, i.second);
+      return out;
+    }
 
     void set_data(const int istate, std::shared_ptr<const RelDvector<DataType>> o) {
       assert(space_ == o->space_ || o->dvecs_.begin()->second->ij() == 1);
