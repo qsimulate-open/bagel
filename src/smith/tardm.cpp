@@ -31,7 +31,7 @@ template<int N>
 using MapType = map<pair<int, int>, shared_ptr<TA<N>>>;
 
 template <int N>
-inline vector<MapType<N+1>> annihilate_one(vector<MapType<N>> in, const IndexRange active) {
+inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const IndexRange active) {
   const int nele = in[0].begin()->first.first + in[0].begin()->first.second;
   const int nact = active.size()/2;
   const int nstates = in.size();
@@ -88,6 +88,8 @@ inline vector<MapType<N+1>> annihilate_one(vector<MapType<N>> in, const IndexRan
             // submit a task
             taket->get_world().taskq.add(
               [=](typename TA<N+1>::value_type target, typename TA<N>::value_type source) {
+                assert(target.size() == tstride*nloops);
+                assert(source.size() == sstride*nloops);
                 for (size_t n = 0; n != nloops; ++n)
                   blas::ax_plus_y_n(sign, source.begin()+n*sstride, lenb, target.begin()+n*tstride+(i-lo[1])*lenb);
               }, (*it).future(), source->find(sa)
@@ -187,10 +189,15 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
       tacivec[istate].emplace(id.first, taket);
     }
 
-  // TODO take care of this later
-  assert(nele > 1);
-  auto ta1vec = annihilate_one(tacivec, active_);
-  auto ta2vec = annihilate_one(ta1vec, active_);
+  vector<MapType<2>> ta1vec = annihilate_one(tacivec, active_);
+
+// TODO understand the reason why we need this!! //////
+ta1vec[0].begin()->second->get_world().gop.fence();
+///////////////////////////////////////////////////////
+
+  vector<MapType<3>> ta2vec;
+  if (nele > 1)
+    ta2vec = annihilate_one(ta1vec, active_);
 
   // TODO rebuilding these quantities (remove the code in spinfreebase.cc once everything is done.
   rdm0all_ = make_shared<Vec<TATensor<complex<double>,0>>>();
@@ -209,10 +216,11 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
           if (i.first == j.first)
             (*rdm1t)("o2,o1") += (*i.second)("o0,o1").conj() * (*j.second)("o0,o2"); // note: reversing indices
 
-      for (auto& i : ta2vec[ibra])
-        for (auto& j : ta2vec[iket])
-          if (i.first == j.first)
-            (*rdm2t)("o3,o1,o4,o2") += (*i.second)("o0,o1,o2").conj() * (*j.second)("o0,o3,o4");
+      if (nele > 1)
+        for (auto& i : ta2vec[ibra])
+          for (auto& j : ta2vec[iket])
+            if (i.first == j.first)
+              (*rdm2t)("o3,o1,o4,o2") += (*i.second)("o0,o1,o2").conj() * (*j.second)("o0,o3,o4");
 
       rdm0all_->emplace(ibra, iket, rdm0t);
       rdm1all_->emplace(ibra, iket, rdm1t);
