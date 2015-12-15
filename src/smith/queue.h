@@ -29,6 +29,7 @@
 
 #ifndef __SRC_SMITH_QUEUE_H
 #define __SRC_SMITH_QUEUE_H
+#ifdef COMPILE_SMITH
 
 #include <src/smith/task.h>
 
@@ -62,4 +63,5 @@ class Queue {
 }
 }
 
+#endif
 #endif

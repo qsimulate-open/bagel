@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 
 #include <src/smith/queue.h>
 #include <tiledarray.h>
@@ -47,3 +49,5 @@ shared_ptr<Task> Queue::next_compute() {
   tasklist_.erase(i);
   return out;
 }
+
+#endif

@@ -27,7 +27,10 @@
 #ifndef __SRC_SMITH_SMITH_H
 #define __SRC_SMITH_SMITH_H
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 #include <src/smith/spinfreebase.h>
+#endif
 #include <stddef.h>
 #include <map>
 #include <memory>
@@ -38,7 +41,9 @@ namespace bagel {
 
 class Smith : public Method {
   protected:
+#ifdef COMPILE_SMITH
     std::shared_ptr<SMITH::SpinFreeMethod<double>> algo_;
+#endif
 
     // correlated density matrices
     // second order density matrix
@@ -69,25 +74,35 @@ class Smith : public Method {
     std::shared_ptr<const Civec> cideriv() const { return cider_; }
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
+#ifdef COMPILE_SMITH
     std::shared_ptr<const SMITH::SpinFreeMethod<double>> algo() const { return algo_; }
+#endif
 
 };
 
 
 class RelSmith : public Method {
   protected:
+#ifdef COMPILE_SMITH
     std::shared_ptr<SMITH::SpinFreeMethod<std::complex<double>>> algo_;
+#endif
     std::shared_ptr<const ZMatrix> coeff_;
 
   public:
     RelSmith(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
-    void compute() override { algo_->solve(); }
+    void compute() override {
+#ifdef COMPILE_SMITH
+      algo_->solve();
+#endif
+    }
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
     std::shared_ptr<const ZMatrix> coeff() const { return coeff_; }
 
+#ifdef COMPILE_SMITH
     std::shared_ptr<const SMITH::SpinFreeMethod<std::complex<double>>> algo() const { return algo_; }
+#endif
 };
 
 }
