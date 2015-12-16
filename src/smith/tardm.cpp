@@ -190,24 +190,40 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
     }
 
   vector<MapType<2>> ta1vec = annihilate_one(tacivec, active_);
-
-// TODO understand the reason why we need this!! //////
-ta1vec[0].begin()->second->get_world().gop.fence();
-///////////////////////////////////////////////////////
+  ta1vec[0].begin()->second->get_world().gop.fence();
 
   vector<MapType<3>> ta2vec;
-  if (nele > 1)
+  if (nele > 1) {
     ta2vec = annihilate_one(ta1vec, active_);
+    ta2vec[0].begin()->second->get_world().gop.fence();
+  }
+
+  vector<MapType<4>> ta3vec;
+  if (nele > 2) {
+    ta3vec = annihilate_one(ta2vec, active_);
+    ta3vec[0].begin()->second->get_world().gop.fence();
+  }
+
+  vector<MapType<5>> ta4vec;
+  if (nele > 3) {
+    ta4vec = annihilate_one(ta3vec, active_);
+    ta4vec[0].begin()->second->get_world().gop.fence();
+  }
+
 
   // TODO rebuilding these quantities (remove the code in spinfreebase.cc once everything is done.
   rdm0all_ = make_shared<Vec<TATensor<complex<double>,0>>>();
   rdm1all_ = make_shared<Vec<TATensor<complex<double>,2>>>();
   rdm2all_ = make_shared<Vec<TATensor<complex<double>,4>>>();
+  rdm3all_ = make_shared<Vec<TATensor<complex<double>,6>>>();
+  rdm4all_ = make_shared<Vec<TATensor<complex<double>,8>>>();
   for (int ibra = 0; ibra != nstates; ++ibra)
     for (int iket = 0; iket != nstates; ++iket) { // TODO can be reduced by 2 using symmetry
       auto rdm0t = make_shared<TATensor<complex<double>,0>>(vector<IndexRange>());
       auto rdm1t = make_shared<TATensor<complex<double>,2>>(vector<IndexRange>(2,active_), true);
       auto rdm2t = make_shared<TATensor<complex<double>,4>>(vector<IndexRange>(4,active_), true);
+      auto rdm3t = make_shared<TATensor<complex<double>,6>>(vector<IndexRange>(6,active_), true);
+      auto rdm4t = make_shared<TATensor<complex<double>,8>>(vector<IndexRange>(8,active_), true);
 
       (*rdm0t)("") = ibra == iket ? 1.0 : 0.0;
 
@@ -222,9 +238,23 @@ ta1vec[0].begin()->second->get_world().gop.fence();
             if (i.first == j.first)
               (*rdm2t)("o3,o1,o4,o2") += (*i.second)("o0,o1,o2").conj() * (*j.second)("o0,o3,o4");
 
+      if (nele > 2)
+        for (auto& i : ta3vec[ibra])
+          for (auto& j : ta3vec[iket])
+            if (i.first == j.first)
+              (*rdm3t)("o4,o1,o5,o2,o6,o3") += (*i.second)("o0,o1,o2,o3").conj() * (*j.second)("o0,o4,o5,o6");
+
+      if (nele > 3)
+        for (auto& i : ta4vec[ibra])
+          for (auto& j : ta4vec[iket])
+            if (i.first == j.first)
+              (*rdm4t)("o5,o1,o6,o2,o7,o3,o8,o4") += (*i.second)("o0,o1,o2,o3,o4").conj() * (*j.second)("o0,o5,o6,o7,o8");
+
       rdm0all_->emplace(ibra, iket, rdm0t);
       rdm1all_->emplace(ibra, iket, rdm1t);
       rdm2all_->emplace(ibra, iket, rdm2t);
+      rdm3all_->emplace(ibra, iket, rdm3t);
+      rdm4all_->emplace(ibra, iket, rdm4t);
     }
 }
 
