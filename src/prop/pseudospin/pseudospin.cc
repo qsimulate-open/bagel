@@ -377,6 +377,81 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   for (int i = 0; i != nspin1_; ++i) {
     transform->element(i, 0) = dadjust * transform->element(i, 0);
     //transform->element(i, nspin_) = std::conj(dadjust) * transform->element(i, nspin_);
+#endif
+#if 1
+  {
+    // Attempt to fix time-reversal symmetry from the Ci vectors
+    // TODO Probably this could be made significantly more efficient - see if it's a problematic
+    const int maxa = std::min(zfci.nele(), zfci.norb());
+    const int mina = std::max(zfci.nele() - zfci.norb(), 0);
+    cout << setprecision(8);
+
+    // Loop over pairs of Kramers conjugates
+    // km starts with -1/2 (or 0) and goes to -S
+    // kp is the Kramers conjugate of km
+    for (int km = nspin1_ / 2; km != nspin1_; ++km) {
+      const int kp = nspin_ - km;
+      cout << endl;
+
+      //cout << " nele = " << zfci.nele() << ", norb = " << zfci.norb() << ", number alpha/beta runs from " << maxa << " to " << mina << endl;
+      vector<array<int,2>> ab = {};
+      for (int j = maxa; j >= mina; --j)
+        ab.push_back({{j, zfci.nele()-j}});
+
+      double maxval2 = 0.0;
+      double sign = 1.0;
+      complex<double> maxvalm;
+      complex<double> maxvalp;
+
+      // Loop over sectors of different spin values
+      for (int j = 0; j != ab.size(); ++j) {
+
+        auto det_m = zfci.cc()->find(ab[j][0], ab[j][1])->data(0)->det();
+        auto det_p = zfci.cc()->find(ab[j][1], ab[j][0])->data(0)->det();
+
+        // Loop over different Slater determinants in this sector
+        for (auto& ia : det_m->string_bits_a()) {
+          for (auto& ib : det_m->string_bits_b()) {
+            complex<double> valm = 0.0;
+            complex<double> valp = 0.0;
+
+            // Loop over contributions from the different ZFCI eigenstates
+            for (int k = 0; k != nspin1_; ++k) {
+
+              auto civec_m = zfci.cc()->find(ab[j][0], ab[j][1])->data(k);
+              auto civec_p = zfci.cc()->find(ab[j][1], ab[j][0])->data(k);
+
+              const int pos1m = det_m->lexical<0>(ia);
+              const int pos2m = det_m->lexical<1>(ib);
+              const int pos1p = det_p->lexical<0>(ib);
+              const int pos2p = det_p->lexical<1>(ia);
+              const int fullpos_m = pos1m*det_m->lenb() + pos2m;
+              const int fullpos_p = pos1p*det_p->lenb() + pos2p;
+              const complex<double> cival_m = civec_m->data(fullpos_m) * transform->element(k, km);
+              const complex<double> cival_p = civec_p->data(fullpos_p) * transform->element(k, kp);
+              valm += cival_m;
+              valp += cival_p;
+            }
+            const double mag2 = (std::abs(valm) + std::abs(valp));
+            if (mag2 > maxval2) {
+              maxval2 = mag2;
+              maxvalm = valm;
+              maxvalp = valp;
+              sign = ((ia.count() % 2 == 0) ? 1.0 : -1.0);
+            }
+          }
+        }
+      }
+      assert(std::abs(std::abs(maxvalm) - std::abs(maxvalp)) < 1.0e-6);
+      const double phase_sum = std::arg(maxvalm) + std::arg(maxvalp);
+
+      sign *= ((km % 2 == 0) ? 1.0 : -1.0);
+
+      cout << " km = " << km << ", phase shift = " << sign * phase_sum << endl;
+      const complex<double> shift = std::polar(1.0, sign * phase_sum);
+      for (int i = 0; i != nspin1_; ++i)
+        transform->element(i, km) = shift * transform->element(i, km);
+    }
   }
 #endif
 
