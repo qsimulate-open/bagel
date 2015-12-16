@@ -62,12 +62,14 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   const bool comp  = is_same<DataType,complex<double>>::value;
   const int ncore2 = ncore_*(comp ? 2 : 1);
 
+  const int maxtile_act = idata->get<int>("maxtile_act", 3); // 3 is OK till CAS(12,12) using default MAD_BUFFER
+
   closed_ = IndexRange("c", nclosed()-ncore_, maxtile_, 0, ncore_);
   if (comp)
     closed_.merge(IndexRange("c", nclosed()-ncore_, maxtile_, closed_.nblock(), ncore2+closed_.size(), ncore_));
-  active_ = IndexRange("x", nact(), min(maxtile_,10), closed_.nblock(), ncore2+closed_.size());
+  active_ = IndexRange("x", nact(), maxtile_act, closed_.nblock(), ncore2+closed_.size());
   if (comp)
-    active_.merge(IndexRange("x", nact(), min(maxtile_,10), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(), ncore2+closed_.size()));
+    active_.merge(IndexRange("x", nact(), maxtile_act, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(), ncore2+closed_.size()));
   virt_ = IndexRange("a", nvirt(), maxtile_, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());
   if (comp)
     virt_.merge(IndexRange("a", nvirt(), maxtile_, closed_.nblock()+active_.nblock()+virt_.nblock(), ncore2+closed_.size()+active_.size()+virt_.size(),
