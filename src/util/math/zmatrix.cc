@@ -281,9 +281,6 @@ void ZMatrix::purify_idempotent(const ZMatrix& s) {
 void ZMatrix::inverse() {
   assert(ndim() == mdim());
   const int n = ndim();
-#ifndef NDEBUG
-  shared_ptr<ZMatrix> ref = this->copy();
-#endif
   shared_ptr<ZMatrix> buf = this->clone();
   buf->unit();
 
@@ -300,9 +297,6 @@ void ZMatrix::inverse() {
 bool ZMatrix::inverse_half(const double thresh) {
   assert(ndim() == mdim());
   const int n = ndim();
-#ifndef NDEBUG
-  shared_ptr<ZMatrix> ref = this->copy();
-#endif
   VectorB vec(n);
   diagonalize(vec);
 
@@ -310,17 +304,16 @@ bool ZMatrix::inverse_half(const double thresh) {
     double s = vec(i) > thresh ? 1.0/std::sqrt(std::sqrt(vec(i))) : 0.0;
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](complex<double>& a) { a *= s; });
   }
-
-#ifndef NDEBUG
-  for (int i = 0; i != n; ++i)
-    if (vec[i] < thresh) cout << " throwing out " << setprecision(20) << vec[i] << endl;
-#endif
-
   *this = *this ^ *this;
+  vector<double> rm;
+  for (int i = 0; i != n; ++i)
+    if (vec[i] < thresh) rm.push_back(vec[i]);
+  if (!rm.empty())
+    cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
+            "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
+            "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 
-  const bool lindep = std::any_of(vec.begin(), vec.end(), [&thresh] (const double& e) { return e < thresh; });
-
-  return !lindep;
+  return rm.empty();
 }
 
 
