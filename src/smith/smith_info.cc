@@ -62,7 +62,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   const bool comp  = is_same<DataType,complex<double>>::value;
   const int ncore2 = ncore_*(comp ? 2 : 1);
 
-  const int maxtile_act = idata->get<int>("maxtile_act", 3); // 3 is OK till CAS(12,12) using default MAD_BUFFER
+  const int maxtile_act = idata->get<int>("maxtile_act", 4); // in order to fit 4RDMs in MADNESS' buffer
 
   closed_ = IndexRange("c", nclosed()-ncore_, maxtile_, 0, ncore_);
   if (comp)

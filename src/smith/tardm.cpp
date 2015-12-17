@@ -25,16 +25,15 @@
 
 #ifdef SPINFREEMETHOD_DETAIL
 
+namespace {
+
 template<int N>
 using TA = TATensor<complex<double>,N>;
 template<int N>
 using MapType = map<pair<int, int>, shared_ptr<TA<N>>>;
 
-
-static const int Maxtile = 3;
-
 template <int N>
-inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const IndexRange active) {
+inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const IndexRange active, const int maxtile) {
   const int nele = in[0].begin()->first.first + in[0].begin()->first.second;
   const int nact = active.size()/2;
   const int nstates = in.size();
@@ -53,7 +52,7 @@ inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const I
         const size_t lenb = det->lenb();
         IndexRange ci;
         for (size_t i = 0; i != det->lena(); ++i)
-          ci.merge(IndexRange("o", lenb, Maxtile, ci.nblock(), ci.size()));
+          ci.merge(IndexRange("o", lenb, maxtile, ci.nblock(), ci.size()));
 
         const pair<int, int> cpair{det->nelea(), det->neleb()};
         const bool exist = out[istate].find(cpair) != out[istate].end();
@@ -112,7 +111,7 @@ inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const I
         const size_t lenb_orig = det_orig->lenb();
         IndexRange ci;
         for (size_t i = 0; i != det->lena(); ++i)
-          ci.merge(IndexRange("o", lenb, Maxtile, ci.nblock(), ci.size()));
+          ci.merge(IndexRange("o", lenb, maxtile, ci.nblock(), ci.size()));
 
         const pair<int, int> cpair{det->nelea(), det->neleb()};
         const bool exist = out[istate].find(cpair) != out[istate].end();
@@ -179,6 +178,8 @@ inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const I
   return out;
 }
 
+} // end namespace
+
 
 template<>
 void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
@@ -191,6 +192,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
   // nelea, neleb
   const int nele = dynamic_pointer_cast<const RelSpace>(reldvec->space())->nele();
   const int nstates = info_->ciwfn()->nstates();
+  const int maxtile = info_->maxtile();
 
   vector<MapType<1>> tacivec(nstates);
   for (int istate = 0; istate != nstates; ++istate)
@@ -200,7 +202,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
       auto det = cc->det();
       IndexRange ci;
       for (size_t i = 0; i != det->lena(); ++i)
-        ci.merge(IndexRange("o", det->lenb(), Maxtile, ci.nblock(), ci.size()));
+        ci.merge(IndexRange("o", det->lenb(), maxtile, ci.nblock(), ci.size()));
       auto taket = make_shared<TA<1>>(vector<IndexRange>{ci});
 
       for (auto it = taket->begin(); it != taket->end(); ++it) {
@@ -214,24 +216,24 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
       tacivec[istate].emplace(id.first, taket);
     }
 
-  vector<MapType<2>> ta1vec = annihilate_one(tacivec, active_);
+  vector<MapType<2>> ta1vec = annihilate_one(tacivec, active_, maxtile);
   ta1vec[0].begin()->second->get_world().gop.fence();
 
   vector<MapType<3>> ta2vec;
   if (nele > 1) {
-    ta2vec = annihilate_one(ta1vec, active_);
+    ta2vec = annihilate_one(ta1vec, active_, maxtile);
     ta2vec[0].begin()->second->get_world().gop.fence();
   }
 
   vector<MapType<4>> ta3vec;
   if (nele > 2) {
-    ta3vec = annihilate_one(ta2vec, active_);
+    ta3vec = annihilate_one(ta2vec, active_, maxtile);
     ta3vec[0].begin()->second->get_world().gop.fence();
   }
 
   vector<MapType<5>> ta4vec;
   if (nele > 3) {
-    ta4vec = annihilate_one(ta3vec, active_);
+    ta4vec = annihilate_one(ta3vec, active_, maxtile);
     ta4vec[0].begin()->second->get_world().gop.fence();
   }
 
