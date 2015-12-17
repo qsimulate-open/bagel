@@ -131,19 +131,19 @@ inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const I
           // skip alpha tiles
           if (lo[1] < nact) continue;
 
-          // loop over multiple source tiles (index is ordinal)
-          for (typename TiledArray::Pmap::size_type index = 0; index != source->get_pmap()->size(); ++index) {
-            const TiledArray::Range srange = source->trange().make_tile_range(index);
-            const vector<size_t> slo_r = srange.lobound();
-            const vector<size_t> slo(slo_r.rbegin(), slo_r.rend());
-            // skip if astring's are different
-            bool match = slo[0]/lenb_orig == lo[0]/lenb;
-            for (int i = 1; i < N; ++i)
-              match &= slo[i] == lo[i+1];
-            if (!match) continue;
+          // loop over TiledRange1 of the first index (column/row conversion, hence using back())
+          for (auto& p : source->trange().data().back()) {
+            if (p.first/lenb_orig != lo[0]/lenb)
+              continue;
+            vector<size_t> slo{p.first};
+            vector<size_t> sup{p.second};
+            for (int i = 2; i < lo.size(); ++i) {
+              slo.push_back(lo[i]);
+              sup.push_back(up[i]);
+            }
+            const vector<size_t> slo_r(slo.rbegin(), slo.rend());
+            const size_t index = source->trange().tiles().ordinal(source->trange().element_to_tile(slo_r));
 
-            const vector<size_t> sup_r = srange.upbound();
-            const vector<size_t> sup(sup_r.rbegin(), sup_r.rend());
             const size_t sstride = sup[0]-slo[0];
             const size_t tstride = (up[1]-lo[1]) * (up[0]-lo[0]);
             const size_t t0stride = up[0]-lo[0];
