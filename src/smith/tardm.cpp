@@ -30,6 +30,9 @@ using TA = TATensor<complex<double>,N>;
 template<int N>
 using MapType = map<pair<int, int>, shared_ptr<TA<N>>>;
 
+
+static const int Maxtile = 3;
+
 template <int N>
 inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const IndexRange active) {
   const int nele = in[0].begin()->first.first + in[0].begin()->first.second;
@@ -48,7 +51,9 @@ inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const I
       if (det_orig->nelea() > 0) {
         auto det = tsp->finddet(det_orig->nelea()-1, det_orig->neleb());
         const size_t lenb = det->lenb();
-        IndexRange ci("o", det->size(), lenb);
+        IndexRange ci;
+        for (size_t i = 0; i != det->lena(); ++i)
+          ci.merge(IndexRange("o", lenb, Maxtile, ci.nblock(), ci.size()));
 
         const pair<int, int> cpair{det->nelea(), det->neleb()};
         const bool exist = out[istate].find(cpair) != out[istate].end();
@@ -63,23 +68,23 @@ inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const I
           auto up_r = range.upbound();
           const vector<size_t> lo(lo_r.rbegin(), lo_r.rend());
           const vector<size_t> up(up_r.rbegin(), up_r.rend());
-          assert(up[0]-lo[0] == lenb && lo[0] % lenb == 0);
 
           // skip beta tiles
           if (lo[1] >= nact) continue;
           // target alpha string
           const bitset<nbit__> astring = det->string_bits_a(lo[0]/lenb);
           // number of loops and stride
-          const size_t sstride = lenb;
-          const size_t tstride = (up[1]-lo[1]) * lenb;
+          const size_t sstride = up[0]-lo[0];;
+          const size_t tstride = (up[1]-lo[1]) * sstride;
           const size_t nloops = range.volume() / tstride;
+          const size_t boff = lo[0] % lenb;
           for (int i = lo[1]; i != up[1]; ++i) {
             if (astring[i]) continue;
             const double sign = det->template sign<0>(astring, i);
             // source alpha string
             bitset<nbit__> s = astring; s.set(i);
             // obtain the ordinal of the source tile
-            vector<size_t> lo2(1, det_orig->template lexical<0>(s)*lenb);
+            vector<size_t> lo2 {det_orig->template lexical<0>(s)*lenb + boff};
             for (int i = 2; i < lo.size(); ++i)
               lo2.push_back(lo[i]);
             const vector<size_t> lo2_r(lo2.rbegin(), lo2.rend());
@@ -91,7 +96,7 @@ inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const I
                 assert(target.size() == tstride*nloops);
                 assert(source.size() == sstride*nloops);
                 for (size_t n = 0; n != nloops; ++n)
-                  blas::ax_plus_y_n(sign, source.begin()+n*sstride, lenb, target.begin()+n*tstride+(i-lo[1])*lenb);
+                  blas::ax_plus_y_n(sign, source.begin()+n*sstride, sstride, target.begin()+n*tstride+(i-lo[1])*sstride);
               }, (*it).future(), source->find(sa)
             );
           }
@@ -105,7 +110,9 @@ inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const I
         auto det = tsp->finddet(det_orig->nelea(), det_orig->neleb()-1);
         const size_t lenb = det->lenb();
         const size_t lenb_orig = det_orig->lenb();
-        IndexRange ci("o", det->size(), lenb);
+        IndexRange ci;
+        for (size_t i = 0; i != det->lena(); ++i)
+          ci.merge(IndexRange("o", lenb, Maxtile, ci.nblock(), ci.size()));
 
         const pair<int, int> cpair{det->nelea(), det->neleb()};
         const bool exist = out[istate].find(cpair) != out[istate].end();
@@ -120,33 +127,48 @@ inline vector<MapType<N+1>> annihilate_one(const vector<MapType<N>>& in, const I
           auto up_r = range.upbound();
           const vector<size_t> lo(lo_r.rbegin(), lo_r.rend());
           const vector<size_t> up(up_r.rbegin(), up_r.rend());
-          assert(up[0]-lo[0] == lenb && lo[0] % lenb == 0);
 
           // skip alpha tiles
           if (lo[1] < nact) continue;
 
-          vector<size_t> lo2(1, lo[0]/lenb*lenb_orig);
-          for (int i = 2; i < lo.size(); ++i)
-            lo2.push_back(lo[i]);
-          const vector<size_t> lo2_r(lo2.rbegin(), lo2.rend());
-          const size_t sa = source->trange().tiles().ordinal(source->trange().element_to_tile(lo2_r));
+          // loop over multiple source tiles (index is ordinal)
+          for (typename TiledArray::Pmap::size_type index = 0; index != source->get_pmap()->size(); ++index) {
+            const TiledArray::Range srange = source->trange().make_tile_range(index);
+            const vector<size_t> slo_r = srange.lobound();
+            const vector<size_t> slo(slo_r.rbegin(), slo_r.rend());
+            // skip if astring's are different
+            bool match = slo[0]/lenb_orig == lo[0]/lenb;
+            for (int i = 1; i < N; ++i)
+              match &= slo[i] == lo[i+1];
+            if (!match) continue;
 
-          const size_t sstride = lenb_orig;
-          const size_t tstride = (up[1]-lo[1]) * lenb;
-          const size_t nloops = range.volume() / tstride;
+            const vector<size_t> sup_r = srange.upbound();
+            const vector<size_t> sup(sup_r.rbegin(), sup_r.rend());
+            const size_t sstride = sup[0]-slo[0];
+            const size_t tstride = (up[1]-lo[1]) * (up[0]-lo[0]);
+            const size_t t0stride = up[0]-lo[0];
+            const size_t soff = slo[0] % lenb_orig;
+            const size_t toff = lo[0] % lenb;
+            const size_t volume = range.volume();
 
-          taket->get_world().taskq.add(
-            [=](typename TA<N+1>::value_type tile, typename TA<N>::value_type stile) {
-              for (size_t n = 0, soff = 0, toff = 0; n != nloops; ++n, soff += sstride, toff += tstride)
-                for (int i = lo[1]-nact; i != up[1]-nact; ++i)
-                  for (auto& ts : det->string_bits_b()) {
-                    if (ts[i]) continue;
-                    const double sign = det->template sign<1>(ts, i);
-                    bitset<nbit__> s = ts; s.set(i);
-                    tile[toff+det->template lexical<1>(ts)+(i-lo[1]+nact)*lenb] += sign*stile[soff+det_orig->template lexical<1>(s)];
-                  }
-            }, (*it).future(), source->find(sa)
-          );
+            taket->get_world().taskq.add(
+              [=](typename TA<N+1>::value_type tile, typename TA<N>::value_type stile) {
+                for (size_t ss = 0, tt = 0; tt != volume; ss += sstride, tt += tstride)
+                  for (int i = lo[1]-nact; i != up[1]-nact; ++i)
+                    for (auto& ts : det->string_bits_b()) {
+                      if (ts[i]) continue;
+                      bitset<nbit__> s = ts; s.set(i);
+                      const size_t tlex = det->template lexical<1>(ts);
+                      const size_t slex = det_orig->template lexical<1>(s);
+                      if (tlex >= toff && tlex < toff+t0stride
+                       && slex >= soff && slex < soff+sstride) {
+                        const double sign = det->template sign<1>(ts, i);
+                        tile[tt+tlex-toff+(i-lo[1]+nact)*t0stride] += sign*stile[ss+slex-soff];
+                      }
+                    }
+              }, (*it).future(), source->find(index)
+            );
+          }
         }
 
         if (!exist)
@@ -175,15 +197,18 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
     for (auto& id : reldvec->dvecs()) {
       shared_ptr<const ZCivec> cc = id.second->data(istate);
 
-      // index range is blocked by boundaries of beta strings
-      IndexRange ci("o", cc->size(), cc->lenb());
+      auto det = cc->det();
+      IndexRange ci;
+      for (size_t i = 0; i != det->lena(); ++i)
+        ci.merge(IndexRange("o", det->lenb(), Maxtile, ci.nblock(), ci.size()));
       auto taket = make_shared<TA<1>>(vector<IndexRange>{ci});
 
       for (auto it = taket->begin(); it != taket->end(); ++it) {
-        auto buf = make_shared<ZVectorB>(cc->lenb());
         auto range = taket->trange().make_tile_range(it.ordinal());
         auto lo = range.lobound();
-        copy_n(cc->data()+lo[0], cc->lenb(), buf->data());
+        auto up = range.upbound();
+        auto buf = make_shared<ZVectorB>(up[0]-lo[0]);
+        copy_n(cc->data()+lo[0], up[0]-lo[0], buf->data());
         taket->init_tile(it, buf);
       }
       tacivec[istate].emplace(id.first, taket);
@@ -209,7 +234,6 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
     ta4vec = annihilate_one(ta3vec, active_);
     ta4vec[0].begin()->second->get_world().gop.fence();
   }
-
 
   // TODO rebuilding these quantities (remove the code in spinfreebase.cc once everything is done.
   rdm0all_ = make_shared<Vec<TATensor<complex<double>,0>>>();
@@ -260,7 +284,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
 
 template<>
 void SpinFreeMethod<double>::feed_rdm_ta() {
-  assert(false);
+//assert(false);
 }
 
 #endif
