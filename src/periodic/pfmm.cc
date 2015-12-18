@@ -59,7 +59,7 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
   max_height_ = 21; // tree construction 21 is absolute max
   do_contract_ = true;
 
-//  compute_Mlm_direct();
+  compute_Mlm_direct();
   compute_Mlm();
   stack_->release(size_allocated_, buff_);
   resources__->release(stack_);
@@ -100,8 +100,9 @@ void PFMM::compute_Mlm_direct() {
     mvec[1] = -(idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1]);
     mvec[2] = -(idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2]);
     const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
+    if (rsq > numerical_zero__) {
     const double r = sqrt(rsq);
-    const double ctheta = (r > numerical_zero__) ? mvec[2]/r : 0.0;
+    const double ctheta = mvec[2]/r;
     const double phi = atan2(mvec[1], mvec[0]);
 
     for (int l = 0; l <= lmax_; ++l) {
@@ -121,6 +122,7 @@ void PFMM::compute_Mlm_direct() {
         const double imag = sin(am * phi) * plm_tilde;
         mstar[imul] += complex<double>(real, imag);
       }
+    }
     }
   }
 
@@ -149,8 +151,9 @@ void PFMM::compute_Mlm_direct() {
     mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
 
     const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
+    if (rsq > numerical_zero__) {
     const double r = sqrt(rsq);
-    const double ctheta = (r > numerical_zero__) ? mvec[2]/r : 0.0;
+    const double ctheta = mvec[2]/r;
     const double phi = atan2(mvec[1], mvec[0]);
 
     for (int l = 0; l < max_rank_; ++l) {
@@ -170,6 +173,7 @@ void PFMM::compute_Mlm_direct() {
         const double imag = sin(am * phi) * plm_tilde;
         lstar[imul] += complex<double>(real, imag);
       }
+    }
     }
   }
 
@@ -202,7 +206,7 @@ void PFMM::compute_Mlm_direct() {
     }
   }
 
-#if 0
+#if 1
   // DEBUG
   cout << "RESULTS FROM DIRECT SUMMATION" << endl;
   for (int l = 0; l < max_rank_; ++l)
@@ -274,7 +278,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
         const double boost_gamma = 0.5 * boost::math::tgamma_lower(l + 0.5, T_[ivec]) / pow(T_[ivec], l+0.5);
 //        assert(abs(boost_gamma - glower) < 1e-15);
         if (abs(boost_gamma - glower) > 1e-14)
-          cout << "*** warning: " << l << "   " << setprecision(16) << T_[ivec] << " * " << boost_gamma << "  " << glower << endl;
+         cout << "*** warning: Gamma function " << l << "   " << setprecision(16) << T_[ivec] << " * " << boost_gamma << "  " << glower << endl;
 
         glower *= 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
         //glower = boost_gamma * 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
@@ -309,6 +313,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     }
   }
 
+#if 1
   double volume = 0.0;
   vector<array<double, 3>> primkvecs(3);
   switch (ndim_) {
@@ -379,6 +384,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
       }
     }
   }
+#endif
 
 #if 0
   // DEBUG
@@ -465,7 +471,7 @@ vector<shared_ptr<const ZMatrix>> PFMM::compute_multipoles(shared_ptr<const Geom
 
 vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const {
 
-  density->print_real_part("Density");
+  //density->print_real_part("Density");
 
   // sums over L and m have extent ws_ for now
   const int nvec = pow(2*ws_+1, ndim_);
@@ -628,7 +634,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   time.tick_print("  Construct superdensity");
 
   // construct a tree from the super-geometry, ws for FMM is 2 by default
-  Tree fmm_tree(supergeom, max_height_, do_contract_);
+  Tree fmm_tree(supergeom, max_height_, do_contract_, thresh_);
   time.tick_print("  Construct tree");
   const string auxfile = scell_->geom()->auxfile();
   fmm_tree.fmm(lmax_, superden, dodf_, auxfile);
@@ -677,5 +683,6 @@ shared_ptr<const PData> PFMM::pcompute_Jop(shared_ptr<const PData> density) cons
   shared_ptr<const PData> ff = compute_far_field(density);
   assert(nf->nblock() == 2*ws_+1);
 
+//  return make_shared<const PData>(*nf);
   return make_shared<const PData>(*nf + *ff);
 }
