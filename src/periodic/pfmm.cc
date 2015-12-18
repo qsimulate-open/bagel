@@ -309,6 +309,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     }
   }
 
+  double volume = 0.0;
   vector<array<double, 3>> primkvecs(3);
   switch (ndim_) {
     case 1:
@@ -316,18 +317,22 @@ void PFMM::compute_Mlm() { // rectangular scell for now
         const double a1sq = dot(primvecs[0], primvecs[0]);
         for (int i = 0; i != 3; ++i)
           primkvecs[0][i] = primvecs[0][i] / a1sq;
+        volume = sqrt(a1sq);
       }
     case 2:
       {
         array<double, 3> a12 = cross(primvecs[0], primvecs[1]);
-        const double scale = 1.0 / dot(a12, a12);
+        const double a12sq = dot(a12, a12);
+        volume = sqrt(a12sq);
+        const double scale = 1.0 / a12sq;
         primkvecs[0] = cross(primvecs[1], a12, scale);
         primkvecs[1] = cross(a12, primvecs[0], scale);
       }
     case 3:
       {
         array<double, 3> a23 = cross(primvecs[1], primvecs[2]);
-        const double scale = 1.0 / dot(primvecs[0], a23);
+        volume = dot(primvecs[0], a23);
+        const double scale = 1.0 / volume;
         primkvecs[0] = cross(primvecs[1], primvecs[2], scale);
         primkvecs[1] = cross(primvecs[2], primvecs[0], scale);
         primkvecs[2] = cross(primvecs[0], primvecs[1], scale);
@@ -349,7 +354,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
       const double ctheta = kvec[2]/r;
       const double phi = atan2(kvec[1], kvec[0]);
       for (int l = 0; l < max_rank_; ++l) {
-        const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5);
+        const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5) / volume;
 
         for (int mm = 0; mm <= 2 * l; ++mm) {
           const int m = mm - l;
