@@ -357,12 +357,19 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     kvec[1] = idx[0] * primkvecs[0][1] + idx[1] * primkvecs[1][1] + idx[2] * primkvecs[2][1];
     kvec[2] = idx[0] * primkvecs[0][2] + idx[1] * primkvecs[1][2] + idx[2] * primkvecs[2][2];
     const double rsq = kvec[0]*kvec[0] + kvec[1]*kvec[1] + kvec[2]*kvec[2];
+    const double x = rsq * beta__ * beta__;
     if (rsq > numerical_zero__) {
       const double r = sqrt(rsq);
       const double ctheta = kvec[2]/r;
       const double phi = atan2(kvec[1], kvec[0]);
       for (int l = 0; l < max_rank_; ++l) {
-        const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5) / volume;
+        const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l+1-ndim_/2.0) / volume;
+        const double boost_gamma = boost::math::tgamma((ndim_-1)/2.0, x);
+        if (ndim_ == 3) {
+          const double check = exp(-rsq * pibeta);
+          if (abs(boost_gamma - check) > 1e-14)
+           cout << "*** warning: Boost upper gamma in 3D: " << (ndim_-1)/2.0 << "   " << setprecision(16) << x << " * " << boost_gamma << "  " << check << endl;
+        }
 
         for (int mm = 0; mm <= 2 * l; ++mm) {
           const int m = mm - l;
@@ -379,7 +386,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
           const double sign = (m >=0) ? 1.0 : -1.0;
 
           // smooth term
-          const double coeffm = plm_tilde * sgamma(l, r) * exp(-rsq * pibeta) / rsq;
+          const double coeffm = plm_tilde * sgamma(l, r) * boost_gamma * pow(r, 1.0-ndim_);
           double real = coeffm * sign * cos(am * phi);
           double imag = coeffm * sin(am * phi);
           mlm_[imul] += coeffl * complex<double>(real, imag);
