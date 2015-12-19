@@ -389,7 +389,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
     // Loop over pairs of Kramers conjugates
     // km starts with -1/2 (or 0) and goes to -S
     // kp is the Kramers conjugate of km
-    for (int km = nspin1_ / 2; km != nspin1_; ++km) {
+    for (int km = nspin_; km >= nspin1_ / 2; --km) {
       const int kp = nspin_ - km;
       cout << endl;
 
@@ -399,7 +399,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
         ab.push_back({{j, zfci.nele()-j}});
 
       double maxval2 = 0.0;
-      double sign = 1.0;
+      bool signflip = false;
       complex<double> maxvalm;
       complex<double> maxvalp;
 
@@ -437,18 +437,17 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
               maxval2 = mag2;
               maxvalm = valm;
               maxvalp = valp;
-              sign = ((ia.count() % 2 == 0) ? 1.0 : -1.0);
+              signflip = (ab[j][1] % 2 == 0) ? false : true;
             }
           }
         }
       }
       assert(std::abs(std::abs(maxvalm) - std::abs(maxvalp)) < 1.0e-6);
-      const double phase_sum = std::arg(maxvalm) + std::arg(maxvalp);
-
-      sign *= ((km % 2 == 0) ? 1.0 : -1.0);
+      double phase_sum = std::arg(maxvalm) + std::arg(maxvalp);
+      if (signflip == true) phase_sum += pi__;
 
       cout << " km = " << km << ", phase shift = " << sign * phase_sum << endl;
-      const complex<double> shift = std::polar(1.0, sign * phase_sum);
+      const complex<double> shift = std::polar(1.0, -phase_sum);
       for (int i = 0; i != nspin1_; ++i)
         transform->element(i, km) = shift * transform->element(i, km);
     }
