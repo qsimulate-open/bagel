@@ -150,6 +150,8 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   array<shared_ptr<ZMatrix>,3> magnetic_moment;
 
   RelSpinInt ao_spin(zfci.geom());
+  auto ao_trev = make_shared<const RelTRevInt>(zfci.geom());
+
   { // spin angular momentum
     for (int i = 0; i != 3; ++i) {
       magnetic_moment[i] = ao_spin(i)->copy();
@@ -238,6 +240,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
     zfci_spin_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
     zfci_orbang_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
   }
+  trev_h_ = make_shared<ZMatrix>(nspin1_, nspin1_);
   for (int i = 0; i != nspin1_; ++i) {
     for (int j = 0; j != nspin1_; ++j) {
       shared_ptr<Kramers<2,ZRDM<1>>> temprdm = zfci.rdm1(aniso_state[i], aniso_state[j]);
@@ -255,6 +258,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 
       ZMatrix aodensity = (*active_coeff * modensity ^ *active_coeff);
 
+      trev_h_->element(i,j) = aodensity.dot_product(*ao_trev);
       for (int k = 0; k != 3; ++k) {
         spinop_h_[k]->element(i,j) = aodensity.dot_product(*magnetic_moment[k]);
         zfci_spin_[k]->element(i,j) = aodensity.dot_product(*ao_spin(k));
@@ -511,10 +515,13 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
 
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
   array<shared_ptr<ZMatrix>, 3> spinop_s;
+  auto trev_s = make_shared<ZMatrix>(*transform % *trev_h_ * *transform);
   for (int i = 0; i != 3; ++i)
     spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
 
   spinham_s->print("Spin Hamiltonian");
+  cout << endl;
+  trev_s->print("Time-reversal operator!  (in pseudospin states)");
   cout << endl;
   for (int i = 0; i != 3; ++i) {
     spinop_s[i]->print("Spin matrix, component " + to_string(i));

@@ -23,16 +23,17 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-// Produces matrix elements of S_x, S_y, and S_z in atomic orbital basis
-
 #ifndef __SRC_MAT1E_REL_SPININT_H
 #define __SRC_MAT1E_REL_SPININT_H
 
 #include <src/wfn/geometry.h>
+#include <src/mat1e/overlap.h>
+#include <src/mat1e/kinetic.h>
 #include <src/util/math/zmatrix.h>
 
 namespace bagel {
 
+// Matrix elements of S_x, S_y, and S_z operators in atomic spinor basis
 class RelSpinInt {
   protected:
     const std::shared_ptr<const Geometry> geom_;
@@ -47,6 +48,23 @@ class RelSpinInt {
     }
 
     std::shared_ptr<ZMatrix>operator()(const int i) const { assert(i >= 0 && i < 3); return data_[i]; }
+};
+
+
+// Matrix elements of the time-reversal operator in atomic spinor basis
+class RelTRevInt : public ZMatrix {
+  protected:
+    const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const Matrix> kinetic_;
+    const std::shared_ptr<const Overlap> overlap_;
+    void compute_();
+
+  public:
+    RelTRevInt(const std::shared_ptr<const Geometry> geom) : ZMatrix(geom->nbasis()*4, geom->nbasis()*4),
+               geom_(geom), kinetic_(std::make_shared<Kinetic>(geom)), overlap_(std::make_shared<Overlap>(geom)) {
+      assert(!geom->magnetism()); // GIAO-RMB version has not been implemented
+      compute_();
+    }
 };
 
 }

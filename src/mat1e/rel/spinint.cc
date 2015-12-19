@@ -128,3 +128,14 @@ void RelSpinInt::compute_() {
   data_[2]->add_real_block(      w, 2*n, 3*n, n, n, (*smallints)[8]);
   data_[2]->add_real_block(      w, 3*n, 2*n, n, n, (*smallints)[8]);
 }
+
+
+void RelTRevInt::compute_() {
+  const int n = geom_->nbasis();
+  copy_real_block(-1.0, 0, n, n, n, *overlap_);
+  copy_real_block( 1.0, n, 0, n, n, *overlap_);
+  copy_real_block(-0.5/(c__*c__), 2*n, 3*n, n, n, *kinetic_);
+  copy_real_block( 0.5/(c__*c__), 3*n, 2*n, n, n, *kinetic_);
+}
+
+
