@@ -133,63 +133,49 @@ SpinFreeMethod<DataType>::~SpinFreeMethod() {
 }
 
 
-template<typename DataType>
-void SpinFreeMethod<DataType>::feed_rdm_denom(shared_ptr<const MatType> fockact) {
+template<>
+void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const MatType> fockact) {
+#ifdef HAVE_MKL_H
+  mkl_set_num_threads(info_->num_threads());
+#endif
   const int nclo = info_->nclosed();
   const int nstates = info_->ciwfn()->nstates();
-  rdm0all_ = make_shared<Vec<TATensor<DataType,0>>>();
-  rdm1all_ = make_shared<Vec<TATensor<DataType,2>>>();
-  rdm2all_ = make_shared<Vec<TATensor<DataType,4>>>();
-  rdm3all_ = make_shared<Vec<TATensor<DataType,6>>>();
-  rdm4all_ = make_shared<Vec<TATensor<DataType,8>>>();
+  rdm0all_ = make_shared<Vec<TATensor<double,0>>>();
+  rdm1all_ = make_shared<Vec<TATensor<double,2>>>();
+  rdm2all_ = make_shared<Vec<TATensor<double,4>>>();
+  rdm3all_ = make_shared<Vec<TATensor<double,6>>>();
+  rdm4all_ = make_shared<Vec<TATensor<double,8>>>();
 
   const array<IndexRange,5> range{{active_, ortho1_, ortho2_, ortho3_, ortho2t_}};
-  auto denom = make_shared<Denom<DataType>>(fockact, nstates, range, /*thresh*/1.0e-9);
+  auto denom = make_shared<Denom<double>>(fockact, nstates, range, /*thresh*/1.0e-9);
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
     for (int jst = 0; jst != nstates; ++jst) {
 
-      auto rdm0t = make_shared<TATensor<DataType,0>>(vector<IndexRange>());
-      auto rdm1t = make_shared<TATensor<DataType,2>>(vector<IndexRange>(2,active_));
-      auto rdm2t = make_shared<TATensor<DataType,4>>(vector<IndexRange>(4,active_));
-      auto rdm3t = make_shared<TATensor<DataType,6>>(vector<IndexRange>(6,active_));
-      auto rdm4t = make_shared<TATensor<DataType,8>>(vector<IndexRange>(8,active_));
+      auto rdm0t = make_shared<TATensor<double,0>>(vector<IndexRange>());
+      auto rdm1t = make_shared<TATensor<double,2>>(vector<IndexRange>(2,active_));
+      auto rdm2t = make_shared<TATensor<double,4>>(vector<IndexRange>(4,active_));
+      auto rdm3t = make_shared<TATensor<double,6>>(vector<IndexRange>(6,active_));
+      auto rdm4t = make_shared<TATensor<double,8>>(vector<IndexRange>(8,active_));
 
-      shared_ptr<const RDM<1,DataType>> rdm1;
-      shared_ptr<const RDM<2,DataType>> rdm2;
-      shared_ptr<const RDM<3,DataType>> rdm3;
-      shared_ptr<const RDM<4,DataType>> rdm4; // TODO to be removed from here
-      shared_ptr<const RDM<3,DataType>> frdm4;
+      shared_ptr<const RDM<1,double>> rdm1;
+      shared_ptr<const RDM<2,double>> rdm2;
+      shared_ptr<const RDM<3,double>> rdm3;
+      shared_ptr<const RDM<4,double>> rdm4; // TODO to be removed from here
+      shared_ptr<const RDM<3,double>> frdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
       tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
       tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact);
 
       denom->append(jst, ist, rdm1, rdm2, rdm3, frdm4);
 
-      // in complex cases we reorder indices
-      if (is_same<DataType,complex<double>>::value) {
-        const int n = info_->nact()*2;
-        auto rdm1x = rdm1->clone();
-        auto rdm2x = rdm2->clone();
-        auto rdm3x = rdm3->clone();
-        auto rdm4x = rdm4->clone();
-        sort_indices<1,0,0,1,1,1>            (rdm1->data(), rdm1x->data(), n, n);
-        sort_indices<1,0,3,2,0,1,1,1>        (rdm2->data(), rdm2x->data(), n, n, n, n);
-        sort_indices<1,0,3,2,5,4,0,1,1,1>    (rdm3->data(), rdm3x->data(), n, n, n, n, n, n);
-        sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(rdm4->data(), rdm4x->data(), n, n, n, n, n, n, n, n);
-        rdm1 = rdm1x;
-        rdm2 = rdm2x;
-        rdm3 = rdm3x;
-        rdm4 = rdm4x;
-      }
-
       (*rdm0t)("") = jst == ist ? 1.0 : 0.0;
-      const int fac = is_same<DataType,double>::value ? 1.0 : 2.0;
-      fill_block<2,DataType>(rdm1t, rdm1, vector<int>(2,nclo*fac));
-      fill_block<4,DataType>(rdm2t, rdm2, vector<int>(4,nclo*fac));
-      fill_block<6,DataType>(rdm3t, rdm3, vector<int>(6,nclo*fac));
-      fill_block<8,DataType>(rdm4t, rdm4, vector<int>(8,nclo*fac));
+      const int fac = is_same<double,double>::value ? 1.0 : 2.0;
+      fill_block<2,double>(rdm1t, rdm1, vector<int>(2,nclo*fac));
+      fill_block<4,double>(rdm2t, rdm2, vector<int>(4,nclo*fac));
+      fill_block<6,double>(rdm3t, rdm3, vector<int>(6,nclo*fac));
+      fill_block<8,double>(rdm4t, rdm4, vector<int>(8,nclo*fac));
 
       rdm0all_->emplace(jst, ist, rdm0t);
       rdm1all_->emplace(jst, ist, rdm1t);
@@ -200,6 +186,42 @@ void SpinFreeMethod<DataType>::feed_rdm_denom(shared_ptr<const MatType> fockact)
   }
   denom->compute();
   denom_ = denom;
+#ifdef HAVE_MKL_H
+  mkl_set_num_threads(1);
+#endif
+}
+
+
+template<>
+void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const MatType> fockact) {
+#ifdef HAVE_MKL_H
+  mkl_set_num_threads(info_->num_threads());
+#endif
+  const int nstates = info_->ciwfn()->nstates();
+  const array<IndexRange,5> range{{active_, ortho1_, ortho2_, ortho3_, ortho2t_}};
+  auto denom = make_shared<Denom<complex<double>>>(fockact, nstates, range, /*thresh*/1.0e-9);
+
+  // TODO this will be modified once delta's are implemented in TA
+  // TODO this can be reduced to half by bra-ket symmetry
+  for (int ist = 0; ist != nstates; ++ist) {
+    for (int jst = 0; jst != nstates; ++jst) {
+
+      shared_ptr<const RDM<1,complex<double>>> rdm1;
+      shared_ptr<const RDM<2,complex<double>>> rdm2;
+      shared_ptr<const RDM<3,complex<double>>> rdm3;
+      shared_ptr<const RDM<3,complex<double>>> frdm4;
+      tie(rdm1, rdm2) = info_->rdm12(jst, ist);
+      tie(rdm3, frdm4) = info_->rdm34f(jst, ist, fockact);
+
+      denom->append(jst, ist, rdm1, rdm2, rdm3, frdm4);
+
+    }
+  }
+  denom->compute();
+  denom_ = denom;
+#ifdef HAVE_MKL_H
+  mkl_set_num_threads(1);
+#endif
 }
 
 

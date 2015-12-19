@@ -146,8 +146,10 @@ class SpinFreeMethod {
 };
 
 
+template<> void SpinFreeMethod<double>::feed_rdm_denom(std::shared_ptr<const Matrix>);
 template<> void SpinFreeMethod<double>::feed_rdm_deriv(std::shared_ptr<const Matrix>);
 template<> void SpinFreeMethod<double>::feed_rdm_ta();
+template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_denom(std::shared_ptr<const ZMatrix>);
 template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(std::shared_ptr<const ZMatrix>);
 template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_ta();
 
