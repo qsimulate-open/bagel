@@ -82,20 +82,16 @@ void zquatev_(const int n2, complex<double>* const D, double* const eig) {
 
       for (int i = 0; i != len; ++i) choutf[i] = conj(hout[i]);
 
-      // 00-1
-      zgemv_("T", len, len+1, 1.0, D0+k+1+(k)*n, n, hout.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(len, len+1, -conj(tau), choutf.get(), 1, buf.get(), 1, D0+k+1+(k)*n, n);
+      // 00
+      zgemv_("C", len, len+1, 1.0, D0+k+1+(k)*n, n, choutf.get(), 1, 0.0, buf.get(), 1);
+      zaxpy_(len, -conj(tau)*0.5*zdotc_(len, buf.get()+1, 1, choutf.get(), 1), choutf.get(), 1, buf.get()+1, 1);
+      zgerc_(len, len+1, -conj(tau), choutf.get(), 1, buf.get(), 1, D0+k+1+(k)*n, n);
+      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, D0+(k+1)*n+(k), n);
 
-      // 00-2
-      zgemv_("N", len+1, len, 1.0, D0+(k+1)*n+(k), n, choutf.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, D+(k+1)*n+(k), n);
-
-      // 10-1
-      zgemv_("T", len, len+1, -1.0, D1+k+1+(k)*n, n, choutf.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(len, len+1, tau, hout.get(), 1, buf.get(), 1, D1+k+1+(k)*n, n);
-
-      // 10-2
+      // 10
       zgemv_("N", len+1, len, 1.0, D1+k+(k+1)*n, n, choutf.get(), 1, 0.0, buf.get(), 1);
+      zaxpy_(len, conj(tau)*0.5*zdotc_(len, hout.get(), 1, buf.get()+1, 1), choutf.get(), 1, buf.get()+1, 1);
+      zgeru_(len, len+1, tau, hout.get(), 1, buf.get(), 1, D1+k+1+(k)*n, n);
       zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, D1+(k+1)*n+(k), n);
 
       // 00-2
@@ -132,20 +128,16 @@ void zquatev_(const int n2, complex<double>* const D, double* const eig) {
 
       for (int i = 0; i != len; ++i) choutf[i] = conj(hout[i]);
 
-      // 00-1
+      // 00
       zgemv_("C", len, len+1, 1.0, D0+k+1+(k)*n, n, hout.get(), 1, 0.0, buf.get(), 1);
+      zaxpy_(len, -tau*0.5*zdotc_(len, hout.get(), 1, buf.get()+1, 1), hout.get(), 1, buf.get()+1, 1);
       zgerc_(len, len+1, -tau, hout.get(), 1, buf.get(), 1, D0+k+1+(k)*n, n);
-
-      // 00-2
-      zgemv_("N", len+1, len, 1.0, D0+(k+1)*n+(k), n, hout.get(), 1, 0.0, buf.get(), 1);
       zgerc_(len+1, len, -conj(tau), buf.get(), 1, hout.get(), 1, D0+(k+1)*n+(k), n);
 
       // 01-1
       zgemv_("T", len, len+1, 1.0, D1+k+1+(k)*n, n, hout.get(), 1, 0.0, buf.get(), 1);
+      zaxpy_(len, tau*0.5*zdotc_(len, choutf.get(), 1, buf.get()+1, 1), hout.get(), 1, buf.get()+1, 1);
       zgeru_(len, len+1, -conj(tau), choutf.get(), 1, buf.get(), 1, D1+k+1+(k)*n, n);
-
-      // 01-2
-      zgemv_("N", len+1, len, -1.0, D1+(k+1)*n+(k), n, hout.get(), 1, 0.0, buf.get(), 1);
       zgerc_(len+1, len, conj(tau), buf.get(), 1, hout.get(), 1, D1+(k+1)*n+(k), n);
 
       // 00-2
