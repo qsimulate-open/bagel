@@ -323,6 +323,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
         for (int i = 0; i != 3; ++i)
           primkvecs[0][i] = primvecs[0][i] / a1sq;
         volume = sqrt(a1sq);
+        break;
       }
     case 2:
       {
@@ -332,6 +333,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
         const double scale = 1.0 / a12sq;
         primkvecs[0] = cross(primvecs[1], a12, scale);
         primkvecs[1] = cross(a12, primvecs[0], scale);
+        break;
       }
     case 3:
       {
@@ -341,6 +343,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
         primkvecs[0] = cross(primvecs[1], primvecs[2], scale);
         primkvecs[1] = cross(primvecs[2], primvecs[0], scale);
         primkvecs[2] = cross(primvecs[0], primvecs[1], scale);
+        break;
       }
   }
 
