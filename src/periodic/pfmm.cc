@@ -25,8 +25,6 @@
 
 
 #include <src/periodic/pfmm.h>
-#include <boost/math/special_functions/gamma.hpp>
-#include <boost/math/special_functions/erf.hpp>
 #include <boost/math/special_functions/expint.hpp>
 
 using namespace std;
@@ -277,13 +275,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
             glower += cweights[i] * pow(croots[i], l);
         }
 
-        const double boost_gamma = 0.5 * boost::math::tgamma_lower(l + 0.5, T_[ivec]) / pow(T_[ivec], l+0.5);
-//        assert(abs(boost_gamma - glower) < 1e-15);
-        if (abs(boost_gamma - glower) > 1e-14)
-         cout << "*** warning: Gamma function " << l << "   " << setprecision(16) << T_[ivec] << " * " << boost_gamma << "  " << glower << endl;
-
         glower *= 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
-        //glower = boost_gamma * 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
         const double gupper = 1.0 / pow(r, l+1.0) - glower;
 
         for (int mm = 0; mm <= 2 * l; ++mm) {
@@ -364,16 +356,17 @@ void PFMM::compute_Mlm() { // rectangular scell for now
       const double r = sqrt(rsq);
       const double ctheta = kvec[2]/r;
       const double phi = atan2(kvec[1], kvec[0]);
+      double gamma = 0.0;
+      if (ndim_ == 3) {
+        gamma = exp(-x);
+      } else if (ndim_ == 2) {
+        gamma = sqrt(pi__) * erfc(sqrt(x));
+      } else {
+        gamma = -1.0 * boost::math::expint(-x);
+      }
+      const double prefact = pow(pi__, 1-ndim_/2.0) * pow(r, 1.0-ndim_) * gamma / volume;
       for (int l = 0; l < max_rank_; ++l) {
-        const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l+1-ndim_/2.0) / volume;
-        double gamma = 0.0;
-        if (ndim_ == 3) {
-          gamma = exp(-x);
-        } else if (ndim_ == 2) {
-          gamma = sqrt(pi__) * boost::math::erfc(sqrt(x));
-        } else {
-          gamma = -1.0 * boost::math::expint(-x);
-        }
+        const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l) * sgamma(l, r);
 
         for (int mm = 0; mm <= 2 * l; ++mm) {
           const int m = mm - l;
@@ -390,10 +383,9 @@ void PFMM::compute_Mlm() { // rectangular scell for now
           const double sign = (m >=0) ? 1.0 : -1.0;
 
           // smooth term
-          const double coeffm = plm_tilde * sgamma(l, r) * gamma * pow(r, 1.0-ndim_);
-          double real = coeffm * sign * cos(am * phi);
-          double imag = coeffm * sin(am * phi);
-          mlm_[imul] += coeffl * complex<double>(real, imag);
+          double real = sign * cos(am * phi);
+          double imag = sin(am * phi);
+          mlm_[imul] += prefact * coeffl * plm_tilde * complex<double>(real, imag);
         }
       }
     }

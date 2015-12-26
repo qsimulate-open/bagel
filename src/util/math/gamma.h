@@ -61,7 +61,7 @@ class Gamma { // special case for half integers G(l + 1/2)
 };
 
 
-class Gamma_scaled { // r^n/G(l + 1/2)
+class Gamma_scaled { // r^l/G(l + 1/2)
 
   private:
 
