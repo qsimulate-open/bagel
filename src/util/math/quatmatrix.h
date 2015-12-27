@@ -48,15 +48,14 @@ class QuatMatrix : public ZMatrix {
       // assert that matrix is hermitian to ensure real eigenvalues
       assert(is_hermitian(1.0e-10));
 
-      // TODO parallelize
-      zquatev_(ndim(), data(), eig.data());
+      zquatev(ndim(), data(), ndim(), eig.data());
 
       // zquatev_ only gives half the eigenvalues; get the others using symmetry
       for (int i = 0; i != ndim()/2; ++i) {
         eig(ndim()/2+i) = eig(i);
 #ifndef NDEBUG
-        assert(std::abs(eig(i)-eig2(i*2))   < 1.0e-10);
-        assert(std::abs(eig(i)-eig2(i*2+1)) < 1.0e-10);
+        assert(std::abs(eig(i)-eig2(i*2))/std::abs(eig(i)) < 1.0e-6);
+        assert(std::abs(eig(i)-eig2(i*2+1))/std::abs(eig(i)) < 1.0e-6);
 #endif
       }
 

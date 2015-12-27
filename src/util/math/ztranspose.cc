@@ -23,14 +23,16 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/math/algo.h>
 #include <bagel_config.h>
-#ifdef HAVE_MKL_H
-#define MKL_Complex16 std::complex<double>
-#include <mkl.h>
-#endif
+#include <src/util/math/algo.h>
 
 using namespace std;
+
+#ifdef HAVE_MKL_H
+extern "C" {
+  void mkl_zomatcopy_(const char*, const char*, const int*, const int*, const complex<double>*, const complex<double>*, const int*, complex<double>*, const int*);
+}
+#endif
 
 namespace bagel {
 namespace blas {
@@ -43,7 +45,7 @@ void transpose(const complex<double>* h, const int m, const int n, complex<doubl
 template<>
 void transpose(const complex<double>* h, const int m, const int n, complex<double>* vec, const complex<double> fac) {
 #ifdef HAVE_MKL_H
-  mkl_zomatcopy('c', 't', m, n, fac, h, m, vec, n);
+  mkl_zomatcopy_("c", "t", &m, &n, &fac, h, &m, vec, &n);
 #else
   const int mresidual = m % 10;
   const int nresidual = n % 10;
@@ -341,7 +343,7 @@ void transpose_conjg(const complex<double>* h, const int m, const int n, complex
 template<>
 void transpose_conjg(const complex<double>* h, const int m, const int n, complex<double>* vec, const complex<double> fac) {
 #ifdef HAVE_MKL_H
-  mkl_zomatcopy('c', 'c', m, n, fac, h, m, vec, n);
+  mkl_zomatcopy_("c", "c", &m, &n, &fac, h, &m, vec, &n);
 #else
   const int mresidual = m % 10;
   const int nresidual = n % 10;

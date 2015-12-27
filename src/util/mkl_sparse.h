@@ -30,7 +30,6 @@
 
 #ifdef HAVE_MKL_H
 
-//#include <mkl.h>
 #include <memory>
 
 extern "C" {

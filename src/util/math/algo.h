@@ -33,13 +33,18 @@
 #include <algorithm>
 #include <cassert>
 #include <src/util/f77.h>
+#include <src/util/math/zquatev/zquatev.h>
 
 namespace bagel {
 
 extern void dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, const double* adata,
                     const int* acols, const int* arind, const double* b, const int ldb, const double beta,
                     double* c, const int ldc);
-extern void zquatev_(const int n, std::complex<double>* mat, double* eig);
+
+template <typename... Args>
+auto zquatev(Args&&... args) -> decltype(ts::zquatev(std::forward<Args>(args)...)) {
+  return ts::zquatev(std::forward<Args>(args)...);
+}
 
 namespace detail {
 namespace {
