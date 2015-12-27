@@ -23,14 +23,16 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/math/algo.h>
 #include <bagel_config.h>
-#ifdef HAVE_MKL_H
-#define MKL_Complex16 std::complex<double>
-#include <mkl.h>
-#endif
+#include <src/util/math/algo.h>
 
 using namespace std;
+
+#ifdef HAVE_MKL_H
+extern "C" {
+  void mkl_domatcopy_(const char*, const char*, const int*, const int*, const double*, const double*, const int*, double*, const int*);
+}
+#endif
 
 namespace bagel {
 namespace blas {
@@ -38,7 +40,7 @@ namespace blas {
 template<>
 void transpose(const double* h, const int m, const int n, double* vec, const double fac) {
 #ifdef HAVE_MKL_H
-  mkl_domatcopy('c', 't', m, n, fac, h, m, vec, n);
+  mkl_domatcopy_("c", "t", &m, &n, &fac, h, &m, vec, &n);
 #else
   const int mresidual = m % 10;
   const int nresidual = n % 10;
