@@ -71,8 +71,8 @@ class DimerJop : public Jop {
   private:
     void common_init(const int norbA, const int norbB);
 
-    template <int unit> const int nact() const { return ( unit == 0 ? nact_.first : nact_.second ); }
-    template <int unit> const int active(const int a) const { return a + unit * nact_.first; }
+    template <int unit> int nact() const { return ( unit == 0 ? nact_.first : nact_.second ); }
+    template <int unit> int active(const int a) const { return a + unit * nact_.first; }
 
     template <int A, int B, int C, int D>
     std::pair<int, int> index(const int a, const int b, const int c, const int d) const;

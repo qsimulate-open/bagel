@@ -431,7 +431,7 @@ class RASCivector_impl : public RASCivector_base<RASBlock<DataType>> {
 
     using RASCivector_base<RASBlock<DataType>>::block;
 
-    const size_t size() const { return det_->size(); }
+    size_t size() const { return det_->size(); }
     void fill(const double a) { std::fill_n(data(), size(), a); }
     void zero() { fill(0.0); }
 

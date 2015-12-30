@@ -33,7 +33,7 @@
 
 using namespace std;
 
-#ifdef MKL
+#ifdef HAVE_MKL_H
 extern "C" {
  void mkl_zomatcopy_(const char*, const char*, const int*, const int*, const std::complex<double>*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
 }
@@ -43,7 +43,7 @@ namespace ts {
 namespace impl {
 
 void transpose(const int m, const int n, const complex<double>* h, const int ld, complex<double>* vec, const int ldt) {
-#ifdef MKL
+#ifdef HAVE_MKL_H
   complex<double> one = 1.0;
   mkl_zomatcopy_("c", "t", &m, &n, &one, h, &ld, vec, &ldt);
 #else
@@ -189,7 +189,7 @@ void transpose(const int m, const int n, const complex<double>* h, const int ld,
 
 
 void transpose_conj(const int m, const int n, const complex<double>* h, const int ld, complex<double>* vec, const int ldt) {
-#ifdef MKL
+#ifdef HAVE_MKL_H
   complex<double> one = 1.0;
   mkl_zomatcopy_("c", "c", &m, &n, &one, h, &ld, vec, &ldt);
 #else
