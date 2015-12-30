@@ -1,6 +1,6 @@
 //
 // ZQUATEV: Diagonalization of quaternionic matrices
-// File   : block.cc
+// File   : blocked.cc
 // Copyright (c) 2016, Toru Shiozaki (shiozaki@northwestern.edu)
 // All rights reserved.
 //
@@ -394,7 +394,7 @@ void panel_update(const int n, const int nb,
     zgemm3m_("N", "C", nrem, nrem, nb, 1.0, WS.block(0,0), nrem, DWR.block(0,0), nrem, 1.0, D1+nb*ld+nb, ld);
   }
 
-  {
+  if (n != norig) {
     complex<double>* const ptr = YD.block(0,0);
     // Q0W
     SuperMatrix<1,3> Q0W(ptr, norig, nb, norig, nb, /*init*/false); // 3 used
@@ -416,7 +416,7 @@ void panel_update(const int n, const int nb,
     transpose_conj(nb, nb, T.block(2,2), nb, WT.block(0,2), n-1);
     contract<_N, _C>(1.0, W, T.slice<0,2>(), WT);
 
-    // Q0 <- Q0WTW^+
+    // Q0 <- Q0WTW^+ and Q1 <- Q1WTW^+
     zgemm3m_("N", "C", norig, n-1, 3*nb, 1.0, Q0W.block(0,0), norig, WT.block(0,0), n-1, 1.0, Q0+ld, ld);
     zgemm3m_("N", "C", norig, n-1, 3*nb, 1.0, Q1W.block(0,0), norig, WT.block(0,0), n-1, 1.0, Q1+ld, ld);
 
@@ -428,14 +428,39 @@ void panel_update(const int n, const int nb,
     // R^T W^T Q0^T
     SuperMatrix<1,1> RWQ0(ptr+norig*nb*6+(n-1)*nb, nb, norig, nb, norig, /*init*/true); // 8 used
     contract<_T, _T>(1.0, R, Q0W, RWQ0);
-    // Q0^* W^* R^* SW^+
+    // Q1 <- Q0^* W^* R^* SW^+
     zgemm3m_("C", "C", norig, n-1, nb, -1.0, RWQ0.block(0,0), nb, WS.block(0,0), n-1, 1.0, Q1+ld, ld);
 
     // R^T W^T Q1^T
     SuperMatrix<1,1> RWQ1(ptr+norig*nb*6+(n-1)*nb, nb, norig, nb, norig, /*init*/true); // 8 used
     contract<_T, _T>(1.0, R, Q1W, RWQ1);
-    // Q0^* W^* R^* SW^+
+    // Q0 <- Q1^* W^* R^* SW^+
     zgemm3m_("C", "C", norig, n-1, nb, 1.0, RWQ1.block(0,0), nb, WS.block(0,0), n-1, 1.0, Q0+ld, ld);
+  } else {
+    // in the first run this can be simplified, because Q0 = unit, Q1 = 0 on input.
+    assert(abs(zdotc_(n*n, Q0, 1, Q0, 1)-static_cast<double>(n)) < 1.0e-10
+        && abs(zdotc_(n*n, Q1, 1, Q1, 1)) < 1.0e-10);
+
+    complex<double>* const ptr = YD.block(0,0);
+    SuperMatrix<1,3> WT(ptr, n-1, nb, n-1, nb, /*init*/true);
+    transpose_conj(nb, nb, T.block(0,2), nb, WT.block(0,0), n-1);
+    transpose_conj(nb, nb, T.block(1,2), nb, WT.block(0,1), n-1);
+    transpose_conj(nb, nb, T.block(2,2), nb, WT.block(0,2), n-1);
+    contract<_N, _C>(1.0, W, T.slice<0,2>(), WT);
+
+    transpose_conj(n-1, nb, WT.block(0,2), n-1, Q0+ld+1, ld);
+    for (int i = 0; i != nb; ++i)
+      Q0[(i+1)*ld+i+1] += 1.0;
+    zgemm3m_("N", "C", n-1, n-1, 2*nb, 1.0, W.block(0,0), n-1, WT.block(0,0), n-1, 1.0, Q0+ld+1, ld);
+
+    SuperMatrix<1,1> WS(ptr, n-1, nb, n-1, nb, /*init*/true);
+    transpose_conj(nb, nb, S.block(0,2), nb, WS.block(0,0), n-1);
+    contract<_N, _C>(1.0, W, S.slice<0,2>(), WS);
+
+    SuperMatrix<1,1> RW(ptr+(n-1)*nb, nb, n-1, nb, n-1, /*init*/true);
+    transpose(nb, nb, R.block(2,0), nb, RW.block(0,0), nb);
+    contract<_T, _T>(1.0, R.trunc<2>(), W, RW);
+    zgemm3m_("C", "C", n-1, n-1, nb, -1.0, RW.block(0,0), nb, WS.block(0,0), n-1, 1.0, Q1+ld+1, ld);
   }
 
 }

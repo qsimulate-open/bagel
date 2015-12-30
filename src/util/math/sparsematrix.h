@@ -64,9 +64,9 @@ class SparseMatrix {
     int* cols() { return cols_.get(); }
     int* rind() { return rind_.get(); }
 
-    const int ndim() const { return ndim_; }
-    const int mdim() const { return mdim_; }
-    const int size() const { return size_; }
+    int ndim() const { return ndim_; }
+    int mdim() const { return mdim_; }
+    int size() const { return size_; }
 
     // Scalar operations (only bare minimum right now)
     void scale(const double& a);

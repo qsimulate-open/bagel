@@ -355,8 +355,8 @@ void DFBlock::average() {
   size_t t_start, t_end;
   tie(t_start, t_end) = adist_->range(myrank);
 
-  assert(o_end - t_end >= 0);
-  assert(o_start - t_start >= 0);
+  assert(o_end >= t_end);
+  assert(o_start >= t_start);
 
   // TODO so far I am not considering the cases when data must be sent to the next neighbor; CAUTION
   const size_t asendsize = o_end - t_end;

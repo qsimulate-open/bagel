@@ -291,7 +291,7 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
     tmp = make_shared<QuatMatrix>(*rdm1);
 #ifndef NDEBUG
     auto quatrdm = static_pointer_cast<const QuatMatrix>(tmp);
-    assert(quatrdm->is_t_symmetric());
+//  assert(quatrdm->is_t_symmetric());
 #endif
   } else {
     tmp = make_shared<ZMatrix>(*rdm1);
