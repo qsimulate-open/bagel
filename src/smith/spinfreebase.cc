@@ -327,8 +327,6 @@ template<typename DataType>
 void SpinFreeMethod<DataType>::set_rdm(const int ist, const int jst) {
   // ist is bra, jst is ket.
   // CAREFUL! the following is due to SMITH's convention (i.e., index are reversed)
-
-  // TODO is this OK for complex cases?
   rdm0_ = rdm0all_->at(jst, ist);
   rdm1_ = rdm1all_->at(jst, ist);
   rdm2_ = rdm2all_->at(jst, ist);
