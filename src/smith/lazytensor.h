@@ -38,11 +38,6 @@ namespace SMITH {
 
 template<typename DataType, int N, typename Gen>
 class LazyTensor {
-  private:
-    TiledArray::Array<DataType, N, LazyTensor>* owner_;
-    std::array<size_t, N> index_;
-    Gen* gen_;
-
   public:
     using value_type = DataType;
     using eval_type = TiledArray::Tensor<DataType>;
@@ -50,104 +45,47 @@ class LazyTensor {
 
     template <typename Archive>
     void serialize(Archive& ar) {
-      assert(false);
+      ar & range_ & gen_;
     }
+
+  private:
+    range_type range_;
+    Gen gen_;
 
   public:
-    LazyTensor(TiledArray::Array<DataType, N, LazyTensor>* o, const std::array<size_t, N>& i, Gen* gen)
-     : owner_(o), index_(i), gen_(gen) {
+    LazyTensor(const range_type& r, const Gen& gen) : range_(r), gen_(gen) {
     }
 
-    LazyTensor(const LazyTensor& other) : owner_(other.owner_), index_(other.index_), gen_(other.gen_) { }
-    LazyTensor() { }
+    LazyTensor(const LazyTensor& other) = default;
+    LazyTensor(LazyTensor&& other) = default;
+    LazyTensor() = default;
 
-    LazyTensor& operator=(const LazyTensor& other) {
-      owner_ = other.owner_;
-      index_ = other.index_;
-      gen_   = other.gen_;
-      return *this;
-    }
+    LazyTensor& operator=(const LazyTensor& other) = default;
+    LazyTensor& operator=(LazyTensor&& other) = default;
 
     operator eval_type () const {
-      eval_type tile(owner_->trange().make_tile_range(index_));
-      auto* ptr = tile.data();
-      for (auto& i : tile.range())
-        *ptr++ = (*gen_)(i);
+      eval_type tile(range_);
+      for (size_t i = 0; i < tile.size(); ++i)
+        tile[i] = gen_(i);
       return tile;
     }
 };
 
 
-// assuming that the diagonal element is real (which is usually right)
-// TODO CAUTION -- column-row major convention.
-class DiagGen4 {
-  protected:
-    const VecView eig_;
-    const int o0_, o1_, o2_, o3_;
+class GenSample {
   public:
-    // 0 and 1 are virtual orbitals; 2 and 3 are closed orbitals
-    DiagGen4(const VecView eig, const int off0, const int off1, const int off2, const int off3)
-     : eig_(eig), o0_(off0), o1_(off1), o2_(off2), o3_(off3) {
+    template <typename Archive>
+    void serialize(Archive& ar) {
+      // Serialize data members here ...
+    }
+  protected:
+    // members
+  public:
+    GenSample(} {
     }
     template <typename Index>
     double operator()(const Index& i) {
-      // TODO index reversed due to column-row major convention
-      return eig_(o0_+i[3]) + eig_(o1_+i[2]) - eig_(o2_+i[1]) - eig_(o3_+i[0]);
-    }
-};
-
-
-class DenomGen4 {
-  protected:
-    const VecView eig_;
-    const int o0_, o1_, o2_, o3_;
-  public:
-    DenomGen4(const VecView eig, const int off0, const int off1, const int off2, const int off3)
-     : eig_(eig), o0_(off0), o1_(off1), o2_(off2), o3_(off3) { }
-    template <typename Index> double operator()(const Index& i) {
-      return 1.0 / (eig_(o0_+i[3]) + eig_(o1_+i[2]) - eig_(o2_+i[1]) - eig_(o3_+i[0]));
-    }
-};
-template<int I>
-class DenomGen3 {
-  protected:
-    double e0_;
-    const VecView denom_;
-    const VecView eig_;
-    const int o0_;
-  public:
-    DenomGen3(const double e, const VecView d, const VecView eig, const int off0)
-     : e0_(e), denom_(d), eig_(eig), o0_(off0) { }
-    template <typename Index> double operator()(const Index& i) {
-      return 1.0 / (denom_(i[1]) + I*eig_(o0_+i[0]) - e0_);
-    }
-};
-template<int I, int J>
-class DenomGen2 {
-  protected:
-    double e0_;
-    const VecView denom_;
-    const VecView eig_;
-    const int o0_, o1_;
-  public:
-    DenomGen2(const double e, const VecView d, const VecView eig, const int off0, const int off1)
-     : e0_(e), denom_(d), eig_(eig), o0_(off0), o1_(off1) { }
-    template <typename Index> double operator()(const Index& i) {
-      return 1.0 / (denom_(i[2]) + I*eig_(o0_+i[1]) + J*eig_(o1_+i[0]) - e0_);
-    }
-};
-template<int I, int J, int K>
-class DenomGen1 {
-  protected:
-    double e0_;
-    const VecView denom_;
-    const VecView eig_;
-    const int o0_, o1_, o2_;
-  public:
-    DenomGen1(const double e, const VecView d, const VecView eig, const int off0, const int off1, const int off2)
-     : e0_(e), denom_(d), eig_(eig), o0_(off0), o1_(off1), o2_(off2) { }
-    template <typename Index> double operator()(const Index& i) {
-      return 1.0 / (denom_(i[3]) + I*eig_(o0_+i[2]) + J*eig_(o1_+i[1]) + K*eig_(o2_+i[0]) - e0_);
+      return 0.0;
     }
 };
 
@@ -159,16 +97,21 @@ class LazyTATensor : public TiledArray::Array<DataType,N,LazyTensor<DataType,N,G
     Gen gen_;
 
   public:
+    using BaseArray = typename TiledArray::Array<DataType,N,Lazy>;
+    using BaseArray::begin;
+    using BaseArray::end;
+    using BaseArray::trange;
+    using BaseArray::get_world;
+
+  public:
     LazyTATensor(const std::vector<IndexRange>& r, Gen gen)
       : TiledArray::Array<DataType,N,Lazy>(madness::World::get_default(), *TATensor<DataType,N>::make_trange(r)), gen_(gen) {
 
-      for (auto& t : this->trange().tiles())
-        if (this->is_local(t)) {
-          std::array<size_t, N> index;
-          std::copy(t.begin(), t.end(), index.begin());
-          madness::Future<typename LazyTATensor<DataType,N,Gen>::value_type> tile(Lazy(this, index, &gen_));
-          this->set(t, tile);
-        }
+      for (auto it = begin(); it != end; ++it) {
+        const TiledArray::Range range = trange().make_tile_range(it.ordinal());
+        madness::Future<typename Lazy::value_type> tile(Lazy(t, gen_));
+        *it = tile;
+      }
     }
 
     auto operator()(const std::string& vars) const -> decltype(TiledArray::Array<DataType,N,Lazy>::operator()(vars)) {
@@ -193,10 +136,9 @@ class LazyTATensor : public TiledArray::Array<DataType,N,LazyTensor<DataType,N,G
       assert(ss.size() == N);
 
       std::string revvars;
-      for (auto i = ss.rbegin(); i != ss.rend(); ++i) {
-        if (i != ss.rbegin()) revvars += ",";
-        revvars += *i;
-      }
+      auto i = ss.rbegin();
+      for (revvars += *i++; i != ss.rend(); ++i)
+        revvars += "," + *i;
       return TiledArray::Array<DataType,N,Lazy>::operator()(revvars);
     }
 };
