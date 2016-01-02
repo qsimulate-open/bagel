@@ -156,7 +156,7 @@ void Denom<DataType>::compute() {
     } {
       auto inp = make_shared<Tensor3<DataType>>(ortho2t_.size(), nact, nact);
       for (int i = 0; i != nstates_; ++i) {
-        copy_n(shalf_xh_->data() + i*inp->size(), inp->size(), inp->data());
+        copy_n(shalf_xh_->data() + i*fac2*inp->size(), inp->size(), inp->data());
         auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2t_, active_, active_});
         fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
         tashalf_xh_.push_back(tmp2);
@@ -164,7 +164,7 @@ void Denom<DataType>::compute() {
 
       if (fac2 == 2) { // when real (i.e., spin-free equations)
         for (int i = 0; i != nstates_; ++i) {
-          copy_n(shalf_xh_->data() + (i+nstates_)*inp->size(), inp->size(), inp->data());
+          copy_n(shalf_xh_->data() + (i*2+1)*inp->size(), inp->size(), inp->data());
           auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2t_, active_, active_});
           fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
           tashalf_xh2_.push_back(tmp2);
