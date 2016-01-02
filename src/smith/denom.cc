@@ -36,13 +36,13 @@ using namespace btas;
 
 template<typename DataType>
 Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const array<IndexRange,5>& r, const double th)
- : fock_(fock), active_(r[0]), ortho1_(r[1]), ortho2_(r[2]), ortho3_(r[3]), ortho2t_(r[4]), thresh_(th) {
+ : fock_(fock), active_(r[0]), ortho1_(r[1]), ortho2_(r[2]), ortho3_(r[3]), ortho2t_(r[4]), thresh_(th), nstates_(nstates), nact_(fock->mdim()) {
 
   // TODO compute() function still assumes nstates = 1
-  assert(nstates == 1);
-  const size_t ndim = fock->mdim() * nstates;
-  const size_t ndim2 = fock->mdim() * ndim;
-  const size_t ndim3 = fock->mdim() * ndim2;
+  assert(nstates == 1 && nact_ == ortho1_.size());
+  const size_t ndim = nact_ * nstates;
+  const size_t ndim2 = nact_ * ndim;
+  const size_t ndim3 = nact_ * ndim2;
   const int fac2 = is_same<DataType,double>::value ? 2 : 1;
 
   shalf_x_ = make_shared<MatType>(ndim, ndim);
@@ -86,7 +86,6 @@ void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<
 
 template<typename DataType>
 void Denom<DataType>::compute() {
-  // TODO in principle, we can use smaller dimension (i.e., use canonical orthogonalization for shalf_x_)
   const int nclo = active_.front().offset();
   const int nact = active_.size();
   const int fac2 = is_same<DataType,double>::value ? 2 : 1;
@@ -96,8 +95,13 @@ void Denom<DataType>::compute() {
     tmp.diagonalize(denom_x_);
     shalf_x_ = make_shared<MatType>(tmp % *shalf_x_);
 
-    tashalf_x_ = make_shared<TATensor<DataType,2>>(vector<IndexRange>{ortho1_, active_});
-    fill_block<2,DataType>(tashalf_x_, shalf_x_, vector<int>{nclo, 0});
+    auto inp = make_shared<Tensor2<DataType>>(ortho1_.size(), nact);
+    for (int i = 0; i != nstates_; ++i) {
+      copy_n(shalf_x_->data() + i*inp->size(), inp->size(), inp->data());
+      auto tmp2 = make_shared<TATensor<DataType,2>>(vector<IndexRange>{ortho1_, active_});
+      fill_block<2,DataType>(tmp2, inp, vector<int>{nclo, 0});
+      tashalf_x_.push_back(tmp2);
+    }
     work_x_ = shalf_x_ = nullptr;
   }
   {
@@ -106,8 +110,13 @@ void Denom<DataType>::compute() {
     tmp.diagonalize(denom_h_);
     shalf_h_ = make_shared<MatType>(tmp % *shalf_h_);
 
-    tashalf_h_ = make_shared<TATensor<DataType,2>>(vector<IndexRange>{ortho1_, active_});
-    fill_block<2,DataType>(tashalf_h_, shalf_h_, vector<int>{nclo, 0});
+    auto inp = make_shared<Tensor2<DataType>>(ortho1_.size(), nact);
+    for (int i = 0; i != nstates_; ++i) {
+      copy_n(shalf_h_->data() + i*inp->size(), inp->size(), inp->data());
+      auto tmp2 = make_shared<TATensor<DataType,2>>(vector<IndexRange>{ortho1_, active_});
+      fill_block<2,DataType>(tmp2, inp, vector<int>{nclo, 0});
+      tashalf_h_.push_back(tmp2);
+    }
     work_h_ = shalf_x_ = nullptr;
   }
   {
@@ -115,10 +124,14 @@ void Denom<DataType>::compute() {
     MatType tmp(*shalf_xx_ % *work_xx_ * *shalf_xx_);
     tmp.diagonalize(denom_xx_);
     shalf_xx_ = make_shared<MatType>(tmp % *shalf_xx_);
-    static_pointer_cast<btas::Tensor3<DataType>>(shalf_xx_)->resize(btas::CRange<3>(ortho2_.size(), nact, nact));
 
-    tashalf_xx_ = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2_, active_, active_});
-    fill_block<3,DataType>(tashalf_xx_, shalf_xx_, vector<int>{nclo, nclo, 0});
+    auto inp = make_shared<Tensor3<DataType>>(ortho2_.size(), nact, nact);
+    for (int i = 0; i != nstates_; ++i) {
+      copy_n(shalf_xx_->data() + i*inp->size(), inp->size(), inp->data());
+      auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2_, active_, active_});
+      fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
+      tashalf_xx_.push_back(tmp2);
+    }
     work_xx_ = shalf_xx_ = nullptr;
   }
   {
@@ -126,10 +139,14 @@ void Denom<DataType>::compute() {
     MatType tmp(*shalf_hh_ % *work_hh_ * *shalf_hh_);
     tmp.diagonalize(denom_hh_);
     shalf_hh_ = make_shared<MatType>(tmp % *shalf_hh_);
-    static_pointer_cast<btas::Tensor3<DataType>>(shalf_hh_)->resize(btas::CRange<3>(ortho2_.size(), nact, nact));
 
-    tashalf_hh_ = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2_, active_, active_});
-    fill_block<3,DataType>(tashalf_hh_, shalf_hh_, vector<int>{nclo, nclo, 0});
+    auto inp = make_shared<Tensor3<DataType>>(ortho2_.size(), nact, nact);
+    for (int i = 0; i != nstates_; ++i) {
+      copy_n(shalf_hh_->data() + i*inp->size(), inp->size(), inp->data());
+      auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2_, active_, active_});
+      fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
+      tashalf_hh_.push_back(tmp2);
+    }
     work_hh_ = shalf_hh_ = nullptr;
   }
   {
@@ -140,17 +157,26 @@ void Denom<DataType>::compute() {
       shalf_xh_ = make_shared<MatType>(tmp % *shalf_xh_);
       assert(ortho2t_.size() == nact*nact*fac2);
     } {
-      auto tmp = make_shared<btas::Tensor3<DataType>>(btas::CRange<3>(ortho2t_.size(), nact, nact));
-      assert(shalf_xh_->size() == tmp->size()*fac2);
-      copy_n(shalf_xh_->data(), shalf_xh_->size()/fac2, tmp->data());
+      Tensor3<DataType> tmp(ortho2t_.size(), nact, nact);
+      assert(shalf_xh_->size() == tmp.size()*fac2);
+      copy_n(shalf_xh_->data(), shalf_xh_->size()/fac2, tmp.data());
 
-      tashalf_xh_ = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2t_, active_, active_});
-      fill_block<3,DataType>(tashalf_xh_, tmp, vector<int>{nclo, nclo, 0});
+      auto inp = make_shared<Tensor3<DataType>>(ortho2t_.size(), nact, nact);
+      for (int i = 0; i != nstates_; ++i) {
+        copy_n(tmp.data() + i*inp->size(), inp->size(), inp->data());
+        auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2t_, active_, active_});
+        fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
+        tashalf_xh_.push_back(tmp2);
+      }
 
       if (fac2 == 2) { // when real (i.e., spin-free equations)
-        copy_n(shalf_xh_->data()+shalf_xh_->size()/fac2, shalf_xh_->size()/fac2, tmp->data());
-        tashalf_xh2_ = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2t_, active_, active_});
-        fill_block<3,DataType>(tashalf_xh2_, tmp, vector<int>{nclo, nclo, 0});
+        copy_n(shalf_xh_->data()+shalf_xh_->size()/fac2, shalf_xh_->size()/fac2, tmp.data());
+        for (int i = 0; i != nstates_; ++i) {
+          copy_n(tmp.data() + i*inp->size(), inp->size(), inp->data());
+          auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2t_, active_, active_});
+          fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
+          tashalf_xh2_.push_back(tmp2);
+        }
       }
     }
     work_xh_ = shalf_xh_ = nullptr;
@@ -160,10 +186,14 @@ void Denom<DataType>::compute() {
     MatType tmp(*shalf_xhh_ % *work_xhh_ * *shalf_xhh_);
     tmp.diagonalize(denom_xhh_);
     shalf_xhh_ = make_shared<MatType>(tmp % *shalf_xhh_);
-    static_pointer_cast<btas::Tensor4<DataType>>(shalf_xhh_)->resize(btas::CRange<4>(ortho3_.size(), nact, nact, nact));
 
-    tashalf_xhh_ = make_shared<TATensor<DataType,4>>(vector<IndexRange>{ortho3_, active_, active_, active_});
-    fill_block<4,DataType>(tashalf_xhh_, shalf_xhh_, vector<int>{nclo, nclo, nclo, 0});
+    auto inp = make_shared<Tensor4<DataType>>(ortho3_.size(), nact, nact, nact);
+    for (int i = 0; i != nstates_; ++i) {
+      copy_n(shalf_xhh_->data() + i*inp->size(), inp->size(), inp->data());
+      auto tmp2 = make_shared<TATensor<DataType,4>>(vector<IndexRange>{ortho3_, active_, active_, active_});
+      fill_block<4,DataType>(tmp2, inp, vector<int>{nclo, nclo, nclo, 0});
+      tashalf_xhh_.push_back(tmp2);
+    }
     work_xhh_ = shalf_xhh_ = nullptr;
   }
   {
@@ -171,10 +201,14 @@ void Denom<DataType>::compute() {
     MatType tmp(*shalf_xxh_ % *work_xxh_ * *shalf_xxh_);
     tmp.diagonalize(denom_xxh_);
     shalf_xxh_ = make_shared<MatType>(tmp % *shalf_xxh_);
-    static_pointer_cast<btas::Tensor4<DataType>>(shalf_xxh_)->resize(btas::CRange<4>(ortho3_.size(), nact, nact, nact));
 
-    tashalf_xxh_ = make_shared<TATensor<DataType,4>>(vector<IndexRange>{ortho3_, active_, active_, active_});
-    fill_block<4,DataType>(tashalf_xxh_, shalf_xxh_, vector<int>{nclo, nclo, nclo, 0});
+    auto inp = make_shared<Tensor4<DataType>>(ortho3_.size(), nact, nact, nact);
+    for (int i = 0; i != nstates_; ++i) {
+      copy_n(shalf_xxh_->data() + i*inp->size(), inp->size(), inp->data());
+      auto tmp2 = make_shared<TATensor<DataType,4>>(vector<IndexRange>{ortho3_, active_, active_, active_});
+      fill_block<4,DataType>(tmp2, inp, vector<int>{nclo, nclo, nclo, 0});
+      tashalf_xxh_.push_back(tmp2);
+    }
     work_xxh_ = shalf_xxh_ = nullptr;
   }
 }

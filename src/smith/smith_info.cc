@@ -77,12 +77,11 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   all_    = closed_; all_.merge(active_); all_.merge(virt_);
 
   // IndexRange for orbital update
-  const int nstates = ciwfn()->nstates();
   const int nact2 = nact()*(comp ? 2 : 1);
-  ortho1_  = IndexRange("o", nstates*nact2, maxtile_);
-  ortho2_  = IndexRange("o", nstates*nact2*nact2, maxtile_);
-  ortho3_  = IndexRange("o", nstates*nact2*nact2*nact2, maxtile_);
-  ortho2t_ = IndexRange("o", nstates*nact2*nact2*(comp ? 1 : 2), maxtile_); // for XXCA
+  ortho1_  = IndexRange("o", nact2, maxtile_);
+  ortho2_  = IndexRange("o", nact2*nact2, maxtile_);
+  ortho3_  = IndexRange("o", nact2*nact2*nact2, maxtile_);
+  ortho2t_ = IndexRange("o", nact2*nact2*(comp ? 1 : 2), maxtile_); // for XXCA
 
   // only for gradient computation
   if (ciwfn() && grad_) {

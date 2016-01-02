@@ -46,6 +46,8 @@ class Denom {
     const IndexRange ortho3_;
     const IndexRange ortho2t_;
     const double thresh_;
+    const int nstates_;
+    const int nact_;
 
     // work area
     std::shared_ptr<MatType> shalf_x_;
@@ -64,14 +66,14 @@ class Denom {
     std::shared_ptr<MatType> work_xhh_;
     std::shared_ptr<MatType> work_xxh_;
 
-    std::shared_ptr<TATensor<DataType,2>> tashalf_x_;
-    std::shared_ptr<TATensor<DataType,2>> tashalf_h_;
-    std::shared_ptr<TATensor<DataType,3>> tashalf_xx_;
-    std::shared_ptr<TATensor<DataType,3>> tashalf_hh_;
-    std::shared_ptr<TATensor<DataType,3>> tashalf_xh_;
-    std::shared_ptr<TATensor<DataType,3>> tashalf_xh2_;
-    std::shared_ptr<TATensor<DataType,4>> tashalf_xhh_;
-    std::shared_ptr<TATensor<DataType,4>> tashalf_xxh_;
+    std::vector<std::shared_ptr<TATensor<DataType,2>>> tashalf_x_;
+    std::vector<std::shared_ptr<TATensor<DataType,2>>> tashalf_h_;
+    std::vector<std::shared_ptr<TATensor<DataType,3>>> tashalf_xx_;
+    std::vector<std::shared_ptr<TATensor<DataType,3>>> tashalf_hh_;
+    std::vector<std::shared_ptr<TATensor<DataType,3>>> tashalf_xh_;
+    std::vector<std::shared_ptr<TATensor<DataType,3>>> tashalf_xh2_;
+    std::vector<std::shared_ptr<TATensor<DataType,4>>> tashalf_xhh_;
+    std::vector<std::shared_ptr<TATensor<DataType,4>>> tashalf_xxh_;
 
     VectorB denom_x_;
     VectorB denom_h_;
@@ -114,14 +116,14 @@ class Denom {
     const VecView denom_xhh() const { return denom_xhh_; }
     const VecView denom_xxh() const { return denom_xxh_; }
 
-    std::shared_ptr<const TATensor<DataType,2>> tashalf_x() const { return tashalf_x_; }
-    std::shared_ptr<const TATensor<DataType,2>> tashalf_h() const { return tashalf_h_; }
-    std::shared_ptr<const TATensor<DataType,3>> tashalf_xx() const { return tashalf_xx_; }
-    std::shared_ptr<const TATensor<DataType,3>> tashalf_hh() const { return tashalf_hh_; }
-    std::shared_ptr<const TATensor<DataType,4>> tashalf_xhh() const { return tashalf_xhh_; }
-    std::shared_ptr<const TATensor<DataType,4>> tashalf_xxh() const { return tashalf_xxh_; }
+    std::shared_ptr<const TATensor<DataType,2>> tashalf_x(const int i) const { return tashalf_x_[i]; }
+    std::shared_ptr<const TATensor<DataType,2>> tashalf_h(const int i) const { return tashalf_h_[i]; }
+    std::shared_ptr<const TATensor<DataType,3>> tashalf_xx(const int i) const { return tashalf_xx_[i]; }
+    std::shared_ptr<const TATensor<DataType,3>> tashalf_hh(const int i) const { return tashalf_hh_[i]; }
+    std::shared_ptr<const TATensor<DataType,4>> tashalf_xhh(const int i) const { return tashalf_xhh_[i]; }
+    std::shared_ptr<const TATensor<DataType,4>> tashalf_xxh(const int i) const { return tashalf_xxh_[i]; }
     template<bool I>
-    std::shared_ptr<const TATensor<DataType,3>> tashalf_xh() const { auto o = I ? tashalf_xh_ : tashalf_xh2_; assert(o); return o; }
+    std::shared_ptr<const TATensor<DataType,3>> tashalf_xh(const int i) const { auto o = I ? tashalf_xh_[i] : tashalf_xh2_[i]; assert(o); return o; }
 };
 
 extern template class Denom<double>;
