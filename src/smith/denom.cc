@@ -38,8 +38,6 @@ template<typename DataType>
 Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const array<IndexRange,5>& r, const double th)
  : fock_(fock), active_(r[0]), ortho1_(r[1]), ortho2_(r[2]), ortho3_(r[3]), ortho2t_(r[4]), thresh_(th), nstates_(nstates), nact_(fock->mdim()) {
 
-  // TODO compute() function still assumes nstates = 1
-  assert(nstates == 1 && nact_ == ortho1_.size());
   const size_t ndim = nact_ * nstates;
   const size_t ndim2 = nact_ * ndim;
   const size_t ndim3 = nact_ * ndim2;
@@ -155,24 +153,18 @@ void Denom<DataType>::compute() {
       MatType tmp(*shalf_xh_ % *work_xh_ * *shalf_xh_);
       tmp.diagonalize(denom_xh_);
       shalf_xh_ = make_shared<MatType>(tmp % *shalf_xh_);
-      assert(ortho2t_.size() == nact*nact*fac2);
     } {
-      Tensor3<DataType> tmp(ortho2t_.size(), nact, nact);
-      assert(shalf_xh_->size() == tmp.size()*fac2);
-      copy_n(shalf_xh_->data(), shalf_xh_->size()/fac2, tmp.data());
-
       auto inp = make_shared<Tensor3<DataType>>(ortho2t_.size(), nact, nact);
       for (int i = 0; i != nstates_; ++i) {
-        copy_n(tmp.data() + i*inp->size(), inp->size(), inp->data());
+        copy_n(shalf_xh_->data() + i*inp->size(), inp->size(), inp->data());
         auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2t_, active_, active_});
         fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
         tashalf_xh_.push_back(tmp2);
       }
 
       if (fac2 == 2) { // when real (i.e., spin-free equations)
-        copy_n(shalf_xh_->data()+shalf_xh_->size()/fac2, shalf_xh_->size()/fac2, tmp.data());
         for (int i = 0; i != nstates_; ++i) {
-          copy_n(tmp.data() + i*inp->size(), inp->size(), inp->data());
+          copy_n(shalf_xh_->data() + (i+nstates_)*inp->size(), inp->size(), inp->data());
           auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2t_, active_, active_});
           fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
           tashalf_xh2_.push_back(tmp2);
