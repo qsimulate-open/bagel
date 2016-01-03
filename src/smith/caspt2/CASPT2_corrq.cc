@@ -37,7 +37,7 @@ using namespace bagel::SMITH;
 shared_ptr<Queue> CASPT2::CASPT2::make_corrq(const bool reset, const bool diagonal) {
 
   auto corrq = make_shared<Queue>();
-  auto I405 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto I405 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
   auto task278 = make_shared<Task278>(Gamma92_(), I405);
   corrq->add_task(task278);
 
@@ -45,7 +45,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_corrq(const bool reset, const bool diagon
   task278->add_dep(task279);
   corrq->add_task(task279);
 
-  auto I408 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto I408 = make_shared<TATensor<double,4>>({closed_, active_, active_, active_});
   auto task280 = make_shared<Task280>(t2, I408);
   task278->add_dep(task280);
   corrq->add_task(task280);
@@ -54,7 +54,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_corrq(const bool reset, const bool diagon
   task280->add_dep(task281);
   corrq->add_task(task281);
 
-  auto I411 = make_shared<TATensor<double,2>>(std::vector<IndexRange>{active_, active_});
+  auto I411 = make_shared<TATensor<double,2>>({active_, active_});
   auto task282 = make_shared<Task282>(Gamma16_(), I411);
   task278->add_dep(task282);
   corrq->add_task(task282);
@@ -67,7 +67,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_corrq(const bool reset, const bool diagon
   task282->add_dep(task284);
   corrq->add_task(task284);
 
-  auto I417 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto I417 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
   auto task285 = make_shared<Task285>(Gamma32_(), I417);
   task278->add_dep(task285);
   corrq->add_task(task285);
@@ -76,7 +76,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_corrq(const bool reset, const bool diagon
   task285->add_dep(task286);
   corrq->add_task(task286);
 
-  auto I420 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto I420 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
   auto task287 = make_shared<Task287>(Gamma35_(), I420);
   task278->add_dep(task287);
   corrq->add_task(task287);
@@ -93,7 +93,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_corrq(const bool reset, const bool diagon
   task287->add_dep(task290);
   corrq->add_task(task290);
 
-  auto I429 = make_shared<TATensor<double,6>>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
+  auto I429 = make_shared<TATensor<double,6>>({active_, active_, active_, active_, active_, active_});
   auto task291 = make_shared<Task291>(Gamma59_(), I429);
   task278->add_dep(task291);
   corrq->add_task(task291);
@@ -116,7 +116,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_corrq(const bool reset, const bool diagon
     corrq->add_task(task294);
   }
 
-  auto I436 = make_shared<TATensor<double,2>>(std::vector<IndexRange>{active_, active_});
+  auto I436 = make_shared<TATensor<double,2>>({active_, active_});
   auto task295 = make_shared<Task295>(Gamma38_(), I436);
   task278->add_dep(task295);
   corrq->add_task(task295);
@@ -129,7 +129,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_corrq(const bool reset, const bool diagon
   task295->add_dep(task297);
   corrq->add_task(task297);
 
-  auto I442 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto I442 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
   auto task298 = make_shared<Task298>(Gamma60_(), I442);
   task278->add_dep(task298);
   corrq->add_task(task298);

@@ -40,7 +40,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_density1q(const bool reset, const bool di
   auto task523 = make_shared<Task523>(den1, reset);
   density1q->add_task(task523);
 
-  auto I734 = make_shared<TATensor<double,2>>(std::vector<IndexRange>{closed_, active_});
+  auto I734 = make_shared<TATensor<double,2>>({closed_, active_});
   auto task524 = make_shared<Task524>(den1, I734);
   task524->add_dep(task523);
   density1q->add_task(task524);
@@ -50,12 +50,12 @@ shared_ptr<Queue> CASPT2::CASPT2::make_density1q(const bool reset, const bool di
   task525->add_dep(task523);
   density1q->add_task(task525);
 
-  auto I736 = make_shared<TATensor<double,2>>(std::vector<IndexRange>{virt_, closed_});
+  auto I736 = make_shared<TATensor<double,2>>({virt_, closed_});
   auto task526 = make_shared<Task526>(den1, I736);
   task526->add_dep(task523);
   density1q->add_task(task526);
 
-  auto I737 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
+  auto I737 = make_shared<TATensor<double,4>>({active_, virt_, closed_, active_});
   auto task527 = make_shared<Task527>(I736, Gamma38_(), I737);
   task526->add_dep(task527);
   task527->add_dep(task523);
@@ -66,7 +66,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_density1q(const bool reset, const bool di
   task528->add_dep(task523);
   density1q->add_task(task528);
 
-  auto I740 = make_shared<TATensor<double,2>>(std::vector<IndexRange>{virt_, active_});
+  auto I740 = make_shared<TATensor<double,2>>({virt_, active_});
   auto task529 = make_shared<Task529>(den1, I740);
   task529->add_dep(task523);
   density1q->add_task(task529);

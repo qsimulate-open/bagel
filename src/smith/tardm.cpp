@@ -203,7 +203,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_ta() {
       IndexRange ci;
       for (size_t i = 0; i != det->lena(); ++i)
         ci.merge(IndexRange("o", det->lenb(), maxtile, ci.nblock(), ci.size()));
-      auto taket = make_shared<TA<1>>(vector<IndexRange>{ci});
+      auto taket = make_shared<TA<1>>({ci});
 
       for (auto it = taket->begin(); it != taket->end(); ++it) {
         auto range = taket->trange().make_tile_range(it.ordinal());

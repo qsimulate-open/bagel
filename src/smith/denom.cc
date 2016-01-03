@@ -96,7 +96,7 @@ void Denom<DataType>::compute() {
     auto inp = make_shared<Tensor2<DataType>>(ortho1_.size(), nact);
     for (int i = 0; i != nstates_; ++i) {
       copy_n(shalf_x_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,2>>(vector<IndexRange>{ortho1_, active_});
+      auto tmp2 = make_shared<TATensor<DataType,2>>({ortho1_, active_});
       fill_block<2,DataType>(tmp2, inp, vector<int>{nclo, 0});
       tashalf_x_.push_back(tmp2);
     }
@@ -111,7 +111,7 @@ void Denom<DataType>::compute() {
     auto inp = make_shared<Tensor2<DataType>>(ortho1_.size(), nact);
     for (int i = 0; i != nstates_; ++i) {
       copy_n(shalf_h_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,2>>(vector<IndexRange>{ortho1_, active_});
+      auto tmp2 = make_shared<TATensor<DataType,2>>({ortho1_, active_});
       fill_block<2,DataType>(tmp2, inp, vector<int>{nclo, 0});
       tashalf_h_.push_back(tmp2);
     }
@@ -126,7 +126,7 @@ void Denom<DataType>::compute() {
     auto inp = make_shared<Tensor3<DataType>>(ortho2_.size(), nact, nact);
     for (int i = 0; i != nstates_; ++i) {
       copy_n(shalf_xx_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2_, active_, active_});
+      auto tmp2 = make_shared<TATensor<DataType,3>>({ortho2_, active_, active_});
       fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
       tashalf_xx_.push_back(tmp2);
     }
@@ -141,7 +141,7 @@ void Denom<DataType>::compute() {
     auto inp = make_shared<Tensor3<DataType>>(ortho2_.size(), nact, nact);
     for (int i = 0; i != nstates_; ++i) {
       copy_n(shalf_hh_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2_, active_, active_});
+      auto tmp2 = make_shared<TATensor<DataType,3>>({ortho2_, active_, active_});
       fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
       tashalf_hh_.push_back(tmp2);
     }
@@ -157,7 +157,7 @@ void Denom<DataType>::compute() {
       auto inp = make_shared<Tensor3<DataType>>(ortho2t_.size(), nact, nact);
       for (int i = 0; i != nstates_; ++i) {
         copy_n(shalf_xh_->data() + i*fac2*inp->size(), inp->size(), inp->data());
-        auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2t_, active_, active_});
+        auto tmp2 = make_shared<TATensor<DataType,3>>({ortho2t_, active_, active_});
         fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
         tashalf_xh_.push_back(tmp2);
       }
@@ -165,7 +165,7 @@ void Denom<DataType>::compute() {
       if (fac2 == 2) { // when real (i.e., spin-free equations)
         for (int i = 0; i != nstates_; ++i) {
           copy_n(shalf_xh_->data() + (i*2+1)*inp->size(), inp->size(), inp->data());
-          auto tmp2 = make_shared<TATensor<DataType,3>>(vector<IndexRange>{ortho2t_, active_, active_});
+          auto tmp2 = make_shared<TATensor<DataType,3>>({ortho2t_, active_, active_});
           fill_block<3,DataType>(tmp2, inp, vector<int>{nclo, nclo, 0});
           tashalf_xh2_.push_back(tmp2);
         }
@@ -182,7 +182,7 @@ void Denom<DataType>::compute() {
     auto inp = make_shared<Tensor4<DataType>>(ortho3_.size(), nact, nact, nact);
     for (int i = 0; i != nstates_; ++i) {
       copy_n(shalf_xhh_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,4>>(vector<IndexRange>{ortho3_, active_, active_, active_});
+      auto tmp2 = make_shared<TATensor<DataType,4>>({ortho3_, active_, active_, active_});
       fill_block<4,DataType>(tmp2, inp, vector<int>{nclo, nclo, nclo, 0});
       tashalf_xhh_.push_back(tmp2);
     }
@@ -197,7 +197,7 @@ void Denom<DataType>::compute() {
     auto inp = make_shared<Tensor4<DataType>>(ortho3_.size(), nact, nact, nact);
     for (int i = 0; i != nstates_; ++i) {
       copy_n(shalf_xxh_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,4>>(vector<IndexRange>{ortho3_, active_, active_, active_});
+      auto tmp2 = make_shared<TATensor<DataType,4>>({ortho3_, active_, active_, active_});
       fill_block<4,DataType>(tmp2, inp, vector<int>{nclo, nclo, nclo, 0});
       tashalf_xxh_.push_back(tmp2);
     }

@@ -40,7 +40,7 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   auto task962 = make_shared<Task962>(n, reset);
   normq->add_task(task962);
 
-  auto I1765 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, closed_, active_, active_});
+  auto I1765 = make_shared<TATensor<double,4>>({closed_, closed_, active_, active_});
   auto task963 = make_shared<Task963>(n, I1765);
   task963->add_dep(task962);
   normq->add_task(task963);
@@ -50,7 +50,7 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task964->add_dep(task962);
   normq->add_task(task964);
 
-  auto I1767 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto I1767 = make_shared<TATensor<double,4>>({closed_, active_, active_, active_});
   auto task965 = make_shared<Task965>(n, I1767);
   task965->add_dep(task962);
   normq->add_task(task965);
@@ -60,12 +60,12 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task966->add_dep(task962);
   normq->add_task(task966);
 
-  auto I1769 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, virt_, closed_, active_});
+  auto I1769 = make_shared<TATensor<double,4>>({closed_, virt_, closed_, active_});
   auto task967 = make_shared<Task967>(n, I1769);
   task967->add_dep(task962);
   normq->add_task(task967);
 
-  auto I1770 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, virt_, closed_, active_});
+  auto I1770 = make_shared<TATensor<double,4>>({closed_, virt_, closed_, active_});
   auto task968 = make_shared<Task968>(I1769, Gamma12_(), I1770);
   task967->add_dep(task968);
   task968->add_dep(task962);
@@ -76,7 +76,7 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task969->add_dep(task962);
   normq->add_task(task969);
 
-  auto I1773 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, closed_, active_, active_});
+  auto I1773 = make_shared<TATensor<double,4>>({virt_, closed_, active_, active_});
   auto task970 = make_shared<Task970>(n, I1773);
   task970->add_dep(task962);
   normq->add_task(task970);
@@ -91,12 +91,12 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task972->add_dep(task962);
   normq->add_task(task972);
 
-  auto I1777 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, closed_, active_, active_});
+  auto I1777 = make_shared<TATensor<double,4>>({virt_, closed_, active_, active_});
   auto task973 = make_shared<Task973>(n, I1777);
   task973->add_dep(task962);
   normq->add_task(task973);
 
-  auto I1778 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
+  auto I1778 = make_shared<TATensor<double,4>>({active_, virt_, closed_, active_});
   auto task974 = make_shared<Task974>(I1777, Gamma29_(), I1778);
   task973->add_dep(task974);
   task974->add_dep(task962);
@@ -107,7 +107,7 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task975->add_dep(task962);
   normq->add_task(task975);
 
-  auto I1781 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, active_, active_, active_});
+  auto I1781 = make_shared<TATensor<double,4>>({virt_, active_, active_, active_});
   auto task976 = make_shared<Task976>(n, I1781);
   task976->add_dep(task962);
   normq->add_task(task976);
@@ -119,7 +119,7 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
 
   shared_ptr<TATensor<double,4>> I1783;
   if (diagonal) {
-    I1783 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, virt_, closed_, virt_});
+    I1783 = make_shared<TATensor<double,4>>({closed_, virt_, closed_, virt_});
   }
   shared_ptr<Task978> task978;
   if (diagonal) {
@@ -136,12 +136,12 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
     normq->add_task(task979);
   }
 
-  auto I1785 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, closed_, virt_, active_});
+  auto I1785 = make_shared<TATensor<double,4>>({virt_, closed_, virt_, active_});
   auto task980 = make_shared<Task980>(n, I1785);
   task980->add_dep(task962);
   normq->add_task(task980);
 
-  auto I1786 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, virt_, closed_, virt_});
+  auto I1786 = make_shared<TATensor<double,4>>({active_, virt_, closed_, virt_});
   auto task981 = make_shared<Task981>(I1785, Gamma32_(), I1786);
   task980->add_dep(task981);
   task981->add_dep(task962);
@@ -152,7 +152,7 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task982->add_dep(task962);
   normq->add_task(task982);
 
-  auto I1789 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{virt_, virt_, active_, active_});
+  auto I1789 = make_shared<TATensor<double,4>>({virt_, virt_, active_, active_});
   auto task983 = make_shared<Task983>(n, I1789);
   task983->add_dep(task962);
   normq->add_task(task983);

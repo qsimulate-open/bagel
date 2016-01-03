@@ -90,7 +90,7 @@ void CASPT2::CASPT2::solve_deriv() {
     Dens1->next_compute();
   timer.tick_print("Correlated density matrix evaluation");
 
-  deci = make_shared<TATensor<double,1>>(vector<IndexRange>{ci_});
+  deci = make_shared<TATensor<double,1>>({ci_});
   deci->fill_local(0.0);
   shared_ptr<Queue> dec = make_deciq();
   while (!dec->done())

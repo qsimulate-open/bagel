@@ -40,7 +40,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   auto task30 = make_shared<Task30>(r, reset);
   residualq->add_task(task30);
 
-  auto I0 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, closed_, active_, active_});
+  auto I0 = make_shared<TATensor<std::complex<double>,4>>({closed_, closed_, active_, active_});
   auto task31 = make_shared<Task31>(r, I0);
   task31->add_dep(task30);
   residualq->add_task(task31);
@@ -50,7 +50,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task32->add_dep(task30);
   residualq->add_task(task32);
 
-  auto I265 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, closed_, active_});
+  auto I265 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, closed_, active_});
   auto task33 = make_shared<Task33>(I0, Gamma92_(), I265);
   task31->add_dep(task33);
   task33->add_dep(task30);
@@ -61,12 +61,12 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task34->add_dep(task30);
   residualq->add_task(task34);
 
-  auto I2 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, closed_, active_, active_});
+  auto I2 = make_shared<TATensor<std::complex<double>,4>>({closed_, closed_, active_, active_});
   auto task35 = make_shared<Task35>(r, I2);
   task35->add_dep(task30);
   residualq->add_task(task35);
 
-  auto I3 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, closed_, active_, active_});
+  auto I3 = make_shared<TATensor<std::complex<double>,4>>({closed_, closed_, active_, active_});
   auto task36 = make_shared<Task36>(I2, Gamma92_(), I3);
   task35->add_dep(task36);
   task36->add_dep(task30);
@@ -77,7 +77,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task37->add_dep(task30);
   residualq->add_task(task37);
 
-  auto I6 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto I6 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, active_, active_});
   auto task38 = make_shared<Task38>(I2, f1_, I6);
   task35->add_dep(task38);
   task38->add_dep(task30);
@@ -88,7 +88,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task39->add_dep(task30);
   residualq->add_task(task39);
 
-  auto I9 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, closed_, closed_, active_});
+  auto I9 = make_shared<TATensor<std::complex<double>,4>>({active_, closed_, closed_, active_});
   auto task40 = make_shared<Task40>(I2, Gamma3_(), I9);
   task35->add_dep(task40);
   task40->add_dep(task30);
@@ -99,12 +99,12 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task41->add_dep(task30);
   residualq->add_task(task41);
 
-  auto I11 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto I11 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, active_, active_});
   auto task42 = make_shared<Task42>(r, I11);
   task42->add_dep(task30);
   residualq->add_task(task42);
 
-  auto I12 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, closed_, active_, active_});
+  auto I12 = make_shared<TATensor<std::complex<double>,4>>({active_, closed_, active_, active_});
   auto task43 = make_shared<Task43>(I11, Gamma4_(), I12);
   task42->add_dep(task43);
   task43->add_dep(task30);
@@ -120,7 +120,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task45->add_dep(task30);
   residualq->add_task(task45);
 
-  auto I17 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto I17 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, active_, active_});
   auto task46 = make_shared<Task46>(I11, Gamma6_(), I17);
   task42->add_dep(task46);
   task46->add_dep(task30);
@@ -141,7 +141,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task49->add_dep(task30);
   residualq->add_task(task49);
 
-  auto I20 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{closed_, active_});
+  auto I20 = make_shared<TATensor<std::complex<double>,2>>({closed_, active_});
   auto task50 = make_shared<Task50>(I11, Gamma7_(), I20);
   task42->add_dep(task50);
   task50->add_dep(task30);
@@ -162,7 +162,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task53->add_dep(task30);
   residualq->add_task(task53);
 
-  auto I26 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, active_, closed_, active_});
+  auto I26 = make_shared<TATensor<std::complex<double>,4>>({active_, active_, closed_, active_});
   auto task54 = make_shared<Task54>(I11, Gamma9_(), I26);
   task42->add_dep(task54);
   task54->add_dep(task30);
@@ -178,12 +178,12 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task56->add_dep(task30);
   residualq->add_task(task56);
 
-  auto I31 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, closed_, active_, virt_});
+  auto I31 = make_shared<TATensor<std::complex<double>,4>>({closed_, closed_, active_, virt_});
   auto task57 = make_shared<Task57>(r, I31);
   task57->add_dep(task30);
   residualq->add_task(task57);
 
-  auto I32 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, closed_, active_, active_});
+  auto I32 = make_shared<TATensor<std::complex<double>,4>>({closed_, closed_, active_, active_});
   auto task58 = make_shared<Task58>(I31, f1_, I32);
   task57->add_dep(task58);
   task58->add_dep(task30);
@@ -194,7 +194,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task59->add_dep(task30);
   residualq->add_task(task59);
 
-  auto I35 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{closed_, active_});
+  auto I35 = make_shared<TATensor<std::complex<double>,2>>({closed_, active_});
   auto task60 = make_shared<Task60>(I31, f1_, I35);
   task57->add_dep(task60);
   task60->add_dep(task30);
@@ -205,7 +205,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task61->add_dep(task30);
   residualq->add_task(task61);
 
-  auto I38 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{closed_, active_});
+  auto I38 = make_shared<TATensor<std::complex<double>,2>>({closed_, active_});
   auto task62 = make_shared<Task62>(I31, f1_, I38);
   task57->add_dep(task62);
   task62->add_dep(task30);
@@ -216,7 +216,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task63->add_dep(task30);
   residualq->add_task(task63);
 
-  auto I41 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, virt_, closed_, active_});
+  auto I41 = make_shared<TATensor<std::complex<double>,4>>({closed_, virt_, closed_, active_});
   auto task64 = make_shared<Task64>(I31, Gamma14_(), I41);
   task57->add_dep(task64);
   task64->add_dep(task30);
@@ -227,7 +227,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task65->add_dep(task30);
   residualq->add_task(task65);
 
-  auto I45 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, virt_, closed_, active_});
+  auto I45 = make_shared<TATensor<std::complex<double>,4>>({closed_, virt_, closed_, active_});
   auto task66 = make_shared<Task66>(I31, Gamma16_(), I45);
   task57->add_dep(task66);
   task66->add_dep(task30);
@@ -268,7 +268,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task73->add_dep(task30);
   residualq->add_task(task73);
 
-  auto I63 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, closed_, active_, active_});
+  auto I63 = make_shared<TATensor<std::complex<double>,4>>({virt_, closed_, active_, active_});
   auto task74 = make_shared<Task74>(I31, f1_, I63);
   task57->add_dep(task74);
   task74->add_dep(task30);
@@ -284,13 +284,13 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task76->add_dep(task30);
   residualq->add_task(task76);
 
-  auto I66 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, closed_, active_, active_});
+  auto I66 = make_shared<TATensor<std::complex<double>,4>>({virt_, closed_, active_, active_});
   auto task77 = make_shared<Task77>(I31, f1_, I66);
   task57->add_dep(task77);
   task77->add_dep(task30);
   residualq->add_task(task77);
 
-  auto I67 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
+  auto I67 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, closed_, active_});
   auto task78 = make_shared<Task78>(I66, Gamma12_(), I67);
   task77->add_dep(task78);
   task78->add_dep(task30);
@@ -301,7 +301,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task79->add_dep(task30);
   residualq->add_task(task79);
 
-  auto I75 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{virt_, active_});
+  auto I75 = make_shared<TATensor<std::complex<double>,2>>({virt_, active_});
   auto task80 = make_shared<Task80>(I31, t2, I75);
   task57->add_dep(task80);
   task80->add_dep(task30);
@@ -312,7 +312,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task81->add_dep(task30);
   residualq->add_task(task81);
 
-  auto I78 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{virt_, active_});
+  auto I78 = make_shared<TATensor<std::complex<double>,2>>({virt_, active_});
   auto task82 = make_shared<Task82>(I31, t2, I78);
   task57->add_dep(task82);
   task82->add_dep(task30);
@@ -323,12 +323,12 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task83->add_dep(task30);
   residualq->add_task(task83);
 
-  auto I80 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, active_, virt_});
+  auto I80 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, active_, virt_});
   auto task84 = make_shared<Task84>(r, I80);
   task84->add_dep(task30);
   residualq->add_task(task84);
 
-  auto I81 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto I81 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, active_, active_});
   auto task85 = make_shared<Task85>(I80, f1_, I81);
   task84->add_dep(task85);
   task85->add_dep(task30);
@@ -339,7 +339,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task86->add_dep(task30);
   residualq->add_task(task86);
 
-  auto I84 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
+  auto I84 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, closed_, active_});
   auto task87 = make_shared<Task87>(I80, Gamma29_(), I84);
   task84->add_dep(task87);
   task87->add_dep(task30);
@@ -355,7 +355,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task89->add_dep(task30);
   residualq->add_task(task89);
 
-  auto I87 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, closed_, virt_, active_});
+  auto I87 = make_shared<TATensor<std::complex<double>,4>>({active_, closed_, virt_, active_});
   auto task90 = make_shared<Task90>(I80, Gamma7_(), I87);
   task84->add_dep(task90);
   task90->add_dep(task30);
@@ -371,7 +371,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task92->add_dep(task30);
   residualq->add_task(task92);
 
-  auto I92 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, virt_, active_});
+  auto I92 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, virt_, active_});
   auto task93 = make_shared<Task93>(I80, Gamma32_(), I92);
   task84->add_dep(task93);
   task93->add_dep(task30);
@@ -402,7 +402,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task98->add_dep(task30);
   residualq->add_task(task98);
 
-  auto I100 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, virt_, active_, active_});
+  auto I100 = make_shared<TATensor<std::complex<double>,4>>({closed_, virt_, active_, active_});
   auto task99 = make_shared<Task99>(I80, Gamma35_(), I100);
   task84->add_dep(task99);
   task99->add_dep(task30);
@@ -428,7 +428,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task103->add_dep(task30);
   residualq->add_task(task103);
 
-  auto I106 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, active_, active_, active_});
+  auto I106 = make_shared<TATensor<std::complex<double>,4>>({virt_, active_, active_, active_});
   auto task104 = make_shared<Task104>(I80, f1_, I106);
   task84->add_dep(task104);
   task104->add_dep(task30);
@@ -439,7 +439,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task105->add_dep(task30);
   residualq->add_task(task105);
 
-  auto I109 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{closed_, virt_});
+  auto I109 = make_shared<TATensor<std::complex<double>,2>>({closed_, virt_});
   auto task106 = make_shared<Task106>(I80, Gamma38_(), I109);
   task84->add_dep(task106);
   task106->add_dep(task30);
@@ -460,12 +460,12 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task109->add_dep(task30);
   residualq->add_task(task109);
 
-  auto I120 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, active_, virt_});
+  auto I120 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, active_, virt_});
   auto task110 = make_shared<Task110>(r, I120);
   task110->add_dep(task30);
   residualq->add_task(task110);
 
-  auto I121 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto I121 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, active_, active_});
   auto task111 = make_shared<Task111>(I120, f1_, I121);
   task110->add_dep(task111);
   task111->add_dep(task30);
@@ -476,7 +476,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task112->add_dep(task30);
   residualq->add_task(task112);
 
-  auto I124 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
+  auto I124 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, closed_, active_});
   auto task113 = make_shared<Task113>(I120, Gamma7_(), I124);
   task110->add_dep(task113);
   task113->add_dep(task30);
@@ -497,7 +497,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task116->add_dep(task30);
   residualq->add_task(task116);
 
-  auto I130 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
+  auto I130 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, closed_, active_});
   auto task117 = make_shared<Task117>(I120, Gamma34_(), I130);
   task110->add_dep(task117);
   task117->add_dep(task30);
@@ -508,7 +508,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task118->add_dep(task30);
   residualq->add_task(task118);
 
-  auto I132 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, virt_, active_});
+  auto I132 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, virt_, active_});
   auto task119 = make_shared<Task119>(I120, Gamma35_(), I132);
   task110->add_dep(task119);
   task119->add_dep(task30);
@@ -549,7 +549,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task126->add_dep(task30);
   residualq->add_task(task126);
 
-  auto I146 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, active_, active_, active_});
+  auto I146 = make_shared<TATensor<std::complex<double>,4>>({virt_, active_, active_, active_});
   auto task127 = make_shared<Task127>(I120, f1_, I146);
   task110->add_dep(task127);
   task127->add_dep(task30);
@@ -560,7 +560,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task128->add_dep(task30);
   residualq->add_task(task128);
 
-  auto I149 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{closed_, virt_});
+  auto I149 = make_shared<TATensor<std::complex<double>,2>>({closed_, virt_});
   auto task129 = make_shared<Task129>(I120, Gamma38_(), I149);
   task110->add_dep(task129);
   task129->add_dep(task30);
@@ -581,12 +581,12 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task132->add_dep(task30);
   residualq->add_task(task132);
 
-  auto I160 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, active_, active_, active_});
+  auto I160 = make_shared<TATensor<std::complex<double>,4>>({virt_, active_, active_, active_});
   auto task133 = make_shared<Task133>(r, I160);
   task133->add_dep(task30);
   residualq->add_task(task133);
 
-  auto I161 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, active_, virt_, active_});
+  auto I161 = make_shared<TATensor<std::complex<double>,4>>({active_, active_, virt_, active_});
   auto task134 = make_shared<Task134>(I160, Gamma56_(), I161);
   task133->add_dep(task134);
   task134->add_dep(task30);
@@ -597,7 +597,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task135->add_dep(task30);
   residualq->add_task(task135);
 
-  auto I164 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, active_, active_});
+  auto I164 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, active_, active_});
   auto task136 = make_shared<Task136>(I160, Gamma57_(), I164);
   task133->add_dep(task136);
   task136->add_dep(task30);
@@ -618,7 +618,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task139->add_dep(task30);
   residualq->add_task(task139);
 
-  auto I169 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, active_, active_, active_});
+  auto I169 = make_shared<TATensor<std::complex<double>,4>>({virt_, active_, active_, active_});
   auto task140 = make_shared<Task140>(I160, Gamma59_(), I169);
   task133->add_dep(task140);
   task140->add_dep(task30);
@@ -639,7 +639,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task143->add_dep(task30);
   residualq->add_task(task143);
 
-  auto I172 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{active_, virt_});
+  auto I172 = make_shared<TATensor<std::complex<double>,2>>({active_, virt_});
   auto task144 = make_shared<Task144>(I160, Gamma60_(), I172);
   task133->add_dep(task144);
   task144->add_dep(task30);
@@ -660,12 +660,12 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task147->add_dep(task30);
   residualq->add_task(task147);
 
-  auto I180 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, closed_, virt_, closed_});
+  auto I180 = make_shared<TATensor<std::complex<double>,4>>({virt_, closed_, virt_, closed_});
   auto task148 = make_shared<Task148>(r, I180);
   task148->add_dep(task30);
   residualq->add_task(task148);
 
-  auto I181 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{virt_, active_});
+  auto I181 = make_shared<TATensor<std::complex<double>,2>>({virt_, active_});
   auto task149 = make_shared<Task149>(I180, t2, I181);
   task148->add_dep(task149);
   task149->add_dep(task30);
@@ -676,7 +676,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task150->add_dep(task30);
   residualq->add_task(task150);
 
-  auto I184 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{virt_, active_});
+  auto I184 = make_shared<TATensor<std::complex<double>,2>>({virt_, active_});
   auto task151 = make_shared<Task151>(I180, t2, I184);
   task148->add_dep(task151);
   task151->add_dep(task30);
@@ -687,13 +687,13 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task152->add_dep(task30);
   residualq->add_task(task152);
 
-  auto I187 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{virt_, closed_});
+  auto I187 = make_shared<TATensor<std::complex<double>,2>>({virt_, closed_});
   auto task153 = make_shared<Task153>(I180, f1_, I187);
   task148->add_dep(task153);
   task153->add_dep(task30);
   residualq->add_task(task153);
 
-  auto I188 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
+  auto I188 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, closed_, active_});
   auto task154 = make_shared<Task154>(I187, Gamma38_(), I188);
   task153->add_dep(task154);
   task154->add_dep(task30);
@@ -704,13 +704,13 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task155->add_dep(task30);
   residualq->add_task(task155);
 
-  auto I190 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{virt_, closed_});
+  auto I190 = make_shared<TATensor<std::complex<double>,2>>({virt_, closed_});
   auto task156 = make_shared<Task156>(I180, f1_, I190);
   task148->add_dep(task156);
   task156->add_dep(task30);
   residualq->add_task(task156);
 
-  auto I191 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
+  auto I191 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, closed_, active_});
   auto task157 = make_shared<Task157>(I190, Gamma38_(), I191);
   task156->add_dep(task157);
   task157->add_dep(task30);
@@ -721,7 +721,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task158->add_dep(task30);
   residualq->add_task(task158);
 
-  auto I199 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{closed_, active_});
+  auto I199 = make_shared<TATensor<std::complex<double>,2>>({closed_, active_});
   auto task159 = make_shared<Task159>(I180, t2, I199);
   task148->add_dep(task159);
   task159->add_dep(task30);
@@ -732,7 +732,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task160->add_dep(task30);
   residualq->add_task(task160);
 
-  auto I202 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{closed_, active_});
+  auto I202 = make_shared<TATensor<std::complex<double>,2>>({closed_, active_});
   auto task161 = make_shared<Task161>(I180, t2, I202);
   task148->add_dep(task161);
   task161->add_dep(task30);
@@ -743,18 +743,18 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task162->add_dep(task30);
   residualq->add_task(task162);
 
-  auto I204 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, closed_, active_, virt_});
+  auto I204 = make_shared<TATensor<std::complex<double>,4>>({virt_, closed_, active_, virt_});
   auto task163 = make_shared<Task163>(r, I204);
   task163->add_dep(task30);
   residualq->add_task(task163);
 
-  auto I205 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, closed_, active_, active_});
+  auto I205 = make_shared<TATensor<std::complex<double>,4>>({virt_, closed_, active_, active_});
   auto task164 = make_shared<Task164>(I204, f1_, I205);
   task163->add_dep(task164);
   task164->add_dep(task30);
   residualq->add_task(task164);
 
-  auto I206 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, closed_, active_});
+  auto I206 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, closed_, active_});
   auto task165 = make_shared<Task165>(I205, Gamma35_(), I206);
   task164->add_dep(task165);
   task165->add_dep(task30);
@@ -765,7 +765,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task166->add_dep(task30);
   residualq->add_task(task166);
 
-  auto I208 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, closed_, active_, active_});
+  auto I208 = make_shared<TATensor<std::complex<double>,4>>({virt_, closed_, active_, active_});
   auto task167 = make_shared<Task167>(I204, f1_, I208);
   task163->add_dep(task167);
   task167->add_dep(task30);
@@ -781,7 +781,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task169->add_dep(task30);
   residualq->add_task(task169);
 
-  auto I217 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{virt_, active_});
+  auto I217 = make_shared<TATensor<std::complex<double>,2>>({virt_, active_});
   auto task170 = make_shared<Task170>(I204, f1_, I217);
   task163->add_dep(task170);
   task170->add_dep(task30);
@@ -792,7 +792,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task171->add_dep(task30);
   residualq->add_task(task171);
 
-  auto I220 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{virt_, active_});
+  auto I220 = make_shared<TATensor<std::complex<double>,2>>({virt_, active_});
   auto task172 = make_shared<Task172>(I204, f1_, I220);
   task163->add_dep(task172);
   task172->add_dep(task30);
@@ -803,7 +803,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task173->add_dep(task30);
   residualq->add_task(task173);
 
-  auto I223 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{closed_, active_});
+  auto I223 = make_shared<TATensor<std::complex<double>,2>>({closed_, active_});
   auto task174 = make_shared<Task174>(I204, t2, I223);
   task163->add_dep(task174);
   task174->add_dep(task30);
@@ -814,7 +814,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task175->add_dep(task30);
   residualq->add_task(task175);
 
-  auto I226 = make_shared<TATensor<std::complex<double>,2>>(std::vector<IndexRange>{closed_, active_});
+  auto I226 = make_shared<TATensor<std::complex<double>,2>>({closed_, active_});
   auto task176 = make_shared<Task176>(I204, t2, I226);
   task163->add_dep(task176);
   task176->add_dep(task30);
@@ -825,7 +825,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task177->add_dep(task30);
   residualq->add_task(task177);
 
-  auto I229 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, closed_, virt_});
+  auto I229 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, closed_, virt_});
   auto task178 = make_shared<Task178>(I204, Gamma79_(), I229);
   task163->add_dep(task178);
   task178->add_dep(task30);
@@ -836,7 +836,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task179->add_dep(task30);
   residualq->add_task(task179);
 
-  auto I233 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, virt_, virt_});
+  auto I233 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, virt_, virt_});
   auto task180 = make_shared<Task180>(I204, Gamma38_(), I233);
   task163->add_dep(task180);
   task180->add_dep(task30);
@@ -877,7 +877,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task187->add_dep(task30);
   residualq->add_task(task187);
 
-  auto I251 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, virt_, active_, active_});
+  auto I251 = make_shared<TATensor<std::complex<double>,4>>({virt_, virt_, active_, active_});
   auto task188 = make_shared<Task188>(I204, f1_, I251);
   task163->add_dep(task188);
   task188->add_dep(task30);
@@ -888,12 +888,12 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task189->add_dep(task30);
   residualq->add_task(task189);
 
-  auto I253 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, active_, active_, virt_});
+  auto I253 = make_shared<TATensor<std::complex<double>,4>>({virt_, active_, active_, virt_});
   auto task190 = make_shared<Task190>(r, I253);
   task190->add_dep(task30);
   residualq->add_task(task190);
 
-  auto I254 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, active_, active_, active_});
+  auto I254 = make_shared<TATensor<std::complex<double>,4>>({virt_, active_, active_, active_});
   auto task191 = make_shared<Task191>(I253, f1_, I254);
   task190->add_dep(task191);
   task191->add_dep(task30);
@@ -904,7 +904,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task192->add_dep(task30);
   residualq->add_task(task192);
 
-  auto I257 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, active_, virt_, virt_});
+  auto I257 = make_shared<TATensor<std::complex<double>,4>>({active_, active_, virt_, virt_});
   auto task193 = make_shared<Task193>(I253, Gamma60_(), I257);
   task190->add_dep(task193);
   task193->add_dep(task30);
@@ -920,7 +920,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task195->add_dep(task30);
   residualq->add_task(task195);
 
-  auto I259 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, virt_, active_, active_});
+  auto I259 = make_shared<TATensor<std::complex<double>,4>>({virt_, virt_, active_, active_});
   auto task196 = make_shared<Task196>(r, I259);
   task196->add_dep(task30);
   residualq->add_task(task196);
@@ -930,7 +930,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
   task197->add_dep(task30);
   residualq->add_task(task197);
 
-  auto I287 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, active_, virt_});
+  auto I287 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, active_, virt_});
   auto task198 = make_shared<Task198>(I259, Gamma60_(), I287);
   task196->add_dep(task198);
   task198->add_dep(task30);
@@ -943,7 +943,7 @@ shared_ptr<Queue> RelCASPT2::RelCASPT2::make_residualq(const bool reset, const b
 
   shared_ptr<TATensor<std::complex<double>,4>> I318;
   if (diagonal) {
-    I318 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, virt_, closed_, virt_});
+    I318 = make_shared<TATensor<std::complex<double>,4>>({closed_, virt_, closed_, virt_});
   }
   shared_ptr<Task200> task200;
   if (diagonal) {

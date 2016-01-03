@@ -40,7 +40,7 @@ shared_ptr<Queue> RelMRCI::RelMRCI::make_sourceq(const bool reset, const bool di
   auto task721 = make_shared<Task721>(s, reset);
   sourceq->add_task(task721);
 
-  auto I1299 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto I1299 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, active_, active_});
   auto task722 = make_shared<Task722>(s, I1299);
   task722->add_dep(task721);
   sourceq->add_task(task722);
@@ -60,7 +60,7 @@ shared_ptr<Queue> RelMRCI::RelMRCI::make_sourceq(const bool reset, const bool di
   task725->add_dep(task721);
   sourceq->add_task(task725);
 
-  auto I1301 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, virt_, active_, active_});
+  auto I1301 = make_shared<TATensor<std::complex<double>,4>>({closed_, virt_, active_, active_});
   auto task726 = make_shared<Task726>(s, I1301);
   task726->add_dep(task721);
   sourceq->add_task(task726);
@@ -70,7 +70,7 @@ shared_ptr<Queue> RelMRCI::RelMRCI::make_sourceq(const bool reset, const bool di
   task727->add_dep(task721);
   sourceq->add_task(task727);
 
-  auto I1316 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, virt_, active_, active_});
+  auto I1316 = make_shared<TATensor<std::complex<double>,4>>({closed_, virt_, active_, active_});
   auto task728 = make_shared<Task728>(I1301, Gamma24_(), I1316);
   task726->add_dep(task728);
   task728->add_dep(task721);
@@ -86,7 +86,7 @@ shared_ptr<Queue> RelMRCI::RelMRCI::make_sourceq(const bool reset, const bool di
   task730->add_dep(task721);
   sourceq->add_task(task730);
 
-  auto I1303 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, active_, active_, active_});
+  auto I1303 = make_shared<TATensor<std::complex<double>,4>>({virt_, active_, active_, active_});
   auto task731 = make_shared<Task731>(s, I1303);
   task731->add_dep(task721);
   sourceq->add_task(task731);
@@ -106,7 +106,7 @@ shared_ptr<Queue> RelMRCI::RelMRCI::make_sourceq(const bool reset, const bool di
   task734->add_dep(task721);
   sourceq->add_task(task734);
 
-  auto I1305 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, closed_, active_, active_});
+  auto I1305 = make_shared<TATensor<std::complex<double>,4>>({closed_, closed_, active_, active_});
   auto task735 = make_shared<Task735>(s, I1305);
   task735->add_dep(task721);
   sourceq->add_task(task735);
@@ -116,12 +116,12 @@ shared_ptr<Queue> RelMRCI::RelMRCI::make_sourceq(const bool reset, const bool di
   task736->add_dep(task721);
   sourceq->add_task(task736);
 
-  auto I1311 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, closed_, virt_, active_});
+  auto I1311 = make_shared<TATensor<std::complex<double>,4>>({closed_, closed_, virt_, active_});
   auto task737 = make_shared<Task737>(s, I1311);
   task737->add_dep(task721);
   sourceq->add_task(task737);
 
-  auto I1312 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, active_, closed_, virt_});
+  auto I1312 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, closed_, virt_});
   auto task738 = make_shared<Task738>(I1311, Gamma11_(), I1312);
   task737->add_dep(task738);
   task738->add_dep(task721);
@@ -134,7 +134,7 @@ shared_ptr<Queue> RelMRCI::RelMRCI::make_sourceq(const bool reset, const bool di
 
   shared_ptr<TATensor<std::complex<double>,4>> I1327;
   if (diagonal) {
-    I1327 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{closed_, virt_, closed_, virt_});
+    I1327 = make_shared<TATensor<std::complex<double>,4>>({closed_, virt_, closed_, virt_});
   }
   shared_ptr<Task740> task740;
   if (diagonal) {
@@ -151,12 +151,12 @@ shared_ptr<Queue> RelMRCI::RelMRCI::make_sourceq(const bool reset, const bool di
     sourceq->add_task(task741);
   }
 
-  auto I1329 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, closed_, virt_, active_});
+  auto I1329 = make_shared<TATensor<std::complex<double>,4>>({virt_, closed_, virt_, active_});
   auto task742 = make_shared<Task742>(s, I1329);
   task742->add_dep(task721);
   sourceq->add_task(task742);
 
-  auto I1330 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{active_, virt_, closed_, virt_});
+  auto I1330 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, closed_, virt_});
   auto task743 = make_shared<Task743>(I1329, Gamma27_(), I1330);
   task742->add_dep(task743);
   task743->add_dep(task721);
@@ -167,7 +167,7 @@ shared_ptr<Queue> RelMRCI::RelMRCI::make_sourceq(const bool reset, const bool di
   task744->add_dep(task721);
   sourceq->add_task(task744);
 
-  auto I1333 = make_shared<TATensor<std::complex<double>,4>>(std::vector<IndexRange>{virt_, virt_, active_, active_});
+  auto I1333 = make_shared<TATensor<std::complex<double>,4>>({virt_, virt_, active_, active_});
   auto task745 = make_shared<Task745>(s, I1333);
   task745->add_dep(task721);
   sourceq->add_task(task745);

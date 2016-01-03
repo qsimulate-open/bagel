@@ -39,7 +39,7 @@ void CASPT2::CASPT2::diagonal(shared_ptr<TATensor<double,4>> r, shared_ptr<const
   const int ncore = info_->ncore();
   const int nocc  = info_->nclosed() + info_->nact();
   const VecView eig = eig_;
-  TATensor<double,4> i0(vector<IndexRange>{closed_, virt_, closed_, virt_}, true);
+  TATensor<double,4> i0({closed_, virt_, closed_, virt_}, true);
   i0("c2,a3,c0,a1") = (*t)("c0,a1,c2,a3")*8.0 - (*t)("c0,a3,c2,a1")*4.0;
   foreach_inplace(i0, [&](typename TATensor<double,4>::value_type& tile) {
     auto range = tile.range();
@@ -60,7 +60,7 @@ void RelCASPT2::RelCASPT2::diagonal(shared_ptr<TATensor<complex<double>,4>> r, s
   const int ncore = (info_->ncore())*2;
   const int nocc  = (info_->nclosed() + info_->nact())*2;
   const VecView eig = eig_;
-  TATensor<complex<double>,4> i0(vector<IndexRange>{closed_, virt_, closed_, virt_}, true);
+  TATensor<complex<double>,4> i0({closed_, virt_, closed_, virt_}, true);
   i0("c2,a3,c0,a1") = (*t)("c0,a1,c2,a3");
   foreach_inplace(i0, [&](typename TATensor<complex<double>,4>::value_type& tile) {
     auto range = tile.range();

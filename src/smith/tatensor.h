@@ -427,9 +427,22 @@ class TATensor<DataType,0> : public TiledArray::Array<DataType,1> {
     DataType get_scalar() const { return data_; }
 };
 
+// traits
+template<typename T>
+struct is_tatensor { static const bool value = false; };
+template<typename DataType, int N>
+struct is_tatensor<TATensor<DataType,N>> { static const bool value = true; };
+
+
 template<typename DataType>
 std::ostream& operator<<(std::ostream& os, const TATensor<DataType,0>& o) { os << o(""); return os; }
 
 }}
+
+// since make_shared does not support non-explicit initializer lists
+template<typename T, typename... Args, class = typename std::enable_if<bagel::SMITH::is_tatensor<T>::value>::type>
+std::shared_ptr<T> std::make_shared(std::initializer_list<bagel::SMITH::IndexRange> o, Args&&... args) {
+  return std::make_shared<T>(std::move(o), std::forward<Args>(args)...);
+}
 
 #endif

@@ -37,7 +37,7 @@ using namespace bagel::SMITH;
 shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diagonal) {
 
   auto energyq = make_shared<Queue>();
-  auto I335 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto I335 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
   auto task241 = make_shared<Task241>(Gamma92_(), I335);
   energyq->add_task(task241);
 
@@ -45,7 +45,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task241->add_dep(task242);
   energyq->add_task(task242);
 
-  auto I338 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto I338 = make_shared<TATensor<double,4>>({closed_, active_, active_, active_});
   auto task243 = make_shared<Task243>(v2_, I338);
   task241->add_dep(task243);
   energyq->add_task(task243);
@@ -54,7 +54,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task243->add_dep(task244);
   energyq->add_task(task244);
 
-  auto I341 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{closed_, active_, active_, active_});
+  auto I341 = make_shared<TATensor<double,4>>({closed_, active_, active_, active_});
   auto task245 = make_shared<Task245>(t2, I341);
   task241->add_dep(task245);
   energyq->add_task(task245);
@@ -63,7 +63,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task245->add_dep(task246);
   energyq->add_task(task246);
 
-  auto I344 = make_shared<TATensor<double,2>>(std::vector<IndexRange>{active_, active_});
+  auto I344 = make_shared<TATensor<double,2>>({active_, active_});
   auto task247 = make_shared<Task247>(Gamma16_(), I344);
   task241->add_dep(task247);
   energyq->add_task(task247);
@@ -76,7 +76,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task247->add_dep(task249);
   energyq->add_task(task249);
 
-  auto I350 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto I350 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
   auto task250 = make_shared<Task250>(Gamma35_(), I350);
   task241->add_dep(task250);
   energyq->add_task(task250);
@@ -101,7 +101,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task250->add_dep(task255);
   energyq->add_task(task255);
 
-  auto I353 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto I353 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
   auto task256 = make_shared<Task256>(Gamma29_(), I353);
   task241->add_dep(task256);
   energyq->add_task(task256);
@@ -110,7 +110,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task256->add_dep(task257);
   energyq->add_task(task257);
 
-  auto I356 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto I356 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
   auto task258 = make_shared<Task258>(Gamma32_(), I356);
   task241->add_dep(task258);
   energyq->add_task(task258);
@@ -119,7 +119,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task258->add_dep(task259);
   energyq->add_task(task259);
 
-  auto I365 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto I365 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
   auto task260 = make_shared<Task260>(Gamma7_(), I365);
   task241->add_dep(task260);
   energyq->add_task(task260);
@@ -128,7 +128,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task260->add_dep(task261);
   energyq->add_task(task261);
 
-  auto I374 = make_shared<TATensor<double,6>>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
+  auto I374 = make_shared<TATensor<double,6>>({active_, active_, active_, active_, active_, active_});
   auto task262 = make_shared<Task262>(Gamma59_(), I374);
   task241->add_dep(task262);
   energyq->add_task(task262);
@@ -137,7 +137,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task262->add_dep(task263);
   energyq->add_task(task263);
 
-  auto I377 = make_shared<TATensor<double,6>>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
+  auto I377 = make_shared<TATensor<double,6>>({active_, active_, active_, active_, active_, active_});
   auto task264 = make_shared<Task264>(Gamma57_(), I377);
   task241->add_dep(task264);
   energyq->add_task(task264);
@@ -160,7 +160,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
     energyq->add_task(task267);
   }
 
-  auto I384 = make_shared<TATensor<double,2>>(std::vector<IndexRange>{active_, active_});
+  auto I384 = make_shared<TATensor<double,2>>({active_, active_});
   auto task268 = make_shared<Task268>(Gamma38_(), I384);
   task241->add_dep(task268);
   energyq->add_task(task268);
@@ -181,7 +181,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task268->add_dep(task272);
   energyq->add_task(task272);
 
-  auto I390 = make_shared<TATensor<double,4>>(std::vector<IndexRange>{active_, active_, active_, active_});
+  auto I390 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
   auto task273 = make_shared<Task273>(Gamma60_(), I390);
   task241->add_dep(task273);
   energyq->add_task(task273);
@@ -194,7 +194,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_energyq(const bool reset, const bool diag
   task273->add_dep(task275);
   energyq->add_task(task275);
 
-  auto I393 = make_shared<TATensor<double,2>>(std::vector<IndexRange>{closed_, active_});
+  auto I393 = make_shared<TATensor<double,2>>({closed_, active_});
   auto task276 = make_shared<Task276>(h1_, I393);
   task241->add_dep(task276);
   energyq->add_task(task276);

@@ -235,15 +235,11 @@ void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
   tie(rdm3d, rdm4d) = info_->ref()->rdm34deriv(info_->target(), fockact);
   assert(rdm3d->ij() == rdm4d->ij());
 
-  vector<IndexRange> o1 = {ci_};
-  vector<IndexRange> o3 = {ci_, active_, active_};
-  vector<IndexRange> o5 = {ci_, active_, active_, active_, active_};
-  vector<IndexRange> o7 = {ci_, active_, active_, active_, active_, active_, active_};
-  rdm0deriv_ = make_shared<TATensor<double,1>>(o1);
-  rdm1deriv_ = make_shared<TATensor<double,3>>(o3);
-  rdm2deriv_ = make_shared<TATensor<double,5>>(o5);
-  rdm3deriv_ = make_shared<TATensor<double,7>>(o7);
-  rdm4deriv_ = make_shared<TATensor<double,7>>(o7);
+  rdm0deriv_ = make_shared<TATensor<double,1>>({ci_});
+  rdm1deriv_ = make_shared<TATensor<double,3>>({ci_, active_, active_});
+  rdm2deriv_ = make_shared<TATensor<double,5>>({ci_, active_, active_, active_, active_});
+  rdm3deriv_ = make_shared<TATensor<double,7>>({ci_, active_, active_, active_, active_, active_, active_});
+  rdm4deriv_ = make_shared<TATensor<double,7>>({ci_, active_, active_, active_, active_, active_, active_});
 
   const int nclo = info_->nclosed();
   vector<int> inpoff1(1,0);

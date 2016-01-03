@@ -91,7 +91,7 @@ void K2ext<complex<double>>::init() {
 #ifdef HAVE_MKL_H
     mkl_set_num_threads(info_->num_threads());
 #endif
-    TATensor<complex<double>,3> ext(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
+    TATensor<complex<double>,3> ext({aux, blocks_[0], blocks_[1]}, false, pmap);
     for (auto& i0 : blocks_[0]) {
       shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
       list<shared_ptr<RelDFHalf>> half;
@@ -110,7 +110,7 @@ void K2ext<complex<double>>::init() {
 #ifdef HAVE_MKL_H
     mkl_set_num_threads(1);
 #endif
-    TATensor<complex<double>,3> ext2(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, true);
+    TATensor<complex<double>,3> ext2({aux, blocks_[0], blocks_[1]}, true);
     ext2("o4,o0,o1") += ext("o4,o0,o1").conj();
     (*data_)("o0,o1,o2,o3") += ext2("o4,o0,o1") * ext2("o4,o2,o3");
   }
@@ -123,7 +123,7 @@ void K2ext<complex<double>>::init() {
     mkl_set_num_threads(info_->num_threads());
 #endif
     {
-      auto temp = make_shared<TATensor<complex<double>,3>>(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
+      auto temp = make_shared<TATensor<complex<double>,3>>({aux, blocks_[0], blocks_[1]}, false, pmap);
       ext = MapType{{Comp::X, temp}, {Comp::Y, temp->clone(pmap)}, {Comp::Z, temp->clone(pmap)}};
 
       if (info_->breit())
@@ -202,7 +202,7 @@ void K2ext<double>::init() {
     aux.merge(a);
   }
   auto pmap = make_shared<TiledArray::detail::DFPmap>(madness::World::get_default(), ainfo, blocks_[0].nblock()*blocks_[1].nblock());
-  TATensor<double,3> ext(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, pmap);
+  TATensor<double,3> ext({aux, blocks_[0], blocks_[1]}, false, pmap);
 
 #ifdef HAVE_MKL_H
   mkl_set_num_threads(info_->num_threads());
@@ -224,7 +224,7 @@ void K2ext<double>::init() {
 #ifdef HAVE_MKL_H
   mkl_set_num_threads(1);
 #endif
-  TATensor<double,3> ext2(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, true);
+  TATensor<double,3> ext2({aux, blocks_[0], blocks_[1]}, true);
   ext2("o4,o0,o1") += ext("o4,o0,o1");
   (*data_)("o0,o1,o2,o3") += ext2("o4,o0,o1") * ext2("o4,o2,o3");
 
