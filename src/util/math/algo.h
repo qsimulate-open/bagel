@@ -94,7 +94,7 @@ template<typename T, typename U = T,
          class = typename std::enable_if< (std::is_same<double,T>::value || std::is_same<std::complex<double>,T>::value)
                                           and  std::is_convertible<U, T>::value >::type
         >
-void transpose(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0)) { assert(false); }
+void transpose(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0));
 template<>
 void transpose(const double* a, const int b, const int c, double* d, const double fac);
 template<>
@@ -106,7 +106,7 @@ template<typename T, typename U = T,
          class = typename std::enable_if< (std::is_same<double,T>::value || std::is_same<std::complex<double>,T>::value)
                                           and  std::is_convertible<U, T>::value >::type
         >
-void transpose_add(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0)) { assert(false); }
+void transpose_add(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0));
 template<>
 void transpose_add(const double* a, const int b, const int c, double* d, const double fac);
 template<>
@@ -117,7 +117,7 @@ void transpose_add(const std::complex<double>* a, const int b, const int c, std:
 template<typename T, typename U = T,
          class = typename std::enable_if< std::is_same<std::complex<double>,T>::value and std::is_convertible<U, T>::value >::type
         >
-void transpose_conjg(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0)) { assert(false); }
+void transpose_conjg(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0));
 template<>
 void transpose_conjg(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
 template<>

@@ -78,11 +78,10 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   // IndexRange for orbital update
   const int nact2 = nact()*(comp ? 2 : 1);
-  const int nstates = ref_->ciwfn()->nstates();
-  ortho1_  = IndexRange("o", nstates*nact2, maxtile_);
-  ortho2_  = IndexRange("o", nstates*nact2*nact2, maxtile_);
-  ortho3_  = IndexRange("o", nstates*nact2*nact2*nact2, maxtile_);
-  ortho2t_ = IndexRange("o", nstates*nact2*nact2*(comp ? 1 : 2), maxtile_); // for XXCA
+  ortho1_  = IndexRange("o", nstates()*nact2, maxtile_);
+  ortho2_  = IndexRange("o", nstates()*nact2*nact2, maxtile_);
+  ortho3_  = IndexRange("o", nstates()*nact2*nact2*nact2, maxtile_);
+  ortho2t_ = IndexRange("o", nstates()*nact2*nact2*(comp ? 1 : 2), maxtile_); // for XXCA
 
   // only for gradient computation
   if (ciwfn() && grad_) {
@@ -91,6 +90,14 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
     ci_ = IndexRange("ci", ci_size, maxtile_);
   }
 }
+
+
+template<>
+int SMITH_Info<double>::nstates() const { return ref_->ciwfn()->nstates(); }
+
+
+template<>
+int SMITH_Info<complex<double>>::nstates() const { return dynamic_pointer_cast<const RelReference>(ref_)->ciwfn()->nstates(); }
 
 
 template<>
