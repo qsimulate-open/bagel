@@ -93,14 +93,6 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
 
 template<>
-int SMITH_Info<double>::nstates() const { return ref_->ciwfn()->nstates(); }
-
-
-template<>
-int SMITH_Info<complex<double>>::nstates() const { return dynamic_pointer_cast<const RelReference>(ref_)->ciwfn()->nstates(); }
-
-
-template<>
 tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const {
   return ref_->rdm12(ist, jst);
 }

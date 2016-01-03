@@ -242,11 +242,6 @@ void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
   rdm4deriv_ = make_shared<TATensor<double,7>>({ci_, active_, active_, active_, active_, active_, active_});
 
   const int nclo = info_->nclosed();
-  vector<int> inpoff1(1,0);
-  vector<int> inpoff3(2,nclo); inpoff3.push_back(0);
-  vector<int> inpoff5(4,nclo); inpoff5.push_back(0);
-  vector<int> inpoff7(6,nclo); inpoff7.push_back(0);
-
   const int nact = info_->nact();
   const btas::CRange<1> range1(rdm1d->extent(0)*rdm1d->extent(1));
   const btas::CRange<3> range3(rdm1d->extent(0)*rdm1d->extent(1), nact, nact);
@@ -258,11 +253,11 @@ void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
   rdm2d->resize(range5);
   rdm3d->resize(range7);
   rdm4d->resize(range7);
-  fill_block<1,double>(rdm0deriv_, rdm0d, inpoff1);
-  fill_block<3,double>(rdm1deriv_, rdm1d, inpoff3);
-  fill_block<5,double>(rdm2deriv_, rdm2d, inpoff5);
-  fill_block<7,double>(rdm3deriv_, rdm3d, inpoff7);
-  fill_block<7,double>(rdm4deriv_, rdm4d, inpoff7);
+  fill_block<1,double>(rdm0deriv_, rdm0d, {0});
+  fill_block<3,double>(rdm1deriv_, rdm1d, {0, nclo, nclo});
+  fill_block<5,double>(rdm2deriv_, rdm2d, {0, nclo, nclo, nclo, nclo});
+  fill_block<7,double>(rdm3deriv_, rdm3d, {0, nclo, nclo, nclo, nclo, nclo, nclo});
+  fill_block<7,double>(rdm4deriv_, rdm4d, {0, nclo, nclo, nclo, nclo, nclo, nclo});
 }
 
 

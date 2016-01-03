@@ -90,7 +90,7 @@ class SMITH_Info {
     int maxtile() const { return maxtile_; }
     bool grad() const { return grad_; }
     int num_threads() const { return num_threads_; }
-    int nstates() const;
+    int nstates() const { return ciwfn()->nstates(); }
 
     IndexRange virt() const { return virt_; }
     IndexRange active() const { return active_; }
@@ -122,9 +122,6 @@ class SMITH_Info {
     // this function hides coeff function in Reference and RelReference
     std::shared_ptr<const MatType> coeff() const;
 };
-
-template<> int SMITH_Info<double>::nstates() const;
-template<> int SMITH_Info<std::complex<double>>::nstates() const;
 
 template<> std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const;
 template<> std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const;

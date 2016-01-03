@@ -157,11 +157,11 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         (*tjst)("c0,x1,c2,x3") -= i0("o4,c0,c2") * (*sjst)("o4,x1,x3").conj();
       }
       { // XXCX
-        shared_ptr<const TATensor<DataType,4>> sist = denom_->tashalf_xxh(ist);
-        shared_ptr<const TATensor<DataType,4>> sjst = denom_->tashalf_xxh(jst);
+        shared_ptr<const TATensor<DataType,4>> sist = denom_->tashalf_xhh(ist);
+        shared_ptr<const TATensor<DataType,4>> sjst = denom_->tashalf_xhh(jst);
         TATensor<DataType,2> i0({ortho3_, closed_}, true);
         i0("o4,c2") = (*rist)("c2,x3,x0,x1") * (*sist)("o4,x0,x1,x3");
-        const VecView denom = denom_->denom_xxh();
+        const VecView denom = denom_->denom_xhh();
         foreach_inplace(i0, [=](typename TATensor<DataType,2>::value_type& tile) {
           auto range = tile.range();
           auto lo = range.lobound();
@@ -174,11 +174,11 @@ shared_ptr<MultiTATensor<DataType,4>> SpinFreeMethod<DataType>::update_amplitude
         (*tjst)("x0,x1,c2,x3") -= i0("o4,c2") * (*sjst)("o4,x0,x1,x3").conj();
       }
       { // AXXX
-        shared_ptr<const TATensor<DataType,4>> sist = denom_->tashalf_xhh(ist);
-        shared_ptr<const TATensor<DataType,4>> sjst = denom_->tashalf_xhh(jst);
+        shared_ptr<const TATensor<DataType,4>> sist = denom_->tashalf_xxh(ist);
+        shared_ptr<const TATensor<DataType,4>> sjst = denom_->tashalf_xxh(jst);
         TATensor<DataType,2> i0({ortho3_, virt_}, true);
         i0("o4,a1") = (*rist)("x2,x3,x0,a1") * (*sist)("o4,x0,x2,x3");
-        const VecView denom = denom_->denom_xhh();
+        const VecView denom = denom_->denom_xxh();
         foreach_inplace(i0, [=](typename TATensor<DataType,2>::value_type& tile) {
           auto range = tile.range();
           auto lo = range.lobound();

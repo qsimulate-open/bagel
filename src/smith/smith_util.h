@@ -34,7 +34,7 @@ namespace SMITH {
 
 template<int N, typename DataType>
 static void fill_block(std::shared_ptr<TATensor<DataType,N>> target, std::shared_ptr<const btas::TensorN<DataType,N>> input,
-                       const std::vector<int>& inpoffsets) {
+                       const std::vector<int>& inpoffsets_rev) {
   assert(input->range().ordinal().contiguous());
   assert(N == input->range().rank());
   const int rank = N;
@@ -45,6 +45,8 @@ static void fill_block(std::shared_ptr<TATensor<DataType,N>> target, std::shared
   const std::vector<IndexRange> ranges_rev = target->indexrange();
   // last index corresponds to the fastest
   const std::vector<IndexRange> ranges(ranges_rev.rbegin(), ranges_rev.rend());
+  // offset has to be reversed as well. last index corresponds to the fastest
+  const std::vector<int> inpoffsets(inpoffsets_rev.rbegin(), inpoffsets_rev.rend());
 
   // The last element corresponds to the fastest index
   std::vector<std::map<size_t,Index>> keymap;
