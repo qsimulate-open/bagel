@@ -199,7 +199,6 @@ class TATensor : public TiledArray::Array<DataType,N> {
       // TODO until sparsity is implemented properly
       get_world().gop.fence();
 
-      const DataType zero = static_cast<DataType>(0.0);
       for (auto it = begin(); it != end(); ++it)
         if (it->probe())
           get_world().taskq.add([=](value_type& x) { std::fill(x.begin(), x.end(), static_cast<DataType>(0.0)); }, (*it).future());
