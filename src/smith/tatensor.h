@@ -27,6 +27,7 @@
 #define __SRC_SMITH_TATENSOR_H
 
 #include <tiledarray.h>
+#include <src/util/math/algo.h>
 #include <src/smith/indexrange.h>
 
 #if defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 9
@@ -444,5 +445,20 @@ template<typename T, typename... Args, class = typename std::enable_if<bagel::SM
 std::shared_ptr<T> std::make_shared(std::initializer_list<bagel::SMITH::IndexRange> o, Args&&... args) {
   return std::make_shared<T>(std::move(o), std::forward<Args>(args)...);
 }
+
+extern template class bagel::SMITH::TATensor<double,1>;
+extern template class bagel::SMITH::TATensor<double,2>;
+extern template class bagel::SMITH::TATensor<double,3>;
+extern template class bagel::SMITH::TATensor<double,4>;
+extern template class bagel::SMITH::TATensor<double,5>;
+extern template class bagel::SMITH::TATensor<double,6>;
+extern template class bagel::SMITH::TATensor<double,7>;
+extern template class bagel::SMITH::TATensor<std::complex<double>,1>;
+extern template class bagel::SMITH::TATensor<std::complex<double>,2>;
+extern template class bagel::SMITH::TATensor<std::complex<double>,3>;
+extern template class bagel::SMITH::TATensor<std::complex<double>,4>;
+extern template class bagel::SMITH::TATensor<std::complex<double>,5>;
+extern template class bagel::SMITH::TATensor<std::complex<double>,6>;
+extern template class bagel::SMITH::TATensor<std::complex<double>,7>;
 
 #endif
