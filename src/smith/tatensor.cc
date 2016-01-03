@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <src/smith/tatensor.h>
 
 template class bagel::SMITH::TATensor<double,1>;
@@ -39,3 +42,5 @@ template class bagel::SMITH::TATensor<std::complex<double>,4>;
 template class bagel::SMITH::TATensor<std::complex<double>,5>;
 template class bagel::SMITH::TATensor<std::complex<double>,6>;
 template class bagel::SMITH::TATensor<std::complex<double>,7>;
+
+#endif
