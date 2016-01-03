@@ -247,20 +247,11 @@ class DistCivector {
       std::shared_ptr<DistCivector<DataType>> S2 = spin();
       return dot_product(*S2);
     }
-    std::shared_ptr<DistCivector<DataType>> spin() const { assert(false); return nullptr; }
-    void spin_decontaminate(const double thresh = 1.0e-4) { assert(false); }
-    std::shared_ptr<DistCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = nullptr) const {
-      assert(false);
-      return nullptr;
-    }
-    std::shared_ptr<DistCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = nullptr) const {
-      assert(false);
-      return nullptr;
-    }
-    std::shared_ptr<DistCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
-      assert(false);
-      return nullptr;
-    }
+    std::shared_ptr<DistCivector<DataType>> spin() const;
+    void spin_decontaminate(const double thresh = 1.0e-4);
+    std::shared_ptr<DistCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = nullptr) const;
+    std::shared_ptr<DistCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = nullptr) const;
+    std::shared_ptr<DistCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const;
 
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
       for (auto& iter : c)
@@ -657,7 +648,7 @@ class Civector {
       return out;
     }
 
-    void spin_decontaminate(const double thresh = 1.0e-12) { assert(false); }
+    void spin_decontaminate(const double thresh = 1.0e-12);
 
     std::shared_ptr<Civector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
       // action: true -> create; false -> annihilate

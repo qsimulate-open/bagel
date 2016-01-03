@@ -54,8 +54,8 @@ class QuatMatrix : public ZMatrix {
       for (int i = 0; i != ndim()/2; ++i) {
         eig(ndim()/2+i) = eig(i);
 #ifndef NDEBUG
-        assert(std::abs(eig(i)-eig2(i*2))/std::abs(eig(i)) < 1.0e-6);
-        assert(std::abs(eig(i)-eig2(i*2+1))/std::abs(eig(i)) < 1.0e-6);
+        if (std::max(std::abs(eig(i)-eig2(i*2)), std::abs(eig(i)-eig2(i*2+1))) > 1.0e-6)
+          std::cout << " warning - eigenvalues:" << std::setprecision(10) << std::fixed << std::setw(20) << eig(i) << std::setw(20) << eig2(i*2) << std::setw(20) << eig2(i*2+1) << std::endl;
 #endif
       }
 

@@ -56,9 +56,7 @@ class CIStringSet {
     void init() {
       construct_phi();
     }
-    void construct_phi() {
-      assert(false); // should be specialized
-    }
+    void construct_phi(); // should be specialized
 
   private:
     friend class boost::serialization::access;
