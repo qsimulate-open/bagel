@@ -714,8 +714,8 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
             // Loop over contributions from the different ZFCI eigenstates
             for (int k = 0; k != nspin1_; ++k) {
 
-              auto civec_m = zfci.cc()->find(ab[j][0], ab[j][1])->data(k);
-              auto civec_p = zfci.cc()->find(ab[j][1], ab[j][0])->data(k);
+              auto civec_m = zfci.cc()->find(ab[j][0], ab[j][1])->data(aniso_state[k]);
+              auto civec_p = zfci.cc()->find(ab[j][1], ab[j][0])->data(aniso_state[k]);
 
               const int pos1m = det_m->lexical<0>(ia);
               const int pos2m = det_m->lexical<1>(ib);
