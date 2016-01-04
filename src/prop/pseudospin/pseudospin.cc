@@ -145,12 +145,307 @@ void Pseudospin::update_spin_matrices(VectorB spinvals) {
 // Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix
 void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr<const RelCoeff_Block> active_coeff) {
   const complex<double> imag(0.0, 1.0);
+  const int norb = zfci.norb();
 
   // First, we create matrices of the magnetic moment in atomic orbital basis
   array<shared_ptr<ZMatrix>,3> magnetic_moment;
 
   RelSpinInt ao_spin(zfci.geom());
   auto ao_trev = make_shared<const RelTRevInt>(zfci.geom());
+  auto mo_trev = make_shared<ZMatrix>(*active_coeff % *ao_trev * *active_coeff->get_conjg());
+
+# if 1
+  { // Attempt to compute time-reversal matrix in ZFCI states from mo_trev
+    trev_h_ = make_shared<ZMatrix>(nspin1_, nspin1_);
+    trev_h_->zero();
+    const int maxa = std::min(zfci.nele(), zfci.norb());
+    const int mina = std::max(zfci.nele() - zfci.norb(), 0);
+
+    /********************/
+    // MAKE IT RETURN THE SPIN-Y Matrix rather than K, as a debug check
+    if (zfci.idata()->get<bool>("aniso_testconj", false)) {
+      mo_trev = make_shared<ZMatrix>(*active_coeff % *ao_spin(1) * *active_coeff);
+    }
+    const bool conjop = !zfci.idata()->get<bool>("aniso_testconj", false);
+    /********************/
+
+    /********************/
+    // Redundant, but need this info to be available
+    vector<int> aniso_state;
+    aniso_state.resize(nspin1_);
+    for (int i = 0; i != nspin1_; ++i)
+      aniso_state[i] = i;
+
+    // aniso_state can be used to request mapping excited states instead
+    const shared_ptr<const PTree> exstates = zfci.idata()->get_child_optional("aniso_state");
+    if (exstates) {
+      aniso_state = {};
+      for (auto& i : *exstates)
+        aniso_state.push_back(lexical_cast<int>(i->data()) - 1);
+      if (aniso_state.size() != nspin1_)
+        throw runtime_error("Aniso:  Wrong number of states requested for this S value (should be " + to_string(nspin1_) + ")");
+      for (int i = 0; i != nspin1_; ++i)
+        if (aniso_state[i] < 0 || aniso_state[i] >= zfci.nstate())
+         throw runtime_error("Aniso:  Invalid state requested (should be between 1 and " + to_string(zfci.nstate()) + ")");
+    }
+    /********************/
+
+    vector<array<int,2>> ab = {};
+    for (int j = maxa; j >= mina; --j)
+      ab.push_back({{j, zfci.nele()-j}});
+
+    // Loop over pairs of spin sectors
+    for (int k = 0; k != ab.size(); ++k) {
+      for (int l = 0; l != ab.size(); ++l) {
+        auto det_i = zfci.cc()->find(ab[k][0], ab[k][1])->data(0)->det();
+        auto det_j = zfci.cc()->find(ab[l][0], ab[l][1])->data(0)->det();
+
+        // Loop over pairs of determinants
+        for (auto& ia : det_i->string_bits_a()) {
+          for (auto& ib : det_i->string_bits_b()) {
+            const int pos1_i = det_i->lexical<0>(ia);
+            const int pos2_i = det_i->lexical<1>(ib);
+            const int fullpos_i = pos1_i*det_i->lenb() + pos2_i;
+
+            for (auto& ja : det_j->string_bits_a()) {
+              for (auto& jb : det_j->string_bits_b()) {
+                const int pos1_j = det_j->lexical<0>(ja);
+                const int pos2_j = det_j->lexical<1>(jb);
+                const int fullpos_j = pos1_j*det_j->lenb() + pos2_j;
+
+                // Loop over pairs of ZFCI eigenstates
+                for (int i = 0; i != nspin1_; ++i) {
+                  for (int j = 0; j != nspin1_; ++j) {
+
+                    auto civec_i = zfci.cc()->find(ab[k][0], ab[k][1])->data(aniso_state[i]);
+                    auto civec_j = zfci.cc()->find(ab[l][0], ab[l][1])->data(aniso_state[j]);
+
+                    // 1 electron version - Loop over pairs of MOs
+                    if (zfci.nele() == 1) {
+                      for (int Ap = 0; Ap != 2*norb; ++Ap) {
+                        const int A = Ap % norb;
+                        if ((ia[A] && Ap < norb) || (ib[A] && Ap >= norb)) {
+                          for (int Bp = 0; Bp != 2*norb; ++Bp) {
+                            const int B = Bp % norb;
+                            if ((ja[B] && Bp < norb) || (jb[B] && Bp >= norb)) {
+                              if (conjop) {
+                                trev_h_->element(i, j) += std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Ap, Bp);
+                              } else {
+                                trev_h_->element(i, j) += std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Ap, Bp);
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+
+                    // 2 electron version - Loop over sets of 4 MOs
+                    if (zfci.nele() == 2) {
+                      for (int Ap = 0; Ap != 2*norb; ++Ap) {
+                        const int A = Ap % norb;
+                        if ((ia[A] && Ap < norb) || (ib[A] && Ap >= norb)) {
+                          for (int Bp = 0; Bp != 2*norb; ++Bp) {
+                            if (Ap == Bp) continue;
+                            const int B = Bp % norb;
+                            if ((ia[B] && Bp < norb) || (ib[B] && Bp >= norb)) {
+                              for (int Cp = 0; Cp != 2*norb; ++Cp) {
+                                const int C = Cp % norb;
+                                if ((ja[C] && Cp < norb) || (jb[C] && Cp >= norb)) {
+                                  for (int Dp = 0; Dp != 2*norb; ++Dp) {
+                                    if (Cp == Dp) continue;
+                                    const int D = Dp % norb;
+                                    if ((ja[D] && Dp < norb) || (jb[D] && Dp >= norb)) {
+                                      const double sign1 = Ap < Bp ? 1.0 : -1.0;
+                                      const double sign2 = Cp < Dp ? 1.0 : -1.0;
+                                      const double sign3 = sign1 * sign2 / 2.0;
+                                      if (conjop) {
+                                        if (Ap == Cp)
+                                          trev_h_->element(i, j) += sign3 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Bp, Dp);
+                                        if (Bp == Dp)
+                                          trev_h_->element(i, j) += sign3 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Ap, Cp);
+                                      } else {
+                                        if (Ap == Cp)
+                                          trev_h_->element(i, j) += sign3 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Bp, Dp);
+                                        if (Bp == Dp)
+                                          trev_h_->element(i, j) += sign3 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Ap, Cp);
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+
+                    // 3 electron version - Loop over sets of 6 MOs
+                    if (zfci.nele() == 3) {
+                      for (int Ap = 0; Ap != 2*norb; ++Ap) {
+                        const int A = Ap % norb;
+                        if ((ia[A] && Ap < norb) || (ib[A] && Ap >= norb)) {
+
+                          for (int Bp = 0; Bp != 2*norb; ++Bp) {
+                            if (Ap == Bp) continue;
+                            const int B = Bp % norb;
+                            if ((ia[B] && Bp < norb) || (ib[B] && Bp >= norb)) {
+
+                              for (int Cp = 0; Cp != 2*norb; ++Cp) {
+                                if ((Ap == Cp) || (Bp == Cp)) continue;
+                                const int C = Cp % norb;
+                                if ((ia[C] && Cp < norb) || (ib[C] && Cp >= norb)) {
+
+                                  for (int Dp = 0; Dp != 2*norb; ++Dp) {
+                                    const int D = Dp % norb;
+                                    if ((ja[D] && Dp < norb) || (jb[D] && Dp >= norb)) {
+
+                                      for (int Ep = 0; Ep != 2*norb; ++Ep) {
+                                        if (Dp == Ep) continue;
+                                        const int E = Ep % norb;
+                                        if ((ja[E] && Ep < norb) || (jb[E] && Ep >= norb)) {
+
+                                          for (int Fp = 0; Fp != 2*norb; ++Fp) {
+                                            if ((Dp == Fp) || (Ep == Fp)) continue;
+                                            const int F = Fp % norb;
+                                            if ((ja[F] && Fp < norb) || (jb[F] && Fp >= norb)) {
+
+                                              const double sign1 = Ap < Bp ? 1.0 : -1.0;
+                                              const double sign2 = Ap < Cp ? 1.0 : -1.0;
+                                              const double sign3 = Bp < Cp ? 1.0 : -1.0;
+                                              const double sign4 = Dp < Ep ? 1.0 : -1.0;
+                                              const double sign5 = Dp < Fp ? 1.0 : -1.0;
+                                              const double sign6 = Ep < Fp ? 1.0 : -1.0;
+                                              const double sign7 = sign1 * sign2 * sign3 * sign4 * sign5 * sign6 / 6.0;
+
+                                              if (conjop) {
+                                                if ((Ap == Dp) && (Bp == Ep))
+                                                  trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Cp, Fp);
+                                                if ((Bp == Ep) && (Cp == Fp))
+                                                  trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Ap, Dp);
+                                                if ((Ap == Dp) && (Cp == Fp))
+                                                  trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Bp, Ep);
+                                              } else {
+                                                if ((Ap == Dp) && (Bp == Ep))
+                                                  trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Cp, Fp);
+                                                if ((Bp == Ep) && (Cp == Fp))
+                                                  trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Ap, Dp);
+                                                if ((Ap == Dp) && (Cp == Fp))
+                                                  trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Bp, Ep);
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+
+                    // 4 electron version - Loop over sets of 8 MOs
+                    if (zfci.nele() == 4) {
+                      for (int Ap = 0; Ap != 2*norb; ++Ap) {
+                        const int A = Ap % norb;
+                        if ((ia[A] && Ap < norb) || (ib[A] && Ap >= norb)) {
+
+                          for (int Bp = 0; Bp != 2*norb; ++Bp) {
+                            if (Ap == Bp) continue;
+                            const int B = Bp % norb;
+                            if ((ia[B] && Bp < norb) || (ib[B] && Bp >= norb)) {
+
+                              for (int Cp = 0; Cp != 2*norb; ++Cp) {
+                                if ((Ap == Cp) || (Bp == Cp)) continue;
+                                const int C = Cp % norb;
+                                if ((ia[C] && Cp < norb) || (ib[C] && Cp >= norb)) {
+
+                                  for (int Dp = 0; Dp != 2*norb; ++Dp) {
+                                    if ((Ap == Dp) || (Bp == Dp) || (Cp == Dp)) continue;
+                                    const int D = Dp % norb;
+                                    if ((ia[D] && Dp < norb) || (ib[D] && Dp >= norb)) {
+
+                                      for (int Ep = 0; Ep != 2*norb; ++Ep) {
+                                        const int E = Ep % norb;
+                                        if ((ja[E] && Ep < norb) || (jb[E] && Ep >= norb)) {
+
+                                          for (int Fp = 0; Fp != 2*norb; ++Fp) {
+                                            if (Ep == Fp) continue;
+                                            const int F = Fp % norb;
+                                            if ((ja[F] && Fp < norb) || (jb[F] && Fp >= norb)) {
+
+                                              for (int Gp = 0; Gp != 2*norb; ++Gp) {
+                                                if ((Ep == Gp) || (Fp == Gp)) continue;
+                                                const int G = Gp % norb;
+                                                if ((ja[G] && Gp < norb) || (jb[G] && Gp >= norb)) {
+
+                                                  for (int Hp = 0; Hp != 2*norb; ++Hp) {
+                                                    if ((Ep == Hp) || (Fp == Hp) || (Gp == Hp)) continue;
+                                                    const int H = Hp % norb;
+                                                    if ((ja[H] && Hp < norb) || (jb[H] && Hp >= norb)) {
+
+                                                      const double sign1 = Ap < Bp ? 1.0 : -1.0;
+                                                      const double sign2 = Ap < Cp ? 1.0 : -1.0;
+                                                      const double sign3 = Ap < Dp ? 1.0 : -1.0;
+                                                      const double sign4 = Bp < Cp ? 1.0 : -1.0;
+                                                      const double sign5 = Bp < Dp ? 1.0 : -1.0;
+                                                      const double sign6 = Cp < Dp ? 1.0 : -1.0;
+                                                      const double sign7 = Ep < Fp ? 1.0 : -1.0;
+                                                      const double sign8 = Ep < Gp ? 1.0 : -1.0;
+                                                      const double sign9 = Ep < Hp ? 1.0 : -1.0;
+                                                      const double sign10 = Fp < Gp ? 1.0 : -1.0;
+                                                      const double sign11 = Fp < Hp ? 1.0 : -1.0;
+                                                      const double sign12 = Gp < Hp ? 1.0 : -1.0;
+                                                      const double sign13 = sign1 * sign2 * sign3 * sign4 * sign5 * sign6 * sign7 * sign8 * sign9 * sign10 * sign11 * sign12 / 24.0;
+
+                                                      if (conjop) {
+                                                        if ((Ap == Ep) && (Bp == Fp) && (Cp == Gp))
+                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Dp, Hp);
+                                                        if ((Dp == Hp) && (Bp == Fp) && (Cp == Gp))
+                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Ap, Ep);
+                                                        if ((Ap == Ep) && (Dp == Hp) && (Cp == Gp))
+                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Bp, Fp);
+                                                        if ((Ap == Ep) && (Bp == Fp) && (Dp == Hp))
+                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Cp, Gp);
+                                                      } else {
+                                                        if ((Ap == Ep) && (Bp == Fp) && (Cp == Gp))
+                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Dp, Hp);
+                                                        if ((Dp == Hp) && (Bp == Fp) && (Cp == Gp))
+                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Ap, Ep);
+                                                        if ((Ap == Ep) && (Dp == Hp) && (Cp == Gp))
+                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Bp, Fp);
+                                                        if ((Ap == Ep) && (Bp == Fp) && (Dp == Hp))
+                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Cp, Gp);
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+#endif
 
   { // spin angular momentum
     for (int i = 0; i != 3; ++i) {
@@ -201,8 +496,6 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
       (*magnetic_moment[i]).add_block(1.0, 0, 0, 4*n, 4*n, ao_orbang[i]);
     }
   }
-
-  const int norb = zfci.norb();
 
   // By default, just use the ground states
   vector<int> aniso_state;
@@ -512,11 +805,16 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   //  update_spin_matrices(zeig);
   //}
 
+  /***********************/
+  const bool conjop = !zfci.idata()->get<bool>("aniso_testconj", false);
+  /***********************/
+
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(*transform % *spinham_h_ * *transform);
   array<shared_ptr<ZMatrix>, 3> spinop_s;
-  auto trev_s = make_shared<ZMatrix>(*transform % *trev_h_ * *transform);
-  for (int i = 0; i != 3; ++i)
+  auto trev_s = conjop ? make_shared<ZMatrix>(*transform % *trev_h_ * *transform->get_conjg()) : make_shared<ZMatrix>(*transform % *trev_h_ * *transform);
+  for (int i = 0; i != 3; ++i) {
     spinop_s[i] = make_shared<ZMatrix>(*transform % *spinop_h_[i] * *transform);
+  }
 
   spinham_s->print("Spin Hamiltonian");
   cout << endl;
