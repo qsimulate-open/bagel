@@ -259,10 +259,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
                                       const double sign2 = Cp < Dp ? 1.0 : -1.0;
                                       const double sign3 = sign1 * sign2 / 2.0;
                                       if (conjop) {
-                                        if (Ap == Cp)
-                                          trev_h_->element(i, j) += sign3 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Bp, Dp);
-                                        if (Bp == Dp)
-                                          trev_h_->element(i, j) += sign3 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Ap, Cp);
+                                        trev_h_->element(i, j) += sign3 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Bp, Dp) * mo_trev->element(Ap, Cp);
                                       } else {
                                         if (Ap == Cp)
                                           trev_h_->element(i, j) += sign3 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Bp, Dp);
@@ -318,12 +315,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
                                               const double sign7 = sign1 * sign2 * sign3 * sign4 * sign5 * sign6 / 6.0;
 
                                               if (conjop) {
-                                                if ((Ap == Dp) && (Bp == Ep))
-                                                  trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Cp, Fp);
-                                                if ((Bp == Ep) && (Cp == Fp))
-                                                  trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Ap, Dp);
-                                                if ((Ap == Dp) && (Cp == Fp))
-                                                  trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Bp, Ep);
+                                                trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Cp, Fp) * mo_trev->element(Ap, Dp) * mo_trev->element(Bp, Ep);
                                               } else {
                                                 if ((Ap == Dp) && (Bp == Ep))
                                                   trev_h_->element(i, j) += sign7 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Cp, Fp);
@@ -401,14 +393,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
                                                       const double sign13 = sign1 * sign2 * sign3 * sign4 * sign5 * sign6 * sign7 * sign8 * sign9 * sign10 * sign11 * sign12 / 24.0;
 
                                                       if (conjop) {
-                                                        if ((Ap == Ep) && (Bp == Fp) && (Cp == Gp))
-                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Dp, Hp);
-                                                        if ((Dp == Hp) && (Bp == Fp) && (Cp == Gp))
-                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Ap, Ep);
-                                                        if ((Ap == Ep) && (Dp == Hp) && (Cp == Gp))
-                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Bp, Fp);
-                                                        if ((Ap == Ep) && (Bp == Fp) && (Dp == Hp))
-                                                          trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Cp, Gp);
+                                                        trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * std::conj(civec_j->data(fullpos_j)) * mo_trev->element(Dp, Hp) * mo_trev->element(Ap, Ep) * mo_trev->element(Bp, Fp) * mo_trev->element(Cp, Gp);
                                                       } else {
                                                         if ((Ap == Ep) && (Bp == Fp) && (Cp == Gp))
                                                           trev_h_->element(i, j) += sign13 * std::conj(civec_i->data(fullpos_i)) * civec_j->data(fullpos_j) * mo_trev->element(Dp, Hp);
