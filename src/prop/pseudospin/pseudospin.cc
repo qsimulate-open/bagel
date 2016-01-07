@@ -33,6 +33,9 @@
 #include <src/integral/os/angmombatch.h>
 #include <src/mat1e/rel/small1e.h>
 
+// for debugging:
+#include <src/util/math/comb.h>
+
 using namespace std;
 using namespace bagel;
 
@@ -429,6 +432,280 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
         }
       }
     }
+    trev_h_->print("NEW CALCULATION of time-reversal matrix in ZFCI states", 24);
+  }
+#endif
+
+# if 1
+  { // Attempt to compute time-reversal matrix in Determinant basis
+    const static Comb combination;
+    const size_t ndet = combination(2*zfci.norb(), zfci.nele());
+    auto trev_det = make_shared<ZMatrix>(ndet, ndet);
+    trev_det->zero();
+    const int maxa = std::min(zfci.nele(), zfci.norb());
+    const int mina = std::max(zfci.nele() - zfci.norb(), 0);
+    /***********************/
+    const bool conjop = !zfci.idata()->get<bool>("aniso_testconj", false);
+    /***********************/
+
+    /********************/
+    // Redundant, but need this info to be available
+    vector<int> aniso_state;
+    aniso_state.resize(nspin1_);
+    for (int i = 0; i != nspin1_; ++i)
+      aniso_state[i] = i;
+
+    // aniso_state can be used to request mapping excited states instead
+    const shared_ptr<const PTree> exstates = zfci.idata()->get_child_optional("aniso_state");
+    if (exstates) {
+      aniso_state = {};
+      for (auto& i : *exstates)
+        aniso_state.push_back(lexical_cast<int>(i->data()) - 1);
+      if (aniso_state.size() != nspin1_)
+        throw runtime_error("Aniso:  Wrong number of states requested for this S value (should be " + to_string(nspin1_) + ")");
+      for (int i = 0; i != nspin1_; ++i)
+        if (aniso_state[i] < 0 || aniso_state[i] >= zfci.nstate())
+         throw runtime_error("Aniso:  Invalid state requested (should be between 1 and " + to_string(zfci.nstate()) + ")");
+    }
+    /********************/
+
+    vector<array<int,2>> ab = {};
+    for (int j = maxa; j >= mina; --j)
+      ab.push_back({{j, zfci.nele()-j}});
+
+    int ipos = -1;
+    int jpos = -1;
+
+    // Loop over pairs of spin sectors
+    for (int k = 0; k != ab.size(); ++k) {
+      const int ipos_save = ipos;
+      jpos = -1;
+      for (int l = 0; l != ab.size(); ++l) {
+        auto det_i = zfci.cc()->find(ab[k][0], ab[k][1])->data(0)->det();
+        auto det_j = zfci.cc()->find(ab[l][0], ab[l][1])->data(0)->det();
+        const int jpos_save = jpos;
+        ipos = ipos_save;
+
+        // Loop over pairs of determinants
+        for (auto& ia : det_i->string_bits_a()) {
+          for (auto& ib : det_i->string_bits_b()) {
+            ++ipos;
+            jpos = jpos_save;
+            if (jpos == -1) cout << " ** Determinant in position ipos = " << std::setw(4) << ipos << " is " << print_bit(ia, ib, det_i->norb()) << endl;
+
+            for (auto& ja : det_j->string_bits_a()) {
+              for (auto& jb : det_j->string_bits_b()) {
+                ++jpos;
+                //cout << " matrix element to be set = (" << std::setw(4) << ipos << ", " << std::setw(4) << jpos << ")" << endl;
+
+                // 1 electron version - Loop over pairs of MOs
+                if (zfci.nele() == 1) {
+                  for (int Ap = 0; Ap != 2*norb; ++Ap) {
+                    const int A = Ap % norb;
+                    if ((ia[A] && Ap < norb) || (ib[A] && Ap >= norb)) {
+                      for (int Bp = 0; Bp != 2*norb; ++Bp) {
+                        const int B = Bp % norb;
+                        if ((ja[B] && Bp < norb) || (jb[B] && Bp >= norb)) {
+                            trev_det->element(ipos, jpos) += mo_trev->element(Ap, Bp);
+                        }
+                      }
+                    }
+                  }
+                }
+
+                // 2 electron version - Loop over sets of 4 MOs
+                if (zfci.nele() == 2) {
+                  for (int Ap = 0; Ap != 2*norb; ++Ap) {
+                    const int A = Ap % norb;
+                    if ((ia[A] && Ap < norb) || (ib[A] && Ap >= norb)) {
+                      for (int Bp = 0; Bp != 2*norb; ++Bp) {
+                        if (Ap == Bp) continue;
+                        const int B = Bp % norb;
+                        if ((ia[B] && Bp < norb) || (ib[B] && Bp >= norb)) {
+                          for (int Cp = 0; Cp != 2*norb; ++Cp) {
+                            const int C = Cp % norb;
+                            if ((ja[C] && Cp < norb) || (jb[C] && Cp >= norb)) {
+                              for (int Dp = 0; Dp != 2*norb; ++Dp) {
+                                if (Cp == Dp) continue;
+                                const int D = Dp % norb;
+                                if ((ja[D] && Dp < norb) || (jb[D] && Dp >= norb)) {
+                                  const double sign1 = Ap < Bp ? 1.0 : -1.0;
+                                  const double sign2 = Cp < Dp ? 1.0 : -1.0;
+                                  const double sign3 = sign1 * sign2 / 2.0;
+                                  if (conjop) {
+                                      trev_det->element(ipos, jpos) += sign3 * mo_trev->element(Bp, Dp) * mo_trev->element(Ap, Cp);
+                                  } else {
+                                    if (Ap == Cp)
+                                      trev_det->element(ipos, jpos) += sign3 * mo_trev->element(Bp, Dp);
+                                    if (Bp == Dp)
+                                      trev_det->element(ipos, jpos) += sign3 * mo_trev->element(Ap, Cp);
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+
+                // 3 electron version - Loop over sets of 6 MOs
+                if (zfci.nele() == 3) {
+                  for (int Ap = 0; Ap != 2*norb; ++Ap) {
+                    const int A = Ap % norb;
+                    if ((ia[A] && Ap < norb) || (ib[A] && Ap >= norb)) {
+
+                      for (int Bp = 0; Bp != 2*norb; ++Bp) {
+                        if (Ap == Bp) continue;
+                        const int B = Bp % norb;
+                        if ((ia[B] && Bp < norb) || (ib[B] && Bp >= norb)) {
+
+                          for (int Cp = 0; Cp != 2*norb; ++Cp) {
+                            if ((Ap == Cp) || (Bp == Cp)) continue;
+                            const int C = Cp % norb;
+                            if ((ia[C] && Cp < norb) || (ib[C] && Cp >= norb)) {
+
+                              for (int Dp = 0; Dp != 2*norb; ++Dp) {
+                                const int D = Dp % norb;
+                                if ((ja[D] && Dp < norb) || (jb[D] && Dp >= norb)) {
+
+                                  for (int Ep = 0; Ep != 2*norb; ++Ep) {
+                                    if (Dp == Ep) continue;
+                                    const int E = Ep % norb;
+                                    if ((ja[E] && Ep < norb) || (jb[E] && Ep >= norb)) {
+
+                                      for (int Fp = 0; Fp != 2*norb; ++Fp) {
+                                        if ((Dp == Fp) || (Ep == Fp)) continue;
+                                        const int F = Fp % norb;
+                                        if ((ja[F] && Fp < norb) || (jb[F] && Fp >= norb)) {
+
+                                          const double sign1 = Ap < Bp ? 1.0 : -1.0;
+                                          const double sign2 = Ap < Cp ? 1.0 : -1.0;
+                                          const double sign3 = Bp < Cp ? 1.0 : -1.0;
+                                          const double sign4 = Dp < Ep ? 1.0 : -1.0;
+                                          const double sign5 = Dp < Fp ? 1.0 : -1.0;
+                                          const double sign6 = Ep < Fp ? 1.0 : -1.0;
+                                          const double sign7 = sign1 * sign2 * sign3 * sign4 * sign5 * sign6 / 6.0;
+                                          if (conjop) {
+                                            trev_det->element(ipos, jpos) += sign7 * mo_trev->element(Cp, Fp) * mo_trev->element(Ap, Dp) * mo_trev->element(Bp, Ep);
+                                          } else {
+                                            if ((Ap == Dp) && (Bp == Ep))
+                                              trev_det->element(ipos, jpos) += sign7 * mo_trev->element(Cp, Fp);
+                                            if ((Bp == Ep) && (Cp == Fp))
+                                              trev_det->element(ipos, jpos) += sign7 * mo_trev->element(Ap, Dp);
+                                            if ((Ap == Dp) && (Cp == Fp))
+                                              trev_det->element(ipos, jpos) += sign7 * mo_trev->element(Bp, Ep);
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+
+                // 4 electron version - Loop over sets of 8 MOs
+                if (zfci.nele() == 4) {
+                  for (int Ap = 0; Ap != 2*norb; ++Ap) {
+                    const int A = Ap % norb;
+                    if ((ia[A] && Ap < norb) || (ib[A] && Ap >= norb)) {
+
+                      for (int Bp = 0; Bp != 2*norb; ++Bp) {
+                        if (Ap == Bp) continue;
+                        const int B = Bp % norb;
+                        if ((ia[B] && Bp < norb) || (ib[B] && Bp >= norb)) {
+
+                          for (int Cp = 0; Cp != 2*norb; ++Cp) {
+                            if ((Ap == Cp) || (Bp == Cp)) continue;
+                            const int C = Cp % norb;
+                            if ((ia[C] && Cp < norb) || (ib[C] && Cp >= norb)) {
+
+                              for (int Dp = 0; Dp != 2*norb; ++Dp) {
+                                if ((Ap == Dp) || (Bp == Dp) || (Cp == Dp)) continue;
+                                const int D = Dp % norb;
+                                if ((ia[D] && Dp < norb) || (ib[D] && Dp >= norb)) {
+
+                                  for (int Ep = 0; Ep != 2*norb; ++Ep) {
+                                    const int E = Ep % norb;
+                                    if ((ja[E] && Ep < norb) || (jb[E] && Ep >= norb)) {
+
+                                      for (int Fp = 0; Fp != 2*norb; ++Fp) {
+                                        if (Ep == Fp) continue;
+                                        const int F = Fp % norb;
+                                        if ((ja[F] && Fp < norb) || (jb[F] && Fp >= norb)) {
+
+                                          for (int Gp = 0; Gp != 2*norb; ++Gp) {
+                                            if ((Ep == Gp) || (Fp == Gp)) continue;
+                                            const int G = Gp % norb;
+                                            if ((ja[G] && Gp < norb) || (jb[G] && Gp >= norb)) {
+
+                                              for (int Hp = 0; Hp != 2*norb; ++Hp) {
+                                                if ((Ep == Hp) || (Fp == Hp) || (Gp == Hp)) continue;
+                                                const int H = Hp % norb;
+                                                if ((ja[H] && Hp < norb) || (jb[H] && Hp >= norb)) {
+
+                                                  const double sign1 = Ap < Bp ? 1.0 : -1.0;
+                                                  const double sign2 = Ap < Cp ? 1.0 : -1.0;
+                                                  const double sign3 = Ap < Dp ? 1.0 : -1.0;
+                                                  const double sign4 = Bp < Cp ? 1.0 : -1.0;
+                                                  const double sign5 = Bp < Dp ? 1.0 : -1.0;
+                                                  const double sign6 = Cp < Dp ? 1.0 : -1.0;
+                                                  const double sign7 = Ep < Fp ? 1.0 : -1.0;
+                                                  const double sign8 = Ep < Gp ? 1.0 : -1.0;
+                                                  const double sign9 = Ep < Hp ? 1.0 : -1.0;
+                                                  const double sign10 = Fp < Gp ? 1.0 : -1.0;
+                                                  const double sign11 = Fp < Hp ? 1.0 : -1.0;
+                                                  const double sign12 = Gp < Hp ? 1.0 : -1.0;
+                                                  const double sign13 = sign1 * sign2 * sign3 * sign4 * sign5 * sign6 * sign7 * sign8 * sign9 * sign10 * sign11 * sign12 / 24.0;
+
+                                                  if (conjop) {
+                                                      trev_det->element(ipos, jpos) += sign13 * mo_trev->element(Dp, Hp) * mo_trev->element(Ap, Ep) * mo_trev->element(Bp, Fp) * mo_trev->element(Cp , Gp);
+                                                  } else {
+                                                    if ((Ap == Ep) && (Bp == Fp) && (Cp == Gp))
+                                                      trev_det->element(ipos, jpos) += sign13 * mo_trev->element(Dp, Hp);
+                                                    if ((Dp == Hp) && (Bp == Fp) && (Cp == Gp))
+                                                      trev_det->element(ipos, jpos) += sign13 * mo_trev->element(Ap, Ep);
+                                                    if ((Ap == Ep) && (Dp == Hp) && (Cp == Gp))
+                                                      trev_det->element(ipos, jpos) += sign13 * mo_trev->element(Bp, Fp);
+                                                    if ((Ap == Ep) && (Bp == Fp) && (Dp == Hp))
+                                                      trev_det->element(ipos, jpos) += sign13 * mo_trev->element(Cp, Gp);
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ++ipos;
+    ++jpos;
+    cout << " Final ipos = " << ipos << ", final jpos = " << jpos << ", ndet = " << ndet << endl;
+    assert(ipos == jpos);
+    assert(ipos == ndet);
+    trev_det->print("NEW CALCULATION of time-reversal matrix in a basis of determinants", 50);
   }
 #endif
 
