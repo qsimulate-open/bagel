@@ -343,7 +343,6 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
       modensity.copy_block(0, 0, 2 * norb, 2 * norb, rdmmat);
       ZMatrix aodenconj = (*active_coeff * *modensity.get_conjg() ^ *active_coeff);
 
-      trev_h_->element(i,j) = aodensity.dot_product(*ao_trev);
       for (int k = 0; k != 3; ++k) {
         spinop_h_[k]->element(i,j) = aodenconj.dot_product(*magnetic_moment[k]);
         zfci_spin_[k]->element(i,j) = aodenconj.dot_product(*ao_spin(k));
