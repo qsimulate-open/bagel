@@ -353,9 +353,9 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 
 #if 0
   for (int k = 0; k != 3; ++k) {
-    spinop_h_[k]->print("Magnetic moment in ZFCI basis");
-    zfci_spin_[k]->print("Spin angular momentum in ZFCI basis");
-    zfci_orbang_[k]->print("Orbital angular momentum in ZFCI basis");
+    spinop_h_[k]->print("Magnetic moment in ZFCI basis - " + to_string(k), 24);
+    zfci_spin_[k]->print("Spin angular momentum in ZFCI basis - " + to_string(k), 24);
+    zfci_orbang_[k]->print("Orbital angular momentum in ZFCI basis - " + to_string(k), 24);
   }
 #endif
 
@@ -437,8 +437,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   ZMatrix transform(nspin1_, nspin1_);
-  const complex<double> scale = 1.0 / std::sqrt(rotation[0]*rotation[0] + rotation[1]*rotation[1] + rotation[2]*rotation[2]);
-  assert(std::abs(std::imag(scale)) < 1.0e-10);
+  const double scale = 1.0 / std::sqrt(rotation[0]*rotation[0] + rotation[1]*rotation[1] + rotation[2]*rotation[2]);
   for (int i = 0; i != 3; ++i)
     transform += scale * rotation[i] * *spinop_h_[i];
   VectorB zeig(nspin1_);
@@ -458,7 +457,6 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
     zeig = tempv;
   }
 
-#if 1
   { // Adjust the phases of eigenvectors to ensure proper time-reversal symmetry (using the matrix form of the time-reversal operator)
     auto trev_s = make_shared<ZMatrix>(transform % *trev_h_ * *transform.get_conjg());
     for (int k = 0; k <= nspin_ / 2; ++k) {
@@ -473,91 +471,6 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
       }
     }
   }
-#endif
-
-#if 1
-  // For testing arbitrary phase shifts applied to pseudospin eigenfunctions
-  const complex<double> dadjust = polar(1.0, zfci.idata()->get<double>("aniso_dadjust", 0.0));
-  cout << " ** Phase shift = " << std::arg(dadjust) << endl;
-  for (int i = 0; i != nspin1_; ++i) {
-    transform->element(i, 0) = dadjust * transform->element(i, 0);
-    //transform->element(i, nspin_) = std::conj(dadjust) * transform->element(i, nspin_);
-#endif
-#if 1
-  {
-    // Attempt to fix time-reversal symmetry from the Ci vectors
-    // TODO Probably this could be made significantly more efficient - see if it's a problematic
-    const int maxa = std::min(zfci.nele(), zfci.norb());
-    const int mina = std::max(zfci.nele() - zfci.norb(), 0);
-    cout << setprecision(8);
-
-    // Loop over pairs of Kramers conjugates
-    // km starts with -1/2 (or 0) and goes to -S
-    // kp is the Kramers conjugate of km
-    for (int km = nspin_; km >= nspin1_ / 2; --km) {
-      const int kp = nspin_ - km;
-      cout << endl;
-
-      //cout << " nele = " << zfci.nele() << ", norb = " << zfci.norb() << ", number alpha/beta runs from " << maxa << " to " << mina << endl;
-      vector<array<int,2>> ab = {};
-      for (int j = maxa; j >= mina; --j)
-        ab.push_back({{j, zfci.nele()-j}});
-
-      double maxval2 = 0.0;
-      bool signflip = false;
-      complex<double> maxvalm;
-      complex<double> maxvalp;
-
-      // Loop over sectors of different spin values
-      for (int j = 0; j != ab.size(); ++j) {
-
-        auto det_m = zfci.cc()->find(ab[j][0], ab[j][1])->data(0)->det();
-        auto det_p = zfci.cc()->find(ab[j][1], ab[j][0])->data(0)->det();
-
-        // Loop over different Slater determinants in this sector
-        for (auto& ia : det_m->string_bits_a()) {
-          for (auto& ib : det_m->string_bits_b()) {
-            complex<double> valm = 0.0;
-            complex<double> valp = 0.0;
-
-            // Loop over contributions from the different ZFCI eigenstates
-            for (int k = 0; k != nspin1_; ++k) {
-
-              auto civec_m = zfci.cc()->find(ab[j][0], ab[j][1])->data(aniso_state[k]);
-              auto civec_p = zfci.cc()->find(ab[j][1], ab[j][0])->data(aniso_state[k]);
-
-              const int pos1m = det_m->lexical<0>(ia);
-              const int pos2m = det_m->lexical<1>(ib);
-              const int pos1p = det_p->lexical<0>(ib);
-              const int pos2p = det_p->lexical<1>(ia);
-              const int fullpos_m = pos1m*det_m->lenb() + pos2m;
-              const int fullpos_p = pos1p*det_p->lenb() + pos2p;
-              const complex<double> cival_m = civec_m->data(fullpos_m) * transform->element(k, km);
-              const complex<double> cival_p = civec_p->data(fullpos_p) * transform->element(k, kp);
-              valm += cival_m;
-              valp += cival_p;
-            }
-            const double mag2 = (std::abs(valm) + std::abs(valp));
-            if (mag2 > maxval2) {
-              maxval2 = mag2;
-              maxvalm = valm;
-              maxvalp = valp;
-              signflip = (ab[j][1] % 2 == 0) ? false : true;
-            }
-          }
-        }
-      }
-      assert(std::abs(std::abs(maxvalm) - std::abs(maxvalp)) < 1.0e-6);
-      double phase_sum = std::arg(maxvalm) + std::arg(maxvalp);
-      if (signflip == true) phase_sum += pi__;
-
-      cout << " km = " << km << ", phase shift = " << sign * phase_sum << endl;
-      const complex<double> shift = std::polar(1.0, -phase_sum);
-      for (int i = 0; i != nspin1_; ++i)
-        transform->element(i, km) = shift * transform->element(i, km);
-    }
-  }
-#endif
 
 
 #ifndef NDEBUG
@@ -584,29 +497,23 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(transform % *spinham_h_ * transform);
   array<shared_ptr<ZMatrix>, 3> spinop_s;
   auto trev_s = make_shared<ZMatrix>(transform % *trev_h_ * *transform.get_conjg());
-  for (int i = 0; i != 3; ++i) {
+  for (int i = 0; i != 3; ++i)
     spinop_s[i] = make_shared<ZMatrix>(transform % *spinop_h_[i] * transform);
-  }
 
-  spinham_s->print("Spin Hamiltonian");
+  spinham_s->print("Pseudospin Hamiltonian", 24);
   cout << endl;
-  trev_s->print("Time-reversal operator!  (in pseudospin states)");
-  cout << endl;
-  for (int i = 0; i != 3; ++i) {
-    spinop_s[i]->print("Spin matrix, component " + to_string(i));
-    cout << endl;
-  }
+  for (int i = 0; i != 3; ++i)
+    spinop_s[i]->print("Magnetic moment matrix, component " + to_string(i), 24);
 
   if (!is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true))
     throw runtime_error("The spin Hamiltonian seems to not have proper time-reversal symmetry.  Check that your spin value and states mapped are reasonable.");
 
   cout << endl;
   for (int i = 0; i != 3; ++i) {
-    //spinop_h_[i]->print("ZFCI basis spin matrix " + to_string(i+1));
 #if 0
-    spinop_s[i]->print("Spin eigenfunction basis magnetic moment matrix " + to_string(i+1));
-    (transform % *zfci_spin_[i] * transform).print("Spin eigenfunction basis spin angular momentum matrix " + to_string(i+1));
-    (transform % *zfci_orbang_[i] * transform).print("Spin eigenfunction basis orbital angular momentum matrix " + to_string(i+1));
+    spinop_s[i]->print("Pseudospin eigenfunction basis magnetic moment matrix " + to_string(i+1));
+    (transform % *zfci_spin_[i] * transform).print("Pseudospin eigenfunction basis spin angular momentum matrix " + to_string(i+1));
+    (transform % *zfci_orbang_[i] * transform).print("Pseudospin eigenfunction basis orbital angular momentum matrix " + to_string(i+1));
     cout << endl;
 #endif
     assert(is_t_symmetric(*spinop_s[i], /*hermitian*/true, /*time reversal*/false));
