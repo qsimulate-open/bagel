@@ -460,6 +460,23 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   }
 
 #if 1
+  { // Adjust the phases of eigenvectors to ensure proper time-reversal symmetry (using the matrix form of the time-reversal operator)
+    auto trev_s = make_shared<ZMatrix>(*transform % *trev_h_ * *transform->get_conjg());
+    for (int k = 0; k <= nspin_ / 2; ++k) {
+      const double target_phase = (k % 2 == 0) ? pi__ : 0.0;
+      const double phase_error = std::arg(trev_s->element(k, nspin_ - k)) - target_phase;
+      const complex<double> adjust = std::polar(1.0, 0.5 * phase_error);
+      for (int i = 0; i != nspin1_; ++i)
+        transform->element(i, k) = adjust * transform->element(i, k);
+      if (nspin_ % 2 == 1 || k < nspin_ / 2) {
+        for (int i = 0; i != nspin1_; ++i)
+          transform->element(i, nspin_ - k) = adjust * transform->element(i, nspin_ - k);
+      }
+    }
+  }
+#endif
+
+#if 1
   // For testing arbitrary phase shifts applied to pseudospin eigenfunctions
   const complex<double> dadjust = polar(1.0, zfci.idata()->get<double>("aniso_dadjust", 0.0));
   cout << " ** Phase shift = " << std::arg(dadjust) << endl;
@@ -543,34 +560,6 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   }
 #endif
 
-#if 1
-  // Enforce time-reversal symmetry by looking at the matrices - misses the {1/2, -1/2} element
-  { // Adjust the phases of eigenvectors to ensure proper time-reversal symmetry
-    ZMatrix spinham_s = *transform % *spinham_h_ * *transform;
-    complex<double> adjust = 1.0;
-    for (int k = nspin_ / 2; k > 0; --k) {
-      const double phase_error = std::arg(spinham_s.element(nspin_ - k, nspin1_ - k)) - std::arg(spinham_s.element(k - 1, k)) - pi__;
-      adjust *= std::polar(1.0, -1.0 * phase_error);
-      for (int i = 0; i != nspin1_; ++i)
-        transform->element(i, nspin1_ - k) = adjust * transform->element(i, nspin1_ - k);
-    }
-  }
-
-  // Check the spin matrices as well with basically the same procedure, since sometimes we miss a phase due to numerically zero entries in the Hamiltonian
-  for (int j = 0; j != 3; ++j) {
-    const ZMatrix spinop_x = *transform % *spinop_h_[j] * *transform;
-    if (!is_t_symmetric(spinop_x, /*hermitian*/ true, /*t_symmetric*/ false, 1.0e-8)) {
-      complex<double> adjust = 1.0;
-      for (int k = nspin_ / 2; k > 0; --k) {
-        const double phase_error = std::arg(spinop_x.element(nspin_ - k, nspin1_ - k)) - std::arg(spinop_x.element(k - 1, k));
-        assert(std::abs(phase_error) < 1.0e-2); // should be a small correction
-        adjust *= std::polar(1.0, -1.0 * phase_error);
-        for (int i = 0; i != nspin1_; ++i)
-          transform->element(i, nspin1_ - k) = adjust * transform->element(i, nspin1_ - k);
-      }
-    }
-  }
-#endif
 
 #ifndef NDEBUG
   {
@@ -578,12 +567,6 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
     for (int i = 0; i != nspin1_; ++i)
       diagspin->element(i, i) = zeig[i];
     *diagspin = *transform * *diagspin ^ *transform;
-    /*
-    spinmat_to_diag->print("Original spin matrix");
-    diagspin->print("Recalculated spin matrix");
-    (*spinmat_to_diag - *diagspin).print("Error");
-    cout << endl;
-    */
     assert((*diagspin - *spinmat_to_diag).rms() < 1.0e-6);
   }
 #endif
