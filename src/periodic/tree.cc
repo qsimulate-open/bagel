@@ -25,6 +25,7 @@
 
 
 #include <src/periodic/tree.h>
+#include <src/util/taskqueue.h>
 
 using namespace bagel;
 using namespace std;
@@ -256,15 +257,22 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
     offsets.insert(offsets.end(), tmpoff.begin(), tmpoff.end());
   }
 
+  TaskQueue<function<void(void)>> tasks(nnode_);
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   for (int i = 1; i != nnode_; ++i) {
-    nodes_[i]->compute_local_expansions(density, lmax, offsets);
-    if (nodes_[i]->is_leaf()) {
-      //////shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_exact_Coulomb_FF(density, lmax, offsets);
-      shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, dodf, auxfile);
-      *out += *tmp;
-    }
+    tasks.emplace_back(
+      [this, i, &out, &density, lmax, offsets, dodf, auxfile] () {
+        nodes_[i]->compute_local_expansions(density, lmax, offsets);
+        if (nodes_[i]->is_leaf()) {
+          //////shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_exact_Coulomb_FF(density, lmax, offsets);
+          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, dodf, auxfile);
+          //shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, false);
+          *out += *tmp;
+        }
+      }
+    );
   }
+  tasks.compute();
   fmmtime.tick_print("    Upward pass");
   cout << endl;
 
