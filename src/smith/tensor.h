@@ -42,28 +42,121 @@
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>
+#include <src/smith/tatensor.h>
 
 namespace bagel {
 namespace SMITH {
+
 
 template <typename DataType>
 class Tensor_ {
   protected:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+
   protected:
     std::vector<IndexRange> range_;
     std::shared_ptr<Storage<DataType>> data_;
     int rank_;
 
-    virtual void init() const { initialized_ = true; }
     mutable bool initialized_;
 
   public:
     Tensor_(std::vector<IndexRange> in, const bool kramers = false);
 
+    template<typename D, int N>
+    Tensor_(const TATensor<D,N>& o) : Tensor_(o.indexrange()) { // delegate constuctor
+      madness::World::get_default().gop.fence();
+      std::vector<std::map<size_t, Index>> imap(N);
+      for (int n = 0; n != N; ++n) {
+        size_t off = 0lu;
+        for (auto& j : range_[n]) {
+          imap[n].emplace(off, j);
+          off += j.size();
+        }
+      }
+      // loop over tiles
+      for (auto it = o.begin(); it != o.end(); ++it) {
+        // first get range
+        const TiledArray::Range range = o.trange().make_tile_range(it.ordinal());
+        auto lo = range.lobound();
+        size_t cnt = 0;
+        std::vector<Index> indices;
+        for (auto i = lo.rbegin(); i != lo.rend(); ++i)
+          indices.push_back(imap[cnt++].at(*i));
+        if (it->probe()) {
+          auto tile = it->get();
+          std::unique_ptr<DataType[]> data(new DataType[tile.size()]);
+          assert(tile.size() == get_size(indices));
+          std::copy_n(&(tile[0]), tile.size(), data.get());
+          this->put_block(data, indices);
+        }
+      }
+      // allreduce
+      if (N != 0) allreduce();
+      // for zero dimentional array
+      if (N == 0) {
+        std::unique_ptr<DataType[]> data(new DataType[1]);
+        data[0] = o.get_scalar();
+        this->put_block(data, generate_hash_key());
+      }
+    }
+
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
       *data_ = *(o.data_);
       return *this;
+    }
+
+    // Debug function to return TiledArray Tensor from this
+    template<int N>
+    std::shared_ptr<TATensor<DataType,N>> tiledarray(const bool init = false) const {
+      assert(range_.size() == N);
+      std::vector<std::map<size_t,size_t>> keymap;
+      for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
+        std::map<size_t,size_t> key;
+        size_t off = 0lu;
+        for (auto& j : *it) {
+          key.emplace(off, j.key());
+          off += j.size();
+        }
+        keymap.push_back(key);
+      }
+      auto out = std::make_shared<TATensor<DataType,N>>(range_);
+
+      for (auto it = out->begin(); it != out->end(); ++it) {
+        const TiledArray::Range range = out->trange().make_tile_range(it.ordinal());
+        auto lo = range.lobound();
+        assert(lo.size() == N);
+        std::vector<size_t> seed(lo.size());
+        {
+          auto iter = seed.rbegin();
+          auto key = keymap.begin();
+          for (auto jt = lo.begin(); jt != lo.end(); ++jt, ++key, ++iter)
+            *iter = key->at(*jt);
+        }
+        if (get_size_alloc(seed)) {
+          // pull out the tile
+          std::unique_ptr<DataType[]> data = get_block(generate_hash_key(seed));
+          // copy
+          typename TiledArray::Array<DataType,N>::value_type tile(range);
+          assert(tile.size() == get_size_alloc(seed));
+          std::copy_n(data.get(), tile.size(), &(tile[0]));
+          *it = tile;
+        } else if (init) {
+          typename TiledArray::Array<DataType,N>::value_type tile(range);
+          std::fill_n(tile.begin(), tile.size(), 0.0);
+          *it = tile;
+        }
+      }
+      // for zero dimentional array
+      if (N == 0) {
+        if (get_size_alloc()) {
+          std::unique_ptr<DataType[]> data = get_block();
+          out->fill_local(data[0]);
+        } else {
+          out->fill_local(static_cast<DataType>(0.0));
+        }
+      }
+      return out;
     }
 
     std::shared_ptr<Tensor_<DataType>> clone() const {
@@ -131,6 +224,10 @@ class Tensor_ {
       data_->conjugate_inplace();
     }
 
+    void allreduce() { data_->allreduce(); }
+
+    virtual void init() const { initialized_ = true; } /*const due to hacky code*/
+
     std::vector<DataType> diag() const;
 
     std::shared_ptr<MatType> matrix() const;
@@ -140,6 +237,14 @@ class Tensor_ {
 
     // for Kramers tensors (does not do anything for standard tensors)
     void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { data_->set_perm(p); }
+
+    void print1(std::string label, const double thresh = 5.0e-2) const;
+    void print2(std::string label, const double thresh = 5.0e-2) const;
+    void print3(std::string label, const double thresh = 5.0e-2) const;
+    void print4(std::string label, const double thresh = 5.0e-2) const;
+    void print5(std::string label, const double thresh = 5.0e-2) const;
+    void print6(std::string label, const double thresh = 5.0e-2) const;
+    void print8(std::string label, const double thresh = 5.0e-2) const;
 };
 
 extern template class Tensor_<double>;

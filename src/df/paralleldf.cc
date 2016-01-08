@@ -103,7 +103,7 @@ shared_ptr<btas::Tensor3<double>> ParallelDF::get_block(const int i, const int i
   tuple<size_t, size_t> info = adist_now()->locate(i);
 
   // date has to be localised in this node
-  if (get<0>(info) == mpi__->rank() && !block_[0]->averaged()) {
+  if (get<0>(info) == mpi__->rank()) {
     return block_[0]->get_block(i, id, j, jd, k, kd);
   } else {
     throw logic_error("ParallelDF::get_block is an intra-node function (or bug?)");

@@ -105,7 +105,7 @@ class MOFile {
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
 
     bool hz() const { return hz_; }
-    const int nocc() const { return nocc_; }
+    int nocc() const { return nocc_; }
 
     std::shared_ptr<const Matrix> core_fock() const { return core_fock_; }
     double core_energy() const { return core_energy_; }

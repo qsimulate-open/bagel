@@ -93,7 +93,7 @@ class Alpha : public ZMatrix {
       }
     }
 
-    const int comp() const { return alpha_comp_; }
+    int comp() const { return alpha_comp_; }
 
 };
 

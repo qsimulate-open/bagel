@@ -43,22 +43,22 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Matrix)
 
-Matrix::Matrix(const int n, const int m , const bool loc) : Matrix_base<double>(n,m,loc) {
+Matrix::Matrix(const int n, const int m , const bool loc) : Matrix_base<double>(n,m,loc), std::enable_shared_from_this<Matrix>() {
 }
 
 
-Matrix::Matrix(const Matrix& o) : Matrix_base<double>(o) {
+Matrix::Matrix(const Matrix& o) : Matrix_base<double>(o), std::enable_shared_from_this<Matrix>() {
 }
 
-Matrix::Matrix(const MatView& o) : Matrix_base<double>(o) {
+Matrix::Matrix(const MatView& o) : Matrix_base<double>(o), std::enable_shared_from_this<Matrix>() {
 }
 
-Matrix::Matrix(Matrix&& o) : Matrix_base<double>(move(o)) {
+Matrix::Matrix(Matrix&& o) : Matrix_base<double>(move(o)), std::enable_shared_from_this<Matrix>() {
 }
 
 
 #ifdef HAVE_SCALAPACK
-Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
+Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()), std::enable_shared_from_this<Matrix>() {
   setlocal_(o.local());
 }
 #endif

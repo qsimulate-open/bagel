@@ -33,13 +33,18 @@
 #include <algorithm>
 #include <cassert>
 #include <src/util/f77.h>
+#include <src/util/math/zquatev/zquatev.h>
 
 namespace bagel {
 
 extern void dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, const double* adata,
                     const int* acols, const int* arind, const double* b, const int ldb, const double beta,
                     double* c, const int ldc);
-extern void zquatev_(const int n, std::complex<double>* mat, double* eig);
+
+template <typename... Args>
+auto zquatev(Args&&... args) -> decltype(ts::zquatev(std::forward<Args>(args)...)) {
+  return ts::zquatev(std::forward<Args>(args)...);
+}
 
 namespace detail {
 namespace {
@@ -89,7 +94,7 @@ template<typename T, typename U = T,
          class = typename std::enable_if< (std::is_same<double,T>::value || std::is_same<std::complex<double>,T>::value)
                                           and  std::is_convertible<U, T>::value >::type
         >
-void transpose(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0)) { assert(false); }
+void transpose(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0));
 template<>
 void transpose(const double* a, const int b, const int c, double* d, const double fac);
 template<>
@@ -101,7 +106,7 @@ template<typename T, typename U = T,
          class = typename std::enable_if< (std::is_same<double,T>::value || std::is_same<std::complex<double>,T>::value)
                                           and  std::is_convertible<U, T>::value >::type
         >
-void transpose_add(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0)) { assert(false); }
+void transpose_add(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0));
 template<>
 void transpose_add(const double* a, const int b, const int c, double* d, const double fac);
 template<>
@@ -112,7 +117,7 @@ void transpose_add(const std::complex<double>* a, const int b, const int c, std:
 template<typename T, typename U = T,
          class = typename std::enable_if< std::is_same<std::complex<double>,T>::value and std::is_convertible<U, T>::value >::type
         >
-void transpose_conjg(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0)) { assert(false); }
+void transpose_conjg(const T* a, const int b, const int c, T* d, const U fac = static_cast<U>(1.0));
 template<>
 void transpose_conjg(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
 template<>
@@ -211,6 +216,12 @@ namespace {
 
 }}
 
+}
+
+// for convenience
+namespace std {
+  inline std::complex<double> operator*(const std::complex<double>& i, const int& j) { return i * static_cast<double>(j); }
+  inline std::complex<double> operator*(const int& j, const std::complex<double>& i) { return i * static_cast<double>(j); }
 }
 
 #endif

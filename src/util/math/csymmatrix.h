@@ -68,8 +68,8 @@ class CSymMatrix {
     }
 
     // get info
-    const int nocc() const { return nocc_; }
-    const int size() const { return size_; }
+    int nocc() const { return nocc_; }
+    int size() const { return size_; }
 
     // sequential access
     double* data() { return data_.get(); }

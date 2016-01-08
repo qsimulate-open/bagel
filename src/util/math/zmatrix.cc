@@ -37,36 +37,36 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(ZMatrix)
 
-ZMatrix::ZMatrix(const int n, const int m, const bool loc) : Matrix_base<complex<double>>(n, m, loc) {
+ZMatrix::ZMatrix(const int n, const int m, const bool loc) : Matrix_base<complex<double>>(n, m, loc), std::enable_shared_from_this<bagel::ZMatrix>() {
 }
 
 
-ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double>>(o) {
+ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double>>(o), std::enable_shared_from_this<bagel::ZMatrix>() {
 }
 
 
-ZMatrix::ZMatrix(const ZMatView& o) : Matrix_base<complex<double>>(o) {
+ZMatrix::ZMatrix(const ZMatView& o) : Matrix_base<complex<double>>(o), std::enable_shared_from_this<bagel::ZMatrix>() {
 }
 
 
-ZMatrix::ZMatrix(ZMatrix&& o) : Matrix_base<complex<double>>(move(o)) {
+ZMatrix::ZMatrix(ZMatrix&& o) : Matrix_base<complex<double>>(move(o)), std::enable_shared_from_this<bagel::ZMatrix>() {
 }
 
 
-ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) {
+ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>>(r.ndim(), r.mdim()), std::enable_shared_from_this<bagel::ZMatrix>() {
   assert(r.ndim() == i.ndim() && r.mdim() == i.mdim());
   add_real_block(complex<double>(1.0, 0.0), 0, 0, ndim(), mdim(), r);
   add_real_block(complex<double>(0.0, 1.0), 0, 0, ndim(), mdim(), i);
 }
 
 
-ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim(), r.localized()) {
+ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim(), r.localized()), std::enable_shared_from_this<bagel::ZMatrix>() {
   add_real_block(factor, 0, 0, ndim(), mdim(), r);
 }
 
 
 #ifdef HAVE_SCALAPACK
-ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), o.mdim()) {
+ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), o.mdim()), std::enable_shared_from_this<bagel::ZMatrix>() {
   setlocal_(o.local());
 }
 #endif
@@ -94,7 +94,7 @@ void ZMatrix::diagonalize(VecView eig) {
   assert(eig.size() >= ndim());
 
   // assert that matrix is hermitian to ensure real eigenvalues
-  assert(is_hermitian(1.0e-10));
+//assert(is_hermitian(1.0e-10));
 
   const int n = ndim();
   int info;
@@ -281,9 +281,6 @@ void ZMatrix::purify_idempotent(const ZMatrix& s) {
 void ZMatrix::inverse() {
   assert(ndim() == mdim());
   const int n = ndim();
-#ifndef NDEBUG
-  shared_ptr<ZMatrix> ref = this->copy();
-#endif
   shared_ptr<ZMatrix> buf = this->clone();
   buf->unit();
 
@@ -300,9 +297,6 @@ void ZMatrix::inverse() {
 bool ZMatrix::inverse_half(const double thresh) {
   assert(ndim() == mdim());
   const int n = ndim();
-#ifndef NDEBUG
-  shared_ptr<ZMatrix> ref = this->copy();
-#endif
   VectorB vec(n);
   diagonalize(vec);
 
@@ -310,17 +304,16 @@ bool ZMatrix::inverse_half(const double thresh) {
     double s = vec(i) > thresh ? 1.0/std::sqrt(std::sqrt(vec(i))) : 0.0;
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](complex<double>& a) { a *= s; });
   }
-
-#ifndef NDEBUG
-  for (int i = 0; i != n; ++i)
-    if (vec[i] < thresh) cout << " throwing out " << setprecision(20) << vec[i] << endl;
-#endif
-
   *this = *this ^ *this;
+  vector<double> rm;
+  for (int i = 0; i != n; ++i)
+    if (vec[i] < thresh) rm.push_back(vec[i]);
+  if (!rm.empty())
+    cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
+            "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
+            "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 
-  const bool lindep = std::any_of(vec.begin(), vec.end(), [&thresh] (const double& e) { return e < thresh; });
-
-  return !lindep;
+  return rm.empty();
 }
 
 

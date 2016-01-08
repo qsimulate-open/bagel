@@ -148,6 +148,22 @@ void RelDFFull::scale(complex<double> a) {
 }
 
 
+shared_ptr<btas::Tensor3<std::complex<double>>>
+  RelDFFull::get_block(const int ist, const int ii, const int jst, const int jj, const int kst, const int kk) const {
+
+  auto out = make_shared<btas::Tensor3<complex<double>>>(ii, jj, kk);
+
+  shared_ptr<btas::Tensor3<double>> real = get_real()->get_block(ist, ii, jst, jj, kst, kk);
+  shared_ptr<btas::Tensor3<double>> imag = get_imag()->get_block(ist, ii, jst, jj, kst, kk);
+  auto r = real->data();
+  auto i = imag->data();
+  for (auto& o : *out)
+    o = complex<double>(*r++, *i++);
+
+  return out;
+}
+
+
 list<shared_ptr<RelDFHalfB>> RelDFFull::back_transform(array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) const {
   list<shared_ptr<RelDFHalfB>> out;
   assert(basis_.size() == 1);
@@ -221,11 +237,4 @@ shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZRDM<2>> rdm2) cons
   i->ax_plus_y( 1.0, dffull_[0]->apply_2rdm(*irdm));
   return make_shared<RelDFFull>(array<shared_ptr<DFFullDist>,2>{{r, i}}, cartesian_, basis_);
 }
-
-
-bool RelDFFull::alpha_matches(shared_ptr<const RelDFFull> o) const {
-  assert(basis_.size() == 1);
-  return basis_[0]->alpha_comp() == o->basis()[0]->alpha_comp();
-}
-
 

@@ -52,15 +52,15 @@ class K2ext {
     std::shared_ptr<const SMITH_Info<DataType>> info_;
     std::shared_ptr<const MatType> coeff_;
     std::vector<IndexRange> blocks_;
-    std::shared_ptr<Tensor_<DataType>> data_;
+    std::shared_ptr<TATensor<DataType,4>> data_;
+    std::shared_ptr<TATensor<DataType,3>> ext_; // (gamma|aa)
 
-    // some handwritten drivers
     void init() { assert(false); }
 
   public:
     K2ext(std::shared_ptr<const SMITH_Info<DataType>> r, std::shared_ptr<const MatType> c, const std::vector<IndexRange>& b);
 
-    std::shared_ptr<Tensor_<DataType>> tensor() { return data_; }
+    std::shared_ptr<TATensor<DataType,4>> tensor() { return data_; }
 };
 template<> void K2ext<double>::init();
 template<> void K2ext<std::complex<double>>::init();
@@ -76,8 +76,9 @@ class MOFock {
     std::shared_ptr<const SMITH_Info<DataType>> info_;
     std::shared_ptr<const MatType> coeff_;
     std::vector<IndexRange> blocks_;
-    std::shared_ptr<Tensor_<DataType>> data_;
-    std::shared_ptr<Tensor_<DataType>> h1_;
+    std::shared_ptr<TATensor<DataType,2>> data_;
+    std::shared_ptr<TATensor<DataType,2>> h1_;
+    VectorB eig_;
 
     double core_energy_;
 
@@ -87,12 +88,13 @@ class MOFock {
     MOFock(std::shared_ptr<const SMITH_Info<DataType>> r, const std::vector<IndexRange>& b);
 
     // fock operator
-    std::shared_ptr<Tensor_<DataType>> tensor() { return data_; }
+    std::shared_ptr<TATensor<DataType,2>> tensor() { return data_; }
     // core Fock operator minus diagonal part of the two-body integrals
-    std::shared_ptr<Tensor_<DataType>> h1() { return h1_; }
+    std::shared_ptr<TATensor<DataType,2>> h1() { return h1_; }
 
     std::shared_ptr<const MatType> coeff() const { return coeff_; }
     double core_energy() const { return core_energy_; }
+    VectorB eig() const { return eig_; }
 };
 template<> void MOFock<double>::init();
 template<> void MOFock<std::complex<double>>::init();

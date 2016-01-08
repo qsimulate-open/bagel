@@ -27,7 +27,6 @@
 #ifdef COMPILE_SMITH
 
 #include <src/smith/tensor.h>
-#include <src/smith/storagekramers.h>
 
 using namespace std;
 using namespace bagel;
@@ -35,6 +34,7 @@ using namespace bagel::SMITH;
 
 template <typename DataType>
 Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers) : range_(in), rank_(in.size()), initialized_(false) {
+  assert(!kramers);
   // make block list
   if (!in.empty()) {
     LoopGenerator lg(in);
@@ -54,10 +54,7 @@ Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers) : range_(i
       off += size;
     }
 
-    if (!kramers)
-      data_ = make_shared<Storage<DataType>>(hashmap, false);
-    else
-      data_ = make_shared<StorageKramers<DataType>>(hashmap, false);
+    data_ = make_shared<Storage<DataType>>(hashmap, false);
   } else {
     rank_ = 0;
     map<size_t, size_t> hashmap {{generate_hash_key(), 1lu}};
@@ -174,6 +171,211 @@ shared_ptr<Civector<DataType>> Tensor_<DataType>::civec(shared_ptr<const Determi
   copy_n(civ.get(), dim0, out->data());
 
   return out;
+}
+
+
+template <typename DataType>
+void Tensor_<DataType>::print2(string label, const double thresh) const {
+  cout << endl << "======================================" << endl;
+  cout << " > debug print out " << label << endl << endl;
+
+  vector<IndexRange> o = indexrange();
+  assert(o.size() == 2);
+  for (auto& i1 : o[1].range()) {
+    for (auto& i0 : o[0].range()) {
+      if (!this->get_size(i0, i1)) continue;
+      unique_ptr<DataType[]> data = this->get_block(i0, i1);
+      size_t iall = 0;
+      for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+        for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+          if (abs(data[iall]) > thresh) {
+            cout << "   " << setw(4) << j0 << " " << setw(4) << j1 <<
+                           " " << setprecision(10) << setw(20) << fixed << data[iall] << endl;
+          }
+        }
+    }
+  }
+  cout << "======================================" << endl << endl;
+}
+
+
+template <typename DataType>
+void Tensor_<DataType>::print3(string label, const double thresh) const {
+  cout << endl << "======================================" << endl;
+  cout << " > debug print out " << label << endl << endl;
+
+  vector<IndexRange> o = indexrange();
+  assert(o.size() == 3);
+  for (auto& i2 : o[2].range()) {
+    for (auto& i1 : o[1].range()) {
+      for (auto& i0 : o[0].range()) {
+        if (!this->get_size(i0, i1, i2)) continue;
+        unique_ptr<DataType[]> data = this->get_block(i0, i1, i2);
+        size_t iall = 0;
+        for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+          for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+            for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+              if (abs(data[iall]) > thresh) {
+                cout << "   " << setw(4) << j0 << " " << setw(4) << j1 << " " << setw(4) << j2 <<
+                               " " << setprecision(10) << setw(20) << fixed << data[iall] << endl;
+              }
+            }
+      }
+    }
+  }
+  cout << "======================================" << endl << endl;
+}
+
+
+template <typename DataType>
+void Tensor_<DataType>::print4(string label, const double thresh) const {
+  cout << endl << "======================================" << endl;
+  cout << " > debug print out " << label << endl << endl;
+
+  vector<IndexRange> o = indexrange();
+  assert(o.size() == 4);
+  for (auto& i3 : o[3].range()) {
+    for (auto& i2 : o[2].range()) {
+      for (auto& i1 : o[1].range()) {
+        for (auto& i0 : o[0].range()) {
+          if (!this->get_size_alloc(i0, i1, i2, i3)) continue;
+          unique_ptr<DataType[]> data = this->get_block(i0, i1, i2, i3);
+          size_t iall = 0;
+          for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                  if (abs(data[iall]) > thresh) {
+                     cout << "   " << setw(4) << j0 << " " << setw(4) << j1 <<
+                                    " " << setw(4) << j2 << " " << setw(4) << j3 <<
+                                    " " << setprecision(10) << setw(20) << fixed << data[iall] << endl;
+                  }
+                }
+        }
+      }
+    }
+  }
+  cout << "======================================" << endl << endl;
+}
+
+
+template <typename DataType>
+void Tensor_<DataType>::print5(string label, const double thresh) const {
+  cout << endl << "======================================" << endl;
+  cout << " > debug print out " << label << endl << endl;
+
+  vector<IndexRange> o = indexrange();
+  assert(o.size() == 5);
+  for (auto& i4 : o[4].range()) {
+    for (auto& i3 : o[3].range()) {
+      for (auto& i2 : o[2].range()) {
+        for (auto& i1 : o[1].range()) {
+          for (auto& i0 : o[0].range()) {
+            if (!this->get_size(i0, i1, i2, i3, i4)) continue;
+            unique_ptr<DataType[]> data = this->get_block(i0, i1, i2, i3, i4);
+            size_t iall = 0;
+            for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4)
+               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                     for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                       if (abs(data[iall]) > thresh) {
+                          cout << "   " << setw(4) << j0 << " " << setw(4) << j1 <<
+                                         " " << setw(4) << j2 << " " << setw(4) << j3 << " " << setw(4) << j4 <<
+                                         " " << setprecision(10) << setw(20) << fixed << data[iall] << endl;
+                       }
+                     }
+          }
+        }
+      }
+    }
+  }
+  cout << "======================================" << endl << endl;
+}
+
+
+template <typename DataType>
+void Tensor_<DataType>::print6(string label, const double thresh) const {
+  cout << endl << "======================================" << endl;
+  cout << " > debug print out " << label << endl << endl;
+
+  vector<IndexRange> o = indexrange();
+  assert(o.size() == 6);
+  for (auto& i5 : o[5].range()) {
+    for (auto& i4 : o[4].range()) {
+       for (auto& i3 : o[3].range()) {
+         for (auto& i2 : o[2].range()) {
+           for (auto& i1 : o[1].range()) {
+             for (auto& i0 : o[0].range()) {
+               if (!this->get_size(i0, i1, i2, i3, i4, i5)) continue;
+               unique_ptr<DataType[]> data = this->get_block(i0, i1, i2, i3, i4, i5);
+               size_t iall = 0;
+               for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5)
+                 for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4)
+                   for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                     for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                       for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                         for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                           if (abs(data[iall]) > thresh) {
+                              cout << "   " << setw(4) << j0 << " " << setw(4) << j1 <<
+                                             " " << setw(4) << j2 << " " << setw(4) << j3 <<
+                                             " " << setw(4) << j4 << " " << setw(4) << j5 <<
+                                             " " << setprecision(10) << setw(20) << fixed << data[iall] << endl;
+                           }
+                         }
+            }
+          }
+        }
+      }
+    }
+  }
+  cout << "======================================" << endl << endl;
+}
+
+
+template <typename DataType>
+void Tensor_<DataType>::print8(string label, const double thresh) const {
+  cout << endl << "======================================" << endl;
+  cout << " > debug print out " << label << endl << endl;
+
+  vector<IndexRange> o = indexrange();
+  assert(o.size() == 8);
+  for (auto& i7 : o[7].range()) {
+    for (auto& i6 : o[6].range()) {
+      for (auto& i5 : o[5].range()) {
+        for (auto& i4 : o[4].range()) {
+          for (auto& i3 : o[3].range()) {
+            for (auto& i2 : o[2].range()) {
+              for (auto& i1 : o[1].range()) {
+                for (auto& i0 : o[0].range()) {
+                  if (!this->get_size(i0, i1, i2, i3, i4, i5, i6, i7)) continue;
+                  unique_ptr<DataType[]> data = this->get_block(i0, i1, i2, i3, i4, i5, i6, i7);
+                  size_t iall = 0;
+                  for (int j7 = i7.offset(); j7 != i7.offset()+i7.size(); ++j7)
+                    for (int j6 = i6.offset(); j6 != i6.offset()+i6.size(); ++j6)
+                      for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5)
+                        for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4)
+                          for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                                for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                                  if (abs(data[iall]) > thresh) {
+                                     cout << "   " << setw(4) << j0 << " " << setw(4) << j1 <<
+                                                    " " << setw(4) << j2 << " " << setw(4) << j3 <<
+                                                    " " << setw(4) << j4 << " " << setw(4) << j5 <<
+                                                    " " << setw(4) << j6 << " " << setw(4) << j7 <<
+                                                    " " << setprecision(10) << setw(20) << fixed << data[iall] << endl;
+                                  }
+                                }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  cout << "======================================" << endl << endl;
 }
 
 

@@ -110,6 +110,11 @@ class Storage_base {
       for (auto& i : hashtable_)
         i.second->conjugate_inplace();
     }
+
+    void allreduce() {
+      for (auto& i : hashtable_)
+        i.second->allreduce();
+    }
 };
 
 
@@ -145,6 +150,7 @@ class StorageBlock {
     void scale(const DataType& a);
 
     void conjugate_inplace();
+    void allreduce();
 };
 
 
@@ -160,6 +166,11 @@ class StorageIncore : public Storage_base<StorageBlock<DataType>> {
 
   public:
     StorageIncore(const std::map<size_t, size_t>& size, bool init);
+
+    std::unique_ptr<DataType[]> get_block(const size_t& key) const { return get_block_(key); }
+    std::unique_ptr<DataType[]> move_block(const size_t& key) { return move_block_(key); }
+    void put_block(std::unique_ptr<DataType[]>& dat, const size_t& key) { put_block_(dat, key); }
+    void add_block(const std::unique_ptr<DataType[]>& dat, const size_t& key) { add_block_(dat, key); }
 
     virtual std::unique_ptr<DataType[]> get_block() const;
     virtual std::unique_ptr<DataType[]> get_block(const Index& i0) const;
