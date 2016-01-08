@@ -51,7 +51,9 @@ class RelSpinInt {
 };
 
 
+#ifndef NDEBUG
 // Matrix elements of the time-reversal operator in atomic spinor basis
+// Currently, this is only ever used in a debug check
 class RelTRevInt : public ZMatrix {
   protected:
     const std::shared_ptr<const Geometry> geom_;
@@ -66,6 +68,7 @@ class RelTRevInt : public ZMatrix {
       compute_();
     }
 };
+#endif
 
 }
 

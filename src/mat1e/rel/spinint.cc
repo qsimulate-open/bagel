@@ -130,6 +130,7 @@ void RelSpinInt::compute_() {
 }
 
 
+#ifndef NDEBUG
 void RelTRevInt::compute_() {
   const int n = geom_->nbasis();
   copy_real_block(-1.0, 0, n, n, n, *overlap_);
@@ -137,5 +138,6 @@ void RelTRevInt::compute_() {
   copy_real_block(-0.5/(c__*c__), 2*n, 3*n, n, n, *kinetic_);
   copy_real_block( 0.5/(c__*c__), 3*n, 2*n, n, n, *kinetic_);
 }
+#endif
 
 
