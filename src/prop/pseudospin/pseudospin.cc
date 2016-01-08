@@ -436,6 +436,89 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   }
 #endif
 
+
+# if 1
+  { // time-reversal matrix - general implementation
+    auto trev_h2 = make_shared<ZMatrix>(nspin1_, nspin1_);
+    trev_h2->zero();
+    const int maxa = std::min(zfci.nele(), zfci.norb());
+    const int mina = std::max(zfci.nele() - zfci.norb(), 0);
+
+
+    /********************/
+    // Redundant, but need this info to be available
+    vector<int> aniso_state;
+    aniso_state.resize(nspin1_);
+    for (int i = 0; i != nspin1_; ++i)
+      aniso_state[i] = i;
+
+    // aniso_state can be used to request mapping excited states instead
+    const shared_ptr<const PTree> exstates = zfci.idata()->get_child_optional("aniso_state");
+    if (exstates) {
+      aniso_state = {};
+      for (auto& i : *exstates)
+        aniso_state.push_back(lexical_cast<int>(i->data()) - 1);
+      if (aniso_state.size() != nspin1_)
+        throw runtime_error("Aniso:  Wrong number of states requested for this S value (should be " + to_string(nspin1_) + ")");
+      for (int i = 0; i != nspin1_; ++i)
+        if (aniso_state[i] < 0 || aniso_state[i] >= zfci.nstate())
+         throw runtime_error("Aniso:  Invalid state requested (should be between 1 and " + to_string(zfci.nstate()) + ")");
+    }
+    /********************/
+
+    vector<array<int,2>> ab = {};
+    for (int j = maxa; j >= mina; --j)
+      ab.push_back({{j, zfci.nele()-j}});
+
+    // Loop over spin sectors
+    for (int k = 0; k != ab.size(); ++k) {
+
+      // bra
+      auto dvec_i = zfci.cc()->find(ab[k][0], ab[k][1]);
+
+      // ket (just flip alpha and beta - all other contributions will be zero)
+      auto dvec_j = zfci.cc()->find(ab[k][1], ab[k][0]);
+
+      auto det_i = dvec_i->data(0)->det();
+      auto det_j = dvec_j->data(0)->det();
+
+      // Loop over determinants
+      for (auto& ia : det_i->string_bits_a()) {
+        for (auto& ib : det_i->string_bits_b()) {
+          const int pos1_i = det_i->lexical<0>(ia);
+          const int pos2_i = det_i->lexical<1>(ib);
+          const int fullpos_i = pos1_i*det_i->lenb() + pos2_i;
+
+          const int pos1_j = det_j->lexical<0>(ib);
+          const int pos2_j = det_j->lexical<1>(ia);
+          const int fullpos_j = pos1_j*det_j->lenb() + pos2_j;
+
+          // We get a -1 from each beta electron in the ket
+          const double sign1 = (ia.count() % 2 == 0) ? 1.0 : -1.0;
+
+          // We can also have a sign change due to the reordering of orbitals within the Slater Determinant
+          const double sign2 = ((ia.count() * ib.count()) % 2 == 0) ? 1.0 : -1.0;
+
+          // Loop over pairs of ZFCI eigenstates
+          for (int i = 0; i != nspin1_; ++i) {
+            for (int j = 0; j != nspin1_; ++j) {
+
+              // Since time-reversal includes the complex conjugation operator, both the bra and ket use conjugate here
+              const complex<double> cival_ist = std::conj(dvec_i->data(aniso_state[i])->data(fullpos_i));
+              const complex<double> cival_jst = std::conj(dvec_j->data(aniso_state[j])->data(fullpos_j));
+
+              trev_h2->element(i, j) += sign1 * sign2 * cival_ist * cival_jst;
+            }
+          }
+        }
+      }
+    }
+    trev_h2->print(" **** EFFICIENT, GENERAL implementation of time-reversal matrix in ZFCI states", 24);
+    assert((*trev_h2 - *trev_h_).rms() < 1.0e-10);
+  }
+#endif
+
+
 # if 1
   { // Attempt to compute time-reversal matrix in Determinant basis
     const static Comb combination;
