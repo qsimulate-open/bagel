@@ -106,6 +106,7 @@ class Lattice {
     void print_lattice_vectors() const;
     void print_lattice_kvectors() const;
     void print_lattice_coordinates() const; // write .XYZ file
+    void print_atoms() const;
     std::array<double, 3> centre() const { return primitive_cell_->charge_center(); }
     double centre(const int i) const { return primitive_cell_->charge_center()[i]; }
     std::array<double, 3> cell_centre(const int icell) const;

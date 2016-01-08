@@ -165,6 +165,7 @@ void Tree::contract_vertex() {
 
 void Tree::build_tree() {
 
+  Timer treetime;
   nnode_ = 1;
   nodes_.resize(nnode_);
   nodes_[0] = make_shared<Node>();
@@ -231,6 +232,8 @@ void Tree::build_tree() {
       }
     }
   }
+
+  cout << "    * Tree construction: " << setw(15) << setprecision(2) << treetime.tick() << endl;
 }
 
 

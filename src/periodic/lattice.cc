@@ -335,6 +335,18 @@ void Lattice::print_lattice_coordinates() const {
 }
 
 
+void Lattice::print_atoms() const {
+  cout << "  *** Geometry ***" << endl << endl;
+  cout << endl;
+  for (auto& disp : lattice_vectors_) {
+    auto cell = make_shared<const Geometry>(*primitive_cell_, disp);
+    for (auto& atom : cell->atoms())
+      atom->print();
+  }
+  cout << endl;
+}
+
+
 array<double, 3> Lattice::cell_centre(const int icell) const {
 
   const array<double, 3> displacement = lattice_vectors_[icell];
