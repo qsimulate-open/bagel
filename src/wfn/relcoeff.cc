@@ -260,7 +260,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
 
   shared_ptr<const ZMatrix> orthog = overlap->tildex(1.0e-9);
   shared_ptr<const ZMatrix> s12 = RelCoeff_Kramers(*orthog, nclosed_, nact_, nvirt_nr(), nneg_).swap_central();
-  shared_ptr<const ZMatrix> focktmp = make_shared<DFock>(geom, hcore, slice_copy(0, nele), gaunt, breit, /*store_half*/false, /*robust*/false);
+  shared_ptr<const ZMatrix> focktmp = make_shared<DFock>(geom, hcore, slice_copy(0, nele), gaunt, breit, /*store_half*/false, /*robust*/breit);
   VectorB eig(s12->mdim());
 
   // quaternion diagonalize a fock matrix in MO basis

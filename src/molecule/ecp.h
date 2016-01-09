@@ -61,14 +61,14 @@ class ECP {
     void get_shell_maxl_ecp();
 
     std::shared_ptr<const Shell_ECP> shell_maxl_ecp() const;
-    const int ecp_maxl() const { return ecp_maxl_; }
+    int ecp_maxl() const { return ecp_maxl_; }
 
-    const int ecp_ncore() const { return ecp_ncore_; }
+    int ecp_ncore() const { return ecp_ncore_; }
 
-    const int nshell() const { return nshell_; }
+    int nshell() const { return nshell_; }
 
     const std::array<int, 3> nr() { return nr_; }
-    const int nr(const int i) const { return nr_[i]; }
+    int nr(const int i) const { return nr_[i]; }
 
     double position(const int i) const { return shells_ecp_[0]->position(i); };
     const std::array<double,3>& position() const { return shells_ecp_[0]->position(); };

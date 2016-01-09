@@ -25,6 +25,8 @@
 
 
 #include <src/periodic/tree.h>
+#include <src/util/taskqueue.h>
+#include <src/util/parallel/mpi_interface.h>
 
 using namespace bagel;
 using namespace std;
@@ -165,6 +167,7 @@ void Tree::contract_vertex() {
 
 void Tree::build_tree() {
 
+  Timer treetime;
   nnode_ = 1;
   nodes_.resize(nnode_);
   nodes_[0] = make_shared<Node>();
@@ -231,6 +234,8 @@ void Tree::build_tree() {
       }
     }
   }
+
+  cout << "    * Tree construction: " << setw(15) << setprecision(2) << treetime.tick() << endl;
 }
 
 
@@ -254,14 +259,36 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
   }
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
-  for (int i = 1; i != nnode_; ++i) {
-    nodes_[i]->compute_local_expansions(density, lmax, offsets);
-    if (nodes_[i]->is_leaf()) {
-      //////shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_exact_Coulomb_FF(density, lmax, offsets);
-      shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, dodf, auxfile);
-      *out += *tmp;
+  int u = 0;
+  if (!dodf) {
+    TaskQueue<function<void(void)>> tasks(nnode_);
+    for (int i = 1; i != nnode_; ++i) {
+      if (u++ % mpi__->size() == mpi__->rank()) {
+      tasks.emplace_back(
+        [this, i, &out, &density, lmax, offsets, dodf, auxfile] () {
+          nodes_[i]->compute_local_expansions(density, lmax, offsets);
+          if (nodes_[i]->is_leaf()) {
+            shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, dodf, auxfile);
+            *out += *tmp;
+          }
+        }
+      );
+      }
+    }
+    tasks.compute();
+  } else {
+    for (int i = 1; i != nnode_; ++i) {
+      if (u++ % mpi__->size() == mpi__->rank()) {
+        nodes_[i]->compute_local_expansions(density, lmax, offsets);
+        if (nodes_[i]->is_leaf()) {
+          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, dodf, auxfile);
+          *out += *tmp;
+        }
+      }
     }
   }
+  out->allreduce();
+
   fmmtime.tick_print("    Upward pass");
   cout << endl;
 

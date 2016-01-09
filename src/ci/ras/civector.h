@@ -285,10 +285,10 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
       std::shared_ptr<const DistRASCivector<DataType>> S2 = spin();
       return this->dot_product(*S2);
     }
-    std::shared_ptr<DistRASCivector<DataType>> spin() const { assert(false); return nullptr;} // returns S^2 | civec >
-    std::shared_ptr<DistRASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; } // S_-
-    std::shared_ptr<DistRASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; } // S_+
-    void spin_decontaminate(const double thresh = 1.0e-8) { assert(false); }
+    std::shared_ptr<DistRASCivector<DataType>> spin() const; // returns S^2 | civec >
+    std::shared_ptr<DistRASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const; // S_-
+    std::shared_ptr<DistRASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const; // S_+
+    void spin_decontaminate(const double thresh = 1.0e-8);
 
     std::shared_ptr<DistRASCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
       // action: true -> create; false -> annihilate
@@ -431,7 +431,7 @@ class RASCivector_impl : public RASCivector_base<RASBlock<DataType>> {
 
     using RASCivector_base<RASBlock<DataType>>::block;
 
-    const size_t size() const { return det_->size(); }
+    size_t size() const { return det_->size(); }
     void fill(const double a) { std::fill_n(data(), size(), a); }
     void zero() { fill(0.0); }
 
@@ -606,9 +606,9 @@ class RASCivector : public RASCivector_impl<DataType, RASCivector<DataType>> {
     std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const { return this->template transpose_impl<RASCivector<DataType>>(det); }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
-    std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return nullptr;}
-    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
-    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<RASCivector<DataType>> spin() const;
+    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const;
+    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const;
 
     void spin_decontaminate(const double thresh = 1.0e-8) { this->spin_decontaminate_impl(thresh); }
 
@@ -721,9 +721,9 @@ class RASCivecView_ : public RASCivector_impl<DataType, RASCivecView_<DataType>>
     using RASCivector_base<RASBlock<DataType>>::det;
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
-    std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return nullptr;}
-    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
-    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<RASCivector<DataType>> spin() const;
+    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const;
+    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const;
 
     void spin_decontaminate(const double thresh = 1.0e-8) { this->spin_decontaminate_impl(thresh); }
 

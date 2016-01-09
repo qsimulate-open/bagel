@@ -47,8 +47,8 @@ class DFDist : public ParallelDF {
     std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all);
 
   public:
-    DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block = nullptr, std::shared_ptr<const ParallelDF> df = nullptr, std::shared_ptr<Matrix> data2 = nullptr)
-      : ParallelDF(naux, nbas, nbas, df, data2) {
+    DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block = nullptr, std::shared_ptr<const ParallelDF> df = nullptr, std::shared_ptr<Matrix> data2 = nullptr,
+           const bool serial = false) : ParallelDF(naux, nbas, nbas, df, data2, serial) {
       if (block)
         block_.push_back(block);
     }
@@ -131,7 +131,8 @@ class DFDist_ints : public DFDist {
 
   public:
     DFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
-                const double thr, const bool inverse, const double dum, const bool average = false, const std::shared_ptr<Matrix> data2 = nullptr) : DFDist(nbas, naux) {
+                const double thr, const bool inverse, const double dum, const bool average = false, const std::shared_ptr<Matrix> data2 = nullptr, const bool serial = false)
+      : DFDist(nbas, naux, nullptr, nullptr, nullptr, serial) {
 
       // 3index Integral is now made in DFBlock.
       std::vector<std::shared_ptr<const Shell>> ashell, b1shell, b2shell;

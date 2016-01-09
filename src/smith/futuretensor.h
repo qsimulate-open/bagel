@@ -33,25 +33,39 @@
 namespace bagel {
 namespace SMITH {
 
-template<typename DataType>
-class FutureTensor_ : public Tensor_<DataType> {
+template<typename DataType, int N>
+class FutureTATensor : public TATensor<DataType,N> {
   protected:
-    using Tensor_<DataType>::initialized_;
+    using TATensor<DataType,N>::initialized_;
 
   protected:
-    // TODO actually not const, but this is the only way to make it compiled...
-    void init() const override { init_->compute(); initialized_ = true; }
+    std::shared_ptr<Tensor_<DataType>> tensor_;
     mutable std::shared_ptr<Task> init_;
 
   public:
-    FutureTensor_(const Tensor_<DataType>& i,  std::shared_ptr<Task> j) : Tensor_<DataType>(i), init_(j) { }
+    FutureTATensor(const TATensor<DataType,N>& i,  std::shared_ptr<Tensor_<DataType>> t, std::shared_ptr<Task> j) : TATensor<DataType,N>(i), tensor_(t), init_(j) { }
 
+    void init() override {
+      init_->compute();
+      TATensor<DataType,N>::operator=(std::move(*tensor_->template tiledarray<N>()));
+    }
 };
 
-namespace CASPT2 { using FutureTensor = FutureTensor_<double>; }
-namespace MRCI   { using FutureTensor = FutureTensor_<double>; }
-namespace RelCASPT2 { using FutureTensor = FutureTensor_<std::complex<double>>; }
-namespace RelMRCI   { using FutureTensor = FutureTensor_<std::complex<double>>; }
+template<typename DataType, int N>
+class FutureTATensor_new : public TATensor<DataType,N> {
+  protected:
+    std::shared_ptr<TATensor<DataType,N>> tensor_;
+    mutable std::shared_ptr<Task> init_;
+
+  public:
+    FutureTATensor_new(std::shared_ptr<TATensor<DataType,N>> i, std::shared_ptr<Task> j) : TATensor<DataType,N>(*i), tensor_(i), init_(j) { }
+
+    void init() override {
+      this->initialized_ = true;
+      init_->compute();
+      TATensor<DataType,N>::operator=(std::move(*tensor_));
+    }
+};
 
 }
 }

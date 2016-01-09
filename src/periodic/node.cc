@@ -529,8 +529,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
        naux += aux_atom->nbasis();
     }
 
-    df_ = form_fit(nbas, naux, close_atoms, aux_atoms);
-
     Matrix subden(nbas, nbas);
     int o0 = 0;
     for (int i0 = 0; i0 != size; ++i0) {
@@ -550,7 +548,8 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
       o0 += b0size;
     }
 
-    shared_ptr<const Matrix> o = df_->compute_Jop(make_shared<const Matrix>(subden));
+    shared_ptr<const DFDist> df = form_fit(nbas, naux, close_atoms, aux_atoms);
+    shared_ptr<const Matrix> o = df->compute_Jop(make_shared<const Matrix>(subden));
 
     o0 = 0;
     for (int i0 = 0; i0 != size; ++i0) {

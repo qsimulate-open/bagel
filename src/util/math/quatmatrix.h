@@ -38,17 +38,25 @@ class QuatMatrix : public ZMatrix {
     // TODO : implement constructor that can take "00" and "01" matrices and build the rest of the matrix
 
     void diagonalize(VecView eig) override {
+#ifndef NDEBUG
+      auto tmp = std::make_shared<ZMatrix>(*this);
+      VectorB eig2(ndim());
+      std::static_pointer_cast<ZMatrix>(tmp)->diagonalize(eig2);
+#endif
       assert(ndim() == mdim());
       assert(eig.size() >= ndim());
       // assert that matrix is hermitian to ensure real eigenvalues
       assert(is_hermitian(1.0e-10));
 
-      // TODO parallelize
-      zquatev_(ndim(), data(), eig.data());
+      zquatev(ndim(), data(), ndim(), eig.data());
 
       // zquatev_ only gives half the eigenvalues; get the others using symmetry
       for (int i = 0; i != ndim()/2; ++i) {
         eig(ndim()/2+i) = eig(i);
+#ifndef NDEBUG
+        if (std::max(std::abs(eig(i)-eig2(i*2)), std::abs(eig(i)-eig2(i*2+1))) > 1.0e-6)
+          std::cout << " warning - eigenvalues:" << std::setprecision(10) << std::fixed << std::setw(20) << eig(i) << std::setw(20) << eig2(i*2) << std::setw(20) << eig2(i*2+1) << std::endl;
+#endif
       }
 
       synchronize();

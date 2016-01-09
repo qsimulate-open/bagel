@@ -225,27 +225,35 @@ int main() {
 
 #if 1
   vector<array<mpreal, 3>> primkvecs(3);
+  mpreal volume = zero;
   switch (ndim) {
     case 1:
       {
         const mpreal a1sq = dot(primvecs[0], primvecs[0]);
         for (int i = 0; i != 3; ++i)
           primkvecs[0][i] = primvecs[0][i] / a1sq;
+        volume = sqrt(a1sq);
+        break;
       }
     case 2:
       {
         array<mpreal, 3> a12 = cross(primvecs[0], primvecs[1]);
-        const mpreal scale = one / dot(a12, a12);
+        const mpreal a12sq = dot(a12, a12);
+        volume = sqrt(a12sq);
+        const mpreal scale = one / a12sq;
         primkvecs[0] = cross(primvecs[1], a12, scale);
         primkvecs[1] = cross(a12, primvecs[0], scale);
+        break;
       }
     case 3:
       {
         array<mpreal, 3> a23 = cross(primvecs[1], primvecs[2]);
-        const mpreal scale = one / dot(primvecs[0], a23);
+        volume = dot(primvecs[0], a23);
+        const mpreal scale = one / volume;
         primkvecs[0] = cross(primvecs[1], primvecs[2], scale);
         primkvecs[1] = cross(primvecs[2], primvecs[0], scale);
         primkvecs[2] = cross(primvecs[0], primvecs[1], scale);
+        break;
       }
   }
   for (int i = ndim; i != 3; ++i)
@@ -264,7 +272,7 @@ int main() {
 
     if (rsq > zero) {
       for (int l = 0; l <= lmax; ++l) {
-        const complex<mpreal> coeffl = std::pow(complex<mpreal>(zero, one), l) * mpfr::pow(pi, l-half);
+        const complex<mpreal> coeffl = std::pow(complex<mpreal>(zero, one), l) * mpfr::pow(pi, l-half) / volume;
 
         for (int m = -l; m <= l; ++m) {
           const int am = abs(m);

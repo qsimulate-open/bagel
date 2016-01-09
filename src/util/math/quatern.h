@@ -90,9 +90,9 @@ class Quatern {
     std::array<T, 3> ijk() { return std::array<T, 3>{{data_[1], data_[2], data_[3]}}; }
 
     void print() const { }
-    double norm() const { assert(false); return 0.0; }
-    double dot_product(const Quatern<T>&) const { assert(false); return 0.0; }
-    void normalize() { assert(false); }
+    double norm() const;
+    double dot_product(const Quatern<T>&) const;
+    void normalize();
 };
 
 template<> void Quatern<double>::print() const;

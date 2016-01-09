@@ -27,10 +27,7 @@
 #ifndef __SRC_SMITH_TASK_H
 #define __SRC_SMITH_TASK_H
 
-#include <stddef.h>
 #include <list>
-#include <memory>
-#include <algorithm>
 #include <src/smith/storage.h>
 
 namespace bagel {
@@ -60,9 +57,7 @@ class Task : public std::enable_shared_from_this<Task> {
     }
 
     void delete_dep(std::shared_ptr<Task> a) {
-      auto iter = std::find(depend_.begin(), depend_.end(), a);
-      if (iter != depend_.end()) depend_.erase(iter);
-      // depend_ should not have duplicated records.
+      depend_.remove(a);
       assert(std::find(depend_.begin(), depend_.end(), a) == depend_.end());
     }
 
@@ -82,10 +77,9 @@ class AccTask : public Task {
   protected:
     double target_;
   public:
-    AccTask() {}
+    AccTask() : target_(0.0) {}
     ~AccTask() {}
     double target() const { return target_; }
-
 };
 
 }

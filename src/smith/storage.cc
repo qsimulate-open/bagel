@@ -29,6 +29,7 @@
 #include <src/util/f77.h>
 #include <src/util/math/algo.h>
 #include <src/smith/storage.h>
+#include <src/util/parallel/mpi_interface.h>
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
@@ -128,6 +129,22 @@ void StorageBlock<DataType>::scale(const DataType& a) {
 template<typename DataType>
 void StorageBlock<DataType>::conjugate_inplace() {
   blas::conj_n(data_.get(), size_alloc());
+}
+
+template<typename DataType>
+void StorageBlock<DataType>::allreduce() {
+  // assuming that this is called from all the processes
+  int exist = initialized_;
+  mpi__->allreduce(&exist, 1);
+  assert(exist == 0 || exist == 1);
+  if (exist) {
+    if (!initialized_) {
+      initialized_ = true;
+      data_ = unique_ptr<DataType[]>(new DataType[size()]);
+      zero();
+    }
+    mpi__->allreduce(data_.get(), size());
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

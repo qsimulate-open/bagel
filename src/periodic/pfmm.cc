@@ -25,7 +25,7 @@
 
 
 #include <src/periodic/pfmm.h>
-#include <boost/math/special_functions/gamma.hpp>
+#include <boost/math/special_functions/expint.hpp>
 
 using namespace std;
 using namespace bagel;
@@ -59,7 +59,7 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
   max_height_ = 21; // tree construction 21 is absolute max
   do_contract_ = true;
 
-//  compute_Mlm_direct();
+  compute_Mlm_direct();
   compute_Mlm();
   stack_->release(size_allocated_, buff_);
   resources__->release(stack_);
@@ -100,8 +100,9 @@ void PFMM::compute_Mlm_direct() {
     mvec[1] = -(idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1]);
     mvec[2] = -(idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2]);
     const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
+    if (rsq > numerical_zero__) {
     const double r = sqrt(rsq);
-    const double ctheta = (r > numerical_zero__) ? mvec[2]/r : 0.0;
+    const double ctheta = mvec[2]/r;
     const double phi = atan2(mvec[1], mvec[0]);
 
     for (int l = 0; l <= lmax_; ++l) {
@@ -121,6 +122,7 @@ void PFMM::compute_Mlm_direct() {
         const double imag = sin(am * phi) * plm_tilde;
         mstar[imul] += complex<double>(real, imag);
       }
+    }
     }
   }
 
@@ -149,8 +151,9 @@ void PFMM::compute_Mlm_direct() {
     mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
 
     const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
+    if (rsq > numerical_zero__) {
     const double r = sqrt(rsq);
-    const double ctheta = (r > numerical_zero__) ? mvec[2]/r : 0.0;
+    const double ctheta = mvec[2]/r;
     const double phi = atan2(mvec[1], mvec[0]);
 
     for (int l = 0; l < max_rank_; ++l) {
@@ -170,6 +173,7 @@ void PFMM::compute_Mlm_direct() {
         const double imag = sin(am * phi) * plm_tilde;
         lstar[imul] += complex<double>(real, imag);
       }
+    }
     }
   }
 
@@ -202,7 +206,7 @@ void PFMM::compute_Mlm_direct() {
     }
   }
 
-#if 0
+#if 1
   // DEBUG
   cout << "RESULTS FROM DIRECT SUMMATION" << endl;
   for (int l = 0; l < max_rank_; ++l)
@@ -271,13 +275,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
             glower += cweights[i] * pow(croots[i], l);
         }
 
-        const double boost_gamma = 0.5 * boost::math::tgamma_lower(l + 0.5, T_[ivec]) / pow(T_[ivec], l+0.5);
-//        assert(abs(boost_gamma - glower) < 1e-15);
-        if (abs(boost_gamma - glower) > 1e-14)
-          cout << "*** warning: " << l << "   " << setprecision(16) << T_[ivec] << " * " << boost_gamma << "  " << glower << endl;
-
         glower *= 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
-        //glower = boost_gamma * 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
         const double gupper = 1.0 / pow(r, l+1.0) - glower;
 
         for (int mm = 0; mm <= 2 * l; ++mm) {
@@ -309,6 +307,8 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     }
   }
 
+#if 1
+  double volume = 0.0;
   vector<array<double, 3>> primkvecs(3);
   switch (ndim_) {
     case 1:
@@ -316,21 +316,28 @@ void PFMM::compute_Mlm() { // rectangular scell for now
         const double a1sq = dot(primvecs[0], primvecs[0]);
         for (int i = 0; i != 3; ++i)
           primkvecs[0][i] = primvecs[0][i] / a1sq;
+        volume = sqrt(a1sq);
+        break;
       }
     case 2:
       {
         array<double, 3> a12 = cross(primvecs[0], primvecs[1]);
-        const double scale = 1.0 / dot(a12, a12);
+        const double a12sq = dot(a12, a12);
+        volume = sqrt(a12sq);
+        const double scale = 1.0 / a12sq;
         primkvecs[0] = cross(primvecs[1], a12, scale);
         primkvecs[1] = cross(a12, primvecs[0], scale);
+        break;
       }
     case 3:
       {
         array<double, 3> a23 = cross(primvecs[1], primvecs[2]);
-        const double scale = 1.0 / dot(primvecs[0], a23);
+        volume = dot(primvecs[0], a23);
+        const double scale = 1.0 / volume;
         primkvecs[0] = cross(primvecs[1], primvecs[2], scale);
         primkvecs[1] = cross(primvecs[2], primvecs[0], scale);
         primkvecs[2] = cross(primvecs[0], primvecs[1], scale);
+        break;
       }
   }
 
@@ -344,12 +351,22 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     kvec[1] = idx[0] * primkvecs[0][1] + idx[1] * primkvecs[1][1] + idx[2] * primkvecs[2][1];
     kvec[2] = idx[0] * primkvecs[0][2] + idx[1] * primkvecs[1][2] + idx[2] * primkvecs[2][2];
     const double rsq = kvec[0]*kvec[0] + kvec[1]*kvec[1] + kvec[2]*kvec[2];
+    const double x = rsq * pibeta;
     if (rsq > numerical_zero__) {
       const double r = sqrt(rsq);
       const double ctheta = kvec[2]/r;
       const double phi = atan2(kvec[1], kvec[0]);
+      double gamma = 0.0;
+      if (ndim_ == 3) {
+        gamma = exp(-x);
+      } else if (ndim_ == 2) {
+        gamma = sqrt(pi__) * erfc(sqrt(x));
+      } else {
+        gamma = -1.0 * boost::math::expint(-x);
+      }
+      const double prefact = pow(pi__, 1-ndim_/2.0) * pow(r, 1.0-ndim_) * gamma / volume;
       for (int l = 0; l < max_rank_; ++l) {
-        const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l-0.5);
+        const complex<double> coeffl = std::pow(complex<double>(0.0, 1.0), l) * pow(pi__, l) * sgamma(l, r);
 
         for (int mm = 0; mm <= 2 * l; ++mm) {
           const int m = mm - l;
@@ -366,14 +383,14 @@ void PFMM::compute_Mlm() { // rectangular scell for now
           const double sign = (m >=0) ? 1.0 : -1.0;
 
           // smooth term
-          const double coeffm = plm_tilde * sgamma(l, r) * exp(-rsq * pibeta) / rsq;
-          double real = coeffm * sign * cos(am * phi);
-          double imag = coeffm * sin(am * phi);
-          mlm_[imul] += coeffl * complex<double>(real, imag);
+          double real = sign * cos(am * phi);
+          double imag = sin(am * phi);
+          mlm_[imul] += prefact * coeffl * plm_tilde * complex<double>(real, imag);
         }
       }
     }
   }
+#endif
 
 #if 0
   // DEBUG
@@ -460,7 +477,7 @@ vector<shared_ptr<const ZMatrix>> PFMM::compute_multipoles(shared_ptr<const Geom
 
 vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const {
 
-  density->print_real_part("Density");
+  //density->print_real_part("Density");
 
   // sums over L and m have extent ws_ for now
   const int nvec = pow(2*ws_+1, ndim_);
@@ -623,7 +640,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   time.tick_print("  Construct superdensity");
 
   // construct a tree from the super-geometry, ws for FMM is 2 by default
-  Tree fmm_tree(supergeom, max_height_, do_contract_);
+  Tree fmm_tree(supergeom, max_height_, do_contract_, thresh_);
   time.tick_print("  Construct tree");
   const string auxfile = scell_->geom()->auxfile();
   fmm_tree.fmm(lmax_, superden, dodf_, auxfile);
@@ -672,5 +689,6 @@ shared_ptr<const PData> PFMM::pcompute_Jop(shared_ptr<const PData> density) cons
   shared_ptr<const PData> ff = compute_far_field(density);
   assert(nf->nblock() == 2*ws_+1);
 
+//  return make_shared<const PData>(*nf);
   return make_shared<const PData>(*nf + *ff);
 }

@@ -110,6 +110,7 @@ int main() {
     mvec[1] = -(idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1]);
     mvec[2] = -(idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2]);
     const mpreal rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
+    if (rsq > zero) {
     const mpreal r = sqrt(rsq);
     const mpreal ctheta = (r > zero) ? mvec[2]/r : zero;
     const mpreal phi = atan2(mvec[1], mvec[0]);
@@ -132,6 +133,7 @@ int main() {
 
         mstar[imul] += complex<mpreal>(real, imag);
       }
+    }
     }
   }
 
@@ -176,6 +178,7 @@ int main() {
     mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
 
     const mpreal rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
+    if (rsq > zero) {
     const mpreal r = sqrt(rsq);
     const mpreal ctheta = (r > zero) ? mvec[2]/r : zero;
     const mpreal phi = atan2(mvec[1], mvec[0]);
@@ -198,6 +201,7 @@ int main() {
 
         lstar[imul] += complex<mpreal>(real, imag);
       }
+    }
     }
   }
 

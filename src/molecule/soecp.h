@@ -61,8 +61,8 @@ class SOECP {
     std::vector<std::shared_ptr<const Shell_ECP>> shells_so() const { return shells_so_; }
     std::shared_ptr<const Shell_ECP> shell_so(const int i) const { return shells_so_[i]; }
 
-    const int nshell() const { return shells_so_.size(); }
-    const int so_maxl() const { return so_maxl_; }
+    int nshell() const { return shells_so_.size(); }
+    int so_maxl() const { return so_maxl_; }
 
     double position(const int i) const { return shells_so_.front()->position(i); };
     const std::array<double,3>& position() const { return shells_so_.front()->position(); };

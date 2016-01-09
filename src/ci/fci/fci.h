@@ -170,6 +170,7 @@ class FCI : public Method {
     void compute_rdm12(const int ist, const int jst);
 
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<3>>> rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const;
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;

@@ -60,7 +60,7 @@ class ASDSpin : public SparseMatrix {
     template<typename T>
     ASDSpin(const int dimension, const ASDSpinMap<T>& spinmap, const int max) : SparseMatrix(dimension, dimension, spinmap.coords()), max_spin_(max) {}
 
-    const int max() const { return max_spin_; }
+    int max() const { return max_spin_; }
 
     std::shared_ptr<Matrix> apply(const Matrix& o) const;
     void filter(Matrix& o, const int desired_spin) const;

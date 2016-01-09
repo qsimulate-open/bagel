@@ -61,6 +61,16 @@ double relcas_energy(std::string inp) {
         ref.reset();
       if (ref) ref = ref->project_coeff(geom);
 
+    } else if (method == "hf") {
+      auto scf = std::make_shared<RHF>(itree, geom);
+      scf->compute();
+      ref = scf->conv_to_ref();
+
+    } else if (method == "dhf") {
+      auto scf = std::make_shared<Dirac>(itree, geom);
+      scf->compute();
+      ref = scf->conv_to_ref();
+
     } else if (method == "casscf") {
       std::string algorithm = itree->get<std::string>("algorithm", "");
       if (algorithm == "superci" || algorithm == "") {
