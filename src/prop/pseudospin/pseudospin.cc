@@ -520,6 +520,19 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   }
   assert(is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true));
 
+#ifndef NDEBUG
+  { // Verify that the time-reversal operator has taken the correct form
+    // The numerical threshold is arbitrary and might need adjustment
+    auto trev_s = make_shared<ZMatrix>(transform % *trev_h_ * *transform.get_conjg());
+    auto trev_target = make_shared<ZMatrix>(nspin1_, nspin1_);
+    for (int k = 0; k <= nspin_; ++k) {
+      const double val = (k % 2 == 0) ? -1.0 : 1.0;
+      trev_target->element(k, nspin_ - k) = val;
+    }
+    assert((*trev_s - *trev_target).rms() < 1.0e-10);
+  }
+#endif
+
   return spinham_s;
 }
 
