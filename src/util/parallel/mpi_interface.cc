@@ -34,6 +34,10 @@
 #include <src/util/parallel/scalapack.h>
 #include <src/util/parallel/mpi_interface.h>
 
+#ifdef COMPILE_SMITH
+#include <tiledarray.h>
+#endif
+
 using namespace std;
 using namespace bagel;
 
@@ -90,12 +94,16 @@ MPI_Interface::MPI_Interface()
 
 MPI_Interface::~MPI_Interface() {
 #ifdef HAVE_MPI_H
-#ifndef SCALAPACK
-  MPI_Finalize();
-#else
+#ifdef SCALAPACK
   blacs_gridexit_(context_);
-  blacs_exit_(0);
+  blacs_exit_(1);
 #endif
+#ifdef COMPILE_SMITH
+  if (madness::initialized())
+    madness::finalize();
+  else
+#endif
+    MPI_Finalize();
 #endif
 }
 

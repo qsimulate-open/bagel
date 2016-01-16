@@ -40,8 +40,8 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   static_assert(is_same<DataType,double>::value or is_same<DataType,complex<double>>::value,
                 "illegal DataType for SpinFreeMethod");
 
-  { // initializing madness world
-    assert(!madness::initialized());
+  // initializing madness world
+  if (!madness::initialized()) {
     int czero = 0;
     char** cnull;
     madness::initialize(czero, cnull);
@@ -126,7 +126,6 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
 template<typename DataType>
 SpinFreeMethod<DataType>::~SpinFreeMethod() {
-  madness::finalize();
 #ifdef HAVE_MKL_H
   mkl_set_num_threads(info_->num_threads());
 #endif
