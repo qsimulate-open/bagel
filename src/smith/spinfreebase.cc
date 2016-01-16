@@ -45,10 +45,10 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     int czero = 0;
     char** cnull;
     madness::initialize(czero, cnull);
-#ifdef HAVE_MKL_H
-    mkl_set_num_threads(1);
-#endif
   }
+#ifdef HAVE_MKL_H
+  mkl_set_num_threads(1);
+#endif
 
   Timer timer;
 
