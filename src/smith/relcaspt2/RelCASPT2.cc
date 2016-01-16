@@ -43,28 +43,27 @@ RelCASPT2::RelCASPT2::RelCASPT2(shared_ptr<const SMITH_Info<std::complex<double>
 void RelCASPT2::RelCASPT2::solve() {
   Timer timer;
   print_iteration();
+  shared_ptr<Queue> sourceq = make_sourceq();
+  while (!sourceq->done())
+    sourceq->next_compute();
   Timer mtimer;
   int iter = 0;
   for ( ; iter != info_->maxiter(); ++iter) {
-    shared_ptr<Queue> source = make_sourceq();
-    while (!source->done())
-      source->next_compute();
     energy_ = detail::real(dot_product_transpose(s, t2));
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
     diagonal(r, t2);
+    r->ax_plus_y(1.0, s);
     energy_ += detail::real(dot_product_transpose(r, t2));
     const double err = r->rms();
     print_iteration(iter, energy_, err, mtimer.tick());
-
     t2 = update_amplitude(t2, r);
     r->zero();
     if (err < info_->thresh()) break;
   }
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
-
   cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_+info_->ciwfn()->energy(0) << endl;
 }
 
