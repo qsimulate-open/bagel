@@ -23,15 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <fstream>
-#include <sstream>
+#include <cassert>
 #include <src/util/parallel/process.h>
 #include <src/util/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
 
-Process::Process() : print_level_(3) {
+Process::Process() : print_level_(3), muted_(false) {
   int rank;
 #ifdef HAVE_MPI_H
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -41,20 +40,28 @@ Process::Process() : print_level_(3) {
   if (rank != 0) {
     cout_orig = cout.rdbuf();
     cout.rdbuf(ss_.rdbuf());
+    muted_ = true;
   }
 }
 
 Process::~Process() {
-  int rank;
-#ifdef HAVE_MPI_H
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#else
-  rank = 0;
-#endif
-  if (rank != 0)
+  if (muted_)
     cout.rdbuf(cout_orig);
 }
 
+void Process::cout_on() {
+  if (mpi__->rank() != 0) {
+    assert(muted_);
+    cout.rdbuf(cout_orig);
+    muted_ = false;
+  }
+}
 
-void Process::cout_on()  const { if (mpi__->rank() != 0) cout.rdbuf(cout_orig); }
-void Process::cout_off() const { if (mpi__->rank() != 0) cout.rdbuf(ss_.rdbuf()); }
+
+void Process::cout_off() {
+  if (mpi__->rank() != 0) {
+    assert(!muted_);
+    cout.rdbuf(ss_.rdbuf());
+    muted_ = true;
+  }
+}

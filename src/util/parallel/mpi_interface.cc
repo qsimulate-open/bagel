@@ -94,7 +94,7 @@ MPI_Interface::MPI_Interface()
 
 MPI_Interface::~MPI_Interface() {
 #ifdef HAVE_MPI_H
-#ifdef SCALAPACK
+#ifdef HAVE_SCALAPACK
   blacs_gridexit_(context_);
   blacs_exit_(1);
 #endif
