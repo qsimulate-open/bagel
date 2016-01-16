@@ -4,11 +4,11 @@ libbagel_smith_la_SOURCES = smith_info.cc storage.cc loopgenerator.cc denom.cc t
 spinfreebase.cc subtask.cc queue.cc smith.cc caspt2grad.cc moint.cc diagonal.cc \
 \
 caspt2/CASPT2.cc caspt2/CASPT2_gamma.cc caspt2/CASPT2_residualq.cc caspt2/CASPT2_corrq.cc caspt2/CASPT2_deciq.cc \
-caspt2/CASPT2_densityq.cc caspt2/CASPT2_energyq.cc caspt2/CASPT2_density1q.cc caspt2/CASPT2_density2q.cc \
+caspt2/CASPT2_densityq.cc caspt2/CASPT2_sourceq.cc caspt2/CASPT2_density1q.cc caspt2/CASPT2_density2q.cc \
 caspt2/CASPT2_tasks1.cc caspt2/CASPT2_tasks2.cc caspt2/CASPT2_tasks3.cc caspt2/CASPT2_tasks4.cc caspt2/CASPT2_tasks5.cc \
 caspt2/CASPT2_tasks6.cc caspt2/CASPT2_tasks7.cc caspt2/CASPT2_tasks8.cc caspt2/CASPT2_tasks9.cc caspt2/CASPT2_tasks10.cc \
 caspt2/CASPT2_tasks11.cc caspt2/CASPT2_tasks12.cc caspt2/CASPT2_tasks13.cc caspt2/CASPT2_tasks14.cc caspt2/CASPT2_tasks15.cc \
-caspt2/CASPT2_tasks16.cc caspt2/CASPT2_tasks17.cc caspt2/CASPT2_gen1.cc caspt2/CASPT2_gen2.cc \
+caspt2/CASPT2_tasks16.cc caspt2/CASPT2_gen1.cc caspt2/CASPT2_gen2.cc \
 \
 mrci/MRCI.cc mrci/MRCI_gamma.cc mrci/MRCI_sourceq.cc mrci/MRCI_residualq.cc mrci/MRCI_normq.cc \
 mrci/MRCI_tasks1.cc mrci/MRCI_tasks2.cc mrci/MRCI_tasks3.cc mrci/MRCI_tasks4.cc mrci/MRCI_tasks5.cc \

@@ -41,7 +41,7 @@ void Task50::Task_local::compute() {
   const Index x3 = b(4);
   const Index x2 = b(5);
   const Index x0 = b(6);
-  // tensor label: Gamma298
+  // tensor label: Gamma276
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x4, x1, x3, x2, x0);
   {
     if (x2 == x4 && x1 == x3) {
@@ -166,7 +166,7 @@ void Task51::Task_local::compute() {
   const Index x3 = b(2);
   const Index x2 = b(3);
   const Index x0 = b(4);
-  // tensor label: Gamma299
+  // tensor label: Gamma277
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x3, x2, x0);
   {
     if (x1 == x3) {
@@ -213,7 +213,7 @@ void Task52::Task_local::compute() {
   const Index x4 = b(4);
   const Index x3 = b(5);
   const Index x2 = b(6);
-  // tensor label: Gamma301
+  // tensor label: Gamma279
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x0, x1, x4);
   // associated with merged
   std::unique_ptr<double[]> fdata = in(3)->get_block(x3, x2);
@@ -311,7 +311,7 @@ void Task53::Task_local::compute() {
   const Index x0 = b(2);
   const Index x1 = b(3);
   const Index x2 = b(4);
-  // tensor label: Gamma302
+  // tensor label: Gamma280
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x1, x2);
   {
     if (x1 == x2) {
@@ -343,7 +343,7 @@ void Task54::Task_local::compute() {
   const Index x0 = b(4);
   const Index x3 = b(5);
   const Index x2 = b(6);
-  // tensor label: Gamma304
+  // tensor label: Gamma282
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x4, x1, x0);
   // associated with merged
   std::unique_ptr<double[]> fdata = in(3)->get_block(x3, x2);
@@ -441,7 +441,7 @@ void Task55::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   const Index x0 = b(4);
-  // tensor label: Gamma305
+  // tensor label: Gamma283
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x2, x1, x0);
   {
     if (x1 == x2) {
@@ -473,7 +473,7 @@ void Task56::Task_local::compute() {
   const Index x3 = b(4);
   const Index x1 = b(5);
   const Index x2 = b(6);
-  // tensor label: Gamma307
+  // tensor label: Gamma285
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x0, x4, x3, x1, x2);
   {
     if (x1 == x2) {
@@ -524,7 +524,7 @@ void Task57::Task_local::compute() {
   const Index ci0 = b(0);
   const Index x1 = b(1);
   const Index x0 = b(2);
-  // tensor label: Gamma308
+  // tensor label: Gamma286
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x1, x0);
   {
     std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x1, x0);
@@ -541,7 +541,7 @@ void Task58::Task_local::compute() {
   const Index x3 = b(4);
   const Index x1 = b(5);
   const Index x0 = b(6);
-  // tensor label: Gamma321
+  // tensor label: Gamma299
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x2, x4, x3, x1, x0);
   {
     if (x1 == x2) {
@@ -596,7 +596,7 @@ void Task59::Task_local::compute() {
   const Index x4 = b(4);
   const Index x2 = b(5);
   const Index x1 = b(6);
-  // tensor label: Gamma326
+  // tensor label: Gamma304
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x0, x3, x4, x2, x1);
   {
     if (x2 == x4) {
@@ -651,7 +651,7 @@ void Task60::Task_local::compute() {
   const Index x0 = b(4);
   const Index x2 = b(5);
   const Index x1 = b(6);
-  // tensor label: Gamma327
+  // tensor label: Gamma305
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x4, x3, x0, x2, x1);
   {
     if (x2 == x4) {
@@ -708,7 +708,7 @@ void Task61::Task_local::compute() {
   const Index x1 = b(6);
   const Index x4 = b(7);
   const Index x3 = b(8);
-  // tensor label: Gamma328
+  // tensor label: Gamma306
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x7, x0, x6, x5, x2, x1);
   // associated with merged
   std::unique_ptr<double[]> fdata = in(3)->get_block(x4, x3);
@@ -824,7 +824,7 @@ void Task62::Task_local::compute() {
   const Index x3 = b(4);
   const Index x2 = b(5);
   const Index x1 = b(6);
-  // tensor label: Gamma329
+  // tensor label: Gamma307
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x0, x4, x3, x2, x1);
   {
     if (x2 == x3) {
@@ -858,7 +858,7 @@ void Task63::Task_local::compute() {
   const Index x0 = b(2);
   const Index x2 = b(3);
   const Index x1 = b(4);
-  // tensor label: Gamma330
+  // tensor label: Gamma308
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0, x2, x1);
   {
     std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x3, x0, x2, x1);
@@ -871,7 +871,7 @@ void Task64::Task_local::compute() {
   const Index ci0 = b(0);
   const Index x1 = b(1);
   const Index x0 = b(2);
-  // tensor label: Gamma339
+  // tensor label: Gamma317
   std::unique_ptr<double[]> odata = out()->move_block(ci0);
   // associated with merged
   std::unique_ptr<double[]> fdata = in(1)->get_block(x1, x0);
@@ -895,7 +895,7 @@ void Task65::Task_local::compute() {
   const Index x0 = b(2);
   const Index x2 = b(3);
   const Index x1 = b(4);
-  // tensor label: Gamma351
+  // tensor label: Gamma329
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x3, x0);
   // associated with merged
   std::unique_ptr<double[]> fdata = in(1)->get_block(x2, x1);
@@ -925,7 +925,7 @@ void Task66::Task_local::compute() {
   const Index x1 = b(4);
   const Index x3 = b(5);
   const Index x2 = b(6);
-  // tensor label: Gamma362
+  // tensor label: Gamma340
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x0, x4, x1);
   // associated with merged
   std::unique_ptr<double[]> fdata = in(1)->get_block(x3, x2);
@@ -959,7 +959,7 @@ void Task67::Task_local::compute() {
   const Index x3 = b(4);
   const Index x1 = b(5);
   const Index x0 = b(6);
-  // tensor label: Gamma377
+  // tensor label: Gamma355
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x2, x5, x4, x3, x1, x0);
   {
     if (x2 == x5 && x1 == x3) {
@@ -1139,7 +1139,7 @@ void Task68::Task_local::compute() {
   const Index x3 = b(4);
   const Index x2 = b(5);
   const Index x1 = b(6);
-  // tensor label: Gamma395
+  // tensor label: Gamma373
   std::unique_ptr<double[]> odata = out()->move_block(ci0, x5, x4, x0, x3, x2, x1);
   {
     if (x2 == x3 && x0 == x1) {
@@ -1326,175 +1326,174 @@ void Task72::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  (*ta0_)("c1, c2, x0, x1") += (*ta1_)("x0, x3, x1, x2") * (*ta2_)("c1, x3, c2, x2");
+  (*ta0_)("c1, c2, x0, x1") += (*ta1_)("x0, x3, x1, x2") * (*ta2_)("c1, x3, c2, x2") * e0_ * (-2);
 }
 
 void Task73::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  (*ta0_)("c1, x3, c2, x2") += (*ta1_)("c1, x3, c2, x2") * e0_ * (-2)
-     + (*ta2_)("c1, x3, c2, x2");
-}
-
-void Task74::compute_() {
   (*ta0_)("c2, x1, c1, x0") += (*ta1_)("c2, c1, x0, x1") + (*ta1_)("c1, c2, x1, x0");
 }
 
-void Task75::compute_() {
+void Task74::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("x0, x3, x1, x2") * (*ta2_)("c2, c1, x3, x2");
 }
 
-void Task76::compute_() {
+void Task75::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("c2, c1, x3, x2") += (*ta1_)("c1, x3, c3, x2") * (*ta2_)("c2, c3") * (-2);
 }
 
-void Task77::compute_() {
+void Task76::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("c2, x2") * (*ta2_)("c1, x0, x1, x2");
 }
 
-void Task78::compute_() {
+void Task77::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c1, x0, x1, x2") += (*ta1_)("x5, x4, x0, x3, x1, x2") * (*ta2_)("x5, x4, c1, x3");
 }
 
-void Task79::compute_() {
+void Task78::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c2, c1, x0, x1") += (*ta1_)("x1, x3, x0, x2") * (*ta2_)("x2, c1, c2, x3");
 }
 
-void Task80::compute_() {
+void Task79::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x2, c1, c2, x3") += (*ta1_)("c1, a3, c2, x3") * (*ta2_)("a3, x2") * (-1);
 }
 
-void Task81::compute_() {
+void Task80::compute_() {
   (*ta0_)("c1, x2, x0, x1") += (*ta1_)("c1, x2, x1, x0");
 }
 
-void Task82::compute_() {
+void Task81::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c1, x2, x1, x0") += (*ta1_)("x2, x5, x3, x4, x1, x0") * (*ta2_)("x3, c1, x5, x4");
 }
 
-void Task83::compute_() {
+void Task82::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x3, c1, x5, x4") += (*ta1_)("c1, x5, c2, x4") * (*ta2_)("x3, c2") * 2;
 }
 
-void Task84::compute_() {
+void Task83::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c1, x2, x1, x0") += (*ta1_)("x7, x6, x2, x5, x1, x0") * (*ta2_)("x7, x6, c1, x5");
 }
 
-void Task85::compute_() {
+void Task84::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c1, x2, x1, x0") += (*ta1_)("x5, x4, x2, x3, x1, x0") * (*ta2_)("c1, x5, x4, x3");
 }
 
-void Task86::compute_() {
+void Task85::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  (*ta0_)("c1, x5, x4, x3") += (*ta1_)("x5, x4, c1, x3") * e0_ * (-1)
-     + (*ta2_)("x5, x4, c1, x3") * 0.5;
+  (*ta0_)("c1, x5, x4, x3") += (*ta1_)("x5, x4, c1, x3") * e0_ * (-1);
 }
 
-void Task87::compute_() {
+void Task86::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("c1, x5, x4, x3") += (*ta1_)("x5, x4, c2, x3") * (*ta2_)("c1, c2") * (-1);
 }
 
-void Task88::compute_() {
+void Task87::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("c1, x5, x4, x3") += (*ta1_)("c1, a2, x5, x4") * (*ta2_)("a2, x3");
 }
 
-void Task89::compute_() {
+void Task88::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c1, x2, x1, x0") += (*ta1_)("x2, x3, x1, x0") * (*ta2_)("c1, x3");
 }
 
-void Task90::compute_() {
-  if (!ta0_->initialized())
-    ta0_->fill_local(0.0);
-  (*ta0_)("c1, x3") += (*ta1_)("c1, x3");
-}
-
-void Task91::compute_() {
+void Task89::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("c1, x3") += (*ta1_)("c2, a3, c1, x3") * (*ta2_)("a3, c2") * 2;
 }
 
-void Task92::compute_() {
+void Task90::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("c1, x3") += (*ta1_)("c1, a3, c2, x3") * (*ta2_)("a3, c2") * (-1);
 }
 
-void Task93::compute_() {
+void Task91::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
   (*ta0_)("c1, x2, x1, x0") += (*ta1_)("x5, x3, x2, x4, x1, x0") * (*ta2_)("x3, x5, c1, x4");
 }
 
-void Task94::compute_() {
+void Task92::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   (*ta0_)("x3, x5, c1, x4") += (*ta1_)("x5, a2, c1, x4") * (*ta2_)("a2, x3") * (-1);
+}
+
+void Task93::compute_() {
+  (*ta0_)("c3, x0, c1, a2") += (*ta1_)("c1, c3, x0, a2");
+}
+
+void Task94::compute_() {
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  (*ta0_)("c1, c3, x0, a2") += (*ta1_)("x1, a2") * (*ta2_)("c1, c3, x1, x0");
 }
 
 void Task95::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
   ta1_->init();
-  (*ta0_)("c1, x2, x1, x0") += (*ta1_)("x2, x5, x4, x3, x1, x0") * (*ta2_)("c1, x5, x4, x3") * 0.5;
+  (*ta0_)("c1, c3, x1, x0") += (*ta1_)("x1, x3, x0, x2") * (*ta2_)("c1, x3, c3, x2") * (-2);
 }
 
 void Task96::compute_() {
-  (*ta0_)("c3, x0, c1, a2") += (*ta1_)("c1, c3, x0, a2");
+  if (!ta0_->initialized())
+    ta0_->fill_local(0.0);
+  (*ta0_)("c1, c3, x0, a2") += (*ta1_)("c1, a2") * (*ta2_)("c3, x0");
 }
 
 void Task97::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  (*ta0_)("c1, c3, x0, a2") += (*ta1_)("x1, a2") * (*ta2_)("c1, c3, x1, x0");
+  ta1_->init();
+  (*ta0_)("c3, x0") += (*ta1_)("x3, x2, x0, x1") * (*ta2_)("x3, x2, c3, x1") * 2;
 }
 
 void Task98::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  ta1_->init();
-  (*ta0_)("c1, c3, x1, x0") += (*ta1_)("x1, x3, x0, x2") * (*ta2_)("c1, x3, c3, x2") * (-2);
+  (*ta0_)("c1, c3, x0, a2") += (*ta1_)("c3, a2") * (*ta2_)("c1, x0");
 }
 
 void Task99::compute_() {
   if (!ta0_->initialized())
     ta0_->fill_local(0.0);
-  (*ta0_)("c1, c3, x0, a2") += (*ta1_)("c1, a2") * (*ta2_)("c3, x0");
+  ta1_->init();
+  (*ta0_)("c1, x0") += (*ta1_)("x3, x2, x0, x1") * (*ta2_)("x3, x2, c1, x1") * (-1);
 }
 
 #endif

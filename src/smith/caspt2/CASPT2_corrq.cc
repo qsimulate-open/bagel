@@ -37,106 +37,106 @@ using namespace bagel::SMITH;
 shared_ptr<Queue> CASPT2::CASPT2::make_corrq(const bool reset, const bool diagonal) {
 
   auto corrq = make_shared<Queue>();
-  auto I405 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
-  auto task278 = make_shared<Task278>(Gamma92_(), I405);
+  auto I335 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
+  auto task261 = make_shared<Task261>(Gamma92_(), I335);
+  corrq->add_task(task261);
+
+  auto task262 = make_shared<Task262>(I335, t2);
+  task261->add_dep(task262);
+  corrq->add_task(task262);
+
+  auto I338 = make_shared<TATensor<double,4>>({closed_, active_, active_, active_});
+  auto task263 = make_shared<Task263>(t2, I338);
+  task261->add_dep(task263);
+  corrq->add_task(task263);
+
+  auto task264 = make_shared<Task264>(I338, Gamma6_(), t2);
+  task263->add_dep(task264);
+  corrq->add_task(task264);
+
+  auto I341 = make_shared<TATensor<double,2>>({active_, active_});
+  auto task265 = make_shared<Task265>(Gamma16_(), I341);
+  task261->add_dep(task265);
+  corrq->add_task(task265);
+
+  auto task266 = make_shared<Task266>(I341, t2);
+  task265->add_dep(task266);
+  corrq->add_task(task266);
+
+  auto task267 = make_shared<Task267>(I341, t2);
+  task265->add_dep(task267);
+  corrq->add_task(task267);
+
+  auto I347 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
+  auto task268 = make_shared<Task268>(Gamma32_(), I347);
+  task261->add_dep(task268);
+  corrq->add_task(task268);
+
+  auto task269 = make_shared<Task269>(I347, t2);
+  task268->add_dep(task269);
+  corrq->add_task(task269);
+
+  auto I350 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
+  auto task270 = make_shared<Task270>(Gamma35_(), I350);
+  task261->add_dep(task270);
+  corrq->add_task(task270);
+
+  auto task271 = make_shared<Task271>(I350, t2);
+  task270->add_dep(task271);
+  corrq->add_task(task271);
+
+  auto task272 = make_shared<Task272>(I350, t2);
+  task270->add_dep(task272);
+  corrq->add_task(task272);
+
+  auto task273 = make_shared<Task273>(I350, t2);
+  task270->add_dep(task273);
+  corrq->add_task(task273);
+
+  auto I359 = make_shared<TATensor<double,6>>({active_, active_, active_, active_, active_, active_});
+  auto task274 = make_shared<Task274>(Gamma59_(), I359);
+  task261->add_dep(task274);
+  corrq->add_task(task274);
+
+  auto task275 = make_shared<Task275>(I359, t2);
+  task274->add_dep(task275);
+  corrq->add_task(task275);
+
+  shared_ptr<Task276> task276;
+  if (diagonal) {
+    task276 = make_shared<Task276>(t2);
+    task261->add_dep(task276);
+    corrq->add_task(task276);
+  }
+
+  shared_ptr<Task277> task277;
+  if (diagonal) {
+    task277 = make_shared<Task277>(t2);
+    task261->add_dep(task277);
+    corrq->add_task(task277);
+  }
+
+  auto I366 = make_shared<TATensor<double,2>>({active_, active_});
+  auto task278 = make_shared<Task278>(Gamma38_(), I366);
+  task261->add_dep(task278);
   corrq->add_task(task278);
 
-  auto task279 = make_shared<Task279>(I405, t2);
+  auto task279 = make_shared<Task279>(I366, t2);
   task278->add_dep(task279);
   corrq->add_task(task279);
 
-  auto I408 = make_shared<TATensor<double,4>>({closed_, active_, active_, active_});
-  auto task280 = make_shared<Task280>(t2, I408);
+  auto task280 = make_shared<Task280>(I366, t2);
   task278->add_dep(task280);
   corrq->add_task(task280);
 
-  auto task281 = make_shared<Task281>(I408, Gamma6_(), t2);
-  task280->add_dep(task281);
+  auto I372 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
+  auto task281 = make_shared<Task281>(Gamma60_(), I372);
+  task261->add_dep(task281);
   corrq->add_task(task281);
 
-  auto I411 = make_shared<TATensor<double,2>>({active_, active_});
-  auto task282 = make_shared<Task282>(Gamma16_(), I411);
-  task278->add_dep(task282);
+  auto task282 = make_shared<Task282>(I372, t2);
+  task281->add_dep(task282);
   corrq->add_task(task282);
-
-  auto task283 = make_shared<Task283>(I411, t2);
-  task282->add_dep(task283);
-  corrq->add_task(task283);
-
-  auto task284 = make_shared<Task284>(I411, t2);
-  task282->add_dep(task284);
-  corrq->add_task(task284);
-
-  auto I417 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
-  auto task285 = make_shared<Task285>(Gamma32_(), I417);
-  task278->add_dep(task285);
-  corrq->add_task(task285);
-
-  auto task286 = make_shared<Task286>(I417, t2);
-  task285->add_dep(task286);
-  corrq->add_task(task286);
-
-  auto I420 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
-  auto task287 = make_shared<Task287>(Gamma35_(), I420);
-  task278->add_dep(task287);
-  corrq->add_task(task287);
-
-  auto task288 = make_shared<Task288>(I420, t2);
-  task287->add_dep(task288);
-  corrq->add_task(task288);
-
-  auto task289 = make_shared<Task289>(I420, t2);
-  task287->add_dep(task289);
-  corrq->add_task(task289);
-
-  auto task290 = make_shared<Task290>(I420, t2);
-  task287->add_dep(task290);
-  corrq->add_task(task290);
-
-  auto I429 = make_shared<TATensor<double,6>>({active_, active_, active_, active_, active_, active_});
-  auto task291 = make_shared<Task291>(Gamma59_(), I429);
-  task278->add_dep(task291);
-  corrq->add_task(task291);
-
-  auto task292 = make_shared<Task292>(I429, t2);
-  task291->add_dep(task292);
-  corrq->add_task(task292);
-
-  shared_ptr<Task293> task293;
-  if (diagonal) {
-    task293 = make_shared<Task293>(t2);
-    task278->add_dep(task293);
-    corrq->add_task(task293);
-  }
-
-  shared_ptr<Task294> task294;
-  if (diagonal) {
-    task294 = make_shared<Task294>(t2);
-    task278->add_dep(task294);
-    corrq->add_task(task294);
-  }
-
-  auto I436 = make_shared<TATensor<double,2>>({active_, active_});
-  auto task295 = make_shared<Task295>(Gamma38_(), I436);
-  task278->add_dep(task295);
-  corrq->add_task(task295);
-
-  auto task296 = make_shared<Task296>(I436, t2);
-  task295->add_dep(task296);
-  corrq->add_task(task296);
-
-  auto task297 = make_shared<Task297>(I436, t2);
-  task295->add_dep(task297);
-  corrq->add_task(task297);
-
-  auto I442 = make_shared<TATensor<double,4>>({active_, active_, active_, active_});
-  auto task298 = make_shared<Task298>(Gamma60_(), I442);
-  task278->add_dep(task298);
-  corrq->add_task(task298);
-
-  auto task299 = make_shared<Task299>(I442, t2);
-  task298->add_dep(task299);
-  corrq->add_task(task299);
 
   return corrq;
 }

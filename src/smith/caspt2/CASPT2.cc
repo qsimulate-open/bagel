@@ -36,22 +36,37 @@ using namespace bagel::SMITH;
 CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref) {
   t2 = init_amplitude();
   r = init_residual();
+  s = init_residual();
 }
 
 
 void CASPT2::CASPT2::solve() {
   Timer timer;
   print_iteration();
+
+  // computing <proj|H|0>, set to s // TODO use this when initializing LinearRM
+  shared_ptr<Queue> sourceq = make_sourceq();
+  while (!sourceq->done())
+    sourceq->next_compute();
+
   Timer mtimer;
   int iter = 0;
   for ( ; iter != info_->maxiter(); ++iter) {
-    shared_ptr<Queue> energyq = make_energyq();
-    energy_ = accumulate(energyq);
+    // E = <1|H|0>
+    energy_ = dot_product_transpose(s, t2);
+
+    // R = <proj|f-E0|1>
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
     diagonal(r, t2);
+
+    // R += <proj|H|0> // TODO remove when subspace solver is implemented
+    r->ax_plus_y(1.0, s);
+
+    // E += <1|f-E0|1>+<1|H|0>
     energy_ += detail::real(dot_product_transpose(r, t2));
+
     const double err = r->rms();
     print_iteration(iter, energy_, err, mtimer.tick());
 

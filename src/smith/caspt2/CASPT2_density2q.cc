@@ -37,130 +37,130 @@ using namespace bagel::SMITH;
 shared_ptr<Queue> CASPT2::CASPT2::make_density2q(const bool reset, const bool diagonal) {
 
   auto density2q = make_shared<Queue>();
-  auto task531 = make_shared<Task531>(Den1, reset);
-  density2q->add_task(task531);
+  auto task514 = make_shared<Task514>(Den1, reset);
+  density2q->add_task(task514);
 
-  auto I742 = make_shared<TATensor<double,4>>({closed_, closed_, active_, active_});
-  auto task532 = make_shared<Task532>(Den1, I742);
-  task532->add_dep(task531);
+  auto I672 = make_shared<TATensor<double,4>>({closed_, closed_, active_, active_});
+  auto task515 = make_shared<Task515>(Den1, I672);
+  task515->add_dep(task514);
+  density2q->add_task(task515);
+
+  auto task516 = make_shared<Task516>(I672, Gamma92_(), t2);
+  task515->add_dep(task516);
+  task516->add_dep(task514);
+  density2q->add_task(task516);
+
+  auto I674 = make_shared<TATensor<double,4>>({closed_, active_, active_, active_});
+  auto task517 = make_shared<Task517>(Den1, I674);
+  task517->add_dep(task514);
+  density2q->add_task(task517);
+
+  auto task518 = make_shared<Task518>(I674, Gamma6_(), t2);
+  task517->add_dep(task518);
+  task518->add_dep(task514);
+  density2q->add_task(task518);
+
+  auto I676 = make_shared<TATensor<double,4>>({closed_, virt_, closed_, active_});
+  auto task519 = make_shared<Task519>(Den1, I676);
+  task519->add_dep(task514);
+  density2q->add_task(task519);
+
+  auto I677 = make_shared<TATensor<double,4>>({closed_, virt_, closed_, active_});
+  auto task520 = make_shared<Task520>(I676, Gamma16_(), I677);
+  task519->add_dep(task520);
+  task520->add_dep(task514);
+  density2q->add_task(task520);
+
+  auto task521 = make_shared<Task521>(I677, t2);
+  task520->add_dep(task521);
+  task521->add_dep(task514);
+  density2q->add_task(task521);
+
+  auto I680 = make_shared<TATensor<double,4>>({virt_, closed_, active_, active_});
+  auto task522 = make_shared<Task522>(Den1, I680);
+  task522->add_dep(task514);
+  density2q->add_task(task522);
+
+  auto task523 = make_shared<Task523>(I680, Gamma32_(), t2);
+  task522->add_dep(task523);
+  task523->add_dep(task514);
+  density2q->add_task(task523);
+
+  auto task524 = make_shared<Task524>(I680, Gamma35_(), t2);
+  task522->add_dep(task524);
+  task524->add_dep(task514);
+  density2q->add_task(task524);
+
+  auto I684 = make_shared<TATensor<double,4>>({virt_, closed_, active_, active_});
+  auto task525 = make_shared<Task525>(Den1, I684);
+  task525->add_dep(task514);
+  density2q->add_task(task525);
+
+  auto I685 = make_shared<TATensor<double,4>>({active_, virt_, closed_, active_});
+  auto task526 = make_shared<Task526>(I684, Gamma35_(), I685);
+  task525->add_dep(task526);
+  task526->add_dep(task514);
+  density2q->add_task(task526);
+
+  auto task527 = make_shared<Task527>(I685, t2);
+  task526->add_dep(task527);
+  task527->add_dep(task514);
+  density2q->add_task(task527);
+
+  auto I688 = make_shared<TATensor<double,4>>({virt_, active_, active_, active_});
+  auto task528 = make_shared<Task528>(Den1, I688);
+  task528->add_dep(task514);
+  density2q->add_task(task528);
+
+  auto task529 = make_shared<Task529>(I688, Gamma59_(), t2);
+  task528->add_dep(task529);
+  task529->add_dep(task514);
+  density2q->add_task(task529);
+
+  shared_ptr<TATensor<double,4>> I690;
+  if (diagonal) {
+    I690 = make_shared<TATensor<double,4>>({closed_, virt_, closed_, virt_});
+  }
+  shared_ptr<Task530> task530;
+  if (diagonal) {
+    task530 = make_shared<Task530>(Den1, I690);
+    task530->add_dep(task514);
+    density2q->add_task(task530);
+  }
+
+  shared_ptr<Task531> task531;
+  if (diagonal) {
+    task531 = make_shared<Task531>(I690, t2);
+    task530->add_dep(task531);
+    task531->add_dep(task514);
+    density2q->add_task(task531);
+  }
+
+  auto I692 = make_shared<TATensor<double,4>>({virt_, closed_, virt_, active_});
+  auto task532 = make_shared<Task532>(Den1, I692);
+  task532->add_dep(task514);
   density2q->add_task(task532);
 
-  auto task533 = make_shared<Task533>(I742, Gamma92_(), t2);
+  auto I693 = make_shared<TATensor<double,4>>({active_, virt_, closed_, virt_});
+  auto task533 = make_shared<Task533>(I692, Gamma38_(), I693);
   task532->add_dep(task533);
-  task533->add_dep(task531);
+  task533->add_dep(task514);
   density2q->add_task(task533);
 
-  auto I744 = make_shared<TATensor<double,4>>({closed_, active_, active_, active_});
-  auto task534 = make_shared<Task534>(Den1, I744);
-  task534->add_dep(task531);
+  auto task534 = make_shared<Task534>(I693, t2);
+  task533->add_dep(task534);
+  task534->add_dep(task514);
   density2q->add_task(task534);
 
-  auto task535 = make_shared<Task535>(I744, Gamma6_(), t2);
-  task534->add_dep(task535);
-  task535->add_dep(task531);
+  auto I696 = make_shared<TATensor<double,4>>({virt_, virt_, active_, active_});
+  auto task535 = make_shared<Task535>(Den1, I696);
+  task535->add_dep(task514);
   density2q->add_task(task535);
 
-  auto I746 = make_shared<TATensor<double,4>>({closed_, virt_, closed_, active_});
-  auto task536 = make_shared<Task536>(Den1, I746);
-  task536->add_dep(task531);
+  auto task536 = make_shared<Task536>(I696, Gamma60_(), t2);
+  task535->add_dep(task536);
+  task536->add_dep(task514);
   density2q->add_task(task536);
-
-  auto I747 = make_shared<TATensor<double,4>>({closed_, virt_, closed_, active_});
-  auto task537 = make_shared<Task537>(I746, Gamma16_(), I747);
-  task536->add_dep(task537);
-  task537->add_dep(task531);
-  density2q->add_task(task537);
-
-  auto task538 = make_shared<Task538>(I747, t2);
-  task537->add_dep(task538);
-  task538->add_dep(task531);
-  density2q->add_task(task538);
-
-  auto I750 = make_shared<TATensor<double,4>>({virt_, closed_, active_, active_});
-  auto task539 = make_shared<Task539>(Den1, I750);
-  task539->add_dep(task531);
-  density2q->add_task(task539);
-
-  auto task540 = make_shared<Task540>(I750, Gamma32_(), t2);
-  task539->add_dep(task540);
-  task540->add_dep(task531);
-  density2q->add_task(task540);
-
-  auto task541 = make_shared<Task541>(I750, Gamma35_(), t2);
-  task539->add_dep(task541);
-  task541->add_dep(task531);
-  density2q->add_task(task541);
-
-  auto I754 = make_shared<TATensor<double,4>>({virt_, closed_, active_, active_});
-  auto task542 = make_shared<Task542>(Den1, I754);
-  task542->add_dep(task531);
-  density2q->add_task(task542);
-
-  auto I755 = make_shared<TATensor<double,4>>({active_, virt_, closed_, active_});
-  auto task543 = make_shared<Task543>(I754, Gamma35_(), I755);
-  task542->add_dep(task543);
-  task543->add_dep(task531);
-  density2q->add_task(task543);
-
-  auto task544 = make_shared<Task544>(I755, t2);
-  task543->add_dep(task544);
-  task544->add_dep(task531);
-  density2q->add_task(task544);
-
-  auto I758 = make_shared<TATensor<double,4>>({virt_, active_, active_, active_});
-  auto task545 = make_shared<Task545>(Den1, I758);
-  task545->add_dep(task531);
-  density2q->add_task(task545);
-
-  auto task546 = make_shared<Task546>(I758, Gamma59_(), t2);
-  task545->add_dep(task546);
-  task546->add_dep(task531);
-  density2q->add_task(task546);
-
-  shared_ptr<TATensor<double,4>> I760;
-  if (diagonal) {
-    I760 = make_shared<TATensor<double,4>>({closed_, virt_, closed_, virt_});
-  }
-  shared_ptr<Task547> task547;
-  if (diagonal) {
-    task547 = make_shared<Task547>(Den1, I760);
-    task547->add_dep(task531);
-    density2q->add_task(task547);
-  }
-
-  shared_ptr<Task548> task548;
-  if (diagonal) {
-    task548 = make_shared<Task548>(I760, t2);
-    task547->add_dep(task548);
-    task548->add_dep(task531);
-    density2q->add_task(task548);
-  }
-
-  auto I762 = make_shared<TATensor<double,4>>({virt_, closed_, virt_, active_});
-  auto task549 = make_shared<Task549>(Den1, I762);
-  task549->add_dep(task531);
-  density2q->add_task(task549);
-
-  auto I763 = make_shared<TATensor<double,4>>({active_, virt_, closed_, virt_});
-  auto task550 = make_shared<Task550>(I762, Gamma38_(), I763);
-  task549->add_dep(task550);
-  task550->add_dep(task531);
-  density2q->add_task(task550);
-
-  auto task551 = make_shared<Task551>(I763, t2);
-  task550->add_dep(task551);
-  task551->add_dep(task531);
-  density2q->add_task(task551);
-
-  auto I766 = make_shared<TATensor<double,4>>({virt_, virt_, active_, active_});
-  auto task552 = make_shared<Task552>(Den1, I766);
-  task552->add_dep(task531);
-  density2q->add_task(task552);
-
-  auto task553 = make_shared<Task553>(I766, Gamma60_(), t2);
-  task552->add_dep(task553);
-  task553->add_dep(task531);
-  density2q->add_task(task553);
 
   return density2q;
 }
