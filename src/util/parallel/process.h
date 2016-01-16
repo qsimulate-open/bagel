@@ -39,13 +39,14 @@ class Process {
     std::stringstream ss_;
 
     int print_level_;
+    bool muted_;
 
   public:
     Process();
     ~Process();
 
-    void cout_on()  const;
-    void cout_off() const;
+    void cout_on();
+    void cout_off();
 
     int print_level() const { return print_level_; }
     void set_print_level(const int i) { print_level_ = i; }
