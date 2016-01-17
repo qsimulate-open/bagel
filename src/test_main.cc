@@ -38,10 +38,11 @@
 
 using namespace bagel;
 
-Resources b(8);
-Resources* bagel::resources__ = &b;
 static MPI_Interface c;
 MPI_Interface* bagel::mpi__ = &c;
+
+Resources b(8);
+Resources* bagel::resources__ = &b;
 
 static double THRESH = 1.0e-8;
 static std::string location__ = "../../test/";
