@@ -123,6 +123,7 @@ class SpinFreeMethod {
 
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info<DataType>> r);
+    ~SpinFreeMethod();
 
     IndexRange& virt() { return virt_; }
     IndexRange& all() { return all_; }
