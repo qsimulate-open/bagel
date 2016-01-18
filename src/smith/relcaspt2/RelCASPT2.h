@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: RelCASPT2.h
 // Copyright (C) 2014 Shiozaki group
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -46,10 +45,11 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> s;
+    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
 
 
     std::shared_ptr<FutureTensor> Gamma0_();
-    std::shared_ptr<FutureTensor> Gamma94_();
+    std::shared_ptr<FutureTensor> Gamma92_();
     std::shared_ptr<FutureTensor> Gamma2_();
     std::shared_ptr<FutureTensor> Gamma3_();
     std::shared_ptr<FutureTensor> Gamma4_();
@@ -57,7 +57,6 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<FutureTensor> Gamma6_();
     std::shared_ptr<FutureTensor> Gamma7_();
     std::shared_ptr<FutureTensor> Gamma9_();
-    std::shared_ptr<FutureTensor> Gamma107_();
     std::shared_ptr<FutureTensor> Gamma12_();
     std::shared_ptr<FutureTensor> Gamma14_();
     std::shared_ptr<FutureTensor> Gamma16_();
@@ -76,9 +75,9 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<FutureTensor> Gamma58_();
     std::shared_ptr<FutureTensor> Gamma59_();
     std::shared_ptr<FutureTensor> Gamma60_();
-    std::shared_ptr<FutureTensor> Gamma69_();
-    std::shared_ptr<FutureTensor> Gamma81_();
-    std::shared_ptr<FutureTensor> Gamma92_();
+    std::shared_ptr<FutureTensor> Gamma79_();
+    std::shared_ptr<FutureTensor> Gamma90_();
+    std::shared_ptr<FutureTensor> Gamma109_();
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
 

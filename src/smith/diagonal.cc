@@ -28,11 +28,10 @@
 #include <src/smith/MRCI.h>
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/smith/RelMRCI.h>
-#include <src/smith/RelCASPT2.h>
+#include <src/smith/relcaspt2/RelCASPT2.h>
 #if 0
 #include <src/smith/mrci/MRCI.h>
 #include <src/smith/relmrci/RelMRCI.h>
-#include <src/smith/relcaspt2/RelCASPT2.h>
 #endif
 
 using namespace std;
@@ -64,7 +63,6 @@ void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) 
 }
 
 
-#if 0
 void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) const {
   for (auto& i3 : virt_) {
     for (auto& i2 : closed_) {
@@ -72,14 +70,14 @@ void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tenso
         for (auto& i0 : closed_) {
           // if this block is not included in the current wave function, skip it
           if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
-          const unique_ptr<DataType[]> data = t->get_block(i0, i1, i2, i3);
+          unique_ptr<complex<double>[]> data = t->get_block(i0, i1, i2, i3);
           size_t iall = 0;
           for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
             for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
               for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                 for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                   data[iall] *= -(eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]) * 4.0;
-          r->add_block(data, i2, i3, i0, i1);
+          r->add_block(data, i0, i1, i2, i3);
         }
       }
     }
@@ -87,6 +85,7 @@ void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tenso
 }
 
 
+#if 0
 // this function takes care of 4-external.
 void MRCI::MRCI::diagonal(shared_ptr<TATensor<double,4>> r, shared_ptr<const TATensor<double,4>> t) const {
   const bool diag = (*rdm0_)("") == 1.0;

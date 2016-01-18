@@ -1,33 +1,32 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: RelCASPT2.cc
-// Copyright (C) 2014 Shiozaki group
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Shiozaki group <shiozaki@northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
 
-#include <src/smith/RelCASPT2.h>
+#include <src/smith/relcaspt2/RelCASPT2.h>
 
 using namespace std;
 using namespace bagel;
@@ -39,24 +38,26 @@ RelCASPT2::RelCASPT2::RelCASPT2(shared_ptr<const SMITH_Info<std::complex<double>
   for (int i = 0; i != eig.size(); ++i)
     eig_[i] = real(eig[i]);
   t2 = init_amplitude();
-  r = t2->clone();
-  s = t2->clone();
+  r = init_residual();
+  s = init_residual();
 }
 
 
 void RelCASPT2::RelCASPT2::solve() {
   Timer timer;
   print_iteration();
+  shared_ptr<Queue> sourceq = make_sourceq();
+  while (!sourceq->done())
+    sourceq->next_compute();
   Timer mtimer;
   int iter = 0;
   for ( ; iter != info_->maxiter(); ++iter) {
-    shared_ptr<Queue> source = make_sourceq();
-    while (!source->done())
-      source->next_compute();
     energy_ = detail::real(dot_product_transpose(s, t2));
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
+    diagonal(r, t2);
+    r->ax_plus_y(1.0, s);
     energy_ += detail::real(dot_product_transpose(r, t2));
     const double err = r->rms();
     print_iteration(iter, energy_, err, mtimer.tick());
@@ -67,7 +68,6 @@ void RelCASPT2::RelCASPT2::solve() {
   }
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
-
   cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_+info_->ciwfn()->energy(0) << endl;
 }
 

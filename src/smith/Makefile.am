@@ -19,9 +19,9 @@ MRCI_gen6.cc MRCI_tasks6.cc MRCI_gen7.cc MRCI_tasks7.cc MRCI_gen8.cc MRCI_tasks8
 MRCI_gen11.cc MRCI_tasks11.cc MRCI_gen12.cc MRCI_tasks12.cc MRCI_gen13.cc MRCI_tasks13.cc MRCI_gen14.cc MRCI_tasks14.cc MRCI_gen15.cc MRCI_tasks15.cc \
 MRCI_gen16.cc MRCI_tasks16.cc MRCI_gen17.cc MRCI_tasks17.cc MRCI_gen18.cc MRCI_tasks18.cc MRCI_gen19.cc MRCI_tasks19.cc MRCI_gen20.cc MRCI_tasks20.cc \
 \
-RelCASPT2.cc RelCASPT2_gamma.cc RelCASPT2_residualq.cc RelCASPT2_sourceq.cc \
-RelCASPT2_gen1.cc RelCASPT2_tasks1.cc RelCASPT2_gen2.cc RelCASPT2_tasks2.cc RelCASPT2_gen3.cc RelCASPT2_tasks3.cc RelCASPT2_gen4.cc RelCASPT2_tasks4.cc \
-RelCASPT2_gen5.cc RelCASPT2_tasks5.cc \
+relcaspt2/RelCASPT2.cc relcaspt2/RelCASPT2_gamma.cc relcaspt2/RelCASPT2_residualq.cc relcaspt2/RelCASPT2_sourceq.cc \
+relcaspt2/RelCASPT2_gen1.cc relcaspt2/RelCASPT2_gen2.cc relcaspt2/RelCASPT2_gen3.cc relcaspt2/RelCASPT2_gen4.cc relcaspt2/RelCASPT2_gen5.cc \
+relcaspt2/RelCASPT2_tasks1.cc relcaspt2/RelCASPT2_tasks2.cc relcaspt2/RelCASPT2_tasks3.cc relcaspt2/RelCASPT2_tasks4.cc relcaspt2/RelCASPT2_tasks5.cc \
 \
 RelMRCI.cc RelMRCI_gamma.cc RelMRCI_sourceq.cc RelMRCI_residualq.cc RelMRCI_normq.cc \
 RelMRCI_gen1.cc RelMRCI_tasks1.cc RelMRCI_gen2.cc RelMRCI_tasks2.cc RelMRCI_gen3.cc RelMRCI_tasks3.cc RelMRCI_gen4.cc RelMRCI_tasks4.cc RelMRCI_gen5.cc RelMRCI_tasks5.cc \
