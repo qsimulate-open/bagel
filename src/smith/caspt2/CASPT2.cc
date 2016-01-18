@@ -43,23 +43,38 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
 void CASPT2::CASPT2::solve() {
   Timer timer;
   print_iteration();
+  // <proj| H |0> set to s
   shared_ptr<Queue> sourceq = make_sourceq();
   while (!sourceq->done())
     sourceq->next_compute();
+
   Timer mtimer;
   int iter = 0;
   for ( ; iter != info_->maxiter(); ++iter) {
+    // E = <1| H |0>
     energy_ = detail::real(dot_product_transpose(s, t2));
+
+    // R = <proj| H0 - E0 |1> + <proj | H |0> is set to r
+    //  first term
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
     diagonal(r, t2);
+    //  second term
     r->ax_plus_y(1.0, s);
+
+    // E += <1| H0 - E0 |1> + <1| H |0>
     energy_ += detail::real(dot_product_transpose(r, t2));
+    // E is now Hylleraas energy 
+
+    // get the root mean square
     const double err = r->rms();
     print_iteration(iter, energy_, err, mtimer.tick());
 
+    // TODO this will be replaced by subspace updates
     update_amplitude(t2, r);
+
+    // zeroing out the residual
     r->zero();
     if (err < info_->thresh()) break;
   }
