@@ -29,12 +29,9 @@
 
 #ifdef COMPILE_SMITH
 #include <src/smith/mrci/MRCI.h>
-#include <src/smith/RelMRCI.h>
+#include <src/smith/relmrci/RelMRCI.h>
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/smith/relcaspt2/RelCASPT2.h>
-#if 0
-#include <src/smith/relmrci/RelMRCI.h>
-#endif
 using namespace bagel::SMITH;
 #endif
 using namespace std;
