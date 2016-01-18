@@ -121,9 +121,6 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor_<DataType>> init_amplitude() const;
     std::shared_ptr<Tensor_<DataType>> init_residual() const;
 
-    // diagonal part of CASPT2 (for efficiency)
-    void diagonal(std::shared_ptr<Tensor_<DataType>> r, std::shared_ptr<const Tensor_<DataType>> t) const;
-
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info<DataType>> r);
 

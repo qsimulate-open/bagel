@@ -487,36 +487,6 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor
 }
 
 
-template<typename DataType>
-void SpinFreeMethod<DataType>::diagonal(shared_ptr<Tensor_<DataType>> r, shared_ptr<const Tensor_<DataType>> t) const {
-  assert(to_upper(info_->method()) == "CASPT2");
-  if (!is_same<DataType,double>::value)
-    throw logic_error("SpinFreeMethod<DataType>::diagonal is only correct for non-rel spin-adapted cases ");
-
-  for (auto& i3 : virt_) {
-    for (auto& i2 : closed_) {
-      for (auto& i1 : virt_) {
-        for (auto& i0 : closed_) {
-          // if this block is not included in the current wave function, skip it
-          if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
-          unique_ptr<DataType[]>       data0 = t->get_block(i0, i1, i2, i3);
-          const unique_ptr<DataType[]> data1 = t->get_block(i0, i3, i2, i1);
-
-          sort_indices<0,3,2,1,8,1,-4,1>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
-          size_t iall = 0;
-          for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                  // note that e0 is cancelled by another term
-                  data0[iall] *= -(eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
-          r->add_block(data0, i0, i1, i2, i3);
-        }
-      }
-    }
-  }
-}
-
 #define SPINFREEMETHOD_DETAIL
 #include <src/smith/spinfreebase_update.cpp>
 #undef SPINFREEMETHOD_DETAIL
