@@ -46,24 +46,24 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
   shalf_xx_ = make_shared<MatType>(ndim2, ndim2);
   shalf_hh_ = make_shared<MatType>(ndim2, ndim2);
   shalf_xh_ = make_shared<MatType>(ndim2*fac2, ndim2*fac2);
-  shalf_xhh_ = make_shared<MatType>(ndim3, ndim3);
   shalf_xxh_ = make_shared<MatType>(ndim3, ndim3);
+  shalf_xhh_ = make_shared<MatType>(ndim3, ndim3);
 
   work_x_ = make_shared<MatType>(ndim, ndim);
   work_h_ = make_shared<MatType>(ndim, ndim);
   work_xx_ = make_shared<MatType>(ndim2, ndim2);
   work_hh_ = make_shared<MatType>(ndim2, ndim2);
   work_xh_ = make_shared<MatType>(ndim2*fac2, ndim2*fac2);
-  work_xhh_ = make_shared<MatType>(ndim3, ndim3);
   work_xxh_ = make_shared<MatType>(ndim3, ndim3);
+  work_xhh_ = make_shared<MatType>(ndim3, ndim3);
 
   denom_x_ = VectorB(ndim);
   denom_h_ = VectorB(ndim);
   denom_xx_ = VectorB(ndim2);
   denom_hh_ = VectorB(ndim2);
   denom_xh_ = VectorB(ndim2*fac2);
-  denom_xhh_ = VectorB(ndim3);
   denom_xxh_ = VectorB(ndim3);
+  denom_xhh_ = VectorB(ndim3);
 }
 
 
@@ -142,8 +142,8 @@ void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<
   init_xx_(jst, ist, rdm1, rdm2, rdm3, frdm4);
   init_hh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
   init_xh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
-  init_xhh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
   init_xxh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
+  init_xhh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
 }
 
 
@@ -181,16 +181,16 @@ void Denom<DataType>::compute() {
     shalf_xh_ = make_shared<MatType>(tmp % *shalf_xh_);
   }
   {
-    shalf_xhh_->inverse_half(thresh_);
-    MatType tmp(*shalf_xhh_ % *work_xhh_ * *shalf_xhh_);
-    tmp.diagonalize(denom_xhh_);
-    shalf_xhh_ = make_shared<MatType>(tmp % *shalf_xhh_);
-  }
-  {
     shalf_xxh_->inverse_half(thresh_);
     MatType tmp(*shalf_xxh_ % *work_xxh_ * *shalf_xxh_);
     tmp.diagonalize(denom_xxh_);
     shalf_xxh_ = make_shared<MatType>(tmp % *shalf_xxh_);
+  }
+  {
+    shalf_xhh_->inverse_half(thresh_);
+    MatType tmp(*shalf_xhh_ % *work_xhh_ * *shalf_xhh_);
+    tmp.diagonalize(denom_xhh_);
+    shalf_xhh_ = make_shared<MatType>(tmp % *shalf_xhh_);
   }
 }
 
@@ -425,7 +425,7 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
 
 
 template<typename DataType>
-void Denom<DataType>::init_xhh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
+void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
                                                               shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact*nact;
@@ -437,9 +437,9 @@ void Denom<DataType>::init_xhh_(const int jst, const int ist, shared_ptr<const R
           blas::ax_plus_y_n(1.0, rdm2->element_ptr(0, i4, i0, i5), nact, ovl->element_ptr(0, i3, i3, i4, i0, i5));
   auto shalf = make_shared<MatType>(dim, dim);
   sort_indices<4,0,1,5,3,2,0,1,1,1>(ovl->data(), shalf->data(), nact, nact, nact, nact, nact, nact);
-  shalf_xhh_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
+  shalf_xxh_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
 
-  // TODO a littile of duplication. Maybe should merge with xxh below
+  // TODO a littile of duplication. Maybe should merge with xhh below
   shared_ptr<RDM<3,DataType>> fr4 = frdm4->copy();
   for (int i4 = 0; i4 != nact; ++i4)
     for (int i3 = 0; i3 != nact; ++i3) {
@@ -477,12 +477,12 @@ void Denom<DataType>::init_xhh_(const int jst, const int ist, shared_ptr<const R
   }
   auto fss = make_shared<MatType>(dim, dim);
   sort_indices<4,0,1,5,3,2,0,1,1,1>(fr4->data(), fss->data(), nact, nact, nact, nact, nact, nact);
-  work_xhh_->copy_block(dim*jst, dim*ist, dim, dim, fss);
+  work_xxh_->copy_block(dim*jst, dim*ist, dim, dim, fss);
 }
 
 
 template<typename DataType>
-void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
+void Denom<DataType>::init_xhh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
                                                               shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact*nact;
@@ -504,7 +504,7 @@ void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const R
     }
   auto shalf = make_shared<MatType>(dim, dim);
   sort_indices<0,2,4,3,1,0,1,1,1>(ovl->data(), shalf->data(), nact*nact, nact, nact, nact, nact);
-  shalf_xxh_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
+  shalf_xhh_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
 
   shared_ptr<RDM<3,DataType>> fr4 = frdm4->copy();
   fr4->scale(-1.0);
@@ -594,7 +594,7 @@ void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const R
     }
   auto fss = make_shared<MatType>(dim, dim);
   sort_indices<0,2,4,3,1,0,1,1,1>(fr4->data(), fss->data(), nact*nact, nact, nact, nact, nact);
-  work_xxh_->copy_block(dim*jst, dim*ist, dim, dim, fss);
+  work_xhh_->copy_block(dim*jst, dim*ist, dim, dim, fss);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

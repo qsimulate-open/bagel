@@ -293,10 +293,10 @@ void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
   rdm4deriv_ = make_shared<Tensor_<DataType>>(o7);
 
   const int nclo = info_->nclosed();
-  vector<int> inpoff1(1,0);
-  vector<int> inpoff3(2,nclo); inpoff3.push_back(0);
-  vector<int> inpoff5(4,nclo); inpoff5.push_back(0);
-  vector<int> inpoff7(6,nclo); inpoff7.push_back(0);
+  const vector<int> inpoff1{0};
+  const vector<int> inpoff3{0,nclo,nclo};
+  const vector<int> inpoff5{0,nclo,nclo,nclo,nclo};
+  const vector<int> inpoff7{0,nclo,nclo,nclo,nclo,nclo,nclo};
 
   const int nact = info_->nact();
   const btas::CRange<1> range1(rdm1d->extent(0)*rdm1d->extent(1));

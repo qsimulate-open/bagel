@@ -34,11 +34,12 @@ namespace SMITH {
 
 template<int N, typename DataType>
 static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_ptr<const btas::TensorN<DataType,N>> input,
-                       const std::vector<int>& inpoffsets, const std::vector<IndexRange>& ranges_rev) {
+                       const std::vector<int>& inpoffsets_rev, const std::vector<IndexRange>& ranges_rev) {
   assert(input->range().ordinal().contiguous());
   assert(target->rank() == input->range().rank() && target->rank() > 0);
   const int rank = target->rank();
   const std::vector<IndexRange> ranges(ranges_rev.rbegin(), ranges_rev.rend());
+  const std::vector<int> inpoffsets(inpoffsets_rev.rbegin(), inpoffsets_rev.rend());
 
   auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
 
@@ -84,9 +85,10 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
 
 template<int N, typename DataType, class T> // T is supposed to be derived from btas::Tensor
 static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_ptr<const Kramers<N,T>> input,
-                       const std::vector<int>& inpoffsets, const std::vector<IndexRange>& ranges_rev) {
+                       const std::vector<int>& inpoffsets_rev, const std::vector<IndexRange>& ranges_rev) {
   const int rank = target->rank();
   const std::vector<IndexRange> ranges(ranges_rev.rbegin(), ranges_rev.rend());
+  const std::vector<int> inpoffsets(inpoffsets_rev.rbegin(), inpoffsets_rev.rend());
 
   auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
 
