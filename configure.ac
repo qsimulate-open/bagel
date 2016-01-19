@@ -119,7 +119,7 @@ if test "x${compile_smith}" != xno; then
   AC_DEFINE([COMPILE_SMITH], [], [Compile SMITH generated code])
   AH_TEMPLATE([HAVE_GA], [Global Arrays will be used.])
   AC_CHECK_HEADERS([ga.h], [], [AC_MSG_ERROR([ga.h not found or not working])], [])
-  AC_CHECK_LIB(ga, main,  [AC_DEFINE([HAVE_GA]) LIBS="-lga $LIBS"], [AC_MSG_ERROR("Linking against GA failed.")])
+  AC_CHECK_LIB(ga, main,  [AC_DEFINE([HAVE_GA]) LIBS="-lga -lgfortran $LIBS"], [AC_MSG_ERROR("Linking against GA failed.")])
 fi
 
 AC_LANG_POP()
