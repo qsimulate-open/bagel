@@ -26,6 +26,7 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
+#include <ga.h>
 #include <src/smith/moint.h>
 #include <src/smith/spinfreebase.h>
 #include <src/smith/smith_util.h>
@@ -38,6 +39,9 @@ template<typename DataType>
 SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> inf) : info_(inf) {
   static_assert(is_same<DataType,double>::value or is_same<DataType,complex<double>>::value,
                 "illegal DataType for SpinFreeMethod");
+
+  // start Global Arrays here
+  GA_Initialize();
 
   Timer timer;
   const int max = info_->maxtile();
@@ -119,6 +123,12 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
   // set e0
   e0_ = compute_e0();
+}
+
+
+template<typename DataType>
+SpinFreeMethod<DataType>::~SpinFreeMethod() {
+  GA_Terminate();
 }
 
 
