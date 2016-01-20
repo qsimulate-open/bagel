@@ -26,144 +26,104 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <src/util/f77.h>
-#include <src/util/math/algo.h>
-#include <src/smith/storage.h>
+#include <ga.h>
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <src/util/f77.h>
+#include <src/util/math/algo.h>
+#include <src/smith/storage.h>
+#include <src/util/parallel/mpi_interface.h>
 
 using namespace bagel::SMITH;
 using namespace std;
 
-
+// size contains hashkey and length (in this order)
 template<typename DataType>
-StorageBlock<DataType>::StorageBlock(const size_t size, const bool init) : size_(size), initialized_(init) {
-  static_assert(is_same<DataType, double>::value or is_same<DataType, complex<double>>::value, "illegal Type in StorageBlock");
-  if (init) {
-    data_ = unique_ptr<DataType[]>(new DataType[size_]);
-    zero();
-  }
-}
-
-
-template<typename DataType>
-void StorageBlock<DataType>::zero() {
-  if (initialized_)
-    fill_n(data(), size_, 0.0);
-}
-
-
-template<typename DataType>
-StorageBlock<DataType>& StorageBlock<DataType>::operator=(const StorageBlock<DataType>& o) {
-  if (o.initialized_ && !initialized_) {
-    data_ = unique_ptr<DataType[]>(new DataType[size_]);
-    initialized_ = true;
-  }
-  if (o.initialized_)
-    copy_n(o.data(), size_, data());
-  return *this;
-}
-
-
-template<typename DataType>
-void StorageBlock<DataType>::put_block(unique_ptr<DataType[]>&& o) {
-  assert(!initialized_);
-  initialized_ = true;
-  data_ = move(o);
-}
-
-
-template<typename DataType>
-void StorageBlock<DataType>::add_block(const std::unique_ptr<DataType[]>& o) {
-  assert(initialized_);
-  blas::ax_plus_y_n(1.0, o.get(), size_, data());
-}
-
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageBlock<DataType>::get_block() const {
-  assert(initialized_);
-  unique_ptr<DataType[]> out(new DataType[size_]);
-  copy_n(data_.get(), size_, out.get());
-  return move(out);
-}
-
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageBlock<DataType>::move_block() {
-  if (!initialized_) {
-    initialized_ = true;
-    data_ = unique_ptr<DataType[]>(new DataType[size_]);
-    zero();
-  }
-  initialized_ = false;
-  return move(data_);
-}
-
-
-template<typename DataType>
-DataType StorageBlock<DataType>::dot_product(const StorageBlock<DataType>& o) const {
-  assert(size_ == o.size_ && !(initialized_ ^ o.initialized_));
-  return initialized_ ? blas::dot_product(data(), size_, o.data()) : DataType(0.0);
-}
-
-
-template<typename DataType>
-void StorageBlock<DataType>::ax_plus_y(const DataType& a, const StorageBlock<DataType>& o) {
-  assert(size_ == o.size_ && !(initialized_ ^ o.initialized_));
-  if (initialized_)
-    blas::ax_plus_y_n(a, o.data(), size_, data());
-}
-
-
-template<typename DataType>
-void StorageBlock<DataType>::scale(const DataType& a) {
-  if (initialized_)
-    blas::scale_n(a, data(), size_);
-}
-
-
-template<typename DataType>
-void StorageBlock<DataType>::conjugate_inplace() {
-  blas::conj_n(data_.get(), size_alloc());
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-template<typename DataType>
-StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool init) : Storage_base<StorageBlock<DataType>>(size, init) {
+StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool init) : size_(size), initialized_(false) {
   static_assert(is_same<DataType, double>::value or is_same<DataType, complex<double>>::value, "illegal Type in StorageIncore");
+
+  using GA_Type = typename conditional<is_same<double,DataType>::value, double, DoubleComplex>::type;
+
+  static_assert(sizeof(GA_Type) == sizeof(DataType),
+    "SMITH assumes that the GA and BAGEL data type have the same size");
+
+  // first prepare some variables
+  totalsize_ = 0;
+  for (auto& i : size) {
+    if (i.second > 0)
+      hashtable_.emplace(i.first, make_pair(totalsize_, totalsize_+i.second-1));
+    totalsize_ += i.second;
+  }
+
+  // here we initialize the global array storage
+  if (init)
+    initialize();
+}
+
+
+template<typename DataType>
+void StorageIncore<DataType>::initialize() {
+  assert(!initialized_);
+  int64_t mpisize = mpi__->size();
+  vector<int64_t> blocks(mpisize);
+  const size_t blocksize = (totalsize_-1)/mpisize+1;
+  int cnt = 0;
+  size_t tsize = 0;
+  for (auto& i : size_) {
+    if (cnt*blocksize <= tsize)
+      blocks[cnt++] = tsize;
+    tsize += i.second;
+  }
+  // create GA
+  auto type = is_same<double,DataType>::value ? MT_F_DBL : MT_C_DCPL;
+  ga_ = NGA_Create_irreg64(type, 1, &totalsize_, const_cast<char*>(""), &mpisize, blocks.data());
+  zero();
+
+  initialized_ = true;
+}
+
+
+template<typename DataType>
+StorageIncore<DataType>::~StorageIncore() {
+  GA_Destroy(ga_);
 }
 
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageIncore<DataType>::get_block_(const size_t& key) const {
+  assert(initialized_);
   // first find a key
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::get_block(const size_t&)");
-  return hash->second->get_block();
+  auto p = hash->second;
+  int64_t size = p.second - p.first + 1;
+  unique_ptr<DataType[]> out(new DataType[size]);
+  NGA_Get64(ga_, &p.first, &p.second, out.get(), &size);
+  return move(out);
 }
 
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageIncore<DataType>::move_block_(const size_t& key) {
-  // first find a key
-  auto hash = hashtable_.find(key);
-  if (hash == hashtable_.end())
-    throw logic_error("a key was not found in Storage::move_block(const size_t&)");
-  return hash->second->move_block();
+  if (!initialized_)
+    initialize();
+  return get_block_(key);
 }
 
 
 template<typename DataType>
 void StorageIncore<DataType>::put_block_(unique_ptr<DataType[]>& dat, const size_t& key) {
+  if (!initialized_)
+    initialize();
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
-  hash->second->put_block(move(dat));
+  auto p = hash->second;
+  int64_t size = p.second - p.first + 1;
+  NGA_Put64(ga_, &p.first, &p.second, dat.get(), &size);
 }
 
 
@@ -172,7 +132,10 @@ void StorageIncore<DataType>::add_block_(const unique_ptr<DataType[]>& dat, cons
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
-  hash->second->add_block(dat);
+  auto p = hash->second;
+  int64_t size = p.second - p.first + 1;
+  DataType one = 1.0;
+  NGA_Acc64(ga_, &p.first, &p.second, dat.get(), &size, &one);
 }
 
 
@@ -388,67 +351,51 @@ void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const
 
 template<typename DataType>
 void StorageIncore<DataType>::zero() {
-  for (auto& i : hashtable_)
-    i.second->zero();
+  assert(initialized_);
+  GA_Zero(ga_);
 }
 
 
 template<typename DataType>
 void StorageIncore<DataType>::scale(const DataType& a) {
-  for (auto& i : hashtable_)
-    i.second->scale(a);
+  assert(initialized_);
+  GA_Scale(ga_, const_cast<DataType*>(&a));
 }
 
 
 template<typename DataType>
 StorageIncore<DataType>& StorageIncore<DataType>::operator=(const StorageIncore<DataType>& o) {
-  if (hashtable_.size() == o.hashtable_.size()) {
-    auto i = hashtable_.begin();
-    for (auto& j : o.hashtable_) {
-      *i->second = *j.second;
-      ++i;
-    }
-  } else {
-    throw logic_error("Trying to copy something different in StorageIncore");
-  }
+  if (!initialized_ && o.initialized_)
+    initialize();
+  GA_Copy(o.ga_, ga_);
   return *this;
 }
 
 
 template<typename DataType>
 void StorageIncore<DataType>::ax_plus_y(const DataType& a, const StorageIncore<DataType>& o) {
-  if (hashtable_.size() == o.hashtable_.size()) {
-    auto i = hashtable_.begin();
-    for (auto& j : o.hashtable_) {
-      i->second->ax_plus_y(a, *j.second);
-      ++i;
-    }
-  } else {
-    throw logic_error("Trying to copy something different in StorageIncore");
-  }
+  assert(initialized_);
+  DataType one = 1.0;
+  GA_Add(const_cast<DataType*>(&a), o.ga_, &one, ga_, ga_);
 }
 
 
-template<typename DataType>
-DataType StorageIncore<DataType>::dot_product(const StorageIncore<DataType>& o) const {
-  DataType out = 0.0;
-  if (hashtable_.size() == o.hashtable_.size()) {
-    auto i = hashtable_.begin();
-    for (auto& j : o.hashtable_) {
-      out += i->second->dot_product(*j.second);
-      ++i;
-    }
-  } else {
-    throw logic_error("Trying to copy something different in StorageIncore");
-  }
-  return out;
+template<>
+double StorageIncore<double>::dot_product(const StorageIncore<double>& o) const {
+  assert(initialized_);
+  return GA_Ddot(ga_, o.ga_);
 }
 
+
+template<>
+complex<double> StorageIncore<complex<double>>::dot_product(const StorageIncore<complex<double>>& o) const {
+  assert(initialized_);
+  const DoubleComplex result = GA_Zdot(ga_, o.ga_);
+  return complex<double>(result.real, result.imag);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
-template class StorageBlock<double>;
-template class StorageBlock<complex<double>>;
 template class StorageIncore<double>;
 template class StorageIncore<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

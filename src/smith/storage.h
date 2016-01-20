@@ -33,6 +33,7 @@
 
 #include <stddef.h>
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -71,87 +72,20 @@ size_t generate_hash_key(const T& head, const args&... tail) {
 }
 
 
-template<class BlockType>
-class Storage_base {
-  protected:
-    // this relates hash keys, block number, and block lengths (in this order).
-    std::map<size_t, std::shared_ptr<BlockType>> hashtable_;
-
-  public:
-    // size contains hashkey and length (in this order)
-    Storage_base(const std::map<size_t, size_t>& size, bool init) {
-      for (auto& i : size)
-        hashtable_.emplace(i.first, std::make_shared<BlockType>(i.second, init));
-    }
-
-    // functions that return protected members
-    template<typename ...args>
-    size_t blocksize(const args& ...p) const {
-      auto a = hashtable_.find(generate_hash_key(p...));
-      return a != hashtable_.end() ? a->second->size() : 0lu;
-    }
-    template<typename ...args>
-    size_t blocksize_alloc(const args& ...p) const {
-      auto a = hashtable_.find(generate_hash_key(p...));
-      return a != hashtable_.end() ? a->second->size_alloc() : 0lu;
-    }
-
-    size_t size() const {
-      return std::accumulate(hashtable_.begin(), hashtable_.end(), 0lu,
-                             [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size(); });
-    }
-
-    size_t size_alloc() const {
-      return std::accumulate(hashtable_.begin(), hashtable_.end(), 0lu,
-                             [](size_t sum, const std::pair<size_t, std::shared_ptr<BlockType>>& o) { return sum+o.second->size_alloc(); });
-    }
-
-    void conjugate_inplace() {
-      for (auto& i : hashtable_)
-        i.second->conjugate_inplace();
-    }
-};
-
-
 template<typename DataType>
-class StorageBlock {
-  public:
-    using data_type = DataType;
+class StorageIncore {
   protected:
-    std::unique_ptr<DataType[]> data_;
-    size_t size_;
+    // Global Array handler:
+    int ga_;
+    int64_t totalsize_;
+
+    // this relates hash keys to lo and high of the block
+    std::unordered_map<size_t, std::pair<int64_t, int64_t>> hashtable_;
+    // input - storing this for delayed initialization
+    const std::map<size_t, size_t> size_;
+
     bool initialized_;
-
-    DataType* data() { return data_.get(); }
-    const DataType* data() const { return data_.get(); }
-  public:
-    StorageBlock(const size_t size, const bool init);
-
-    void zero();
-
-    size_t size() const { return size_; }
-    size_t size_alloc() const { return initialized_ ? size_ : 0lu; }
-
-    StorageBlock<DataType>& operator=(const StorageBlock<DataType>& o);
-
-    void put_block(std::unique_ptr<DataType[]>&& o);
-    void add_block(const std::unique_ptr<DataType[]>& o);
-
-    std::unique_ptr<DataType[]> get_block() const;
-    std::unique_ptr<DataType[]> move_block();
-
-    DataType dot_product(const StorageBlock& o) const;
-    void ax_plus_y(const DataType& a, const StorageBlock& o);
-    void scale(const DataType& a);
-
-    void conjugate_inplace();
-};
-
-
-template<typename DataType>
-class StorageIncore : public Storage_base<StorageBlock<DataType>> {
-  protected:
-    using Storage_base<StorageBlock<DataType>>::hashtable_;
+    void initialize();
 
     std::unique_ptr<DataType[]> get_block_(const size_t& key) const;
     std::unique_ptr<DataType[]> move_block_(const size_t& key);
@@ -160,6 +94,7 @@ class StorageIncore : public Storage_base<StorageBlock<DataType>> {
 
   public:
     StorageIncore(const std::map<size_t, size_t>& size, bool init);
+    ~StorageIncore();
 
     virtual std::unique_ptr<DataType[]> get_block() const;
     virtual std::unique_ptr<DataType[]> get_block(const Index& i0) const;
@@ -219,20 +154,35 @@ class StorageIncore : public Storage_base<StorageBlock<DataType>> {
     virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                                                    const Index& i4, const Index& i5, const Index& i6, const Index& i7);
 
+    template<typename ...args>
+    size_t blocksize(const args& ...p) const {
+      auto a = hashtable_.find(generate_hash_key(p...));
+      return a != hashtable_.end() ? (a->second.second - a->second.first + 1) : 0lu;
+    }
+    template<typename ...args>
+    size_t blocksize_alloc(const args& ...p) const {
+      auto a = hashtable_.find(generate_hash_key(p...));
+      return (a != hashtable_.end() && initialized_) ? (a->second.second - a->second.first + 1) : 0lu;
+    }
+
+    size_t size() const { return totalsize_; }
+    size_t size_alloc() const { return initialized_ ? size() : 0lu; }
+
     void zero();
     void scale(const DataType& a);
 
     StorageIncore<DataType>& operator=(const StorageIncore<DataType>& o);
-    virtual void ax_plus_y(const DataType& a, const StorageIncore<DataType>& o);
-            void ax_plus_y(const DataType& a, const std::shared_ptr<StorageIncore<DataType>> o) { ax_plus_y(a, *o); };
-    virtual DataType dot_product(const StorageIncore<DataType>& o) const;
+    void ax_plus_y(const DataType& a, const StorageIncore<DataType>& o);
+    void ax_plus_y(const DataType& a, const std::shared_ptr<StorageIncore<DataType>> o) { ax_plus_y(a, *o); };
+    DataType dot_product(const StorageIncore<DataType>& o) const;
 
     virtual void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { }
 };
 
+template<> double StorageIncore<double>::dot_product(const StorageIncore<double>& o) const;
+template<> std::complex<double> StorageIncore<std::complex<double>>::dot_product(const StorageIncore<std::complex<double>>& o) const;
 
-extern template class StorageBlock<double>;
-extern template class StorageBlock<std::complex<double>>;
+
 extern template class StorageIncore<double>;
 extern template class StorageIncore<std::complex<double>>;
 

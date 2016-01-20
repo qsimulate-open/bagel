@@ -212,14 +212,6 @@ class StorageKramers : public StorageIncore<DataType> {
     void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                                            const Index& i4, const Index& i5, const Index& i6, const Index& i7) override;
 
-    void ax_plus_y(const DataType& a, const StorageIncore<DataType>& o) {
-      throw std::logic_error("StorageKramers::ax_plus_y illegal call");
-    }
-    DataType dot_product(const StorageIncore<DataType>& o) const {
-      throw std::logic_error("StorageKramers::dot_product illegal call");
-      return 0.0;
-    }
-
     void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) override { perm_ = p; }
 };
 

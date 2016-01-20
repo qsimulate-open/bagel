@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <list>
 #include <map>
+#include <unordered_set>
 #include <memory>
 #include <iostream>
 #include <iomanip>
@@ -54,12 +55,13 @@ class Tensor_ {
     std::vector<IndexRange> range_;
     std::shared_ptr<Storage<DataType>> data_;
     int rank_;
+    std::unordered_set<size_t> sparse_;
 
     virtual void init() const { initialized_ = true; }
     mutable bool initialized_;
 
   public:
-    Tensor_(std::vector<IndexRange> in, const bool kramers = false);
+    Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = {}, const bool alloc = false);
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
       *data_ = *(o.data_);
@@ -67,7 +69,7 @@ class Tensor_ {
     }
 
     std::shared_ptr<Tensor_<DataType>> clone() const {
-      return std::make_shared<Tensor_<DataType>>(range_);
+      return std::make_shared<Tensor_<DataType>>(range_, false, sparse_);
     }
 
     std::shared_ptr<Tensor_<DataType>> copy() const {
@@ -125,10 +127,6 @@ class Tensor_ {
 
     void zero() {
       data_->zero();
-    }
-
-    void conjugate_inplace() {
-      data_->conjugate_inplace();
     }
 
     std::vector<DataType> diag() const;
