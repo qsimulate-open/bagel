@@ -69,16 +69,17 @@ void StorageIncore<DataType>::initialize() {
   int64_t mpisize = mpi__->size();
   vector<int64_t> blocks(mpisize);
   const size_t blocksize = (totalsize_-1)/mpisize+1;
-  int cnt = 0;
+  int64_t cnt = 0;
   size_t tsize = 0;
   for (auto& i : size_) {
     if (cnt*blocksize <= tsize)
       blocks[cnt++] = tsize;
     tsize += i.second;
   }
+  assert(totalsize_ == tsize);
   // create GA
   auto type = is_same<double,DataType>::value ? MT_F_DBL : MT_C_DCPL;
-  ga_ = NGA_Create_irreg64(type, 1, &totalsize_, const_cast<char*>(""), &mpisize, blocks.data());
+  ga_ = NGA_Create_irreg64(type, 1, &totalsize_, const_cast<char*>(""), &cnt, blocks.data());
   zero();
 
   initialized_ = true;
