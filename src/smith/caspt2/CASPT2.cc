@@ -27,6 +27,7 @@
 
 
 #include <src/smith/caspt2/CASPT2.h>
+#include <src/util/math/linearRM.h>
 
 using namespace std;
 using namespace bagel;
@@ -47,6 +48,7 @@ void CASPT2::CASPT2::solve() {
   shared_ptr<Queue> sourceq = make_sourceq();
   while (!sourceq->done())
     sourceq->next_compute();
+  LinearRM<Tensor> solver(30, s);
 
   Timer mtimer;
   int iter = 0;
@@ -60,19 +62,20 @@ void CASPT2::CASPT2::solve() {
     while (!queue->done())
       queue->next_compute();
     diagonal(r, t2);
+
+    // TODO this will be replaced by subspace updates
+    //  update_amplitude(t2, r);
+    solver.compute_residual(t2->copy(), s->copy());
+
     //  second term
     r->ax_plus_y(1.0, s);
-
+    // E is now Hylleraas energy 
     // E += <1| H0 - E0 |1> + <1| H |0>
     energy_ += detail::real(dot_product_transpose(r, t2));
-    // E is now Hylleraas energy 
 
     // get the root mean square
     const double err = r->rms();
     print_iteration(iter, energy_, err, mtimer.tick());
-
-    // TODO this will be replaced by subspace updates
-    update_amplitude(t2, r);
 
     // zeroing out the residual
     r->zero();
