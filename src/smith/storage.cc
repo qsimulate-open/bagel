@@ -373,6 +373,15 @@ StorageIncore<DataType>& StorageIncore<DataType>::operator=(const StorageIncore<
 
 
 template<typename DataType>
+bool StorageIncore<DataType>::is_local(const size_t key) const {
+  auto iter = hashtable_.find(key);
+  assert(iter != hashtable_.end());
+  int64_t lo = iter->second.first;
+  return NGA_Nodeid() == NGA_Locate64(ga_, &lo);
+}
+
+
+template<typename DataType>
 void StorageIncore<DataType>::ax_plus_y(const DataType& a, const StorageIncore<DataType>& o) {
   assert(initialized_);
   DataType one = 1.0;
@@ -395,10 +404,10 @@ complex<double> StorageIncore<complex<double>>::dot_product(const StorageIncore<
   for (auto& i : hashtable_) {
     int64_t lo = i.second.first;
     int64_t hi = i.second.second;
-    if (NGA_Nodeid() == NGA_Locate64(ga_, &lo)) {
+    if (is_local(i.first)) {
       unique_ptr<complex<double>[]> a = get_block_(i.first);
       unique_ptr<complex<double>[]> b = o.get_block_(i.first);
-      sum += zdotc_(hi-lo+1, a, 1, b, 1);
+      sum += blas::dot_product(a.get(), hi-lo+1, b.get());
     }
   }
   mpi__->allreduce(&sum, 1);

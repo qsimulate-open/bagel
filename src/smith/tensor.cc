@@ -35,7 +35,7 @@ using namespace bagel::SMITH;
 
 template <typename DataType>
 Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers, const unordered_set<size_t> sparse, const bool alloc)
-  : range_(in), rank_(in.size()), sparse_(sparse), initialized_(false) {
+  : range_(in), rank_(in.size()), sparse_(sparse), initialized_(false), allocated_(alloc) {
 
   // make block list
   if (!in.empty()) {
@@ -66,6 +66,14 @@ Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers, const unor
     map<size_t, size_t> hashmap {{generate_hash_key(), 1lu}};
     data_ = make_shared<Storage<DataType>>(hashmap, alloc);
   }
+}
+
+
+template <typename DataType>
+void Tensor_<DataType>::allocate() {
+  assert(!allocated_);
+  data_->initialize();
+  allocated_ = true;
 }
 
 

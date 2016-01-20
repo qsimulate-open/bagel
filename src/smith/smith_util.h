@@ -43,10 +43,14 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
 
   auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
 
+  if (!target->allocated())
+    target->allocate();
+
   LoopGenerator gen(ranges);
   std::vector<std::vector<Index>> loop = gen.block_loop();
   for (auto& indices : loop) {
     assert(indices.size() == rank);
+    if (!target->is_local(std::vector<Index>(indices.rbegin(), indices.rend()))) continue;
 
     const size_t buffersize = std::accumulate(indices.begin(), indices.end(), 1ul, prod);
     std::unique_ptr<DataType[]> buffer(new DataType[buffersize]);
@@ -92,10 +96,14 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
 
   auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
 
+  if (!target->allocated())
+    target->allocate();
+
   LoopGenerator gen(ranges);
   std::vector<std::vector<Index>> loop = gen.block_loop();
   for (auto& indices : loop) {
     assert(indices.size() == rank);
+    if (!target->is_local(std::vector<Index>(indices.rbegin(), indices.rend()))) continue;
 
     std::bitset<N> bit;
     for (int i = 0; i != N; ++i)

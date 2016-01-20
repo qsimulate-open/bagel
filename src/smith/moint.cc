@@ -46,7 +46,7 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
   // so far MOInt can be called for 2-external K integral and all-internals.
   if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
     throw logic_error("MOInt called with wrong blocks");
-  data_ = make_shared<Tensor_<DataType>>(blocks_, is_same<DataType,complex<double>>::value);
+  data_ = make_shared<Tensor_<DataType>>(blocks_, is_same<DataType,complex<double>>::value, unordered_set<size_t>{}, /*alloc*/true);
   init();
 }
 
@@ -117,7 +117,8 @@ void K2ext<complex<double>>::init() {
               shared_ptr<ZMatrix> tmp = df01_2->form_4index(df23, 1.0)->get_conjg();
               blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
             }
-            data_->put_block(target, i0, i1, i2, i3);
+            if (data_->is_local(i0, i1, i2, i3))
+              data_->put_block(target, i0, i1, i2, i3);
           }
         }
       }
@@ -188,9 +189,11 @@ void K2ext<double>::init() {
           if (hashkey23 != hashkey01) {
             unique_ptr<double[]> target2(new double[i0.size()*i1.size()*i2.size()*i3.size()]);
             blas::transpose(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
-            data_->put_block(target2, i2, i3, i0, i1);
+            if (data_->is_local(i2, i3, i0, i1))
+              data_->put_block(target2, i2, i3, i0, i1);
           }
-          data_->put_block(target, i0, i1, i2, i3);
+          if (data_->is_local(i0, i1, i2, i3))
+            data_->put_block(target, i0, i1, i2, i3);
         }
       }
     }

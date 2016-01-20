@@ -379,13 +379,16 @@ double SpinFreeMethod<DataType>::compute_e0() {
     assert(!!rdm1_);
     for (auto& i1 : active_) {
       for (auto& i0 : active_) {
-        const size_t size = i0.size() * i1.size();
-        unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
-        unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
-        sum += blas::dot_product_noconj(fdata.get(), size, rdata.get());
+        if (f1_->is_local(i0, i1)) {
+          const size_t size = i0.size() * i1.size();
+          unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
+          unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
+          sum += blas::dot_product_noconj(fdata.get(), size, rdata.get());
+        }
       }
     }
   }
+  mpi__->allreduce(&sum, 1);
   sum /= nstates;
   cout << "    - Zeroth order energy: " << setw(20) << setprecision(10) << sum << endl;
   return detail::real(sum);
@@ -478,7 +481,7 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor
   DataType out = 0.0;
   auto prod = [this, &r, &t2, &out](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
     const size_t size = r->get_size_alloc(i2, i3, i0, i1);
-    if (size != 0) {
+    if (r->is_local(i2, i3, i0, i1) && size != 0) {
       unique_ptr<DataType[]> tmp0 = t2->get_block(i0, i1, i2, i3);
       unique_ptr<DataType[]> tmp1(new DataType[size]);
       sort_indices<2,3,0,1,0,1,1,1>(tmp0.get(), tmp1.get(), i0.size(), i1.size(), i2.size(), i3.size());
@@ -487,6 +490,7 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor
     }
   };
   loop_over(prod);
+  mpi__->allreduce(&out, 1);
   return out;
 }
 

@@ -60,6 +60,8 @@ class Tensor_ {
     virtual void init() const { initialized_ = true; }
     mutable bool initialized_;
 
+    bool allocated_;
+
   public:
     Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = {}, const bool alloc = false);
 
@@ -82,6 +84,12 @@ class Tensor_ {
     void ax_plus_y(const DataType& a, std::shared_ptr<const Tensor_<DataType>> o) { ax_plus_y(a, *o); }
 
     void scale(const DataType& a) { data_->scale(a); }
+
+    bool allocated() const { return allocated_; }
+    void allocate();
+
+    template<typename ...args>
+    bool is_local(args&& ...p) const { return data_->is_local(std::forward<args>(p)...); }
 
     DataType dot_product(const Tensor_<DataType>& o) const { return data_->dot_product(*o.data_); }
     DataType dot_product(std::shared_ptr<const Tensor_<DataType>> o) const { return dot_product(*o); }

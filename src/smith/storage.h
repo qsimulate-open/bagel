@@ -85,7 +85,6 @@ class StorageIncore {
     const std::map<size_t, size_t> size_;
 
     bool initialized_;
-    void initialize();
 
     std::unique_ptr<DataType[]> get_block_(const size_t& key) const;
     std::unique_ptr<DataType[]> move_block_(const size_t& key);
@@ -168,8 +167,14 @@ class StorageIncore {
     size_t size() const { return totalsize_; }
     size_t size_alloc() const { return initialized_ ? size() : 0lu; }
 
+    void initialize();
+
     void zero();
     void scale(const DataType& a);
+
+    template<typename ...args>
+    bool is_local(args&& ...p) const { return is_local(generate_hash_key(p...)); }
+    bool is_local(const size_t key) const;
 
     StorageIncore<DataType>& operator=(const StorageIncore<DataType>& o);
     void ax_plus_y(const DataType& a, const StorageIncore<DataType>& o);
