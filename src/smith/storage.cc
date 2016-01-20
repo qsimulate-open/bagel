@@ -390,8 +390,19 @@ double StorageIncore<double>::dot_product(const StorageIncore<double>& o) const 
 template<>
 complex<double> StorageIncore<complex<double>>::dot_product(const StorageIncore<complex<double>>& o) const {
   assert(initialized_);
-  const DoubleComplex result = GA_Zdot(ga_, o.ga_);
-  return complex<double>(result.real, result.imag);
+  // GA_Zdot is zdotu, so we have to compute this manually
+  complex<double> sum = 0.0;
+  for (auto& i : hashtable_) {
+    int64_t lo = i.second.first;
+    int64_t hi = i.second.second;
+    if (NGA_Nodeid() == NGA_Locate64(ga_, &lo)) {
+      unique_ptr<complex<double>[]> a = get_block_(i.first);
+      unique_ptr<complex<double>[]> b = o.get_block_(i.first);
+      sum += zdotc_(hi-lo+1, a, 1, b, 1);
+    }
+  }
+  mpi__->allreduce(&sum, 1);
+  return sum;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
