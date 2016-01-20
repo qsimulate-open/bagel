@@ -32,6 +32,7 @@
 #include <src/periodic/vertex.h>
 #include <src/df/df.h>
 #include <src/integral/rys/eribatch.h>
+#include <src/integral/rys/naibatch.h>
 
 namespace bagel {
 
