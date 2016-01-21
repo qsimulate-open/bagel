@@ -90,7 +90,7 @@ class TreeNAI : public Matrix1e {
         NAIBatch nai(input, mol);
         nai.compute();
 
-        add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+        add_block(2.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
       }
     }
 
