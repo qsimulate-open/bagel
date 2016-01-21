@@ -114,7 +114,7 @@ fi
 AC_ARG_ENABLE(smith, [AS_HELP_STRING([--enable-smith],[enable SMITH code.])], [compile_smith=yes], [compile_smith=no])
 if test "x${compile_smith}" != xno; then
   if test "x${with_mpi}" = xno; then
-    AC_MSG_ERROR("SMITH requires MPI + TiledArray / Madness")
+    AC_MSG_ERROR("SMITH requires MPI + GA")
   fi
   AC_DEFINE([COMPILE_SMITH], [], [Compile SMITH generated code])
   AH_TEMPLATE([HAVE_GA], [Global Arrays will be used.])
