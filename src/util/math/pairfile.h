@@ -94,6 +94,7 @@ class PairFile {
     void zero() { first()->zero(); second()->zero(); }
 
     std::shared_ptr<PairFile<T, U>> clone() const { return std::make_shared<PairFile<T, U>>(file0_->clone(), file1_->clone()); }
+    std::shared_ptr<PairFile<T, U>> copy() const { return std::make_shared<PairFile<T, U>>(*this); }
 
     // assumes that c is already orthogonal with each other.
     double orthog(std::list<std::shared_ptr<const PairFile<T, U>>> c) {

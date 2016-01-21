@@ -54,11 +54,12 @@ void CASPT2::CASPT2::solve() {
   
   t2->zero();
   update_amplitude(t2, s);
- 
+
   Timer mtimer;
   int iter = 0;
   for ( ; iter != info_->maxiter(); ++iter) {
-  //solver.orthog(t2);
+    // orthogonalizing current delta T with the previous vectors
+    solver.orthog(t2);
 
     // R = <proj| H0 - E0 |1> + <proj | H |0> is set to r
     //  first term
@@ -80,14 +81,17 @@ void CASPT2::CASPT2::solve() {
     // E += <1| H0 - E0 |1> + <1| H |0>
     energy_ = detail::real(dot_product_transpose(s, t2));
     cout << setprecision(10) << setw(20) << fixed << energy_ << "E in loop " << endl;
+    energy_ += detail::real(dot_product_transpose(r, t2));
+
 
     // get the root mean square
     const double err = r->rms();
     print_iteration(iter, energy_, err, mtimer.tick());
 
-    // zeroing out the residual
+    // computing delta T
     t2->zero();
     update_amplitude(t2, r);
+    // zeroing out the residual
     r->zero();
     if (err < info_->thresh()) break;
   }
