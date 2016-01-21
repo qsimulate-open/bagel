@@ -81,8 +81,8 @@ class StorageIncore {
 
     // this relates hash keys to lo and high of the block
     std::unordered_map<size_t, std::pair<int64_t, int64_t>> hashtable_;
-    // input - storing this for delayed initialization
-    const std::map<size_t, size_t> size_;
+    // distribution information
+    std::vector<int64_t> blocks_;
 
     bool initialized_;
 

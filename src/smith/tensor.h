@@ -57,7 +57,6 @@ class Tensor_ {
     int rank_;
     std::unordered_set<size_t> sparse_;
 
-    virtual void init() const { initialized_ = true; }
     mutable bool initialized_;
 
     bool allocated_;
@@ -79,6 +78,8 @@ class Tensor_ {
       *out = *this;
       return out;
     }
+
+    virtual void init() const { initialized_ = true; }
 
     void ax_plus_y(const DataType& a, const Tensor_<DataType>& o) { data_->ax_plus_y(a, o.data_); }
     void ax_plus_y(const DataType& a, std::shared_ptr<const Tensor_<DataType>> o) { ax_plus_y(a, *o); }
@@ -104,7 +105,6 @@ class Tensor_ {
 
     template<typename ...args>
     std::unique_ptr<DataType[]> get_block(args&& ...p) const {
-      if (!initialized_) init();
       return data_->get_block(std::forward<args>(p)...);
     }
 

@@ -54,8 +54,9 @@ class SubTask_ {
     virtual void compute() = 0;
 
     const Index& block(const size_t& i) const { return block_index_[i]; }
-    const std::shared_ptr<const Tensor_<DataType>>& in_tensor(const size_t& i) const { return in_[i]; }
-    const std::shared_ptr<Tensor_<DataType>>& out_tensor() const { return out_; }
+    const std::array<std::shared_ptr<const Tensor_<DataType>>, M>& in_tensors() const { return in_; }
+    std::shared_ptr<const Tensor_<DataType>> in_tensor(const size_t& i) const { return in_[i]; }
+    std::shared_ptr<Tensor_<DataType>> out_tensor() { return out_; }
 };
 
 namespace CASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }

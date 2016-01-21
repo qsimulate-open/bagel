@@ -41,7 +41,7 @@ using namespace std;
 
 // size contains hashkey and length (in this order)
 template<typename DataType>
-StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool init) : size_(size), initialized_(false) {
+StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool init) : initialized_(false) {
   static_assert(is_same<DataType, double>::value or is_same<DataType, complex<double>>::value, "illegal Type in StorageIncore");
 
   using GA_Type = typename conditional<is_same<double,DataType>::value, double, DoubleComplex>::type;
@@ -57,6 +57,18 @@ StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool ini
     totalsize_ += i.second;
   }
 
+  // store block data
+  const size_t blocksize = (totalsize_-1)/mpi__->size()+1;
+  size_t tsize = 0;
+  for (auto& i : size) {
+    if (i.second == 0) continue;
+    if (blocks_.size()*blocksize <= tsize)
+      blocks_.push_back(tsize);
+    tsize += i.second;
+  }
+  blocks_.push_back(totalsize_);
+  assert(totalsize_ == tsize);
+
   // here we initialize the global array storage
   if (init)
     initialize();
@@ -66,23 +78,14 @@ StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool ini
 template<typename DataType>
 void StorageIncore<DataType>::initialize() {
   assert(!initialized_);
-  int64_t mpisize = mpi__->size();
-  vector<int64_t> blocks(mpisize);
-  const size_t blocksize = (totalsize_-1)/mpisize+1;
-  int64_t cnt = 0;
-  size_t tsize = 0;
-  for (auto& i : size_) {
-    if (cnt*blocksize <= tsize)
-      blocks[cnt++] = tsize;
-    tsize += i.second;
-  }
-  assert(totalsize_ == tsize);
   // create GA
-  auto type = is_same<double,DataType>::value ? MT_F_DBL : MT_C_DCPL;
-  ga_ = NGA_Create_irreg64(type, 1, &totalsize_, const_cast<char*>(""), &cnt, blocks.data());
-  zero();
+  auto type = is_same<double,DataType>::value ? MT_C_DBL : MT_C_DCPL;
+  int64_t nblocks = blocks_.size() - 1;
+  assert(nblocks <= mpi__->size());
+  ga_ = NGA_Create_irreg64(type, 1, &totalsize_, const_cast<char*>(""), &nblocks, blocks_.data());
 
   initialized_ = true;
+  zero();
 }
 
 
@@ -109,16 +112,13 @@ unique_ptr<DataType[]> StorageIncore<DataType>::get_block_(const size_t& key) co
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageIncore<DataType>::move_block_(const size_t& key) {
-  if (!initialized_)
-    initialize();
   return get_block_(key);
 }
 
 
 template<typename DataType>
 void StorageIncore<DataType>::put_block_(unique_ptr<DataType[]>& dat, const size_t& key) {
-  if (!initialized_)
-    initialize();
+  assert(initialized_);
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
@@ -130,6 +130,7 @@ void StorageIncore<DataType>::put_block_(unique_ptr<DataType[]>& dat, const size
 
 template<typename DataType>
 void StorageIncore<DataType>::add_block_(const unique_ptr<DataType[]>& dat, const size_t& key) {
+  assert(initialized_);
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
     throw logic_error("a key was not found in Storage::put_block(const size_t&)");
@@ -378,7 +379,9 @@ bool StorageIncore<DataType>::is_local(const size_t key) const {
   auto iter = hashtable_.find(key);
   assert(iter != hashtable_.end());
   int64_t lo = iter->second.first;
-  return NGA_Nodeid() == NGA_Locate64(ga_, &lo);
+  int64_t nodeid = NGA_Nodeid();
+  const bool out = lo >= blocks_[nodeid] && lo < blocks_[nodeid+1];
+  return out;
 }
 
 
