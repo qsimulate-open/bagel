@@ -131,6 +131,14 @@ class Tensor_ {
       data_->conjugate_inplace();
     }
 
+    double orthog(const std::list<std::shared_ptr<const Tensor_<DataType>>> o) {
+      for (auto& it : o)
+        ax_plus_y(-detail::conj(this->dot_product(it)), it);
+      const double n = norm();
+      scale(1.0/n);
+      return n;
+    }
+
     std::vector<DataType> diag() const;
 
     std::shared_ptr<MatType> matrix() const;
