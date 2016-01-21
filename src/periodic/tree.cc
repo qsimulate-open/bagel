@@ -264,15 +264,15 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
     TaskQueue<function<void(void)>> tasks(nnode_);
     for (int i = 1; i != nnode_; ++i) {
       if (u++ % mpi__->size() == mpi__->rank()) {
-      tasks.emplace_back(
-        [this, i, &out, &density, lmax, offsets, dodf, auxfile] () {
-          nodes_[i]->compute_local_expansions(density, lmax, offsets);
-          if (nodes_[i]->is_leaf()) {
-            shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, dodf, auxfile);
-            *out += *tmp;
+        tasks.emplace_back(
+          [this, i, &out, &density, lmax, offsets, dodf, auxfile] () {
+            nodes_[i]->compute_local_expansions(density, lmax, offsets);
+            if (nodes_[i]->is_leaf()) {
+              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, dodf, auxfile);
+              *out += *tmp;
+            }
           }
-        }
-      );
+        );
       }
     }
     tasks.compute();
@@ -291,6 +291,10 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
 
   fmmtime.tick_print("    Upward pass");
   cout << endl;
+
+  // NAI
+  auto nai = make_shared<const TreeNAI>(geom_);
+  *out += *nai;
 
   // return the Coulomb matrix
   coulomb_ = out;

@@ -32,6 +32,7 @@
 #include <src/periodic/node.h>
 #include <src/periodic/vertex.h>
 #include <src/util/atommap.h>
+#include <src/mat1e/matrix1e.h>
 
 namespace bagel {
 
@@ -77,6 +78,27 @@ class Tree {
     std::shared_ptr<const ZMatrix> coulomb() { return coulomb_; }
 
     void print_tree_xyz() const;
+};
+
+
+class TreeNAI : public Matrix1e {
+  protected:
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
+      const int dimb1 = input[0]->nbasis();
+      const int dimb0 = input[1]->nbasis();
+      {
+        NAIBatch nai(input, mol);
+        nai.compute();
+
+        add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+      }
+    }
+
+  public:
+    TreeNAI(std::shared_ptr<const Molecule> mol) : Matrix1e(mol) {
+      init(mol);
+      fill_upper();
+    }
 };
 
 }
