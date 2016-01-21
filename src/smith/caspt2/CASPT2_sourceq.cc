@@ -37,31 +37,37 @@ shared_ptr<Queue> CASPT2::CASPT2::make_sourceq(const bool reset, const bool diag
 
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
   auto sourceq = make_shared<Queue>();
+cout << "cc" << endl;
+mpi__->barrier();
   auto tensor229 = vector<shared_ptr<Tensor>>{s};
   auto task229 = make_shared<Task229>(tensor229, reset);
   sourceq->add_task(task229);
+cout << "cd" << endl;
+mpi__->barrier();
 
-  vector<IndexRange> I288_index = {active_, active_, closed_, closed_};
+  vector<IndexRange> I288_index = {closed_, closed_, active_, active_};
   auto I288 = make_shared<Tensor>(I288_index);
   auto tensor230 = vector<shared_ptr<Tensor>>{s, I288};
   auto task230 = make_shared<Task230>(tensor230, pindex);
   task230->add_dep(task229);
   sourceq->add_task(task230);
+cout << "ce" << endl;
+mpi__->barrier();
 
-  auto tensor231 = vector<shared_ptr<Tensor>>{I288, v2_, Gamma92_()};
+  auto tensor231 = vector<shared_ptr<Tensor>>{I288, Gamma92_(), v2_};
   auto task231 = make_shared<Task231>(tensor231, pindex);
   task230->add_dep(task231);
   task231->add_dep(task229);
   sourceq->add_task(task231);
 
-  vector<IndexRange> I290_index = {closed_, active_, active_, active_};
+  vector<IndexRange> I290_index = {active_, active_, active_, closed_};
   auto I290 = make_shared<Tensor>(I290_index);
   auto tensor232 = vector<shared_ptr<Tensor>>{s, I290};
   auto task232 = make_shared<Task232>(tensor232, pindex);
   task232->add_dep(task229);
   sourceq->add_task(task232);
 
-  auto tensor233 = vector<shared_ptr<Tensor>>{I290, Gamma105_(), v2_};
+  auto tensor233 = vector<shared_ptr<Tensor>>{I290, v2_, Gamma105_()};
   auto task233 = make_shared<Task233>(tensor233, pindex);
   task232->add_dep(task233);
   task233->add_dep(task229);
@@ -128,6 +134,8 @@ shared_ptr<Queue> CASPT2::CASPT2::make_sourceq(const bool reset, const bool diag
   task239->add_dep(task243);
   task243->add_dep(task229);
   sourceq->add_task(task243);
+cout << "cg" << endl;
+mpi__->barrier();
 
   auto tensor244 = vector<shared_ptr<Tensor>>{I298, h1_, Gamma38_()};
   auto task244 = make_shared<Task244>(tensor244, pindex);
@@ -155,6 +163,8 @@ shared_ptr<Queue> CASPT2::CASPT2::make_sourceq(const bool reset, const bool diag
   task246->add_dep(task247);
   task247->add_dep(task229);
   sourceq->add_task(task247);
+cout << "ch" << endl;
+mpi__->barrier();
 
   auto tensor248 = vector<shared_ptr<Tensor>>{I306, v2_, Gamma7_()};
   auto task248 = make_shared<Task248>(tensor248, pindex);
@@ -220,6 +230,8 @@ shared_ptr<Queue> CASPT2::CASPT2::make_sourceq(const bool reset, const bool diag
     task256->add_dep(task229);
     sourceq->add_task(task256);
   }
+cout << "cr" << endl;
+mpi__->barrier();
 
   vector<IndexRange> I320_index = {virt_, closed_, virt_, active_};
   auto I320 = make_shared<Tensor>(I320_index);
@@ -254,6 +266,8 @@ shared_ptr<Queue> CASPT2::CASPT2::make_sourceq(const bool reset, const bool diag
   task260->add_dep(task261);
   task261->add_dep(task229);
   sourceq->add_task(task261);
+cout << "cs" << endl;
+mpi__->barrier();
 
   return sourceq;
 }
