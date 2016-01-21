@@ -420,7 +420,15 @@ void StorageIncore<DataType>::ax_plus_y(const DataType& a, const StorageIncore<D
   if (hashtable_.size() == o.hashtable_.size()) {
     auto i = hashtable_.begin();
     for (auto& j : o.hashtable_) {
-      i->second->ax_plus_y(a, *j.second);
+      assert(i->first == j.first);
+      if (j.second->size_alloc() == 0) {
+        ++i;
+        continue;
+      }
+      unique_ptr<DataType[]> buf = move_block_(i->first);
+      const unique_ptr<DataType[]> obuf = o.get_block_(j.first);
+      blas::ax_plus_y_n(a, obuf.get(), j.second->size(), buf.get());
+      put_block_(buf, i->first);
       ++i;
     }
   } else {

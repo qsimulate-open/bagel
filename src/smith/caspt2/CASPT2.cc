@@ -70,7 +70,7 @@ void CASPT2::CASPT2::solve() {
     // TODO this will be replaced by subspace updates
     //  update_amplitude(t2, r);
     r = solver.compute_residual(t2->copy(), r->copy());
-//  t2 = solver.civec();
+    t2 = solver.civec();
 
     cout << setprecision(10) << setw(20) << fixed << r->rms() << "r in loop " << endl;
     cout << setprecision(10) << setw(20) << fixed << t2->rms() << "t2 in loop " << endl;
