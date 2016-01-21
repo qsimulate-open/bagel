@@ -41,7 +41,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
                 "illegal DataType for SpinFreeMethod");
 
   // start Global Arrays here
-  GA_Initialize();
+//GA_Initialize();
 
   Timer timer;
   const int max = info_->maxtile();
@@ -128,7 +128,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
 template<typename DataType>
 SpinFreeMethod<DataType>::~SpinFreeMethod() {
-  GA_Terminate();
+//GA_Terminate();
 }
 
 

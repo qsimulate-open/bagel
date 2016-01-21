@@ -26,6 +26,8 @@
 #ifdef COMPILE_SMITH
 
 
+#include <iostream>
+#include <iomanip>
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/util/math/linearRM.h>
 
@@ -49,12 +51,14 @@ void CASPT2::CASPT2::solve() {
   while (!sourceq->done())
     sourceq->next_compute();
   LinearRM<Tensor> solver(30, s);
-
+  
+  t2->zero();
+  update_amplitude(t2, s);
+ 
   Timer mtimer;
   int iter = 0;
   for ( ; iter != info_->maxiter(); ++iter) {
-    // E = <1| H |0>
-    energy_ = detail::real(dot_product_transpose(s, t2));
+  //solver.orthog(t2);
 
     // R = <proj| H0 - E0 |1> + <proj | H |0> is set to r
     //  first term
@@ -65,19 +69,25 @@ void CASPT2::CASPT2::solve() {
 
     // TODO this will be replaced by subspace updates
     //  update_amplitude(t2, r);
-    solver.compute_residual(t2->copy(), s->copy());
+    r = solver.compute_residual(t2->copy(), r->copy());
+//  t2 = solver.civec();
 
-    //  second term
-    r->ax_plus_y(1.0, s);
+    cout << setprecision(10) << setw(20) << fixed << r->rms() << "r in loop " << endl;
+    cout << setprecision(10) << setw(20) << fixed << t2->rms() << "t2 in loop " << endl;
+
     // E is now Hylleraas energy 
+    // E = <1| H |0>
     // E += <1| H0 - E0 |1> + <1| H |0>
-    energy_ += detail::real(dot_product_transpose(r, t2));
+    energy_ = detail::real(dot_product_transpose(s, t2));
+    cout << setprecision(10) << setw(20) << fixed << energy_ << "E in loop " << endl;
 
     // get the root mean square
     const double err = r->rms();
     print_iteration(iter, energy_, err, mtimer.tick());
 
     // zeroing out the residual
+    t2->zero();
+    update_amplitude(t2, r);
     r->zero();
     if (err < info_->thresh()) break;
   }
