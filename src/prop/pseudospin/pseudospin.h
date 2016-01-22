@@ -87,6 +87,7 @@ class Pseudospin {
     std::array<std::shared_ptr<ZMatrix>,3> zfci_orbang_;
 
     void update_spin_matrices(VectorB spinvals);
+    std::shared_ptr<Matrix> enforce_right_handed(std::shared_ptr<const Matrix>) const;
 
   public:
     Pseudospin(const int nspin);
