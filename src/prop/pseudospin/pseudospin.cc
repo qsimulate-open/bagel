@@ -428,6 +428,9 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
     for (int i = 0; i != 3; ++i)
       cout << " *** A tensor eigenvalue " << i << " = " << Aeig[i] << endl;
     cout << endl;
+
+    // All eigenvalues of A should be positive, since they are proportional to squares of the principle g-values
+    assert(Aeig[0] > 0.0 && Aeig[1] > 0.0 && Aeig[2] > 0.0);
   }
 
   {
