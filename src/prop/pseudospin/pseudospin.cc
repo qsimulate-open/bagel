@@ -99,7 +99,7 @@ void Pseudospin::compute(const ZHarrison& zfci) {
   shared_ptr<const Matrix> mag_axes = identify_magnetic_axes();
   array<double,3> rotation;
     for (int i = 0; i != 3; ++i)
-      rotation[i] = mag_axes->element(2, i);
+      rotation[i] = mag_axes->element(i, 2);
 
   array<double, 3> rotin = zfci.idata()->get_array<double,3>("aniso_axis", rotation);
 
@@ -394,7 +394,7 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
     Atensor->print("A tensor");
     cout << endl;
     for (int i = 0; i != 3; ++i)
-      cout << " *** Atensor eigenvalue " << i << " = " << Aeig[i] << endl;
+      cout << " *** A tensor eigenvalue " << i << " = " << Aeig[i] << endl;
     cout << endl;
   }
 
@@ -423,9 +423,9 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
     cout << "  Main axes of magnetic anisotropy:" << endl;
     for (int i = 0; i != 3; ++i) {
       cout << "   " << i << " |g_" << i << "| = " << setw(12) << gval[i] << ",  axis = ( ";
-      cout << setw(12) << Atransform->element(i, 0) << ", ";
-      cout << setw(12) << Atransform->element(i, 1) << ", ";
-      cout << setw(12) << Atransform->element(i, 2) << " )" << endl;
+      cout << setw(12) << Atransform->element(0, i) << ", ";
+      cout << setw(12) << Atransform->element(1, i) << ", ";
+      cout << setw(12) << Atransform->element(2, i) << " )" << endl;
     }
     cout << endl;
   }
