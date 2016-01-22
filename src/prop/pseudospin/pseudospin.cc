@@ -473,8 +473,18 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   ZMatrix transform(nspin1_, nspin1_);
   const double scale = 1.0 / std::sqrt(rotation[0]*rotation[0] + rotation[1]*rotation[1] + rotation[2]*rotation[2]);
-  for (int i = 0; i != 3; ++i)
-    transform += scale * rotation[i] * *spinop_h_[i];
+  const string diagset = zfci.idata()->get<string>("aniso_diagop", "Mu");
+  if (diagset != "Mu" && diagset != "J" && diagset != "S" && diagset != "L")
+    throw runtime_error("Sorry, the only options for which angular momentum to diagonalize are S, L, J and Mu for the magnetic moment");
+
+  for (int i = 0; i != 3; ++i) {
+    if (diagset == "Mu")
+      transform += scale * rotation[i] * *spinop_h_[i];
+    if (diagset == "S" || diagset == "J")
+      transform += scale * rotation[i] * *zfci_spin_[i];
+    if (diagset == "L" || diagset == "J")
+      transform += scale * rotation[i] * *zfci_orbang_[i];
+  }
   VectorB zeig(nspin1_);
 #ifndef NDEBUG
   auto spinmat_to_diag = transform.copy();
