@@ -166,7 +166,8 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
       unique_ptr<double[]> data0(new double[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
       rdm0t->allocate();
-      rdm0t->put_block(data0);
+      if (rdm0t->is_local())
+        rdm0t->put_block(data0);
       fill_block<2,double>(rdm1t, rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
       fill_block<4,double>(rdm2t, rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
       fill_block<6,double>(rdm3t, rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
@@ -218,7 +219,8 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       unique_ptr<complex<double>[]> data0(new complex<double>[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
       rdm0t->allocate();
-      rdm0t->put_block(data0);
+      if (rdm0t->is_local())
+        rdm0t->put_block(data0);
 
       const int n = info_->nact();
 
