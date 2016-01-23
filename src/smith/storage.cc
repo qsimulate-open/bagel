@@ -324,8 +324,7 @@ bool StorageIncore<DataType>::is_local(const size_t key) const {
   assert(iter != hashtable_.end());
   int64_t lo = iter->second.first;
   int64_t nodeid = NGA_Nodeid();
-  const bool out = (nodeid+1 < blocks_.size()) && (lo >= blocks_[nodeid] && lo < blocks_[nodeid+1]);
-  return out;
+  return (nodeid+1 < blocks_.size()) && (lo >= blocks_[nodeid] && lo < blocks_[nodeid+1]);
 }
 
 

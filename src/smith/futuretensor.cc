@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: futuretensor.h
+// Filename: futuretensor.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,40 +23,23 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <ga.h>
+#include <src/smith/futuretensor.h>
 
-#ifndef __SRC_SMITH_FUTURETENSOR_H
-#define __SRC_SMITH_FUTURETENSOR_H
-
-#include <src/smith/tensor.h>
-#include <src/smith/task.h>
-
-namespace bagel {
-namespace SMITH {
+using namespace std;
+using namespace bagel;
+using namespace bagel::SMITH;
 
 template<typename DataType>
-class FutureTensor_ : public Tensor_<DataType> {
-  protected:
-    using Tensor_<DataType>::initialized_;
-
-  protected:
-    mutable std::shared_ptr<Task> init_;
-
-  public:
-    FutureTensor_(const Tensor_<DataType>& i,  std::shared_ptr<Task> j);
-
-    void init() const override;
-
-};
-
-extern template class FutureTensor_<double>;
-extern template class FutureTensor_<std::complex<double>>;
-
-namespace CASPT2 { using FutureTensor = FutureTensor_<double>; }
-namespace MRCI   { using FutureTensor = FutureTensor_<double>; }
-namespace RelCASPT2 { using FutureTensor = FutureTensor_<std::complex<double>>; }
-namespace RelMRCI   { using FutureTensor = FutureTensor_<std::complex<double>>; }
-
-}
+FutureTensor_<DataType>::FutureTensor_(const Tensor_<DataType>& i,  std::shared_ptr<Task> j) : Tensor_<DataType>(i), init_(j) {
 }
 
-#endif
+template<typename DataType>
+void FutureTensor_<DataType>::init() const {
+  init_->compute();
+  initialized_ = true;
+  GA_Sync();
+}
+
+template class FutureTensor_<double>;
+template class FutureTensor_<std::complex<double>>;
