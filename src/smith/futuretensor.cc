@@ -23,6 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <ga.h>
 #include <src/smith/futuretensor.h>
 
@@ -43,3 +46,5 @@ void FutureTensor_<DataType>::init() const {
 
 template class FutureTensor_<double>;
 template class FutureTensor_<std::complex<double>>;
+
+#endif

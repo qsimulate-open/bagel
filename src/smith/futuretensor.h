@@ -27,6 +27,9 @@
 #ifndef __SRC_SMITH_FUTURETENSOR_H
 #define __SRC_SMITH_FUTURETENSOR_H
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <src/smith/tensor.h>
 #include <src/smith/task.h>
 
@@ -59,4 +62,5 @@ namespace RelMRCI   { using FutureTensor = FutureTensor_<std::complex<double>>; 
 }
 }
 
+#endif
 #endif
