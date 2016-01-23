@@ -96,6 +96,7 @@ void MRCI::MRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) cons
             if (!r->is_local(i0, i1, i2, i3) || !r->get_size_alloc(i0, i1, i2, i3)) continue;
             const size_t tsize = r->get_size_alloc(i0, i1, i2, i3);
             unique_ptr<double[]> local(new double[tsize]);
+            fill_n(local.get(), tsize, 0.0);
             unique_ptr<double[]> buf(new double[tsize]);
 
             for (auto& i3t : virt_) {
@@ -112,7 +113,7 @@ void MRCI::MRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) cons
                 dgemm_("N", "N", i0.size()*i2.size(), i1.size()*i3.size(), i1t.size()*i3t.size(),
                         1.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 0.0, buf, i0.size()*i2.size());
 
-                sort_indices<0,2,1,3,0,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
+                sort_indices<0,2,1,3,1,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
               }
             }
             r->add_block(local, i0, i1, i2, i3);
@@ -137,6 +138,7 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
             if (!r->is_local(i0, i1, i2, i3) || !r->get_size_alloc(i0, i1, i2, i3)) continue;
             const size_t tsize = r->get_size_alloc(i0, i1, i2, i3);
             unique_ptr<complex<double>[]> local(new complex<double>[tsize]);
+            fill_n(local.get(), tsize, 0.0);
             unique_ptr<complex<double>[]> buf(new complex<double>[tsize]);
 
             for (auto& i3t : virt_) {
@@ -152,7 +154,7 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
                 zgemm3m_("N", "N", i0.size()*i2.size(), i1.size()*i3.size(), i1t.size()*i3t.size(),
                          1.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 0.0, buf, i0.size()*i2.size());
 
-                sort_indices<0,2,1,3,0,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
+                sort_indices<0,2,1,3,1,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
               }
             }
             r->add_block(local, i0, i1, i2, i3);
